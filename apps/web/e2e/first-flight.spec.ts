@@ -120,10 +120,12 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   await expect(tip).toBeVisible();
   await expect(tip).toContainText("Your flight plan is one tap away");
   await expect(tip).toContainText("Tap FPL any time");
-  // Over the toggle, its arrow at it: at the search's row's start (the owner,
-  // 2026-11-20), the tip's edge reaches over it, on the screen.
+  // Over the toggle on a phone, its arrow at it, the tip's edge reaching
+  // over it, on the screen. In a desktop's side panel the toggle is at the
+  // window's top, with no room over it: the tip hangs under it (FplTip).
   const [tipBox, toggleBox] = [await tip.boundingBox(), await toggle(page).boundingBox()];
-  expect(tipBox!.y + tipBox!.height).toBeLessThanOrEqual(toggleBox!.y);
+  if (page.viewportSize()!.width >= 768) expect(tipBox!.y).toBeGreaterThanOrEqual(toggleBox!.y + toggleBox!.height);
+  else expect(tipBox!.y + tipBox!.height).toBeLessThanOrEqual(toggleBox!.y);
   expect(tipBox!.x).toBeLessThanOrEqual(toggleBox!.x + toggleBox!.width / 2);
   expect(tipBox!.x + tipBox!.width).toBeGreaterThanOrEqual(toggleBox!.x + toggleBox!.width / 2);
   expect(tipBox!.x).toBeGreaterThanOrEqual(0);

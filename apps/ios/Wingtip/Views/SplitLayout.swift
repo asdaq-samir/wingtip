@@ -40,9 +40,10 @@ extension EnvironmentValues {
 
 /// The iPad's layout: stock SwiftUI throughout. The plan under the one
 /// search in the NavigationSplitView's sidebar (on iPadOS 26 and later a
-/// floating glass card over the map), the map as its detail across the
-/// screen, the second-level card in the system inspector, and the
-/// flight's figures along the foot of the map.
+/// floating card over the map, its rows on the sheet's solid ground), the
+/// map as its detail across the screen, the second-level card in the
+/// system inspector on the map, and the flight's figures on a
+/// solid card along the foot of the map.
 struct SplitLayout<Map: View>: View {
     @Environment(Navigator.self) private var nav
     let map: Map
@@ -54,19 +55,32 @@ struct SplitLayout<Map: View>: View {
     var body: some View {
         NavigationSplitView(columnVisibility: $columns) {
             PlanSheet(search: search, openScreen: openScreen, ask: ask)
+                // The plan's rows on the look's own sheet ground, as the
+                // iPhone's sheet is (PlanSheetPresentation), not the chart
+                // through the sidebar's glass: main's nightly run
+                // 44927130075 found the Search page's rows under 4.5:1 on
+                // the iPad Pro (Find Nearby, Nearest's "Waiting for the
+                // position"; WCAG 2.2 1.4.3).
+                .background(WingtipInk.sheet)
                 .navigationSplitViewColumnWidth(min: 320, ideal: 375, max: 420)
         } detail: {
             map
                 .overlay(alignment: .bottom) {
+                    // Figures on a solid ground, as rows and cards are
+                    // (docs/design/ios.md §0): on glass over the chart the
+                    // same run found the names DIST and TO under 4.5:1,
+                    // semibold and in the tokens' black.
                     FiguresStrip()
-                        .environment(\.figuresOnGlass, true)
                         .padding(.vertical, WingtipSpace.md)
                         .frame(maxWidth: 520)
-                        .floatingGlass(in: floatingCard)
+                        .background(WingtipInk.sheet, in: floatingCard)
                         .padding(.bottom, WingtipSpace.lg)
                         .padding(.horizontal, WingtipSpace.lg)
                 }
                 .toolbar(.hidden, for: .navigationBar)
+                // On the map, where it has been: moving it to the split
+                // view as a column of its own waits on the owner's word
+                // (CLAUDE.md: no panel moved without it).
                 .inspector(isPresented: inspectorShown) {
                     inspector
                         // The cards' rows on a solid ground, not the map

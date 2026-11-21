@@ -258,10 +258,14 @@ export function StripNote({ children, status = false }: { children: ReactNode; s
 }
 
 const STRIP = "-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain px-1";
-/** A pill's row of small tiles, sliding sideways where more than fit (`className`: strips laid into it). */
+/** A pill's row of small tiles, sliding sideways where more than fit (`className`: strips laid into it).
+ *  Marked as made to slide (data-slides), as the hours' and runways'
+ *  strips are, Apple Maps' Favorites row: its tiles past the edge are the
+ *  design, not a panel spilling sideways (the iOS audit's P18 read
+ *  Nearest's eight as "668 in 351"). */
 export function PillStrip({ children, testId, className }: { children: ReactNode; testId?: string; className?: string }) {
   return (
-    <div className={cn(STRIP, className)} data-testid={testId}>
+    <div className={cn(STRIP, className)} data-testid={testId} data-slides="">
       {children}
     </div>
   );

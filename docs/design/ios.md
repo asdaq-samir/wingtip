@@ -1859,16 +1859,24 @@ Next Flight, Airport Weather and Currency Status.
 **Structure** (`SplitLayout`, as built):
 
 1. **The sidebar** (`NavigationSplitView`, 320–420 pt): the tabs and
-   their content, with the title inline.
+   their content, with the title inline, on the look's solid sheet
+   colour (`WingtipInk.sheet`), as the iPhone's sheet is: on the
+   sidebar's glass over the chart the Search page's rows fell under
+   4.5:1 (the nightly of 2026-11-21).
    - The selected row stays highlighted.
    - Search is at the sidebar's top, the one search.
 2. **The map** as the detail, across the screen. The chart extends under
    the sidebar (`backgroundExtensionEffect()`).
 3. **The inspector** (`.inspector`, 320–440 pt): the second-level card,
    such as an airport, an airplane or a leg. It opens beside the map
-   instead of over it.
-4. **The figure strip** floats in glass along the map's foot, at most
-   520 pt wide.
+   instead of over it. It is put on the map, whose bar is hidden, so its
+   card has no title, close or gear there (the nightly of 2026-11-21);
+   making it a full-height column of the split view, with its own bar,
+   waits on the owner's word, as moving a panel does.
+4. **The figure strip** floats along the map's foot on a solid card in
+   the sheet's colour, at most 520 pt wide, its words in the system's
+   inks: on glass the names failed 4.5:1 even semibold in the tokens'
+   black.
 5. **Brief, Nav Log and Logbook** open in the sidebar's stack. A large
    `Table` takes the detail column only when the pilot asks for it in
    full (the nav log).

@@ -91,27 +91,18 @@ test("a pinch brings in the airports of each level it passes, before the fingers
   // since the owner's "make the current position zoom level the same as
   // class D airports" (2026-11-04, ownShip's OPEN_ZOOM), where these
   // fields are drawn already.
+  // The map itself as the app hands it to a test it is driven by
+  // (useGlProbe's probeLayers, window.__wingtipMaps), the one whose
+  // element is the page's map. The map's element is made with the map and
+  // parked outside React's tree (makeMap), so a walk of React's fibers
+  // from it found no map ("reading 'setZoom'" of null, main's nightly
+  // 44926432837 on the iPhone 16 Pro Max and the iPad).
   await page.evaluate(() => {
-    const box = document.querySelector(".maplibregl-map") as unknown as Record<string, unknown>;
-    const key = Object.keys(box).find((k) => k.startsWith("__reactFiber"))!;
-    let map: { setZoom: (z: number, o: object) => void } | null = null;
-    const seen = new Set<unknown>();
-    const walk = (
-      f: { memoizedProps?: { value?: { map?: { setZoom?: unknown } } }; child?: unknown; sibling?: unknown } | null,
-      depth: number,
-    ) => {
-      if (!f || map || depth > 40 || seen.has(f)) return;
-      seen.add(f);
-      const value = f.memoizedProps?.value;
-      if (value?.map?.setZoom) {
-        map = value.map as typeof map;
-        return;
-      }
-      walk(f.child as typeof f, depth + 1);
-      walk(f.sibling as typeof f, depth);
-    };
-    walk(box[key] as Parameters<typeof walk>[0], 0);
-    map!.setZoom(7, { animate: false });
+    type Zoomable = { getContainer: () => HTMLElement; setZoom: (z: number, o: object) => void };
+    const maps = (window as unknown as { __wingtipMaps?: Zoomable[] }).__wingtipMaps ?? [];
+    const box = document.querySelector(".maplibregl-map");
+    const map = maps.find((m) => m.getContainer() === box) ?? maps[0];
+    map.setZoom(7, { animate: false });
   });
   await mapStill(page);
   // The fields drawn at the region's level (AirportsGl's probe).

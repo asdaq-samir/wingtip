@@ -183,7 +183,11 @@ export default function AirspaceCard({
             {ground !== null && ` · ground ${altFt(ground)} ft`}
           </span>
         }
-        line={naming ? named ? named.name : <SkeletonLine className="w-32" /> : undefined}
+        // A point no fix is near (frd_near's None) keeps the line's room,
+        // empty: taken away as it answered, everything under it rose 18
+        // points (the nightly of 2026-11-21, airspace.spec:104 on the
+        // desktop, whose click fell outside CI's fixes round Chicago).
+        line={named ? named.name : isLoading ? <SkeletonLine className="w-32" /> : <span aria-hidden="true">{"\u00a0"}</span>}
         lineTestId="airspace-named"
         onClose={onClose}
         // Its link (`at`), which opens this card, as every card with one

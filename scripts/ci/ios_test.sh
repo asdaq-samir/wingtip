@@ -68,9 +68,18 @@ only=(-only-testing:WingtipTests) scheme=WingtipUnit
 # step's, or an earlier run's.
 from=$(($(wc -l < "$log") + 1))
 said() { tail -n "+$from" "$log"; }
+# ENABLE_DEBUG_DYLIB=NO: one app binary, as CI needs no Xcode Previews.
+# With the debug dylib on, the app's Wingtip.debug.dylib and its
+# __preview.dylib both write Wingtip_dependency_info.dat, and Xcode links
+# them in either order. Where the preview stub was linked last (the night's
+# iPhone Duo leg, run 44927130075), the App Intents tool found no
+# AppIntents.framework in that file, skipped the Siri phrases
+# ("Metadata extraction skipped, no AppIntents.framework dependency
+# found"), and the string catalog's check read them as gone.
 # `only` is empty at night, which the Mac's bash 3.2 calls unset under -u.
 xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme "$scheme" -configuration Debug "${opts[@]}" ${only[@]+"${only[@]}"} \
   CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= COMPILER_INDEX_STORE_ENABLE=NO \
+  ENABLE_DEBUG_DYLIB=NO \
   WINGTIP_HOST="$host" WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID" "$action" >> "$log" 2>&1 || true
 
 # Each error with the lines after it (a cause), the tests, the verdict.

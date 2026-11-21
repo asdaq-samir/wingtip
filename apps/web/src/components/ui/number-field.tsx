@@ -58,7 +58,10 @@ function NumberField({
   unit,
   lead,
   onTyped,
-  enterKeyHint,
+  // Done unless a field names its own: the figure is taken as Enter
+  // leaves it, and iOS's return key says so (the iOS audit's P19, the
+  // holding and lost-communications practice pages).
+  enterKeyHint = "done",
   className,
   inputClassName,
   formatOptions,
