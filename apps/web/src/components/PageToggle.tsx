@@ -105,7 +105,7 @@ export default function PageToggle({ page, onHold }: { page: 0 | 1; onHold?: () 
         </span>
       ) : (
         // The ✕ at 24, every card's close's size (CloseButton).
-         <X className="size-6" strokeWidth={1.75} aria-hidden="true" />
+        <X className="size-6" strokeWidth={1.75} aria-hidden="true" />
       )}
     </Toggle>
   );
