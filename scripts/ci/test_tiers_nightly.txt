@@ -8,7 +8,6 @@ a11y.spec.ts
 airplane-lookup.spec.ts
 airplane-mode.spec.ts
 airport-diagram.spec.ts
-airport-use.spec.ts
 airport-weather.spec.ts
 airspace-3d.spec.ts
 airspace-lines.spec.ts
