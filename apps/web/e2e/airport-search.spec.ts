@@ -104,7 +104,7 @@ test("a stop at the route box's arrow and the route's ends are picked in the one
   await openRoute(page);
   await sideDrawer(page).getByRole("button", { name: "Add a stop between C81 and KDLH" }).click();
   const field = page.getByTestId("search-airports");
-  await expect(field).toHaveAttribute("placeholder", "Search airports and waypoints");
+  await expect(field).toHaveAccessibleName("Search airports and waypoints");
   await expect(field).toBeFocused();
   await expect(sideDrawer(page).getByRole("search")).toHaveCount(1);
   await field.fill("madison");

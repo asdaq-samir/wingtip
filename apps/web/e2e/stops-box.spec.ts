@@ -88,7 +88,7 @@ test("the route's box is round, one line tall for a short route and the panel's 
   await sideDrawer(page).getByRole("button", { name: "Add a stop between C81 and KDLH" }).click();
   await expect(sideDrawer(page).getByTestId("route-type")).not.toHaveAccessibleName("A stop here");
   const field = page.getByTestId("search-airports");
-  await expect(field).toHaveAttribute("placeholder", "Search airports and waypoints");
+  await expect(field).toHaveAccessibleName("Search airports and waypoints");
   // A stop's rows come from the airports' copy at once and the planner's
   // answer (with the waypoints) a debounce and a request later; Enter
   // before it keeps what was typed (useAirportSearch `answered`), so on a
