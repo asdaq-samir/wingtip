@@ -22,7 +22,7 @@ export default function ClearRouteButton({ hasRoute, onClear }: { hasRoute: bool
   return (
     <>
       <IconButton round label="Clear route" disabled={!hasRoute} onClick={ask} data-testid="fpl-clear">
-        <X className="size-5" aria-hidden="true" />
+        <X className="size-6" strokeWidth={1.75} aria-hidden="true" />
       </IconButton>
       {asked}
     </>

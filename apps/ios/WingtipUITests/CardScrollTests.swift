@@ -50,7 +50,9 @@ final class CardScrollTests: XCTestCase {
             CardTests.settled(grabber)
             XCTAssertNotEqual(grabber.value as? String, "Expanded", "the Map card did not open half way at \(size.name)")
             let title = app.navigationBars["Map"]
-            let firstRow = app.descendants(matching: .any)["layer-traffic"]
+            // The card's first row, whichever it is (the Chart section's
+            // pictures since 698a7c9da, the layers under them).
+            let firstRow = card.cells.firstMatch
             let rowY = firstRow.frame.minY - title.frame.minY
             card.swipeUp()
             CardTests.settled(grabber)
@@ -100,7 +102,15 @@ final class CardScrollTests: XCTestCase {
             let app = CardTests.launch(["-card", "+clearance"], size: size.arguments)
             let card = CardTests.card(app, "card-clearance")
             XCTAssertTrue(card.waitForExistence(timeout: 20), "the clearance did not open at \(size.name)")
-            let field = app.textFields.firstMatch.exists ? app.textFields.firstMatch : app.textViews.firstMatch
+            // At the accessibility sizes the form's field is below the half
+            // card: the card swiped up until it is in sight.
+            let fields = app.descendants(matching: .any).matching(NSPredicate(
+                format: "elementType == %d OR elementType == %d",
+                XCUIElement.ElementType.textField.rawValue, XCUIElement.ElementType.textView.rawValue))
+            for _ in 0..<4 where !(fields.firstMatch.waitForExistence(timeout: 3) && fields.firstMatch.isHittable) {
+                card.swipeUp()
+            }
+            let field = fields.firstMatch
             XCTAssertTrue(field.waitForExistence(timeout: 10), "no field to type in at \(size.name)")
             field.tap()
             field.typeText("CLEARED TO KOSH")

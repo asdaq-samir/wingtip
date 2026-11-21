@@ -685,12 +685,11 @@ off by default (the owner, 2026-11-13).
   44-point disc in the field's white: on Search at the start of the first
   row, before the field, with the account button at its end, as Apple
   Maps' avatar is (the owner, 2026-11-20: "move the fpl button on the left
-  side of search and avatar to the right side"); on FPL the same word at the end
-  of FPL's bar, after the ✕ that clears the route. Both hide while the search is in use, Cancel in their
+  side of search and avatar to the right side"); on FPL the bar's end is the ✕ that clears the route, and its Search
+  button at the start is the way back. Both hide while the search is in use, Cancel in their
   place. The toggle shows the page a tap goes to, as
-  Apple Maps' 2D/3D button shows the mode it switches to: on Search the word
-  FPL ("FPL, show flight plan" to a screen reader; the owner, 2026-11-20), on FPL
-  the same word ("FPL, close flight plan"). A real button, never pressed, its name
+  Apple Maps' 2D/3D button shows the mode it switches to: the word
+  FPL ("FPL, show flight plan" to a screen reader; the owner, 2026-11-20); FPL's page has none. A real button, never pressed, its name
   saying where it goes; a 44-point tap by its hit area, never grown. It
   turns the page and leaves the sheet's size. A card over the sheet
   covers the row and both buttons with it; the card's ✕ brings them back.

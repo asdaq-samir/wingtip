@@ -75,6 +75,10 @@ struct WelcomeSheet: View {
         }
         .background(Color(.systemGroupedBackground))
         .safeAreaInset(edge: .bottom) { foot }
+        // A container of its own: the identifier on the stack alone would
+        // be given to every element in it, the buttons' welcome-go and
+        // welcome-later lost under it.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("welcome")
     }
 

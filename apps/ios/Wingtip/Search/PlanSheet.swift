@@ -32,7 +32,15 @@ struct PlanSheet: View {
         NavigationStack(path: stack) {
             SheetPages(page: nav.sheetPage) {
                 List {
-                    BrowseSections(nearest: search.nearest, pick: browse)
+                    // Its rows only while the page is in sight: kept under
+                    // FPL, hidden and at no opacity, the List's rows (UIKit's
+                    // collection view) were still read by VoiceOver and the
+                    // audit over FPL, "Recents" at its top, whatever
+                    // accessibilityHidden said (the accessibility audit,
+                    // 2026-11-21).
+                    if nav.sheetPage == .search {
+                        BrowseSections(nearest: search.nearest, pick: browse)
+                    }
                 }
                 .accessibilityIdentifier("sheet-page-search")
             } fpl: {
