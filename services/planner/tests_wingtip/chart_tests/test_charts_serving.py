@@ -1,10 +1,31 @@
 """The chart modules (wingtip.charts maps them): a cycle going over to a new pass, the published pointer and the publish."""
 
+import io
 import json
 
-from wingtip import chart_coverage, chart_cycle, chart_grid, chart_kinds, chart_publish, chart_render, chart_serving, chart_tiles, config
+from wingtip import (
+    chart_archives,
+    chart_coverage,
+    chart_cycle,
+    chart_grid,
+    chart_kinds,
+    chart_publish,
+    chart_render,
+    chart_serving,
+    chart_tiles,
+    config,
+)
 
 from .helpers import _Bucket
+
+
+def _png(n: int) -> bytes:
+    """A small palette PNG, its colour told by n."""
+    from PIL import Image
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (8, 8), (n, 255 - n, 7)).quantize(256).save(buffer, format="PNG")
+    return buffer.getvalue()
 
 
 def test_each_kind_goes_over_to_a_new_cycle_as_its_own_pass_finishes(tmp_path, monkeypatch):
@@ -64,10 +85,11 @@ def test_published_pointer_decides_the_served_cycle_in_the_cloud(tmp_path, monke
 def test_publish_uploads_each_archive_once_and_points_serving_at_them(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
     monkeypatch.setattr(chart_grid, "TILE_SCALES", (1, 2))
+    monkeypatch.setattr(chart_archives, "_pack_workers", lambda: 0)
     root = tmp_path / "tiles" / "09-03-2026"
-    for key in ("sec/8/65/94.png", "sec/8/65/95.png", "sec/8/65/94@2x.png", "tac/11/522/757.png"):
+    for n, key in enumerate(("sec/8/65/94.png", "sec/8/65/95.png", "sec/8/65/94@2x.png", "tac/11/522/757.png")):
         (root / key).parent.mkdir(parents=True, exist_ok=True)
-        (root / key).write_bytes(b"\x89PNG" + key.encode())
+        (root / key).write_bytes(_png(40 * n))
     chart_serving.write_pyramid_status(
         "09-03-2026",
         {
@@ -92,7 +114,9 @@ def test_publish_uploads_each_archive_once_and_points_serving_at_them(tmp_path, 
     body, kind, cache = client.objects[("charts-bucket", f"tiles/09-03-2026/{names['1']}")]
     assert (kind, cache) == ("application/vnd.pmtiles", "public, max-age=2419200, immutable")
     archive = chart_tiles.tile_archive.Archive(lambda offset, length: body[offset : offset + length])
-    assert archive.get(8, 65, 95) == b"\x89PNGsec/8/65/95.png" and archive.get(8, 64, 95) is None
+    assert archive.header["tile_type"] == chart_tiles.tile_archive.TileType.WEBP
+    assert chart_tiles.tile_archive.media_type(archive.get(8, 65, 95)) == "image/webp" and archive.get(8, 64, 95) is None
+    assert chart_render.decode_rgba(archive.get(8, 65, 95))[0, 0, :3].tolist() == [40, 215, 7]
 
     # A second run uploads nothing new but refreshes the pointer.
     before = len(client.objects)

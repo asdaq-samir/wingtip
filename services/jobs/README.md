@@ -82,6 +82,47 @@ archive); a tile not in a finished archive is no tile, as a `.none`
 marker said. Tiles drawn on request for a kind with no archive yet stay
 loose files with their `.none` markers, as before.
 
+In the archive a tile is lossless WebP of the loose palette PNG's own
+pixels (`wingtip.chart_render.to_webp`: method 4, effort 25), and its
+header says so (tile type WebP). The planner sends each tile with its own
+Content-Type (`wingtip.tile_archive.media_type`), so an archive packed
+before, still PNG, is served as it is; the address keeps its `.png`.
+Measured on 48 tiles of the 10-29-2026 cycle (z6, 9 and 11, or 10 to 12
+for the TAC, over Chicago and Los Angeles; 2026-11-21, Pillow in the
+planner's image, one core):
+
+| Archive | Tiles | Palette PNG (today) | PNG, optimised | WebP lossless, m6 q100 | WebP q90 | WebP q80 |
+|---|---|---|---|---|---|---|
+| sec | 12 | 395 KB | 99.2% | 85.9% | 96.6%, 24.5 dB | 71.0%, 24.2 dB |
+| sec@2x | 12 | 1,300 KB | 98.9% | 87.4% | 100.7%, 24.0 dB | 73.5%, 23.6 dB |
+| tac@2x | 12 | 887 KB | 97.8% | 85.5% | 117.4%, 25.5 dB | 88.0%, 25.2 dB |
+| ifr_low@2x | 12 | 556 KB | 96.4% | 83.5% | 120.4%, 34.0 dB | 87.4%, 32.6 dB |
+
+Over all 48, lossless WebP's settings (bytes against the PNGs, time a
+tile on one core): method 6 at effort 100, 86.0% but 2.5 s; method 4 at
+effort 25, the one kept, 88.6% at 9 ms; method 2, 91.2% at 8 ms; method
+0, 105%. Lossless keeps every drawn pixel. Lossy WebP was ruled out for a chart:
+on the VFR charts 13 to 16% of the pixels on a letter's or a line's edge
+were off by more than 48 in a channel (its 4:2:0 colour blurs magenta and
+blue type on the tints), and at q90 it was larger than the PNG for three
+of the four. A cycle's archives come to about 89% of their PNG size,
+some 3.4 GB less of the 30 (sec@2x about 16 GB for 18). Measured with a short Pillow
+script (the tiles audit's) in the planner's image, the archives mounted
+read-only.
+
+A cycle packed before the WebP is written again once, the same pixels
+and no tile drawn again (no revision bumped), by `transcode`, which takes
+the refresh lock and needs room for the largest archive again beside it:
+
+```
+scripts/dev/one-at-a-time.sh "charts transcode" docker compose run --rm charts transcode --cycle 10-29-2026 --workers 4
+```
+
+then `charts publish --cycle 10-29-2026` where the cycle is published (on
+AWS the next refresh packs new cycles as WebP by itself). About 1.4
+million tiles at some 9 ms each, twice (once for each tile's length, once
+to write it), so about 7 CPU-hours: under two hours on four workers.
+
 A cycle drawn before the archives is converted once with
 `docker compose run --rm charts pack` (every cycle on disk; `--cycle
 MM-DD-YYYY` for one). It needs free space for the largest archive beside

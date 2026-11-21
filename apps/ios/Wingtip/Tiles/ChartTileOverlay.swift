@@ -181,10 +181,13 @@ final class TileCache: @unchecked Sendable {
     }
 }
 
-/// A tile's PNG made ready to draw: decoded once into a plain 32-bit
-/// bitmap (the pyramid's tiles are 256-colour palette PNGs, #547, which
-/// Core Graphics would otherwise expand at every draw), with the day's
-/// lift (ChartLift) on it where asked.
+/// A tile made ready to draw: decoded once into a plain 32-bit bitmap
+/// (the pyramid's tiles are 256 colours, #547, which Core Graphics would
+/// otherwise expand at every draw), with the day's lift (ChartLift) on it
+/// where asked. ImageIO reads the bytes for what they are: lossless WebP
+/// out of an archive packed since 2026-11-21 (iOS 14 and later), a
+/// palette PNG out of one packed before or drawn on request, whatever
+/// the address's `.png` says.
 enum ChartTileImage {
     nonisolated static func decode(_ data: Data, lift: Bool) -> CGImage? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil),
