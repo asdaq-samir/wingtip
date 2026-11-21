@@ -126,8 +126,14 @@ def snapshot(now: dt.datetime | None = None) -> dict[str, int]:
     counts = {}
     for kind, items in (("notams", _notam_items()), ("tfrs", _tfr_items())):
         path = _file(kind, day)
-        merged = {**_read(path), **items}
-        _write(path, merged)
+        held = _read(path)
+        merged = {**held, **items}
+        # Written only where the hour brought something new (or the day has
+        # no file yet, an empty day being archived too): the day's whole
+        # file re-dumped and gzipped each hour, the same bytes most of the
+        # day, was work and a new mtime for nothing.
+        if merged != held or not path.exists():
+            _write(path, merged)
         counts[kind] = len(merged)
     forget_before(day - dt.timedelta(days=KEEP_DAYS))
     return counts
