@@ -64,14 +64,21 @@ def _ended(detail: dict, now: datetime) -> bool:
 def failing() -> bool:
     """Whether the service's last ask of tfr.faa.gov failed, the list held
     before served on in its place (for the pilot's Status page)."""
-    tried = weather_store.attempt("tfrs")
-    record = weather_store.read("tfrs")
-    return bool(tried and tried.get("error") and (record is None or tried["attempted"] >= record.fetched_at))
+    return weather_store.failing("tfrs", weather_store.read("tfrs"))
 
 
 def fetched_at() -> float | None:
-    """When the TFRs the map is drawn from were fetched (UNIX seconds),
-    None before the first fetch."""
+    """When the TFRs the map is drawn from were last confirmed as
+    tfr.faa.gov's (UNIX seconds): fetched, or found unchanged since, as
+    the service does not write an unchanged list again. None before the
+    first fetch."""
+    return weather_store.confirmed_at("tfrs", weather_store.read("tfrs"))
+
+
+def copy_written_at() -> float | None:
+    """When the copy of the list held was written (UNIX seconds), which
+    changes only with the list itself: what an answer made from it is kept
+    by (app.routers.briefing's /api/tfrs). None before the first fetch."""
     record = weather_store.read("tfrs")
     return record.fetched_at if record else None
 
@@ -89,7 +96,7 @@ def _keeps(record):
     outage may name TFRs that have since expired, which the site's own list
     would no longer carry, and those are left out. One issued since cannot
     be known; the map says how old the list is."""
-    held = time.time() - record.fetched_at >= SHAPES_TTL_S
+    held = time.time() - weather_store.confirmed_at("tfrs", record) >= SHAPES_TTL_S
     now = datetime.now(timezone.utc)
     return lambda t: not (held and _ended(t, now))
 
