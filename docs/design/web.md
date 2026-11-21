@@ -950,9 +950,11 @@ buttons all the way up and while a card slides (index.css), where the
 toggle stays in the pinned row; both go while flying. A card over the
 sheet covers the row, the toggle with it, and the account button rides
 the card's top. The first flight's tip (`FplTip`) points at the toggle
-while it shows FPL, its right edge at the toggle's; not all the way up,
-where the toggle has no room over it, and not again once the toggle has
-been tapped to FPL (the UI audit's B5, 2026-11-17). The page up is the
+while it shows FPL, over it with its right edge at the toggle's; not all
+the way up, where the toggle has no room over it, and not again once the
+toggle has been tapped to FPL (the UI audit's B5, 2026-11-17). In a
+desktop's side panel, whose toggle is at the window's top at every size,
+it hangs under the toggle with its arrow up at it. The page up is the
 planner's place (`usePanelView`'s `view`: the plan is FPL, the search
 and the traffic are Search); the toggle picks it as a place is picked
 (`pickPage`), closing whatever card is opening as it is tapped
