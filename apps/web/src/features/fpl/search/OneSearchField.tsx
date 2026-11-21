@@ -1,11 +1,9 @@
 import { useEffect, useEffectEvent } from "react";
-import { X } from "lucide-react";
-import { cn } from "cn";
-import IconButton from "../../../components/IconButton";
+import { CardHeadRow } from "../../../components/CardHead";
+import CloseButton from "../../../components/CloseButton";
 import PageToggle from "../../../components/PageToggle";
 import { isSearchKey } from "../../../hooks/use-shortcuts";
 import { askSearch, useSearchPick, type SearchPick } from "../../../lib/oneSearch";
-import { TEXT } from "../../../lib/text";
 import { useVoice } from "../../voice";
 import SearchBox from "./SearchBox";
 import { AccountButton } from "../../pilot";
@@ -74,14 +72,15 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
   // Cancel, back where it was asked from.
   if (model.pick && !model.pick.waiting)
     return (
-      <div className="flex w-full items-center gap-2" role="search">
+      <div className="w-full" role="search">
         <h1 className="sr-only">Wingtip Maps</h1>
-        <h2 className={cn("min-w-0 flex-1 truncate font-bold text-foreground", TEXT.hero)} data-testid="search-pick-title">
-          {askTitle(model.pick)}
-        </h2>
-        <IconButton round label="Cancel" onClick={model.cancel} data-testid="one-search-cancel">
-          <X className="size-5" aria-hidden="true" />
-        </IconButton>
+        {/* Every card's and page's one head row (CardHeadRow), as Settings'
+            pages and a list in full have theirs. */}
+        <CardHeadRow
+          name={askTitle(model.pick)}
+          nameTestId="search-pick-title"
+          end={<CloseButton label="Cancel" onClick={model.cancel} data-testid="one-search-cancel" />}
+        />
       </div>
     );
   return (
@@ -92,11 +91,7 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
       {/* In use, a round ✕ at the row's end where the avatar was, as Apple
           Maps' search has on iOS 26, not the word Cancel (the owner,
           2026-11-20: "Instead just show the close/clear button when typing"). */}
-      {using && (
-        <IconButton round label="Cancel" onClick={model.cancel} data-testid="one-search-cancel">
-          <X className="size-5" aria-hidden="true" />
-        </IconButton>
-      )}
+      {using && <CloseButton label="Cancel" onClick={model.cancel} data-testid="one-search-cancel" />}
       {!using && <AccountButton />}
     </div>
   );

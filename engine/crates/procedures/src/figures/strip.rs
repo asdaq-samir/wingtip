@@ -112,7 +112,7 @@ pub fn tanks(points: &[TankPoint], usable_gal: f64, taxi_gal: f64, reserve_gal: 
             }
             burned += p.fuel_gal.unwrap_or(f64::NAN);
             let gal = usable_gal - taxi_gal - burned;
-            let at = gal.is_finite().then(|| (gal, gal < reserve_gal));
+            let at = gal.is_finite().then_some((gal, gal < reserve_gal));
             if p.refuel {
                 burned = 0.0;
             }

@@ -75,10 +75,14 @@ run_area() {
       tag=$(web_image)
       # A worktree's own node_modules (macOS binaries, or an older lock's)
       # would come first in Node's walk up: hidden behind one of the
-      # container's own, links to the image's /node_modules, where knip
+      # container's own, a copy of the image's /node_modules, where knip
       # looks for the packages package.json names (it reads no further up).
-      docker run --rm -v "$here:/repo" --tmpfs /repo/apps/web/node_modules -w /repo/apps/web "$tag" \
-        sh -c 'ln -s /node_modules/* /node_modules/.bin node_modules/ && npm run -s types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npm run -s format:check && npx knip --no-progress && npm run -s layers && npx vitest run'
+      # A copy, not links, so the packages sit inside the app as they do on
+      # CI (npm ci): Vite serves no file outside it, and a test importing a
+      # package's file by URL (makeMap's Inter, `?url`) failed here only
+      # ("Denied ID /node_modules/...", firstDraw.test, 2026-11-20).
+      docker run --rm -v "$here:/repo" --tmpfs /repo/apps/web/node_modules:exec -w /repo/apps/web "$tag" \
+        sh -c 'cp -a /node_modules/. node_modules/ && npm run -s types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npm run -s format:check && npx knip --no-progress && npm run -s layers && npx vitest run'
       ;;
     py) run_py wingtip ;;
     planner) run_py planner ;;
