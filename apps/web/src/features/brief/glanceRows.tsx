@@ -155,7 +155,7 @@ export function FieldRow({
             {field.overFiftyFt != null && (
               <Stat
                 label={landing ? "Landing 50 ft" : "Takeoff 50 ft"}
-                value={grouped(field.overFiftyFt)}
+                value={`${grouped(field.overFiftyFt)} ft`}
                 finding={field.finding === "stop" ? "stop" : undefined}
               />
             )}
