@@ -7,7 +7,7 @@ import Testing
 /// Add Fuel Stops' route.
 @MainActor
 struct RouteTanksTests {
-    private let figures = RouteTanks.Figures(usableGal: 40, taxiGal: 1.4, reserveGal: 6)
+    private let figures = RouteTanks.Figures(usableGal: 40, taxiGal: 1.4, reservesGal: [6, 6])
     private let legs: [RouteTanks.LegBurn] = [.init(to: "WP1", fuelGal: 4), .init(to: "KJVL", fuelGal: 6), .init(to: "KOSH", fuelGal: 9)]
 
     @Test func fullTanksAtTheStartEachLegBurntAndAStopFuelledAgain() throws {
@@ -63,5 +63,24 @@ struct RouteTanksTests {
         #expect(next.added == ["KCDC", "KRKS"])
         // Already in: nothing more to put in.
         #expect(RouteTanks.withFuelStops(dep: "KLAS", stops: next.stops, suggested: suggested) == nil)
+    }
+
+    @Test func eachFlightIsHeldToItsOwnReserve() throws {
+        // The first flight's reserve is the night's 45 minutes, the second's
+        // the day's 30 (14 CFR 91.151(a)): landing at KJVL with 8 gal is low
+        // against 9, the destination with 8 is not against 5.
+        let burns: [RouteTanks.LegBurn] = [.init(to: "KJVL", fuelGal: 30.6), .init(to: "KOSH", fuelGal: 30.6)]
+        let held = RouteTanks.Figures(usableGal: 40, taxiGal: 1.4, reservesGal: [9, 5])
+        let tanks = try RouteTanks.walk(legs: burns, dep: "C81", stops: ["KJVL"], refuels: [true], figures: held, own: [:])
+        #expect(tanks[.stop(0)]?.low == true)
+        #expect(tanks[.destination]?.low == false)
+    }
+
+    @Test func aFlightShortWithNoStopSaysWhy() throws {
+        let json = #"[{"departure":"C81","destination":"KDLH","on_board":true},{"departure":"KMSN","destination":"KDLH"}]"#
+        let short = try Planner.json.decode([NoFuelStop].self, from: Data(json.utf8))
+        #expect(RouteTanks.noFuelStopWords(short) == "Too little fuel on board for C81 → KDLH")
+        #expect(RouteTanks.noFuelStopWords(Array(short.dropFirst())) == "No fuel stop in reach on KMSN → KDLH")
+        #expect(RouteTanks.noFuelStopWords([]) == nil)
     }
 }

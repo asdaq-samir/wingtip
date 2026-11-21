@@ -34,6 +34,20 @@ final class OneSearchModel {
 
     /// The Add the search is up for; nil for the search itself.
     var keeping: Keeping?
+    /// The route's point the search is asked to pick (PointAsk): Add Stop,
+    /// Change Stop or an end; nil for the search itself.
+    var picking: PointAsk?
+
+    /// The search up to pick a point of the route (Add a Stop, a point's
+    /// ident tapped on FPL): its title over the suggestions, a tap on a
+    /// field picking it.
+    func ask(_ point: PointAsk) {
+        text = ""
+        clearFound()
+        keeping = nil
+        picking = point
+        presented = true
+    }
 
     var text = "" { didSet { if !text.isEmpty { askingDestination = false } } }
     /// The welcome put away: the field asks for the destination, not
@@ -154,6 +168,7 @@ final class OneSearchModel {
         presented = false
         askingDestination = false
         keeping = nil
+        picking = nil
         text = ""
         clearFound()
     }

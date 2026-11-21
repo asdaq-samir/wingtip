@@ -53,7 +53,7 @@ struct RouteCard: View {
             Button("Clear Route", role: .destructive) { plan.clear() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("The route, its stops and what was set on it go. Shake to undo.")
+            Text("The route, its stops and what was set on it go. Undo brings them back.")
         }
     }
 

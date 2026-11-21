@@ -3,12 +3,16 @@ import SwiftUI
 /// The plan, the sheet's FPL page (PlanSheet, SheetPages), with no bar
 /// of its own so its first row is the route's: with a route, its card
 /// (RouteCard: the route, Ready to Fly, the figures, Brief, Nav Log,
-/// Airplane and the route's •••), then the route -- its ends, its Routes,
-/// the airplane and the altitude (RouteBoxRow) -- the stops and "Add a
-/// Stop", the route's own edits and the procedures, in FPL's order. With
-/// none, the route box empty, its close a level back (the web's, the
-/// owner's 2026-11-11 "We don't need plan a flight either"); Favorites,
-/// Recents and Nearest are the Search page's.
+/// File and the route's •••), then its Routes, the airplane and the
+/// altitude (RouteBoxRow), then the route as its timeline -- each point's
+/// mark, ident, tanks and time, Add a Stop (RouteTimelineSection) -- the
+/// route's own edits, in FPL's order; each field's procedures are on its
+/// line (TimelineFieldParts, TimelineProcedureRows). The From and To
+/// fields are the route typed: before it is whole, while one is typed in,
+/// and until the planner's course is this route's. With none, the route
+/// box empty, its close a level back (the web's, the owner's 2026-11-11
+/// "We don't need plan a flight either"); Favorites, Recents and Nearest
+/// are the Search page's.
 struct PlanView: View {
     @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
@@ -20,10 +24,18 @@ struct PlanView: View {
     /// A page of the plan's, opened by the sheet: pushed on the iPhone, the
     /// profile, the brief and the flights in the inspector on the iPad.
     let open: (Screen) -> Void
-    /// "Add a Stop": the search, whose airport card has Add as Stop.
-    let addStop: () -> Void
+    /// The one search asked to pick a point of the route: Add a Stop, a
+    /// point's ident tapped to change it (PointAsk).
+    let ask: (PointAsk) -> Void
+    /// The route's fields' cards, asked once for the timeline's lines.
+    @State private var cards = RouteFieldCards()
+    /// A gauge tapped: the fuel to set leaving its field.
+    @State private var setting: FuelSetAsk?
 
     enum Field { case dep, dest }
+
+    /// The route read on its timeline: whole, its course in, nothing typed.
+    private var onTimeline: Bool { plan.routed && plan.courseIsRoute && focused == nil }
 
     var body: some View {
         @Bindable var plan = plan
@@ -34,7 +46,7 @@ struct PlanView: View {
                 if let shareProblem = plan.shareProblem { ProblemLine(shareProblem) }
             }
             Section {
-                RouteEndsRow(focused: $focused)
+                if !onTimeline { RouteEndsRow(focused: $focused) }
                 if plan.routed && plan.course != nil && RouteLine.shows(plan.routes, picked: plan.pickedChip, problem: plan.routesProblem) {
                     // Routes: the ways to fly it, right under the route's
                     // ends, in the system's menu picker.
@@ -94,46 +106,11 @@ struct PlanView: View {
                     }
                 }
             }
-            if plan.routed {
-                // The stops in order, each a swipe from going and all
-                // of them draggable into another order, as the web
-                // app's route list has them; then "Add a Stop", the
-                // search, whose airport card adds it (the Plan
-                // artboard's "+ Add a stop").
-                Section {
-                    ForEach(Array(plan.stops.enumerated()), id: \.offset) { _, stop in
-                        RoutePointMenu(ident: stop)
-                    }
-                    .onDelete { at in plan.stops.remove(atOffsets: at); plan.plan() }
-                    .onMove { from, to in plan.stops.move(fromOffsets: from, toOffset: to); plan.plan() }
-                    Button(action: addStop) { Label("Add a Stop", systemImage: "plus") }
-                    FuelStopsButton()
-                } header: {
-                    // The stops' Edit (delete, move) at the header's
-                    // right, as iOS's lists put it, since the bar it was
-                    // in is gone (the one-row header, 2026-11-10).
-                    HStack {
-                        Text("Stops")
-                        Spacer()
-                        if !plan.stops.isEmpty { EditButton().textCase(nil) }
-                    }
-                }
+            if plan.routed, focused == nil {
+                RouteTimelineSection(cards: cards, ask: ask, setFuel: { setting = $0 })
             }
-            // The fuel in the tanks at each field, each a tap to set it.
-            if plan.routed { FuelTanksSection() }
             // The route's own edits and the flight in the air.
             RouteExtrasSection()
-            if plan.course != nil {
-                // Each field's procedures, pull-downs as the web app's
-                // route list has them: the departure's departures, every
-                // landing's arrivals and approaches.
-                Section("Procedures") {
-                    ProceduresRow(ident: plan.dep, kinds: ["departure"])
-                    ForEach(plan.stops + [plan.dest], id: \.self) { field in
-                        ProceduresRow(ident: field, kinds: ["arrival", "approach"])
-                    }
-                }
-            }
             if plan.course != nil, let template = charts.template {
                 // The chart along the route for the air, as the web app's
                 // KeepRoute keeps it, and the briefing, NOTAMs, cards,
@@ -150,6 +127,13 @@ struct PlanView: View {
             }
         }
         .appEntityIdentifier(SiriSaw.flight(plan))
+        // Each field's card for its line: closed or not, its report, its
+        // runways and its zone, asked once the course says which are fields.
+        .task(id: plan.timelineFields) { await cards.load(plan.timelineFields) }
+        // Each procedure picked as the planner draws it, for its fixes'
+        // rows on the line.
+        .task(id: plan.procedures) { await cards.loadDrawings(plan.procedures) }
+        .sheet(item: $setting) { fuel in FuelSetSheet(ask: fuel).presentationDetents([.medium]) }
         // Leaving the page puts the keyboard away (the web's sheet audit,
         // 2026-11-12: focus left on a page put away kept the keyboard up).
         .onChange(of: nav.sheetPage) { _, _ in focused = nil }

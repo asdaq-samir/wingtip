@@ -96,9 +96,7 @@ final class FlowTests: XCTestCase {
         let flyHere = app.descendants(matching: .any)["fly-here"]
         XCTAssertTrue(flyHere.waitForExistence(timeout: 10), "no Fly Here")
         flyHere.tap()
-        let to = app.textFields["To"]
-        XCTAssertTrue(to.waitForExistence(timeout: 30), "the plan did not show")
-        XCTAssertEqual(to.value as? String, "KDLH")
+        XCTAssertTrue(CardTests.routeEnds(app, at: "KDLH", timeout: 30), "the plan did not show with KDLH")
     }
 
     @MainActor

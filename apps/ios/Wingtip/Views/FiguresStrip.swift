@@ -5,7 +5,7 @@ import SwiftUI
 /// shows at the sheet's foot (FlightLine), and what the pilot glances at
 /// in the air. Track took the fuel's place (the owner, 2026-11-21:
 /// "replace Fuel with Track"): the fuel is FPL's gauges at each field
-/// (FuelTanksSection), the nav log's and the Brief's. In flight and in a
+/// (TimelineGauge), the nav log's and the Brief's. In flight and in a
 /// dry run no To, which the flying head names.
 struct FiguresStrip: View {
     @Environment(InFlight.self) private var inFlight
