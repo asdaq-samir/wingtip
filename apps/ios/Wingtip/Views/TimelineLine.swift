@@ -67,6 +67,9 @@ struct TimelineThread: View {
 struct TimelineColumns<Mark: View, Words: View>: View {
     let top: Bool
     let bottom: Bool
+    /// The list's hairline over the words, where the line is not the first
+    /// of its list row (a procedure's rows and the field's line in one).
+    var hairline = false
     @ViewBuilder let mark: Mark
     @ViewBuilder let words: Words
     @ScaledMetric(relativeTo: .body) private var line = WingtipSize.tapTarget
@@ -77,6 +80,7 @@ struct TimelineColumns<Mark: View, Words: View>: View {
             mark.frame(width: column, height: line)
             words
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .overlay(alignment: .top) { if hairline { Divider() } }
                 .alignmentGuide(.listRowSeparatorLeading) { $0[.leading] }
         }
         .background(alignment: .topLeading) {

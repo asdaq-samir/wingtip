@@ -129,3 +129,31 @@ extension Plan {
         plan()
     }
 }
+
+/// A field's runways as FPL's line offers them to leave from and land on.
+enum TimelineRunways {
+    /// The ends of the field's open runways, by their numbers as the
+    /// sectional prints them ("24"), in the card's order.
+    static func ends(_ place: AirportPlace?) -> [String] {
+        (place?.runways ?? []).filter { !$0.closed }.flatMap { $0.runwayEnds ?? [] }.map { AirportWords.runwayNumber($0.ident) }
+    }
+
+    /// The procedure kinds landed by and left by, in the order flown.
+    static let arriving = ["arrival", "approach"]
+    static let leaving = ["departure"]
+}
+
+extension Plan {
+    /// A runway picked to leave a field from or land on, or (nil) the one
+    /// into the wind again: planned again, Undo taking it back.
+    func setRunway(_ end: String?, at ident: String, takeoff: Bool) {
+        let key = ident.uppercased()
+        if takeoff { extras.takeoffs[key] = end } else { extras.landings[key] = end }
+        plan()
+    }
+
+    /// The procedures picked at a field of `kinds`, in the kinds' order.
+    func picks(at ident: String, kinds: [String]) -> [ProcedurePick] {
+        kinds.flatMap { kind in procedures.filter { $0.ident.uppercased() == ident.uppercased() && $0.kind == kind } }
+    }
+}

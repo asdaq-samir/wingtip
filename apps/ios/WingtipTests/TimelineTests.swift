@@ -41,4 +41,33 @@ struct TimelineTests {
         #expect(Timeline.stopDestination(4, stops: 2) == 2)
         #expect(Timeline.stopDestination(2, stops: 2) == 1)
     }
+
+    @Test func aStopsProceduresAreItsLandingsThenItsTakeoffs() {
+        let plan = Plan()
+        plan.dep = "C81"; plan.stops = ["KMSN"]; plan.dest = "KDLH"
+        plan.procedures = [
+            ProcedurePick(ident: "KMSN", id: "MSN2", kind: "departure", name: "MADISON TWO"),
+            ProcedurePick(ident: "KMSN", id: "I36", kind: "approach", name: "ILS RWY 36"),
+            ProcedurePick(ident: "KMSN", id: "KOLT1", kind: "arrival", name: "KOLT ONE"),
+        ]
+        // In the order flown: the arrival, then the approach, before the
+        // field's line; the departure after it.
+        #expect(plan.picks(at: "kmsn", kinds: TimelineRunways.arriving).map(\.id) == ["KOLT1", "I36"])
+        #expect(plan.picks(at: "KMSN", kinds: TimelineRunways.leaving).map(\.id) == ["MSN2"])
+        #expect(plan.picks(at: "KDLH", kinds: TimelineRunways.arriving).isEmpty)
+    }
+
+    @Test func aRunwayThresholdIsNoFixOnTheLine() {
+        #expect(TimelineProcedureRows.threshold("RW24"))
+        #expect(TimelineProcedureRows.threshold("RW09L"))
+        #expect(!TimelineProcedureRows.threshold("RWAYS"))
+        #expect(!TimelineProcedureRows.threshold("BXCMB"))
+    }
+
+    @Test func theKindsWords() {
+        #expect(ProcedureKindWords.short("approach") == "APCH")
+        #expect(ProcedureKindWords.short("arrival") == "ARR")
+        #expect(ProcedureKindWords.short("departure") == "DEP")
+        #expect(ProcedureKindWords.word("approach") == "Approach")
+    }
 }

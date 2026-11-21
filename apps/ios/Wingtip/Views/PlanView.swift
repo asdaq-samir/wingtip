@@ -6,7 +6,8 @@ import SwiftUI
 /// File and the route's •••), then its Routes, the airplane and the
 /// altitude (RouteBoxRow), then the route as its timeline -- each point's
 /// mark, ident, tanks and time, Add a Stop (RouteTimelineSection) -- the
-/// route's own edits and the procedures, in FPL's order. The From and To
+/// route's own edits, in FPL's order; each field's procedures are on its
+/// line (TimelineFieldParts, TimelineProcedureRows). The From and To
 /// fields are the route typed: before it is whole, while one is typed in,
 /// and until the planner's course is this route's. With none, the route
 /// box empty, its close a level back (the web's, the owner's 2026-11-11
@@ -110,17 +111,6 @@ struct PlanView: View {
             }
             // The route's own edits and the flight in the air.
             RouteExtrasSection()
-            if plan.course != nil {
-                // Each field's procedures, pull-downs as the web app's
-                // route list has them: the departure's departures, every
-                // landing's arrivals and approaches.
-                Section("Procedures") {
-                    ProceduresRow(ident: plan.dep, kinds: ["departure"])
-                    ForEach(plan.stops + [plan.dest], id: \.self) { field in
-                        ProceduresRow(ident: field, kinds: ["arrival", "approach"])
-                    }
-                }
-            }
             if plan.course != nil, let template = charts.template {
                 // The chart along the route for the air, as the web app's
                 // KeepRoute keeps it, and the briefing, NOTAMs, cards,
@@ -140,6 +130,9 @@ struct PlanView: View {
         // Each field's card for its line: closed or not, its report, its
         // runways and its zone, asked once the course says which are fields.
         .task(id: plan.timelineFields) { await cards.load(plan.timelineFields) }
+        // Each procedure picked as the planner draws it, for its fixes'
+        // rows on the line.
+        .task(id: plan.procedures) { await cards.loadDrawings(plan.procedures) }
         .sheet(item: $setting) { fuel in FuelSetSheet(ask: fuel).presentationDetents([.medium]) }
         // Leaving the page puts the keyboard away (the web's sheet audit,
         // 2026-11-12: focus left on a page put away kept the keyboard up).

@@ -451,7 +451,23 @@ opened. Typing "traffic" offers Show Traffic in Do.
      Stop is the last row, then Add (or Remove) Fuel Stops (one tap puts
      in every stop the planner's rounds found, already checked; a flight
      short with none offered says why in their place, "No fuel stop in
-     reach on KMSN → KDLH"). The From and To fields are the route typed:
+     reach on KMSN → KDLH"). Once a field's card says it is open, its
+     line has its runways and the kinds of procedure not picked under it
+     (`TimelineFieldParts`, the web's trays, 5228f10df): "Land RWY 24" and
+     "Takeoff RWY 06", each a menu of its runway ends with Into the Wind
+     first, the planner's own pick where none is (`AirportWords.windEnd`,
+     the planner's `wind_runways`; a pick is its `patterns` or `runways`),
+     a stop's landing then its takeoff; and "+ ARR", "+ APCH" and "+ DEP"
+     for each kind it publishes and the route has none of. A procedure
+     picked is no chip: its fixes are points on the route's line itself
+     (`TimelineProcedureRows`, the owner's option D), an arrival's and an
+     approach's before the field's line, a departure's after it; its head
+     row the kind and the field in the procedure's indigo over its name,
+     the whole row the kind's menu; each fix an indigo ring with "•••",
+     its menu Direct To and Cross at…, its roles under its name and its
+     altitude at the right, the ring filled in the tint where the airplane
+     is sent direct and the fixes before it dashed, skipped. The From and
+     To fields are the route typed:
      before it is whole, while one is typed in, and until the planner's
      course is this route's. Then the
      rest of the plan. At the pill, the search row alone. With no route,

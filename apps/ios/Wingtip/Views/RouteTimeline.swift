@@ -50,8 +50,10 @@ struct RouteTimelineSection: View {
 }
 
 /// One point's line on the timeline (the web's TimelineLine): its mark
-/// and menu, its ident, its tanks, its time, and why it cannot be flown
-/// to where it cannot.
+/// and menu, its ident, its tanks, its time, why it cannot be flown to
+/// where it cannot, its runways and the kinds of procedure not picked;
+/// with a procedure picked there its fixes' rows on the line before it
+/// (an arrival, an approach) or after it (a departure).
 struct TimelinePointRow: View {
     @Environment(Plan.self) private var plan
     let point: TimelinePoint
@@ -63,8 +65,29 @@ struct TimelinePointRow: View {
 
     var body: some View {
         let problem = point.field ? cards.problem(point.ident) : nil
+        // Its runways and procedures only once its card says it is open,
+        // never offered to land by before (decision 0043).
+        let opens = point.field && cards.known(point.ident) && problem == nil
+        let before = opens && point.role != .departure ? plan.picks(at: point.ident, kinds: TimelineRunways.arriving) : []
+        let after = opens && point.role != .destination ? plan.picks(at: point.ident, kinds: TimelineRunways.leaving) : []
+        VStack(spacing: 0) {
+            // An arrival's and an approach's fixes on the line before the
+            // field, a departure's after it (TimelineProcedureRows).
+            ForEach(Array(before.enumerated()), id: \.element.id) { i, pick in
+                TimelineProcedureRows(pick: pick, cards: cards, top: point.index > 0 || i > 0, bottom: true, hairline: i > 0)
+            }
+            line(problem: problem, opens: opens, before: !before.isEmpty, after: !after.isEmpty)
+            ForEach(Array(after.enumerated()), id: \.element.id) { i, pick in
+                TimelineProcedureRows(pick: pick, cards: cards, top: true, bottom: !last || i < after.count - 1, hairline: true)
+            }
+        }
+    }
+
+    /// The point's own line: its mark, ident, tanks and time, why it
+    /// cannot be flown to, and its runways and the kinds not picked.
+    private func line(problem: String?, opens: Bool, before: Bool, after: Bool) -> some View {
         let category = point.field ? cards.place(point.ident)?.metar?.flightCategory : nil
-        TimelineColumns(top: point.index > 0, bottom: !last) {
+        return TimelineColumns(top: point.index > 0 || before, bottom: !last || after, hairline: before) {
             Menu {
                 RoutePointActions(ident: point.ident, role: role, change: change)
             } label: {
@@ -97,6 +120,9 @@ struct TimelinePointRow: View {
                         .foregroundStyle(WingtipInk.problem)
                         .padding(.bottom, WingtipSpace.sm)
                         .accessibilityIdentifier("timeline-problem")
+                }
+                if opens {
+                    TimelineFieldParts(point: point, cards: cards).padding(.bottom, WingtipSpace.sm)
                 }
             }
         }

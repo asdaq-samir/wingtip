@@ -111,6 +111,13 @@ struct RouteExtras: Equatable, Sendable {
     var tanks: [String: Int] = [:]
     /// The stops Add Fuel Stops put in, for its Remove Fuel Stops.
     var fuelStops: [String] = []
+    /// The runway each field is left from and landed on where the pilot
+    /// picked one on FPL's timeline ("Takeoff RWY 24", "Land RWY 36"), by
+    /// its ident: the planner's `runways` and `patterns` ("KSTL:30R"), a
+    /// landing with no approach flown by its traffic pattern. A field with
+    /// none picked is flown into its report's wind (`wind_runways`).
+    var takeoffs: [String: String] = [:]
+    var landings: [String: String] = [:]
 
     /// The alternate as the planner takes it: only under IFR, VFR having
     /// none to file.
@@ -121,7 +128,12 @@ struct RouteExtras: Equatable, Sendable {
 
     /// "IDENT:FEET" pairs, as the planner reads `altitudes` and `crossings`.
     static func pairs(_ feet: [String: Int]) -> String? {
-        feet.isEmpty ? nil : feet.sorted { $0.key < $1.key }.map { "\($0.key):\($0.value)" }.joined(separator: ",")
+        pairs(feet.mapValues { "\($0)" })
+    }
+
+    /// "IDENT:VALUE" pairs, as the planner reads `runways` and `patterns`.
+    static func pairs(_ values: [String: String]) -> String? {
+        values.isEmpty ? nil : values.sorted { $0.key < $1.key }.map { "\($0.key):\($0.value)" }.joined(separator: ",")
     }
 
     /// The nav log's query for them, only the ones set: the procedures
@@ -132,6 +144,8 @@ struct RouteExtras: Equatable, Sendable {
         if let altitudes = Self.pairs(altitudes) { query.altitudes = altitudes }
         if let crossings = Self.pairs(crossings) { query.crossings = crossings }
         if let tanks = Self.pairs(tanks) { query.tanks = tanks }
+        if let takeoffs = Self.pairs(takeoffs) { query.runways = takeoffs }
+        if let landings = Self.pairs(landings) { query.patterns = landings }
         let started = starts.filter { altitudes[$0] != nil }.sorted()
         if !started.isEmpty { query.altitudeStarts = started.joined(separator: ",") }
         if !holds.isEmpty { query.holds = try holds.map { try $0.text() }.joined(separator: ",") }

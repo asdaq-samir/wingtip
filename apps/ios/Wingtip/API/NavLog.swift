@@ -153,6 +153,10 @@ enum NavLog {
         query.altitudeChoice = choice.flatMap { $0 == "fastest" ? nil : $0 }
         // The rules kept (FlightRules): sent where IFR, VFR being the planner's default.
         query.rules = FlightRules.saved() == .ifr ? "ifr" : nil
+        // A field with no runway picked flown into its own report's wind
+        // (the planner's wind_picks), the runway FPL's line says it lands
+        // on or leaves from (AirportWords.bestWind, TimelineFieldParts).
+        query.windRunways = true
         // The pilot's own figures, which an airplane of no stock type flies on.
         query.cruiseTasKt = figures.cruiseTasKt
         query.fuelBurnGph = figures.fuelBurnGph

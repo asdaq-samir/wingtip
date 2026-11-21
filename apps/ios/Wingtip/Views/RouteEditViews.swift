@@ -101,9 +101,9 @@ struct DirectStrip: View {
 }
 
 /// FPL's section for the route's own edits: the Direct to, the
-/// alternate, the holds set, the procedures' fixes, and the pages of the
-/// flight in the air. The points' own menus are their marks on the
-/// timeline (RouteTimelineSection).
+/// alternate, the holds set, and the pages of the flight in the air. The
+/// points' own menus are their marks on the timeline and the procedures'
+/// fixes are rows on its line (RouteTimelineSection).
 struct RouteExtrasSection: View {
     @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
@@ -125,11 +125,6 @@ struct RouteExtrasSection: View {
                     }
                 }
                 .onDelete { at in at.map { plan.extras.holds[$0].fix }.forEach { plan.setHold(at: $0, nil) } }
-                ForEach(plan.procedures) { pick in
-                    NavigationLink(value: SheetPage.flight("fixes:\(pick.ident):\(pick.id)")) {
-                        LabeledContent("\(pick.name) fixes", value: plan.extras.procedureDirect["\(pick.ident):\(pick.id)"].map { "Direct \($0)" } ?? pick.ident)
-                    }
-                }
             } header: {
                 Text("Route")
             }

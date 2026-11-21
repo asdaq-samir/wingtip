@@ -105,6 +105,12 @@ struct RouteEditsTests {
         #expect(query.crossings == "BXCMB:3000")
         #expect(query.holds == "VPBNG:090:R:1M:2T")
         #expect(query.procedures == "KELD:I22::BXCMB")
+        // The runways picked on FPL's timeline, left from and landed on.
+        extras.takeoffs = ["KMSN": "36"]
+        extras.landings = ["KELD": "22", "KDLH": "27"]
+        try extras.apply(to: &query, procedures: [pick])
+        #expect(query.runways == "KMSN:36")
+        #expect(query.patterns == "KDLH:27,KELD:22")
     }
 
     @Test func aPositionAndAFixOffAPointAreWrittenAsTheRouteWritesThem() throws {
