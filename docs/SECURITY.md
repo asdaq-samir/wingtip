@@ -96,7 +96,7 @@ the AWS template and CI. Nothing critical. The outside test's brief is
 | M: a connector token revoked while its connection's refresh token stood, or one of a second connection through the same client, kept working | The planner asks about the token itself (`X-Connector-Token`, an introspection); `LiveConnections` keeps a yes per token, never past its expiry. |
 | M: five link requests from anyone locked a pilot out of signing in for the hour | The address's five are counted per caller, 30 an hour in all (`MagicLinkController.ADDRESS_CALLERS`). |
 | M (availability): the AWS tile path asked the planner for `/chart-tile/...` under the origin's Host, a 404 then a 403, which CloudFront would have kept | Rewritten as the gateway does (`/api/planner/X` is `/api/X`), the planner named `planner`. |
-| M (availability): two migrations numbered V46, so the merged gateway would not start | The Apple token's client is V48; `MigrationVersionsTest` refuses a repeat. |
+| M (availability): two migrations numbered V46, so the merged gateway would not start | The Apple token's client is V49 (ops-audit's indexes took V48); `MigrationVersionsTest` refuses a repeat. |
 | L: an iPhone sign-in kept the Apple refresh token of whatever code came with it, another account's too | Kept only where Apple's ID token for the code names the signing-in subject. |
 | L: the Apple nonce route made a 30-day session per call, for anyone | 30 an hour a client. |
 | L: the delete-account page's time told which addresses have an account (the mail sent on the request's thread) | Sent on a thread of its own. |

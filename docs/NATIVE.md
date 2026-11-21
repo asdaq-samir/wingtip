@@ -700,7 +700,7 @@ client and a client secret signed for it with the team's key
 `APPLE_KEY_ID` and `APPLE_PRIVATE_KEY` as the web's sign-in, the key
 enabled for Sign in with Apple on the app's App ID), and keeps the refresh
 token with the pilot and the client it was issued to (`pilots
-.apple_token_client`, V48). Deleting the account revokes it with that
+.apple_token_client`, V49). Deleting the account revokes it with that
 client (`AppleRevocation`); the web's own token goes with the Services
 ID as before. Both are best effort: a sign-in or a deletion never fails
 because Apple did not answer. A pilot who signed in on the iPhone before
