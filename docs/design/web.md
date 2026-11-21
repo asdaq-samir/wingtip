@@ -1829,7 +1829,15 @@ sheet scrolls one way on a phone:
   and the route's pills carry `data-base-ui-swipe-ignore="x"`
   (an up or down drag the sheet's), and every native sideways row
   `overscroll-x-contain`. The upright altitude Slider and the sortable
-  rows' grips keep `""`: their own drag is up and down.
+  rows' grips keep `""`: their own drag is up and down. A row made to
+  slide says so (`data-slides`: the pill strips, `PillStrip`, as the
+  hours' and runways' strips), so the iPhone audit's P18 reads its tiles
+  past the edge as the design.
+- A menu is never wider than the room beside it (the stock
+  `DropdownMenuContent`'s `max-w-(--available-width)`, as the Combobox's
+  popup), so a wide one does not scroll the page sideways at Safari's
+  page zoom; and every typed field names its return key, Done unless it
+  names its own (the stock `Input` and `NumberField`; the audit's P19).
 - Back is where you were, new starts at the top: the airport card's tabs
   each keep their place, Settings' list its place after a page
   (`useScrollPlace`), and the suggestions, a sent search's results and its
