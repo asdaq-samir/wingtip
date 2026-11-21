@@ -408,7 +408,14 @@ Resources:
         ImageId: !Ref ServerImageId
         IamInstanceProfile: { Arn: !GetAtt ServerInstanceProfile.Arn }
         SecurityGroupIds: [!Ref ServerSecurityGroup]
-        MetadataOptions: { HttpTokens: required, HttpEndpoint: enabled }
+        # One hop: the server itself reaches the instance's metadata (deploy.sh,
+        # backup.sh, the awslogs driver in dockerd), its containers, a hop
+        # further behind Docker's bridge, do not. None of them asks AWS for
+        # anything (the planner reads the tiles through CloudFront), and code
+        # run in one of them -- a PDF or GeoTIFF parser's bug, a dependency --
+        # would otherwise have the server role's keys: every secret and every
+        # backup (the deep security review of 2026-11-21).
+        MetadataOptions: { HttpTokens: required, HttpEndpoint: enabled, HttpPutResponseHopLimit: 1 }
         BlockDeviceMappings:
           - DeviceName: /dev/xvda
             Ebs: { VolumeType: gp3, VolumeSize: 20, Encrypted: true, DeleteOnTermination: true }
@@ -648,6 +655,30 @@ Resources:
             Condition:
               StringEquals:
                 AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
+          # TLS only, whoever asks (AWS's S3 security best practices).
+          - Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource: [!GetAtt ChartTilesBucket.Arn, !Sub "${ChartTilesBucket.Arn}/*"]
+            Condition:
+              Bool: { aws:SecureTransport: "false" }
+
+  # The backups and the model only over TLS: nothing grants a reader here
+  # but the roles, and this keeps any of them, or a script, from asking in
+  # the clear (the deep security review of 2026-11-21).
+  ServerBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ServerBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource: [!GetAtt ServerBucket.Arn, !Sub "${ServerBucket.Arn}/*"]
+            Condition:
+              Bool: { aws:SecureTransport: "false" }
 
   # The answers the same for every pilot (the planner's routes marked
   # SHARED in app.gateway, the airport diagrams among them; app.router_basics'

@@ -104,3 +104,24 @@ def test_caddy_names_the_planner_by_a_host_it_answers():
     assert re.search(r"header_up Host planner\s*$", handle, re.M)
     guard = (ROOT / "services/planner/app/local_guard.py").read_text()
     assert re.search(r'HOSTS = frozenset\(\{"planner"', guard)
+
+
+TEMPLATE = (ROOT / "infra/cloudformation/template.yaml").read_text()
+
+
+def test_the_servers_containers_cannot_reach_its_metadata():
+    # The deep security review of 2026-11-21: with the image's default hop
+    # limit a container behind Docker's bridge reached the instance's
+    # metadata and the server role's keys (every secret, every backup).
+    options = re.search(r"MetadataOptions: \{([^}]*)\}", TEMPLATE)[1]
+    assert "HttpTokens: required" in options
+    assert re.search(r"HttpPutResponseHopLimit: 1\b", options)
+
+
+def test_every_bucket_refuses_a_request_in_the_clear():
+    buckets = re.findall(r"^  (\w+):\n    Type: AWS::S3::Bucket\n", TEMPLATE, re.M)
+    assert buckets
+    for bucket in buckets:
+        policy = re.search(rf"Bucket: !Ref {bucket}\n(.*?)(?=\n  \w|\Z)", TEMPLATE, re.S)
+        assert policy, f"{bucket} has no bucket policy"
+        assert re.search(r"Effect: Deny.*?aws:SecureTransport: \"false\"", policy[1], re.S), bucket
