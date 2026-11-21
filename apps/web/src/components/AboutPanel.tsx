@@ -5,7 +5,7 @@ import { FileText, Hand, LifeBuoy, PlaneTakeoff } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "./GroupedList";
 import { RowBadge } from "./RowBadge";
-import { DATA_SOURCES, SOFTWARE } from "./dataSources";
+import { DATA_SOURCES, LICENCES_HREF, SOFTWARE } from "./dataSources";
 import { PLANNING_AID } from "./planningAid";
 import { DEMO_AIRPLANE, DEMO_FLIGHT, DEMO_HREF } from "../lib/demoFlight";
 import { LEGAL_PAGES } from "../lib/legal";
@@ -77,6 +77,9 @@ export default function AboutPanel() {
         {SOFTWARE.map((s) => (
           <ListRow key={s.name} title={s.name} value={s.licence} href={s.href} data-testid="about-source" />
         ))}
+        {/* Every open-source package the page is made with, its licence
+            and notices: written by each build (vite-plugins/licences.ts). */}
+        <ListRow title="Open-Source Licences" href={LICENCES_HREF} data-testid="about-licences" />
       </ListGroup>
 
       <ListGroup title="Legal">

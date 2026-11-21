@@ -476,6 +476,7 @@ jobs:
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated/**
                 - apps/ios/Wingtip/Engine/Generated/**
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/generated/**
+                - engine/licences/**
               test-wingtip:
                 - services/planner/wingtip/**
                 - engine/**
@@ -527,6 +528,7 @@ jobs:
                 - scripts/build/web_rules.py
                 - scripts/build/build-engine-wasm.sh
                 - apps/web/src/lib/engine/wingtip-engine.wasm
+                - scripts/build/licences.sh
                 - apps/web/src/lib/fixtures/**
                 - services/planner/tests_wingtip/fixtures/native/**
               test-gateway:

@@ -3,7 +3,8 @@
  *  the iPhone's and Android's About copy too: change that first. The
  *  FAA's, NOAA's, the USGS's and the Census Bureau's are works of the US
  *  government, which carry no copyright (17 U.S.C. 105); adsb.lol's is
- *  under the Open Database License, whose 4.3 asks for this credit;
+ *  under the Open Database License, whose 4.3 asks for this credit, as do
+ *  OpenStreetMap's airport outlines and the time zones;
  *  adsb.fi's for personal, non-commercial use, credited and linked;
  *  OurAirports puts its data in the public domain; Overture's places are
  *  CDLA Permissive 2.0, whose terms go with the data; Virtual Radar
@@ -33,13 +34,40 @@ export const DATA_SOURCES: { name: string; licence: string; href?: string }[] = 
     href: "https://nowcoast.noaa.gov",
   },
   { name: "USGS The National Map imagery", licence: PUBLIC_DOMAIN },
+  { name: "USGS 3DEP elevation and GNIS place names", licence: PUBLIC_DOMAIN },
+  // The ground the altitudes are planned over, and the map's relief and 3D
+  // (the planner's /api/terrain-tile): Terrain Tiles' attribution list
+  // (github.com/tilezen/joerd, docs/attribution.md) asks each source's credit.
+  {
+    name: "Terrain Tiles (Mapzen and others): 3DEP, SRTM and GMTED2010 courtesy of the U.S. Geological Survey, ETOPO1 of NOAA, Canada's under the Open Government Licence – Canada, Mexico's from INEGI",
+    licence: "Each source's terms, credited",
+    href: "https://github.com/tilezen/joerd/blob/master/docs/attribution.md",
+  },
   { name: "US Census Bureau geocoder and gazetteer", licence: PUBLIC_DOMAIN },
   {
     name: "OurAirports: fields abroad, fields NASR does not list, and field sizes",
     licence: PUBLIC_DOMAIN,
     href: "https://ourairports.com/data/",
   },
-  { name: "Overture Maps places: services near a field", licence: "CDLA Permissive 2.0", href: "https://cdla.dev/permissive-2-0/" },
+  // Overture's places come from several sources (docs.overturemaps.org/attribution):
+  // most CDLA Permissive 2.0, Foursquare's Apache 2.0 with its notice.
+  {
+    name: "Overture Maps places: services near a field; Foursquare's places © 2024 Foursquare Labs, Inc.",
+    licence: "CDLA Permissive 2.0 and Apache 2.0",
+    href: "https://docs.overturemaps.org/attribution/",
+  },
+  // A place on or off the field by the airport's outline: OpenStreetMap's, ODbL 4.3.
+  {
+    name: "OpenStreetMap contributors: airport outlines, through Overture Maps' base theme",
+    licence: "ODbL 1.0",
+    href: "https://www.openstreetmap.org/copyright",
+  },
+  // A field's local time (the planner's tzfpy, whose data is this, ODbL).
+  {
+    name: "Time zones: timezone-boundary-builder, from OpenStreetMap contributors",
+    licence: "ODbL 1.0",
+    href: "https://github.com/evansiroky/timezone-boundary-builder",
+  },
   { name: "adsb.lol ADS-B traffic", licence: "ODbL 1.0", href: "https://opendatacommons.org/licenses/odbl/1-0/" },
   { name: "ADS-B Exchange traffic", licence: "ADS-B Exchange's API terms", href: "https://www.adsbexchange.com" },
   // Its terms ask for its name and a link to its home page.
@@ -51,6 +79,12 @@ export const DATA_SOURCES: { name: string; licence: string; href?: string }[] = 
     licence: "Planespotters.net's photo API terms",
     href: "https://www.planespotters.net",
   },
+  // Each photo's author, licence and page beside it (PhotoSlide's credit).
+  {
+    name: "Wikimedia Commons photos of fields, each credited to its photographer with its licence and linked to its page",
+    licence: "Each photo's own licence",
+    href: "https://commons.wikimedia.org",
+  },
 ];
 
 /** The maps and software the web app draws with (credits.md's second
@@ -59,6 +93,12 @@ export const SOFTWARE: { name: string; licence: string; href?: string }[] = [
   { name: "MapLibre GL", licence: "BSD 3-Clause", href: "https://github.com/maplibre/maplibre-gl-js/blob/main/LICENSE.txt" },
   { name: "Google Maps Platform map tiles", licence: "Google's terms; its attribution is drawn on the map" },
 ];
+
+/** The open-source licences of every package the page is made with, the
+ *  engine's crates among them, which each build writes beside the page
+ *  (vite-plugins/licences.ts; docs/legal/credits.md, "Open-source
+ *  licences"). */
+export const LICENCES_HREF = "/app/licences.txt";
 
 /** What the Open Database License asks of a map that draws adsb.lol's
  *  data: its source and the licence, named. Not a link: on the map's edge

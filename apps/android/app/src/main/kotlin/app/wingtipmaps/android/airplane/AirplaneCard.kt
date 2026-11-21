@@ -129,7 +129,11 @@ fun AirplaneCard(at: ProfileOpen.At, plan: Plan, exit: CardExit, onFlown: () -> 
                 // photographer beside it (their terms).
                 looked.photo?.let { p ->
                     val credit = stringResource(R.string.airplane_photo_by, p.photographer ?: "Planespotters.net")
-                    PhotoCarousel(listOf(CardPicture(tail, p.thumbnailLarge ?: p.thumbnail ?: p.link, credit)), Modifier.padding(vertical = WingtipSpace.Xs))
+                    // Its thumbnail leads back to the photo's page there (their terms).
+                    PhotoCarousel(
+                        listOf(CardPicture(tail, p.thumbnailLarge ?: p.thumbnail ?: p.link, credit, page = p.link, tapOpensPage = true)),
+                        Modifier.padding(vertical = WingtipSpace.Xs),
+                    )
                 }
                 AirplaneButtons(tail, looked, canFly, fly, Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs))
             }

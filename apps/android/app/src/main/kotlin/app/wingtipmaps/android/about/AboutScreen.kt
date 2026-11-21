@@ -21,6 +21,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,7 +49,8 @@ import app.wingtipmaps.android.ui.ValueSettingRow
  * About, from the foot of Setup: the app and its build, the chart edition
  * and the cycle packs in use, the planning aid's words every app says
  * (docs/legal/credits.md), the credits, the privacy policy, terms and
- * support on the site, Send Feedback, and the demo flight. A figure the phone does not
+ * support on the site, the open-source licences (LicencesScreen), Send
+ * Feedback, and the demo flight. A figure the phone does not
  * have is left out rather than guessed.
  *
  * @param onDemo after the demo flight is put on the plan: the sheets close
@@ -59,6 +63,7 @@ fun AboutScreen(onDemo: () -> Unit, model: AboutModel = hiltViewModel(), charts:
     val packsCycle by model.packsCycle.collectAsStateWithLifecycle()
     // The activity's one plan, which the map draws.
     val plan: Plan = hiltViewModel()
+    var licences by rememberSaveable { mutableStateOf(false) }
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
@@ -93,9 +98,11 @@ fun AboutScreen(onDemo: () -> Unit, model: AboutModel = hiltViewModel(), charts:
 
         SectionTitle(stringResource(R.string.about_legal))
         SettingsGroup {
-            ActionSettingRow(stringResource(R.string.about_privacy), index = 0, count = 3) { openSite(context, "/privacy") }
-            ActionSettingRow(stringResource(R.string.about_terms), index = 1, count = 3) { openSite(context, "/terms") }
-            ActionSettingRow(stringResource(R.string.about_support), index = 2, count = 3) { openSite(context, "/support") }
+            ActionSettingRow(stringResource(R.string.about_privacy), index = 0, count = 4) { openSite(context, "/privacy") }
+            ActionSettingRow(stringResource(R.string.about_terms), index = 1, count = 4) { openSite(context, "/terms") }
+            ActionSettingRow(stringResource(R.string.about_support), index = 2, count = 4) { openSite(context, "/support") }
+            // The open-source licences of every library the app ships with.
+            ActionSettingRow(stringResource(R.string.about_licences), index = 3, count = 4) { licences = true }
         }
         // A tester's word to the owner, through Android's sharesheet to
         // whoever they send it (docs/store/beta.md): the build and the
@@ -106,6 +113,7 @@ fun AboutScreen(onDemo: () -> Unit, model: AboutModel = hiltViewModel(), charts:
         SettingsGroup {
             ActionSettingRow(stringResource(R.string.about_send_feedback), index = 0, count = 1) { sendFeedback(context, subject, feedback) }
         }
+        if (licences) LicencesScreen { licences = false }
 
         Button(
             onClick = {

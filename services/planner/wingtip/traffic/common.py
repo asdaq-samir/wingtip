@@ -9,6 +9,30 @@ import time
 from ..units import NM_PER_DEG_LAT
 
 HEADERS = {"User-Agent": "wingtip-maps/0.1 (VFR flight planner; traffic for pilots' situational awareness)"}
+#: How long a refusal for the day's quota keeps adsb.lol unasked where it
+#: names no Retry-After, s: an hour.
+QUOTA_WAIT_S = 3600.0
+
+
+def lol_headers() -> dict:
+    """adsb.lol's API asked with its key where the deployment has one
+    (ADSBLOL_API_KEY, sent as x-api-key, as adsb.lol's API page asks, read
+    2026-11-21): with none an address has 500 requests a day, a free adhoc
+    key 1,000 and a feeder's 7,200, more than the map's few an hour."""
+    from ..config import get_settings
+
+    key = get_settings().adsblol_api_key
+    return {**HEADERS, "x-api-key": key} if key else HEADERS
+
+
+def refused_for_s(resp) -> float:
+    """How long adsb.lol asks not to be asked again, s: a 429's Retry-After
+    (its quota spent; the day's window opens at 00:00 UTC), else none."""
+    if resp.status_code != 429:
+        return 0.0
+    wait = _number(resp.headers.get("Retry-After"))
+    return wait if wait is not None and wait > 0 else QUOTA_WAIT_S
+
 
 #: A position older than this is left out: the airplane is somewhere else.
 STALE_S = 30.0

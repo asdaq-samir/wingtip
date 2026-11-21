@@ -60,6 +60,9 @@ areas:
       - apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated/**
       - apps/ios/Wingtip/Engine/Generated/**
       - apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/generated/**
+      # The engine's open-source notices, which the build adds to the page's
+      # (vite-plugins/licences.ts) and its test reads.
+      - engine/licences/**
   py:
     ci: test-wingtip
     check: ruff check wingtip tests_wingtip && lint-imports && pytest tests_wingtip/ (services/planner)
@@ -140,6 +143,8 @@ areas:
       # the committed WebAssembly, held to what engine/ builds
       - scripts/build/build-engine-wasm.sh
       - apps/web/src/lib/engine/wingtip-engine.wasm
+      # its open-source notices (the guards' "Engine: licences")
+      - scripts/build/licences.sh
       - apps/web/src/lib/fixtures/**
       - services/planner/tests_wingtip/fixtures/native/**
   java:

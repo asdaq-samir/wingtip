@@ -71,10 +71,10 @@ struct AirportTiles: View {
                 }
             }
             if let photo = photos?.photo {
-                // Its photographer and licence, as Commons' licences ask.
+                // Its photographer and licence, linked to its page, as Commons' licences ask.
                 let credit = photo.credit + ((photo.license ?? "").isEmpty ? "" : " · " + (photo.license ?? ""))
                 PictureTile(caption: "From the Ground", label: "\(ident) from the ground, full screen") {
-                    shown = .paths("\(ident) from the ground", [photo.url], credit: credit)
+                    shown = .paths("\(ident) from the ground", [photo.url], credit: credit, creditLink: photo.sourceUrl.flatMap(URL.init(string:)))
                 } picture: {
                     RemotePicture(path: photo.url)
                 }
