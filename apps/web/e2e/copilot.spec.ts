@@ -28,6 +28,18 @@ async function stubAround(page: Page) {
     (url) => url.pathname.endsWith("/copilot/around"),
     (route) => route.fulfill({ json: { fields, areas: [], itws: [], unavailable: [], at: Date.now() / 1000 } }),
   );
+  // Nothing ahead in the alerts' read: from Waukegan the dry run passes
+  // Chicago's Class B shelf, Kenosha's Class D and Mitchell's Class C, and
+  // while one is in the alerts banner the copilot gives way to it
+  // (CopilotBanner, its message `elsewhere`), which on CI's runner held
+  // the message out of sight for the whole 40 s wait, both tries (PR #588,
+  // run of 6d821230a, shard 4). The giving way is the engine's
+  // copilot_watch's (engine/facade/tests/copilot.rs); this spec is the
+  // copilot's message.
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airspace/ahead"),
+    (route) => route.fulfill({ json: { alerts: [], unavailable: [] } }),
+  );
 }
 
 async function startDryRun(page: Page) {
@@ -54,24 +66,12 @@ test("flying the dry run, Oshkosh gone IFR is said with a field to go to and its
   await startDryRun(page);
   const banner = page.locator('[data-copilot-banner="weather"]');
   await expect(banner).toBeVisible({ timeout: slow(20_000) });
-  // The dry run held while the message is up. Flown on at its 50 times it
-  // passes Kenosha's Class D and Mitchell's Class C, and while each is in
-  // the alerts banner the copilot gives way to it (CopilotBanner, its
-  // message `elsewhere`), coming back a new banner, closed: the sources
-  // opened by the tap below were gone again 1 to 6 s later (a trace at two
-  // cores; failing 1 of 2 here, on main's build as on this one, and on CI).
-  // Held where the message is up: one held while an alert has it gives way
-  // flies on until the message is back.
+  // The dry run held while the message is up, so the sources a tap opens
+  // stay to be read.
   const play = sideDrawer(page).getByTestId("dry-run-play");
-  await expect(async () => {
-    if ((await play.getAttribute("aria-pressed")) === "false") {
-      await play.click();
-      await expect(banner).toBeVisible({ timeout: 10_000 });
-    }
-    await play.click();
-    await expect(play).toHaveAttribute("aria-pressed", "false");
-    await expect(banner).toBeVisible({ timeout: 2000 });
-  }).toPass({ timeout: slow(40_000) });
+  await play.click();
+  await expect(play).toHaveAttribute("aria-pressed", "false");
+  await expect(banner).toBeVisible();
   await expect(banner.getByTestId("copilot-title")).toContainText("KOSH is IFR");
   await expect(banner.getByTestId("copilot-title")).toContainText("is VFR");
   await banner.getByTestId("copilot-title").click();

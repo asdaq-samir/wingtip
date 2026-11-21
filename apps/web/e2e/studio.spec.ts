@@ -33,39 +33,50 @@ async function stubStudio(page: Page) {
   return asked;
 }
 
-test("studio: a day of an airplane replays in the chase camera, its data block and profile following", async ({ page }) => {
+/** The Studio opened on N14511's day, its track loaded, its credit said
+ *  and the chase camera on it. Each test below does little more in the
+ *  3D view: on CI's SwiftShader, with no graphics chip, the view's load
+ *  alone is about 50 frames of a second or more each (counted at two
+ *  cores, the draws stopping once it stood still), and one test of the
+ *  replay, its data block, the camera menu and the profile together ran
+ *  past its two minutes (PR #588, run of 6d821230a, shard 10; 1.1 to 1.7
+ *  min of them at two cores here). */
+async function openReplay(page: Page) {
   const asked = await stubStudio(page);
   await page.goto("/app/studio?q=N14511&day=2026-11-10");
   await settle(page);
   await expect.poll(() => asked.length).toBeGreaterThan(0);
   expect(asked[0]).toContain("q=N14511");
-  // The track loaded, its credit said, the chase camera on it.
   const replay = page.getByTestId("studio-replay");
   await expect(replay).toBeVisible();
   await expect(replay).toContainText("adsb.lol, ODbL 1.0");
   await expect(page.getByTestId("studio-camera")).toContainText("Chase");
   await expect(page.locator("[data-replay-camera='chase']")).toBeAttached();
-  // Played at 16 times: the time moves on, and the data block says the
-  // climb in pressure altitude.
+}
+
+test("studio: a day of an airplane replays in the chase camera, its time and data block following", async ({ page }) => {
+  await openReplay(page);
+  // Played at 16 times the time moves on, then held, as each frame of the
+  // chase view played is a whole 3D redraw; the data block says where the
+  // replay stands, moving or held: the climb in pressure altitude.
   await page.getByTestId("studio-timeline-speed").click();
   await page.getByTestId("studio-timeline-speed-16").click();
   const time = page.getByTestId("replay-data-time");
   const before = await time.textContent();
-  await page.getByTestId("studio-timeline-play").click();
-  await expect(time).not.toHaveText(before ?? "");
-  await expect(page.getByTestId("replay-data-block")).toContainText("Press alt");
-  await expect(page.getByTestId("replay-data-vs")).toHaveText(/fpm|Level/);
-  // Another camera from the menu, the replay held: played on, each frame
-  // of the chase view is a whole 3D redraw, a second or more on CI's
-  // SwiftShader, and the menu's open and pick waited on several, past the
-  // test's two minutes (run 44621875032).
   const play = page.getByTestId("studio-timeline-play");
   await play.click();
+  await expect(time).not.toHaveText(before ?? "");
+  await play.click();
   await expect(play).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByTestId("replay-data-block")).toContainText("Press alt");
+  await expect(page.getByTestId("replay-data-vs")).toHaveText(/fpm|Level/);
+});
+
+test("studio: another camera is picked from its menu, and the profile is the nav log's own chart", async ({ page }) => {
+  await openReplay(page);
   await page.getByTestId("studio-camera").click();
   await page.getByTestId("studio-camera-orbit").click();
   await expect(page.locator("[data-replay-camera='orbit']")).toBeAttached();
-  // The profile drawn from the nav log's own chart.
   await expect(page.getByTestId("replay-profile").getByTestId("profile-chart")).toBeVisible();
 });
 
