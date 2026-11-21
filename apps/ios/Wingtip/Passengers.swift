@@ -45,10 +45,7 @@ enum PassengerBriefing {
     /// A clock time on this device's clock, "09:05", as the web app's
     /// clockTime writes it.
     static func clock(_ date: Date, in zone: TimeZone = .current) -> String {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = zone
-        let parts = calendar.dateComponents([.hour, .minute], from: date)
-        return String(format: "%02d:%02d", parts.hour ?? 0, parts.minute ?? 0)
+        Format.clock(date, in: zone)
     }
 
     /// The destination's report in plain words: "VFR, no ceiling, 10 sm".

@@ -36,7 +36,7 @@ import Testing
             return Format.altitudeRange(pair[0].doubleValue, pair[1].doubleValue)
         case "duration": return number(input).map(Format.duration)
         case "navLogTime": return number(input).map(Format.navLogTime)
-        case "zulu": return (input as? String).flatMap { ISO8601DateFormatter().date(from: $0) }.map(Format.zulu)
+        case "zulu": return AirportWords.date(input as? String).map(Format.zulu)
         case "heading": return number(input).map(Format.heading)
         case "distance": return Format.distance(number(input))
         case "speed": return Format.speed(number(input))
@@ -76,6 +76,20 @@ import Testing
         #expect(Format.duration(126) == "2h 6m")
         #expect(Format.heading(0) == "360°")
         #expect(Format.distance(12, decimals: 0) == "12 nm")
+    }
+
+    /// The times now written by Foundation's own styles (Duration's units
+    /// and time patterns, Date's verbatim style) keep the hand-built
+    /// writers' forms: zero minutes, a whole hour, minutes past an hour on
+    /// a stopwatch, and the clock in a zone that is not the phone's.
+    @Test func foundationStylesWriteTheSameTimes() {
+        #expect(Format.duration(0) == "0m" && Format.duration(60) == "1h" && Format.duration(-3) == "0m")
+        #expect(Format.navLogTime(18) == "0:18" && Format.navLogTime(65) == "1:05")
+        #expect(Format.stopwatch(425) == "7:05" && Format.stopwatch(3900) == "65:00" && Format.stopwatch(-1) == "0:00")
+        let at = Date(timeIntervalSince1970: 1_763_733_120) // 2025-11-21 13:52 UTC
+        #expect(Format.zulu(at) == "1352Z")
+        #expect(Format.clock(at, in: TimeZone(identifier: "America/Chicago")!) == "07:52")
+        #expect(Format.clock(at, in: TimeZone(identifier: "Asia/Kolkata")!) == "19:22")
     }
 
     /// The number words are written by hand, not by the OS's spellOut, so
