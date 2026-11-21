@@ -72,7 +72,7 @@ describe("the overlay tiles' layers", () => {
     ]);
     // Each class from its own zoom (AIRSPACE_FROM).
     const from = Object.fromEntries(layers.lines!.map((l) => [l.id, l.minzoom]));
-    expect(from).toMatchObject({ "airspace-B": glZoom(6), "airspace-C": glZoom(7), "airspace-D": glZoom(8) });
+    expect(from).toMatchObject({ "airspace-B": glZoom(5), "airspace-C": glZoom(5), "airspace-D": glZoom(7) });
   });
 
   it("write one tab a shelf from the label points", () => {
@@ -102,8 +102,21 @@ describe("the overlay tiles' layers", () => {
     expect(set.state.get("selectedAirport")).toBeNull();
     const airports = overlayStyle(TILES, ORIGIN).layers.marks!.find((l) => l.id === "airports") as SymbolLayerSpecification;
     // Hidden by its paint, so the tiles are not laid out again at a tap.
-    expect(airports.layout!["text-field"]).toEqual(["get", "ident"]);
     expect(airports.paint!["text-opacity"]).toEqual(["case", ["==", ["get", "ident"], ["global-state", "selectedAirport"]], 0, 1]);
+  });
+
+  it("name only the Class B fields out at a few states, every field from 6, each mark a little apart", () => {
+    const airports = overlayStyle(TILES, ORIGIN).layers.marks!.find((l) => l.id === "airports") as SymbolLayerSpecification;
+    expect(airports.minzoom).toBe(glZoom(4));
+    expect(airports.layout!["text-field"]).toEqual([
+      "step",
+      ["zoom"],
+      ["case", ["==", ["get", "size"], "largest"], ["get", "ident"], ""],
+      glZoom(6),
+      ["get", "ident"],
+    ]);
+    expect(airports.layout!["icon-padding"]).toBe(2);
+    expect(airports.layout!["symbol-sort-key"]).toEqual(["get", "rank"]);
   });
 
   it("hide the armed services' and private fields unless asked for, and the route's own fields", () => {

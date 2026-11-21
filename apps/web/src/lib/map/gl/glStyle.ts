@@ -149,11 +149,16 @@ export const AIRSPACE_INK: Record<AirspaceClass, { colour: string; dash?: number
   E: { colour: CHART.airspaceMagenta, dash: [10 / 3, 5 / 3], opacity: 0.45, width: 3, band: 0 },
 };
 
-/** From which zoom each class is drawn, in the app's levels:
- *  B from 6, C from 7, D (and E) from 8, and every label from 9 (the
+/** From which zoom each class is drawn, in the app's levels: B and C
+ *  from 5, a few states on a phone, with the towered fields they are
+ *  named for, as ForeFlight draws them at that scale (the owner,
+ *  2026-11-21: "how come we don't see big airports and airspaces at our
+ *  zoom levels?"); D from 7, E from 8; and every label from 9 (the
  *  owner, 2026-11-20, the readability list's G: farther out the tabs were
- *  the largest marks on the map, over the fields' names). */
-const AIRSPACE_FROM: Record<AirspaceClass, number> = { B: 6, C: 7, D: 8, E: 8 };
+ *  the largest marks on the map, over the fields' names). The overlay
+ *  tiles hold B and C from their first zoom (the charts job's
+ *  AIRSPACE_MIN_ZOOM). */
+const AIRSPACE_FROM: Record<AirspaceClass, number> = { B: 5, C: 5, D: 7, E: 8 };
 export const AIRSPACE_LABELS_FROM = 9;
 
 export const AIRSPACE_LINE_LAYERS = (["D", "C", "B"] as const).map((c) => `airspace-${c}`);
@@ -196,6 +201,16 @@ const BAND_WIDTH = byZoom(BAND_STOPS);
  *  Vector Tile spec 2.1, 4.3.4.4, which tippecanoe writes), so the right
  *  is always the inside, round a ring and round a hole alike. */
 const BAND_OFFSET = byZoom(BAND_STOPS.map(([z, w]) => [z, w / 2 + 1.5]));
+/** Out past the band's first zoom a Class C's ring is some ten pixels
+ *  across, which a full line and its band filled into a dot: there the
+ *  line alone, half its width, as ForeFlight's thin rings at a few
+ *  states' scale, its full width by the band's zoom. */
+const BAND_FROM = BAND_STOPS[0]![0];
+const lineWidth = (width: number) =>
+  byZoom([
+    [5, width / 2],
+    [BAND_FROM, width],
+  ]);
 
 /** Each class's band and line, a line layer each drawn from that class's
  *  zoom, and the labels: white bold type in a dark tab bordered in the
@@ -213,6 +228,7 @@ export function airspaceLayers(font: string[]): LayerSpecification[] {
       {
         id: `airspace-${c}-band`,
         ...common,
+        minzoom: glZoom(Math.max(AIRSPACE_FROM[c], BAND_FROM)),
         layout: { "line-join": "round" },
         paint: { "line-color": ink.colour, "line-opacity": ink.band, "line-width": BAND_WIDTH, "line-offset": BAND_OFFSET },
       },
@@ -222,7 +238,7 @@ export function airspaceLayers(font: string[]): LayerSpecification[] {
         layout: { "line-join": "round", "line-cap": ink.dash ? "butt" : "round" },
         paint: {
           "line-color": ink.colour,
-          "line-width": ink.width,
+          "line-width": lineWidth(ink.width),
           "line-opacity": ink.opacity,
           ...(ink.dash ? { "line-dasharray": ink.dash } : {}),
         },
@@ -281,7 +297,9 @@ const SUA_RESTRICTED = ["P", "R", "W", "D"];
 const SUA_MOA = ["MOA", "A"];
 /** The hatch picture of each ink (glOverlays' SUA_PICTURES). */
 export const suaHatch = (ink: keyof typeof SUA_INK) => `sua|hatch|${ink}`;
-/** From the app's zoom 7, a few states across, as Class C. */
+/** From the app's zoom 7, a few states across, with Class D: tried at 6
+ *  (2026-11-21), California's MOAs and restricted areas, some 160 hatched
+ *  lines, hid the fields and the Class B and C under them. */
 const SUA_FROM = 7;
 export const SUA_LAYERS = ["sua-band", "sua-line", "sua-labels"];
 

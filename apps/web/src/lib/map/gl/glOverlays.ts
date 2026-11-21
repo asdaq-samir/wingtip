@@ -60,9 +60,21 @@ export function overlayPictures(): Promise<Map<string, DrawnImage>> {
 /** The airports' zooms, in the app's levels: the farthest out any
  *  is drawn. Within it each field is in the tiles from its own zoom by
  *  its tier (AIRPORT_MIN_ZOOM in services/jobs/charts/overlay_layers.py):
- *  towered, then the long hard runways, other public fields, private
- *  ones, heliports. */
+ *  towered from 5, then the long hard runways from 7, other public fields
+ *  from 8, private ones from 10, heliports from 11. */
 const AIRPORTS_FARTHEST_ZOOM = 4;
+/** A field's ident beside its mark: out at a few states (below the app's
+ *  zoom 6) only a Class B's field's (the engine's field_mark_rank sizes
+ *  it largest), as there an ident is wider than the room between two
+ *  towered fields and took the place of the next one's mark (KSJC's of
+ *  Fresno's); from 6 every field's. */
+const AIRPORT_IDENT_FAR: ExpressionSpecification = [
+  "step",
+  ["zoom"],
+  ["case", ["==", ["get", "size"], "largest"], ["get", "ident"], ""],
+  glZoom(6),
+  ["get", "ident"],
+];
 
 /** The airports' one symbol layer, from either source: the mark (airportIcons), its ident beside it in bold in the field's
  *  ink (the sectional sets an airport's name in its symbol's colour, Chart User's Guide, Airports), kept apart by MapLibre's
@@ -88,10 +100,11 @@ function airportMarksLayer(from: { source: string; "source-layer"?: string }): S
       // Each field at its own size step, the biggest largest (airportIconSize).
       "icon-size": airportIconSize(glZoom(AIRPORTS_FARTHEST_ZOOM), glZoom(10), glZoom(13)),
       "icon-allow-overlap": false,
-      // Out at a few states, a mark keeps some 80 px from the next; closer in, its own: every field at a field's own scale.
-      "icon-padding": ["step", ["zoom"], 27, glZoom(7), 2],
+      // Two px round each mark at every zoom: out at a few states the towered fields then stand side by side in rank
+      // order, as ForeFlight's do, where 27 px round each (to the app's zoom 7) left one field a metro (2026-11-21).
+      "icon-padding": 2,
       "symbol-sort-key": ["get", "rank"],
-      "text-field": ["get", "ident"],
+      "text-field": AIRPORT_IDENT_FAR,
       "text-font": GL_FONT_BOLD,
       "text-size": AIRPORT_IDENT_SIZE,
       "text-anchor": "left",
