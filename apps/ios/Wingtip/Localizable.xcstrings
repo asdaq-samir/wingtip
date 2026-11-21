@@ -342,7 +342,20 @@
         }
       }
     },
+    "%@, %@, %@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@, %3$@%4$@"
+          }
+        }
+      }
+    },
     "%@, You" : {
+
+    },
+    "%@, gallons" : {
 
     },
     "%@, in %@, %@" : {
@@ -591,6 +604,9 @@
 
     },
     "Add Date" : {
+
+    },
+    "Add Fuel Stops" : {
 
     },
     "Add Your Name" : {
@@ -969,6 +985,9 @@
     "Checkpoints" : {
 
     },
+    "Checkpoints for ForeFlight" : {
+
+    },
     "Checkpoints · Within %@ min" : {
 
     },
@@ -1013,6 +1032,9 @@
 
     },
     "Clear Route" : {
+
+    },
+    "Clear Route?" : {
 
     },
     "Clear Your Path" : {
@@ -1109,6 +1131,9 @@
 
     },
     "Cruise altitude" : {
+
+    },
+    "Cruise altitude, altitude caution" : {
 
     },
     "Cruise figures at %@, standard day" : {
@@ -1525,6 +1550,9 @@
     "File Flight Plan" : {
 
     },
+    "File flight plan" : {
+
+    },
     "File it with Flight Service" : {
 
     },
@@ -1770,16 +1798,25 @@
     "Fuel Burn" : {
 
     },
+    "Fuel in the Tanks" : {
+
+    },
     "Fuel remarks" : {
 
     },
     "Fuel, Minutes" : {
 
     },
+    "Full (%lld gal)" : {
+
+    },
     "G-AIRMETs" : {
 
     },
     "GS" : {
+
+    },
+    "Gallons" : {
 
     },
     "Give your name first: your endorsements name you by it" : {
@@ -2002,9 +2039,6 @@
     "Its pilot stopped sharing it." : {
 
     },
-    "Its profile" : {
-
-    },
     "J. J. Jones" : {
 
     },
@@ -2079,6 +2113,9 @@
 
     },
     "Landings" : {
+
+    },
+    "Lands with %@" : {
 
     },
     "Last Flights" : {
@@ -2336,6 +2373,9 @@
     "More Info" : {
 
     },
+    "More than the %lld gal the tanks hold" : {
+
+    },
     "My position" : {
 
     },
@@ -2547,6 +2587,9 @@
 
     },
     "No flights were read on this page." : {
+
+    },
+    "No fuel" : {
 
     },
     "No hour with nothing against it before %@." : {
@@ -2977,6 +3020,9 @@
     "Previews the airplane's own altitude" : {
 
     },
+    "Print Nav Log" : {
+
+    },
     "Privacy" : {
 
     },
@@ -2995,9 +3041,6 @@
     "Profile" : {
 
     },
-    "Profile, Altitude Caution" : {
-
-    },
     "Profile, highest %@" : {
 
     },
@@ -3011,6 +3054,9 @@
 
     },
     "Puts an approach on your route at its airport and opens the Brief." : {
+
+    },
+    "Puts in %@" : {
 
     },
     "Radar and Satellite" : {
@@ -3125,6 +3171,9 @@
     "Remove %@" : {
 
     },
+    "Remove Fuel Stops" : {
+
+    },
     "Remove Hold" : {
 
     },
@@ -3165,7 +3214,13 @@
     "Route Box" : {
 
     },
+    "Route Checkpoints" : {
+
+    },
     "Route Leg" : {
+
+    },
+    "Route Options" : {
 
     },
     "Route options" : {
@@ -3258,16 +3313,7 @@
     "Search" : {
 
     },
-    "Search airports and airplanes" : {
-
-    },
     "Search for Your Airplane" : {
-
-    },
-    "Search for an airplane to keep" : {
-
-    },
-    "Search for your airplane" : {
 
     },
     "Search, like Maps" : {
@@ -3325,6 +3371,12 @@
 
     },
     "Set the usable fuel and the cruise fuel burn above for the endurance." : {
+
+    },
+    "Sets the fuel bought at %@" : {
+
+    },
+    "Sets the fuel on board at engine start" : {
 
     },
     "Settings" : {
@@ -3766,6 +3818,9 @@
     "The forecast along the run" : {
 
     },
+    "The fuel in the tanks at engine start: full, or the gallons." : {
+
+    },
     "The leg time for this altitude couldn't be worked out: %@" : {
 
     },
@@ -3809,6 +3864,9 @@
 
     },
     "The route, its Go / No-Go and the departure's weather: the plan on the page or a saved flight." : {
+
+    },
+    "The route, its stops and what was set on it go. Shake to undo." : {
 
     },
     "The route, nav log, profile and brief, one tap away on the FPL button." : {
@@ -4079,9 +4137,6 @@
 
     },
     "Where" : {
-
-    },
-    "Where are you flying to?" : {
 
     },
     "Where to, or ask" : {
