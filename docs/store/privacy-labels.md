@@ -124,10 +124,11 @@ privacy manifest".
 **Does your app collect or share any of the required user data types?**
 Yes. **Is all of the user data collected by your app encrypted in
 transit?** Yes: every call is HTTPS, to the gateway (`Config.kt`) and,
-straight from the phone, to Google's map tiles once the map is zoomed
-close in (`Charts.kt`, `map/CloseMap.kt`) and to the weather loop's
-tiles from Iowa State's IEM and NOAA's nowCOAST (`map/WeatherLoop.kt`);
-`usesCleartextTraffic` is false.
+straight from the phone, to the USGS's aerial imagery once the map is
+zoomed close in (`map/CloseMap.kt`) and to the weather loop's tiles from
+Iowa State's IEM and NOAA's nowCOAST (`map/WeatherLoop.kt`);
+`usesCleartextTraffic` is false. The Android app asks Google for no map
+tile and links no Google Maps SDK.
 **Do you provide a way for users to request that their data is
 deleted?** Yes: Setup, Delete Account in the app
 (`account/AccountActions.kt`, wired in `ui/SetupScreen.kt`), and, for
@@ -154,9 +155,9 @@ and Amazon SES)
 process data for the app and are not sharing. The device's live
 position, sent to answer Nearest and the copilot and not kept, is
 "processed ephemerally" and not collected in Google's sense. The map
-tiles the phone asks of Google (close in), IEM and nowCOAST carry the
-device's internet address and the view, as any map's, and no account;
-Google is the app's Maps Platform provider. Before answering, check each
+tiles the phone asks of the USGS (close in), IEM and nowCOAST carry the
+device's internet address and the view, as any map's, and no account.
+Before answering, check each
 Google SDK's own entry in Play's SDK Index (`play-services-location`,
 ML Kit's document scanner and text recognition) against these rows.
 

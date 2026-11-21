@@ -117,9 +117,6 @@ S13). Tick each as it is done.
 
 ## Google Cloud
 
-- [ ] Restrict the Android Maps key to the package name and the SHA-256
-      of Play's **app signing** certificate (not only the upload key):
-      the close-in map sends both (`map/CloseMap.kt`), and a key
-      restricted to the upload key fails for every installed copy.
-- [ ] Map Tiles API billing and a quota for Android's close-in map, which
-      now loads by itself whenever the map is zoomed close in.
+Nothing for Android: its close-in map is the USGS's imagery
+(`map/CloseMap.kt`), and the app carries no Maps key. The web's Google
+overlay keeps the planner's browser key (docs/GOOGLE-MAPS.md).

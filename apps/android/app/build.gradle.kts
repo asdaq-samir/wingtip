@@ -1,5 +1,4 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import java.util.Properties
 
 // The native Android app (docs/NATIVE-ANDROID.md): Jetpack Compose and
 // Material 3 over the same planner and gateway the website uses, with the
@@ -28,19 +27,6 @@ plugins {
 val wingtipHost: String =
     (System.getenv("WINGTIP_HOST") ?: providers.gradleProperty("wingtipHost").orNull ?: "")
         .trim().ifEmpty { "wingtipmaps.app" }
-
-// / Google's Map Tiles key for this app, restricted in Google Cloud to
-// / Android apps by this package name and signing certificate (which
-// / CloseMap.signer sends as X-Android-Package and X-Android-Cert): from the
-// / GOOGLE_MAPS_ANDROID_KEY the workflow passes, a `googleMapsAndroidKey`
-// / gradle property, or local.properties' google.maps.android.key. Empty
-// / until the owner adds one: the app then uses the planner's key
-// / (/api/map/google), and without either the chart stays, enlarged.
-val googleMapsAndroidKey: String =
-    (System.getenv("GOOGLE_MAPS_ANDROID_KEY") ?: providers.gradleProperty("googleMapsAndroidKey").orNull
-        ?: rootProject.file("local.properties").takeIf { it.exists() }?.let { f ->
-            Properties().apply { f.inputStream().use { load(it) } }.getProperty("google.maps.android.key")
-        } ?: "").trim()
 
 // / The app's package name on the phone and on Google Play. Not the
 // / shell's (app.wingtipmaps.android), so a tester can have both installed
@@ -91,8 +77,6 @@ android {
         // Read by Config at run time, and by the manifest's App Links filter.
         buildConfigField("String", "WINGTIP_HOST", "\"$wingtipHost\"")
         manifestPlaceholders["wingtipHost"] = wingtipHost
-        buildConfigField("String", "GOOGLE_MAPS_ANDROID_KEY", "\"$googleMapsAndroidKey\"")
-        manifestPlaceholders["googleMapsAndroidKey"] = googleMapsAndroidKey
         // The ABIs the engine is built for (engine/bindings/ffi/build-android.sh):
         // the phones Play serves, and the emulator CI tests on.
         ndk {
