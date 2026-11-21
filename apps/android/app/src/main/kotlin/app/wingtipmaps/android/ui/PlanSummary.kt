@@ -24,7 +24,9 @@ import app.wingtipmaps.android.alternate.AlternateStopRow
 import app.wingtipmaps.android.alternate.PlanAlternate
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.plan.PlanGround
+import app.wingtipmaps.android.plan.PlanProcedures
 import app.wingtipmaps.android.plan.RouteFieldFacts
+import app.wingtipmaps.android.plan.RouteProcedures
 import app.wingtipmaps.android.plan.StopTimes
 import app.wingtipmaps.android.route.RoutePointMenu
 
@@ -39,6 +41,10 @@ import app.wingtipmaps.android.route.RoutePointMenu
  * RoutePointMenu: Direct To, Hold, Add a Stop After, Move, Remove). An
  * end not yet given asks for it ("Where from?", "Where to?") and opens
  * the search; Add a Stop opens the search for a field or fix on the way.
+ * A field open by its card has its runways and the kinds of procedure
+ * not picked under it (TimelineFieldParts), and a procedure picked there
+ * its fixes as rows of the line, an arrival's and an approach's before
+ * the field, a departure's after it (TimelineProcedureRows).
  */
 @Composable
 fun RouteStops(
@@ -49,6 +55,7 @@ fun RouteStops(
     onAddStop: () -> Unit,
     onAddStopAfter: (String) -> Unit,
     model: RouteFieldFacts = hiltViewModel(),
+    procedures: RouteProcedures = hiltViewModel(),
 ) {
     val course = state.course
     // Under IFR, the alternate after the destination (PlanAlternate).
@@ -57,6 +64,11 @@ fun RouteStops(
     val alternate = PlanAlternate.of(state.rules, state.dest, filed)
     val facts by model.facts.collectAsStateWithLifecycle()
     LaunchedEffect(state.dep, state.dest, state.stops) { model.load(listOf(state.dep) + state.stops + state.dest) }
+    val picks by PlanProcedures.state.collectAsStateWithLifecycle()
+    val lists by procedures.lists.collectAsStateWithLifecycle()
+    val drawings by procedures.drawings.collectAsStateWithLifecycle()
+    LaunchedEffect(facts) { procedures.load(facts.filterValues { it.open }.keys) }
+    LaunchedEffect(picks.picks) { procedures.loadDrawings(picks.picks) }
     // The times at each point, from the plan's departure time or now,
     // where the airplane gives the legs' times (decision 0011).
     val departMs = Plan.departMs(state.depart) ?: AppClock.nowMs()
@@ -64,28 +76,54 @@ fun RouteStops(
     val idents = listOf(state.dep) + state.stops + state.dest
     val zones = idents.mapIndexed { i, id -> (i - 1) to facts[id.uppercase()]?.zone }.toMap()
     val said = StopTimes.zonesSaid(times, zones)
+    // A field's procedures on the line once its card says it is open:
+    // those landed by before its row, those left by after it.
+    fun picksAt(at: Int, kinds: List<String>): List<PlanProcedures.Pick> {
+        val ident = idents[at + 1]
+        val lands = kinds == PlanProcedures.ARRIVING && at >= 0
+        val leaves = kinds == PlanProcedures.LEAVING && at < state.stops.size
+        return if (facts[ident.uppercase()]?.open == true && (lands || leaves)) PlanProcedures.at(picks, ident, kinds) else emptyList()
+    }
+    fun rows(list: List<PlanProcedures.Pick>) = list.sumOf { procedureRows(drawings[RouteProcedures.drawingKey(it)]) }
+    val points = -1..state.stops.size
     // Material 3 Expressive's segmented list: the route's rows as one
     // rounded group with small gaps between them, the line through them.
-    val count = state.stops.size + 3 + (if (ifr) 1 else 0)
+    val count = state.stops.size + 3 + (if (ifr) 1 else 0) + points.sumOf { rows(picksAt(it, PlanProcedures.ARRIVING)) + rows(picksAt(it, PlanProcedures.LEAVING)) }
     val gap = ListItemDefaults.SegmentedGap
+    val replan = { plan.plan() }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(gap)) {
+        var index = 0
         fun point(at: Int) = Point(at, idents[at + 1], facts[idents[at + 1].uppercase()]?.category, times[at], zones[at], said)
-        StopRow(plan, point(-1), course?.departure?.name, R.string.route_depart, R.string.where_from, 0, count, onField, onFind, onAddStopAfter)
-        state.stops.forEachIndexed { i, _ ->
-            StopRow(plan, point(i), course?.stops?.getOrNull(i)?.name, R.string.route_stop, R.string.where_to, i + 1, count, onField, onFind, onAddStopAfter)
+
+        @Composable
+        fun picked(list: List<PlanProcedures.Pick>) = list.forEach { pick ->
+            val drawing = drawings[RouteProcedures.drawingKey(pick)]
+            TimelineProcedureRows(pick, drawing, lists[pick.ident.uppercase()], picks, index, count, replan)
+            index += procedureRows(drawing)
         }
+
+        @Composable
+        fun fieldRows(at: Int, name: String?, role: Int, ask: Int, last: Boolean = false) {
+            picked(picksAt(at, PlanProcedures.ARRIVING))
+            val p = point(at)
+            StopRow(plan, p, name, role, ask, index++, count, onField, onFind, onAddStopAfter, last) {
+                TimelineFieldParts(p.ident, lands = at >= 0, leaves = at < state.stops.size, facts[p.ident.uppercase()], lists[p.ident.uppercase()], picks, replan)
+            }
+            picked(picksAt(at, PlanProcedures.LEAVING))
+        }
+        fieldRows(-1, course?.departure?.name, R.string.route_depart, R.string.where_from)
+        state.stops.forEachIndexed { i, _ -> fieldRows(i, course?.stops?.getOrNull(i)?.name, R.string.route_stop, R.string.where_to) }
         val thread = rememberThread()
         SegmentedListItem(
             onClick = onAddStop,
             enabled = state.routed,
-            shapes = ListItemDefaults.segmentedShapes(index = state.stops.size + 1, count = count),
+            shapes = ListItemDefaults.segmentedShapes(index = index++, count = count),
             leadingContent = { TimelineMark(thread) { Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary) } },
             modifier = Modifier.fillMaxWidth().timelineThread(thread, first = false, last = false, dot = null, gap = gap),
             content = { Text(stringResource(R.string.add_a_stop), color = if (state.routed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
         )
-        val arrive = state.stops.size + 2
-        StopRow(plan, point(state.stops.size), course?.destination?.name, R.string.route_arrive, R.string.where_to, arrive, count, onField, onFind, onAddStopAfter, last = true)
-        if (ifr) AlternateStopRow(alternate, arrive + 1, count, onField)
+        fieldRows(state.stops.size, course?.destination?.name, R.string.route_arrive, R.string.where_to, last = true)
+        if (ifr) AlternateStopRow(alternate, index, count, onField)
     }
 }
 
@@ -106,6 +144,7 @@ private fun StopRow(
     onFind: () -> Unit,
     onAddStopAfter: (String) -> Unit,
     last: Boolean = false,
+    parts: @Composable () -> Unit = {},
 ) {
     val ident = point.ident
     val given = ident.isNotEmpty()
@@ -115,7 +154,12 @@ private fun StopRow(
         onClick = { if (given) onField(ident) else onFind() },
         shapes = ListItemDefaults.segmentedShapes(index = index, count = count),
         leadingContent = { TimelineMark(thread) },
-        supportingContent = { Text(listOfNotNull(stringResource(role), name).joinToString(" · "), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        supportingContent = {
+            Column {
+                Text(listOfNotNull(stringResource(role), name).joinToString(" · "), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                parts()
+            }
+        },
         trailingContent = if (!given) null else ({
             PointEnd(
                 times = {

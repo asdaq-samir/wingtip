@@ -10,6 +10,7 @@ import app.wingtipmaps.android.engine.generated.airportNotamsNone
 import app.wingtipmaps.android.engine.generated.airportUseWords
 import app.wingtipmaps.android.engine.generated.fuelNames
 import app.wingtipmaps.android.engine.generated.gonogoRunwayInUse
+import app.wingtipmaps.android.engine.generated.gonogoRunwayNumber
 import app.wingtipmaps.android.engine.generated.notamSubject
 import app.wingtipmaps.android.plates.APPROACH_CHART
 
@@ -108,6 +109,14 @@ object AirportReads {
         val closed = place.runways.mapIndexed { i, r -> r.closed || marks.runway[i]?.unusable == true }
         val open = place.runways.indices.filter { !closed[it] && place.runways[it].lengthFt != null }
         val longest = if (open.size > 1) open.maxBy { place.runways[it].lengthFt ?: 0 } else -1
+        val inUse = inUse(place, closed)
+        return RunwayBadges(longest, inUse?.runway ?: -1)
+    }
+
+    /** The runway in use where the field's report's wind chose it (the
+     *  engine's gonogo_runway_in_use, AC 90-66C 11.5); none where the wind
+     *  chose none. `closed` each runway's, a NOTAM's closure among them. */
+    private fun inUse(place: AirportPlace, closed: List<Boolean>): EngineContract.GonogoFlown? {
         val asked = place.runways.mapIndexed { i, r ->
             EngineContract.Runway(
                 closed = closed[i], surface = r.surface, lengthFt = r.lengthFt?.toDouble(),
@@ -115,7 +124,21 @@ object AirportReads {
                 wind = r.wind?.let { EngineContract.GonogoRunwayWind(it.end, it.headwindKt, it.crosswindKt, it.gustCrosswindKt, crosswindExactKt = it.crosswindExactKt, inUse = it.inUse) },
             )
         }
-        val inUse = if (asked.isEmpty()) null else Engine.gonogoRunwayInUse(asked).getOrNull()
-        return RunwayBadges(longest, inUse?.takeIf { it.byWind }?.runway ?: -1)
+        return if (asked.isEmpty()) null else Engine.gonogoRunwayInUse(asked).getOrNull()?.takeIf { it.byWind }
     }
+
+    /** The end the wind picks by its number as the sectional prints it
+     *  ("24", the engine's gonogo_runway_number): what the plan's line
+     *  lands on and leaves from where the pilot picks none, as the planner
+     *  flies it (`wind_runways`), the iPhone's AirportWords.windEnd. */
+    fun windEnd(place: AirportPlace): String? {
+        val flown = inUse(place, place.runways.map { it.closed }) ?: return null
+        val end = place.runways.getOrNull(flown.runway)?.runwayEnds?.getOrNull(flown.end) ?: return null
+        return Engine.gonogoRunwayNumber(end.ident).getOrDefault(end.ident)
+    }
+
+    /** The ends of the field's open runways by their numbers ("24"), in
+     *  the card's order: the plan's runway menus. */
+    fun runwayEnds(place: AirportPlace): List<String> =
+        place.runways.filter { !it.closed }.flatMap { it.runwayEnds.orEmpty() }.map { Engine.gonogoRunwayNumber(it.ident).getOrDefault(it.ident) }
 }
