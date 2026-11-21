@@ -133,7 +133,7 @@ export function FieldRow({
 }) {
   const here = isPosition(field.ident);
   const note =
-    [field.runwayFt != null && `Of ${grouped(field.runwayFt)} ft`, field.wind && `wind ${field.wind}`].filter(Boolean).join(" · ") ||
+    [field.runwayFt != null && `${grouped(field.runwayFt)} ft long`, field.wind && `wind ${field.wind}`].filter(Boolean).join(" · ") ||
     undefined;
   return (
     <ListRow
