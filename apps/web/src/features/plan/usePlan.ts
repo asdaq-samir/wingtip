@@ -98,10 +98,15 @@ export function usePlan({
   }, [chartPending]);
   const cycleKnown = !chartPending || chartWaited;
   const course = useQuery({ ...courseQuery(dep, dest, stops, cycle), enabled: briefable && cycleKnown, placeholderData: keepPreviousData });
+  // Kept as the nav log is (navlogQuery's staleTime): planned again by
+  // Load (`load`, in the key) or a change of what it is of, not at every
+  // return to the window and every mount of the page, which asked the
+  // planner for the same local flight each time.
   const localFlight = useQuery({
-    queryKey: ["localFlight", dep, localMin, depart, aircraft.profile, aircraft.fuelBurnGph ?? null, aircraft.usableFuelGal ?? null, rules],
+    queryKey: ["localFlight", dep, localMin, depart, aircraft.profile, aircraft.fuelBurnGph ?? null, aircraft.usableFuelGal ?? null, rules, load],
     queryFn: () => api.localFlight(dep, localMin, aircraft, depart || undefined, rules),
     enabled: local,
+    staleTime: Infinity,
     placeholderData: keepPreviousData,
   });
 

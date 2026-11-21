@@ -109,4 +109,21 @@ describe("useAirportSearch with fixes and the copy in", () => {
     await waitFor(() => expect(result.current.rows.length).toBe(1));
     expect(result.current.answered).toBe(false);
   });
+
+  test("asks the planner once for letters typed again", async () => {
+    vi.mocked(api.airportSearch).mockResolvedValue([]);
+    const { result, rerender } = renderHook(({ text }) => useAirportSearch(text, true, true), {
+      wrapper: wrapper(),
+      initialProps: { text: "osh" },
+    });
+    await waitFor(() => expect(result.current.answered).toBe(true));
+    rerender({ text: "oshk" });
+    await waitFor(() => expect(api.airportSearch).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(result.current.answered).toBe(true));
+    // The last letter taken back: the answer kept, not asked again.
+    rerender({ text: "osh" });
+    await waitFor(() => expect(result.current.typed).toBe("osh"));
+    await new Promise((go) => setTimeout(go, 200));
+    expect(api.airportSearch).toHaveBeenCalledTimes(2);
+  });
 });

@@ -37,10 +37,18 @@ export const mapAgesQuery = {
   meta: { silent: true },
 } as const;
 
+/** How long the editions' answer is good for where only they are read:
+ *  the FAA's data sets change by the 28-day cycle, not by the minute. */
+const CYCLES_FRESH_MS = 60 * 60_000;
+
 /** Each FAA data set the planner uses and whether its edition is in its
- *  cycle (lib/dataCycles has the words). */
+ *  cycle (lib/dataCycles has the words). Not asked again each minute by
+ *  itself, as the ages are: Ready to Fly's prompt reads it under the map
+ *  for the whole visit, and with the ages' own minute it asked the planner
+ *  once a minute for editions that change once a month. Where the ages are
+ *  shown too (the map's settings, the Status page) they poll for both. */
 export function useDataCycles(): DataCycle[] {
-  return useQuery(mapAgesQuery).data?.data_cycles ?? [];
+  return useQuery({ ...mapAgesQuery, refetchInterval: false, staleTime: CYCLES_FRESH_MS }).data?.data_cycles ?? [];
 }
 
 /**

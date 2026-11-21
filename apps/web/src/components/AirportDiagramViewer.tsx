@@ -9,7 +9,7 @@ import { api } from "../lib/api/client";
 import { chartPagePicture, type PageMark } from "../lib/diagram";
 import { ownShipHtml } from "../lib/map/marks/icons";
 import { usePreferences } from "../lib/preferences";
-import { drawOwnShip, ownShipMarker } from "../lib/map/gl/layers/ownShipMarker";
+import { drawOwnShip, ownShipMarker, placeOwnShip } from "../lib/map/gl/layers/ownShipMarker";
 import { TEXT } from "../lib/text";
 import { cn } from "cn";
 import FullScreenViewer from "./FullScreenViewer";
@@ -152,10 +152,7 @@ function Pages({ placed, all, mark }: ReturnType<typeof laidOut> & { mark: PageM
     // The page's fractions in its box's degrees: across from its west
     // edge, down from its north one.
     const [west, , , north] = page.box;
-    marker.current
-      .setLngLat([west + mark.x * page.width * K, north - mark.y * page.height * K])
-      .setRotation(mark.rotationDeg ?? 0)
-      .addTo(map);
+    placeOwnShip(marker.current, map, [west + mark.x * page.width * K, north - mark.y * page.height * K], mark.rotationDeg ?? 0);
   }, [placed, mark, look]);
   // Black at night where it is drawn white on black: the canvas inverted.
   return <div ref={box} data-pages={placed.length} className="min-h-0 flex-1 bg-white dark:bg-black dark:[&_canvas]:invert" />;

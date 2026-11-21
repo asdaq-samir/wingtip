@@ -15,7 +15,7 @@ import LogbookFile from "./LogbookFile";
 import { localDay } from "../../lib/format";
 import { said } from "../../lib/endorsements";
 import { FINDING_TONE } from "../../lib/findings";
-import { currencyQuery, pilotQuery, trainingQuery } from "../../lib/queryClient";
+import { RECORDS_FRESH_MS, currencyQuery, logbookQuery, pilotQuery, trainingQuery } from "../../lib/queryClient";
 import LogbookFlights from "./logbook/LogbookFlights";
 import { refreshLogbook } from "./logbook/logbookEntry";
 
@@ -95,7 +95,7 @@ export function LogbookPanel({ aircraft }: { aircraft?: string }) {
 function SignedInLogbook({ aircraft }: { aircraft?: string }) {
   const queryClient = useQueryClient();
   // The file's export reads the flights too (LogbookFlights' own query).
-  const { data: entries } = useQuery({ queryKey: ["logbook"], queryFn: api.logbook.list, meta: { silent: true } });
+  const { data: entries } = useQuery(logbookQuery);
   const { data: currency } = useQuery(currencyQuery);
   const { data: training } = useQuery(trainingQuery);
   const refresh = () => void refreshLogbook(queryClient);
@@ -109,7 +109,7 @@ function SignedInLogbook({ aircraft }: { aircraft?: string }) {
   });
   // Emailed 30 and 7 days before each of these runs out (ReminderService),
   // at the pilot's ask.
-  const { data: reminders } = useQuery({ queryKey: ["reminders"], queryFn: api.logbook.reminders });
+  const { data: reminders } = useQuery({ queryKey: ["reminders"], queryFn: api.logbook.reminders, staleTime: RECORDS_FRESH_MS });
   const remind = useMutation({
     mutationFn: (on: boolean) => api.logbook.setReminders(on),
     onSuccess: (r) => queryClient.setQueryData(["reminders"], r),
