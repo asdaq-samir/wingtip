@@ -335,6 +335,16 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   (`SheetViewport`): Base UI 1.9 gives the viewport its touchstart,
   touchend and pointerdown as React props, and React sends a portal's
   events to its React parents, not to the viewport it sits in on the page.
+- A card's code is in hand before its tap where it can be: the Emergency
+  sheet's and an airplane's profile's chunks at idle (`EmergencyHost`,
+  `AirplaneProfileHost`), the Profile's side view once a route's plan is
+  in (`usePlanFpl`), the departure picker's calendar and time wheels as
+  one chunk on its trigger's pointer-down, hover or focus
+  (`navlog/departPickerParts`), each drawn from its module once in
+  (`lib/fromChunk`), not through `lazy`, which suspends a first draw once
+  more. What is past a card's first screen is drawn once its drawer has
+  come up (`useCardUp`, its `onOpenChangeComplete`): the Nav Log's rows
+  past its first twelve.
 - A tap's feedback is each part's own pressed state, as on iOS: the
   stock Button dims under a finger (`pointer-coarse:active:opacity-60`),
   a menu's or a list's row is highlighted, a Toggle fills. Safari's grey
