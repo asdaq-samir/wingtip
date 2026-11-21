@@ -5,7 +5,6 @@
 # Workflows whose every job writes, so the write is granted at the top:
 # merging, labelling and pushing are what they are for.
 write | auto-merge-agents.yml
-write | ci-autofix.yml
 write | update-branches.yml
 # One standing issue (issues: write and nothing else that writes).
 write | nightly-issue.yml
