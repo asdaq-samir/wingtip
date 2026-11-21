@@ -79,7 +79,11 @@ describe("checkpoint notes", () => {
     vi.mocked(api.saveCheckpointNote).mockRejectedValue(new ApiError("planner down", 502));
     const { result } = renderHook(() => usePlan(params), { wrapper });
 
-    await act(() => result.current.saveDescription(43, -89, "lost?").catch(() => {}));
+    // The failure reaches the caller (the note's field says it), not
+    // swallowed: then nothing is kept.
+    await act(async () => {
+      await expect(result.current.saveDescription(43, -89, "lost?")).rejects.toThrow("planner down");
+    });
     expect(result.current.descriptions[key]).toBeUndefined();
   });
 

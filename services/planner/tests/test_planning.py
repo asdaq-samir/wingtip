@@ -111,6 +111,7 @@ def test_single_flight_cache_lets_a_follower_retry_after_the_leaders_error():
     attempts_lock = threading.Lock()
     release_leader = threading.Event()
     leader_running = threading.Event()
+    follower_asking = threading.Event()
 
     def compute():
         with attempts_lock:
@@ -132,17 +133,20 @@ def test_single_flight_cache_lets_a_follower_retry_after_the_leaders_error():
             errors.append("leader")
 
     def follower():
-        leader_running.wait(timeout=5)
-        # Give the leader a moment to actually be registered as in-flight
-        # before this one joins it, rather than racing to become its own
-        # leader on an empty cache.
-        time.sleep(0.05)
+        # The leader is in flight by now: get_or_compute registers it
+        # before it calls compute(), which is what sets leader_running, so
+        # this one joins it rather than becoming a leader of its own.
+        assert leader_running.wait(timeout=5)
+        follower_asking.set()
         results.append(cache.get_or_compute("k", compute))
 
     t_leader = threading.Thread(target=leader)
     t_follower = threading.Thread(target=follower)
     t_leader.start()
     t_follower.start()  # waits on leader_running itself; no join needed here
+    assert follower_asking.wait(timeout=5)
+    # A moment for the follower to reach the leader's flight and wait on it
+    # (nothing outside the cache can see that), before the leader fails.
     time.sleep(0.1)
     release_leader.set()
     t_leader.join(timeout=5)

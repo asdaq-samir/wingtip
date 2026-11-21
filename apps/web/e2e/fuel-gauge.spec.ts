@@ -1,5 +1,6 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { openPanel, openRoute, settle, timelineLine } from "./helpers";
+import { pastSettling } from "./planHelpers";
 import { pickAirplane } from "./startState";
 
 /**
@@ -12,10 +13,6 @@ import { pickAirplane } from "./startState";
  * plan's Undo putting it back. The stock C172, 40 gal usable
  * (data/aircraft/c172.json).
  */
-
-// Changes within planHistory's SETTLE_MS are one step to undo, as the
-// page's own settling is: each edit here comes after it, as a pilot's do.
-const pastSettling = (page: Page) => page.waitForTimeout(1600);
 
 test.beforeEach(async ({ page }) => {
   await pickAirplane(page);

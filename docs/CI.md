@@ -148,6 +148,13 @@ script can check, and the rest are for whoever writes a test or a job.
     (`apps/web/src/lib/fixtures`), which every app's tests read rather
     than keeping their own copy of a rule's expectations; a screen has
     unit tests; browser and UI tests prove journeys only. Written policy.
+    And every test asserts: a test whose body holds no assertion and
+    calls no helper that does, or one skipped with no condition
+    (`test.skip("…")`, `@pytest.mark.skip`, `#[ignore]`, `@Disabled`,
+    `@Ignore`, `.disabled`), fails, in every suite but vitest's, whose
+    `vitest/expect-expect` and `no-focused-tests` are ESLint's; a focused
+    browser test is ESLint's and Playwright's `forbidOnly`. *Guard:*
+    `test_assertions.py`.
 14. **Least privilege.** Every workflow has a top-level `permissions:`,
     read-only but for the few that write (listed with why); every action
     outside the repository is pinned to a commit; no

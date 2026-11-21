@@ -19,11 +19,20 @@ const SAMPLES: [&str; 7] = [
 
 const XML: &str = "<XNOTAM-Update><Group><Add><Not><dateEffective>2026-11-02T14:00:00</dateEffective><TfrNot><codeType>99.7</codeType></TfrNot><aseTFRArea><valDistVerUpper>180</valDistVerUpper><uomDistVerUpper>FL</uomDistVerUpper></aseTFRArea></Not></Add></Group></XNOTAM-Update>";
 
+/// Each parser fed the text: none panics, and what the NOTAM and TFR
+/// readers write back for it is JSON a client can read (a NOTAM list an
+/// array, a TFR's detail an object), however broken the text was.
 fn every(text: &str) {
     let _ = metar::parse(text);
     let _ = taf::parse(text, NEAR);
-    let _ = notam::to_json(&notam::from_fns(text));
-    let _ = tfr::parse_detail(text).map(|d| tfr::to_json(&d));
+    let notams = notam::to_json(&notam::from_fns(text));
+    let read: serde_json::Value = serde_json::from_str(&notams).unwrap_or_else(|e| panic!("NOTAMs of {text:?} wrote {notams:?}: {e}"));
+    assert!(read.is_array(), "NOTAMs of {text:?} wrote {notams:?}, not a list");
+    if let Some(detail) = tfr::parse_detail(text) {
+        let json = tfr::to_json(&detail);
+        let read: serde_json::Value = serde_json::from_str(&json).unwrap_or_else(|e| panic!("TFR of {text:?} wrote {json:?}: {e}"));
+        assert!(read.is_object(), "TFR of {text:?} wrote {json:?}, not an object");
+    }
     let _ = xml::parse(text);
 }
 

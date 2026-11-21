@@ -226,6 +226,24 @@ async function pinchOut(target: Locator) {
   });
 }
 
+/** The canvas's picture once it has stopped changing (drawn, or done
+ *  zooming): two shots alike, rather than a fixed wait for it. */
+async function drawnStill(canvas: Locator): Promise<Buffer> {
+  let last = await canvas.screenshot();
+  await expect
+    .poll(
+      async () => {
+        const now = await canvas.screenshot();
+        const same = now.equals(last);
+        last = now;
+        return same;
+      },
+      { timeout: slow(15000), intervals: [300] },
+    )
+    .toBe(true);
+  return last;
+}
+
 test("each picture opens full screen, where a pinch zooms it and the zoom stays, and its close goes back to the card", async ({ page }) => {
   // The owner, 2026-11-14: "When I tap on an image, why doesn't it let me
   // zoom in/out?" -- the viewer's map was laid out again at each draw of the
@@ -248,11 +266,9 @@ test("each picture opens full screen, where a pinch zooms it and the zoom stays,
     await expect.poll(async () => (await viewer.boundingBox())?.width).toBe(page.viewportSize()!.width);
     const canvas = viewer.locator("canvas");
     await expect(canvas).toBeVisible({ timeout: slow(15000) });
-    await page.waitForTimeout(1500); // its picture drawn
-    const whole = await canvas.screenshot();
+    const whole = await drawnStill(canvas);
     await pinchOut(canvas);
-    await page.waitForTimeout(800);
-    const zoomed = await canvas.screenshot();
+    const zoomed = await drawnStill(canvas);
     expect(zoomed.equals(whole), `${tile} zoomed`).toBe(false);
     // A minute on, the card drawn again under it (its minute clock): still zoomed.
     await page.waitForTimeout(61_000);
