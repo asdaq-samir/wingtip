@@ -38,7 +38,9 @@ test("a VOR's link opens its card, with its full row and every band of its servi
   await head.getByTestId("card-share").click();
   const sent = await page.evaluate(() => (window as unknown as { sent: { url: string }[] }).sent);
   expect(new URL(sent[0]!.url).searchParams.get("navaid")).toBe(OBK);
-  // Its ✕ takes the link's key off.
+  // Its ✕ takes the link's key off: waited for, as the address is written
+  // after the card goes (read once, the URL was still the card's on CI's
+  // settings, 2026-11-20).
   await page.getByTestId("sheet-card-close").filter({ visible: true }).click();
-  expect(new URL(page.url()).searchParams.get("navaid")).toBeNull();
+  await expect(page).not.toHaveURL(/[?&]navaid=/);
 });

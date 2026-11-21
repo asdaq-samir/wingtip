@@ -87,7 +87,6 @@ export default function DepartPicker({
           <Button
             variant="link"
             size="inline"
-            aria-label={`${label}, ${date ? leaveWhen(date) : "now"}: change`}
             data-testid={testId}
             className={cn(
               // 44 tall round its 20 (12 over and under), so a tap just
@@ -101,6 +100,11 @@ export default function DepartPicker({
                 figure's does: no chevron after it (the owner's list,
                 2026-11-17, "Now ⌄"). "Now" says the clock's time under it
                 (the owner, 2026-11-19: "Can depart time show under now?"). */}
+            {/* Its name is what it shows, the label and "change" round it for
+                a screen reader alone, so the name holds the words in sight,
+                the clock under "Now" too (WCAG 2.5.3, Label in Name; axe's
+                label-content-name-mismatch, a11y.spec's Nav Log). */}
+            <span className="sr-only">{label}, </span>
             {date ? (
               leaveWhen(date)
             ) : (
@@ -109,6 +113,7 @@ export default function DepartPicker({
                 <NowTime />
               </span>
             )}
+            <span className="sr-only">: change</span>
           </Button>
         ) : (
           <Button

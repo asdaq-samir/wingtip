@@ -2,20 +2,19 @@ import { test, expect } from "@playwright/test";
 import { inSheet, openPanel, settle, sideDrawer, slow } from "./helpers";
 
 /**
- * An airport already on the route keeps Add Stop on its card, greyed, and
- * says why (the owner, 2026-11-11: "Add stop button not showing for airport
- * already in the plan, show it but disable it"). A field off the route can
- * be added.
+ * An airport already on the route has no Add Stop on its card: its row
+ * ends with Address instead (the owner, 2026-11-20: "If add stop is
+ * disabled, just show the address at the end instead", where 2026-11-11
+ * had it greyed). A field off the route can be added.
  */
-test("Add Stop is shown but greyed for an airport already on the route", async ({ page }) => {
+test("an airport already on the route ends its card's row with Address, not a greyed Add Stop", async ({ page }) => {
   await page.goto("/app/plan?dep=KMSN&dest=KOSH&place=KOSH");
   await settle(page);
-  const card = sideDrawer(page).getByTestId("place-card");
-  const addStop = card.getByTestId("place-add-stop");
-  await expect(addStop).toBeVisible({ timeout: 20_000 });
-  await expect(addStop).toBeDisabled();
-  await expect(addStop).toHaveAccessibleName(/already on the route/);
-  await expect(card.getByTestId("place-actions").locator("[data-testid]").filter({ visible: true })).toHaveCount(4);
+  const row = sideDrawer(page).getByTestId("place-card").getByTestId("place-actions");
+  await expect(row.getByTestId("place-address-action")).toBeVisible({ timeout: 20_000 });
+  await expect(row.getByTestId("place-add-stop")).toHaveCount(0);
+  await expect(row.locator("[data-testid]").filter({ visible: true })).toHaveCount(4);
+  await expect(row.locator("[data-testid]").last()).toHaveAttribute("data-testid", "place-address-action");
 });
 
 test("Add Stop takes a tap for an airport off the route", async ({ page }) => {

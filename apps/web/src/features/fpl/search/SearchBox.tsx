@@ -37,7 +37,8 @@ export default function SearchBox({
   return (
     <label
       className={cn(
-        "relative flex items-center gap-2 pr-0.5 pl-3.5 text-muted-foreground",
+        // A container, so its mic can step aside when it is narrow (below).
+        "@container/search relative flex items-center gap-2 pr-0.5 pl-3.5 text-muted-foreground",
         SHEET_BAR,
         // Focused, a fine ring in the tint round it, as Apple's field has.
         "focus-within:ring-1 focus-within:ring-tint",
@@ -121,7 +122,11 @@ export default function SearchBox({
             voice.press();
           }}
           testId="one-search-mic"
-          className="size-9"
+          // Off the field where it is under 180 px wide, so the words keep
+          // their room: at a large text size the row's round buttons grow
+          // with the text, and at twice the size the field was 0 wide and
+          // took no typing (card-scroll.spec's text size test, 2026-11-20).
+          className="size-9 @max-[180px]/search:hidden"
         />
       )}
     </label>
