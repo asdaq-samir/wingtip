@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { locateOnOpen, useOwnShip } from "./ownShip";
+import { M_PER_FT } from "../../geo";
+import { altitudeFtOf, locateOnOpen, useOwnShip } from "./ownShip";
 
 /**
  * Who turned own ship on: the page as the map opens (locateOnOpen), or
@@ -38,5 +39,22 @@ describe("own ship's start", () => {
   test("turned on by the pilot is the pilot's", () => {
     useOwnShip.getState().setEnabled(true);
     expect(useOwnShip.getState()).toMatchObject({ enabled: true, byPage: false });
+  });
+});
+
+describe("the fix's altitude", () => {
+  test("is a height only with its accuracy, as the W3C Geolocation API ties the two", () => {
+    expect(altitudeFtOf({ altitude: 300, altitudeAccuracy: 10 })).toBeCloseTo(300 / M_PER_FT, 9);
+    // A desktop's Wi-Fi fix: no height at all, or a 0 with no accuracy to it.
+    expect(altitudeFtOf({ altitude: null, altitudeAccuracy: null })).toBeNull();
+    expect(altitudeFtOf({ altitude: 0, altitudeAccuracy: null })).toBeNull();
+    expect(altitudeFtOf({ altitude: 0, altitudeAccuracy: 0 })).toBeNull();
+    expect(altitudeFtOf({ altitude: 0, altitudeAccuracy: -1 })).toBeNull();
+    expect(altitudeFtOf({ altitude: Number.NaN, altitudeAccuracy: 5 })).toBeNull();
+  });
+
+  test("keeps a real height of nought, and one below the ellipsoid", () => {
+    expect(altitudeFtOf({ altitude: 0, altitudeAccuracy: 8 })).toBe(0);
+    expect(altitudeFtOf({ altitude: -10, altitudeAccuracy: 8 })).toBeCloseTo(-10 / M_PER_FT, 9);
   });
 });

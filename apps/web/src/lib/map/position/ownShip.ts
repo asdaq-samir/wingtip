@@ -159,12 +159,26 @@ export function startWatching(set: (patch: Partial<OwnShip>) => void) {
   );
 }
 
+/**
+ * The fix's altitude in feet, only where the browser has one to give: the
+ * W3C Geolocation API (section 9.2) has `altitudeAccuracy` null whenever
+ * `altitude` is, so a real height comes with its accuracy, in metres, over
+ * nought. A Mac's Wi-Fi fix in Chrome gave a height of 0 that no receiver
+ * had measured, and the strip read "GPS alt 0 ft" and Fly Here's
+ * departure "@lat,lon,0" (the owner's desktop, 2026-11-21).
+ */
+export function altitudeFtOf({ altitude, altitudeAccuracy }: Pick<GeolocationCoordinates, "altitude" | "altitudeAccuracy">) {
+  if (altitude === null || !Number.isFinite(altitude)) return null;
+  if (altitudeAccuracy === null || !(altitudeAccuracy > 0)) return null;
+  return altitude / M_PER_FT;
+}
+
 /** A fix from the browser into own ship. */
 function applyFix(set: (patch: Partial<OwnShip>) => void, position: GeolocationPosition) {
   // A dry run is flying own ship: the GPS waits until it ends.
   if (useOwnShip.getState().simulated) return;
   quiet = false;
-  const { latitude, longitude, accuracy, heading, speed, altitude } = position.coords;
+  const { latitude, longitude, accuracy, heading, speed } = position.coords;
   set({
     lastFix: { lat: Math.round(latitude * 1000) / 1000, lon: Math.round(longitude * 1000) / 1000 },
     error: null,
@@ -174,7 +188,7 @@ function applyFix(set: (patch: Partial<OwnShip>) => void, position: GeolocationP
       accuracyM: accuracy,
       headingDeg: heading === null || Number.isNaN(heading) ? null : heading,
       speedKt: speed === null || Number.isNaN(speed) ? null : speed * KT_PER_M_S,
-      altitudeFt: altitude === null || Number.isNaN(altitude) ? null : altitude / M_PER_FT,
+      altitudeFt: altitudeFtOf(position.coords),
       at: position.timestamp,
     },
   });
