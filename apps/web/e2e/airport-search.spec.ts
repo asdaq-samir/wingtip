@@ -50,7 +50,7 @@ test(
     await openPanel(page);
     const destination = page.getByLabel(/^(\S+, )?Destination$/);
     await changeDestination(page);
-    const box = page.getByPlaceholder("Search for a destination");
+    const box = page.getByLabel("Search for a destination");
     await box.fill("KD");
     await expect(page.getByRole("option", { name: /KDAA/ })).toBeVisible();
 
@@ -66,7 +66,7 @@ test("once the rows answer the box, Enter takes the highlighted row", async ({ p
   await openPanel(page);
   const destination = page.getByLabel(/^(\S+, )?Destination$/);
   await changeDestination(page);
-  const box = page.getByPlaceholder("Search for a destination");
+  const box = page.getByLabel("Search for a destination");
   await box.fill("KD");
   await expect(page.getByRole("option", { name: /KDAA/ })).toBeVisible();
   await expect(page.getByRole("listbox")).not.toHaveAttribute("aria-busy", "true");
@@ -123,6 +123,6 @@ test("a stop at the route box's arrow and the route's ends are picked in the one
   await page.goto("/app/plan?dep=C81&dest=KMSP");
   await openPanel(page);
   await changeDestination(page);
-  await expect(page.getByTestId("search-airports")).toHaveAttribute("placeholder", "Search for a destination");
+  await expect(page.getByTestId("search-airports")).toHaveAccessibleName("Search for a destination");
   await expect(sideDrawer(page).getByRole("search")).toHaveCount(1);
 });

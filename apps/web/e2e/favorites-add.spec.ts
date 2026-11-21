@@ -24,7 +24,7 @@ test("the search's Favorites row has one Add, a menu of Airport and Airplane", a
   await expect(page.getByTestId("pill-favorite-add-airport")).toBeVisible();
   await expect(page.getByTestId("pill-favorite-add-airplane")).toBeVisible();
   await page.getByTestId("pill-favorite-add-airport").click();
-  await expect(page.getByTestId("search-airports")).toHaveAttribute("placeholder", "Search for an airport to keep");
+  await expect(page.getByTestId("search-airports")).toHaveAccessibleName("Search for an airport to keep");
 });
 
 // The airplanes' Adds ask the one search, as the airports' do: the traffic's
@@ -51,7 +51,7 @@ test("the Favorites' Add, Airplane, asks the one search for one, and the one pic
   await row.getByTestId("pill-favorite-add").click();
   await page.getByTestId("pill-favorite-add-airplane").click();
   const search = page.getByTestId("search-airports");
-  await expect(search).toHaveAttribute("placeholder", "Search for an airplane to keep");
+  await expect(search).toHaveAccessibleName("Search for an airplane to keep");
   await expect(search).toBeFocused();
   await search.fill("N200");
   await sideDrawer(page).getByTestId("search-airplane").filter({ hasText: "N200XY" }).click();

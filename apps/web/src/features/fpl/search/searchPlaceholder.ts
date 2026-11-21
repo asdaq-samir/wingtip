@@ -25,8 +25,12 @@ export function placeholderOf(direct: boolean, pick: SearchPick | null, picking:
 const SEARCH_WORD = "Search";
 const SEARCH_ALL = "Search airports and airplanes";
 
-/** The one search's words: `placeholder` in the field, `label` its name. */
+/** The one search's words: `placeholder` in the field, `label` its name.
+ *  The field always says the one word (the owner, 2026-11-21: "Search for a
+ *  destination" showed on a fresh load, where he asked for "Search"); what
+ *  it is asked for is its name to a screen reader, and a picker's own
+ *  title says it on the screen (OneSearchField). */
 export function searchWords(direct: boolean, pick: SearchPick | null, picking: string) {
-  const placeholder = placeholderOf(direct, pick, picking);
-  return { label: placeholder === SEARCH_WORD ? SEARCH_ALL : placeholder, placeholder };
+  const asked = placeholderOf(direct, pick, picking);
+  return { label: asked === SEARCH_WORD ? SEARCH_ALL : asked, placeholder: SEARCH_WORD };
 }

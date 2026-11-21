@@ -73,7 +73,7 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   // the favorites filter to stay when it's full").
   await expect(page.getByTestId("pill-home")).toContainText("Add");
   await page.getByTestId("pill-home").click();
-  await expect(search).toHaveAttribute("placeholder", "Search for your home airport");
+  await expect(search).toHaveAccessibleName("Search for your home airport");
   await search.fill("C81");
   await searchAirports(page).filter({ hasText: "C81" }).first().click();
   await expect(page.getByTestId("pill-home")).not.toContainText("Add");

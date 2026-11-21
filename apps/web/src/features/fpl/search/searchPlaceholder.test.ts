@@ -21,4 +21,9 @@ describe("searchWords", () => {
   it("shows the default as Search, its name saying what it finds (the owner, 2026-11-20)", () => {
     expect(searchWords(false, null, "place")).toEqual({ label: "Search airports and airplanes", placeholder: "Search" });
   });
+
+  it("keeps the one word in the field when it asks for something, the ask its name (the owner, 2026-11-21)", () => {
+    expect(searchWords(false, pick("Destination"), "place")).toEqual({ label: "Search for a destination", placeholder: "Search" });
+    expect(searchWords(true, null, "place")).toEqual({ label: "Direct to which airport?", placeholder: "Search" });
+  });
 });
