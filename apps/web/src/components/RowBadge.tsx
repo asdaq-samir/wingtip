@@ -23,10 +23,13 @@ export function RowBadge({
   children: ReactNode;
 }) {
   return (
+    // The glyph in rem as the square is (18 in 28 at a 16 px root), so the
+    // two grow together with the pilot's text size; at 18 px it stayed put
+    // while the square grew round it (the scale audit, 2026-11-21).
     <span
       aria-hidden="true"
       className={cn(
-        "grid size-7 shrink-0 place-items-center text-white [&_svg]:size-[18px]",
+        "grid size-7 shrink-0 place-items-center text-white [&_svg]:size-4.5",
         round ? "rounded-full" : "rounded-(--radius-badge)",
       )}
       style={{ backgroundColor: colour }}
