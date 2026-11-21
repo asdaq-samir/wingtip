@@ -39,8 +39,9 @@ env:
   # The site the app talks to and whose links open it (App Links); its
   # host is the build's WINGTIP_HOST (apps/android/app/build.gradle.kts).
   WINGTIP_URL: ${{ vars.WINGTIP_URL || 'https://wingtipmaps.app/app/plan' }}
-  # This workflow's own runs build the APK as well (scripts/ci/android_build.sh).
-  OWN_RUN: ${{ github.workflow == 'Native Android' }}
+  # This workflow's own runs and a wave's validation build the APK as well
+  # (scripts/ci/android_build.sh); a pull request's call does not.
+  OWN_RUN: ${{ github.workflow != 'CI' }}
   RELEASE: ${{ github.workflow == 'Native Android' && (github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main')) }}
 
 jobs:

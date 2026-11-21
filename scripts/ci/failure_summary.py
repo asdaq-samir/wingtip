@@ -30,7 +30,7 @@ import re
 import sys
 from typing import NamedTuple
 
-from ci_budget import api
+from ci_budget import api, bare
 
 # The jobs about the run itself, which fail or stop because another did.
 META = {"CI passed", "CI budget", "Stop on red"}
@@ -246,7 +246,7 @@ def block(job: dict, annotations: list[dict], base: str) -> tuple[list[str], lis
         lines += ["```", *words(first.get("message") or ""), "```"]
     else:
         lines.append(f"No annotation says what failed. The step `{step or '?'}` failed; its log has the error: {job.get('html_url')}")
-    commands, notes = reproduce(job["name"], [(a.get("title") or "", a.get("path") or "") for a in failures] + [(step, "")])
+    commands, notes = reproduce(bare(job["name"]), [(a.get("title") or "", a.get("path") or "") for a in failures] + [(step, "")])
     # The branch the guards hold a change against is the pull request's base.
     commands = [command.replace("origin/main", f"origin/{base}") for command in commands]
     if commands:
@@ -257,7 +257,8 @@ def block(job: dict, annotations: list[dict], base: str) -> tuple[list[str], lis
 def report(repo: str, run_id: str, token: str) -> list[str]:
     """Writes the summary; returns the workflow commands to print in CI."""
     run = api(f"repos/{repo}/actions/runs/{run_id}", token)
-    jobs = [j for j in api(f"repos/{repo}/actions/runs/{run_id}/jobs?per_page=100&filter=latest", token)["jobs"] if j["name"] not in META]
+    listed = api(f"repos/{repo}/actions/runs/{run_id}/jobs?per_page=100&filter=latest", token)["jobs"]
+    jobs = [j for j in listed if bare(j["name"]) not in META]
     failed = [j for j in jobs if j.get("conclusion") == "failure"]
     cancelled = sum(j.get("conclusion") == "cancelled" for j in jobs)
     base = next((pr["base"]["ref"] for pr in run.get("pull_requests") or []), "main")
