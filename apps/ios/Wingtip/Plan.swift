@@ -99,18 +99,6 @@ final class Plan {
 
     var routed: Bool { !dep.isEmpty && !dest.isEmpty }
 
-    /// What is on the page, kept for the air (Kept): after the nav log
-    /// is whole, and as the briefing, checkpoints and side view come. And
-    /// the route itself in the plan history the pilot's devices share
-    /// (PlannedRoute).
-    func keep() {
-        guard routed, course != nil, totals != nil else { return }
-        Kept(dep: dep, dest: dest, stops: stops, aircraft: aircraft, tail: tail, ownAltitudeFt: ownAltitudeFt, altitudeChoice: altitudeChoice,
-             course: course, checkpoints: checkpoints, profile: profile, altitude: altitude, legs: legs, totals: totals,
-             briefing: briefing, briefedAt: briefedAt, plannedAt: plannedAt ?? Date()).save()
-        PlanHistory.planned(routeState, at: plannedAt ?? Date())
-    }
-
     /// The last plan kept, back on the page at launch: planned again when
     /// the planner answers, kept as it was when it does not. The file
     /// holds the whole briefing, so it is read and decoded off the main
@@ -235,14 +223,6 @@ final class Plan {
         directProblem = "Not changed: no connection. Direct to \(ident ?? "the point") needs the planner; the route is as it was."
         remember()
         noteKept(plannedAt, .plan)
-    }
-
-    /// A procedure picked for a field, in place of any of its kind there;
-    /// nil takes that kind off the field. Planned again.
-    func pick(_ procedure: ProcedurePick?, kind: String, at ident: String) {
-        procedures.removeAll { $0.ident == ident && $0.kind == kind }
-        if let procedure { procedures.append(procedure) }
-        plan()
     }
 
     /// The ways to fly the route as the pilot typed it, for the route
