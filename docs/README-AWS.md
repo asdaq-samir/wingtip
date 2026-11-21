@@ -43,7 +43,7 @@ pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                    └─ everything else ──▶ the server            not cached: pages, /api, sign-in
                                             │ origin.app.example.com:443, with X-Origin-Secret
                                             ▼
-                        EC2 t3a.medium on Spot, a group of one (Amazon Linux 2023,
+                        EC2 t3a.large on Spot, a group of one (Amazon Linux 2023,
                         infra/docker-compose.prod.yml), its fixed address and data disk
                         taken over by whichever server is running
                           caddy ─▶ gateway ─▶ planner (the chart model and the engine in-process)
@@ -131,7 +131,7 @@ Prices in us-east-1, October 2026, at today's traffic:
 
 | Item | A month |
 |---|---|
-| EC2 t3a.medium on Spot, all month (on demand: $27.45) | ~$10, as Spot's price moves |
+| EC2 t3a.large on Spot, all month (on demand: about $55) | ~$19, as Spot's price moves |
 | Its public IPv4 address | $3.65 |
 | 20 GB system disk and 30 GB data disk, gp3 | $4.00 |
 | S3 tiles: a few dozen archives a cycle (cents; they were 2.2 million tile uploads, about $11), and up to three cycles stored (some 36 GB a cycle with the @2x tiles) | ~$2.50 |
@@ -142,10 +142,14 @@ Prices in us-east-1, October 2026, at today's traffic:
 | ECR, CloudWatch logs, backups, the Fargate Spot refresh (under $1 a cycle) | ~$1.50 |
 | CloudFront | $0 within the always-free 1 TB and 10 million requests |
 | SES | $0.10 per 1,000 sign-in emails |
-| **Total** | **about $27** |
+| **Total** | **about $35** |
 
 With `ServerPricing=on-demand`, for a server AWS never takes back, it
-is about $41, or about $31 with a one-year Savings Plan. The next
+is about $71, or about $45 with a one-year Savings Plan. The template's
+default is a t3a.large (8 GB) since 2026-11-21 (the owner, on the
+prelaunch audit): the services take about 3.5 GB, which a t3a.medium's
+4 GB barely holds. `InstanceType=t3a.medium` (and `SpareInstanceType=t3.medium`)
+still deploys the smaller server, at about $27. The next
 saving after Spot was the tiles' upload bill, and the archives (#535)
 took it to cents, the reader in the planner rather than the map.
 
@@ -166,7 +170,7 @@ little the second time). The planner's CPU per route and its memory
 were not measured for this; the server's services add up to about
 3.5 GB (weather 768 MB, ingest 384 MB, the gateway's JVM, the planner,
 Postgres), which a t3a.medium's 4 GB barely holds, so a t3a.large is
-the launch size.
+the launch size, and the template's default.
 
 | A month | 100 pilots | 1,000 pilots | 10,000 pilots |
 |---|---|---|---|
@@ -442,13 +446,31 @@ restore one, on the server:
 
 ```bash
 cd /srv/wingtip/repo
+infra/server/restore-deletions.sh save
 B=s3://<ServerBucketName>/backups/<date>
 aws s3 cp $B/postgres.dump - | \
   docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml \
   exec -T db pg_restore -U wingtip -d wingtip --clean --if-exists
 aws s3 cp $B/labels.tar.gz - | tar -xz -C /srv/wingtip/data
+infra/server/restore-deletions.sh apply
 docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml restart gateway planner
 ```
+
+**A deleted account stays deleted.** A dump from before a pilot deleted
+their account holds that account. The gateway notes each deletion by the
+pilot's id alone in `deleted_accounts` (V47, kept 60 days, longer than any
+backup), and `backup.sh` copies that list to `backups/deleted-accounts.csv`
+each night. `restore-deletions.sh save` keeps the live database's list (if
+it still answers) and the nightly copy before the restore; `apply` puts
+them back and moves the pilots' id sequence past them. As the gateway
+starts it deletes again every noted account the restore brought back,
+the planner's notes included (`DeletionsReapplied`), and it looks again
+each night. Restoring a snapshot of the data disk is the same: `save`
+before the new volume is attached (the nightly copy, if the old disk is
+gone), `apply` once the stack is up. Only an account deleted after the last
+night's copy, on a server whose database is lost, is not caught: the dump
+it comes back from is at most a day older than that deletion, and the pilot
+deletes it again (docs/privacy-inventory.md says so).
 
 Everything else in the data folder (the FAA's files, the chart sheets)
 is downloaded again by the planner as it is needed.

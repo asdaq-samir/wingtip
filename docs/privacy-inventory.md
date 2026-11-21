@@ -193,7 +193,8 @@ longer than it takes to answer the request.
   "Data Not Used to Track You".
 - **No analytics**: no count of what a pilot uses is kept. The month's
   count of each Claude-written feature went with those features
-  (2026-11-12, decision 0041).
+  (2026-11-12, decision 0041), and its table (`paid_feature_uses`) was
+  dropped on 2026-11-21 (V46).
 - **Purchases** are the stores' own: the app keeps only the plan's term
   and the store's id for it (above), never a card.
 - **The avatar's photo**, if the pilot chooses one in Pilot Details: a
@@ -295,8 +296,14 @@ whose every code and token ran out over a day ago is let go each night,
 with the spent refresh tokens' hashes past their 30 days, and a client
 nobody connected through goes with its consents
 (`ConnectorHousekeeping`, 03:45 UTC); a consent otherwise stays until
-the pilot deletes their account. Fault reports go after 30 days, speed
-figures after 400, sign-in links a day after they expire.
+the pilot deletes their account. Fault reports go after 30 days
+(`DiagnosticsService`, 03:15 UTC). Each night at 03:30 UTC
+(`Housekeeping`) speed figures go after 400 days, sign-in links a day
+after they expire, a reminder's record of being sent once its day has
+passed (it only stops the same reminder going twice), and a deletion's
+note after 60 days (below); before 2026-11-21 the first two went only when
+another sample or link came, and the reminders' records stayed until the
+account went (the prelaunch audit's P8).
 
 ## Kept in backups
 
@@ -306,11 +313,18 @@ overwritten or expired copies after 30 more (`ServerBucket`'s lifecycle,
 `infra/cloudformation/template.yaml`); the data disk's daily snapshots
 keep seven (`SnapshotPolicy`). So a deleted account's rows can stay in a
 backup for up to 44 days, and in a snapshot for 7, until each ages out.
-A backup is restored only to recover the service, never an account; a
-restore from before a deletion brings the account back, and nothing yet
-deletes it again by itself (the prelaunch audit's P3: the owner deletes
-it by hand after a restore, until a log of deletions does). The privacy
-policy says so ("Your copy and deleting it").
+A backup is restored only to recover the service, never an account. A
+restore from before a deletion would bring the account back, so each
+deletion is noted by the pilot's id alone, with its time
+(`deleted_accounts`, V47; no name, address or anything else), kept 60
+days, longer than any backup, and copied to the bucket each night
+(`backups/deleted-accounts.csv`). After a restore the list is put back
+(`infra/server/restore-deletions.sh`) and the gateway deletes those
+accounts again as it starts and each night, the planner's notes included
+(`DeletionsReapplied`; the prelaunch audit's P3). Only an account deleted
+in the day since the last copy, on a server whose database is itself
+lost, is not caught. The privacy policy says so ("Your copy and deleting
+it").
 
 ## Kept on the device (the web)
 
@@ -339,5 +353,9 @@ browser's storage, cleared with the site's data.
   (`useDeleteAccount`) removes every `wingtip.` key and `pilot-own`.
 
 ## Kept after an account is deleted
+
+The account's id and when it was deleted, 60 days, so a restore deletes
+it again (`deleted_accounts`, "Kept in backups" above). The id names no
+one once the account's row is gone.
 
 An endorsement an instructor signed in the app stays with the other of the two when either deletes their account, with the student's name as signed and the deleted account left out: it is the student's endorsement, and 14 CFR 61.189(b) and (c) ask the instructor to keep a record of it for 3 years (`signed_endorsements`).

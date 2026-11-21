@@ -8,11 +8,9 @@ import org.jspecify.annotations.Nullable;
 /**
  * The account's records that no screen of the app reads back whole, for
  * the pilot's export: the reminders already emailed (so none is sent
- * twice), the subscription row and each month's count of the paid
- * features used against their caps.
+ * twice) and the subscription row.
  */
-public record AccountRecordsDto(
-        List<SentReminder> remindersSent, @Nullable SubscriptionRow subscription, List<FeatureUse> featureUses) {
+public record AccountRecordsDto(List<SentReminder> remindersSent, @Nullable SubscriptionRow subscription) {
 
     /** A reminder emailed: what it was of, the day it runs out, how many days before. */
     public record SentReminder(String what, LocalDate dueOn, int daysBefore, Instant sentAt) {}
@@ -26,7 +24,4 @@ public record AccountRecordsDto(
             @Nullable String store,
             @Nullable String storeRef,
             Instant updatedAt) {}
-
-    /** A month's uses of one paid feature. */
-    public record FeatureUse(LocalDate month, String feature, int uses) {}
 }
