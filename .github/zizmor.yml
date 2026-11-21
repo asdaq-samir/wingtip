@@ -5,8 +5,9 @@ rules:
   # workflow_run is how these follow a finished CI run. Two act on main's
   # own commit or on the run's logs and never check out the pull request's
   # code. ci-autofix.yml checks out a claude/ branch of this repository,
-  # never a fork's, to run its formatters: main's script decides and
-  # pushes, and the branch's formatters get no token (docs/CI.md, "Rules").
+  # never a fork's, to run its formatters: on a job and machine of their
+  # own with no token, whose diff alone main's script applies and pushes
+  # from another (docs/CI.md, "Rules").
   dangerous-triggers:
     ignore:
       - ci-autofix.yml

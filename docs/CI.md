@@ -416,7 +416,15 @@ pushes one commit of the pull request's own files among those laid out,
 "CI's formatting only: ...", with `MERGE_TOKEN`, so CI starts again. A
 branch that has been pushed to since is left to its newer run. It edits
 nothing else, opens nothing, comments nowhere and never formats its own
-commit. Main's failures are `nightly-issue.yml`'s alone.
+commit. Main's failures are `nightly-issue.yml`'s alone. It is three
+jobs on three machines: `plan` reads GitHub; `format` runs the branch's
+own formatters, which are the branch's code, on a machine with no token
+at all and hands on only their diff; `push`, on a fresh checkout, applies
+the diff's changes to existing files of the pull request's own, commits
+them with hooks off and pushes. Until the deep security review of
+2026-11-21 the formatters ran beside `MERGE_TOKEN` in one job, where a
+branch could have read it from the calling script's `/proc` or a
+`pre-push` hook it wrote.
 
 A browser test tagged `@flight-critical` runs on main's push too, with
 the smoke set: the journey a pilot cannot be without in the air (plan, nav
