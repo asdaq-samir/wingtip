@@ -54,3 +54,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0046 | [A row is swiped away and held to move, by React Aria's own recipe and the browser's own drag](0046-row-gestures.md) | 2026-11-17 | Accepted |
 | 0047 | [FPL has one route layout: folded to read, opened to edit](0047-one-fpl-layout.md) | 2026-11-17 | Accepted |
 | 0048 | [The browser specs a change reaches gate its merge](0048-browser-specs-gate.md) | 2026-11-19 | Accepted |
+| 0054 | [A wave's heavy validation runs on GitHub, and waves are small](0054-validation-on-github.md) | 2026-11-21 | Accepted |
