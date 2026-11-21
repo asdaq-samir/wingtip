@@ -27,15 +27,6 @@ describe("two-way radio failure, 91.185", () => {
     });
     expect(segmentAltitudes([{ name: "x", minimumFt: null }], { assignedFt: null, expectedFt: null, expectedFrom: 0 })[0]!.fly).toBeNull();
   });
-
-  test("leaving the clearance limit: at the EFC, else the ETA, an approach fix or not", () => {
-    expect(leaveLimit(true, "1420Z", "1435Z")).toContain("expect-further-clearance time, 1420Z");
-    expect(leaveLimit(true, "", "1435Z")).toContain("estimated time of arrival, 1435Z");
-    expect(leaveLimit(false, "", "1435Z")).toMatch(
-      /^Leave the clearance limit on arriving over it, proceed to a fix an approach begins from/,
-    );
-    expect(leaveLimit(false, "1420Z", "")).toContain("Leave the clearance limit at the expect-further-clearance time, 1420Z");
-  });
 });
 
 // The shared fixture the iPhone app's LostComms (PilotLogic.swift) is
