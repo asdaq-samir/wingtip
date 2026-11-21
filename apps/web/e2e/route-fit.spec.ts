@@ -48,7 +48,8 @@ test("opened fresh, the map is on the pilot's position in the middle of what the
   await settle(page);
   // Opened as the one search alone on a phone (the owner's ask); a desktop's side panel put away to start from the same rest.
   await fromRest(page);
-  await expect(page.getByTestId("my-position-button")).toHaveAttribute("aria-pressed", "true");
+  // The position shown: the arrow offers to hide or follow it, not to show it (a plain button named by its tap).
+  await expect(page.getByTestId("my-position-button")).not.toHaveAccessibleName("Show my position");
   await shipInTheMiddle(page);
   await closeSidebarWithTheStockKey(page);
   await expectDrawerClosed(page);
@@ -284,7 +285,8 @@ test("an airport's card keeps its field in sight: the next position the GPS give
   await context.setGeolocation({ latitude: 42.3247, longitude: -88.0742 });
   await page.goto("/app/plan");
   await settle(page);
-  await expect(page.getByTestId("my-position-button")).toHaveAttribute("aria-pressed", "true");
+  // The position shown: the arrow offers to hide or follow it, not to show it (a plain button named by its tap).
+  await expect(page.getByTestId("my-position-button")).not.toHaveAccessibleName("Show my position");
   await shipInTheMiddle(page);
 
   // A field far from the position, from the search: the map goes to it (Madison, in the overlay tiles' box).

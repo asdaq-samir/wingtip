@@ -42,7 +42,8 @@ export default function CompassButton({ map }: { map: GlMap | null }) {
   return (
     <div data-map-food="" className={cn("flex rounded-full p-1", GLASS)}>
       <IconButton
-        label={`Compass, the map turned ${bearing}°: turn north up`}
+        // The point it shows in its name, as a voice-control user reads it off the dial (WCAG 2.5.3).
+        label={`Compass ${point}, the map turned ${bearing}°: turn north up`}
         data-testid="map-compass"
         data-bearing={bearing}
         // 44 px whatever the text size, as the map's other buttons (MAP_BUTTON).

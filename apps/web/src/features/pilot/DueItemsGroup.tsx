@@ -186,10 +186,21 @@ export default function DueItemsGroup({ aircraft }: { aircraft: Aircraft }) {
               />
             </FieldHit>
           </ListRow>
-          {problem && <ListRow muted title={<span className={FINDING_TONE.stop}>{problem}</span>} />}
+          {problem && (
+            <ListRow
+              muted
+              title={
+                <span id={`${id}-problem`} className={FINDING_TONE.stop}>
+                  {problem}
+                </span>
+              }
+            />
+          )}
           <ListRow
             title={<span className="font-medium text-tint">Save item</span>}
             disabled={!!problem || save.isPending}
+            // Why it cannot be saved yet, read with the button (WCAG 3.3.1).
+            aria-describedby={problem ? `${id}-problem` : undefined}
             data-testid="due-item-save"
             onClick={() =>
               save.mutate({

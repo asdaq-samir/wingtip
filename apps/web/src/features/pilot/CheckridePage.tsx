@@ -91,7 +91,8 @@ function KnowledgeTest({ codes, onSave, saving }: { codes: string[]; onSave: (co
           data-testid="acs-codes-input"
         />
         <div className="flex items-center justify-between gap-2">
-          <span className={cn("text-muted-foreground", TEXT.note)}>
+          {/* Counted again as the codes are typed, and said so (WCAG 4.1.3). */}
+          <span role="status" className={cn("text-muted-foreground", TEXT.note)}>
             {typed.length ? `${typed.length} code${typed.length === 1 ? "" : "s"} found` : ""}
           </span>
           <span className="flex gap-2">
@@ -197,7 +198,8 @@ function Instructors({ training }: { training: Training }) {
               disabled={drop.isPending}
               onClick={() => drop.mutate(l.id)}
             >
-              Remove
+              {/* Whose, for a reader's list of buttons (WCAG 2.4.6), after the word seen (2.5.3). */}
+              Remove<span className="sr-only"> {l.name ?? l.email}</span>
             </Button>
           </ListRow>
         ))}
@@ -233,7 +235,7 @@ function Instructors({ training }: { training: Training }) {
             >
               {!r.answeredAt && (
                 <Button type="button" variant="ghost" size="sm" disabled={withdraw.isPending} onClick={() => withdraw.mutate(r.id)}>
-                  Take back
+                  Take back<span className="sr-only"> {reviewRoute(r)}</span>
                 </Button>
               )}
             </ListRow>
