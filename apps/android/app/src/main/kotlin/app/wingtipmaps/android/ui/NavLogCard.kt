@@ -165,9 +165,9 @@ private fun TotalsRows(totals: NavLogTotals, airplane: AirplaneNow) {
         Figure(stringResource(R.string.figure_dist), Format.distance(totals.distanceNm), said = stringResource(R.string.leg_distance) + ", " + Spoken.distance(totals.distanceNm))
         // Time and fuel only with an airplane: the planner sends none
         // without one, and none is guessed (decision 0011).
-        totals.eteMin?.let { Figure(stringResource(R.string.figure_ete), Format.duration(it), said = stringResource(R.string.leg_time) + ", " + Spoken.duration(it)) }
+        totals.eteMin?.let { Figure(stringResource(R.string.figure_ete), Format.duration(it), said = stringResource(R.string.wording_time_en_route) + ", " + Spoken.duration(it)) }
         totals.fuelGal?.let { Figure(stringResource(R.string.figure_fuel), Format.fuel(it), warn = warn, said = stringResource(R.string.leg_fuel) + ", " + Spoken.fuel(it)) }
-        totals.fuelRequiredGal?.let { Figure(stringResource(R.string.figure_required), Format.fuel(it), warn = warn, said = stringResource(R.string.said_fuel_required) + ", " + Spoken.fuel(it)) }
+        totals.fuelRequiredGal?.let { Figure(stringResource(R.string.figure_required), Format.fuel(it), warn = warn, said = stringResource(R.string.wording_fuel_required) + ", " + Spoken.fuel(it)) }
     }
     if (warn) {
         val line = if (shortOn.isEmpty()) stringResource(R.string.under_reserve) else stringResource(R.string.under_reserve_on, shortOn.joinToString(", "))

@@ -84,7 +84,7 @@ fun HandbookPhotoSheet(type: String, onClose: () -> Unit, model: HandbookPhotoMo
 /** Performance or Weight & Balance: what the page is, for the reader. */
 @Composable
 private fun PageKindRow(page: Documents.Kind, onPick: (Documents.Kind) -> Unit) {
-    val kinds = listOf(Documents.Kind.PERFORMANCE to R.string.photo_performance, Documents.Kind.WEIGHT_BALANCE to R.string.photo_weight_balance)
+    val kinds = listOf(Documents.Kind.PERFORMANCE to R.string.photo_performance, Documents.Kind.WEIGHT_BALANCE to R.string.wording_weight_and_balance)
     ChoiceGroup(kinds.map { (kind, words) -> kind to stringResource(words) }, selected = page, onPick = onPick)
 }
 

@@ -111,7 +111,7 @@ class SearchModel @Inject constructor() : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                InAir.Failed(Problems.say("Couldn't check whether it's in the air", e))
+                InAir.Failed(Problems.say("Whether it is in the air could not be checked", e))
             }
             _state.update { s -> s.copy(airplanes = s.airplanes.map { if (it is AirplaneHit.Registered) it.copy(inAir = inAir) else it }) }
         }

@@ -158,7 +158,7 @@ private fun KeptRow(
         }
         kept.failed?.let {
             ProblemLine(stringResource(R.string.offline_stopped, it))
-            TextButton(onClick = onRetry) { Text(stringResource(R.string.offline_try_again)) }
+            TextButton(onClick = onRetry) { Text(stringResource(R.string.wording_try_again)) }
         }
         if (updatable && newest != null) TextButton(onClick = onUpdate) { Text(stringResource(R.string.offline_update_to, newest)) }
         TextButton(onClick = onDelete) { Text(stringResource(R.string.offline_delete)) }

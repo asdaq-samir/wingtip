@@ -185,7 +185,7 @@ fun InstrumentsBar(state: InFlight.State, onNearest: () -> Unit) {
                     Text(stringResource(R.string.emergency), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
                 }
                 Text(
-                    "Planning aid · not for navigation",
+                    stringResource(R.string.wording_planning_aid_notice_title),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f),

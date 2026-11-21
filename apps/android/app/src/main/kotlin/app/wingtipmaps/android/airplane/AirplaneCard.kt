@@ -118,7 +118,7 @@ fun AirplaneCard(at: ProfileOpen.At, plan: Plan, exit: CardExit, onFlown: () -> 
                 ExtendedFloatingActionButton(
                     onClick = fly,
                     icon = { Icon(WingtipIcons.airplane, contentDescription = null) },
-                    text = { Text(stringResource(R.string.fly_this_airplane)) },
+                    text = { Text(stringResource(R.string.wording_fly_this_airplane)) },
                 )
             }
         },
@@ -178,7 +178,7 @@ private fun AirplaneButtons(tail: String, looked: AirplaneLookup.State, canFly: 
     val starred = hex != null && favorites.any { it.hex == hex }
     val following = hex != null && watches.any { it.hex == hex }
     val items = buildList {
-        if (canFly) add(GroupAction(stringResource(R.string.fly_this_airplane), WingtipIcons.airplane, filled = true, onClick = fly))
+        if (canFly) add(GroupAction(stringResource(R.string.wording_fly_this_airplane), WingtipIcons.airplane, filled = true, onClick = fly))
         add(
             GroupAction(stringResource(if (following) R.string.airplane_unfollow else R.string.airplane_follow), null, enabled = hex != null, checked = following) {
                 if (hex != null) WatchKind.entries.forEach { kind -> if (tracking.watching(hex, kind) == following) tracking.toggleWatch(hex, tail, kind) }

@@ -95,7 +95,7 @@ fun LazyListScope.notamsSection(notams: CardNotams, pad: Modifier) {
     }
     if (notams.ranked?.unchecked.orEmpty().isNotEmpty()) {
         item(key = "notams-unchecked") {
-            Text(stringResource(R.string.notams_tfrs_unread), color = LocalInk.current.cautionInk, style = MaterialTheme.typography.bodyMedium, modifier = pad.padding(vertical = WingtipSpace.Sm))
+            Text(stringResource(R.string.wording_tfr_list_not_read), color = LocalInk.current.cautionInk, style = MaterialTheme.typography.bodyMedium, modifier = pad.padding(vertical = WingtipSpace.Sm))
         }
     }
 }

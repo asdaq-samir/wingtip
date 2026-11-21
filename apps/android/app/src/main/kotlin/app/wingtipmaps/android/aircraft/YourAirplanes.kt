@@ -63,8 +63,8 @@ fun YourAirplanesPage(exit: CardExit, model: AircraftModel = hiltViewModel()) {
     val editing = state.editing
     val title = when {
         editing == null -> stringResource(R.string.your_airplanes)
-        editing.id == null -> stringResource(R.string.add_airplane)
-        else -> stringResource(R.string.edit_airplane)
+        editing.id == null -> stringResource(R.string.wording_new_airplane)
+        else -> stringResource(R.string.wording_edit_airplane)
     }
     // The form is a level of its own: Back comes back to the list first,
     // asking before it throws away a change not saved.
@@ -99,7 +99,7 @@ private fun AirplaneList(state: AircraftModel.State, model: AircraftModel) {
         else -> {
             if (state.airplanes.isEmpty() && state.problem == null) Line(stringResource(R.string.your_airplanes_none))
             state.airplanes.forEach { a -> AirplaneRow(a) { model.startEditing(a) } }
-            Button(onClick = model::startAdding, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.add_airplane)) }
+            Button(onClick = model::startAdding, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.wording_add_airplane)) }
         }
     }
 }
@@ -127,7 +127,7 @@ private fun AirplaneEditor(editing: AircraftModel.Editing, problem: String?, mod
             enabled = !editing.saving,
             colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
             modifier = Modifier.fillMaxWidth(),
-        ) { Text(stringResource(R.string.delete_airplane)) }
+        ) { Text(stringResource(R.string.wording_delete_airplane)) }
     }
     if (editing.confirmingDelete) {
         AlertDialog(

@@ -29,18 +29,18 @@ enum class FigureKey(
 ) {
     CRUISE("cruise_tas_kt", true, true, "cruiseTasKt", R.string.own_cruise, R.string.ask_cruise, "kt"),
     BURN("fuel_burn_gph", true, true, "fuelBurnGph", R.string.own_burn, R.string.ask_burn, "gph"),
-    POWER("cruise_power_pct", true, true, "cruisePowerPct", R.string.own_power, R.string.ask_power, "%"),
-    USABLE("usable_fuel_gal", true, true, "usableFuelGal", R.string.own_usable, R.string.ask_usable, "gal"),
+    POWER("cruise_power_pct", true, true, "cruisePowerPct", R.string.wording_cruise_power, R.string.ask_power, "%"),
+    USABLE("usable_fuel_gal", true, true, "usableFuelGal", R.string.wording_usable_fuel, R.string.ask_usable, "gal"),
     CLIMB_TAS("climb_tas_kt", true, true, null, R.string.own_climb_tas, R.string.ask_climb_tas, "kt"),
     CLIMB_BURN("climb_fuel_burn_gph", true, true, null, R.string.own_climb_burn, R.string.ask_climb_burn, "gph"),
     DESCENT_IAS("descent_ias_kt", true, true, null, R.string.own_descent_ias, R.string.ask_descent_ias, "kt"),
     DESCENT_BURN("descent_fuel_burn_gph", true, true, null, R.string.own_descent_burn, R.string.ask_descent_burn, "gph"),
-    CLIMB_RATE("climb_rate_fpm", false, true, null, R.string.own_climb_rate, R.string.ask_climb_rate, "fpm"),
-    CEILING("service_ceiling_ft", false, true, null, R.string.own_ceiling, R.string.ask_ceiling, "ft"),
-    TAXI("taxi_fuel_gal", false, true, null, R.string.own_taxi, R.string.ask_taxi, "gal"),
-    GLIDE("glide_ratio", false, true, null, R.string.own_glide, R.string.ask_glide, "to 1"),
-    EMPTY_WEIGHT("empty_weight_lb", false, false, null, R.string.own_empty_weight, R.string.ask_empty_weight, "lb"),
-    EMPTY_MOMENT("empty_moment_lb_in", false, false, null, R.string.own_empty_moment, R.string.ask_empty_moment, "lb-in"),
+    CLIMB_RATE("climb_rate_fpm", false, true, null, R.string.wording_climb_rate_at_sea_level, R.string.ask_climb_rate, "fpm"),
+    CEILING("service_ceiling_ft", false, true, null, R.string.wording_service_ceiling, R.string.ask_ceiling, "ft"),
+    TAXI("taxi_fuel_gal", false, true, null, R.string.wording_start_and_taxi_fuel, R.string.ask_taxi, "gal"),
+    GLIDE("glide_ratio", false, true, null, R.string.wording_glide_ratio, R.string.ask_glide, "to 1"),
+    EMPTY_WEIGHT("empty_weight_lb", false, false, null, R.string.wording_empty_weight, R.string.ask_empty_weight, "lb"),
+    EMPTY_MOMENT("empty_moment_lb_in", false, false, null, R.string.wording_empty_moment, R.string.ask_empty_moment, "lb-in"),
     ;
 
     /** "112 kt", "8.5 gph", "65%", "9 to 1": whole where whole, else to a tenth. */

@@ -191,7 +191,7 @@ private fun RouteFields(plan: Plan, state: Plan.State, dryRun: DryRun) {
                 enabled = dep.isNotBlank() && dest.isNotBlank() && !state.planning,
             ) { Text(stringResource(R.string.plan)) }
             // The plan flown on paper over the map, once the nav log is in.
-            if (state.totals != null && !state.planning) TextButton(onClick = { dryRun.start(state) }) { Text(stringResource(R.string.dry_run)) }
+            if (state.totals != null && !state.planning) TextButton(onClick = { dryRun.start(state) }) { Text(stringResource(R.string.wording_dry_run)) }
             if (state.planning) Loading(Modifier.size(WingtipSpace.Xl))
             state.stage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }

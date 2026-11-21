@@ -94,9 +94,9 @@ fun WingtipSheet(
 fun DiscardDialog(onDiscard: () -> Unit, onKeep: () -> Unit) {
     AlertDialog(
         onDismissRequest = onKeep,
-        title = { Text(stringResource(R.string.discard_title)) },
+        title = { Text(stringResource(R.string.wording_discard_changes_question)) },
         text = { Text(stringResource(R.string.discard_line)) },
-        confirmButton = { TextButton(onClick = onDiscard) { Text(stringResource(R.string.discard)) } },
+        confirmButton = { TextButton(onClick = onDiscard) { Text(stringResource(R.string.wording_discard)) } },
         dismissButton = { TextButton(onClick = onKeep) { Text(stringResource(R.string.keep_editing)) } },
     )
 }

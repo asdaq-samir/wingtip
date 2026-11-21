@@ -11,11 +11,9 @@
     <string name="route_options">Route Options</string>
     <string name="route_options_none">No other way to fly this route was found.</string>
     <string name="route_options_use">Use</string>
-    <string name="share_link">Share Link</string>
     <string name="nav_log_text">Nav Log as Text</string>
-    <string name="nav_log_print">Print the Nav Log</string>
     <string name="pick_closed">Closed</string>
-    <string name="pick_on_route">On the route already</string>
+    <string name="pick_on_route">Already on the route</string>
     <string name="leaves_at">Leaves %1$s</string>
     <string name="leaves_title">Leaves Again</string>
 </resources>

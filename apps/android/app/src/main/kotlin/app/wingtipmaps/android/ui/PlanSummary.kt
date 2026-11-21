@@ -81,7 +81,7 @@ fun RouteStops(
             shapes = ListItemDefaults.segmentedShapes(index = state.stops.size + 1, count = count),
             leadingContent = { TimelineMark(thread) { Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary) } },
             modifier = Modifier.fillMaxWidth().timelineThread(thread, first = false, last = false, dot = null, gap = gap),
-            content = { Text(stringResource(R.string.add_a_stop), color = if (state.routed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
+            content = { Text(stringResource(R.string.wording_add_stop), color = if (state.routed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
         )
         val arrive = state.stops.size + 2
         StopRow(plan, point(state.stops.size), course?.destination?.name, R.string.route_arrive, R.string.where_to, arrive, count, onField, onFind, onAddStopAfter, last = true)

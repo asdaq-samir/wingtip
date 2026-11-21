@@ -148,7 +148,7 @@ fun ClearancePage(plan: Plan, fix: OwnShip.Fix?, exit: CardExit, onEntered: () -
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                     if (radio != null) {
                         OutlinedButton(onClick = { withMic(model::readBackAgain) }, modifier = Modifier.weight(1f)) {
-                            Text(stringResource(R.string.clearance_read_back_again))
+                            Text(stringResource(R.string.wording_read_back_again))
                         }
                     }
                     Button(
@@ -158,7 +158,7 @@ fun ClearancePage(plan: Plan, fix: OwnShip.Fix?, exit: CardExit, onEntered: () -
                         },
                         enabled = state.ready,
                         modifier = Modifier.weight(1f),
-                    ) { Text(stringResource(R.string.clearance_enter)) }
+                    ) { Text(stringResource(R.string.wording_enter_route)) }
                 }
             }
             Steps(state.steps)
@@ -269,7 +269,7 @@ private fun ReadbackLines(state: ClearanceModel.State, c: Clearance, listening: 
             Text("“${state.readback}”", style = MaterialTheme.typography.titleLargeEmphasized)
             val check = state.check
             if (check == null) {
-                Text(stringResource(R.string.clearance_readback_unchecked), color = muted)
+                Text(stringResource(R.string.wording_read_back_not_checked), color = muted)
             } else {
                 ClearanceWords.readbackLines(c, check).forEach { Mark(it.ok, it.words) }
             }

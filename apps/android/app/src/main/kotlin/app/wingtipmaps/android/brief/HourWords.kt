@@ -29,7 +29,7 @@ object HourWords {
     fun word(verdict: String): String = when (verdict) {
         "go" -> "Go"
         "caution" -> "Caution"
-        "no-go" -> "No-go"
+        "no-go" -> "No-Go"
         else -> "Not known"
     }
 

@@ -48,7 +48,7 @@ fun ExportRow(model: ExportModel = hiltViewModel()) {
     // A segmented row of its own, as the settings' other groups; its
     // spinner at the end while the file is fetched.
     ActionSettingRow(
-        stringResource(R.string.export_my_data), index = 0, count = 1,
+        stringResource(R.string.wording_export_my_data), index = 0, count = 1,
         supporting = stringResource(if (state.saved) R.string.export_saved else R.string.export_my_data_line),
         trailing = if (state.fetching) {
             { Loading(Modifier.size(WingtipSpace.Xl)) }
@@ -78,11 +78,11 @@ fun DeleteAccountButton(session: Session) {
         colors = ButtonDefaults.outlinedButtonColors(contentColor = error),
         // Material's outlined border width, in the error colour.
         border = BorderStroke(1.dp, error),
-    ) { Text(stringResource(R.string.delete_account)) }
+    ) { Text(stringResource(R.string.wording_delete_account)) }
     if (asking) {
         AlertDialog(
             onDismissRequest = { asking = false },
-            title = { Text(stringResource(R.string.delete_account_title)) },
+            title = { Text(stringResource(R.string.wording_delete_account_question)) },
             text = { Text(stringResource(R.string.delete_account_text)) },
             confirmButton = {
                 TextButton(
@@ -91,7 +91,7 @@ fun DeleteAccountButton(session: Session) {
                         session.deleteAccount(context)
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = error),
-                ) { Text(stringResource(R.string.delete_account)) }
+                ) { Text(stringResource(R.string.wording_delete_account)) }
             },
             dismissButton = { TextButton(onClick = { asking = false }) { Text(stringResource(R.string.cancel)) } },
         )
