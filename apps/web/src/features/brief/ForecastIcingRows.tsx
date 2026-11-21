@@ -2,11 +2,11 @@ import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import FindingIcon from "../../components/FindingIcon";
 import { TEXT } from "../../lib/text";
-import { feetRange } from "../../lib/format";
+import { clockAndZulu, feetRange } from "../../lib/format";
 import type { Leg } from "../../lib/api/types";
 import type { FlightBriefing } from "./useFlightBriefing";
 import { severityWord } from "./useIcingForecast";
-import { altFt, clockTime } from "../plan";
+import { altFt } from "../plan";
 import { Pending } from "./BriefingBits";
 
 /**
@@ -35,7 +35,7 @@ export default function ForecastIcingRows({ vm, legs }: { vm: FlightBriefing; le
     <ListGroup
       title="Forecast Icing"
       // The source and its issue, a credit.
-      footer={`AWC CIP and FIP, issued ${clockTime(new Date(found.issued))}`}
+      footer={`AWC CIP and FIP, issued ${clockAndZulu(new Date(found.issued))}`}
       className="pt-2"
     >
       {found.legs.map((leg) => {

@@ -187,7 +187,7 @@ export function NavLogList({
           data-testid="navlog-list-heads"
         >
           {/* The clock's zone, once over the column (the FPL audit's A19). */}
-          {airplane && <span className="col-start-3">ETA {zoneName()}</span>}
+          {airplane && <span className="col-start-3">ETA {zoneName(new Date(from))}</span>}
           {airplane && <span className="col-start-3">GS kt</span>}
         </div>
         <div role="rowgroup">

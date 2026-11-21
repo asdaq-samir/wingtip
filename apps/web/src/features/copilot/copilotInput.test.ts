@@ -109,4 +109,17 @@ describe("the engine's question from the app's state", () => {
     expect(nightCurrent({ nightPassengersUntil: "2026-11-08" } as never, at)).toBe(false);
     expect(nightCurrent({ nightPassengersUntil: null } as never, at)).toBe(false);
   });
+
+  test("night passenger currency on the evening of its last day, by the pilot's own day", () => {
+    const was = process.env.TZ;
+    process.env.TZ = "America/Chicago";
+    try {
+      // 19:30 CST on the 21st is 01:30 UTC on the 22nd: still the 21st for the pilot.
+      const evening = Date.UTC(2026, 10, 22, 1, 30) / 1000;
+      expect(nightCurrent({ nightPassengersUntil: "2026-11-21" } as never, evening)).toBe(true);
+    } finally {
+      if (was === undefined) delete process.env.TZ;
+      else process.env.TZ = was;
+    }
+  });
 });

@@ -59,7 +59,7 @@ test("a SIGMET says its legs and times, and a tap shows the legs on the map", as
   await openTab(page, "Weather");
   await openSection(page, "Adverse Conditions");
   const row = sideDrawer(page).getByTestId("on-route").first();
-  await expect(row).toHaveText(/^Legs 1–2 · \d\d:\d\d–\d\d:\d\d, valid till \d\d:\d\d$/, { timeout: slow(90000) });
+  await expect(row).toHaveText(/^Legs 1–2 · \d\d:\d\d–\d\d:\d\d, valid till \d\d:\d\d [A-Z+0-9:-]+ \(\d{4}Z\)$/, { timeout: slow(90000) });
 
   // The legs in the orange band on the map's canvas (LegHighlightGl's probe).
   const highlighted = async () => (await drawn(page, "leg-highlight")).length;

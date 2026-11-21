@@ -3,7 +3,7 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 import { data, planner } from "../../lib/api/client";
 import type { components } from "../../lib/api/schema";
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
-import { twoFigures, zuluTime } from "../../lib/format";
+import { instantOf, twoFigures, zuluTime } from "../../lib/format";
 
 export type FieldNotams = components["schemas"]["NotamsRanked"];
 export type FieldNotam = FieldNotams["notams"][number];
@@ -132,8 +132,8 @@ export function numberOf(n: FieldNotam, ident: string): string {
 /** A feed's time as a date, one with no zone read as UTC; null where it
  *  is none. */
 export function dateOf(iso: string | null | undefined): Date | null {
-  const at = iso ? new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`) : null;
-  return at && !Number.isNaN(at.getTime()) ? at : null;
+  const at = instantOf(iso);
+  return at === null ? null : new Date(at);
 }
 
 /** The feed's times, or where it gave none the NOTAM's own (its

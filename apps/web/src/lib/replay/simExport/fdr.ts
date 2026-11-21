@@ -1,4 +1,5 @@
 import { twoFigures } from "../../format";
+import { HPA_PER_INHG } from "../../geo";
 import { altitudeWords, ESTIMATED_WORDS, type SimMeta, type SimSegment } from "./flight";
 
 /*
@@ -91,7 +92,7 @@ export function writeFdr(segment: SimSegment, meta: SimMeta): string {
     `DATE, ${mdy(first.t)}`,
     // X-Plane's sea-level pressure, inHg: the airplane's own altimeter
     // setting, so the altimeter in the replay reads as the crew's did.
-    ...(segment.setting_hpa !== null ? [`PRES, ${(segment.setting_hpa / 33.86389).toFixed(2)}`] : []),
+    ...(segment.setting_hpa !== null ? [`PRES, ${(segment.setting_hpa / HPA_PER_INHG).toFixed(2)}`] : []),
     "",
     ...DREFS.map(([path]) => `DREF, ${path}\t1.0`),
     "",

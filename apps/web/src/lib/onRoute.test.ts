@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { OnRoute } from "./api/types";
-import { clockTime } from "./format";
+import { clockAndZulu, clockTime } from "./format";
 import { legLines, legWords, onRouteLine } from "./onRoute";
 
 const on = (over: Partial<OnRoute>): OnRoute => ({
@@ -17,6 +17,8 @@ const on = (over: Partial<OnRoute>): OnRoute => ({
   ...over,
 });
 const t = (iso: string) => clockTime(new Date(iso));
+// The hazard's own times say their zone and UTC beside them.
+const z = (iso: string) => clockAndZulu(new Date(iso));
 
 describe("legWords", () => {
   it("says the legs as the nav log numbers them, runs together", () => {
@@ -30,15 +32,15 @@ describe("legWords", () => {
 describe("onRouteLine", () => {
   it("is the legs, the airplane's time there and until when the hazard is valid", () => {
     expect(onRouteLine(on({}))).toBe(
-      `Legs 2–3 · ${t("2026-10-04T14:20:00Z")}–${t("2026-10-04T14:45:00Z")}, valid till ${t("2026-10-04T15:00:00Z")}`,
+      `Legs 2–3 · ${t("2026-10-04T14:20:00Z")}–${t("2026-10-04T14:45:00Z")}, valid till ${z("2026-10-04T15:00:00Z")}`,
     );
   });
 
   it("says when the airplane is there before the hazard starts or after it ends", () => {
     expect(onRouteLine(on({ when: "before", valid_from: "2026-10-04T16:00:00Z" }))).toContain(
-      `before it starts at ${t("2026-10-04T16:00:00Z")}`,
+      `before it starts at ${z("2026-10-04T16:00:00Z")}`,
     );
-    expect(onRouteLine(on({ when: "after" }))).toContain(`after it ends at ${t("2026-10-04T15:00:00Z")}`);
+    expect(onRouteLine(on({ when: "after" }))).toContain(`after it ends at ${z("2026-10-04T15:00:00Z")}`);
   });
 
   it("gives a point's one time, and a pilot report's when it was made", () => {
@@ -52,7 +54,7 @@ describe("onRouteLine", () => {
       valid_to: null,
       issued: "2026-10-04T13:40:00Z",
     });
-    expect(onRouteLine(pirep)).toBe(`Leg 1 · ${t("2026-10-04T14:10:00Z")}, reported ${t("2026-10-04T13:40:00Z")}`);
+    expect(onRouteLine(pirep)).toBe(`Leg 1 · ${t("2026-10-04T14:10:00Z")}, reported ${z("2026-10-04T13:40:00Z")}`);
   });
 
   it("does not give a G-AIRMET's snapshot window as if it were the product's", () => {

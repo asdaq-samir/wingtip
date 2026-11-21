@@ -1,4 +1,5 @@
 import { callEngine } from "../../engine/engine";
+import { HPA_PER_INHG } from "../../geo";
 import type { SimGround, SimRow, SimSample, SimSegment, SimSetting } from "../../engine/contract";
 
 export type { SimRow, SimSegment };
@@ -83,7 +84,7 @@ export function isoTime(t: number): string {
 /** What the files say of the altitude (the engine's sim_flight note). */
 export function altitudeWords(segment: Pick<SimSegment, "msl" | "setting_hpa">): string {
   if (segment.setting_hpa !== null)
-    return `Altitude: feet above mean sea level, the transponder's pressure altitude set on the airplane's own altimeter setting (${segment.setting_hpa.toFixed(1)} hPa, ${(segment.setting_hpa / 33.86389).toFixed(2)} inHg).`;
+    return `Altitude: feet above mean sea level, the transponder's pressure altitude set on the airplane's own altimeter setting (${segment.setting_hpa.toFixed(1)} hPa, ${(segment.setting_hpa / HPA_PER_INHG).toFixed(2)} inHg).`;
   if (segment.msl) return "Altitude: feet above mean sea level, as recorded.";
   return "Altitude: pressure altitude (29.92 inHg), not corrected to sea level: the airplane sent no altimeter setting. On a day off standard it reads about 1,000 ft for each inch of mercury from 29.92.";
 }

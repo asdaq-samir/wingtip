@@ -7,7 +7,7 @@ import { USE_WORDS } from "../../lib/airportIndex";
 import type { NearestAirport } from "../../lib/api/types";
 import { chipFillOf } from "../../lib/map/marks/flightCategory";
 import { visibilityWords } from "../../lib/map/marks/airportWeather";
-import { clockTime } from "../../lib/format";
+import { clockAndZulu } from "../../lib/format";
 import { TEXT } from "../../lib/text";
 import { NO_CONNECTION } from "../../lib/problems";
 import { nmAway } from "../../lib/useAway";
@@ -53,7 +53,7 @@ function ResultRow({ field, onOpen }: { field: NearestAirport; onOpen: () => voi
     field.visibility_sm != null ? visibilityWords(field.visibility_sm) : null,
   ].filter(Boolean);
   const forecast = field.forecast?.category ?? null;
-  const forecastAt = field.forecast ? clockTime(new Date(field.forecast.at * 1000)) : null;
+  const forecastAt = field.forecast ? clockAndZulu(new Date(field.forecast.at * 1000)) : null;
   return (
     <Button
       variant="plain"

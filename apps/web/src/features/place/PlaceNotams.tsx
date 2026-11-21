@@ -8,6 +8,7 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import { NotamAsSent } from "../../components/NotamAsSent";
 import { TEXT } from "../../lib/text";
 import { useMinuteClock } from "../../lib/useMinuteClock";
+import { instantOf } from "../../lib/format";
 import {
   headingOf,
   readNotam,
@@ -180,9 +181,10 @@ function NotamWhat({ what }: { what: string }) {
  *  otherwise. In force unless the planner says it is not (in_force false). */
 function NotamState({ n }: { n: FieldNotam }) {
   const active = n.in_force !== false;
-  const starts = n.starts ? Date.parse(n.starts) : NaN;
+  // Read as fieldNotams' dateOf reads it: no zone is UTC, not local.
+  const starts = instantOf(n.starts);
   const now = useMinuteClock();
-  const later = !active && !Number.isNaN(starts) && starts > now;
+  const later = !active && starts !== null && starts > now;
   return (
     <StatusBadge variant={active ? "active" : later ? "later" : "cold"} className="w-fit shrink-0" data-testid="place-notam-state">
       {active || later ? undefined : "Inactive"}
