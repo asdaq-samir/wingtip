@@ -61,5 +61,6 @@ fn the_tafs_along_a_leg_across_the_antimeridian_are_its_own() {
     let answer = ask("tafs_along_route", &case["input"]);
     let idents: Vec<&Value> = answer["stations"].as_array().unwrap().iter().map(|s| &s["icaoId"]).collect();
     assert_eq!(json!(idents), case["stations"], "{}", case["why"]);
-    assert_eq!(answer["min_ceiling_ft"], case["min_ceiling_ft"], "{}", case["why"]);
+    // By value: the answer writes its feet as a float (800.0), the fixture as written (800).
+    assert_eq!(answer["min_ceiling_ft"].as_f64(), case["min_ceiling_ft"].as_f64(), "{}", case["why"]);
 }

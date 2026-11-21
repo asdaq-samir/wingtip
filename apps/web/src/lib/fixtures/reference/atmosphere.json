@@ -750,11 +750,11 @@
         {
           "path": "",
           "value": -0.9,
-          "tolerance": 0.05
+          "tolerance": 0.051
         }
       ],
       "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 8,000 ft",
-      "method": "The table gives tenths of a degree: within 0.05 °C."
+      "method": "The table gives tenths of a degree, and 8,000 ft's standard temperature is -0.85 °C (6.5 °C a kilometre, 2.4384 km), which the table rounds half away from zero to -0.9: within 0.05 °C of the table, and the 0.0004 the engine's 0.0019812 °C a foot leaves on the half."
     },
     {
       "name": "Standard temperature at 9,000 ft: -2.8 °C",

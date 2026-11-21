@@ -151,7 +151,7 @@ pub fn hard_surface(code: &str) -> bool {
 /// The one statement for the glide's and the diversion's runway and the
 /// runway picked into the wind.
 pub fn water_surface(code: &str) -> bool {
-    let first = code.split(['-', '/', ' ']).next().unwrap_or("").trim().to_ascii_uppercase();
+    let first = code.trim().split(['-', '/', ' ']).next().unwrap_or("").to_ascii_uppercase();
     matches!(first.as_str(), "WATER" | "WAT" | "W")
 }
 

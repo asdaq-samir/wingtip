@@ -157,18 +157,20 @@ fn a_field_the_services_own_is_military_or_joint() {
 
 #[test]
 fn a_fields_kind_of_site_in_words_none_for_an_airport() {
-    // NASR APT_BASE SITE_TYPE_CODE.
-    for (code, want) in [
-        (json!("A"), Value::Null),
-        (json!("B"), json!("Balloonport")),
-        (json!("C"), json!("Seaplane base")),
-        (json!("G"), json!("Gliderport")),
-        (json!(" h "), json!("Heliport")),
-        (json!("U"), json!("Ultralight")),
-        (json!("X"), Value::Null),
-        (Value::Null, Value::Null),
+    // NASR APT_BASE SITE_TYPE_CODE, and whether an airplane on wheels
+    // lands there (A airport, G gliderport, U ultralight; a field with no
+    // code is taken as an airport).
+    for (code, want, airplane) in [
+        (json!("A"), Value::Null, true),
+        (json!("B"), json!("Balloonport"), false),
+        (json!("C"), json!("Seaplane base"), false),
+        (json!("G"), json!("Gliderport"), true),
+        (json!(" h "), json!("Heliport"), false),
+        (json!("U"), json!("Ultralight"), true),
+        (json!("X"), Value::Null, false),
+        (Value::Null, Value::Null, true),
     ] {
-        assert_eq!(ask("field_site_type", &json!({"site_type": code.clone()})), json!({ "words": want }), "{code}");
+        assert_eq!(ask("field_site_type", &json!({"site_type": code.clone()})), json!({ "words": want, "airplane": airplane }), "{code}");
     }
 }
 

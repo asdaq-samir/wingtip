@@ -103,7 +103,8 @@ fn a_day_deferral_grounds_a_flight_after_sunset() {
     let dusk = frat::Input { night: false, lights: Some(true), squawks: open.clone(), ..quiet_risk() };
     assert_eq!(keys(&frat::assess(&dusk)), ["inoperative"]);
     let day = frat::Input { night: false, lights: Some(false), squawks: open, ..quiet_risk() };
-    assert!(keys(&frat::assess(&day)).is_empty());
+    // By day it does not ground; it is still an open squawk to read (91.7(b)).
+    assert_eq!(keys(&frat::assess(&day)), ["squawks"]);
 }
 
 /// Approaches flown this month count from next month (61.57(c)(1)): with
