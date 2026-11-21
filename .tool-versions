@@ -12,7 +12,7 @@ java temurin-25
 python 3.15.2
 rust 1.100.0
 nodejs 26
-gradle 9.9.1
+gradle 9.9.2
 maven 4.0.0-rc-7
 # The .NET SDK of tools/msfs-agent (the MSFS replay agent): its global.json.
 dotnet 11.0.100

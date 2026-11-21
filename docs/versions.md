@@ -51,7 +51,7 @@ The owner, 2026-11-09, standing:
 | Python | 3.15.2 | every service and job image (`python:3.15-slim`), CI's setup-python, the dev container |
 | Rust | 1.100.0, edition 2024 | `engine/rust-toolchain.toml`, every engine crate, the WebAssembly build |
 | Node | 26 | `apps/web/.nvmrc`, the web build (`node:26-slim`), CI |
-| Gradle | 9.9.1 | `apps/android/gradle/wrapper/gradle-wrapper.properties` |
+| Gradle | 9.9.2 | `apps/android/gradle/wrapper/gradle-wrapper.properties` |
 | Maven | 4.0.0-rc-7 | the gateway: its build image (`maven:4.0.0-rc-7-eclipse-temurin-25`) and `./mvnw`, the Maven Wrapper CI and a Mac without Docker run (`services/gateway/.mvn/wrapper`, checked by its sha256) |
 | Xcode | 27.2 (the iOS 27.2 SDK) | `scripts/ci/select-xcode.sh`, CI's `xcode-27` runner and the Mac mini |
 | Debian | trixie | every Debian-based image (`postgres:18-trixie`; a `-slim` tag is trixie) |
@@ -84,7 +84,7 @@ mode with complete strict concurrency.
 
 ### Android (`apps/android/gradle/libs.versions.toml`)
 
-AGP **9.6.0-alpha04** (its built-in Kotlin compiles the app), Kotlin
+AGP **9.6.0-alpha05** (its built-in Kotlin compiles the app), Kotlin
 **2.5.0-RC**, KSP 2.3.13, the Compose alpha BOM (`compose-bom-alpha`)
 2026.11.00, which carries Material 3 **1.5.0-rc01** (for Material 3
 Expressive) and Material adaptive 1.4.0-alpha03 with its Navigation 3
