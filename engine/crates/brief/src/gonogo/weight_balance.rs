@@ -29,8 +29,9 @@ pub struct Loading {
     pub baggage_combined_max_lb: Option<f64>,
     pub fuel_arm_in: f64,
     pub fuel_max_gal: f64,
-    /// Pounds a gallon: avgas's standard 6 (FAA-H-8083-1B, Aircraft Weight
-    /// and Balance Handbook) where the airplane's handbook gives none.
+    /// Pounds a gallon: the airplane's handbook's figure, else its fuel
+    /// grade's standard weight, avgas 6 or Jet A 6.8 (FAA-H-8083-25,
+    /// chapter 10; wingtip_flight::fuel_weight).
     pub fuel_lb_per_gal: f64,
     pub start_taxi_fuel_lb: f64,
     /// The centre-of-gravity envelope, (arm, weight) points in order.

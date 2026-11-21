@@ -1720,6 +1720,11 @@ extension Engine {
         try Self.rule("special_use_tab", EngineContract.SpecialUseTabInput(name: name, type: type, floor: floor, ceiling: ceiling, excluded: excluded))
     }
 
+    /// 14 CFR 91.157's special VFR for an airplane (eCFR, current on 2026-11-21): within the surface area of an airport's Class B, C, D or E airspace and below 10,000 ft MSL (91.157(a)), never at the airports of part 91 appendix D, section 3 (fixed-wing special VFR prohibited: O'Hare, LaGuardia and 31 more, by FAA or ICAO ident); with an ATC clearance, clear of clouds and at least 1 statute mile flight visibility (91.157(b)(1)-(3)); between sunset and sunrise (in Alaska, the sun more than 6 degrees below the horizon) only for a pilot meeting part 61's requirements for instrument flight in an airplane equipped as 91.205(d) asks (91.157(b)(4)); and to take off or land, at least 1 sm ground visibility, or flight visibility where none is reported (91.157(c)). `available` is false where anything known rules it out (each in `problems`); what is not given rules nothing out and stays in `needs`, never said to be met.
+    static func specialVfr(surfaceArea: String? = nil, airport: String? = nil, altitudeFt: Double? = nil, night: Bool? = nil, alaska: Bool? = nil, sunElevationDeg: Double? = nil, instrumentCurrent: Bool? = nil, ifrEquipped: Bool? = nil, flightVisibilitySm: Double? = nil, groundVisibilitySm: Double? = nil, clearOfClouds: Bool? = nil, takeoffOrLanding: Bool? = nil) throws -> EngineContract.SpecialVfrAnswer {
+        try Self.rule("special_vfr", EngineContract.SpecialVfrInput(surfaceArea: surfaceArea, airport: airport, altitudeFt: altitudeFt, night: night, alaska: alaska, sunElevationDeg: sunElevationDeg, instrumentCurrent: instrumentCurrent, ifrEquipped: ifrEquipped, flightVisibilitySm: flightVisibilitySm, groundVisibilitySm: groundVisibilitySm, clearOfClouds: clearOfClouds, takeoffOrLanding: takeoffOrLanding))
+    }
+
     /// What a squawk says, where it says more than a code: 7500 unlawful interference (AIM 6-3-4), 7600 two-way radio failure (AIM 6-4-2), 7700 an emergency (AIM 6-2-2); null for any other.
     static func squawkMeaning(squawk: String? = nil) throws -> String? {
         try Self.rule("squawk_meaning", EngineContract.SquawkMeaningInput(squawk: squawk))
@@ -1863,6 +1868,11 @@ extension Engine {
     /// The surface-area minimums (14 CFR 91.155(c), (d)), which the planner holds every route to: no VFR under a 1,000 ft ceiling or in under 3 statute miles within a surface area of controlled airspace. Not the least VFR ever asks (Class G at or below 1,200 ft above the surface by day: 1 sm and clear of clouds, 91.155(a)).
     static func vfrBasicMinimums() throws -> EngineContract.VfrBasicMinimumsAnswer {
         try Self.rule("vfr_basic_minimums", EngineContract.VfrBasicMinimumsInput())
+    }
+
+    /// 14 CFR 91.155(b)(2), Class G's one exception to 91.155(a) for an airplane (eCFR, current on 2026-11-21): below 1,200 ft above the surface (not at it: the table's low row is "1,200 feet or less"), at night, in an airport traffic pattern within 1/2 mile of the runway, with the visibility under 3 statute miles but not under 1, the airplane may fly clear of clouds. By day the table's low row already asks 1 sm and clear of clouds (91.155(a)); 91.155(b)(1) is the helicopter's. A visibility not given leaves the other conditions to decide.
+    static func vfrClassGNightPattern(`class`: String, aglFt: Double, night: Bool? = nil, inPattern: Bool? = nil, visibilitySm: Double? = nil) throws -> EngineContract.VfrClassGNightPatternAnswer {
+        try Self.rule("vfr_class_g_night_pattern", EngineContract.VfrClassGNightPatternInput(class: `class`, aglFt: aglFt, night: night, inPattern: inPattern, visibilitySm: visibilitySm))
     }
 
     /// The VFR floor of each piece of the route between consecutive breaks: the ground plus 1,000 ft, or a DOF obstacle's top plus 14 CFR 91.119's clearance where it stands (1,000 ft over a congested area, (b); 500 elsewhere, (c); 1,000 where the towns are not known), rounded up to the next 100 ft; with 91.119's own minimum under it.

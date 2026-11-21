@@ -1,4 +1,5 @@
 use super::*;
+use wingtip_flight::fuel_weight;
 
 pub(crate) fn table(i: In, t: &Value) -> R<ShortField> {
     let grids = |key: &str| -> R<Vec<Vec<Vec<f64>>>> {
@@ -169,9 +170,10 @@ pub(super) fn loading(i: In, v: &Value) -> R<Loading> {
         baggage_combined_max_lb: i.opt_num(l, "baggage_combined_max_lb")?,
         fuel_arm_in: i.num(l, "fuel_arm_in")?,
         fuel_max_gal: i.num(l, "fuel_max_gal")?,
-        // Avgas's standard 6 lb a gallon (FAA-H-8083-1B, Aircraft Weight
-        // and Balance Handbook), where the airplane's handbook gives none.
-        fuel_lb_per_gal: i.opt_num(l, "fuel_lb_per_gal")?.unwrap_or(6.0),
+        // The airplane's handbook's figure, else its grade's standard
+        // weight, avgas 6 lb or Jet A 6.8 lb a gallon (FAA-H-8083-25,
+        // chapter 10; wingtip_flight::fuel_weight).
+        fuel_lb_per_gal: fuel_weight::lb_per_gal(i.opt_num(l, "fuel_lb_per_gal")?, fuel_grade(i, l)?),
         start_taxi_fuel_lb: i.opt_num(l, "start_taxi_fuel_lb")?.unwrap_or(0.0),
         envelope: envelope(i, l)?,
     })
@@ -193,4 +195,13 @@ pub(super) fn load(i: In, v: &Value) -> R<Load> {
             .collect::<R<_>>()?,
         fuel_gal: i.num(l, "fuel_gal")?,
     })
+}
+
+/// The loading's `fuel_grade`, "avgas" or "jet_a", None where not given:
+/// what its fuel weighs where its handbook gives no figure (fuel_weight).
+fn fuel_grade(i: In, l: &Value) -> R<Option<fuel_weight::Grade>> {
+    match i.opt_str(l, "fuel_grade")? {
+        None => Ok(None),
+        Some(text) => fuel_weight::Grade::read(&text).map_or_else(|| i.err("fuel_grade", "is not avgas or jet_a"), |g| Ok(Some(g))),
+    }
 }

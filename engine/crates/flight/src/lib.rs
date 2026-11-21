@@ -26,6 +26,8 @@
 //! - special_vfr: 91.157's special VFR, and the airports of part 91
 //!   appendix D, section 3 where an airplane may not fly it
 //!   (special_vfr_airports);
+//! - fuel_weight: a gallon of avgas or Jet A in pounds, the FAA's
+//!   standard weights;
 //! - based: where an airplane is usually based, from its past flights;
 //! - calls: these rules asked by name.
 
@@ -34,6 +36,7 @@ pub mod calls;
 pub mod field;
 pub mod filing;
 pub mod flight;
+pub mod fuel_weight;
 pub mod limits;
 pub mod performance;
 pub mod route_read;
