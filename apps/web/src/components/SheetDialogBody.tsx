@@ -42,7 +42,8 @@ const FIRST = "input:not(:disabled), textarea:not(:disabled), button:not(:disabl
  * (PhoneSheetContent) up from the screen's foot, as iOS asks from
  * the bottom of the screen (the sheet consolidation, 2026-10-27, where
  * four of them stood in the middle of a phone and three more each made
- * the switch their own way).
+ * the switch their own way). A confirmation (`centered`, useConfirm's)
+ * stays in the middle at every width, over the page, no card.
  *
  * Its title row is an iOS sheet's: the title and the app's close
  * (CloseButton) at its end; or, for a form (`cancel`), Cancel at its
@@ -58,6 +59,7 @@ export default function SheetDialog({
   description,
   alert = false,
   cancel = false,
+  centered = false,
   action,
   more,
   trigger,
@@ -76,6 +78,10 @@ export default function SheetDialog({
   alert?: boolean;
   /** A form's Cancel, and the action beside the title on a phone. */
   cancel?: boolean;
+  /** An alert in the middle of the screen at every width, as iOS's alert
+   *  is (the owner, 2026-11-20: a confirmation "shouldn't open a new
+   *  card"), not the phone's sheet from the foot. useConfirm's. */
+  centered?: boolean;
   action?: SheetDialogAction;
   /** A further button: in the buttons' row from `md` up, under the
    *  content on a phone (an altitude's Reset). */
@@ -124,7 +130,7 @@ export default function SheetDialog({
     return first ?? true;
   };
 
-  if (onPhone) {
+  if (onPhone && !(alert && centered)) {
     return (
       <PhoneSheet open={open} onOpenChange={onOpenChange}>
         {trigger && <PhoneSheetTrigger render={trigger} />}
