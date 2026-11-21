@@ -36,6 +36,24 @@ struct AirportChartsTab: View {
         }
     }
 
+    struct PublicationNote: Equatable {
+        let title: String
+        var detail: String?
+    }
+
+    /// Where the FAA could not give the card its plates or its Chart
+    /// Supplement page (the planner's `publications`): an outage said in
+    /// place of the empty list, not read as a field with none; a kept
+    /// earlier cycle shown in its place named. The web's publicationNotes.
+    static func publicationNotes(_ place: AirportPlace) -> [PublicationNote] {
+        let editions = [("Plates", place.publications?.plates), ("Chart Supplement", place.publications?.supplement)]
+        return editions.compactMap { what, edition -> PublicationNote? in
+            if edition?.state == "unavailable" { return PublicationNote(title: "\(what) couldn't be fetched from the FAA") }
+            guard edition?.state == "kept", let cycle = edition?.edition else { return nil }
+            return PublicationNote(title: "\(what) from kept cycle \(cycle)", detail: "The cycle in force couldn't be fetched from the FAA")
+        }
+    }
+
     /// The sketch full screen, for a field the FAA draws no diagram for.
     @MainActor
     static func sketch(_ place: AirportPlace) -> ShownPicture {
@@ -50,6 +68,13 @@ struct AirportChartsTab: View {
         let charts = place.procedures ?? []
         let sketched = !RunwaySketch.strips(place.runways).isEmpty
         Section("Airport") {
+            ForEach(Self.publicationNotes(place), id: \.title) { note in
+                VStack(alignment: .leading) {
+                    Text(note.title)
+                    if let detail = note.detail { Text(detail).font(.footnote) }
+                }
+                .foregroundStyle(.secondary)
+            }
             if let cycle = place.airportDiagramCycle {
                 row("Airport diagram", "map") {
                     shown = .paths("\(place.ident) airport diagram", [Planner.diagramPath(ident: place.ident, cycle: cycle)])
@@ -58,7 +83,7 @@ struct AirportChartsTab: View {
                 row("Airport diagram", "map") { shown = .faaChart("\(place.ident) airport diagram", url: url, airport: place.ident) }
             } else if sketched {
                 row("Airport diagram", "map", detail: "A sketch of the runways: the FAA publishes none") { shown = Self.sketch(place) }
-            } else {
+            } else if place.publications?.plates?.state != "unavailable" {
                 Text("The FAA publishes no airport diagram for this field").foregroundStyle(.secondary)
             }
             // The FAA's diagram with the airplane on it, by the diagram's

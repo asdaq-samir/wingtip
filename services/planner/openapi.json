@@ -2003,6 +2003,10 @@
             "title": "Procedures",
             "type": "array"
           },
+          "publications": {
+            "$ref": "#/components/schemas/FaaPublications",
+            "default": {}
+          },
           "radio_notes": {
             "default": [],
             "items": {
@@ -9406,6 +9410,21 @@
           "met"
         ],
         "title": "ExperienceItem",
+        "type": "object"
+      },
+      "FaaPublications": {
+        "description": "The card's plates (the d-TPP: diagram, procedures, minimums) and its\nChart Supplement page, each by the edition its links are of.",
+        "properties": {
+          "plates": {
+            "$ref": "#/components/schemas/PublicationEdition",
+            "default": {}
+          },
+          "supplement": {
+            "$ref": "#/components/schemas/PublicationEdition",
+            "default": {}
+          }
+        },
+        "title": "FaaPublications",
         "type": "object"
       },
       "FeedHealth": {
@@ -19052,6 +19071,34 @@
           "alt_ft"
         ],
         "title": "ProfilePoint",
+        "type": "object"
+      },
+      "PublicationEdition": {
+        "description": "Which edition of one of the FAA's publications a card's links are of\n(wingtip.publications.editions): an FAA outage is said, not read as a\nfield with no plates.",
+        "properties": {
+          "edition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edition"
+          },
+          "state": {
+            "default": "current",
+            "enum": [
+              "current",
+              "kept",
+              "unavailable"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "title": "PublicationEdition",
         "type": "object"
       },
       "PyramidPass": {

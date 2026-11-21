@@ -33,7 +33,8 @@ class Approaches:
 
 
 def approaches(ident: str) -> Approaches:
-    charts = publications.terminal_charts(ident)
+    # The cycle in force only: a kept cycle's approaches may since be gone.
+    charts = publications.terminal_charts(ident, kept=False)
     iaps = tuple(c["name"] for c in charts if c["kind"] == "IAP")
     page = next((c["url"] for c in charts if c["kind"] == "MIN" and "ALTERNATE" in c["name"].upper()), None)
     return Approaches(names=iaps, alternate_minimums_url=page)

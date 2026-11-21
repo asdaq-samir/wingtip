@@ -141,6 +141,29 @@ class TerminalChart(BaseModel):
     url: str
 
 
+class PublicationEdition(BaseModel):
+    """Which edition of one of the FAA's publications a card's links are of
+    (wingtip.publications.editions): an FAA outage is said, not read as a
+    field with no plates."""
+
+    #: "current": the edition in force. "kept": an earlier edition kept on
+    #: disk, shown because the one in force could not be fetched from the
+    #: FAA. "unavailable": neither, so the card's list is empty for want
+    #: of the FAA, not because the field has none.
+    state: Literal["current", "kept", "unavailable"] = "current"
+    #: The edition the links are of: the d-TPP's cycle ("2611"), the Chart
+    #: Supplement's ("29Oct2026"); None where unavailable.
+    edition: str | None = None
+
+
+class FaaPublications(BaseModel):
+    """The card's plates (the d-TPP: diagram, procedures, minimums) and its
+    Chart Supplement page, each by the edition its links are of."""
+
+    plates: PublicationEdition = PublicationEdition()
+    supplement: PublicationEdition = PublicationEdition()
+
+
 class ChartPage(BaseModel):
     """One page of one of the FAA's charts, to show in the app: its
     picture is /api/faa-chart/page/{source}/{edition}/{pdf}/{page}.png,
@@ -225,3 +248,6 @@ class AirportPlace(AirportRecord, AirportDetails):
     # And all of the field's charts in this cycle's d-TPP, the diagram among
     # them: what the card's Diagrams tab lists.
     procedures: list[TerminalChart] = []
+    # Whether those are of the editions in force, a kept earlier one, or
+    # could not be had from the FAA at all.
+    publications: FaaPublications = FaaPublications()
