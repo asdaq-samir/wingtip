@@ -257,8 +257,9 @@ test.describe("/app/plan", () => {
     else {
       const bar = (await fplHead(page).boundingBox())!;
       expect(bar.y).toBeLessThan(100);
-      // The route's head 12 under the row (the sheet's own padding, measured: row ends 72, head starts 84).
-      expect(headerBox.y).toBeLessThan(bar.y + bar.height + 16);
+      // The route's head right under the row, the sheet's own 12 of padding
+      // between them (measured: row ends 72, head starts 84).
+      expect(headerBox.y).toBeLessThanOrEqual(bar.y + bar.height + 12);
     }
     // The route folded to its one line leads the panel, its departure at its
     // left edge.
