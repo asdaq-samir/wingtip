@@ -80,7 +80,10 @@ export function airportMarkSvg(
       })();
   const half = AIRPORT_MARK / 2;
   return (
-    `<svg data-airport-mark="" data-airspace="${space ?? ""}"${use ? ` data-use="${use}"` : ""} aria-hidden="true" class="${className}"` +
+    // The class and use come from the planner's JSON, whatever their types
+    // say, so they are escaped as the weather is (the security reviews of
+    // 2026-11-21, L17): a quote in either would have ended the attribute.
+    `<svg data-airport-mark="" data-airspace="${text(space ?? "")}"${use ? ` data-use="${text(use)}"` : ""} aria-hidden="true" class="${className}"` +
     ` width="${AIRPORT_MARK}" height="${AIRPORT_MARK}" viewBox="${-half} ${-half} ${AIRPORT_MARK} ${AIRPORT_MARK}">${symbol}</svg>`
   );
 }
