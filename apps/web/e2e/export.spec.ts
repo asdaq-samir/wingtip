@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { settle, slow, controlsInSight } from "./helpers";
+import { settle, slow, controlsInSight, openNavLog } from "./helpers";
 import { drawnMarks } from "./marks";
 
 /**
@@ -54,6 +54,12 @@ test("the route goes to ForeFlight in one button: its checkpoints' pack the firs
   await page.getByTestId("share-route").click();
   const routeLink = (await page.getByTestId("open-foreflight").getAttribute("href"))!;
   expect(routeLink).toMatch(/^foreflightmobile:\/\/maps\/search\?q=C81\+(CONTPACK@[A-Z0-9_]{3,}\+)+KDLH(\+\d+ft)?$/);
+  // The checkpoints are the nav log's Share's, not More's (the owner, 2026-11-21).
+  await expect(page.getByTestId("foreflight-pack")).toHaveCount(0);
+  await expect(page.getByTestId("export-foreflight")).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await openNavLog(page);
+  await page.getByTestId("card-share").click();
   await expect(page.getByTestId("foreflight-pack")).toHaveText("Send the checkpoints again");
 
   const download = page.waitForEvent("download");

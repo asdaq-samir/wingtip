@@ -270,6 +270,29 @@ export default function ShareMenu({
                     }
                   />
                 ))}
+            </>
+          )}
+          {card === "route" && (
+            <>
+              {routed && saving(afterMenu(() => setAskingReview(true)))}
+              {routed && (
+                <DropdownMenuItem disabled={!fileable} onClick={onFile} data-testid="file-flight-plan">
+                  <FileText />
+                  File flight plan
+                </DropdownMenuItem>
+              )}
+              {planAgain && (
+                <DropdownMenuItem onClick={planAgain.onPlan} data-testid="plan-again" data-stale={planAgain.stale.length ? "" : undefined}>
+                  <RotateCw />
+                  Refresh
+                  {planAgain.stale.length > 0 && <span aria-hidden="true" className="ml-auto size-2 rounded-full bg-caution" />}
+                </DropdownMenuItem>
+              )}
+            </>
+          )}
+          {/* The checkpoints are the nav log's (the owner, 2026-11-21: "Print navlog should be in navlog share, not in more. Same with the checkpoints"). */}
+          {card === "navlog" && routed && (
+            <>
               {/* Sent once and since deleted in ForeFlight: again. */}
               {packHref && sentPack && (
                 <DropdownMenuItem
@@ -295,24 +318,6 @@ export default function ShareMenu({
               )}
             </>
           )}
-          {card === "route" && (
-            <>
-              {routed && saving(afterMenu(() => setAskingReview(true)))}
-              {routed && (
-                <DropdownMenuItem disabled={!fileable} onClick={onFile} data-testid="file-flight-plan">
-                  <FileText />
-                  File flight plan
-                </DropdownMenuItem>
-              )}
-              {planAgain && (
-                <DropdownMenuItem onClick={planAgain.onPlan} data-testid="plan-again" data-stale={planAgain.stale.length ? "" : undefined}>
-                  <RotateCw />
-                  Refresh
-                  {planAgain.stale.length > 0 && <span aria-hidden="true" className="ml-auto size-2 rounded-full bg-caution" />}
-                </DropdownMenuItem>
-              )}
-            </>
-          )}
           {/* Printed once the menu has gone, so it is not on the paper: the
               whole briefing from the Brief, and from the nav log the
               kneeboard card -- the nav log, radio and patterns on one
@@ -332,7 +337,7 @@ export default function ShareMenu({
               Refresh
             </DropdownMenuItem>
           )}
-          {(card === "navlog" || card === "route") && !local && (
+          {card === "navlog" && !local && (
             <DropdownMenuItem
               disabled={!routed}
               data-testid="print-kneeboard"
