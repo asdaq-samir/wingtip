@@ -19,6 +19,9 @@ The kit:
   sample flight out of the Studio, copies everything into X-Plane, and
   collects the videos.
 
+The same plugin also flies the scripted test flight that checks the
+apps' in-flight features (docs/SIM-FLIGHT.md, `scripts/dev/sim-flight.sh`).
+
 ## The sample flight
 
 The sample is Kenmore Air's DHC-2 Beaver N17598, flying from Kenmore on

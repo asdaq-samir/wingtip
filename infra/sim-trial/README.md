@@ -15,7 +15,7 @@ What is here:
 | `template.yaml` | CloudFormation: the GPU instance (Windows Server 2025, 250 GB gp3), its security group (DCV from your address only), its role (SSM, the bucket, the driver's and DCV's AWS buckets), the bucket for recordings and logs (deleted after 14 days), the idle stop, the role for the timed stop, and a $50 budget that stops the instance |
 | `trial.sh` | Everything from the Mac: `up`, `status`, `dcv`, `run`, `fetch`, `down`, `destroy` |
 | `run-replay.ps1` | What `trial.sh run` has SSM Run Command do on the instance |
-| `../../tools/msfs-agent` | The replay agent (.NET, SimConnect, obs-websocket), its tests, and the trial's track |
+| `../../tools/msfs-agent` | The replay agent (.NET, SimConnect, obs-websocket), its tests, and the trial's track; with `--feed` it also drives the scripted test flight's apps (docs/SIM-FLIGHT.md) |
 
 The first boot installs, with no one there: the NVIDIA gaming driver (from
 AWS's `nvidia-gaming` bucket, free on EC2), Amazon DCV (free on EC2: no
