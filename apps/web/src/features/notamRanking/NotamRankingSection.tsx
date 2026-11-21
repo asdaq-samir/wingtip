@@ -60,7 +60,7 @@ export default function NotamRankingSection() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="relative h-auto px-1 text-tint after:absolute after:inset-x-0 after:-inset-y-3 after:content-['']"
+                  className="relative h-auto px-1 text-tint hit-y-3"
                   onClick={() => setFilter(ALL_NOTAMS)}
                   data-testid="brief-notams-show-all"
                 >
@@ -87,7 +87,7 @@ export default function NotamRankingSection() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="group relative -ml-2 self-start text-tint after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']"
+                      className="group relative -ml-2 self-start text-tint hit-y-1.5"
                       data-testid="brief-notams-more"
                     />
                   }

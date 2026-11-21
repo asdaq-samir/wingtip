@@ -127,7 +127,7 @@ export function LoopBar() {
             size="inline"
             type="button"
             className={cn(
-              "relative h-9 shrink-0 rounded-full px-2.5 font-semibold text-tint outline-none after:absolute after:-inset-1 after:content-[''] hover:bg-foreground/8 focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
+              "relative h-9 shrink-0 rounded-full px-2.5 font-semibold text-tint outline-none hit-1 hover:bg-foreground/8 focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
               TEXT.detail,
             )}
           />

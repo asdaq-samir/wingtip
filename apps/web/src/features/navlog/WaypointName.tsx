@@ -20,7 +20,7 @@ export function WaypointName({ row, link }: { row: NavLogRow; link: boolean }) {
         event.stopPropagation();
         wantPlace(field);
       }}
-      className="relative min-w-0 justify-start text-left [overflow-wrap:anywhere] whitespace-normal after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-['']"
+      className="relative min-w-0 justify-start text-left [overflow-wrap:anywhere] whitespace-normal hit-y-[11px]"
     >
       {name}
     </Button>

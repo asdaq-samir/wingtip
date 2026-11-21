@@ -20,7 +20,7 @@ function ContactLine({ label, c, testId }: { label: string; c: Contact; testId?:
             {", "}
             <a
               href={dial(c.phone)}
-              className="relative font-medium text-tint tabular-nums after:absolute after:-inset-y-3 after:inset-x-0 after:content-['']"
+              className="relative font-medium text-tint tabular-nums hit-y-3"
               data-testid={testId && `${testId}-phone`}
             >
               {c.phone}

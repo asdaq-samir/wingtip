@@ -93,7 +93,7 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
               // The search's chips' pill (FilterChips), filled in the tint
               // while it is the way flown; its 44-point area round it.
               "relative h-8 shrink-0 gap-1.5 rounded-full border border-border bg-card px-3 font-medium text-foreground",
-              "after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']",
+              "hit-y-1.5",
               "data-pressed:border-tint data-pressed:bg-tint data-pressed:text-primary-foreground hover:data-pressed:bg-tint",
               TEXT.detail,
             )}

@@ -49,7 +49,7 @@ export const MENU_LABEL = `px-4 pt-2 pb-1 font-medium text-muted-foreground ${TE
  *  stock trigger's field look away). */
 export const PULL_DOWN_WORDS = cn(
   "relative inline-flex min-w-0 items-center gap-1 rounded-sm text-tint outline-none",
-  "after:absolute after:-inset-x-2 after:-inset-y-[11px] after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+  "hit-x-2 hit-y-[11px] focus-visible:ring-2 focus-visible:ring-ring",
   "[&_svg]:shrink-0",
   TEXT.row,
 );

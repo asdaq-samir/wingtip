@@ -85,10 +85,7 @@ function DateField({
           data-testid={testId}
           // A finger's 44 round its 32: a band eight proud above and below,
           // taking no room.
-          className={cn(
-            "relative justify-start font-normal tabular-nums after:absolute after:inset-x-0 after:-inset-y-2 after:content-['']",
-            className,
-          )}
+          className={cn("relative justify-start font-normal tabular-nums hit-y-2", className)}
         >
           {shown || <span className="text-muted-foreground">None</span>}
         </Button>

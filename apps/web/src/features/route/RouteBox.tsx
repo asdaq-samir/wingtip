@@ -290,7 +290,7 @@ export default function RouteBox({
                 size="inline"
                 onClick={onUndo}
                 data-testid="route-undo"
-                className={cn("relative mt-1 mr-1 px-1 text-tint after:absolute after:-inset-2 after:content-['']", TEXT.row)}
+                className={cn("relative mt-1 mr-1 px-1 text-tint hit-2", TEXT.row)}
               >
                 Undo
               </Button>

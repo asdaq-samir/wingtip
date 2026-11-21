@@ -23,7 +23,7 @@ export default function DirectStrip({ ident, onDevice = false, onCancel }: { ide
         size="inline"
         onClick={onCancel}
         data-testid="direct-cancel"
-        className={cn("relative shrink-0 px-1 after:absolute after:-inset-x-1 after:-inset-y-2.5 after:content-['']", TEXT.row)}
+        className={cn("relative shrink-0 px-1 hit-x-1 hit-y-2.5", TEXT.row)}
       >
         Cancel
       </Button>

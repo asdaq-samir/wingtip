@@ -7,7 +7,7 @@ import { LargeFace } from "./AccountFace";
 import { useAvatarPhoto } from "./useAvatarPhoto";
 
 /** A 44-point hit area around a link's words, which do not grow for it. */
-const HIT = "relative after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']";
+const HIT = "relative hit-x-2 hit-y-3";
 
 /**
  * The pilot's avatar atop Pilot Details, with Choose Photo under it and

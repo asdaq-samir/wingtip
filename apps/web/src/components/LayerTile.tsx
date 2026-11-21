@@ -118,7 +118,7 @@ export function LayerToggleMenu({
                 // White on the tint while on, open or not; the stock ghost's muted
                 // fill would put white dots on near-white.
                 tile.on ? "text-white hover:bg-white/15 hover:text-white aria-expanded:bg-white/20 native:text-white" : "text-tint",
-                "after:absolute after:-inset-2.5 after:content-['']",
+                "hit-2.5",
               )}
             >
               <Ellipsis aria-hidden />

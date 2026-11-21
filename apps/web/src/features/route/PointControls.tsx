@@ -257,7 +257,7 @@ export function PointMenu({
               // lines"): its column centres it (ProceduresRoute).
               // The stock Button's glass at its icon size; the mark's picture
               // filling its own box (AirportMark's), not the stock 16 a glyph.
-              className="relative -mx-1 rounded-full after:absolute after:-inset-1 after:content-[''] [&_svg:not([class*='size-'])]:size-full"
+              className="relative -mx-1 rounded-full hit-1 [&_svg:not([class*='size-'])]:size-full"
             >
               {face}
             </Button>
