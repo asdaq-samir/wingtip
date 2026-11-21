@@ -17,7 +17,11 @@ from wingtip import airspace_tabs, phone_pack_shapes
 #: left out of the tiles; from it on, it is in every tile it touches, and
 #: none is ever dropped for a tile's size (--no-feature-limit,
 #: --no-tile-size-limit, -r1, --no-tiny-polygon-reduction).
-AIRSPACE_MIN_ZOOM = {"B": 4, "C": 5, "D": 6}
+#: Class B and C from the archive's first zoom, a country on a phone, as
+#: ForeFlight draws them at a few states' scale (the owner, 2026-11-21:
+#: "how come we don't see big airports and airspaces at our zoom levels?");
+#: Class D a zoom in.
+AIRSPACE_MIN_ZOOM = {"B": 4, "C": 4, "D": 6}
 #: Class E by its LOCAL_TYPE: at the surface (E2), the extensions of a
 #: Class C's or D's surface area (E3, E4), from 700 or 1,200 ft (E5), and
 #: the en route and offshore areas (E6, E7). 14 CFR 71.71, 71.79.
@@ -26,7 +30,9 @@ CLASS_E_OTHER_MIN_ZOOM = 8
 SPECIAL_USE_MIN_ZOOM = 5
 #: Airports by the engine's field_mark_rank's tier: towered, public with a
 #: hard runway of 3,000 ft or more, other public, private, then heliports.
-AIRPORT_MIN_ZOOM = (5, 6, 7, 9, 10)
+#: The towered fields from the archive's first zoom, with the Class B and C
+#: they sit in (the owner, 2026-11-21, against ForeFlight over California).
+AIRPORT_MIN_ZOOM = (4, 6, 7, 9, 10)
 #: The VORs (wingtip.fix_rows.VOR_KINDS) a zoom out; the rest closer in.
 VOR_MIN_ZOOM = 5
 NAVAID_MIN_ZOOM = 7

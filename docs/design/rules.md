@@ -772,6 +772,19 @@ At each airport the chart already shows, from the map's own
   the give-way hides its weather too. Each variant (ring x weather x
   use) is one picture drawn once a page, the steps the layer's
   icon-size, so the chart's element count is unchanged.
+- **What is drawn from which zoom** (the owner, 2026-11-21, against
+  ForeFlight over California: "how come we don't see big airports and
+  airspaces at our zoom levels?"): from zoom 5, a few states on a phone,
+  the towered fields (`field_mark_rank`'s first tier) and the Class B and
+  C rings, the rings at half their width and with no band, and only the
+  Class B fields named; from 6 every field drawn named; from 7 the public
+  fields with 3,000 ft of hard runway, the Class D rings, the restricted
+  areas and MOAs, and the rings at their full width with their band; the
+  other public fields from 8, private ones from 10, heliports from 11,
+  and the altitude tabs from 9. The overlay tiles hold each from that
+  zoom (the charts job's `AIRPORT_MIN_ZOOM`, `AIRSPACE_MIN_ZOOM`). Where
+  marks would overlap, the rule's order keeps them, each 2 px from the
+  next.
 - **Station model from zoom 10 in** (the matching span on the iPhone):
   the engine's `wind_barb` (5, 10 and 50 kt barbs and flags, a ring for
   calm, 0 to 2 kt calm), and two lines beside the field, the visibility with its weather

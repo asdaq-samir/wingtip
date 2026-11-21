@@ -82,10 +82,9 @@ interface OwnShip {
 
 /** Where the planner opens on the pilot's position: the region a flight
  *  from here goes to, some 100 nm across a phone -- the zoom from which
- *  the Class D rings and every airport are drawn (glStyle's AIRSPACE_FROM,
- *  AirportsGl's FROM_ZOOM), at the owner's ask (2026-11-04: "make the
- *  current position zoom level the same as class D airports"); at 7 the
- *  position opened on a chart with the Class B and C alone. */
+ *  the public airports are drawn, a zoom in from the Class D rings (glStyle's
+ *  AIRSPACE_FROM, from 7 since 2026-11-21), at the owner's ask (2026-11-04:
+ *  "make the current position zoom level the same as class D airports"). */
 export const OPEN_ZOOM = 8;
 /** Where a map with no route and no position opens: the lower 48, whole
  *  on a phone, as Maps opens on the country before it knows where you are. */

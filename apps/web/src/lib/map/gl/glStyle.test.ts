@@ -130,16 +130,23 @@ describe("airspaceLayers", () => {
     expect(band!["source-layer"]).toBe("special_use");
   });
 
-  it("draws each class from its own zoom, the labels from 9", () => {
+  it("draws each class from its own zoom, the bands from 7 and the labels from 9", () => {
     const layers = airspaceLayers(["Inter"]);
     const from = Object.fromEntries(layers.map((l) => [l.id, l.minzoom]));
     expect(from).toMatchObject({
-      "airspace-B": glZoom(6),
-      "airspace-B-band": glZoom(6),
-      "airspace-C": glZoom(7),
-      "airspace-D": glZoom(8),
+      "airspace-B": glZoom(5),
+      "airspace-B-band": glZoom(7),
+      "airspace-C": glZoom(5),
+      "airspace-C-band": glZoom(7),
+      "airspace-D": glZoom(7),
+      "airspace-D-band": glZoom(7),
       "airspace-labels": glZoom(9),
     });
+  });
+
+  it("draws a ring half its width out at a few states, its full width from 7", () => {
+    const line = airspaceLayers(["Inter"]).find((l) => l.id === "airspace-C") as LineLayerSpecification;
+    expect(line.paint!["line-width"]).toEqual(["interpolate", ["linear"], ["zoom"], glZoom(5), 2, glZoom(7), 4]);
   });
 });
 

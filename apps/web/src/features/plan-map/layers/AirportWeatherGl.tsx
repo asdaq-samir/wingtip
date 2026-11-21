@@ -17,8 +17,7 @@ const SOURCE = "airport-weather";
 /** The station model from zoom 10, where the chart's fields stand apart
  *  enough for its lines beside each (the owner's pick, 2026-11-10: "about
  *  10 on web and Android"); with the look Station, from 7, a region's
- *  scale, where the fields' own symbols start keeping only a little apart
- *  (glOverlays' icon-padding) and the lines give way where they don't fit. */
+ *  scale, where the lines give way where they don't fit. */
 const STATION_CLOSE = MAP.zoomStationClose;
 const STATION_ALWAYS = MAP.zoomStationAlways;
 
