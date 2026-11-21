@@ -175,7 +175,8 @@ export function usePlanRoute() {
   // round trip's in `takeoff`.
   const runwaysText = useMemo(() => departureRunways(patternText, takeoffText, routeFields), [patternText, takeoffText, routeFields]);
   const landingsText = useMemo(() => landingRunways(patternText, routeFields), [patternText, routeFields]);
-  const local = !!planned.dep && planned.dep === planned.dest && planned.stops.length === 0;
+  // One field by either of its idents (KOSH, OSH): the engine's same_field.
+  const local = !!planned.dep && !!planned.dest && sameField(planned.dep, planned.dest) && planned.stops.length === 0;
   // A route on screen: one the planner plans, or a local flight -- an
   // airport to itself with no stop (usePlan's `local`).
   const routed = routeOf(planned.dep, planned.dest, planned.stops) !== null || local;

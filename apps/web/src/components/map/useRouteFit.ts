@@ -8,6 +8,7 @@ import { cameraOf } from "../../lib/map/gl/camera";
 import { coursePoints } from "../../lib/course";
 import { padOf } from "./makeMap";
 import { useIsMobile } from "../../hooks/use-mobile";
+import { lonBounds } from "../../lib/geo";
 
 /** The least the map is fitted to round a route, ~10 nm. */
 const MIN_FIT_DEG = 0.08;
@@ -43,11 +44,11 @@ export function useRouteFit(map: maplibregl.Map | null, course: Course | null, i
     if (!course) return null;
     const line = course.course_line as [number, number][];
     const lats = line.map((p) => p[0]),
-      lons = line.map((p) => p[1]);
+      [west, east] = lonBounds(line.map((p) => p[1]));
     const pad = MIN_FIT_DEG / 2;
     return [
-      [Math.min(...lons) - pad, Math.min(...lats) - pad],
-      [Math.max(...lons) + pad, Math.max(...lats) + pad],
+      [west - pad, Math.min(...lats) - pad],
+      [east + pad, Math.max(...lats) + pad],
     ];
   }, [course]);
   // A route made, or asked for again from the location arrow: the pilot's

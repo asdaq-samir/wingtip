@@ -110,6 +110,11 @@ export default function BriefGlance({
               onOpen={onOpen}
             />
           )}
+          {/* An Air Defense Identification Zone on the way, said once:
+              what 14 CFR part 99 asks of the flight there. */}
+          {glance?.adiz && (
+            <Line line={{ ...glance.adiz, key: "adiz", finding: "caution", tab: "enroute", section: null, raw: [] }} onOpen={onOpen} />
+          )}
           {lines && lines.rest.items.length > 0 && lines.rest.finding !== "ok" && <Rest rest={lines.rest} onOpen={onOpen} />}
           <BeforeRow before={glance?.before} airplane={airplane} onOpen={onOpen} />
           {glance?.depart && <FieldRow tab="depart" label="Depart" field={glance.depart} landing={false} onOpen={onOpen} />}

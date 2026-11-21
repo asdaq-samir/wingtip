@@ -42,6 +42,7 @@ const glance: BriefGlance = {
   enroute: { ceilingFt: null, visibilitySm: null, wind: null, eteMin: null, line: null, finding: "ok" },
   arrive: null,
   outside: null,
+  adiz: null,
   raw: { metars: [{ ident: "C81", raw: "METAR C81 ..." }], tafs: [], tfrs: [] },
 };
 
