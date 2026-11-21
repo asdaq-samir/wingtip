@@ -98,4 +98,35 @@ struct RepeatedWorkTests {
         // A tenth of a mile north is a new place.
         #expect(OwnShip.coarse(CLLocationCoordinate2D(latitude: 42.1247, longitude: -88.457)).latitude != a.latitude)
     }
+
+    // MARK: The GPS on the ground (item 10)
+
+    @Test func theGpsIsAtItsBestOnlyFlyingFollowedOrOnADiagram() async {
+        let file = FileManager.default.temporaryDirectory.appending(path: "rec-\(UUID().uuidString).json")
+        let ownShip = OwnShip(recorder: FlightRecorder(file: file))
+        func take(kt: Double, at s: TimeInterval) async {
+            let location = CLLocation(coordinate: CLLocationCoordinate2D(latitude: 42, longitude: -88), altitude: 250,
+                                      horizontalAccuracy: 5, verticalAccuracy: 5, course: 0, speed: kt / Units.ktPerMS,
+                                      timestamp: Date(timeIntervalSince1970: s))
+            ownShip.locationManager(CLLocationManager(), didUpdateLocations: [location])
+            for _ in 0..<20 where ownShip.fix?.at != location.timestamp { await Task.yield() }
+        }
+        // Parked: ten metres, and a ten-metre move.
+        await take(kt: 0, at: 1)
+        #expect(!ownShip.isPrecise)
+        // The map following the airplane, or a diagram up: the best.
+        ownShip.mapFollows = true
+        #expect(ownShip.isPrecise)
+        ownShip.mapFollows = false
+        ownShip.diagramShown = true
+        #expect(ownShip.isPrecise)
+        ownShip.diagramShown = false
+        #expect(!ownShip.isPrecise)
+        // At flying speed (the engine's underway): the best, and it stays
+        // so after landing while the recorder waits for the airplane to rest.
+        await take(kt: 100, at: 10)
+        #expect(ownShip.isPrecise)
+        await take(kt: 0, at: 20)
+        #expect(ownShip.isPrecise)
+    }
 }

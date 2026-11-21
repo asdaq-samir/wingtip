@@ -175,6 +175,8 @@ struct RootMap: View {
             // and the Edit menu (PlanHistory).
             .onAppear { plan.undoManager = undoManager }
             .onChange(of: undoManager) { _, manager in plan.undoManager = manager }
+            // The GPS at its best while the map follows the airplane (OwnShip.precise).
+            .onChange(of: following, initial: true) { _, now in ownShip.mapFollows = now }
             // Siri listens for the fields the shortcuts' airport entity
             // suggests (the kept route's: AirportEntityQuery.suggestedEntities),
             // and Spotlight finds them, so both are told again when the route

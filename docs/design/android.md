@@ -1361,6 +1361,9 @@ for, by the phones' wasted-work audit:
   degree, told only as it changes (`AirportFacts.From.near`), and the
   card's actions read the fix when tapped (`RouteActions`), so neither
   the card nor a point's card is drawn again at every fix.
+- **Own ship put away on the ground** stops reading (OwnShipControl's
+  ON_STOP), as OwnShip says it does, and starts again at ON_RESUME; with
+  own ship's service up (a flight under way) it goes on.
 
 ## 4. Not verified
 

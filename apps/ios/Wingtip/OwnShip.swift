@@ -3,8 +3,11 @@ import Foundation
 import Observation
 
 /// Own ship: where the phone is, which way it is going and how fast, from
-/// Core Location at one fix a second while the map is shown, as the web
-/// app's useOwnShip keeps it. Nothing is worked out from the fix here
+/// Core Location, as the web app's useOwnShip keeps it: at its best
+/// accuracy, a fix a second, while flying, while the flight is being
+/// recorded and while the map follows the airplane; otherwise on the
+/// ground to ten metres and only after a move of ten (`precise`), which
+/// a parked phone answers with almost nothing. Nothing is worked out from the fix here
 /// but the figures of flying it: the distance and time to the next point
 /// and what is ahead on the track, which the planner is asked for
 /// (/api/airspace/ahead).
@@ -47,6 +50,21 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     var routeLine: [[Double]]?
 
     private let manager = CLLocationManager()
+    /// Whether the map follows own ship (RootMap): the dot must keep up.
+    var mapFollows = false { didSet { tune() } }
+    /// Whether an airport diagram with own ship on it is up
+    /// (DiagramOwnShipView): AC 120-76D 11.17.2.3 takes the airplane off
+    /// once its fix is three seconds old, which a ten-metre filter would
+    /// do to an airplane holding short.
+    var diagramShown = false { didSet { tune() } }
+    /// At flying speed, or recording a flight not yet ended, at the last fix.
+    @ObservationIgnored private var flying = false
+    /// Whether Core Location is asked for its best, each fix (precise).
+    @ObservationIgnored private(set) var isPrecise = false
+    /// On the ground, the metres of move before a new fix: a parked
+    /// airplane needs none, a taxiing one still gives one every few
+    /// seconds for the flight recorder's taxi.
+    static let groundFilterM: CLLocationDistance = 10
     private var asking: Task<Void, Never>?
     /// The ahead question asked again (Repeating), while the position is
     /// being read.
@@ -66,7 +84,8 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
         self.recorder = recorder
         super.init()
         manager.delegate = self
-        manager.desiredAccuracy = kCLLocationAccuracyBest
+        manager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+        manager.distanceFilter = Self.groundFilterM
         manager.activityType = .airborne
         // Kept going with the phone locked or the app put away while the
         // airplane is at flying speed (took): the alerts ahead and the
@@ -142,8 +161,23 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
         // background past the flying speed too, until the engine finds
         // the airplane landed and at rest: 1.1's flight time ends there.
         let recording = recorder.took(fix)
-        let flying = trail.took(fix) || recording
+        flying = trail.took(fix) || recording
         if manager.allowsBackgroundLocationUpdates != flying { manager.allowsBackgroundLocationUpdates = flying }
+        // In the air and until the recorder has seen the airplane come to
+        // rest after landing (14 CFR 1.1's flight time ends there), every
+        // fix at its best.
+        tune()
+    }
+
+    private func tune() { precise(flying || mapFollows || diagramShown) }
+
+    /// Core Location at its best, a fix a second, or on the ground to ten
+    /// metres and a ten-metre move: told only as it changes.
+    private func precise(_ yes: Bool) {
+        guard yes != isPrecise else { return }
+        isPrecise = yes
+        manager.desiredAccuracy = yes ? kCLLocationAccuracyBest : kCLLocationAccuracyNearestTenMeters
+        manager.distanceFilter = yes ? kCLDistanceFilterNone : Self.groundFilterM
     }
 
     /// A place to a thousandth of a degree (coarseCoordinate).

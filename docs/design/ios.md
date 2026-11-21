@@ -2023,6 +2023,14 @@ What each fix asks for, by the phones' wasted-work audit:
   a degree (`OwnShip.coarseCoordinate`, at most some 0.03 nm off), so a
   parked airplane's jitter does not draw it again or ask the engine for
   its distance and time again.
+- **The GPS's accuracy.** Core Location is asked for its best, a fix a
+  second, while flying, while the flight recorder waits for the airplane
+  to come to rest after landing (14 CFR 1.1's flight time ends there),
+  while the map follows the airplane and while an airport diagram with
+  own ship is up (AC 120-76D 11.17.2.3 takes the airplane off a
+  three-second-old fix). Otherwise, on the ground, to ten metres and
+  only after a ten-metre move (`OwnShip.isPrecise`), which a parked
+  phone answers with almost nothing.
 
 ---
 
