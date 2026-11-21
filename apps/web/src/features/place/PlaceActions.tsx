@@ -117,7 +117,9 @@ export default function PlaceActions({
               closed
                 ? `${ACTION.flyHere.label}: ${closed}`
                 : timed
-                  ? `${ACTION.flyHere.label}, about ${spokenDuration(timed.minutes)} at ${Math.round(timed.tasKt)} knots, no wind`
+                  ? // The time in sight first, so the name holds it (WCAG 2.5.3,
+                    // Label in Name; axe's label-content-name-mismatch).
+                    `≈ ${duration(timed.minutes)} to Fly Here, about ${spokenDuration(timed.minutes)} at ${Math.round(timed.tasKt)} knots, no wind`
                   : undefined
             }
             testId="fly-here"

@@ -280,8 +280,14 @@ export default function MapPanel(props: Props) {
           "fixed left-[max(1rem,env(safe-area-inset-left))] z-40 flex flex-col pb-4 overflow-clip text-foreground outline-none print:static",
           look,
         )}
-        // Out, the window's height inside its float on either side.
-        style={{ top: FLOAT_PX, bottom: size === "peek" ? undefined : FLOAT_PX, borderRadius: PILL_RADIUS }}
+        // Out, the window's height inside its float on either side, and
+        // inside the safe area, as its left edge is: an iPhone held
+        // sideways has the home indicator under the panel's grabber.
+        style={{
+          top: `max(${FLOAT_PX}px, env(safe-area-inset-top))`,
+          bottom: size === "peek" ? undefined : `max(${FLOAT_PX}px, env(safe-area-inset-bottom))`,
+          borderRadius: PILL_RADIUS,
+        }}
       >
         <SheetParts {...shared} />
         {!cardsUp && sheetGrabber}
