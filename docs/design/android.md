@@ -1368,6 +1368,9 @@ for, by the phones' wasted-work audit:
   key of tenths of a degree, before it measures the route
   (`route_position`), so it measures at most every 3 s, as the iPhone
   looks.
+- **The map pane** hands ChartMap the traffic as a lambda, as it hands
+  it the fix, so a traffic answer draws the map's traffic, not the
+  whole pane with its bars and field actions.
 
 ## 4. Not verified
 

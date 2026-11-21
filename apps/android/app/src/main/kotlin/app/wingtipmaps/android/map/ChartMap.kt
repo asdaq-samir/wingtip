@@ -87,7 +87,7 @@ data class MapRest(val south: Double, val west: Double, val north: Double, val e
  * @param layers Setup's switches: which overlays are drawn, and the
  *   terminal area chart pinned (`terminal`, where the chart has one).
  * @param weather each reporting field's weather pip by ident (AirportWeatherMarks).
- * @param traffic the airplanes heard (Traffic), `tracked` the one ringed.
+ * @param traffic the airplanes heard (Traffic), read here alone, `tracked` the one ringed.
  * @param night the chart dimmed (MapStyle.chartPaint): a dark Appearance but Dark + Bright.
  * @param bottomInset what the sheet covers of the map, in pixels: the
  *   map's padding, so its middle is the middle of what the sheet leaves.
@@ -113,7 +113,7 @@ fun ChartMap(
     layers: MapLayers = MapLayers(),
     terminal: Charts.Companion.Terminal? = null,
     weather: Map<String, String> = emptyMap(),
-    traffic: List<TrafficDrawing.Target> = emptyList(),
+    traffic: () -> List<TrafficDrawing.Target> = { emptyList() },
     tracked: String? = null,
     night: Boolean = false,
     bottomInset: Int = 0,
@@ -168,7 +168,7 @@ fun ChartMap(
     LaunchedEffect(holder, layers) { holder.layers(layers) }
     LaunchedEffect(holder, terminal, layers.tac) { holder.terminal(if (layers.tac) terminal else null) }
     LaunchedEffect(holder, weather) { holder.weather(weather) }
-    LaunchedEffect(holder, traffic, tracked) { lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { holder.traffic(traffic, tracked) } }
+    LaunchedEffect(holder, traffic(), tracked) { lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { holder.traffic(traffic(), tracked) } }
     LaunchedEffect(holder) { snapshotFlow { ring() }.collect(holder::glide) }
     LaunchedEffect(holder, emergency) { holder.emergency(emergency) }
     LaunchedEffect(holder, selectedField) { holder.selectField(selectedField?.ident).also { MapTerrain.selected(selectedField?.ident) } }
