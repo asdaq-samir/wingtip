@@ -16,4 +16,6 @@
     <string name="nav_log_print">Print the Nav Log</string>
     <string name="pick_closed">Closed</string>
     <string name="pick_on_route">On the route already</string>
+    <string name="leaves_at">Leaves %1$s</string>
+    <string name="leaves_title">Leaves Again</string>
 </resources>

@@ -21,6 +21,7 @@ import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.KeptPlan
+import app.wingtipmaps.android.plan.PlanGround
 import app.wingtipmaps.android.plan.PlanShown
 import app.wingtipmaps.android.plan.PlanTanks
 import app.wingtipmaps.android.route.RouteEdits
@@ -232,7 +233,7 @@ class Plan @Inject constructor(app: Application) : AndroidViewModel(app) {
                 val course = Planner.course(asked.dep, asked.dest, asked.stops)
                 _state.update { it.copy(course = course) }
                 val fresh = mutableListOf<Leg>()
-                Planner.navlog(asked.dep, asked.dest, asked.stops, AirplaneNow.plannerQuery(asked.aircraft, asked.own), asked.holds, asked.rules, asked.altitudeFt, asked.depart, (listOf(asked.dep) + asked.stops + asked.dest).let { r -> PlanAltitudes.query(r) + PlanTanks.query(r) } + PlanAlternate.query(asked.rules, asked.dest)).collect { message ->
+                Planner.navlog(asked.dep, asked.dest, asked.stops, AirplaneNow.plannerQuery(asked.aircraft, asked.own), asked.holds, asked.rules, asked.altitudeFt, asked.depart, (listOf(asked.dep) + asked.stops + asked.dest).let { r -> PlanAltitudes.query(r) + PlanTanks.query(r) + PlanGround.query(r) } + PlanAlternate.query(asked.rules, asked.dest)).collect { message ->
                     when (message) {
                         is NavLogMessage.Stage -> _state.update { it.copy(stage = message.detail) }
                         is NavLogMessage.Altitude -> PlanAltitudes.heard(message.line)
@@ -381,8 +382,7 @@ class Plan @Inject constructor(app: Application) : AndroidViewModel(app) {
     }
 
     companion object {
-        /** A departure time as written (ISO 8601, with its offset or Z),
-         *  in epoch milliseconds; null where there is none or it is not one. */
+        /** A departure time as written (ISO 8601, its offset or Z) in epoch ms; null where none or not one. */
         fun departMs(iso: String?): Long? =
             iso?.let { runCatching { java.time.OffsetDateTime.parse(it).toInstant().toEpochMilli() }.getOrNull() }
         /** A hold's length where the pilot sets none: two turns, as the web's and iPhone's begin. */

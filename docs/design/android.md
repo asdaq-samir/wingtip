@@ -700,6 +700,20 @@ placement wins, and the difference is noted.
      figures. On the map, the chosen route is in the course's magenta
      and the others are grey and tappable, as Maps shows alternates.
      **Use** is the card's filled button.
+  4a. **The route as a timeline** (`ui/PlanSummary`'s `RouteStops`,
+     `ui/RouteTimeline`; the web's FPL timeline, 2026-11-19 to 21): the
+     route's `SegmentedListItem`s joined by one solid line in the course's
+     magenta (`WingtipColors.Chart.Course`), drawn over each row at its
+     leading mark and on through the list's gaps, each field's mark a dot
+     in its flight category's colour (the field's card, `plan/RouteFieldFacts`).
+     At a row's end its times and its ⋮ (`RoutePointMenu`): the departure's
+     leave time, each stop's landing and "Leaves 11:33", a tap that opens
+     Material's time picker and sends the stop's minutes on the ground as
+     the planner's `ground` (`plan/PlanGround`), the destination's landing;
+     a time zone said on every time only once a point keeps another zone
+     than the departure's ("13:00 MST", `plan/StopTimes`). No times without
+     an airplane (0011). Procedures on the line (the web's runway pills
+     and a procedure's fixes before or after its field) are not ported yet.
   5. Legs as `ListItem`s (`route/RouteLegs`). Each has a leading
      waypoint symbol, the leg's figures, and a trailing drag handle.
      Long press drags to reorder; a swipe removes the leg and shows

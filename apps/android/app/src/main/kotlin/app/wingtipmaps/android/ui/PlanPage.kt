@@ -82,9 +82,18 @@ import kotlinx.coroutines.launch
  * @param onNavLog the Nav Log's card opened.
  * @param onFind the search opened, for an end not given yet.
  * @param onAddStop the search opened for a stop.
+ * @param onAddStopAfter the search opened for a stop after a point (its menu's).
  */
 @Composable
-fun PlanPage(plan: Plan, onClose: () -> Unit, onField: (String) -> Unit, onNavLog: () -> Unit, onFind: () -> Unit, onAddStop: () -> Unit) {
+fun PlanPage(
+    plan: Plan,
+    onClose: () -> Unit,
+    onField: (String) -> Unit,
+    onNavLog: () -> Unit,
+    onFind: () -> Unit,
+    onAddStop: () -> Unit,
+    onAddStopAfter: (String) -> Unit,
+) {
     val state by plan.state.collectAsStateWithLifecycle()
     val dryRun: DryRun = hiltViewModel()
     val dryRunState by dryRun.state.collectAsStateWithLifecycle()
@@ -114,7 +123,7 @@ fun PlanPage(plan: Plan, onClose: () -> Unit, onField: (String) -> Unit, onNavLo
             item(key = "pills") {
                 Box(pad) { PlanPills(plan, state, onAltitude = { scope.launch { list.animateScrollToItem(altitudeIndex(state)) } }) }
             }
-            item(key = "stops") { Box(pad) { RouteStops(state, onField = onField, onFind = onFind, onAddStop = onAddStop) } }
+            item(key = "stops") { Box(pad) { RouteStops(plan, state, onField = onField, onFind = onFind, onAddStop = onAddStop, onAddStopAfter = onAddStopAfter) } }
             // Add or Remove Fuel Stops by Add a Stop, then the fuel in the
             // tanks at each field, each a tap to set it (FuelTanks).
             item(key = "fuel-stops") { Box(pad) { FuelStopsRow(plan, state, index = 0, count = 1) } }

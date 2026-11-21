@@ -7,15 +7,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SplitButtonDefaults
 import androidx.compose.material3.SplitButtonLayout
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TimePickerDialog
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -117,7 +112,6 @@ private fun Pill(word: String, onWord: () -> Unit, glyph: @Composable () -> Unit
  * Now goes back to the planner's now. The winds, the night and every
  * time down the route are then the planner's for it.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DepartPill(plan: Plan, state: Plan.State) {
     var picking by rememberSaveable { mutableStateOf(false) }
@@ -130,26 +124,20 @@ private fun DepartPill(plan: Plan, state: Plan.State) {
     )
     if (!picking) return
     val (hour, minute) = DepartTime.hourMinute(departMs, AppClock.nowMs())
-    val picker = rememberTimePickerState(initialHour = hour, initialMinute = minute, is24Hour = true)
-    TimePickerDialog(
-        onDismissRequest = { picking = false },
-        title = { Text(stringResource(R.string.depart_title)) },
-        confirmButton = {
-            TextButton(onClick = {
-                picking = false
-                plan.setDepart(DepartTime.next(picker.hour, picker.minute, AppClock.nowMs()))
-            }) { Text(stringResource(R.string.depart_set)) }
+    TimeDialog(
+        title = stringResource(R.string.depart_title),
+        hour = hour,
+        minute = minute,
+        onSet = { h, m ->
+            picking = false
+            plan.setDepart(DepartTime.next(h, m, AppClock.nowMs()))
         },
-        dismissButton = {
-            Row {
-                TextButton(onClick = {
-                    picking = false
-                    plan.setDepart(null)
-                }) { Text(now) }
-                TextButton(onClick = { picking = false }) { Text(stringResource(R.string.cancel)) }
-            }
+        onDismiss = { picking = false },
+        onNow = {
+            picking = false
+            plan.setDepart(null)
         },
-    ) { TimePicker(state = picker, modifier = Modifier.padding(top = WingtipSpace.Sm)) }
+    )
 }
 
 /** The time's pill: Material's outlined split button's leading half alone
