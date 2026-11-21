@@ -15,18 +15,18 @@ export function placeholderOf(direct: boolean, pick: SearchPick | null, picking:
   // The airplanes' Adds, which the traffic's own field said (2026-11-14).
   if (picking === "mine") return "Search for your airplane";
   if (picking === "airplane") return "Search for an airplane to keep";
-  return SEARCH_ALL;
+  return SEARCH_WORD;
 }
 
-/** The default, in the field and to a screen reader alike: the owner,
- *  2026-11-14, "Just say Search airports and airplanes" (it was cut to
- *  "Search airports" on 2026-11-10 to fit beside the mic at the owner's
- *  larger text sizes; the whole words now, cut by the field only where
- *  they cannot fit). */
+/** The default in the field is the one word (the owner, 2026-11-20: "just
+ *  say Search"), which also fits beside the mic at the owner's larger text;
+ *  its name to a screen reader keeps what it finds (WCAG 2.5.3: the name
+ *  holds the word shown). */
+const SEARCH_WORD = "Search";
 const SEARCH_ALL = "Search airports and airplanes";
 
 /** The one search's words: `placeholder` in the field, `label` its name. */
 export function searchWords(direct: boolean, pick: SearchPick | null, picking: string) {
-  const label = placeholderOf(direct, pick, picking);
-  return { label, placeholder: label };
+  const placeholder = placeholderOf(direct, pick, picking);
+  return { label: placeholder === SEARCH_WORD ? SEARCH_ALL : placeholder, placeholder };
 }

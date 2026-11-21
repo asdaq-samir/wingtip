@@ -59,5 +59,5 @@ test("the Favorites' Add, Airplane, asks the one search for one, and the one pic
   await expect(page).not.toHaveURL(/[?&]flight=/);
   await expect(row.getByTestId("pill-aircraft-favorite")).toHaveCount(2);
   await expect(row.getByTestId("pill-aircraft-favorite").last()).toContainText("N200XY");
-  await expect(search).toHaveAttribute("placeholder", "Search airports and airplanes");
+  await expect(search).toHaveAttribute("placeholder", "Search");
 });

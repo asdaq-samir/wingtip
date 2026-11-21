@@ -165,7 +165,7 @@ otherwise.
 
 Since the one search (the owner's approved design, 2026-11-09, branch
 `claude/one-search-web`) the web's sheet has no tabs. Its first row is one
-field, "Search airports and airplanes" (the web has no Ask since decision 0041), with the microphone its
+field, "Search" (named "Search airports and airplanes") (the web has no Ask since decision 0041), with the microphone its
 trailing button, and the page toggle at its end, where the account
 button was until the owner swapped the two (2026-11-14: "Swap the fpl
 toggle and account buttons"); the account button rides the sheet's top
