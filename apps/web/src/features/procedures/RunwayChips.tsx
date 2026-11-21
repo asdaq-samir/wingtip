@@ -99,7 +99,7 @@ export function Chips({
         // track has, so a tap just over or under a row of chips is the
         // group's and not the page's (isolate keeps it over what is round).
         className={cn(
-          "relative isolate w-max flex-nowrap after:absolute after:inset-x-0 after:-inset-y-1.5 after:-z-10 after:content-['']",
+          "relative isolate w-max flex-nowrap hit-y-1.5 after:-z-10",
           !trailing && !tray && "min-w-full",
           tray && TRAY_BODY,
           enter,

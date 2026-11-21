@@ -37,7 +37,7 @@ export default function Explain({
     className: cn(
       // A 44-point area up and down by a pseudo-element, the word's own
       // size unchanged (decision 0030).
-      "relative inline cursor-help rounded-sm text-tint outline-none after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+      "relative inline cursor-help rounded-sm text-tint outline-none hit-x-1 hit-y-3 focus-visible:ring-2 focus-visible:ring-ring",
       className,
     ),
     "aria-label": `${spoken ?? children ?? term}: what it means`,

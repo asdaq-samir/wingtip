@@ -9,8 +9,7 @@ import { Button as BaseButton } from "@base-ui/react/button";
  *  them, the links far enough apart that their areas meet without
  *  overlapping (CLAUDE.md; the web audit's WEB-45: Privacy and Terms were
  *  42 and 35 by 26 with no area of their own). */
-const FOOT_LINK =
-  "relative outline-none after:absolute after:-inset-x-2 after:-inset-y-3.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring";
+const FOOT_LINK = "relative outline-none hit-x-2 hit-y-3.5 focus-visible:ring-2 focus-visible:ring-ring";
 
 /**
  * The foot of the search's page, as Apple Maps on the web ends its sheet

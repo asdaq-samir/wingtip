@@ -54,7 +54,7 @@ const LABEL: Record<string, string> = { Dist: "Distance", ETE: "ETE" };
  *  en route, the arrival, the fuel required. */
 const EXPLAIN: Record<string, ExplainedTerm> = { ETE: "ETE", ETA: "ETA" };
 
-const AREA = "relative max-w-full after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']";
+const AREA = "relative max-w-full hit-x-2 hit-y-3";
 
 /** A figure an airplane makes (the time, the fuel), with none picked: a
  *  dash, said as what it waits for. */

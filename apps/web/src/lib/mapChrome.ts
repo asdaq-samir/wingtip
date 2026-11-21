@@ -195,7 +195,7 @@ export const GRABBER_BAR = "h-[5px] w-9 rounded-full bg-muted-foreground/40";
 /** A capsule whose 44-point hit area is a pseudo-element six points out
  *  round it (the app's rule: a control never grows to get there). The
  *  caller adds its height (h-8 for the 32-point ones) and fill. */
-export const CAPSULE_HIT = "relative rounded-full after:absolute after:-inset-1.5 after:content-['']";
+export const CAPSULE_HIT = "relative rounded-full hit-1.5";
 
 /** A tinted capsule that adds a field to the route -- the Stops' Add
  *  Stop and Direct To (StopsCard) -- one height, padding and hit area (the

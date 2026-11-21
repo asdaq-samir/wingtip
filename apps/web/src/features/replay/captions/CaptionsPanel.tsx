@@ -58,7 +58,7 @@ export function CaptionsPanel({ callsign }: { callsign: string | null }) {
         <div key={c.id} className={cn("flex flex-col gap-1.5 rounded-(--radius-card) p-2", on?.id === c.id && "bg-accent")}>
           <div className="flex items-center gap-2">
             <BaseButton
-              className={cn("relative tabular-nums text-primary after:absolute after:-inset-3 after:content-['']", TEXT.note)}
+              className={cn("relative tabular-nums text-primary hit-3", TEXT.note)}
               onClick={() => usePastFlight.setState({ at: c.from })}
             >
               {replayTimes(c.from).zulu}

@@ -86,7 +86,7 @@ export default function FlightFoot({
       <Button
         variant="link"
         size="inline"
-        className="relative font-semibold after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
+        className="relative font-semibold hit-x-2 hit-y-3"
         data-testid="done-flying"
         onClick={doneFlying}
       >
