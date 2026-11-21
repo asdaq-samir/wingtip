@@ -12,14 +12,15 @@ cat > /tmp/e2e-out/stack.sh <<'EOF'
 mark() { echo "$(($(date +%s) - T0)) $*" >> /tmp/e2e-out/timeline; }
 there() { docker buildx imagetools inspect --raw "$1" > /dev/null 2>&1; }
 # Until e2e-images has pushed $1. After a minute, ask after that
-# job every twenty seconds: once it has ended, it never will.
+# job every twenty seconds: once it has ended, it never will. By the end
+# of its name, as a wave's validation puts "CI / " before it.
 await() {
   local built
   until there "$1"; do
     sleep 2
     if [ "$SECONDS" -ge 60 ]; then
       built=$(gh api "repos/$REPOSITORY/actions/runs/$RUN_ID/jobs?per_page=100" \
-        --jq '.jobs[] | select(.name == "build (e2e)") | .conclusion // "running"')
+        --jq '.jobs[] | select(.name | endswith("build (e2e)")) | .conclusion // "running"')
       if [ "$built" != running ] && [ -n "$built" ] && ! there "$1"; then
         echo "no $1, and build (e2e) ended: $built"
         return 1
