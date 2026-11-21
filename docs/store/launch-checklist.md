@@ -75,7 +75,10 @@ S13). Tick each as it is done.
       (the review account's address and code, below), and the screen
       recording of the copilot listening with the phone locked.
 - [ ] Screenshots: iPhone 6.9" ×5 and iPad 13" ×2 from
-      `docs/store/screenshots/`.
+      `docs/store/screenshots/`, and at least one Apple Watch screenshot,
+      which App Store Connect asks of an app that has a Watch app (the
+      shot list is in `screenshots/README.md`, "Still to take"; not yet
+      captured).
 
 ## The review account (both stores)
 
@@ -110,6 +113,9 @@ S13). Tick each as it is done.
       covers the copilot and the flight recorder; film the ADS-B
       receiver's setup too.
 - [ ] App access: the review account's instructions from listing.md.
+- [ ] Phone screenshots, at least two (Play needs two to publish):
+      `screenshots/android-phone/`, not yet captured (screenshots/README.md,
+      "Still to take").
 - [ ] Content rating (IARC), target audience 18 and over, no ads, and
       the rest of App content as listing.md says.
 - [ ] `APP_ANDROID_CERT_SHA256` in the AppSecret with Play's app signing
