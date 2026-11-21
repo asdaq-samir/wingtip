@@ -93,7 +93,6 @@ export function useSuggestedStops({
     (ident: string) => setHiddenFuel((was) => ({ route: fuelRoute, idents: [...(was.route === fuelRoute ? was.idents : []), ident] })),
     [fuelRoute],
   );
-  const showFuelStops = useCallback(() => setHiddenFuel({ route: "", idents: [] }), []);
   // The tanks for FPL's fuel at each point: the fuel check's usable fuel,
   // allowance and reserve, the first flight's where the route has stops
   // (each is filled again), the strictest reserve of them.
@@ -159,13 +158,9 @@ export function useSuggestedStops({
     if (chase && chase.stops.join(",") !== here) setStops(chase.stops, chase.added);
   });
   useEffect(() => putIn(), [chase]);
-  // Whether the pilot took any out here: the route menu's Show Fuel Stops.
-  const fuelHidden = hiddenHere.length > 0;
   return {
     fuelStops,
-    fuelHidden,
     hideFuelStop,
-    showFuelStops,
     tankFigures,
     fuelStopPins,
     keepFuelStops,

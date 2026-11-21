@@ -12,7 +12,7 @@ import { closeCard, grabberTo, openPanel, settled, sideDrawer, slow } from "./sh
  *  0047): the timeline is where the route is edited -- a tap on a field's
  *  line opens its runways and procedures, the mark is its menu, a hold or
  *  the grip moves it -- and the route's field, to type or paste it in,
- *  opens from the route's ••• (Type the Route), Done folding it away. A
+ *  opens from Add a Stop's keyboard button (Type the route), Done folding it away. A
  *  new plan or half a route has it open already. */
 export async function openRoute(page: Page) {
   const panel = sideDrawer(page);
@@ -21,8 +21,7 @@ export async function openRoute(page: Page) {
   await expect(timeline.or(done).first()).toBeVisible({ timeout: slow(30_000) });
   if (await done.isVisible()) return;
   await controlsInSight(page);
-  await panel.getByTestId("share-route").locator("visible=true").first().click();
-  await page.getByTestId("route-type-open").click();
+  await panel.getByTestId("route-type-open").click();
   await expect(done).toBeVisible();
 }
 
@@ -40,14 +39,15 @@ export function timelineLine(page: Page, ident: string): Locator {
 }
 
 /** The route cleared: half a route by the route box's ✕, a route by
- *  More's Clear route (the owner, 2026-11-11 and 2026-11-18). */
+ *  FPL's ✕ (the owner, 2026-11-11, 2026-11-18 and 2026-11-21). */
 export async function clearTheRoute(page: Page) {
   await openPanel(page);
   await controlsInSight(page);
   const boxClear = sideDrawer(page).getByTestId("route-box-clear");
   if (await boxClear.isVisible()) return boxClear.click();
-  await sideDrawer(page).getByTestId("share-route").locator("visible=true").first().click();
-  await page.getByTestId("route-clear").click();
+  await sideDrawer(page).getByTestId("fpl-clear").click();
+  // FPL's ✕ asks first (ClearRouteButton).
+  await page.getByRole("alertdialog").getByRole("button", { name: "Clear Route" }).click();
 }
 
 /** The Brief put away, by its own close (closeCard), which goes back

@@ -40,6 +40,7 @@ export {
 } from "./consoleHelpers";
 export {
   openBrief,
+  openBriefMenu,
   openBriefing,
   openTab,
   openNavLog,

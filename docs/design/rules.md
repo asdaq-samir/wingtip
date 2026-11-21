@@ -500,7 +500,7 @@ off by default (the owner, 2026-11-13).
    strip -- its N-number and the altitude, no captions (the owner,
    2026-11-17: "No need for airplane and cruise labels"; VFR/IFR the
    Profile card's, the same day), and before there is a route its •••
-   (Undo, the map's choices, a half route's Clear), a plain glyph in the
+   (the route options, the link), a plain glyph in the
    tint as the search bar's microphone is -- in a bar exactly the search
    field's size, the page toggle at its end, so a turn of the page changes
    only what is in the bar; under it the route in its one layout (the
@@ -578,7 +578,7 @@ off by default (the owner, 2026-11-13).
    nothing; a closed field or an unknown point says why in red under its
    line, no chips. The route's field to type or paste a whole route opens
    under the timeline ("Route" over it, Done after) with no route, half a
-   route, an unknown point, or from the route's ••• (Type the Route), the
+   route, an unknown point, or from the keyboard button at Add a Stop's end, the
    figures under it and the Routes' chips put away; a present position is "My Location" (Apple Maps' words)
    wherever the route shows it, never an ident (decision 0047); under the
    timeline the route's figures (To,
@@ -613,9 +613,14 @@ off by default (the owner, 2026-11-13).
    tabs are drawn in, the same height and width (`FloatingBar`, 2026-11-18),
    round Base UI's stock Toolbar (one tab stop, the arrows between them),
    of three buttons: Brief and Nav Log, each opening its card over FPL,
-   and the route's •••, "More", its one menu -- undo and redo,
-   its link, Open in ForeFlight, Save,
-   File, Plan again, Show Fuel Stops, the map's choices and Clear; the checkpoints (ForeFlight's pack) and the printed nav log (the
+   and the route's •••, "More", its one menu, three items (the owner, 2026-11-21): Route Options, Share link and Open in ForeFlight. Undo and Redo, Clear route, the map's choices,
+   Show Fuel Stops, Refresh, Save and Type the Route are no longer its items:
+   Undo is the toast's, "Route Cleared · Undo" or "Altitude Changed · Undo",
+   with Cmd-Z and Shift-Cmd-Z on a keyboard; Clear is FPL's ✕; Checkpoints
+   a switch in the Map card (Route Checkpoints); Add Fuel Stops (also asking
+   again for any taken out) the timeline's pill; Refresh and Save the Brief's
+   Share menu (Refresh replans too); Type the Route a keyboard button at Add a
+   Stop's end; the checkpoints (ForeFlight's pack) and the printed nav log (the
    kneeboard) are the Nav Log card's own Share's, after its link (the owner,
    2026-11-21: "Print navlog should be in navlog share, not in more. Same with
    the checkpoints") (the owner, 2026-11-16, "make those action buttons as tab bar again and move the
@@ -1115,8 +1120,7 @@ way: three homes, and every control in one of them.
    Class B fields' weather marks have no switch: always drawn, the Class B
    ones at every zoom (the owner, 2026-11-17: "Just keep it by default in
    the app so all the class B airports show even when zoomed out"). The
-   route's VFR checkpoints are a switch of the route's ••• menu, On the Map
-   (Checkpoints), off by default (the owner's "Let's not enable waypoints
+   route's VFR checkpoints are a switch of the Map card, Route Checkpoints, off by default (the owner's "Let's not enable waypoints
    for a pilot").
 
 Taken out the same day, with no home: the sheet's Position (a phone's
@@ -1139,7 +1143,7 @@ the web's words are Private & Military since 2026-11-14)
 as the stock toggle's button style, and Look, Theme and Appearance as
 menus (2026-11-14), with no overlay row (Google's tiles are not drawn on the iPhone, and the USGS
 imagery already comes in by itself close in). Show Route As (Route Box or
-Strip) is in the route's ••• menu, the empty route's too; the web has one
+Strip) went with the route's ••• menu's other items; the web has one
 layout since 2026-11-17 (decision 0047), the iPhone's to follow at the
 owner's word.
 
@@ -1277,11 +1281,11 @@ less cluttered". Decision [0045](../decisions/0045-fpl-for-every-pilot.md).
    the nav log's winds, an airplane heard (`traffic_fresh`, in seconds).
 5. **A dash only means "needs an airplane".** A figure still coming is a
    placeholder shape (`components/FigureWait`).
-6. **One Undo.** Every FPL edit is undone and redone from the first items
-   of the route's ••• menu, named by what they put back, kept across a
-   reload (`lib/planUndo`, `hooks/planHistory`). A removal also offers Undo
-   in its toast, where the pilot acted, and Cmd-Z undoes on a keyboard;
-   every other edit is undone from ••• alone (the owner, 2026-11-17).
+6. **One Undo.** Every FPL edit offers Undo in its toast where the pilot
+   acted ("KMSN Removed", "Altitude Changed"), and Cmd-Z and Shift-Cmd-Z
+   undo and redo on a keyboard, the steps kept across a reload
+   (`lib/planUndo`, `hooks/planHistory`); the route's ••• menu no longer
+   holds Undo and Redo (the owner, 2026-11-21).
 7. **One surface.** No box in a box, fewer borders and pills; spacing
    groups, colour only for meaning.
 8. **A point the planner will not plan to is said, not planned.** An

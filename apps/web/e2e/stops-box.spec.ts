@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, openPanel, settle, sideDrawer, slow, openRoute } from "./helpers";
+import { controlsInSight, openPanel, settle, sideDrawer, slow, openRoute, openBriefMenu } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { pickAirplane } from "./startState";
 import { recordedStops } from "./recordedStops";
@@ -28,8 +28,8 @@ test("a flight saved with a stop is filed with it and the altitude set there, an
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KMSN&altitudes=KMSN:2400&view=full");
   const save = page.getByTestId("save-flight-button");
   await controlsInSight(page);
-  // Save, in the route's Share menu.
-  await sideDrawer(page).getByTestId("share-route").click();
+  // Save, in the Brief's Share menu.
+  await openBriefMenu(page);
   await expect(save).toBeEnabled({ timeout: slow(30000) });
   await save.click();
 

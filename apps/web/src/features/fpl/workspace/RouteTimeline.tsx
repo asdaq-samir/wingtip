@@ -9,7 +9,7 @@ import { NO_CONNECTION, noConnection } from "../../../lib/problems";
 import { sameField } from "../../../lib/procedures";
 import { airportQuery } from "../../../lib/queryClient";
 import { DepartPicker } from "../../navlog/lazy";
-import { FuelStopsChip, TimelineRoute, visitAt, visitRow, type TimelinePoint } from "../../procedures/lazy";
+import { FuelStopsChip, TimelineRoute, TypeRouteButton, visitAt, visitRow, type TimelinePoint } from "../../procedures/lazy";
 import { etaAt } from "../../plan";
 import type { PlanSlices } from "../vm/planSlices";
 import type { ProceduresRouteProps } from "../../procedures/lazy";
@@ -173,6 +173,19 @@ export default function RouteTimeline({
   ) : fuelIn ? (
     <FuelStopsChip added onClick={() => setStops(planned.stops.filter((stop) => !fuel.some((f) => sameField(f, stop))))} />
   ) : null;
+  // Type the Route, where More's item was (the owner, 2026-11-21: More keeps
+  // three items): a keyboard glyph at Add a Stop's end on a whole route
+  // whose field is folded, opening the route's field to type or paste it in
+  // whole (RouteEditor), as Type or Paste a Route does before it is whole.
+  const typeFuel =
+    wholeRoute && vm.routeList.routeFolded ? (
+      <>
+        <TypeRouteButton onType={() => vm.routeList.setRouteOpen(true)} />
+        {fuelPill}
+      </>
+    ) : (
+      fuelPill
+    );
   return (
     <TimelineRoute
       {...props}
@@ -180,7 +193,7 @@ export default function RouteTimeline({
       head={half && !planned.dep ? <MissingEnd vm={vm} end="Departure" /> : undefined}
       tail={half && !planned.dest ? <MissingEnd vm={vm} end="Destination" /> : undefined}
       foot={half ? <TypeRow vm={vm} /> : undefined}
-      addTrailing={read ? undefined : fuelPill}
+      addTrailing={read ? undefined : typeFuel}
       allStops={read || tall || panel === "full"}
       onAllStops={() => setPanel("full")}
     />

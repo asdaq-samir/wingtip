@@ -3,6 +3,8 @@ import { CircleDashed, CloudSun, Plane, Shield } from "lucide-react";
 import { LayerSubmenu, LayerToggle, LayerToggleMenu } from "../../components/LayerTile";
 import { DropdownMenuCheckboxItem, DropdownMenuGroup, DropdownMenuLabel, DropdownMenuSeparator } from "../../components/ui/dropdown-menu";
 import SectionTitle from "../../components/SectionTitle";
+import { ListGroup } from "../../components/GroupedList";
+import SwitchRow from "../../components/SwitchRow";
 import { usePreferences } from "../../lib/preferences";
 import { useWeatherLayers, type WindsAt } from "../../lib/map/sources/weatherLayers";
 import { WINDS_MODELLED_LABEL } from "../../lib/windsAloft";
@@ -29,8 +31,7 @@ const WINDS: { value: WindsAt; label: string }[] = [
  * layers aeronautical, weather, traffic, private/military in the map
  * settings?"), where there were eleven; two by two since 2026-11-14. The public fields, the route and
  * the plan's points, own ship and the TFRs have no switch: always drawn;
- * the route's checkpoints and the Class B chips are the route's ••• menu's
- * (RouteMapChoices). Which weather the Weather layer draws is its tile's own
+ * the route's checkpoints are a switch under them. Which weather the Weather layer draws is its tile's own
  * menu, the ••• in its corner.
  */
 export default function MapLayers() {
@@ -79,6 +80,15 @@ export default function MapLayers() {
           onChange={prefs.setPrivateMilitary}
           testId="private-military-toggle"
         />
+      </div>
+      {/* The route's VFR checkpoints with the landmarks they were chosen
+          from, off unless turned on (the owner's "Let's not enable waypoints
+          for a pilot"); it was the route's ••• menu's Checkpoints until
+          2026-11-21, when More kept three items. */}
+      <div className="pt-2">
+        <ListGroup>
+          <SwitchRow title="Route Checkpoints" on={prefs.waypoints} onChange={prefs.setWaypoints} testId="waypoints-toggle" />
+        </ListGroup>
       </div>
     </section>
   );

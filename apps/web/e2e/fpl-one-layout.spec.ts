@@ -206,10 +206,10 @@ test.describe("/app/plan", () => {
     await foldRoute(page);
     await expect(drawer.getByTestId("route-box")).toHaveCount(0);
 
-    // The route's ••• keeps Undo and the map's choices, and no Show Route As.
+    // The route's ••• keeps three items, and no Show Route As.
     await controlsInSight(page);
     await drawer.getByTestId("share-route").locator("visible=true").first().click();
-    await expect(page.getByText("On the Map")).toBeVisible();
+    await expect(page.getByTestId("share-link")).toBeVisible();
     await expect(page.getByText("Show Route As")).toHaveCount(0);
   });
 

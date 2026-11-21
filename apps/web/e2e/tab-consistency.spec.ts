@@ -190,13 +190,22 @@ test("FPL's File button stands beside its bar, at its height, and the pair fits 
     const m = await page.evaluate(() => {
       const bar = document.querySelector("[data-floating-bar]:not([data-single])")!.getBoundingClientRect();
       const one = document.querySelector("[data-single]")!.getBoundingClientRect();
-      return { barLeft: bar.left, barRight: bar.right, barH: bar.height, left: one.left, right: one.right, h: one.height, w: innerWidth };
+      const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      return {
+        rem,
+        barLeft: bar.left,
+        barRight: bar.right,
+        barH: bar.height,
+        left: one.left,
+        right: one.right,
+        h: one.height,
+        w: innerWidth,
+      };
     });
     const where = root || "the default size";
-    // eslint-disable-next-line no-console
-    console.log(where, JSON.stringify(m));
+    test.info().annotations.push({ type: "fit", description: `${where} ${JSON.stringify(m)}` });
     expect(m.h, `${where}: height`).toBeCloseTo(m.barH, 0);
-    expect(m.left - m.barRight, `${where}: gap`).toBeCloseTo(8, 0);
+    expect(m.left - m.barRight, `${where}: gap`).toBeCloseTo(m.rem / 2, 0);
     expect(m.barLeft, `${where}: left margin`).toBeGreaterThanOrEqual(0);
     expect(m.right, `${where}: right margin`).toBeLessThanOrEqual(m.w);
   }

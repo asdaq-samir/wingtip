@@ -15,6 +15,13 @@ export async function openBrief(page: Page) {
   await expect(card).toBeVisible();
 }
 
+/** The Brief's Share menu open, where Save and the review are (the owner,
+ *  2026-11-21: More keeps Route Options, Share link and Open in ForeFlight). */
+export async function openBriefMenu(page: Page) {
+  await openBrief(page);
+  await sideDrawer(page).getByTestId("card-share").click();
+}
+
 /** The panel all the way out, as a finger takes it: a drag on its
  *  grabber to the screen's far edge from half; from the pill, the
  *  grabber's arrow keys. */

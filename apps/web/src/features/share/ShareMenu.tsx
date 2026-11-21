@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { done } from "../../lib/doneNote";
-import { FileArchive, Fuel, Keyboard, Link2, MapPinned, Printer, RotateCw, Send, Signpost, Trash2 } from "lucide-react";
+import { FileArchive, Link2, MapPinned, Printer, RotateCw, Send, Signpost } from "lucide-react";
 import { Toolbar } from "@base-ui/react/toolbar";
 import { TriggerButton, TriggerFace } from "./ShareTrigger";
 import { ResponsivePopover, ResponsivePopoverAnchor } from "../../components/ResponsivePopover";
@@ -9,7 +9,6 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import type { Candidate, Course } from "../../lib/api/types";
@@ -19,8 +18,6 @@ import { markPackSent, openInForeFlight, packOrigin, packPath, packSent } from "
 import { navLogRows } from "../plan";
 import { useShareLink } from "./useShareLink";
 import { refreshLive } from "../../lib/liveRefresh";
-import PlanUndoItems from "./PlanUndoItems";
-import RouteMapChoices from "./RouteMapChoices";
 
 /** The route as typed: its departure, stops and destination. */
 interface Planned {
@@ -63,9 +60,6 @@ export default function ShareMenu({
   saving,
   reviewSheet,
   planAgain,
-  onShowFuel,
-  onTypeRoute,
-  onClear,
   routeOptions,
   look,
 }: {
@@ -79,14 +73,6 @@ export default function ShareMenu({
    *  route options in the ... button"), where it was a pill under FPL's
    *  title; given only while there are ways to offer (routesOffered). */
   routeOptions?: { shown: boolean; onShown: (shown: boolean) => void };
-  /** The suggested fuel stops taken out of the route box, put back. */
-  onShowFuel?: () => void;
-  /** The route's field opened over its timeline, to type or paste the
-   *  route in whole (RouteEditor; decision 0047). */
-  onTypeRoute?: () => void;
-  /** The route cleared: the route box's menu's last item (the owner,
-   *  2026-11-11: "Instead of clear button, move that to the …"). */
-  onClear?: () => void;
   align: "start" | "end";
   /** Its button's: the route box's, or the tab bar's over the Brief and
    *  the nav log (TabBar's `routeShare`). */
@@ -106,10 +92,10 @@ export default function ShareMenu({
   saving: (askReview: () => void) => ReactNode;
   /** The review's sheet, given the way to put it away. */
   reviewSheet: (done: () => void) => ReactNode;
-  /** Plan again -- fresh winds, weather and fuel -- in the route's menu,
-   *  at the owner's pick ("A": the route box's row on one line), and what
-   *  is out of date, marked on Share as it was on its own button. */
-  planAgain?: { stale: string[]; onPlan: () => void };
+  /** Plan again -- fresh winds, weather and fuel -- with the Brief's Refresh
+   *  (the owner, 2026-11-21: More keeps only Route Options, Share link and
+   *  Open in ForeFlight; the plan has no refresh of its own but this). */
+  planAgain?: { onPlan: () => void };
 }) {
   const [askingReview, setAskingReview] = useState(false);
   // What an item does once the menu has gone, at Base UI's own word that
@@ -177,7 +163,7 @@ export default function ShareMenu({
     window.setTimeout(() => packChanged((n) => n + 1), 0);
     done("Sent to ForeFlight", { detail: "Then tap Open in ForeFlight again" });
   };
-  const trigger = <TriggerButton look={look} card={card} stale={planAgain?.stale ?? []} testId={testId} />;
+  const trigger = <TriggerButton look={look} card={card} testId={testId} />;
 
   return (
     // The review's sheet, from the menu's item, placed by the Share
@@ -204,28 +190,15 @@ export default function ShareMenu({
           {/* In FPL's floating bar a button of its Toolbar (FplTabBar),
               in the arrows' roving focus, as the NOTAM filters' menus are. */}
           <DropdownMenuTrigger render={look === "bar" ? <Toolbar.Button render={trigger} /> : trigger}>
-            {(!look || look === "head") && <TriggerFace card={card} stale={planAgain?.stale ?? []} share={look === "head"} />}
+            {(!look || look === "head") && <TriggerFace card={card} share={look === "head"} />}
           </DropdownMenuTrigger>
         </ResponsivePopoverAnchor>
         <DropdownMenuContent align={align} className="min-w-56 print:hidden">
-          {card === "route" && <PlanUndoItems />}
           {routeOptions && (
             <DropdownMenuCheckboxItem checked={routeOptions.shown} onCheckedChange={routeOptions.onShown} data-testid="routes-toggle">
               <Signpost />
               Route Options
             </DropdownMenuCheckboxItem>
-          )}
-          {routed && onShowFuel && (
-            <DropdownMenuItem onClick={onShowFuel} data-testid="route-show-fuel">
-              <Fuel />
-              Show Fuel Stops
-            </DropdownMenuItem>
-          )}
-          {onTypeRoute && (
-            <DropdownMenuItem onClick={onTypeRoute} data-testid="route-type-open">
-              <Keyboard />
-              Type the Route
-            </DropdownMenuItem>
           )}
           {/* The route's link and its sending, in the route's ••• since
               Share left the floating bar (the owner, 2026-11-17: "Yes to
@@ -268,18 +241,8 @@ export default function ShareMenu({
                 ))}
             </>
           )}
-          {card === "route" && (
-            <>
-              {routed && saving(afterMenu(() => setAskingReview(true)))}
-              {planAgain && (
-                <DropdownMenuItem onClick={planAgain.onPlan} data-testid="plan-again" data-stale={planAgain.stale.length ? "" : undefined}>
-                  <RotateCw />
-                  Refresh
-                  {planAgain.stale.length > 0 && <span aria-hidden="true" className="ml-auto size-2 rounded-full bg-caution" />}
-                </DropdownMenuItem>
-              )}
-            </>
-          )}
+          {/* Save and the review, the Brief's (the owner, 2026-11-21). */}
+          {card === "brief" && routed && saving(afterMenu(() => setAskingReview(true)))}
           {/* The checkpoints are the nav log's (the owner, 2026-11-21: "Print navlog should be in navlog share, not in more. Same with the checkpoints"). */}
           {card === "navlog" && routed && (
             <>
@@ -322,7 +285,13 @@ export default function ShareMenu({
               Refresh is in its own menu: the head keeps its two buttons
               (rules.md). Kept fresh by themselves besides (useLiveRefresh). */}
           {card === "brief" && (
-            <DropdownMenuItem onClick={() => void refreshLive("brief")} data-testid="brief-refresh">
+            <DropdownMenuItem
+              onClick={() => {
+                void refreshLive("brief");
+                planAgain?.onPlan();
+              }}
+              data-testid="brief-refresh"
+            >
               <RotateCw />
               Refresh
             </DropdownMenuItem>
@@ -336,25 +305,6 @@ export default function ShareMenu({
               <Printer />
               Print the nav log
             </DropdownMenuItem>
-          )}
-          {/* What the map draws of the route after its actions, as iOS's
-              ••• menus put a page's view options, the Clear still last:
-              only once there is a route (the owner, 2026-11-18: "Finding
-              checkpoints is an action after we draw the route"). */}
-          {card === "route" && routed && (
-            <>
-              <DropdownMenuSeparator />
-              <RouteMapChoices />
-            </>
-          )}
-          {onClear && (
-            <>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={onClear} data-testid="route-clear">
-                <Trash2 />
-                Clear route
-              </DropdownMenuItem>
-            </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>

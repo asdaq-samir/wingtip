@@ -113,10 +113,12 @@ test("a suggested fuel stop can be taken out of the route box and put back, or a
   await chip.click();
   await page.getByTestId("route-fuel-stop-remove").click();
   await expect(chip).toHaveCount(0);
-  // The route's menu puts it back.
-  await sideDrawer(page).getByTestId("share-route").click();
-  await page.getByTestId("route-show-fuel").click();
-  await expect(chip).toHaveText("KRPD");
+  // Planned again, it is back.
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  await openRoute(page);
+  await expect(chip).toHaveText("KRPD", { timeout: slow(60_000) });
   // And its menu's Add to Route makes it a stop of the route.
   await chip.click();
   await page.getByTestId("route-fuel-stop-add").click();

@@ -63,11 +63,9 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   const { aircraft, aircraftChoices, aircraftValue, changeAircraft, changeDepart, course, pickTail, s, selected } = vm.plan;
   const { cardOpen, flight, heldPoint, place } = vm.cards;
   const { filedProcedures } = vm.picks;
-  const { fuelHidden, showFuelStops } = vm.stops;
   const { briefShown, openProfile, profileReady, profileShown } = vm.fpl;
   const { flying } = vm.flight;
-  const { altitudeMark, fileFlightPlan, fileable, flightToSave, landedStops, landings, stale, tightLeg, unflyable, unflyableBrief } =
-    vm.brief;
+  const { altitudeMark, fileFlightPlan, fileable, flightToSave, landedStops, landings, tightLeg, unflyable, unflyableBrief } = vm.brief;
   // Each tab's part of the briefing. Made once for the same plan
   // (useCallback), and each
   // part drawn again only when its plan changes (FlightBriefingView's
@@ -241,23 +239,13 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
           <ReviewAskSheet flight={flightToSave} onDone={done} />
         </Suspense>
       )}
-      // Plan again in the route's own menu, at the owner's pick ("A") to
-      // keep the route box's row on one line; Share marked where it is due.
-      planAgain={card === undefined && routed && !s.local ? { stale, onPlan: () => setLoad((n) => n + 1) } : undefined}
-      onShowFuel={card === undefined && fuelHidden ? showFuelStops : undefined}
+      // Plan again with the Brief's Refresh (the owner, 2026-11-21: More
+      // keeps only Route Options, Share link and Open in ForeFlight).
+      planAgain={card === "brief" && routed && !s.local ? { onPlan: () => setLoad((n) => n + 1) } : undefined}
       // The suggested routes, More's first item while there are some.
       routeOptions={
         card === undefined && routesOffered(vm) ? { shown: vm.routeList.routesShown, onShown: vm.routeList.setRoutesShown } : undefined
       }
-      // The route's field over its timeline, to type or paste it in whole.
-      onTypeRoute={
-        card === undefined && vm.route.wholeRoute && vm.routeList.routeFolded && !vm.flight.flying
-          ? () => vm.routeList.setRouteOpen(true)
-          : undefined
-      }
-      // The route's Clear, last in More; half a route's is the route box's ✕
-      // (RouteEditor), and the empty page has nothing to clear.
-      onClear={card === undefined && vm.route.hasPoints ? vm.routeList.clearRoute : undefined}
     />
   );
 

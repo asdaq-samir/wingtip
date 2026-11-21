@@ -68,13 +68,17 @@ export interface PlanHistory {
 export const started = (now: PlanState, at: number): PlanHistory => ({ past: [], now, future: [], at });
 
 /** The plan as the address has it now, taken in: a change of the pilot's
- *  is a step back, with what it did in words where it took something away
- *  (`note`, for the Undo bar); one the page made as it settled is folded
+ *  is a step back, with what it did in words (`note`, for the Undo bar: the
+ *  menu's Undo and Redo are gone, the owner 2026-11-21, so every edit offers
+ *  its own); one the page made as it settled is folded
  *  into the step before. */
 export function observed(h: PlanHistory, next: PlanState, at: number): { history: PlanHistory; note: string | null } {
   if (sameState(h.now, next)) return { history: h, note: null };
   if (at - h.at < SETTLE_MS) return { history: { ...h, now: next }, note: null };
-  return { history: { past: [...h.past, h.now].slice(-LIMIT), now: next, future: [], at }, note: describeEdit(h.now, next) };
+  return {
+    history: { past: [...h.past, h.now].slice(-LIMIT), now: next, future: [], at },
+    note: describeEdit(h.now, next) ?? `${editName(h.now, next)} Changed`,
+  };
 }
 
 /** One step back: the plan to put in the address, or null with none. */
@@ -94,8 +98,8 @@ export function redone(h: PlanHistory, at: number): PlanHistory | null {
 const listOf = (value: string | undefined) => (value ? value.split(",").filter(Boolean) : []);
 
 /** What a change took away, in the bar's words ("Route Cleared", "KMSN
- *  removed"); null for one that only added or changed a figure, which the
- *  keyboard still undoes. */
+ *  removed"); null for one that only added or changed something, which
+ *  `observed` says by the part it touched ("Altitude Changed"). */
 export function describeEdit(before: PlanState, after: PlanState): string | null {
   const hadRoute = !!(before.dep || before.dest);
   if (hadRoute && !after.dep && !after.dest) return "Route Cleared";

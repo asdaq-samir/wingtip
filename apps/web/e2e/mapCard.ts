@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { controlsInSight, frontSheet, grabberTo, openMapSettings, openPanel, settle, sideDrawer, slow } from "./helpers";
+import { frontSheet, grabberTo, inSheet, openMapSettings, settle, slow } from "./helpers";
 
 /* The Map card, the Settings its gear opens, and the map's 3D button
    (features/map-settings, features/settings, ThreeDButton; the owner's
@@ -41,21 +41,18 @@ export async function setMap3d(page: Page, on: boolean) {
   await expect(button).toHaveText(on ? "2D" : "3D");
 }
 
-/** The route's ••• menu's map switch -- Checkpoints (`waypoints-toggle`),
- *  since the Map card's layers became four (the owner, 2026-11-14) -- turned over
- *  in More on a route drawn (only then: the owner, 2026-11-18), remembered
- *  per browser, so the route loaded after shows it. */
+/** The Map card's Route Checkpoints switch (`waypoints-toggle`; moved from
+ *  the route's ••• menu, 2026-11-21, when More kept three items), turned
+ *  over, remembered per browser, so the route loaded after shows it. */
 export async function routeMenuSwitch(page: Page, testId: "waypoints-toggle", on: boolean, route = "/app/plan?dep=C81&dest=KDLH") {
   await page.goto(route);
   await settle(page);
-  await openPanel(page);
-  await controlsInSight(page);
-  const more = sideDrawer(page).getByTestId("share-route").locator("visible=true").first();
-  await more.click();
-  const item = page.getByTestId(testId);
-  await expect(item).toHaveAttribute("aria-checked", String(!on));
+  await openMapSettings(page);
+  const item = page.getByTestId("map-settings").getByTestId(testId);
+  await expect(item).toBeChecked({ checked: !on });
+  // Below the layers' tiles: the card pulled up to it, as a pilot does.
+  await inSheet(page, item);
   await item.click();
-  await more.click();
-  await expect(page.getByTestId(testId)).toHaveAttribute("aria-checked", String(on));
-  await page.keyboard.press("Escape");
+  await expect(item).toBeChecked({ checked: on });
+  await closeMapSettings(page);
 }

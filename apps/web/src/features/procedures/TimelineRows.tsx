@@ -179,6 +179,25 @@ export function FuelStopsChip({ added, onClick }: { added: boolean; onClick: () 
   );
 }
 
+/** Type the Route on a whole route, at Add a Stop's end (the owner,
+ *  2026-11-21: More keeps three items): the keyboard glyph alone in the fuel
+ *  stops' chip's shape and wash, named in full, opening the route's field
+ *  (RouteEditor) to type or paste the route in whole. */
+export function TypeRouteButton({ onType }: { onType: () => void }) {
+  return (
+    <Button
+      variant="ghost"
+      type="button"
+      onClick={onType}
+      aria-label="Type the route"
+      data-testid="route-type-open"
+      className={cn(chipLook(true), "bg-tint/12 hover:bg-tint/20! dark:hover:bg-tint/20!")}
+    >
+      <Keyboard className="size-4" aria-hidden="true" />
+    </Button>
+  );
+}
+
 /**
  * An end of the route not yet picked, in its place on the timeline (the
  * owner, 2026-11-18: "the empty fpl page looks a bit different than filled

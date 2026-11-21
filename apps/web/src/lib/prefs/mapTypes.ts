@@ -53,7 +53,7 @@ export interface MapSlice {
    *  planner's checkpoints and the landmarks they were chosen from, the
    *  training map's detections and added points. Off unless turned on, at
    *  the owner's ask ("Let's not enable waypoints for a pilot"); the
-   *  route's ••• menu's Checkpoints (RouteMapChoices). */
+   *  Map card's Route Checkpoints switch (MapLayers). */
   waypoints: boolean;
   /** Whether the airplanes ADS-B receivers hear about the map are drawn
    *  (TrafficGl). Off by default: it asks a third party every five seconds. */

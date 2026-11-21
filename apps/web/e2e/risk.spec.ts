@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { settle, sideDrawer, slow, openTab, openSection, controlsInSight } from "./helpers";
+import { settle, sideDrawer, slow, openTab, openSection, controlsInSight, openBriefMenu } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -73,7 +73,7 @@ test("a quiet day is low, what the pilot ticks raises it, and Save files it with
   await expect(drawer.getByTestId("risk-flag")).toContainText("High risk");
 
   await controlsInSight(page);
-  await drawer.getByTestId("share-route").click();
+  await openBriefMenu(page);
   await page.getByTestId("save-flight-button").click();
   await expect.poll(() => filed?.risk?.level).toBe("high");
   expect(filed!.risk!.factors).toEqual(
