@@ -33,58 +33,55 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.FlightModel
+import app.wingtipmaps.android.flight.StripTrack
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 
 /**
- * The flight's figures in one line -- To, Dist, ETE, Fuel -- what the
- * web app's pill shows at the sheet's foot (FlightLine) and the iOS app's
- * FiguresStrip, and what the pilot glances at in the air. The fuel is the
- * engine's `strip_fuel`, the web's and the iPhone's: the fuel required, in
- * the error colour where the tanks do not hold it and its reserve (14 CFR
- * 91.151, 91.167): a warning, never a limit.
+ * The flight's figures in one line -- To, Dist, ETE, Trk, and GPS Alt
+ * whenever the airplane's position is known -- what the web app's strip
+ * shows at the sheet's foot (FlightLine) and the iOS app's FiguresStrip,
+ * and what the pilot glances at in the air. Track took the fuel's place
+ * (the owner, 2026-11-21: "replace Fuel with Track"): the fuel is the
+ * plan's gauges at each field (FuelTanks), the nav log's and the Brief's.
+ * In flight no To, which the flying head names.
  */
 @Composable
 fun FiguresStrip(state: Plan.State, model: FlightModel = hiltViewModel()) {
     // In the air on the route -- moving, within 3 nm of the line (the
     // engine's `in_flight`, InFlight) -- the figures count down from where
     // the airplane is, as the iPhone's do: what is left to the destination
-    // at the groundspeed now, and the fuel still required.
+    // at the groundspeed now.
     val flight by model.state.collectAsStateWithLifecycle()
     val progress = flight.progress?.takeIf { it.onRoute }
-    val warn = model.stripFuel(state.totals).getOrNull()?.short?.isNotEmpty() == true
-    // A failed rule reads "Failed" in the error colour, never as no fuel
-    // required (Engine.rule logs the engine's words).
-    // The hop being flown and what has burnt since it began, the engine's
-    // (in_flight's hop and hop_burnt_gal, the tanks filled at each stop).
-    val fuel = model.stripFuel(state.totals, hop = progress?.hop ?: 0, burntGal = progress?.hopBurntGal)
     val to = stringResource(R.string.figure_to)
     val dist = stringResource(R.string.figure_dist)
     val ete = stringResource(R.string.figure_ete)
-    val fuelName = stringResource(R.string.figure_fuel)
+    val trk = stringResource(R.string.figure_trk)
+    val gpsAlt = stringResource(R.string.figure_gps_alt)
     val saidTo = stringResource(R.string.said_to)
     val saidDist = stringResource(R.string.leg_distance)
     val saidEte = stringResource(R.string.leg_time)
-    val saidFuel = stringResource(R.string.said_fuel_required)
-    val failed = stringResource(R.string.failed)
+    val saidTrack = stringResource(R.string.said_track)
+    val saidNoTrack = stringResource(R.string.said_no_track)
+    val saidGpsAlt = stringResource(R.string.said_gps_alt)
     // Each figure with what TalkBack says for it (Spoken), so "102.4 nm"
     // is heard as miles rather than as "one hundred two point four n m".
     val figures = buildList {
-        add(StripFigure(to, if (state.routed) state.dest else Format.NONE, "$saidTo, ${if (state.routed) state.dest else Spoken.NOT_KNOWN}"))
+        if (progress == null) add(StripFigure(to, if (state.routed) state.dest else Format.NONE, "$saidTo, ${if (state.routed) state.dest else Spoken.NOT_KNOWN}"))
         val nm = if (progress != null) progress.destination?.distanceNm ?: progress.leftNm
         else state.totals?.distanceNm ?: state.course?.distanceNm
         add(StripFigure(dist, Format.distance(nm), "$saidDist, ${Spoken.distance(nm)}"))
-        // With no airplane, To and Dist alone: no time or fuel is guessed
-        // (decision 0011).
-        if (state.airplane) {
-            val min = if (progress != null) progress.destination?.eteMin else state.totals?.eteMin
-            add(StripFigure(ete, min?.let(Format::duration) ?: Format.NONE, "$saidEte, ${Spoken.duration(min)}"))
-            fuel.fold(
-                { add(StripFigure(fuelName, Format.fuel(it.requiredGal), "$saidFuel, ${Spoken.fuel(it.requiredGal)}", warn)) },
-                { add(StripFigure(fuelName, failed, "$saidFuel, $failed", warn = true)) },
-            )
+        // With no airplane no time is guessed (decision 0011).
+        val min = if (progress != null) progress.destination?.eteMin else state.totals?.eteMin?.takeIf { state.airplane }
+        add(StripFigure(ete, min?.let(Format::duration) ?: Format.NONE, "$saidEte, ${Spoken.duration(min)}"))
+        val track = StripTrack.of(flight.fix, flight.underway, flight.progress?.trackMagDeg)
+        add(StripFigure(trk, track?.let(Format::heading) ?: Format.NONE, track?.let { "$saidTrack, ${Spoken.headingMagnetic(it)}" } ?: saidNoTrack))
+        flight.fix?.let { fix ->
+            val feet = fix.altitudeFt?.let(StripTrack::tens)
+            add(StripFigure(gpsAlt, Format.altitude(feet), "$saidGpsAlt, ${Spoken.altitude(feet)}"))
         }
     }
     // At 150 % type and more four figures do not fit across a phone: two

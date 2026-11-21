@@ -37,12 +37,21 @@ struct RouteBoxRow: View {
                 .accessibilityLabel("No airplane picked")
                 .accessibilityHint("Pick one for the time, fuel and groundspeed")
             }
+            // The Profile's one button, its altitude caution marked on it
+            // (the web's altitude pill ends in the Profile, its caution
+            // counted there, the owner, 2026-11-20).
+            let cautioned = !(plan.altitude?.cautions?.isEmpty ?? true)
             Button { open(.profile) } label: {
-                Text(Format.cruiseAltitude(plan.altitudeFt)).font(WingtipType.row.monospaced())
+                Label {
+                    Text(Format.cruiseAltitude(plan.altitudeFt)).font(WingtipType.row.monospaced())
+                } icon: {
+                    Image(systemName: cautioned ? "exclamationmark.triangle.fill" : WingtipIcon.profile)
+                        .foregroundStyle(cautioned ? WingtipInk.caution : Color.accentColor)
+                }
             }
             .buttonStyle(.borderless)
             .hitArea()
-            .accessibilityLabel("Cruise altitude")
+            .accessibilityLabel(cautioned ? "Cruise altitude, altitude caution" : "Cruise altitude")
             .accessibilityValue(plan.altitudeFt.map { Format.spokenAltitude($0) } ?? "the planner's pick")
             .accessibilityHint("Opens the profile and the Altitude Advisor")
             .accessibilityIdentifier("route-cruise")

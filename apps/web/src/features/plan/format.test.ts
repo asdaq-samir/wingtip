@@ -82,6 +82,7 @@ describe("legsWithoutWind", () => {
     alternate: null,
     hops: [],
     fuel_stops: [],
+    no_fuel_stop: [],
     planned_at: null,
     winds: null,
     ground_min: 0,

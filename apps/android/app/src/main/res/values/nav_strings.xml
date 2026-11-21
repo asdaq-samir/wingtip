@@ -19,12 +19,9 @@
     <string name="point_move_down">Move Down</string>
     <string name="point_remove">Remove</string>
     <string name="point_add_stop_after_title">Add a Stop After %1$s</string>
-    <string name="undo_removed">Removed %1$s</string>
+    <string name="undo_removed">%1$s Removed</string>
     <string name="undo_direct">Direct to %1$s</string>
-    <string name="undo_moved">Moved %1$s</string>
-    <string name="undo_added">Added %1$s</string>
-    <string name="undo_fly_here">New route to %1$s</string>
-    <string name="undo_depart_from">Departing %1$s</string>
+    <string name="undo_replaced">Route Replaced</string>
 
     <string name="logbook_deleted">Deleted %1$s</string>
     <string name="logbook_remarks">Remarks</string>

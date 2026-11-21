@@ -69,6 +69,13 @@
           "items": {
             "$ref": "#/definitions/FuelField"
           }
+        },
+        "alternate_gal": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Under IFR with an alternate filed, the fuel from the destination on to it, gallons (14 CFR 91.167(a)(2)): the stretch landing at the destination keeps it with the reserve. Each stop is itself a first point of intended landing under 91.167(a)(1); only the destination's alternate is counted, as the planner's fuel check counts it. Null or 0 under VFR."
         }
       },
       "required": [

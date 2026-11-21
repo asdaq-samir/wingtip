@@ -10857,6 +10857,11 @@
             "title": "Destination",
             "type": "string"
           },
+          "passes": {
+            "default": false,
+            "title": "Passes",
+            "type": "boolean"
+          },
           "reason": {
             "default": "fuel",
             "enum": [
@@ -10865,6 +10870,17 @@
             ],
             "title": "Reason",
             "type": "string"
+          },
+          "short": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShortFlight"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
           },
           "stops": {
             "items": {
@@ -15377,6 +15393,30 @@
           "state"
         ],
         "title": "NextCycle",
+        "type": "object"
+      },
+      "NoFuelStop": {
+        "description": "A flight short of fuel the planner offers no stop on, and why: the\nfuel on board at the start under its start, taxi and reserve already\n(`on_board`, 14 CFR 91.151(a), 91.167(a)), or no field with fuel in\nreach of the tanks.",
+        "properties": {
+          "departure": {
+            "title": "Departure",
+            "type": "string"
+          },
+          "destination": {
+            "title": "Destination",
+            "type": "string"
+          },
+          "on_board": {
+            "default": false,
+            "title": "On Board",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "departure",
+          "destination"
+        ],
+        "title": "NoFuelStop",
         "type": "object"
       },
       "NotamReason": {
@@ -21675,6 +21715,25 @@
         "title": "ShortField",
         "type": "object"
       },
+      "ShortFlight": {
+        "description": "A flight between two landings, by its two ends.",
+        "properties": {
+          "departure": {
+            "title": "Departure",
+            "type": "string"
+          },
+          "destination": {
+            "title": "Destination",
+            "type": "string"
+          }
+        },
+        "required": [
+          "departure",
+          "destination"
+        ],
+        "title": "ShortFlight",
+        "type": "object"
+      },
       "SpecialUse": {
         "description": "One special-use area, as the FAA publishes it.",
         "properties": {
@@ -24359,6 +24418,14 @@
             ],
             "default": null,
             "title": "Night Passengers"
+          },
+          "no_fuel_stop": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/NoFuelStop"
+            },
+            "title": "No Fuel Stop",
+            "type": "array"
           },
           "on_board_gal": {
             "anyOf": [

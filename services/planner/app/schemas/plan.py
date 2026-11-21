@@ -134,6 +134,10 @@ class Totals(BaseModel):
     #: (wingtip.fuelstops), one entry a flight short of fuel; empty where every
     #: flight's fuel check passes.
     fuel_stops: list["FuelStopSuggestion"] = []
+    #: The flights short of fuel with no stop offered (wingtip.flight_legs
+    #: fuel_stops_of): no field with fuel in reach, or the fuel on board at
+    #: the start already under its start, taxi and reserve (`on_board`).
+    no_fuel_stop: list["NoFuelStop"] = []
     #: Minutes on the ground at the route's stops (PlanQuery.ground), not in
     #: `ete_min`: the destination's arrival is `ete_min` and this after the
     #: departure. 0 without stops.
@@ -170,6 +174,24 @@ class FuelStop(BaseModel):
     elevation_ft: float | None = None
 
 
+class NoFuelStop(BaseModel):
+    """A flight short of fuel the planner offers no stop on, and why: the
+    fuel on board at the start under its start, taxi and reserve already
+    (`on_board`, 14 CFR 91.151(a), 91.167(a)), or no field with fuel in
+    reach of the tanks."""
+
+    departure: str
+    destination: str
+    on_board: bool = False
+
+
+class ShortFlight(BaseModel):
+    """A flight between two landings, by its two ends."""
+
+    departure: str
+    destination: str
+
+
 class FuelStopSuggestion(BaseModel):
     """The stops that take one flight short of fuel to its destination with
     the reserve left at every landing, the tanks filled at each, and other
@@ -181,8 +203,18 @@ class FuelStopSuggestion(BaseModel):
     #: The tanks' usable fuel, gallons, each stop's landing measured against.
     usable_gal: float
     reason: Literal["fuel", "break"] = "fuel"
+    #: Every stop the flight needs, in order: the route planned again with
+    #: them in (wingtip.fuel_rounds) till no flight through them is short.
     stops: list[FuelStop]
     choices: list[FuelStop] = []
+    #: Whether the last plan of the route with these stops in has every
+    #: flight through them hold its fuel and reserve (14 CFR 91.151(a),
+    #: 91.167(a)); false where one is still short (`short`) or the route
+    #: with them could not be planned to check.
+    passes: bool = False
+    #: The flight through the stops still short: no field with fuel in its
+    #: reach, or the planner's rounds run out.
+    short: ShortFlight | None = None
 
 
 class HopTotals(BaseModel):
