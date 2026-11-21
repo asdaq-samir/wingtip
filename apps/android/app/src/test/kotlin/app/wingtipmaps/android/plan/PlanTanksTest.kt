@@ -14,7 +14,7 @@ import org.junit.Test
  *  no gauges where a stop matches no leg; the `tanks` query; Add Fuel
  *  Stops' route; and the gauge's words. */
 class PlanTanksTest {
-    private val figures = PlanTanks.Figures(usableGal = 40.0, taxiGal = 1.4, reserveGal = 6.0)
+    private val figures = PlanTanks.Figures(usableGal = 40.0, taxiGal = 1.4, reservesGal = listOf(6.0, 7.5))
     private val legs = listOf(PlanTanks.LegBurn("WP1", 4.0), PlanTanks.LegBurn("KJVL", 6.0), PlanTanks.LegBurn("KOSH", 9.0))
 
     private fun stop(ident: String) = FuelStop(
@@ -78,5 +78,26 @@ class PlanTanksTest {
     fun theGaugesWords() {
         assertEquals("23 gal", PlanTanks.words(23.9))
         assertEquals("−12 gal", PlanTanks.words(-11.2))
+    }
+
+    @Test
+    fun eachFlightIsReadAgainstItsOwnReserveAndTheAlternatesFuel() {
+        fun totals(reserve: Double?) = app.wingtipmaps.android.api.NavLogTotals(distanceNm = 100.0, legsWithoutWind = 0, unflyableLegs = 0, usableFuelGal = 40.0, taxiGal = 1.4, reserveGal = reserve)
+        val route = totals(null).copy(
+            hops = listOf(
+                app.wingtipmaps.android.api.generated.HopTotals("C81", "KJVL", totals(5.0)),
+                app.wingtipmaps.android.api.generated.HopTotals("KJVL", "KOSH", totals(null)),
+            ),
+            alternate = app.wingtipmaps.android.api.generated.AlternateLeg(altitudeFt = 3000.0, distanceNm = 20.0, fuelGal = 2.5, ident = "KATW"),
+        )
+        val f = PlanTanks.Figures.of(route)!!
+        assertEquals(listOf(5.0, null), f.reservesGal)
+        assertEquals(2.5, f.alternateGal!!, 0.0)
+        var asked: PlanTanks.Figures? = null
+        PlanTanks.walk(legs, "C81", listOf("KJVL"), listOf(true), f, emptyMap()) { points, figures ->
+            asked = figures
+            Result.success(points.map { EngineContract.FuelInTanksAnswerItem(gal = 20.0, low = false) })
+        }
+        assertEquals(f, asked)
     }
 }

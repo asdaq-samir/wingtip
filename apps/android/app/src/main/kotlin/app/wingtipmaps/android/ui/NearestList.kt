@@ -41,12 +41,19 @@ import app.wingtipmaps.android.search.FieldMarks
  * joint-use field is marked first, the engine's airport_use_words naming
  * its use as the web's Nearest does (FieldMarks).
  */
-fun LazyListScope.nearestRows(fields: List<NearestAirport>, fix: OwnShip.Fix?, onOpen: (NearestAirport) -> Unit) {
-    items(fields, key = { "near-" + it.ident }) { field -> NearestRow(field, fix, onClick = { onOpen(field) }) }
+fun LazyListScope.nearestRows(
+    fields: List<NearestAirport>,
+    fix: OwnShip.Fix?,
+    refusal: (NearestAirport) -> String? = { null },
+    onOpen: (NearestAirport) -> Unit,
+) {
+    items(fields, key = { "near-" + it.ident }) { field -> NearestRow(field, fix, refusal(field), onClick = { onOpen(field) }) }
 }
 
+/** One field, greyed with its reason in its detail's place where a pick
+ *  the one search is asked for cannot take it (`refused`, PickRefusal). */
 @Composable
-private fun NearestRow(field: NearestAirport, fix: OwnShip.Fix?, onClick: () -> Unit, model: FlightModel = hiltViewModel()) {
+private fun NearestRow(field: NearestAirport, fix: OwnShip.Fix?, refused: String?, onClick: () -> Unit, model: FlightModel = hiltViewModel()) {
     val openWord = stringResource(R.string.said_open)
     // A glide the engine could not judge says so, never "out of reach";
     // with no glide ratio (no airplane picked) none is said to be within one.
@@ -60,8 +67,9 @@ private fun NearestRow(field: NearestAirport, fix: OwnShip.Fix?, onClick: () -> 
     )
     ListItem(
         onClick = onClick,
+        enabled = refused == null,
         leadingContent = { Icon(Icons.Filled.LocalAirport, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
-        supportingContent = { Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        supportingContent = { Text(refused ?: parts.joinToString(" · "), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) },
         trailingContent = field.flightCategory?.let { c -> { CategoryChip(c) } },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().semantics { onClick(label = openWord, action = null) },
