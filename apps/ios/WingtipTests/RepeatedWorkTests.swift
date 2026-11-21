@@ -50,4 +50,17 @@ struct RepeatedWorkTests {
         #expect(WatchLink.fixToSend(near, sent: nil, sentAt: .distantPast, now: start) == near)
         #expect(WatchLink.fixToSend(nil, sent: sent, sentAt: start, now: start) == nil)
     }
+
+    // MARK: Traffic against own height (item 5)
+
+    @Test func ownShipsHeightIsReadToTheNearest10FtSoAFixsWanderAsksNothing() throws {
+        #expect(Traffic.markedFt(3_204) == 3_200)
+        #expect(Traffic.markedFt(3_196) == 3_200)
+        #expect(Traffic.markedFt(3_205) == 3_210)
+        #expect(Traffic.markedFt(nil) == nil)
+        // An airplane 1,003 ft above the exact height reads as it does
+        // 1,000 ft above the rounded one: "+10", hundreds cut toward own ship.
+        let plane = TrafficAircraft(altitudeFt: 4_500, hex: "a93f1e", lat: 42, lon: -88)
+        #expect(try Traffic.label(plane, ownFt: 3_497) == Traffic.label(plane, ownFt: Traffic.markedFt(3_497)))
+    }
 }

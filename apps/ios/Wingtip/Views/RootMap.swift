@@ -64,7 +64,7 @@ struct RootMap: View {
             // A flown track's replay, else the dry run: the same airplane.
             simulated: replay.fix ?? dryRun.fix,
             traffic: traffic.on ? traffic.planes : [],
-            ownFt: (dryRun.fix ?? ownShip.fix)?.altitudeFt,
+            ownFt: Traffic.markedFt((dryRun.fix ?? ownShip.fix)?.altitudeFt),
             onRegion: { centre, radius in traffic.mapCentre = centre; traffic.mapRadiusNm = radius },
             // A field tapped on the chart opens its card, half way up, as
             // the web app does.

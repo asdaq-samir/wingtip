@@ -2005,6 +2005,11 @@ What each fix asks for, by the phones' wasted-work audit:
   has moved about a mile or is five minutes old (`WatchLink.fixToSend`),
   not every 5 s; the checklist is read into the watch's shape once per
   text.
+- **Traffic against own height.** Own ship's GPS height is read to the
+  nearest 10 ft for the traffic's marks (`Traffic.markedFt`), as the web
+  reads it, so the map asks `traffic_marks` again at a new report or a
+  real change of height, not at each fix's wander. The engine's 1,000 ft
+  band and its hundreds cut toward own ship still decide.
 
 ---
 
