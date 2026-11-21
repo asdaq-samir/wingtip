@@ -9,8 +9,8 @@ import XCTest
 /// over Search closes back to Search, leaving Search puts the keyboard
 /// away, the toggle over a card closes it, an up or down drag still sizes
 /// the sheet on either page, and the
-/// first launch's welcome goes on to Search asking for the destination.
-/// Offline, but for Fly Here, whose card needs the planner (PlannerHost).
+/// first launch's welcome goes on to Search, and the route's ✕ asks
+/// "Clear Route?" before it clears. Offline, but for Fly Here, whose card needs the planner (PlannerHost).
 final class SheetPageToggleTests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -173,7 +173,7 @@ final class SheetPageToggleTests: XCTestCase {
         XCTAssertTrue(later.exists || go.exists, "no way on from the welcome")
         (later.exists ? later : go).tap()
         XCTAssertTrue(welcome.waitForNonExistence(timeout: 5), "the welcome stayed up")
-        XCTAssertTrue(app.searchFields["Where are you flying to?"].waitForExistence(timeout: 10), "the search did not ask for the destination")
+        XCTAssertTrue(app.searchFields["Search"].waitForExistence(timeout: 10), "the welcome did not go on to Search")
         XCTAssertFalse(app.keyboards.firstMatch.exists, "the keyboard came up before a tap")
     }
 
@@ -199,5 +199,28 @@ final class SheetPageToggleTests: XCTestCase {
             XCTAssertEqual(toggle.frame.minY, half, accuracy: 8, "the sheet did not go back up on \(page)")
             toggle.tap()
         }
+    }
+
+    @MainActor
+    func testTheRoutesCloseAsksBeforeClearing() throws {
+        let app = launch()
+        toggle(app).tap()
+        let from = app.textFields["From"], to = app.textFields["To"]
+        XCTAssertTrue(to.waitForExistence(timeout: 10), "the toggle did not go to FPL")
+        from.tap()
+        from.typeText("KMSN")
+        to.tap()
+        to.typeText("KOSH")
+        let clear = app.buttons["route-clear"]
+        XCTAssertTrue(clear.waitForExistence(timeout: 10), "no ✕ on the route card")
+        clear.tap()
+        let alert = app.alerts["Clear Route?"]
+        XCTAssertTrue(alert.waitForExistence(timeout: 5), "the ✕ did not ask first")
+        alert.buttons["Cancel"].tap()
+        XCTAssertEqual(to.value as? String, "KOSH", "Cancel cleared the route")
+        clear.tap()
+        XCTAssertTrue(alert.waitForExistence(timeout: 5))
+        alert.buttons["Clear Route"].tap()
+        XCTAssertTrue(app.buttons["route-close"].waitForExistence(timeout: 5), "the route was not cleared")
     }
 }

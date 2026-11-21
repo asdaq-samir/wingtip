@@ -425,16 +425,33 @@ opened. Typing "traffic" offers Show Traffic in Do.
      `oneRow`), the microphone and the account beside it, as Maps' search
      row. Under it, at half and full, the route card (`RouteCard`): the
      route (KMSN → KOSH) with the engine's Ready to Fly line and the
-     route's ••• at its right; the figures in one line (distance, ETE,
-     fuel, altitude, airplane); Brief, Nav Log and Airplane; then the
-     route itself (From and To, Routes, the airplane and the altitude),
-     the stops and the rest of the plan. At the pill, the search row
-     alone. With no route, the same place holds Favorites, Recents, Find
-     Nearby and Nearest. Saved Flights, Share and Undo moved from the bar
-     into the route card's ••• with the Profile and Clear Route; Undo
-     stays on shake and the Edit menu (UndoManager); the stops' Edit is
-     at the Stops header's right. Cards still cover the search with
-     their ✕ (the card rule).
+     route's ••• and its ✕ at its right; the figures in one line
+     (distance, ETE, fuel, altitude, airplane); Brief, Nav Log and File,
+     the web's tab bar and its File button (2026-11-21); then the route
+     itself (From and To, Routes, the airplane and the altitude), the
+     stops with Add a Stop and Add (or Remove) Fuel Stops, the fuel in
+     the tanks at each field (`FuelTanksSection`: the system's capacity
+     gauge and the gallons, "−12 gal" past empty, red under the reserve,
+     each field the airplane leaves a tap to set its fuel in a sheet of
+     a segmented Full / No fuel / Gallons and a number field, Cancel and
+     Done; the engine's `fuel_in_tanks`, the planner's `tanks`) and the
+     rest of the plan. At the pill, the search row alone. With no route,
+     the same place holds Favorites, Recents, Find Nearby and Nearest.
+     The ••• is the web's More (2026-11-21): Route Options (the ways'
+     menu picker), Share Link and Open in ForeFlight; under a divider
+     what the iPhone keeps there as view options, Undo (the web's toast;
+     shake and ⌘Z too), Saved Flights and Show Route As. The ✕ asks
+     "Clear Route?" in the system's alert. The Profile is the cruise
+     altitude's button, its caution marked on it; the rest of the
+     sharing, the checkpoints for ForeFlight and Print are the Nav Log's
+     Share; Route Checkpoints and Class B Weather are Map Settings'
+     switches. The stops' Edit is at the Stops header's right. Cards
+     still cover the search with their ✕ (the card rule). The figures
+     strip at the sheet's foot reads To, Dist, ETE, Trk and, whenever
+     the airplane's position is known, GPS Alt (no To in flight): Track
+     the magnetic track, the engine's on the route or the fix's true
+     course less the engine's WMM variation, "—" below flying speed.
+     The one search's prompt is "Search" whatever it is up for.
    - Still the owner's to decide (2026-11-10): the altitude picker, a
      wheel or a list like ForeFlight's Altitude Advisor.
    - Use `.searchable(text:placement:prompt:)` and
