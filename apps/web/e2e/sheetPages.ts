@@ -21,7 +21,7 @@ export async function expectPage(page: Page, at: 0 | 1) {
   await expect(toggle(page)).toHaveAttribute("data-shows", String(at === 0 ? 1 : 0));
   // Its name where it is in sight: under a card the sheet's row, the
   // toggle with it, is put away, and a hidden element has none.
-  if (await toggle(page).isVisible()) await expect(toggle(page)).toHaveAccessibleName(at === 0 ? "Show flight plan" : "Close flight plan");
+  if (await toggle(page).isVisible()) await expect(toggle(page)).toHaveAccessibleName(at === 0 ? "FPL, show flight plan" : "Close flight plan");
   await expect(toggle(page)).toHaveAttribute("aria-pressed", "false");
 }
 

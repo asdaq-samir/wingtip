@@ -1,8 +1,9 @@
 import { useCallback, useRef } from "react";
 import { useLongPress } from "react-aria/useLongPress";
-import { Route, X } from "lucide-react";
+import { X } from "lucide-react";
 import { Toggle } from "./ui/toggle";
 import { PANEL_FIELD_FILL } from "./panelField";
+import { TEXT } from "../lib/text";
 import { useConsoleOpen } from "../lib/mapChrome";
 import { closeEveryCard } from "../lib/openCards";
 import { FPL_TIP, useTips } from "../lib/firstRunTips";
@@ -22,7 +23,8 @@ import { keepPlanButton, noteFocus, takeFocus, usePageToggle } from "./sheet/pag
  * only while that page is up, so there is one in the page.
  *
  * It shows the page a tap goes to, as Apple Maps' 2D/3D button shows the
- * mode it switches to: on Search FPL's route glyph, on FPL the magnifier.
+ * mode it switches to: on Search the word FPL (the owner, 2026-11-20:
+ * "Fpl button icon can just say FPL"), on FPL the ✕ that closes.
  * The stock Toggle (Base UI's, ui/toggle), never pressed -- a tap goes
  * somewhere, it turns nothing on -- so to a screen reader it is a button
  * whose name says where it goes. A 44-point disc in the field's own fill,
@@ -67,7 +69,6 @@ export default function PageToggle({ page, onHold }: { page: 0 | 1; onHold?: () 
   // 2026-11-19: "Maybe we can have similar buttons x and share"): it closes
   // the flight plan's page to Search, the route kept; the search itself is
   // the round button beside FPL's floating bar (FplTabBar).
-  const Glyph = onSearch ? Route : X;
   return (
     <Toggle
       {...holdProps}
@@ -89,13 +90,22 @@ export default function PageToggle({ page, onHold }: { page: 0 | 1; onHold?: () 
         // again (the UI audit's B5).
         if (onSearch) useTips.getState().see(FPL_TIP);
       }}
-      aria-label={onSearch ? "Show flight plan" : "Close flight plan"}
+      // WCAG 2.5.3: the name holds the word the button shows.
+      aria-label={onSearch ? "FPL, show flight plan" : "Close flight plan"}
       data-testid="sheet-page-toggle"
       data-shows={onSearch ? 1 : 0}
-      // FPL's ✕ in the text's colour, as Share's beside it and a card's ✕.
-      className={`relative size-11 shrink-0 rounded-full p-0 print:hidden ${onSearch ? "text-tint" : "text-foreground"} ${PANEL_FIELD_FILL}`}
+      // The word and the ✕ in the text's colour, as Share's beside it and a card's ✕.
+      className={`relative size-11 shrink-0 rounded-full p-0 print:hidden text-foreground ${PANEL_FIELD_FILL}`}
     >
-      <Glyph className="size-5" strokeWidth={1.75} aria-hidden="true" />
+      {onSearch ? (
+        // A word in the badge's 12 points semibold, rem like the disc, so
+        // it grows with the text and the three capitals stay inside it.
+        <span aria-hidden="true" className={`font-semibold ${TEXT.badge}`}>
+          FPL
+        </span>
+      ) : (
+        <X className="size-5" strokeWidth={1.75} aria-hidden="true" />
+      )}
     </Toggle>
   );
 }
