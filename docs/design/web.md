@@ -993,6 +993,18 @@ the sheet's pages, not in FPL's (`PlanPage`): in flight the sheet draws no
 pages, and the Profile card, with a dry run's controls and its figures
 and Done flying at its foot, stays up while the airplane flies.
 
+In flight (the in-flight audit, the owner's picks of 2026-11-21): flying
+mode keeps the screen on by the Screen Wake Lock API
+(`features/flying/useScreenAwake`), taken again as the page comes back in
+sight and let go on the ground or at Done flying; Done flying's words stay
+small but its target is the whole Flying row, 60 points tall, as every
+control in flight is; own ship's real-GPS follow jumps once a fix when the
+step is under 8 px (`cameraRules`' `followStep`), easing only larger steps,
+where a frame-rate ease redrew the map 60 times a second to move it a
+pixel; the dry run keeps its glide. Traffic is read against own ship's GPS
+height to the nearest 10 ft, and 3D traffic's step stops while the page is
+hidden.
+
 ### 3. The flight plan and route editing
 
 **Reference.** ForeFlight Web: "Rubberbanding is fully supported on the

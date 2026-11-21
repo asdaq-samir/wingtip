@@ -109,9 +109,9 @@ S13). Tick each as it is done.
 
 ## Google Cloud
 
-- [ ] Restrict the Android Maps key to the package name and the SHA-256
-      of Play's **app signing** certificate (not only the upload key):
-      the close-in map sends both (`map/CloseMap.kt`), and a key
-      restricted to the upload key fails for every installed copy.
-- [ ] Map Tiles API billing and a quota for Android's close-in map, which
-      now loads by itself whenever the map is zoomed close in.
+- [ ] Only if Android ever draws a Google overlay (today its close-in
+      map is the USGS's imagery, `map/CloseMap.kt`, and it asks Google
+      for nothing): restrict the Android Maps key to the package name and
+      the SHA-256 of Play's **app signing** certificate, and set Map Tiles
+      API billing and a quota; it would come as the web's does, only
+      after the pilot picks it.

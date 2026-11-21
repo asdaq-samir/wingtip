@@ -64,11 +64,26 @@ function Aloft({ geo }: { geo: Geo }) {
     addTrafficPictures(map);
   }, [map]);
 
-  // Each airplane carried on along its track a step at a time.
+  // Each airplane carried on along its track a step at a time, only while
+  // the page is in sight: hidden, nothing is drawn, and the step ran on
+  // for nothing (the in-flight audit, 2026-11-21). Back in sight it steps
+  // at once to now.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), STEP_MS);
-    return () => window.clearInterval(timer);
+    let timer = 0;
+    const run = () => {
+      window.clearInterval(timer);
+      timer = 0;
+      if (document.hidden) return;
+      setNow(Date.now());
+      timer = window.setInterval(() => setNow(Date.now()), STEP_MS);
+    };
+    run();
+    document.addEventListener("visibilitychange", run);
+    return () => {
+      document.removeEventListener("visibilitychange", run);
+      window.clearInterval(timer);
+    };
   }, [map]);
 
   const drawn = useMemo(() => {

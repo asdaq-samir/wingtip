@@ -182,7 +182,7 @@ longer than it takes to answer the request.
 | Planespotters (api.planespotters.net, t.plnspttrs.net) | The web app, when a traffic card opens: that airplane's transponder address, to show its photo (`features/traffic/planePhoto.ts`), from the browser | The browser's internet address and the address of the airplane looked at; no account |
 | USGS (epqs.nationalmap.gov) | Sample points along a route, for the ground's height where the terrain tiles have none (`wingtip/elevation_sources.py`), from the server | None: points on a route, no account |
 | USGS (basemap.nationalmap.gov) | With its imagery overlay on, the map's tiles in view, asked by the device | None: the tiles' coordinates, as any web map's |
-| Google (tile.googleapis.com) | On the web, with a Google overlay on; on Android, by itself once the map is zoomed close in (`Charts.kt`, `map/CloseMap.kt`): a session and the map's tiles in view, asked by the device with the app's key, Android's requests carrying the package name and signing certificate (`X-Android-Package`, `X-Android-Cert`) that the key is restricted to | None of the pilot's: the device's internet address, the tiles' coordinates and the view, as any Google map's; Google's own terms and privacy policy apply to the request |
+| Google (tile.googleapis.com) | On the web only, and only once the pilot picks a Google overlay in the Map menu (`useCloseImagery`): a session and the map's tiles in view, asked by the device with the deployment's key. Android asks Google for nothing: close in it draws the USGS's public-domain imagery, as the web does by default (`map/CloseMap.kt`, since b5b72427e) | None of the pilot's: the device's internet address, the tiles' coordinates and the view, as any Google map's; Google's own terms and privacy policy apply to the request |
 | US Census Bureau (geocoding.geo.census.gov) | A street address typed in Nearest's field, to place it; its gazetteer of towns is downloaded once | The address typed, from the server, not the device; kept in the planner's memory for an hour so the same address is not asked twice (`geocode.py`), never written to disk or a log (a failure logs the error's kind only), and a place picked is in the page address (`nearName`, `nearAt`) |
 | Amazon Web Services | Hosting all of the above (us-east-1) | As above |
 
@@ -336,7 +336,8 @@ browser's storage, cleared with the site's data.
   minimums, loads, the airplane flown and those followed), a flight's
   track opened from a file (`wingtip.track.<flight>`), the GPS track the
   phone recorded for a logbook draft (`wingtip.autolog.track`), own
-  ship's trail (`wingtip.owntrail`, cleared by its own button), the
+  ship's trail (`wingtip.owntrail`, cleared by its own button, on sign-out,
+  and once read past its flight, ten minutes after its last point), the
   checklists, the plan's undo history, the risk assessment, the routes
   and charts kept for the air, the coach's certificate, the drills.
 - **The service worker's caches** (`vite.config.ts`): chart tiles,
@@ -348,8 +349,11 @@ browser's storage, cleared with the site's data.
 - **Signing out** (`useLogout`) forgets what was the pilot's: their part
   of the preferences, the checklists, the route kept for the air, the
   flights' tracks and the recorded GPS track (since the prelaunch audit,
-  2026-11-21), and `pilot-own`. The map's look, the trail and the public
-  answers stay, the device's. **Deleting the account**
+  2026-11-21), own ship's trail, `pilot-own`, and the planner's answers
+  whose addresses carry a point, `planner-now` and `planner-api`
+  (`forgetPlannerAnswers`, the owner's word of 2026-11-21; they refill
+  online). The map's look and the steady answers (`planner-steady`, the
+  charts, the diagrams) stay, the device's. **Deleting the account**
   (`useDeleteAccount`) removes every `wingtip.` key and `pilot-own`.
 
 ## Kept after an account is deleted
