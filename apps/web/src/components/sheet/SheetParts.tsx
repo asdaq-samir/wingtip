@@ -151,6 +151,8 @@ export function SheetParts(p: PartsProps) {
         // All the way up on a phone the search alone is pinned at the
         // top, a hairline under it, as Apple Maps' is.
         hairline && p.onPhone && size === "full" && "border-b border-border",
+        // Stuck in a band too tall to stick (bandFits), as iOS keeps a sheet's header (FPL's went off the top, 2026-11-21).
+        "in-data-band-tall:sticky in-data-band-tall:top-0 in-data-band-tall:z-20 in-data-band-tall:frost-head",
       )}
     >
       <PanelSize.Provider value={p.panelSize}>{bar}</PanelSize.Provider>
