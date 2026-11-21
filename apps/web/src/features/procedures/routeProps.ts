@@ -76,7 +76,16 @@ export interface ProceduresRouteProps {
   procedures: PickedProcedure[];
   /** Those drawn, by field and kind, as the route's box names them, an
    *  approach's with the runway it lands on (approachRunway). */
-  inRoute: { ident: string; kind: Kind; id: string; runway: string | null; label: string; fixes?: BranchFix[]; direct?: string | null }[];
+  inRoute: {
+    ident: string;
+    kind: Kind;
+    id: string;
+    runway: string | null;
+    name?: string;
+    label: string;
+    fixes?: BranchFix[];
+    direct?: string | null;
+  }[];
   /** All of them as they are to be, and the one just picked, for the map
    *  to go to. */
   onProcedures: (next: PickedProcedure[], picked: PickedProcedure | null) => void;

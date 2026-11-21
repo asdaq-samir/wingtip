@@ -109,10 +109,10 @@ test("a picked approach is taught: briefed a step at a time, flown fix by fix wi
   await openTab(page, "Nav Log");
   await openRoute(page);
   const kdlh = page.getByTestId("procedures").getByRole("region", { name: "KDLH · Arrive" });
-  // A procedure picked is its own grouped box of its fixes, open, the button to pick another at its head (the owner, 2026-11-21).
-  const approach = kdlh.locator("[data-testid=procedure-box][data-kind=approach]");
-  await expect(approach).toContainText("ILS 09 · DLH", { timeout: slow(20000) });
-  await kdlh.locator("[data-testid=procedure-box] [data-testid=procedure-kind]").click();
+  // A procedure picked, its fixes on the route's line before the field's, its head row the button to pick another (the owner's option D, 2026-11-21).
+  const approach = kdlh.locator("[data-testid=procedure-rows][data-kind=approach]");
+  await expect(approach).toContainText("ILS · RWY 09", { timeout: slow(20000) });
+  await kdlh.locator("[data-testid=procedure-rows] [data-testid=procedure-kind]").click();
   await page.getByTestId("procedure-menu").getByTestId("procedure-menu-learn").click();
 
   const lesson = page.getByTestId("approach-lesson");

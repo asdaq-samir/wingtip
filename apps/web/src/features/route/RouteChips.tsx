@@ -15,6 +15,9 @@ export interface RouteProcedure {
    *  lands on (approachRunway), none for one circling only. */
   id: string;
   runway: string | null;
+  /** Its name as the FAA's list gives it ("RNAV (GPS)-B"), and as the
+   *  route says it, with its transition or the fix it was sent to. */
+  name?: string;
   label: string;
   spoken: string;
   /** The fix ATC sent the airplane direct to, and the procedure's fixes it

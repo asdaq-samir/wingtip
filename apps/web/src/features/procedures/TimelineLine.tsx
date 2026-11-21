@@ -10,13 +10,12 @@ import type { NavLogRow, ProcedureAirport } from "../plan";
 import { FuelGauge } from "./FuelGauge";
 import { FuelSet } from "./FuelSet";
 import { WindLine } from "./FieldHead";
-import { fieldParts, kindMenu, kindPicked, windWords } from "./fieldParts";
+import { fieldParts, kindMenu, kindPicked, windWords, type FieldPart } from "./fieldParts";
 import { PartTray } from "./RunwayTray";
 import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
 import { askHold, type pointEnd } from "./pointEnd";
 import { HoldChip } from "./HoldChip";
-import { TimelineProcedureBox } from "./TimelineProcedure";
-import { sameField } from "../../lib/procedures";
+import { TimelineProcedureRows } from "./TimelineProcedureRows";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
 /** One point of FPL's timeline as the plan gives it (RouteTimeline). */
@@ -123,17 +122,12 @@ export function TimelineLine({
   const tank = point.role === "Departure" ? tanks.get("departure") : row ? tanks.get(row.key) : undefined;
   const reported = reportedOf(point.ident);
   const parts = field ? fieldParts(vm, field, row) : [];
-  const pickedLabel = (kind: string) => vm.inRoute.find((p) => sameField(p.ident, point.ident) && p.kind === kind)?.label;
   // Each part's tray, a stop's takeoff a region of its own as the list
   // read in flight names it ("KMSN · Depart"); a kind not picked as
-  // "+ APCH"; the destination's hold last, once it has one; the procedures
-  // picked in boxes of their own under them.
+  // "+ APCH"; the destination's hold last, once it has one. A kind picked
+  // is no chip: its fixes are points on the route's line (TimelineProcedureRows).
+  const onLine = (kinds: FieldPart["kinds"]) => (field && !point.problem ? kinds.filter((k) => kindPicked(vm, field, k)) : []);
   const chips = parts.map((part, i) => {
-    // A procedure picked, its own grouped box of its fixes, open
-    // (TimelineProcedure; the owner, 2026-11-21), under the runway's chips
-    // (2026-11-20: "Selected procedure should be on a new line"); a kind
-    // not picked, "+ APCH", stays among them.
-    const boxes = part.kinds.filter((k) => kindPicked(vm, field!, k) && pickedLabel(k));
     const tray = (
       <PartTray
         key={part.role}
@@ -141,7 +135,7 @@ export function TimelineLine({
         a={field!}
         part={part}
         trailing={[
-          ...part.kinds.filter((k) => !boxes.includes(k)).map((k) => kindMenu(vm, field!, k, "add")),
+          ...part.kinds.filter((k) => !kindPicked(vm, field!, k)).map((k) => kindMenu(vm, field!, k, "add")),
           // The destination's hold after its procedures (HoldChip), once
           // there is one: no "+ HOLD" to add one (the owner, 2026-11-19: "No
           // need for +HOLD"); its menu's Hold adds it.
@@ -151,29 +145,20 @@ export function TimelineLine({
         ]}
       />
     );
-    const body = (
-      <>
-        {tray}
-        {boxes.length > 0 && (
-          <div className="flex basis-full flex-col gap-2" data-testid="timeline-procedures">
-            {boxes.map((k) => (
-              <TimelineProcedureBox key={k} vm={vm} field={field!} kind={k} />
-            ))}
-          </div>
-        )}
-      </>
-    );
     return i === 0 ? (
-      <div key={part.role} className="contents">
-        {body}
-      </div>
+      tray
     ) : (
-      <section key={part.role} aria-label={`${point.ident} · ${part.role}`} className={cn(boxes.length > 0 && "basis-full")}>
-        {body}
+      <section key={part.role} aria-label={`${point.ident} · ${part.role}`}>
+        {tray}
       </section>
     );
   });
-  return (
+  // A procedure picked, its fixes on the route's line in flight order, at
+  // the owner's pick (option D, 2026-11-21): an arrival's and an
+  // approach's before the field's line, a departure's after it.
+  const before = onLine(parts.find((p) => p.role === "Arrive")?.kinds ?? []);
+  const after = onLine(parts.find((p) => p.role === "Depart")?.kinds ?? []);
+  const line = (
     <Collapsible
       open={opens && open}
       onOpenChange={onOpen}
@@ -184,10 +169,6 @@ export function TimelineLine({
           // area ("C81: open the airport" 25 wide), where at 16 the two
           // meet (TIMELINE_GAP, the rows' too).
           className={cn("relative flex", TIMELINE_GAP)}
-          // A field's line a region, named as the list read in flight names
-          // its step ("KDLH · Arrive"), so VoiceOver goes from field to field.
-          role={parts[0] ? "region" : undefined}
-          aria-label={parts[0] ? `${point.ident} · ${parts[0].role}` : undefined}
           data-testid="timeline-line"
           data-ident={point.ident}
           data-open={opens && open ? "" : undefined}
@@ -198,9 +179,9 @@ export function TimelineLine({
           under it into the next line, centred under the marks. */}
       <span className="relative flex w-8 shrink-0 justify-center">
         <span className="relative z-10 flex h-11 items-center">{mark}</span>
-        {!last && <span aria-hidden="true" className={TIMELINE_THREAD} />}
+        {(!last || after.length > 0) && <span aria-hidden="true" className={TIMELINE_THREAD} />}
       </span>
-      <div className={cn("min-w-0 flex-1", TIMELINE_END, !first && "border-t border-border")}>
+      <div className={cn("min-w-0 flex-1", TIMELINE_END, (!first || before.length > 0) && "border-t border-border")}>
         <div className="relative flex min-h-11 min-w-0 items-center gap-2 py-0.5">
           {opens && (
             <CollapsibleTrigger
@@ -315,5 +296,19 @@ export function TimelineLine({
         )}
       </div>
     </Collapsible>
+  );
+  // A field's line, with its procedures' rows, a region named as the list
+  // read in flight names its step ("KDLH · Arrive"), so VoiceOver goes
+  // from field to field.
+  return (
+    <div role={parts[0] ? "region" : undefined} aria-label={parts[0] ? `${point.ident} · ${parts[0].role}` : undefined}>
+      {before.map((k) => (
+        <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} />
+      ))}
+      {line}
+      {after.map((k, i) => (
+        <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} stop={last && i === after.length - 1} />
+      ))}
+    </div>
   );
 }

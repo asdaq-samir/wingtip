@@ -8,14 +8,15 @@ import { TRAY_HEAD } from "./RunwayChips";
 import { setRunwayLine, type ProceduresRouteModel } from "./useProceduresRoute";
 import type { FieldPart } from "./fieldParts";
 
-/** The tray's head: "RWY", the FAA's contraction (FAA Order JO 7340.2), in
- *  place of the landing's or the takeoff's glyph, at the owner's ask
- *  (2026-11-17: "instead of the landing glyph, just use RWY"); a reader
- *  hears which it is, a landing's or a takeoff's. */
+/** The tray's head: what the runway is for and "RWY", the FAA's
+ *  contraction (FAA Order JO 7340.2), "Land RWY" or "Takeoff RWY", so the
+ *  tray reads "Land RWY 24" (the owner's option D, 2026-11-21; it was
+ *  "RWY" alone, 2026-11-17: "instead of the landing glyph, just use RWY");
+ *  a reader hears which it is, a landing's or a takeoff's. */
 function RunwayWord({ role }: { role: "Arrive" | "Depart" }) {
   return (
-    <span role="img" aria-label={role === "Arrive" ? "landing" : "takeoff"} className={cn(TEXT.detail, "font-semibold")}>
-      RWY
+    <span role="img" aria-label={role === "Arrive" ? "landing" : "takeoff"} className={cn(TEXT.detail, "font-semibold whitespace-nowrap")}>
+      {role === "Arrive" ? "Land" : "Takeoff"} RWY
     </span>
   );
 }
@@ -64,9 +65,9 @@ function RunwayTray({
               type="button"
               data-testid="runway-line-toggle"
               data-disclosure=""
-              // Its name starts with the "RWY" it shows (WCAG 2.5.3, Label in Name: a
+              // Its name starts with the "Land RWY" it shows (WCAG 2.5.3, Label in Name: a
               // voice user says what they see), then the field and what a tap does.
-              aria-label={`RWY, ${a.ident} ${role === "Arrive" ? "landing" : "takeoff"}: ${lineOpen ? "fold the runways" : "all the runways"}`}
+              aria-label={`${role === "Arrive" ? "Land" : "Takeoff"} RWY, ${a.ident}: ${lineOpen ? "fold the runways" : "all the runways"}`}
               className={cn("justify-start text-inherit", TRAY_HEAD, "outline-none focus-visible:ring-2 focus-visible:ring-ring")}
             />
           }

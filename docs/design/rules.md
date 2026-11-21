@@ -557,15 +557,21 @@ off by default (the owner, 2026-11-13).
    putting either back. A tap on a field's
    line opens it, one at a time: its wind at the left and elevation at the
    right, then one row of runway and procedure chips, wrapping where they
-   do not fit: a procedure picked is a grouped box of its own under them,
-   always open (the owner, 2026-11-21: "Can we make the selected approach
-   a grouped box showing the fixes etc?"): its head row its name, wrapping,
-   never cut, "Approach · 4 fixes" in a note's grey under it and the
-   button to pick another at its end, then a 44-point row a fix in the
-   order they are flown, each with its altitude, Direct To and its •••,
-   hairlines between them; past six fixes the first five and "Show All N
-   Fixes" (`TimelineProcedure`, `FixList`'s `boxed`); a kind not picked
-   stays its "+ APCH" chip;
+   do not fit, each runway's tray saying what it is for, "Land RWY 24"
+   and "Takeoff RWY 24"; a kind not picked stays its "+ APCH" chip. A
+   procedure picked is no chip: its fixes are points on the route's
+   magenta line itself, in the order they are flown (the owner's option
+   D, 2026-11-21), an arrival's and an approach's before the field's line
+   and a departure's after it, shown whether the line is open or not:
+   a head row, the kind and the field in the procedure's indigo, small
+   capitals ("APPROACH · C81"), over the procedure's name with the runway
+   it lands on ("RNAV (GPS)-B · RWY 24", wrapping, never cut), the whole
+   row one button with a chevron that opens the kind's menu to pick
+   another ("just tapping it should show the approaches menu"); then a
+   44-point row a fix, its mark an indigo ring with "•••" in the marks'
+   column, its menu (Direct To, its altitude and card), its name (a tap
+   opens its card) with the parts it plays under it, and its altitude at
+   the right (`TimelineProcedureRows`);
    the map centres
    it above the sheet and shows the route's points alone (the chart and
    the TFRs kept; lib/map/routeOnly). My Location and a waypoint open

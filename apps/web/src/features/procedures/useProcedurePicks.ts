@@ -117,6 +117,7 @@ export function useProcedurePicks({
           kind: d.kind,
           id: d.id,
           runway: d.kind === "approach" ? approachRunway(d.name) : null,
+          name: d.name,
           label: `${d.name.replace(/ RWY /, " ")}${direct ? ` · direct ${direct}` : d.transition ? ` · ${d.transition}` : ""}`,
           spoken: `${d.name}, ${direct ? `direct ${direct}` : transitionWords(d.kind, d.transition ?? null, true)}`,
           direct,
