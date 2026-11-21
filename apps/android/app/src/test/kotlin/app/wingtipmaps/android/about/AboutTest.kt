@@ -1,6 +1,9 @@
 package app.wingtipmaps.android.about
 
 import app.wingtipmaps.android.api.exportFileName
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -8,7 +11,8 @@ import java.io.File
 import java.time.LocalDate
 
 /** About's fixed parts: the demo flight every app plans, the credits as
- *  docs/legal/credits.md words them, and the export's file name. */
+ *  docs/legal/credits.md words them, the open-source licences added to
+ *  AboutLibraries' own, and the export's file name. */
 class AboutTest {
     @Test
     fun theDemoFlightIsMadisonToOshkoshInAStockSkyhawk() {
@@ -31,6 +35,24 @@ class AboutTest {
         }
         // Every row but Apple MapKit, which is the iPhone's map.
         assertEquals(rows.size - 1, AboutCredits.data.size + AboutCredits.software.size)
+    }
+
+    @Test
+    fun theEngineAndTheGlyphsAreAmongTheLicences() {
+        // The JVM tests run in the module's folder (apps/android/app).
+        val licence = Json.parseToJsonElement(File("aboutlibraries/licenses/wingtip-engine.json").readText()).jsonObject
+        // The engine's notices as cargo-about wrote them (scripts/build/licences.sh engine).
+        assertEquals(File("../../../engine/licences/NOTICES.txt").readText(), licence.getValue("content").jsonPrimitive.content)
+        // Each library added names a licence added beside it.
+        for (name in listOf("wingtip-engine", "inter")) {
+            val library = Json.parseToJsonElement(File("aboutlibraries/libraries/$name.json").readText()).jsonObject
+            val hash = library.getValue("licenses").toString().trim('[', ']', '"')
+            assertTrue("$name's licence $hash is not in aboutlibraries/licenses", File("aboutlibraries/licenses").listFiles()!!.any {
+                Json.parseToJsonElement(it.readText()).jsonObject.getValue("hash").jsonPrimitive.content == hash
+            })
+        }
+        // The OFL travels with the glyphs drawn from Inter.
+        assertTrue(File("src/main/assets/glyphs/Inter-Bold/OFL.txt").readText().contains("SIL OPEN FONT LICENSE Version 1.1"))
     }
 
     @Test

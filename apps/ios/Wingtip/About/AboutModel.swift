@@ -42,7 +42,9 @@ enum PlanningAid {
 /// credits.md first, then the web's components/dataSources.ts, Android's
 /// about/AboutCredits.kt and this, so the three say the same. Each line
 /// says whose it is and the terms it is used under, as the licences ask
-/// (ODbL 4.3 for adsb.lol, CDLA for Overture).
+/// (ODbL 4.3 for adsb.lol and OpenStreetMap's, CDLA and Apache 2.0 for
+/// Overture). The open-source licences of the code it ships with are
+/// Settings.bundle's acknowledgements (scripts/build/licences.sh ios).
 enum AboutCredits {
     struct Credit: Hashable, Sendable {
         let what: String
@@ -63,15 +65,24 @@ enum AboutCredits {
         Credit(what: "NWS NEXRAD radar mosaic loop, via the Iowa Environmental Mesonet (Iowa State University); not for navigation, check official weather", terms: publicDomain),
         Credit(what: "NOAA GOES East and West satellite loop, via NOAA nowCOAST; not for navigation, check official weather", terms: publicDomain),
         Credit(what: "USGS The National Map imagery", terms: publicDomain),
+        Credit(what: "USGS 3DEP elevation and GNIS place names", terms: publicDomain),
+        // The ground the altitudes are planned over: Terrain Tiles' attribution
+        // list (github.com/tilezen/joerd, docs/attribution.md) asks each source's credit.
+        Credit(what: "Terrain Tiles (Mapzen and others): 3DEP, SRTM and GMTED2010 courtesy of the U.S. Geological Survey, ETOPO1 of NOAA, Canada's under the Open Government Licence – Canada, Mexico's from INEGI", terms: "Each source's terms, credited"),
         Credit(what: "US Census Bureau geocoder and gazetteer", terms: publicDomain),
         Credit(what: "OurAirports: fields abroad, fields NASR does not list, and field sizes", terms: publicDomain),
-        Credit(what: "Overture Maps places: services near a field", terms: "CDLA Permissive 2.0"),
+        // Overture's attribution page names each source's licence: Foursquare's are Apache 2.0.
+        Credit(what: "Overture Maps places: services near a field; Foursquare's places © 2024 Foursquare Labs, Inc.", terms: "CDLA Permissive 2.0 and Apache 2.0"),
+        Credit(what: "OpenStreetMap contributors: airport outlines, through Overture Maps' base theme", terms: "ODbL 1.0"),
+        Credit(what: "Time zones: timezone-boundary-builder, from OpenStreetMap contributors", terms: "ODbL 1.0"),
         Credit(what: "adsb.lol ADS-B traffic", terms: "ODbL 1.0"),
         Credit(what: "ADS-B Exchange traffic", terms: "ADS-B Exchange's API terms"),
         Credit(what: "adsb.fi ADS-B traffic", terms: "Personal, non-commercial use, credited and linked"),
         Credit(what: "Virtual Radar Server flight routes", terms: "CC0"),
         // Its terms ask for the photographer's name next to each photo.
         Credit(what: "Planespotters.net aircraft photos, each credited to its photographer beside it", terms: "Planespotters.net's photo API terms"),
+        // Each photo's author and licence in the viewer, its credit a link to its page.
+        Credit(what: "Wikimedia Commons photos of fields, each credited to its photographer with its licence and linked to its page", terms: "Each photo's own licence"),
     ]
 
     static let software: [Credit] = [

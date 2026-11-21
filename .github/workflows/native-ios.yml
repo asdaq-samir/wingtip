@@ -39,6 +39,7 @@ on:
       - scripts/build/engine-contract-apps.*
       - scripts/ci/content-mtimes.py
       - scripts/build/ios-strings.sh
+      - scripts/build/licences.sh
       - scripts/ci/ios_test.sh
       - .github/workflows/native-ios.yml
   workflow_dispatch:
@@ -158,6 +159,12 @@ jobs:
       # syncs. After the build, since it reads the build's .stringsdata.
       - name: The string catalog is what the Swift says
         run: scripts/build/ios-strings.sh --check --derived-data "$RUNNER_TEMP/derived"
+      # The acknowledgements in Settings.bundle are what LicensePlist writes
+      # from the packages this build resolved, the engine's notices among
+      # them (docs/legal/credits.md, "Open-source licences"); after the
+      # build, since it reads the build's SourcePackages.
+      - name: The acknowledgements are the packages' licences
+        run: scripts/build/licences.sh ios --check "$RUNNER_TEMP/derived/SourcePackages"
       - name: Tested on the simulator
         env:
           SIM: ${{ steps.sim.outputs.id }}

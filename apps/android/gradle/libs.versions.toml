@@ -113,6 +113,12 @@ telephoto = "0.19.0"
 # scripts/build/api-models-apps.sh), read with kotlinx.serialization, on
 # the app's OkHttp client. 3.0.0, the newest on Maven Central (2025-05-15).
 retrofit = "3.0.0"
+# AboutLibraries, the open-source licences About lists (about/LicencesScreen):
+# its Gradle plugin collects every library's licence as the app is built
+# and fails the build on one not allowed (app/build.gradle.kts), and its
+# Material 3 list shows them. 15.3.0, the newest on Maven Central and the
+# Gradle Plugin Portal (2026-10-13; read 2026-11-21).
+aboutlibraries = "15.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -212,6 +218,8 @@ telephoto-zoomable = { group = "me.saket.telephoto", name = "zoomable", version.
 # Retrofit and its kotlinx.serialization converter.
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converter-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
+# AboutLibraries' Material 3 list of the licences (LicencesScreen).
+aboutlibraries-compose-m3 = { group = "com.mikepenz", name = "aboutlibraries-compose-m3", version.ref = "aboutlibraries" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -221,3 +229,4 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 android-test = { id = "com.android.test", version.ref = "agp" }
 androidx-baselineprofile = { id = "androidx.baselineprofile", version.ref = "benchmark" }
+aboutlibraries = { id = "com.mikepenz.aboutlibraries.plugin.android", version.ref = "aboutlibraries" }
