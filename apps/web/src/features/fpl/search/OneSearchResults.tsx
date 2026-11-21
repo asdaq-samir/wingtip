@@ -71,8 +71,12 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
   const none = airports.length + waypoints.length + airplanes.length + does.length === 0;
 
   const airportRow = (r: AirportSearchRow, top: boolean) => {
+    // A pick that cannot take this field: greyed with its reason (a closed
+    // field's own badge says Closed).
+    const why = model.refusal(r.ident);
     const row = (
       <ResultRow
+        disabled={!!why}
         key={r.ident}
         value={r.ident}
         icon={<AirportIcon ident={r.ident} name={r.name} kept={top} />}
@@ -84,7 +88,15 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
             · <Matched text={r.name} typed={typed} />
           </>
         }
-        detail={r.closed || r.use ? <AirportDetail closed={r.closed} use={r.use} municipality={r.municipality} /> : r.municipality}
+        detail={
+          r.closed || r.use ? (
+            <AirportDetail closed={r.closed} use={r.use} municipality={r.municipality} />
+          ) : why ? (
+            [why, r.municipality].filter(Boolean).join(" · ")
+          ) : (
+            r.municipality
+          )
+        }
         onSelect={() => model.pickAirport(r)}
         testId="airport-result"
         actions={
@@ -187,6 +199,7 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
         (r) => r.ident,
         (r) => (
           <ResultRow
+            disabled={!!model.refusal(r.ident)}
             value={`fix:${r.ident}`}
             icon={
               <RoundIcon>
@@ -202,7 +215,7 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
                 · <Matched text={r.name} typed={typed} />
               </>
             }
-            detail={r.region}
+            detail={[model.refusal(r.ident), r.region].filter(Boolean).join(" · ")}
             onSelect={() => model.pickWaypoint(r.ident)}
             testId="search-waypoint"
           />

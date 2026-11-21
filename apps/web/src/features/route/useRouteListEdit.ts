@@ -124,6 +124,7 @@ export function useRouteListEdit({
         label: "Add a Stop",
         fixes: true,
         stop: true,
+        taken: routePoints,
         onPick: (picked) => {
           const added = addedRoute(routePoints, index, picked);
           if (added) setRoute(added);

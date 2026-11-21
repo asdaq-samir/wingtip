@@ -83,6 +83,7 @@ export function SmallTile({
   testId,
   wide = false,
   tone = "strip",
+  refused = null,
   ...rest
 }: Omit<ComponentProps<"button">, "title" | "children" | "className" | "type"> & {
   mark: ReactNode;
@@ -97,13 +98,21 @@ export function SmallTile({
    *  "tint": the search's round tiles (FavoriteTiles) on the sheet, no hover fill, the
    *  line grey, or the tint for an action ("Add"). */
   tone?: "strip" | "muted" | "tint";
+  /** Why a pick cannot take this field ("Closed", "On the route already"):
+   *  the tile greyed, its reason where the detail is, a tap doing nothing
+   *  (the owner, 2026-11-21). */
+  refused?: string | null;
 }) {
+  const shown = refused ?? detail;
   return (
     <BaseButton
       {...rest}
-      onClick={onClick}
+      onClick={refused ? undefined : onClick}
+      disabled={!!refused}
+      focusableWhenDisabled={!!refused}
       data-testid={testId}
       className={cn(
+        refused && "opacity-50",
         wide ? "w-24" : "w-[4.5rem]",
         "flex shrink-0 flex-col items-center gap-1.5 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring",
         tone === "strip" && "hover:bg-foreground/5",
@@ -112,7 +121,7 @@ export function SmallTile({
       {mark}
       <span className={cn("w-full truncate text-center font-medium text-foreground", TEXT.detail)}>{title}</span>
       {/* 4.5:1 on the pill's glass, as the tab bar's words are. */}
-      {detail && (
+      {shown && (
         <span
           className={cn(
             "-mt-1.5 w-full truncate text-center",
@@ -120,7 +129,7 @@ export function SmallTile({
             tone === "strip" ? "text-foreground/65 tabular-nums" : tone === "tint" ? "text-tint" : "text-muted-foreground",
           )}
         >
-          {detail}
+          {shown}
         </span>
       )}
       {label && <span className="sr-only">, {label}</span>}
@@ -315,11 +324,13 @@ function SmallAirportTile({
   detail,
   onClick,
   testId = "pill-favorite",
+  refused,
 }: {
   airport: RecentAirport;
   detail: string;
   onClick: () => void;
   testId?: string;
+  refused?: string | null;
 }) {
   const space = useAirspace(airport);
   return (
@@ -334,6 +345,7 @@ function SmallAirportTile({
       detail={detail}
       label={`${airport.ident}, ${space.name}`}
       onClick={onClick}
+      refused={refused}
       testId={testId}
     />
   );
@@ -346,6 +358,7 @@ export function FavoriteStrip({
   favorites,
   onOpen,
   onAddHome,
+  refusal,
 }: {
   home: RecentAirport | null;
   favorites: RecentAirport[];
@@ -353,6 +366,8 @@ export function FavoriteStrip({
   /** Home's Add, where none is kept yet: listed all the same, as the
    *  search's Favorites list it (FavoriteTiles). */
   onAddHome: () => void;
+  /** While the search picks a point: why a field cannot be picked (pickRefusal). */
+  refusal?: (ident: string) => string | null;
 }) {
   const away = useAway();
   return (
@@ -363,10 +378,11 @@ export function FavoriteStrip({
         detail={home ? away(home) : "Add"}
         label={home ? `Home, ${home.ident}` : "Add Home"}
         onClick={home ? () => onOpen(home) : onAddHome}
+        refused={home ? refusal?.(home.ident) : null}
         testId="pill-home"
       />
       {favorites.map((a) => (
-        <SmallAirportTile key={a.ident} airport={a} detail={away(a)} onClick={() => onOpen(a)} />
+        <SmallAirportTile key={a.ident} airport={a} detail={away(a)} onClick={() => onOpen(a)} refused={refusal?.(a.ident)} />
       ))}
     </PillStrip>
   );

@@ -15,6 +15,7 @@ import { wantScreen } from "../../../lib/navigation/wanted";
 import { focusAsShown } from "../../../lib/focusAsShown";
 import { takeSearchAsk, useSearchAsk, useSearchPick } from "../../../lib/oneSearch";
 import { usePickScope } from "./usePickScope";
+import { pickRefusal } from "../../../lib/pickRefusal";
 import { POSITION_NAME, positionIdent } from "../../../lib/identSchema";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { searchWords } from "./searchPlaceholder";
@@ -228,8 +229,10 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
     riseToSee(setPanel);
   };
 
+  // Why this airport cannot be picked now (Closed; On the route already), for the rows to grey.
+  const refusal = (ident: string) => pickRefusal(pick, index, ident);
   const pickIdent = (ident: string) => {
-    if (!ident) return; // My Location with the fix gone since
+    if (!ident || refusal(ident)) return; // My Location with the fix gone since; a field refused
     const to = pick;
     done();
     to?.onPick(ident.toUpperCase());
@@ -340,6 +343,7 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
     direct,
     pick,
     pickIdent,
+    refusal,
     // Its own, else why a picker's last pick would not do (the first flight's).
     problem: problem ?? pick?.problem ?? null,
     focused,

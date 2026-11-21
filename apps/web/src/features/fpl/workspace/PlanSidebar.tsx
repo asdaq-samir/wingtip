@@ -274,7 +274,9 @@ export default function PlanSidebar({
             <Waits>{model.sent ? <SearchResultsPage /> : <OneSearchResults model={model} />}</Waits>
           </TabPage>
         ) : (
-          stripsDrawn && <SearchHome vm={vm} pickIdent={model.pick ? model.pickIdent : undefined} />
+          stripsDrawn && (
+            <SearchHome vm={vm} pickIdent={model.pick ? model.pickIdent : undefined} refusal={model.pick ? model.refusal : undefined} />
+          )
         )}
       </TabKept>
     </>

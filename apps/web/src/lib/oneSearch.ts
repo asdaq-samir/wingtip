@@ -50,6 +50,9 @@ export interface SearchPick {
    *  screenshot, 2026-11-19). */
   title?: string;
   query?: string;
+  /** Idents that cannot be picked as they stand in the route (Add a Stop:
+   *  a point of it already), shown greyed "On the route already". */
+  taken?: readonly string[];
 }
 export const useSearchPick = create<{ pick: SearchPick | null; fields: number }>(() => ({ pick: null, fields: 0 }));
 
