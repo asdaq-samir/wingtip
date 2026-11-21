@@ -24,7 +24,7 @@ import signal
 import threading
 import time
 
-from wingtip import schedule, traffic, tracing
+from wingtip import log_lines, schedule, traffic, tracing
 from wingtip.config import get_settings as wingtip_settings
 from wingtip.traffic import store
 
@@ -62,7 +62,8 @@ def run(stop: threading.Event) -> None:
 
 
 def main() -> None:
-    logging.basicConfig(level=get_settings().log_level, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    # One line a record, JSON in production (LOG_FORMAT, wingtip.log_lines).
+    log_lines.configure(get_settings().log_level, wingtip_settings().log_format)
     # Traces with TRACING=1 (docs/LOCAL-DEV.md, "Tracing"): each round of
     # following a trace, its adsb.fi asks under it; nothing otherwise.
     tracing.start("ingest")

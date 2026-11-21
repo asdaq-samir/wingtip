@@ -25,8 +25,9 @@
 #   docker compose -f infra/docker-compose.prod.yml up -d
 
 # Every service's log to CloudWatch (the stack's ServerLogGroup), a
-# stream per container: the server's own disk keeps none, and what went
-# wrong is read in the console or with `aws logs tail`.
+# stream per container, kept a month: the server's own disk keeps none, and
+# what went wrong is read in the console, with `aws logs tail`, or by field
+# in Logs Insights (the services write JSON lines; docs/RUNBOOKS.md).
 x-restart: &restart
   restart: unless-stopped
   logging:
@@ -66,6 +67,20 @@ services:
     # (2026-11-09). A volume made under bookworm (glibc 2.36) would need its
     # collation version refreshed once (scripts/dev/pg-refresh-collation.sh).
     image: postgres:18-trixie@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42
+    # A statement over half a second, and a wait on a lock over a second
+    # (deadlock_timeout), written to its log, so a query that has turned
+    # slow as the tables grew shows in CloudWatch with its text (the ops
+    # audit, 2026-11-21; docs/RUNBOOKS.md, "Reading the logs"). Its text
+    # only: the values bound to it (a pilot's address, say) are left out
+    # of the log (log_parameter_max_length=0; docs/privacy-inventory.md).
+    command:
+      - postgres
+      - -c
+      - log_min_duration_statement=500
+      - -c
+      - log_lock_waits=on
+      - -c
+      - log_parameter_max_length=0
     environment:
       POSTGRES_DB: wingtip
       POSTGRES_USER: wingtip
@@ -115,6 +130,9 @@ services:
       FAA_DATA_AUTO_REFRESH: "1"
       CHART_TILES_URL: https://${PUBLIC_HOST}/tiles
       TZ: America/Chicago
+      # One JSON object a log line, with the page's request id
+      # (wingtip.log_lines), for CloudWatch Logs Insights.
+      LOG_FORMAT: json
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
       interval: 10s
@@ -139,6 +157,7 @@ services:
       # (github.com/adsbfi/opendata): the followed airplanes' rounds are
       # off for the public app until adsb.fi agrees to it.
       ADSBFI_OPEN_DATA: "0"
+      LOG_FORMAT: json
       # The FAA's SWIM feeds (ingest.swim); each off without its own. The
       # owner's SCDS subscriptions' login and queues.
       SWIM_HOST: ${SWIM_HOST:-}
@@ -167,6 +186,7 @@ services:
       - /srv/wingtip/data:/workspace/data
     environment:
       TZ: America/Chicago
+      LOG_FORMAT: json
     # Its working set is Python, the engine, a GLMP issue's two grids at
     # their largest while it reads them and the model weather's timeline
     # fetched afresh, up to 565 MB on x86 (docker-compose.yml says how it
@@ -255,6 +275,11 @@ services:
       # "oauth" turns on Sign in with Google and Apple (OAuthClientsConfig).
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-}
       JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=40 -XX:TieredStopAtLevel=1
+      # One JSON object a log line (Spring Boot's Elastic Common Schema),
+      # the request id and trace among its fields (the MDC: RequestIdFilter),
+      # for CloudWatch Logs Insights. The ALERT lines the stack's
+      # GatewayAlertFilter counts are its message, as they were.
+      LOGGING_STRUCTURED_FORMAT_CONSOLE: ecs
 
   # The charts job's overlay tiles (services/jobs/charts): one-off, behind
   # the `jobs` profile so `up` never starts it; cron runs

@@ -40,7 +40,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from collections.abc import Callable
 
 from apscheduler.schedulers.base import BaseScheduler
-from wingtip import schedule, tracing, weather_store
+from wingtip import log_lines, schedule, tracing, weather_store
 
 from . import aviationweather, fetch, flow, gfs, glmp, glmp_forecast, radar, satellite, spc, tfr
 from .settings import get_settings
@@ -196,7 +196,8 @@ class _Health(BaseHTTPRequestHandler):
 def main() -> None:
     from wingtip.config import get_settings as wingtip_settings
 
-    logging.basicConfig(level=wingtip_settings().log_level, format="%(asctime)s %(name)s %(levelname)s %(message)s")
+    # One line a record, JSON in production (LOG_FORMAT, wingtip.log_lines).
+    log_lines.configure(wingtip_settings().log_level, wingtip_settings().log_format)
     # Traces with TRACING=1 (docs/LOCAL-DEV.md, "Tracing"); nothing otherwise.
     tracing.start("weather")
     settings = get_settings()
