@@ -147,7 +147,19 @@ final class AccessibilityAuditTests: XCTestCase {
     /// screens and those two checks with no element alone, so a control of
     /// the card's own with no label, or the plan's sheet raised over the
     /// map, still fails.
-    private static let halfCardsOverTheChart: Set<String> = ["airplane", "brief", "navlog", "downloads"]
+    ///
+    /// About the same, a card at half over the chart too: the wave's check
+    /// run of 2026-11-21 failed it on an "Element has no description" with
+    /// no element. Run alone on the iPhone 18 Pro (iOS 27.2), six times
+    /// each, it failed 3 of 6 with the chart on, on that issue alone and
+    /// with no element to find, where each named issue (MapKit's Legal
+    /// link) was found by its element; launched with -base none it passed
+    /// 6 of 6. It comes and goes with the chart's tiles under the card,
+    /// which is why the runs that passed before missed it. Setup the same,
+    /// found by this change's run of the whole class: alone, with the chart
+    /// on it failed 2 of 21 on that issue with no element, and with -base
+    /// none it passed 21 of 21.
+    private static let halfCardsOverTheChart: Set<String> = ["airplane", "brief", "navlog", "downloads", "about", "setup"]
 
     @MainActor
     private static func unnamedMapLabel(_ issue: XCUIAccessibilityAuditIssue, screen: String) -> Bool {
