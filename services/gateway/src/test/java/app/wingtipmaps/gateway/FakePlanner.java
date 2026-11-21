@@ -3,6 +3,8 @@ package app.wingtipmaps.gateway;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -38,8 +40,12 @@ final class FakePlanner {
             // Every field the document requires, in JSON, as the planner answers: Jackson 3 leaves a
             // missing list null, and Spring reads an unlabelled body as octet-stream.
             String path = exchange.getRequestURI().getPath();
+            // One last good day for each endorsement asked of, in order, as the engine answers
+            // (endorsement_records): none runs out here.
+            String asks = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+            String until = String.join(",", Collections.nCopies(asks.split("\"code\"", -1).length - 1, "null"));
             byte[] body = (path.equals("/api/pilot/endorsements")
-                            ? "{\"checks\":[],\"soloUntil\":null,\"until\":[]}"
+                            ? "{\"checks\":[],\"soloUntil\":null,\"until\":[" + until + "]}"
                             : exchange.getRequestMethod().equals("GET") && path.equals("/api/checkpoint-notes/mine")
                                     ? NOTES
                                     : "{\"removed\":1}")
