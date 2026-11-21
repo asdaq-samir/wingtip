@@ -233,7 +233,7 @@ class Plan @Inject constructor(app: Application) : AndroidViewModel(app) {
                 val course = Planner.course(asked.dep, asked.dest, asked.stops)
                 _state.update { it.copy(course = course) }
                 val fresh = mutableListOf<Leg>()
-                Planner.navlog(asked.dep, asked.dest, asked.stops, AirplaneNow.plannerQuery(asked.aircraft, asked.own), asked.holds, asked.rules, asked.altitudeFt, asked.depart, (listOf(asked.dep) + asked.stops + asked.dest).let { r -> PlanAltitudes.query(r) + PlanTanks.query(r) + PlanGround.query(r) } + PlanAlternate.query(asked.rules, asked.dest)).collect { message ->
+                Planner.navlog(asked.dep, asked.dest, asked.stops, AirplaneNow.plannerQuery(asked.aircraft, asked.own), asked.holds, asked.rules, asked.altitudeFt, asked.depart, (listOf(asked.dep) + asked.stops + asked.dest).let { r -> PlanAltitudes.query(r) + PlanTanks.query(r) + PlanGround.query(r) + app.wingtipmaps.android.plan.PlanProcedures.query(r) } + PlanAlternate.query(asked.rules, asked.dest)).collect { message ->
                     when (message) {
                         is NavLogMessage.Stage -> _state.update { it.copy(stage = message.detail) }
                         is NavLogMessage.Altitude -> PlanAltitudes.heard(message.line)

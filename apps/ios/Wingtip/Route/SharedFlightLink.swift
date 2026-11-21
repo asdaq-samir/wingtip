@@ -28,14 +28,16 @@ enum SharedFlightLink: Equatable, Sendable {
                                 type: Links.ident(query[LinkKey.type.rawValue]),
                                 rules: query[LinkKey.rules.rawValue].flatMap { FlightRules(rawValue: $0.lowercased()) },
                                 tail: Links.ident(query[LinkKey.tail.rawValue]),
-                                tanks: SharedPlan.tanks(of: query[LinkKey.tanks.rawValue])))
+                                tanks: SharedPlan.tanks(query[LinkKey.tanks.rawValue])))
     }
 }
 
 /// The plan a link shares: its route, cruise altitude (feet MSL),
 /// departure time, the sender's airplane type (shown, never assumed: the
-/// receiver's own airplane flies it), flight rules, and the N-number only
-/// where the sender chose to include it.
+/// receiver's own airplane flies it), flight rules, the fuel its pilot
+/// set on FPL's gauges (`tanks`, the planner's own "KJVL:0,KMSN:20", as
+/// Android's link carries it), and the N-number only where the sender
+/// chose to include it.
 struct SharedPlan: Equatable, Sendable {
     var dep: String
     var dest: String
@@ -45,9 +47,8 @@ struct SharedPlan: Equatable, Sendable {
     var type: String?
     var rules: FlightRules?
     var tail: String?
-    /// The fuel its pilot set on FPL's gauges as the airplane leaves a
-    /// field, whole gallons by ident (the link's `tanks`, the planner's own
-    /// "KJVL:0,KMSN:20"); none named, full.
+    /// The fuel as the airplane leaves a field, whole gallons by ident,
+    /// where the sender set it (RouteExtras.tanks); none named, full.
     var tanks: [String: Int] = [:]
 
     var route: String { ([dep] + stops + [dest]).joined(separator: " → ") }
@@ -64,10 +65,7 @@ struct SharedPlan: Equatable, Sendable {
         if let type { items.append(URLQueryItem(name: LinkKey.type.rawValue, value: type)) }
         if let rules { items.append(URLQueryItem(name: LinkKey.rules.rawValue, value: rules.rawValue)) }
         if includeTail, let tail { items.append(URLQueryItem(name: LinkKey.tail.rawValue, value: tail)) }
-        if !tanks.isEmpty {
-            let words = tanks.sorted { $0.key < $1.key }.map { "\($0.key):\($0.value)" }.joined(separator: ",")
-            items.append(URLQueryItem(name: LinkKey.tanks.rawValue, value: words))
-        }
+        if let tanks = RouteExtras.pairs(tanks) { items.append(URLQueryItem(name: LinkKey.tanks.rawValue, value: tanks)) }
         return host.appending(path: Screen.linkPath).appending(queryItems: items)
     }
 
@@ -85,16 +83,16 @@ struct SharedPlan: Equatable, Sendable {
         self.depart = depart; self.type = type; self.rules = rules; self.tail = tail; self.tanks = tanks
     }
 
-    /// A link's `tanks` read warily, as Android's and the web's are: each
-    /// part an ident and whole gallons, 0 to 9,999; a part that is not one
-    /// is left out, never guessed.
-    static func tanks(of raw: String?) -> [String: Int] {
+    /// A link's `tanks` read warily, as Android's SharedPlan reads it: each
+    /// part an ident and whole gallons from 0 to 9,999; a part that is not
+    /// one is left out, never guessed (the planner's own reading refuses it).
+    static func tanks(_ raw: String?) -> [String: Int] {
         var out: [String: Int] = [:]
         for part in (raw ?? "").split(separator: ",") {
             let pair = part.split(separator: ":", omittingEmptySubsequences: false)
             guard pair.count == 2, let ident = Links.ident(String(pair[0])),
-                  let gallons = Int(pair[1].trimmingCharacters(in: .whitespaces)), (0...9_999).contains(gallons) else { continue }
-            out[ident] = gallons
+                  let gal = Int(pair[1].trimmingCharacters(in: .whitespaces)), (0...9_999).contains(gal) else { continue }
+            out[ident] = gal
         }
         return out
     }

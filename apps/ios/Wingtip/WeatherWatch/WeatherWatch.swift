@@ -77,7 +77,7 @@ final class WeatherWatch {
         let legs = BriefLegs.query(course: kept.course, checkpoints: kept.checkpoints, legs: kept.legs)
         let briefing: Briefing
         do {
-            briefing = try await Planner.briefing(dep: kept.dep, dest: kept.dest, stops: kept.stops, eteMin: kept.totals?.eteMin, legs: legs)
+            briefing = try await Planner.briefing(dep: kept.dep, dest: kept.dest, stops: kept.stops, depart: kept.depart, eteMin: kept.totals?.eteMin, legs: legs)
         } catch {
             Log.records.notice("the weather watch could not fetch the briefing: \(error.localizedDescription, privacy: .public)")
             return

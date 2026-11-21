@@ -37,12 +37,24 @@ struct SharedFlightTests {
         #expect(Links.command(for: without) == .sharedFlight(.plan(SharedPlan(dep: "KMSN", dest: "KOSH", altitudeFt: 3500, type: "C172", rules: .ifr))))
     }
 
-    @Test func theFuelSetOnTheGaugesGoesWithTheLink_readWarily() {
-        let plan = SharedPlan(dep: "KMSN", dest: "KOSH", stops: ["KJVL"], tanks: ["KMSN": 20, "KJVL": 0])
+    /// The fuel set on the gauges goes with the link as the planner's own
+    /// `tanks` (design/screens.json's key, LinkKey.tanks), as Android's
+    /// does, and is read back warily: a part that is not an ident and
+    /// whole gallons from 0 to 9,999 is left out, never guessed. Use This
+    /// Plan puts it on the receiver's gauges.
+    @Test func theFuelSetGoesWithTheLinkAndIsReadBackWarily() throws {
+        let plan = SharedPlan(dep: "KMSN", dest: "KOSH", stops: ["KJVL"], tanks: ["KMSN": 30, "KJVL": 0])
         let link = plan.link(includeTail: false, host: URL(string: "https://wingtipmaps.app")!)
-        #expect(link.absoluteString.hasSuffix("&tanks=KJVL:0,KMSN:20"))
+        #expect(link.absoluteString.contains("&tanks=KJVL:0,KMSN:30"))
         #expect(Links.command(for: link) == .sharedFlight(.plan(plan)))
-        #expect(SharedPlan.tanks(of: "KJVL:12,KMSN:-3,K!:4,KOSH:10000,C81:7:1") == ["KJVL": 12])
+        #expect(SharedPlan.tanks("KMSN:30,bad,KJVL:-4,KOSH:12.5,KDLH:10000,kmke:20") == ["KMSN": 30, "KMKE": 20])
+        #expect(SharedPlan.tanks(nil).isEmpty)
+
+        let model = SharedFlightModel(calls: .init(fetch: { _ in nil }))
+        let route = Plan()
+        model.open(.plan(plan))
+        _ = model.use(on: route, defaults: UserDefaults(suiteName: "SharedFlightTests")!)
+        #expect(route.extras.tanks == ["KMSN": 30, "KJVL": 0])
     }
 
     @Test func notNowLeavesThePlanAsItWas() {

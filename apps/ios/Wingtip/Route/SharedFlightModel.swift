@@ -94,7 +94,7 @@ final class SharedFlightModel {
         route.altitudeChoice = nil
         route.procedures = []
         route.extras = RouteExtras()
-        // The fuel its pilot set on the gauges, flown by the same figures.
+        // The fuel its pilot set, on the receiver's gauges (the planner's `tanks`).
         route.extras.tanks = shared.tanks
         if let rules = shared.rules { defaults.set(rules.rawValue, forKey: FlightRules.key) }
         notNow()
