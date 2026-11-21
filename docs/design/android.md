@@ -669,8 +669,22 @@ placement wins, and the difference is noted.
      through the screen's `SnackbarHostState`; the owner, 2026-11-10:
      stock over the hand-built undo row). Problems still show where they
      happen.
-  6. The figure strip at the sheet's foot: To, Dist, ETE and Fuel, with
-     only To and Dist when there is no airplane (0011).
+  6. The figure strip at the sheet's foot: To, Dist, ETE, Trk and,
+     whenever the airplane's position is known, GPS Alt (no To in
+     flight; `flight/StripTrack`): Track in the fuel's place, the web's
+     (2026-11-21), magnetic, the engine's on the route or the fix's true
+     course less the engine's WMM variation, "—" below flying speed; no
+     time with no airplane (0011).
+  6a. **The fuel in the tanks** (`ui/FuelTanks`, `plan/PlanTanks`): a
+     `SegmentedListItem` a field, its determinate `LinearProgressIndicator`
+     the share left and the gallons ("−12 gal" past empty, the error
+     colour under the reserve), every figure the engine's
+     `fuel_in_tanks`; a field the airplane leaves a tap to set its fuel
+     in Material's `AlertDialog` (Full / No fuel / Gallons as a connected
+     button group, a number field), sent as the planner's `tanks`. Add
+     Fuel Stops (every flight's, up to four plans) or Remove Fuel Stops
+     under Add a Stop (`route/FuelStops`). The plan's ••• Clear Route
+     asks "Clear Route?" in Material's `AlertDialog` first.
   7. **The alternate** (IFR, 2026-11-10; `alternate/`): the route's
      `SegmentedListItem`s end, under IFR, with the alternate filed (a tap
      to its airport card, the card rule) or **Add Alternate**, which

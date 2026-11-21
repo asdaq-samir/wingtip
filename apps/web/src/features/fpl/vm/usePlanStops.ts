@@ -24,8 +24,8 @@ export function usePlanStops(route: PlanRoute, answer: PlanAnswerModel, { place 
   // suggested, as Fly Here's is at its tap: Add Fuel Stops then draws it
   // at once from what is in, where the owner watched four and a half
   // seconds of dashes and "Planning altitudes…" after the tap (the video,
-  // 2026-10-22). The same plan the page asks for once they are stops, and
-  // the one whose own suggestions Add Fuel Stops reads next.
+  // 2026-10-22). The same plan the page asks for once they are stops, which
+  // the planner made already to check them (wingtip.fuel_rounds).
   const nextStops = !s.local ? (fuelToAdd?.stops ?? null) : null;
   const aheadKey = nextStops
     ? JSON.stringify([nextStops, planParams.altitudeFt, planParams.altitudeChoice, planParams.depart, aircraft.profile, load])

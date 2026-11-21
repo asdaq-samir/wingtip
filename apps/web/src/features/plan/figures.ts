@@ -56,10 +56,14 @@ export function nextLanding(totals: Totals | null, destination: string, hop = 0)
   return flight ? { to: flight.destination, totals: flight.totals } : { to: destination, totals };
 }
 
-/** The strip's fuel from the planner's totals, the engine's
- *  (strip_fuel), the iPhone's and Android's own: the fuel required to the
- *  landing of hop `hop` (the tanks filled at each stop), less what a
- *  flight under way has burnt, and the flights the tanks fall short on. */
+/** The fuel figure from the planner's totals, the engine's (strip_fuel),
+ *  the one the iPhone's and Android's strips show: the fuel required to
+ *  the landing of hop `hop` (the tanks filled at each stop), less what a
+ *  flight under way has burnt, and the flights the tanks fall short on.
+ *  The web's strip shows the Track in its place (TripFigures); the web
+ *  says this figure in the Nav Log card's head (figuresLine) and the
+ *  flights short (shortFlights), the tanks themselves in the timeline's
+ *  gauges. */
 function stripFuel(totals: Totals | null, hop = 0, burntGal: number | null = null) {
   return callEngine("strip_fuel", {
     fuel_required_gal: totals?.fuel_required_gal ?? null,

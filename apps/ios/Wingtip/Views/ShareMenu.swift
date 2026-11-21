@@ -1,53 +1,32 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// The route shared, as the web app's ShareMenu: its link, the nav log as
-/// text and as the kneeboard's page (PDF), a GPX route for another app,
-/// ForeFlight's own link (the checkpoints' pack first, then the route),
-/// and Save as File: the flight as a Wingtip flight file (FlightFile),
-/// which opens on another iPhone as the shared link's preview, and the
-/// kneeboard as a PDF, each saved through the system's file exporter
-/// (SaveFileExporter, SaveFileLink). Every share is the system's
-/// ShareLink, a file made only when the share sheet asks for it
-/// (SharedFile). The route card's ••• (RouteCard) is this menu with
-/// its own rows round the sharing, which then sits in a Share submenu, so
-/// the sheets it opens live in one place (`rows`, `more`, `label`).
-struct ShareMenu<Rows: View, More: View, Shown: View>: View {
+/// The route shared, as the web's nav log Share (the owner, 2026-11-21:
+/// "Print navlog should be in navlog share, not in more. Same with the
+/// checkpoints"): its link, the nav log as text and as the kneeboard's
+/// page (PDF), the checkpoints for ForeFlight (its content pack), Save as
+/// File -- the flight as a Wingtip flight file (FlightFile), which opens on
+/// another iPhone as the shared link's preview, and the kneeboard as a
+/// PDF, each saved through the system's file exporter (SaveFileExporter,
+/// SaveFileLink) -- and Print, the system's print panel over the
+/// kneeboard's page. Every share is the system's ShareLink, a file made
+/// only when the share sheet asks for it (SharedFile). FPL's ••• is
+/// RouteMoreMenu: Route Options, the link and Open in ForeFlight.
+struct ShareMenu: View {
     @Environment(Plan.self) private var plan
     @Environment(\.openURL) private var openURL
     @State private var includeTail = false
     /// The file being saved, while the exporter is up.
     @State private var saving: SavedFile?
 
-    /// The rows above the sharing and below it, and the menu's face;
-    /// nested, the sharing is a Share submenu.
-    let rows: Rows
-    let more: More
-    let label: Shown
-    let nested: Bool
-
-    init(rows: Rows, more: More, label: Shown, nested: Bool = true) {
-        self.rows = rows
-        self.more = more
-        self.label = label
-        self.nested = nested
-    }
-
     var body: some View {
         Menu {
-            if nested {
-                rows
-                Menu { ways } label: { Label("Share", systemImage: WingtipIcon.share) }
-                    .disabled(plan.legs.isEmpty)
-                more
-            } else {
-                ways
-            }
+            ways
         } label: {
-            label
+            Image(systemName: WingtipIcon.share)
         }
-        .accessibilityLabel(nested ? "More" : "Share")
-        .disabled(!nested && plan.legs.isEmpty)
+        .accessibilityLabel("Share")
+        .disabled(plan.legs.isEmpty)
         .modifier(SaveFileExporter(saving: $saving))
     }
 
@@ -57,6 +36,13 @@ struct ShareMenu<Rows: View, More: View, Shown: View>: View {
         if let tail = plan.tail { Toggle("Include \(tail)", isOn: $includeTail) }
         ShareLink(item: RouteShare.navLogText(plan)) { Label("Nav Log as Text", systemImage: WingtipIcon.navLog) }
         ShareLink(item: navLogPDF, preview: SharePreview("Nav Log")) { Label("Nav Log as PDF", systemImage: "doc.richtext") }
+        // The checkpoints as ForeFlight's content pack, named as the nav
+        // log names them, so a route sent after finds them by name.
+        if !plan.checkpoints.isEmpty {
+            Button { RouteShare.sendPack(plan, openURL: openURL) } label: {
+                Label("Checkpoints for ForeFlight", systemImage: "mappin.and.ellipse")
+            }
+        }
         Menu {
             SaveFileLink(saving: $saving, make: flightFile) {
                 Label("Flight", systemImage: "airplane")
@@ -67,10 +53,22 @@ struct ShareMenu<Rows: View, More: View, Shown: View>: View {
         } label: {
             Label("Save as File", systemImage: "square.and.arrow.down")
         }
-        // ForeFlight sends the route on to the panel wirelessly (Garmin's
-        // Connext, Avidyne, Dynon): the owner's pick (2026-11-02), as most
-        // pilots have ForeFlight and not Garmin Pilot.
-        Button { foreflight() } label: { Label("Open in ForeFlight", systemImage: WingtipIcon.send) }
+        Button { print() } label: { Label("Print Nav Log", systemImage: "printer") }
+    }
+
+    /// The kneeboard's page in the system's print panel (UIKit's
+    /// UIPrintInteractionController, the stock way an iPhone prints).
+    private func print() {
+        _ = try? Self.said("The nav log's print", on: plan) {
+            guard let url = Kneeboard.pdf(plan), UIPrintInteractionController.canPrint(url) else { throw CocoaError(.fileReadUnknown) }
+            let printer = UIPrintInteractionController.shared
+            let info = UIPrintInfo(dictionary: nil)
+            info.jobName = "Nav Log \(plan.idents.joined(separator: " "))"
+            info.outputType = .general
+            printer.printInfo = info
+            printer.printingItem = url
+            printer.present(animated: true)
+        }
     }
 
     /// The flight as a Wingtip flight file, the N-number in it only where
@@ -117,28 +115,5 @@ struct ShareMenu<Rows: View, More: View, Shown: View>: View {
             plan.shareProblem = "\(what) couldn't be made, so nothing was sent: \(error.localizedDescription)"
             throw error
         }
-    }
-
-    /// ForeFlight takes no route and pack in one: the pack the first time a
-    /// route goes there from this device, then the route itself, its
-    /// checkpoints by their names in the pack.
-    private func foreflight() {
-        let route = plan.idents.joined(separator: "-")
-        let names = plan.checkpoints.map { $0.waypoint ?? "" }
-        let sent = RouteShare.packSent(route, names: names)
-        if !sent, !plan.checkpoints.isEmpty {
-            RouteShare.markPackSent(route, names: names)
-            openURL(RouteShare.openPack(RouteShare.packURL(plan)))
-        } else {
-            openURL(RouteShare.foreflightRoute(plan, named: sent))
-        }
-    }
-}
-
-extension ShareMenu where Rows == EmptyView, More == EmptyView, Shown == AnyView {
-    /// The route's Share alone, its glyph the face (the nav log's bar, the strip).
-    init() {
-        self.init(rows: EmptyView(), more: EmptyView(),
-                  label: AnyView(Image(systemName: WingtipIcon.share)), nested: false)
     }
 }

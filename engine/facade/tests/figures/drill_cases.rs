@@ -254,11 +254,11 @@ fn the_tanks_are_walked_and_filled_at_each_field_landed_at() {
     use serde_json::json;
     let a = ask(
         "fuel_in_tanks",
-        json!({"usable_gal": 40.0, "taxi_gal": 1.4, "reserve_gal": 6.0, "points": [
+        json!({"usable_gal": 40.0, "taxi_gal": 1.4, "reserves_gal": [6.0], "points": [
         {"departure": true}, {"fuel_gal": 10.0}, {"fuel_gal": 20.0, "refuel": true}, {"fuel_gal": 34.0},
         {"fuel_gal": null}, {"fuel_gal": 1.0}]}),
     );
-    assert_eq!(a[0], json!({"gal": 40.0, "low": false}));
+    assert_eq!(a[0], json!({"gal": 40.0, "low": false, "leaves_gal": 40.0}));
     assert_eq!(a[1]["low"], json!(false));
     assert!((a[1]["gal"].as_f64().unwrap() - 28.6).abs() < 1e-9);
     assert!((a[2]["gal"].as_f64().unwrap() - 8.6).abs() < 1e-9);
@@ -278,16 +278,39 @@ fn the_pilots_own_fuel_at_engine_start_and_after_a_stop() {
     // the 6 gal reserve. More than the tanks hold at the start is kept.
     let a = ask(
         "fuel_in_tanks",
-        json!({"usable_gal": 40.0, "taxi_gal": 1.4, "reserve_gal": 6.0, "points": [
+        json!({"usable_gal": 40.0, "taxi_gal": 1.4, "reserves_gal": [6.0], "points": [
         {"departure": true, "fill_gal": 25.0}, {"fuel_gal": 10.0, "refuel": true, "fill_gal": 0.0}, {"fuel_gal": 8.0}]}),
     );
-    assert_eq!(a[0], json!({"gal": 25.0, "low": false}));
+    assert_eq!(a[0], json!({"gal": 25.0, "low": false, "leaves_gal": 25.0}));
     assert!((a[1]["gal"].as_f64().unwrap() - 13.6).abs() < 1e-9);
     assert!((a[2]["gal"].as_f64().unwrap() - 4.2).abs() < 1e-9);
     assert_eq!(a[2]["low"], json!(true));
     let over = ask(
         "fuel_in_tanks",
-        json!({"usable_gal": 40.0, "taxi_gal": 1.4, "reserve_gal": 6.0, "points": [{"departure": true, "fill_gal": 44.0}]}),
+        json!({"usable_gal": 40.0, "taxi_gal": 1.4, "reserves_gal": [6.0], "points": [{"departure": true, "fill_gal": 44.0}]}),
     );
-    assert_eq!(over[0], json!({"gal": 44.0, "low": false}));
+    assert_eq!(over[0], json!({"gal": 44.0, "low": false, "leaves_gal": 44.0}));
+}
+
+#[test]
+fn a_day_flight_after_a_night_one_is_held_to_its_own_reserve() {
+    use serde_json::json;
+    // At 10 gph, the night flight's 45 minutes (14 CFR 91.151(a)(2)) are
+    // 7.5 gal and the day flight's 30 (91.151(a)(1)) 5 gal, as the
+    // planner's totals give each flight's reserve_gal. Filled at the stop,
+    // the day flight lands with 40 - 1.4 - 32 = 6.6: under the night's
+    // reserve, over its own, so not low.
+    let points = json!([{"departure": true}, {"fuel_gal": 20.0, "refuel": true}, {"fuel_gal": 32.0}]);
+    let a = ask("fuel_in_tanks", json!({"usable_gal": 40.0, "taxi_gal": 1.4, "reserves_gal": [7.5, 5.0], "points": points}));
+    assert!((a[2]["gal"].as_f64().unwrap() - 6.6).abs() < 1e-9);
+    assert_eq!(a[2]["low"], json!(false));
+    let a = ask("fuel_in_tanks", json!({"usable_gal": 40.0, "taxi_gal": 1.4, "reserves_gal": [5.0, 7.5], "points": points}));
+    assert_eq!(a[2]["low"], json!(true));
+    // Under IFR the destination is held to the fuel on to the alternate
+    // too (91.167(a)(2)): 6.6 over the 5 gal reserve, under it and 2 more.
+    let a = ask(
+        "fuel_in_tanks",
+        json!({"usable_gal": 40.0, "taxi_gal": 1.4, "reserves_gal": [7.5, 5.0], "alternate_gal": 2.0, "points": points}),
+    );
+    assert_eq!(a[2]["low"], json!(true));
 }

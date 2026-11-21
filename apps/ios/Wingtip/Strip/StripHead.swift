@@ -16,13 +16,14 @@ struct StripHead: View {
     @Environment(\.chartInk) private var ink
     /// At the accessibility sizes the route's line wraps rather than is cut.
     @Environment(\.dynamicTypeSize) private var size
+    @State private var clearing = false
     /// A finding's row, or the verdict, tapped: the Brief.
     let onBrief: () -> Void
     let onFile: () -> Void
 
     private var line: String {
         StripData.headLine(dep: plan.dep, dest: plan.dest, stops: plan.stops, airplane: plan.airplaneName ?? "",
-                           cruiseFt: plan.ownAltitudeFt ?? plan.altitudeFt, departAt: nil)
+                           cruiseFt: plan.ownAltitudeFt ?? plan.altitudeFt, departAt: plan.extras.depart)
     }
 
     var body: some View {
@@ -94,7 +95,7 @@ struct StripHead: View {
                 }
             }
             .accessibilityLabel(StripData.spokenHeadLine(dep: plan.dep, dest: plan.dest, stops: plan.stops, airplane: plan.airplaneName ?? "",
-                                                         cruiseFt: plan.ownAltitudeFt ?? plan.altitudeFt, departAt: nil))
+                                                         cruiseFt: plan.ownAltitudeFt ?? plan.altitudeFt, departAt: plan.extras.depart))
         }
         .padding(WingtipSpace.lg)
         .frame(maxWidth: .infinity, minHeight: 112, alignment: .bottomLeading)
@@ -109,14 +110,15 @@ struct StripHead: View {
     }
 
     /// The route's menu: Share (its own menu, the web's ShareMenu), File,
-    /// Clear.
+    /// Clear, asked first.
     private var menu: some View {
         Menu {
             ShareMenu()
             Button { onFile() } label: { Label("File Flight Plan", systemImage: WingtipIcon.send) }
             ShowRouteAs()
             Divider()
-            Button(role: .destructive) { plan.clear() } label: { Label("Clear Route", systemImage: WingtipIcon.close) }
+            // Asked first, as the route card's ✕ asks (the owner, 2026-11-20).
+            Button(role: .destructive) { clearing = true } label: { Label("Clear Route", systemImage: WingtipIcon.close) }
         } label: {
             Image(systemName: WingtipIcon.more)
                 .font(.body.weight(.medium))
@@ -125,6 +127,12 @@ struct StripHead: View {
                 .contentShape(Rectangle().inset(by: -6))
         }
         .accessibilityLabel("The route's menu")
+        .alert("Clear Route?", isPresented: $clearing) {
+            Button("Clear Route", role: .destructive) { plan.clear() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The route, its stops and what was set on it go. Shake to undo.")
+        }
     }
 
     /// The route's other ways (the planner's chips), in the system's

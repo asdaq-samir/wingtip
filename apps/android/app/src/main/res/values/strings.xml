@@ -14,7 +14,7 @@
     <string name="settings">Settings</string>
     <!-- The bar's placeholder, one line at every font scale (Material's
          search bar is 56 dp); TalkBack reads the whole sentence. -->
-    <string name="search_hint">Search airports and airplanes</string>
+    <string name="search_hint">Search</string>
     <string name="search_hint_spoken">Search airports and airplanes</string>
     <string name="search_hint_flying">Tap the mic and say it</string>
     <string name="search_add_stop">Add a stop</string>
@@ -90,7 +90,6 @@
     <string name="share">Share</string>
     <string name="send">Send</string>
     <string name="stop">Stop</string>
-    <string name="failed">Failed</string>
     <string name="not_now">Not Now</string>
     <string name="allow">Allow</string>
     <string name="allow_precise">Allow Precise</string>
@@ -100,6 +99,8 @@
     <string name="figure_dist">DIST</string>
     <string name="figure_ete">ETE</string>
     <string name="figure_fuel">FUEL</string>
+    <string name="figure_trk">TRK</string>
+    <string name="figure_gps_alt">GPS ALT</string>
     <string name="figure_mh">MH</string>
     <string name="figure_mc">MC</string>
     <string name="figure_required">REQUIRED</string>
@@ -108,6 +109,9 @@
          where the written word is an abbreviation or nothing at all. -->
     <string name="said_to">To</string>
     <string name="said_fuel_required">Fuel required</string>
+    <string name="said_track">Track</string>
+    <string name="said_no_track">Track: none from this position</string>
+    <string name="said_gps_alt">GPS altitude</string>
     <string name="said_expanded">Expanded</string>
     <string name="said_collapsed">Collapsed</string>
     <string name="said_show_why">Show why</string>

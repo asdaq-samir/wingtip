@@ -235,14 +235,17 @@ with the sheet at rest: the search or a row of the plan is 1.
 **One row (owner decision 2026-11-10).** The "Flight Plan" title bar is
 gone on the iPhone: the sheet's top row is the search with the microphone
 and the account button beside it, and the route card sits under it (the
-route, Ready to Fly, the figures, Brief, Nav Log, Airplane, •••). Saved
-Flights, Share and Undo, which were the bar's, are in the route card's
-•••: Flights 1 → 2, Share 1 → 2 (its ways a submenu, 3 to pick one), Undo
-1 → 2, and Undo is still 0 taps by shaking the iPhone or ⌘Z.
+route, Ready to Fly, the figures, Brief, Nav Log, File, ••• and ✕). The
+••• is the web's More since 2026-11-21: Route Options, Share Link and
+Open in ForeFlight, then Saved Flights and Show Route As; the nav log's
+Share holds the other ways out, the checkpoints for ForeFlight and Print.
+Undo is the undo bar's after each change (a stop or a procedure removed,
+the route cleared or replaced, a Direct To: 1 tap for six seconds), and 0
+taps by shaking the iPhone or ⌘Z.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
-| Plan (was FPL) | the sheet itself | 1 → **0** | From/To and altitude inline; stops Edit (delete, move), **Add a Stop (the search)**; each point's menu; Undo bar |
+| Plan (was FPL) | the sheet itself | 1 → **0** | From/To until the route is whole and planned, then **the timeline: a point's ident changes it through the search (2 taps), its mark is its menu (1), its gauge sets its fuel (1), the departure's time and a stop's leave-again time are pickers on their lines (1)**; altitude inline; stops Edit (delete, move), **Add a Stop (the search, asked to pick: a tap on Nearest, a Favorite, a Recent or a result puts it in, 2 taps)**; Undo bar |
 | Search (was Airport) | the field | 1 | Nothing typed: Your Flight, Favorites (fields and airplanes), Recents, Nearest; typed: Airports, Waypoints and Navaids, Airplanes, Do (Direct To, screens, Ask) |
 | Airport card | Tap a field; a search row; a list's row (Nearest, Favorites, Recents); hold for its preview; a link's `place=` | 1 | The one card from every way in: Fly Here (the flight's time when planned), Depart, Add Stop, Diagram; the floating bar's Add to Plan, Favorite, Share, •••; its sections' picker pinned under the bar once its head scrolls away; frequencies copy on hold |
 | Airplane profile | any N-number or airplane figure; the search's N-number or own airplane; a link's `airplane=` | 1–2 | **One profile card**: its own card from the plan or the search, pushed in the card it was tapped in; Fly This Airplane; every figure edited in place (an inline ask's Edit opens it at that figure) |
@@ -251,10 +254,10 @@ Flights, Share and Undo, which were the bar's, are in the route card's
 | Figures strip | the sheet's foot, with a route | 0 | Tapped, the nav log |
 | Nav Log | the route card's Nav Log; the strip | 2 → **1** / 1 | -- |
 | Brief | the route card's Brief; the search's Do | 2 → **1** | the Brief's one foot bar, Start Flight |
-| Profile | the route card's ••• → Profile; the cruise altitude in the route section; a stop's Set Altitude… (on that waypoint's Start At / Cross At popover); the search's Do | 1 / 2 | The vertical altitude slider (Set, Auto in flight); the Altitude Advisor's rows pick the cruise; a waypoint's altitude, typed or stepped |
+| Profile | the cruise altitude in the route section, its caution marked on it; a stop's Set Altitude… (on that waypoint's Start At / Cross At popover); the search's Do | 1 / 2 | The vertical altitude slider (Set, Auto in flight); the Altitude Advisor's rows pick the cruise; a waypoint's altitude, typed or stepped |
 | Saved Flights | the route card's ••• → Saved Flights (was the bar's, 1); the search's Do; Settings' Flights row | 1 → **2** (one-row header, owner decision 2026-11-10) | Swipe to delete with an Undo row |
-| Share | the route card's ••• → Share → a way (was the bar's Share, 1 → 2) | 2 → **3** | -- |
-| Undo | the route card's ••• → Undo (was the bar's, 1); shake; ⌘Z | 1 → **2**, shake 0 | -- |
+| Share | the route card's ••• → Share Link or Open in ForeFlight; the Nav Log's Share → a way, the checkpoints for ForeFlight, Print | 2 / 3 | -- |
+| Undo | the undo bar at the plan's foot after a change (was the route card's ••• → Undo, 2); shake; ⌘Z | 2 → **1**, shake 0 | -- |
 | Nearest | the instruments bar; the search's All Nearest; the plan's Nearest for a Diversion; Siri | 1–2 | **One list** from every way in: Divert on a swipe or a hold, Diversion Drill |
 | Map card (new) | the map's own Map button; Settings' Map row | **1** (was 2, Settings) | The layers, airport weather, traffic, the weather loop and the alerts, each switch in place |
 | Settings (was Setup) | the account button, opening Settings with no menu between (the owner, 2026-11-10) | 1 → 1 | Every switch and picker in place; Sign In or the account's page with Sign Out |
@@ -314,7 +317,7 @@ or overflow).
 | A logbook entry | Edit, Delete, Undo | **in the row; Undo row (new)** | **in the row; Undo row (new)** | **in the row; Undo row (new)** |
 | A frequency | Copy (Tune nowhere: no radio link) | **tap (new)** | **hold (new)** | **tap (new)** |
 | A flight just ended | Debrief the approaches · Log it | FlightLoggedSheet | FlightLoggedSheet | FlightLoggedSheet |
-| An approach | Brief, Dry Run, Load into Route, Plate | procedures sheet | -- (ProceduresRow picks the procedure only; gap) | -- (no approach list on Android; gap) |
+| An approach | Brief, Dry Run, Load into Route, Plate | procedures sheet | **FPL's timeline: "+ APCH" on the field's line picks it, its head row picks another, each fix's ring Direct To and Cross at… (2026-11-21)**; Brief, Dry Run and Plate still a gap | -- (no approach list on Android; gap) |
 | An alert | what it is and its fix | AlertsBanner opens it | **the airspace card; copilot: Direct To, More Info (new)** | **the Ahead sheet; copilot: Fly to, More Info (new)** |
 | A Go / No-Go item, a Brief line | its fix | opens its page | targets only | **not tappable (gap)** |
 
