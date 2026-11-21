@@ -970,6 +970,22 @@ export type SpecialUseTabAnswer = {
 export type SquawkMeaningAnswer = "hijack" | "lost radio" | "emergency" | null;
 export type SuaAltitudesAnswer = string;
 export type SunDownAnswer = boolean;
+export type TafValidityAnswer = {
+  station: string;
+  /**
+   * When it was issued, Unix seconds; the time it was read where its header gives none.
+   */
+  issued: number;
+  /**
+   * The start of its valid period, Unix seconds.
+   */
+  valid_from: number;
+  /**
+   * The end of its valid period, Unix seconds.
+   */
+  valid_to: number;
+  state: "not_yet" | "in_force" | "expired";
+} | null;
 export type TemperatureAtAnswer = number | null;
 export type TfrDetailReadAnswer = {
   effective: string | null;
@@ -3535,6 +3551,13 @@ export interface EngineContract {
   surface_hours: {
     input: SurfaceHoursInput;
     answer: SurfaceHoursAnswer;
+  };
+  /**
+   * A TAF's own times and whether it speaks for now: its station, when it was issued and its valid period, as its header gives them, and its state, not yet before the period, in force during it and expired at its end (FAA-H-8083-28B 27.4.1, a TAF is a forecast for its valid period; the same rule as weather_in_force's for a TAF). The airport card says it under the hours, so a TAF kept from before the signal was lost is never read as today's forecast (14 CFR 91.103). Null where the words are not a TAF.
+   */
+  taf_validity: {
+    input: TafValidityInput;
+    answer: TafValidityAnswer;
   };
   /**
    * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).
@@ -12832,6 +12855,16 @@ export interface SurfaceHoursAnswer {
     at: number;
     next_day: boolean;
   } | null;
+}
+export interface TafValidityInput {
+  /**
+   * The TAF as sent.
+   */
+  taf: string;
+  /**
+   * Unix seconds, UTC: the engine has no clock.
+   */
+  now: number;
 }
 export interface TafWindowInput {
   fcsts: TafPeriod[];

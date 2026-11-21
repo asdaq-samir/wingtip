@@ -212,6 +212,7 @@ export const WEB_RULES = [
   "sua_altitudes",
   "sun_down",
   "surface_hours",
+  "taf_validity",
   "terrain_view_bands",
   "tfr_read",
   "thin_track",

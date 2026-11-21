@@ -1,0 +1,31 @@
+{
+  "_note": "A TAF's own times and whether it speaks for now (the engine's taf_validity): the TAF is FAA-H-8083-28B 27.4.1's own example's header, KPIR issued the 11th at 1130Z for 1112/1212 (valid from the 11th at 12Z to the 12th at 12Z), read in November 2026. A TAF is a forecast for its valid period only: before it, not yet; at its end and after, expired (the same rule as weather_in_force's for a TAF). Times are Unix seconds, UTC. The engine (engine/facade/tests/taf_validity.rs) and the web (features/place/tafValidity.test.ts) are held to it.",
+  "taf": "TAF KPIR 111130Z 1112/1212 TEMPO 1112/1114 5SM BR FM111500 16010KT P6SM SKC BECMG 1210/1212 33015G25KT",
+  "cases": [
+    {
+      "why": "read before its valid period starts: issued, not yet in force",
+      "now": 1794397500,
+      "expected": { "station": "KPIR", "issued": 1794396600, "valid_from": 1794398400, "valid_to": 1794484800, "state": "not_yet" }
+    },
+    {
+      "why": "the first second of its valid period",
+      "now": 1794398400,
+      "expected": { "state": "in_force", "valid_from": 1794398400, "valid_to": 1794484800 }
+    },
+    {
+      "why": "its last minute",
+      "now": 1794484740,
+      "expected": { "state": "in_force" }
+    },
+    {
+      "why": "the end of its valid period: expired",
+      "now": 1794484800,
+      "expected": { "state": "expired", "valid_to": 1794484800 }
+    },
+    {
+      "why": "kept on a phone with no signal into the next day: expired",
+      "now": 1794560400,
+      "expected": { "state": "expired", "issued": 1794396600 }
+    }
+  ]
+}

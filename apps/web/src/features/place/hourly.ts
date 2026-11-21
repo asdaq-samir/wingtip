@@ -96,13 +96,15 @@ const clock = (ms: number) => clockTime(new Date(ms));
  * what changes it, the ceiling or the visibility -- or that it stays;
  * the worse weather a TEMPO or PROB gives at times; thunderstorms; and
  * the strongest gust. With no TAF, the category now and that there is no
- * forecast. Null with nothing to say from.
+ * forecast -- or, where the field's TAF has run out (`none`, from the
+ * engine's taf_validity), that it has, never as if it had none. Null with
+ * nothing to say from.
  */
-export function sentenceOf(hours: Hour[], time: (ms: number) => string = clock): string | null {
+export function sentenceOf(hours: Hour[], time: (ms: number) => string = clock, none = "no forecast for this field"): string | null {
   if (!hours.length) return null;
   const forecast = hours.filter((h) => !h.now);
   const first = hours[0]!;
-  if (!forecast.length) return first.category ? `${first.category} now, no forecast for this field.` : "No forecast for this field.";
+  if (!forecast.length) return first.category ? `${first.category} now, ${none}.` : `${none[0]!.toUpperCase()}${none.slice(1)}.`;
   const within = hours.filter((h) => h.at <= first.at + SENTENCE_HOURS * HOUR_MS);
   const last = hours.at(-1)!;
   const said: string[] = [];

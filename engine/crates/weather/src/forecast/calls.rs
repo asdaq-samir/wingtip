@@ -145,6 +145,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             let count = opt_num(name, v, "count")?.map_or(hours::HOURS, |c| c.max(0.0) as usize);
             out = hours::field_hours(metar, taf, num(name, v, "now")?, count);
         }
+        "taf_validity" => out = hours::taf_validity(text(name, v, "taf")?, num(name, v, "now")?.floor() as i64),
         "awc_metars_read" => out = awc::metars(text(name, v, "text")?).map_err(|e| format!("{name}: {e}"))?,
         "awc_tafs_read" => out = awc::tafs(text(name, v, "text")?).map_err(|e| format!("{name}: {e}"))?,
         "awc_airsigmets_read" => out = awc::airsigmets(text(name, v, "text")?).map_err(|e| format!("{name}: {e}"))?,
