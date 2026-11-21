@@ -1160,6 +1160,15 @@ only the ground under the route ahead (`app.prefetch`), never the
 chart's read; `checkpoints_ready` says whether that read is kept, and
 starts nothing.
 
+**Asked once, at once.** A route's nav log is asked the moment the route
+is known, with the pilot's own runways only (`features/plan/windRunways`):
+the planner picks the runway into the wind at every other field itself
+(`wind_runways`, the planner's `wind_picks`, the same rule over the same
+report as the page's picks), so the page no longer waits about a second
+for the fields' cards and its own picks, nor asks again as they come in.
+A runway the wind turns afterwards, or one the pilot picks, is asked for by
+name and the route planned again.
+
 **Stock parts.** Wingtip's `NavLogView` is TanStack Table v9 over
 shadcn's Table, which is what shadcn's Data Table guide uses
 ([shadcn Data Table][shadcn-datatable]); keep it. A native `<table>` is

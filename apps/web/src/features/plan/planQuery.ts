@@ -61,7 +61,7 @@ export interface PlanParams {
   /** Checkpoints between the route's points, as the map shows them (the
    *  settings' Waypoints); without, the nav log runs point to point. */
   checkpoints?: boolean;
-  settling?: boolean; // Wind runways or procedures still coming: the nav log waits, asked once (WEB-14).
+  settling?: boolean; // Procedures still being drawn: the nav log waits, asked once (WEB-14).
   /** A local flight's time aloft, in minutes (one airport to itself). */
   localMin?: number;
   /** The flight rules it is planned under: IFR's minimum altitudes,
