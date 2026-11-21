@@ -88,6 +88,12 @@ Compose. Nothing here is built by hand where a stock part does it.
    (the web's `features/plan/useAirplaneHits`), so the two never differ. Enter or
    leaving the field still takes a whole N-number as typed; arrows and
    Enter pick a row, Escape closes the list.
+   While the search is asked to pick (Add a Stop, Change Stop, an end), a
+   tap on an airport on its page -- Nearest's tiles, Home, a Favorite, a
+   Recent -- picks it as a result row does and goes back to where the pick
+   was asked from; it does not open its card (the owner, 2026-11-21: "When
+   picking stop, when I tap a nearest airport, it opens the airport card
+   instead of selecting it"). Outside a pick a tap opens the card.
 6. **Back and Escape close the top card first**, then go back a level.
    Neither only lowers the sheet while a card is open; with no card open
    they may lower it.

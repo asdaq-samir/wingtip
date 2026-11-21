@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { FavoriteStrip, PillSection, PillStrip } from "../../../components/Favorites";
-import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
+import { usePreferences, type KeptAircraft, type RecentAirport } from "../../../lib/preferences";
 import AddFavoriteTile from "../../../components/AddFavoriteTile";
 import TabPage from "../../../components/TabPage";
 import { AircraftFavoriteStrip, AircraftRecentTiles } from "../../aircraft-pick";
@@ -27,11 +27,23 @@ import SheetFooter from "./SheetFooter";
  * title (PillSection), the Recents as picture cards sliding sideways, and its foot the
  * legal links and the copyright (SheetFooter).
  */
-export default function SearchHome({ vm }: { vm: PlanSlices<"cards" | "fpl" | "map" | "search"> }) {
-  const { selectPlace, openList, selectFlight } = vm.cards;
+export default function SearchHome({
+  vm,
+  pickIdent,
+}: {
+  vm: PlanSlices<"cards" | "fpl" | "map" | "search">;
+  /** Set while the search is asked to pick a point (FPL's Add a Stop, a point's Change Stop, an end):
+   *  a tap on an airport -- Nearest's, a Favorite, Home, a Recent -- picks it as a result row does,
+   *  not opens its card (the owner, 2026-11-21: "when I tap a nearest airport, it opens the airport
+   *  card instead of selecting it"). */
+  pickIdent?: (ident: string) => void;
+}) {
+  const { selectPlace: openPlace, openList, selectFlight } = vm.cards;
+  const selectPlace = pickIdent ?? openPlace;
   const { nearOrigin } = vm.map;
   const { openNearest, findNearby } = vm.fpl;
-  const { home, favorites, askFor, pickAirplane, pickPlace, nearStrip, nearMap } = vm.search;
+  const { home, favorites, askFor, pickAirplane, pickPlace: openRecent, nearStrip, nearMap } = vm.search;
+  const pickPlace = (a: RecentAirport) => (pickIdent ? pickIdent(a.ident) : openRecent(a));
   const openAirplane = (kept: KeptAircraft) => pickAirplane(kept, (hex) => selectFlight(hex));
   const hasAirplane = usePreferences((s) => !!s.myAircraft || s.favoriteAircraft.length > 0);
   return (
