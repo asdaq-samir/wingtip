@@ -84,11 +84,7 @@ enum BriefLegs {
     /// "14:20", the hours and minutes in `zone`, as the web app's
     /// clockTime gives the device's own.
     static func clock(_ iso: String?, zone: TimeZone = .current) -> String? {
-        guard let at = AirportWords.date(iso) else { return nil }
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = zone
-        let parts = calendar.dateComponents([.hour, .minute], from: at)
-        return String(format: "%02d:%02d", parts.hour ?? 0, parts.minute ?? 0)
+        AirportWords.date(iso).map { Format.clock($0, in: zone) }
     }
 
     /// "Legs 2–3 · 14:20–14:45, valid till 15:00": the legs, when the
