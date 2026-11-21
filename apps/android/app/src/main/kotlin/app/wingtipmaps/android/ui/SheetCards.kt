@@ -31,6 +31,7 @@ import app.wingtipmaps.android.offline.DownloadsScreen
 import app.wingtipmaps.android.plates.PlateCard
 import app.wingtipmaps.android.plates.PlatePick
 import app.wingtipmaps.android.route.RouteLegCard
+import app.wingtipmaps.android.route.RouteOptionsCard
 import app.wingtipmaps.android.search.SearchControl
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
@@ -113,6 +114,7 @@ private fun Card(
         SheetPage.Profile -> ProfileCard(plan, exit)
         SheetPage.NavLog -> NavLogCard(plan, exit, onLeg = { sheet.push(SheetPage.Leg(it)) }, onAddStopAfter = search::addStopAfter)
         SheetPage.Emergency -> EmergencyCard(plan, control, exit)
+        SheetPage.RouteOptions -> RouteOptionsCard(plan, exit, onUsed = showPlan)
         is SheetPage.Checklist -> {
             val kind = ChecklistKind.entries.firstOrNull { it.name == page.kind } ?: ChecklistKind.NORMAL
             Page(stringResource(R.string.checklists_of, page.airplane.uppercase()), exit) { ChecklistScreen(airplane = page.airplane, kind = kind) }

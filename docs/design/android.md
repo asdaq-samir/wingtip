@@ -622,7 +622,27 @@ placement wins, and the difference is noted.
   Google Maps' directions. Maps draws the chosen route in a strong
   colour and the others greyed, picks one by a tap on the map, and puts
   Start at the foot. Decision 0029 keeps the FPL sheet's own layout.
-- **Structure** (unchanged in order, Material in idiom):
+- **Structure** (the web's FPL since 2026-11-21, Material in idiom):
+  0. **The head** (`ui/PlanPage`, `ui/PlanPills`): the card's top app
+     bar titled "Flight Plan", Search in the ←'s place at its start (back
+     to the one search, the route kept; `CardPage`'s `navigationIcon`) and
+     ✕ at its end, which asks "Clear Route?" in Material's `AlertDialog`
+     before the route goes (`route/ClearRouteAsk`). Under the title the
+     pills, each Material's outlined split button (`SplitButtonLayout`:
+     the word the leading button, the glyph the trailing one): the
+     airplane, its ⓘ the airplane's card; the cruise altitude (FL-045),
+     the Altitude Advisor on a tap and the Profile at its end; and when
+     the flight leaves, one outlined button showing the time ("Now" or
+     "15:00") that opens Material's `TimePicker` in its `TimePickerDialog`,
+     Set for the next time the clock reads it (`plan/DepartTime`), Now for
+     the planner's now. The row scrolls sideways rather than squeeze a pill.
+  0a. **The foot** (`ui/PlanFoot`), the Scaffold's bottom bar, so it stays
+     while the route scrolls under it: Material 3 Expressive's
+     `HorizontalFloatingToolbar` with Brief, Nav Log and More, each
+     labelled, over the figure strip. More (`route/PlanMore`) holds Route
+     Options (`route/RouteOptionsCard`, the planner's `/route-options`,
+     each with Use) and Share Link; no Open in ForeFlight, which has no
+     Android app. In the air the toolbar goes and the strip stays.
   1. The tabs row.
   2. The route box:
      - the route as `InputChip`s, one per point, removable with the
@@ -676,7 +696,7 @@ placement wins, and the difference is noted.
      2026-11-21). Each step carries the fuel set at the fields
      (`PlanTanks`), so an Undo puts the gauges back with the route. Problems still show where they
      happen.
-  6. The figure strip at the sheet's foot: To, Dist, ETE, Trk and,
+  6. The figure strip at the sheet's foot, under the toolbar: To, Dist, ETE, Trk and,
      whenever the airplane's position is known, GPS Alt (no To in
      flight; `flight/StripTrack`): Track in the fuel's place, the web's
      (2026-11-21), magnetic, the engine's on the route or the fix's true
@@ -707,7 +727,7 @@ placement wins, and the difference is noted.
      destination it is for, so a new destination drops it) and goes to
      the planner's nav log as `alternate`, as the web's address does.
 - **Primary action**:
-  - Brief, on the route box's first line, where the owner put it.
+  - Brief, the foot's toolbar's first, where the web's tab bar has it.
   - On a medium or larger window, a `HorizontalFloatingToolbar` over
     the map carries Undo, Redo and Add Point while the plan is open
     (`route/RouteToolbar`; the owner, 2026-11-09).

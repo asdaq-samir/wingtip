@@ -1,7 +1,9 @@
 package app.wingtipmaps.android.ui
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.AltRoute
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.filled.ShowChart
@@ -15,13 +17,17 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.FormatListNumbered
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Route
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Square
@@ -52,6 +58,24 @@ object WingtipIcons {
 
     val share = Icons.Filled.Share
     val more = Icons.Filled.MoreVert
+
+    /** The plan's way back to the one search, at its bar's start. */
+    val search = Icons.Filled.Search
+
+    /** The airplane's card, at the end of the plan's airplane pill. */
+    val info = Icons.Filled.Info
+
+    /** The flight plan filed (the web's `file`, FileText). */
+    val file = Icons.AutoMirrored.Filled.Article
+
+    /** The nav log printed (PrintManager). */
+    val print = Icons.Filled.Print
+
+    /** When the flight leaves, the plan's time pill. */
+    val time = Icons.Filled.Schedule
+
+    /** Route Options, the plan's More. */
+    val routeOptions = Icons.AutoMirrored.Filled.AltRoute
 
     /** The map's position button: the arrow outlined while off, filled
      *  while it reads or follows, so the state is in the shape as well as
