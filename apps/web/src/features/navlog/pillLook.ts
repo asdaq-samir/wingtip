@@ -51,22 +51,36 @@ export const PREFIXED_FIELD = "pl-0!";
 
 /** The end addon round a pill's glyph (PILL_END): none of the stock end
  *  addon's padding, nor its negative margin for a button, which drew the
- *  glyph out past the pill's end and over the next pill. */
-export const PILL_END_ADDON = "py-0 pr-0 has-[>button]:mr-0";
+ *  glyph out past the pill's end and over the next pill. The field's 44
+ *  band over it, as over "FL-" (a tap there focuses the field, the stock
+ *  addon's own click), over the head under it (z-10) and under the glyph
+ *  (z-20), the addon itself no layer of its own, so the glyph's area still
+ *  reaches over the next pill's empty start: with no plan yet the Profile's glyph
+ *  is greyed and takes no tap, and a tap just past the figures above or
+ *  below the pill went to the head round it (the iOS audit's P1,
+ *  "altitude-input" 31×44 on FPL with no route). */
+export const PILL_END_ADDON = cn(
+  "relative py-0 pr-0 has-[>button]:mr-0",
+  "after:absolute after:inset-x-0 after:top-1/2 after:z-10 after:h-11 after:-translate-y-1/2 after:content-['']",
+);
 
 /**
  * A pill's glyph at its end, the stock InputGroupButton in the tint: the
  * N-number's ⓘ (the airplane's card) and the altitude's Profile (the owner,
  * 2026-11-20: "can N number show an info button and can FL show profile
- * button rather than in the tab bar?"). 20 wide in the 24 pill round its
- * 16 glyph, so both pills still fit the head at the owner's 19.65 px text,
- * nothing grown that is seen and no edge of its own (the stock button's
- * clear one cut its area to 42); its area a pseudo-element (index.css's
- * rule): 44 tall, and out past the pill's end over the 4 points to the
- * next pill and that pill's own empty 8 before its "FL-", 32 wide in all,
- * never over the field before it, whose words stay the field's to tap.
+ * button rather than in the tab bar?"). The app's one icon button, 36 round
+ * a 20 glyph (the iOS audit's P18, the owner's "make all buttons same size
+ * as Apple Maps", 2026-11-20), where it was 20 by 24 round a 16: its box
+ * seen by nothing (no fill, no edge, its corner under half its side so it
+ * is not the round 44), and laid in the pill's 20 by 24 alone (-mx-2,
+ * -my-1.5), so both pills still fit the head at the owner's 19.65 px text.
+ * The box reaches 8 into the field before it, the field's own empty end
+ * (its 5ch and 0.5rem, the words at most 5ch), never over its words, and 8
+ * past the pill's end; its area (index.css's rule, a pseudo-element) 4 more
+ * past that and 4 over and under, 44 tall and 12 past the pill in all,
+ * over the 4 to the next pill and that pill's own empty 8 before its "FL-".
  */
 export const PILL_END = cn(
-  "relative z-20 w-5 rounded-full border-0 hover:bg-transparent hover:text-tint aria-expanded:bg-transparent [&_svg]:size-4!",
-  "after:absolute after:-inset-y-2.5 after:left-0 after:-right-3 after:content-['']",
+  "relative z-20 -mx-2 -my-1.5 size-9 rounded-md border-0 hover:bg-transparent hover:text-tint aria-expanded:bg-transparent [&_svg]:size-5!",
+  "after:absolute after:-inset-y-1 after:left-0 after:-right-1 after:content-['']",
 );

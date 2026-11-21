@@ -29,6 +29,12 @@ export const TIMELINE_THREAD = "absolute top-10 -bottom-1 left-1/2 -translate-x-
 export const TIMELINE_CARD = "overflow-x-clip rounded-(--radius-card) border border-border bg-card pl-4";
 /** A row's words' room at the trailing side, inside its hairline. */
 export const TIMELINE_END = "pr-4";
+/** The marks' column to the words, 16: a point's mark's area runs 6 past
+ *  its 32 and a name's from 10 before it (PointMenu's `bare`,
+ *  TimelineLine's ident), so a three-letter name's 44-point square, centred
+ *  on it, ends where the mark's begins (the iOS audit's P1; at 12 the two
+ *  crossed). */
+export const TIMELINE_GAP = "gap-4";
 
 /** The circle in the marks' column: the tint's wash with the tint's glyph,
  *  as a point's "•••" (TimelineMark), or filled in the tint with a white
@@ -76,7 +82,8 @@ function TimelineAction({
         {...button}
         // Greyed under a finger as iOS's rows are (the grouped box's audit).
         className={cn(
-          "h-11 w-full justify-start gap-3 rounded-none px-0 font-normal hover:bg-transparent pointer-coarse:active:bg-muted pointer-coarse:active:opacity-100 dark:hover:bg-transparent",
+          "h-11 w-full justify-start rounded-none px-0 font-normal hover:bg-transparent pointer-coarse:active:bg-muted pointer-coarse:active:opacity-100 dark:hover:bg-transparent",
+          TIMELINE_GAP,
           TEXT.row,
         )}
       >

@@ -58,7 +58,14 @@ export default function RouteHead({
             size="inline"
             onClick={done}
             data-testid="route-done"
-            className={cn("relative px-1 font-semibold text-tint after:absolute after:-inset-2 after:content-['']", TEXT.row)}
+            // Its area the row's 44 tall (11 over and under its 22-point
+            // line) and 8 past its words each side, nothing grown that is
+            // seen: -inset-2 left it 38 tall (the iOS audit's P1, "Done"
+            // 46×22).
+            className={cn(
+              "relative px-1 font-semibold text-tint after:absolute after:-inset-x-2 after:-inset-y-[11px] after:content-['']",
+              TEXT.row,
+            )}
           >
             Done
           </Button>

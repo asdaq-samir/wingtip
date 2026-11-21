@@ -229,11 +229,13 @@ export function PointMenu({
               aria-label={`${actions.ident}: more`}
               data-testid={testId}
               data-point-mark=""
-              // Its area 8 past its 32 all round: the stock button's clear
-              // 1-point edge is inside its box and the after is laid from
-              // inside it, so 6 past made 42 (the iOS audit's P1, "C81: more"
-              // 32×32); 46 round the box still ends 5 short of the ident.
-              className="relative shrink-0 rounded-full p-0 hover:bg-transparent aria-expanded:bg-transparent after:absolute after:-inset-2 after:content-['']"
+              // Its area 8 past its 32 (the stock button's clear 1-point
+              // edge is inside its box and the after is laid from inside it,
+              // so 6 past made 42; the iOS audit's P1, "C81: more" 32×32),
+              // but 6 on the words' side (7 from inside that edge), where
+              // the name's area begins in the line's 16 (TimelineRows'
+              // TIMELINE_GAP).
+              className="relative shrink-0 rounded-full p-0 hover:bg-transparent aria-expanded:bg-transparent after:absolute after:-inset-y-2 after:-left-2 after:-right-[7px] after:content-['']"
             >
               {face}
             </Button>

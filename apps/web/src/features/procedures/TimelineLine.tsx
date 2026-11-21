@@ -12,7 +12,7 @@ import { FuelSet } from "./FuelSet";
 import { WindLine } from "./FieldHead";
 import { fieldParts, kindMenu, kindPicked, windWords } from "./fieldParts";
 import { PartTray } from "./RunwayTray";
-import { TIMELINE_END, TIMELINE_THREAD } from "./TimelineRows";
+import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
 import { askHold, type pointEnd } from "./pointEnd";
 import { HoldChip } from "./HoldChip";
 import { TimelineProcedureBox } from "./TimelineProcedure";
@@ -179,7 +179,11 @@ export function TimelineLine({
       onOpenChange={onOpen}
       render={
         <div
-          className="relative flex gap-3"
+          // The marks' column 16 from the words (gap-4): at 12 a short
+          // name's 44-point square, centred on it, reached over the mark's
+          // area ("C81: open the airport" 25 wide), where at 16 the two
+          // meet (TIMELINE_GAP, the rows' too).
+          className={cn("relative flex", TIMELINE_GAP)}
           // A field's line a region, named as the list read in flight names
           // its step ("KDLH · Arrive"), so VoiceOver goes from field to field.
           role={parts[0] ? "region" : undefined}
@@ -235,9 +239,13 @@ export function TimelineLine({
                   // The name cut short in a span of its own, not the
                   // button: a button that clips (truncate's overflow) cut
                   // its own 44-point area to its 22-point line (the iOS
-                  // audit's P1, "C81: change it" 25×22).
+                  // audit's P1, "C81: change it" 25×22). Its area starts
+                  // 10 before the name, where the mark's ends (6 past the
+                  // marks' column, PointMenu's `bare`, in the line's 16),
+                  // and runs right to 44 wide at the least, over the fuel's
+                  // gauge after a short name, which is no control.
                   className={cn(
-                    "relative min-w-0 font-normal after:absolute after:-inset-y-3 after:-inset-x-1 after:content-['']",
+                    "relative min-w-0 font-normal after:absolute after:-inset-y-3 after:-left-2.5 after:w-[max(54px,calc(100%+14px))] after:content-['']",
                     point.problem && "text-destructive",
                     TEXT.row,
                   )}
