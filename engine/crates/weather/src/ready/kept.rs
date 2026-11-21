@@ -76,10 +76,11 @@ pub fn call(_name: &str, v: &Value) -> R<String> {
             *source,
         ),
         Fresh::Cycle => {
-            // Fetched before the cycle in force today began: of the last one.
-            let today = now.div_euclid(86_400);
-            let started = cycles::start_on(Kind::Airac, today);
-            let old = at.div_euclid(86_400) < started;
+            // Fetched before the cycle in force now took over (0901Z on its
+            // date, cycles.rs): of the last one. By the day alone, a fetch
+            // at 0300Z on the changeover day was called of the new cycle.
+            let started = cycles::start_on(Kind::Airac, cycles::in_force_day(Kind::Airac, now));
+            let old = at < cycles::takes_over_at(Kind::Airac, started);
             let ident = cycles::airac_ident(started);
             let detail = if old { format!("From before FAA data cycle {ident}") } else { format!("Of FAA data cycle {ident}") };
             (old, None, detail, CYCLE_SOURCE)

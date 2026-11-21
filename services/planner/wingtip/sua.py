@@ -6,7 +6,8 @@ airspace is not in that file, and the planner never looked at it: a
 route across P-56 in Washington, or through an active restricted area,
 came back with a nav log and no word about it. It comes from the FAA's
 own published feature service (ADDS), every area in the country read once
-and held a day, since the areas change on the chart cycle.
+and held a day, and read again after each AIRAC cycle's 0901Z, when the
+areas' amendments take effect.
 
 TFRs are NOTAMs, which this project has no source for; the briefing
 already says so and links to a real briefing service.
@@ -26,7 +27,7 @@ from cachetools import TTLCache
 import shapely
 from shapely.geometry import LineString, Point, shape
 
-from . import outside
+from . import data_cycles, outside
 from .atomic import atomic_path
 from .engine import ask as engine
 from .geo import along_track_distance_nm, corridor_bbox
@@ -136,14 +137,14 @@ def _everything() -> list:
     SERVE_HELD_S old while the service does not answer (_held)."""
     with _CACHE_LOCK:
         hit = _CACHE.get("all")
-    if hit is not None and (time.time() - hit[0] < HOLD_S or time.time() < _RETRY_AT):
+    if hit is not None and (time.time() - hit[0] < data_cycles.fresh_s("airac", HOLD_S) or time.time() < _RETRY_AT):
         return hit[1]
     with _FETCH_LOCK:
         with _CACHE_LOCK:
             hit = _CACHE.get("all")
-        if hit is not None and (time.time() - hit[0] < HOLD_S or time.time() < _RETRY_AT):
+        if hit is not None and (time.time() - hit[0] < data_cycles.fresh_s("airac", HOLD_S) or time.time() < _RETRY_AT):
             return hit[1]
-        kept = _read_disk()
+        kept = _read_disk(data_cycles.fresh_s("airac", HOLD_S))
         if kept is not None:
             with _CACHE_LOCK:
                 _CACHE["all"] = kept

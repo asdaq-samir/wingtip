@@ -14,11 +14,7 @@ from wingtip import weather_store
 from app import flow, flow_aloft, flow_grid, flow_nomads, flow_parts
 
 NOW = datetime(2026, 11, 12, 12, 40, tzinfo=timezone.utc)
-LEVELS = {
-    "wind": [{"id": "060", "ft": 6000.0, "isa_hpa": 812.0}],
-    "temperature_hpa": [850.0, 800.0],
-    "flight_levels_from_ft": 18000.0,
-}
+LEVELS = {"wind": [{"id": "060", "ft": 6000.0, "isa_hpa": 812.0}], "temperature_hpa": [850.0, 800.0], "flight_levels_from_ft": 18000.0}
 
 
 @pytest.fixture(autouse=True)

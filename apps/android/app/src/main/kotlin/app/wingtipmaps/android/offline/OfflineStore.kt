@@ -2,6 +2,8 @@ package app.wingtipmaps.android.offline
 
 import android.content.Context
 import app.wingtipmaps.android.AppClock
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.dataCycle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -10,8 +12,7 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import java.io.File
 import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneOffset
+import java.time.temporal.ChronoUnit
 
 /**
  * A region's charts kept on the phone (Setup → Downloads), as the iOS
@@ -36,13 +37,25 @@ data class OfflineKept(
     val complete: Boolean get() = done.toSet() == wanted.keys
     val bytes: Long get() = wanted.values.sum()
 
-    /** Past its date: an edition is replaced at 0901Z on the next one's
-     *  effective day (the FAA's 28 and 56 Day Product Schedule, as the
-     *  planner's wingtip.data_cycles.in_force_day has it). Said on the
-     *  list, never removed for it alone (warn, never limit; decision 0008). */
+    /** Past its date: the engine's `data_cycle` on the FAA's 56-day chart
+     *  schedule, asked at the minute, as an edition is replaced at 0901Z on
+     *  the next one's date ("Effective 0901 UTC"). The rule was worked out
+     *  here as `expires` plus nine hours and a minute. Said on the list,
+     *  never removed for it alone (warn, never limit; decision 0008). */
     fun expired(now: Instant = AppClock.javaNow()): Boolean {
-        val day = expires?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return false
-        return !now.isBefore(day.atTime(9, 1).toInstant(ZoneOffset.UTC))
+        val effective = isoDay(cycle) ?: return false
+        val answer = Engine.dataCycle(kind = "chart", effective = effective, on = now.truncatedTo(ChronoUnit.SECONDS).toString()).getOrNull()
+        return answer?.state == "expired"
+    }
+
+    companion object {
+        /** A chart cycle's name, "10-29-2026" as the FAA's links write it, as
+         *  "2026-10-29"; null where it is no such name. */
+        fun isoDay(cycle: String): String? {
+            val parts = cycle.split("-")
+            if (parts.size != 3 || parts.any { it.toIntOrNull() == null }) return null
+            return "${parts[2]}-${parts[0]}-${parts[1]}"
+        }
     }
 }
 

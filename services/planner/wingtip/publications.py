@@ -25,7 +25,7 @@ import logging
 import re
 import threading
 import xml.etree.ElementTree as ET
-from datetime import date
+from datetime import date, datetime
 
 import requests
 
@@ -47,17 +47,17 @@ _LOCK = threading.Lock()
 _HELD: dict = {}
 
 
-def dtpp_cycle(on: date | None = None) -> str:
-    """The d-TPP cycle in force on `on` (today, UTC, from 0901Z): "2610", the AIRAC
-    cycle's number the engine gives (`data_cycle`). Today is by
-    `in_force_day`: the new cycle counts from its 0901Z."""
-    return data_cycles.cycle("airac", None, on or data_cycles.in_force_day())["current_ident"]
+def dtpp_cycle(on: date | datetime | None = None) -> str:
+    """The d-TPP cycle in force at `on` (now, to the minute: the new cycle
+    counts from 0901Z on its date): "2610", the AIRAC cycle's number the
+    engine gives (`data_cycle`)."""
+    return data_cycles.cycle("airac", None, on)["current_ident"]
 
 
-def dcs_edition(on: date | None = None) -> str:
-    """The Chart Supplement edition in force on `on` (today, UTC):
-    "03Sep2026", on the 56-day charting cycle."""
-    return data_cycles.start_on("chart", on or data_cycles.in_force_day()).strftime("%d%b%Y")
+def dcs_edition(on: date | datetime | None = None) -> str:
+    """The Chart Supplement edition in force at `on` (now, from 0901Z on
+    its date): "03Sep2026", on the 56-day charting cycle."""
+    return data_cycles.start_on("chart", on).strftime("%d%b%Y")
 
 
 def _charts_of(xml_bytes: bytes) -> dict:

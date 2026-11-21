@@ -105,7 +105,7 @@ gateway mails that as it begins and ends.
 | TFRs | older than 3 × 30 min |
 | NEXRAD frames (radar) | older than 3 × 15 min |
 | GOES frames (satellite) | older than 3 × 30 min |
-| Charts, NASR, CIFP, DOF, offline packs | the edition is past its cycle (56-day charts, 28-day AIRAC; `wingtip.data_cycles`, 14 CFR 91.103). On AWS the charts' next cycle is published ahead and served from 0901Z on its date (README-AWS.md, "Chart cycles"), so this fires only when that failed |
+| Charts, NASR, CIFP, DOF, special-use airspace, offline packs | the edition is past its cycle, to the minute: an AIRAC or chart edition takes over at 0901Z on its date, the DOF at 0000Z on its release (56-day charts, 28-day AIRAC; `wingtip.data_cycles`, the engine's `data_cycle`, 14 CFR 91.103). The next NASR cycle and CIFP are fetched a week ahead and put in place at 0902Z (`app.warm_up.at_changeover`); on AWS the charts' next cycle is published ahead and served from 0901Z on its date (README-AWS.md, "Chart cycles"), so this fires only when that failed |
 | The weather service | not answering (its products then unjudged) |
 
 A SWIM feed not set up (no queue in ingest's settings) is "off", not

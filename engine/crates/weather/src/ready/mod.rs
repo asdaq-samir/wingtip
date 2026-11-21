@@ -215,7 +215,9 @@ fn pack_item(packs: Option<&Value>, today: i64) -> R<Option<Item>> {
 /// (the rest are for its route), then what needs the signal most.
 pub fn items(v: &Value) -> R<(Vec<Item>, Option<i64>, i64)> {
     let now = v.get("now").and_then(Value::as_f64).ok_or("ready_to_fly: \"now\" (Unix seconds) is missing")? as i64;
-    let today = now.div_euclid(86_400);
+    // The day whose editions are in force now: the day before until 0901Z,
+    // when an AIRAC or charting edition takes over (cycles.rs).
+    let today = cycles::in_force_day(Kind::Airac, now);
     let mut out = Vec::new();
     let routed = plan_items(get(v, "plan"), &mut out);
     let mut age = None;

@@ -1,5 +1,6 @@
 """The chart modules (wingtip.charts maps them): a refresh, the tile cache, writing a tile safely, and the pyramid workers' memory."""
 
+import datetime as dt
 import io
 import json
 
@@ -19,6 +20,7 @@ from wingtip import (
     chart_tiles,
     chart_workers,
     config,
+    data_cycles,
 )
 
 from .helpers import _palette_raster
@@ -70,6 +72,8 @@ def test_a_refresh_publishing_to_a_bucket_asks_the_bucket_whether_the_cycle_is_d
     monkeypatch.setattr(config, "CHART_TILE_CACHE_DIR", tmp_path / "tiles")
     monkeypatch.setattr(config, "CHARTS_DIR", tmp_path / "charts")
     monkeypatch.setattr(chart_cycle, "current_cycle", lambda *a, **k: "10-29-2026")
+    # Before the next cycle's lead (charts.next_cycle stages it).
+    monkeypatch.setattr(data_cycles, "now", lambda: dt.datetime(2026, 11, 12, 12, tzinfo=dt.timezone.utc))
     calls = []
     monkeypatch.setattr(chart_prepare, "prepare_all", lambda kinds, cycle: calls.append("prepare"))
 

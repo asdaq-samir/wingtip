@@ -25,14 +25,25 @@
 //!   recently been changed from Mondays to Tuesdays"), and it is the file
 //!   to use until the next one's release 56 days on (24 Nov 2026).
 //!
-//! Dates are UTC days. A simplification, toward the safer side: an edition
-//! takes effect at 0901Z on its date, and here it counts from 0000Z, so an
-//! old one is called out of date up to nine hours before it is, never after.
-//! That is for a warning only: a caller choosing which edition to fetch
-//! and use must not run ahead of 0901Z, and gives the previous day until then.
+//! When, to the minute. The FAA's airspace and procedure amendments are
+//! "Effective 0901 UTC" on their AIRAC date (the Federal Register's
+//! 14 CFR part 71, 73 and 97 rules, for one "DATES: Effective 0901 UTC,
+//! May 14, 2026"), and the NASR subscription, the CIFP, the d-TPP and the
+//! charts all carry those dates, so an AIRAC or charting edition takes over
+//! at 0901Z on its date. The DOF names a release day and no hour: it counts
+//! from 0000Z on it. Asked with an instant (`cycle_at`, "on" with a time),
+//! the answer is exact: the old edition is in force up to 0900Z and the new
+//! one from 0901Z. Asked with a day alone (`cycle`), the whole effective
+//! day is the new edition's, which errs toward calling an old one out of
+//! date early, never late; a host choosing what to fetch or show asks with
+//! the instant.
 
 use crate::json;
-use crate::time::{civil_from_days, days_from_civil, days_in_month};
+use crate::time::{self, civil_from_days, days_from_civil, days_in_month, DAY_S};
+
+/// 0901Z, as seconds into the day: when an AIRAC or charting edition
+/// takes over ("Effective 0901 UTC", the Federal Register's amendments).
+pub const TAKES_EFFECT_S: i64 = 9 * 3600 + 60;
 
 /// Which schedule a data set is published on.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -75,6 +86,15 @@ impl Kind {
             Kind::Airac => days_from_civil(2026, 1, 22),
             Kind::Chart => days_from_civil(2026, 9, 3),
             Kind::Dof => days_from_civil(2026, 9, 29),
+        }
+    }
+
+    /// The seconds into its effective day an edition takes over: 0901Z for
+    /// AIRAC and the charts, the start of its release day for the DOF.
+    pub fn takes_effect_s(self) -> i64 {
+        match self {
+            Kind::Airac | Kind::Chart => TAKES_EFFECT_S,
+            Kind::Dof => 0,
         }
     }
 
@@ -171,6 +191,25 @@ pub fn cycle(kind: Kind, effective: Option<i64>, day: i64) -> Cycle {
     }
 }
 
+/// The day whose edition is in force at `t` (Unix seconds, UTC): the day
+/// before until 0901Z, for AIRAC and the charts, as an edition takes over
+/// at 0901Z on its date; the day itself for the DOF.
+pub fn in_force_day(kind: Kind, t: i64) -> i64 {
+    (t - kind.takes_effect_s()).div_euclid(DAY_S)
+}
+
+/// `cycle` at an instant (Unix seconds, UTC), to the minute: the edition
+/// named `effective` is in force from 0901Z on its date (0000Z for the DOF)
+/// to the same time on the next one's.
+pub fn cycle_at(kind: Kind, effective: Option<i64>, t: i64) -> Cycle {
+    cycle(kind, effective, in_force_day(kind, t))
+}
+
+/// The instant a day's edition takes over, Unix seconds.
+pub fn takes_over_at(kind: Kind, day: i64) -> i64 {
+    day * DAY_S + kind.takes_effect_s()
+}
+
 /// A day as "YYYY-MM-DD".
 pub fn day_text(day: i64) -> String {
     let (y, m, d) = civil_from_days(day);
@@ -204,6 +243,10 @@ pub fn to_json(c: &Cycle) -> String {
     json::opt_string(&mut out, c.effective.map(day_text).as_deref());
     out.push_str(",\"expires\":");
     json::opt_string(&mut out, c.expires.map(day_text).as_deref());
+    out.push_str(",\"next_at\":");
+    json::string(&mut out, &time::iso(takes_over_at(c.kind, c.next)));
+    out.push_str(",\"expires_at\":");
+    json::opt_string(&mut out, c.expires.map(|e| time::iso(takes_over_at(c.kind, e))).as_deref());
     out.push_str(",\"state\":");
     json::string(&mut out, c.state.name());
     out.push_str(&format!(",\"behind\":{}}}", c.behind));
@@ -235,5 +278,49 @@ mod tests {
         // its last on 31 Dec.
         assert_eq!(airac_ident(d("2025-01-23")), "2501");
         assert_eq!(airac_ident(d("2043-12-31")), "4314");
+    }
+
+    fn at(text: &str) -> i64 {
+        time::parse_iso(text).unwrap()
+    }
+
+    #[test]
+    fn an_airac_edition_takes_over_at_0901z_to_the_minute() {
+        // AIRAC 2612 takes effect 26 Nov 2026 (the NASR subscription page).
+        let old = Some(d("2026-10-29"));
+        let new = Some(d("2026-11-26"));
+        for (when, old_state, new_state, ident) in [
+            ("2026-11-26T09:00:00Z", State::InForce, State::NotYet, "2611"),
+            ("2026-11-26T09:01:00Z", State::Expired, State::InForce, "2612"),
+            ("2026-11-26T09:02:00Z", State::Expired, State::InForce, "2612"),
+        ] {
+            assert_eq!(cycle_at(Kind::Airac, old, at(when)).state, old_state, "{when}");
+            assert_eq!(cycle_at(Kind::Airac, new, at(when)).state, new_state, "{when}");
+            assert_eq!(cycle_at(Kind::Airac, None, at(when)).current_ident.as_deref(), Some(ident), "{when}");
+        }
+    }
+
+    #[test]
+    fn a_chart_edition_takes_over_at_0901z_and_the_dof_at_its_release_day() {
+        // The sectionals: 29 Oct 2026 current, 24 Dec 2026 next (the FAA's
+        // VFR charts page).
+        let oct = Some(d("2026-10-29"));
+        assert_eq!(cycle_at(Kind::Chart, oct, at("2026-12-24T09:00:00Z")).state, State::InForce);
+        assert_eq!(cycle_at(Kind::Chart, oct, at("2026-12-24T09:01:00Z")).state, State::Expired);
+        assert_eq!(cycle_at(Kind::Chart, oct, at("2026-12-24T09:02:00Z")).state, State::Expired);
+        // DOF_260927 (changes to 27 Sep 2026, released 29 Sep), replaced by
+        // the 24 Nov 2026 release (the FAA's DOF page).
+        let dof = Some(d("2026-09-27"));
+        assert_eq!(cycle_at(Kind::Dof, dof, at("2026-11-23T23:59:00Z")).state, State::InForce);
+        assert_eq!(cycle_at(Kind::Dof, dof, at("2026-11-24T00:00:00Z")).state, State::Expired);
+        assert_eq!(cycle_at(Kind::Dof, dof, at("2026-11-24T00:01:00Z")).state, State::Expired);
+    }
+
+    #[test]
+    fn the_answer_says_the_minute_of_the_next_change() {
+        let c = cycle_at(Kind::Airac, Some(d("2026-10-29")), at("2026-11-06T12:00:00Z"));
+        let answer = to_json(&c);
+        assert!(answer.contains("\"next_at\":\"2026-11-26T09:01:00Z\""), "{answer}");
+        assert!(answer.contains("\"expires_at\":\"2026-11-26T09:01:00Z\""), "{answer}");
     }
 }

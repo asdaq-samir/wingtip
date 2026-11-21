@@ -151,10 +151,7 @@ def records_batch(ask: RecordsBatchAsk) -> RecordsBatch:
     /api/pilot/experience and /api/pilot/endorsements answer it, in the
     order asked: an instructor's page asks its students and the reviews
     waiting on them together (14 CFR 61.109(a), 61.87, 61.93(d))."""
-    return RecordsBatch(
-        experience=[experience(a) for a in ask.experience],
-        endorsements=[endorsements(a) for a in ask.endorsements],
-    )
+    return RecordsBatch(experience=[experience(a) for a in ask.experience], endorsements=[endorsements(a) for a in ask.endorsements])
 
 
 @router.post("/api/aircraft/inspections-batch")

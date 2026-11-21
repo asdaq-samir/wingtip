@@ -42,6 +42,7 @@ const SHORT: Record<string, string> = {
   charts: "charts",
   cifp: "procedures",
   dof: "obstacles",
+  sua: "special-use airspace",
   packs: "offline packs",
 };
 

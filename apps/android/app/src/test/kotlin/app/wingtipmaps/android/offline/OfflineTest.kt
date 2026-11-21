@@ -46,9 +46,12 @@ class OfflineTest {
 
     @Test
     fun anEditionExpiresAt0901ZOnTheNextOnesDay() {
+        // The minute before, of and after the 24 Dec 2026 edition takes over.
         assertFalse(kept().expired(Instant.parse("2026-12-24T09:00:00Z")))
         assertTrue(kept().expired(Instant.parse("2026-12-24T09:01:00Z")))
-        assertFalse(kept(expires = null).expired(Instant.MAX))
+        assertTrue(kept().expired(Instant.parse("2026-12-24T09:02:00Z")))
+        assertEquals("2026-10-29", OfflineKept.isoDay("10-29-2026"))
+        assertNull(OfflineKept.isoDay("latest"))
     }
 
     @Test

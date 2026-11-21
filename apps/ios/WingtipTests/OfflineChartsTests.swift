@@ -115,9 +115,11 @@ struct OfflineChartsTests {
     @Test func anEditionExpiresAt0901ZOnTheNextOnesDay() {
         let kept = Self.kept()
         let utc = ISO8601DateFormatter()
+        // The minute before, of and after the 24 Dec 2026 edition takes over.
         #expect(!kept.expired(now: utc.date(from: "2026-12-24T09:00:00Z")!))
         #expect(kept.expired(now: utc.date(from: "2026-12-24T09:01:00Z")!))
-        #expect(!Self.kept(expires: nil).expired(now: .distantFuture))
+        #expect(kept.expired(now: utc.date(from: "2026-12-24T09:02:00Z")!))
+        #expect(OfflineKept.isoDay("10-29-2026") == "2026-10-29" && OfflineKept.isoDay("latest") == nil)
     }
 
     @Test func anExpiredEditionGoesOnlyOnceItsUpdateIsWhole() {

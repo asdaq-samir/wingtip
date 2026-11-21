@@ -102,7 +102,20 @@ def main(argv: list | None = None) -> int:
         prog="python -m charts", description="FAA charts: fetch every sheet, render every tile, build the overlays."
     )
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("run", "overlays", "prepare", "pyramid", "refresh", "check", "publish", "unmask", "pack", "next", "accept-cuts", "transcode"):
+    for name in (
+        "run",
+        "overlays",
+        "prepare",
+        "pyramid",
+        "refresh",
+        "check",
+        "publish",
+        "unmask",
+        "pack",
+        "next",
+        "accept-cuts",
+        "transcode",
+    ):
         p = sub.add_parser(name)
         if name in ("prepare", "pyramid"):
             p.add_argument("--kind", nargs="+", choices=list(chart_kinds.KINDS), default=list(chart_kinds.KINDS))

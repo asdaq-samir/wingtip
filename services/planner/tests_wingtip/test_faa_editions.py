@@ -2,7 +2,7 @@
 when the FAA has a newer edition, a zip's files together, and a file on
 disk of the current cycle left alone."""
 
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -73,3 +73,36 @@ def test_one_edition_failing_leaves_the_rest_to_refresh_and_itself_for_next_time
     failing.clear()
     fetched.clear()
     assert faa_editions.refresh_editions(folder) == ["DOF.DAT"] and fetched == ["DOF_261001.zip"]
+
+
+def test_the_next_nasr_cycle_is_fetched_ahead_and_put_in_place_at_its_0901z(faa, monkeypatch):
+    """A week before 0901Z on 29 Oct 2026 the next cycle's zips are fetched
+    into a folder of their own; at the check after 0901Z they are moved
+    into place with nothing to download, CLS_ARSP.csv (the Class D hours)
+    among them."""
+    folder, fetched, _ = faa
+    # Eight days ahead: not yet.
+    assert faa_editions.stage_next(folder, now=datetime(2026, 10, 21, 9, 0, tzinfo=timezone.utc)) == []
+    staged = faa_editions.stage_next(folder, now=datetime(2026, 10, 22, 12, 0, tzinfo=timezone.utc))
+    assert "CLS_ARSP_CSV" in staged and "DOF" not in staged
+    assert "29_Oct_2026_NAV_CSV.zip" in fetched and (folder / ".next-2026-10-29" / "NAV_BASE.csv").exists()
+    # Asked again, nothing is fetched twice.
+    fetched.clear()
+    assert faa_editions.stage_next(folder, now=datetime(2026, 10, 23, 12, 0, tzinfo=timezone.utc)) == [] and fetched == []
+    # 0901Z on 29 Oct: the cycle in force is the staged one.
+    monkeypatch.setattr(faa_data.apra, "nasr_cycle", lambda: date(2026, 10, 29))
+    refreshed = faa_editions.refresh_editions(folder)
+    assert {"NAV_BASE.csv", "CLS_ARSP.csv", "Shape_Files/Class_Airspace.shp"} <= set(refreshed)
+    assert [f for f in fetched if "_CSV.zip" in f or "class_airspace" in f] == []
+    assert not (folder / ".next-2026-10-29" / "NAV_BASE.csv").exists()
+    # The day after, the old staging folder is gone.
+    faa_editions.stage_next(folder, now=datetime(2026, 10, 30, 12, 0, tzinfo=timezone.utc))
+    assert not (folder / ".next-2026-10-29").exists()
+
+
+def test_the_class_airspace_hours_are_refreshed_with_the_cycle(faa):
+    folder, fetched, _ = faa
+    _csv(folder / "CLS_ARSP.csv", "2026/09/03")
+    assert "CLS_ARSP.csv" in faa_editions.refresh_editions(folder)
+    assert "01_Oct_2026_CLS_ARSP_CSV.zip" in fetched
+    assert faa_editions._effective_date(folder / "CLS_ARSP.csv") == "2026/10/01"

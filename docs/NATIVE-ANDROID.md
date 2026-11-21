@@ -363,7 +363,8 @@ region draws from the file with or without signal and the rest of the
 map from the network as before; the TAC and IFR area archives follow
 the terminal switch as the style is built. The style is built again as
 a download lands. The cycle's update, its expiry at 0901Z on the next
-one's date and the sweep once the update is whole are the iPhone's.
+one's date (the engine's `data_cycle`, asked at the minute) and the sweep
+once the update is whole are the iPhone's.
 
 With no signal in the air (the offline audit of 2026-11-10): Emergency
 and Nearest rank the packs' fields on the phone (`emergency/PhoneFields`,
