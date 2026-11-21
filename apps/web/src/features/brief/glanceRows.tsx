@@ -176,6 +176,11 @@ export function FieldRow({
  *  list says it already. */
 export function EnrouteRow({ enroute, said, onOpen }: { enroute?: BriefGlance["enroute"]; said: boolean; onOpen: Open }) {
   const stop = enroute?.finding === "stop";
+  // "None", no ceiling, only where the forecast along the route was read and
+  // gave none (its visibility is in): with no forecast yet, or none to read,
+  // it is a dash, as the visibility is -- "None" there read as clear skies
+  // nothing had said (the aviation audit, 2026-11-21).
+  const ceiling = enroute?.ceilingFt != null ? `${grouped(enroute.ceilingFt)} ft` : enroute?.visibilitySm != null ? "None" : DASH;
   return (
     <ListRow
       title={
@@ -188,11 +193,7 @@ export function EnrouteRow({ enroute, said, onOpen }: { enroute?: BriefGlance["e
       wide
       description={
         <Figures note={said ? undefined : (enroute?.line ?? undefined)}>
-          <Stat
-            label="Ceiling"
-            value={enroute?.ceilingFt != null ? `${grouped(enroute.ceilingFt)} ft` : "None"}
-            finding={stop && enroute.ceilingFt != null ? "stop" : undefined}
-          />
+          <Stat label="Ceiling" value={ceiling} finding={stop && enroute.ceilingFt != null ? "stop" : undefined} />
           <Stat
             label="Visibility"
             value={enroute?.visibilitySm != null ? `${enroute.visibilitySm} sm` : DASH}
