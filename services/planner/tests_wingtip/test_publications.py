@@ -48,6 +48,15 @@ def test_the_supplement_is_the_airports_pages_in_order():
     assert publications._supplements_of(AFD) == {"DLH": ["nc_161_03SEP2026.pdf"], "C81": ["ec_59_03SEP2026.pdf", "ec_60_03SEP2026.pdf"]}
 
 
+def test_a_pdf_named_with_a_path_is_no_chart_and_no_page():
+    """The security reviews of 2026-11-21 (L16): the names go into the
+    card's links, so only a PDF's own name is kept from either index."""
+    metafile = METAFILE.replace(b"00125AD.PDF", b"../../evil/00125AD.PDF")
+    assert [c[2] for c in publications._charts_of(metafile)["DLH"]] == ["NC1TO.PDF"]
+    afd = AFD.replace(b"ec_60_03SEP2026.pdf", b"https://elsewhere.test/x.pdf")
+    assert publications._supplements_of(afd)["C81"] == ["ec_59_03SEP2026.pdf"]
+
+
 def test_the_links_are_the_editions_own(monkeypatch, tmp_path):
     monkeypatch.setattr(publications, "CACHE_DIR", tmp_path)
     monkeypatch.setattr(publications, "_HELD", {})
