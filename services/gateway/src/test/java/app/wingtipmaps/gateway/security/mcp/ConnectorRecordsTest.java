@@ -86,10 +86,11 @@ class ConnectorRecordsTest {
         planner = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         planner.createContext("/", exchange -> {
             String path = exchange.getRequestURI().getPath();
+            String sent = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
             asked.add(exchange.getRequestMethod() + " " + path + " auth="
                     + exchange.getRequestHeaders().getFirst("Authorization") + " session="
                     + exchange.getRequestHeaders().getFirst("Mcp-Session-Id") + " body="
-                    + new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+                    + sent);
             byte[] body;
             if (path.equals("/mcp")) {
                 exchange.getResponseHeaders().add("Content-Type", "text/event-stream");
@@ -101,6 +102,17 @@ class ConnectorRecordsTest {
             } else if (path.equals("/.well-known/oauth-protected-resource/mcp")) {
                 exchange.getResponseHeaders().add("Content-Type", "application/json");
                 body = "{\"resource\":\"http://localhost/mcp\"}".getBytes(StandardCharsets.UTF_8);
+            } else if (path.equals("/api/aircraft/inspections-batch")) {
+                // One airplane's answer an ask, nothing due (the inspections batch).
+                exchange.getResponseHeaders().add("Content-Type", "application/json");
+                String none = "{\"annualUntil\":null,\"eltUntil\":null,\"staticCheckUntil\":null,"
+                        + "\"transponderCheckUntil\":null,\"hundredHourDueAtHours\":null,\"vorCheck\":null,\"due\":[]}";
+                int asks = tools.jackson.databind.json.JsonMapper.builder()
+                        .build()
+                        .readTree(sent)
+                        .size();
+                body = ("[" + String.join(",", java.util.Collections.nCopies(asks, none)) + "]")
+                        .getBytes(StandardCharsets.UTF_8);
             } else {
                 exchange.getResponseHeaders().add("Content-Type", "application/json");
                 body = "{}".getBytes(StandardCharsets.UTF_8);

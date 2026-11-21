@@ -72,7 +72,7 @@ def test_a_tile_whose_published_archive_is_out_of_reach_is_a_503_no_cache_keeps(
     def unavailable(x, y, z, kind, scale=1):
         raise chart_tiles.TileUnavailable("sec tile 4/3/6: its archive did not answer")
 
-    monkeypatch.setattr(chart_tiles, "tile_png", unavailable)
+    monkeypatch.setattr(chart_tiles, "tile_bytes", unavailable)
     resp = client.get("/api/chart-tile/sec/4/3/6.png")
     assert resp.status_code == 503 and resp.headers["cache-control"] == "no-store"
 

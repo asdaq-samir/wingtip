@@ -24,7 +24,7 @@ public sealed class StateLineTests
     [Fact]
     public void A_line_has_the_feeds_fields_in_feet_and_knots()
     {
-        var line = JsonDocument.Parse(new StateLine(Start).For(At(12.5))!).RootElement;
+        var line = JsonElement.Parse(new StateLine(Start).For(At(12.5))!);
         Assert.Equal("msfs", line.GetProperty("sim").GetString());
         Assert.Equal(1, line.GetProperty("seq").GetInt32());
         Assert.Equal(new DateTimeOffset(Start).ToUnixTimeSeconds() + 12.5, line.GetProperty("utc").GetDouble(), 3);
@@ -39,7 +39,7 @@ public sealed class StateLineTests
     {
         var lines = new StateLine(Start);
         lines.For(At(0));
-        var done = JsonDocument.Parse(lines.Done(At(60, ground: true))).RootElement;
+        var done = JsonElement.Parse(lines.Done(At(60, ground: true)));
         Assert.True(done.GetProperty("done").GetBoolean());
         Assert.Equal(2, done.GetProperty("seq").GetInt32());
     }

@@ -42,7 +42,7 @@ extension EnvironmentValues {
 /// search in the NavigationSplitView's sidebar (on iPadOS 26 and later a
 /// floating card over the map, its rows on the sheet's solid ground), the
 /// map as its detail across the screen, the second-level card in the
-/// system inspector on the map, and the flight's figures on a
+/// system inspector beside the split view, and the flight's figures on a
 /// solid card along the foot of the map.
 struct SplitLayout<Map: View>: View {
     @Environment(Navigator.self) private var nav
@@ -78,20 +78,23 @@ struct SplitLayout<Map: View>: View {
                         .padding(.horizontal, WingtipSpace.lg)
                 }
                 .toolbar(.hidden, for: .navigationBar)
-                // On the map, where it has been: moving it to the split
-                // view as a column of its own waits on the owner's word
-                // (CLAUDE.md: no panel moved without it).
-                .inspector(isPresented: inspectorShown) {
-                    inspector
-                        // The cards' rows on a solid ground, not the map
-                        // through glass: glass is for controls (HIG
-                        // Materials; docs/design/ios.md §0), and the audit
-                        // found the Brief's words faint over the chart.
-                        .background(Color(.systemGroupedBackground))
-                        .inspectorColumnWidth(min: 320, ideal: 375, max: 440)
-                }
         }
         .navigationSplitViewStyle(.balanced)
+        // On the split view, not on the map in its detail: an inspector in
+        // a column puts its toolbar in that column's bar, and the map's is
+        // hidden, so the card had no title, no close and no gear (main's
+        // nightly run 44927130075: CardRuleTests, CardScrollTests and
+        // CardSmokeTests on the iPad Pro). Here it is a column of its own,
+        // full height, its card's bar its own.
+        .inspector(isPresented: inspectorShown) {
+            inspector
+                // The cards' rows on a solid ground, not the map
+                // through glass: glass is for controls (HIG
+                // Materials; docs/design/ios.md §0), and the audit
+                // found the Brief's words faint over the chart.
+                .background(Color(.systemGroupedBackground))
+                .inspectorColumnWidth(min: 320, ideal: 375, max: 440)
+        }
         .environment(\.splitLayout, true)
         // A card's action done in the inspector (Fly Here, Fly This
         // Airplane): the card put away and the plan in the sidebar shown.

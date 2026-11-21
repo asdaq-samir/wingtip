@@ -359,7 +359,11 @@ aboutLibraries {
             "wingtip-engine",
             "inter-ofl",
         )
-        allowedLicensesMap = mapOf("LGPL-2.1-or-later" to listOf("net.java.dev.jna"))
+        // Reactive Streams' interfaces (a library's dependency) are CC0, a
+        // public-domain dedication the web's list allows as well
+        // (vite-plugins/licences.ts); let through for that artifact alone.
+        allowedLicensesMap =
+            mapOf("LGPL-2.1-or-later" to listOf("net.java.dev.jna"), "CC0-1.0" to listOf("org.reactivestreams"))
     }
 }
 

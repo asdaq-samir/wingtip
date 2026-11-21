@@ -99,7 +99,12 @@ class UpstreamRoutesTest {
             // N-number, for its card: public, as the traffic it is found in is.
             Map.entry("GET /api/airplanes/{n_number}", "public csrf"),
             Map.entry("GET /api/airplanes/{n_number}/photo", "public csrf"),
-            Map.entry("GET /api/traffic/registered", "public csrf"));
+            Map.entry("GET /api/traffic/registered", "public csrf"),
+            // The documents library: its shelf, a document's PDF (ranges, for
+            // pdf.js's pages) and its text, public as the FAA's own are (decision 0057).
+            Map.entry("GET /api/library", "public csrf"),
+            Map.entry("GET /api/library/{doc}/{edition}.pdf", "public csrf"),
+            Map.entry("GET /api/library/{doc}/{edition}/text", "public csrf"));
 
     /** Routes whose passed headers changed on purpose since the hand list
      *  was recorded: what each passes now. */

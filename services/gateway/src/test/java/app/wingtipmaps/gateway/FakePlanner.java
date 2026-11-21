@@ -4,9 +4,12 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * The stand-in planner the account tests share: it keeps the pilot's own
@@ -20,6 +23,7 @@ final class FakePlanner {
     private FakePlanner() {}
 
     private static HttpServer server;
+    private static final JsonMapper JSON = JsonMapper.builder().build();
 
     /** The pilot's own note, as the planner answers GET /api/checkpoint-notes/mine. */
     static final String NOTES =
@@ -46,9 +50,14 @@ final class FakePlanner {
             String until = String.join(",", Collections.nCopies(asks.split("\"code\"", -1).length - 1, "null"));
             byte[] body = (path.equals("/api/pilot/endorsements")
                             ? "{\"checks\":[],\"soloUntil\":null,\"until\":[" + until + "]}"
-                            : exchange.getRequestMethod().equals("GET") && path.equals("/api/checkpoint-notes/mine")
-                                    ? NOTES
-                                    : "{\"removed\":1}")
+                            : path.equals("/api/pilot/records-batch")
+                                    ? recordsBatch(asks)
+                                    : path.equals("/api/aircraft/inspections-batch")
+                                            ? inspectionsBatch(asks)
+                                            : exchange.getRequestMethod().equals("GET")
+                                                            && path.equals("/api/checkpoint-notes/mine")
+                                                    ? NOTES
+                                                    : "{\"removed\":1}")
                     .getBytes();
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(status, body.length);
@@ -56,6 +65,28 @@ final class FakePlanner {
             exchange.close();
         });
         server.start();
+    }
+
+    /** The batch of records, one answer an ask in order (server-later's
+     *  POST /api/pilot/records-batch): no experience, and a last good day
+     *  (none) for each endorsement each ask holds. */
+    static String recordsBatch(String asks) {
+        JsonNode ask = JSON.readTree(asks);
+        List<String> experience = new ArrayList<>();
+        ask.path("experience").forEach(e -> experience.add("[]"));
+        List<String> endorsements = new ArrayList<>();
+        ask.path("endorsements")
+                .forEach(e -> endorsements.add("{\"checks\":[],\"soloUntil\":null,\"until\":["
+                        + String.join(",", Collections.nCopies(e.path("held").size(), "null")) + "]}"));
+        return "{\"experience\":[" + String.join(",", experience) + "],\"endorsements\":["
+                + String.join(",", endorsements) + "]}";
+    }
+
+    /** One airplane's inspections a POST /api/aircraft/inspections-batch ask, nothing due. */
+    static String inspectionsBatch(String asks) {
+        String none = "{\"annualUntil\":null,\"eltUntil\":null,\"staticCheckUntil\":null,"
+                + "\"transponderCheckUntil\":null,\"hundredHourDueAtHours\":null,\"vorCheck\":null,\"due\":[]}";
+        return "[" + String.join(",", Collections.nCopies(JSON.readTree(asks).size(), none)) + "]";
     }
 
     static String baseUrl() {

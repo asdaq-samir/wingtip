@@ -20,7 +20,11 @@ final class InspectionsStub {
 
     /** One {@code due} for each airplane asked, in order. */
     static Answer<List<PlannerInspections>> each(PlannerInspections due) {
-        return asked -> Collections.nCopies(((List<?>) asked.getArgument(0)).size(), due);
+        // None for none: a later given(...) with one(...) calls the mock with
+        // the matcher's null while it is stubbed, and lands here.
+        return asked -> asked.getArgument(0) == null
+                ? List.of()
+                : Collections.nCopies(((List<?>) asked.getArgument(0)).size(), due);
     }
 
     /** A call of one airplane's ask that {@code fits}. */

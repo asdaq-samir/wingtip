@@ -81,7 +81,7 @@ def test_a_tile_as_webp_is_the_same_pixels_and_webp_is_kept_as_it_is():
     assert chart_render.is_webp(webp)
     before = Image.open(io.BytesIO(palette.getvalue())).convert("RGBA")
     after = Image.open(io.BytesIO(webp)).convert("RGBA")
-    assert list(before.getdata()) == list(after.getdata())
+    assert before.tobytes() == after.tobytes()
     assert chart_render.to_webp(webp) is webp
 
 

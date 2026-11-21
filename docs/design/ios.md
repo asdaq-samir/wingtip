@@ -1889,10 +1889,9 @@ Next Flight, Airport Weather and Currency Status.
    the sidebar (`backgroundExtensionEffect()`).
 3. **The inspector** (`.inspector`, 320–440 pt): the second-level card,
    such as an airport, an airplane or a leg. It opens beside the map
-   instead of over it. It is put on the map, whose bar is hidden, so its
-   card has no title, close or gear there (the nightly of 2026-11-21);
-   making it a full-height column of the split view, with its own bar,
-   waits on the owner's word, as moving a panel does.
+   instead of over it. It is put on the split view, a full-height column
+   with its own bar: put on the map, whose bar is hidden, its card had no
+   title, close or gear (the owner's word for the move, 2026-11-21).
 4. **The figure strip** floats along the map's foot on a solid card in
    the sheet's colour, at most 520 pt wide, its words in the system's
    inks: on glass the names failed 4.5:1 even semibold in the tokens'

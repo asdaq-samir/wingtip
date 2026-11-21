@@ -186,17 +186,7 @@ def _pointer_at(name: str) -> dict | None:
         pointer = resp.json() if resp.ok else None
     except (requests.RequestException, ValueError):
         return None
-    return served_of(pointer)
-
-
-def served_of(pointer: dict | None, now=None) -> dict | None:
-    """A published pointer (serving.json, next.json) where the cycle it
-    names is in force at `now` (0901Z on its date, chart_cycle.in_force),
-    else None: a cycle staged ahead of its date is never drawn early, and
-    every planner turns over at 0901Z by its own clock."""
-    if isinstance(pointer, dict) and pointer.get("cycle") and chart_cycle.in_force(pointer["cycle"], now):
-        return pointer
-    return None
+    return pointer if isinstance(pointer, dict) and pointer.get("cycle") else None
 
 
 def _published_pointer() -> dict | None:

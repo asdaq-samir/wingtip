@@ -401,6 +401,11 @@ targets:
       # drifts from the other fails CI.
       - path: ../web/src/lib/fixtures
         buildPhase: resources
+        # The engine's reference cases (the handbooks' figures) are its own
+        # tests', not the phones', and one shares a name with a fixture here,
+        # which a flat bundle cannot hold twice.
+        excludes:
+          - "reference/**"
       # The engine's: the Chicago phone packs and the planner's answers at
       # each tap (services/planner/tests_wingtip/test_native.py holds them to the planner's code).
       - path: ../../services/planner/tests_wingtip/fixtures/native/phone

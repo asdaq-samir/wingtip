@@ -96,6 +96,8 @@ class AircraftRecordsControllerTest {
                                 3L, LocalDate.of(2026, 10, 10), "Landing light out", true, null, null, null))));
         AircraftDueItem ad = new AircraftDueItem(first)
                 .set(DueItemKind.AD, "Oil filter adapter", "AD 2011-10-09", null, null, 2310.4);
+        // Saved, as a listed item is: the planner's inspections ask names it by its id.
+        ReflectionTestUtils.setField(ad, "id", 31L);
         given(dueItemService.of(List.of(7L, 8L))).willReturn(Map.of(7L, List.of(ad)));
 
         mockMvc.perform(get("/api/aircraft").with(oidcLogin()))
