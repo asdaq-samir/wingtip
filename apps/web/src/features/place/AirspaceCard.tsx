@@ -246,9 +246,7 @@ export default function AirspaceCard({
       )}
       {!summary && (
         <div className="space-y-5 pt-4">
-          {isError && (
-            <p className={cn("text-destructive", TEXT.prose)}>{WORDING.airspaceNotRead}</p>
-          )}
+          {isError && <p className={cn("text-destructive", TEXT.prose)}>{WORDING.airspaceNotRead}</p>}
           {data && (
             <>
               {data.mode_c_veil && (
@@ -267,9 +265,7 @@ export default function AirspaceCard({
               )}
               <ListGroup title="Special Use">
                 {data.special_use_unavailable ? (
-                  <ListRow
-                    title={<span className="text-caution-ink">{WORDING.specialUseNoAnswer}</span>}
-                  />
+                  <ListRow title={<span className="text-caution-ink">{WORDING.specialUseNoAnswer}</span>} />
                 ) : data.special_use.length === 0 ? (
                   <ListRow muted title="None here" />
                 ) : (

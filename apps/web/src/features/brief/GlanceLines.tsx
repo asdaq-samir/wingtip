@@ -41,7 +41,10 @@ export function Line({ line, onOpen }: { line: Omit<GlanceLine, "key"> & { key: 
         <p className={TEXT.detail}>
           <span className="font-semibold">Why it matters: </span>
           {/* Each cited rule a tap to its paragraph in the library. */}
-          <Cited text={line.why} /> <span className="text-muted-foreground">(<Cited text={line.cite} />)</span>
+          <Cited text={line.why} />{" "}
+          <span className="text-muted-foreground">
+            (<Cited text={line.cite} />)
+          </span>
         </p>
         {line.raw.length > 0 && (
           <div className={cn("space-y-1 font-mono whitespace-pre-wrap text-muted-foreground", TEXT.note)} data-testid="brief-line-raw">

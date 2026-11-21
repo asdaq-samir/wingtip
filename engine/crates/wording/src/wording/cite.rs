@@ -144,7 +144,11 @@ fn cfr(title: u32, part: &str, at: Option<&str>, paragraph: &str) -> Cite {
 
 /// The title a bare part belongs to: NTSB 830 is 49 CFR's.
 fn title_of(part: &str, context: Option<u32>) -> u32 {
-    if part == "830" { 49 } else { context.unwrap_or(14) }
+    if part == "830" {
+        49
+    } else {
+        context.unwrap_or(14)
+    }
 }
 
 /// A list's next item after a cite, ", 91.137", " and 7-1-6",

@@ -68,6 +68,7 @@ class AppleAppTokensTest {
     @Test
     void withoutTheTeamsKeyOrTheBundleIdThereIsNoSecret() {
         assertThat(new AppleAppTokens("", "", "", BUNDLE).secret()).isEmpty();
-        assertThat(new AppleAppTokens("TEAM123456", "KEY1234567", pem(), " ").secret()).isEmpty();
+        assertThat(new AppleAppTokens("TEAM123456", "KEY1234567", pem(), " ").secret())
+                .isEmpty();
     }
 }

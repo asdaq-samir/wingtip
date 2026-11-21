@@ -91,9 +91,7 @@ export default function PastFlights({
           />
         )}
         {isError && !data && (
-          <ListRow
-            title={<span className={cn("text-destructive", TEXT.detail)}>{WORDING.pastFlightsNotFetched}</span>}
-          />
+          <ListRow title={<span className={cn("text-destructive", TEXT.detail)}>{WORDING.pastFlightsNotFetched}</span>} />
         )}
         {data && !flights.length && !hasNextPage && !unread && (
           // The owner's words, where it read "None heard in adsb.lol's archive".

@@ -97,12 +97,13 @@ class InstructorPageTest {
                                     .checks(List.of()))
                             .toList());
         });
-        InstructorPage page =
-                new InstructorPage(links, signed, reviews, recorded, logbook, planner, transactions);
+        InstructorPage page = new InstructorPage(links, signed, reviews, recorded, logbook, planner, transactions);
 
         InstructorDto dto = page.of(instructor, NOW);
 
-        assertThat(dto.students()).hasSize(2).allSatisfy(s -> assertThat(s.soloUntil()).isEqualTo(DAY.plusDays(60)));
+        assertThat(dto.students())
+                .hasSize(2)
+                .allSatisfy(s -> assertThat(s.soloUntil()).isEqualTo(DAY.plusDays(60)));
         assertThat(dto.reviews()).hasSize(3);
         assertThat(dto.students().get(0).reviewsWaiting()).isEqualTo(2);
         // One call for the page: the students' experience, their solo
@@ -130,8 +131,7 @@ class InstructorPageTest {
     void aPageOfNothingAsksThePlannerNothingButItsDay() {
         given(planner.instructorRecordsSince(any())).willReturn(LocalDate.parse("2023-11-21"));
         given(planner.records(any(), any())).willCallRealMethod();
-        InstructorPage page =
-                new InstructorPage(links, signed, reviews, recorded, logbook, planner, transactions);
+        InstructorPage page = new InstructorPage(links, signed, reviews, recorded, logbook, planner, transactions);
 
         InstructorDto dto = page.of(instructor, NOW);
 

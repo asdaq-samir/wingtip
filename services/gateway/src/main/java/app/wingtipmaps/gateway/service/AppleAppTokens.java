@@ -36,7 +36,11 @@ public class AppleAppTokens {
 
     @Autowired
     public AppleAppTokens(AppProperties app) {
-        this(app.apple().teamId(), app.apple().keyId(), app.apple().privateKey(), app.ios().bundleId());
+        this(
+                app.apple().teamId(),
+                app.apple().keyId(),
+                app.apple().privateKey(),
+                app.ios().bundleId());
     }
 
     public AppleAppTokens(String teamId, String keyId, String privateKey, String bundleId) {

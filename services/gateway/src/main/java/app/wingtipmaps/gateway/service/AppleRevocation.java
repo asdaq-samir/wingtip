@@ -47,6 +47,7 @@ public class AppleRevocation {
     private final Optional<ClientRegistrationRepository> registrations;
     /** The iOS app's client, for a token its sign-in was given. */
     private final AppleAppTokens app;
+
     private final String revokeUrl;
     private final String tokenUrl;
     /** Boot's RestClient: its waits are spring.http.clients' (application.yml). */

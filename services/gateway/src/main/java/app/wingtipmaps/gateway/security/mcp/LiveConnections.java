@@ -42,8 +42,8 @@ public class LiveConnections {
 
         static Key of(long pilotId, String clientId, String accessToken) {
             try {
-                byte[] digest = MessageDigest.getInstance("SHA-256")
-                        .digest(accessToken.getBytes(StandardCharsets.UTF_8));
+                byte[] digest =
+                        MessageDigest.getInstance("SHA-256").digest(accessToken.getBytes(StandardCharsets.UTF_8));
                 return new Key(Long.toString(pilotId), clientId, HexFormat.of().formatHex(digest));
             } catch (NoSuchAlgorithmException e) {
                 throw new IllegalStateException("every JVM has SHA-256", e);
@@ -58,6 +58,7 @@ public class LiveConnections {
     /** Raised by every forget: an answer read from the tables while one
      *  happened is not kept, as it may be from before the change. */
     private final AtomicLong changes = new AtomicLong();
+
     private final Clock clock;
 
     public LiveConnections() {

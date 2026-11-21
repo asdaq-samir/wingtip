@@ -38,4 +38,12 @@ export { csrfHeaders, data, gateway, planner } from "./http";
  * (./gatewayPilot) and what they keep (./gatewayRecords). The clients and the rules every call keeps are in
  * ./http, and why a call failed in ./errors.
  */
-export const api = { ...plannerRoute, ...plannerAirports, ...plannerMap, ...plannerDev, ...plannerLibrary, ...gatewayPilot, ...gatewayRecords };
+export const api = {
+  ...plannerRoute,
+  ...plannerAirports,
+  ...plannerMap,
+  ...plannerDev,
+  ...plannerLibrary,
+  ...gatewayPilot,
+  ...gatewayRecords,
+};

@@ -34,9 +34,11 @@ class MigrationVersionsTest {
         var versions = names.stream()
                 .map(VERSIONED::matcher)
                 .filter(Matcher::matches)
-                .collect(Collectors.groupingBy(m -> Integer.parseInt(m.group(1)), Collectors.mapping(m -> m.group(0), Collectors.toList())));
+                .collect(Collectors.groupingBy(
+                        m -> Integer.parseInt(m.group(1)), Collectors.mapping(m -> m.group(0), Collectors.toList())));
         assertThat(versions).isNotEmpty();
-        var repeated = versions.values().stream().filter(files -> files.size() > 1).toList();
+        var repeated =
+                versions.values().stream().filter(files -> files.size() > 1).toList();
         assertThat(repeated).as("migrations sharing a version").isEmpty();
     }
 }

@@ -46,15 +46,14 @@ export const useReaderPlaces = create<ReaderPlaces>()(
         }),
       renameBookmark: (doc, page, label) =>
         set((s) => ({
-          bookmarks: { ...s.bookmarks, [doc]: (s.bookmarks[doc] ?? []).map((m) => (m.page === page && label.trim() ? { ...m, label: label.trim() } : m)) },
+          bookmarks: {
+            ...s.bookmarks,
+            [doc]: (s.bookmarks[doc] ?? []).map((m) => (m.page === page && label.trim() ? { ...m, label: label.trim() } : m)),
+          },
         })),
       setInverted: (inverted) => set({ inverted }),
     }),
-    {
-      name: "wingtip.readerPlaces",
-      version: 1,
-      partialize: (s) => ({ pages: s.pages, bookmarks: s.bookmarks, inverted: s.inverted }),
-    },
+    { name: "wingtip.readerPlaces", version: 1, partialize: (s) => ({ pages: s.pages, bookmarks: s.bookmarks, inverted: s.inverted }) },
   ),
 );
 

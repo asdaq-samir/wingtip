@@ -1588,6 +1588,13 @@ export interface EngineContract {
     answer: CheckpointsSelectAnswer;
   };
   /**
+   * A text cut into pieces, each cited rule among them named by the document that holds it and the place in it, for the documents library to open (docs/decisions/0056-documents-library.md): 14 CFR and 49 CFR sections with their paragraphs ("14 CFR 91.211(a)(1)", "49 CFR 830.5", a list after one, a bare section after a title or with its paragraph, never a bare figure such as 121.5), 14 CFR's parts ("Part 135"), AIM paragraphs ("AIM 7-1-5") and advisory circulars ("AC 61-65K", named without the edition's letter). A document is cfr-<title>-<part>, aim or ac-<number>; the pieces' texts joined are the text.
+   */
+  citations: {
+    input: CitationsInput;
+    answer: CitationsAnswer;
+  };
+  /**
    * Which Class B band along a route's profile holds an altitude (14 CFR 91.131(a)(1): an ATC clearance before entering Class B): the index of the first band of class B whose floor is at or under altitude_ft and whose ceiling is at or over it, both ft MSL as the FAA's Class Airspace shapefile publishes them; null where none does. A band with no ceiling given holds every altitude from its floor up, so a clearance is said to be needed rather than not (Class B tops run from 7,000 ft at KMSY to 12,500 ft at KDEN, so no one figure stands in for it).
    */
   class_b_at_altitude: {
@@ -5594,6 +5601,33 @@ export interface CheckpointsSelectInput {
    */
   min_score?: number | null;
   length_nm?: number | null;
+}
+export interface CitationsInput {
+  /**
+   * The words as the app shows them: a finding's why, a rule's cite.
+   */
+  text?: string | null;
+}
+export interface CitationsAnswer {
+  pieces: {
+    text: string;
+    cite: null | Citation;
+  }[];
+}
+export interface Citation {
+  kind: "cfr" | "aim" | "ac";
+  /**
+   * The library's document: "cfr-14-91", "aim", "ac-61-65".
+   */
+  doc: string;
+  /**
+   * The place in it: a CFR section ("91.155"), an AIM paragraph ("7-1-5"); null for a whole part or circular.
+   */
+  at: string | null;
+  /**
+   * A CFR section's paragraph as written, "(a)(1)".
+   */
+  paragraph: string | null;
 }
 export interface ClassBAtAltitudeInput {
   bands: {

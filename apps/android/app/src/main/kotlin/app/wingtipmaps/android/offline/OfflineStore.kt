@@ -13,9 +13,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import java.io.File
-import java.util.concurrent.ConcurrentHashMap
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * A region's charts kept on the phone (Setup → Downloads), as the iOS

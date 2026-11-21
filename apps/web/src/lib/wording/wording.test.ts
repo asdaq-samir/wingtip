@@ -45,7 +45,9 @@ describe("isTitleCase", () => {
 
 describe("WORDING's sentences", () => {
   it("end with a full stop and say could not, never couldn't", () => {
-    const errors = Object.entries(WORDING).filter(([key]) => /Not(Fetched|Reached|Read|Checked|Loaded|LookedUp|Found)$|NoAnswer$/.test(key));
+    const errors = Object.entries(WORDING).filter(([key]) =>
+      /Not(Fetched|Reached|Read|Checked|Loaded|LookedUp|Found)$|NoAnswer$/.test(key),
+    );
     expect(errors.length).toBeGreaterThan(0);
     for (const [, words] of errors) {
       expect(words).toMatch(/\.$/);

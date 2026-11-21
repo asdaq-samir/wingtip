@@ -105,9 +105,7 @@ export default function NotamRankingSection() {
                 </CollapsibleContent>
               </Collapsible>
             )}
-            {answer?.unchecked.includes("tfrs") && (
-              <p className={cn("text-muted-foreground", TEXT.note)}>{WORDING.tfrsNotChecked}</p>
-            )}
+            {answer?.unchecked.includes("tfrs") && <p className={cn("text-muted-foreground", TEXT.note)}>{WORDING.tfrsNotChecked}</p>}
             <p className={cn("text-muted-foreground", TEXT.note)} data-testid="brief-notams-credit">
               {notamCredit(since)}
             </p>

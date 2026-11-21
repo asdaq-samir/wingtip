@@ -197,9 +197,7 @@ function NotamState({ n }: { n: FieldNotam }) {
 /** That the TFRs could not be read rather than that there are none, under
  *  the list. */
 function Unchecked({ data }: { data: FieldNotams | undefined }) {
-  return data && data.unchecked.length > 0 ? (
-    <p className={cn("pt-2 text-caution-ink", TEXT.note)}>{WORDING.tfrListNotRead}</p>
-  ) : null;
+  return data && data.unchecked.length > 0 ? <p className={cn("pt-2 text-caution-ink", TEXT.note)}>{WORDING.tfrListNotRead}</p> : null;
 }
 
 /** The NOTAMs by what they are about, the engine's heading (notam_read:

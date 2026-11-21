@@ -74,8 +74,7 @@ class AppHealthControllerTest {
         given(launch.getP50()).willReturn(640.0);
         given(launch.getP75()).willReturn(810.0);
         given(launch.getP95()).willReturn(1400.0);
-        given(health.byVersion(anyInt()))
-                .willReturn(new AppHealthService.ByVersion(List.of(crashes), List.of(launch)));
+        given(health.byVersion(anyInt())).willReturn(new AppHealthService.ByVersion(List.of(crashes), List.of(launch)));
 
         mockMvc.perform(get("/api/diagnostics/versions").param("days", "14").with(oidcLogin()))
                 .andExpect(status().isOk())

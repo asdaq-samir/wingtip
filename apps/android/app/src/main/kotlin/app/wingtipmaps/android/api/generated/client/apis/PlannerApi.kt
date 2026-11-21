@@ -1074,7 +1074,7 @@ interface PlannerApi {
     /**
      * POST aircraft/inspections-batch
      * Inspections Batch
-     * Many airplanes&#39; inspections in one call, each as /api/aircraft/inspections answers it, in the order asked: a pilot&#39;s aircraft list and the daily reminders ask every airplane at once.
+     * Many airplanes&#39; inspections in one call, each as /api/aircraft/inspections answers it, in the order asked: a pilot&#39;s aircraft list and the daily reminders ask every airplane at once, at most MAX_BATCH.
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error
@@ -1112,6 +1112,51 @@ interface PlannerApi {
      */
     @GET("live/itws")
     suspend fun itwsAlerts(@Query("airports") airports: kotlin.String): Response<app.wingtipmaps.android.api.generated.ItwsAlerts>
+
+    /**
+     * GET library/{doc}/{edition}.pdf
+     * Library Pdf
+     * A document&#39;s PDF in the edition kept.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 206: The byte range asked for (Range: bytes=a-b)
+     *  - 404: Not on the shelf, or not the edition kept
+     *  - 422: Validation Error
+     *
+     * @param doc
+     * @param edition
+     * @return [Unit]
+     */
+    @GET("library/{doc}/{edition}.pdf")
+    suspend fun libraryPdf(@Path("doc") doc: kotlin.String, @Path("edition") edition: kotlin.String): Response<Unit>
+
+    /**
+     * GET library
+     * Library Shelf
+     * Every document on the shelf, in its order: the FAA&#39;s books, the AIM, the circulars and the CFR parts, each with the edition kept and its date, or none yet where it has never been had.
+     * Responses:
+     *  - 200: Successful Response
+     *
+     * @return [app.wingtipmaps.android.api.generated.Library]
+     */
+    @GET("library")
+    suspend fun libraryShelf(): Response<app.wingtipmaps.android.api.generated.Library>
+
+    /**
+     * GET library/{doc}/{edition}/text
+     * Library Text
+     * A CFR part&#39;s text in the edition kept (the eCFR&#39;s issue date): its subparts and sections, each section&#39;s paragraphs.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 404: Not a CFR part on the shelf, or not the edition kept
+     *  - 422: Validation Error
+     *
+     * @param doc
+     * @param edition
+     * @return [app.wingtipmaps.android.api.generated.CfrText]
+     */
+    @GET("library/{doc}/{edition}/text")
+    suspend fun libraryText(@Path("doc") doc: kotlin.String, @Path("edition") edition: kotlin.String): Response<app.wingtipmaps.android.api.generated.CfrText>
 
     /**
      * GET local-flight

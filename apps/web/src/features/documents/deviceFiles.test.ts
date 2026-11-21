@@ -19,10 +19,10 @@ import {
 function memory(): FileStore {
   const kept = new Map<string, unknown>();
   return {
-    get: async <T,>(key: string) => kept.get(key) as T | undefined,
+    get: async <T>(key: string) => kept.get(key) as T | undefined,
     set: async (key, value) => void kept.set(key, value),
     del: async (key) => void kept.delete(key),
-    update: async <T,>(key: string, change: (old: T | undefined) => T) => void kept.set(key, change(kept.get(key) as T | undefined)),
+    update: async <T>(key: string, change: (old: T | undefined) => T) => void kept.set(key, change(kept.get(key) as T | undefined)),
   };
 }
 

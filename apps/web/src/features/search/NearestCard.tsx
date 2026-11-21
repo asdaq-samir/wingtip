@@ -114,7 +114,9 @@ function NearAnswers({ from, onFrom }: { from: NearFrom | null; onFrom: (from: N
           />
         ))}
         {found && !found.length && !isFetching && <ListRow muted title="Nothing by that name" />}
-        {current && isError && <ListRow title={<span className={cn("text-destructive", TEXT.detail)}>The search did not answer. Try again.</span>} />}
+        {current && isError && (
+          <ListRow title={<span className={cn("text-destructive", TEXT.detail)}>The search did not answer. Try again.</span>} />
+        )}
         {!found && !(current && isError) && (
           <ListRow title={<span className={cn("text-muted-foreground", TEXT.detail)}>Fetching {typed.trim()}…</span>} />
         )}
@@ -335,14 +337,7 @@ export default function NearestCard({
             ))}
             {/* Where they could not be found, said with Try again, where the
                 list stayed on "Looking…" (QueryState). */}
-            {!data && (
-              <QueryState
-                row
-                query={nearestAsked}
-                fetching={WORDING.fetchingNearestFields}
-                failed={WORDING.nearestNotFound}
-              />
-            )}
+            {!data && <QueryState row query={nearestAsked} fetching={WORDING.fetchingNearestFields} failed={WORDING.nearestNotFound} />}
           </ListGroup>
         )}
         {/* In the air with an airplane of no glide ratio: asked for in

@@ -24,10 +24,7 @@ export function forgetThisDevice(storage: Storage = window.localStorage) {
  *  points and the service worker's copy of the account. Deleting kept the
  *  last three until the deep security review of 2026-11-21, so on a
  *  shared device the next person offline was shown them. */
-export function forgetAccountOnThisDevice(
-  local: Storage = window.localStorage,
-  session: Storage = window.sessionStorage,
-): void {
+export function forgetAccountOnThisDevice(local: Storage = window.localStorage, session: Storage = window.sessionStorage): void {
   forgetThisDevice(local);
   forgetThisDevice(session);
   forgetWhereTheyFlew();

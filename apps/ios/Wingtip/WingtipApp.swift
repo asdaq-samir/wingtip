@@ -89,7 +89,7 @@ struct WingtipApp: App {
                 // fields the weather widget's settings offer first, written
                 // as the home base or the favourites change, not each 15 s.
                 .task { await Repeating.every(15) { WidgetFeed.shared.update(plan: plan, verdict: flight.verdict) } }
-                .onChange(of: ([session.pilot?.homeBase ?? ""] + AirportShelf.shared.favorites.map(\.ident)), initial: true) {
+                .onChange(of: [session.pilot?.homeBase ?? ""] + AirportShelf.shared.favorites.map(\.ident), initial: true) {
                     WidgetFeed.shared.airports(homeBase: session.pilot?.homeBase, favorites: AirportShelf.shared.favorites)
                 }
                 // The route's weather watched after the Brief (WeatherWatch):

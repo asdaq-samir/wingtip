@@ -13,7 +13,11 @@ const part91: CfrText = {
           head: "§ 91.151 Fuel requirements for flight in VFR conditions.",
           paragraphs: ["(a) No person may begin a flight in an airplane under VFR conditions unless ..."],
         },
-        { id: "91.155", head: "§ 91.155 Basic VFR weather minimums.", paragraphs: ["(a) Except as provided in paragraph (b) ... VFR flight ... VFR"] },
+        {
+          id: "91.155",
+          head: "§ 91.155 Basic VFR weather minimums.",
+          paragraphs: ["(a) Except as provided in paragraph (b) ... VFR flight ... VFR"],
+        },
       ],
     },
   ],

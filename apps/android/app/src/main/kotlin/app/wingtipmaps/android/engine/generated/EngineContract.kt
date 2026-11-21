@@ -2190,6 +2190,42 @@ object EngineContract {
     )
 
     @Serializable
+    data class CitationsAnswer(
+        val pieces: List<EngineContract.CitationsAnswerPiecesItem>,
+    )
+
+    @Serializable
+    data class CitationsAnswerPiecesItem(
+        val text: String,
+        val cite: EngineContract.CitationsAnswerPiecesItemCite? = null,
+    )
+
+    @Serializable
+    data class CitationsAnswerPiecesItemCite(
+        val kind: String,
+        /**
+         * The library's document: "cfr-14-91", "aim", "ac-61-65".
+         */
+        val doc: String,
+        /**
+         * The place in it: a CFR section ("91.155"), an AIM paragraph ("7-1-5"); null for a whole part or circular.
+         */
+        val at: String? = null,
+        /**
+         * A CFR section's paragraph as written, "(a)(1)".
+         */
+        val paragraph: String? = null,
+    )
+
+    @Serializable
+    data class CitationsInput(
+        /**
+         * The words as the app shows them: a finding's why, a rule's cite.
+         */
+        val text: String? = null,
+    )
+
+    @Serializable
     data class ClassBAtAltitudeInput(
         val bands: List<EngineContract.ClassBAtAltitudeInputBandsItem>,
         @SerialName("altitude_ft")

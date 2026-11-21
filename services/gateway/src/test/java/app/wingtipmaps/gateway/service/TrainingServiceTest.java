@@ -103,7 +103,9 @@ class TrainingServiceTest {
         verify(planner, never()).experience(any(), any());
         assertThat(record.reviews()).hasSize(3);
         assertThat(record.reviews().get(2).endorsement().until()).isEqualTo(day.plusDays(60));
-        assertThat(record.signed()).singleElement().satisfies(e -> assertThat(e.until()).isEqualTo(day.plusDays(60)));
+        assertThat(record.signed())
+                .singleElement()
+                .satisfies(e -> assertThat(e.until()).isEqualTo(day.plusDays(60)));
         // The transaction ends before the planner is asked.
         InOrder order = inOrder(transactions, planner);
         order.verify(transactions).commit(any());

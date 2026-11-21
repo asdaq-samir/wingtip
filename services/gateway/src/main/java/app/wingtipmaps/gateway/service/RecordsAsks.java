@@ -86,7 +86,9 @@ final class RecordsAsks {
         }
 
         List<ReviewCheckDto> checks(int i) {
-            return endorsements(i).getChecks().stream().map(PlannerAsks::checkOf).toList();
+            return endorsements(i).getChecks().stream()
+                    .map(PlannerAsks::checkOf)
+                    .toList();
         }
 
         /** {@code dtos} (read with no last good day) with the days asked at

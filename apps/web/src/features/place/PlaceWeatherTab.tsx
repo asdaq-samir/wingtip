@@ -179,11 +179,7 @@ export function PlaceWeatherTab({
                 <ListRow title={<span className="font-mono break-words">{metar.raw}</span>} />
               </>
             ) : (
-              <ListRow
-                title={
-                  place.weather_unavailable ? WORDING.weatherNotReached : "No weather station reports from this field"
-                }
-              />
+              <ListRow title={place.weather_unavailable ? WORDING.weatherNotReached : "No weather station reports from this field"} />
             )}
           </ListGroup>
           {/* For one with no report of its own, the weather modelled at

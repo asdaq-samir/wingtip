@@ -69,9 +69,16 @@ export default function TextBody({ source, startPage, startAt, find, goto, onOut
 
   if (!text) return null;
   return (
-    <div ref={box} className="absolute inset-0 overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]" data-testid="document-text">
+    <div
+      ref={box}
+      className="absolute inset-0 overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+      data-testid="document-text"
+    >
       {listed && (
-        <div className="sticky top-0 z-10 -mx-4 max-h-[60%] overflow-y-auto bg-background px-4 py-2 shadow-(--depth-float)" data-testid="document-text-hits">
+        <div
+          className="sticky top-0 z-10 -mx-4 max-h-[60%] overflow-y-auto bg-background px-4 py-2 shadow-(--depth-float)"
+          data-testid="document-text-hits"
+        >
           <ListGroup title={hits.length ? `${hits.length >= MOST_HITS ? `${MOST_HITS}+` : hits.length} Found` : "Not Found"}>
             {hits.map((h, i) => (
               <ListRow

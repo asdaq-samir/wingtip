@@ -397,6 +397,12 @@ fun Engine.checkpointsSelect(candidates: List<EngineContract.CheckpointsSelectIn
     rule("checkpoints_select", EngineContract.CheckpointsSelectInput(candidates = candidates, minSpacingNm = minSpacingNm, maxCount = maxCount, minScore = minScore, lengthNm = lengthNm))
 
 /**
+ * A text cut into pieces, each cited rule among them named by the document that holds it and the place in it, for the documents library to open (docs/decisions/0056-documents-library.md): 14 CFR and 49 CFR sections with their paragraphs ("14 CFR 91.211(a)(1)", "49 CFR 830.5", a list after one, a bare section after a title or with its paragraph, never a bare figure such as 121.5), 14 CFR's parts ("Part 135"), AIM paragraphs ("AIM 7-1-5") and advisory circulars ("AC 61-65K", named without the edition's letter). A document is cfr-<title>-<part>, aim or ac-<number>; the pieces' texts joined are the text.
+ */
+fun Engine.citations(text: String? = null): Result<EngineContract.CitationsAnswer> =
+    rule("citations", EngineContract.CitationsInput(text = text))
+
+/**
  * Which Class B band along a route's profile holds an altitude (14 CFR 91.131(a)(1): an ATC clearance before entering Class B): the index of the first band of class B whose floor is at or under altitude_ft and whose ceiling is at or over it, both ft MSL as the FAA's Class Airspace shapefile publishes them; null where none does. A band with no ceiling given holds every altitude from its floor up, so a clearance is said to be needed rather than not (Class B tops run from 7,000 ft at KMSY to 12,500 ft at KDEN, so no one figure stands in for it).
  */
 fun Engine.classBAtAltitude(bands: List<EngineContract.ClassBAtAltitudeInputBandsItem>, altitudeFt: Double): Result<Int?> =

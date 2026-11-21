@@ -189,7 +189,8 @@ public class PlannerClient {
      * @throws PlannerUnavailableException when the planner cannot be reached or refuses,
      *     or answers a list of another length
      */
-    public PlannerRecordsBatch records(List<PlannerExperienceAsk> experience, List<PlannerEndorsementsAsk> endorsements) {
+    public PlannerRecordsBatch records(
+            List<PlannerExperienceAsk> experience, List<PlannerEndorsementsAsk> endorsements) {
         if (experience.isEmpty() && endorsements.isEmpty()) {
             return new PlannerRecordsBatch().experience(List.of()).endorsements(List.of());
         }
@@ -197,8 +198,10 @@ public class PlannerClient {
                 new PlannerRecordsBatchAsk().experience(experience).endorsements(endorsements);
         String what = "the students' records";
         return rule(what, () -> planner.recordsBatch(ask), r -> {
-            if (r.getExperience().size() != experience.size() || r.getEndorsements().size() != endorsements.size()) {
-                throw new PlannerUnavailableException("the planner answered " + what + " with a list of another length");
+            if (r.getExperience().size() != experience.size()
+                    || r.getEndorsements().size() != endorsements.size()) {
+                throw new PlannerUnavailableException(
+                        "the planner answered " + what + " with a list of another length");
             }
             return r;
         });
@@ -333,7 +336,8 @@ public class PlannerClient {
     static List<PlannerInspections> inspectionsOf(PlannerApi planner, String what, List<PlannerInspectionsAsk> asks) {
         return rule(what, () -> planner.inspectionsBatch(asks), all -> {
             if (all.size() != asks.size()) {
-                throw new PlannerUnavailableException("the planner answered " + what + " with a list of another length");
+                throw new PlannerUnavailableException(
+                        "the planner answered " + what + " with a list of another length");
             }
             return List.copyOf(all);
         });

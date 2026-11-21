@@ -149,7 +149,8 @@ public class SecurityConfig {
                             .access(developer)
                             // The apps' speed over time and faults, and both by build (SpeedController,
                             // DiagnosticsController, AppHealthController).
-                            .requestMatchers(HttpMethod.GET, "/api/speed", "/api/diagnostics", "/api/diagnostics/versions")
+                            .requestMatchers(
+                                    HttpMethod.GET, "/api/speed", "/api/diagnostics", "/api/diagnostics/versions")
                             .access(developer);
                     // Reading from the planner: planning a route needs no
                     // account. The Go / No-Go, the debrief, lost comms and a

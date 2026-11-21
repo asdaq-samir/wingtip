@@ -75,7 +75,9 @@ class InstructorPage {
     InstructorDto of(Pilot pilot, Instant now) {
         LocalDate today = LocalDate.ofInstant(now, ZoneOffset.UTC);
         // As far back as 14 CFR 61.189(c) has them keep it: the engine's.
-        Instant since = planner.instructorRecordsSince(today).atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant since = planner.instructorRecordsSince(today)
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant();
         RecordsAsks asks = new RecordsAsks();
         Page page = read.execute(tx -> page(pilot, since, today, asks));
         RecordsAsks.Answers answers = asks.ask(planner);
@@ -159,8 +161,10 @@ class InstructorPage {
     }
 
     private Records recordsOf(Long studentId, Map<Long, Records> records) {
-        return records.computeIfAbsent(studentId, id -> new Records(
-                recorded.findByKeyPilotIdOrderByKeyCode(id), signed.findByStudentIdOrderBySignedAtDesc(id)));
+        return records.computeIfAbsent(
+                studentId,
+                id -> new Records(
+                        recorded.findByKeyPilotIdOrderByKeyCode(id), signed.findByStudentIdOrderBySignedAtDesc(id)));
     }
 
     /** A review as its instructor reads it, with what the student's record
@@ -174,8 +178,7 @@ class InstructorPage {
                 r.getFlightOn());
         SignedEndorsement e = r.getEndorsement();
         int until = e == null ? -1 : asks.untilOf(List.of("until", e.getId()), List.of(e));
-        return new ReviewRow(
-                EndorsementRecords.dto(r, List.of(), x -> EndorsementRecords.dto(x, null)), checks, until);
+        return new ReviewRow(EndorsementRecords.dto(r, List.of(), x -> EndorsementRecords.dto(x, null)), checks, until);
     }
 
     /** A student or an ask, with how many of their reviews wait on the
@@ -187,9 +190,7 @@ class InstructorPage {
         int experience = asks.experience(
                 student.getId(), () -> logbook.findByPilotIdOrderByFlownOnDescIdDesc(student.getId()), today);
         int solo = asks.endorsements(
-                List.of("solo", student.getId()),
-                () -> EndorsementRecords.held(theirs.paper(), theirs.signed()),
-                null);
+                List.of("solo", student.getId()), () -> EndorsementRecords.held(theirs.paper(), theirs.signed()), null);
         return new StudentRow(
                 new StudentDto(
                         l.getId(),

@@ -33,12 +33,26 @@ export default function DocumentsPage() {
     <div className="flex flex-col gap-5" data-testid="documents-page">
       <ListGroup title="Your Documents">
         {vm.own.map((doc) => (
-          <OwnRow key={doc.id} doc={doc} onOpen={() => vm.open({ doc: ownDocName(doc.id), at: null, page: null })} onRename={vm.rename} onDelete={vm.remove} />
+          <OwnRow
+            key={doc.id}
+            doc={doc}
+            onOpen={() => vm.open({ doc: ownDocName(doc.id), at: null, page: null })}
+            onRename={vm.rename}
+            onDelete={vm.remove}
+          />
         ))}
         {/* React Aria's FileTrigger: the device's own file picker, PDFs only. */}
-        <FileTrigger acceptedFileTypes={["application/pdf", ".pdf"]} allowsMultiple onSelect={(files) => files && void vm.add(Array.from(files))}>
+        <FileTrigger
+          acceptedFileTypes={["application/pdf", ".pdf"]}
+          allowsMultiple
+          onSelect={(files) => files && void vm.add(Array.from(files))}
+        >
           <Pressable>
-            <Button variant="plain" className={cn("min-h-11 w-full justify-start gap-3 px-4 text-tint", TEXT.row)} data-testid="documents-add">
+            <Button
+              variant="plain"
+              className={cn("min-h-11 w-full justify-start gap-3 px-4 text-tint", TEXT.row)}
+              data-testid="documents-add"
+            >
               <FileUp aria-hidden className="size-5" />
               Add a PDF
             </Button>
@@ -135,7 +149,13 @@ function OwnRow({
           if (typeof name === "string") void onRename(doc.id, name);
         }}
       >
-        <Input name="name" defaultValue={doc.name} aria-label="Document name" autoFocus onBlur={(e) => e.currentTarget.form?.requestSubmit()} />
+        <Input
+          name="name"
+          defaultValue={doc.name}
+          aria-label="Document name"
+          autoFocus
+          onBlur={(e) => e.currentTarget.form?.requestSubmit()}
+        />
       </form>
     );
   return (

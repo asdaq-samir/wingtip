@@ -41,7 +41,11 @@ export const EXPLAINED = {
     source: PHAK,
   },
   // PHAK, Navigation: true heading is true course plus the wind correction.
-  TH: { name: WORDING.trueHeading, sentence: "The true course with the wind correction: where the nose points, from true north.", source: PHAK },
+  TH: {
+    name: WORDING.trueHeading,
+    sentence: "The true course with the wind correction: where the nose points, from true north.",
+    source: PHAK,
+  },
   // PHAK, Navigation: magnetic heading is the true heading less (or plus) the variation.
   MH: {
     name: WORDING.magneticHeading,

@@ -68,8 +68,7 @@ class AircraftRecordsControllerTest {
 
     @BeforeEach
     void nothingDue() {
-        given(planner.inspections(any()))
-                .willAnswer(InspectionsStub.each(new PlannerInspections()));
+        given(planner.inspections(any())).willAnswer(InspectionsStub.each(new PlannerInspections()));
     }
 
     private static Pilot samplePilot() {

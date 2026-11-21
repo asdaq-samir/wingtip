@@ -47,7 +47,8 @@ public final class AppleClientSecret {
                 .issueTime(Date.from(now))
                 .expirationTime(Date.from(now.plus(DAYS, ChronoUnit.DAYS)))
                 .build();
-        SignedJWT jwt = new SignedJWT(new JWSHeader.Builder(JWSAlgorithm.ES256).keyID(keyId).build(), claims);
+        SignedJWT jwt = new SignedJWT(
+                new JWSHeader.Builder(JWSAlgorithm.ES256).keyID(keyId).build(), claims);
         try {
             jwt.sign(new ECDSASigner(privateKey(privateKeyPem)));
         } catch (JOSEException | IllegalArgumentException e) {

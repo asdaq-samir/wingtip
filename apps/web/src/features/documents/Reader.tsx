@@ -47,34 +47,35 @@ export default function Reader({ place, onClose }: { place: DocPlace; onClose: (
   // A bookmark's name: a CFR part's section by its heading, a PDF's page by its number.
   const label = (at: number) =>
     (vm.source?.kind === "text" && vm.source.text.groups.flatMap((g) => g.sections)[at - 1]?.head) || `Page ${at}`;
-  const body = vm.source && !failed && {
-    source: vm.source,
-    startPage: vm.startPage,
-    startAt: vm.startAt,
-    find,
-    goto,
-    inverted: vm.inverted,
-    onOutline: setOutline,
-    onPage,
-    onMatches: setMatches,
-    onFailed: () => setFailed(true),
-  };
+  const body = vm.source &&
+    !failed && {
+      source: vm.source,
+      startPage: vm.startPage,
+      startAt: vm.startAt,
+      find,
+      goto,
+      inverted: vm.inverted,
+      onOutline: setOutline,
+      onPage,
+      onMatches: setMatches,
+      onFailed: () => setFailed(true),
+    };
   return (
     <FullScreenViewer title={vm.title} testId="document-reader" closeTestId="document-reader-close" onClose={onClose}>
       <div className="flex shrink-0 items-center gap-2 px-4 pb-2">
         <div className="min-w-0 flex-1">
-        <SearchField
-          value={typed}
-          onChange={(v) => {
-            setTyped(v);
-            if (!v) setMatches(null);
-          }}
-          onCancel={() => setTyped("")}
-          onSubmit={() => ask(find?.query === typed.trim() ? "next" : null)}
-          placeholder="Search"
-          label="Search this document"
-          testId="document-search"
-        />
+          <SearchField
+            value={typed}
+            onChange={(v) => {
+              setTyped(v);
+              if (!v) setMatches(null);
+            }}
+            onCancel={() => setTyped("")}
+            onSubmit={() => ask(find?.query === typed.trim() ? "next" : null)}
+            placeholder="Search"
+            label="Search this document"
+            testId="document-search"
+          />
         </div>
         <IconButton label="Contents" aria-pressed={contents} onClick={() => setContents((c) => !c)} data-testid="document-contents-button">
           <ListTree />
@@ -88,7 +89,12 @@ export default function Reader({ place, onClose }: { place: DocPlace; onClose: (
         >
           {marked ? <BookmarkCheck /> : <Bookmark />}
         </IconButton>
-        <IconButton label="Invert Colors" aria-pressed={vm.inverted} onClick={() => vm.setInverted(!vm.inverted)} data-testid="document-invert">
+        <IconButton
+          label="Invert Colors"
+          aria-pressed={vm.inverted}
+          onClick={() => vm.setInverted(!vm.inverted)}
+          data-testid="document-invert"
+        >
           <Moon />
         </IconButton>
         {vm.share && (

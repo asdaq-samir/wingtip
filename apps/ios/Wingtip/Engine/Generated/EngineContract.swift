@@ -2185,6 +2185,30 @@ enum EngineContract {
         }
     }
 
+    struct CitationsAnswer: Codable, Equatable, Sendable {
+        var pieces: [EngineContract.CitationsAnswerPiecesItem]
+    }
+
+    struct CitationsAnswerPiecesItem: Codable, Equatable, Sendable {
+        var text: String
+        var cite: EngineContract.CitationsAnswerPiecesItemCite?
+    }
+
+    struct CitationsAnswerPiecesItemCite: Codable, Equatable, Sendable {
+        var kind: String
+        /// The library's document: "cfr-14-91", "aim", "ac-61-65".
+        var doc: String
+        /// The place in it: a CFR section ("91.155"), an AIM paragraph ("7-1-5"); null for a whole part or circular.
+        var at: String?
+        /// A CFR section's paragraph as written, "(a)(1)".
+        var paragraph: String?
+    }
+
+    struct CitationsInput: Codable, Equatable, Sendable {
+        /// The words as the app shows them: a finding's why, a rule's cite.
+        var text: String?
+    }
+
     struct ClassBAtAltitudeInput: Codable, Equatable, Sendable {
         var bands: [EngineContract.ClassBAtAltitudeInputBandsItem]
         var altitudeFt: Double

@@ -24,6 +24,7 @@ public record SignedEndorsementDto(
     /** The same endorsement with its last good day, the engine's, filled
      *  in once the planner is asked. */
     public SignedEndorsementDto withUntil(@Nullable LocalDate until) {
-        return new SignedEndorsementDto(id, code, studentName, fields, text, signature, signedOn, until, voided, digest);
+        return new SignedEndorsementDto(
+                id, code, studentName, fields, text, signature, signedOn, until, voided, digest);
     }
 }

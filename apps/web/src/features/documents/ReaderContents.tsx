@@ -51,7 +51,11 @@ export function ReaderContents({
             {outline.map((row, i) => (
               <ListRow
                 key={i}
-                title={<span className={cn(INDENT[Math.min(row.depth, INDENT.length - 1)], row.depth > 0 && "text-muted-foreground")}>{row.title}</span>}
+                title={
+                  <span className={cn(INDENT[Math.min(row.depth, INDENT.length - 1)], row.depth > 0 && "text-muted-foreground")}>
+                    {row.title}
+                  </span>
+                }
                 onClick={() => onPick({ dest: row.dest })}
               />
             ))}
@@ -64,7 +68,13 @@ export function ReaderContents({
       ) : bookmarks.length ? (
         <ListGroup>
           {bookmarks.map((m) => (
-            <ListRow key={m.page} title={m.label} value={paged ? `Page ${m.page}` : undefined} onClick={() => onPick({ page: m.page })} data-testid="document-bookmark" />
+            <ListRow
+              key={m.page}
+              title={m.label}
+              value={paged ? `Page ${m.page}` : undefined}
+              onClick={() => onPick({ page: m.page })}
+              data-testid="document-bookmark"
+            />
           ))}
         </ListGroup>
       ) : (

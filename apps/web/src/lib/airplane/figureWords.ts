@@ -67,7 +67,14 @@ export const FIGURE_WORDS: Record<FigureKey, FigureWords> = {
     max: 50,
   },
   glide_ratio: { label: WORDING.glideRatio, unit: ": 1", ask: (t) => `What is ${t}'s glide ratio?`, min: 1, max: 80, minExcluded: true },
-  empty_weight_lb: { label: WORDING.emptyWeight, unit: "lb", ask: (t) => `What is ${t}'s empty weight?`, min: 0, max: 20000, minExcluded: true },
+  empty_weight_lb: {
+    label: WORDING.emptyWeight,
+    unit: "lb",
+    ask: (t) => `What is ${t}'s empty weight?`,
+    min: 0,
+    max: 20000,
+    minExcluded: true,
+  },
   empty_moment_lb_in: {
     label: WORDING.emptyMoment,
     unit: "lb-in",

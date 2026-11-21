@@ -15,7 +15,6 @@ def load_way(dep: str, dest: str, stops: str | list | None = None) -> Route:
     r = load_route(dep, dest, stops)
     if len(r.idents) == 2 and r.length_nm < SAME_PLACE_NM:
         raise HTTPException(
-            422,
-            f"{r.idents[0]} and {r.idents[1]} are the same place: a local flight has no route to plan. Add a stop for a round trip.",
+            422, f"{r.idents[0]} and {r.idents[1]} are the same place: a local flight has no route to plan. Add a stop for a round trip."
         )
     return r

@@ -54,7 +54,9 @@ public final class RecordsStandIn {
         return new PlannerEndorsements()
                 .until(Collections.nCopies(held.size(), (LocalDate) null))
                 .soloUntil(
-                        held.stream().anyMatch(h -> List.of("solo-first", "solo-90").contains(h.getCode()))
+                        held.stream()
+                                        .anyMatch(h ->
+                                                List.of("solo-first", "solo-90").contains(h.getCode()))
                                 ? soloUntil
                                 : null)
                 .checks(

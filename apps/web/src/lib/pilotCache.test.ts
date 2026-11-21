@@ -5,10 +5,7 @@ import { PILOT_CACHE, PLANNER_CACHES, forgetPilotCache, forgetPlannerAnswers, si
 
 function stubCaches(held: string[] = []) {
   const deleted: string[] = [];
-  vi.stubGlobal("caches", {
-    delete: async (name: string) => (deleted.push(name), true),
-    has: async (name: string) => held.includes(name),
-  });
+  vi.stubGlobal("caches", { delete: async (name: string) => (deleted.push(name), true), has: async (name: string) => held.includes(name) });
   return deleted;
 }
 

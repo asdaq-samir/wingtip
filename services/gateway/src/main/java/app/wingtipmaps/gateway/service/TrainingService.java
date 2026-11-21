@@ -108,7 +108,8 @@ public class TrainingService {
         List<SignedEndorsementDto> theirs = answers.until(read.theirUntil(), read.theirs());
         Map<Long, SignedEndorsementDto> theirById = new HashMap<>();
         theirs.forEach(d -> theirById.putIfAbsent(d.id(), d));
-        List<CrossCountryReviewDto> asked = java.util.stream.IntStream.range(0, read.asked().size())
+        List<CrossCountryReviewDto> asked = java.util.stream.IntStream.range(
+                        0, read.asked().size())
                 .mapToObj(i -> {
                     CrossCountryReviewDto r = read.asked().get(i);
                     SignedEndorsementDto e = r.endorsement();

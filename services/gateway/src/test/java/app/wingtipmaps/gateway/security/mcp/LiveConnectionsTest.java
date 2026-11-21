@@ -98,7 +98,8 @@ class LiveConnectionsTest {
         verify(f.store, times(1)).findById("a-1");
 
         // Disconnected: /oauth2/revoke saves it with the token invalidated.
-        OAuth2Authorization revoked = OAuth2Authorization.from(f.connection).invalidate(f.refresh).build();
+        OAuth2Authorization revoked =
+                OAuth2Authorization.from(f.connection).invalidate(f.refresh).build();
         f.authorizations.save(revoked);
         given(f.store.findById("a-1")).willReturn(revoked);
         assertThat(f.grants.live(7, "claude", "access-1")).isFalse();
@@ -119,7 +120,8 @@ class LiveConnectionsTest {
         assertThat(f.grants.live(8, "claude", "access-1")).isFalse();
 
         // The access token alone revoked: its refresh token still stands.
-        OAuth2Authorization revoked = OAuth2Authorization.from(f.connection).invalidate(f.access).build();
+        OAuth2Authorization revoked =
+                OAuth2Authorization.from(f.connection).invalidate(f.access).build();
         f.authorizations.save(revoked);
         given(f.store.findById("a-1")).willReturn(revoked);
         assertThat(revoked.getRefreshToken().isActive()).isTrue();

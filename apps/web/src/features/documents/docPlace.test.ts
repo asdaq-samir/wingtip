@@ -3,7 +3,16 @@ import type { LibraryDocument } from "../../lib/api/types";
 import { citedPlace, docLink, docPlaceText, isOwn, ownDocName, parseDocPlace } from "./docPlace";
 
 const shelf = [
-  { id: "cfr-14-91", title: "14 CFR Part 91", group: "Regulations", kind: "text", edition: "2026-11-10", label: "eCFR", date: "2026-11-10", bytes: 1 },
+  {
+    id: "cfr-14-91",
+    title: "14 CFR Part 91",
+    group: "Regulations",
+    kind: "text",
+    edition: "2026-11-10",
+    label: "eCFR",
+    date: "2026-11-10",
+    bytes: 1,
+  },
   { id: "aim", title: "AIM", group: "AIM", kind: "pdf", edition: null, label: null, date: null, bytes: null },
 ] satisfies LibraryDocument[];
 
@@ -27,7 +36,9 @@ describe("a document's place in the address", () => {
   });
 
   it("shares the library's places, never a pilot's own document", () => {
-    expect(docLink({ doc: "aim", at: "7-1-5", page: null }, "https://wingtipmaps.app")).toBe("https://wingtipmaps.app/app/plan?doc=aim%407-1-5");
+    expect(docLink({ doc: "aim", at: "7-1-5", page: null }, "https://wingtipmaps.app")).toBe(
+      "https://wingtipmaps.app/app/plan?doc=aim%407-1-5",
+    );
     expect(docLink({ doc: ownDocName("x1"), at: null, page: 3 }, "https://wingtipmaps.app")).toBeNull();
     expect(isOwn(ownDocName("x1"))).toBe(true);
   });

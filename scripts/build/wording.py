@@ -122,9 +122,7 @@ export const WORDING = {{
 
 
 def ios(words):
-    rows = "\n".join(
-        f"    /// {w['about']}\n    static let {camel(k)} = String(localized: {quoted(w['text'])})" for k, w in words.items()
-    )
+    rows = "\n".join(f"    /// {w['about']}\n    static let {camel(k)} = String(localized: {quoted(w['text'])})" for k, w in words.items())
     return f"""// {BANNER}
 
 import Foundation
@@ -160,12 +158,7 @@ def android(words):
 
 def doc_table(words):
     rows = [f"| `{k}` | {w['kind']} | {w['text'].replace('|', '·')} | {w['about']} |" for k, w in words.items()]
-    head = [
-        DOC_BEGIN,
-        "",
-        "| Key | Kind | Words | Where |",
-        "|---|---|---|---|",
-    ]
+    head = [DOC_BEGIN, "", "| Key | Kind | Words | Where |", "|---|---|---|---|"]
     return "\n".join(head + rows + ["", DOC_END])
 
 

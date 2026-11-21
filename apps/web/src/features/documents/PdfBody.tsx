@@ -43,7 +43,13 @@ export default function PdfBody({ source, startPage, startAt, find, goto, invert
     const bus = new EventBus();
     const links = new PDFLinkService({ eventBus: bus });
     const finder = new PDFFindController({ eventBus: bus, linkService: links });
-    const viewer = new PDFViewer({ container: box.current, viewer: inner.current, eventBus: bus, linkService: links, findController: finder });
+    const viewer = new PDFViewer({
+      container: box.current,
+      viewer: inner.current,
+      eventBus: bus,
+      linkService: links,
+      findController: finder,
+    });
     links.setViewer(viewer);
     parts.current = { bus, viewer, links };
     let gone = false;

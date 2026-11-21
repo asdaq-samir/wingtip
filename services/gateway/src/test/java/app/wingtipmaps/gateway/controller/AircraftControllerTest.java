@@ -77,8 +77,7 @@ class AircraftControllerTest {
 
     @BeforeEach
     void nothingDue() {
-        given(planner.inspections(any()))
-                .willAnswer(InspectionsStub.each(NOTHING_DUE));
+        given(planner.inspections(any())).willAnswer(InspectionsStub.each(NOTHING_DUE));
     }
 
     private static Pilot samplePilot() {
@@ -219,7 +218,8 @@ class AircraftControllerTest {
     void aVorCheckIsRecordedAndSaysHowLongItIsGoodFor() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
         given(planner.inspections(InspectionsStub.one(ask -> ask.getVorCheck() != null
-                        && java.time.LocalDate.of(2026, 10, 1).equals(ask.getVorCheck().getOn())
+                        && java.time.LocalDate.of(2026, 10, 1)
+                                .equals(ask.getVorCheck().getOn())
                         && ask.getVorCheck().getKind() == PlannerVorCheckAsk.KindEnum.VOT
                         && ask.getVorCheck().getErrorDeg().compareTo(new BigDecimal("-5.0")) == 0)))
                 .willReturn(List.of(new PlannerInspections()
@@ -276,8 +276,8 @@ class AircraftControllerTest {
                                 java.time.LocalDate.of(2028, 6, 1))));
         // The days are the engine's, through the planner (inspections_due):
         // its answer for the airplane's own dates, which the gateway sends.
-        given(planner.inspections(InspectionsStub.one(ask ->
-                        java.time.LocalDate.of(2025, 10, 5).equals(ask.getAnnualOn())
+        given(planner.inspections(InspectionsStub.one(
+                        ask -> java.time.LocalDate.of(2025, 10, 5).equals(ask.getAnnualOn())
                                 && java.time.LocalDate.of(2026, 1, 31).equals(ask.getEltOn())
                                 && java.time.LocalDate.of(2024, 11, 30).equals(ask.getStaticCheckOn())
                                 && java.time.LocalDate.of(2025, 2, 1).equals(ask.getTransponderCheckOn())

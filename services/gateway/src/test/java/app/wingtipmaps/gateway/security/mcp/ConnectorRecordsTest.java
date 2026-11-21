@@ -259,7 +259,8 @@ class ConnectorRecordsTest {
         mvc.perform(connection(id, client.getClientId(), token)).andExpect(status().isNoContent());
         mvc.perform(connection(id, "another-client", token)).andExpect(status().isNotFound());
         mvc.perform(connection("999999", client.getClientId(), token)).andExpect(status().isNotFound());
-        mvc.perform(connection(id, client.getClientId(), "a-token-never-issued")).andExpect(status().isNotFound());
+        mvc.perform(connection(id, client.getClientId(), "a-token-never-issued"))
+                .andExpect(status().isNotFound());
 
         // A second connection through the same client, its access token
         // revoked while its refresh token stands: refused, the first not.
@@ -272,9 +273,11 @@ class ConnectorRecordsTest {
                 .refreshToken(new OAuth2RefreshToken("r-" + UUID.randomUUID(), now, now.plusSeconds(3600)))
                 .build();
         authorizations.save(other);
-        mvc.perform(connection(id, client.getClientId(), second.getTokenValue())).andExpect(status().isNoContent());
+        mvc.perform(connection(id, client.getClientId(), second.getTokenValue()))
+                .andExpect(status().isNoContent());
         authorizations.save(OAuth2Authorization.from(other).invalidate(second).build());
-        mvc.perform(connection(id, client.getClientId(), second.getTokenValue())).andExpect(status().isNotFound());
+        mvc.perform(connection(id, client.getClientId(), second.getTokenValue()))
+                .andExpect(status().isNotFound());
         mvc.perform(connection(id, client.getClientId(), token)).andExpect(status().isNoContent());
 
         // Disconnected: its refresh token revoked.

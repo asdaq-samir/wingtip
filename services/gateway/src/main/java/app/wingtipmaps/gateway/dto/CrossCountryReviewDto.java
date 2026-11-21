@@ -26,8 +26,7 @@ public record CrossCountryReviewDto(
     /** The same review with the engine's checks and its endorsement's
      *  last good day filled in: a page reads its records first and asks
      *  the planner for them after, with no database connection held. */
-    public CrossCountryReviewDto withAnswers(
-            List<ReviewCheckDto> checks, @Nullable SignedEndorsementDto endorsement) {
+    public CrossCountryReviewDto withAnswers(List<ReviewCheckDto> checks, @Nullable SignedEndorsementDto endorsement) {
         return new CrossCountryReviewDto(
                 id,
                 studentId,

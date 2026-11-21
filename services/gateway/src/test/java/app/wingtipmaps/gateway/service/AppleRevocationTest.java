@@ -133,15 +133,13 @@ class AppleRevocationTest {
     void theAppsTokenGoesWithTheBundleIdAndASecretSignedForIt() {
         revocation(true).revoke("app.refresh", "app.wingtipmaps.ios");
 
-        assertThat(asked)
-                .singleElement()
-                .satisfies(sent -> {
-                    assertThat(sent)
-                            .startsWith("POST application/x-www-form-urlencoded"
-                                    + " client_id=app.wingtipmaps.ios&client_secret=");
-                    assertThat(sent).endsWith("&token=app.refresh&token_type_hint=refresh_token");
-                    assertThat(AppleAppTokensTest.secretSubject(sent)).isEqualTo("app.wingtipmaps.ios");
-                });
+        assertThat(asked).singleElement().satisfies(sent -> {
+            assertThat(sent)
+                    .startsWith(
+                            "POST application/x-www-form-urlencoded" + " client_id=app.wingtipmaps.ios&client_secret=");
+            assertThat(sent).endsWith("&token=app.refresh&token_type_hint=refresh_token");
+            assertThat(AppleAppTokensTest.secretSubject(sent)).isEqualTo("app.wingtipmaps.ios");
+        });
     }
 
     @Test

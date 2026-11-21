@@ -33,10 +33,12 @@ export function useReader(place: DocPlace) {
   const owned = useQuery({ ...ownDocsQuery, enabled: own }).data?.find((d) => d.id === id);
   const onDevice = useQuery({
     queryKey: ["documents", "body", place.doc],
-    queryFn: async () => (own ? { edition: "own", body: (await ownBlob(deviceStore(), id)) ?? null } : ((await keptBody(deviceStore(), id)) ?? null)),
+    queryFn: async () =>
+      own ? { edition: "own", body: (await ownBlob(deviceStore(), id)) ?? null } : ((await keptBody(deviceStore(), id)) ?? null),
     staleTime: Infinity,
   });
-  const kept = onDevice.data && onDevice.data.body && (own || !entry?.edition || onDevice.data.edition === entry.edition) ? onDevice.data.body : null;
+  const kept =
+    onDevice.data && onDevice.data.body && (own || !entry?.edition || onDevice.data.edition === entry.edition) ? onDevice.data.body : null;
   const network = !own && !kept && onDevice.isFetched && entry?.edition ? entry : null;
   const text = useQuery({
     queryKey: ["documents", "text", id, network?.edition],

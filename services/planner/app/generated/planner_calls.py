@@ -289,6 +289,16 @@ async def icing_on_the_route(*, fixes: str, alt_ft: str, leg_min: str, ground_mi
     return await _send('GET', '/api/icing/route', query={'fixes': fixes, 'alt_ft': alt_ft, 'leg_min': leg_min, 'ground_min': ground_min, 'depart': depart}, body=None, headers={})
 
 
+async def library_shelf() -> Any:
+    """GET /api/library: Library Shelf"""
+    return await _send('GET', '/api/library', query={}, body=None, headers={})
+
+
+async def library_text(*, doc: str, edition: str) -> Any:
+    """GET /api/library/{doc}/{edition}/text: Library Text"""
+    return await _send('GET', f"/api/library/{_seg(doc)}/{_seg(edition)}/text", query={}, body=None, headers={})
+
+
 async def digital_atis(*, airport: str) -> Any:
     """GET /api/live/atis: Digital Atis"""
     return await _send('GET', '/api/live/atis', query={'airport': airport}, body=None, headers={})

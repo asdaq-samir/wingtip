@@ -46,6 +46,7 @@ export const WEB_RULES = [
   "checklist_phases",
   "checklist_read",
   "checklist_section",
+  "citations",
   "class_b_at_altitude",
   "cleared_route",
   "closest_approach",

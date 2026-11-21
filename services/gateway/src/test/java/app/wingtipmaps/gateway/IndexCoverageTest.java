@@ -17,8 +17,7 @@ class IndexCoverageTest extends AccountTestBase {
     void everyForeignKeyLeadsAnIndex() {
         // A key's columns (conkey) are covered when an index on the same
         // table starts with them, in order (indkey's first columns).
-        List<String> bare = jdbc.queryForList(
-                """
+        List<String> bare = jdbc.queryForList("""
                 SELECT c.conrelid::regclass || '(' || c.conname || ')'
                 FROM pg_constraint c
                 WHERE c.contype = 'f' AND c.connamespace = 'public'::regnamespace
@@ -28,8 +27,7 @@ class IndexCoverageTest extends AccountTestBase {
                       AND array_to_string((i.indkey::int2[])[0:cardinality(c.conkey) - 1], ',')
                         = array_to_string(c.conkey, ','))
                 ORDER BY 1
-                """,
-                String.class);
+                """, String.class);
         // cross_country_reviews' endorsement_id alone:
         // an endorsement is voided, never deleted (AC 120-78B, V26).
         assertThat(bare).allMatch(k -> k.contains("endorsement_id"), "foreign keys with no index: " + bare);
@@ -40,7 +38,11 @@ class IndexCoverageTest extends AccountTestBase {
         List<String> names = jdbc.queryForList(
                 "SELECT indexname FROM pg_indexes WHERE tablename IN ('magic_links', 'flights')", String.class);
         assertThat(names)
-                .contains("idx_magic_links_expires", "idx_magic_links_email", "idx_flights_pilot_created", "idx_flights_aircraft")
+                .contains(
+                        "idx_magic_links_expires",
+                        "idx_magic_links_email",
+                        "idx_flights_pilot_created",
+                        "idx_flights_aircraft")
                 .doesNotContain("idx_flights_pilot_id");
     }
 }

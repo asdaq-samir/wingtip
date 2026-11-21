@@ -133,7 +133,9 @@ export default function PilotGuide() {
             Cruise speed and fuel burn start from your airplane's cruise power at {altFt(cruiseReferenceFt())} ft on a standard day, then
             each leg flies them in the day's air at its altitude. A model within a few percent of most handbooks: yours governs.
           </Tip>
-          <Tip title={WORDING.planningAidTitle}>Check everything against the current charts, NOTAMs and an official briefing before you fly.</Tip>
+          <Tip title={WORDING.planningAidTitle}>
+            Check everything against the current charts, NOTAMs and an official briefing before you fly.
+          </Tip>
           <Tip title="Add It to Your Home Screen">
             In Safari tap Share, then Add to Home Screen: it opens as its own app, the whole screen, with no browser bar over the chart.
           </Tip>
