@@ -9,6 +9,7 @@ import { api } from "../../../lib/api/client";
 import type { Status } from "../../../lib/api/types";
 import { done } from "../../../lib/doneNote";
 import { TEXT } from "../../../lib/text";
+import { AppsPage, RoutesPage } from "./AppHealthPages";
 import { ChartsSection } from "./ChartsSection";
 import { agoOrDate, DATASET_NAMES, waiting } from "./devWords";
 import SpeedPage from "./SpeedPage";
@@ -136,6 +137,11 @@ export function SystemTab({
         },
         feeds: { title: "Live feeds", content: <FeedsPage status={status} failed={failed} /> },
         errors: { title: "Recent errors", content: <ErrorsPage status={status} failed={failed} /> },
+        // Each planner route's calls, failures and times (app.route_metrics),
+        // and the apps' faults and speed by build (AppHealthController):
+        // the owner's status page, with the feeds' ages above.
+        routes: { title: "Routes", content: <RoutesPage status={status} failed={failed} /> },
+        apps: { title: "Apps", content: <AppsPage /> },
         // The web app's speed over time, under System at the owner's ask
         // (2026-10-11), where it was a tab of its own.
         speed: { title: "Speed", content: <SpeedPage /> },
@@ -200,6 +206,8 @@ export function SystemTab({
             }
           />
           <PageRow page="errors" title="Recent errors" value={status ? (status.recent_errors ?? []).length : undefined} />
+          <PageRow page="routes" title="Routes" value={status ? (status.routes ?? []).length : undefined} />
+          <PageRow page="apps" title="Apps" />
           <PageRow page="speed" title="Speed" />
           <PageRow page="elsewhere" title="Elsewhere in the stack" value={shown.length} />
         </ListGroup>
