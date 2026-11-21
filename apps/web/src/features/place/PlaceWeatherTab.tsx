@@ -81,8 +81,11 @@ export function PlaceWeatherTab({
           >
             {/* Refresh at the row's right, after the report's age: what
                 the card shows asked again now (the owner, 2026-11-11,
-                "refresh can go in the weather tab itself"). */}
-            {place && <RefreshNow card="airport" label={`Refresh ${place.ident}`} className="size-8" />}
+                "refresh can go in the weather tab itself"), the round glass
+                button at its own 44 as every one is (IconButton's `round`,
+                the owner's "make all buttons same size as Apple Maps",
+                2026-11-20), where it was held to 32 (the iOS audit's P18). */}
+            {place && <RefreshNow card="airport" label={`Refresh ${place.ident}`} />}
           </ListRow>
           {/* The hours only where there is a forecast to show (a TAF): Now
               alone was a column of the summary's own figures in a mostly
