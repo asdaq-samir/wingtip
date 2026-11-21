@@ -9,6 +9,7 @@ import {
   miles,
   nm,
   reportedAltitude,
+  reportedVisibility,
   wholeNm,
   reportedDirection,
   threeFigures,
@@ -20,6 +21,17 @@ describe("figures written as the FAA writes them", () => {
     expect(miles(2.5)).toBe("2.5 sm");
     expect(miles(6, true)).toBe("6+ sm");
     expect(miles(null)).toBe("—");
+    // A metric report's float, to the hundredth and down, not every figure.
+    expect(miles(2.4854847689493362)).toBe("2.48 sm");
+  });
+
+  it("writes a reported visibility to the sixteenth below 3 sm and the whole mile above, always down", () => {
+    expect(reportedVisibility(0.625)).toEqual([0, "5/8"]);
+    expect(reportedVisibility(0.0625)).toEqual([0, "1/16"]);
+    expect(reportedVisibility(1.5)).toEqual([1, "1/2"]);
+    expect(reportedVisibility(0.7456)).toEqual([0, "11/16"]);
+    expect(reportedVisibility(4.97)).toEqual([4, null]);
+    expect(reportedVisibility(10)).toEqual([10, null]);
   });
 
   it("writes whole miles, and a target's altitude to the hundred feet", () => {

@@ -138,16 +138,30 @@ object Format {
     fun visibility(sm: Double, plus: Boolean): String = visibility(sm).let { if (plus) it.removeSuffix(" sm") + "+ sm" else it }
 
     fun visibility(sm: Double): String {
-        val whole = kotlin.math.floor(sm).toInt()
-        val frac = sm - whole
-        val part = when (frac) {
-            0.25 -> "¼"
-            0.5 -> "½"
-            0.75 -> "¾"
-            0.0 -> ""
-            else -> String.format(Locale.US, "%.2f", frac).trimEnd('0').removePrefix("0")
+        val (whole, fraction) = reportedVisibility(sm)
+        val part = when (fraction) {
+            null -> ""
+            "1/4" -> "¼"
+            "1/2" -> "½"
+            "3/4" -> "¾"
+            else -> (if (whole != 0) " " else "") + fraction
         }
         return "${if (whole != 0 || part.isEmpty()) whole.toString() else ""}$part sm"
+    }
+
+    /** A visibility as a whole and a fraction of a statute mile, as a METAR
+     *  writes it: 1.625 is (1, "5/8"), 10 is (10, null). To the sixteenth
+     *  below 3 sm (the finest a US report gives, "1/16SM") and the whole
+     *  mile from 3, always down, as the web's reportedVisibility: 5/8 was
+     *  written ".63", rounded up. */
+    fun reportedVisibility(sm: Double): Pair<Int, String?> {
+        val whole = kotlin.math.floor(sm + 1e-9).toInt()
+        val sixteenths = if (sm >= 3) 0 else kotlin.math.floor((sm + 1e-9 - whole) * 16).toInt()
+        if (sixteenths == 0) return whole to null
+        var n = sixteenths
+        var d = 16
+        while (n % 2 == 0) { n /= 2; d /= 2 }
+        return whole to "$n/$d"
     }
 
     /** A forecast's ceiling and visibility, as the web's

@@ -58,7 +58,8 @@ fn ceiling_visibility(name: &str, v: &Value) -> R<(Option<f64>, Option<f64>)> {
             Some(vis) => {
                 let value = num(name, vis, "value")?;
                 match vis.get("unit").and_then(Value::as_str) {
-                    Some("m") => Some((metar::metres_to_sm(value) * 100.0).round() / 100.0),
+                    // To the step at or below, never rounded up (metres_to_sm).
+                    Some("m") => Some(metar::metres_to_sm(value)),
                     Some("sm") | None => Some(value),
                     Some(other) => return Err(format!("{name}: the visibility's \"unit\" is sm or m, not {other:?}")),
                 }

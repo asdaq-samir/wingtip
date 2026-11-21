@@ -254,12 +254,29 @@ pub fn flight_category_of(ceiling_ft: Option<f64>, ceiling_unknown: bool, visibi
 }
 
 /// A visibility in metres (WMO No. 306) in statute miles, as US reports
-/// give it: 9999 is "10 km or more", which the AWC writes 6+.
+/// give it: 9999 is "10 km or more", which the AWC writes 6+. Below that,
+/// to the step a US report writes at or below it (statute_miles_down), so
+/// 1,200 m is 11/16 sm and not 0.7456, which a pilot read rounded to "3/4"
+/// or "1": a visibility rounded up is more than was seen.
 pub fn metres_to_sm(metres: f64) -> f64 {
     if metres >= 9999.0 {
         6.0
     } else {
-        metres * SM_PER_M
+        statute_miles_down(metres * SM_PER_M)
+    }
+}
+
+/// A visibility in statute miles to the step at or below it that a US
+/// report writes: sixteenths of a mile below 3 sm (the finest a METAR
+/// gives, "1/16SM"), whole miles from 3 up. Always down, never up.
+pub fn statute_miles_down(sm: f64) -> f64 {
+    // A hair over each step, so a figure already on one (1.5, 0.0625)
+    // stays on it and float noise does not drop it a step.
+    const NOISE: f64 = 1e-9;
+    if sm >= 3.0 {
+        (sm + NOISE).floor()
+    } else {
+        ((sm + NOISE) * 16.0).floor() / 16.0
     }
 }
 
