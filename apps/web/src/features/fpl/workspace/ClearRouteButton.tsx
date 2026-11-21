@@ -1,5 +1,4 @@
-import { X } from "lucide-react";
-import IconButton from "../../../components/IconButton";
+import CloseButton from "../../../components/CloseButton";
 import { useConfirm } from "../../../components/useConfirm";
 
 /**
@@ -21,9 +20,8 @@ export default function ClearRouteButton({ hasRoute, onClear }: { hasRoute: bool
   });
   return (
     <>
-      <IconButton round label="Clear route" disabled={!hasRoute} onClick={ask} data-testid="fpl-clear">
-        <X className="size-6" strokeWidth={1.75} aria-hidden="true" />
-      </IconButton>
+      {/* Every panel's ✕ is CloseButton, its name what it does here. */}
+      <CloseButton label="Clear route" disabled={!hasRoute} onClick={ask} data-testid="fpl-clear" />
       {asked}
     </>
   );
