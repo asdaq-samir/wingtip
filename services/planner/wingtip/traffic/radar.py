@@ -1,5 +1,6 @@
 """Airplanes heard by another source -- the FAA's terminal radar through SWIM, which ingest
-(services/ingest) reads -- and which of the radar is worth reading now. Both through the live
+(services/ingest) reads, the FAA's LADD list left out (wingtip.traffic.ladd) -- and which of
+the radar is worth reading now. Both through the live
 store (wingtip.traffic.store): ingest writes what the radar hears and reads what is wanted, the
 planner writes where the map looks and reads what the radar heard."""
 
@@ -9,7 +10,7 @@ import logging
 import math
 
 from ..geo import box_around, distance_nm
-from . import store
+from . import ladd, store
 from .adsb_lol import NEAR_RADIUS_NM, REGION_DEG, WIDE_REGION_DEG, _region
 from .common import STALE_S, _NM_PER_DEG, _wall
 from .recorded import FOLLOW_KEEP_S, RECORD_KEEP_S, _followed, _last_recorded, _record, followed
@@ -28,6 +29,10 @@ def heard_elsewhere(plane: dict, at: float) -> None:
     as the airplane's latest for the map, and recorded where it is
     followed, a point every ELSEWHERE_RECORD_S."""
     hex_id = plane["hex"]
+    # An aircraft on the FAA's LADD list is never shown, nor any radar
+    # track while no current list is kept (ladd: SWIM's terms).
+    if ladd.hidden(plane):
+        return
     if not store.radar_heard(plane, at):
         return
     if _followed(hex_id):
@@ -113,6 +118,9 @@ def _heard_elsewhere_now(hex_id: str) -> dict | None:
     if found is None:
         return None
     plane, at = found
+    # Read again against the list: one listed since it was heard stays hidden.
+    if ladd.hidden(plane):
+        return None
     return plane | {"seen_s": round(now - at, 1)}
 
 
@@ -123,7 +131,7 @@ def _elsewhere_near(lat: float, lon: float, radius_nm: float, have: set[str]) ->
     south, west, north, east = box_around(lat, lon, radius_nm)
     out = []
     for p, at in store.radar_within(south, north, west, east, now - STALE_S):
-        if p["hex"] in have:
+        if p["hex"] in have or ladd.hidden(p):
             continue
         if distance_nm(lat, lon, p["lat"], p["lon"]) <= radius_nm:
             out.append(p | {"seen_s": round(now - at, 1)})

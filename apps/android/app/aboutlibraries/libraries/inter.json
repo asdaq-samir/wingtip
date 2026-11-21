@@ -1,0 +1,16 @@
+{
+  "uniqueId": "rsms:inter",
+  "artifactVersion": "",
+  "name": "Inter",
+  "description": "The map's label glyphs (assets/glyphs/Inter-Bold), drawn from the Inter typeface.",
+  "website": "https://rsms.me/inter/",
+  "developers": [
+    {
+      "name": "The Inter Project Authors",
+      "organisationUrl": "https://github.com/rsms/inter"
+    }
+  ],
+  "licenses": [
+    "inter-ofl"
+  ]
+}

@@ -115,6 +115,8 @@ struct ShownPicture: Identifiable {
     let id = UUID()
     let title: String
     var credit: String?
+    /// The photo's page (a Commons file's), its author and licence in full: the credit links to it.
+    var creditLink: URL?
     /// The kept answer it is drawn from, for its age with no signal.
     var kept: (kind: KeptForAir.Kind, key: String)?
     /// An approach plate's page as the planner placed it, for own ship on
@@ -123,8 +125,8 @@ struct ShownPicture: Identifiable {
     let load: () async throws -> [UIImage]
 
     /// The planner's pictures by their paths.
-    static func paths(_ title: String, _ paths: [String], credit: String? = nil) -> ShownPicture {
-        ShownPicture(title: title, credit: credit) { try await PictureCache.images(paths) }
+    static func paths(_ title: String, _ paths: [String], credit: String? = nil, creditLink: URL? = nil) -> ShownPicture {
+        ShownPicture(title: title, credit: credit, creditLink: creditLink) { try await PictureCache.images(paths) }
     }
 
     /// One of the FAA's charts by its address, its pages drawn by the
@@ -184,10 +186,12 @@ struct PictureViewer: View {
             }
             .safeAreaInset(edge: .bottom) {
                 if let credit = picture.credit, images != nil {
-                    Text(credit).font(.caption2).foregroundStyle(.secondary)
-                        .padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xs)
-                        .floatingGlass(in: Capsule())
-                        .padding(.bottom, WingtipSpace.sm)
+                    Group {
+                        if let page = picture.creditLink { Link(credit, destination: page) } else { Text(credit).foregroundStyle(.secondary) }
+                    }
+                    .font(.caption2).padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xs)
+                    .floatingGlass(in: Capsule())
+                    .padding(.bottom, WingtipSpace.sm)
                 }
             }
             .task { await load() }

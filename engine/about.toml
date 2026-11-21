@@ -1,0 +1,32 @@
+# cargo-about's settings (scripts/build/licences.sh engine): the licences
+# the engine's crates may come under, and how they are read. The engine is
+# linked into the App Store and Google Play binaries and the web's
+# WebAssembly, so a crate under a licence not listed here (GPL, LGPL,
+# AGPL, a licence with no grant at all) fails the build of the notices,
+# and so the guards, rather than shipping. Where a crate offers a choice
+# ("MIT OR Apache-2.0 OR LGPL-2.1-or-later", r-efi), the first of these it
+# offers is taken. MPL-2.0 (uniffi) is file-level copyleft: unmodified, it
+# asks only that its notice and where its source is be given, which the
+# notices do (each crate's repository).
+accepted = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unicode-3.0",
+    "Unlicense",
+    "MPL-2.0",
+]
+# What ships is what a crate is built with: not its tests' or its build
+# script's dependencies.
+ignore-dev-dependencies = true
+ignore-build-dependencies = true
+# The workspace's own crates (each `publish = false`) are the app's own,
+# under the repository's LICENSE.
+private = { ignore = true }
+# The licence texts are read from the crates' own files (licences.sh runs
+# it --offline, after `cargo fetch`), never asked of a service: the same
+# answer on the Mac and on every runner.

@@ -27,7 +27,8 @@
 #            feature layers (dependency-cruiser)
 #   ENGINE   the crates' layering, the WebAssembly's size budget, no
 #            unused dependency (cargo-machete), rustfmt, clippy with
-#            warnings denied
+#            warnings denied, the engine's open-source notices current
+#            and every crate's licence accepted (licences.sh engine)
 #   FLIGHT   flight-critical: the engine's FAA worked examples (in CI,
 #            test-engine's where the engine changed); and, on the
 #            Mac (no PART), the planner's KMSN-KOSH nav log, which needs the
@@ -147,6 +148,10 @@ clippy() {
 # (apps/web/src/lib/fixtures/flightCritical.json: FAA-H-8083-25C ch. 16,
 # 14 CFR 91.151, 91.155, 91.159, 91.167, 91.179, AIM 5-3-8), and the
 # planner's nav log and nearest fields, which ask the engine every rule.
+engine_licences() {
+  need cargo || return $?
+  scripts/build/licences.sh engine --check
+}
 flight_engine() {
   need cargo || return $?
   cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine --test flight_critical
@@ -209,6 +214,9 @@ if part engine; then
     start "Engine: machete" machete
     start "Engine: rustfmt" scripts/dev/format.sh --check rust
     start "Engine: clippy" clippy
+    # The engine's open-source notices are what cargo-about writes from
+    # Cargo.lock, and every crate's licence one engine/about.toml accepts.
+    start "Engine: licences" engine_licences
   fi
   # Where the engine changed, test-engine runs wingtip-engine's tests,
   # flight_critical among them (the facade uses every crate, so it is

@@ -13,6 +13,7 @@ import { preloadEngine } from "./vite-plugins/preloadEngine.ts";
 import { MANIFEST, themeColor } from "./vite-plugins/manifest.ts";
 import { CHUNK_SIZE_LIMIT, strictRolldown, warningsFail } from "./vite-plugins/strictBuild.ts";
 import { STAGING, publish, publishDir } from "./vite-plugins/publishBuild.ts";
+import { licences } from "./vite-plugins/licences.ts";
 
 // The page reader's files (features/airplane/lib/readPage), from node_modules into the
 // build's tesseract/ under their own names, where tesseract.js asks for
@@ -44,6 +45,8 @@ export default defineConfig({
   plugins: [
     warningsFail,
     publish,
+    // The open-source licences, /app/licences.txt (About's Open-Source Licences).
+    licences,
     tesseractFiles,
     preloadEngine,
     themeColor,

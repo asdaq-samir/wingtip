@@ -12,6 +12,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.runtime.Composable
@@ -24,8 +25,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -40,14 +44,25 @@ import coil3.request.SuccessResult
 import me.saket.telephoto.zoomable.coil3.ZoomableAsyncImage
 
 /** A picture on a card: what it is (TalkBack's words and the viewer's
- *  title), its address or gateway path, and its credit where it has one. */
-data class CardPicture(val label: String, val address: String, val credit: String? = null)
+ *  title), its address or gateway path, its credit where it has one, and
+ *  its own page: the credit's link (a Wikimedia Commons file's page, where
+ *  its author and licence are given in full, as Creative Commons asks),
+ *  and with [tapOpensPage] the picture's tap too (Planespotters.net's
+ *  terms: "the thumbnail must lead back to the photo's page"). */
+data class CardPicture(
+    val label: String,
+    val address: String,
+    val credit: String? = null,
+    val page: String? = null,
+    val tapOpensPage: Boolean = false,
+)
 
 /**
  * A card's pictures under its tabs, as Google Maps' place sheet has its
  * previews: Material's multi-browse carousel,
  * each picture a tap to the full-screen viewer, a stock Dialog, which
- * Back closes. A picture that cannot be had is left out. Coil loads them
+ * Back closes (or to its page, where its terms ask), its credit over its
+ * corner. A picture that cannot be had is left out. Coil loads them
  * (the app's one loader, on the app's OkHttp client): asked once here to
  * learn which can be had, then drawn from its memory cache.
  */
@@ -60,6 +75,7 @@ fun PhotoCarousel(pictures: List<CardPicture>, modifier: Modifier = Modifier) {
         value = pictures.filter { p -> loader.execute(ImageRequest.Builder(context).data(address(p)).build()) is SuccessResult }
     }
     if (loaded.isEmpty()) return
+    val uriHandler = LocalUriHandler.current
     var open by remember { mutableStateOf<CardPicture?>(null) }
     val state = rememberCarouselState { loaded.size }
     HorizontalMultiBrowseCarousel(
@@ -69,13 +85,30 @@ fun PhotoCarousel(pictures: List<CardPicture>, modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxWidth().height(PictureHeight).padding(horizontal = WingtipSpace.Lg),
     ) { i ->
         val picture = loaded[i]
-        AsyncImage(
-            model = address(picture),
-            contentDescription = picture.label,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize().maskClip(MaterialTheme.shapes.extraLarge)
-                .clickable(role = Role.Image) { open = picture },
-        )
+        Box(Modifier.fillMaxSize().maskClip(MaterialTheme.shapes.extraLarge)) {
+            AsyncImage(
+                model = address(picture),
+                contentDescription = picture.label,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize().clickable(role = Role.Image) {
+                    val page = picture.page
+                    if (picture.tapOpensPage && page != null) uriHandler.openUri(page) else open = picture
+                },
+            )
+            // Its credit beside it, as its licence or terms ask.
+            picture.credit?.let {
+                Text(
+                    it,
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.align(Alignment.BottomStart).padding(WingtipSpace.Sm)
+                        .background(Color.Black.copy(alpha = 0.55f), MaterialTheme.shapes.extraSmall)
+                        .padding(horizontal = WingtipSpace.Xs),
+                )
+            }
+        }
     }
     open?.let { picture -> PictureViewer(picture) { open = null } }
 }
@@ -102,7 +135,17 @@ private fun PictureViewer(picture: CardPicture, onClose: () -> Unit) {
                 Icon(WingtipIcons.close, contentDescription = stringResource(R.string.close), tint = Color.White)
             }
             picture.credit?.let {
-                Text(it, color = Color.White, style = MaterialTheme.typography.bodySmall, modifier = Modifier.align(Alignment.BottomStart).padding(WingtipSpace.Lg))
+                val page = picture.page
+                val uriHandler = LocalUriHandler.current
+                // A link to its page where it has one, its hit area Material's 48 dp.
+                val credit = Modifier.align(Alignment.BottomStart).padding(WingtipSpace.Lg)
+                if (page != null) {
+                    TextButton(onClick = { uriHandler.openUri(page) }, modifier = credit) {
+                        Text(it, color = Color.White, style = MaterialTheme.typography.bodySmall, textDecoration = TextDecoration.Underline)
+                    }
+                } else {
+                    Text(it, color = Color.White, style = MaterialTheme.typography.bodySmall, modifier = credit)
+                }
             }
         }
     }

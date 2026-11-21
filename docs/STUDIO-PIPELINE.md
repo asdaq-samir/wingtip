@@ -98,6 +98,21 @@ These hold for every film, whatever the tools do:
   decided the hold is over.
 - **Publishing is always a person's**, never automatic. The pipeline makes
   a draft and a film; the owner decides whether it goes anywhere.
+- **Every source in a film is credited, and a simulator's footage is
+  licensed first.** The film's credits carry each source's own words
+  (the ADS-B track's adsb.lol, ODbL; the weather's Iowa Environmental
+  Mesonet; the FAA's and the USGS's charts and imagery), and no Google or
+  Apple map content is ever in a film. A film made in a flight simulator
+  is published only on that simulator's terms (read 2026-11-21): X-Plane's
+  licence is "for non-commercial purposes only" and forbids distributing
+  its artwork without Laminar Research's permission, so X-Plane footage
+  needs Laminar's professional licence or its written permission, and the
+  free demo never; Microsoft's Game Content Usage Rules
+  (xbox.com/en-US/developers/rules) allow a free film, ads on YouTube
+  included, with the game's name, Microsoft's copyright, "not endorsed by
+  or affiliated with Microsoft" and a link to the rules, but not one that
+  promotes a commercial venture without Microsoft's licence: such a film
+  does not advertise Wingtip Maps.
 
 ## Running it on the Mac
 

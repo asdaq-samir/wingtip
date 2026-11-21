@@ -118,6 +118,8 @@ class Settings(BaseSettings):
     weather_store: Path = DATA_DIR / "raw" / "weather"
     #: wingtip.notams' SQLite store of NOTAMs.
     notam_store: Path = DATA_DIR / "raw" / "faa_notams" / "notams.sqlite"
+    #: adsb.lol's API key (x-api-key), its day's quota above an address's 500 (wingtip.traffic.common).
+    adsblol_api_key: str | None = None
     #: ADS-B Exchange's RapidAPI key; None turns that source off (wingtip.traffic).
     adsbx_rapidapi_key: str | None = None
     #: ADS-B Exchange requests a month at most, short of the plan's 10,000.
@@ -126,6 +128,9 @@ class Settings(BaseSettings):
     adsbx_usage_file: Path = DATA_DIR / "raw" / "adsbx_usage.json"
     #: Whether adsb.fi's open data is asked for watched airplanes (0 in production until adsb.fi agrees).
     adsbfi_open_data: bool = True
+    #: Whether the FAA's radar from SWIM is shown only while a current LADD
+    #: list is kept (wingtip.traffic.ladd); 0 only where nothing is public.
+    ladd_required: bool = True
     #: wingtip.traffic.store's SQLite store of the live feeds (the FAA's radar,
     #: the followed airplanes and their tracks, where the map looks): written by
     #: ingest (services/ingest) and the planner both, on the data folder they share.
@@ -215,6 +220,7 @@ class Settings(BaseSettings):
     read_switches = field_validator(
         "charts_fetch_for_tiles",
         "adsbfi_open_data",
+        "ladd_required",
         "registry_refresh",
         "cycle_pack",
         "landmarks_build",
