@@ -95,7 +95,8 @@ function DateField({
       </ResponsivePopoverTrigger>
       <ResponsivePopoverContent
         title={label}
-        className="w-auto p-0"
+        className="w-auto"
+        bleed
         align="start"
         leading={
           day ? (

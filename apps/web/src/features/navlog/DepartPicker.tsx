@@ -150,7 +150,8 @@ export default function DepartPicker({
       <ResponsivePopoverContent
         title={label}
         description={date ? `Leaving ${leaveWhen(date)}` : "Leaving now"}
-        className="w-auto p-0"
+        className="w-auto"
+        bleed
         align="start"
         closeButton={false}
         leading={
