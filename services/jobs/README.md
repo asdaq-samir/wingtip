@@ -34,6 +34,8 @@ docker compose run --rm charts                     # overlays where due, then th
 docker compose run --rm charts overlays            # the overlay tiles alone
 docker compose run --rm charts refresh --workers 2 # the chart cycle alone
 docker compose run --rm charts pack                # loose tiles of finished kinds into archives
+docker compose run --rm charts check              # seams, and cuts a new cycle made that the served one did not (fails, with previews)
+docker compose run --rm charts accept-cuts 12-24-2026  # the cuts looked at: the refresh goes on
 docker compose run --rm charts pyramid --kind sec  # prepare, pyramid, check, unmask, publish: as before
 ```
 

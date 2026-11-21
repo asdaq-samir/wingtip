@@ -233,6 +233,20 @@ of them -- for after the search learns to find more. To put a sheet back as the
 FAA printed it, delete its folder under `data/raw/charts.nosync/` and
 `prepare` downloads it again.
 
+**Cuts need a look (owner decision 2026-11-21).** `prepare` writes each
+cycle's cuts to `data/raw/charts.nosync/<cycle>/cuts.json`: per sheet its
+faces and every panel or inset cut out of it (kind, box in degrees, size).
+`charts check` sets the newest prepared cycle's against the served one's
+(a cut matches within 0.05 degree, as the same panel moves a little between
+editions) and fails, one line each, on a new or grown cut or a face edge
+that moved more than 0.05 degree, with a PNG of the sheet and the cut in
+red under `<cycle>/cut-review/`. The refresh and the next-cycle run stop
+on the same findings before they render a tile, so the map is never
+swapped to a cycle nobody looked at (`CHARTS_AUTO_REFRESH` included).
+After looking, `docker compose run --rm -T charts accept-cuts <cycle>`
+records the reviewed set (`cuts.accepted.json`); the run goes on, and the
+check fails again only for a cut that changed since.
+
 ## Things that are not obvious
 
 **scikit-learn is pinned to the training image's.** The chart model is

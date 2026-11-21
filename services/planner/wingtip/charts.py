@@ -49,7 +49,9 @@ The modules, lowest first, each with one job:
   chart_tiles: a tile as the map asks for it.
 - chart_workers and chart_pyramid: the whole country drawn ahead of
   time; chart_rerender: tiles drawn again after a sheet changed.
-- chart_publish: the archives to S3; chart_upkeep: keeping up with the
+- chart_cuts (and chart_cut_preview): what each cycle cuts out of its
+  sheets, and the check that stops a cycle cutting more than the served one
+  until a person has looked; chart_publish: the archives to S3; chart_upkeep: keeping up with the
   cycle, its lock and the Dev console's status.
 
 These were one module of 2,336 lines until 2026-11-18. A split was
