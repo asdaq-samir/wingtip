@@ -1,5 +1,4 @@
 {
- "apps/android/app/src/main/kotlin/app/wingtipmaps/android/aircraft/AircraftFormFields.kt | apps/android/app/src/main/kotlin/app/wingtipmaps/android/logbook/LogbookFields.kt": 1,
  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/brief/DepartureWindowModel.kt | apps/android/app/src/main/kotlin/app/wingtipmaps/android/ui/BriefModel.kt": 1,
  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/documents/HandbookPhotoModel.kt | apps/android/app/src/main/kotlin/app/wingtipmaps/android/documents/LogbookPhotoModel.kt": 2,
  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/documents/HandbookPhotoSheet.kt | apps/android/app/src/main/kotlin/app/wingtipmaps/android/documents/LogbookPhotoSheet.kt": 2,
