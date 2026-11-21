@@ -11,11 +11,11 @@ interface ConfirmOptions {
 }
 
 /**
- * Asking before an action, in the app rather than the browser: an alert
- * (SheetDialog) in the middle of the screen from `md` up, with Cancel,
- * and on a phone a sheet from the navigation bar's edge with the action
- * under the question and the app's close in its title row -- from the
- * bottom, by default, as iOS asks about something just tapped.
+ * Asking before an action, in the app rather than the browser: the stock
+ * centred alert (SheetDialog, Base UI's AlertDialog) at every width, with
+ * the action and Cancel under the question, as iOS asks -- over the page,
+ * never a card or a sheet from the foot (the owner, 2026-11-20: "the
+ * confirmation shouldn't open a new card"; before it a phone had a sheet).
  * `window.confirm` was what asked before -- the browser's own box,
  * unthemed, headed by the site's address, and in an iOS app's web view
  * nothing at all (it returns false unless the native host draws one),
@@ -33,6 +33,7 @@ export function useConfirm({ title, description, confirmLabel, destructive, onCo
       open={open}
       onOpenChange={setOpen}
       alert
+      centered
       title={title}
       description={description}
       action={{
