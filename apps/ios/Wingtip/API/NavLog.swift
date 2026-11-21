@@ -78,6 +78,11 @@ extension FuelStop: @retroactive Identifiable {
 /// reserve left (FuelStopSuggestion).
 typealias FuelStopSuggestion = APIFuelStopSuggestion
 
+/// A flight short of fuel the planner offers no stop on, and why: the
+/// fuel on board under its start, taxi and reserve already (`onBoard`),
+/// or no field with fuel in reach (the totals' no_fuel_stop).
+typealias NoFuelStop = APINoFuelStop
+
 extension FuelStopSuggestion: @retroactive Identifiable {
     public var id: String { "\(departure)-\(destination)" }
 }
@@ -148,6 +153,10 @@ enum NavLog {
         query.altitudeChoice = choice.flatMap { $0 == "fastest" ? nil : $0 }
         // The rules kept (FlightRules): sent where IFR, VFR being the planner's default.
         query.rules = FlightRules.saved() == .ifr ? "ifr" : nil
+        // A field with no runway picked flown into its own report's wind
+        // (the planner's wind_picks), the runway FPL's line says it lands
+        // on or leaves from (AirportWords.bestWind, TimelineFieldParts).
+        query.windRunways = true
         // The pilot's own figures, which an airplane of no stock type flies on.
         query.cruiseTasKt = figures.cruiseTasKt
         query.fuelBurnGph = figures.fuelBurnGph

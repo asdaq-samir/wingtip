@@ -9,7 +9,15 @@ import { NO_CONNECTION, noConnection } from "../../../lib/problems";
 import { sameField } from "../../../lib/procedures";
 import { airportQuery } from "../../../lib/queryClient";
 import { DepartPicker } from "../../navlog/lazy";
-import { FuelStopsChip, TimelineRoute, TypeRouteButton, visitAt, visitRow, type TimelinePoint } from "../../procedures/lazy";
+import {
+  FuelStopsChip,
+  NoFuelStopNote,
+  TimelineRoute,
+  TypeRouteButton,
+  visitAt,
+  visitRow,
+  type TimelinePoint,
+} from "../../procedures/lazy";
 import { etaAt } from "../../plan";
 import type { PlanSlices } from "../vm/planSlices";
 import type { ProceduresRouteProps } from "../../procedures/lazy";
@@ -51,7 +59,7 @@ export default function RouteTimeline({
   const { metarCategory } = vm.brief;
   const { waypointStops } = vm.routeList;
   const { setStops } = vm.route;
-  const { fuelToAdd } = vm.stops;
+  const { fuelToAdd, noFuelStop } = vm.stops;
   const { panel, setPanel } = vm.view;
   const read = !!vm.flight.flying || !!vm.flight.dryRunning;
   // From md up the side panel is the window's height at half as at full
@@ -172,6 +180,8 @@ export default function RouteTimeline({
     <FuelStopsChip added={false} onClick={fuelToAdd.add} />
   ) : fuelIn ? (
     <FuelStopsChip added onClick={() => setStops(planned.stops.filter((stop) => !fuel.some((f) => sameField(f, stop))))} />
+  ) : noFuelStop[0] ? (
+    <NoFuelStopNote flight={noFuelStop[0]} />
   ) : null;
   // Type the Route, where More's item was (the owner, 2026-11-21: More keeps
   // three items): a keyboard glyph at Add a Stop's end on a whole route

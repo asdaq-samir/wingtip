@@ -45,6 +45,7 @@ import app.wingtipmaps.android.format.Spoken
 import app.wingtipmaps.android.route.LegPhase
 import app.wingtipmaps.android.route.LegWords
 import app.wingtipmaps.android.route.RoutePointMenu
+import app.wingtipmaps.android.share.ShareRouteButton
 import app.wingtipmaps.android.strip.StripData
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
@@ -67,7 +68,10 @@ fun NavLogCard(plan: Plan, exit: CardExit, onLeg: (Int) -> Unit, onAddStopAfter:
     val state by plan.state.collectAsStateWithLifecycle()
     val pad = Modifier.padding(horizontal = WingtipSpace.Lg)
     val route = if (state.dep.isEmpty() && state.dest.isEmpty()) null else StripData.routeName(state.dep, state.dest, state.stops)
-    CardPage(title = stringResource(R.string.nav_log), exit = exit, subtitle = route) { padding ->
+    // Its Share in the bar, as the web's nav log holds the route's link
+    // (the owner, 2026-11-21: the sharing is the nav log's).
+    val share: @Composable RowScope.() -> Unit = { if (state.routed && !state.planning) ShareRouteButton(state) }
+    CardPage(title = stringResource(R.string.nav_log), exit = exit, subtitle = route, actions = share) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             itemsIndexed(state.legs, key = { i, _ -> "leg-$i" }) { i, leg ->
                 Column(pad) {

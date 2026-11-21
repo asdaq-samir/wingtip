@@ -179,6 +179,20 @@ export function FuelStopsChip({ added, onClick }: { added: boolean; onClick: () 
   );
 }
 
+/** Where a flight is short of fuel and the planner offers no stop on it,
+ *  why, at Add a Stop's end where the fuel stops' pill would be (warn,
+ *  never limit; the aviation audit of 2026-11-21, F7.6): the fuel on board
+ *  at the start already under its start, taxi and reserve (14 CFR
+ *  91.151(a), 91.167(a)), or no field with fuel in the tanks' reach. The
+ *  first such flight, named by its two ends. */
+export function NoFuelStopNote({ flight }: { flight: { name: string; onBoard: boolean } }) {
+  return (
+    <span className={cn("truncate text-destructive-ink", TEXT.note)} data-testid="timeline-no-fuel-stop">
+      {flight.onBoard ? `Too little fuel on board for ${flight.name}` : `No fuel stop in reach on ${flight.name}`}
+    </span>
+  );
+}
+
 /** Type the Route on a whole route, at Add a Stop's end (the owner,
  *  2026-11-21: More keeps three items): the keyboard glyph alone in the fuel
  *  stops' chip's shape and wash, named in full, opening the route's field

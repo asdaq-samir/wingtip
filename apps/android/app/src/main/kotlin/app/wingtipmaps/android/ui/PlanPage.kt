@@ -91,6 +91,10 @@ fun PlanPage(plan: Plan, onClose: () -> Unit, onField: (String) -> Unit, onNavLo
             item(key = "head") { Box(pad) { PlanHead(state, tail) } }
             item(key = "doors") { Box(pad) { PlanButtons(state.routed, onBrief = { ScreenRequests.ask(Screen.BRIEF) }, onNavLog = onNavLog) } }
             item(key = "stops") { Box(pad) { RouteStops(state, onField = onField, onFind = onFind, onAddStop = onAddStop) } }
+            // Add or Remove Fuel Stops by Add a Stop, then the fuel in the
+            // tanks at each field, each a tap to set it (FuelTanks).
+            item(key = "fuel-stops") { Box(pad) { FuelStopsRow(plan, state, index = 0, count = 1) } }
+            item(key = "fuel") { Box(pad) { FuelTanks(plan, state) } }
             if (state.routed) item(key = "ready") { Box(pad) { ReadyToFlyRow(plan, onSetRoute = null) } }
             item(key = "route") { Box(pad) { RouteFields(plan, state, dryRun) } }
             item(key = "rules") { Box(pad) { FlightRulesRow(onChanged = { if (state.routed) plan.plan() }) } }
