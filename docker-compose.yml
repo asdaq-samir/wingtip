@@ -109,6 +109,10 @@ services:
       # internet-reachable host without also publishing an
       # unauthenticated Jupyter/DB/service port to it.
       - "${DEV_PUBLISH_ADDRESS:-127.0.0.1}:8888:8888"
+    environment:
+      # Jupyter's token: .env's, else a random one each start, printed in
+      # `docker compose logs ml` (ml/Dockerfile.ml).
+      JUPYTER_TOKEN: ${JUPYTER_TOKEN:-}
     volumes:
       - .:/workspace
 

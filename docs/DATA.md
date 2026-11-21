@@ -166,7 +166,7 @@ the ratings are made as they are: 77 labels carried over by position,
 ## Notebooks
 
 `docker compose up ml`, then [localhost:8888](http://localhost:8888)
-(token `wingtip`). The notebooks call the same code as the training run,
+(the address with its token is in `docker compose logs ml`). The notebooks call the same code as the training run,
 so a notebook and the run cannot write two different tables.
 
 | # | Notebook | What it does | Automated as |

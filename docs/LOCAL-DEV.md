@@ -96,7 +96,7 @@ Every port is on `127.0.0.1` unless `.env` says otherwise (below).
 | Health | [localhost:8080/actuator/health](http://localhost:8080/actuator/health) | gateway |
 | The planner's API docs | [localhost:8084/docs](http://localhost:8084/docs) | planner |
 | The sign-in inbox | [localhost:8025](http://localhost:8025) | mailpit |
-| Jupyter (token `wingtip`) | [localhost:8888](http://localhost:8888) | ml, on request |
+| Jupyter (its address and token in `docker compose logs ml`, or `JUPYTER_TOKEN` from `.env`) | [localhost:8888](http://localhost:8888) | ml, on request |
 | Traces | [localhost:16686](http://localhost:16686) | jaeger, on request |
 
 The apps only ever talk to the gateway; it proxies `/api/planner/*` to
@@ -133,8 +133,9 @@ docker compose up -d
   tiles within 10 nm of the course with the course, checkpoints and nav
   log. The briefing and the weather are not kept, since a cached METAR
   could only be shown as if it were current.
-- `DEV_PUBLISH_ADDRESS=0.0.0.0` opens Jupyter (8888) too. It has no
-  password and runs code. The planner (8084) and the database stay on
+- `DEV_PUBLISH_ADDRESS=0.0.0.0` opens Jupyter (8888) too. It runs code,
+  behind its token alone: a random one each start (`docker compose logs
+  ml`), or `JUPYTER_TOKEN` from `.env`, never a word in the repository. The planner (8084) and the database stay on
   loopback whatever it says: the planner answers without
   sign-in, and its developer routes are checked by the gateway alone, so
   another device reaches it through the gateway.
