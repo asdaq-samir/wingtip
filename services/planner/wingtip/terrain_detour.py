@@ -24,6 +24,7 @@ from __future__ import annotations
 import threading
 
 import numpy as np
+from cachetools import FIFOCache
 
 from . import elevation, fixes, fuelstops, geo
 from .engine import ask as engine
@@ -66,12 +67,11 @@ def way_round(start: tuple, end: tuple, ceiling_ft: float, fields=None) -> list[
     found = _way_round(start, end, ceiling_ft)
     with _KEPT_LOCK:
         _KEPT[key] = None if found is None else tuple(found)
-        while len(_KEPT) > 64:
-            _KEPT.pop(next(iter(_KEPT)))
     return None if found is None else [dict(p) for p in found]
 
 
-_KEPT: dict = {}
+#: The last 64 ways found, the oldest let go first (cachetools' FIFOCache).
+_KEPT: FIFOCache = FIFOCache(maxsize=64)
 _KEPT_LOCK = threading.Lock()
 
 

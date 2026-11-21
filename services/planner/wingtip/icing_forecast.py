@@ -25,6 +25,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 import requests
+from cachetools import TTLCache
 
 from . import outside
 from .config import REQUEST_HEADERS
@@ -53,7 +54,9 @@ MOST_LEGS = 30
 
 TIMEOUT_S = 20
 
-_HELD: dict = {}
+#: The sections asked, each kept HELD_S (cachetools' TTLCache, which also
+#: lets the oldest go past 2,000, a long day's worth of routes).
+_HELD: TTLCache = TTLCache(maxsize=2000, ttl=HELD_S, timer=time.time)
 _LOCK = threading.Lock()
 
 
@@ -73,9 +76,8 @@ def _section(a: tuple, b: tuple, hour: int, issued: datetime) -> dict | None:
     path = ",".join(f"{x:.2f}" for x in (*a, *b))
     key = (issued.timestamp(), hour, path)
     with _LOCK:
-        held = _HELD.get(key)
-        if held and time.time() - held[0] < HELD_S:
-            return held[1]
+        if key in _HELD:
+            return _HELD[key]
     resp = outside.get(URL.format(issued=issued.strftime("%Y%m%d/%H"), hour=hour, path=path), headers=REQUEST_HEADERS, timeout=TIMEOUT_S)
     resp.raise_for_status()
     body = resp.json()
@@ -89,9 +91,7 @@ def _section(a: tuple, b: tuple, hour: int, issued: datetime) -> dict | None:
     )
     found = {k: body[k] for k in ("width", "data_levels", "values", "sfc_hgt") if k in body} if shaped else None
     with _LOCK:
-        if len(_HELD) > 2000:
-            _HELD.clear()
-        _HELD[key] = (time.time(), found)
+        _HELD[key] = found
     return found
 
 

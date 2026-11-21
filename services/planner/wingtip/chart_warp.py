@@ -7,6 +7,7 @@ zoom, finer or coarser than its own pixels, is here.
 
 from __future__ import annotations
 
+import functools
 import math
 import os
 import threading
@@ -71,14 +72,12 @@ def _opened(path) -> object:
     return src
 
 
+@functools.cache
 def _web_mercator():
     """EPSG:3857 parsed once, not at every warp."""
     from rasterio.crs import CRS
 
-    crs = getattr(_web_mercator, "crs", None)
-    if crs is None:
-        crs = _web_mercator.crs = CRS.from_epsg(3857)
-    return crs
+    return CRS.from_epsg(3857)
 
 
 def warp_rgb(
