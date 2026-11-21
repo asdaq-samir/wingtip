@@ -62,13 +62,9 @@ internal fun RootRequests(
         when (val opened = link) {
             null -> return@LaunchedEffect
             is Links.Place -> pages.show(SheetPage.Airport(opened.ident))
-            is Links.Route -> {
-                plan.plan(opened.dep, opened.dest, opened.stops)
-                showPlan()
-                opened.then?.let(ScreenRequests::ask)
-            }
             is Links.Open -> ScreenRequests.ask(opened.screen)
-            // Previewed first: the receiver's plan stays until Use This Plan.
+            // A shared flight or any route link, previewed first: the
+            // receiver's plan stays until Use This Plan.
             is Links.Shared -> shared.open(opened)
             is Links.SignIn -> {}
         }

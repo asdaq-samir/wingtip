@@ -118,10 +118,16 @@ The plan's own keys go beside it, and alone they open what they name:
 <!-- END generated -->
 
 A link with a route and a screen (`?dep=C81&dest=KDLH&open=brief`) plans
-the route, then opens the screen: the web waits up to 30 s for the route
-(`lib/navigation/wanted`), the phones open it after the route command
-(the screen `CommandHost` runs after a link's command, `Links.Route.then`). The word `open` is taken off
+the route on the web, then opens the screen: the web waits up to 30 s for
+the route (`lib/navigation/wanted`). The word `open` is taken off
 the web's address once used, so a reload or Back does not open it again.
+On the phones any route link, with or without `open=shared`, opens the
+shared-flight preview below and replaces the pilot's plan only at Use This
+Plan: any page or app can open a link, and a plan swapped in the air
+unasked is a safety problem (the deep security review of 2026-11-21, N3).
+A screen named beside it is not opened over the preview, and a link with
+only a destination opens the field's card on the iPhone, whose Fly Here
+plans it.
 
 ## Sharing a flight
 
