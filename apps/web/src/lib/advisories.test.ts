@@ -85,50 +85,29 @@ describe("suaAltitudes", () => {
   });
 });
 
+// The rules of the FAA's capitals are the engine's, tested once there
+// (engine/facade/tests/wording.rs, with the shared faaWords.json): here,
+// that each name reaches its engine call, and what the page does itself
+// (no text, no call).
 describe("the FAA's capitals in sentence case", () => {
-  it("keeps the codes and the figures, and starts each sentence with a capital", () => {
-    expect(faaWords("INTERMITTENT BY NOTAM 4 HOURS IN ADVANCE")).toBe("Intermittent by NOTAM 4 hours in advance");
-    expect(faaWords("0700 - 2200 LOCAL, MON - FRI; OTHER TIMES BY NOTAM")).toBe("0700 - 2200 local, Mon - Fri; other times by NOTAM");
-    expect(faaWords("AIR SPEED LOSS OR GAIN OF 20KTS OR MORE BELOW 2000 FT AGL")).toBe(
-      "Air speed loss or gain of 20KTS or more below 2000 ft AGL",
-    );
-    // A cause made of contractions alone stays as the FAA wrote it.
-    expect(faaWords("CIG BLW 010 VIS BLW 3SM BR FG")).toBe("CIG BLW 010 VIS BLW 3SM BR FG");
-    expect(faaWords("Security: VIP movement")).toBe("Security: VIP movement");
-    // A special-use area's or an airspace's name: its designator whole, its
-    // class as the AIM writes it, the days still read as days.
-    expect(faaWords("R-4401A")).toBe("R-4401A");
-    expect(faaWords("ACTIVE IN R-5311A")).toBe("Active in R-5311A");
-    expect(faaWords("CHICAGO CLASS B")).toBe("Chicago Class B");
-    expect(faaWords("0800 - 1600, TUE-SAT")).toBe("0800 - 1600, Tue-Sat");
-    expect(faaWords(null)).toBe("");
-    // An approach's title keeps its codes (the plate's card).
-    expect(faaWords("ILS OR LOC RWY 36")).toBe("ILS or LOC rwy 36");
-    expect(faaWords("RNAV (GPS) Z RWY 36")).toBe("RNAV (GPS) Z rwy 36");
-    expect(faaWords("VOR-A")).toBe("VOR-A");
-    // A NOTAM's codes and idents kept, a NOTAM given whole as sent: the
-    // engine's own cases (engine/facade/tests/wording.rs reads them too).
+  it("is the engine's, a NOTAM given whole as sent, and nothing for no text", () => {
     for (const c of faaWordsCases.cases) expect(faaWords(c.text), c.about).toBe(c.want);
-    expect(sigmetHazard("CONVECTIVE")).toBe("Convective");
+    expect(faaWords("CHICAGO CLASS B")).toBe("Chicago Class B");
+    expect(faaWords(null)).toBe("");
     expect(sigmetHazard("MTN OBSCN")).toBe("Mountain obscuration");
     expect(sigmetHazard(null, "SIGMET")).toBe("SIGMET");
   });
 });
 
 describe("a name the FAA writes in capitals", () => {
-  it("is written as a name is", () => {
-    expect(titleCase("CHICAGO CLASS B")).toBe("Chicago Class B");
+  it("is written as a name is, by the engine", () => {
     expect(titleCase("ROCKFORD")).toBe("Rockford");
   });
 });
 
 describe("a place's name", () => {
-  it("is spelt as a town is, each word capitalised", async () => {
+  it("is spelt as a town is, by the engine", async () => {
     const { placeWords } = await import("./advisories");
-    expect(placeWords("LA CROSSE")).toBe("La Crosse");
-    expect(placeWords("EAU CLAIRE")).toBe("Eau Claire");
-    expect(placeWords("STERLING/ROCKFALLS")).toBe("Sterling/Rockfalls");
     expect(placeWords("MCCOOK")).toBe("McCook");
-    expect(placeWords("Madison")).toBe("Madison");
   });
 });

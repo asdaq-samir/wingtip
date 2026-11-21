@@ -1,0 +1,12 @@
+{
+  "about": "The closed-fields rule (decision 0043): the engine's field_status over NASR APT_BASE.csv's ARPT_STATUS, as every host reads its answer. O is operational and so open; CI is closed indefinitely, CP closed permanently; any other code, a blank one too, is not said to be operational, so closed (the safer side); no NASR record at all (null) is not judged, so neither hidden nor labelled. Read by engine/facade/tests/field_status.rs and the web's lib/engine/engine.test.ts.",
+  "cases": [
+    { "status": "O", "open": true, "closed": null },
+    { "status": " o ", "open": true, "closed": null },
+    { "status": "CI", "open": false, "closed": "Closed indefinitely" },
+    { "status": "CP", "open": false, "closed": "Closed permanently" },
+    { "status": "", "open": false, "closed": "Closed" },
+    { "status": "X", "open": false, "closed": "Closed" },
+    { "status": null, "open": true, "closed": null }
+  ]
+}

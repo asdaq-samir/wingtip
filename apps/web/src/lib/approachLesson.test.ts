@@ -140,18 +140,13 @@ const RADIO: Frequency[] = [
   { type: "GND", description: "GND", frequency_mhz: 121.9 },
 ];
 
+// 14 CFR 97.3's categories are the engine's, each boundary tested there
+// (engine/facade/tests/approach/lesson_cases.rs): here, that the page's
+// arguments reach it in order, VREF then VSO, and nothing known is null.
 describe("approachCategory", () => {
-  it("is 14 CFR 97.3's, by VREF or 1.3 VSO", () => {
-    expect(approachCategory(90.9)).toBe("A");
-    expect(approachCategory(91)).toBe("B");
-    expect(approachCategory(120.9)).toBe("B");
+  it("is the engine's 97.3 category, by VREF or 1.3 VSO", () => {
     expect(approachCategory(121)).toBe("C");
-    expect(approachCategory(141)).toBe("D");
-    expect(approachCategory(166)).toBe("E");
-    // 1.3 x 60 = 78, A; 1.3 x 70 = 91, B. VREF first where both are known.
-    expect(approachCategory(null, 60)).toBe("A");
     expect(approachCategory(null, 70)).toBe("B");
-    expect(approachCategory(85, 70)).toBe("A");
     expect(approachCategory(null, null)).toBeNull();
   });
 });

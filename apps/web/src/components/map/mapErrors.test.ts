@@ -19,10 +19,11 @@ afterEach(() => {
 const said = () => useSystemProblems.getState().problems.some((p) => p.id === MAP_PROBLEM);
 
 function fakeMap() {
-  const on: Record<string, (e: { error?: unknown }) => void> = {};
+  const on: Record<string, (e: { error?: unknown; sourceId?: string }) => void> = {};
   return {
-    on: (type: string, f: (e: { error?: unknown }) => void) => void (on[type] = f),
-    fire: (type: string, error?: unknown) => on[type]!({ error }),
+    on: (type: string, f: (e: { error?: unknown; sourceId?: string }) => void) => void (on[type] = f),
+    fire: (type: string, error?: unknown, sourceId?: string) => on[type]!({ error, sourceId }),
+    refreshTiles: vi.fn(),
   };
 }
 
@@ -60,5 +61,29 @@ describe("watchMapErrors", () => {
     expect(said()).toBe(true);
     map.fire("idle");
     expect(said()).toBe(false);
+  });
+
+  it("asks a source's failed tiles again from Try again, and the next clean rest takes the line away", () => {
+    vi.stubGlobal("navigator", { onLine: true });
+    const map = fakeMap();
+    watchMapErrors(map as unknown as Parameters<typeof watchMapErrors>[0]);
+    // The terrain's tiles failing after the map's last rest: the planner down.
+    map.fire("idle");
+    map.fire("error", Object.assign(new Error("Bad Gateway"), { status: 502 }), "terrain-dem");
+    const problem = useSystemProblems.getState().problems.find((p) => p.id === MAP_PROBLEM)!;
+    expect(problem.retry).toBeTypeOf("function");
+    // Back, and Try again: the source's tiles asked for again, drawn, at rest.
+    problem.retry!();
+    expect(map.refreshTiles).toHaveBeenCalledWith("terrain-dem");
+    map.fire("idle");
+    expect(said()).toBe(false);
+  });
+
+  it("offers no Try again for a failure that is not a source's", () => {
+    vi.stubGlobal("navigator", { onLine: true });
+    const map = fakeMap();
+    watchMapErrors(map as unknown as Parameters<typeof watchMapErrors>[0]);
+    map.fire("error", new Error("Glyph range failed"));
+    expect(useSystemProblems.getState().problems.find((p) => p.id === MAP_PROBLEM)?.retry).toBeUndefined();
   });
 });
