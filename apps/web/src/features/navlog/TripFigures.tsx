@@ -1,9 +1,6 @@
 import { useAirplaneChosen } from "../../lib/preferences";
 import { useState, type ReactNode } from "react";
 import { zoneName } from "../../lib/format";
-import { useOwnFix } from "../../lib/map/position/ownShip";
-import { underway } from "../../lib/map/position/glide";
-import { callEngine } from "../../lib/engine/engine";
 import { cn } from "cn";
 import type { ExplainedTerm } from "../../lib/explain";
 import { unknownWhy, type UnknownPlace } from "../../lib/api/client";
@@ -12,8 +9,7 @@ import FigureStrip, { type StripFigure } from "../../components/FigureStrip";
 import { Button } from "../../components/ui/button";
 import { tripFigures, type Flown } from "../plan";
 import { requestAirplanePick } from "../../lib/pickAirplane";
-import { gpsFigure } from "./gpsFigure";
-import { trackFigure } from "./trackFigure";
+import { useFixFigures } from "./useFixFigures";
 
 /**
  * The flight's figures, the last of the route's panel over the tabs, at
@@ -123,13 +119,10 @@ export default function TripFigures({
   const airplane = useAirplaneChosen();
   // The airplane's GPS altitude at the strip's end whenever its position
   // is known (gpsFigure: what the figure is and where it comes from).
-  const fix = useOwnFix();
-  const gps = gpsFigure(fix);
   // The track in the fuel's place (trackFigure): always a column, a dash
-  // while there is no course to give.
-  const track = trackFigure(fix, underway(fix), (lat, lon) =>
-    callEngine("magnetic_variation", { lat, lon, date: new Date().toISOString().slice(0, 10) }),
-  );
+  // while there is no course to give. Both read from the fix as they are
+  // written (useFixFigures), not at every fix.
+  const { gps, track } = useFixFigures();
   const ours: StripFigure[] = [
     ...tripFigures(input)
       // The fuel is the timeline's tank gauges' and the nav log's, not the
