@@ -17,7 +17,8 @@ So each is held to what it normally does:
   a connection that is down makes them stale.
 - Every feed is stale when ingest itself has not beaten for BEAT_STALE_S
   (its own health check's HEALTHY_WITHIN_S): its word of each feed is then
-  as old as that.
+  as old as that. With no SWIM feed set up, ingest has a line of its own,
+  held to the same beat.
 - The weather products by the weather service's own answer (its GET /),
   which holds each to three of its idle turns and its product's validity:
   the METARs and TAFs, the AIRMETs, SIGMETs and PIREPs, the winds aloft,
@@ -114,6 +115,30 @@ def swim(beats: dict, now: float) -> list[dict]:
         detail = f"connected; last message {_age(now, last_at)} ago" if last_at else "connected, nothing sent yet"
         out.append({**line, "state": OK, "detail": detail + (" (quiet by nature: stale only when down)" if quiet else "")})
     return out
+
+
+def ingest_line(beats: dict, now: float) -> list[dict]:
+    """ingest itself, where no SWIM feed is set up: every SWIM line is then
+    "off", which never alerts, so an ingest that had stopped (its beat
+    gone quiet: the followed airplanes, the live store's upkeep) said
+    nothing (the ops audit, 2026-11-21). Where a feed is set up, its own
+    line already goes stale with ingest's beat; where ingest has never
+    beaten, every SWIM line already asks whether it is running."""
+    ingest = beats.get("ingest")
+    if ingest is None or ingest.get("feeds"):
+        return []
+    at = float(ingest.get("at") or 0)
+    stale = now - at > BEAT_STALE_S
+    return [
+        {
+            "name": "ingest",
+            "kind": "service",
+            "what": "the live feeds' reader",
+            "last_at": at or None,
+            "state": STALE if stale else OK,
+            "detail": f"last beat {_age(now, at)} ago" + (f" (stale after {_span(BEAT_STALE_S)})" if stale else ""),
+        }
+    ]
 
 
 def weather_feeds(url: str | None, now: float, get=requests.get) -> list[dict]:
@@ -228,7 +253,7 @@ def check(weather_url: str | None, now: float | None = None) -> list[dict]:
             for name in SWIM_FEEDS
         ]
     if beats is not None:
-        lines = swim(beats, now)
+        lines = swim(beats, now) + ingest_line(beats, now)
     return lines + weather_feeds(weather_url, now) + _held_cycles()
 
 

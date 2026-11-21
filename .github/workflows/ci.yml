@@ -1349,6 +1349,8 @@ jobs:
           docker run --rm -e ORIGIN_HOST=origin.app.example.com -e PUBLIC_HOST=app.example.com -e ORIGIN_SECRET=x \
             -v "$PWD/infra/server/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee \
             caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+      - name: health.sh on stand-ins (infra/server/health.sh)
+        run: scripts/ci/health_sh_test.sh
 
   # The phone apps, inside CI's run so "CI passed" waits for them (#499
   # merged with the Android app not compiling while its build ran beside

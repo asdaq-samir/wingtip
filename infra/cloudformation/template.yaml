@@ -353,6 +353,14 @@ Resources:
               - Effect: Allow
                 Action: [logs:CreateLogStream, logs:PutLogEvents]
                 Resource: !GetAtt ServerLogGroup.Arn
+              # Its own checks' figures (infra/server/health.sh), in the
+              # Wingtip namespace alone; PutMetricData takes no resource.
+              - Effect: Allow
+                Action: cloudwatch:PutMetricData
+                Resource: "*"
+                Condition:
+                  StringEquals:
+                    "cloudwatch:namespace": Wingtip
               # Each new server takes over the stack's address and data disk.
               # The volume and the address are the stack's own; an instance
               # is allowed only if it carries the stack's server Name tag
@@ -446,8 +454,11 @@ Resources:
               mkdir -p /srv/wingtip
               echo "UUID=$(blkid -s UUID -o value "$disk") /srv/wingtip xfs defaults,nofail 0 2" >> /etc/fstab
               mount /srv/wingtip
-              dnf install -y docker git cronie
-              systemctl enable --now docker crond
+              # logrotate keeps the cron jobs' logs (deploy.sh's
+              # /etc/logrotate.d/wingtip); openssl reads the origin's
+              # certificate for health.sh.
+              dnf install -y docker git cronie logrotate openssl
+              systemctl enable --now docker crond logrotate.timer
               mkdir -p /usr/local/lib/docker/cli-plugins
               # A pinned release, checked against the checksum published
               # beside it, so a rebuild gets the plugin the first boot did.
@@ -813,13 +824,15 @@ Resources:
 
   # ---------------------------------------------------------------------
   # Chart tiles, once per cycle: a Fargate Spot task runs the charts job's
-  # refresh (services/jobs/charts) every day -- a no-op until the FAA
-  # publishes a new cycle, then it fetches the country's sheets, draws the
-  # pyramid, packs each kind into its archives and publishes them to the
-  # tiles bucket (wingtip.chart_publish.publish), serving.json last, so every
-  # planner moves to the new cycle at once. Spot: an interrupted run
-  # starts over the next day, the old cycle served until then. Under $1
-  # a cycle.
+  # refresh (services/jobs/charts) every day. In the week before a new
+  # cycle's date, once the FAA has it up, it fetches the country's sheets,
+  # draws the pyramid, packs each kind into its archives and publishes
+  # them to the tiles bucket ahead (wingtip.chart_publish, next.json), which
+  # every planner takes at 0901Z on the date; the next run makes it
+  # serving.json's. The other days it is a read or two. Spot: an
+  # interrupted run starts over the next day, with six more days before the
+  # date, and ChartRefreshFailedRule mails a run that stops. Under $1 a
+  # cycle.
   # ---------------------------------------------------------------------
   EcsCluster:
     Type: AWS::ECS::Cluster
@@ -891,10 +904,13 @@ Resources:
       # tiles (1.5 million of them) for the 09-03-2026 cycle, and about
       # 29 GB more of the 512-pixel "@2x" palette tiles from the
       # 12-24-2026 cycle; then each kind's archive written beside its
-      # loose tiles before they go, the sectional's @2x the largest.
+      # loose tiles before they go, the sectional's @2x the largest. 160 GB,
+      # not 100: a run may draw the cycle in force and then stage the next
+      # one ahead (charts.next_cycle.stage_to_bucket), two cycles on one
+      # disk; the extra is about $0.10 a run.
       Cpu: "2048"
       Memory: "8192"
-      EphemeralStorage: { SizeInGiB: 100 }
+      EphemeralStorage: { SizeInGiB: 160 }
       ExecutionRoleArn: !GetAtt TaskExecutionRole.Arn
       TaskRoleArn: !GetAtt ChartRefreshTaskRole.Arn
       ContainerDefinitions:
@@ -937,7 +953,7 @@ Resources:
     Type: AWS::Events::Rule
     DependsOn: EcsClusterCapacityProviders
     Properties:
-      Description: Publish the FAA's current chart cycle if it is not published yet; a no-op on the other 55 days.
+      Description: Publish the FAA's current chart cycle if it is not published yet, and stage the next one ahead of its date in the week before it; a read or two on the other days.
       ScheduleExpression: cron(30 8 * * ? *)
       State: ENABLED
       Targets:
@@ -1069,14 +1085,34 @@ Resources:
   # ---------------------------------------------------------------------
   # Spending: an email at 80% of $50 a month.
   # ---------------------------------------------------------------------
-  # The owner's alerts by email: a failed nightly backup (backup.sh), and
-  # the app not answering (HealthAlarm).
+  # The owner's alerts by email: a failed nightly backup (backup.sh), the
+  # app not answering (HealthAlarm), and the alarms below. Each is in
+  # docs/RUNBOOKS.md with what to do.
   BackupAlertTopic:
     Type: AWS::SNS::Topic
     Condition: HasBudget
     Properties:
       DisplayName: Wingtip Maps alerts
       Subscription: [{ Protocol: email, Endpoint: !Ref BudgetEmail }]
+
+  # EventBridge publishes the chart refresh's failures and the
+  # certificate's expiry warnings to the topic; CloudWatch's alarms need
+  # no policy of their own.
+  AlertTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Condition: HasBudget
+    Properties:
+      Topics: [!Ref BackupAlertTopic]
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: events.amazonaws.com }
+            Action: sns:Publish
+            Resource: !Ref BackupAlertTopic
+            Condition:
+              StringEquals:
+                "aws:SourceAccount": !Ref AWS::AccountId
 
   # Is the app up, as a pilot reaches it: through CloudFront to the
   # gateway's health, which counts its database, every 30 seconds from
@@ -1115,6 +1151,194 @@ Resources:
       TreatMissingData: breaching
       AlarmActions: [!Ref BackupAlertTopic]
       OKActions: [!Ref BackupAlertTopic]
+
+  # ---------------------------------------------------------------------
+  # Alarms: what the health check through CloudFront cannot see. The
+  # server's own checks (infra/server/health.sh, every five minutes) send
+  # the Wingtip namespace's figures; each alarm emails the owner, and
+  # again when it clears. docs/RUNBOOKS.md has what to do for each.
+  # ---------------------------------------------------------------------
+  # The system disk (images, swap, the cron jobs' logs).
+  RootDiskAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasBudget
+    Properties:
+      AlarmDescription: The server's system disk is over 85% full (docs/RUNBOOKS.md, "The disk filling").
+      Namespace: Wingtip
+      MetricName: RootDiskUsedPercent
+      Dimensions: [{ Name: Stack, Value: !Ref AWS::StackName }]
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 85
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref BackupAlertTopic]
+      OKActions: [!Ref BackupAlertTopic]
+
+  # The data disk (Postgres, the FAA data, the chart sheets): it grows in
+  # place (DataVolumeGb) before it fills.
+  DataDiskAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasBudget
+    Properties:
+      AlarmDescription: The server's data disk is over 85% full (docs/RUNBOOKS.md, "The disk filling").
+      Namespace: Wingtip
+      MetricName: DataDiskUsedPercent
+      Dimensions: [{ Name: Stack, Value: !Ref AWS::StackName }]
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 85
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref BackupAlertTopic]
+      OKActions: [!Ref BackupAlertTopic]
+
+  # A service not running, or unhealthy (and restarted by health.sh), at
+  # three checks running: a deploy's restart or a planner warming up (its
+  # health check allows ten minutes) does not count.
+  ServicesAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasBudget
+    Properties:
+      AlarmDescription: A service on the server (ingest, weather, the planner, the gateway, Postgres or Caddy) has not been running or healthy for 15 minutes (docs/RUNBOOKS.md, "A service down").
+      Namespace: Wingtip
+      MetricName: ServicesNotHealthy
+      Dimensions: [{ Name: Stack, Value: !Ref AWS::StackName }]
+      Statistic: Minimum
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref BackupAlertTopic]
+      OKActions: [!Ref BackupAlertTopic]
+
+  # Caddy's Let's Encrypt certificate for origin.<domain>, renewed 30 days
+  # out: under 14 days left, renewal has been failing for two weeks.
+  OriginCertAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasBudget
+    Properties:
+      AlarmDescription: The origin's certificate (Caddy, Let's Encrypt) has under 14 days left or cannot be read (docs/RUNBOOKS.md, "Certificate renewal").
+      Namespace: Wingtip
+      MetricName: OriginCertDaysLeft
+      Dimensions: [{ Name: Stack, Value: !Ref AWS::StackName }]
+      Statistic: Maximum
+      Period: 3600
+      EvaluationPeriods: 1
+      Threshold: 14
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref BackupAlertTopic]
+      OKActions: [!Ref BackupAlertTopic]
+
+  # No whole nightly backup for over a day: backup.sh mails its own
+  # failures, and this catches one that never ran.
+  BackupLateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasBudget
+    Properties:
+      AlarmDescription: No nightly backup has reached S3 for over 26 hours (docs/RUNBOOKS.md, "Restore a backup").
+      Namespace: Wingtip
+      MetricName: BackupAgeHours
+      Dimensions: [{ Name: Stack, Value: !Ref AWS::StackName }]
+      Statistic: Minimum
+      Period: 3600
+      EvaluationPeriods: 1
+      Threshold: 26
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref BackupAlertTopic]
+      OKActions: [!Ref BackupAlertTopic]
+
+  # The checks themselves stopped (cron gone, the server wedged): no data
+  # for 15 minutes is the alarm. A Spot replacement's few minutes may send
+  # one pair, as HealthAlarm does.
+  ChecksMissingAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasBudget
+    Properties:
+      AlarmDescription: The server has sent no health figures for 15 minutes (docs/RUNBOOKS.md, "A Spot interruption").
+      Namespace: Wingtip
+      MetricName: ChecksRun
+      Dimensions: [{ Name: Stack, Value: !Ref AWS::StackName }]
+      Statistic: SampleCount
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions: [!Ref BackupAlertTopic]
+      OKActions: [!Ref BackupAlertTopic]
+
+  # The gateway's own monitor (UptimeWatch: a service down 5 minutes, a
+  # feed stale 15, an FAA data set past its cycle) mails through SES, which
+  # can itself be what is broken (credentials, the sandbox). Its ALERT
+  # lines are counted from the log here, so they reach the owner without it.
+  GatewayAlertFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: HasBudget
+    Properties:
+      LogGroupName: !Ref ServerLogGroup
+      FilterPattern: '"ALERT"'
+      MetricTransformations:
+        - { MetricNamespace: Wingtip, MetricName: GatewayAlerts, MetricValue: "1", DefaultValue: 0, Unit: Count }
+
+  GatewayAlertAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasBudget
+    Properties:
+      AlarmDescription: The gateway's monitor raised an alert (a service down, a feed stale or a data set past its cycle); its ALERT line in the gateway's log says which (docs/RUNBOOKS.md, "A feed outage").
+      Namespace: Wingtip
+      MetricName: GatewayAlerts
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref BackupAlertTopic]
+
+  # The chart refresh task stopped by anything but its own clean exit: a
+  # failed draw or publish, or Spot taking it back. The old cycle is served
+  # until the next day's run (docs/RUNBOOKS.md, "A bad or late FAA cycle").
+  ChartRefreshFailedRule:
+    Type: AWS::Events::Rule
+    Condition: HasBudget
+    Properties:
+      Description: The chart refresh task stopped without finishing.
+      EventPattern:
+        source: [aws.ecs]
+        detail-type: [ECS Task State Change]
+        detail:
+          clusterArn: [!GetAtt EcsCluster.Arn]
+          lastStatus: [STOPPED]
+          $or:
+            - containers: { exitCode: [{ anything-but: 0 }] }
+            - stopCode: [{ anything-but: EssentialContainerExited }]
+      Targets:
+        - Id: alert
+          Arn: !Ref BackupAlertTopic
+          InputTransformer:
+            InputPathsMap: { reason: "$.detail.stoppedReason", task: "$.detail.taskArn" }
+            InputTemplate: '"Wingtip Maps: the chart refresh task <task> stopped without finishing (<reason>). The old cycle is served until the next run; docs/RUNBOOKS.md, A bad or late FAA cycle."'
+
+  # CloudFront's certificate is ACM's, renewed by itself while its DNS
+  # record stands; ACM says so 45 days out when it cannot.
+  CertificateExpiryRule:
+    Type: AWS::Events::Rule
+    Condition: HasBudget
+    Properties:
+      Description: The app's ACM certificate is near its expiry and has not renewed.
+      EventPattern:
+        source: [aws.acm]
+        detail-type: [ACM Certificate Approaching Expiration]
+        resources: [!Ref Certificate]
+      Targets:
+        - Id: alert
+          Arn: !Ref BackupAlertTopic
 
   MonthlyBudget:
     Type: AWS::Budgets::Budget
