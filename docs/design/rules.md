@@ -551,18 +551,26 @@ off by default (the owner, 2026-11-13).
    or more one row between the ends, "2 Stops" and their idents, a tap taking the sheet all the way up, where each is its own row (one stop always its own); Add a Stop the last row, by the one
    search, with a pill at its end where there is fuel to plan: "Add Fuel
    Stops" puts the planner's suggested ones in, every flight's of the
-   route, and then reads the plan of the route with them in and puts in
-   what that plan suggests too, till it suggests none (four plans at most):
-   the planner picks the stops on the flight's figures as one flight, and
-   each stop's flight is planned on its own altitude and winds, which is
-   the check (the owner's KDSM to KCBK landed 3 gal short, KLAS to KPWK 21,
-   2026-11-20; `useSuggestedStops`' `fuelToAdd`); the pill stays Add while
+   route, in one step: the planner picks the stops on the flight's figures
+   as one flight, then plans the route again with them in, each stop's
+   flight on its own altitude and winds, which is the check, and puts in
+   what those plans suggest too, till none is short (three plans more at
+   most; `wingtip.fuel_rounds`, the owner's KDSM to KCBK landed 3 gal
+   short, KLAS to KPWK 21, 2026-11-20). Each suggestion says whether its
+   flights pass (`passes`) or which is still short (`short`), the same
+   answer for the phones; the nav log says "Checking fuel stops…" while
+   it plans (`useSuggestedStops`' `fuelToAdd`); the pill stays Add while
    any flight still has stops suggested, and "Remove Fuel Stops" takes
    them out once none is, the first in the tint's light wash and the second in the
    destructive light red (the owner, 2026-11-20; `FuelStopsChip`). A flight
-   still short with no field with fuel in reach says so in the fuel's
-   breakdown ("no fuel stop in reach"), its tanks red; it may still be
-   flown (warn, never limit); a hold moves
+   still short with no stop offered says why in the pill's place
+   (`NoFuelStopNote`, the totals' `no_fuel_stop`): "No fuel stop in reach
+   on KMSN → KDLH", or "Too little fuel on board for C81 → KMSN" where the
+   fuel on board at the start is under its start, taxi and reserve already;
+   its tanks red; it may still be flown (warn, never limit). Under IFR the
+   search keeps the fuel on to the alternate for the last stretch
+   (91.167(a)(2)); each stop is itself a first landing (91.167(a)(1)), and
+   only the destination's alternate is counted; a hold moves
    a point and its menu's Remove takes a stop out, the plan's toast Undo
    putting either back. A tap on a field's
    line opens it, one at a time: its wind at the left and elevation at the

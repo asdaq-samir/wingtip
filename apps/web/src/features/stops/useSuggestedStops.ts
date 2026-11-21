@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useEffectEvent, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { FuelStopSuggestion, Totals } from "../../lib/api/types";
-import { MAX_STOPS } from "../../lib/identSchema";
+import { MAX_STOPS, pointName } from "../../lib/identSchema";
 import { sameField } from "../../lib/procedures";
 
 const NO_FUEL_STOPS: FuelStopSuggestion[] = [];
 const NO_IDENTS: string[] = [];
+const NO_SHORT: { name: string; onBoard: boolean }[] = [];
 
 /** The route with `idents` put in after `after` (the departure, or one of
  *  its stops), as many as the planner takes (MAX_STOPS), and those that
@@ -38,18 +39,6 @@ export function withFuelStops(dep: string, stops: string[], suggested: FuelStopS
   }
   return added.length ? { stops: route, added } : null;
 }
-
-/** Whether `totals` are the plan of the route with `added` put in: a
- *  flight leaves from each of them. A plan of the route before it, which
- *  lacks them, is never read as this one's. */
-function plannedWith(totals: Totals, added: string[]): boolean {
-  return added.every((a) => totals.hops.some((h) => sameField(h.departure, a)));
-}
-
-/** How many plans one tap of Add Fuel Stops reads (addFuelStops): the
- *  owner's trip took three, the first and two of the route with stops in.
- *  A bound, so a plan whose stops keep moving never adds them for ever. */
-const FUEL_ROUNDS = 4;
 
 /**
  * The stops the planner suggests -- fuel for a flight too long for its
@@ -113,6 +102,15 @@ export function useSuggestedStops({
       alternateGal: t?.alternate?.fuel_gal ?? null,
     };
   }, [local, totals]);
+  // The flights short of fuel the planner offers no stop on, and why
+  // (the totals' no_fuel_stop), named by their ends.
+  const noFuelStop = useMemo(
+    () =>
+      local || !totals?.no_fuel_stop?.length
+        ? NO_SHORT
+        : totals.no_fuel_stop.map((f) => ({ name: `${pointName(f.departure)} → ${pointName(f.destination)}`, onBoard: !!f.on_board })),
+    [local, totals],
+  );
   // Their pins on the map, every flight's.
   const fuelStopPins = useMemo(
     () => fuelStops.flatMap((f) => f.stops.map(({ ident, lat, lon }) => ({ ident, lat, lon, reason: f.reason }))),
@@ -140,38 +138,23 @@ export function useSuggestedStops({
     },
     [setStops, planned.dep, planned.stops],
   );
-  // Add Fuel Stops: every flight's suggested stops put in, and then each
-  // plan of the route with them read in turn, its own suggestions put in
-  // too, till a plan suggests none (or FUEL_ROUNDS). The planner chooses
-  // the stops on the flight's figures as one flight, and each stop's
-  // flight is then planned on its own, at its own altitude and winds, which
-  // is the real check (the engine's fuel_stops): the owner's KDSM to KCBK,
-  // at 6,500 ft into the wind, burnt 0.107 gal/nm where the one flight at
-  // 14,500 ft burnt 0.080, and landed 3 gal short (2026-11-20). One tap,
-  // as the owner asked ("After it added 3 stops, it asked for another fuel
-  // stop"); the route each round set is the one read next (`chase`), so a
-  // route the pilot changes meanwhile is left as they made it.
-  const [chase, setChase] = useState<{ stops: string[]; added: string[]; round: number } | null>(null);
+  // Add Fuel Stops: every flight's suggested stops put in, in one step.
+  // The planner has already planned the route with them in, each flight
+  // between two of them on its own at its own altitude and winds, and put
+  // in what those plans asked too, till none is short (wingtip.fuel_rounds):
+  // the owner's KDSM to KCBK, flown on its own into the wind, had landed
+  // 3 gal short of the stops chosen on the one flight's figures
+  // (2026-11-20). One tap, as the owner asked ("After it added 3 stops, it
+  // asked for another fuel stop").
   const toAdd = useMemo(() => withFuelStops(planned.dep, planned.stops, fuelStops), [planned.dep, planned.stops, fuelStops]);
   const addFuelStops = useCallback(() => {
-    if (toAdd) setChase({ ...toAdd, round: 1 });
-  }, [toAdd]);
-  // Once the plan of the route last set is in, its own suggestions are the
-  // next round, set as the page draws (React's adjusting state on a change).
-  const here = planned.stops.join(",");
-  const planHere = !!chase && !!totals && !local && plannedWith(totals, chase.added);
-  if (chase && chase.stops.join(",") === here && planHere) {
-    setChase(toAdd && chase.round < FUEL_ROUNDS ? { ...toAdd, round: chase.round + 1 } : null);
-  }
-  // Each round's route put in, once, as it is set.
-  const putIn = useEffectEvent(() => {
-    if (chase && chase.stops.join(",") !== here) setStops(chase.stops, chase.added);
-  });
-  useEffect(() => putIn(), [chase]);
+    if (toAdd) setStops(toAdd.stops, toAdd.added);
+  }, [toAdd, setStops]);
   return {
     fuelStops,
     hideFuelStop,
     tankFigures,
+    noFuelStop,
     fuelStopPins,
     keepFuelStops,
     addStopField,

@@ -29,30 +29,23 @@ describe("Add Fuel Stops", () => {
     expect(withFuelStops(POS, ["KDSM", "KLAS"], [flight("KDSM", "KLAS", ["KDSM"])])).toBeNull();
   });
 
-  it("reads the plan with the stops in and puts in what it suggests too, till it suggests none", () => {
-    // The first plan's KDSM to KCBK, flown on its own at 6,500 ft into the
-    // wind, landed 3 gal short; the plan with it in suggests KPMV there.
+  it("puts in the stops the planner checked in one step, and offers none once they are in", () => {
+    // The planner planned the route with them in and put in KPMV and KCWI
+    // too (wingtip.fuel_rounds): one tap sets them all, and nothing more.
     const setStops = vi.fn();
     let planned = { dep: POS, stops: ["KLAS"], dest: "KPWK" };
-    let totals = totalsOf([POS, "KLAS"], [flight(POS, "KLAS", ["KDSM", "KCBK", "KAIB"]), flight("KLAS", "KPWK", ["KSYF"])]);
+    let totals = totalsOf([POS, "KLAS"], [flight(POS, "KLAS", ["KDSM", "KPMV", "KCBK", "KAIB"]), flight("KLAS", "KPWK", ["KSYF", "KCWI"])]);
     const hook = renderHook(() => useSuggestedStops({ totals, local: false, planned, setStops }));
     act(() => hook.result.current.fuelToAdd!.add());
-    expect(setStops).toHaveBeenLastCalledWith(["KDSM", "KCBK", "KAIB", "KLAS", "KSYF"], ["KDSM", "KCBK", "KAIB", "KSYF"]);
-    // The route set, its plan not in yet: nothing more is put in.
-    planned = { ...planned, stops: ["KDSM", "KCBK", "KAIB", "KLAS", "KSYF"] };
-    totals = totalsOf([POS, "KLAS"], []);
-    hook.rerender();
     expect(setStops).toHaveBeenCalledTimes(1);
-    // Its plan: KDSM to KCBK and KSYF to KPWK still short, a stop each.
-    totals = totalsOf([POS, "KDSM", "KCBK", "KAIB", "KLAS", "KSYF"], [flight("KDSM", "KCBK", ["KPMV"]), flight("KSYF", "KPWK", ["KCWI"])]);
-    hook.rerender();
-    expect(setStops).toHaveBeenLastCalledWith(["KDSM", "KPMV", "KCBK", "KAIB", "KLAS", "KSYF", "KCWI"], ["KPMV", "KCWI"]);
-    // That plan's: every flight reaches, so nothing more, and the pill can
-    // take them out again.
+    expect(setStops).toHaveBeenLastCalledWith(
+      ["KDSM", "KPMV", "KCBK", "KAIB", "KLAS", "KSYF", "KCWI"],
+      ["KDSM", "KPMV", "KCBK", "KAIB", "KSYF", "KCWI"],
+    );
     planned = { ...planned, stops: ["KDSM", "KPMV", "KCBK", "KAIB", "KLAS", "KSYF", "KCWI"] };
     totals = totalsOf([POS, ...planned.stops], []);
     hook.rerender();
-    expect(setStops).toHaveBeenCalledTimes(2);
+    expect(setStops).toHaveBeenCalledTimes(1);
     expect(hook.result.current.fuelToAdd).toBeNull();
   });
 
@@ -70,5 +63,16 @@ describe("Add Fuel Stops", () => {
       useSuggestedStops({ totals, local: false, planned: { dep: POS, stops: ["KLAS"], dest: "KPWK" }, setStops: vi.fn() }),
     );
     expect(hook.result.current.tankFigures).toEqual({ usableGal: 36, taxiGal: 1.4, reservesGal: [7.5, 5], alternateGal: null });
+  });
+
+  it("names the flights short with no stop offered, and why", () => {
+    const totals = {
+      ...totalsOf([POS], []),
+      no_fuel_stop: [{ departure: "KLAS", destination: "KPWK", on_board: true }],
+    } as unknown as Totals;
+    const hook = renderHook(() =>
+      useSuggestedStops({ totals, local: false, planned: { dep: POS, stops: ["KLAS"], dest: "KPWK" }, setStops: vi.fn() }),
+    );
+    expect(hook.result.current.noFuelStop).toEqual([{ name: "KLAS → KPWK", onBoard: true }]);
   });
 });

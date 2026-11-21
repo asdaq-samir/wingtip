@@ -135,13 +135,13 @@ def totals_of(r, runs: list[HopRun], outcome: Flown, asked: Asked) -> dict:
         left = per_flight[-1].get("lands_with_gal")
         at += hops
     totals = route_totals(per_flight, r.flights)
-    totals["fuel_stops"] = fuel_stops_of(r, per_flight, flown)
+    totals["fuel_stops"], totals["no_fuel_stop"] = fuel_stops_of(r, per_flight, flown)
     # The time on the ground at the stops (hop_runs), for the arrival.
     totals["ground_min"] = sum(ground_min_at(asked.ground, f.dest_ident) for f in r.flights[:-1])
     return totals
 
 
-def fuel_stops_of(r, per_flight: list[dict], flown: list[tuple[list[dict], datetime | None]]) -> list[dict]:
+def fuel_stops_of(r, per_flight: list[dict], flown: list[tuple[list[dict], datetime | None]]) -> tuple[list[dict], list[dict]]:
     """Where each flight the tanks do not hold could land for fuel, at the
     owner's ask ("suggest fuel stops just like Tesla suggests"): the
     engine's navlog_fuel_stop_need says whether it needs one and the
@@ -152,8 +152,19 @@ def fuel_stops_of(r, per_flight: list[dict], flown: list[tuple[list[dict], datet
     in the plan, not food etc. That can be done by the pilot by tapping the
     button along the route", 2026-10-23): the map's Stops is where a meal
     or a rest is picked. None where every flight's fuel check passes, or
-    where the usable fuel or the flight's figures are not known."""
-    out = []
+    where the usable fuel or the flight's figures are not known.
+
+    And the flights short with no stop offered, each saying whether that
+    is because the fuel on board at the start is under its start, taxi and
+    reserve already (`on_board`: no field is in its reach) rather than no
+    field with fuel being in reach, so the app says why where the fuel
+    stops are offered (warn, never limit; the aviation audit of
+    2026-11-21, F7.6). Under IFR the last flight's search keeps the fuel on
+    to its alternate (14 CFR 91.167(a)(2)), as its fuel check counts it: a
+    flight short only by its alternate had been offered no stop (F7.1).
+    Each IFR stop is itself a first point of intended landing
+    (91.167(a)(1)); only the destination's alternate is counted."""
+    out, none = [], []
     for flight, t, (legs, depart) in zip(r.flights, per_flight, flown):
         # The engine has no clock: no departure time leaves now.
         depart = planning.now() if depart is None else depart if depart.tzinfo else depart.replace(tzinfo=timezone.utc)
@@ -184,7 +195,7 @@ def fuel_stops_of(r, per_flight: list[dict], flown: list[tuple[list[dict], datet
         )
         if need is None:
             continue
-        need.pop("on_board_short", None)
+        on_board = need.pop("on_board_short", False)
         try:
             stops, choices = fuelstops.suggest(flight.start, flight.end, **need, skip=set(r.idents))
         except (OSError, ValueError, KeyError):
@@ -192,15 +203,17 @@ def fuel_stops_of(r, per_flight: list[dict], flown: list[tuple[list[dict], datet
             # still says the flight is short, with no stop offered.
             log.warning("No fuel stops for %s-%s", flight.dep_ident, flight.dest_ident, exc_info=True)
             continue
-        if stops:
-            out.append(
-                {
-                    "departure": flight.dep_ident,
-                    "destination": flight.dest_ident,
-                    "usable_gal": need["usable_gal"],
-                    "reason": "fuel",
-                    "stops": [s.as_dict() for s in stops],
-                    "choices": [c.as_dict() for c in choices],
-                }
-            )
-    return out
+        if not stops:
+            none.append({"departure": flight.dep_ident, "destination": flight.dest_ident, "on_board": bool(on_board)})
+            continue
+        out.append(
+            {
+                "departure": flight.dep_ident,
+                "destination": flight.dest_ident,
+                "usable_gal": need["usable_gal"],
+                "reason": "fuel",
+                "stops": [s.as_dict() for s in stops],
+                "choices": [c.as_dict() for c in choices],
+            }
+        )
+    return out, none
