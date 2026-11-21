@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { create } from "zustand";
 import { useQueries } from "@tanstack/react-query";
 import { callEngine } from "../../lib/engine/engine";
-import { useWindPicks, legOf, type NavLogRow, type Landing, type ProcedureAirport, type ProcedureKind } from "../plan";
+import { useWindPicks, legOf, landingRunway, type NavLogRow, type Landing, type ProcedureAirport, type ProcedureKind } from "../plan";
 import type { ProcedureList, ProcedureSummary } from "../../lib/api/types";
 import { plateQuery, proceduresQuery } from "../../lib/queryClient";
 import { approachRunway, sameField, type PickedProcedure } from "../../lib/procedures";
@@ -169,8 +169,17 @@ export function useProceduresRoute(given: ProceduresRouteProps) {
     if (runway) onPick(ident, runway);
   };
   const close = () => onAt(null);
-  // The runway picked at a field, and a stop's to leave from.
-  const chosenAt = (ident: string) => picked.get(ident) ?? null;
+  // The runway landed on at a field, and a stop's to leave from. With an
+  // approach, the approach's own straight in, another only where the pilot
+  // picked it and the plate publishes circling minimums (the engine's
+  // landing_runway, AIM 5-4-20): "Land RWY 9" with KDLH's ILS 09, where
+  // the tray stood open with nothing picked (the HIG review's Q3).
+  const landedOn = (ident: string) => {
+    const now = picked.get(ident) ?? null;
+    const landing = landingOf(ident);
+    return landing ? landingRunway(landing, now, now !== null && !autoPicked.has(`land:${ident}`)).runway : now;
+  };
+  const chosenAt = (ident: string) => landedOn(ident);
   const takeoffAt = (ident: string) => takeoffs.get(ident) ?? null;
   // Each field of the route, its runway picked into the wind until the
   // pilot picks one or none, at the owner's ask ("a preselected runway into
@@ -209,6 +218,15 @@ export function useProceduresRoute(given: ProceduresRouteProps) {
           : [`takeoff:${a.ident}:${wind.ident}`]),
       ];
     })
+    // With an approach, its own runway written to the address where none
+    // was picked or the wind's was (landedOn), so the plan flies it; no
+    // wind is waited for.
+    .concat(
+      airports.flatMap((a) => {
+        const land = landingOf(a.ident) && !preselectedLand(a) ? landedOn(a.ident) : null;
+        return land && land !== picked.get(a.ident) ? [`land:${a.ident}:${land}`] : [];
+      }),
+    )
     .join(",");
   // Save waits while a field's wind is still coming (features/plan/windPicks): its
   // runway is picked into it as it comes, and the route planned again.

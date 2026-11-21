@@ -152,8 +152,9 @@ fn capital(s: &str) -> String {
 
 /// A section's name inside a sentence, in lower case but for a code's
 /// words -- "TFRs & special use", where it read "tfrs" (the FPL audit's
-/// A10; the FAA's codes are kept).
-fn in_sentence(label: &str) -> String {
+/// A10; the FAA's codes are kept). The verdict's line names its labels
+/// the same way (verdict/items.rs).
+pub(super) fn in_sentence(label: &str) -> String {
     let code = |w: &str| w.chars().take(2).filter(char::is_ascii_uppercase).count() == 2;
     label.split(' ').map(|w| if code(w) { w.to_owned() } else { w.to_lowercase() }).collect::<Vec<_>>().join(" ")
 }

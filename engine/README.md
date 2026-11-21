@@ -253,7 +253,9 @@ Then the callers switch to the name and the old copy is deleted.
   findings where none is picked, the line over them -- by `gonogo_brief`,
   and worded for the Brief as it opens (at most three lines a pilot acts
   on, each with what to do, why and its rule, the rest in one row) by
-  `gonogo_glance_lines`. Each is a name in `call.rs`
+  `gonogo_glance_lines`, with the Adverse Conditions under them (at most
+  three, a TFR crossed, the SIGMETs, CWAs, urgent PIREPs and G-AIRMETs
+  met on the route, AIM 7-1-5(b)(1)) by `gonogo_adverse_rows`. Each is a name in `call.rs`
   (`gonogo_brief`, `gonogo_risk`, `gonogo_runway_checks` ...), asked by
   the web app (callEngine), the planner's app.gonogo (wingtip_native.call;
   its POST /api/go-no-go asks `gonogo_brief` once) and the phones (the
@@ -291,7 +293,10 @@ Then the callers switch to the name and the old copy is deleted.
   pattern's legs on the map and as the planner flies them (the web's
   lib/wind, lib/pattern, lib/runwayFit, lib/takeoffLanding and
   lib/trafficPattern; wingtip.runway_wind and wingtip.pattern), each a name in
-  `call.rs` (`wind_pick`, `runway_end_fit`, `traffic_pattern` ...). The
+  `call.rs` (`wind_pick`, `runway_end_fit`, `traffic_pattern` ...), and
+  with an instrument approach the runway landed on, its own straight in,
+  another only by a circle the plate allows (`landing_runway`, AIM
+  5-4-20). The
   Go / No-Go's runway check goes by the same. A crosswind is rounded to
   the knot for the page only: a limit (the POH's demonstrated crosswind,
   the pilot's own) is judged against the unrounded one, which a

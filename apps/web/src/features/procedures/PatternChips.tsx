@@ -5,7 +5,7 @@ import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
 import { CollapsibleContent } from "../../components/ui/collapsible";
 import { Skeleton } from "../../components/ui/skeleton";
 import type { Runway } from "../../lib/api/types";
-import { runwayNumber, type RunwayEnd, type WindPick, type Landing, type ProcedureAirport } from "../plan";
+import { landingRunway, runwayNumber, type RunwayEnd, type WindPick, type Landing, type ProcedureAirport } from "../plan";
 import { trafficPattern } from "../../lib/trafficPattern";
 import type { EndFit } from "./runwayFit";
 import { setRunwayLine, useOpenRunwayLines } from "./useProceduresRoute";
@@ -74,10 +74,10 @@ export function PatternChips({
   // With an approach, the chip is the runway landed on: the approach's
   // own, straight in, or another only where the plate publishes circling
   // minimums -- a circle to land (AIM 5-4-20); one circling only may
-  // circle to any. No pattern is flown then (PlanWorkspace's patterns).
-  const straightIn = landing?.runway ?? null;
-  const mayCircle = !!landing && (straightIn === null || landing.circling === true);
-  const allowed = (id: string) => !landing || id === straightIn || mayCircle;
+  // circle to any. The engine's landing_runway says which. No pattern is
+  // flown then (PlanWorkspace's patterns).
+  const own = landingRunway(landing, null, false);
+  const allowed = (id: string) => own.othersAllowed || id === own.runway;
   // Folded to the runway picked, at the owner's ask ("can the runway line
   // collapse to the selected runway?"): its chip alone, a tap on it the
   // whole line again, and a pick folding it back to the new one. None
@@ -129,8 +129,11 @@ export function PatternChips({
   const after = useRef<HTMLDivElement>(null);
   const shown = !!picked && !open && a.runways !== null ? "folded" : "open";
   useLayoutEffect(() => {
+    // Measured from the field's row, which both the open line and the
+    // folded one sit in: folded, the line is laid out in the tray's row
+    // (`contents`, below) and has no box of its own to measure from.
     const box = after.current,
-      base = line.current;
+      base = line.current?.closest<HTMLElement>('[data-testid="field-part"]') ?? line.current;
     if (!box || !base) {
       trailingStood.delete(key);
       return;
@@ -163,8 +166,12 @@ export function PatternChips({
       // The pull-downs under the tray where there is no room beside it:
       // a field with an arrival and an approach to add ran the nav log
       // 41 points past a phone's width (the iOS audit's "no sideways
-      // scroll in a panel").
-      <div ref={line} className="flex flex-wrap items-center gap-x-2 gap-y-2" data-testid="procedure-patterns">
+      // scroll in a panel"). Laid out in the tray's own row (`contents`,
+      // RunwayTray's `folded`), so where they wrap they start at the line's
+      // leading edge, under "Land RWY", not under the runway's chip (the
+      // HIG review, 2026-11-21; the owner took it). Open, they slide with
+      // the runways, as before.
+      <div ref={line} className="contents" data-testid="procedure-patterns">
         {/* Still the group's choice to a screen reader, picked: the same
             stock ToggleGroup as the open line's, with the one runway in it,
             so VoiceOver says the same group and choice folded or open. A
@@ -174,8 +181,13 @@ export function PatternChips({
         <ToggleGroup
           value={[c.id]}
           aria-label={label ?? `${a.ident} ${landing ? "runway" : "traffic pattern"}`}
-          // Square where it meets the head, as the open line's body is.
-          className={cn(TRAY_BODY, "rounded-l-none")}
+          // Square where it meets the head, as the open line's body is; 12
+          // to the pull-downs beside it (the iOS rule's gap-3), so the
+          // runway's area, 3 past the tray, and a pull-down's, 6 round it,
+          // do not cross: at 8 KDEN's runway lost 3 of its probes to
+          // "+ ARR" (the HIG review, 2026-11-21). A margin, so a pull-down
+          // wrapped under it starts at the line's edge.
+          className={cn(TRAY_BODY, "mr-3 rounded-l-none")}
         >
           <ToggleGroupItem
             variant="glass"
@@ -208,7 +220,7 @@ export function PatternChips({
             past the card's edge, "+ APCH" cut, on a 375-point phone at the
             owner's 19.65 px (the HIG review, 2026-11-21). */}
         {trailing && (
-          <div ref={after} className="flex max-w-full min-w-0 flex-wrap items-center gap-2">
+          <div ref={after} className="flex max-w-full min-w-0 flex-wrap items-center gap-3 self-center">
             {trailing}
           </div>
         )}
@@ -217,7 +229,7 @@ export function PatternChips({
   }
   return (
     // The chips alone, the wind under the ident, how the runway is flown in its chip's name ("No need for info button").
-    <div ref={line} className="flex flex-wrap items-center gap-2" data-testid="procedure-patterns">
+    <div ref={line} className="flex min-w-0 flex-1 flex-wrap items-center gap-2" data-testid="procedure-patterns">
       {a.runways === null || !ends.length ? (
         <>
           {/* The runways' chips in outline while they come (the style audit, 2026-10-26), their words for a screen
