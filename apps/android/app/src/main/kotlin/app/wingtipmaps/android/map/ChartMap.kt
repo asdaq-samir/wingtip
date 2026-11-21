@@ -639,7 +639,6 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private fun edgeColour(night: Boolean): Int = if (night) Color.WHITE else Color.rgb(0x0b, 0x0f, 0x0a)
 
     private companion object {
-
         const val ROUTE = "route"
         const val ROUTE_EDGE = "route-edge"
         /** The chart's magenta, the web's COURSE_MAGENTA. */
@@ -649,7 +648,8 @@ private class MapHolder(val view: MapView, private val density: Float) {
          *  TAP.mark and TAP.line). */
         const val TAP_MARK = 22f
         const val TAP_LINE = 10f
-        /** How often each airplane is carried on between answers, while the map is started. */ const val CARRY_MS = 1_000L
+        /** How often each airplane is carried on between answers, while the map is started. */
+        const val CARRY_MS = 1_000L
         const val GLIDE = "glide-ring"
         /** The sheet's own settle, so the map's middle moves with it. */
         const val INSET_MS = 300
