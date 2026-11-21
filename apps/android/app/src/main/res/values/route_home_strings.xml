@@ -13,5 +13,5 @@
     <!-- The plan's ••• menu, and the Undo after Clear Route. -->
     <string name="route_menu">Route actions</string>
     <string name="clear_route">Clear Route</string>
-    <string name="undo_cleared">Cleared %1$s</string>
+    <string name="undo_cleared">Route Cleared</string>
 </resources>

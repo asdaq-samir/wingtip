@@ -49,6 +49,7 @@ import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.FlightRules
 import app.wingtipmaps.android.ready.ReadyToFlyRow
 import app.wingtipmaps.android.route.RouteMenu
+import app.wingtipmaps.android.route.replaceRoute
 import app.wingtipmaps.android.share.ShareRouteButton
 import app.wingtipmaps.android.strip.StripData
 import app.wingtipmaps.android.ui.sheet.CardExit
@@ -145,7 +146,7 @@ private fun RouteFields(plan: Plan, state: Plan.State, dryRun: DryRun) {
         )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
             Button(
-                onClick = { plan.plan(dep, dest, stops.split(",")) },
+                onClick = { plan.replaceRoute(dep, dest, stops.split(",")) },
                 enabled = dep.isNotBlank() && dest.isNotBlank() && !state.planning,
             ) { Text(stringResource(R.string.plan)) }
             // Its Share: the plan as a link another pilot opens (share/).

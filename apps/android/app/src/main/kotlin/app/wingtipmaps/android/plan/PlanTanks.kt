@@ -67,6 +67,9 @@ object PlanTanks {
 
     fun removedFuelStops() = _state.update { it.copy(fuelStops = emptyList()) }
 
+    /** The fuel set at the fields as an Undo or a Redo left it (RouteUndo). */
+    fun restore(own: Map<String, Int>) = _state.update { it.copy(own = own) }
+
     /** The route cleared: nothing of its fuel kept. */
     fun clear() = _state.update { State() }
 

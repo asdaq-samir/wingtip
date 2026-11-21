@@ -667,7 +667,14 @@ placement wins, and the difference is noted.
      Long press drags to reorder; a swipe removes the leg and shows
      Material's `Snackbar` with an Undo action (`route/RouteUndoSnackbar`,
      through the screen's `SnackbarHostState`; the owner, 2026-11-10:
-     stock over the hand-built undo row). Problems still show where they
+     stock over the hand-built undo row). Only an edit that took something
+     away puts one up, in the web's words: "KJVL Removed", "Route
+     Cleared", "Route Replaced" (Fly Here, Depart From, a route typed, a
+     link or a trip's leg, `route/ReplaceRoute`), "Direct to KMSN"; an
+     added or moved stop and a field's fuel set are quiet steps, taken back
+     by the wide window's Undo (`RouteUndo.Kind.loud`; the owner,
+     2026-11-21). Each step carries the fuel set at the fields
+     (`PlanTanks`), so an Undo puts the gauges back with the route. Problems still show where they
      happen.
   6. The figure strip at the sheet's foot: To, Dist, ETE, Trk and,
      whenever the airplane's position is known, GPS Alt (no To in

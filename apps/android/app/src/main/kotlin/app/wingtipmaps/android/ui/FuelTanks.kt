@@ -34,6 +34,7 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.ChoiceGroup
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.plan.PlanTanks
+import app.wingtipmaps.android.route.RouteUndo
 import app.wingtipmaps.android.route.addFuelStops
 import app.wingtipmaps.android.route.fuelStopsIn
 import app.wingtipmaps.android.route.fuelStopsToAdd
@@ -95,6 +96,7 @@ fun FuelTanks(plan: Plan, state: Plan.State) {
     }
     asking?.let { (ident, stop, tank) ->
         FuelSetDialog(ident, stop, tank, onDone = { gallons ->
+            plan.undoable(RouteUndo.Kind.FUEL, ident)
             PlanTanks.set(ident, gallons)
             asking = null
             plan.plan()
