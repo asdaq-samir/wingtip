@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { consoleSheet, grabberTo, settle, settled, sideDrawer, frontSheet } from "./helpers";
-import { expectPage, expectSearchInUse, expectShown, openAirport, toggle } from "./sheetPages";
+import { expectPage, expectSearchInUse, expectShown, openAirport, showPage, toggle } from "./sheetPages";
 
 /**
  * The sheet's two pages, Search and FPL, turned by one round button in
@@ -22,7 +22,7 @@ import { expectPage, expectSearchInUse, expectShown, openAirport, toggle } from 
  * Cancel bring it back. The cards over the pages: sheet-pages-cards.spec.
  */
 
-test("Search to FPL and back by the toggle, the sheet's size kept", { tag: "@smoke" }, async ({ page }) => {
+test("Search to FPL by the toggle and back by FPL's Search button, the sheet's size kept", { tag: "@smoke" }, async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
   await grabberTo(page, "half");
@@ -37,20 +37,21 @@ test("Search to FPL and back by the toggle, the sheet's size kept", { tag: "@smo
   await expect(sideDrawer(page).getByTestId("route-empty")).toBeVisible();
   await expect(sideDrawer(page).getByText("Plan a flight")).toHaveCount(0);
 
-  await toggle(page).click();
+  // FPL's Search button is the way back, the sheet's size kept, the search
+  // in use (its Cancel goes back to FPL).
+  await showPage(page, 0);
   await expectPage(page, 0);
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
-  // The keyboard: a real button, Enter and Space turn the page, the focus
-  // kept on it, its name now the other way.
+  // The keyboard: a real button, Enter turns the page.
+  await page.goto("/app/plan?open=search");
+  await settle(page);
+  await grabberTo(page, "half");
   await toggle(page).focus();
   await page.keyboard.press("Enter");
   await expectPage(page, 1);
-  await expect(toggle(page)).toBeFocused();
-  await page.keyboard.press("Space");
-  await expectPage(page, 0);
 });
 
-test("on Search the toggle starts the first row and the account button ends it, on FPL its FPL button ends it, the ✕ before it, the bars one size", async ({
+test("on Search the toggle starts the first row and the account button ends it, on FPL its Search button starts it and the ✕ ends it, the bars one size", async ({
   page,
 }) => {
   test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
@@ -73,7 +74,9 @@ test("on Search the toggle starts the first row and the account button ends it, 
       return {
         sheet: box('[data-slot="map-panel"]'),
         bar: box(bar),
-        toggle: box('[data-testid="sheet-page-toggle"]'),
+        // Search's toggle; FPL's head has its Search button and ✕ instead.
+        toggle: up === "0" ? box('[data-testid="sheet-page-toggle"]') : box('[data-testid="fpl-search"]'),
+        clear: up === "0" ? undefined : box('[data-testid="fpl-clear"]'),
         // The account button drawn in sight (Search's, at rest), or none:
         // the page put away keeps its box, hidden.
         account: [...document.querySelectorAll('[data-testid="account-button"]')]
@@ -83,13 +86,21 @@ test("on Search the toggle starts the first row and the account button ends it, 
       };
     });
   const fpl = await measure();
-  await toggle(page).click();
+  // Search at rest, by its deep link: FPL's Search button opens the search
+  // in use, over the same page.
+  await page.goto("/app/plan?dep=C81&dest=KDLH&open=search");
+  await settle(page);
+  await grabberTo(page, "half");
+  await settled(sideDrawer(page));
   await expectPage(page, 0);
   const search = await measure();
   const mid = (b: { top: number; h: number }) => b.top + b.h / 2;
-  // On FPL the FPL button at the row's end, sixteen in from the sheet's edge, level
-  // with the two rows; no account button in sight (it is Search's).
-  expect(fpl.viewport - fpl.toggle.right).toBeCloseTo(16, 0);
+  // On FPL the ✕ at the row's end, sixteen in from the sheet's edge, level
+  // with the two rows and its Search button at the start; no account button
+  // in sight (it is Search's).
+  expect(fpl.viewport - fpl.clear!.right).toBeCloseTo(16, 0);
+  expect(mid(fpl.clear!)).toBeCloseTo(mid(fpl.bar), 0);
+  expect(fpl.toggle.left - fpl.sheet.left).toBeCloseTo(16, 0);
   expect(mid(fpl.toggle)).toBeCloseTo(mid(fpl.bar), 0);
   expect(fpl.account, "no account button on FPL").toBeUndefined();
   // On Search the toggle at the row's start, sixteen in from the sheet's
@@ -114,7 +125,8 @@ test("on Search the toggle starts the first row and the account button ends it, 
   // left, which may be empty, and the ✕ and FPL button at the right).
   const sheetMid = (fpl.sheet.left + fpl.sheet.right) / 2;
   expect((fpl.bar.left + fpl.bar.right) / 2, "the two rows are centred in the row").toBeCloseTo(sheetMid, -1);
-  expect(fpl.bar.right).toBeLessThanOrEqual(fpl.toggle.left);
+  expect(fpl.bar.right).toBeLessThanOrEqual(fpl.clear!.left);
+  expect(fpl.bar.left).toBeGreaterThanOrEqual(fpl.toggle.right);
   expect(search.bar.h).toBeCloseTo(46, 0);
   expect(fpl.bar.h, "FPL's two rows the field's height").toBeCloseTo(46, 0);
   // No bar under the sheet: the pill is the search's own 4.25 rem off the
@@ -225,7 +237,7 @@ test("a route made goes to FPL; Search puts FPL's figures away with its page", a
   await grabberTo(page, "half");
   await expect(sideDrawer(page).getByTestId("route-strip")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeVisible();
-  await toggle(page).click();
+  await showPage(page, 0);
   await expectPage(page, 0);
   await expect(page.getByTestId("panel-foot")).toBeHidden();
 });
@@ -252,7 +264,7 @@ test("a drag up or down still sizes the sheet on either page", async ({ page, br
   await settle(page);
   await grabberTo(page, "half");
   for (const at of [1, 0] as const) {
-    if ((await toggle(page).getAttribute("data-shows")) === String(at)) await toggle(page).click();
+    await showPage(page, at);
     await expectPage(page, at);
     await grabberTo(page, "full");
     await grabberTo(page, "half");
@@ -340,7 +352,9 @@ test("a card open covers the row, its toggle and account button, and its close a
   await expect(page.getByTestId("account-button")).toBeHidden();
 });
 
-test("on FPL one tap on the ✕ asks to clear the route in a centred alert, the page staying up; FPL closes it", async ({ page }) => {
+test("on FPL one tap on the ✕ asks to clear the route in a centred alert, the page staying up; its Search button goes back", async ({
+  page,
+}) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await grabberTo(page, "half");
@@ -365,7 +379,7 @@ test("on FPL one tap on the ✕ asks to clear the route in a centred alert, the 
   await expect(page).not.toHaveURL(/dep=C81/);
   await expectPage(page, 1);
   await expect(clear).toBeDisabled();
-  // FPL's button is what goes back to Search.
-  await toggle(page).click();
+  // FPL's Search button goes back to Search, the route (here none) kept.
+  await showPage(page, 0);
   await expectPage(page, 0);
 });

@@ -86,7 +86,7 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
   return (
     <div className="flex w-full items-center gap-2" role="search">
       <h1 className="sr-only">Wingtip Maps</h1>
-      {!using && <PageToggle page={0} />}
+      {!using && <PageToggle />}
       <SearchBox model={model} inputRef={inputRef} using={using} />
       {/* In use, a round ✕ at the row's end where the avatar was, as Apple
           Maps' search has on iOS 26, not the word Cancel (the owner,

@@ -1,6 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { grabberTo, settle, sideDrawer, slow } from "./helpers";
-import { toggle, expectShown, openAirport, tapAirportOnMap } from "./sheetPages";
+import { expectShown, openAirport, showPage, tapAirportOnMap } from "./sheetPages";
 
 /**
  * Every way to a route from an airport -- Fly Here from a card opened on
@@ -67,7 +67,7 @@ test("Fly Here from the map over a route, from Search at the pill", async ({ pag
   await page.goto(ROUTE);
   await settle(page);
   await grabberTo(page, "half");
-  await toggle(page).tap();
+  await showPage(page, 0);
   await grabberTo(page, "peek");
   // A Class C field, drawn with the whole route in sight and clear of its
   // line, inside the box CI's overlay tiles are cut to (41.4 to 43.4 N,
@@ -93,7 +93,7 @@ for (const size of ["half", "full"] as const) {
     // buttons, the toggle with them, give way (index.css).
     await grabberTo(page, "half");
     if (size === "full") {
-      await toggle(page).tap();
+      await showPage(page, 0);
       await grabberTo(page, size);
     }
     await openAirport(page, "KOSH", true);
@@ -110,7 +110,7 @@ test("Fly Here again to the airport the route already goes to brings FPL back", 
   await openAirport(page, "KOSH", true);
   await flyHere(page, "KOSH");
   await expectShown(page, 1);
-  await toggle(page).tap();
+  await showPage(page, 0);
   await expectShown(page, 0);
   // The same route asked for again: the address's points are as they were.
   await openAirport(page, "KOSH", true);
@@ -123,14 +123,14 @@ test("the top hit's Fly Here and Depart From land on FPL", async ({ page }) => {
   await page.goto(ROUTE);
   await settle(page);
   await grabberTo(page, "half");
-  await toggle(page).tap();
+  await showPage(page, 0);
   const search = page.getByTestId("search-airports");
   await search.tap();
   await search.fill("KOSH");
   await page.getByTestId("search-top-depart-from").tap({ timeout: slow(10_000) });
   await expect(page).toHaveURL(/[?&]dep=KOSH/, { timeout: slow(15_000) });
   await expectPlanLive(page);
-  await toggle(page).tap();
+  await showPage(page, 0);
   await search.tap();
   await search.fill("KMSN");
   await page.getByTestId("search-top-fly-here").tap({ timeout: slow(10_000) });
@@ -181,7 +181,7 @@ test("Add Stop from Search's card over a route lands on FPL", async ({ page }) =
   await page.goto(ROUTE);
   await settle(page);
   await grabberTo(page, "half");
-  await toggle(page).tap();
+  await showPage(page, 0);
   await openAirport(page, "KOSH", true);
   await card(page).getByTestId("place-add-stop").tap();
   await expect(page).toHaveURL(/[?&]stops=[^&]*KOSH/, { timeout: slow(15_000) });

@@ -10,20 +10,25 @@ export { showPage } from "./oneSearch";
  */
 
 const pages = (page: Page) => sideDrawer(page).getByTestId("sheet-pages");
-/** The toggle: it shows the page a tap goes to (data-shows), FPL's route
- *  glyph on Search, the magnifier on FPL. */
+/** Search's toggle to FPL, the word FPL; FPL's page has none (its way back
+ *  is its head's Search button, which the specs go back by: `showPage`). */
 export const toggle = (page: Page) => page.getByTestId("sheet-page-toggle");
 
-/** The page `at` up, and the toggle offering the other, by name: a
- *  button never pressed, its name where it goes. */
+/** The page `at` up: on Search the toggle offering FPL, by name, a button
+ *  never pressed; on FPL no toggle. */
 export async function expectPage(page: Page, at: 0 | 1) {
   await expect(pages(page)).toHaveAttribute("data-page", String(at));
-  await expect(toggle(page)).toHaveAttribute("data-shows", String(at === 0 ? 1 : 0));
+  if (at === 1) {
+    await expect(toggle(page)).toHaveCount(0);
+    return;
+  }
   // Its name where it is in sight: under a card the sheet's row, the
   // toggle with it, is put away, and a hidden element has none.
-  if (await toggle(page).isVisible())
-    await expect(toggle(page)).toHaveAccessibleName(at === 0 ? "FPL, show flight plan" : "FPL, close flight plan");
-  await expect(toggle(page)).toHaveAttribute("aria-pressed", "false");
+  // (And none while the search is in use: its Cancel is in the toggle's place.)
+  if (await toggle(page).isVisible()) {
+    await expect(toggle(page)).toHaveAccessibleName("FPL, show flight plan");
+    await expect(toggle(page)).toHaveAttribute("aria-pressed", "false");
+  }
 }
 
 /** The page `at` is the one in sight and live: its panel shown, the

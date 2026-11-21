@@ -9,7 +9,7 @@ import { useConfirm } from "../../../components/useConfirm";
  * it once and confirm"; it was a long press). With no route there is
  * nothing to clear, so it stays where it is, dimmed and unpressable, as
  * iOS dims a toolbar button with nothing to do rather than drawing the row
- * again without it. The page's close is the FPL button beside it (PageToggle).
+ * again without it. The way back to Search is the head's Search button.
  */
 export default function ClearRouteButton({ hasRoute, onClear }: { hasRoute: boolean; onClear: () => void }) {
   const [ask, asked] = useConfirm({

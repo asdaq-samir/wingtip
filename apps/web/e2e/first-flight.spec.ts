@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { frontSheet, grabberTo, searchAirports, settle, slow } from "./helpers";
-import { expectPage, expectSearchInUse, toggle } from "./sheetPages";
+import { expectPage, expectSearchInUse, showPage, toggle } from "./sheetPages";
 
 /**
  * The first flight (FirstFlight, useFirstFlight; the owner's option A,
@@ -107,10 +107,13 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
     .click({ timeout: slow(15_000) });
   await expect(page).toHaveURL(/dest=KOSH/, { timeout: slow(30_000) });
   await expectPage(page, 1);
-  // The tip waits for the toggle to show FPL: on FPL it shows the magnifier.
+  // The tip waits for the toggle, which Search alone has: none on FPL. Search
+  // at rest again by its deep link (FPL's Search button opens the search in
+  // use, its Cancel back to FPL).
   const tip = page.getByTestId("fpl-tip");
   await expect(tip).toHaveCount(0);
-  await toggle(page).click();
+  await page.goto(`${page.url()}&open=search`);
+  await settle(page);
   await expectPage(page, 0);
   await expect(tip).toBeVisible();
   await expect(tip).toContainText("Your flight plan is one tap away");
@@ -142,13 +145,12 @@ test("the FPL tip stays off the sheet all the way up, and once the toggle has be
 }) => {
   // The welcome seen, the tip not (lib/firstRunTips' store).
   await page.addInitScript(() => localStorage.setItem("wingtip.tips", JSON.stringify({ state: { seen: ["first-flight"] }, version: 0 })));
-  await page.goto("/app/plan?dep=C81&dest=KMSN");
+  await page.goto("/app/plan?dep=C81&dest=KMSN&open=search");
   await settle(page);
   const tip = page.getByTestId("fpl-tip");
   // A route's link opens at the pill, FPL's figures in its row: half way
   // the first row, and the toggle at its end, are in sight.
   await grabberTo(page, "half");
-  if ((await toggle(page).getAttribute("data-shows")) === "0") await toggle(page).click();
   await expectPage(page, 0);
   await expect(tip).toBeVisible({ timeout: slow(15_000) });
   // All the way up the toggle is at the screen's top, with no room over it:
@@ -160,7 +162,7 @@ test("the FPL tip stays off the sheet all the way up, and once the toggle has be
   // The toggle tapped to FPL: the tip has done its work.
   await toggle(page).click();
   await expectPage(page, 1);
-  await toggle(page).click();
+  await showPage(page, 0);
   await expectPage(page, 0);
   await page.waitForTimeout(1000);
   await expect(tip).toHaveCount(0);
