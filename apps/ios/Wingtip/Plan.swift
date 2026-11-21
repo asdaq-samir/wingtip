@@ -165,7 +165,7 @@ final class Plan {
         if undoManager?.isUndoing == true || undoManager?.isRedoing == true {
             undoOffer = nil
         } else if let note {
-            UIAccessibility.post(notification: .announcement, argument: note)
+            Announce.alert(note)
             undoOffer = UndoOffer(note)
         }
         guard let undoManager else { return }

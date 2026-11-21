@@ -44,28 +44,49 @@ enum Format {
 
     /// A time aloft, a time left or an age, in minutes, as the web's
     /// Intl.DurationFormat writes it narrow: "1h 5m", "45m", "3h", "0m".
+    /// Foundation's own duration style (Duration.UnitsFormatStyle, narrow,
+    /// the hours and minutes only, a zero unit left out), the same CLDR
+    /// words the web's Intl.DurationFormat writes, in place of the
+    /// hand-built switch.
     static func duration(_ minutes: Double) -> String {
-        let whole = max(0, Int(minutes.rounded()))
-        let (h, m) = (whole / 60, whole % 60)
-        switch (h, m) {
-        case (0, _): return "\(m)m"
-        case (_, 0): return "\(h)h"
-        default: return "\(h)h \(m)m"
-        }
+        whole(minutes).formatted(.units(allowed: [.hours, .minutes], width: .narrow).locale(locale))
     }
 
-    /// A leg's time en route as a paper nav log writes it: "0:18".
+    /// A leg's time en route as a paper nav log writes it: "0:18"
+    /// (Duration.TimeFormatStyle's hour-minute pattern).
     static func navLogTime(_ minutes: Double) -> String {
-        let whole = max(0, Int(minutes.rounded()))
-        return "\(whole / 60):\(String(whole % 60).leftPadded(to: 2))"
+        whole(minutes).formatted(.time(pattern: .hourMinute).locale(locale))
+    }
+
+    /// Minutes as a stopwatch counts them, "7:05", minutes past an hour
+    /// still minutes (Duration.TimeFormatStyle's minute-second pattern).
+    static func stopwatch(_ seconds: Double) -> String {
+        Duration.seconds(max(0, seconds.rounded(.down))).formatted(.time(pattern: .minuteSecond).locale(locale))
+    }
+
+    /// Minutes rounded to the whole minute, never below zero, as a Duration.
+    private static func whole(_ minutes: Double) -> Duration {
+        .seconds(max(0, minutes.rounded()) * 60)
     }
 
     /// A UTC clock time as reports and flight plans give it: "1432Z".
-    static func zulu(_ date: Date) -> String {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "UTC")!
-        let parts = calendar.dateComponents([.hour, .minute], from: date)
-        return String(parts.hour ?? 0).leftPadded(to: 2) + String(parts.minute ?? 0).leftPadded(to: 2) + "Z"
+    static func zulu(_ date: Date) -> String { date.formatted(zuluStyle) }
+
+    /// A clock time, 24-hour, in a zone (the phone's own by default),
+    /// "09:05", as the web app's clockTime writes it.
+    static func clock(_ date: Date, in zone: TimeZone = .current) -> String {
+        date.formatted(clockStyle(zone))
+    }
+
+    /// Foundation's verbatim date styles: Sendable values with the
+    /// pattern fixed, so no DateFormatter or calendar sums are kept here.
+    private static let zuluStyle = Date.VerbatimFormatStyle(
+        format: "\(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased))\(minute: .twoDigits)Z",
+        locale: locale, timeZone: .gmt, calendar: Calendar(identifier: .gregorian))
+    private static func clockStyle(_ zone: TimeZone) -> Date.VerbatimFormatStyle {
+        Date.VerbatimFormatStyle(
+            format: "\(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased)):\(minute: .twoDigits)",
+            locale: locale, timeZone: zone, calendar: Calendar(identifier: .gregorian))
     }
 
     /// A course, heading, track or wind direction: three figures, whole

@@ -1,3 +1,4 @@
+import Accessibility
 import Foundation
 import UIKit
 
@@ -71,14 +72,15 @@ enum MapMotion {
 /// it come in (the copilot's message, a call from ATC, the best field in
 /// an emergency): a banner appearing is otherwise silent to VoiceOver.
 /// Each caller posts once per new alert. An urgent one is said at once,
-/// over what VoiceOver is reading; the others wait their turn.
+/// over what VoiceOver is reading; the others wait their turn (the
+/// priority alone says so since iOS 17, which deprecated the queue flag).
+/// The Accessibility framework's own AccessibilityNotification, in place
+/// of UIKit's untyped post with an attributes dictionary.
 enum Announce {
     @MainActor
     static func alert(_ words: String, urgent: Bool = false) {
-        let said = NSAttributedString(string: words, attributes: [
-            .accessibilitySpeechAnnouncementPriority: urgent ? UIAccessibilityPriority.high : UIAccessibilityPriority.default,
-            .accessibilitySpeechQueueAnnouncement: !urgent,
-        ])
-        UIAccessibility.post(notification: .announcement, argument: said)
+        var said = AttributedString(words)
+        said.accessibilitySpeechAnnouncementPriority = urgent ? .high : .default
+        AccessibilityNotification.Announcement(said).post()
     }
 }
