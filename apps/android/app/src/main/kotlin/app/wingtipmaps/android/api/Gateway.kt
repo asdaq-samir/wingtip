@@ -12,6 +12,7 @@ import app.wingtipmaps.android.map.OverlayCache
 import app.wingtipmaps.android.map.OverlayStore
 import app.wingtipmaps.android.offline.KeptLoopTiles
 import app.wingtipmaps.android.offline.LoopTileFallback
+import app.wingtipmaps.android.writeWhole
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -220,10 +221,7 @@ object Gateway {
     suspend fun saveFile(url: String, file: File, who: String) {
         client.newCall(Request.Builder().url(url).build()).executeAsync().use { response ->
             if (!response.isSuccessful) throw IllegalStateException("$who answered ${response.code}.")
-            file.parentFile?.mkdirs()
-            val part = File(file.path + ".part")
-            part.writeBytes(response.body.bytes())
-            if (!part.renameTo(file)) part.delete()
+            file.writeWhole(response.body.bytes())
         }
     }
 

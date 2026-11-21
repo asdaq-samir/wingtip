@@ -4,6 +4,8 @@ import android.content.Context
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.SavedTrack
+import app.wingtipmaps.android.readWhole
+import app.wingtipmaps.android.writeWhole
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,13 +43,13 @@ interface TrackShelf {
  * The flown tracks logged whose upload to their saved flight has not gone
  * through yet (no signal after landing is common), kept on the phone until
  * it has: the only copy of a flight's track once the recorder has let it
- * go (the iPhone's UnsentTracks, IOS-1). Sent again each time the app is in
- * front with a network (AutoLogbookHost), and gone with the recorder's own
+ * go (the iPhone's UnsentTracks, IOS-1). Sent by WorkManager once there is
+ * a network (UnsentTracksWorker), and gone with the recorder's own
  * track when the pilot signs out (PhoneWipe).
  */
 class UnsentTracks(private val file: File) : TrackShelf {
     private val _unsent = MutableStateFlow(
-        runCatching { Gateway.json.decodeFromString<List<Unsent>>(file.readText()) }.getOrDefault(emptyList()),
+        file.readWhole()?.let { runCatching { Gateway.json.decodeFromString<List<Unsent>>(it) }.getOrNull() }.orEmpty(),
     )
     override val unsent: StateFlow<List<Unsent>> = _unsent.asStateFlow()
     // Kept from an earlier run: said so until it is sent.
@@ -89,15 +91,12 @@ class UnsentTracks(private val file: File) : TrackShelf {
         withContext(Dispatchers.IO) { file.delete() }
     }
 
-    /** Written whole (a .part, then renamed), awaited, so the recorder lets
-     *  its own copy go only once this one is on the disk. */
+    /** Written whole and flushed to the disk (AtomicFile, WholeFiles),
+     *  awaited, so the recorder lets its own copy go only once this one is
+     *  on the disk: it is the only copy of the flight's track. */
     private suspend fun write() = writing.withLock {
         val text = Gateway.json.encodeToString(_unsent.value)
-        withContext(Dispatchers.IO) {
-            val part = File(file.parentFile, file.name + ".part")
-            part.writeText(text)
-            part.renameTo(file)
-        }
+        withContext(Dispatchers.IO) { file.writeWhole(text) }
     }
 
     companion object {

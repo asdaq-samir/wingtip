@@ -15,7 +15,10 @@
 [versions]
 agp = "9.6.0-alpha05"
 kotlin = "2.5.0-RC"
-coreKtx = "1.19.1"
+# core-ktx's alpha, the newest on Google Maven on 2026-11-21; its core
+# carries AtomicFile, which the app's own files are written through
+# (WholeFiles.kt).
+coreKtx = "1.20.0-alpha01"
 activityCompose = "1.14.0-alpha03"
 lifecycle = "2.12.0-alpha06"
 # Compose's alpha BOM, the newest (2026.11.01): Compose 1.13.0-rc01, and
@@ -35,15 +38,16 @@ jna = "5.19.1"
 maplibre = "2026.11.2-globe"
 material = "1.14.0"
 junit = "4.13.2"
-androidxTestRunner = "1.7.0"
-androidxTestJunit = "1.3.0"
+androidxTestRunner = "1.8.0-alpha04"
+androidxTestJunit = "1.4.0-alpha04"
 # The flight pieces (flight/, records/, notify/): the fused location
 # provider, Room 3 (androidx.room3) for the records with KSP for its
 # compiler (KSP2, whose version is its own since 2.3), DataStore for the
-# few switches.
+# few switches. Room 3's 3.1.0-alpha04 and KSP 2.3.14, the newest on
+# Google Maven and Maven Central on 2026-11-21.
 playServicesLocation = "21.4.0"
-room3 = "3.0.3"
-ksp = "2.3.13"
+room3 = "3.1.0-alpha04"
+ksp = "2.3.14"
 datastore = "1.3.0"
 # The geoid model that turns the GPS's height above the ellipsoid into
 # height above mean sea level, for phones below Android 14 (own ship's
@@ -58,8 +62,9 @@ metricsPerformance = "1.0.0"
 # archive fetched with the app in the background or closed.
 work = "2.12.0"
 # Glance, for the home screen's Next Flight widget (widget/), drawn in
-# Material 3's roles from the Wingtip palettes.
-glance = "1.2.0"
+# Material 3's roles from the Wingtip palettes; 1.3.0-alpha02, the newest
+# on Google Maven on 2026-11-21.
+glance = "1.3.0-alpha02"
 # Navigation 3, for the sheet's cards and pages (ui/SheetPages.kt's
 # NavDisplay over MapViewModel's back stack): its transitions and
 # predictive back, and Material's list-detail scene on a wide window. The
@@ -87,13 +92,15 @@ mlkitTextRecognition = "19.0.2"
 # train, 1.5.0 the newest stable on Google Maven on 2026-11-10; UiAutomator
 # for the generator's taps (2.4.1, the same day); ProfileInstaller, which
 # installs the profile on a phone that did not get it from Play (1.4.1).
+# Benchmark and the Baseline Profile plugin moved to their 1.6.0-alpha02,
+# the newest on Google Maven on 2026-11-21.
 # Hilt, the app's dependency injection (the owner, 2026-11-12): Dagger's
 # Hilt 2.60.1 (google/dagger's GitHub releases, dagger-2.60.1, the newest
 # on 2026-11-12), its compiler through KSP, and AndroidX's Hilt 1.4.0
 # (Google Maven) for hiltViewModel in Compose.
 hilt = "2.60.1"
 androidxHilt = "1.4.0"
-benchmark = "1.5.0"
+benchmark = "1.6.0-alpha02"
 uiautomator = "2.4.1"
 profileinstaller = "1.4.1"
 # Coil 3, the images (a field's pictures on its card, ui/PhotoCarousel.kt):

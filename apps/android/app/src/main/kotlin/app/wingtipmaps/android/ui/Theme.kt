@@ -17,12 +17,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.design.LocalNative
 import app.wingtipmaps.android.design.generated.WingtipColors
@@ -83,7 +83,7 @@ object LookPreference {
 }
 
 @Composable
-fun rememberLook(): State<Look?> = LookPreference.flow(LocalContext.current).collectAsState()
+fun rememberLook(): State<Look?> = LookPreference.flow(LocalContext.current).collectAsStateWithLifecycle()
 
 /** The scheme's own palette, for the roles Material does not name: a
  *  caution, a go, the course's magenta, the inks. */
