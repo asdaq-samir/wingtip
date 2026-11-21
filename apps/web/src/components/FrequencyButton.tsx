@@ -2,7 +2,7 @@ import { Button as BaseButton } from "@base-ui/react/button";
 import { Check } from "lucide-react";
 import { mhzText } from "../lib/frequencies";
 import { showError } from "../lib/problems";
-import { useCopied } from "../lib/share";
+import { copyText, useCopied } from "../lib/share";
 
 /**
  * A frequency wherever it is shown -- an airport's card and its Brief
@@ -44,7 +44,7 @@ export default function FrequencyButton({
         // The frequency's own tap, not the row's or the card's under it.
         event.stopPropagation();
         // Called in the tap, as the clipboard asks.
-        void navigator.clipboard?.writeText(text).then(
+        void copyText(text).then(
           () => setCopied(text),
           () => showError("Not Copied", "This browser would not let the frequency be copied."),
         );

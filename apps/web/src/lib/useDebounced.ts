@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 /** `value` once it has stood still for `delayMs`: what is typed asked
  *  about a word at a time, not a letter (the airport search, Nearest's
- *  places). */
+ *  places, the clearance card's reader, which had a copy of its own). */
 export function useDebounced<T>(value: T, delayMs: number): T {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {

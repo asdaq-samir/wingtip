@@ -28,7 +28,9 @@ const isoDay = (d: Date) => localDay(d);
 export default function PastFlightsDay({ from, onPick }: { from: string | null; onPick: (day: string | null) => void }) {
   const [picking, setPicking] = useState(false);
   const today = new Date();
-  const earliest = new Date(today.getTime() - (ARCHIVE_DAYS - 1) * 86_400_000);
+  // Counted on the calendar (Date rolls a day before the 1st into the
+  // month before), not in 24-hour days, which a change of clocks makes 23.
+  const earliest = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (ARCHIVE_DAYS - 1));
   const picked = from ? new Date(`${from}T12:00:00Z`) : undefined;
   return (
     <ResponsivePopover open={picking} onOpenChange={setPicking}>
