@@ -545,10 +545,13 @@ The owner's steps, once:
    for a new app: let Google generate the app-signing key. A new
    personal developer account then runs a closed test with at least 12
    testers for 14 days before production.
-5. **Each release:** raise `ANDROID_VERSION_CODE` above the last
-   upload's (the workflow passes none yet, so set it for the run, or in
-   `app/build.gradle.kts`), take the bundle from that run, and upload it.
-   The foreground-service declarations and the Data safety form are in
+5. **Each release:** the release build's version code is the workflow's
+   run number (`ANDROID_VERSION_CODE`, set by `scripts/ci/android_build.sh`),
+   so each upload is above the last. With the `PLAY_SERVICE_ACCOUNT`
+   secret, main's push puts the bundle on the internal testing track
+   by itself (`scripts/ci/play_internal.py`, docs/store/beta.md); without
+   it, take the bundle from the run and upload it by hand. The
+   foreground-service declarations and the Data safety form are in
    docs/store (foreground-services.md, privacy-labels.md).
 
 ## The flight pieces, and what is still to come

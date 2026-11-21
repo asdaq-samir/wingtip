@@ -4,8 +4,8 @@ import UIKit
 /// About, as Settings > General > About has it: the app and its build, the
 /// editions of the FAA data in use, what the app is and is not (the
 /// planning aid's words, the same in every app), whose data and software
-/// it is made with, the site's legal pages, the open-source acknowledgements
-/// (the app's page in Settings), and the demo flight for a
+/// it is made with, the site's legal pages, Send Feedback, the open-source
+/// acknowledgements (the app's page in Settings), and the demo flight for a
 /// pilot or App Review trying it. Reached from Setup's last section.
 struct AboutView: View {
     @Environment(\.appCommand) private var appCommand
@@ -54,6 +54,15 @@ struct AboutView: View {
                 // Settings.bundle (LicensePlist, scripts/build/licences.sh ios).
                 if let settings = URL(string: UIApplication.openSettingsURLString) {
                     Link("Acknowledgements", destination: settings)
+                }
+            }
+            // A tester's word to the owner, through the share sheet to whoever
+            // they send it (docs/store/beta.md); TestFlight's own screenshot
+            // feedback goes to App Store Connect beside it.
+            Section {
+                ShareLink(item: AboutModel.feedback(version: model.version, system: "iOS \(UIDevice.current.systemVersion)"),
+                          subject: Text("Wingtip Maps Feedback")) {
+                    Text("Send Feedback")
                 }
             }
             // The flight planned and the map shown with the FPL tab up; the

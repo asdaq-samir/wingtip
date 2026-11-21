@@ -165,6 +165,14 @@ longer than it takes to answer the request.
   goes to a server. Opened, it shows the Shared Flight preview and plans
   nothing until Use This Plan. The kneeboard's PDF saved the same way
   stays as the pilot sends it.
+- **A tester's feedback** (About, Send Feedback, on the iPhone and
+  Android; docs/store/beta.md). The share sheet is handed the app's
+  version and build, the system's version (what the fault reports
+  already carry, above) and three questions. It goes only where the tester
+  sends it, by their own mail or message, and the app sends nothing
+  itself. TestFlight's own screenshot feedback is Apple's, kept in App
+  Store Connect under Apple's terms. Play's internal testers write to the
+  owner the same way.
 - **The iPhone's widgets** (`WingtipWidgets`). Next Flight reads the plan
   on the page and the saved flights' routes and totals from the App Group
   the app writes (`Shared/WidgetStore.swift`), on the phone. Airport

@@ -774,4 +774,7 @@ it is the gateway's address and the app's associated domain.
    sign-in.
 7. **TestFlight:** add yourself as an internal tester. The next push to
    `main` that changes the app (or Run workflow on Native iOS) uploads a
-   build; it appears in TestFlight after Apple processes it.
+   build; it appears in TestFlight after Apple processes it. Once
+   processed, `scripts/ci/testflight_beta.py` gives it its What to Test
+   and sends it to the external group **Pilots** with Beta App Review
+   asked for (docs/store/beta.md, the pilot beta).

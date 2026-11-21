@@ -597,7 +597,8 @@ placement wins, and the difference is noted.
   Flights lists its past flights by its ICAO address, each with ▶, which
   plays it on the map with its path behind it (`PastFlightReplay`, its bar
   over the map). Info is its public record in groups: Registration (the
-  owner shown, the FAA registry being public), Airplane, Engine,
+  owner named only on the pilot's own airplane or for an organisation,
+  else its kind and state: rules.md 17, decision 0055), Airplane, Engine,
   Airworthiness, Usually based at, Safety history (the NTSB's cases, each
   its CAROL report), Ownership history and Documents filed
   (`airplane/AirplaneInfo`). The search's registry row draws the record's

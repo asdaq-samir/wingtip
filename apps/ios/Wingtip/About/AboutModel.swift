@@ -23,6 +23,23 @@ final class AboutModel {
         packCycle = cycle?.isEmpty == false ? cycle : nil
     }
 
+    /// What Send Feedback hands the share sheet (docs/store/beta.md): the
+    /// build and the system, which the fault reports already carry
+    /// (docs/privacy-inventory.md, Diagnostics), and three questions for
+    /// the tester to answer. Nothing else of theirs; it goes where they
+    /// send it, by their own mail or message, and the app sends nothing.
+    nonisolated static func feedback(version: AppVersion, system: String) -> String {
+        """
+        Wingtip Maps \(version.text), \(system)
+
+        What I was doing:
+
+        What happened:
+
+        What I expected:
+        """
+    }
+
     /// The site's pages, on the host the build was made for.
     nonisolated static func page(_ path: String, host: String = Config.host) -> URL {
         URL(string: "https://\(host)/\(path)")!

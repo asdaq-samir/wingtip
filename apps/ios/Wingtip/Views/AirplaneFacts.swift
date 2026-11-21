@@ -13,12 +13,14 @@ import SwiftUI
 /// - Seats and Engines: the FAA's reference record (ACFTREF), else the
 ///   registration's.
 /// - Registration: its status, in the problem ink where it has lapsed.
-/// - Owner: who it is registered to, public data the FAA publishes (the
-///   owner, 2026-11-14: "For owner info though, it's public info"); "Not
-///   in the record" where the owner asked the FAA to withhold the name
-///   (49 U.S.C. 44114(b)).
+/// - Owner: who it is registered to, named only on the pilot's own
+///   airplane or for an organisation, else its kind and state
+///   (RegistryNames, App Review 5.1.1(viii)); "Not in the record" where
+///   the owner asked the FAA to withhold the name (49 U.S.C. 44114(b)).
 struct AirplaneFacts: View {
     let record: FAARecord?
+    /// One of the pilot's airplanes, whose registrant is named.
+    let own: Bool
     var model: APIAircraftModel?
     /// What it is where the registry has no record (the traffic's type).
     var type: String?
@@ -40,7 +42,7 @@ struct AirplaneFacts: View {
                     FactCell("Registration", status, colour: record?.standing == "lapsed" ? WingtipInk.problem : nil)
                 }
                 if let record {
-                    FactCell("Owner", record.owner ?? "Not in the record").frame(maxWidth: 220, alignment: .leading)
+                    FactCell("Owner", RegistryNames.owner(record, own: own)).frame(maxWidth: 220, alignment: .leading)
                 }
             }
             .accessibilityIdentifier("airplane-facts")

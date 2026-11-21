@@ -60,3 +60,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0052 | [The map shows the big fields and their airspace from zoom 5](0052-map-low-zoom-fields-and-airspace.md) | 2026-11-21 | Accepted |
 | 0053 | [A route outside the United States is warned of: its figures are by US rules](0053-us-rules-outside-the-us.md) | 2026-11-21 | Accepted |
 | 0054 | [A wave's heavy validation runs on GitHub, and waves are small](0054-validation-on-github.md) | 2026-11-21 | Accepted |
+| 0055 | [The store apps name an airplane's registrant only where it is the pilot's own or an organisation](0055-registry-names-in-store-apps.md) | 2026-11-21 | Accepted |
