@@ -1,10 +1,9 @@
 //! The aviation grids the map's model weather layer draws by level (the
 //! weather service's app.flow_awc and app.flow_dafs, the web's
 //! features/weather-flow), the owner's ask of 2026-11-12 to source the
-//! layer from the Aviation Weather Center: which levels each field has,
-//! what the icing and turbulence values mean, and what AWC's cloud text
-//! says. The weather service sends the values as AWC's products give
-//! them; what they mean is decided here, once, and the hosts ask by name.
+//! layer from the Aviation Weather Center: which levels each field has, what the icing and turbulence
+//! values mean, and what AWC's cloud text says. The weather service sends the values as AWC's
+//! products give them; what they mean is decided here, once, and the hosts ask by name.
 //!
 //! - Levels: AWC's own picker (aviationweather.gov/gfa/help, "Winds",
 //!   read 2026-11-12): "levels above Mean Sea Level (MSL) in 3,000 ft

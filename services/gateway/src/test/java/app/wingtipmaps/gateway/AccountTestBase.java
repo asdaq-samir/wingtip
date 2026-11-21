@@ -21,14 +21,11 @@ import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.repository.SquawkRepository;
 import app.wingtipmaps.gateway.repository.SubscriptionRepository;
 import app.wingtipmaps.gateway.security.MagicLinkAuthenticationToken;
-import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,18 +66,8 @@ abstract class AccountTestBase {
         postgres.start();
     }
 
-    /** The planner, which keeps the pilot's own checkpoint notes. */
-    private static HttpServer planner;
-
-    /** The pilot's own note, as the planner answers GET /api/checkpoint-notes/mine. */
-    static final String NOTES =
-            "{\"notes\":[{\"route\":\"C81->KDLH\",\"lat\":45.0,\"lon\":-90.0,\"description\":\"Water tower\",\"created_at\":\"2026-10-01T00:00:00+00:00\"}]}";
-
     /** A PNG's eight-byte signature: what AvatarService checks a PNG by. */
     static final byte[] PNG = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'};
-
-    static final List<String> plannerAsked = new CopyOnWriteArrayList<>();
-    static volatile int plannerStatus = 200;
 
     @Autowired
     MockMvc mockMvc;
@@ -122,42 +109,17 @@ abstract class AccountTestBase {
      *  is: the cached context keeps the first one's address. */
     @BeforeAll
     static void startPlanner() throws IOException {
-        if (planner != null) {
-            return;
-        }
-        planner = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        planner.createContext("/", exchange -> {
-            plannerAsked.add(
-                    exchange.getRequestMethod() + " " + exchange.getRequestURI().getPath() + " pilot="
-                            + exchange.getRequestHeaders().getFirst("X-Pilot-Id"));
-            // Every field the document requires, in JSON, as the planner answers: Jackson 3 leaves a
-            // missing list null, and Spring reads an unlabelled body as octet-stream.
-            String path = exchange.getRequestURI().getPath();
-            byte[] body = (path.equals("/api/pilot/endorsements")
-                            ? "{\"checks\":[],\"soloUntil\":null,\"until\":[]}"
-                            : exchange.getRequestMethod().equals("GET") && path.equals("/api/checkpoint-notes/mine")
-                                    ? NOTES
-                                    : "{\"removed\":1}")
-                    .getBytes();
-            exchange.getResponseHeaders().set("Content-Type", "application/json");
-            exchange.sendResponseHeaders(plannerStatus, body.length);
-            exchange.getResponseBody().write(body);
-            exchange.close();
-        });
-        planner.start();
+        FakePlanner.start();
     }
 
     @DynamicPropertySource
     static void plannerUrl(DynamicPropertyRegistry registry) {
-        registry.add(
-                "app.planner.base-url",
-                () -> "http://127.0.0.1:" + planner.getAddress().getPort());
+        registry.add("app.planner.base-url", FakePlanner::baseUrl);
     }
 
     @BeforeEach
     void reset() {
-        plannerAsked.clear();
-        plannerStatus = 200;
+        FakePlanner.reset();
     }
 
     /** A pilot with one of everything a pilot can have, and a session. */

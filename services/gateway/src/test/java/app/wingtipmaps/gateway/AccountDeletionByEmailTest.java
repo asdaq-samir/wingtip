@@ -95,7 +95,7 @@ class AccountDeletionByEmailTest extends AccountTestBase {
 
         assertThat(rowsOf(leaving)).containsOnly(0);
         assertThat(rowsOf(staying)).isEqualTo(before);
-        assertThat(plannerAsked).containsExactly("DELETE /api/checkpoint-notes/mine pilot=" + leaving.getId());
+        assertThat(FakePlanner.asked).containsExactly("DELETE /api/checkpoint-notes/mine pilot=" + leaving.getId());
     }
 
     @Test

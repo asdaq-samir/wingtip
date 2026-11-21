@@ -237,39 +237,6 @@ struct FieldNotamPage: View {
     }
 }
 
-/// A TFR's own sections under its lines: its place's name (tfr_read, its
-/// dates off, as the time lines say them; the owner, 2026-11-12: "dates
-/// are twice"), its instructions as the FAA gives them a line each in
-/// sentence case with their codes kept (faa_words), and whom it names to
-/// call, each telephone a link that dials.
-struct TfrDetailsSections: View {
-    let notam: APIRankedNotam
-    let read: EngineContract.TfrReadAnswer?
-
-    var body: some View {
-        let t = notam.tfr
-        if let place = read?.place { Section { Text(place) } }
-        if let lines = t?.instructions, !lines.isEmpty {
-            Section("Instructions") {
-                ForEach(Array(lines.enumerated()), id: \.offset) { _, line in Text(AirportWords.faaWords(line)) }
-            }
-        }
-        if let facility = t?.facility { contact("Coordination Facility", facility) }
-        if let contact = t?.contact { self.contact("Point of Contact", contact) }
-    }
-
-    private func contact(_ title: String, _ c: APITfrContact) -> some View {
-        Section(title) {
-            Text(c.name)
-            if let phone = c.phone, let dial = URL(string: "tel:+1" + phone.filter(\.isNumber)) {
-                Link(destination: dial) { Label(phone, systemImage: WingtipIcon.call).monospacedDigit() }
-                    .accessibilityLabel("Call \(phone)")
-            }
-            if let frequency = c.frequency { LabeledContent("Frequency", value: frequency).monospacedDigit() }
-        }
-    }
-}
-
 /// The NOTAMs on one thing, from a tap on its badge or its row: one in
 /// full, several as the list's rows, each opening in full.
 struct NotamsOnPage: View {
