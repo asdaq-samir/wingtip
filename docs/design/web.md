@@ -1007,9 +1007,11 @@ buttons all the way up and while a card slides (index.css), where the
 toggle stays in the pinned row; both go while flying. A card over the
 sheet covers the row, the toggle with it, and the account button rides
 the card's top. The first flight's tip (`FplTip`) points at the toggle
-while it shows FPL, its right edge at the toggle's; not all the way up,
-where the toggle has no room over it, and not again once the toggle has
-been tapped to FPL (the UI audit's B5, 2026-11-17). The page up is the
+while it shows FPL, over it with its right edge at the toggle's; not all
+the way up, where the toggle has no room over it, and not again once the
+toggle has been tapped to FPL (the UI audit's B5, 2026-11-17). In a
+desktop's side panel, whose toggle is at the window's top at every size,
+it hangs under the toggle with its arrow up at it. The page up is the
 planner's place (`usePanelView`'s `view`: the plan is FPL, the search
 and the traffic are Search); the toggle picks it as a place is picked
 (`pickPage`), closing whatever card is opening as it is tapped
@@ -1479,7 +1481,8 @@ the place.
 the first frame, End and the Now button to now; Space toggles play while
 the bar has focus. The slider follows the APG slider keys
 ([APG slider][apg-slider]); tapping the track sets the frame (WCAG 2.5.7).
-On desktop, hovering the scrubber shows that frame's time.
+On desktop, hovering the scrubber shows that frame's time, while its
+tiles still load as well as after, as its keys and taps do.
 
 **Motion.** The loop never autoplays under reduced motion, and it stops
 by itself after one pass otherwise; any loop longer than 5 s has a pause,
@@ -1845,7 +1848,10 @@ WebAssembly and what Keep for the Air fetched; the page asks it first.
 - Emergency's best fields and Nearest rank the fields round the airplane
   on the device when the planner cannot be had: the airport index the
   browser keeps, the engine's `best_fields` (`lib/fieldsOnDevice`), said
-  "From this device, without weather".
+  "From this device, without weather". As the airplane moves on they are
+  asked again, and the newest answer for the airplane, from wherever it
+  was asked, is ranked from own ship now while the next is under way
+  (`useEmergency`), so a slow answer never leaves the list empty.
 - Direct To works its leg out on the device (the engine's `navlog_leg`
   and `navlog_totals`, `features/plan/directOnDevice`), "Worked out
   on this device" under the Direct strip, and its fuel check as the
@@ -1955,7 +1961,15 @@ sheet scrolls one way on a phone:
   and the route's pills carry `data-base-ui-swipe-ignore="x"`
   (an up or down drag the sheet's), and every native sideways row
   `overscroll-x-contain`. The upright altitude Slider and the sortable
-  rows' grips keep `""`: their own drag is up and down.
+  rows' grips keep `""`: their own drag is up and down. A row made to
+  slide says so (`data-slides`: the pill strips, `PillStrip`, as the
+  hours' and runways' strips), so the iPhone audit's P18 reads its tiles
+  past the edge as the design.
+- A menu is never wider than the room beside it (the stock
+  `DropdownMenuContent`'s `max-w-(--available-width)`, as the Combobox's
+  popup), so a wide one does not scroll the page sideways at Safari's
+  page zoom; and every typed field names its return key, Done unless it
+  names its own (the stock `Input` and `NumberField`; the audit's P19).
 - Back is where you were, new starts at the top: the airport card's tabs
   each keep their place, Settings' list its place after a page
   (`useScrollPlace`), and the suggestions, a sent search's results and its

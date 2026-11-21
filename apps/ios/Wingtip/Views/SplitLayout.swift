@@ -40,9 +40,10 @@ extension EnvironmentValues {
 
 /// The iPad's layout: stock SwiftUI throughout. The plan under the one
 /// search in the NavigationSplitView's sidebar (on iPadOS 26 and later a
-/// floating glass card over the map), the map as its detail across the
-/// screen, the second-level card in the system inspector, and the
-/// flight's figures along the foot of the map.
+/// floating card over the map, its rows on the sheet's solid ground), the
+/// map as its detail across the screen, the second-level card in the
+/// system inspector beside the split view, and the flight's figures on a
+/// solid card along the foot of the map.
 struct SplitLayout<Map: View>: View {
     @Environment(Navigator.self) private var nav
     let map: Map
@@ -54,30 +55,46 @@ struct SplitLayout<Map: View>: View {
     var body: some View {
         NavigationSplitView(columnVisibility: $columns) {
             PlanSheet(search: search, openScreen: openScreen, ask: ask)
+                // The plan's rows on the look's own sheet ground, as the
+                // iPhone's sheet is (PlanSheetPresentation), not the chart
+                // through the sidebar's glass: main's nightly run
+                // 44927130075 found the Search page's rows under 4.5:1 on
+                // the iPad Pro (Find Nearby, Nearest's "Waiting for the
+                // position"; WCAG 2.2 1.4.3).
+                .background(WingtipInk.sheet)
                 .navigationSplitViewColumnWidth(min: 320, ideal: 375, max: 420)
         } detail: {
             map
                 .overlay(alignment: .bottom) {
+                    // Figures on a solid ground, as rows and cards are
+                    // (docs/design/ios.md §0): on glass over the chart the
+                    // same run found the names DIST and TO under 4.5:1,
+                    // semibold and in the tokens' black.
                     FiguresStrip()
-                        .environment(\.figuresOnGlass, true)
                         .padding(.vertical, WingtipSpace.md)
                         .frame(maxWidth: 520)
-                        .floatingGlass(in: floatingCard)
+                        .background(WingtipInk.sheet, in: floatingCard)
                         .padding(.bottom, WingtipSpace.lg)
                         .padding(.horizontal, WingtipSpace.lg)
                 }
                 .toolbar(.hidden, for: .navigationBar)
-                .inspector(isPresented: inspectorShown) {
-                    inspector
-                        // The cards' rows on a solid ground, not the map
-                        // through glass: glass is for controls (HIG
-                        // Materials; docs/design/ios.md §0), and the audit
-                        // found the Brief's words faint over the chart.
-                        .background(Color(.systemGroupedBackground))
-                        .inspectorColumnWidth(min: 320, ideal: 375, max: 440)
-                }
         }
         .navigationSplitViewStyle(.balanced)
+        // On the split view, not on the map in its detail: an inspector in
+        // a column puts its toolbar in that column's bar, and the map's is
+        // hidden, so the card had no title, no close and no gear (main's
+        // nightly run 44927130075: CardRuleTests, CardScrollTests and
+        // CardSmokeTests on the iPad Pro). Here it is a column of its own,
+        // full height, its card's bar its own.
+        .inspector(isPresented: inspectorShown) {
+            inspector
+                // The cards' rows on a solid ground, not the map
+                // through glass: glass is for controls (HIG
+                // Materials; docs/design/ios.md §0), and the audit
+                // found the Brief's words faint over the chart.
+                .background(Color(.systemGroupedBackground))
+                .inspectorColumnWidth(min: 320, ideal: 375, max: 440)
+        }
         .environment(\.splitLayout, true)
         // A card's action done in the inspector (Fly Here, Fly This
         // Airplane): the card put away and the plan in the sidebar shown.

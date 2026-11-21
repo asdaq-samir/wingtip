@@ -18,12 +18,9 @@ enum WingtipInk {
     /// The brand's tint, Sectional Blue, by day and at night: for the
     /// widgets, which have no accent colour of their own to take it from.
     static let tint = Color(dynamic(\.tint))
-    /// Words in the tokens' text colour, for text on clear glass over the
-    /// map (the iPad's figures, FiguresStrip): there the system's .primary
-    /// and .secondary turn vibrant and take on the chart behind, and the
-    /// accessibility audit of 2026-11-09 found the figures' names, and
-    /// even their dashes, under 4.5:1 (WCAG 2.2 1.4.3). The token stays
-    /// put: #0A0A0A by day, #EEF3F9 at night.
+    /// Words in the tokens' text colour, where the system's .primary is not
+    /// to hand (the Live Activity's action buttons, FlightActivityWidget).
+    /// The token stays put: #0A0A0A by day, #EEF3F9 at night.
     static let text = Color(dynamic(\.foreground))
     /// The solid surface glass falls back to under Reduce Transparency:
     /// the sheet's own colour, by day or at night.

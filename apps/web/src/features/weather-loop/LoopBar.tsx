@@ -45,8 +45,11 @@ export function LoopBar() {
   // time said here, as long as it rests there (docs/design/web.md §7).
   const peeked = loop.showing !== loop.shown ? loop.frames[loop.showing] : undefined;
   const peekTime = peeked ? frameTime(peeked.valid, now, loop.oldAfterS) : null;
+  // Live while the frames' tiles still load, as the scrubber is: a mouse
+  // that came to rest before they were in sends no second move, so a
+  // peek dropped then stayed dropped.
   const peekOver = (e: PointerEvent<HTMLDivElement>) => {
-    if (e.pointerType !== "mouse" || loop.frames.length < 2 || !loop.ready) return;
+    if (e.pointerType !== "mouse" || loop.frames.length < 2) return;
     const box = e.currentTarget.getBoundingClientRect();
     const at = Math.min(1, Math.max(0, (e.clientX - box.left) / Math.max(1, box.width)));
     loop.peekAt(Math.round(at * (loop.frames.length - 1)));

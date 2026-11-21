@@ -2,6 +2,7 @@ import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
 import { usePageToggle } from "../../components/sheet/pageToggle";
+import { useIsMobile } from "../../hooks/use-mobile";
 import { useMapInsets } from "../../lib/mapChrome";
 import { Popover, PopoverContent, PopoverDescription, PopoverTitle } from "../../components/ui/popover";
 import { TEXT } from "../../lib/text";
@@ -20,14 +21,20 @@ import { TEXT } from "../../lib/text";
  * room over it and dropped onto Nearest with its arrow at nothing (the UI
  * audit's B5, 2026-11-17); and once the toggle has been used it is not
  * shown again (PageToggle sees it), the way it points being known.
+ * In a side panel (from `md` up) the toggle is at the window's top at
+ * every size, at the panel's left edge, with no room over it or beside
+ * it: there the tip hangs under it, its arrow up at it, where Base UI
+ * turned it down by itself with its arrow drawn at nothing (the nightly
+ * of 2026-11-21, first-flight.spec:56 on the desktop: the tip's foot at
+ * 193, the toggle's top at 31).
  */
 export default function FplTip({ onClose }: { onClose: () => void }) {
   const button = usePageToggle((s) => s.plan);
   const full = useMapInsets((i) => i.up);
+  const sidePanel = !useIsMobile();
   // Its left edge at the toggle's own, at the row's start, the rest over
-  // the map to the right of it: aligned at its end, as when the toggle
-  // ended the row, it stood off the screen's left and leaned on the
-  // collision padding to come back.
+  // the map to the right of it (the owner, 2026-11-20); on a phone over
+  // the toggle, in a side panel under it, where there is no room above.
   if (!button || full) return null;
   return (
     <Popover
@@ -38,7 +45,7 @@ export default function FplTip({ onClose }: { onClose: () => void }) {
     >
       <PopoverContent
         anchor={button}
-        side="top"
+        side={sidePanel ? "bottom" : "top"}
         align="start"
         sideOffset={12}
         collisionPadding={12}
@@ -48,8 +55,8 @@ export default function FplTip({ onClose }: { onClose: () => void }) {
         className="w-72 flex-row items-start gap-3 overflow-visible rounded-(--radius-card) py-3 pr-2 pl-4 shadow-overlay"
       >
         {/* Base UI's arrow, placed at the toggle by the Positioner: a square
-            turned a quarter, its lower half out under the tip. */}
-        <PopoverPrimitive.Arrow className="size-3 rotate-45 bg-popover data-[side=top]:-bottom-1.5" />
+            turned a quarter, half of it out of the tip's side that faces the toggle. */}
+        <PopoverPrimitive.Arrow className="size-3 rotate-45 bg-popover data-[side=bottom]:-top-1.5 data-[side=top]:-bottom-1.5" />
         <div className="min-w-0 flex-1">
           <PopoverTitle className={cn("font-semibold text-foreground", TEXT.row)}>Your flight plan is one tap away</PopoverTitle>
           <PopoverDescription className={cn("mt-0.5", TEXT.detail)}>
