@@ -20,7 +20,7 @@ import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { searchWords } from "./searchPlaceholder";
 import type { AirportSearchRow } from "../../../lib/airportIndex";
 import { SCREEN_KEYS, DIRECT_KEY } from "../../../hooks/use-shortcuts";
-import { useAirportIndex } from "../../../lib/airportIndex";
+import { closedOf, useAirportIndex } from "../../../lib/airportIndex";
 import { readQuery, nearOf, useSearchResults } from "../../search";
 import { useEngineReady } from "../../../lib/engine/useEngineReady";
 import type { PlanSlices } from "../vm/planSlices";
@@ -105,10 +105,11 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   // A search sent (useSearchResults): its list in the sheet while the
   // field is not being typed in, its fields on the map.
   const sent = useSearchResults((s) => s.sent);
-  const index = useAirportIndex(true, typed.length > 0);
   const [direct, setDirect] = useState(false);
   // A picker's ask: airports only (the waypoints too for a stop), its pick.
   const { pick, from: pickFrom } = usePickScope(vm.view.view); // pickIdent: its airport, picked or typed
+  // Read while a picker asks too, for the closed fields it refuses (pickIdent).
+  const index = useAirportIndex(true, typed.length > 0 || !!pick);
   const [problem, setProblem] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const directTo = useRadioActions((s) => s.directTo);
@@ -230,6 +231,9 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
 
   const pickIdent = (ident: string) => {
     if (!ident) return; // My Location with the fix gone since
+    // Never a closed field as a stop or an end (decision 0043), from a row or a Nearest, Favorite or Recent tile.
+    const closed = index && closedOf(index, ident);
+    if (closed) return setProblem(`${ident.toUpperCase()}: ${closed}. Pick another field.`);
     const to = pick;
     done();
     to?.onPick(ident.toUpperCase());

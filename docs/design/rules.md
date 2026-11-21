@@ -93,7 +93,10 @@ Compose. Nothing here is built by hand where a stock part does it.
    Recent -- picks it as a result row does and goes back to where the pick
    was asked from; it does not open its card (the owner, 2026-11-21: "When
    picking stop, when I tap a nearest airport, it opens the airport card
-   instead of selecting it"). Outside a pick a tap opens the card.
+   instead of selecting it"). Outside a pick a tap opens the card. A
+   field NASR lists as closed is never picked, from a tile or a row
+   (decision 0043): the pick is refused with its label ("KXXX: Closed
+   indefinitely. Pick another field."), said on the page it was tapped on.
 6. **Back and Escape close the top card first**, then go back a level.
    Neither only lowers the sheet while a card is open; with no card open
    they may lower it.

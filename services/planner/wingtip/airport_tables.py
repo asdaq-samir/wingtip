@@ -117,9 +117,15 @@ def _airport_rows(path: str, _mtime: float) -> dict:
 #: the US Virgin Islands, Guam, American Samoa, the Northern Marianas and
 #: the minor outlying islands), each its own ISO 3166-1 code there, so
 #: TJSJ, San Juan, is "PR", not "US": the airport card said "Not found"
-#: for it (the owner's screenshot, 2026-11-20). NASR's own list then
-#: keeps the fields the FAA lists (field_status.listed).
-FAA_COUNTRIES = frozenset({"US", "PR", "VI", "GU", "AS", "MP", "UM"})
+#: for it (the owner's screenshot, 2026-11-20). And the three freely
+#: associated states whose fields APT_BASE lists too, with the FAA's own
+#: idents and no STATE_CODE (COUNTRY_CODE FM, MH, PW: 22 fields in the
+#: 2026-10-29 cycle, Pohnpei's PTPN, Majuro's PKMJ and Palau's PTRO among
+#: them; the FAA's Chart Supplement Pacific): the route lookup already
+#: planned to them as NASR's, while their search and card said "Not
+#: found". NASR's own list then keeps the fields the FAA lists
+#: (field_status.listed).
+FAA_COUNTRIES = frozenset({"US", "PR", "VI", "GU", "AS", "MP", "UM", "FM", "MH", "PW"})
 
 
 def countries_of(df: pd.DataFrame) -> pd.Series:

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { indexOf, placeOf, searchIndex } from "./airportIndex";
+import { closedOf, indexOf, placeOf, searchIndex } from "./airportIndex";
 
 // The planner's own tests' fields (services/planner/tests_wingtip/test_airports.py), as its index
 // sends them: ident, name, town, state, size rank, other idents.
@@ -87,6 +87,12 @@ describe("a field NASR lists as closed (decision 0043)", () => {
         use: null,
       },
     ]);
+  });
+
+  test("is told closed by any of its idents, an open field and an unknown one not", () => {
+    expect(closedOf(index, "9ii2")).toBe("Closed indefinitely");
+    expect(closedOf(index, "KC81")).toBeNull();
+    expect(closedOf(index, "ZZZZ")).toBeNull();
   });
 
   test("comes after the open fields it is found with, never first", () => {
