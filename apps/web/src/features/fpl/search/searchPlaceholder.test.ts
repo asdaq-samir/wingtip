@@ -19,9 +19,6 @@ describe("placeholderOf", () => {
 
 describe("searchWords", () => {
   it("shows the default as Search, its name saying what it finds (the owner, 2026-11-20)", () => {
-    expect(searchWords(false, null, "place")).toEqual({
-      label: "Search airports and airplanes",
-      placeholder: "Search",
-    });
+    expect(searchWords(false, null, "place")).toEqual({ label: "Search airports and airplanes", placeholder: "Search" });
   });
 });
