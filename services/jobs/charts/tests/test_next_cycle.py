@@ -109,3 +109,32 @@ def test_published_asks_the_faa_for_one_sectional():
     assert asked and "aeronav.faa.gov/visual/12-24-2026/sectional-files/" in asked[0]
     Response.status_code = 200
     assert next_cycle.published("12-24-2026", get=lambda url, **kw: Response())
+
+
+def test_the_refresh_task_stages_the_next_cycle_ahead_in_its_bucket(disk, monkeypatch):
+    # The ops audit, 2026-11-21: on AWS the next cycle is published under
+    # next.json within its lead, once the FAA has it up, and once only.
+    built, published = [], []
+    monkeypatch.setattr(chart_upkeep, "build_cycle", lambda cycle, workers=None: built.append(cycle) or True)
+    monkeypatch.setattr(
+        next_cycle.chart_publish, "publish", lambda cycle, bucket, client=None, ahead=False: published.append((cycle, ahead))
+    )
+    staged = {"cycle": None}
+    monkeypatch.setattr(next_cycle.chart_publish, "bucket_cycle", lambda bucket, client=None, pointer=None: staged["cycle"])
+
+    def stage(when, up=True):
+        return next_cycle.stage_to_bucket("charts-bucket", now=utc(when), is_published=lambda c: up)
+
+    assert stage("2026-11-09T08:30") == chart_next.WAITING  # before the lead
+    assert stage("2026-12-18T08:30", up=False) == chart_next.NOT_PUBLISHED
+    assert built == [] and published == []
+    assert stage("2026-12-18T08:30") == chart_next.STAGED
+    assert built == ["12-24-2026"] and published == [("12-24-2026", True)]
+    staged["cycle"] = "12-24-2026"
+    assert stage("2026-12-19T08:30") == chart_next.STAGED  # one read, nothing drawn again
+    assert built == ["12-24-2026"]
+    # Sheets missing: nothing published, and the task says it failed.
+    staged["cycle"] = None
+    monkeypatch.setattr(chart_upkeep, "build_cycle", lambda cycle, workers=None: False)
+    assert stage("2026-12-20T08:30") == chart_next.FAILED
+    assert published == [("12-24-2026", True)]

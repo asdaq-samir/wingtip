@@ -58,6 +58,20 @@ def test_a_chart_tile_no_sheet_covers_is_an_empty_204_kept_as_long_as_a_drawn_on
     assert client.get("/api/chart-tile/wac/4/3/6.png").status_code == 404
 
 
+def test_a_tile_whose_published_archive_is_out_of_reach_is_a_503_no_cache_keeps(monkeypatch):
+    # The ops audit, 2026-11-21: the AWS server no longer draws such a tile
+    # itself (chart_tiles.TileUnavailable), and a blank kept at the edge
+    # for 28 days would outlive the outage.
+    from wingtip import chart_tiles
+
+    def unavailable(x, y, z, kind, scale=1):
+        raise chart_tiles.TileUnavailable("sec tile 4/3/6: its archive did not answer")
+
+    monkeypatch.setattr(chart_tiles, "tile_png", unavailable)
+    resp = client.get("/api/chart-tile/sec/4/3/6.png")
+    assert resp.status_code == 503 and resp.headers["cache-control"] == "no-store"
+
+
 def test_the_512_pixel_tile_is_the_same_address_with_at_2x(monkeypatch):
     from wingtip import chart_tiles
 

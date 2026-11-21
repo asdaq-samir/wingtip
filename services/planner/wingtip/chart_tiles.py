@@ -39,6 +39,15 @@ FETCH_FOR_TILES = get_settings().charts_fetch_for_tiles
 _NONE_TTL_S = 3600
 
 
+class TileUnavailable(RuntimeError):
+    """Where the tiles are published (CHART_TILES_URL, the AWS server), the
+    published archive could not be read just now. The server does not draw
+    the tile itself instead: on its two cores, a CDN or S3 outage turned
+    every tile the map asked for into a sheet fetched and drawn, and the
+    routes, nav logs and Briefs every pilot was waiting on starved (the ops
+    audit, 2026-11-21). The map leaves the tile blank and asks again."""
+
+
 def rasters_covering(kind: ChartKind, bbox: Box, cycle: str | None = None) -> tuple[list, bool]:
     """Every prepared raster of `kind` whose face touches `bbox`, in
     `chart_render.draw_order`, and whether that is all of them -- False
@@ -76,7 +85,8 @@ def tile_png(x: int, y: int, zoom: int, kind: str = "sec", scale: int = 1) -> by
     finished, where a tile it lacks is no tile; else rendered on first
     request and cached on disk for the cycle; None where no chart of
     this kind covers it (a 404 for the map's tile layer to leave blank).
-    `scale` 2 is the high-density tile."""
+    `scale` 2 is the high-density tile. TileUnavailable where the tiles are
+    published and their archive cannot be read."""
     chart_kind = KINDS[kind]
     # Whole numbers, whatever the caller handed in: the tile's file is
     # named by them under the cache (CodeQL's py/path-injection).
@@ -88,10 +98,14 @@ def tile_png(x: int, y: int, zoom: int, kind: str = "sec", scale: int = 1) -> by
     if archive is not None:
         try:
             return archive.get(zoom, x, y)
-        except (OSError, requests.RequestException):
-            # The published copy out of reach for now: drawn here instead,
-            # as before there was one.
+        except (OSError, requests.RequestException) as err:
+            # The published copy out of reach for now: drawn here instead
+            # where tiles are drawn here (locally), never on the AWS server.
             log.warning("%s tile %d/%d/%d not read from its archive", kind, zoom, x, y, exc_info=True)
+            if config.CHART_TILES_URL:
+                raise TileUnavailable(f"{kind} tile {zoom}/{x}/{y}: its archive did not answer") from err
+    elif config.CHART_TILES_URL:
+        raise TileUnavailable(f"{kind} tiles of cycle {cycle} at {scale}x are not published, or the pointer did not answer")
     path = chart_render.tile_path(chart_kind, cycle, x, y, zoom, scale)
     none_marker = path.with_suffix(".none")
     try:
