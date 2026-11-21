@@ -171,13 +171,18 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
   pointer-events: none;
 }
 
-/* iOS's leading on a touch screen: each text style's line is its size
-   and five points -- 13/18, 15/20, 16/21, 17/22, 20/25, within a point
-   of Apple's own table from 12 to 28 -- where Tailwind's ratios gave a
-   17-point row 24.3 and a 15-point line 21.4. Every text-* class reads
-   its line height from these, so a touch size set beside one (lib/text.ts,
-   the stock controls) takes its leading with it. An explicit leading-*
-   still wins. Not in the Native look, which keeps Tailwind's own. */
+/* iOS's leading on a touch screen, for the stock controls' touch sizes
+   (ui/button's text-sm with the row's 17 beside it, and the like): a
+   line is its size and five points -- 13/18, 15/20, 16/21, 17/22, 20/25,
+   within a point of Apple's own table from 12 to 28 -- where Tailwind's
+   ratios gave a 17-point row 24.3 and a 15-point line 21.4. Every text-*
+   class reads its line height from these. The text roles carry their own
+   leading in rem instead (design/tokens.json type, `touchLeading`: a
+   row's 1.375rem, a line's 1.25rem), which an explicit leading-* wins
+   over these with: at 19.65 px a row leads 27, as iOS's xxLarge Body
+   does, where the five points held stayed 25.9 (the scale audit's Q7,
+   the owner, 2026-11-21). Not in the Native look, which keeps
+   Tailwind's own. */
 @media (pointer: coarse) {
   :root:not([data-brand="native"]) {
     --text-xs--line-height: calc(1em + 5px);

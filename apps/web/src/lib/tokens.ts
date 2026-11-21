@@ -207,12 +207,11 @@ export const TYPE_CLASS = {
   hero: "text-(length:--type-hero) leading-(--lead-hero)",
   card: "text-(length:--type-card) leading-(--lead-card)",
   heading: "text-(length:--type-heading) leading-(--lead-heading)",
-  title: "text-base pointer-coarse:text-[1.0625rem]",
-  row: "text-base pointer-coarse:text-[1.0625rem]",
-  prose: "text-base pointer-coarse:text-[0.9375rem]",
-  detail: "text-sm pointer-coarse:text-[0.9375rem]",
+  title: "text-base pointer-coarse:text-[1.0625rem] pointer-coarse:leading-[1.375rem]",
+  row: "text-base pointer-coarse:text-[1.0625rem] pointer-coarse:leading-[1.375rem]",
+  prose: "text-base pointer-coarse:text-[0.9375rem] pointer-coarse:leading-[1.25rem]",
+  detail: "text-sm pointer-coarse:text-[0.9375rem] pointer-coarse:leading-[1.25rem]",
   note: "text-(length:--type-note) leading-(--lead-note)",
-  tab: "text-(length:--type-tab) leading-(--lead-tab)",
   tabBar: "text-(length:--type-tab-bar) leading-(--lead-tab-bar)",
   badge: "text-(length:--type-badge) leading-(--lead-badge)",
   caption: "text-(length:--type-caption) leading-(--lead-caption)",
@@ -232,8 +231,7 @@ export const TYPE_POINTS = {
   prose: 15,
   detail: 15,
   note: 13,
-  tab: 13,
-  tabBar: 12,
+  tabBar: 13,
   badge: 12,
   caption: 11,
   chip: 13,
@@ -278,94 +276,7 @@ export const MAP = {
   airspaceLabelFaded: 0.6,
 } as const;
 
-/** From which zoom each kind of airport and airspace is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1. */
-export const MAP_ZOOM = {
-  /** The farthest out the airports' layer is drawn, where its marks are smallest; each field within it from its own tier's zoom below. */
-  airportsFarthest: 4,
-  /** Towered fields (field_mark_rank's first tier), a few states on a phone, with the Class B and C they are named for. */
-  airportTowered: 5,
-  /** Public fields with a hard runway of 3,000 ft or more (field_mark_rank's second tier). */
-  airportLongHard: 7,
-  /** Every other public field (field_mark_rank's third tier). */
-  airportPublic: 8,
-  /** Private fields (field_mark_rank's fourth tier), behind their switch. */
-  airportPrivate: 10,
-  /** Heliports (field_mark_rank's last tier). */
-  airportHeliport: 11,
-  /** Every drawn field's ident from this zoom; farther out only a Class B field's, as there an ident is wider than the room between two towered fields. */
-  airportIdents: 6,
-  /** Class B rings. */
-  airspaceB: 5,
-  /** Class C rings. */
-  airspaceC: 5,
-  /** Class D rings. */
-  airspaceD: 7,
-  /** Class E at the surface and a Class C's or D's surface-area extensions (E2, E3, E4): in the tiles, not drawn on the 2D map. */
-  airspaceESurface: 8,
-  /** Every other Class E (E5, E6, E7): in the tiles, not drawn on the 2D map. */
-  airspaceE: 9,
-  /** The rings at their full width with their band inside; farther out half their width and no band, so a Class C is a ring and not a dot. */
-  airspaceFull: 7,
-  /** The airspace and special-use altitude tabs: farther out they were the largest marks on the map, over the fields' names (the owner, 2026-11-20). */
-  airspaceLabels: 9,
-  /** Restricted, prohibited and warning areas and MOAs: at 6 California's 160 hatched lines hid the fields and the Class B and C under them (2026-11-21). */
-  specialUse: 7,
-} as const;
-
-/** A kind of map label's look: its size, fixed or by zoom (the app's levels, interpolated), its weight and its halo. */
-export interface MapLabelKind {
-  size: number | readonly (readonly [zoom: number, px: number])[];
-  bold: boolean;
-  halo: "light" | "dark" | "none";
-}
-/** The map's words (design/tokens.json's map.label): the size scale (px), the halo, and each kind's size, weight and halo. */
-export const MAP_LABEL = {
-  size: { small: 11, normal: 12, large: 13, count: 14, runway: 16, picked: 17 },
-  halo: 2,
-  haloNight: 0.6,
-  kind: {
-    /** A field's ident beside its mark, in its symbol's blue or magenta (Chart User's Guide, Airports): the tiles' fields, a Class B field's, a stop's. */
-    airportIdent: { size: [[4, 11], [10, 12], [13, 13]], bold: true, halo: "light" },
-    /** The open card's field's ident, white over its ring. */
-    airportPicked: { size: 17, bold: true, halo: "dark" },
-    /** A VOR's ident and frequency on its blue tag, "GCO (108.25)", as ForeFlight writes it. */
-    navaidIdent: { size: [[7, 11], [11, 12]], bold: true, halo: "none" },
-    /** An enroute fix's or a VFR waypoint's ident, in capitals as NASR names it, the navaids' size. */
-    fixIdent: { size: [[7, 11], [11, 12]], bold: true, halo: "light" },
-    /** An airspace's or a special-use area's altitudes on its dark tab, as the sectional sets them; the map's smallest words at every zoom, so the tabs are never the largest marks on the chart. */
-    airspaceTab: { size: 11, bold: true, halo: "none" },
-    /** A 3D shelf's altitudes on its tab, standing over the tilted map. */
-    shelfTab: { size: 12, bold: true, halo: "none" },
-    /** A runway end's number, white on the dark halo, turned as painted. */
-    runwayNumber: { size: [[13.5, 11], [17, 16]], bold: true, halo: "dark" },
-    /** A checkpoint's name beside its dot: a place's name, in regular as the chart sets a town's, under the bold idents. */
-    checkpointName: { size: 12, bold: false, halo: "light" },
-    /** A checkpoint's number on its dot. */
-    checkpointNumber: { size: 11, bold: true, halo: "none" },
-    /** A route field's ident on its dark pill: the route's words over the chart's. */
-    routeIdent: { size: 12, bold: true, halo: "none" },
-    /** A route point's name, a top of climb's or descent's, on its white pill. */
-    routePoint: { size: 11, bold: true, halo: "none" },
-    /** A traffic pattern leg's name on its teal chip. */
-    patternLeg: { size: 11, bold: true, halo: "none" },
-    /** A way's chip: its time in bold, its name in regular. */
-    way: { size: 12, bold: true, halo: "none" },
-    /** A procedure's or a plate's tag of several lines, drawn as a picture (drawTag). */
-    fixTag: { size: 13, bold: true, halo: "none" },
-    /** A SIGMET's, an AIRMET's or a TFR's words along its outline, in its colour. */
-    hazard: { size: 11, bold: true, halo: "light" },
-    /** A field's weather beside it: a variable wind, its visibility and weather. */
-    airportWeather: { size: 11, bold: true, halo: "light" },
-    /** A PIREP's level on its chip. */
-    pirep: { size: 12, bold: true, halo: "none" },
-    /** Traffic's height and callsign on its dark tag. */
-    traffic: { size: 11, bold: true, halo: "none" },
-    /** A cluster's count on its blue disc. */
-    clusterCount: { size: 14, bold: true, halo: "none" },
-    /** Model Weather's pinned value on its white pill. */
-    flowPin: { size: 13, bold: true, halo: "none" },
-  },
-} as const satisfies { kind: Record<string, MapLabelKind> };
+export { MAP_LABEL, MAP_ZOOM, type MapLabelKind } from "./generated/mapTokens";
 
 /** A colour-ramp stop: the value in the field's unit and its colour as [r, g, b, 255ths], as weatherlayers-gl takes it. */
 type FlowStop = [number, [number, number, number, number]];
@@ -438,7 +349,20 @@ export const TAP_TARGET = 44;
 export const SIZE = {
   tapTarget: 44,
   chip: 32,
-  mapButton: 48,
+  mapButton: 44,
+  roundButton: 44,
+  pill: 24,
+  rowMark: 32,
+  chartMark: 30,
+  searchDisc: 36,
+  rowBadge: 28,
+  glyphCaption: 12,
+  glyphNote: 16,
+  glyphRow: 20,
+  glyphBadge: 18,
+  glyphBar: 24,
+  glyphMap: 20,
+  glyphCardAction: 20,
   tabBar: 64,
   panel: 384,
   panelWide: 448,

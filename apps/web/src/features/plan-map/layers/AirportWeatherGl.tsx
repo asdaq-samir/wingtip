@@ -3,7 +3,7 @@ import type { ExpressionSpecification, SymbolLayerSpecification } from "maplibre
 import type { AirportPin } from "../../../lib/api/types";
 import { EMPTY, useGlData, useGlLayer, useGlMap } from "../../../lib/map/gl/glLayer";
 import { glZoom } from "../../../lib/map/gl/glStyle";
-import { labelHalo, labelText } from "../../../lib/map/gl/layers/common";
+import { labelHalo, labelInk, labelText } from "../../../lib/map/gl/layers/common";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { weatherMarksOf } from "../../../lib/map/marks/airportWeather";
 import { airportWeatherDrawn } from "../../../lib/map/marks/airportWeatherPrefs";
@@ -45,7 +45,7 @@ const wind = (id: string, filter: ExpressionSpecification): SymbolLayerSpecifica
     "text-optional": true,
   },
   paint: {
-    "text-color": ["case", ["get", "over"], CHART.warning, CHART.fixInk] as ExpressionSpecification,
+    "text-color": labelInk(["case", ["get", "over"], CHART.warning, CHART.fixInk] as ExpressionSpecification),
     ...labelHalo("airportWeather"),
   },
 });
@@ -68,7 +68,7 @@ const LINES: SymbolLayerSpecification = {
     "text-offset": [-1.5, 0],
     "text-padding": 1,
   },
-  paint: { "text-color": CHART.fixInk, ...labelHalo("airportWeather") },
+  paint: { "text-color": labelInk(CHART.fixInk), ...labelHalo("airportWeather") },
 };
 
 /** Farther out, at any zoom the station model is not drawn at, the barb

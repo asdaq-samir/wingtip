@@ -223,6 +223,13 @@ export const usePanelDragging = create<{ dragging: boolean }>(() => ({ dragging:
  *  glyphs are a desk's. One size for the whole stack, the microphone's
  *  circle included, set on the stack rather than each button. */
 export const FLYING_STACK = "gap-3 [&_button]:size-[60px]";
+/** The map's buttons on the ground: 44 px (size.map-button) whatever the
+ *  pilot's text size, as Apple Maps' do not grow with Dynamic Type (the
+ *  scale audit's Q1, the owner, 2026-11-21; they were rem, 54 at 19.65 px),
+ *  their glyphs 20 px (size.glyph-map). Their 44-point hit area is the
+ *  button itself (index.css's --tap-target is px too). */
+export const MAP_BUTTON_SIZE = "[&_button]:size-(--size-map-button)";
+export const MAP_BUTTON_GLYPH = "[&_button>svg]:size-(--size-glyph-map)";
 export const FLYING_BUTTON = "rounded-full font-bold text-tint";
 
 /** Flying mode, as the planner sets it (useFlyingMode) for the map's

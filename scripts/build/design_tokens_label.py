@@ -2,7 +2,9 @@
 
 design/tokens.json's `map.label` group is the map's lettering: a scale of
 sizes (px), the halo's width and its strength after dark, and each kind
-of label (`map.label.kind`) as a size, a weight and a halo. A kind's size
+of label (`map.label.kind`) as a size, a weight and a halo, each light-haloed
+word's ink after dark by its day ink (`map.label.night-ink`), and how far the
+Larger Map Labels setting grows them (`scale-max`). A kind's size
 is a step of the scale or [zoom, step] pairs, zooms in the app's levels
 (MapLibre's plus one), which each app interpolates between. The steps are
 resolved here, so every app reads numbers: the web's MAP_LABEL, the
@@ -10,6 +12,8 @@ iPhone's and Android's WingtipMapLabel.
 """
 
 import re
+
+from design_tokens_colour import hex6, rgba
 
 HEAD = "The map's words (design/tokens.json's map.label): the size scale (px), the halo, and each kind's size, weight and halo."
 # The scale's steps by the name a kind gives them.
@@ -48,6 +52,22 @@ def _kinds(tree):
     return out
 
 
+def _colour(tree, value):
+    """A colour token's hex, following "{group.name}" references."""
+    while value.startswith("{"):
+        node = tree
+        for part in value.strip("{}").split("."):
+            node = node[part]
+        value = node["$value"]
+    return hex6(rgba(value))
+
+
+def _night_ink(tree):
+    """[(day hex, night hex)], in the file's order."""
+    inks = _group(tree)["night-ink"]
+    return [(_colour(tree, t["day"]), _colour(tree, t["$value"])) for k, t in inks.items() if not k.startswith("$")]
+
+
 def _camel(name):
     head, *rest = name.split("-")
     return head + "".join(p[:1].upper() + p[1:] for p in rest)
@@ -71,6 +91,9 @@ def ts(tree):
         "  size: { %s }," % ", ".join("%s: %g" % (k, v) for k, v in scale.items()),
         "  halo: %g," % g["halo"]["$value"],
         "  haloNight: %g," % g["halo-night"]["$value"],
+        "  scaleMax: %g," % g["scale-max"]["$value"],
+        "  /** Each light-haloed word's ink after dark, by its day ink (map.label.night-ink). */",
+        "  nightInk: { %s } as Record<string, string>," % ", ".join('"%s": "%s"' % pair for pair in _night_ink(tree)),
         "  kind: {",
     ]
     for name, k in _kinds(tree).items():
@@ -95,6 +118,9 @@ def swift(tree):
         *["    static let %s: Double = %g" % (_camel("size-" + k), v) for k, v in scale.items()],
         "    static let halo: Double = %g" % g["halo"]["$value"],
         "    static let haloNight: Double = %g" % g["halo-night"]["$value"],
+        "    static let scaleMax: Double = %g" % g["scale-max"]["$value"],
+        "    /// Each light-haloed word's ink after dark, by its day ink (map.label.night-ink).",
+        "    static let nightInk: [String: String] = [%s]" % ", ".join('"%s": "%s"' % pair for pair in _night_ink(tree)),
     ]
     for name, k in _kinds(tree).items():
         stops = ", ".join("(%g, %g)" % (z or 0, px) for z, px in k["stops"])
@@ -114,6 +140,9 @@ def kotlin(tree):
         *["    const val %s = %sf" % (_upper("size-" + k), "%g" % v) for k, v in scale.items()],
         "    const val HALO = %sf" % ("%g" % g["halo"]["$value"]),
         "    const val HALO_NIGHT = %sf" % ("%g" % g["halo-night"]["$value"]),
+        "    const val SCALE_MAX = %sf" % ("%g" % g["scale-max"]["$value"]),
+        "    /** Each light-haloed word's ink after dark, by its day ink (map.label.night-ink). */",
+        "    val NIGHT_INK = mapOf(%s)" % ", ".join('"%s" to "%s"' % pair for pair in _night_ink(tree)),
     ]
     for name, k in _kinds(tree).items():
         stops = ", ".join("%s to %s" % (float(z or 0), float(px)) for z, px in k["stops"])

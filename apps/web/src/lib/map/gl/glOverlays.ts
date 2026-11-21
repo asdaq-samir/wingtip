@@ -13,7 +13,7 @@ import { overlaySource } from "../sources/overlayTiles";
 import { SLOTS, slotId, type Slot } from "./glLayer";
 import { drawSvg, type DrawnImage } from "./drawSvg";
 import { OVERLAY_SOURCE, SUA_LAYERS, airspaceLayers, glZoom, specialUseLayers } from "./glStyle";
-import { GL_FONT_BOLD, LABEL_HALO, labelHalo, labelText } from "./layers/common";
+import { GL_FONT_BOLD, LABEL_HALO, labelHalo, labelInk, labelText } from "./layers/common";
 import { specialUseLabelLayer } from "./glSuaLabels";
 import { OVERLAY_PICTURES } from "./glOverlayPictures";
 import { CHART, MAP_ZOOM } from "../../tokens";
@@ -113,7 +113,7 @@ function airportMarksLayer(from: { source: string; "source-layer"?: string }): S
       "text-optional": true,
       "text-padding": 1,
     },
-    paint: { "text-color": AIRPORT_IDENT_INK, ...labelHalo("airportIdent"), "text-opacity": SELECTED_HIDDEN },
+    paint: { "text-color": labelInk(AIRPORT_IDENT_INK), ...labelHalo("airportIdent"), "text-opacity": SELECTED_HIDDEN },
   };
 }
 
@@ -158,7 +158,10 @@ function navaidMarks(
         "icon-text-fit-padding": [1, 4, 1, 4],
       },
       paint: {
-        "text-color": ["match", kind, "vor", CHART.casing, "vfr", VFR_GREEN, FIX_INK] as ExpressionSpecification,
+        // A VOR's white on its tag stays white after dark (casing is no
+        // day ink in map.label.night-ink); a fix's and a VFR waypoint's
+        // turn light on the night's dark halo (labelInk).
+        "text-color": labelInk(["match", kind, "vor", CHART.casing, "vfr", VFR_GREEN, FIX_INK] as ExpressionSpecification),
         "text-halo-color": ["match", kind, "vor", "transparent", LABEL_HALO["text-halo-color"]] as ExpressionSpecification,
         "text-halo-width": LABEL_HALO["text-halo-width"],
       },

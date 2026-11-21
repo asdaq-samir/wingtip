@@ -21,7 +21,7 @@ import {
   selectedLegFilter,
 } from "../glRoute";
 import { useGlProbe } from "../useGlProbe";
-import { TAP, labelHalo, labelText } from "./common";
+import { TAP, labelHalo, labelInk, labelText } from "./common";
 import { useGlSymbols } from "../useGlSymbols";
 import { WAY_CHIPS_LOWEST } from "./WaysGl";
 import { LEG_RANK, LEG_REACH, nearestLeg, type GlLeg } from "../legTap";
@@ -106,7 +106,7 @@ const NAMES: SymbolLayerSpecification = {
     "text-justify": "auto",
     "symbol-sort-key": ["get", "number"],
   },
-  paint: { "text-color": CHART.fixInk, ...labelHalo("checkpointName") },
+  paint: { "text-color": labelInk(CHART.fixInk), ...labelHalo("checkpointName") },
 };
 
 /**

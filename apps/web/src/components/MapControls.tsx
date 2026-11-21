@@ -13,7 +13,7 @@ import ClearanceKey from "./ClearanceKey";
 import { useAtcRadio } from "../lib/atcRadio";
 import { useCommsAssist } from "../lib/atc/commsAssist";
 import { useIsMobile } from "../hooks/use-mobile";
-import { FLYING_BUTTON, FLYING_STACK, GLASS, useFlying } from "../lib/mapChrome";
+import { FLYING_BUTTON, FLYING_STACK, GLASS, MAP_BUTTON_GLYPH, MAP_BUTTON_SIZE, useFlying } from "../lib/mapChrome";
 import { EngineGate } from "../lib/engine/engineGate";
 import { OnSheetTop } from "./sheet/sheetTop";
 import { TEXT } from "../lib/text";
@@ -102,7 +102,7 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
       <span
         className={cn(
           "flex shrink-0 [&_button]:rounded-full",
-          flying ? "[&_button]:size-[60px]" : "[&_button]:size-11",
+          flying ? "[&_button]:size-[60px]" : MAP_BUTTON_SIZE,
           pillDone && !flying && "hidden",
         )}
       >
@@ -135,9 +135,13 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
         // rounded square in it.
         // At rest a capsule of 44-point buttons, as Apple Maps' map buttons
         // are (the owner, 2026-11-20: "make all buttons same size as Apple
-        // Maps"), 52 across with the glass's 4 round them.
+        // Maps"), 52 across with the glass's 4 round them; 44 px and their
+        // glyphs 20 whatever the text size, as Maps' do not grow with
+        // Dynamic Type (MAP_BUTTON_SIZE, MAP_BUTTON_GLYPH).
         "flex flex-col gap-2 p-1",
-        flying ? cn("rounded-2xl [&_button]:rounded-xl", FLYING_STACK) : "rounded-full [&_button]:size-11 [&_button]:rounded-full",
+        flying
+          ? cn("rounded-2xl [&_button]:rounded-xl", FLYING_STACK)
+          : cn("rounded-full [&_button]:rounded-full", MAP_BUTTON_SIZE, MAP_BUTTON_GLYPH),
         GLASS,
       )}
     >

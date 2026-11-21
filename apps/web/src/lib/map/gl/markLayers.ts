@@ -1,6 +1,6 @@
 import type { ExpressionSpecification, SymbolLayerSpecification } from "maplibre-gl";
 import { CHART } from "../../tokens";
-import { labelHalo, labelText, type LabelKind } from "./layers/common";
+import { labelHalo, labelInk, labelText, type LabelKind } from "./layers/common";
 import { AIRPORT_IDENT_INK } from "./airportIcons";
 
 /**
@@ -67,7 +67,7 @@ export function labelledLayer(
       ...giving(how),
       ...layout,
     },
-    paint: { "text-color": AIRPORT_IDENT_INK, ...labelHalo("airportIdent"), ...paint },
+    paint: { "text-color": labelInk(AIRPORT_IDENT_INK), ...labelHalo("airportIdent"), ...paint },
   };
 }
 

@@ -13,7 +13,14 @@ import re
 import textwrap
 from pathlib import Path
 
+import design_tokens_label as label
+
 PYTHON = Path("services/jobs/charts/map_zoom.py")
+# The web's MAP_ZOOM and MAP_LABEL are a file of their own, which lib/tokens
+# re-exports, so lib/tokens stays within the 400-line budget
+# (scripts/ci/file_sizes.py; generated/ folders are left out of it).
+WEB = Path("apps/web/src/lib/generated/mapTokens.ts")
+TS_REEXPORT = 'export { MAP_LABEL, MAP_ZOOM, type MapLabelKind } from "./generated/mapTokens";'
 HEAD = "From which zoom each kind of airport and airspace is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1."
 
 
@@ -61,5 +68,7 @@ def python(tree, banner):
 
 
 def outputs(tree, root, banner):
-    """The files this module writes whole, by path: the charts job's."""
-    return {root / PYTHON: python(tree, banner)}
+    """The files written whole beside the four token files, by path: the
+    charts job's zooms and the web's MAP_ZOOM, with its MAP_LABEL
+    (design_tokens_label)."""
+    return {root / PYTHON: python(tree, banner), root / WEB: "/* %s */\n\n%s\n\n%s\n" % (banner, ts(tree), label.ts(tree))}

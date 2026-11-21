@@ -24,7 +24,7 @@ import design_tokens_stock as stock
 import design_tokens_system as system
 import design_tokens_typography as typography
 import design_tokens_zoom as zoom
-from design_tokens_webtype import fixed, rem, web_class
+from design_tokens_webtype import fixed, rem, size_css, web_class
 from design_tokens_colour import hex6, rgba
 from design_tokens_formats import gen_formats
 
@@ -194,7 +194,7 @@ def gen_css(tree):
     day_feel, night_feel = feel.css(tokens(tree["feel"]))
     root += day_feel
     root += [("tap-target", "%gpx" % tree["size"]["tap-target"]["$value"])]
-    root += [("size-%s" % k, "%gpx" % t["$value"]) for k, t in tokens(tree["size"]).items() if k != "tap-target"]
+    root += [("size-%s" % k, size_css(t)) for k, t in tokens(tree["size"]).items() if k != "tap-target"]
     root += decls("color", "theme", "light")
     ink_all = [
         ("brand-font", font_stack(tree, "font.brand").rsplit(",", 1)[0]),

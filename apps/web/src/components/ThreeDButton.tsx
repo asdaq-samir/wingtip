@@ -28,7 +28,8 @@ export default function ThreeDButton() {
         className={cn(
           // The area square, as the account button's under it: round, its
           // corners were the glass's, not the button's (the iOS audit's P1).
-          "relative size-11 rounded-full font-semibold text-foreground",
+          // 44 px whatever the text size, as the map's other buttons (MAP_BUTTON).
+          "relative size-(--size-map-button) rounded-full font-semibold text-foreground",
           "aria-pressed:bg-transparent data-pressed:text-tint",
           TEXT.detail,
         )}

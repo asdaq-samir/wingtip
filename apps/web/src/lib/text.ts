@@ -49,16 +49,13 @@ export const TEXT = {
   /** A chip's category inside a column the width of the star, with
    *  font-bold: iOS's Caption 2, 11 on 13, the same with a mouse. */
   caption: TYPE_CLASS.caption,
-  /** The tab bar's words: iOS's Footnote, 13 on 17, two sizes up from its
-   *  tab bar's Caption 2, at the owner's asks ("make the label font and icon
-   *  size a bit bigger so it fits nicely"; the tabs to "pop out more",
-   *  2026-10-22). */
-  tab: TYPE_CLASS.tab,
-  /** The tab bar's words: 12, a size under the 13 they were, for a
-   *  slimmer bar with room round its tabs (the owner, 2026-11-04: 49
-   *  points "seems too congested and small"), on iOS's own 16 for 12
-   *  (Caption 1, 12/16; the iOS audit's P3). 14 failed the audit on every
-   *  screen with the tabs; the tab is 50 tall, so the bar keeps its height. */
+  /** The floating tab bar's words under their glyphs (FloatingBar, FPL's
+   *  and the airport card's bars): iOS's Footnote, 13 on 18, two sizes up
+   *  from its tab bar's Caption 2, at the owner's asks ("make the label font
+   *  and icon size a bit bigger so it fits nicely"; the tabs to "pop out
+   *  more", 2026-10-22). The bars drew a note's 13 while this role said 12,
+   *  and the 13-on-17 `tab` role had no caller; one role now, and `tab` is
+   *  gone (the scale audit's Q3, the owner, 2026-11-21). */
   tabBar: TYPE_CLASS.tabBar,
   /** A figure's name, an ident, a chip's word in the display face
    *  (index.css --display: Barlow Condensed in the Chart ink look, the

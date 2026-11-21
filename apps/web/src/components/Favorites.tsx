@@ -28,9 +28,9 @@ export function Mark({ icon, className, style }: { icon: ReactNode; className?: 
 }
 
 /** A kept airport's mark in a list's row: its chart symbol, as Favorites'
- *  and Nearest's rows draw it. */
+ *  and Nearest's rows draw it, at a row's size (ChartMark's "row"). */
 export function KeptMark({ airport }: { airport: RecentAirport }) {
-  return <KeptChartMark airport={airport} size={26} />;
+  return <KeptChartMark airport={airport} size="row" />;
 }
 
 /** A field's chart symbol in a strip's tile: 44 in the tile's 56, as wide
@@ -279,14 +279,19 @@ export function ChartMark({
   space: AirspaceClass | null;
   category: string | null | undefined;
   use: "military" | "private" | null;
-  /** Its width in points: the pills' 22, a list row's 26 (Nearest's). */
-  size?: number;
+  /** Its width in points: the pills' 22, a tile's 44; or "row", a list
+   *  row's 30 in rem (size.chart-mark), Search's, Nearest's and Favorites'
+   *  alike and growing with the row's words (the scale audit's Q5: Nearest
+   *  drew 26 and Search 30, neither growing). */
+  size?: number | "row";
 }) {
+  const box = size === "row" ? "var(--size-chart-mark)" : Math.max(28, size);
+  const drawn = size === "row" ? "var(--size-chart-mark)" : size;
   return (
-    <span aria-hidden="true" className="grid shrink-0 place-items-center" style={{ width: Math.max(28, size), height: Math.max(28, size) }}>
+    <span aria-hidden="true" className="grid shrink-0 place-items-center" style={{ width: box, height: box }}>
       <span
         className="block"
-        style={{ width: size, height: size }}
+        style={{ width: drawn, height: drawn }}
         dangerouslySetInnerHTML={{ __html: airportMarkSvg(space, colourOf(category), use, "block size-full overflow-visible") }}
       />
     </span>
@@ -296,7 +301,7 @@ export function ChartMark({
 /** A kept airport's chart symbol (ChartMark), from the field as the
  *  planner has it -- the query useAirspace asks, so none more -- its
  *  weather and whose it is with its airspace. */
-export function KeptChartMark({ airport, size }: { airport: RecentAirport; size?: number }) {
+export function KeptChartMark({ airport, size }: { airport: RecentAirport; size?: number | "row" }) {
   const { data } = useQuery(airportQuery(airport.ident));
   const use = data?.military === "military" ? "military" : data?.private ? "private" : null;
   // With no report of its own, the weather modelled at it, else a station's

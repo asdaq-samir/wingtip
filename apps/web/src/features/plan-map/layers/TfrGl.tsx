@@ -10,7 +10,7 @@ import { SheetCard } from "../../../components/SheetCard";
 import { TfrCard, TfrGone } from "../TfrCard";
 import { TFR_RED, inForce } from "../tfrMarks";
 import { useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
-import { TAP, labelHalo, labelText } from "../../../lib/map/gl/layers/common";
+import { TAP, labelHalo, labelInk, labelText } from "../../../lib/map/gl/layers/common";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { pickOnMap, useMapPickOwner } from "../../../lib/map/mapPick";
 
@@ -67,7 +67,7 @@ const LABEL: SymbolLayerSpecification = {
     ...labelText("hazard"),
     "text-max-angle": 30,
   },
-  paint: { "text-color": TFR_RED, ...labelHalo("hazard") },
+  paint: { "text-color": labelInk(TFR_RED), ...labelHalo("hazard") },
 };
 const ALL = [...LAYERS, LINE, LINE_LATER, LABEL];
 

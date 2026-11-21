@@ -17,7 +17,7 @@ import { useWeatherLayers } from "../../../lib/map/sources/weatherLayers";
 import { WINDS_MODELLED } from "../../../lib/windsAloft";
 import { useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
-import { TAP, labelHalo, labelText } from "../../../lib/map/gl/layers/common";
+import { TAP, labelHalo, labelInk, labelText } from "../../../lib/map/gl/layers/common";
 import { chipLayer, pictureLayer } from "../../../lib/map/gl/markLayers";
 import { useGlSymbols, type GlSymbol } from "../../../lib/map/gl/useGlSymbols";
 import { useGlView } from "../../../lib/map/gl/useGlView";
@@ -59,7 +59,7 @@ const AREA_LAYERS: (FillLayerSpecification | LineLayerSpecification | SymbolLaye
       ...labelText("hazard"),
       "text-max-angle": 30,
     },
-    paint: { "text-color": ["get", "ink"], ...labelHalo("hazard") },
+    paint: { "text-color": labelInk(["get", "ink"]), ...labelHalo("hazard") },
   },
 ];
 /** The area whose card is open, its edge again, wide, in the selection's

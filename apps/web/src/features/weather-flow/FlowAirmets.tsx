@@ -4,7 +4,7 @@ import type { LineLayerSpecification, SymbolLayerSpecification } from "maplibre-
 import { api } from "../../lib/api/client";
 import { callEngine } from "../../lib/engine/engine";
 import { useGlData, useGlLayer } from "../../lib/map/gl/glLayer";
-import { labelHalo, labelText } from "../../lib/map/gl/layers/common";
+import { labelHalo, labelInk, labelText } from "../../lib/map/gl/layers/common";
 import { areaColour, hazardTextInk } from "../../lib/map/weatherColours";
 import type { FlowFrame } from "./useWeatherFlow";
 
@@ -36,7 +36,7 @@ const LAYERS: (LineLayerSpecification | SymbolLayerSpecification)[] = [
       ...labelText("hazard"),
       "symbol-spacing": 320,
     },
-    paint: { "text-color": ["get", "ink"], ...labelHalo("hazard") },
+    paint: { "text-color": labelInk(["get", "ink"]), ...labelHalo("hazard") },
   },
 ];
 

@@ -1266,7 +1266,10 @@ object WingtipMapLabel {
     const val SIZE_RUNWAY = 16f
     const val SIZE_PICKED = 17f
     const val HALO = 2f
-    const val HALO_NIGHT = 0.6f
+    const val HALO_NIGHT = 0.85f
+    const val SCALE_MAX = 1.2f
+    /** Each light-haloed word's ink after dark, by its day ink (map.label.night-ink). */
+    val NIGHT_INK = mapOf("#2465b8" to "#82b4ff", "#c0309f" to "#f28ddc", "#117a35" to "#62d48e", "#1c1a17" to "#eef1f5", "#dc2626" to "#ff8a8a", "#d70015" to "#ff8a8a", "#c2410c" to "#fb9466", "#2563eb" to "#8fb4ff", "#b45309" to "#fbbf24", "#7c3aed" to "#bba1ff", "#78716c" to "#cdc8c3", "#be185d" to "#f58cc4", "#0f766e" to "#4fd1c5", "#57534e" to "#cfcac5", "#9333ea" to "#c99cff")
     /** A field's ident beside its mark, in its symbol's blue or magenta (Chart User's Guide, Airports): the tiles' fields, a Class B field's, a stop's. */
     val AIRPORT_IDENT = Kind(listOf(4.0 to 11.0, 10.0 to 12.0, 13.0 to 13.0), true, Halo.LIGHT)
     /** The open card's field's ident, white over its ring. */
@@ -1336,7 +1339,20 @@ object WingtipFlow {
 object WingtipSize {
     val TapTarget = 48.dp
     val Chip = 32.dp
-    val MapButton = 48.dp
+    val MapButton = 44.dp
+    val RoundButton = 44.dp
+    val Pill = 24.dp
+    val RowMark = 32.dp
+    val ChartMark = 30.dp
+    val SearchDisc = 36.dp
+    val RowBadge = 28.dp
+    val GlyphCaption = 12.dp
+    val GlyphNote = 16.dp
+    val GlyphRow = 20.dp
+    val GlyphBadge = 18.dp
+    val GlyphBar = 24.dp
+    val GlyphMap = 20.dp
+    val GlyphCardAction = 20.dp
     val TabBar = 64.dp
     val Panel = 384.dp
     val PanelWide = 448.dp

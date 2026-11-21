@@ -909,10 +909,8 @@ enum WingtipType {
     static let detail: Font = Font.system(.subheadline, weight: .regular)
     /// A section's line of help, a group's heading, a key (iOS Footnote); 13 with a mouse too, the least a desktop's words are.
     static let note: Font = Font.system(.footnote, weight: .regular)
-    /// The panel's tabs' words (iOS Footnote).
-    static let tab: Font = Font.system(.footnote, weight: .regular)
-    /// The tab bar's words (iOS Caption 1, 12/16; the iOS audit's P3).
-    static let tabBar: Font = Font.system(.caption, weight: .regular)
+    /// The floating tab bar's words under their glyphs (FPL's and the airport card's bars): iOS's Footnote, 13 on 18, what the bars drew as a note's since the owner's "a bit bigger" (2026-10-22); the panel's old 13-on-17 tab role, which nothing read, is gone (the scale audit's Q3, the owner, 2026-11-21).
+    static let tabBar: Font = Font.system(.footnote, weight: .regular)
     /// A StatusBadge's word (Active, Closed, In the air): iOS's Caption 1 in semibold, 12 on 16, the same with a mouse.
     static let badge: Font = Font.system(.caption, weight: .semibold)
     /// A chip's category in a narrow column (iOS Caption 2).
@@ -1044,7 +1042,10 @@ enum WingtipMapLabel {
     static let sizeRunway: Double = 16
     static let sizePicked: Double = 17
     static let halo: Double = 2
-    static let haloNight: Double = 0.6
+    static let haloNight: Double = 0.85
+    static let scaleMax: Double = 1.2
+    /// Each light-haloed word's ink after dark, by its day ink (map.label.night-ink).
+    static let nightInk: [String: String] = ["#2465b8": "#82b4ff", "#c0309f": "#f28ddc", "#117a35": "#62d48e", "#1c1a17": "#eef1f5", "#dc2626": "#ff8a8a", "#d70015": "#ff8a8a", "#c2410c": "#fb9466", "#2563eb": "#8fb4ff", "#b45309": "#fbbf24", "#7c3aed": "#bba1ff", "#78716c": "#cdc8c3", "#be185d": "#f58cc4", "#0f766e": "#4fd1c5", "#57534e": "#cfcac5", "#9333ea": "#c99cff"]
     /// A field's ident beside its mark, in its symbol's blue or magenta (Chart User's Guide, Airports): the tiles' fields, a Class B field's, a stop's.
     static let airportIdent = Kind(size: [(4, 11), (10, 12), (13, 13)], bold: true, halo: .light)
     /// The open card's field's ident, white over its ring.
@@ -1114,7 +1115,20 @@ enum WingtipFlow {
 enum WingtipSize {
     static let tapTarget: CGFloat = 44
     static let chip: CGFloat = 32
-    static let mapButton: CGFloat = 48
+    static let mapButton: CGFloat = 44
+    static let roundButton: CGFloat = 44
+    static let pill: CGFloat = 24
+    static let rowMark: CGFloat = 32
+    static let chartMark: CGFloat = 30
+    static let searchDisc: CGFloat = 36
+    static let rowBadge: CGFloat = 28
+    static let glyphCaption: CGFloat = 12
+    static let glyphNote: CGFloat = 16
+    static let glyphRow: CGFloat = 20
+    static let glyphBadge: CGFloat = 18
+    static let glyphBar: CGFloat = 24
+    static let glyphMap: CGFloat = 20
+    static let glyphCardAction: CGFloat = 20
     static let tabBar: CGFloat = 64
     static let panel: CGFloat = 384
     static let panelWide: CGFloat = 448
