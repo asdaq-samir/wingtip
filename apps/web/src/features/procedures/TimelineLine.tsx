@@ -250,13 +250,17 @@ export function TimelineLine({
                       : `${point.ident}${point.category ? `, ${point.category}` : ""}: open the airport`
                   }
                   data-testid="timeline-ident"
+                  // The name cut short in a span of its own, not the
+                  // button: a button that clips (truncate's overflow) cut
+                  // its own 44-point area to its 22-point line (the iOS
+                  // audit's P1, "C81: change it" 25×22).
                   className={cn(
-                    "relative min-w-0 truncate font-normal after:absolute after:-inset-y-3 after:-inset-x-1 after:content-['']",
+                    "relative min-w-0 font-normal after:absolute after:-inset-y-3 after:-inset-x-1 after:content-['']",
                     point.problem && "text-destructive",
                     TEXT.row,
                   )}
                 >
-                  {pointName(point.ident)}
+                  <span className="min-w-0 truncate">{pointName(point.ident)}</span>
                 </Button>
               </h3>
             ) : (
