@@ -66,3 +66,17 @@ fn the_ring_is_over_the_higher_ground() {
     assert!(glide_ring(45.0, -93.0, Some(5000.0), Some(10.0), Some(1200.0), None, Some(9.0)).is_none());
     assert!(glide_ring(45.0, -93.0, Some(5000.0), Some(100.0), Some(1200.0), Some(900.0), None).is_none(), "no ratio, no ring");
 }
+
+#[test]
+fn along_a_leg_across_the_antimeridian_the_airplane_is_on_it() {
+    // Adak (176.6 W) to Shemya (174.1 E), the airplane on the geodesic
+    // 175 nm out: on the leg, not hundreds of miles off it. The segment is
+    // a straight line in degrees, which on a 430 nm leg at 52 N bows some
+    // 8 nm from the geodesic (along's flat patch, meant for short legs).
+    let line = vec![(51.878, -176.646), (52.7123, 174.1136)];
+    let lengths = vec![distance_nm(51.878, -176.646, 52.7123, 174.1136)];
+    let at = wingtip_core::geo::destination(51.878, -176.646, wingtip_core::geo::bearing_deg(51.878, -176.646, 52.7123, 174.1136), 175.0);
+    let found = along(&line, &lengths, at.0, at.1, 0).unwrap();
+    assert!(found.off_nm < 15.0, "{} nm off", found.off_nm);
+    assert!((found.along_nm - 175.0).abs() < 15.0, "{} nm along", found.along_nm);
+}

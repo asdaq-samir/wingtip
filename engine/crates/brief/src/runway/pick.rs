@@ -81,10 +81,16 @@ pub type Flown = (usize, usize, bool);
 /// runwayInUse): of the ends the reported wind favours, the one with the
 /// most headwind -- AC 90-66C 11.5's runway most nearly into the wind,
 /// calm, the one the field's last wind favoured -- or, with no wind
-/// reported, the most used runway's first end. Only ends with a heading.
+/// reported, the most used runway's first end. Only ends with a heading,
+/// and never a water runway (wingtip_flight::field::water_surface): Lake
+/// Hood's water lanes lie beside its gravel strip, and a lane into the wind
+/// is no runway for an airplane on wheels. A pilot's own pick of one
+/// (runway_flown) stands.
 pub fn runway_in_use(runways: &[Runway]) -> Option<Flown> {
-    let open: Vec<usize> =
-        (0..runways.len()).filter(|&i| !runways[i].closed && runways[i].ends.iter().any(|e| e.heading_true_deg.is_some())).collect();
+    let wet = |r: &Runway| r.surface.as_deref().is_some_and(wingtip_flight::field::water_surface);
+    let open: Vec<usize> = (0..runways.len())
+        .filter(|&i| !runways[i].closed && !wet(&runways[i]) && runways[i].ends.iter().any(|e| e.heading_true_deg.is_some()))
+        .collect();
     let mut winded: Vec<usize> = open.iter().copied().filter(|&i| runways[i].wind.is_some()).collect();
     // A stable sort, as JavaScript's: equals keep the data's order.
     winded.stable_sort_by(|&a, &b| {

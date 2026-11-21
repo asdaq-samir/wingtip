@@ -105,6 +105,16 @@ def test_the_chart_alone_is_there_for_a_map_with_no_route():
     assert resp.headers["cache-control"] == "public, max-age=60"
 
 
+@pytest.mark.parametrize("dest", ["C81", "c81 "])
+def test_a_route_to_its_own_departure_is_a_local_flight_not_a_plan(dest):
+    """C81 to C81 with no stop is one hop of no length: a 422 that says so,
+    from the plan and the nav log alike (app.route_way), not a plan of nothing."""
+    for path in ("/api/plan", "/api/navlog"):
+        resp = client.get(path, params={"dep": "C81", "dest": dest})
+        assert resp.status_code == 422, path
+        assert "same place" in resp.json()["detail"]
+
+
 def test_a_local_flight_is_its_time_aloft_at_cruise_burn_with_the_fuel_check(monkeypatch):
     """C81 to C81, the pattern for an hour and a half: no legs, the fuel
     the burn gives, the day reserve with no departure time at noon."""

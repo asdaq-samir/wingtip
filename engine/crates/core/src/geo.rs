@@ -225,6 +225,14 @@ pub fn surely_off_nm(lat: f64, lon: f64, a: (f64, f64), course: f64, width_nm: f
     cross.abs() > width_nm + 2.0 + 0.01 * s
 }
 
+/// A longitude written within 180° of `reference` (179 near -179 is -181):
+/// so a box or a line between two points across the antimeridian is the
+/// short way round, as the geodesic between them is, not some 350° the
+/// long way. The one copy for the engine's boxes in degrees.
+pub fn lon_near(lon: f64, reference: f64) -> f64 {
+    reference + (lon - reference + 180.0).rem_euclid(360.0) - 180.0
+}
+
 /// A padded (min_lat, min_lon, max_lat, max_lon) box round the route a ->
 /// b (wingtip.geo.corridor_bbox): `buffer_nm` at WGS-84's shortest degree
 /// of latitude, the equator's 59.7 nm (110,574 m), and of longitude

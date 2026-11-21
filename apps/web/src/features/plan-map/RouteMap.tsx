@@ -21,6 +21,7 @@ import CheckpointCard from "./CheckpointCard";
 import RoutePointCard from "./RoutePointCard";
 import { PICK_ZOOM } from "../../lib/map/mapPick";
 import { labelOf, legFactsOf, routeAirports, weatherOf } from "./routeMapFacts";
+import { lonBounds } from "../../lib/geo";
 
 const NO_PATTERNS: TrafficPattern[] = [];
 const NO_POINTS: { lat: number; lon: number }[] = [];
@@ -184,11 +185,16 @@ export default memo(function RouteMap({
     const lats = course.course_line.map((p) => p[0]),
       lons = course.course_line.map((p) => p[1]);
     const out = (v: number, up: boolean) => (up ? Math.ceil(v * 2) : Math.floor(v * 2)) / 2;
+    // The planner's box takes -180 to 180, west under east: a course across
+    // or near the antimeridian asks the whole band of longitude rather than
+    // a 422 (west -180.5, or west past east), its fields then all in it.
+    const [w, e] = lonBounds(lons);
+    const across = w - 0.5 < -180 || e + 0.5 > 180;
     return {
       south: out(Math.min(...lats) - 0.5, false),
       north: out(Math.max(...lats) + 0.5, true),
-      west: out(Math.min(...lons) - 0.5, false),
-      east: out(Math.max(...lons) + 0.5, true),
+      west: across ? -180 : out(w - 0.5, false),
+      east: across ? 180 : out(e + 0.5, true),
     };
   }, [course]);
 

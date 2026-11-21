@@ -105,7 +105,6 @@ gairmet_title
 glide_range
 glide_reaches
 glide_ring
-gonogo_adverse_rows
 gonogo_balance
 gonogo_brief
 gonogo_default_load
@@ -142,7 +141,6 @@ ifr_alternate_not_required
 in_flight
 kept_age
 kneeboard_radio
-landing_runway
 least_crosswind
 live_feed_refresh
 logbook_csv_read
@@ -192,7 +190,8 @@ readback_check
 ready_to_fly
 registered_profile
 replay_track
-route_headwind
+route_adiz
+route_jurisdiction
 route_position
 route_read
 route_way_warning
@@ -213,7 +212,6 @@ strip_fuel
 sua_altitudes
 sun_down
 surface_hours
-taf_validity
 terrain_view_bands
 tfr_read
 thin_track

@@ -50,7 +50,11 @@ fn reach(r: &Ranked) -> Reason {
 
 fn runway(r: &Ranked) -> Vec<Reason> {
     let Some(e) = &r.end else {
-        return vec![("stop", "No open runway listed".to_owned())];
+        // A field whose open runways are all water (a seaplane base's
+        // lanes, NASR APT_RWY's WATER) says so: listed, but not for wheels.
+        let water = r.field.runways.iter().any(|w| !w.closed) && !r.field.runways.iter().any(super::rank::landable);
+        let words = if water { "Water runways only: none for an airplane on wheels" } else { "No open runway listed" };
+        return vec![("stop", words.to_owned())];
     };
     let mut out = vec![];
     let length = e.fit.length_ft.map_or_else(|| "length not listed".to_owned(), |l| format!("{} ft", grouped(l)));

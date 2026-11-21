@@ -1,0 +1,322 @@
+{
+  "_note": "Unusual places and routes (the edge-places audit, 2026-11-21): the ADIZs of 14 CFR 99.43-99.49 (the engine's route_adiz), night along a leg across the antimeridian (night_on_the_way, 14 CFR 1.1 and 91.151(a)), water runways as no landing for an airplane on wheels (best_fields), and the kinds of field an airplane lands at (field_site_type's airplane, NASR APT_BASE SITE_TYPE_CODE). The fields' places are their reference points; Lake Hood's runways and the seaplane base's are illustrative shapes, not NASR's figures. Held by engine/facade/tests/edge_places.rs and the web's features/plan/adiz.test.ts.",
+  "adiz": {
+    "routes": [
+      {
+        "why": "Miami to Nassau crosses the Florida Straits' band (99.43)",
+        "points": [
+          {
+            "lat": 25.7932,
+            "lon": -80.2906
+          },
+          {
+            "lat": 25.039,
+            "lon": -77.4662
+          }
+        ],
+        "zones": [
+          "contiguous"
+        ],
+        "lead": "Through the Contiguous U.S. ADIZ"
+      },
+      {
+        "why": "Brown Field to Tijuana crosses the land border, 99.43's line along it",
+        "points": [
+          {
+            "lat": 32.5723,
+            "lon": -116.9802
+          },
+          {
+            "lat": 32.5411,
+            "lon": -116.97
+          }
+        ],
+        "zones": [
+          "contiguous"
+        ],
+        "lead": "Through the Contiguous U.S. ADIZ"
+      },
+      {
+        "why": "Adak to Shemya, across the antimeridian, in Alaska's (99.45)",
+        "points": [
+          {
+            "lat": 51.878,
+            "lon": -176.646
+          },
+          {
+            "lat": 52.7123,
+            "lon": 174.1136
+          }
+        ],
+        "zones": [
+          "alaska"
+        ],
+        "lead": "Through the Alaska ADIZ"
+      },
+      {
+        "why": "Honolulu to Hilo leaves 99.49(b)'s inner boundary",
+        "points": [
+          {
+            "lat": 21.3187,
+            "lon": -157.9225
+          },
+          {
+            "lat": 19.7214,
+            "lon": -155.0485
+          }
+        ],
+        "zones": [
+          "hawaii"
+        ],
+        "lead": "Through the Hawaii ADIZ"
+      },
+      {
+        "why": "Campbell to Duluth meets none",
+        "points": [
+          {
+            "lat": 42.3246,
+            "lon": -88.0741
+          },
+          {
+            "lat": 46.842,
+            "lon": -92.1936
+          }
+        ],
+        "zones": [],
+        "lead": null
+      },
+      {
+        "why": "Anchorage to Fairbanks, inland, meets none",
+        "points": [
+          {
+            "lat": 61.1744,
+            "lon": -149.9964
+          },
+          {
+            "lat": 64.8151,
+            "lon": -147.856
+          }
+        ],
+        "zones": [],
+        "lead": null
+      },
+      {
+        "why": "Guam to Saipan stays inside 99.47(a)'s inner boundary",
+        "points": [
+          {
+            "lat": 13.4834,
+            "lon": 144.7959
+          },
+          {
+            "lat": 15.119,
+            "lon": 145.7294
+          }
+        ],
+        "zones": [],
+        "lead": null
+      }
+    ]
+  },
+  "night": [
+    {
+      "why": "Adak toward Shemya at 00:00 UTC on the 2026 equinox: about local noon all along the geodesic, so day; a line in degrees passed Greenwich at midnight",
+      "start": [
+        51.878,
+        -176.646
+      ],
+      "end": [
+        52.7123,
+        174.1136
+      ],
+      "depart_s": 1773964800,
+      "minutes": 180,
+      "night": false
+    },
+    {
+      "why": "The same leg twelve hours on: night",
+      "start": [
+        51.878,
+        -176.646
+      ],
+      "end": [
+        52.7123,
+        174.1136
+      ],
+      "depart_s": 1774008000,
+      "minutes": 180,
+      "night": true
+    }
+  ],
+  "waterRunways": {
+    "why": "A diversion from east of Lake Hood: its water lane lies straight in from the course, its gravel strip does not; an airplane on wheels is given the gravel, and a seaplane base's water lanes are said to be no runway for it",
+    "input": {
+      "mode": "diversion",
+      "at": {
+        "lat": 61.18,
+        "lon": -149.8
+      },
+      "altitude_ft": 2500,
+      "speed_kt": 100,
+      "fields": [
+        {
+          "ident": "LHD",
+          "name": "Lake Hood",
+          "lat": 61.18,
+          "lon": -149.97,
+          "elevation_ft": 71,
+          "metar": null,
+          "runways": [
+            {
+              "surface": "GRVL",
+              "length_ft": 2200,
+              "runway_ends": [
+                {
+                  "ident": "14",
+                  "heading_true_deg": 157
+                },
+                {
+                  "ident": "32",
+                  "heading_true_deg": 337
+                }
+              ]
+            },
+            {
+              "surface": "WATER",
+              "length_ft": 4540,
+              "runway_ends": [
+                {
+                  "ident": "09W",
+                  "heading_true_deg": 90
+                },
+                {
+                  "ident": "27W",
+                  "heading_true_deg": 270
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "ident": "XAC1",
+          "name": "Spenard Lake",
+          "lat": 61.185,
+          "lon": -149.93,
+          "elevation_ft": 75,
+          "metar": null,
+          "runways": [
+            {
+              "surface": "WATER",
+              "length_ft": 3000,
+              "runway_ends": [
+                {
+                  "ident": "09W",
+                  "heading_true_deg": 90
+                },
+                {
+                  "ident": "27W",
+                  "heading_true_deg": 270
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "lakeHoodEnd": "32",
+    "waterOnly": "Water runways only: none for an airplane on wheels"
+  },
+  "sites": [
+    {
+      "site_type": "A",
+      "airplane": true
+    },
+    {
+      "site_type": "G",
+      "airplane": true
+    },
+    {
+      "site_type": "U",
+      "airplane": true
+    },
+    {
+      "site_type": "H",
+      "airplane": false
+    },
+    {
+      "site_type": "B",
+      "airplane": false
+    },
+    {
+      "site_type": "C",
+      "airplane": false
+    },
+    {
+      "site_type": null,
+      "airplane": true
+    }
+  ],
+  "tafsAcross": {
+    "why": "The TAFs along Adak to Shemya, across the antimeridian: the two fields' own, not Stansted's, whose 200 ft a box the long way round took in",
+    "input": {
+      "tafs": [
+        {
+          "icaoId": "PADK",
+          "lat": 51.878,
+          "lon": -176.646,
+          "elevation_ft": 18,
+          "fcsts": [
+            {
+              "timeFrom": 1773964800,
+              "timeTo": 1774051200,
+              "ceiling_ft": 1500,
+              "visibility_sm": 6
+            }
+          ]
+        },
+        {
+          "icaoId": "PASY",
+          "lat": 52.7123,
+          "lon": 174.1136,
+          "elevation_ft": 95,
+          "fcsts": [
+            {
+              "timeFrom": 1773964800,
+              "timeTo": 1774051200,
+              "ceiling_ft": 800,
+              "visibility_sm": 6
+            }
+          ]
+        },
+        {
+          "icaoId": "EGSS",
+          "lat": 51.885,
+          "lon": 0.235,
+          "elevation_ft": 348,
+          "fcsts": [
+            {
+              "timeFrom": 1773964800,
+              "timeTo": 1774051200,
+              "ceiling_ft": 200,
+              "visibility_sm": 6
+            }
+          ]
+        }
+      ],
+      "from": [
+        51.878,
+        -176.646
+      ],
+      "to": [
+        52.7123,
+        174.1136
+      ],
+      "start": 1773964800,
+      "end": 1773975600
+    },
+    "stations": [
+      "PADK",
+      "PASY"
+    ],
+    "min_ceiling_ft": 800
+  }
+}

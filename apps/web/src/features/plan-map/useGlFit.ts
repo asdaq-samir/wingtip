@@ -5,6 +5,7 @@ import { glZoom } from "../../lib/map/gl/glStyle";
 import { picked, pilotMoved } from "../../lib/map/gl/pilotCamera";
 import { cameraOf } from "../../lib/map/gl/camera";
 import { FIT_MARGIN } from "../../lib/map/clear";
+import { lonBounds } from "../../lib/geo";
 
 /**
  * The map fitted to `points`, clear of the panel and the map's buttons,
@@ -55,11 +56,11 @@ export function useGlFit(
     // Moved by hand while the points were coming: left where the pilot put it.
     if (pilotMoved()) return;
     const lats = points.map((p) => p.lat),
-      lons = points.map((p) => p.lon);
+      [west, east] = lonBounds(points.map((p) => p.lon));
     cameraOf(map).fit(
       [
-        [Math.min(...lons), Math.min(...lats)],
-        [Math.max(...lons), Math.max(...lats)],
+        [west, Math.min(...lats)],
+        [east, Math.max(...lats)],
       ],
       {
         margin: { ...FIT_MARGIN, top: FIT_MARGIN.top + top, bottom: FIT_MARGIN.bottom + bottom },

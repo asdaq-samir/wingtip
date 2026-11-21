@@ -19,7 +19,10 @@ airport_use, gonogo::permission).
   field_status rules on (wingtip.field_status, decision 0043); `site_type`,
   the engine's field_site_type words for SITE_TYPE_CODE ("Heliport",
   "Seaplane base"; None for an airport, A), for the card to say what kind
-  of field it is.
+  of field it is; `airplane`, whether an airplane on wheels lands there
+  (the engine's: an airport, gliderport or ultralight park, not a heliport,
+  balloonport or seaplane base), which every list of fields to land at is
+  held to (`named`'s `_airplane`, wingtip.airport_places `_landing`).
 
 Each is None or empty where the file cannot be had, never a failure: a
 card or a Brief without the line, not one that failed.
@@ -76,8 +79,10 @@ def _records_of(path: str, _mtime: float) -> dict:
     # NASR's capitals as every app writes them, the FAA's codes kept (the
     # engine's airport_names: "Sierra Vista Muni-Libby AAF"), in one call.
     names = engine("airport_names", names=[n.strip() for n in table["ARPT_NAME"]])
-    # The engine's words for each kind of site, asked once per code (NASR has six).
-    sites = {code: engine("field_site_type", site_type=code)["words"] for code in set(table["SITE_TYPE_CODE"].str.strip().str.upper())}
+    # The engine's words for each kind of site, and whether an airplane on
+    # wheels lands at one, asked once per code (NASR has six).
+    # A blank code (a file without the column) is no code: the table decides.
+    sites = {code: engine("field_site_type", site_type=code or None) for code in set(table["SITE_TYPE_CODE"].str.strip().str.upper())}
     for row, nasr_name in zip(table.itertuples(index=False), names):
         method = row.INSPECT_METHOD_CODE.strip().upper()
         record = {
@@ -87,7 +92,8 @@ def _records_of(path: str, _mtime: float) -> dict:
             "notam_id": row.NOTAM_ID.strip().upper(),
             "name": nasr_name or None,
             "status": row.ARPT_STATUS.strip().upper() or None,
-            "site_type": sites[row.SITE_TYPE_CODE.strip().upper()],
+            "site_type": sites[row.SITE_TYPE_CODE.strip().upper()]["words"],
+            "airplane": sites[row.SITE_TYPE_CODE.strip().upper()]["airplane"],
         }
         for ident in (row.ARPT_ID, row.ICAO_ID):
             if ident.strip():
@@ -142,6 +148,12 @@ def named(us: pd.DataFrame, faa_path: str, faa_mtime: float) -> pd.DataFrame:
     records = _records_of(faa_path, faa_mtime)
     names = _by_idents(us, {ident: r["name"] for ident, r in records.items() if r["name"]})
     us["name"] = names.fillna(us["name"])
+    # NASR's kind of field over OurAirports' type: OurAirports files some
+    # of NASR's heliports, balloonports and seaplane bases as small
+    # airports, which the nearest fields, the Stops and a glide's list
+    # then offered an airplane (`_airplane`, False for those; None where
+    # NASR has no record, the table's own type deciding).
+    us["_airplane"] = _by_idents(us, {ident: r["airplane"] for ident, r in records.items()}).astype(object).where(lambda a: a.notna(), None)
     try:
         private = faa_data._private_of(faa_path, faa_mtime)
         uses = {**{ident: "private" for ident in private}, **faa_data._military_of(faa_path, faa_mtime)}

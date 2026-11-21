@@ -163,3 +163,12 @@ fn the_corridors_first_cut_never_lets_go_a_point_within_the_width() {
         }
     }
 }
+
+#[test]
+fn a_longitude_is_written_near_its_reference() {
+    // Shemya (174.1 E) from Adak (176.6 W): the short way, west past -180.
+    assert!((lon_near(174.1136, -176.646) - -185.8864).abs() < 1e-9);
+    assert!((lon_near(-176.646, 174.1136) - 183.354).abs() < 1e-9);
+    // Nothing to wrap: as it is.
+    assert!((lon_near(-88.07, -92.19) - -88.07).abs() < 1e-9);
+}

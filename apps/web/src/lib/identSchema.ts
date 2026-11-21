@@ -137,8 +137,10 @@ export function stopsOf(value: string | null | undefined): string[] {
 export const MAX_STOPS = 16;
 
 /** A route the planner can plan, or null: both ends valid idents, and no
- *  airport straight after itself -- a route from an airport to itself is
- *  a round trip once it lands somewhere between. Plan's and Train's forms
+ *  airport straight after itself, by any of its idents (the engine's
+ *  same_field: KOSH after OSH is one field, a hop of no length the planner
+ *  refuses) -- a route from an airport to itself is a round trip once it
+ *  lands somewhere between. Plan's and Train's forms
  *  and hooks each used to decide this for themselves, three different
  *  ways -- Train's form let a same-airport route through, and its chart
  *  read then asked for that corridor. */
@@ -151,7 +153,7 @@ export function routeOf(
     a = identOf(dest);
   if (!d || !a) return null;
   const idents = [d, ...stops, a];
-  return idents.every((ident, i) => i === 0 || ident !== idents[i - 1]) ? { dep: d, dest: a } : null;
+  return idents.every((ident, i) => i === 0 || !callEngine("same_field", { a: ident, b: idents[i - 1]! })) ? { dep: d, dest: a } : null;
 }
 
 const ARROW = " → ";

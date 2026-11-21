@@ -110,12 +110,19 @@ pub fn points(v: Option<&Value>) -> Vec<(f64, f64)> {
 /// field's elevation, which the altitude plan keeps each leg under its
 /// clouds with (14 CFR 91.155).
 pub fn tafs_along_route(tafs: &[Value], a: (f64, f64), b: (f64, f64), corridor_nm: f64, start: f64, end: f64) -> String {
+    // The box and each station read with their longitudes within 180° of
+    // the route's start (geo::lon_near): a leg across the antimeridian,
+    // Adak to Shemya, made a box some 350° wide the long way round, which
+    // took in every station of its latitudes the world over, and a leg
+    // near 180 left out the stations just across it.
+    let b = (b.0, geo::lon_near(b.1, a.1));
     let (s, w, n, e) = geo::corridor_bbox(a, b, corridor_nm);
     let mut stations = String::new();
     let (mut ceiling, mut visibility, mut unknown_at): (Option<f64>, Option<f64>, Vec<&str>) = (None, None, Vec::new());
     for station in tafs {
         let (Some(lat), Some(lon)) = (num(station, "lat"), num(station, "lon")) else { continue };
-        if !(s <= lat && lat <= n && w <= lon && lon <= e) {
+        let near = geo::lon_near(lon, a.1);
+        if !(s <= lat && lat <= n && w <= near && near <= e) {
             continue;
         }
         let fcsts = station.get("fcsts").and_then(Value::as_array).unwrap_or(&[]);

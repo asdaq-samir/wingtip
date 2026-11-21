@@ -1,4 +1,5 @@
 import type { ExpressionSpecification, LayerSpecification, LineLayerSpecification } from "maplibre-gl";
+import { lonNear, unwrapLine } from "../../geo";
 import { CHART } from "../../tokens";
 
 /** The route and its checkpoints as GL data and layers (the chart's style is glStyle). */
@@ -23,6 +24,9 @@ export function routeFeature(
   line: [number, number][],
   legs: { key: string; from: { lat: number; lon: number }; to: { lat: number; lon: number } }[] = [],
 ): GeoJSON.FeatureCollection<GeoJSON.LineString> {
+  // Each longitude near the one before: across the antimeridian the course
+  // is drawn the short way (unwrapLine), not once round the whole map.
+  line = unwrapLine(line);
   const lonLat = (pts: [number, number][]) => pts.map(([lat, lon]) => [lon, lat]);
   const features: GeoJSON.Feature<GeoJSON.LineString>[] = [
     { type: "Feature", properties: { part: "route" }, geometry: { type: "LineString", coordinates: lonLat(line) } },
@@ -51,11 +55,13 @@ function along(line: [number, number][], p: { lat: number; lon: number }, after:
   for (let i = Math.floor(after); i < line.length - 1; i++) {
     const [la, lo] = line[i]!,
       [lb, ob] = line[i + 1]!;
+    // The point's longitude near the vertex's, the line being unwrapped.
+    const lon = lonNear(p.lon, lo);
     const dy = lb - la,
       dx = (ob - lo) * kx;
     const len2 = dx * dx + dy * dy;
-    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.lon - lo) * kx * dx + (p.lat - la) * dy) / len2));
-    const d = Math.hypot((p.lon - lo) * kx - t * dx, p.lat - la - t * dy);
+    const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((lon - lo) * kx * dx + (p.lat - la) * dy) / len2));
+    const d = Math.hypot((lon - lo) * kx - t * dx, p.lat - la - t * dy);
     if (d < bestD - 1e-12 && i + t >= after) {
       bestD = d;
       best = i + t;

@@ -27,6 +27,7 @@ from wingtip.planning import route_line
 from wingtip.profile import route_profile as side_view
 
 from .. import chart_model, cycle_in_address, foreflight, fuel_replan, prefetch
+from ..route_way import load_way
 from ..router_basics import load_route
 from ..schemas.plan import Checkpoints, Course, Plan, RouteProfile, Totals
 from ..checkpoint_scoring import route_checkpoints
@@ -177,7 +178,7 @@ def plan(q: Annotated[PlanQuery, Depends()]) -> Plan:
     without it, the 6-hour product, i.e. about now -- and whether the
     fuel reserve is the day or the night one.
     """
-    r = load_route(q.dep, q.dest, q.stops)
+    r = load_way(q.dep, q.dest, q.stops)
     asked = q.asked()
     scored, selected, runs, outcome = fp.plan_within_limit(r, asked, lambda: named_checkpoints(r))
     if isinstance(outcome, fp.NoWinds):

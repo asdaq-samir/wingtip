@@ -18,8 +18,13 @@ _FIELD_KINDS = {"large_airport": "large", "medium_airport": "medium", "small_air
 
 
 def _landing(df: pd.DataFrame) -> pd.DataFrame:
-    """The open landing fields (every list to land at, map mark, Nearest)."""
-    return df[df["type"].isin(list(_FIELD_KINDS)) & df["_closed"].isna()]
+    """The open landing fields (every list to land at, map mark, Nearest):
+    an airport by OurAirports' type, and not one NASR files as a heliport,
+    balloonport or seaplane base (wingtip.field_use's `_airplane`, the
+    engine's field_site_type), which OurAirports calls a small airport at
+    times and an airplane on wheels cannot land at."""
+    airplane = df["_airplane"].ne(False) if "_airplane" in df.columns else True
+    return df[df["type"].isin(list(_FIELD_KINDS)) & df["_closed"].isna() & airplane]
 
 
 def _place_of(row) -> dict:

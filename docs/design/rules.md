@@ -1631,6 +1631,37 @@ On all three apps:
   visibility, ft, kt, inHg (a Q group converted), °C, US gallons and
   pounds. There is no metric setting.
 
+## 16. Unusual places and routes (the owner, 2026-11-21)
+
+Most routes are flown over the Midwest; the edge-places audit of
+2026-11-21 ("Yes to all") holds the rest to the same rules:
+
+1. **The ADIZs, once in the Brief** (`route_adiz`, 14 CFR 99.41-99.49): a
+   route whose points or legs (checked every 2 nm) meet the Contiguous
+   U.S., Alaska, Hawaii or Guam ADIZ, or cross the land border with
+   Mexico (99.43's line), says so once among the Brief's findings, a
+   caution with what part 99 asks there (a flight plan, a listening
+   watch, the transponder, a report before crossing) and 99.1(b)'s
+   exceptions for under 180 kt. Warn, never limit.
+2. **An airplane lands on ground**: a field NASR files as a heliport, a
+   balloonport or a seaplane base is in no list of fields to land at (the
+   nearest, the Stops, a glide's), wherever OurAirports calls it an
+   airport (the engine's `field_site_type` `airplane`); a water runway is
+   never the runway a glide, a diversion or the wind picks
+   (`water_surface`), and a field with water runways alone says so.
+3. **The short way round the antimeridian**: night along a leg, a leg's
+   variation and air, the TAFs along it, the airplane's place on the
+   route and the course drawn on the map are each read along the
+   geodesic, not a line in degrees the long way round (Adak to Shemya).
+4. **A route goes somewhere**: a departure that is its own destination
+   with no stop (C81 to C81, or KOSH to OSH) is a local flight, not a
+   route of no length (`same_field` on the web; a 422 from the plan).
+
+|       | Web                                                                                                                                                              | iPhone                                       | Android |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------- |
+| Where | `features/plan/adiz` (`routeAdiz`), the Brief's glance `adiz` line; `lib/geo` `unwrapLine`, `lonBounds`                                                          | Not yet: on the owner's word (decision 0038) | Not yet |
+| Tests | `engine/crates/flight/src/adiz_tests.rs`, `engine/facade/tests/edge_places.rs` (`lib/fixtures/edgePlaces.json`); `features/plan/adiz.test.ts`, `lib/geo.test.ts` | --                                           | --      |
+
 ## Changing a rule
 
 A rule here changes only when the owner says so (the `owner` label). Then

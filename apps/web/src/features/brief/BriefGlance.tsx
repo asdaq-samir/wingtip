@@ -79,7 +79,7 @@ export default function BriefGlance({
   // or what could not be checked (CautionRow draws nothing without).
   const cycles = useDataCycles();
   const unchecked = !!glance?.unchecked.length || !!dataWarning(cycles);
-  const findings = !!lines?.act.length || !!glance?.outside || rest || unchecked;
+  const findings = !!lines?.act.length || !!glance?.outside || !!glance?.adiz || rest || unchecked;
   return (
     <div className="flex flex-col gap-4 pt-1 pb-4" data-testid="brief-glance">
       <Accordion multiple data-testid="brief-list" className="flex flex-col gap-4">
@@ -95,6 +95,11 @@ export default function BriefGlance({
                 line={{ ...glance.outside, key: "jurisdiction", finding: "caution", tab: "enroute", section: null, raw: [] }}
                 onOpen={onOpen}
               />
+            )}
+            {/* An Air Defense Identification Zone on the way, said once:
+                what 14 CFR part 99 asks of the flight there. */}
+            {glance?.adiz && (
+              <Line line={{ ...glance.adiz, key: "adiz", finding: "caution", tab: "enroute", section: null, raw: [] }} onOpen={onOpen} />
             )}
             {rest && <Rest rest={lines!.rest} onOpen={onOpen} />}
             <CautionRow unchecked={glance?.unchecked} />

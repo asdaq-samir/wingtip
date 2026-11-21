@@ -15,7 +15,7 @@ is not worked: that needs a deviation card the profiles do not carry.
 from itertools import pairwise
 
 from .engine import ask as engine
-from .geo import distance_nm
+from .geo import distance_nm, great_circle_points
 from .magnetic import magnetic_variation_deg
 from .winds_aloft import air_at, later
 
@@ -59,7 +59,11 @@ def leg_air(fix_list: list, altitudes: list, fcst_hr: str | None = None, tas_kt:
     winds cannot be read."""
     out, flown_nm = [], 0.0
     for (a, b), at in zip(pairwise(fix_list), altitudes):
-        lat, lon = (a["lat"] + b["lat"]) / 2, (a["lon"] + b["lon"]) / 2
+        # Half way along the leg's geodesic, never the mean of the two
+        # longitudes, which across the antimeridian (Adak to Shemya) is near
+        # Greenwich: the variation and the winds read half a world away.
+        lats, lons = great_circle_points((a["lat"], a["lon"]), (b["lat"], b["lon"]), 3)
+        lat, lon = float(lats[1]), float(lons[1])
         leg_nm = float(distance_nm(a["lat"], a["lon"], b["lat"], b["lon"]))
         when = later(fcst_hr, (flown_nm + leg_nm / 2) / tas_kt * 3600 if tas_kt else 0.0)
         flown_nm += leg_nm

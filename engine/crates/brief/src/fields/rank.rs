@@ -129,13 +129,20 @@ fn reach_of(g: &Glide, own: &Own, altitude_ft: f64, agl_ft: f64, distance_nm: f6
     (tier, Some(reach), Some(arrive))
 }
 
+/// Whether a runway is one to land on: open, and not water (a seaplane's
+/// lane; wingtip_flight::field::water_surface), which no airplane on
+/// wheels lands on, glide or diversion.
+pub(super) fn landable(runway: &crate::runway::pick::Runway) -> bool {
+    !runway.closed && !runway.surface.as_deref().is_some_and(wingtip_flight::field::water_surface)
+}
+
 /// The end to land on: one the POH's distance fits, then the crosswind
 /// within the demonstrated, then the most headwind (AC 90-66C 11.5, the
 /// end most nearly into the wind), then the one most nearly straight in
 /// from the course flown there, then the longest.
 fn best_end(airplane: Option<&Airplane>, field: &Field, course_deg: f64) -> Option<EndPick> {
     let mut best: Option<EndPick> = None;
-    for (index, runway) in field.runways.iter().enumerate().filter(|(_, r)| !r.closed) {
+    for (index, runway) in field.runways.iter().enumerate().filter(|(_, r)| landable(r)) {
         for end in &runway.ends {
             let fit = end_fit(
                 airplane.and_then(|a| a.landing.as_ref()),
