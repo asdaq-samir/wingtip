@@ -15,6 +15,7 @@ import app.wingtipmaps.android.engine.generated.receiverNexrad
 import app.wingtipmaps.android.engine.generated.receiverRead
 import app.wingtipmaps.android.engine.generated.receiverReports
 import app.wingtipmaps.android.engine.generated.receiverTraffic
+import app.wingtipmaps.android.flight.OwnShipService
 import app.wingtipmaps.android.flight.Ticker
 import app.wingtipmaps.android.settings
 import kotlinx.coroutines.CoroutineScope
@@ -97,6 +98,10 @@ class Receiver private constructor(private val context: Context, private val tic
      *  whether a receiver was heard, changed. */
     suspend fun read(nowMs: Long = AppClock.nowMs()) {
         if (_mode.value != ReceiverMode.AUTO) return
+        // Put away with no receiver heard and no flight under way, nothing
+        // listens: Android keeps the process. One heard, or own ship's
+        // service up, it goes on with the screen off.
+        if (ticker.background && !serving && !OwnShipService.running) return
         socket.start()
         _problem.value = socket.problem
         val bytes = socket.drain()

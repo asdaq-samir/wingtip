@@ -1347,6 +1347,14 @@ for, by the phones' wasted-work audit:
   once only the FIS-B products are left, once a minute. Traffic merges
   again only where the receiver's airplanes changed (`Receiver.due`,
   `trafficChanged`), as on the iPhone.
+- **With the app put away.** Android keeps the process, so the loops
+  stop themselves: the traffic poll and the receiver's listening go on
+  only while own ship's service is up (a flight under way) or a receiver
+  is heard; the map's carrying of each airplane runs only while the map
+  is started; the radar loop's and the model weather's lists are asked
+  only with the app in front (`Ticker.inFront`); the airport card's
+  live rows only while the card can be seen (`LifecycleStartEffect`),
+  their programs each five minutes, as the iPhone asks them.
 
 ## 4. Not verified
 
