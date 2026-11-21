@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { CardId, type CardFrame } from "../../lib/sheetCards";
 import { Shown, useShown } from "../../lib/shown";
 import { useCardFrame } from "./useCardFrame";
+import { CardDialogs } from "./CardDialogs";
 
 /**
  * Content shown as a card of its own over the map's sheet -- a place's
@@ -48,7 +49,10 @@ export function CardLayer({
   return slot
     ? createPortal(
         <Shown.Provider value={shown}>
-          <CardId.Provider value={id}>{children}</CardId.Provider>
+          {/* Its dialogs its own, not the sheet's (CardDialogs). */}
+          <CardDialogs>
+            <CardId.Provider value={id}>{children}</CardId.Provider>
+          </CardDialogs>
         </Shown.Provider>,
         slot,
       )

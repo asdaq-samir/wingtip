@@ -326,7 +326,12 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   `[data-nested-drawer-swiping]`, hidden once faded; its ground, edge and
   shadow the same on the Drawer's curve (`SheetDrawer`). A card's content stays drawn where
   its caller is (its providers) and is put in its drawer's scroller
-  (`useCardFrame`); touches on it are handed to its drawer's viewport
+  (`useCardFrame`), its dialogs under a Root of their own that never
+  opens (`CardDialogs`): in the sheet's React tree they told the sheet,
+  closing, that nothing was open over it, Base UI setting the nested
+  count rather than adding to it, and its ground came back as a grey
+  slab under a card at the pill (`e2e/card-pill-map.spec.ts`; the owner,
+  2026-11-20); touches on it are handed to its drawer's viewport
   (`SheetViewport`): Base UI 1.9 gives the viewport its touchstart,
   touchend and pointerdown as React props, and React sends a portal's
   events to its React parents, not to the viewport it sits in on the page.
