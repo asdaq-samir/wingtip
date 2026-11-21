@@ -2,6 +2,7 @@ package app.wingtipmaps.android.route
 
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.plan.PlanGround
+import app.wingtipmaps.android.plan.PlanProcedures
 import app.wingtipmaps.android.plan.PlanTanks
 import app.wingtipmaps.android.strip.StripData
 
@@ -20,6 +21,7 @@ fun Plan.clearRoute() {
     RouteHome.shared.cleared(s.dest)
     PlanTanks.clear()
     PlanGround.clear()
+    PlanProcedures.clear()
     clear()
 }
 

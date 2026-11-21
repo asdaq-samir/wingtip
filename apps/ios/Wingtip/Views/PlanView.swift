@@ -21,6 +21,7 @@ struct PlanView: View {
     @Environment(Session.self) private var session
     @FocusState private var focused: Field?
     @Environment(KeepForAir.self) private var keepForAir
+    @Environment(FlightUI.self) private var flightUI
     /// A page of the plan's, opened by the sheet: pushed on the iPhone, the
     /// profile, the brief and the flights in the inspector on the iPad.
     let open: (Screen) -> Void
@@ -134,6 +135,8 @@ struct PlanView: View {
         // rows on the line.
         .task(id: plan.procedures) { await cards.loadDrawings(plan.procedures) }
         .sheet(item: $setting) { fuel in FuelSetSheet(ask: fuel).presentationDetents([.medium]) }
+        // An approach on the line briefed or flown dry (ApproachMenuItems).
+        .sheet(item: Bindable(flightUI).lesson) { ask in ApproachLessonSheet(ask: ask).presentationDetents([.medium, .large]) }
         // Leaving the page puts the keyboard away (the web's sheet audit,
         // 2026-11-12: focus left on a page put away kept the keyboard up).
         .onChange(of: nav.sheetPage) { _, _ in focused = nil }

@@ -53,6 +53,11 @@ class BriefModel @Inject constructor() : ViewModel() {
          *  network's own (KeptAgeLine). */
         val keptAtMs: Long? = null,
     ) {
+        /** Every finding to act on, the stops then the cautions, as the
+         *  web's findingRows counts them on its Brief button. */
+        val found: List<Finding>
+            get() = items.map { finding(it.finding) }.filter { it == Finding.STOP || it == Finding.CAUTION }.sortedBy { if (it == Finding.STOP) 0 else 1 }
+
         /** The findings to act on, worst first, at most three. */
         val actions: List<GlanceAction>
             get() = items.map { it to finding(it.finding) }
@@ -70,7 +75,7 @@ class BriefModel @Inject constructor() : ViewModel() {
      *  route not planned, and nothing again for the same route. */
     fun brief(plan: Plan.State) {
         if (!plan.routed || plan.totals == null || plan.planning) return
-        val route = listOf(plan.dep, plan.stops.joinToString(","), plan.dest, plan.aircraft, AirplaneNow.given(plan.own), plan.holds.joinToString(","), plan.rules, PlanAlternate.of(plan.rules, plan.dest)).joinToString("|")
+        val route = listOf(plan.dep, plan.stops.joinToString(","), plan.dest, plan.aircraft, AirplaneNow.given(plan.own), plan.holds.joinToString(","), plan.rules, PlanAlternate.of(plan.rules, plan.dest), plan.depart).joinToString("|")
         if (route == _state.value.route && (_state.value.verdict != null || _state.value.loading)) return
         asking?.cancel()
         _state.value = State(route = route, loading = true)
@@ -114,6 +119,9 @@ class BriefModel @Inject constructor() : ViewModel() {
                 dep = plan.dep, dest = plan.dest, stops = plan.stops.joinToString(",").ifEmpty { null },
                 aircraft = AirplaneNow.plannerName(plan.aircraft, plan.own), holds = plan.holds.joinToString(",").ifEmpty { null },
                 rules = plan.rules,
+                // For when the flight leaves (the plan's time pill), not
+                // the moment asked: the forecast the verdict reads.
+                depart = plan.depart,
                 // Under IFR, the alternate filed: its fuel in the plan, and
                 // the planner's 91.169 finding of it in the weather's.
                 alternate = PlanAlternate.of(plan.rules, plan.dest),

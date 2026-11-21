@@ -157,10 +157,13 @@ enum BriefLegs {
 
 extension Planner {
     /// The briefing, its hazards placed on the nav log's legs where they
-    /// are given (/api/briefing's fixes, leg_min, ground_min).
-    static func briefing(dep: String, dest: String, stops: [String], eteMin: Double?, legs: BriefLegs.Query?) async throws -> Briefing {
+    /// are given (/api/briefing's fixes, leg_min, ground_min), its forecast
+    /// read from `depart`, the time picked on FPL's departure line, to an
+    /// hour past arrival; nil is the planner's now, as the web's
+    /// usePlan asks it.
+    static func briefing(dep: String, dest: String, stops: [String], depart: Date? = nil, eteMin: Double?, legs: BriefLegs.Query?) async throws -> Briefing {
         try await call {
-            try await $0.briefing(query: .init(dep: dep, dest: dest, stops: Self.stops(stops), eteMin: eteMin?.rounded(),
+            try await $0.briefing(query: .init(dep: dep, dest: dest, stops: Self.stops(stops), depart: depart.map { ISO8601DateFormatter().string(from: $0) }, eteMin: eteMin?.rounded(),
                                                fixes: legs?.fixes, legMin: legs?.legMin, groundMin: legs?.groundMin)).ok.body.json
         }
     }

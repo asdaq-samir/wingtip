@@ -1,0 +1,86 @@
+import SwiftUI
+
+/// Type Route at the end of FPL's Add a Stop row, as the web's keyboard
+/// chip there (TypeRouteButton, the owner's 2026-11-21 ask): the keyboard
+/// glyph alone in a small bordered button, named in full for VoiceOver.
+/// A tap opens TypeRouteSheet with the route already in it.
+struct TypeRouteButton: View {
+    @State private var typing = false
+
+    var body: some View {
+        Button { typing = true } label: {
+            Label("Type Route", systemImage: "keyboard").labelStyle(.iconOnly)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .controlSize(.small)
+        .hitArea()
+        .accessibilityLabel("Type Route")
+        .accessibilityHint("Type or paste the whole route")
+        .accessibilityIdentifier("route-type-open")
+        .sheet(isPresented: $typing) {
+            TypeRouteSheet().presentationDetents([.medium, .large])
+        }
+    }
+}
+
+/// The route typed or pasted whole (TypedRoute): the system's text field
+/// over several lines, filled with the route as it is so a pilot changes
+/// it rather than typing it again, Cancel and Plan in the bar as a form
+/// sheet has them; what the engine could not read said under the field
+/// (ProblemLine), the sheet left up.
+struct TypeRouteSheet: View {
+    @Environment(Plan.self) private var plan
+    @Environment(\.dismiss) private var dismiss
+    @State private var text = ""
+    @State private var problem: String?
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("KPWK DCT OBK V100 KLAS", text: $text, axis: .vertical)
+                        .lineLimit(2...6)
+                        .font(WingtipType.row.monospaced())
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                        .focused($focused)
+                        .onSubmit(use)
+                        .accessibilityLabel("Route")
+                        .accessibilityIdentifier("route-type-field")
+                    if let problem { ProblemLine(problem) }
+                }
+            }
+            .navigationTitle("Type Route")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Plan", action: use)
+                        .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .accessibilityIdentifier("route-type-plan")
+                }
+            }
+        }
+        .onAppear {
+            text = TypedRoute.words(dep: plan.dep, stops: plan.stops, dest: plan.dest)
+            focused = true
+        }
+    }
+
+    /// The words read by the engine and planned; kept up with why where
+    /// they cannot be.
+    private func use() {
+        do {
+            guard let read = try TypedRoute.read(text) else {
+                problem = "A route needs two points at least: where it leaves from and where it lands."
+                return
+            }
+            plan.useTypedRoute(read)
+            dismiss()
+        } catch {
+            problem = "The route couldn't be read: \(error.localizedDescription)"
+        }
+    }
+}
