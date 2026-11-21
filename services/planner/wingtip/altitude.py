@@ -23,11 +23,20 @@ from itertools import pairwise
 
 from . import airspace, ifr, procedure_legs, sua, terrain, weather
 from .engine import ask as engine
-from .geo import along_track_distance_nm, distance_nm
+from .geo import along_track_distance_nm, distance_nm, great_circle_points
 from .magnetic import magnetic_variation_deg
 from .terrain import DEFAULT_FAA_CACHE_DIR
 
 log = logging.getLogger(__name__)
+
+
+def midpoint(a: tuple, b: tuple) -> tuple[float, float]:
+    """Half way along the geodesic from a to b (geo.great_circle_points):
+    where a leg's variation, and so 91.159's hemisphere, and its air are
+    read. Never the mean of the two longitudes, which across the
+    antimeridian (Adak, 176.6 W, to Shemya, 174.1 E) is near Greenwich."""
+    lats, lons = great_circle_points(a, b, 3)
+    return float(lats[1]), float(lons[1])
 
 
 def _timed(label: str, fn, pending: set | None = None):
@@ -86,7 +95,7 @@ def _service_ceiling_ft(aircraft_profile: dict | None, a: tuple, b: tuple, fcst_
     if not temperatures:
         return book_ft
     try:
-        profile = weather.temperatures_aloft((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, fcst_hr)
+        profile = weather.temperatures_aloft(*midpoint(a, b), fcst_hr)
     except weather.WeatherServiceError:
         return book_ft
     if not profile:
@@ -182,8 +191,8 @@ def select_cruise_altitude(
     # felt slow -- the same issue, and the same fix, as /api/briefing.
     request_started = time.time()
     shp_path = timed("airspace.ensure_class_airspace_shapefile", airspace.ensure_class_airspace_shapefile)(faa_cache_dir)
-    mid_lat = (route_start[0] + route_end[0]) / 2
-    mid_lon = (route_start[1] + route_end[1]) / 2
+    # Half way along the geodesic, never the mean of the longitudes (midpoint).
+    mid_lat, mid_lon = midpoint(route_start, route_end)
 
     under_ifr = rules == "ifr"
     # On an airway its MEA is the floor (14 CFR 91.177(a)(1)), which the
@@ -285,7 +294,7 @@ def select_cruise_altitude(
     ]
     # Each leg's magnetic variation at its midpoint, for its own course:
     # 14 CFR 91.159 goes by the course flown.
-    leg_variations_deg = [magnetic_variation_deg((a[0] + b[0]) / 2, (a[1] + b[1]) / 2) for a, b in legs] if fixes else []
+    leg_variations_deg = [magnetic_variation_deg(*midpoint(a, b)) for a, b in legs] if fixes else []
 
     # The rules -- each leg's band under the shelf, the clouds (91.155) and
     # the service ceiling, its cruising altitudes by course (91.159,

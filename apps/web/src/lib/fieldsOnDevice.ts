@@ -1,7 +1,7 @@
 import type { AirportIndex } from "./airportIndex";
 import type { NearestAirport } from "./api/types";
 import { callEngine, type EngineInput } from "./engine/engine";
-import { lonScale, type LatLon } from "./geo";
+import { lonNear, lonScale, type LatLon } from "./geo";
 
 /**
  * The fields round a point from the airport index the browser keeps
@@ -35,7 +35,8 @@ export function fieldsNear(index: AirportIndex, at: LatLon, limit: number): Devi
     const lat = index.lat[row]!;
     // Never a field NASR lists as closed (decision 0043).
     if (Number.isNaN(lat) || index.rows[row]![4] > LANDING_SIZE_MAX || index.closed[row]) continue;
-    near.push([(lat - at.lat) ** 2 + ((index.lon[row]! - at.lon) * shrink) ** 2, row]);
+    // Across the antimeridian too (lonNear): Shemya is Adak's neighbour.
+    near.push([(lat - at.lat) ** 2 + ((lonNear(index.lon[row]!, at.lon) - at.lon) * shrink) ** 2, row]);
   }
   near.sort((a, b) => a[0] - b[0]);
   return near.slice(0, limit).map(([, row]) => {

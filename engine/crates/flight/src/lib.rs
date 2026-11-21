@@ -29,14 +29,27 @@
 //! - fuel_weight: a gallon of avgas or Jet A in pounds, the FAA's
 //!   standard weights;
 //! - based: where an airplane is usually based, from its past flights;
+//! - jurisdiction: whose rules a point is under, the United States' or
+//!   another country's (14 CFR 91.1, 91.703; decision 0053), from Natural
+//!   Earth's outlines in data/borders.txt; jurisdiction_call asks it by name;
+//! - adiz: the Air Defense Identification Zones a route meets (14 CFR
+//!   99.41-99.49), each as part 99 draws it; adiz_call asks it by name;
 //! - calls: these rules asked by name.
 
+pub mod adiz;
+pub mod adiz_call;
+#[cfg(test)]
+mod adiz_tests;
 pub mod based;
 pub mod calls;
 pub mod field;
 pub mod filing;
 pub mod flight;
 pub mod fuel_weight;
+pub mod jurisdiction;
+pub mod jurisdiction_call;
+#[cfg(test)]
+mod jurisdiction_tests;
 pub mod limits;
 pub mod performance;
 pub mod route_read;

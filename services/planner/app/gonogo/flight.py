@@ -296,7 +296,9 @@ def findings_for(
     airplane = q.profile()
     profile = (nav or {}).get("aircraft") or ({"name": q.aircraft, **airplane} if airplane else {})
     loading = profile.get("loading")
-    usable = (totals or {}).get("on_board_gal") or profile.get("usable_fuel_gal")
+    # A pilot's 0 is their figure, not "unset": `or` took it for full tanks.
+    on_board = (totals or {}).get("on_board_gal")
+    usable = on_board if on_board is not None else profile.get("usable_fuel_gal")
     load = (
         ask.load.model_dump()
         if ask.load

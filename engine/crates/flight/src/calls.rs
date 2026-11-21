@@ -268,8 +268,10 @@ pub fn field_military(name: &str, v: &Value) -> Result<String, String> {
 }
 
 /// `field_site_type`: the words for a field's kind of landing site, from
-/// NASR APT_BASE's SITE_TYPE_CODE (field.rs's site_words):
-/// `{"words": "Heliport" | ... | null}`, null for an airport.
+/// NASR APT_BASE's SITE_TYPE_CODE (field.rs's site_words), and whether an
+/// airplane on wheels lands there (land_airplane_site):
+/// `{"words": "Heliport" | ... | null, "airplane": bool}`, null words for
+/// an airport.
 pub fn field_site_type(name: &str, v: &Value) -> Result<String, String> {
     let code = match v.get("site_type") {
         None | Some(Value::Null) => None,
@@ -278,6 +280,8 @@ pub fn field_site_type(name: &str, v: &Value) -> Result<String, String> {
     };
     let mut out = String::from("{\"words\":");
     json::opt_string(&mut out, field::site_words(code));
+    out.push_str(",\"airplane\":");
+    out.push_str(if field::land_airplane_site(code) { "true" } else { "false" });
     out.push('}');
     Ok(out)
 }

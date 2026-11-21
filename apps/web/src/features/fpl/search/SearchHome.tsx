@@ -1,4 +1,7 @@
 import { Suspense } from "react";
+import { cn } from "cn";
+import { FieldError } from "../../../components/ui/field";
+import { TEXT } from "../../../lib/text";
 import { FavoriteStrip, PillSection, PillStrip } from "../../../components/Favorites";
 import { usePreferences, type KeptAircraft, type RecentAirport } from "../../../lib/preferences";
 import AddFavoriteTile from "../../../components/AddFavoriteTile";
@@ -30,6 +33,7 @@ import SheetFooter from "./SheetFooter";
 export default function SearchHome({
   vm,
   pickIdent,
+  problem = null,
 }: {
   vm: PlanSlices<"cards" | "fpl" | "map" | "search">;
   /** Set while the search is asked to pick a point (FPL's Add a Stop, a point's Change Stop, an end):
@@ -37,6 +41,8 @@ export default function SearchHome({
    *  not opens its card (the owner, 2026-11-21: "when I tap a nearest airport, it opens the airport
    *  card instead of selecting it"). */
   pickIdent?: (ident: string) => void;
+  /** Why the pick just tapped would not do (a closed field, decision 0043), said where it was tapped (lib/problems). */
+  problem?: string | null;
 }) {
   const { selectPlace: openPlace, openList, selectFlight } = vm.cards;
   const selectPlace = pickIdent ?? openPlace;
@@ -48,6 +54,7 @@ export default function SearchHome({
   const hasAirplane = usePreferences((s) => !!s.myAircraft || s.favoriteAircraft.length > 0);
   return (
     <TabPage testId="search-home">
+      {problem && <FieldError className={cn("appear pt-2 text-destructive-ink", TEXT.note)}>{problem}</FieldError>}
       <PillSection title="Nearest" onMore={openNearest} testId="pill-section-nearest">
         <NearestStrip fields={nearStrip} located={!!nearOrigin} nearMap={nearMap} onOpen={selectPlace} />
       </PillSection>

@@ -9283,7 +9283,7 @@
       "additionalProperties": false
     },
     "field_site_type": {
-      "description": "The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport.",
+      "description": "The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport. `airplane`: whether an airplane on wheels lands there, an airport (A), a gliderport (G) or an ultralight park (U), each a strip of ground; not a heliport, a balloonport or a seaplane base, whose runways are water. What every list of fields to land at is held to (nearest, a stop, a glide's); true with no code, the host's own list then deciding.",
       "type": "object",
       "properties": {
         "input": {
@@ -9313,10 +9313,15 @@
                 null
               ],
               "description": "The site's kind in words, or null for an airport."
+            },
+            "airplane": {
+              "type": "boolean",
+              "description": "Whether an airplane on wheels lands at a field of this kind: A, G and U, or no code."
             }
           },
           "required": [
-            "words"
+            "words",
+            "airplane"
           ],
           "additionalProperties": false
         }
@@ -16708,6 +16713,66 @@
         "answer": {
           "title": "IsaTempCAnswer",
           "type": "number"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "jurisdiction_of": {
+      "description": "Whose rules a point is under. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "JurisdictionOfInput",
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        },
+        "answer": {
+          "title": "JurisdictionOfAnswer",
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "enum": [
+                "US",
+                "CA",
+                "MX",
+                "BS",
+                "other"
+              ],
+              "description": "US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it."
+            },
+            "name": {
+              "type": "string",
+              "description": "The country's name as the warning starts, \"Canada\"; \"Outside the US\" for other."
+            },
+            "caution": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The warning where the figures are, \"Canada: rules not checked \u2014 figures use US rules\"; null in the United States."
+            }
+          },
+          "required": [
+            "code",
+            "name",
+            "caution"
+          ]
         }
       },
       "required": [
@@ -25495,6 +25560,317 @@
       ],
       "additionalProperties": false
     },
+    "route_adiz": {
+      "description": "The Air Defense Identification Zones a route meets (14 CFR part 99, subpart B), each as the regulation draws it: the Contiguous U.S. ADIZ (99.43, its line along the U.S.-Mexico border taken as crossed by a leg from one country to the other), Alaska's (99.45), Guam's (99.47) and Hawaii's (99.49), great circles between their points and rhumb lines along a parallel (99.41). Each point, each leg checked every 2 nm along its geodesic, the zones met in order and the Brief's one line: a flight plan filed and open (99.11), a two-way radio and a listening watch (99.9), the transponder on (99.13) and a position report before crossing (99.15), with 99.1(b)'s exceptions said. Warn, never limit: any altitude or speed is taken as meeting the zone.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RouteAdizInput",
+          "type": "object",
+          "properties": {
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "lat",
+                  "lon"
+                ]
+              },
+              "description": "The route's points in order, as the nav log's rows: a leg from each to the next."
+            }
+          },
+          "required": [
+            "points"
+          ]
+        },
+        "answer": {
+          "title": "RouteAdizAnswer",
+          "type": "object",
+          "properties": {
+            "points": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "contiguous",
+                      "alaska",
+                      "hawaii",
+                      "guam"
+                    ],
+                    "description": "14 CFR part 99's zones: contiguous the Contiguous U.S. ADIZ (99.43), alaska (99.45), guam (99.47), hawaii (99.49)."
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "description": "Each point's zone, null outside every one."
+            },
+            "legs": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "contiguous",
+                    "alaska",
+                    "hawaii",
+                    "guam"
+                  ],
+                  "description": "14 CFR part 99's zones: contiguous the Contiguous U.S. ADIZ (99.43), alaska (99.45), guam (99.47), hawaii (99.49)."
+                },
+                "description": "The zones met along the leg, its ends included, in the order met."
+              },
+              "description": "From each point to the next."
+            },
+            "zones": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "contiguous",
+                  "alaska",
+                  "hawaii",
+                  "guam"
+                ],
+                "description": "14 CFR part 99's zones: contiguous the Contiguous U.S. ADIZ (99.43), alaska (99.45), guam (99.47), hawaii (99.49)."
+              },
+              "description": "Every zone the route meets, once each in order."
+            },
+            "brief": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "lead": {
+                      "type": "string",
+                      "description": "The finding alone, \"Through the Alaska ADIZ\"."
+                    },
+                    "line": {
+                      "type": "string",
+                      "description": "The finding and what part 99 asks, in one line."
+                    },
+                    "action": {
+                      "type": "string",
+                      "description": "What part 99 asks in the first zone met, its exceptions (99.1(b)) said."
+                    },
+                    "why": {
+                      "type": "string"
+                    },
+                    "cite": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "lead",
+                    "line",
+                    "action",
+                    "why",
+                    "cite"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The Brief's line for the route, once; null where it meets no ADIZ."
+            }
+          },
+          "required": [
+            "points",
+            "legs",
+            "zones",
+            "brief"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "route_jurisdiction": {
+      "description": "Which of a route's points and legs lie outside the United States, each leg checked every 2 nm along its geodesic, and the Brief's one line for them. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RouteJurisdictionInput",
+          "type": "object",
+          "properties": {
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "lat",
+                  "lon"
+                ]
+              },
+              "description": "The route's points in order, as the nav log's rows: a leg from each to the next."
+            }
+          },
+          "required": [
+            "points"
+          ]
+        },
+        "answer": {
+          "title": "RouteJurisdictionAnswer",
+          "type": "object",
+          "properties": {
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "enum": [
+                      "US",
+                      "CA",
+                      "MX",
+                      "BS",
+                      "other"
+                    ],
+                    "description": "US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it."
+                  },
+                  "caution": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The warning where the figures are, \"Canada: rules not checked \u2014 figures use US rules\"; null in the United States."
+                  }
+                },
+                "required": [
+                  "code",
+                  "caution"
+                ]
+              },
+              "description": "Each point's, in order."
+            },
+            "legs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "codes": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "enum": [
+                        "US",
+                        "CA",
+                        "MX",
+                        "BS",
+                        "other"
+                      ],
+                      "description": "US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it."
+                    },
+                    "description": "The countries other than the United States met along the leg, its ends included, in the order met."
+                  },
+                  "caution": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The warning where the figures are, \"Canada: rules not checked \u2014 figures use US rules\"; null in the United States."
+                  }
+                },
+                "required": [
+                  "codes",
+                  "caution"
+                ]
+              },
+              "description": "From each point to the next."
+            },
+            "outside": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "US",
+                  "CA",
+                  "MX",
+                  "BS",
+                  "other"
+                ],
+                "description": "US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it."
+              },
+              "description": "Every country other than the United States the route meets, once each in order."
+            },
+            "brief": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "lead": {
+                      "type": "string",
+                      "description": "The finding alone."
+                    },
+                    "line": {
+                      "type": "string",
+                      "description": "The finding and what to do, in one line."
+                    },
+                    "action": {
+                      "type": "string"
+                    },
+                    "why": {
+                      "type": "string"
+                    },
+                    "cite": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "lead",
+                    "line",
+                    "action",
+                    "why",
+                    "cite"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The Brief's line for the route, once; null where it is all in the United States."
+            }
+          },
+          "required": [
+            "points",
+            "legs",
+            "outside",
+            "brief"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "route_options": {
       "description": "The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route, the most filed one and the one round the Class B it enters (14 CFR 91.131(a)(1)) with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.",
       "type": "object",
@@ -31745,6 +32121,7 @@
     "instructor_records_since",
     "is_eastbound",
     "isa_temp_c",
+    "jurisdiction_of",
     "kept_age",
     "kneeboard_radio",
     "least_crosswind",
@@ -31846,6 +32223,8 @@
     "replay_track",
     "report_near",
     "reserve_min",
+    "route_adiz",
+    "route_jurisdiction",
     "route_options",
     "route_options_frame",
     "route_position",

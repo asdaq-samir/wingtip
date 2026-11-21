@@ -1,0 +1,61 @@
+{
+  "x-call": "wingtip_flight::jurisdiction_call::call",
+  "description": "Whose rules a point is under. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "JurisdictionOfInput",
+      "type": "object",
+      "properties": {
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "lat",
+        "lon"
+      ]
+    },
+    "answer": {
+      "title": "JurisdictionOfAnswer",
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "enum": [
+            "US",
+            "CA",
+            "MX",
+            "BS",
+            "other"
+          ],
+          "description": "US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it."
+        },
+        "name": {
+          "type": "string",
+          "description": "The country's name as the warning starts, \"Canada\"; \"Outside the US\" for other."
+        },
+        "caution": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The warning where the figures are, \"Canada: rules not checked — figures use US rules\"; null in the United States."
+        }
+      },
+      "required": [
+        "code",
+        "name",
+        "caution"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

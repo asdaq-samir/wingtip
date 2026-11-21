@@ -93,7 +93,10 @@ Compose. Nothing here is built by hand where a stock part does it.
    Recent -- picks it as a result row does and goes back to where the pick
    was asked from; it does not open its card (the owner, 2026-11-21: "When
    picking stop, when I tap a nearest airport, it opens the airport card
-   instead of selecting it"). Outside a pick a tap opens the card.
+   instead of selecting it"). Outside a pick a tap opens the card. A
+   field NASR lists as closed is never picked, from a tile or a row
+   (decision 0043): the pick is refused with its label ("KXXX: Closed
+   indefinitely. Pick another field."), said on the page it was tapped on.
 6. **Back and Escape close the top card first**, then go back a level.
    Neither only lowers the sheet while a card is open; with no card open
    they may lower it.
@@ -1454,6 +1457,64 @@ recommendation.
 | One pick          | `lib/map/mapPick`: each kind's card says how it is put away while it is up (`useMapPickOwner`), a pick puts the others away (`pickOnMap`), a tap on the chart all (GlMapShell); the map's own card's ring goes with it (`openCard`'s companions)                                                                              | Not yet: on the owner's word (decision 0038) | Not yet |
 | Ring and lit edge | `selectionRing` (lib/map/gl/layers/common), drawn by AirportsGl and PickedGl in the `top` slot; a card rings its point while it is drawn (`useRingWhileUp`) and lights its area (`useAreaWhileUp`: TfrGl's feature state, AirspaceGl's `airspace-picked`, WeatherGl's `wx-area-picked`); traffic's in `trafficMarks`' picture | --                                           | --      |
 | Tests             | `e2e/map-selection.spec.ts` (a ring clears on ✕ and on the chart, a route point opens its card, a new pick replaces the old card, own ship's card); `e2e/weather-map.spec.ts` and `e2e/airspace-lines.spec.ts` (an area lit while its card is up); `lib/address.test.ts` (the `mark` and `at` links)                          | --                                           | --      |
+
+## 15. Outside the United States, the figures say they are US ones (the owner, 2026-11-21)
+
+Every rule the engine holds is the FAA's (14 CFR 91.1; outside the
+United States a U.S. airplane flies by the country's own rules and over
+the high seas by ICAO Annex 2, 91.703(a)). A route that leaves the
+United States is planned as any other, never refused, and says so where
+its figures are (decision
+[0053](../decisions/0053-us-rules-outside-the-us.md)):
+
+1. **The words are the engine's** (`route_jurisdiction`): "Canada: rules
+   not checked — figures use US rules", Mexico's, the Bahamas' or
+   "Outside the US" by the same pattern, for a point or a leg (checked
+   every 2 nm) outside the United States.
+2. **Under the point's row in FPL's timeline**, in the caution's ink, for
+   the point or the legs since the point before; a stop with it keeps the
+   stops listed, as one that cannot be flown to does.
+3. **On the nav log's rail**, once before the first row of each stretch
+   outside, not on every row.
+4. **Once in the Brief**, a caution among its findings citing 14 CFR
+   91.703(a), unfolding to what to do: Canada's rules (the CARs and the
+   TC AIM) for Canada.
+
+|       | Web                                                                                                                                                                                         | iPhone                                       | Android |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------- |
+| Where | `features/plan/jurisdiction` (`routeJurisdiction`, `rowCautions`) over the nav log's rows; RouteTimeline's `caution` (TimelineLine), NavLogList's rail line, the Brief's glance `outside` line | Not yet: on the owner's word (decision 0038) | Not yet |
+| Tests | `engine/crates/flight/src/jurisdiction_tests.rs`, `engine/facade/tests/jurisdiction.rs` (`lib/fixtures/jurisdiction.json`); `features/plan/jurisdiction.test.ts`, `features/brief/GlanceLines.test.tsx`; `e2e/jurisdiction.spec.ts` (C81 to CYQT) | --                                           | --      |
+
+## 16. Unusual places and routes (the owner, 2026-11-21)
+
+Most routes are flown over the Midwest; the edge-places audit of
+2026-11-21 ("Yes to all") holds the rest to the same rules:
+
+1. **The ADIZs, once in the Brief** (`route_adiz`, 14 CFR 99.41-99.49): a
+   route whose points or legs (checked every 2 nm) meet the Contiguous
+   U.S., Alaska, Hawaii or Guam ADIZ, or cross the land border with
+   Mexico (99.43's line), says so once among the Brief's findings, a
+   caution with what part 99 asks there (a flight plan, a listening
+   watch, the transponder, a report before crossing) and 99.1(b)'s
+   exceptions for under 180 kt. Warn, never limit.
+2. **An airplane lands on ground**: a field NASR files as a heliport, a
+   balloonport or a seaplane base is in no list of fields to land at (the
+   nearest, the Stops, a glide's), wherever OurAirports calls it an
+   airport (the engine's `field_site_type` `airplane`); a water runway is
+   never the runway a glide, a diversion or the wind picks
+   (`water_surface`), and a field with water runways alone says so.
+3. **The short way round the antimeridian**: night along a leg, a leg's
+   variation and air, the TAFs along it, the airplane's place on the
+   route and the course drawn on the map are each read along the
+   geodesic, not a line in degrees the long way round (Adak to Shemya).
+4. **A route goes somewhere**: a departure that is its own destination
+   with no stop (C81 to C81, or KOSH to OSH) is a local flight, not a
+   route of no length (`same_field` on the web; a 422 from the plan).
+
+|       | Web                                                                                                                                                              | iPhone                                       | Android |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------- |
+| Where | `features/plan/adiz` (`routeAdiz`), the Brief's glance `adiz` line; `lib/geo` `unwrapLine`, `lonBounds`                                                          | Not yet: on the owner's word (decision 0038) | Not yet |
+| Tests | `engine/crates/flight/src/adiz_tests.rs`, `engine/facade/tests/edge_places.rs` (`lib/fixtures/edgePlaces.json`); `features/plan/adiz.test.ts`, `lib/geo.test.ts` | --                                           | --      |
 
 ## Changing a rule
 

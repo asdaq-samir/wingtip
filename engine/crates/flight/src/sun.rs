@@ -43,6 +43,8 @@ pub const SUNRISE_DEPRESSION_DEG: f64 = 0.833;
 /// and ends 1 hour before sunrise, s.
 pub const PASSENGER_NIGHT_MARGIN_S: f64 = 3600.0;
 
+use wingtip_core::geo::{destination, distance_and_bearing};
+
 const DAY_S: f64 = 86_400.0;
 
 /// The sun's declination and the equation of time at an instant: NOAA's
@@ -181,7 +183,7 @@ pub const NIGHT_STEP_MIN: f64 = 30.0;
 /// Whether any of a trip from `start` to `end` (lat, lon) of `minutes`,
 /// its stops' time on the ground counted, leaving at `depart_s`, falls in
 /// the night, judged every NIGHT_STEP_MIN at where it is by then along
-/// the straight line: a stop's flight landing after dark is held to 14
+/// the geodesic between them: a stop's flight landing after dark is held to 14
 /// CFR 91.151(a)(2)'s 45 minutes, which the one long flight, day at both
 /// its ends, was not.
 pub fn night_on_the_way(start: (f64, f64), end: (f64, f64), depart_s: f64, minutes: f64) -> bool {
@@ -197,11 +199,18 @@ pub fn passenger_night_on_the_way(start: (f64, f64), end: (f64, f64), depart_s: 
     on_the_way(start, end, depart_s, minutes, passenger_night)
 }
 
+/// Where the trip is by each step: on the geodesic from `start` to `end`
+/// (wingtip_core::geo), never a straight line in degrees. Across the
+/// antimeridian (Adak to Attu, 176.6 W to 172.9 E) a line in degrees ran
+/// the long way round, through Greenwich at the half-way step, where it
+/// is night when it is noon over the Aleutians, and a day flight was held
+/// to 91.151(a)(2)'s night reserve, or a night one to the day's.
 fn on_the_way(start: (f64, f64), end: (f64, f64), depart_s: f64, minutes: f64, test: fn(f64, f64, f64) -> bool) -> bool {
     let steps = ((minutes / NIGHT_STEP_MIN).floor() as i64 + 1).max(1);
+    let (nm, course) = distance_and_bearing(start.0, start.1, end.0, end.1);
     (0..=steps).any(|k| {
         let at = if minutes > 0.0 { (k as f64 * NIGHT_STEP_MIN).min(minutes) / minutes } else { 0.0 };
-        let (lat, lon) = (start.0 + (end.0 - start.0) * at, start.1 + (end.1 - start.1) * at);
+        let (lat, lon) = if at >= 1.0 { end } else { destination(start.0, start.1, course, nm * at) };
         test(lat, lon, depart_s + at * minutes * 60.0)
     })
 }
@@ -297,5 +306,15 @@ mod tests {
         let leave = utc(2026, 3, 20, 20, 0);
         assert!(night_on_the_way((41.88, -87.63), (39.74, -104.99), leave, 600.0));
         assert!(!night_on_the_way((41.88, -87.63), (39.74, -104.99), leave, 120.0));
+    }
+
+    #[test]
+    fn a_day_flight_across_the_antimeridian_stays_day() {
+        // Adak (176.6 W) toward Attu (172.9 E) at 00:00 UTC on the equinox:
+        // about local noon all the way along the geodesic, so 1.1's day.
+        // A straight line in degrees passed Greenwich, at midnight.
+        let leave = utc(2026, 3, 20, 0, 0);
+        assert!(!night_on_the_way((51.88, -176.65), (52.83, 173.18), leave, 180.0));
+        assert!(night_on_the_way((51.88, -176.65), (52.83, 173.18), utc(2026, 3, 20, 12, 0), 180.0));
     }
 }

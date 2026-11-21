@@ -1,0 +1,143 @@
+{
+  "x-call": "wingtip_flight::adiz_call::call",
+  "description": "The Air Defense Identification Zones a route meets (14 CFR part 99, subpart B), each as the regulation draws it: the Contiguous U.S. ADIZ (99.43, its line along the U.S.-Mexico border taken as crossed by a leg from one country to the other), Alaska's (99.45), Guam's (99.47) and Hawaii's (99.49), great circles between their points and rhumb lines along a parallel (99.41). Each point, each leg checked every 2 nm along its geodesic, the zones met in order and the Brief's one line: a flight plan filed and open (99.11), a two-way radio and a listening watch (99.9), the transponder on (99.13) and a position report before crossing (99.15), with 99.1(b)'s exceptions said. Warn, never limit: any altitude or speed is taken as meeting the zone.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RouteAdizInput",
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "lat",
+              "lon"
+            ]
+          },
+          "description": "The route's points in order, as the nav log's rows: a leg from each to the next."
+        }
+      },
+      "required": [
+        "points"
+      ]
+    },
+    "answer": {
+      "title": "RouteAdizAnswer",
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "contiguous",
+                  "alaska",
+                  "hawaii",
+                  "guam"
+                ],
+                "description": "14 CFR part 99's zones: contiguous the Contiguous U.S. ADIZ (99.43), alaska (99.45), guam (99.47), hawaii (99.49)."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": "Each point's zone, null outside every one."
+        },
+        "legs": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "contiguous",
+                "alaska",
+                "hawaii",
+                "guam"
+              ],
+              "description": "14 CFR part 99's zones: contiguous the Contiguous U.S. ADIZ (99.43), alaska (99.45), guam (99.47), hawaii (99.49)."
+            },
+            "description": "The zones met along the leg, its ends included, in the order met."
+          },
+          "description": "From each point to the next."
+        },
+        "zones": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "contiguous",
+              "alaska",
+              "hawaii",
+              "guam"
+            ],
+            "description": "14 CFR part 99's zones: contiguous the Contiguous U.S. ADIZ (99.43), alaska (99.45), guam (99.47), hawaii (99.49)."
+          },
+          "description": "Every zone the route meets, once each in order."
+        },
+        "brief": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "lead": {
+                  "type": "string",
+                  "description": "The finding alone, \"Through the Alaska ADIZ\"."
+                },
+                "line": {
+                  "type": "string",
+                  "description": "The finding and what part 99 asks, in one line."
+                },
+                "action": {
+                  "type": "string",
+                  "description": "What part 99 asks in the first zone met, its exceptions (99.1(b)) said."
+                },
+                "why": {
+                  "type": "string"
+                },
+                "cite": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "lead",
+                "line",
+                "action",
+                "why",
+                "cite"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The Brief's line for the route, once; null where it meets no ADIZ."
+        }
+      },
+      "required": [
+        "points",
+        "legs",
+        "zones",
+        "brief"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

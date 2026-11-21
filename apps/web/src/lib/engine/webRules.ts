@@ -192,6 +192,8 @@ export const WEB_RULES = [
   "ready_to_fly",
   "registered_profile",
   "replay_track",
+  "route_adiz",
+  "route_jurisdiction",
   "route_position",
   "route_read",
   "route_way_warning",
