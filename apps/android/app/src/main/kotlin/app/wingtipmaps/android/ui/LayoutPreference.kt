@@ -3,9 +3,9 @@ package app.wingtipmaps.android.ui
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Kept
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -44,5 +44,5 @@ object LayoutPreference {
 @Composable
 fun rememberLayout(): State<String?> {
     val context = LocalContext.current
-    return LayoutPreference.flow(context).collectAsState()
+    return LayoutPreference.flow(context).collectAsStateWithLifecycle()
 }

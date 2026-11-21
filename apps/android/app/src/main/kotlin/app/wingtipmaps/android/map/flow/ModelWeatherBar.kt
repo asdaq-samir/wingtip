@@ -36,7 +36,6 @@ import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,8 +53,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipRadius
@@ -83,14 +81,10 @@ fun ModelWeatherBar(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val model = remember(context) { ModelWeather.of(context) }
     val state by model.state.collectAsStateWithLifecycle()
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    DisposableEffect(lifecycle, model) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) model.away(true) else if (event == Lifecycle.Event.ON_START) model.away(false)
-        }
-        lifecycle.addObserver(observer)
-        onDispose { lifecycle.removeObserver(observer) }
-    }
+    // Lifecycle's own effects: paused at the app's stop, played again at
+    // its start where it was playing.
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { model.away(true) }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { model.away(false) }
     val field = state.field ?: return
     Column(
         modifier.widthIn(max = 360.dp).fillMaxWidth().padding(horizontal = WingtipSpace.Md),
