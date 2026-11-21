@@ -69,17 +69,15 @@ export interface PlanHistory {
 export const started = (now: PlanState, at: number): PlanHistory => ({ past: [], now, future: [], at });
 
 /** The plan as the address has it now, taken in: a change of the pilot's
- *  is a step back, with what it did in words (`note`, for the Undo bar: the
- *  menu's Undo and Redo are gone, the owner 2026-11-21, so every edit offers
- *  its own); one the page made as it settled is folded
+ *  is a step back, and one that took something away (a stop, point or
+ *  procedure removed, Clear Route, the route replaced whole) says so in
+ *  words (`note`, for the Undo toast); every other edit is a step with no
+ *  toast, undone by Cmd-Z (the owner, 2026-11-21); one the page made as it settled is folded
  *  into the step before. */
 export function observed(h: PlanHistory, next: PlanState, at: number): { history: PlanHistory; note: string | null } {
   if (sameState(h.now, next)) return { history: h, note: null };
   if (at - h.at < SETTLE_MS || byTheWind(h.now, next)) return { history: { ...h, now: next }, note: null };
-  return {
-    history: { past: [...h.past, h.now].slice(-LIMIT), now: next, future: [], at },
-    note: describeEdit(h.now, next) ?? `${editName(h.now, next)} Changed`,
-  };
+  return { history: { past: [...h.past, h.now].slice(-LIMIT), now: next, future: [], at }, note: describeEdit(h.now, next) };
 }
 
 /** The keys a runway picked into the wind writes (useRunwayPicks). */

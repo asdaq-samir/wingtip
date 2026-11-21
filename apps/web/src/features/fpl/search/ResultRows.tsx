@@ -66,6 +66,7 @@ export function ResultRow({
   end,
   actions,
   tint = false,
+  disabled = false,
 }: {
   value: string;
   icon: ReactNode;
@@ -78,10 +79,14 @@ export function ResultRow({
   actions?: ReactNode;
   /** The title in the tint: a row that does something. */
   tint?: boolean;
+  /** Greyed, a tap and Enter doing nothing: a field a pick refuses, its
+   *  reason in `detail` (the owner, 2026-11-21). */
+  disabled?: boolean;
 }) {
   return (
     <CommandItem
       value={value}
+      disabled={disabled}
       onClick={onSelect}
       className={cn("min-h-13 items-start gap-3 rounded-none px-3 py-2.5", className)}
       data-testid={testId}

@@ -23,7 +23,14 @@ const ZOOM = 10;
  * chart, shows the card's grey alone. Same rows and taps as the strip it
  * replaced (RecentAirportTiles): a tap opens the field's card.
  */
-export default function RecentCards({ onPick }: { onPick: (airport: RecentAirport) => void }) {
+export default function RecentCards({
+  onPick,
+  refusal,
+}: {
+  onPick: (airport: RecentAirport) => void;
+  /** While the search picks a point: why a field cannot be picked. */
+  refusal?: (ident: string) => string | null;
+}) {
   const recents = usePreferences((s) => s.recentAirports);
   const away = useAway();
   // With none, the airplanes' tiles under it (SearchHome) say what is kept.
@@ -35,7 +42,7 @@ export default function RecentCards({ onPick }: { onPick: (airport: RecentAirpor
       <CarouselContent className="-ml-3">
         {recents.map((a) => (
           <CarouselItem key={a.ident} className="basis-auto pl-3">
-            <RecentCard airport={a} detail={away(a)} onClick={() => onPick(a)} />
+            <RecentCard airport={a} detail={away(a)} onClick={() => onPick(a)} refused={refusal?.(a.ident)} />
           </CarouselItem>
         ))}
       </CarouselContent>
@@ -43,7 +50,17 @@ export default function RecentCards({ onPick }: { onPick: (airport: RecentAirpor
   );
 }
 
-function RecentCard({ airport, detail, onClick }: { airport: RecentAirport; detail: string; onClick: () => void }) {
+function RecentCard({
+  airport,
+  detail,
+  onClick,
+  refused,
+}: {
+  airport: RecentAirport;
+  detail: string;
+  onClick: () => void;
+  refused?: string | null;
+}) {
   const { data: chart } = useQuery(chartQuery);
   const [missing, setMissing] = useState(false);
   const at = airport.lat != null && airport.lon != null ? tileAt(airport.lat, airport.lon, ZOOM) : null;
@@ -56,12 +73,15 @@ function RecentCard({ airport, detail, onClick }: { airport: RecentAirport; deta
       variant="ghost"
       size="inline"
       type="button"
-      onClick={onClick}
-      // Its name is every line it shows, the distance too (WCAG 2.5.3, 1.3.1).
-      aria-label={[airport.ident, airport.name, detail].filter(Boolean).join(", ")}
+      onClick={refused ? undefined : onClick}
+      disabled={!!refused}
+      focusableWhenDisabled={!!refused}
+      // Its name is every line it shows, the distance too, or why it cannot be picked in its place (WCAG 2.5.3, 1.3.1).
+      aria-label={[airport.ident, airport.name, refused ?? detail].filter(Boolean).join(", ")}
       data-testid="airport-recent"
       className={cn(
         "text-inherit",
+        refused && "opacity-50",
         "relative flex h-44 w-36 shrink-0 flex-col justify-end overflow-hidden rounded-2xl bg-muted text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
       )}
     >
@@ -85,7 +105,7 @@ function RecentCard({ airport, detail, onClick }: { airport: RecentAirport; deta
       >
         <span className={cn("font-mono font-bold", TEXT.title)}>{airport.ident}</span>
         <span className={cn("line-clamp-2 font-semibold", TEXT.detail)}>{airport.name}</span>
-        {detail && <span className={cn("truncate opacity-85", TEXT.note)}>{detail}</span>}
+        {(refused ?? detail) && <span className={cn("truncate opacity-85", TEXT.note)}>{refused ?? detail}</span>}
       </span>
     </Button>
   );

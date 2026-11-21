@@ -261,11 +261,11 @@ function rowOf(index: AirportIndex, ident: string): number | undefined {
   return rows.get(ident.toUpperCase());
 }
 
-/** The label of a field NASR lists as closed ("Closed indefinitely", the
- *  engine's field_status as the planner sends it), by any of its idents;
- *  null for an open field or one the index does not hold. A closed field
- *  is never offered as a landing site or a stop (decision 0043). */
-export function closedOf(index: AirportIndex, ident: string): string | null {
+/** The label of a field NASR lists as closed (the engine's field_status,
+ *  as the planner sends it, decision 0043), null where it is open or the
+ *  index does not know it (a waypoint, a position) or is not read yet. */
+export function closedOf(index: AirportIndex | null | undefined, ident: string): string | null {
+  if (!index) return null;
   const row = rowOf(index, ident);
-  return row === undefined ? null : (index.closed[row] ?? null);
+  return row === undefined ? null : index.closed[row]!;
 }

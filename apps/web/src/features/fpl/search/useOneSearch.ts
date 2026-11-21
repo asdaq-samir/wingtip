@@ -5,10 +5,11 @@ import { usePreferences } from "../../../lib/preferences";
 import { useRadioActions } from "../../../lib/atcRadio";
 import { useSearchPick } from "../../../lib/oneSearch";
 import { usePickScope } from "./usePickScope";
+import { pickRefusal } from "../../../lib/pickRefusal";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { searchWords } from "./searchPlaceholder";
 import type { AirportSearchRow } from "../../../lib/airportIndex";
-import { closedOf, useAirportIndex } from "../../../lib/airportIndex";
+import { useAirportIndex } from "../../../lib/airportIndex";
 import { readQuery, nearOf, useSearchResults } from "../../search";
 import { useEngineReady } from "../../../lib/engine/useEngineReady";
 import type { PlanSlices } from "../vm/planSlices";
@@ -112,11 +113,10 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
     riseToSee(setPanel);
   };
 
+  // Why this airport cannot be picked now (Closed; On the route already), for the rows to grey.
+  const refusal = (ident: string) => pickRefusal(pick, index, ident);
   const pickIdent = (ident: string) => {
-    if (!ident) return; // My Location with the fix gone since
-    // Never a closed field as a stop or an end (decision 0043), from a row or a Nearest, Favorite or Recent tile.
-    const closed = index && closedOf(index, ident);
-    if (closed) return setProblem(`${ident.toUpperCase()}: ${closed}. Pick another field.`);
+    if (!ident || refusal(ident)) return; // My Location with the fix gone since; a field refused
     const to = pick;
     done();
     to?.onPick(ident.toUpperCase());
@@ -209,6 +209,7 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
     direct,
     pick,
     pickIdent,
+    refusal,
     // Its own, else why a picker's last pick would not do (the first flight's).
     problem: problem ?? pick?.problem ?? null,
     focused,

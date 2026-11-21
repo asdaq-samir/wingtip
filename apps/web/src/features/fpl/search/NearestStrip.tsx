@@ -26,6 +26,7 @@ export function NearestStrip({
   located,
   nearMap = false,
   onOpen,
+  refusal,
 }: {
   fields: NearestAirport[] | undefined;
   /** Whether there is a position (or a place typed) to be near. */
@@ -34,6 +35,8 @@ export function NearestStrip({
    *  (usePlanSearch), said so, with the way to show the position under them. */
   nearMap?: boolean;
   onOpen: (ident: string) => void;
+  /** While the search picks a point: why a field cannot be picked. */
+  refusal?: (ident: string) => string | null;
 }) {
   const setEnabled = useOwnShip((s) => s.setEnabled);
   const showPosition = (
@@ -63,6 +66,7 @@ export function NearestStrip({
           <SmallTile
             key={field.ident}
             onClick={() => onOpen(field.ident)}
+            refused={refusal?.(field.ident)}
             testId="nearest-strip-field"
             // Said after the tile's ident and distance (SmallTile): the name,
             // the way, and the mark's colour in words, as Favorites' tiles

@@ -93,10 +93,16 @@ Compose. Nothing here is built by hand where a stock part does it.
    Recent -- picks it as a result row does and goes back to where the pick
    was asked from; it does not open its card (the owner, 2026-11-21: "When
    picking stop, when I tap a nearest airport, it opens the airport card
-   instead of selecting it"). Outside a pick a tap opens the card. A
-   field NASR lists as closed is never picked, from a tile or a row
-   (decision 0043): the pick is refused with its label ("KXXX: Closed
-   indefinitely. Pick another field."), said on the page it was tapped on.
+   instead of selecting it"). Outside a pick a tap opens the card.
+   While it picks, an airport it cannot take is shown greyed in every list
+   -- Nearest's tiles, Home, Favorites, Recents and the result rows -- with
+   its reason in a note's grey in the place of its detail: "Closed" (the
+   engine's field_status through the airport index, `closedOf`, decision
+   0043) and, for Add a Stop, "On the route already" (`SearchPick.taken`).
+   A greyed one is disabled (`aria-disabled`, the reason in its accessible
+   name), a tap or Enter does nothing and says nothing more
+   (`lib/pickRefusal`, the model's `refusal`; the owner, 2026-11-21).
+   Outside a pick nothing is greyed.
 6. **Back and Escape close the top card first**, then go back a level.
    Neither only lowers the sheet while a card is open; with no card open
    they may lower it.
@@ -1330,11 +1336,15 @@ less cluttered". Decision [0045](../decisions/0045-fpl-for-every-pilot.md).
    the nav log's winds, an airplane heard (`traffic_fresh`, in seconds).
 5. **A dash only means "needs an airplane".** A figure still coming is a
    placeholder shape (`components/FigureWait`).
-6. **One Undo.** Every FPL edit offers Undo in its toast where the pilot
-   acted ("KMSN Removed", "Altitude Changed"), and Cmd-Z and Shift-Cmd-Z
-   undo and redo on a keyboard, the steps kept across a reload
-   (`lib/planUndo`, `hooks/planHistory`); the route's ••• menu no longer
-   holds Undo and Redo (the owner, 2026-11-21).
+6. **One Undo.** Every FPL edit is undone by Cmd-Z and Shift-Cmd-Z on a
+   keyboard, the steps kept across a reload (`lib/planUndo`,
+   `hooks/planHistory`); the toast with Undo ("KMSN Removed", "Route
+   Cleared", "Route Replaced") is shown only where the pilot took
+   something away -- a stop, point or procedure removed, Clear Route, the
+   route replaced whole -- and for no other edit, an altitude or an
+   airplane changed (the owner, 2026-11-21); a runway the page picks into
+   the wind is never a step. The route's ••• menu holds no Undo or Redo
+   (the owner, 2026-11-21).
 7. **One surface.** No box in a box, fewer borders and pills; spacing
    groups, colour only for meaning.
 8. **A point the planner will not plan to is said, not planned.** An

@@ -275,7 +275,7 @@ export default function PlanSidebar({
           </TabPage>
         ) : (
           stripsDrawn && (
-            <SearchHome vm={vm} pickIdent={model.pick ? model.pickIdent : undefined} problem={model.pick ? model.problem : null} />
+            <SearchHome vm={vm} pickIdent={model.pick ? model.pickIdent : undefined} refusal={model.pick ? model.refusal : undefined} />
           )
         )}
       </TabKept>

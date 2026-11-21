@@ -1,12 +1,10 @@
 import { Suspense } from "react";
-import { cn } from "cn";
-import { FieldError } from "../../../components/ui/field";
-import { TEXT } from "../../../lib/text";
 import { FavoriteStrip, PillSection, PillStrip } from "../../../components/Favorites";
 import { usePreferences, type KeptAircraft, type RecentAirport } from "../../../lib/preferences";
 import AddFavoriteTile from "../../../components/AddFavoriteTile";
 import TabPage from "../../../components/TabPage";
 import { AircraftFavoriteStrip, AircraftRecentTiles } from "../../aircraft-pick";
+import { useAirportIndex } from "../../../lib/airportIndex";
 import FindNearby from "./FindNearby";
 import { NearestStrip } from "./NearestStrip";
 import type { PlanSlices } from "../vm/planSlices";
@@ -33,7 +31,7 @@ import SheetFooter from "./SheetFooter";
 export default function SearchHome({
   vm,
   pickIdent,
-  problem = null,
+  refusal,
 }: {
   vm: PlanSlices<"cards" | "fpl" | "map" | "search">;
   /** Set while the search is asked to pick a point (FPL's Add a Stop, a point's Change Stop, an end):
@@ -41,9 +39,11 @@ export default function SearchHome({
    *  not opens its card (the owner, 2026-11-21: "when I tap a nearest airport, it opens the airport
    *  card instead of selecting it"). */
   pickIdent?: (ident: string) => void;
-  /** Why the pick just tapped would not do (a closed field, decision 0043), said where it was tapped (lib/problems). */
-  problem?: string | null;
+  /** Why such a tile cannot be picked, greyed with it: Closed, On the route already. */
+  refusal?: (ident: string) => string | null;
 }) {
+  // The index says which fields are closed, read as soon as a pick asks.
+  useAirportIndex(true, !!pickIdent);
   const { selectPlace: openPlace, openList, selectFlight } = vm.cards;
   const selectPlace = pickIdent ?? openPlace;
   const { nearOrigin } = vm.map;
@@ -54,9 +54,8 @@ export default function SearchHome({
   const hasAirplane = usePreferences((s) => !!s.myAircraft || s.favoriteAircraft.length > 0);
   return (
     <TabPage testId="search-home">
-      {problem && <FieldError className={cn("appear pt-2 text-destructive-ink", TEXT.note)}>{problem}</FieldError>}
       <PillSection title="Nearest" onMore={openNearest} testId="pill-section-nearest">
-        <NearestStrip fields={nearStrip} located={!!nearOrigin} nearMap={nearMap} onOpen={selectPlace} />
+        <NearestStrip fields={nearStrip} located={!!nearOrigin} nearMap={nearMap} onOpen={selectPlace} refusal={refusal} />
       </PillSection>
       <FindNearby onFind={findNearby} />
       <PillSection title="Favorites" onMore={() => openList("favorites")} testId="pill-section-favorites">
@@ -66,7 +65,13 @@ export default function SearchHome({
             own box laid out of the way (display: contents), its tiles in
             this one. */}
         <PillStrip testId="pill-favorites-row" className="[&>div]:contents">
-          <FavoriteStrip home={home} favorites={favorites} onOpen={(a) => selectPlace(a.ident)} onAddHome={() => askFor("home")} />
+          <FavoriteStrip
+            home={home}
+            favorites={favorites}
+            onOpen={(a) => selectPlace(a.ident)}
+            onAddHome={() => askFor("home")}
+            refusal={refusal}
+          />
           <Suspense fallback={null}>
             <AircraftFavoriteStrip
               onOpen={openAirplane}
@@ -89,7 +94,7 @@ export default function SearchHome({
         </PillStrip>
       </PillSection>
       <PillSection title="Recents" onMore={() => openList("recents")} testId="airport-recents">
-        <RecentCards onPick={(airport) => void pickPlace(airport)} />
+        <RecentCards onPick={(airport) => void pickPlace(airport)} refusal={refusal} />
         <Suspense fallback={null}>
           <AircraftRecentTiles onPick={openAirplane} />
         </Suspense>
