@@ -28743,6 +28743,75 @@
       ],
       "additionalProperties": false
     },
+    "taf_validity": {
+      "description": "A TAF's own times and whether it speaks for now: its station, when it was issued and its valid period, as its header gives them, and its state, not yet before the period, in force during it and expired at its end (FAA-H-8083-28B 27.4.1, a TAF is a forecast for its valid period; the same rule as weather_in_force's for a TAF). The airport card says it under the hours, so a TAF kept from before the signal was lost is never read as today's forecast (14 CFR 91.103). Null where the words are not a TAF.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TafValidityInput",
+          "type": "object",
+          "properties": {
+            "taf": {
+              "type": "string",
+              "description": "The TAF as sent."
+            },
+            "now": {
+              "type": "number",
+              "description": "Unix seconds, UTC: the engine has no clock."
+            }
+          },
+          "required": [
+            "taf",
+            "now"
+          ]
+        },
+        "answer": {
+          "title": "TafValidityAnswer",
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "station": {
+              "type": "string"
+            },
+            "issued": {
+              "type": "number",
+              "description": "When it was issued, Unix seconds; the time it was read where its header gives none."
+            },
+            "valid_from": {
+              "type": "number",
+              "description": "The start of its valid period, Unix seconds."
+            },
+            "valid_to": {
+              "type": "number",
+              "description": "The end of its valid period, Unix seconds."
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "not_yet",
+                "in_force",
+                "expired"
+              ]
+            }
+          },
+          "required": [
+            "station",
+            "issued",
+            "valid_from",
+            "valid_to",
+            "state"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "taf_window": {
       "description": "What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).",
       "type": "object",
@@ -31903,6 +31972,7 @@
     "sun_down",
     "surface_airspace",
     "surface_hours",
+    "taf_validity",
     "taf_window",
     "tafs_along_route",
     "temperature_at",

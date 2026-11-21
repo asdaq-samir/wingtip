@@ -45,13 +45,15 @@ export function FlowBar() {
   const name = lookOf(flow.field).name;
   const frame = flow.frame;
   const at = frame ? new Date(frame.valid) : null;
-  const status = flow.failed
-    ? "Model weather isn't available right now"
-    : flow.loading
-      ? "Fetching model weather…"
-      : !flow.frames.length
-        ? "No model weather yet"
-        : null;
+  const status = flow.offline
+    ? "Model weather: no connection"
+    : flow.failed
+      ? "Model weather isn't available right now"
+      : flow.loading
+        ? "Fetching model weather…"
+        : !flow.frames.length
+          ? "No model weather yet"
+          : null;
   // What the hour shown is, so a pilot knows which (the owner, 2026-11-12):
   // the radar's mosaic for an hour past on the precipitation, observed;
   // every other picture a forecast, an hour to come said as how far ahead.
