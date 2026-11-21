@@ -19,7 +19,7 @@ import { startRadio, stopRadio } from "../lib/atcListening";
 import { callPattern } from "../lib/heardCall";
 import { altitudeWords, clearanceParts, readbackCheck, readbackLines } from "../lib/readback";
 import { TEXT } from "../lib/text";
-import { useSettled } from "../hooks/use-settled";
+import { useDebounced } from "../lib/useDebounced";
 import { useReadback } from "./useReadback";
 import { NotYet, Step, Verdict } from "./ClearanceSteps";
 import { ROW_BUTTON, ROW_MIC, routeLine } from "../lib/clearanceRows";
@@ -72,7 +72,7 @@ export default function ClearanceCard({
   // Enter in the field reads what is typed at once (one line: no new
   // lines in a clearance), where the reader otherwise waits for a pause.
   const [readNow, setReadNow] = useState<string | null>(null);
-  const waited = useSettled(text, 400);
+  const waited = useDebounced(text, 400);
   const settled = readNow === text ? text : waited;
   const clearance = useMemo(() => readClearance(settled), [settled]);
   const heardIt = heardAny(clearance);

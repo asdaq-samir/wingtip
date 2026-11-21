@@ -39,4 +39,11 @@ describe("a frequency", () => {
     fireEvent.click(screen.getByRole("button", { name: "Copy 121.5" }));
     await waitFor(() => expect(useFailedAction.getState().failed?.title).toBe("Not Copied"));
   });
+
+  it("with no clipboard to write to (a page not over HTTPS), says so as a refusal does", async () => {
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
+    render(<FrequencyButton mhz={122.8} />);
+    fireEvent.click(screen.getByRole("button", { name: "Copy 122.8" }));
+    await waitFor(() => expect(useFailedAction.getState().failed?.title).toBe("Not Copied"));
+  });
 });
