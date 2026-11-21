@@ -6,7 +6,7 @@ import { chartPagePicture } from "../../lib/diagram";
 import { latestAnswer } from "../../lib/kept/latest";
 import type { KeptKind } from "../../lib/kept/keptAge";
 import { useWeatherLayers } from "../../lib/map/sources/weatherLayers";
-import { airportQuery } from "../../lib/queryClient";
+import { airportQuery, fieldNotamsQuery } from "../../lib/queryClient";
 import { notamRankingQuery } from "../notamRanking";
 import { keptRecordStore, keptRoute, type KeptRecord } from "./keptRecord";
 import { keepProfile, keepRadar } from "./keepFlightPath";
@@ -20,7 +20,8 @@ import { courseFields } from "../../lib/course";
  * cards and the weather loop, airport-diagrams for the plates' pages), and
  * the route's side view and the loop's newest radar over it
  * (keepFlightPath), the NOTAMs, a POST it cannot keep, in this browser's storage
- * (notamRanking). In the air each is shown from there with its age
+ * (notamRanking), and each field's own NOTAMs, its card's list, through the
+ * worker as planner-api keeps them. In the air each is shown from there with its age
  * (lib/kept). What fails is named missing, never in the way of the rest.
  */
 
@@ -92,14 +93,26 @@ export async function keepRouteAnswers(
   await keepProfile(client, course);
 
   const plan = useBriefPlan.getState();
+  let ranked: boolean | null = null;
   if (plan.routed) {
     try {
       bytes += bytesOf(await client.fetchQuery({ ...notamRankingQuery(plan), staleTime: 0 }));
-      mark("notams", true);
+      ranked = true;
     } catch {
-      mark("notams", false);
+      ranked = false;
     }
   }
+  // And the departure's, the destination's and each stop's own NOTAMs, the
+  // airport card's list (GET /api/airport/{ident}/notams), which the worker
+  // keeps as it passes (planner-api): before, a card opened in the air
+  // showed them only where it had been opened online (the offline audit
+  // of 2026-11-21, finding 6; 14 CFR 91.103 asks for the NOTAMs of every
+  // field a flight uses).
+  const notams = await Promise.allSettled(fields.map((ident) => client.fetchQuery({ ...fieldNotamsQuery(ident), staleTime: 0 })));
+  notams.forEach((n) => (bytes += n.status === "fulfilled" ? bytesOf(n.value) : 0));
+  // On board only where the route's list and every field's came: a field
+  // whose NOTAMs could not be had is said missing, never kept quiet.
+  if (ranked !== null || notams.length) mark("notams", ranked !== false && notams.every((n) => n.status === "fulfilled"));
 
   // Every field's card -- its frequencies, runways, weather and diagram's
   // cycle -- and the alternate's; the plates of the destination and the

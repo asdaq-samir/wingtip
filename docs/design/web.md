@@ -1840,6 +1840,12 @@ WebAssembly and what Keep for the Air fetched; the page asks it first.
   (`lib/map/route/routeAnswers`) -- asked again through the worker, as the
   page's first load asked them before the worker held it; a kept route
   opened again offline plans from them (flight-critical.spec).
+- Keep for the Air keeps the departure's, each stop's and the
+  destination's own NOTAMs with the briefing (`fieldNotamsQuery`, the
+  airport card's GET, kept by the worker's planner-api as it passes), so
+  a field's card opened in the air lists them with their age; NOTAMs are
+  on board only where the route's list and every field's came, and
+  missing otherwise (the offline audit of 2026-11-21, finding 6).
 - Keep for the Air keeps the map's overlay archive whole once a cycle,
   where the browser has room (`overlay-archive`, answered in ranges by
   Workbox's range-requests plugin), the route's side view, and the

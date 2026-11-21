@@ -1,32 +1,17 @@
 import { useState } from "react";
-import { queryOptions, useQuery } from "@tanstack/react-query";
-import { data, planner } from "../../lib/api/client";
-import type { components } from "../../lib/api/schema";
+import { useQuery } from "@tanstack/react-query";
+import { fieldNotamsQuery, type FieldNotams } from "../../lib/queryClient";
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
 import { twoFigures, zuluTime } from "../../lib/format";
 
-export type FieldNotams = components["schemas"]["NotamsRanked"];
+// The field's NOTAMs and their query are lib/queryClient's, which Keep
+// for the Air asks for each of the route's fields too.
+export type { FieldNotams };
 export type FieldNotam = FieldNotams["notams"][number];
 /** A NOTAM as the engine reads it for a pilot (notam_read). */
 export type NotamReading = EngineAnswer<"notam_read">;
 /** A TFR as the engine reads it for a pilot (tfr_read). */
 export type TfrReading = EngineAnswer<"tfr_read">;
-
-/**
- * A field's own NOTAMs (the FAA's feed, by any ident it goes by) and the
- * TFRs within 5 nm of it, best first, as the engine ranks a route's: the
- * planner's GET /api/airport/{ident}/notams, which the iPhone's and
- * Android's cards read too. 14 CFR 91.103 asks for the NOTAMs of every
- * field a flight uses; a card is where a pilot looks at one field.
- */
-export const fieldNotamsQuery = (ident: string) =>
-  queryOptions({
-    queryKey: ["airport-notams", ident],
-    queryFn: () => planner.GET("/api/airport/{ident}/notams", { params: { path: { ident } } }).then(data<FieldNotams>),
-    staleTime: 5 * 60_000,
-    meta: { silent: true },
-  });
-
 /** How many NOTAMs the card's section shows, the engine's first three
  *  (its ranking says its top three first, notams_ranked), the title the
  *  way to the rest, as every list on the card shows three (FirstFew). */

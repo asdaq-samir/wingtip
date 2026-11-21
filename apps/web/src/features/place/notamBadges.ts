@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { AirportPlace } from "../../lib/api/types";
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
-import { fieldNotamsQuery, identsOf, type FieldNotam } from "./fieldNotams";
+import { fieldNotamsQuery } from "../../lib/queryClient";
+import { identsOf, type FieldNotam } from "./fieldNotams";
 
 type EngineBadge = EngineAnswer<"notam_subject">["badges"][number];
 
