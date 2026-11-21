@@ -14,9 +14,8 @@ import { ListGroup } from "../../components/GroupedList";
 import { RowBadge } from "../../components/RowBadge";
 import { SETTING_BADGE } from "../../lib/rowBadges";
 import type { Pilot } from "../../lib/api/types";
-import { api } from "../../lib/api/client";
 import { feet, miles } from "../../lib/format";
-import { flightsQuery, pilotQuery } from "../../lib/queryClient";
+import { flightsQuery, logbookQuery, pilotQuery } from "../../lib/queryClient";
 import { shortName } from "../../lib/aircraftChoice";
 import { usePreferences } from "../../lib/preferences";
 import type { Minimums } from "../../lib/minimums";
@@ -82,7 +81,7 @@ function Personal({
   // the owner's pick (T3): asked for only signed in, as the rows open to
   // nothing otherwise.
   const { data: flights } = useQuery({ ...flightsQuery, enabled: signedIn });
-  const { data: entries } = useQuery({ queryKey: ["logbook"], queryFn: api.logbook.list, enabled: signedIn, meta: { silent: true } });
+  const { data: entries } = useQuery({ ...logbookQuery, enabled: signedIn });
   const hours = entries?.reduce((sum, e) => sum + (e.totalHours ?? 0), 0);
   const settings = minimumsWords(minimums);
   // Settings' Help & About: how old the plan's data is, and what is kept

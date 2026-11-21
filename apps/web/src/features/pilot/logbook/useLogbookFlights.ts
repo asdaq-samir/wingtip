@@ -1,6 +1,7 @@
 import { startTransition, useActionState, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, describeError } from "../../../lib/api/client";
+import { logbookQuery } from "../../../lib/queryClient";
 import type { LogbookEntry, LogbookEntryRequest } from "../../../lib/api/types";
 import { done } from "../../../lib/doneNote";
 import { toast } from "../../../lib/toast";
@@ -32,7 +33,7 @@ export function useLogbookFlights() {
   const queryClient = useQueryClient();
   // Quiet: the list says in place what it could not fetch (QueryState),
   // where a failure read "No flights logged yet".
-  const asked = useQuery({ queryKey: ["logbook"], queryFn: api.logbook.list, meta: { silent: true } });
+  const asked = useQuery(logbookQuery);
   const [entries, change] = useOptimisticList(asked.data);
   const [adding, setAdding] = useState(false);
   // The flight whose row is its form now.
