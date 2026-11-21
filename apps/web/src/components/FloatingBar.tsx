@@ -46,7 +46,11 @@ export function FloatingBarFace({ icon, badge, label }: { icon: ReactNode; badge
         {icon}
         {badge}
       </span>
-      <span className={cn("font-normal whitespace-nowrap", TEXT.tab, "leading-4")}>{label}</span>
+      {/* iOS's Footnote, 13 on its own 18 line (TEXT.note): with the glyph
+          back at 24 (c23b9baec) the two fit the item's 48 without the 16
+          line the 28-point glyph needed, which the iOS audit's P3 found off
+          the type scale. */}
+      <span className={cn("font-normal whitespace-nowrap", TEXT.note)}>{label}</span>
     </>
   );
 }

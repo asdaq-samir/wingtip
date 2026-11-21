@@ -95,7 +95,9 @@ export default function PageToggle({ page, onHold }: { page: 0 | 1; onHold?: () 
       // FPL's ✕ in the text's colour, as Share's beside it and a card's ✕.
       className={`relative size-11 shrink-0 rounded-full p-0 print:hidden ${onSearch ? "text-tint" : "text-foreground"} ${PANEL_FIELD_FILL}`}
     >
-      <Glyph className="size-5" strokeWidth={1.75} aria-hidden="true" />
+      {/* The ✕ at 24, every card's close's size (CloseButton), lucide's
+          cross spanning half its box; FPL's route glyph at 20. */}
+      <Glyph className={onSearch ? "size-5" : "size-6"} strokeWidth={1.75} aria-hidden="true" />
     </Toggle>
   );
 }

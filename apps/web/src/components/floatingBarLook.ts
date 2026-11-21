@@ -29,12 +29,16 @@ export const FLOATING_BAR_COLUMNS = "grid auto-cols-fr grid-flow-col";
  * taller with the text rather than its word cut), its own hit area, over
  * 44 points (CLAUDE.md), the items meeting side by side. Picked, pressed
  * or its menu out, the soft lighter pill of iOS 26's tab bar, not a solid
- * fill; the stock parts' own edge, shadow and fill taken off.
+ * fill; the stock parts' own edge, shadow and fill taken off. The picked
+ * tab's pill is the ground's own colour, by day and by night, so its word
+ * in the tint reads at 4.5:1 or more: the foreground's grey wash took the
+ * tint to 4.28 by day and 4.07 by night (the iOS audit's P15, the nightly
+ * run of 2026-11-20).
  */
 export const FLOATING_BAR_ITEM = cn(
   "h-auto min-h-12 min-w-0 flex-col justify-center gap-0 rounded-full border-0 px-2 py-0 shadow-none",
-  "hover:bg-foreground/10 active:bg-foreground/10 aria-expanded:bg-foreground/10 data-active:bg-foreground/10",
-  "dark:hover:bg-foreground/15 dark:active:bg-foreground/15 dark:aria-expanded:bg-foreground/15 dark:data-active:bg-foreground/15",
+  "hover:bg-foreground/10 active:bg-foreground/10 aria-expanded:bg-foreground/10 data-active:bg-background/80",
+  "dark:hover:bg-foreground/15 dark:active:bg-foreground/15 dark:aria-expanded:bg-foreground/15",
 );
 
 /** The least room under the bar where there is no home indicator. */

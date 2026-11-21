@@ -108,7 +108,9 @@ export default function DepartPicker({
             {date ? (
               leaveWhen(date)
             ) : (
-              <span className="flex flex-col items-end leading-tight">
+              // Each line at its own size's leading (TEXT.detail's), as
+              // the iOS audit's P3 asks: tightened, "Now" sat on 18.8.
+              <span className="flex flex-col items-end">
                 Now
                 <NowTime />
               </span>
