@@ -17,12 +17,17 @@
         <!-- UserDefaults: the App Group's suite the app writes and these
              widgets read, the next flight's snapshot and the saved flights
              and fields (Wingtip/Shared: WidgetSnapshot, WidgetStore);
-             1C8F.1, Apple's reason for an App Group's defaults. -->
+             1C8F.1, Apple's reason for an App Group's defaults. And the
+             extension's own standard defaults, which Ink reads for the
+             look ("look", Wingtip/Design/Ink.swift, compiled into this
+             extension): read by the extension alone, CA92.1. Without it
+             App Store Connect answers the upload with ITMS-91053. -->
         <dict>
             <key>NSPrivacyAccessedAPIType</key>
             <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
             <key>NSPrivacyAccessedAPITypeReasons</key>
             <array>
+                <string>CA92.1</string>
                 <string>1C8F.1</string>
             </array>
         </dict>

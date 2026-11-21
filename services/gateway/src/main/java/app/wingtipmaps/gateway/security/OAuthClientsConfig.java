@@ -1,18 +1,9 @@
 package app.wingtipmaps.gateway.security;
 
 import app.wingtipmaps.gateway.config.AppProperties;
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.crypto.ECDSASigner;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
-import java.security.interfaces.ECPrivateKey;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import org.springframework.boot.ssl.pem.PemContent;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -154,42 +145,11 @@ public class OAuthClientsConfig {
                 .build();
     }
 
+    /** Signed once at startup (AppleClientSecret), not refreshed on a
+     *  schedule: a restart inside its 150 days, which every deploy is,
+     *  keeps it valid. A malformed APPLE_PRIVATE_KEY fails the bean at
+     *  startup rather than at the first click. */
     private String appleClientSecretJwt() {
-        try {
-            Instant now = Instant.now();
-            JWTClaimsSet claims = new JWTClaimsSet.Builder()
-                    .issuer(appleTeamId)
-                    .subject(appleServicesId)
-                    .audience("https://appleid.apple.com")
-                    .issueTime(Date.from(now))
-                    // Comfortably inside Apple's own 6-month ceiling --
-                    // this is signed once at startup, not refreshed on
-                    // a schedule, so a value close to that ceiling
-                    // would leave almost no margin for a deploy that
-                    // runs long between restarts.
-                    .expirationTime(Date.from(now.plus(150, ChronoUnit.DAYS)))
-                    .build();
-            SignedJWT jwt = new SignedJWT(
-                    new JWSHeader.Builder(JWSAlgorithm.ES256).keyID(appleKeyId).build(), claims);
-            jwt.sign(new ECDSASigner(parseApplePrivateKey()));
-            return jwt.serialize();
-        } catch (Exception e) {
-            // A malformed APPLE_PRIVATE_KEY is a startup-time
-            // configuration error, not a runtime one -- surfacing it
-            // clearly (and failing the whole bean, not just silently
-            // registering Apple with a broken secret) beats a sign-in
-            // that only fails once someone actually clicks the button.
-            throw new IllegalStateException("Could not sign Apple's client-secret JWT -- check APPLE_PRIVATE_KEY", e);
-        }
-    }
-
-    /** The .p8 key Apple gives, PKCS#8 PEM with its line breaks, read by
-     *  Boot's own PEM reader. */
-    private ECPrivateKey parseApplePrivateKey() {
-        PemContent pem = PemContent.of(applePrivateKeyPem);
-        if (pem == null || !(pem.getPrivateKey() instanceof ECPrivateKey key)) {
-            throw new IllegalArgumentException("APPLE_PRIVATE_KEY is not an EC private key in PEM");
-        }
-        return key;
+        return AppleClientSecret.sign(appleTeamId, appleKeyId, applePrivateKeyPem, appleServicesId, Instant.now());
     }
 }

@@ -192,10 +192,11 @@ and its code in the password field, and the notes say how to use them.
 > the same way): https://wingtipmaps.app/api/auth/magic-link/verify?token=[the code in the password field].
 > The app opens signed in as the review account.
 >
-> Location is asked for the first time you use something that needs it
-> (the location button on the map, Nearest, the emergency assistant or
-> Ready to Fly), never at launch; declined, the map works without your
-> airplane on it. The microphone and speech recognition are asked for
+> Location is asked for only when you tap something that needs it: the
+> welcome's Turn On Location (with Later beside it, which asks nothing),
+> the location button on the map, Nearest, the emergency assistant or
+> Ready to Fly; iOS's own question is never shown at launch by itself.
+> Declined, the map works without your airplane on it. The microphone and speech recognition are asked for
 > when you turn on the ATC copilot (Setup, Alerts) or tap a microphone
 > in search or Ask; speech is recognised on the iPhone only
 > (requiresOnDeviceRecognition) and never sent to a server, and the
@@ -229,7 +230,8 @@ phone locked (the orange indicator and the Live Activity) for the
 `audio` mode (2.5.4).
 
 Where each note comes from: the location ask, `OwnShip.swift`
-(`askLocation`, "No question at launch"); the microphone, `VoiceInput`
+(`askLocation`, "No question at launch") and the welcome's
+`FirstFlight/WelcomeSheet.swift` (Turn On Location, Later); the microphone, `VoiceInput`
 and `ClearanceListener.swift`; the widgets, `apps/ios/WingtipWidgets`;
 the Watch, `apps/ios/WingtipWatch`; the review link,
 `MagicLinkController.verify` and `Session.open`.
@@ -394,7 +396,7 @@ signing certificate (launch-checklist.md).
 | Sign-in | Apple, emailed link | emailed link | Apple, Google, emailed link |
 | Delete account in the app | yes | yes | yes |
 | Delete account without the app | `/delete-account` | `/delete-account` | `/delete-account` |
-| Lock Screen / widgets | Live Activity, widgets | none | n/a |
+| Lock Screen / widgets | Live Activity, widgets | Live Update (Android 16), Next Flight widget | n/a |
 | Watch | yes | no | n/a |
 | Pilot's view / 3D terrain | no (`isPitchEnabled = false`) | no | yes (`features/plan-map/terrain`) |
 | Records across devices | iCloud (SwiftData) | the account only | the account only |

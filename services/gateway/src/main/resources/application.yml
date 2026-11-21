@@ -215,8 +215,8 @@ app:
   # Sign in with Apple (OAuthClientsConfig, AppleRevocation): the web's
   # team, key and Services ID and the .p8 key's PEM, its line breaks kept;
   # whether the iOS app's sign-in must carry its nonce (AppleNonce,
-  # docs/NATIVE.md: off until the app sends one); and where a deleted
-  # pilot's grant is revoked.
+  # docs/NATIVE.md: off until the app sends one); where a deleted
+  # pilot's grant is revoked; and where the iOS app's code is traded.
   apple:
     team-id: ${APPLE_TEAM_ID:}
     key-id: ${APPLE_KEY_ID:}
@@ -224,6 +224,9 @@ app:
     private-key: ${APPLE_PRIVATE_KEY:}
     require-nonce: ${APP_APPLE_REQUIRE_NONCE:false}
     revoke-url: https://appleid.apple.com/auth/revoke
+    # The iOS app's authorization code traded for its refresh token
+    # (AppleAppTokens), so deleting the account can revoke it too.
+    token-url: https://appleid.apple.com/auth/token
   # Sign in with Google (OAuthClientsConfig).
   google:
     client-id: ${GOOGLE_CLIENT_ID:}

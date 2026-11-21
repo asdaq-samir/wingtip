@@ -52,6 +52,11 @@ public class Pilot {
     @Column(length = 2000)
     private String appleRefreshToken;
 
+    /** The Apple client that token was issued to (V46): the iOS app's
+     *  bundle id for the app's sign-in, null for the web's Services ID.
+     *  Apple revokes a token only with the client it was issued to. */
+    private String appleTokenClient;
+
     /** Defaults to PILOT for every row, including every row that
      *  existed before the column did (V7). A developer is granted, not
      *  inherited. */
@@ -150,9 +155,16 @@ public class Pilot {
         this.appleSubject = subject;
     }
 
-    /** What Apple handed over at the latest Sign in with Apple. */
+    /** What Apple handed over at the latest Sign in with Apple, on the web. */
     public void keepAppleRefreshToken(String token) {
+        keepAppleRefreshToken(token, null);
+    }
+
+    /** What Apple handed over at the latest Sign in with Apple, and the
+     *  client it was handed to (null: the web's). */
+    public void keepAppleRefreshToken(String token, String client) {
         this.appleRefreshToken = token;
+        this.appleTokenClient = client;
     }
 
     /** The address the provider now vouches for, when it changed there. */

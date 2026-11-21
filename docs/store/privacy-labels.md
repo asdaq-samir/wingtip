@@ -125,10 +125,11 @@ privacy manifest".
 **Does your app collect or share any of the required user data types?**
 Yes. **Is all of the user data collected by your app encrypted in
 transit?** Yes: every call is HTTPS, to the gateway (`Config.kt`) and,
-straight from the phone, to the USGS's imagery once the map is zoomed
-close in (`map/CloseMap.kt`; the phone asks Google for nothing) and to the weather loop's
-tiles from Iowa State's IEM and NOAA's nowCOAST (`map/WeatherLoop.kt`);
-`usesCleartextTraffic` is false.
+straight from the phone, to the USGS's aerial imagery once the map is
+zoomed close in (`map/CloseMap.kt`) and to the weather loop's tiles from
+Iowa State's IEM and NOAA's nowCOAST (`map/WeatherLoop.kt`);
+`usesCleartextTraffic` is false. The Android app asks Google for no map
+tile and links no Google Maps SDK.
 **Do you provide a way for users to request that their data is
 deleted?** Yes: Setup, Delete Account in the app
 (`account/AccountActions.kt`, wired in `ui/SetupScreen.kt`), and, for
@@ -146,7 +147,8 @@ pilot without the app asks by email and confirms from the link
 | Location: Precise location | Yes, a logged flight's track | No | Yes | App functionality | `logbook/FlightRecorder.kt`, `logbook/AutoLogbookHost.kt` |
 | App activity: Other user-generated content | Yes (airplanes, flights, logbook, notes) | No | Yes | App functionality | `logbook/`, `records/` |
 | App info and performance: Crash logs | Yes: the exits Android kept (`ApplicationExitInfo`: crashes, ANRs with their traces, low-memory kills) and an uncaught exception's stack, with the app's version, the Android version and phone or tablet; sent as the phone has it and scrubbed on receipt (queries, emails, home folders and UUIDs, `DiagnosticText`), no account; kept 30 days | No | No | App functionality (finding faults) | `diagnostics/ExitReasons.kt`, `CrashCatcher.kt`, `DiagnosticsReporter.kt` |
-| App info and performance: Diagnostics | Yes: the start-up time and the share of slow frames (JankStats), the same way; kept 400 days; both rows only while Help Improve Wingtip Maps is on (`diagnostics/HelpImprove.kt`), and Play's Android vitals are Google's own, not the app's | No | No | App functionality (keeping the app fast) | `diagnostics/FrameStats.kt` |
+| App info and performance: Diagnostics | Yes: the start-up time and the share of slow frames (JankStats), the same way; kept 400 days; both rows only while Help Improve Wingtip Maps is on (`diagnostics/HelpImprove.kt`), and Play's Android vitals are Google's own, not the app's. And ML Kit's own diagnostics, sent to Google by the SDK when Add from a Photo or the on-phone AI is used: the device's maker, model and Android version, the app's version, the call's speed, settings, sizes and error codes | No | No | App functionality (keeping the app fast); Analytics (ML Kit's stated purpose, "diagnostics and usage analytics") | `diagnostics/FrameStats.kt`; `documents/`, `ai/read/OnPhoneReader.kt`, `ai/Nano.kt` |
+| Device or other IDs | Yes, by ML Kit only: an identifier for the install (and for the Prompt API a device or user identifier), sent to Google with its diagnostics when Add from a Photo or the on-phone AI is used; nothing of the pilot's account | No | Yes (only those features) | Analytics (ML Kit's stated purpose) | `play-services-mlkit-document-scanner`, `play-services-mlkit-text-recognition`, `mlkit-genai-prompt` (developers.google.com/ml-kit/android-data-disclosure, read 2026-11-21) |
 | Photos and videos: Photos | **No**: a page photographed for Add from a Photo is read on the phone with Gemini Nano (ML Kit text recognition, then Nano, `ai/read/OnPhoneReader.kt`) and sent nowhere; without Nano, Add from a Photo is not offered | | | | `documents/` |
 | Audio: Voice or sound recordings | **No**: the radio is heard by the phone's on-device `SpeechRecognizer` only (`createOnDeviceSpeechRecognizer`, `atc/RadioListener.kt`) and read on the phone, and a question asked by voice by its own on-device recognizer (`voice/VoiceInput.kt`, since 2026-11-10), its words typed into the field as a typed question; nothing is sent by the app or to Google; without an on-device recognizer voice is not offered | | | | |
 
@@ -155,9 +157,9 @@ and Amazon SES)
 process data for the app and are not sharing. The device's live
 position, sent to answer Nearest and the copilot and not kept, is
 "processed ephemerally" and not collected in Google's sense. The map
-tiles the phone asks of Google (close in), IEM and nowCOAST carry the
-device's internet address and the view, as any map's, and no account;
-Google is the app's Maps Platform provider. Before answering, check each
+tiles the phone asks of the USGS (close in), IEM and nowCOAST carry the
+device's internet address and the view, as any map's, and no account.
+Before answering, check each
 Google SDK's own entry in Play's SDK Index (`play-services-location`,
 ML Kit's document scanner and text recognition) against these rows.
 

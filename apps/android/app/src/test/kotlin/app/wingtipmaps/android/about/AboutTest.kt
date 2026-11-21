@@ -33,8 +33,11 @@ class AboutTest {
         for (credit in AboutCredits.data + AboutCredits.software) {
             assertTrue("${credit.what} is not in credits.md", rows.any { it.getOrNull(1) == credit.what && it.getOrNull(2) == credit.terms })
         }
-        // Every row but Apple MapKit, which is the iPhone's map.
-        assertEquals(rows.size - 1, AboutCredits.data.size + AboutCredits.software.size)
+        // Every row but Apple MapKit, the iPhone's map, and Google's tiles,
+        // the web's overlay: Android asks Google for none (CloseMap is the
+        // USGS's), so it credits none (the store-review audit, 2026-11-21).
+        assertEquals(rows.size - 2, AboutCredits.data.size + AboutCredits.software.size)
+        assertTrue(AboutCredits.software.none { it.what.startsWith("Google") })
     }
 
     @Test

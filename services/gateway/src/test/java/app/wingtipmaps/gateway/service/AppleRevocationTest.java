@@ -18,12 +18,16 @@ import org.springframework.security.oauth2.client.registration.InMemoryClientReg
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.web.client.RestClient;
 
-/** What Apple is sent when a deleted pilot's refresh token is revoked. */
+/**
+ * What Apple is sent when a deleted pilot's refresh token is revoked, and
+ * when the iOS app's authorization code is traded for one.
+ */
 class AppleRevocationTest {
 
     private HttpServer apple;
     private final List<String> asked = new CopyOnWriteArrayList<>();
     private volatile int answer = 200;
+    private volatile String tokenAnswer = "{\"access_token\":\"a\",\"refresh_token\":\"r.app\",\"id_token\":\"i\"}";
 
     @BeforeEach
     void startApple() throws IOException {
@@ -33,6 +37,14 @@ class AppleRevocationTest {
                     + exchange.getRequestHeaders().getFirst("Content-Type") + " "
                     + new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             exchange.sendResponseHeaders(answer, -1);
+            exchange.close();
+        });
+        apple.createContext("/auth/token", exchange -> {
+            asked.add("TOKEN " + new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            byte[] body = tokenAnswer.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().add("Content-Type", "application/json");
+            exchange.sendResponseHeaders(answer, body.length);
+            exchange.getResponseBody().write(body);
             exchange.close();
         });
         apple.start();
@@ -65,7 +77,9 @@ class AppleRevocationTest {
         return new AppleRevocation(
                 registrations.map(r -> r),
                 RestClient.builder(),
-                "http://127.0.0.1:" + apple.getAddress().getPort() + "/auth/revoke");
+                "http://127.0.0.1:" + apple.getAddress().getPort() + "/auth/revoke",
+                "http://127.0.0.1:" + apple.getAddress().getPort() + "/auth/token",
+                AppleAppTokensTest.app());
     }
 
     @Test
@@ -101,5 +115,68 @@ class AppleRevocationTest {
 
         assertThatCode(() -> revocation(true).revoke("token")).doesNotThrowAnyException();
         assertThat(asked).hasSize(1);
+    }
+
+    @Test
+    void theAppsTokenGoesWithTheBundleIdAndASecretSignedForIt() {
+        revocation(true).revoke("app.refresh", "app.wingtipmaps.ios");
+
+        assertThat(asked)
+                .singleElement()
+                .satisfies(sent -> {
+                    assertThat(sent)
+                            .startsWith("POST application/x-www-form-urlencoded"
+                                    + " client_id=app.wingtipmaps.ios&client_secret=");
+                    assertThat(sent).endsWith("&token=app.refresh&token_type_hint=refresh_token");
+                    assertThat(AppleAppTokensTest.secretSubject(sent)).isEqualTo("app.wingtipmaps.ios");
+                });
+    }
+
+    @Test
+    void aTokenForAnotherClientIsNotSentWithTheAppsSecret() {
+        revocation(true).revoke("app.refresh", "com.someone.else");
+
+        assertThat(asked).isEmpty();
+    }
+
+    // The iOS app's code traded for the token to revoke (5.1.1(v)).
+
+    @Test
+    void theAppsCodeIsTradedWithTheBundleIdForTheRefreshToken() {
+        assertThat(revocation(true).tradeAppCode("c.code")).contains("r.app");
+
+        assertThat(asked).singleElement().satisfies(form -> {
+            assertThat(form).startsWith("TOKEN client_id=app.wingtipmaps.ios&client_secret=");
+            assertThat(form).endsWith("&code=c.code&grant_type=authorization_code");
+            assertThat(AppleAppTokensTest.secretSubject(form)).isEqualTo("app.wingtipmaps.ios");
+        });
+    }
+
+    @Test
+    void noCodeOrNoAppClientAsksNothing() {
+        assertThat(revocation(true).tradeAppCode(null)).isEmpty();
+        assertThat(revocation(true).tradeAppCode(" ")).isEmpty();
+        var unset = new AppleRevocation(
+                Optional.empty(),
+                RestClient.builder(),
+                "http://127.0.0.1:" + apple.getAddress().getPort() + "/auth/revoke",
+                "http://127.0.0.1:" + apple.getAddress().getPort() + "/auth/token",
+                new AppleAppTokens("", "", "", "app.wingtipmaps.ios"));
+        assertThat(unset.tradeAppCode("c.code")).isEmpty();
+        assertThat(asked).isEmpty();
+    }
+
+    @Test
+    void appleRefusingTheCodeGivesNoTokenAndNoFault() {
+        answer = 400;
+        tokenAnswer = "{\"error\":\"invalid_grant\"}";
+        assertThat(revocation(true).tradeAppCode("c.code")).isEmpty();
+        assertThat(asked).hasSize(1);
+    }
+
+    @Test
+    void anAnswerWithoutARefreshTokenGivesNone() {
+        tokenAnswer = "{\"access_token\":\"a\"}";
+        assertThat(revocation(true).tradeAppCode("c.code")).isEmpty();
     }
 }
