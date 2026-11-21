@@ -9882,8 +9882,12 @@ extension Components {
             public var departure: Swift.String
             /// - Remark: Generated from `#/components/schemas/FuelStopSuggestion/destination`.
             public var destination: Swift.String
+            /// - Remark: Generated from `#/components/schemas/FuelStopSuggestion/passes`.
+            public var passes: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/FuelStopSuggestion/reason`.
             public var reason: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/FuelStopSuggestion/short`.
+            public var short: Components.Schemas.ShortFlight?
             /// - Remark: Generated from `#/components/schemas/FuelStopSuggestion/stops`.
             public var stops: [Components.Schemas.FuelStop]
             /// - Remark: Generated from `#/components/schemas/FuelStopSuggestion/usable_gal`.
@@ -9894,21 +9898,27 @@ extension Components {
             ///   - choices:
             ///   - departure:
             ///   - destination:
+            ///   - passes:
             ///   - reason:
+            ///   - short:
             ///   - stops:
             ///   - usableGal:
             public init(
                 choices: [Components.Schemas.FuelStop]? = nil,
                 departure: Swift.String,
                 destination: Swift.String,
+                passes: Swift.Bool? = nil,
                 reason: Swift.String? = nil,
+                short: Components.Schemas.ShortFlight? = nil,
                 stops: [Components.Schemas.FuelStop],
                 usableGal: Swift.Double
             ) {
                 self.choices = choices
                 self.departure = departure
                 self.destination = destination
+                self.passes = passes
                 self.reason = reason
+                self.short = short
                 self.stops = stops
                 self.usableGal = usableGal
             }
@@ -9916,7 +9926,9 @@ extension Components {
                 case choices
                 case departure
                 case destination
+                case passes
                 case reason
+                case short
                 case stops
                 case usableGal = "usable_gal"
             }
@@ -13737,6 +13749,40 @@ extension Components {
                 case stageFrom = "stage_from"
                 case state
                 case updatedAt = "updated_at"
+            }
+        }
+        /// A flight short of fuel the planner offers no stop on, and why: the
+        /// fuel on board at the start under its start, taxi and reserve already
+        /// (`on_board`, 14 CFR 91.151(a), 91.167(a)), or no field with fuel in
+        /// reach of the tanks.
+        ///
+        /// - Remark: Generated from `#/components/schemas/NoFuelStop`.
+        public struct NoFuelStop: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/NoFuelStop/departure`.
+            public var departure: Swift.String
+            /// - Remark: Generated from `#/components/schemas/NoFuelStop/destination`.
+            public var destination: Swift.String
+            /// - Remark: Generated from `#/components/schemas/NoFuelStop/on_board`.
+            public var onBoard: Swift.Bool?
+            /// Creates a new `NoFuelStop`.
+            ///
+            /// - Parameters:
+            ///   - departure:
+            ///   - destination:
+            ///   - onBoard:
+            public init(
+                departure: Swift.String,
+                destination: Swift.String,
+                onBoard: Swift.Bool? = nil
+            ) {
+                self.departure = departure
+                self.destination = destination
+                self.onBoard = onBoard
+            }
+            public enum CodingKeys: String, CodingKey {
+                case departure
+                case destination
+                case onBoard = "on_board"
             }
         }
         /// Why it bears on the flight, or does not, in the engine's words.
@@ -19400,6 +19446,31 @@ extension Components {
                 case windSource = "wind_source"
             }
         }
+        /// A flight between two landings, by its two ends.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ShortFlight`.
+        public struct ShortFlight: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ShortFlight/departure`.
+            public var departure: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ShortFlight/destination`.
+            public var destination: Swift.String
+            /// Creates a new `ShortFlight`.
+            ///
+            /// - Parameters:
+            ///   - departure:
+            ///   - destination:
+            public init(
+                departure: Swift.String,
+                destination: Swift.String
+            ) {
+                self.departure = departure
+                self.destination = destination
+            }
+            public enum CodingKeys: String, CodingKey {
+                case departure
+                case destination
+            }
+        }
         /// One special-use area, as the FAA publishes it.
         ///
         /// - Remark: Generated from `#/components/schemas/SpecialUse`.
@@ -21609,6 +21680,8 @@ extension Components {
             public var night: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/Totals/night_passengers`.
             public var nightPassengers: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/Totals/no_fuel_stop`.
+            public var noFuelStop: [Components.Schemas.NoFuelStop]?
             /// - Remark: Generated from `#/components/schemas/Totals/on_board_gal`.
             public var onBoardGal: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/Totals/planned_at`.
@@ -21644,6 +21717,7 @@ extension Components {
             ///   - legsWithoutWind:
             ///   - night:
             ///   - nightPassengers:
+            ///   - noFuelStop:
             ///   - onBoardGal:
             ///   - plannedAt:
             ///   - procedureNm:
@@ -21667,6 +21741,7 @@ extension Components {
                 legsWithoutWind: Swift.Int,
                 night: Swift.Bool? = nil,
                 nightPassengers: Swift.Bool? = nil,
+                noFuelStop: [Components.Schemas.NoFuelStop]? = nil,
                 onBoardGal: Swift.Double? = nil,
                 plannedAt: Swift.String? = nil,
                 procedureNm: Swift.Double? = nil,
@@ -21690,6 +21765,7 @@ extension Components {
                 self.legsWithoutWind = legsWithoutWind
                 self.night = night
                 self.nightPassengers = nightPassengers
+                self.noFuelStop = noFuelStop
                 self.onBoardGal = onBoardGal
                 self.plannedAt = plannedAt
                 self.procedureNm = procedureNm
@@ -21714,6 +21790,7 @@ extension Components {
                 case legsWithoutWind = "legs_without_wind"
                 case night
                 case nightPassengers = "night_passengers"
+                case noFuelStop = "no_fuel_stop"
                 case onBoardGal = "on_board_gal"
                 case plannedAt = "planned_at"
                 case procedureNm = "procedure_nm"

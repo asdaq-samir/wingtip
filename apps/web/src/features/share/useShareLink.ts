@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { done } from "../../lib/doneNote";
 import { usePreferences } from "../../lib/preferences";
+import { describeError } from "../../lib/api/client";
 import { showError } from "../../lib/problems";
 import { cancelled, shareOrCopy } from "../../lib/share";
 import { airplaneOfChoice, sharedPlanLink } from "../../lib/sharedFlight";
@@ -30,7 +31,7 @@ export function useShareLink(planned: { dep: string; dest: string; stops: string
     try {
       if ((await shareOrCopy({ title: routeName(planned.dep, planned.dest, planned.stops), url })) === "copied") done("Link Copied");
     } catch (err) {
-      if (!cancelled(err)) showError("Could not share the route", (err as Error).message);
+      if (!cancelled(err)) showError("Could not share the route", describeError(err));
     }
   }, [planned, altitudeFt, depart, type, rules, tail]);
 

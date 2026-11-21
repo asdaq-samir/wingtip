@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { strictDistance } from "../../lib/format";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
@@ -52,6 +52,17 @@ export default function DrillPage({ deck: key }: { deck: DeckKey }) {
   const [now, setNow] = useState(() => Date.now());
   const card = deck.cards.find((c) => c.id === queue[0]);
 
+  // The button pressed goes as the answer comes, and focus with it: taken
+  // to the answer, and after Knew it or Missed it to the next card's
+  // prompt, so a keyboard or a reader goes on from there (WCAG 2.4.3).
+  const answerAt = useRef<HTMLDivElement>(null);
+  const promptAt = useRef<HTMLParagraphElement>(null);
+  const answeredOne = useRef(false);
+  useEffect(() => {
+    if (revealed) answerAt.current?.focus();
+    else if (answeredOne.current) promptAt.current?.focus();
+  }, [revealed, card?.id]);
+
   const answer = (knew: boolean) => {
     if (!card) return;
     const t = Date.now();
@@ -64,6 +75,7 @@ export default function DrillPage({ deck: key }: { deck: DeckKey }) {
     setQueue((q) => (knew ? q.slice(1) : [...q.slice(1), q[0]!]));
     if (knew) setDone((d) => d + 1);
     setRevealed(false);
+    answeredOne.current = true;
   };
 
   if (!card) {
@@ -97,11 +109,11 @@ export default function DrillPage({ deck: key }: { deck: DeckKey }) {
       </p>
       <div className="space-y-4 rounded-(--radius-card) border border-border bg-card p-4">
         {card.light && <Lamp light={card.light} />}
-        <p className={cn("font-semibold", TEXT.title)} data-testid="drill-prompt">
+        <p ref={promptAt} tabIndex={-1} className={cn("font-semibold outline-none", TEXT.title)} data-testid="drill-prompt">
           {card.prompt}
         </p>
         {revealed ? (
-          <div className="space-y-1" data-testid="drill-answer">
+          <div ref={answerAt} tabIndex={-1} className="space-y-1 outline-none" data-testid="drill-answer">
             <p className={cn("font-medium", TEXT.prose)}>{card.answer}</p>
             {card.detail && <p className={cn("text-muted-foreground", TEXT.detail)}>{card.detail}</p>}
           </div>

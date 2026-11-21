@@ -92,7 +92,7 @@ export function FplRoute({
   const figures = useRef<HTMLDivElement>(null);
   usePinAtFoot(figures, SHEET_FOOT, { on: ground && !editing, held: ground && !panelOpen });
   return (
-    // The figures alone are the side panel's pill (SheetParts' DESK_PILL).
+    // The figures alone are the side panel's pill (SheetHead's DESK_PILL).
     <div className="flex w-full min-w-0 flex-1 flex-col" data-pill-row="">
       {/* The suggested routes' pills just above the stops, out while the
           More's Route Options is on (ShareMenu; the owner, 2026-11-17:

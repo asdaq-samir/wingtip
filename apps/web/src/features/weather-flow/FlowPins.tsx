@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 import type { SymbolLayerSpecification } from "maplibre-gl";
-import { GL_FONT_BOLD, LABEL_SIZE } from "../../lib/map/gl/layers/common";
+import { labelText } from "../../lib/map/gl/layers/common";
 import { useGlSymbols, type GlSymbol } from "../../lib/map/gl/useGlSymbols";
 import { framed } from "../../lib/map/marks/markPictures";
 import { useOwnShipNear } from "../../lib/map/position/ownShip";
 import { usePreferences } from "../../lib/preferences";
-import { CHART } from "../../lib/tokens";
+import { CHART, MAP_LABEL } from "../../lib/tokens";
 import { useFlowTexture, valueAt } from "./flowTexture";
 import type { FlowFrame, FlowLayer } from "./useWeatherFlow";
 
@@ -20,7 +20,7 @@ const PILL = framed("flow-pin", () => `<rect width="28" height="28" rx="14" fill
 
 /** Its words this far above the point, ems: the pill's foot 14 points over
  *  it, where the HTML pin sat, clear of own ship's arrow. */
-const LIFT_EM = -(14 + 6) / LABEL_SIZE.large;
+const LIFT_EM = -(14 + 6) / MAP_LABEL.kind.flowPin.size;
 
 const LAYERS: SymbolLayerSpecification[] = [
   {
@@ -31,8 +31,7 @@ const LAYERS: SymbolLayerSpecification[] = [
       "icon-image": ["get", "icon"],
       "icon-text-fit": "both",
       "text-field": ["get", "text"],
-      "text-font": GL_FONT_BOLD,
-      "text-size": LABEL_SIZE.large,
+      ...labelText("flowPin"),
       "text-anchor": "bottom",
       "text-offset": [0, LIFT_EM],
       "text-allow-overlap": true,

@@ -9,8 +9,8 @@ import { TEXT } from "../../lib/text";
 /**
  * The one tip after the first route (FirstFlight, useFirstFlight; the
  * owner's option A, 2026-11-13): where the flight plan is, one tap away
- * on the round page toggle (PageToggle) at the end of the search's row
- * (the owner, 2026-11-14) -- shown while it shows FPL, on Search. The stock Popover
+ * on the round page toggle (PageToggle) saying FPL at the start of the
+ * search's row (the owner, 2026-11-20) -- shown while it shows FPL, on Search. The stock Popover
  * (shadcn's on Base UI), anchored to the toggle (sheet/pageToggle) with
  * its arrow at it, from no trigger of its own. Its ✕, a tap outside it or
  * Escape put it away for good; it takes no focus, so the map and the
@@ -24,8 +24,10 @@ import { TEXT } from "../../lib/text";
 export default function FplTip({ onClose }: { onClose: () => void }) {
   const button = usePageToggle((s) => s.plan);
   const full = useMapInsets((i) => i.up);
-  // Its right edge at the toggle's own, at the row's end, the rest over the
-  // map to the left of it.
+  // Its left edge at the toggle's own, at the row's start, the rest over
+  // the map to the right of it: aligned at its end, as when the toggle
+  // ended the row, it stood off the screen's left and leaned on the
+  // collision padding to come back.
   if (!button || full) return null;
   return (
     <Popover
@@ -37,7 +39,7 @@ export default function FplTip({ onClose }: { onClose: () => void }) {
       <PopoverContent
         anchor={button}
         side="top"
-        align="end"
+        align="start"
         sideOffset={12}
         collisionPadding={12}
         initialFocus={false}
@@ -51,7 +53,7 @@ export default function FplTip({ onClose }: { onClose: () => void }) {
         <div className="min-w-0 flex-1">
           <PopoverTitle className={cn("font-semibold text-foreground", TEXT.row)}>Your flight plan is one tap away</PopoverTitle>
           <PopoverDescription className={cn("mt-0.5", TEXT.detail)}>
-            Route, nav log, profile and brief, like your EFB. Tap here any time.
+            Route, nav log, profile and brief, like your EFB. Tap FPL any time.
           </PopoverDescription>
         </div>
         <CloseButton label="Close the tip" className="-my-1 shrink-0" onClick={onClose} data-testid="fpl-tip-close" />

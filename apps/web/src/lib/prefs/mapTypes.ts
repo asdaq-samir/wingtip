@@ -87,6 +87,10 @@ export interface MapSlice {
   chartLight: ChartLight;
   /** The map stood up in 3D, the map's 3D button (ThreeDButton). */
   threeD: boolean;
+  /** The map's words grown with the pilot's text size, at most 1.2x (the
+   *  Map card's Larger Map Labels; the owner, 2026-11-21): off, they are
+   *  their own px, as Apple Maps keeps them. */
+  largerMapLabels: boolean;
   /** How many times 3D stands its heights up (HeightStretch): three
    *  unless picked, the Map card's Heights while 3D is on. */
   heightStretch: HeightStretch;
@@ -110,6 +114,7 @@ export interface MapSlice {
   setChartContrast: (chartContrast: number) => void;
   setChartLight: (chartLight: ChartLight) => void;
   setThreeD: (threeD: boolean) => void;
+  setLargerMapLabels: (largerMapLabels: boolean) => void;
   setHeightStretch: (heightStretch: HeightStretch) => void;
   setStopsRadiusNm: (nm: number) => void;
   setStopKind: (kind: StopPick) => void;

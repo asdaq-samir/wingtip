@@ -13,6 +13,7 @@ import { create } from "zustand";
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
 import type { Finding } from "../../lib/findings";
 import type { VerdictItem } from "../../lib/verdict";
+import type { Adverse } from "./adverse";
 
 /** A field's: the departure's, or the destination's. */
 export interface FieldGlance {
@@ -60,6 +61,12 @@ export interface BriefGlance {
     finding: Finding;
   };
   arrive: FieldGlance | null;
+  /** The adverse conditions on the route, at most three (the engine's
+   *  gonogo_adverse_rows, AIM 7-1-5(b)(1)), drawn under the findings. */
+  adverse: Adverse;
+  /** What the briefing could not check, in words ("SIGMETs", "current
+   *  METARs"), said in the findings' caution row. */
+  unchecked: string[];
   /** The reports the briefing holds as sent, for a finding's sources: the
    *  METARs and TAFs at the fields, and the TFRs by their NOTAM. */
   raw: { metars: { ident: string; raw: string }[]; tafs: { ident: string; raw: string }[]; tfrs: string[] };

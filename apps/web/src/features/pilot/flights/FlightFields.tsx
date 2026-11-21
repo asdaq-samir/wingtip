@@ -72,7 +72,7 @@ export default function FlightFields({
         save(false);
       }}
     >
-      <RowField id={nameId} error={problem ?? undefined} wide>
+      <RowField id={nameId} error={problem ?? undefined} wide label="Flight name">
         <Input
           id={nameId}
           ref={nameField}
@@ -81,25 +81,24 @@ export default function FlightFields({
           readOnly={saving}
           enterKeyHint="done"
           placeholder={routeName(flight.departureIdent, flight.destinationIdent, flight.stops)}
-          aria-label="Flight name"
           {...invalidProps(nameId, problem ?? undefined)}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => keys(e, false)}
           data-testid="saved-flight-name"
         />
       </RowField>
+      <RowField id={notesId} error={undefined} wide label="Notes">
       <Textarea
         id={notesId}
         value={notes}
         rows={2}
         maxLength={NOTES_MAX}
         readOnly={saving}
-        placeholder="Notes"
-        aria-label="Flight notes"
         onChange={(e) => setNotes(e.target.value)}
         onKeyDown={(e) => keys(e, true)}
         data-testid="saved-flight-notes"
       />
+      </RowField>
     </div>
   );
 }

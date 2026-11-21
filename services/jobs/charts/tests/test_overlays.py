@@ -388,7 +388,7 @@ def test_the_special_use_area_keeps_its_hole_and_fields(sources):
         "controlling_agency": "CHICAGO TRACON",
     }
     assert {k: area["properties"].get(k) for k in expected} == expected
-    assert area["tippecanoe"] == {"minzoom": 5}
+    assert area["tippecanoe"] == {"minzoom": 6}
     geometry = shapely.from_geojson(json.dumps(area["geometry"]))
     assert len(geometry.interiors) == 1 and geometry.exterior.is_ccw and not geometry.interiors[0].is_ccw
 

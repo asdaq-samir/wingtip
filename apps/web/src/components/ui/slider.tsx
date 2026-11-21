@@ -7,7 +7,7 @@ import { Slider as SliderPrimitive } from "@base-ui/react/slider";
  *  is not grown to be caught by a finger (the scrubbers'). Not the default:
  *  the dry run's, the altitude wheel's and the plate's sliders are laid out
  *  without it. */
-export const THUMB_HIT = "relative after:absolute after:-inset-3.5 after:content-['']";
+export const THUMB_HIT = "relative hit-3.5";
 
 function Slider({
   className,

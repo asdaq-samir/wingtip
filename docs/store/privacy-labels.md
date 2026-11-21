@@ -124,8 +124,8 @@ privacy manifest".
 **Does your app collect or share any of the required user data types?**
 Yes. **Is all of the user data collected by your app encrypted in
 transit?** Yes: every call is HTTPS, to the gateway (`Config.kt`) and,
-straight from the phone, to Google's map tiles once the map is zoomed
-close in (`Charts.kt`, `map/CloseMap.kt`) and to the weather loop's
+straight from the phone, to the USGS's imagery once the map is zoomed
+close in (`map/CloseMap.kt`; the phone asks Google for nothing) and to the weather loop's
 tiles from Iowa State's IEM and NOAA's nowCOAST (`map/WeatherLoop.kt`);
 `usesCleartextTraffic` is false.
 **Do you provide a way for users to request that their data is

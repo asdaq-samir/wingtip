@@ -56,9 +56,14 @@ export default function PageToggle() {
       }}
       aria-label="FPL, show flight plan"
       data-testid="sheet-page-toggle"
-      className={`relative size-11 shrink-0 rounded-full p-0 text-foreground print:hidden ${PANEL_FIELD_FILL}`}
+      // 44 px whatever the text size, as the map's buttons beside it
+      // (MAP_BUTTON); its word a note's 13 semibold, as 3D's word is near
+      // its size in the same disc: at 12 it read small (the scale audit's
+      // Q3b, the owner, 2026-11-21). "FPL" is 3 letters, about 30 px wide
+      // at 19.65 px text, so it fits the 44.
+      className={`relative size-(--size-map-button) shrink-0 rounded-full p-0 text-foreground print:hidden ${PANEL_FIELD_FILL}`}
     >
-      <span aria-hidden="true" className={`font-semibold ${TEXT.badge}`}>
+      <span aria-hidden="true" className={`font-semibold ${TEXT.note}`}>
         FPL
       </span>
     </Toggle>

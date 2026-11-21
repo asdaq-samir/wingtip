@@ -5,6 +5,6 @@ import { TEXT } from "../lib/text";
  *  round it (CLAUDE.md): PageLink's, and Settings' links out (Privacy,
  *  Terms). */
 export const PAGE_LINK = cn(
-  "relative rounded-sm text-tint outline-none after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+  "relative rounded-sm text-tint outline-none hit-x-2 hit-y-3 focus-visible:ring-2 focus-visible:ring-ring",
   TEXT.detail,
 );

@@ -51,7 +51,7 @@ test("Preflight opens on its Go / No-Go: VFR not recommended is no-go, marked on
   await expect(weather).toHaveAttribute("data-finding", "stop");
   await expect(weather).toContainText("VFR not recommended: KDLH currently reporting IFR");
   // What they come to, in the pill under the Brief's name, over every page.
-  await expect(drawer.getByTestId("brief-card").getByTestId("brief-verdict")).toContainText(/^No-go as planned: Weather/);
+  await expect(drawer.getByTestId("brief-card").getByTestId("brief-verdict")).toContainText(/^No-go as planned: weather/);
   // Every tab's finding, a row each in the order a pilot goes through them.
   await expect(drawer.locator("[data-testid^='verdict-'][data-finding]")).toHaveCount(7);
   await expect(drawer.getByTestId("verdict").getByRole("button")).toHaveText([
@@ -263,11 +263,15 @@ test("the Brief opens on whether to go and one grouped list, a row for each part
   await openBrief(page);
   const glance = drawer.getByTestId("brief-glance");
   const card = drawer.getByTestId("brief-card");
-  await expect(card.getByTestId("brief-verdict")).toContainText(/^No-go as planned: Weather/, { timeout: slow(30_000) });
+  await expect(card.getByTestId("brief-verdict")).toContainText(/^No-go as planned: weather/, { timeout: slow(30_000) });
   await expect(glance.getByTestId("brief-glance-enroute")).toHaveAttribute("data-finding", "stop");
-  // One list, in this order: the findings, then the parts of the flight, then the NOTAMs.
+  // In this order: the findings, then the Adverse Conditions on the route
+  // where there are any (the owner's option 2, 2026-11-21), then the parts
+  // of the flight, then the NOTAMs; When to go after the list.
   const list = glance.getByTestId("brief-list");
-  const rows = list.locator("[data-testid^='brief-line-'][data-finding], [data-testid^='brief-glance-'], [data-testid=brief-notams-row]");
+  const rows = list.locator(
+    "[data-testid^='brief-line-'][data-finding], [data-testid^='brief-adverse-'], [data-testid^='brief-glance-'], [data-testid=brief-notams-row]",
+  );
   const order = await rows.evaluateAll((els) => els.map((el) => el.getAttribute("data-testid")));
   expect(order.slice(order.indexOf("brief-glance-preflight"))).toEqual([
     "brief-glance-preflight",
@@ -276,9 +280,16 @@ test("the Brief opens on whether to go and one grouped list, a row for each part
     "brief-glance-arrive",
     "brief-notams-row",
   ]);
-  const findings = order.slice(0, order.indexOf("brief-glance-preflight"));
+  const above = order.slice(0, order.indexOf("brief-glance-preflight"));
+  const adverseAt = above.findIndex((id) => id!.startsWith("brief-adverse-"));
+  const findings = adverseAt < 0 ? above : above.slice(0, adverseAt);
   expect(findings).toContain("brief-line-weather");
   for (const id of findings) expect(id).toMatch(/^brief-line-/);
+  if (adverseAt >= 0) for (const id of above.slice(adverseAt)) expect(id).toMatch(/^brief-adverse-/);
+  // When to go, where it is drawn (signed in), at the foot.
+  const top = async (id: string) => (await glance.getByTestId(id).boundingBox())!.y;
+  if (await glance.getByTestId("departure-window").count())
+    expect(await top("departure-window")).toBeGreaterThan(await top("brief-notams-row"));
   // Said once, in the weather's own line over the rows, the En Route row
   // not repeating it (the owner, 2026-11-16: "How do we make brief less
   // cluttered?", 5c55321c4).

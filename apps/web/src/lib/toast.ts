@@ -23,8 +23,16 @@ type Managers = typeof import("./toastManager");
 /** Base UI's own options for a toast (its manager's `add`). */
 type ToastOptions = Parameters<Managers["toastManager"]["add"]>[0];
 
-/** How long an Undo stays: long enough to read it and reach it. */
-export const UNDO_MS = 8_000;
+/** How long an Undo stays: long enough to read its two or three words and
+ *  reach it, and no longer, since on a phone it sits over FPL's head
+ *  (Search, the title, the ✕) for as long as it is up (the HIG review,
+ *  2026-11-21: kept where it is, as iOS's banners are, its time shortened;
+ *  the owner took it). 5 s, Gmail's Undo Send's least and between
+ *  Material's short (4 s) and long (10 s) snackbar; it was 8. Base UI's
+ *  toast holds its timer while it is hovered or focused, so a keyboard or
+ *  a pointer reaching for Undo keeps it, and Cmd-Z undoes the same step
+ *  after it has gone (lib/planUndo). */
+export const UNDO_MS = 5_000;
 /** How long a confirmation by its control stays, as Apple's "Copied". */
 const DONE_MS = 2_000;
 

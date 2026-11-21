@@ -133,7 +133,7 @@ export function FieldRow({
 }) {
   const here = isPosition(field.ident);
   const note =
-    [field.runwayFt != null && `Of ${grouped(field.runwayFt)} ft`, field.wind && `wind ${field.wind}`].filter(Boolean).join(" · ") ||
+    [field.runwayFt != null && `${grouped(field.runwayFt)} ft long`, field.wind && `wind ${field.wind}`].filter(Boolean).join(" · ") ||
     undefined;
   return (
     <ListRow
@@ -155,7 +155,7 @@ export function FieldRow({
             {field.overFiftyFt != null && (
               <Stat
                 label={landing ? "Landing 50 ft" : "Takeoff 50 ft"}
-                value={grouped(field.overFiftyFt)}
+                value={`${grouped(field.overFiftyFt)} ft`}
                 finding={field.finding === "stop" ? "stop" : undefined}
               />
             )}
@@ -198,7 +198,7 @@ export function EnrouteRow({ enroute, said, onOpen }: { enroute?: BriefGlance["e
             value={enroute?.visibilitySm != null ? `${enroute.visibilitySm} sm` : DASH}
             finding={stop && enroute.visibilitySm != null ? "stop" : undefined}
           />
-          <Stat label="Wind Aloft" value={enroute?.wind ?? DASH} />
+          <Stat label="Wind aloft" value={enroute?.wind ?? DASH} />
         </Figures>
       }
       chevron

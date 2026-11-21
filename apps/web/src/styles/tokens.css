@@ -27,8 +27,7 @@
   --type-prose: 0.9375rem;
   --type-detail: 0.9375rem;
   --type-note: 0.8125rem;
-  --type-tab: 0.8125rem;
-  --type-tab-bar: 0.75rem;
+  --type-tab-bar: 0.8125rem;
   --type-badge: 0.75rem;
   --type-caption: 0.6875rem;
   --type-chip: 0.8125rem;
@@ -38,8 +37,7 @@
   --lead-card: 1.75rem;
   --lead-heading: 1.5625rem;
   --lead-note: 1.125rem;
-  --lead-tab: 1.0625rem;
-  --lead-tab-bar: 1rem;
+  --lead-tab-bar: 1.125rem;
   --lead-badge: 1rem;
   --lead-caption: 0.8125rem;
   --lead-label: 1.0625rem;
@@ -67,6 +65,7 @@
   --chart-special-use: #e0662a;
   --chart-fix-ink: #1c1a17;
   --chart-vfr-green: #148a3b;
+  --chart-vfr-green-text: #117a35;
   --chart-runway-hard: #4a4f57;
   --chart-runway-soft: #7d8a6a;
   --chart-procedure: #5b5bd6;
@@ -228,7 +227,20 @@
   --depth-overlay: 0 0 0 0.5px rgb(0 0 0 / 0.078), 0 4px 8px 0 rgb(0 0 0 / 0.059), 0 16px 40px 0 rgb(0 0 0 / 0.18);
   --tap-target: 44px;
   --size-chip: 32px;
-  --size-map-button: 48px;
+  --size-map-button: 44px;
+  --size-round-button: 2.75rem;
+  --size-pill: 1.5rem;
+  --size-row-mark: 2rem;
+  --size-chart-mark: 1.875rem;
+  --size-search-disc: 2.25rem;
+  --size-row-badge: 1.75rem;
+  --size-glyph-caption: 0.75rem;
+  --size-glyph-note: 1rem;
+  --size-glyph-row: 1.25rem;
+  --size-glyph-badge: 1.125rem;
+  --size-glyph-bar: 1.5rem;
+  --size-glyph-map: 20px;
+  --size-glyph-card-action: 20px;
   --size-tab-bar: 64px;
   --size-panel: 384px;
   --size-panel-wide: 448px;
@@ -424,8 +436,6 @@
   --lead-heading: 1.75rem;
   --type-note: 0.75rem;
   --lead-note: 1rem;
-  --type-tab: 0.875rem;
-  --lead-tab: 1.25rem;
   --type-tab-bar: 0.75rem;
   --lead-tab-bar: 1rem;
   --type-badge: 0.75rem;

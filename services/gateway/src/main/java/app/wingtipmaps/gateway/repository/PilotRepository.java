@@ -35,4 +35,13 @@ public interface PilotRepository extends JpaRepository<Pilot, Long> {
     @Modifying
     @Query("DELETE FROM Pilot p WHERE p.id = :id")
     int deleteNow(@Param("id") Long id);
+
+    /** The pilot's id noted as deleted (V47), in the deletion's own
+     *  transaction, so a restore from an older backup deletes the account
+     *  again (DeletionsReapplied). Its first deletion's time is kept. */
+    @Modifying
+    @Query(
+            value = "INSERT INTO deleted_accounts (pilot_id) VALUES (:id) ON CONFLICT DO NOTHING",
+            nativeQuery = true)
+    int noteDeleted(@Param("id") Long id);
 }

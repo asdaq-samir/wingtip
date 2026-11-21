@@ -6,7 +6,8 @@ to the site), App Store Connect's App Privacy answers,
 Google Play's Data safety form and the iOS app's privacy manifest
 (`PrivacyInfo.xcprivacy`). Change it
 whenever the code changes what leaves a device or what the server keeps.
-Last checked against the code on 2026-11-10 (the privacy and store audit: the phone number, the third parties the apps call directly, the traffic view's region, the export, deletion from the web).
+Checked against the code on 2026-11-10 (the privacy and store audit: the phone number, the third parties the apps call directly, the traffic view's region, the export, deletion from the web).
+Last checked on 2026-11-21 (the prelaunch audit: the web's device storage and what sign-out clears, the backups' and snapshots' retention, the logs).
 
 "Collected" is App Store Connect's meaning: sent off the device and kept
 longer than it takes to answer the request.
@@ -181,7 +182,7 @@ longer than it takes to answer the request.
 | Planespotters (api.planespotters.net, t.plnspttrs.net) | The web app, when a traffic card opens: that airplane's transponder address, to show its photo (`features/traffic/planePhoto.ts`), from the browser | The browser's internet address and the address of the airplane looked at; no account |
 | USGS (epqs.nationalmap.gov) | Sample points along a route, for the ground's height where the terrain tiles have none (`wingtip/elevation_sources.py`), from the server | None: points on a route, no account |
 | USGS (basemap.nationalmap.gov) | With its imagery overlay on, the map's tiles in view, asked by the device | None: the tiles' coordinates, as any web map's |
-| Google (tile.googleapis.com) | On the web, with a Google overlay on; on Android, by itself once the map is zoomed close in (`Charts.kt`, `map/CloseMap.kt`): a session and the map's tiles in view, asked by the device with the app's key, Android's requests carrying the package name and signing certificate (`X-Android-Package`, `X-Android-Cert`) that the key is restricted to | None of the pilot's: the device's internet address, the tiles' coordinates and the view, as any Google map's; Google's own terms and privacy policy apply to the request |
+| Google (tile.googleapis.com) | On the web only, and only once the pilot picks a Google overlay in the Map menu (`useCloseImagery`): a session and the map's tiles in view, asked by the device with the deployment's key. Android asks Google for nothing: close in it draws the USGS's public-domain imagery, as the web does by default (`map/CloseMap.kt`, since b5b72427e) | None of the pilot's: the device's internet address, the tiles' coordinates and the view, as any Google map's; Google's own terms and privacy policy apply to the request |
 | US Census Bureau (geocoding.geo.census.gov) | A street address typed in Nearest's field, to place it; its gazetteer of towns is downloaded once | The address typed, from the server, not the device; kept in the planner's memory for an hour so the same address is not asked twice (`geocode.py`), never written to disk or a log (a failure logs the error's kind only), and a place picked is in the page address (`nearName`, `nearAt`) |
 | Amazon Web Services | Hosting all of the above (us-east-1) | As above |
 
@@ -192,7 +193,8 @@ longer than it takes to answer the request.
   "Data Not Used to Track You".
 - **No analytics**: no count of what a pilot uses is kept. The month's
   count of each Claude-written feature went with those features
-  (2026-11-12, decision 0041).
+  (2026-11-12, decision 0041), and its table (`paid_feature_uses`) was
+  dropped on 2026-11-21 (V46).
 - **Purchases** are the stores' own: the app keeps only the plan's term
   and the store's id for it (above), never a card.
 - **The avatar's photo**, if the pilot chooses one in Pilot Details: a
@@ -294,9 +296,70 @@ whose every code and token ran out over a day ago is let go each night,
 with the spent refresh tokens' hashes past their 30 days, and a client
 nobody connected through goes with its consents
 (`ConnectorHousekeeping`, 03:45 UTC); a consent otherwise stays until
-the pilot deletes their account. Fault reports go after 30 days, speed
-figures after 400, sign-in links a day after they expire.
+the pilot deletes their account. Fault reports go after 30 days
+(`DiagnosticsService`, 03:15 UTC). Each night at 03:30 UTC
+(`Housekeeping`) speed figures go after 400 days, sign-in links a day
+after they expire, a reminder's record of being sent once its day has
+passed (it only stops the same reminder going twice), and a deletion's
+note after 60 days (below); before 2026-11-21 the first two went only when
+another sample or link came, and the reminders' records stayed until the
+account went (the prelaunch audit's P8).
+
+## Kept in backups
+
+The nightly `pg_dump` and the planner's notes (`infra/server/backup.sh`)
+go to the server bucket, whose `backups/` expire after 14 days and whose
+overwritten or expired copies after 30 more (`ServerBucket`'s lifecycle,
+`infra/cloudformation/template.yaml`); the data disk's daily snapshots
+keep seven (`SnapshotPolicy`). So a deleted account's rows can stay in a
+backup for up to 44 days, and in a snapshot for 7, until each ages out.
+A backup is restored only to recover the service, never an account. A
+restore from before a deletion would bring the account back, so each
+deletion is noted by the pilot's id alone, with its time
+(`deleted_accounts`, V47; no name, address or anything else), kept 60
+days, longer than any backup, and copied to the bucket each night
+(`backups/deleted-accounts.csv`). After a restore the list is put back
+(`infra/server/restore-deletions.sh`) and the gateway deletes those
+accounts again as it starts and each night, the planner's notes included
+(`DeletionsReapplied`; the prelaunch audit's P3). Only an account deleted
+in the day since the last copy, on a server whose database is itself
+lost, is not caught. The privacy policy says so ("Your copy and deleting
+it").
+
+## Kept on the device (the web)
+
+Nothing below leaves the browser unless a row above says so; it is the
+browser's storage, cleared with the site's data.
+
+- **localStorage, every key under `wingtip.`**: the preferences
+  (`wingtip.preferences`: the map's look, Home, Favorites, recents,
+  minimums, loads, the airplane flown and those followed), a flight's
+  track opened from a file (`wingtip.track.<flight>`), the GPS track the
+  phone recorded for a logbook draft (`wingtip.autolog.track`), own
+  ship's trail (`wingtip.owntrail`, cleared by its own button, on sign-out,
+  and once read past its flight, ten minutes after its last point), the
+  checklists, the plan's undo history, the risk assessment, the routes
+  and charts kept for the air, the coach's certificate, the drills.
+- **The service worker's caches** (`vite.config.ts`): chart tiles,
+  airport diagrams and pictures, and the planner's answers
+  (`planner-now` a day, `planner-steady` 60 days, `planner-api` 30 days),
+  whose addresses can carry a point asked about (Nearest, the airspace
+  at a point); `pilot-own`, the pilot's account, airplanes and flights,
+  30 days.
+- **Signing out** (`useLogout`) forgets what was the pilot's: their part
+  of the preferences, the checklists, the route kept for the air, the
+  flights' tracks and the recorded GPS track (since the prelaunch audit,
+  2026-11-21), own ship's trail, `pilot-own`, and the planner's answers
+  whose addresses carry a point, `planner-now` and `planner-api`
+  (`forgetPlannerAnswers`, the owner's word of 2026-11-21; they refill
+  online). The map's look and the steady answers (`planner-steady`, the
+  charts, the diagrams) stay, the device's. **Deleting the account**
+  (`useDeleteAccount`) removes every `wingtip.` key and `pilot-own`.
 
 ## Kept after an account is deleted
+
+The account's id and when it was deleted, 60 days, so a restore deletes
+it again (`deleted_accounts`, "Kept in backups" above). The id names no
+one once the account's row is gone.
 
 An endorsement an instructor signed in the app stays with the other of the two when either deletes their account, with the student's name as signed and the deleted account left out: it is the student's endorsement, and 14 CFR 61.189(b) and (c) ask the instructor to keep a record of it for 3 years (`signed_endorsements`).

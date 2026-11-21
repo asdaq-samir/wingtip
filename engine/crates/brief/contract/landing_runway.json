@@ -1,0 +1,69 @@
+{
+  "x-call": "wingtip_brief::runway::landing::call",
+  "description": "The runway landed on at a field the route flies an instrument approach to: the approach's own runway, straight in (AIM 5-4-20, Approach and Landing Minimums; 14 CFR 91.175, the runway of intended landing), unless the pilot picked another and the plate publishes circling minimums, a circle to land (AIM 5-4-20). A runway picked into the wind gives way to the approach's own. With no approach, or one circling only (no runway in its name), the pick stands and any runway may be picked. `circling` null (the plate still coming) is taken as no circling. The runway is answered as painted (\"9\", \"8L\").",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "LandingRunwayInput",
+      "type": "object",
+      "properties": {
+        "approach": {
+          "type": "boolean"
+        },
+        "straight_in": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "circling": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "picked": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "by_pilot": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "approach",
+        "straight_in",
+        "circling",
+        "picked",
+        "by_pilot"
+      ]
+    },
+    "answer": {
+      "title": "LandingRunwayAnswer",
+      "type": "object",
+      "properties": {
+        "runway": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "others_allowed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "runway",
+        "others_allowed"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

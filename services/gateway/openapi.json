@@ -67,12 +67,6 @@
       },
       "AccountRecordsDto" : {
         "properties" : {
-          "featureUses" : {
-            "items" : {
-              "$ref" : "#/components/schemas/FeatureUse"
-            },
-            "type" : "array"
-          },
           "remindersSent" : {
             "items" : {
               "$ref" : "#/components/schemas/SentReminder"
@@ -87,7 +81,7 @@
             } ]
           }
         },
-        "required" : [ "featureUses", "remindersSent", "subscription" ],
+        "required" : [ "remindersSent", "subscription" ],
         "type" : "object"
       },
       "AircraftDto" : {
@@ -1105,23 +1099,6 @@
           }
         },
         "required" : [ "at", "detail", "kind", "signature" ],
-        "type" : "object"
-      },
-      "FeatureUse" : {
-        "properties" : {
-          "feature" : {
-            "type" : "string"
-          },
-          "month" : {
-            "format" : "date",
-            "type" : "string"
-          },
-          "uses" : {
-            "format" : "int32",
-            "type" : "integer"
-          }
-        },
-        "required" : [ "feature", "month", "uses" ],
         "type" : "object"
       },
       "FieldReport" : {
@@ -5131,7 +5108,7 @@
     },
     "/api/me/export" : {
       "get" : {
-        "description" : "The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.",
+        "description" : "The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders, subscription and connected AI apps (never a token); sent as a download.",
         "operationId" : "export",
         "responses" : {
           "200" : {

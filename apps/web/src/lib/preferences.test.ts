@@ -51,8 +51,11 @@ describe("a new pilot's preferences", () => {
       traffic: false,
       privateMilitary: false,
       waypoints: false,
+      largerMapLabels: false,
     });
     expect(keptPreferences({ ...usePreferences.getInitialState(), ownShipLook: "jet" })).toMatchObject({ ownShipLook: "jet" });
+    // Larger Map Labels is kept, as every other Map card choice is.
+    expect(keptPreferences({ ...usePreferences.getInitialState(), largerMapLabels: true })).toMatchObject({ largerMapLabels: true });
   });
 });
 

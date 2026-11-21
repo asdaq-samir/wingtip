@@ -246,7 +246,8 @@ function YouHead({ pilot, opens }: { pilot: Pilot | null; opens: boolean }) {
           variant="plain"
           size="inline"
           onClick={() => openPage("pilot")}
-          aria-label={name ? `${name}, Pilot Details` : "Pilot Details"}
+          // Its visible words first, as voice control says them (WCAG 2.5.3).
+          aria-label={`${name ?? "Add Your Name"}, Pilot Details`}
           data-testid="pilot-row"
           className="flex h-auto max-w-full flex-col items-center gap-1 whitespace-normal"
         >
