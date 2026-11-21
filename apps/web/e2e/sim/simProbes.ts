@@ -36,7 +36,7 @@ export interface SimState {
 }
 
 /** What the page counted since the last read. */
-export interface Work {
+interface Work {
   engine: number;
   byRule: Record<string, number>;
   mutations: number;

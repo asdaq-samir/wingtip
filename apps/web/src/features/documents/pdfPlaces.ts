@@ -25,7 +25,7 @@ export function outlineRows(items: readonly OutlineItem[] | null | undefined, de
 
 /** The dashes a PDF's text may set a paragraph's number in (the AIM's
  *  "7–1–5", a minus) as the hyphen the engine's citations write. */
-export const plainDashes = (text: string) => text.replace(/[‐-―−]/g, "-");
+const plainDashes = (text: string) => text.replace(/[‐-―−]/g, "-");
 
 /** The outline's row for a paragraph or section ("7-1-5", "91.155"): the
  *  first whose title starts with it, a word after it ("7-1-5. Preflight

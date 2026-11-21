@@ -68,7 +68,9 @@ export default function PdfBody({ source, startPage, startAt, find, goto, invert
     void task
       .then((t) => t.promise)
       .then(async (doc) => {
-        if (gone) return void doc.destroy();
+        // Closed before it opened: the cleanup's task.destroy() frees it
+        // (pdf.js 6 has no destroy on the document itself).
+        if (gone) return;
         viewer.setDocument(doc);
         links.setDocument(doc, null);
         setLoading(false);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FileUp, CircleCheck, Download, Pencil, Trash2 } from "lucide-react";
 import { FileTrigger } from "react-aria-components";
 import { Pressable } from "react-aria/Pressable";
@@ -138,6 +138,12 @@ function OwnRow({
   onDelete: (id: string) => Promise<void>;
 }) {
   const [naming, setNaming] = useState(false);
+  // The name's field takes the focus as Rename opens it, the pilot's own
+  // ask (the stock focus a rename gives on iOS and Android), not on load.
+  const field = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (naming) field.current?.focus();
+  }, [naming]);
   if (naming)
     return (
       <form
@@ -153,7 +159,7 @@ function OwnRow({
           name="name"
           defaultValue={doc.name}
           aria-label="Document name"
-          autoFocus
+          ref={field}
           onBlur={(e) => e.currentTarget.form?.requestSubmit()}
         />
       </form>

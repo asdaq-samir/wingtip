@@ -22,7 +22,7 @@ use crate::json;
 /// The figures a student estimates, and how far off is still reasonable:
 /// key, label, unit and allowance.
 pub const ALLOWANCES: [(&str, &str, &str, f64); 4] =
-    [("mh", "Magnetic heading", "°", 10.0), ("gs", "Ground speed", "kt", 10.0), ("ete", "Time", "min", 3.0), ("fuel", "Fuel", "gal", 1.0)];
+    [("mh", "Magnetic Heading", "°", 10.0), ("gs", "Ground Speed", "kt", 10.0), ("ete", "Time", "min", 3.0), ("fuel", "Fuel", "gal", 1.0)];
 
 /// The leg's air the diversion is flown in.
 #[derive(Clone, Copy, Debug, PartialEq)]

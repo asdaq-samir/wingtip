@@ -41,9 +41,13 @@ export default function TextBody({ source, startPage, startAt, find, goto, onOut
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
 
-  useEffect(() => {
+  // A find typed lists its hits, set as the find comes rather than in an
+  // effect after it (React's derived state).
+  const [findSeen, setFindSeen] = useState(find);
+  if (find !== findSeen) {
+    setFindSeen(find);
     if (find) setListed(find.query);
-  }, [find]);
+  }
 
   useEffect(() => {
     if (!goto) return;

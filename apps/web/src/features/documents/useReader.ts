@@ -12,7 +12,7 @@ import type { BodySource } from "./readerBody";
 import { useReaderPlaces } from "./readerPlaces";
 
 /** Why a document cannot be shown, in the reader's own words. */
-export type ReaderTrouble = "gone" | "unreachable" | null;
+type ReaderTrouble = "gone" | "unreachable" | null;
 
 /**
  * The reader's view model (Reader): which document, where its pages come

@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { isAbsolute, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { init, type ModuleInfos } from "license-checker-rseidelsohn";
 import type { Plugin } from "vite";
@@ -48,7 +49,10 @@ export const NOT_SHIPPED = ["@img/sharp-", "sharp", "onnxruntime-node"];
 export function noticesText(packages: ModuleInfos, readFile: (path: string) => string, engine: string): string {
   const each = Object.entries(packages).map(([name, info]) => {
     const licences = Array.isArray(info.licenses) ? info.licenses.join(", ") : (info.licenses ?? "UNKNOWN");
-    const words = info.licenseFile ? readFile(info.licenseFile).trim() : `${licences}; no licence file in the package.`;
+    // A clarified package's licence file is named from its own folder
+    // (licence-clarifications.json), every other one by its whole path.
+    const file = info.licenseFile && info.path && !isAbsolute(info.licenseFile) ? join(info.path, info.licenseFile) : info.licenseFile;
+    const words = file ? readFile(file).trim() : `${licences}; no licence file in the package.`;
     const notice = info.noticeFile ? `\n\n${readFile(info.noticeFile).trim()}` : "";
     return `${name}\n${licences}\n${info.repository ? `${info.repository}\n` : ""}\n${words}${notice}`;
   });
@@ -66,6 +70,12 @@ function collect(start: string): Promise<ModuleInfos> {
         excludePrivatePackages: true,
         excludePackagesStartingWith: NOT_SHIPPED.join(";"),
         onlyAllow: ALLOWED_LICENCES.join(";"),
+        // A package whose own licence field the checker cannot read as SPDX:
+        // weatherlayers-gl's "(MPL-2.0 OR LicenseRef-LICENSE_TERMS_OF_USE.md)"
+        // (an underscore is no SPDX idstring), which it then guesses from
+        // LICENSE.md as "Custom: <MPL's URL>". Clarified as the MPL-2.0 it
+        // offers, its LICENSE.md by checksum, so a change of terms fails.
+        clarificationsFile: fileURLToPath(new URL("./licence-clarifications.json", import.meta.url)),
         color: false,
       },
       (err, packages) => (err ? reject(err) : resolve(packages)),

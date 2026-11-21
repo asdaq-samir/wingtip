@@ -10,7 +10,7 @@ import { keptDocsQuery, libraryQuery, ownDocsQuery } from "./libraryQueries";
 import { forgetPlaces } from "./readerPlaces";
 
 /** The shelf's groups in the order the page lists them. */
-export const GROUPS = ["Regulations", "AIM", "Handbooks", "Advisory Circulars", "Charts"] as const;
+const GROUPS = ["Regulations", "AIM", "Handbooks", "Advisory Circulars", "Charts"] as const;
 
 /**
  * The documents library's view model (DocumentsPage): the pilot's own

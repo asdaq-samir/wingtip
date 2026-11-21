@@ -1,0 +1,7 @@
+{
+  "weatherlayers-gl@^2026": {
+    "licenses": "MPL-2.0",
+    "licenseFile": "LICENSE.md",
+    "checksum": "4b89d4518bd135ab4ee154a7bce722246b57a98c3d7efc1a09409898160c2bd1"
+  }
+}
