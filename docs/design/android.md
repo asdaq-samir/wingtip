@@ -435,6 +435,13 @@ placement wins, and the difference is noted.
        - trailing: the flight category's pip for reporting fields
   3. Picking a result collapses the bar, flies the map to it, and opens
      its card ([§3.2](#32-the-airport-card-and-the-airplane-card)).
+  4. Asked to pick (Add a Stop, a point's Add a Stop After, an end of the
+     route), a tap on a result, a Nearest row, a Favorite or a Recent
+     picks it rather than opening its card; a field the pick cannot take
+     is greyed and disabled, its reason in its detail's place, "Closed"
+     (the planner's `closed`, the engine's `field_status`; decision 0043)
+     or, for a stop, "On the route already" (`search/PickRefusal`, the
+     web's pickRefusal, 2026-11-21), and a tap on it does nothing.
 - **Primary action**: the result row itself. There is no Search button,
   and the keyboard's action key searches.
 - **Motion**: the stock bar's expand and collapse, which runs on the
@@ -622,7 +629,45 @@ placement wins, and the difference is noted.
   Google Maps' directions. Maps draws the chosen route in a strong
   colour and the others greyed, picks one by a tap on the map, and puts
   Start at the foot. Decision 0029 keeps the FPL sheet's own layout.
-- **Structure** (unchanged in order, Material in idiom):
+- **Structure** (the web's FPL since 2026-11-21, Material in idiom):
+  0. **The head** (`ui/PlanPage`, `ui/PlanPills`): the card's top app
+     bar titled "Flight Plan", Search in the ←'s place at its start (back
+     to the one search, the route kept; `CardPage`'s `navigationIcon`) and
+     ✕ at its end, which asks "Clear Route?" in Material's `AlertDialog`
+     before the route goes (`route/ClearRouteAsk`). Under the title the
+     pills, each Material's outlined split button (`SplitButtonLayout`:
+     the word the leading button, the glyph the trailing one): the
+     airplane, its ⓘ the airplane's card; the cruise altitude (FL-045),
+     the Altitude Advisor on a tap and the Profile at its end; and when
+     the flight leaves, one outlined button showing the time ("Now" or
+     "15:00") that opens Material's `TimePicker` in its `TimePickerDialog`,
+     Set for the next time the clock reads it (`plan/DepartTime`), Now for
+     the planner's now. The row scrolls sideways rather than squeeze a pill.
+  0a. **The foot** (`ui/PlanFoot`), the Scaffold's bottom bar, so it stays
+     while the route scrolls under it: Material 3 Expressive's
+     `HorizontalFloatingToolbar` with Brief, Nav Log and More, each
+     labelled, over the figure strip. Brief's glyph carries Material's
+     `Badge` with what the Brief found to act on, every stop and caution
+     of the Go / No-Go (`BriefModel.State.found`, the web's findingRows),
+     red with a stop among them, the caution ink where all are cautions;
+     the Go / No-Go is asked for the plan's departure time (`depart`).
+     More (`route/PlanMore`) holds Route
+     Options (`route/RouteOptionsCard`, the planner's `/route-options`,
+     each with Use) and Share Link; no Open in ForeFlight, which has no
+     Android app. File stands beside the toolbar, a separate
+     `FilledTonalButton` with its glyph and word, greyed until the plan
+     can be filed (an airport to leave from, its nav log in;
+     `PlanFiling.fileable`): the floating action button it was has no
+     disabled state, so it came and went and the bar moved with it. It
+     opens **File Flight Plan** (`filing/FilingPage`): FAA Form 7233-4 a
+     flight to a group of `ListItem`s, item by item as AIM Appendix 4
+     names them, every item the engine's (`filed_speed`, `filed_level`,
+     `filed_route`, `filed_times`, `filed_dof`; `plan/PlanFiling`), the
+     persons on board a number field, Copy the Flight Plan, File with
+     Flight Service where the gateway has it connected and the pilot is
+     signed in (its reference on the row), then 1800wxbrief.com and Flight
+     Service's numbers (AIM 5-1-1, 5-1-5, 5-1-6). In the air the toolbar
+     goes and the strip stays.
   1. The tabs row.
   2. The route box:
      - the route as `InputChip`s, one per point, removable with the
@@ -662,14 +707,55 @@ placement wins, and the difference is noted.
      figures. On the map, the chosen route is in the course's magenta
      and the others are grey and tappable, as Maps shows alternates.
      **Use** is the card's filled button.
+  4a. **The route as a timeline** (`ui/PlanSummary`'s `RouteStops`,
+     `ui/RouteTimeline`; the web's FPL timeline, 2026-11-19 to 21): the
+     route's `SegmentedListItem`s joined by one solid line in the course's
+     magenta (`WingtipColors.Chart.Course`), drawn over each row at its
+     leading mark and on through the list's gaps, each field's mark a dot
+     in its flight category's colour (the field's card, `plan/RouteFieldFacts`).
+     At a row's end its times and its ⋮ (`RoutePointMenu`): the departure's
+     leave time, each stop's landing and "Leaves 11:33", a tap that opens
+     Material's time picker and sends the stop's minutes on the ground as
+     the planner's `ground` (`plan/PlanGround`), the destination's landing;
+     a time zone said on every time only once a point keeps another zone
+     than the departure's ("13:00 MST", `plan/StopTimes`). No times without
+     an airplane (0011). **Procedures on the line** (2026-11-21, the web's
+     and the iPhone's): once a field's card says it is open (0043), its
+     row has Material's `AssistChip`s "Land RWY 24" and "Takeoff RWY 06",
+     each a `DropdownMenu` of its open runway ends with Into the Wind
+     first (`AirportReads.windEnd`, the engine's gonogo_runway_in_use), a
+     stop's landing then its takeoff, and "+ ARR", "+ APCH", "+ DEP" for
+     each kind it publishes and the route has none of
+     (`ui/TimelineFieldParts`; a procedure's transitions open in the
+     menu's place). A procedure picked is rows of the line
+     (`ui/TimelineProcedureRows`), an arrival's and an approach's before
+     the field, a departure's after it: its head (the kind and field in
+     the procedure's indigo over its name, a tap its kind's menu) and a
+     row a fix, an indigo ring, its roles, its altitude (the pilot's
+     crossing, else the engine's altitude_lines words) and its ⋮: Direct
+     To (Fly as Charted once direct; the fixes before it said skipped) and
+     Cross at… (Material's `AlertDialog`, the engine's altitude_typed).
+     `plan/PlanProcedures` holds the picks, runways, direct fixes and
+     crossings and sends them with the nav log (`procedures`, `runways`,
+     `patterns`, `crossings`, `wind_runways`); `plan/RouteProcedures`
+     asks each open field's list and each pick's drawing once. An
+     approach's Brief, Dry Run and Plate, and an Undo for a procedure
+     removed, are not ported yet.
   5. Legs as `ListItem`s (`route/RouteLegs`). Each has a leading
      waypoint symbol, the leg's figures, and a trailing drag handle.
      Long press drags to reorder; a swipe removes the leg and shows
      Material's `Snackbar` with an Undo action (`route/RouteUndoSnackbar`,
      through the screen's `SnackbarHostState`; the owner, 2026-11-10:
-     stock over the hand-built undo row). Problems still show where they
+     stock over the hand-built undo row). Only an edit that took something
+     away puts one up, in the web's words: "KJVL Removed", "Route
+     Cleared", "Route Replaced" (Fly Here, Depart From, a route typed, a
+     link or a trip's leg, `route/ReplaceRoute`), "Direct to KMSN"; an
+     added or moved stop and a field's fuel set are quiet steps, taken back
+     by the wide window's Undo (`RouteUndo.Kind.loud`; the owner,
+     2026-11-21). Each step carries the fuel set at the fields
+     (`PlanTanks`), so an Undo puts the gauges back with the route. Problems still show where they
      happen.
-  6. The figure strip at the sheet's foot: To, Dist, ETE, Trk and,
+  6. The figure strip at the sheet's foot, under the toolbar: To, Dist, ETE, Trk and,
      whenever the airplane's position is known, GPS Alt (no To in
      flight; `flight/StripTrack`): Track in the fuel's place, the web's
      (2026-11-21), magnetic, the engine's on the route or the fix's true
@@ -679,11 +765,18 @@ placement wins, and the difference is noted.
      `SegmentedListItem` a field, its determinate `LinearProgressIndicator`
      the share left and the gallons ("−12 gal" past empty, the error
      colour under the reserve), every figure the engine's
-     `fuel_in_tanks`; a field the airplane leaves a tap to set its fuel
+     `fuel_in_tanks`, each gauge held to the reserve of its own flight
+     and the destination's to an IFR alternate's fuel too (the totals'
+     hops' `reserve_gal` and `alternate.fuel_gal`, `PlanTanks.Figures`);
+     a field the airplane leaves a tap to set its fuel
      in Material's `AlertDialog` (Full / No fuel / Gallons as a connected
      button group, a number field), sent as the planner's `tanks`. Add
-     Fuel Stops (every flight's, up to four plans) or Remove Fuel Stops
-     under Add a Stop (`route/FuelStops`). The plan's ••• Clear Route
+     Fuel Stops (every flight's, in one plan: the planner checks them
+     itself, claude/fuel-engine's fuel rounds) or Remove Fuel Stops
+     under Add a Stop (`route/FuelStops`); a flight short with no stop in
+     reach says so in the row's place ("No fuel stop in reach on KMSN →
+     KDLH", "Too little fuel on board for C81 → KDLH", the totals'
+     `no_fuel_stop`). The plan's ••• Clear Route
      asks "Clear Route?" in Material's `AlertDialog` first.
   7. **The alternate** (IFR, 2026-11-10; `alternate/`): the route's
      `SegmentedListItem`s end, under IFR, with the alternate filed (a tap
@@ -693,7 +786,7 @@ placement wins, and the difference is noted.
      destination it is for, so a new destination drops it) and goes to
      the planner's nav log as `alternate`, as the web's address does.
 - **Primary action**:
-  - Brief, on the route box's first line, where the owner put it.
+  - Brief, the foot's toolbar's first, where the web's tab bar has it.
   - On a medium or larger window, a `HorizontalFloatingToolbar` over
     the map carries Undo, Redo and Add Point while the plan is open
     (`route/RouteToolbar`; the owner, 2026-11-09).
@@ -742,8 +835,14 @@ placement wins, and the difference is noted.
      planner's, from the engine's `navlog_alternate_leg`, its fuel in the
      totals (14 CFR 91.167(a)(2)), "in still air" where the winds were
      not had.
-- **Primary action**: Share, in the top bar's actions. Nothing else
-  is a primary on a read-only log.
+- **Primary action**: Share, in the top bar's actions
+  (`share/NavLogShare`, the web's nav log Share since 2026-11-21): a
+  `DropdownMenu` with Share Link, Nav Log as Text (the sharesheet) and
+  Print the Nav Log, Android's print framework (`PrintManager` over a
+  `WebView`'s print adapter, every printer and Save as PDF;
+  `share/NavLogText` writes the text and the page). No checkpoints for
+  ForeFlight: it has no Android app. Nothing else is a primary on a
+  read-only log.
 - **Type**: the figures use `bodyLarge` with tabular figures
   (`fontFeatureSettings = "tnum"`), so columns line up.
 - **Avoid**:

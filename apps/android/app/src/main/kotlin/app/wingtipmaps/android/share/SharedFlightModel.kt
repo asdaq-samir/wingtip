@@ -15,6 +15,7 @@ import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.FlightRules
+import app.wingtipmaps.android.plan.PlanTanks
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -85,7 +86,8 @@ class SharedFlightModel @Inject constructor(app: Application) : AndroidViewModel
     }
 
     /** Use This Plan: the route planned as the receiver's own -- its
-     *  altitude, its departure time while still ahead, its flight rules --
+     *  altitude, its departure time while still ahead, its flight rules,
+     *  the fuel its pilot set --
      *  on their own airplane, then its nav log (the plan's legs). */
     fun use(plan: Plan) {
         val shown = _state.value as? State.Shown ?: return
@@ -93,6 +95,10 @@ class SharedFlightModel @Inject constructor(app: Application) : AndroidViewModel
         p.rules?.let { FlightChoices.of(getApplication()).setRules(FlightRules.of(it)) }
         val depart = p.depart?.takeIf { runCatching { Instant.parse(it).isAfter(AppClock.javaNow()) }.getOrDefault(false) }
         plan.useLeg(p.dep, p.dest, p.stops, p.altitudeFt?.toDouble(), depart)
+        // The sender's fuel set at its fields, after the Undo has kept the
+        // receiver's own and before the nav log is asked, which waits on
+        // the course first, so the log flies it (the planner's `tanks`).
+        PlanTanks.restore(p.tanks)
         ScreenRequests.ask(Screen.NAVLOG)
         _state.value = State.Closed
     }

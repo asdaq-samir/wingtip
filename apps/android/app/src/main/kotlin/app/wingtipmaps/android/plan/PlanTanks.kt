@@ -18,7 +18,8 @@ import kotlinx.coroutines.flow.update
  * the start, taxi and takeoff allowance and each leg's burn taken from
  * them after; fuelled again at each field landed at (full, or the pilot's
  * own), as the planner checks each flight; negative past empty, the
- * gallons short. And what the pilot set: the fuel as the airplane leaves
+ * gallons short; low under the reserve of the flight each field is on.
+ * And what the pilot set: the fuel as the airplane leaves
  * a field, sent as the planner's `tanks` ("C81:20,KMSN:0"), whose fuel
  * checks fly the same figure, and the stops Add Fuel Stops put in.
  */
@@ -35,14 +36,18 @@ object PlanTanks {
     data class LegBurn(val to: String, val fuelGal: Double?)
 
     /** The tanks' figures the gauges are read against: the first flight's
-     *  usable fuel and allowance, the strictest reserve of every flight. */
-    data class Figures(val usableGal: Double, val taxiGal: Double, val reserveGal: Double) {
+     *  usable fuel and allowance, each flight's own reserve in order (day,
+     *  night or IFR by its own times and rules: 14 CFR 91.151(a)(1), (a)(2),
+     *  91.167(a)(3)), and under IFR the fuel on to the alternate the
+     *  destination is held to too (91.167(a)(2)), as the web's tankFigures
+     *  passes them; which is low is the engine's, never compared here. */
+    data class Figures(val usableGal: Double, val taxiGal: Double, val reservesGal: List<Double?>, val alternateGal: Double? = null) {
         companion object {
             fun of(totals: NavLogTotals?): Figures? {
                 totals ?: return null
                 val flights = totals.hops?.map { it.totals }?.ifEmpty { null } ?: listOf(totals)
                 val usable = flights.first().usableFuelGal?.takeIf { it > 0 } ?: return null
-                return Figures(usable, flights.first().taxiGal ?: 0.0, maxOf(0.0, flights.mapNotNull { it.reserveGal }.maxOrNull() ?: 0.0))
+                return Figures(usable, flights.first().taxiGal ?: 0.0, flights.map { it.reserveGal }, totals.alternate?.fuelGal)
             }
         }
     }
@@ -61,6 +66,9 @@ object PlanTanks {
     fun addedFuelStops(idents: List<String>) = _state.update { it.copy(fuelStops = it.fuelStops + idents.map(String::uppercase)) }
 
     fun removedFuelStops() = _state.update { it.copy(fuelStops = emptyList()) }
+
+    /** The fuel set at the fields as an Undo or a Redo left it (RouteUndo). */
+    fun restore(own: Map<String, Int>) = _state.update { it.copy(own = own) }
 
     /** The route cleared: nothing of its fuel kept. */
     fun clear() = _state.update { State() }
@@ -87,7 +95,7 @@ object PlanTanks {
         figures: Figures?,
         own: Map<String, Int>,
         walk: (List<EngineContract.FuelInTanksInputPointsItem>, Figures) -> Result<List<EngineContract.FuelInTanksAnswerItem?>> = { points, f ->
-            Engine.fuelInTanks(points, f.usableGal, f.taxiGal, f.reserveGal)
+            Engine.fuelInTanks(points, f.usableGal, f.taxiGal, f.reservesGal, f.alternateGal)
         },
     ): Map<At, Tank> {
         if (figures == null || legs.isEmpty()) return emptyMap()
