@@ -89,7 +89,7 @@ S13). Tick each as it is done.
       Play never lets it change: `app.wingtipmaps.android` (it reads
       better) or the build's default `app.wingtipmaps.android.native`
       (`apps/android/app/build.gradle.kts`, `ANDROID_NATIVE_APP_ID`), and
-      make listing.md, `APP_ANDROID_PACKAGE` and the Maps key agree.
+      make listing.md and `APP_ANDROID_PACKAGE` agree.
 - [ ] The app record, enrolled in Play App Signing, with an upload key
       kept in CI's secrets for the signed release bundle (`bundleRelease`).
 - [ ] Data safety: the answers in privacy-labels.md, with the deletion
@@ -109,9 +109,7 @@ S13). Tick each as it is done.
 
 ## Google Cloud
 
-- [ ] Only if Android ever draws a Google overlay (today its close-in
-      map is the USGS's imagery, `map/CloseMap.kt`, and it asks Google
-      for nothing): restrict the Android Maps key to the package name and
-      the SHA-256 of Play's **app signing** certificate, and set Map Tiles
-      API billing and a quota; it would come as the web's does, only
-      after the pilot picks it.
+- [ ] Nothing for Android: its close-in map is the USGS's imagery
+      (`map/CloseMap.kt`) and it asks Google for nothing, so the app
+      carries no Maps key. A Google overlay there would come as the web's
+      does, only after the pilot picks it, with its own restricted key.
