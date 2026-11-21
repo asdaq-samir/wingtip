@@ -151,4 +151,18 @@ struct RepeatedWorkTests {
         sight.picked()
         #expect(sight.set(.away, hidden: false, playing: false) == nil)
     }
+
+    // MARK: Smaller items (item 15)
+
+    @Test func theRoutesAndTheAlternatesWorseAsksEachKeepTheirOwnAnswer() {
+        let field = { (ident: String, ceilingFt: Double) in
+            EngineContract.WorseField(ident: ident, ceilingFt: ceilingFt, visibilitySm: 10, ceilingUnknown: false, arrival: true)
+        }
+        let route = FieldWeatherMarks.worse(now: [field("KMSN", 5000)], atEta: [field("KMSN", 800)])
+        let alternates = FieldWeatherMarks.worse(now: [field("KRFD", 5000)], atEta: [field("KRFD", 4000)], asker: .alternates)
+        // Both kept, so the next render's route ask is answered from its own slot.
+        #expect(FieldWeatherMarks.lastWorse[.route]?.answer == route)
+        #expect(FieldWeatherMarks.lastWorse[.alternates]?.answer == alternates)
+        #expect(FieldWeatherMarks.worse(now: [field("KMSN", 5000)], atEta: [field("KMSN", 800)]) == route)
+    }
 }

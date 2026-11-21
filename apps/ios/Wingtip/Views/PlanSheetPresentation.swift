@@ -6,6 +6,7 @@ import SwiftUI
 /// the sheet's content alone.
 struct PlanSheetPresentation: ViewModifier {
     @Binding var detent: PresentationDetent
+    @Environment(FlightSession.self) private var flight
 
     func body(content: Content) -> some View {
         content
@@ -20,10 +21,12 @@ struct PlanSheetPresentation: ViewModifier {
             // floats over the map (docs/design/ios.md).
             .presentationBackground(WingtipInk.sheet)
             .interactiveDismissDisabled()
-            // The weather timelines paused while the sheet covers the map.
+            // The weather timelines paused, and the traffic on the ground not
+            // asked, while the sheet covers the map.
             .onChange(of: detent, initial: true) { _, now in
                 WeatherLoop.shared.covered(now == .large)
                 ModelWeather.shared.covered(now == .large)
+                flight.traffic.covered = now == .large
             }
         // The system sheet settles at its detents with its own feel; no
         // tap of ours is added to a stock part (the owner, 2026-11-10).

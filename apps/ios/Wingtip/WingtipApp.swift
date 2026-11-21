@@ -85,12 +85,11 @@ struct WingtipApp: App {
                 // (WidgetFeed, FlightWidget in WingtipWidgets): the plan, its
                 // verdict and the departure's weather, written to the App
                 // Group only as they change, on the same clock; and the
-                // fields the weather widget's settings offer first.
-                .task {
-                    await Repeating.every(15) {
-                        WidgetFeed.shared.update(plan: plan, verdict: flight.verdict)
-                        WidgetFeed.shared.airports(homeBase: session.pilot?.homeBase, favorites: AirportShelf.shared.favorites)
-                    }
+                // fields the weather widget's settings offer first, written
+                // as the home base or the favourites change, not each 15 s.
+                .task { await Repeating.every(15) { WidgetFeed.shared.update(plan: plan, verdict: flight.verdict) } }
+                .onChange(of: ([session.pilot?.homeBase ?? ""] + AirportShelf.shared.favorites.map(\.ident)), initial: true) {
+                    WidgetFeed.shared.airports(homeBase: session.pilot?.homeBase, favorites: AirportShelf.shared.favorites)
                 }
                 // The route's weather watched after the Brief (WeatherWatch):
                 // a look every quarter hour while the app runs, and iOS's

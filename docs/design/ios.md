@@ -2035,6 +2035,15 @@ What each fix asks for, by the phones' wasted-work audit:
   full height over the map and while the app is put away, and play again
   once back in sight if they were playing (`LoopSight`); put away, their
   lists are not fetched either, and are asked again on return.
+- **Smaller ones.** The traffic is not asked under a full-height sheet
+  on the ground (in flight it goes on, for the near ones told); the
+  route's and the alternates' "worse by then" asks each keep their own
+  answer; Ready to Fly refreshes, without fetching the NOTAMs again, when
+  a receiver is heard or lost; the weather widget's fields are written
+  as the home base or the favourites change; Next Flight's widget for
+  the plan on the page waits for the app's reload (`.never`), a saved
+  flight's every 15 minutes; and the flight recorder writes its file
+  every five minutes on the ground, every 30 s from the takeoff.
 
 ---
 

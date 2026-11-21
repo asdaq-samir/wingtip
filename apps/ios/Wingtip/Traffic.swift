@@ -52,8 +52,21 @@ final class Traffic {
         // The receiver's airplanes merged as each second's bytes are read.
         Receiver.shared.onRead = { [weak self] in self?.merge() }
         await Repeating.every(Self.everyS) { [weak self] in
-            await self?.ask(near: ownShip())
+            guard let self else { return }
+            let fix = ownShip()
+            guard Self.wanted(covered: covered, fix: fix) else { return }
+            await ask(near: fix)
         }
+    }
+
+    /// The iPhone's sheet at full height over the map (PlanSheetPresentation).
+    var covered = false
+
+    /// Whether the clock asks: not under a full-height sheet on the
+    /// ground, where nothing of it is seen; flying, always, for the near
+    /// ones told (tellNear). The engine's underway.
+    static func wanted(covered: Bool, fix: OwnShip.Fix?) -> Bool {
+        !covered || (try? Flight.underway(fix?.groundspeedKt)) == true
     }
 
     /// One answer about a point, where traffic is on and there is one: on
