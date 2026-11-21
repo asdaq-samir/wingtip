@@ -39,7 +39,7 @@ function Stacked({ position, style, className }: { position: "top" | "bottom"; s
           data-position={position}
           style={style}
           className={cn(
-            "fixed inset-x-0 z-100 mx-auto flex w-(--width) flex-col items-stretch gap-2 outline-none",
+            "fixed left-(--toast-left) right-(--toast-right) z-100 mx-auto flex w-(--width) flex-col items-stretch gap-2 outline-none",
             position === "top" ? "top-(--offset-top)" : "bottom-(--offset-bottom) flex-col-reverse",
             className,
           )}
