@@ -30,6 +30,10 @@ export interface SharedPlan {
   rules: FlightRules | null;
   /** The N-number, only where its pilot chose to send it. */
   tail: string | null;
+  /** The fuel its pilot set on FPL's gauges as the airplane leaves a
+   *  field, whole gallons by ident (the link's `tanks`, the planner's own
+   *  "KJVL:0,KMSN:20"); none named, full. */
+  tanks: Record<string, number>;
 }
 
 export type SharedLink = { kind: "plan"; plan: SharedPlan } | { kind: "saved"; token: string };
@@ -45,6 +49,28 @@ const identOrNull = (raw: string | null | undefined) => {
   return IDENT.test(text) ? text : null;
 };
 
+/** The link's `tanks` as the planner writes it, "KJVL:0,KMSN:20", by
+ *  ident; "" for none. */
+const tanksWords = (tanks: Record<string, number>) =>
+  Object.keys(tanks)
+    .sort()
+    .map((ident) => `${ident}:${tanks[ident]}`)
+    .join(",");
+
+/** A link's `tanks` read warily, as Android's SharedPlan reads it: each
+ *  part an ident and whole gallons, 0 to 9,999; a part that is not one is
+ *  left out, never guessed. Without the engine (lib/identSchema's tanksOf
+ *  is its), as the link is read before the engine has loaded. */
+function tanksOfLink(raw: string | null): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const part of (raw ?? "").split(",")) {
+    const [who, gallons, extra] = part.split(":");
+    const ident = identOrNull(who);
+    if (ident && extra === undefined && /^\d{1,4}$/.test(gallons?.trim() ?? "")) out[ident] = Number(gallons);
+  }
+  return out;
+}
+
 /** The link that sends a plan: every key the plan has, none it lacks. */
 export function sharedPlanLink(plan: SharedPlan, origin: string): string {
   const params = new URLSearchParams({ [SCREEN_LINK.key]: SHARED, dep: plan.dep, dest: plan.dest });
@@ -54,6 +80,8 @@ export function sharedPlanLink(plan: SharedPlan, origin: string): string {
   if (plan.type) params.set("type", plan.type.toUpperCase());
   if (plan.rules) params.set("rules", plan.rules);
   if (plan.tail) params.set("tail", plan.tail.toUpperCase());
+  const tanks = tanksWords(plan.tanks);
+  if (tanks) params.set("tanks", tanks);
   return `${origin}${SCREEN_LINK.path}?${params}`;
 }
 
@@ -85,6 +113,7 @@ export function sharedLinkOf(params: URLSearchParams): SharedLink | null {
       type: identOrNull(params.get("type")),
       rules: rules === "vfr" || rules === "ifr" ? rules : null,
       tail: identOrNull(params.get("tail")),
+      tanks: tanksOfLink(params.get("tanks")),
     },
   };
 }
@@ -108,6 +137,7 @@ export function paramsForSharedPlan(plan: SharedPlan, now = Date.now()): URLSear
     stops: plan.stops.length ? plan.stops.join(",") : null,
     altitude_ft: plan.altitudeFt,
     depart: plan.depart && Date.parse(plan.depart) > now ? plan.depart : null,
+    tanks: tanksWords(plan.tanks) || null,
   });
 }
 

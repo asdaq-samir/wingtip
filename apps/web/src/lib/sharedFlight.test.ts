@@ -10,6 +10,7 @@ const PLAN: SharedPlan = {
   type: "C172",
   rules: "vfr",
   tail: null,
+  tanks: {},
 };
 
 describe("a shared flight's link", () => {
@@ -19,6 +20,15 @@ describe("a shared flight's link", () => {
       "https://wingtipmaps.app/app/plan?open=shared&dep=KMSN&dest=KOSH&stops=KJVL&altitude_ft=3500&depart=2026-11-10T15%3A00%3A00.000Z&type=C172&rules=vfr",
     );
     expect(sharedLinkOf(new URL(url).searchParams)).toEqual({ kind: "plan", plan: PLAN });
+  });
+
+  it("carries the fuel set on the gauges as the planner writes it, and reads back only what is whole", () => {
+    const url = sharedPlanLink({ ...PLAN, tanks: { KMSN: 20, KJVL: 0 } }, "");
+    expect(url).toContain("tanks=KJVL%3A0%2CKMSN%3A20");
+    expect(sharedLinkOf(new URL(url, "https://x").searchParams)).toEqual({ kind: "plan", plan: { ...PLAN, tanks: { KJVL: 0, KMSN: 20 } } });
+    const wary = sharedLinkOf(new URLSearchParams("open=shared&dep=KMSN&dest=KOSH&tanks=KJVL:12,KMSN:-3,K!:4,KOSH:10000,C81:7:1"));
+    expect(wary?.kind === "plan" && wary.plan.tanks).toEqual({ KJVL: 12 });
+    expect(paramsForSharedPlan({ ...PLAN, tanks: { KJVL: 0 } }).get("tanks")).toBe("KJVL:0");
   });
 
   it("sends the N-number only where it is given", () => {

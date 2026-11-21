@@ -34,6 +34,7 @@ const shareOf = (f: FlightSummary) => ({
       type: null,
       rules: null,
       tail: null,
+      tanks: {},
     },
     location.origin,
   ),
