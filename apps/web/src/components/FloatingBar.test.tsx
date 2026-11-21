@@ -17,7 +17,7 @@ afterEach(cleanup);
 
 /** The classes that make an item's height and pill, and the capsule's width. */
 const ITEM = ["min-h-12", "rounded-full", "flex-col", "data-active:bg-background/80"];
-const WIDTH = ["w-fit", "min-w-[min(18.75rem,100%)]", "max-w-full"];
+const WIDTH = ["w-fit", "max-w-full"];
 
 function cardBar() {
   render(

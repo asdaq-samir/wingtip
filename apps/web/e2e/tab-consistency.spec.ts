@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { grabberTo, openConsole, settle, settled, showSearch, sideDrawer } from "./helpers";
+import { grabberTo, openConsole, settle, settled, showSearch, sideDrawer, slow } from "./helpers";
 
 /**
  * The sheet's own pages laid out as one (TabPage), at the owner's ask
@@ -103,4 +103,65 @@ test("every page of the sheet is laid out as one: its sections' sides, headings 
   const gaps = all.flatMap(([where, sections]) => sections.slice(1).map((s, i) => ({ where, gap: s.top - sections[i]!.bottom })));
   expect(gaps.length).toBeGreaterThan(2);
   for (const { where, gap } of gaps) expect(Math.abs(gap - gaps[0]!.gap), `${where}: ${gap} apart`).toBeLessThan(1.5);
+});
+
+/** The floating bar in sight (FloatingBar): its rect and its items' in
+ *  points, its bottom from the window's foot. */
+async function floatingBar(page: Page) {
+  return page.evaluate(() => {
+    const bar = [...document.querySelectorAll("[data-floating-bar]")].filter((b) => b.getBoundingClientRect().height > 0).pop();
+    if (!bar) return null;
+    const items = [...bar.querySelectorAll("button, [role=tab]")].filter((e) => !e.parentElement?.closest("button, [role=tab]"));
+    const box = bar.getBoundingClientRect();
+    return {
+      centre: box.left + box.width / 2,
+      foot: innerHeight - box.bottom,
+      height: box.height,
+      items: items.map((i) => {
+        const b = i.getBoundingClientRect();
+        const glyph = i.querySelector("svg")!.getBoundingClientRect();
+        const word = getComputedStyle(i.querySelector(":scope > span:last-child")!);
+        return { width: b.width, height: b.height, glyph: glyph.width, word: `${word.fontSize}/${word.lineHeight}` };
+      }),
+    };
+  });
+}
+
+test("FPL's floating bar and the airport card's sit in one place and look alike: foot, height, centre, items, glyph and word", async ({
+  page,
+}) => {
+  test.setTimeout(slow(240000));
+  // At the default text size and the owner's (19.65 px on a 393-point iPhone).
+  for (const root of ["", "19.65px"]) {
+    const bars = [];
+    for (const [url, item] of [
+      ["/app/plan?dep=C81&dest=KDLH", "route-navlog"],
+      ["/app/plan?place=KOSH", "place-tab-radio"],
+    ] as const) {
+      await page.goto(url);
+      await settle(page);
+      await page.evaluate((size) => (document.documentElement.style.fontSize = size), root);
+      // A route's link opens at the pill, its bar put away there (FlightFoot): in
+      // sight from half.
+      await expect(page.getByTestId(item)).toBeAttached({ timeout: slow(120000) });
+      await grabberTo(page, "half");
+      await expect(page.getByTestId(item)).toBeVisible();
+      await expect.poll(() => floatingBar(page)).not.toBeNull();
+      bars.push((await floatingBar(page))!);
+    }
+    const [fpl, card] = bars as [
+      NonNullable<Awaited<ReturnType<typeof floatingBar>>>,
+      NonNullable<Awaited<ReturnType<typeof floatingBar>>>,
+    ];
+    const where = root || "the default size";
+    expect(fpl.foot, `${where}: foot`).toBeCloseTo(card.foot, 0);
+    expect(fpl.height, `${where}: height`).toBeCloseTo(card.height, 0);
+    expect(fpl.centre, `${where}: centre`).toBeCloseTo(card.centre, 0);
+    for (const item of [...fpl.items, ...card.items]) {
+      expect(item.width, `${where}: an item's width`).toBeCloseTo(card.items[0]!.width, 0);
+      expect(item.height, `${where}: an item's height`).toBeCloseTo(card.items[0]!.height, 0);
+      expect(item.glyph, `${where}: a glyph`).toBeCloseTo(card.items[0]!.glyph, 0);
+      expect(item.word, `${where}: a word`).toBe(card.items[0]!.word);
+    }
+  }
 });

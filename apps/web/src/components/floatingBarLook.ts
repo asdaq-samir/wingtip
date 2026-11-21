@@ -3,26 +3,35 @@ import { cn } from "cn";
 /**
  * The one floating bar: a card's tabs (CardTabBar, the stock Tabs) and
  * FPL's actions (FplTabBar, the stock Toolbar) are drawn alike, the same
- * height and the same width, as iOS 26 draws one tab bar (the owner,
+ * height and the same items, as iOS 26 draws one tab bar (the owner,
  * 2026-11-18: "Yes make it common. Also I meant shorter not narrower, but
- * apply the same height and width for both").
+ * apply the same height and width for both"; 2026-11-21: "fpl and other
+ * tabs placement look different").
  *
- * Its width: 18.75rem, 300 points at the default text size, wide enough
- * for the bars with the most items -- the airport card's four (Info,
- * Weather, Runways, Charts) and FPL's four (Brief, Nav Log, Profile,
- * More) -- in equal columns round the widest word, "Runways", with room
- * to spare (about 46 of a column's 73 at the default size). In rem, so it
- * grows with the reader's text size as the words do, and the same on a
- * card and on the sheet at every size; never wider than the room there
- * is, nor narrower than its words ("don't make it narrow if it's not
- * possible"): it is the least width, and a bar whose words need more
- * (a text size past what dynamicType allows) takes more.
+ * Its items, not the capsule, have the one width: a column a quarter of
+ * 18.75rem's capsule less its 4-point sides, 73 points at the default
+ * text size, so the airport card's four tabs (Info, Weather, Runways,
+ * Charts) make the capsule 300 and FPL's three actions (Brief, Nav Log,
+ * More) 227, each item the same 73 where a capsule of one width spread
+ * three items 97 apart, and FPL's, held to its buttons, drew them 62 (the
+ * probe at 393x852, 2026-11-21). In rem, so it grows with the reader's
+ * text size as the words do; never more than a quarter of the room there
+ * is (the bar's room, FLOATING_BAR_ROOM, a container whose width the
+ * column reads), so at the owner's 19.65 px both bars' items are 85 and a
+ * four-item bar fills the room; never narrower than its words ("don't
+ * make it narrow if it's not possible"): the widest word widens every
+ * column alike.
  */
-export const FLOATING_BAR_WIDTH = "w-fit min-w-[min(18.75rem,100%)] max-w-full";
+export const FLOATING_BAR_WIDTH = "w-fit max-w-full";
 
 /** Its items side by side in equal columns, the capsule's and a stock
- *  list's inside it (CardTabBar's TabsList). */
-export const FLOATING_BAR_COLUMNS = "grid auto-cols-fr grid-flow-col";
+ *  list's inside it (CardTabBar's TabsList), each the one column's width
+ *  or its widest word's. */
+export const FLOATING_BAR_COLUMNS = "grid grid-flow-col auto-cols-[minmax(min(4.5625rem,calc((100cqi-0.5rem)/4)),1fr)]";
+
+/** The block the bar is centred in, on a card's foot and FPL's alike: the
+ *  container whose width caps the bar's columns (FLOATING_BAR_COLUMNS). */
+export const FLOATING_BAR_ROOM = "@container";
 
 /**
  * One item's look, a tab's and a button's: 48 tall (min-h-12, in rem, so

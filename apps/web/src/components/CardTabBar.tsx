@@ -4,7 +4,7 @@ import { cn } from "cn";
 import { TabsList, TabsTrigger } from "./ui/tabs";
 import { CARD_FOOT_ROOM, HOLD_AT_EDGE } from "./sheet/insets";
 import { FloatingBar, FloatingBarFace } from "./FloatingBar";
-import { FLOATING_BAR_COLUMNS, FLOATING_BAR_FOOT_ROOM, FLOATING_BAR_ITEM } from "./floatingBarLook";
+import { FLOATING_BAR_COLUMNS, FLOATING_BAR_FOOT_ROOM, FLOATING_BAR_ITEM, FLOATING_BAR_ROOM } from "./floatingBarLook";
 
 /** One tab of the bar: its value, its word and its icon (required, so none
  *  is bare), and why to open it where there is a reason -- `hint` said in
@@ -62,7 +62,7 @@ export function CardTabBar<T extends string>({
     // pages' end the bar rests where it rests pinned, where it rose by that
     // room as the last page was scrolled to its end (card-scroll.spec).
     <div
-      className={cn("pointer-events-none sticky bottom-0 z-10 pt-3", HOLD_AT_EDGE)}
+      className={cn("pointer-events-none sticky bottom-0 z-10 pt-3", FLOATING_BAR_ROOM, HOLD_AT_EDGE)}
       style={{ paddingBottom: FLOATING_BAR_FOOT_ROOM, marginBottom: `calc(-1 * ${CARD_FOOT_ROOM})` }}
       data-testid={testId}
     >
