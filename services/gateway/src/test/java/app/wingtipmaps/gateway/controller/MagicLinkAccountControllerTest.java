@@ -39,6 +39,13 @@ class MagicLinkAccountControllerTest {
     @MockitoBean
     private MagicLinkRepository magicLinks;
 
+    /** Tokens of the shape the controller makes: 43 base64url characters. */
+    private static final String GOOD = "g".repeat(43);
+
+    private static final String USED = "u".repeat(43);
+    private static final String OLD = "o".repeat(43);
+    private static final String UNKNOWN = "n".repeat(43);
+
     private ResultActions ask(String token, String from) throws Exception {
         return mvc.perform(post("/api/auth/magic-link/account")
                 .with(request -> {
@@ -57,9 +64,9 @@ class MagicLinkAccountControllerTest {
 
     @Test
     void aUsableLinkNamesItsAccountMaskedAndIsNotSpent() throws Exception {
-        given(magicLinks.findByTokenHash(MagicLinkController.hash("good")))
+        given(magicLinks.findByTokenHash(MagicLinkController.hash(GOOD)))
                 .willReturn(Optional.of(link(Instant.now().plus(Duration.ofMinutes(10)), null)));
-        ask("good", "203.0.113.1")
+        ask(GOOD, "203.0.113.1")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("a•••@icloud.com"));
         verify(magicLinks, never()).consumeIfUsable(anyString(), org.mockito.ArgumentMatchers.any());
@@ -67,11 +74,11 @@ class MagicLinkAccountControllerTest {
 
     @Test
     void aUsedExpiredOrUnknownLinkAnswersNothingAlike() throws Exception {
-        given(magicLinks.findByTokenHash(MagicLinkController.hash("used")))
+        given(magicLinks.findByTokenHash(MagicLinkController.hash(USED)))
                 .willReturn(Optional.of(link(Instant.now().plus(Duration.ofMinutes(10)), Instant.now())));
-        given(magicLinks.findByTokenHash(MagicLinkController.hash("old")))
+        given(magicLinks.findByTokenHash(MagicLinkController.hash(OLD)))
                 .willReturn(Optional.of(link(Instant.now().minusSeconds(1), null)));
-        for (String token : new String[] {"used", "old", "unknown"}) {
+        for (String token : new String[] {USED, OLD, UNKNOWN}) {
             ask(token, "203.0.113.2")
                     .andExpect(status().isNotFound())
                     .andExpect(content().string(""));
@@ -79,12 +86,22 @@ class MagicLinkAccountControllerTest {
     }
 
     @Test
+    void aTokenOfAnyOtherShapeIsNoLinksWhateverRowItsHashMatches() throws Exception {
+        // A deletion link's row is hashed over "delete-account:" and its
+        // token (DeleteAccountController): sent whole, it is not a sign-in link.
+        String deletion = DeleteAccountController.PURPOSE + GOOD;
+        given(magicLinks.findByTokenHash(MagicLinkController.hash(deletion)))
+                .willReturn(Optional.of(link(Instant.now().plus(Duration.ofMinutes(10)), null)));
+        ask(deletion, "203.0.113.5").andExpect(status().isNotFound());
+    }
+
+    @Test
     void anAddressAsksSoManyTimesAnHour() throws Exception {
         for (int i = 0; i < 5; i++) {
-            ask("unknown", "203.0.113.3").andExpect(status().isNotFound());
+            ask(UNKNOWN, "203.0.113.3").andExpect(status().isNotFound());
         }
-        ask("unknown", "203.0.113.3").andExpect(status().isTooManyRequests());
-        ask("unknown", "203.0.113.4").andExpect(status().isNotFound());
+        ask(UNKNOWN, "203.0.113.3").andExpect(status().isTooManyRequests());
+        ask(UNKNOWN, "203.0.113.4").andExpect(status().isNotFound());
     }
 
     @Test

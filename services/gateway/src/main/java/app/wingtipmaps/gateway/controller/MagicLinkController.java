@@ -27,6 +27,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,6 +65,7 @@ public class MagicLinkController {
     private static final Logger log = LoggerFactory.getLogger(MagicLinkController.class);
     private static final Duration TOKEN_LIFETIME = Duration.ofMinutes(15);
     private static final Duration THROTTLE_WINDOW = Duration.ofHours(1);
+    private static final Pattern LINK_TOKEN = Pattern.compile("[A-Za-z0-9_-]{43}");
 
     private final MagicLinkRepository magicLinks;
     private final PilotService pilots;
@@ -185,6 +187,14 @@ public class MagicLinkController {
         if (reviewer.isPresent()) {
             return signedIn(pilots.fromVerifiedEmail(reviewer.get()), request, response);
         }
+        // Only a token of the shape this class makes: the deletion links
+        // (DeleteAccountController) share the table, their hash taken over
+        // "delete-account:" and the token, so that string sent here as the
+        // token matched a deletion link's row and signed its holder in.
+        if (!isLinkToken(token)) {
+            return ResponseEntity.badRequest()
+                    .body("This link has expired or was already used. Ask for a new one from the Pilot menu.");
+        }
         String tokenHash = hash(token);
         // Atomic consume-if-usable, not find-then-filter-then-save: the
         // old sequence had a window where two requests racing the same
@@ -231,6 +241,13 @@ public class MagicLinkController {
             // (docs/privacy-inventory.md, "Logs").
             log.warn("Could not send a magic-link email: {}", e.getClass().getSimpleName());
         }
+    }
+
+    /** Whether a token is the shape {@link #generateToken} makes: 32
+     *  random bytes, base64url without padding. A token of any other
+     *  shape is no link's, whichever row its hash might match. */
+    static boolean isLinkToken(String token) {
+        return token != null && LINK_TOKEN.matcher(token).matches();
     }
 
     private String generateToken() {

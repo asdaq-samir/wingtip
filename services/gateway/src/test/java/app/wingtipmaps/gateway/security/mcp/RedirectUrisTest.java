@@ -34,6 +34,15 @@ class RedirectUrisTest {
         assertThat(allowed.allows("https://localhost/callback")).isFalse();
         assertThat(allowed.allows("https://claude.ai/api/mcp/auth_callback#x")).isFalse();
         assertThat(allowed.allows("not a uri")).isFalse();
+        // A prefix takes one callback id after it, not another page of its host.
+        assertThat(allowed.allows("https://chatgpt.com/connector/oauth/../../share/x?next=https://evil.example"))
+                .isFalse();
+        assertThat(allowed.allows("https://chatgpt.com/connector/oauth/abc/def"))
+                .isFalse();
+        assertThat(allowed.allows("https://chatgpt.com/connector/oauth/abc?x=1"))
+                .isFalse();
+        assertThat(allowed.allows("https://chatgpt.com/connector/oauth/")).isFalse();
+        assertThat(allowed.allows("https://chatgpt.com/connector/oauth/..")).isFalse();
     }
 
     @Test

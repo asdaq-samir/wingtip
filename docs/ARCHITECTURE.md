@@ -54,7 +54,7 @@ On request only, behind a compose profile:
 |---|---|---|
 | `retrain` | `jobs` | The training run (`python -m wingtip.pipeline run`) |
 | `charts`, `charts-overlays`, `charts-next` | `jobs` | The chart cycle: the FAA's sheets rendered into one PMTiles archive per kind; the map's overlay vector tiles; the next cycle staged before its date and swapped in at 0901Z on it. [services/jobs/README.md](../services/jobs/README.md) |
-| `ml` | `notebooks` | Jupyter on 8888 (token `wingtip`) |
+| `ml` | `notebooks` | Jupyter on 8888 (its token in `docker compose logs ml`) |
 | `web-build` | `web-dev` | `vite build --watch` into `apps/web/dist`, which the gateway serves in place of its own bundle |
 | `jaeger` | `tracing` | Traces of a request, gateway to planner to each engine rule and source, on 16686 ([LOCAL-DEV.md](LOCAL-DEV.md#tracing)) |
 | `base` | (never runs) | Builds `services/Dockerfile.base`, the Python base with wingtip and the engine that every Python image starts from |

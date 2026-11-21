@@ -9,6 +9,7 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemGroup, ItemMedia, 
 import { Checkbox } from "./ui/checkbox";
 import { Label } from "./ui/label";
 import { TEXT } from "../lib/text";
+import { safeHref } from "../lib/safeHref";
 import SectionTitle from "./SectionTitle";
 
 // A group's box, plain on a sheet or translucent on a glass card.
@@ -243,7 +244,7 @@ export function ListRow({
         className="min-h-11 rounded-none border-0 py-2 in-data-[slot=item-group]:py-3.25 no-underline!"
         render={
           <a
-            href={href}
+            href={safeHref(href)}
             target="_blank"
             rel="noreferrer"
             onClick={buttonProps.onClick as ComponentProps<"a">["onClick"]}
