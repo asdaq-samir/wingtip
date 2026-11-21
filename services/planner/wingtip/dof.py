@@ -14,7 +14,7 @@ wingtip.faa_data downloads it with the NASR tables.
 import json
 import re
 import threading
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -77,17 +77,18 @@ _DOF_LIT = frozenset("RDHMSFCWL")
 _DOF_ZIP = re.compile(r'href="(https://aeronav\.faa\.gov/Obst_Data/DOF_(\d{6})\.zip)"')
 
 
-def dof_zip_url(html: str, on: date) -> str:
-    """The newest DOF zip on the FAA's DOF page that is out by `on`. The
-    page lists the previous edition first, then the current one, each
-    named by the last day of the changes it holds and released two days
-    later (the page's "Release Date"; the engine's `data_cycle` "dof").
-    The first link was taken, and the planner read the 2 Aug 2026
+def dof_zip_url(html: str, on: date | datetime | None = None) -> str:
+    """The newest DOF zip on the FAA's DOF page that is out by `on` (now).
+    The page lists the previous edition first, then the current one and
+    the next, each named by the last day of the changes it holds and
+    released two days later (the page's "Release Date"; the engine's
+    `data_cycle` "dof", which this asks rather than add the two days
+    itself). The first link was taken, and the planner read the 2 Aug 2026
     obstacles for six weeks after the 27 Sep edition was out."""
     released = []
     for url, stamp in _DOF_ZIP.findall(html):
         changes_to = datetime.strptime(stamp, "%y%m%d").date()
-        if changes_to + timedelta(days=2) <= on:
+        if data_cycles.has_begun("dof", changes_to, on):
             released.append((changes_to, url))
     if not released:
         raise RuntimeError(f"No released DOF zip on {DOF_INDEX_URL}")
@@ -99,7 +100,7 @@ def dof_link() -> str:
     the obstacle file (wingtip.apra)."""
     resp = outside.get(DOF_INDEX_URL, headers=FAA_HEADERS, timeout=30)
     resp.raise_for_status()
-    return dof_zip_url(resp.text, data_cycles.in_force_day())
+    return dof_zip_url(resp.text)
 
 
 def _dof_records(dof_dat_path: Path) -> tuple[pd.DataFrame, int]:

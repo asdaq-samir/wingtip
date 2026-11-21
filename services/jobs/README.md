@@ -120,9 +120,11 @@ browser suite's own archive is rebuilt with
 - **charts**: the chart cycle is a Fargate Spot task that EventBridge
   starts daily at 08:30 UTC (`infra/cloudformation/template.yaml`,
   `ChartRefreshTaskDefinition`), the `wingtip/charts` image running
-  `refresh --workers 2`: a no-op until the FAA publishes a cycle, then it
-  draws it, packs it and publishes the archives and `serving.json` to the
-  tiles bucket. The planner reads tiles from those archives through
+  `refresh --workers 2`: a no-op on most days; in the week before a
+  cycle's date it draws the next cycle, packs it and publishes the
+  archives to the tiles bucket and the cycle into `serving.json`'s `next`,
+  which every planner turns to at 0901Z on its date (the cycle in force is
+  drawn at once only where the bucket has none). The planner reads tiles from those archives through
   CloudFront by range requests, and CloudFront caches what it answers.
   The overlay tiles are built on the server, beside the cycle pack the
   planner writes there: cron runs `docker compose -f

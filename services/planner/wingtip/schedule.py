@@ -37,3 +37,9 @@ def every(on: BaseScheduler, seconds: float, job: Callable[..., object], *, name
     else one interval from here."""
     first = {"next_run_time": datetime.now(UTC)} if now else {}
     on.add_job(job, "interval", seconds=seconds, args=args, id=name, name=name, **first)
+
+
+def daily_at(on: BaseScheduler, hour: int, minute: int, job: Callable[..., object], *, name: str) -> None:
+    """`job()` every day at hour:minute UTC (the scheduler's zone): for work
+    tied to a moment rather than an interval, the FAA's 0901Z changeovers."""
+    on.add_job(job, "cron", hour=hour, minute=minute, id=name, name=name)

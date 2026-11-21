@@ -64,7 +64,8 @@ def refresh_lock(wait: bool = False):
 def refresh(kinds: tuple = tuple(KINDS), workers: int = 2, prune: bool = True, publish_bucket: str | None = None, client=None) -> str:
     """Bring the FAA's current cycle to a complete pyramid, publish it
     to `publish_bucket` if one is given (the AWS refresh task's job),
-    then drop older cycles. Returns the cycle. Idempotent: a complete,
+    then drop older cycles; with a bucket, the next cycle staged there
+    too in its lead (`_stage_next`). Returns the cycle. Idempotent: a complete,
     published cycle costs one status read and one listing."""
     cycle = chart_cycle.current_cycle()
     # The AWS refresh task starts on an empty disk every day, which would
@@ -82,7 +83,31 @@ def refresh(kinds: tuple = tuple(KINDS), workers: int = 2, prune: bool = True, p
     # 0901Z (chart_cycle.in_force).
     if prune and chart_serving.pyramid_complete(cycle, kinds) and chart_cycle.in_force(cycle):
         prune_cycles(keep=cycle)
+    if publish_bucket:
+        _stage_next(kinds, workers, publish_bucket, client)
     return cycle
+
+
+def _stage_next(kinds: tuple, workers: int, bucket: str, client=None) -> None:
+    """The next cycle drawn and published into serving.json's `next` once
+    its lead has begun (wingtip.chart_next's plan, a week before its date),
+    where it is not there yet: the AWS task runs at 0830Z, and drawing the
+    new cycle only once it was in force put it on the map hours after
+    0901Z, or a day after where the render missed the morning's run. The
+    planners go over to it at 0901Z by their own clock
+    (chart_serving.served_of). The FAA puts a cycle up 20 days ahead (its
+    VFR charts page: "Next editions will be available 20 days prior to
+    their effective date"); a run before then finds its sheets missing and
+    publishes nothing, and the next day's tries again."""
+    from . import chart_next
+
+    plan = chart_next.plan()
+    if not plan.staging or chart_publish.bucket_next(bucket, client=client) == plan.next_name:
+        return
+    if build_cycle(plan.next_name, kinds, workers):
+        chart_publish.publish(plan.next_name, bucket, client=client)
+    else:
+        log.warning("cycle %s is not complete yet; not staged in %s", plan.next_name, bucket)
 
 
 def build_cycle(cycle: str, kinds: tuple = tuple(KINDS), workers: int | None = 2, step=None) -> bool:

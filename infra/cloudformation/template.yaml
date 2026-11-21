@@ -936,7 +936,7 @@ Resources:
     Type: AWS::Events::Rule
     DependsOn: EcsClusterCapacityProviders
     Properties:
-      Description: Publish the FAA's current chart cycle if it is not published yet; a no-op on the other 55 days.
+      Description: Publish the FAA's current chart cycle if it is not published yet, and stage the next one in serving.json's next a week before its 0901Z; a no-op on most days.
       ScheduleExpression: cron(30 8 * * ? *)
       State: ENABLED
       Targets:

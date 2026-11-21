@@ -1,5 +1,6 @@
 """Sheets and rasters the chart tests draw."""
 
+import io
 import math
 from pathlib import Path
 
@@ -75,8 +76,17 @@ class _Bucket:
     """S3 as publish uses it: put_object for the pointer, upload_file for
     an archive."""
 
+    class exceptions:
+        class NoSuchKey(Exception):
+            pass
+
     def __init__(self):
         self.objects = {}
+
+    def get_object(self, Bucket, Key):
+        if (Bucket, Key) not in self.objects:
+            raise self.exceptions.NoSuchKey()
+        return {"Body": io.BytesIO(self.objects[(Bucket, Key)][0])}
 
     def put_object(self, Bucket, Key, Body, ContentType, CacheControl):
         self.objects[(Bucket, Key)] = (Body, ContentType, CacheControl)

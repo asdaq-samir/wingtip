@@ -187,7 +187,25 @@ def _published_pointer() -> dict | None:
         pointer = resp.json() if resp.ok else None
     except (requests.RequestException, ValueError):
         return None
-    return pointer if isinstance(pointer, dict) and pointer.get("cycle") else None
+    return served_of(pointer)
+
+
+def served_of(pointer: dict | None, now=None) -> dict | None:
+    """The part of a published pointer to draw at `now`: its `next` cycle
+    once that is in force (0901Z on its date, chart_cycle.in_force), else
+    its own cycle where that is. The charts job publishes the next cycle a
+    week ahead into `next` (wingtip.chart_publish), so every planner turns
+    over at 0901Z by its own clock, not when a render lands hours later; and
+    a pointer naming a cycle not yet in force is never drawn early. None
+    where neither is."""
+    if not isinstance(pointer, dict):
+        return None
+    ahead = pointer.get("next")
+    if isinstance(ahead, dict) and ahead.get("cycle") and chart_cycle.in_force(ahead["cycle"], now):
+        return ahead
+    if pointer.get("cycle") and chart_cycle.in_force(pointer["cycle"], now):
+        return {k: v for k, v in pointer.items() if k != "next"}
+    return None
 
 
 def tile_scales(kind: str) -> list[int]:

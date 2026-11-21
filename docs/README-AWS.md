@@ -54,10 +54,12 @@ pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                           nightly pg_dump ─▶ S3 server bucket (14 days)
 
 EventBridge, daily 08:30 UTC ─▶ Fargate Spot task: the charts job (services/jobs/charts), refresh
-   a no-op until the FAA's new cycle, then fetches every sheet, draws the
-   pyramid (1.5 million tiles), packs each kind into one PMTiles archive
-   per density and publishes them to the tiles bucket, serving.json last,
-   so every planner moves to the new cycle at once
+   a no-op on most days. In the week before a cycle's date it fetches
+   every sheet of the next cycle, draws the pyramid (1.5 million tiles),
+   packs each kind into one PMTiles archive per density and publishes them
+   to the tiles bucket, serving.json last, the new cycle in its `next`:
+   every planner moves to it at 0901Z on its date by its own clock
+   (`wingtip.chart_serving.served_of`), not when a render lands
 server cron, hourly ─▶ docker compose run --rm charts-overlays
    the map's overlay tiles, built where the planner's new cycle pack has none
 ```
@@ -453,7 +455,8 @@ a final snapshot: delete them by hand when they are no longer wanted.
   makes `/workspace/data` its user's for that, and the task's 60 GB of
   storage holds the sheets and the pyramid.
 - **The refresh task's empty disk would read as a cycle never drawn;**
-  it asks the bucket's `serving.json` first (`wingtip.chart_upkeep.refresh`).
+  it asks the bucket's `serving.json` first (`wingtip.chart_upkeep.refresh`),
+  both the cycle served and the one staged in its `next`.
 - **A new server waits for the data disk.** Its first boot attaches the
   disk only once the last server has let it go, so a replacement that
   starts before the old server has stopped waits, then carries on.

@@ -15,8 +15,10 @@ What APRA answers, asked on 2026-11-12 (tests_wingtip/fixtures/apra):
 - Not the Digital Obstacle File, which stays on its own page
   (wingtip.faa_data, DOF_INDEX_URL).
 
-Where APRA does not answer, the engine's cycle arithmetic does
-(wingtip.data_cycles): the same date, worked out rather than asked.
+Which edition is in force is the engine's cycle arithmetic
+(wingtip.data_cycles), exact to the 0901Z an edition takes over at; APRA's
+"current" edition dates are only a cross-check, logged where they differ,
+as APRA does not say when on the day it turns over.
 """
 
 import logging
@@ -72,10 +74,17 @@ def _asked(product: str, **params: str) -> date | None:
 
 
 def nasr_cycle() -> date:
-    """The NASR edition in force: APRA's current one, else the 28-day
-    AIRAC cycle's start (NASR is published on the AIRAC dates, the
-    engine's `data_cycle`)."""
-    return _asked("nfdc/nasr/info") or data_cycles.start_on("airac", data_cycles.in_force_day())
+    """The NASR edition in force now: the 28-day AIRAC cycle's start, from
+    0901Z on its date (NASR is published on the AIRAC dates, the engine's
+    `data_cycle`). APRA's current edition was taken first, and it is not
+    held to 0901Z: a "current" it named early was fetched and read before
+    it took effect, and one it named late kept the old edition past its
+    end. It is asked now only to cross-check, and a disagreement logged."""
+    cycle = data_cycles.start_on("airac")
+    asked = _asked("nfdc/nasr/info")
+    if asked and asked != cycle:
+        log.warning("APRA names NASR edition %s; the AIRAC cycle in force is %s, which is used", asked, cycle)
+    return cycle
 
 
 def nasr_csv_url(table: str, cycle: date) -> str:
@@ -104,10 +113,9 @@ def cifp_url(start: date) -> str | None:
     return None
 
 
-def sectional_cycle(today: date) -> date | None:
-    """The sectionals' current edition by APRA, where it has taken effect
-    by `today`; None where APRA cannot say or names one still to come.
-    Every sectional is on the one 56-day cycle, so one sheet's answer is
-    every sheet's."""
-    found = _asked("vfr/sectional/info", geoname="Chicago")
-    return found if found and found <= today else None
+def sectional_cycle() -> date | None:
+    """The sectionals' current edition by APRA; None where APRA cannot
+    say. Every sectional is on the one 56-day cycle, so one sheet's answer
+    is every sheet's. A cross-check (wingtip.chart_cycle): the edition
+    drawn is the schedule's."""
+    return _asked("vfr/sectional/info", geoname="Chicago")

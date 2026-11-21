@@ -180,8 +180,10 @@ as due, draws every tile again (serving the old ones meanwhile), and
 bumps the tile revision at the end, as `unmask` does below.
 
 The planner keeps up with the 56-day cycle by itself: at start-up and
-once an hour it asks the FAA's APRA (wingtip.apra) which cycle is current
-and, if that cycle's pyramid is not complete on disk, starts the charts
+once an hour it works out which cycle is in force (the engine's
+`data_cycle`, to the minute: a cycle takes over at 0901Z on its date; the
+FAA's APRA, wingtip.apra, is asked only as a cross-check and a
+disagreement logged) and, if that cycle's pyramid is not complete on disk, starts the charts
 job's `charts` container through the dev-services sidecar (prepare,
 render, pack, then delete the previous cycle; `docker compose create
 retrain charts charts-overlays charts-next` once makes the containers it starts).

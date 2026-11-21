@@ -114,6 +114,11 @@ export const chartQuery = queryOptions({
     return chart;
   },
   staleTime: 60 * 60_000,
+  // Asked again every quarter hour while the page is open: the FAA's chart
+  // cycle takes over at 0901Z on its date (the planner's serving cycle), and
+  // a tab left open on the map, never refocused, drew the old cycle until it
+  // was reloaded.
+  refetchInterval: 15 * 60_000,
   initialData: () => keptChart()?.chart,
   initialDataUpdatedAt: () => keptChart()?.at,
 });

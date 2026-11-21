@@ -1,9 +1,10 @@
 """wingtip.apra: the FAA's Aeronautical Product Release API read from
 its answers as recorded on 2026-11-12 (fixtures/apra), never the live
-API; and the cycle arithmetic where it does not answer."""
+API; and the cycle in force is the engine's arithmetic, to the minute, APRA
+only a cross-check."""
 
 import json
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -43,8 +44,13 @@ def _answers(monkeypatch, by_product: dict) -> list:
     return asked
 
 
-def test_the_nasr_edition_is_apras_and_its_tables_are_beside_it(monkeypatch):
+def _clock(monkeypatch, when: str):
+    monkeypatch.setattr(apra.data_cycles, "now", lambda: datetime.fromisoformat(when).replace(tzinfo=timezone.utc))
+
+
+def test_the_nasr_edition_is_the_cycle_in_force_and_its_tables_are_beside_it(monkeypatch):
     _answers(monkeypatch, {("nfdc/nasr/info", "current"): "nasr_info_current.json"})
+    _clock(monkeypatch, "2026-11-12T12:00")
 
     cycle = apra.nasr_cycle()
 
@@ -58,10 +64,22 @@ def test_the_nasr_edition_is_apras_and_its_tables_are_beside_it(monkeypatch):
 
 def test_no_answer_is_the_airac_arithmetic(monkeypatch):
     _answers(monkeypatch, {})
-    monkeypatch.setattr(apra.data_cycles, "in_force_day", lambda: date(2026, 11, 12))
-    monkeypatch.setattr(apra.data_cycles, "start_on", lambda kind, on: {"airac": date(2026, 10, 29)}[kind])
-
+    _clock(monkeypatch, "2026-11-12T12:00")
     assert apra.nasr_cycle() == date(2026, 10, 29)
+
+
+@pytest.mark.parametrize(
+    ("when", "cycle"),
+    [("2026-11-26T09:00", date(2026, 10, 29)), ("2026-11-26T09:01", date(2026, 11, 26)), ("2026-11-26T09:02", date(2026, 11, 26))],
+)
+def test_apra_naming_an_edition_early_or_late_is_not_followed(monkeypatch, caplog, when, cycle):
+    """APRA's recorded "current" is 29 Oct 2026: before 0901Z on 26 Nov it
+    agrees; from 0901Z the cycle in force is 26 Nov's whatever APRA says,
+    and the difference is logged for the owner."""
+    _answers(monkeypatch, {("nfdc/nasr/info", "current"): "nasr_info_current.json"})
+    _clock(monkeypatch, when)
+    assert apra.nasr_cycle() == cycle
+    assert ("APRA names NASR edition" in caplog.text) == (cycle != date(2026, 10, 29))
 
 
 def test_an_edition_apra_has_not_got_is_its_own_status_not_a_link(monkeypatch):
@@ -88,28 +106,32 @@ def test_the_cifp_with_apra_down_is_left_to_the_caller(monkeypatch):
     assert apra.cifp_url(date(2026, 10, 29)) is None
 
 
-def test_the_sectional_cycle_is_apras_once_it_has_begun(monkeypatch):
+def test_the_sectional_cycle_is_apras_current(monkeypatch):
     _answers(monkeypatch, {("vfr/sectional/info", "current"): "sectional_info_current.json"})
-
-    assert apra.sectional_cycle(date(2026, 11, 12)) == date(2026, 10, 29)
-    # An edition APRA calls current before its own date is not drawn yet.
-    assert apra.sectional_cycle(date(2026, 10, 28)) is None
+    assert apra.sectional_cycle() == date(2026, 10, 29)
 
 
 def test_the_sectional_cycle_with_apra_down_is_none(monkeypatch):
     _answers(monkeypatch, {})
-    assert apra.sectional_cycle(date(2026, 11, 12)) is None
+    assert apra.sectional_cycle() is None
 
 
-def test_the_current_cycle_is_apras_and_the_arithmetic_without_it(monkeypatch):
-    """APRA's sectional edition where it has begun (wingtip.apra), held
-    six hours; the anchor's where APRA cannot say."""
+@pytest.mark.parametrize(
+    ("when", "cycle"),
+    [("2026-12-24T09:00", "10-29-2026"), ("2026-12-24T09:01", "12-24-2026"), ("2026-12-24T09:02", "12-24-2026")],
+)
+def test_the_current_cycle_is_the_schedules_to_the_minute(monkeypatch, caplog, when, cycle):
+    """The schedule's cycle at the minute, APRA only a cross-check: APRA
+    answering 29 Oct 2026 the morning the 24 Dec edition takes over is
+    logged, and held six hours does not keep the old cycle past 0901Z."""
     asked = []
     monkeypatch.setattr(chart_cycle, "_cycle_cache", TTLCache(maxsize=1, ttl=60))
-    monkeypatch.setattr(chart_cycle.apra, "sectional_cycle", lambda today: asked.append(today) or date(2026, 10, 29))
-    assert chart_cycle.current_cycle(date(2026, 11, 12)) == "10-29-2026"
-    assert chart_cycle.current_cycle(date(2026, 11, 12)) == "10-29-2026" and len(asked) == 1
+    monkeypatch.setattr(chart_cycle.apra, "sectional_cycle", lambda: asked.append(1) or date(2026, 10, 29))
+    _clock(monkeypatch, when)
+    assert chart_cycle.current_cycle() == cycle
+    assert chart_cycle.current_cycle() == cycle and len(asked) == 1
+    assert ("APRA names the sectionals" in caplog.text) == (cycle != "10-29-2026")
 
     monkeypatch.setattr(chart_cycle, "_cycle_cache", TTLCache(maxsize=1, ttl=60))
-    monkeypatch.setattr(chart_cycle.apra, "sectional_cycle", lambda today: None)
-    assert chart_cycle.current_cycle(date(2026, 9, 20)) == "09-03-2026"
+    monkeypatch.setattr(chart_cycle.apra, "sectional_cycle", lambda: None)
+    assert chart_cycle.current_cycle() == cycle
