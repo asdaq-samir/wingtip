@@ -7,6 +7,7 @@ import { CardHeadRow } from "./CardHead";
 import { HeadGrid } from "./HeadGrid";
 import { PinnedHead } from "./PinnedHead";
 import { useCardFrame } from "./sheet/useCardFrame";
+import { CardDialogs } from "./sheet/CardDialogs";
 import { CARD_FOOT_ROOM } from "./sheet/insets";
 import { holdOpenCard, type OpenCard } from "../lib/openCards";
 import { CardId, SheetCardHead, type CardFrame } from "../lib/sheetCards";
@@ -230,31 +231,34 @@ export function SheetCard({
     // close where every card's is), its room over its first line the
     // grabber's (--pinned-room), which a content's pinned head reaches up
     // over; there at once as it opens, still while the sheet moves round
-    // it (the owner: "Is the airport and aircraft card same style?").
-    <div
-      ref={head ? undefined : fromMarker}
-      className="relative shrink-0 px-4 pt-(--pinned-room) [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"
-      style={{ paddingBottom: CARD_FOOT_ROOM }}
-      data-testid={head ? undefined : testId}
-    >
-      {!head ? (
-        body
-      ) : (
-        <>
-          {/* The one head row (CardHeadRow): its name at the left at a card's
+    // it (the owner: "Is the airport and aircraft card same style?"). Its
+    // dialogs its own, not the sheet's (CardDialogs).
+    <CardDialogs>
+      <div
+        ref={head ? undefined : fromMarker}
+        className="relative shrink-0 px-4 pt-(--pinned-room) [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"
+        style={{ paddingBottom: CARD_FOOT_ROOM }}
+        data-testid={head ? undefined : testId}
+      >
+        {!head ? (
+          body
+        ) : (
+          <>
+            {/* The one head row (CardHeadRow): its name at the left at a card's
               size and the close at the right end; a form's Cancel and Save at
               the two ends, the name between them; pinned at the card's top,
               the card scrolling under it (the owner, 2026-11-10). Where the
               content draws its name (a map card's, MapCard), its slot. */}
-          {title === undefined ? (
-            <CardHeadSlot slot={setSlot} startSlot={setStartSlot} leading={leading} end={end} />
-          ) : (
-            <CardHeadRow name={title} sub={description} nameId={headingId} leading={leading} wrap end={end} hidden={titleHidden} />
-          )}
-          <SheetCardHead.Provider value={headSlot}>{body}</SheetCardHead.Provider>
-        </>
-      )}
-    </div>,
+            {title === undefined ? (
+              <CardHeadSlot slot={setSlot} startSlot={setStartSlot} leading={leading} end={end} />
+            ) : (
+              <CardHeadRow name={title} sub={description} nameId={headingId} leading={leading} wrap end={end} hidden={titleHidden} />
+            )}
+            <SheetCardHead.Provider value={headSlot}>{body}</SheetCardHead.Provider>
+          </>
+        )}
+      </div>
+    </CardDialogs>,
     target,
   );
 }
