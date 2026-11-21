@@ -679,11 +679,18 @@ placement wins, and the difference is noted.
      `SegmentedListItem` a field, its determinate `LinearProgressIndicator`
      the share left and the gallons ("−12 gal" past empty, the error
      colour under the reserve), every figure the engine's
-     `fuel_in_tanks`; a field the airplane leaves a tap to set its fuel
+     `fuel_in_tanks`, each gauge held to the reserve of its own flight
+     and the destination's to an IFR alternate's fuel too (the totals'
+     hops' `reserve_gal` and `alternate.fuel_gal`, `PlanTanks.Figures`);
+     a field the airplane leaves a tap to set its fuel
      in Material's `AlertDialog` (Full / No fuel / Gallons as a connected
      button group, a number field), sent as the planner's `tanks`. Add
-     Fuel Stops (every flight's, up to four plans) or Remove Fuel Stops
-     under Add a Stop (`route/FuelStops`). The plan's ••• Clear Route
+     Fuel Stops (every flight's, in one plan: the planner checks them
+     itself, claude/fuel-engine's fuel rounds) or Remove Fuel Stops
+     under Add a Stop (`route/FuelStops`); a flight short with no stop in
+     reach says so in the row's place ("No fuel stop in reach on KMSN →
+     KDLH", "Too little fuel on board for C81 → KDLH", the totals'
+     `no_fuel_stop`). The plan's ••• Clear Route
      asks "Clear Route?" in Material's `AlertDialog` first.
   7. **The alternate** (IFR, 2026-11-10; `alternate/`): the route's
      `SegmentedListItem`s end, under IFR, with the alternate filed (a tap

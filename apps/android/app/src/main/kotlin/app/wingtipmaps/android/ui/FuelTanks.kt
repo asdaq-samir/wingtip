@@ -21,7 +21,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -38,8 +37,8 @@ import app.wingtipmaps.android.plan.PlanTanks
 import app.wingtipmaps.android.route.addFuelStops
 import app.wingtipmaps.android.route.fuelStopsIn
 import app.wingtipmaps.android.route.fuelStopsToAdd
+import app.wingtipmaps.android.route.noFuelStop
 import app.wingtipmaps.android.route.removeFuelStops
-import kotlinx.coroutines.launch
 
 /** The gauges for the plan as planned now (PlanTanks.walk); none without
  *  an airplane, or before the nav log is in. */
@@ -159,16 +158,24 @@ private fun FuelSetDialog(ident: String, stop: Boolean, tank: PlanTanks.Tank, on
 /** Add a Stop's neighbour, the web's fuel stops pill: "Add Fuel Stops"
  *  where the planner suggests stops for a flight too long for the tanks,
  *  every flight's; once the route has the ones it put in, "Remove Fuel
- *  Stops" in the error colour. Nothing where there is neither. */
+ *  Stops" in the error colour. Where a flight is short and the planner
+ *  found no stop in reach, the row says so in the error colour in the
+ *  pill's place (route/NoFuelStop). Nothing where there is none. */
 @Composable
 fun FuelStopsRow(plan: Plan, state: Plan.State, index: Int, count: Int) {
     val set by PlanTanks.state.collectAsStateWithLifecycle()
-    val scope = rememberCoroutineScope()
     val remove = state.fuelStopsIn(set.fuelStops).isNotEmpty()
-    if (!remove && state.fuelStopsToAdd == null) return
+    val short = state.noFuelStop
+    if (!remove && state.fuelStopsToAdd == null) {
+        short.forEach { s ->
+            val words = stringResource(if (s.onBoard) R.string.fuel_too_little_on_board else R.string.fuel_no_stop_in_reach, s.name)
+            ProblemLine(words, Modifier.fillMaxWidth())
+        }
+        return
+    }
     val ink = if (remove) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
     SegmentedListItem(
-        onClick = { if (remove) plan.removeFuelStops() else scope.launch { plan.addFuelStops() } },
+        onClick = { if (remove) plan.removeFuelStops() else plan.addFuelStops() },
         enabled = !state.planning,
         shapes = ListItemDefaults.segmentedShapes(index = index, count = count),
         leadingContent = { Icon(WingtipIcons.fuel, contentDescription = null, tint = ink) },
