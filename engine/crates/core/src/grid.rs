@@ -6,6 +6,7 @@
 
 use crate::sums::{pairwise, Neumaier};
 use std::collections::{HashMap, HashSet};
+use std::marker::PhantomData;
 
 /// A grid's array, read an element at a time: a Vec here, numpy's own
 /// memory in the planner, whatever the phone holds later.
@@ -205,6 +206,8 @@ pub struct Straightener<'c, 'a, E, F: FnMut(usize) -> Result<Vec<f64>, E>> {
     /// way (never a turn, whatever the pass); else its minutes and its
     /// marginal cells.
     lines: HashMap<(usize, usize), Option<(f64, usize)>>,
+    /// The caller's distances' error, which only `nm_from` names.
+    failed: PhantomData<fn() -> E>,
 }
 
 struct Ahead {
@@ -231,7 +234,8 @@ impl<'c, 'a, E, F: FnMut(usize) -> Result<Vec<f64>, E>> Straightener<'c, 'a, E, 
             leg_marginal.push(cells.iter().filter(|&&c| costs.is_marginal(c)).count());
         }
         let (ahead, rows) = ((0..n).map(|_| None).collect(), (0..n).map(|_| None).collect());
-        Ok(Straightener { g, costs, points, mc, wc, nm_from, legs, leg_closed, leg_marginal, ahead, rows, lines: HashMap::new() })
+        let lines = HashMap::new();
+        Ok(Straightener { g, costs, points, mc, wc, nm_from, legs, leg_closed, leg_marginal, ahead, rows, lines, failed: PhantomData })
     }
 
     /// The way's own from i to each j: its closed cells as a set (a turn's
