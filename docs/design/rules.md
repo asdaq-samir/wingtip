@@ -552,15 +552,19 @@ off by default (the owner, 2026-11-13).
    half up a floating glass bar, the one floating bar the airport card's
    tabs are drawn in, the same height and width (`FloatingBar`, 2026-11-18),
    round Base UI's stock Toolbar (one tab stop, the arrows between them),
-   of four buttons: Brief, Nav Log and Profile, each opening its card
-   over FPL, and the route's •••, "More", its one menu -- undo and redo,
+   of three buttons: Brief and Nav Log, each opening its card over FPL,
+   and the route's •••, "More", its one menu -- undo and redo,
    its link, Open in ForeFlight, the checkpoints, the kneeboard, Save,
    File, Plan again, Show Fuel Stops, the map's choices and Clear (the owner,
    2026-11-16, "make those action buttons as tab bar again and move the
    calculations strip to where the action buttons are now", buttons not
    tabs at the owner's pick; 2026-11-17, "move everything to the tab bar
-   with a ... instead of share"); in flight the drawer's tiles are the
-   same four. At the
+   with a ... instead of share"); the Profile's button is the altitude
+   pill's end, its caution counted there, and the N-number pill's end an
+   ⓘ that opens the airplane's card (the owner, 2026-11-20: "can N number
+   show an info button and can FL show profile button rather than in the
+   tab bar?"); in flight the drawer's tiles are Brief, Nav Log, Profile
+   and More. At the
    pill the figures alone, large: swiped down, they grow. Taken up from
    the pill, FPL rises as the airport card does, one shared way for every
    sheet (the owner, 2026-11-16: "can we make it a shared code for all

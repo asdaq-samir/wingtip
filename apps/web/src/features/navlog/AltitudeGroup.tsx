@@ -8,7 +8,8 @@ import { flightLevel } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
 import { useEngineReady } from "../../lib/engine/useEngineReady";
 import { cruiseOf } from "./altitude/plans";
-import { PILL, PILL_FIELD, PILL_PREFIX, PREFIXED_FIELD } from "./pillLook";
+import { PILL, PILL_END_ADDON, PILL_FIELD, PILL_PREFIX, PREFIXED_FIELD } from "./pillLook";
+import ProfilePillButton, { type PillProfile } from "./ProfilePillButton";
 
 /** What the empty field says: an example of what it takes, at the owner's
  *  ask ("I want it to say Alt: 080 as a text filler example"). */
@@ -29,9 +30,10 @@ const said = (ft: number) => callEngine("altitude_said", { ft }).replace(/ ft$/,
 /**
  * The cruising altitude beside the airplane, as the owner picked it
  * (2026-10-20, the redesign's input 1): the figure itself, typed in feet,
- * and the profile's button after it, which opens the Profile card, where
- * the altitude is set on the route's side view (AltitudeProfile), at the
- * owner's ask ("we won't need a separate profile button next to navlog").
+ * and the Profile's button at its end (`profile`), which opens the Profile
+ * card, where the altitude is set on the route's side view
+ * (AltitudeProfile), at the owner's ask (2026-11-20: "can FL show profile
+ * button rather than in the tab bar?").
  * A figure typed is flown on Enter, or as the field is left. Marked as the
  * chip was: red with no legal altitude, IFR's flag, a tight altitude and a
  * pilot's own altitude's caution.
@@ -46,6 +48,7 @@ export default function AltitudeGroup({
   onFlyAltitude,
   disabled = false,
   rules = "vfr",
+  profile,
 }: {
   nav: NavLogAltitude | null;
   legs: Leg[];
@@ -64,6 +67,9 @@ export default function AltitudeGroup({
   disabled?: boolean;
   /** The flight rules it is planned under: IFR's flag on the group. */
   rules?: FlightRules;
+  /** The Profile's button at the pill's end, after the figures
+   *  (ProfilePillButton): what it opens and its caution's mark. */
+  profile?: PillProfile;
 }) {
   const engineReady = useEngineReady();
   const cruise = cruiseOf(nav, legs);
@@ -220,12 +226,15 @@ export default function AltitudeGroup({
         }}
         data-testid="altitude-input"
       />
-      {/* No button of its own at its end, at the owner's ask (2026-10-27:
-            "No need for a separate profile button"), and no caution's dot
-            there either: that is on the route's Profile button now
-            (PlanWorkspace's altitudeMark). What the altitude is and why is
-            the field's description, read with it by VoiceOver
-            (aria-describedby), and nothing on screen. */}
+      {/* The Profile's button at its end, its caution counted on its
+            glyph (the owner, 2026-11-20, where it was the tab bar's). What
+            the altitude is and why is the field's description, read with
+            it by VoiceOver (aria-describedby), and nothing on screen. */}
+      {profile && (
+        <InputGroupAddon align="inline-end" className={PILL_END_ADDON}>
+          <ProfilePillButton {...profile} />
+        </InputGroupAddon>
+      )}
       {(profiled || entered) && (
         <span
           id={whyId}

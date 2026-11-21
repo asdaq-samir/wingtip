@@ -116,15 +116,19 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   await expect(drawer.getByTestId("route-summary").or(drawer.getByTestId("route-head")).first()).toBeVisible();
   expect(await page.locator("header").getByTestId("account-button").count()).toBe(0);
 
-  // The Brief, the Nav Log, the Profile and the route's ••• one floating
-  // bar at the sheet's foot (FplTabBar; the owner, 2026-11-17: "move
-  // everything to the tab bar with a ... instead of share"), none of them
-  // in the airplane's and the altitude's line over the route.
+  // The Brief, the Nav Log and the route's ••• one floating bar at the
+  // sheet's foot (FplTabBar; the owner, 2026-11-17: "move everything to the
+  // tab bar with a ... instead of share"), none of them in the airplane's
+  // and the altitude's line over the route; the Profile is the altitude
+  // pill's own button there (the owner, 2026-11-20: "can FL show profile
+  // button rather than in the tab bar?").
   const tiles = await Promise.all(
-    ["route-brief", "route-navlog", "route-profile", "share-route"].map(async (id) => (await drawer.getByTestId(id).boundingBox())!),
+    ["route-brief", "route-navlog", "share-route"].map(async (id) => (await drawer.getByTestId(id).boundingBox())!),
   );
   for (const tile of tiles) expect(Math.abs(tile.y - tiles[0]!.y)).toBeLessThan(2);
   await expect(drawer.getByTestId("route-strip").getByTestId("share-route")).toHaveCount(0);
+  await expect(drawer.getByTestId("fpl-actions").getByTestId("route-profile")).toHaveCount(0);
+  await expect(drawer.getByTestId("altitude-group").getByTestId("route-profile")).toBeVisible();
   const airplane = (await drawer.getByTestId("aircraft-select").boundingBox())!;
   expect(tiles[0]!.y).toBeGreaterThan(airplane.y + airplane.height);
   // The departure's time on its step in the route's list, not in this

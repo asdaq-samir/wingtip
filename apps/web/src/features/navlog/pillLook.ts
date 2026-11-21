@@ -30,10 +30,11 @@ export const PILL = cn(
  * never under the stock input's 16 (under 16 iOS zooms the page in on a
  * field), and 44 tall over the 24 pill, so a tap a little above or below
  * the words is still the field's (index.css's 44-point rule), nothing
- * grown that is seen.
+ * grown that is seen. Its 2 at the end kept with a glyph after it (PILL_END),
+ * where the input group's own end padding would narrow the fixed width.
  */
 export const PILL_FIELD = cn(
-  "relative z-10 -my-2.5 h-11 min-w-0 flex-initial py-0 pr-0.5 pl-2 font-normal placeholder:text-foreground/70",
+  "relative z-10 -my-2.5 h-11 min-w-0 flex-initial py-0 pr-0.5! pl-2 font-normal placeholder:text-foreground/70",
   "text-[length:inherit] md:text-[length:inherit] pointer-coarse:text-[length:inherit]",
 );
 
@@ -47,3 +48,25 @@ export const PILL_FIELD = cn(
  */
 export const PILL_PREFIX = cn("pr-0 pl-2 font-normal text-foreground", "text-[length:inherit] pointer-coarse:text-[length:inherit]");
 export const PREFIXED_FIELD = "pl-0!";
+
+/** The end addon round a pill's glyph (PILL_END): none of the stock end
+ *  addon's padding, nor its negative margin for a button, which drew the
+ *  glyph out past the pill's end and over the next pill. */
+export const PILL_END_ADDON = "py-0 pr-0 has-[>button]:mr-0";
+
+/**
+ * A pill's glyph at its end, the stock InputGroupButton in the tint: the
+ * N-number's ⓘ (the airplane's card) and the altitude's Profile (the owner,
+ * 2026-11-20: "can N number show an info button and can FL show profile
+ * button rather than in the tab bar?"). 20 wide in the 24 pill round its
+ * 16 glyph, so both pills still fit the head at the owner's 19.65 px text,
+ * nothing grown that is seen and no edge of its own (the stock button's
+ * clear one cut its area to 42); its area a pseudo-element (index.css's
+ * rule): 44 tall, and out past the pill's end over the 4 points to the
+ * next pill and that pill's own empty 8 before its "FL-", 32 wide in all,
+ * never over the field before it, whose words stay the field's to tap.
+ */
+export const PILL_END = cn(
+  "relative z-20 w-5 rounded-full border-0 hover:bg-transparent hover:text-tint aria-expanded:bg-transparent [&_svg]:size-4!",
+  "after:absolute after:-inset-y-2.5 after:left-0 after:-right-3 after:content-['']",
+);
