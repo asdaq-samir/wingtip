@@ -30,40 +30,49 @@ def _is_booklet(source: str, name: str) -> bool:
     return source == "dtpp" and not re.match(r"\d{5}", name)
 
 
-@once(maxsize=512)
-def _pages_of(source: str, edition: str, pdf: str, ident: str | None) -> tuple | None:
-    """The pages of one PDF to show, as their sizes -- a booklet's pages
-    naming the field (none where it has no entry: the FAA lists takeoff
-    minimums, alternates and hot spots only for fields that need them),
-    any other PDF's every page. Kept per (edition, PDF, field), since
-    reading the text of a booklet's sixty-nine pages is long and holds
-    the drawing lock. None where the FAA has no such file."""
+@once(maxsize=64)
+def _read(source: str, edition: str, pdf: str) -> tuple | None:
+    """Each page of one PDF as (width, height, text) -- its size in pixels,
+    drawn DIAGRAM_SCALE times its points, and a booklet's page text (None
+    for any other PDF's) -- read once per (edition, PDF), since reading
+    the text of a booklet's sixty-nine pages is long and holds the drawing
+    lock. Once per PDF, not per field: kept per field asked, a caller
+    naming a new made-up field each time read the whole booklet again
+    under the lock every time, holding up every diagram and chart page
+    anyone else asked for meanwhile (the security review of 2026-11-21).
+    None where the FAA has no such file."""
     data = publications._pdf_of(source, edition, pdf)
     if data is None:
         return None
     booklet = _is_booklet(source, pdf)
-    needle = f"({_faa_idents(ident)[-1]})" if booklet and ident else None
-    pages = []
     with _PDFIUM:
         document = pypdfium2.PdfDocument(data)
         try:
+            pages = []
             for i in range(len(document)):
                 page = document[i]
-                if booklet and (needle is None or needle not in page.get_textpage().get_text_bounded()):
-                    continue
-                pages.append(
-                    {
-                        "source": source,
-                        "edition": edition,
-                        "pdf": pdf,
-                        "page": i + 1,
-                        "width": round(page.get_width() * DIAGRAM_SCALE),
-                        "height": round(page.get_height() * DIAGRAM_SCALE),
-                    }
-                )
+                text = page.get_textpage().get_text_bounded() if booklet else None
+                pages.append((round(page.get_width() * DIAGRAM_SCALE), round(page.get_height() * DIAGRAM_SCALE), text))
+            return tuple(pages)
         finally:
             document.close()
-    return tuple(pages)
+
+
+def _pages_of(source: str, edition: str, pdf: str, ident: str | None) -> tuple | None:
+    """The pages of one PDF to show, as their sizes -- a booklet's pages
+    naming the field (none where it has no entry: the FAA lists takeoff
+    minimums, alternates and hot spots only for fields that need them),
+    any other PDF's every page. None where the FAA has no such file."""
+    read = _read(source, edition, pdf)
+    if read is None:
+        return None
+    booklet = _is_booklet(source, pdf)
+    needle = f"({_faa_idents(ident)[-1]})" if booklet and ident else None
+    return tuple(
+        {"source": source, "edition": edition, "pdf": pdf, "page": i + 1, "width": width, "height": height}
+        for i, (width, height, text) in enumerate(read)
+        if not booklet or (needle is not None and needle in text)
+    )
 
 
 def chart_pages(url: str, ident: str | None = None, on: date | None = None) -> list | None:
