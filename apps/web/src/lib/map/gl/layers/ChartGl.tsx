@@ -1,16 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Course } from "../../../api/types";
 import { chartQuery } from "../../../queryClient";
 import { usePreferences } from "../../../preferences";
 import { useGlLayer, useGlMap, useGlPaint } from "../glLayer";
 import { useChartLook } from "../useChartLook";
-import { chartPaint, chartStyle, type ChartStyle } from "../glStyle";
+import { chartPaint, chartRole, chartSource, chartStyle, type ChartStyle } from "../glStyle";
 import { chartBrightness } from "../../chartLook";
 import { CLOSE_MAX_ZOOM, chartFade } from "../closeZoom";
 import { CloseImageryGl } from "./CloseImageryGl";
 import { LABEL_NIGHT, LABEL_SCALE, labelScale } from "./common";
 import { useCloseImagery } from "../useCloseImagery";
+import { useChartMissed } from "../useChartMissed";
 
 /**
  * The FAA chart (glStyle's chartStyle): the base
@@ -27,7 +28,11 @@ import { useCloseImagery } from "../useCloseImagery";
  * imagery under it (closeZoom, useCloseImagery: the USGS's, or Google's
  * at the pilot's pick, never for export, `publicOnly`), and the map goes
  * in to CLOSE_MAX_ZOOM; where there is none, to two levels past the chart.
- * With the chart None, nothing of it is drawn.
+ * With the chart None, nothing of it is drawn. The base picked before
+ * stays on the map hidden (its layers' visibility none, each id its own,
+ * glStyle's chartId), so its tiles are still in MapLibre's cache for a
+ * switch back, and the new base is added beside it rather than after the
+ * old one is taken down; a hidden source fetches nothing.
  */
 export function ChartGl({ course, publicOnly = false }: { course: Course | null; publicOnly?: boolean }) {
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
@@ -38,26 +43,28 @@ export function ChartGl({ course, publicOnly = false }: { course: Course | null;
   // into; the overlay and the plain ground (BaseGl) are the map's base.
   const none = base === "none";
   const spec = useMemo(() => (chart && !none ? chartStyle(chart, base, true, window.location.origin) : null), [chart, none, base]);
+  // The base before this one (None aside), made from the chart now: a new
+  // cycle makes it again, hidden, with nothing fetched until it is shown.
+  const [bases, setBases] = useState<{ now: string; last: string | null }>({ now: base, last: null });
+  if (bases.now !== base) setBases({ now: base, last: bases.now === "none" ? bases.last : bases.now });
+  const lastBase = bases.now === base ? bases.last : null;
+  const kept = useMemo(() => {
+    const last = chart && lastBase ? chartStyle(chart, lastBase, true, window.location.origin) : null;
+    // Never one whose ids are the shown chart's (a kind the cycle lacks
+    // falls back to the sectional, chartPair).
+    const ids = new Set(Object.keys(spec?.sources ?? {}));
+    return last && !Object.keys(last.sources).some((id) => ids.has(id)) ? last : null;
+  }, [chart, lastBase, spec]);
   // The base and the terminal sheet each made again only as its own tiles
   // change.
-  const parts = useMemo(
-    () =>
-      spec
-        ? (["base", "terminal"] as const)
-            .map((part) => {
-              const ids = part === "base" ? ["chart-under", "chart"] : ["chart-terminal"];
-              const sources = Object.fromEntries(Object.entries(spec.sources).filter(([id]) => ids.includes(id)));
-              return { part, spec: { ...spec, sources, layers: spec.layers.filter((l) => ids.includes(l.id)) } };
-            })
-            .filter((p) => p.spec.layers.length)
-        : [],
-    [spec],
-  );
-  const tileMax = spec?.sources.chart?.maxzoom ?? null;
+  const parts = useMemo(() => [...chartParts(spec, true), ...chartParts(kept, false)], [spec, kept]);
+  const tileMax = (spec && chartSource(spec, "chart")?.maxzoom) ?? null;
   const imagery = useCloseImagery(tileMax, publicOnly);
   // Which charts are drawn and how, on the map's element, for the browser
   // tests: each part's kind (its tiles' path) and the paint's look.
   const { map } = useGlMap();
+  // A tile neither kept nor to be had offline says so, not a blank square.
+  useChartMissed(map);
   // With no chart to set it, the map goes in as far as over the imagery:
   // the overlay and the vector layers have their detail that far.
   useEffect(() => {
@@ -83,6 +90,7 @@ export function ChartGl({ course, publicOnly = false }: { course: Course | null;
     return () => window.removeEventListener("resize", apply);
   }, [map, larger]);
   const kinds = parts
+    .filter((p) => p.shown)
     .map((p) => /\/(?:chart-tile\/)?([a-z_]+)\/\{z\}/.exec(Object.values(p.spec.sources).at(-1)?.tiles?.[0] ?? "")?.[1] ?? "")
     .join(" ");
   const brightness = chartBrightness(dim, sunlight, night);
@@ -96,19 +104,17 @@ export function ChartGl({ course, publicOnly = false }: { course: Course | null;
   // from the map at rest, not from what was asked: the look said "dimmed"
   // while the chart close in was drawn undimmed (UI audit B10).
   useEffect(() => {
-    const drawn = (ids: string[], name: "raster-brightness-max" | "raster-contrast", none: number) =>
-      ids
-        .filter((id) => map.getLayer(id))
-        .map((id) => `${id} ${map.getPaintProperty(id, name) ?? none}`)
+    // Each layer by its role ("chart 0.5"), the hidden last base left out.
+    const drawn = (name: "raster-brightness-max" | "raster-contrast", none: number, others: string[] = []) =>
+      map
+        .getStyle()
+        .layers.filter((l) => (chartRole(l.id) || others.includes(l.id)) && map.getLayoutProperty(l.id, "visibility") !== "none")
+        .map((l) => `${chartRole(l.id) ?? l.id} ${map.getPaintProperty(l.id, name) ?? none}`)
         .join(",");
     const write = () => {
       const el = map.getContainer();
-      el.dataset.chartBrightness = drawn(
-        ["chart-under", "chart", "chart-terminal", "close-imagery", "land-water"],
-        "raster-brightness-max",
-        1,
-      );
-      el.dataset.chartContrast = drawn(["chart-under", "chart", "chart-terminal"], "raster-contrast", 0);
+      el.dataset.chartBrightness = drawn("raster-brightness-max", 1, ["close-imagery", "land-water"]);
+      el.dataset.chartContrast = drawn("raster-contrast", 0);
     };
     map.on("idle", write);
     return () => {
@@ -118,8 +124,8 @@ export function ChartGl({ course, publicOnly = false }: { course: Course | null;
   const paint = chartPaint(night, sunlight, dim, contrast);
   return (
     <>
-      {parts.map(({ part, spec }) => (
-        <ChartSources key={`${part}:${JSON.stringify(spec.sources)}`} spec={spec} paint={paint} fade={!!imagery} />
+      {parts.map(({ part, spec, shown }) => (
+        <ChartSources key={`${part}:${JSON.stringify(spec.sources)}`} spec={spec} paint={paint} fade={!!imagery} shown={shown} />
       ))}
       {imagery && tileMax != null && spec && (
         <CloseImageryGl
@@ -127,36 +133,61 @@ export function ChartGl({ course, publicOnly = false }: { course: Course | null;
           tiles={imagery}
           tileMaxZoom={tileMax}
           brightness={brightness}
-          under={spec.sources["chart-under"] ? "chart-under" : "chart"}
+          under={Object.keys(spec.sources)[0]!}
         />
       )}
     </>
   );
 }
 
+/** A chart style's base and its terminal sheet, each its own part, as
+ *  ChartSources draws them; `shown` false for the last base kept. */
+function chartParts(spec: ChartStyle | null, shown: boolean) {
+  if (!spec) return [];
+  return (["base", "terminal"] as const)
+    .map((part) => {
+      const ids = Object.keys(spec.sources).filter((id) => (chartRole(id) === "chart-terminal") === (part === "terminal"));
+      const sources = Object.fromEntries(Object.entries(spec.sources).filter(([id]) => ids.includes(id)));
+      return { part, shown, spec: { ...spec, sources, layers: spec.layers.filter((l) => ids.includes(l.id)) } };
+    })
+    .filter((p) => p.spec.layers.length);
+}
+
 /** One chart's sources and layers, made again (`key`) as its tiles change;
  *  its paint (chartPaint) set on its layers as the look changes, and, with
- *  the imagery under it (`fade`), faded out past its own last zoom. */
-function ChartSources({ spec, paint, fade }: { spec: ChartStyle; paint: ReturnType<typeof chartPaint>; fade: boolean }) {
+ *  the imagery under it (`fade`), faded out past its own last zoom. While
+ *  not `shown` (the last base, kept), its layers are hidden, so MapLibre
+ *  fetches none of its tiles but keeps those it has. */
+function ChartSources({ spec, paint, fade, shown }: { spec: ChartStyle; paint: ReturnType<typeof chartPaint>; fade: boolean; shown: boolean }) {
   const { map } = useGlMap();
-  useGlLayer("chart", spec.sources, spec.layers);
+  const ids = spec.layers.map((l) => l.id);
+  const visibility = shown ? "visible" : "none";
+  // Added hidden where it is the kept one, so it fetches nothing at all
+  // (useGlLayer reads its specs once, as the part mounts).
+  useGlLayer(
+    "chart",
+    spec.sources,
+    spec.layers.map((l) => ({ ...l, layout: { visibility } })),
+  );
+  const names = ids.join();
+  useEffect(() => {
+    for (const id of names.split(",")) if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", visibility);
+  }, [map, names, visibility]);
   // The base and the region's level under it fade by the base's last
   // zoom, the terminal sheet by its own.
-  const own = (spec.sources.chart ?? spec.sources["chart-terminal"])?.maxzoom;
+  const own = (chartSource(spec, "chart") ?? chartSource(spec, "chart-terminal"))?.maxzoom;
   const opacity = fade && own != null ? chartFade(own) : 1;
-  useGlPaint(
-    spec.layers.map((l) => l.id),
-    { ...paint, "raster-opacity": opacity } as Record<string, unknown>,
-  );
+  useGlPaint(ids, { ...paint, "raster-opacity": opacity } as Record<string, unknown>);
   useEffect(() => {
-    map.setMaxZoom(fade ? CLOSE_MAX_ZOOM : spec.maxZoom);
-  }, [map, spec, fade]);
+    if (shown) map.setMaxZoom(fade ? CLOSE_MAX_ZOOM : spec.maxZoom);
+  }, [map, spec, fade, shown]);
   useEffect(() => {
+    if (!shown) return;
     // The frame the chart's first tile is drawn in, for the speed
     // measurements (a canvas is no Largest Contentful Paint candidate, as
     // an image is): `chart-drawn`, once a page.
     const drawn = (e: { sourceId?: string; tile?: unknown }) => {
-      if (e.sourceId !== "chart" || !e.tile) return;
+      if (chartRole(e.sourceId) !== "chart" || !e.tile) return;
       map.off("sourcedata", drawn);
       if (!performance.getEntriesByName("chart-drawn").length) map.once("render", () => performance.mark("chart-drawn"));
     };
@@ -164,7 +195,7 @@ function ChartSources({ spec, paint, fade }: { spec: ChartStyle; paint: ReturnTy
     // The level of the chart's tiles drawn now, on the map's element, for
     // the browser tests: the zoom rounded, as raster tiles are chosen, no
     // further than the chart's own last level.
-    const chart = spec.sources.chart;
+    const chart = chartSource(spec, "chart");
     const level = () => {
       if (chart) map.getContainer().dataset.chartZoom = String(Math.min(chart.maxzoom ?? 22, Math.round(map.getZoom() + 1)));
     };
@@ -179,6 +210,6 @@ function ChartSources({ spec, paint, fade }: { spec: ChartStyle; paint: ReturnTy
       map.off("moveend", level);
       map.off("zoom", level);
     };
-  }, [map, spec]);
+  }, [map, spec, shown]);
   return null;
 }

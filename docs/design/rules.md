@@ -642,7 +642,9 @@ off by default (the owner, 2026-11-13).
    in degrees magnetic, three figures and north 360 ("274°", "004°"): the
    fix's true course (the W3C Geolocation API's `coords.heading`; a dry
    run's, the plan's track) less the engine's WMM variation at the fix
-   (`magnetic_variation`; `trackFigure`), "—" with no position, no course
+   (`magnetic_variation`; `trackFigure`), asked again only a mile on or
+   on a new UTC day (`lib/magnetic`'s `nearVariation`: the WMM's field
+   changes over miles and years, its track written in whole degrees), "—" with no position, no course
    or below flying speed (the engine's `underway`), a column always. The
    fuel stays on the timeline's tank gauges, the nav log and the Brief,
    no longer on the strip, so the strip no longer opens its breakdown. The
@@ -738,7 +740,9 @@ off by default (the owner, 2026-11-13).
    unmarked reads as the magnetic one a tower gives (the UI audit's A7).
    The Brief's line under its name has no airport names: its title has
    the idents, and the names ran it off the line ("FL-145 · leaving now ·
-   Chicago Exec to Harry R…"). The Routes are one row of chips, each a way's name and time --
+   Chicago Exec to Harry R…"); its time carries its zone ("leaving 14:00
+   CST"), as the Depart row and the timeline write a clock time (the
+   Brief audit of 2026-11-21). The Routes are one row of chips, each a way's name and time --
    As typed, With Fuel Stops (the route as typed with the fuel stops it
    needs, each landing with 14 CFR 91.151's reserve, offered only where
    one is put in; the owner, 2026-11-17: "Suggested routes should also
@@ -904,11 +908,16 @@ At each airport the chart already shows, from the map's own
   airspaces at our zoom levels?"): from zoom 5, a few states on a phone,
   the towered fields (`field_mark_rank`'s first tier) and the Class B and
   C rings, the rings at half their width and with no band, and only the
-  Class B fields named; from 6 every field drawn named; from 7 the public
-  fields with 3,000 ft of hard runway, the Class D rings, the restricted
+  Class B fields named; from 6 every field drawn named (the towered
+  ones); from 7 the public fields with 3,000 ft of hard runway, named
+  from 8, the Class D rings, the restricted
   areas and MOAs, and the rings at their full width with their band; the
-  other public fields from 8, private ones from 10, heliports from 11,
-  and the altitude tabs from 9. Each number is a token, design/tokens.json's
+  other public fields from 8, every field named from there, private ones
+  from 10, heliports from 11, and the altitude tabs from 9. The names
+  are capped so on the web (glOverlays' `AIRPORT_IDENT_FAR`, the tiles'
+  `towered`), the long hard runways' some 2,400 idents at 7 having been
+  about a second of a phone's main thread a wheel notch out (the speed
+  audit of 2026-11-21); the phones follow on the owner's word. Each number is a token, design/tokens.json's
   `map.zoom`, which the web, the iPhone and Android read and the charts
   job's overlay tiles hold each kind from (`map_zoom`, a zoom less in the
   tiles' own levels), so no app keeps a tier of its own. Where marks

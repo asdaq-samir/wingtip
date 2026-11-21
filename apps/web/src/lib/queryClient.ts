@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
-import { api, isUnknownPlace } from "./api/client";
+import { api, data, isUnknownPlace, planner } from "./api/client";
+import type { components } from "./api/schema";
 import type { ChartInfo } from "./api/types";
 import { keptStore } from "./storage";
 import { signedInPilot } from "./pilotCache";
@@ -221,6 +222,25 @@ export const classBQuery = queryOptions({
  *  the card saying in place what it could not have (PlaceCard). */
 export const airportQuery = (ident: string) =>
   queryOptions({ queryKey: ["airport", ident], queryFn: () => api.airport(ident), staleTime: 5 * 60_000, meta: { silent: true } });
+
+/** A field's own NOTAMs and the TFRs near it, as the planner ranks them. */
+export type FieldNotams = components["schemas"]["NotamsRanked"];
+
+/**
+ * A field's own NOTAMs (the FAA's feed, by any ident it goes by) and the
+ * TFRs within 5 nm of it, best first, as the engine ranks a route's: the
+ * planner's GET /api/airport/{ident}/notams, which the iPhone's and
+ * Android's cards read too. 14 CFR 91.103 asks for the NOTAMs of every
+ * field a flight uses; a card is where a pilot looks at one field, and
+ * Keep for the Air asks it for each of the route's (keepAnswers).
+ */
+export const fieldNotamsQuery = (ident: string) =>
+  queryOptions({
+    queryKey: ["airport-notams", ident],
+    queryFn: () => planner.GET("/api/airport/{ident}/notams", { params: { path: { ident } } }).then(data<FieldNotams>),
+    staleTime: 5 * 60_000,
+    meta: { silent: true },
+  });
 
 /** A cycle's procedures hold for its 28 days. */
 const PROCEDURE_STALE_MS = 6 * 60 * 60_000;

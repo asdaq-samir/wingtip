@@ -10,7 +10,7 @@ import { CHART } from "../../../tokens";
 import { useGlLayer, useGlMap, useGlPaint, type Slot } from "../glLayer";
 import { useDarkTheme } from "../useDarkTheme";
 import { useChartBrightness } from "../useChartLook";
-import { glZoom } from "../glStyle";
+import { chartRole, glZoom } from "../glStyle";
 import { MapCredits } from "../MapCredits";
 import { useGoogleAttribution } from "../googleCredit";
 import { useMapCredit } from "../creditStore";
@@ -95,7 +95,7 @@ function useChartDrawnFirst(): boolean {
     if (drawn) return;
     const done = () => setDrawn(true);
     const tile = (e: { sourceId?: string; tile?: unknown }) => {
-      if (e.tile && (e.sourceId === "chart" || e.sourceId === "chart-under")) done();
+      if (e.tile && (chartRole(e.sourceId) === "chart" || chartRole(e.sourceId) === "chart-under")) done();
     };
     map.on("sourcedata", tile);
     map.once("idle", done);

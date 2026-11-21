@@ -1,0 +1,36 @@
+{
+  "_note": "The route's strongest headwind (the engine's route_headwind): of the nav log's legs, the one whose wind aloft blows most against its true course, the wind's component along it (FAA-H-8083-25C ch. 16), a tailwind negative. Worked by hand: 20 kt from 270 on a 300 course is 20 cos 30 = 17.3 kt of headwind; 25 kt from 320 on a 320 course is 25; 30 kt from 180 on a 360 course is a 30 kt tailwind (-30); 10 kt from 250 on a 090 course is 10 cos 160 = -9.4. The engine (engine/facade/tests/route_headwind.rs) and the web (features/brief/glance.test.ts) are held to it.",
+  "cases": [
+    {
+      "why": "the leg flown most into the wind, a later one than the first",
+      "legs": [
+        { "from": "C81", "to": "KMSN", "true_course_deg": 300, "wind": { "wind_dir_true_deg": 270, "wind_speed_kt": 20 } },
+        { "from": "KMSN", "to": "KEAU", "true_course_deg": 320, "wind": { "wind_dir_true_deg": 320, "wind_speed_kt": 25 } },
+        { "from": "KEAU", "to": "KDLH", "true_course_deg": 0, "wind": { "wind_dir_true_deg": 180, "wind_speed_kt": 30 } }
+      ],
+      "expected": { "headwind_kt": 25, "from": "KMSN", "to": "KEAU", "wind_dir_true_deg": 320, "wind_speed_kt": 25 }
+    },
+    {
+      "why": "tailwinds all the way: the least of them, negative",
+      "legs": [
+        { "from": "KMSN", "to": "KMKE", "true_course_deg": 90, "wind": { "wind_dir_true_deg": 270, "wind_speed_kt": 20 } },
+        { "from": "KMKE", "to": "KGRR", "true_course_deg": 90, "wind": { "wind_dir_true_deg": 250, "wind_speed_kt": 10 } }
+      ],
+      "expected": { "headwind_kt": -9.4, "from": "KMKE", "to": "KGRR", "wind_dir_true_deg": 250, "wind_speed_kt": 10 }
+    },
+    {
+      "why": "a leg with no wind or no course passed over",
+      "legs": [
+        { "from": "C81", "to": "BAE", "true_course_deg": 330, "wind": null },
+        { "from": "BAE", "to": "KMSN", "true_course_deg": null, "wind": { "wind_dir_true_deg": 300, "wind_speed_kt": 40 } },
+        { "from": "KMSN", "to": "KDLH", "true_course_deg": 330, "wind": { "wind_dir_true_deg": 300, "wind_speed_kt": 20 } }
+      ],
+      "expected": { "headwind_kt": 17.3, "from": "KMSN", "to": "KDLH", "wind_dir_true_deg": 300, "wind_speed_kt": 20 }
+    },
+    {
+      "why": "no leg with a wind: none",
+      "legs": [{ "from": "C81", "to": "KMSN", "true_course_deg": 300, "wind": null }],
+      "expected": null
+    }
+  ]
+}

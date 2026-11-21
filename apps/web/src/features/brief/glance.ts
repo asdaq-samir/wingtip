@@ -4,7 +4,7 @@
  * 2026-10-22: "that new D looks fine for Brief") -- before you go (the
  * fuel to spare, the loading), the departure (its weather, the
  * runway, the takeoff over 50 ft, the frequency first called), en route
- * (the lowest ceiling and visibility forecast, the wind aloft) and the
+ * (the lowest ceiling and visibility forecast, the strongest headwind) and the
  * arrival (as the departure, with the landing). Worked out where the
  * briefing works out the pages' own (FlightBriefingView, the instance
  * that publishes), and published here, as the Go / No-Go is (lib/verdict).
@@ -51,11 +51,15 @@ export interface BriefGlance {
   };
   depart: FieldGlance | null;
   enroute: {
-    /** The lowest ceiling and visibility forecast along the route. */
+    /** The lowest ceiling and visibility forecast along the route: the
+     *  worst any TAF near it gives over the flight's time (the planner's
+     *  ceiling_visibility_along_route, the engine's tafs_along_route). */
     ceilingFt: number | null;
     visibilitySm: number | null;
-    /** The first stretch's wind aloft, in words ("350°T 8 kt"). */
-    wind: string | null;
+    /** The route's strongest headwind, kt, a tailwind negative, and the leg
+     *  it is on (the engine's route_headwind): the first stretch's wind
+     *  alone said nothing of a later leg flown into a strong one. */
+    headwind: { kt: number; from: string; to: string } | null;
     eteMin: number | null;
     /** Its finding, in a line (the weather's on the Go / No-Go). */
     line: string | null;

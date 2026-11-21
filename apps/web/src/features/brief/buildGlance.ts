@@ -1,5 +1,6 @@
 import type { Briefing, Course, Leg } from "../../lib/api/types";
-import { fieldPhases, navLogRows, routeJurisdiction, windLine, windText, runwayNumber, type useLoad } from "../plan";
+import { fieldPhases, navLogRows, routeJurisdiction, windLine, runwayNumber, type useLoad } from "../plan";
+import { callEngine } from "../../lib/engine/engine";
 import { fieldCategory } from "../../lib/fieldWeather";
 import { worstOf } from "../../lib/findings";
 import type { VerdictItem } from "../../lib/verdict";
@@ -24,8 +25,20 @@ interface GlanceInputs {
   items: VerdictItem[];
   leastMarginGal: number | null;
   loaded: ReturnType<typeof useLoad>["result"];
-  /** The first stretch's wind aloft (windStretches). */
-  wind: { dir: number; speed: number } | null | undefined;
+}
+
+/** The route's strongest headwind, the engine's (route_headwind): the
+ *  leg flown most into the wind aloft, its headwind along the course. */
+export function routeHeadwind(legs: Pick<Leg, "from" | "to" | "true_course_deg" | "wind">[]): BriefGlance["enroute"]["headwind"] {
+  const most = callEngine("route_headwind", {
+    legs: legs.map((leg) => ({
+      from: leg.from,
+      to: leg.to,
+      true_course_deg: leg.true_course_deg,
+      wind: leg.wind ? { wind_dir_true_deg: leg.wind.wind_dir_true_deg, wind_speed_kt: leg.wind.wind_speed_kt } : null,
+    })),
+  });
+  return most ? { kt: most.headwind_kt, from: most.from, to: most.to } : null;
 }
 
 /** The Brief's glance (features/brief/glance): each part of the flight in a few
@@ -46,7 +59,6 @@ export function buildGlance({
   items,
   leastMarginGal,
   loaded,
-  wind,
 }: GlanceInputs): BriefGlance {
   const fieldAt = (ident: string, kind: "departure" | "arrival", at: Date | null): FieldGlance => {
     const check = checks.find((c) => c.field.ident === ident && (kind === "departure" ? c.role === "Departure" : c.role === "Destination"));
@@ -88,7 +100,7 @@ export function buildGlance({
     enroute: {
       ceilingFt: briefing?.forecast.min_ceiling_ft ?? null,
       visibilitySm: briefing?.forecast.min_visibility_sm ?? null,
-      wind: wind ? windText(wind.dir, wind.speed, null, "T") : null,
+      headwind: routeHeadwind(legs),
       eteMin,
       line: items.find((i) => i.key === "weather")?.detail ?? null,
       finding: byKey(["weather", "altitude"]),

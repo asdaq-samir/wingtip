@@ -6,7 +6,11 @@
  * and the first load carried all of it. Fetched as soon as the page is
  * idle, so it is in hand before a route is. The route's box, the search
  * itself, is on a chunk of its own (routeBoxChunk), as the first screen
- * draws it.
+ * draws it. Only what a route draws as it opens: the cards drawn at a tap
+ * (an airport's or an airspace's, placePanel; a flight's, the Stops and
+ * the flying parts, cardsPanel) are chunks of their own, and so are the
+ * Brief's airport sections, which draw an airport card's rows (the speed
+ * audit of 2026-11-21: this chunk was 507 KB, every card in it).
  */
 export { NavLogView } from "../navlog/lazy";
 export { ProceduresRoute } from "../procedures/lazy";
@@ -20,11 +24,4 @@ export { AltitudeGroup } from "../navlog/lazy";
 export { AltitudeProfile } from "../navlog/lazy";
 export { RouteProblem } from "../route/lazy";
 export { LocalDuration } from "../route/lazy";
-export { BriefCard } from "../brief/lazy";
-export { AirspaceCard } from "../place/lazy";
-export { FlightCard } from "../traffic/lazy";
-export { PastFlightCard } from "../flying/lazy";
-export { PlaceCard } from "../place/lazy";
-export { StopsCard } from "../stops/lazy";
-export { DryRunControls, DryRunFigures } from "../flying/lazy";
-export { FlyingHead } from "../flying/lazy";
+export { BriefCard, prefetchAirportSections } from "../brief/lazy";

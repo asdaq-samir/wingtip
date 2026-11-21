@@ -16923,66 +16923,6 @@
       ],
       "additionalProperties": false
     },
-    "jurisdiction_of": {
-      "description": "Whose rules a point is under. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "JurisdictionOfInput",
-          "type": "object",
-          "properties": {
-            "lat": {
-              "type": "number"
-            },
-            "lon": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "lat",
-            "lon"
-          ]
-        },
-        "answer": {
-          "title": "JurisdictionOfAnswer",
-          "type": "object",
-          "properties": {
-            "code": {
-              "type": "string",
-              "enum": [
-                "US",
-                "CA",
-                "MX",
-                "BS",
-                "other"
-              ],
-              "description": "US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it."
-            },
-            "name": {
-              "type": "string",
-              "description": "The country's name as the warning starts, \"Canada\"; \"Outside the US\" for other."
-            },
-            "caution": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "description": "The warning where the figures are, \"Canada: rules not checked \u2014 figures use US rules\"; null in the United States."
-            }
-          },
-          "required": [
-            "code",
-            "name",
-            "caution"
-          ]
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
     "kept_age": {
       "description": "A kept answer's age, as the apps show it with no signal (\"Fetched 42 min ago\"), and whether it is past the freshness ready_to_fly holds it to: the briefing, the plan's nav log, the Go / No-Go and the weather loop for an hour (the app's choice, at AIM 7-1-28's hourly METAR), METARs and TAFs for the routine report's hour (AIM 7-1-28), the NOTAMs for an hour (14 CFR 91.103, AIM 5-1-3; the age the app's choice), and the airport cards and plates for the AIRAC cycle they came in (FAA 28 and 56 Day Product Schedule). A caution at worst: the answer is still shown.",
       "type": "object",
@@ -25847,174 +25787,105 @@
       ],
       "additionalProperties": false
     },
-    "route_jurisdiction": {
-      "description": "Which of a route's points and legs lie outside the United States, each leg checked every 2 nm along its geodesic, and the Brief's one line for them. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).",
+    "route_headwind": {
+      "description": "The route's strongest headwind: of the nav log's legs, the one whose wind aloft blows most against its true course, its headwind the wind's component along that course (the wind triangle, FAA-H-8083-25C ch. 16; the winds aloft forecast's direction is true, FAA-H-8083-28B 27.6), to a tenth of a knot, a tailwind negative, so with tailwinds all the way it is the least of them. The first such leg where two tie; a leg with no wind or no course is passed over; null where no leg has both. The Brief's glance shows it as the route's wind aloft.",
       "type": "object",
       "properties": {
         "input": {
-          "title": "RouteJurisdictionInput",
+          "title": "RouteHeadwindInput",
           "type": "object",
           "properties": {
-            "points": {
+            "legs": {
               "type": "array",
+              "description": "The nav log's legs in order, as the planner gives them.",
               "items": {
                 "type": "object",
                 "properties": {
-                  "lat": {
-                    "type": "number"
+                  "from": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   },
-                  "lon": {
-                    "type": "number"
+                  "to": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "true_course_deg": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "wind": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "wind_dir_true_deg": {
+                            "type": "number"
+                          },
+                          "wind_speed_kt": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "wind_dir_true_deg",
+                          "wind_speed_kt"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   }
-                },
-                "required": [
-                  "lat",
-                  "lon"
-                ]
-              },
-              "description": "The route's points in order, as the nav log's rows: a leg from each to the next."
+                }
+              }
             }
           },
           "required": [
-            "points"
+            "legs"
           ]
         },
         "answer": {
-          "title": "RouteJurisdictionAnswer",
-          "type": "object",
-          "properties": {
-            "points": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "code": {
-                    "type": "string",
-                    "enum": [
-                      "US",
-                      "CA",
-                      "MX",
-                      "BS",
-                      "other"
-                    ],
-                    "description": "US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it."
-                  },
-                  "caution": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "description": "The warning where the figures are, \"Canada: rules not checked \u2014 figures use US rules\"; null in the United States."
-                  }
+          "title": "RouteHeadwindAnswer",
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "headwind_kt": {
+                  "type": "number",
+                  "description": "The headwind on that leg's course, kt; negative a tailwind."
                 },
-                "required": [
-                  "code",
-                  "caution"
-                ]
-              },
-              "description": "Each point's, in order."
-            },
-            "legs": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "codes": {
-                    "type": "array",
-                    "items": {
-                      "type": "string",
-                      "enum": [
-                        "US",
-                        "CA",
-                        "MX",
-                        "BS",
-                        "other"
-                      ],
-                      "description": "US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it."
-                    },
-                    "description": "The countries other than the United States met along the leg, its ends included, in the order met."
-                  },
-                  "caution": {
-                    "type": [
-                      "string",
-                      "null"
-                    ],
-                    "description": "The warning where the figures are, \"Canada: rules not checked \u2014 figures use US rules\"; null in the United States."
-                  }
+                "from": {
+                  "type": "string"
                 },
-                "required": [
-                  "codes",
-                  "caution"
-                ]
-              },
-              "description": "From each point to the next."
-            },
-            "outside": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "enum": [
-                  "US",
-                  "CA",
-                  "MX",
-                  "BS",
-                  "other"
-                ],
-                "description": "US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it."
-              },
-              "description": "Every country other than the United States the route meets, once each in order."
-            },
-            "brief": {
-              "anyOf": [
-                {
-                  "type": "object",
-                  "properties": {
-                    "lead": {
-                      "type": "string",
-                      "description": "The finding alone."
-                    },
-                    "line": {
-                      "type": "string",
-                      "description": "The finding and what to do, in one line."
-                    },
-                    "action": {
-                      "type": "string"
-                    },
-                    "why": {
-                      "type": "string"
-                    },
-                    "cite": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "lead",
-                    "line",
-                    "action",
-                    "why",
-                    "cite"
-                  ]
+                "to": {
+                  "type": "string"
                 },
-                {
-                  "type": "null"
+                "wind_dir_true_deg": {
+                  "type": "number"
+                },
+                "wind_speed_kt": {
+                  "type": "number"
                 }
-              ],
-              "description": "The Brief's line for the route, once; null where it is all in the United States."
+              },
+              "required": [
+                "headwind_kt",
+                "from",
+                "to",
+                "wind_dir_true_deg",
+                "wind_speed_kt"
+              ]
+            },
+            {
+              "type": "null"
             }
-          },
-          "required": [
-            "points",
-            "legs",
-            "outside",
-            "brief"
           ]
         }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
+      }
     },
     "route_options": {
       "description": "The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route, the most filed one and the one round the Class B it enters (14 CFR 91.131(a)(1)) with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.",
@@ -28444,186 +28315,6 @@
       ],
       "additionalProperties": false
     },
-    "special_vfr": {
-      "description": "14 CFR 91.157's special VFR for an airplane (eCFR, current on 2026-11-21): within the surface area of an airport's Class B, C, D or E airspace and below 10,000 ft MSL (91.157(a)), never at the airports of part 91 appendix D, section 3 (fixed-wing special VFR prohibited: O'Hare, LaGuardia and 31 more, by FAA or ICAO ident); with an ATC clearance, clear of clouds and at least 1 statute mile flight visibility (91.157(b)(1)-(3)); between sunset and sunrise (in Alaska, the sun more than 6 degrees below the horizon) only for a pilot meeting part 61's requirements for instrument flight in an airplane equipped as 91.205(d) asks (91.157(b)(4)); and to take off or land, at least 1 sm ground visibility, or flight visibility where none is reported (91.157(c)). `available` is false where anything known rules it out (each in `problems`); what is not given rules nothing out and stays in `needs`, never said to be met.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "SpecialVfrInput",
-          "type": "object",
-          "properties": {
-            "surface_area": {
-              "enum": [
-                "A",
-                "B",
-                "C",
-                "D",
-                "E",
-                "G",
-                null
-              ],
-              "description": "The class of the surface area the airplane is in (controlled airspace designated to the surface for an airport); null or G where it is in none."
-            },
-            "airport": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "description": "The surface area's primary airport, FAA or ICAO ident, for appendix D, section 3."
-            },
-            "altitude_ft": {
-              "type": [
-                "number",
-                "null"
-              ],
-              "description": "Feet MSL; null where not known."
-            },
-            "night": {
-              "type": [
-                "boolean",
-                "null"
-              ],
-              "description": "Between sunset and sunrise; null where not known."
-            },
-            "alaska": {
-              "type": [
-                "boolean",
-                "null"
-              ],
-              "description": "In Alaska, where 91.157(b)(4) reads the sun's elevation."
-            },
-            "sun_elevation_deg": {
-              "type": [
-                "number",
-                "null"
-              ],
-              "description": "The sun's elevation, degrees (negative below the horizon); read in Alaska alone."
-            },
-            "instrument_current": {
-              "type": [
-                "boolean",
-                "null"
-              ],
-              "description": "The pilot meets part 61's requirements for instrument flight (rated, and current under 61.57(c))."
-            },
-            "ifr_equipped": {
-              "type": [
-                "boolean",
-                "null"
-              ],
-              "description": "The airplane is equipped as 91.205(d) asks for IFR."
-            },
-            "flight_visibility_sm": {
-              "type": [
-                "number",
-                "null"
-              ],
-              "description": "Statute miles."
-            },
-            "ground_visibility_sm": {
-              "type": [
-                "number",
-                "null"
-              ],
-              "description": "Statute miles, as reported at the airport; null where none is."
-            },
-            "clear_of_clouds": {
-              "type": [
-                "boolean",
-                "null"
-              ],
-              "description": "Whether the flight can keep clear of clouds."
-            },
-            "takeoff_or_landing": {
-              "type": [
-                "boolean",
-                "null"
-              ],
-              "description": "Taking off or landing under special VFR (91.157(c))."
-            }
-          }
-        },
-        "answer": {
-          "title": "SpecialVfrAnswer",
-          "type": "object",
-          "properties": {
-            "available": {
-              "type": "boolean",
-              "description": "Nothing known rules special VFR out."
-            },
-            "problems": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "words": {
-                    "type": "string"
-                  },
-                  "source": {
-                    "type": "string",
-                    "description": "The rule, \"14 CFR 91.157(b)(3)\"."
-                  }
-                },
-                "required": [
-                  "words",
-                  "source"
-                ],
-                "additionalProperties": false
-              },
-              "description": "What rules it out, each with its rule."
-            },
-            "needs": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "words": {
-                    "type": "string"
-                  },
-                  "source": {
-                    "type": "string",
-                    "description": "The rule, \"14 CFR 91.157(b)(3)\"."
-                  }
-                },
-                "required": [
-                  "words",
-                  "source"
-                ],
-                "additionalProperties": false
-              },
-              "description": "What it asks, each with its rule."
-            },
-            "listed": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "description": "The airport's entry in part 91 appendix D, section 3, \"Chicago, IL (Chicago-O'Hare International Airport)\"; null where it is not listed."
-            },
-            "visibility_sm": {
-              "type": "number"
-            },
-            "below_msl_ft": {
-              "type": "number"
-            }
-          },
-          "required": [
-            "available",
-            "problems",
-            "needs",
-            "listed",
-            "visibility_sm",
-            "below_msl_ft"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
     "squawk_meaning": {
       "description": "What a squawk says, where it says more than a code: 7500 unlawful interference (AIM 6-3-4), 7600 two-way radio failure (AIM 6-4-2), 7700 an emergency (AIM 6-2-2); null for any other.",
       "type": "object",
@@ -30694,97 +30385,6 @@
       ],
       "additionalProperties": false
     },
-    "vfr_class_g_night_pattern": {
-      "description": "14 CFR 91.155(b)(2), Class G's one exception to 91.155(a) for an airplane (eCFR, current on 2026-11-21): below 1,200 ft above the surface (not at it: the table's low row is \"1,200 feet or less\"), at night, in an airport traffic pattern within 1/2 mile of the runway, with the visibility under 3 statute miles but not under 1, the airplane may fly clear of clouds. By day the table's low row already asks 1 sm and clear of clouds (91.155(a)); 91.155(b)(1) is the helicopter's. A visibility not given leaves the other conditions to decide.",
-      "type": "object",
-      "properties": {
-        "input": {
-          "title": "VfrClassGNightPatternInput",
-          "type": "object",
-          "properties": {
-            "class": {
-              "enum": [
-                "A",
-                "B",
-                "C",
-                "D",
-                "E",
-                "G"
-              ]
-            },
-            "agl_ft": {
-              "type": "number",
-              "description": "Feet above the surface."
-            },
-            "night": {
-              "type": [
-                "boolean",
-                "null"
-              ]
-            },
-            "in_pattern": {
-              "type": [
-                "boolean",
-                "null"
-              ],
-              "description": "In an airport traffic pattern within 1/2 mile of the runway."
-            },
-            "visibility_sm": {
-              "type": [
-                "number",
-                "null"
-              ],
-              "description": "Statute miles; null where not known."
-            }
-          },
-          "required": [
-            "class",
-            "agl_ft"
-          ]
-        },
-        "answer": {
-          "title": "VfrClassGNightPatternAnswer",
-          "type": "object",
-          "properties": {
-            "applies": {
-              "type": "boolean"
-            },
-            "visibility_sm": {
-              "type": "number",
-              "description": "The least visibility it asks, 1 sm."
-            },
-            "under_visibility_sm": {
-              "type": "number",
-              "description": "It is for a visibility under this, 3 sm."
-            },
-            "below_agl_ft": {
-              "type": "number",
-              "description": "1,200 ft above the surface."
-            },
-            "words": {
-              "type": "string"
-            },
-            "source": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "applies",
-            "visibility_sm",
-            "under_visibility_sm",
-            "below_agl_ft",
-            "words",
-            "source"
-          ],
-          "additionalProperties": false
-        }
-      },
-      "required": [
-        "input",
-        "answer"
-      ],
-      "additionalProperties": false
-    },
     "vfr_floors": {
       "description": "The VFR floor of each piece of the route between consecutive breaks: the ground plus 1,000 ft, or a DOF obstacle's top plus 14 CFR 91.119's clearance where it stands (1,000 ft over a congested area, (b); 500 elsewhere, (c); 1,000 where the towns are not known), rounded up to the next 100 ft; with 91.119's own minimum under it.",
       "type": "object",
@@ -32336,7 +31936,6 @@
     "instructor_records_since",
     "is_eastbound",
     "isa_temp_c",
-    "jurisdiction_of",
     "kept_age",
     "kneeboard_radio",
     "landing_runway",
@@ -32439,7 +32038,7 @@
     "replay_track",
     "report_near",
     "reserve_min",
-    "route_jurisdiction",
+    "route_headwind",
     "route_options",
     "route_options_frame",
     "route_position",
@@ -32468,7 +32067,6 @@
     "solo_standing",
     "solo_xc_determinations",
     "special_use_tab",
-    "special_vfr",
     "squawk_meaning",
     "strip_fuel",
     "sua_altitudes",
@@ -32499,7 +32097,6 @@
     "vfr_altitudes",
     "vfr_at_hours",
     "vfr_basic_minimums",
-    "vfr_class_g_night_pattern",
     "vfr_floors",
     "vfr_minimums",
     "vfr_not_recommended_reasons",
@@ -35842,15 +35439,7 @@
             "number",
             "null"
           ],
-          "description": "The airplane's handbook's figure; where null or not given, its fuel_grade's standard weight: avgas 6, Jet A 6.8 lb a US gallon (FAA-H-8083-25, chapter 10), avgas where no grade is given."
-        },
-        "fuel_grade": {
-          "enum": [
-            "avgas",
-            "jet_a",
-            null
-          ],
-          "description": "The fuel the airplane burns, for its standard weight where its handbook gives none."
+          "description": "6 where not given, avgas's standard (FAA-H-8083-1B)."
         },
         "start_taxi_fuel_lb": {
           "type": [

@@ -192,7 +192,7 @@ readback_check
 ready_to_fly
 registered_profile
 replay_track
-route_jurisdiction
+route_headwind
 route_position
 route_read
 route_way_warning
@@ -208,7 +208,6 @@ sigmet_hazard
 sim_flight
 solo_standing
 solo_xc_determinations
-special_vfr
 squawk_meaning
 strip_fuel
 sua_altitudes

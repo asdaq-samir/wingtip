@@ -1,13 +1,14 @@
 import { useMemo } from "react";
 import type { StripFigure } from "../../components/FigureStrip";
-import { callEngine } from "../../lib/engine/engine";
+import { nearVariation } from "../../lib/magnetic";
 import { underway } from "../../lib/map/position/glide";
 import { useOwnShip, type Fix } from "../../lib/map/position/ownShip";
 import { gpsFigure } from "./gpsFigure";
 import { trackFigure } from "./trackFigure";
 
-/** The engine's WMM variation at a point today (`magnetic_variation`). */
-const variation = (lat: number, lon: number) => callEngine("magnetic_variation", { lat, lon, date: new Date().toISOString().slice(0, 10) });
+/** The engine's WMM variation at a point today (`magnetic_variation`),
+ *  asked again only a mile on or on a new day (lib/magnetic nearVariation). */
+const variation = nearVariation();
 
 /** The strip's two figures from the fix: its GPS altitude (gpsFigure) and
  *  its magnetic track (trackFigure), exactly as each is written. */

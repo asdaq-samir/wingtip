@@ -58,16 +58,25 @@ export function overlayPictures(): Promise<Map<string, DrawnImage>> {
  *  reads the same tokens): towered, then the long hard runways, other
  *  public fields, private ones, heliports. */
 const AIRPORTS_FARTHEST_ZOOM = MAP_ZOOM.airportsFarthest;
-/** A field's ident beside its mark: out at a few states only a Class B's
- *  field's (the engine's field_mark_rank sizes it largest), as there an
- *  ident is wider than the room between two towered fields and took the
- *  place of the next one's mark (KSJC's of Fresno's); from
- *  map.zoom.airport-idents every field's. */
+/** A field's ident beside its mark, the labels capped by zoom: out at a
+ *  few states only a Class B's field's (the engine's field_mark_rank sizes
+ *  it largest), as there an ident is wider than the room between two
+ *  towered fields and took the place of the next one's mark (KSJC's of
+ *  Fresno's); from map.zoom.airport-idents the towered fields' (the tiles'
+ *  `towered`, NASR's TWR_TYPE_CODE); and the long hard runways' fields,
+ *  drawn from map.zoom.airport-long-hard, named from the zoom the next
+ *  tier comes in (map.zoom.airport-public), every field's from there. At
+ *  zoom 7 those fields came in some 2,400 across the country, each an
+ *  ident to shape and place where nearly all gave way to their marks, and
+ *  a wheel notch out from there was about a second of the main thread's
+ *  long tasks at 4x (the speed audit of 2026-11-21, finding 8). */
 const AIRPORT_IDENT_FAR: ExpressionSpecification = [
   "step",
   ["zoom"],
   ["case", ["==", ["get", "size"], "largest"], ["get", "ident"], ""],
   glZoom(MAP_ZOOM.airportIdents),
+  ["case", ["==", ["get", "towered"], true], ["get", "ident"], ""],
+  glZoom(MAP_ZOOM.airportPublic),
   ["get", "ident"],
 ];
 

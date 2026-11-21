@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { altitudesOf, routeName, visitKey } from "../../../lib/identSchema";
 import { shortName } from "../../../lib/aircraftChoice";
-import { clockTime, flightLevel } from "../../../lib/format";
+import { clockTime, flightLevel, zoneName } from "../../../lib/format";
 import { useMinuteClock } from "../../../lib/useMinuteClock";
 import { legsWithoutWind } from "../../plan";
 import { usePlanFigures } from "./usePlanFigures";
@@ -139,7 +139,10 @@ export function usePlanBrief(route: PlanRoute, answer: PlanAnswerModel, { profil
       routeName(planned.dep, planned.dest, planned.stops),
       // Written as the route box writes it (FL-090), the owner's format.
       cruiseFt ? flightLevel(cruiseFt) : null,
-      depart ? `leaving ${clockTime(new Date(depart))}` : "leaving now",
+      // With its zone, "leaving 14:00 CST", as the Depart row and the
+      // timeline write a clock time: a bare "14:00" read as Z or local
+      // (the Brief audit of 2026-11-21, finding 13).
+      depart ? `leaving ${clockTime(new Date(depart))} ${zoneName(new Date(depart))}` : "leaving now",
       shortName(aircraftLabel),
     ]
       .filter(Boolean)

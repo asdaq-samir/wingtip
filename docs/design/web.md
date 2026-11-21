@@ -66,6 +66,27 @@ These hold on every screen below and win over any reference app.
   the air on its own, and React Aria is off it whole -- a ✕ outside its
   SearchField is `ui/field-clear`'s Base UI `FieldClearButton`, never
   `SearchFieldClear`, which brought 169 KB of it in through one row.
+- **A route opened loads only what it draws.** The route's panel chunk
+  (`features/fpl/routePanel`: the nav log, the route's list and timeline,
+  the Brief's findings that Save and the tabs' marks read) no longer
+  carries the cards a route draws only at a tap: an airport's and an
+  airspace's (`placePanel`), a flight's, its past flight, the Stops and
+  the flying parts (`cardsPanel`), each group a chunk of its own through
+  `routePanelParts`' `panelChunk`, and the Brief's airport sections
+  (`brief/AirportSectionsPart`), which drew an airport card's rows and so
+  brought the whole card's chunk with every route. They are fetched six
+  seconds after the page is idle (`usePrefetchWhenIdle`'s
+  `prefetchTapCards`), and the airport sections as the Brief's card comes
+  up, so a tap still opens its card at once (the speed audit of
+  2026-11-21: the route panel was 507 KB, every card in it).
+- **What a route link loads has its own budget**, the first load's
+  counting only its static graph (0.97 of 4.2 MB): `e2e/route-load.spec.ts`
+  opens /app/plan?dep=KPWK&dest=KDLH on a cold page at a phone's size with
+  the CPU four times slower and sums every script fetched, by its decoded
+  size, until the ETE has a digit, against 4,198,439 bytes, the speed
+  audit's own measurement of that open (204 files). The figure it reads
+  goes in the test's annotations; it is lowered to a new measurement,
+  never raised.
 - **A return visit fetches nothing but the worker's own check.** The
   service worker precaches the app shell, every first-load chunk and the
   engine's `.wasm` (`globPatterns`), so a second load is served from it
@@ -1316,12 +1337,19 @@ verdict, then the Adverse Conditions, When to go at the foot).
      titled "The Flight";
    - Before You Go, its value what is left to do on the device ("4 to
      do", Ready to Fly's count, the engine's `ready_to_fly` items not
-     done), with an airplane its fuel to spare and its loading under it;
-     it opens Preflight;
+     done), with an airplane its fuel beyond the reserve ("Beyond
+     reserve": over the fuel the flight needs and its 14 CFR 91.151(a)
+     or 91.167(a) reserve, where "Fuel spare" was no pilot's term) and
+     its loading under it; it opens Preflight;
    - Depart with its time, Arrive with its field, each with its runway,
      takeoff or landing over 50 ft and first frequency, and En Route
-     with its time and its three figures (ceiling, visibility, wind
-     aloft); only the figures each has, no dashes where there is no
+     with its time and its three figures: "Lowest ceiling", the lowest
+     any TAF near the route forecasts over the flight, not a ceiling
+     now; visibility; and "Most headwind", the route's strongest, the
+     engine's `route_headwind` over every leg (the wind's component
+     along each leg's true course, "None" with tailwinds all the way),
+     where "Wind aloft" was the first stretch's alone (the Brief audit
+     of 2026-11-21); only the figures each has, no dashes where there is no
      airplane or runway, no copy of the weather finding's line in En
      Route;
    - NOTAMs, its value "3 that matter, 44 more", opening Preflight at
@@ -1481,7 +1509,11 @@ the planner's one airport mark (`airportMarkSvg`, rules.md §5): the ring
 in its surface airspace's chart code, its flight category the disc in the
 middle, sized by the engine's `field_mark_rank` step (O'Hare 1.5
 times an ordinary towered field), one GL picture per variant
-(`lib/map/gl/airportIcons`). From
+(`lib/map/gl/airportIcons`). Its ident beside it is capped by zoom
+(`glOverlays`' `AIRPORT_IDENT_FAR`): a Class B field's alone below 6, the
+towered fields' from 6, and the long hard runways' fields, whose marks
+come in at 7, named from 8 with every field (rules.md, "What is drawn
+from which zoom"; the speed audit of 2026-11-21, finding 8). From
 zoom 10 in, a station model adds the wind barb (the engine's `wind_barb`:
 flags, barbs and half-barbs to the nearest 5 kt, a circle for calm,
 FAA-H-8083-28A 25.2.3.4.5) and two lines, the visibility with its weather
@@ -1809,6 +1841,16 @@ WebAssembly and what Keep for the Air fetched; the page asks it first.
   "offlineFirst"`, `lib/queryClient`), so the worker's kept answer
   reaches the page; one it did not keep says "No connection" in place
   (`QueryState`, `lib/problems`), never a blank or a skeleton for good.
+- The chart's tiles are kept cache first (`vite-plugins/workboxRules`'
+  `CHART_TILES`): a drawn tile or the planner's empty 204, never an
+  opaque answer, which an error from a CDN would be, held for 60 days; as
+  a newer edition of a kind is kept, its older cycles' and revisions'
+  tiles go (`dropOlderEditions`, older only, so a page still on a kept
+  chart of the last cycle never sends the new tiles away). A tile neither
+  kept nor to be had says "Chart not kept for this area: it needs a
+  connection" on the map's problem line (`lib/map/gl/useChartMissed`),
+  gone as the connection comes back, where it was a blank square (owner
+  recs of 2026-11-21, item 48).
 - Emergency's best fields and Nearest rank the fields round the airplane
   on the device when the planner cannot be had: the airport index the
   browser keeps, the engine's `best_fields` (`lib/fieldsOnDevice`), said
@@ -1824,12 +1866,20 @@ WebAssembly and what Keep for the Air fetched; the page asks it first.
   (`lib/map/route/routeAnswers`) -- asked again through the worker, as the
   page's first load asked them before the worker held it; a kept route
   opened again offline plans from them (flight-critical.spec).
+- Keep for the Air keeps the departure's, each stop's and the
+  destination's own NOTAMs with the briefing (`fieldNotamsQuery`, the
+  airport card's GET, kept by the worker's planner-api as it passes), so
+  a field's card opened in the air lists them with their age; NOTAMs are
+  on board only where the route's list and every field's came, and
+  missing otherwise (the offline audit of 2026-11-21, finding 6).
 - Keep for the Air keeps the map's overlay archive whole once a cycle,
   where the browser has room (`overlay-archive`, answered in ranges by
   Workbox's range-requests plugin), the route's side view, and the
   newest radar frame over the corridor (`radar-frames`, capped).
 - The glide ring keeps the last field elevation it was given (within 20
   nm of that field).
+  Off, its default, it reads no fix at all, so it is not drawn again at
+  each GPS fix for nothing (`GlideRingGl`).
 - Ages: the airport weather marks say "Field weather 45m old" in the
   map's credits past half an hour; the briefing's age is the network's,
   after a reload too.
@@ -1891,7 +1941,7 @@ The owner's rule: a screenshot of another app means ours should show this.
 | Questions over the page | A confirmation (`useConfirm`: Clear Route, a delete, a discard) is the stock centred alert at every width, no card and no sheet from the foot (2026-11-20); Ready to Fly's prompt and a source's report as sent are SheetDialog's: from the bottom on a phone with their ✕, centred from `md` up |
 | Typing, scrolled: the title and the field go up with the list, nothing pinned, the keyboard up | `sheet/useScrollAway`: all the way up with the search in use, the head pulled up by as much as the list has scrolled, back at its top; the field never leaves the page, so it keeps its focus |
 | A sent search: a round ✕ beside the field (Cancel's place, the owner, 2026-11-20), chips, rows with thumbnails, Filters page, numbered map marks | The sent search's list, its chips and Filters page on one filter state (VFR now and VFR at a time, towered, public, an instrument approach, fuel, runway surface and length, distance: the planner's Nearest with `wingtip.field_facts` and `field_forecast`; no fuel price, which the app has no source for), each row its METAR wind and visibility and what the field has, and the results as their own clustered MapLibre layer over the chart (the chart's own airport symbols untouched) |
-| Map-type button: "Choose Map" card in the sheet, picture tiles | The Map card in the sheet (`MapSettingsButton`): chart picture tiles from committed crops (`public/map-tiles/`), None first, the plain ground (the owner, 2026-11-14: "chart should also have none option"; no FAA chart drawn, the overlay picked over the `map-ground` token's plain colour, light and dark, the airports, airspace, navaids, route, weather and traffic over it) with each chart's terminal sheet always drawn, the base map's four pictures ("Overlay" until 2026-11-14; the preference is still `overlay`) with Strength under them while one is picked, and four layer tiles two by two, Aeronautical, Weather, Traffic and Private & Military (the owner, 2026-11-14: "I want to keep it simple though. can we just have four layers aeronautical, weather, traffic, private/military in the map settings?"; `lib/prefs/mapSlice`), Weather's picks (AIRMETs and SIGMETs and PIREPs as checkbox items, Winds Aloft, Radar and Model Weather as submenus) in the stock menu of the ••• in the Weather tile's corner (`LayerToggleMenu`), the tile's own tap still Weather on or off, the public fields, the route, own ship and the TFRs always drawn, and the route's checkpoints and Class B chips the route's ••• menu's On the Map switches (`RouteMapChoices`, in More only once there is a route, the owner 2026-11-18), off by default; the rest of the old menu is Settings', the card's gear opening it at Map (the owner, 2026-11-13). Since the owner's "How can this be better?" and "every section should have 4 tiles like Layers one" (2026-11-14), every section is the one 2×2 grid of equal tiles (`grid-cols-2 auto-rows-fr gap-2`, `components/LayerTile`, 80 points at the least): Chart and Base map as `LayerPictureTile` (the picture the face, the name on one line on a strip at its foot, the picked one's strip in the tint and the tile ringed in it, both Nones an empty map, `bg-muted` under a faint grid of `--border`; `MapPictureChoices`, the stock `ToggleGroup`), the layers as `LayerToggle`, and Look as Theme, Appearance (System, Light or Dark) and Sunlight (`LayerMenuTile`, the stock `PullDown` with the tile as its trigger, its value under its name; `lookPicks`' `ThemeLayerTile`, `AppearanceLayerTile`, `SunlightLayerTile`) and Own Ship (`OwnShipLayerTile`, the `ownShipLook` preference, the airplane to start; its glyph the pick's own drawing, `lib/map/position/ownShipLook`, which `ownShipHtml` draws on the chart and the airport diagram); Strength and Heights as inset grouped-list rows (`ListGroup`, `ListRow`, `TEXT.row`), and under Look's tiles the chart's Dimmer and Contrast rows, a stock `Slider` each (`map-settings/ChartLookRows`; the owner, 2026-11-18: "can we have a dimmer and contrast sliders under sunlight and remove it from the appearance?"): the Dimmer the chart's `raster-brightness-max` kept per appearance (`chartDim`, light 0 and dark 0.5 by default, at most 0.7, `lib/map/chartLook`), greyed while Sunlight draws the chart at full brightness by day (at night the dark Dimmer holds in sunlight, the row enabled, so a misread light sensor cannot blind the pilot; the owner, 2026-11-18), and Contrast an offset (-0.3 to +0.4, `chartContrast`) on the day's, night's or sunlight's `raster-contrast`, both set by `setPaintProperty` as they move (`glStyle`'s `chartPaint`, ChartGl); Appearance's Dark + Bright is gone, preferences version 12 making a kept one a dark Dimmer of 0 (`prefs/migrate`); one section gap, `gap-6` (`space.xl`). The terminal sheet has no switch: ChartGl always draws it (the owner, 2026-11-14: "TAC switch is not needed, just have it on by default"; the `tac` preference is gone, a kept one not read) |
+| Map-type button: "Choose Map" card in the sheet, picture tiles | The Map card in the sheet (`MapSettingsButton`): chart picture tiles from committed crops (`public/map-tiles/`), None first, the plain ground (the owner, 2026-11-14: "chart should also have none option"; no FAA chart drawn, the overlay picked over the `map-ground` token's plain colour, light and dark, the airports, airspace, navaids, route, weather and traffic over it) with each chart's terminal sheet always drawn, the base map's four pictures ("Overlay" until 2026-11-14; the preference is still `overlay`) with Strength under them while one is picked, and four layer tiles two by two, Aeronautical, Weather, Traffic and Private & Military (the owner, 2026-11-14: "I want to keep it simple though. can we just have four layers aeronautical, weather, traffic, private/military in the map settings?"; `lib/prefs/mapSlice`), Weather's picks (AIRMETs and SIGMETs and PIREPs as checkbox items, Winds Aloft, Radar and Model Weather as submenus) in the stock menu of the ••• in the Weather tile's corner (`LayerToggleMenu`), the tile's own tap still Weather on or off, the public fields, the route, own ship and the TFRs always drawn, and the route's checkpoints and Class B chips the route's ••• menu's On the Map switches (`RouteMapChoices`, in More only once there is a route, the owner 2026-11-18), off by default; the rest of the old menu is Settings', the card's gear opening it at Map (the owner, 2026-11-13). Since the owner's "How can this be better?" and "every section should have 4 tiles like Layers one" (2026-11-14), every section is the one 2×2 grid of equal tiles (`grid-cols-2 auto-rows-fr gap-2`, `components/LayerTile`, 80 points at the least): Chart and Base map as `LayerPictureTile` (the picture the face, the name on one line on a strip at its foot, the picked one's strip in the tint and the tile ringed in it, both Nones an empty map, `bg-muted` under a faint grid of `--border`; `MapPictureChoices`, the stock `ToggleGroup`), the layers as `LayerToggle`, and Look as Theme, Appearance (System, Light or Dark) and Sunlight (`LayerMenuTile`, the stock `PullDown` with the tile as its trigger, its value under its name; `lookPicks`' `ThemeLayerTile`, `AppearanceLayerTile`, `SunlightLayerTile`) and Own Ship (`OwnShipLayerTile`, the `ownShipLook` preference, the airplane to start; its glyph the pick's own drawing, `lib/map/position/ownShipLook`, which `ownShipHtml` draws on the chart and the airport diagram); Strength and Heights as inset grouped-list rows (`ListGroup`, `ListRow`, `TEXT.row`), and under Look's tiles the chart's Dimmer and Contrast rows, a stock `Slider` each (`map-settings/ChartLookRows`; the owner, 2026-11-18: "can we have a dimmer and contrast sliders under sunlight and remove it from the appearance?"): the Dimmer the chart's `raster-brightness-max` kept per appearance (`chartDim`, light 0 and dark 0.5 by default, at most 0.7, `lib/map/chartLook`), greyed while Sunlight draws the chart at full brightness by day (at night the dark Dimmer holds in sunlight, the row enabled, so a misread light sensor cannot blind the pilot; the owner, 2026-11-18), and Contrast an offset (-0.3 to +0.4, `chartContrast`) on the day's, night's or sunlight's `raster-contrast`, both set by `setPaintProperty` as they move (`glStyle`'s `chartPaint`, ChartGl); Appearance's Dark + Bright is gone, preferences version 12 making a kept one a dark Dimmer of 0 (`prefs/migrate`); one section gap, `gap-6` (`space.xl`). The terminal sheet has no switch: ChartGl always draws it (the owner, 2026-11-14: "TAC switch is not needed, just have it on by default"; the `tac` preference is gone, a kept one not read). A new chart pick no longer takes the old one down first: each chart layer and source is named by its role and its tiles' kind (`glStyle`'s `chartId`, "chart:sec", "chart-under:sec", "chart-terminal:tac"), so the chart picked before stays on the map hidden (visibility none, which fetches nothing) beside the new one, its tiles still in MapLibre's cache, and a switch back draws at once; None keeps the last chart the same way, and a new cycle makes the kept one again hidden (the speed audit of 2026-11-21, its map-settings table) |
 
 **The one scrolling rule (the owner, 2026-11-10).** Every card, page and
 sheet scrolls one way on a phone:
@@ -1964,7 +2014,11 @@ apart (`terrain/airspaceShelves`):
   mountain there would mislead (`terrain/heightStretch`'s
   `drawnStretch`); the Heights picked come back as the view ends, and a
   line under the control says "True height in the pilot's view" (or
-  while a replay camera follows) meanwhile, no toast. The map tilts to 85 degrees in 3D
+  while a replay camera follows) meanwhile, no toast. Both cameras move
+  in the frame after the run's or the replay's clock moves (a store
+  subscription), not in a loop of every frame: paused, they ask for no
+  frame at all, and only an orbit, which turns by itself, draws each
+  frame (the waste audit of 2026-11-21). The map tilts to 85 degrees in 3D
   (`map.pitch-max`), low enough to see the shelves from the side.
 
 - Each Class B, C and D shelf is labelled at its top, facing the screen,
