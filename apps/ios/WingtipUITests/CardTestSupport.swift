@@ -14,7 +14,7 @@ enum CardTests {
         ("accessibility XXL", ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXL"]),
     ]
 
-    static let searchPrompt = "Search airports and airplanes"
+    static let searchPrompt = "Search"
 
     /// A way into a card.
     enum Entry: CustomStringConvertible {
@@ -145,6 +145,21 @@ enum CardTests {
     static func dragSideways(_ element: XCUIElement, in app: XCUIApplication, left: Bool) {
         let y = app.frame.height > 0 ? element.frame.midY / app.frame.height : 0.5
         drag(element, in: app, to: CGVector(dx: left ? 0.02 : 0.98, dy: y))
+    }
+
+    /// Whether FPL shows the route ending at `ident` within `timeout`: its
+    /// line on the timeline (a whole route, planned), or its word in the
+    /// To field (half a route, or one still being typed or planned).
+    @MainActor
+    static func routeEnds(_ app: XCUIApplication, at ident: String, timeout: TimeInterval) -> Bool {
+        let line = app.buttons["timeline-ident-\(ident)"], to = app.textFields["To"]
+        let until = Date().addingTimeInterval(timeout)
+        while Date() < until {
+            if line.exists { return true }
+            if to.exists, to.value as? String == ident { return true }
+            Thread.sleep(forTimeInterval: 0.5)
+        }
+        return false
     }
 
     /// Swiped up on the screen's middle until `element` is hittable, at

@@ -154,6 +154,20 @@ enum AirportWords {
     /// Nil where the engine refuses (logged by Engine.rule): no runway is
     /// then badged Best Wind, never a guessed one.
     static func bestWind(_ runways: [Runway]) -> Int? {
+        inUse(runways).map(\.runway)
+    }
+
+    /// The runway end most nearly into the reported wind, as its number
+    /// ("24"), the same engine answer as bestWind: what FPL's line lands
+    /// on and leaves from where the pilot picks none, as the planner flies
+    /// it (wind_runways). Nil where the wind picks none.
+    static func windEnd(_ runways: [Runway]) -> String? {
+        guard let flown = inUse(runways), let end = runways[safe: flown.runway]?.runwayEnds?[safe: flown.end] else { return nil }
+        return runwayNumber(end.ident)
+    }
+
+    /// The engine's runway in use, where the wind chose it.
+    private static func inUse(_ runways: [Runway]) -> EngineContract.GonogoFlown? {
         let asked = runways.map { r in
             EngineContract.Runway(closed: r.closed, surface: r.surface, lengthFt: r.lengthFt.map(Double.init),
                                   runwayEnds: r.runwayEnds?.map { .init(ident: $0.ident, headingTrueDeg: $0.headingTrueDeg) },
@@ -161,7 +175,7 @@ enum AirportWords {
                                                            gustCrosswindKt: $0.gustCrosswindKt, inUse: $0.inUse) })
         }
         guard !asked.isEmpty, let flown = try? Engine.gonogoRunwayInUse(runways: asked), flown.byWind else { return nil }
-        return flown.runway
+        return flown
     }
 
     /// A runway's surface in words: OurAirports' "ASPH-G" is asphalt.

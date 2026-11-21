@@ -3,18 +3,22 @@ import SwiftUI
 /// The route's card at the top of the plan, right under the one search
 /// (the owner's decision of 2026-11-10, the one-row header, as Apple
 /// Maps puts its place under the field): the route and whether it is
-/// ready to fly with the route's ••• at its right, the figures in one
-/// line -- distance, time, fuel, altitude and the airplane -- then Brief,
-/// Nav Log and Airplane. The bar it replaces held Share, Saved Flights and
-/// Undo; they are in the ••• now, with the profile and Clear, and Undo
-/// stays on shake and the Edit menu (UndoManager).
+/// ready to fly, with the route's ••• and its ✕ at its right, the figures
+/// in one line -- distance, time, fuel, altitude and the airplane -- then
+/// Brief, Nav Log and File, as the web's tab bar and its File button
+/// (the owner, 2026-11-21). The ••• is More, the web's three: Route
+/// Options, Share Link and Open in ForeFlight; the nav log's own Share
+/// holds the rest of the sharing (ShareMenu). The ✕ clears the route,
+/// asked first in the system's alert (the owner, 2026-11-20). The
+/// Profile is the cruise altitude's button and the airplane's the
+/// N-number's (RouteBoxRow); the map's choices are Map Settings'.
 struct RouteCard: View {
     @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
-    @Environment(\.undoManager) private var undoManager
     /// A page of the plan's: a card on the iPhone, the inspector on the iPad.
     let open: (Screen) -> Void
     @Environment(ReadyToFly.self) private var ready
+    @State private var clearing = false
 
     var body: some View {
         Section {
@@ -30,20 +34,36 @@ struct RouteCard: View {
                     }
                 }
                 Spacer(minLength: 0)
-                more
+                RouteMoreMenu(open: open)
+                clear
             }
             Text(figures).font(WingtipType.detail.monospacedDigit()).foregroundStyle(.secondary)
                 .accessibilityLabel(spokenFigures)
             // What the figures lack of the airplane, asked in place.
             if plan.airplaneChosen { AskFigureRow(needs: [.fuelTotals, .climb]) }
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: WingtipSpace.sm) { brief; navLog; airplane }
-                VStack(alignment: .leading, spacing: WingtipSpace.sm) { brief; navLog; airplane }
+                HStack(spacing: WingtipSpace.sm) { brief; navLog; file }
+                VStack(alignment: .leading, spacing: WingtipSpace.sm) { brief; navLog; file }
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
             .labelStyle(.titleAndIcon)
         }
+        .alert("Clear Route?", isPresented: $clearing) {
+            Button("Clear Route", role: .destructive) { plan.clear() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The route, its stops and what was set on it go. Undo brings them back.")
+        }
+    }
+
+    /// The ✕: one tap asks, in the centred alert, and the page stays.
+    private var clear: some View {
+        Button { clearing = true } label: {
+            Label("Clear Route", systemImage: WingtipIcon.close).labelStyle(.iconOnly).imageScale(.large).hitArea()
+        }
+        .buttonStyle(.borderless)
+        .accessibilityIdentifier("route-clear")
     }
 
     // MARK: The figures line
@@ -94,42 +114,14 @@ struct RouteCard: View {
             .disabled(plan.legs.isEmpty)
     }
 
-    /// The airplane flown: its profile by its N-number, else the Airplane
-    /// page to pick one.
-    private var airplane: some View {
-        Button {
-            if let tail = plan.tail { nav.open(.tail(ProfileAsk(tail: tail))) } else { open(.airplane) }
-        } label: {
-            Label("Airplane", systemImage: WingtipIcon.airplane)
-        }
-        .hitArea()
-        .accessibilityHint(plan.airplaneChosen ? "Its profile" : "Pick one for the time, fuel and groundspeed")
-    }
-
-    // MARK: The route's •••
-
-    /// The profile, marked where the pilot's altitude breaks a limit; the
-    /// saved flights, Share and Undo from the bar this card replaced; and
-    /// Clear, which asks nothing: Undo takes it back (warn, never limit).
-    private var more: some View {
-        let cautioned = !(plan.altitude?.cautions?.isEmpty ?? true)
-        _ = UndoWatch.shared.changes
-        return ShareMenu(rows: Group {
-            Button { open(.profile) } label: {
-                Label(cautioned ? "Profile, Altitude Caution" : "Profile", systemImage: cautioned ? "exclamationmark.triangle.fill" : WingtipIcon.profile)
-            }
-            Button { open(.flights) } label: { Label("Saved Flights", systemImage: "tray.full") }
-        }, more: Group {
-            if let undoManager, undoManager.canUndo {
-                Button { undoManager.undo() } label: {
-                    Label(undoManager.undoActionName.isEmpty ? "Undo" : "Undo \(undoManager.undoActionName)", systemImage: "arrow.uturn.backward")
-                }
-            }
-            ShowRouteAs()
-            RouteOnMapToggles()
-            Divider()
-            Button(role: .destructive) { plan.clear() } label: { Label("Clear Route", systemImage: WingtipIcon.close) }
-        }, label: Image(systemName: WingtipIcon.more).imageScale(.large).hitArea())
-            .accessibilityIdentifier("route-more")
+    /// Filing with Flight Service, a button of its own beside the two (the
+    /// owner, 2026-11-21: "File flight plan should be a separate button
+    /// next to tabs"), greyed until the nav log is in.
+    private var file: some View {
+        Button { nav.open(.flight("file")) } label: { Label("File", systemImage: WingtipIcon.send) }
+            .hitArea()
+            .disabled(plan.legs.isEmpty)
+            .accessibilityLabel("File flight plan")
+            .accessibilityIdentifier("route-file")
     }
 }
