@@ -54,7 +54,7 @@ function InstructorNote() {
       data-testid="brief-instructor"
     >
       <GraduationCap className="size-5 shrink-0 text-tint" aria-hidden />
-      <span>Your instructor, {link.name ?? link.email}, sees the flights you put to them and can sign off from their phone.</span>
+      <span>Your instructor, {link.name ?? link.email}, sees the flights you send them and can sign them off from their phone.</span>
     </div>
   );
 }
