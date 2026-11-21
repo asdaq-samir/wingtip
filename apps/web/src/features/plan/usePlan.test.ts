@@ -16,7 +16,8 @@ import { queryClient } from "../../lib/queryClient";
 import { keptStore } from "../../lib/storage";
 import type { PlanParams } from "./planQuery";
 import { usePlan } from "./usePlan";
-import { courseFixture, params, signedIn } from "./usePlan.fixtures";
+import { courseFixture } from "../../test/courseFixture";
+import { params, signedIn } from "./usePlan.fixtures";
 
 vi.mock("../../lib/api/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../lib/api/client")>()),
