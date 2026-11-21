@@ -1,6 +1,7 @@
 package app.wingtipmaps.gateway.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -28,6 +29,7 @@ import org.springframework.security.oauth2.jwt.BadJwtException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Sign in with Apple from the iOS app: a token Apple issued to this app
@@ -223,5 +225,26 @@ class AppleNativeSignInControllerTest {
 
         assertThat(answer.getStatusCode().value()).isEqualTo(200);
         verify(pilots, never()).keepAppleRefreshToken(any(Pilot.class), any(), any());
+    }
+
+    /** The deep security review of 2026-11-21: each nonce is a session kept
+     *  30 days, on a route open to anyone, so a client may ask for
+     *  NONCES_PER_HOUR an hour and is then refused, 429, with no session made. */
+    @Test
+    void aClientAsksForSoManyNoncesAnHour() {
+        var controller = new AppleNativeSignInController(aPilot(), value -> token("app.wingtipmaps.ios"));
+        for (int i = 0; i < AppleNativeSignInController.NONCES_PER_HOUR; i++) {
+            assertThat(controller.nonce(new MockHttpServletRequest()).nonce()).isNotBlank();
+        }
+        MockHttpServletRequest past = new MockHttpServletRequest();
+        assertThatThrownBy(() -> controller.nonce(past))
+                .isInstanceOfSatisfying(
+                        ResponseStatusException.class,
+                        e -> assertThat(e.getStatusCode().value()).isEqualTo(429));
+        assertThat(past.getSession(false)).isNull();
+
+        MockHttpServletRequest another = new MockHttpServletRequest();
+        another.setRemoteAddr("192.0.2.7");
+        assertThat(controller.nonce(another).nonce()).isNotBlank();
     }
 }

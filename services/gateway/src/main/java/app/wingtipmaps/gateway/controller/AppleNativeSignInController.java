@@ -18,6 +18,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +45,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Sign in with Apple from the iOS app (apps/ios/), the native way: the
@@ -75,6 +78,11 @@ public class AppleNativeSignInController {
     private final @Nullable AppleRevocation appleGrants;
     /** The app's client at Apple, which the traded token is kept under. */
     private final @Nullable AppleAppTokens appClient;
+
+    /** Nonces a client may ask for an hour. */
+    static final int NONCES_PER_HOUR = 30;
+
+    private final SlidingWindowLimiter nonces = new SlidingWindowLimiter(Duration.ofHours(1));
 
     @Autowired
     public AppleNativeSignInController(
@@ -155,6 +163,13 @@ public class AppleNativeSignInController {
                     + "(ASAuthorizationAppleIDRequest.nonce), then send it as `nonce` with the identity token.")
     @PostMapping("/nonce")
     public AppleNonceAnswer nonce(HttpServletRequest request) {
+        // Each nonce is a session, kept in Postgres for 30 days, and the
+        // route is open to anyone: unbounded, a script filled the session
+        // table (the deep security review of 2026-11-21). A sign-in asks
+        // for one; NONCES_PER_HOUR a client is far above any pilot's.
+        if (!nonces.allow("client:" + SlidingWindowLimiter.clientOf(request), NONCES_PER_HOUR, Instant.now())) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Too many sign-ins from here; try later.");
+        }
         return new AppleNonceAnswer(AppleNonce.issue(request));
     }
 
