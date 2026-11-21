@@ -5,6 +5,8 @@ import { forgetPilot } from "../../lib/preferences";
 import { forgetKeptRecord } from "../keptForAir";
 import { pilotQuery } from "../../lib/queryClient";
 import { forgetPilotCache } from "../../lib/pilotCache";
+import { forgetKeptTracks } from "../../lib/track";
+import { forgetRecordedTrack } from "../logbook-auto";
 
 /** Logging out: the session ended on the server, then the pilot and
  *  everything that was theirs (their airplanes, their flights)
@@ -25,6 +27,11 @@ export function useLogout() {
       // Which route was kept for the air is theirs; the briefing, NOTAMs,
       // cards and plates it lists are public FAA and weather data, and stay.
       forgetKeptRecord();
+      // Where they flew: the tracks kept under their flights, and the one
+      // the phone's GPS recorded for a logbook draft, which would
+      // otherwise be offered to the next pilot as their own flight.
+      forgetKeptTracks();
+      forgetRecordedTrack();
       // The service worker's copy of their account, airplanes and
       // flights (vite.config.ts, pilot-own), which a start with no
       // signal would otherwise show the next person to pick up the phone.
