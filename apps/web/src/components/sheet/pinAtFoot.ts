@@ -31,6 +31,17 @@ export const PIN_AT_FOOT =
   "[transform:translateY(min(var(--pin-cap,0px),calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
 
 /**
+ * The pinned row's own box (FplRoute's, round the row with PIN_AT_FOOT) on
+ * a phone's bottom sheet (Base UI's data-swipe-direction): sticky at the
+ * page's foot, so where a route runs on past the page's foot the browser
+ * holds the row there as the page scrolls, with the finger, and the row's
+ * room (usePinAtFoot) does not change under it. Over the head round it, as
+ * the held row is (FplRoute's PINNED, z-30): a sticky box is a stacking
+ * context of its own. Beside the side panel the row stays in its place.
+ */
+export const PIN_STICKS = "in-data-[swipe-direction=down]:sticky in-data-[swipe-direction=down]:bottom-0 in-data-[swipe-direction=down]:z-30";
+
+/**
  * A row of a sheet's head that is its pill (PIN_AT_FOOT on it): held on
  * the edge of the sheet's foot (`foot`, a selector) while the sheet rests
  * at the pill (`held`), and as the sheet goes down riding with it to there
@@ -106,13 +117,14 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       const room = restingEdge(edge) - natural;
       setRoom(row, `${room}px`, sheet ? getComputedStyle(sheet).getPropertyValue("--sheet-offset") : "");
       const always = onBottomSheet(sheet);
-      row.style.setProperty("--pin-cap", always ? "9999px" : "0px");
+      setVar(row, "--pin-cap", always ? "9999px" : "0px");
       row.toggleAttribute("data-pinned", pinnedNow(heldNow.current || always, moved(row.closest(SHEET)), room));
       row.toggleAttribute("data-pill", heldNow.current);
       const bar = edge?.querySelector<HTMLElement>("[data-makes-way]");
-      if (bar && always) bar.style.setProperty("--pin-bar-lift", `${barLift(restingBottom(bar), restingEdge(edge) - row.offsetHeight)}px`);
-      if (edge && always) pageBox?.style.setProperty("--pin-foot-room", `${edge.offsetHeight}px`);
-      else pageBox?.style.removeProperty("--pin-foot-room");
+      if (bar && always) setVar(bar, "--pin-bar-lift", `${barLift(restingBottom(bar), restingEdge(edge) - row.offsetHeight)}px`);
+      if (edge && always) {
+        if (pageBox) setVar(pageBox, "--pin-foot-room", `${edge.offsetHeight}px`);
+      } else pageBox?.style.removeProperty("--pin-foot-room");
     };
     measure();
     const resized = new ResizeObserver(measure);
@@ -121,16 +133,28 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
     // measured at the top alone, the translation kept as the page scrolled
     // on and carried the figures up through the route, to its middle (the
     // owner's iPhone, 2026-11-21: a long route at full, the strip over the
-    // approach's fixes with rows below it). Measured again at each scroll,
-    // before the frame is drawn, so the figures stay on the foot's edge
-    // while the rest of the route runs under them.
-    page?.addEventListener("scroll", measure, { passive: true });
+    // approach's fixes with rows below it). On a phone's bottom sheet the
+    // row's box is sticky at the page's foot (PIN_STICKS, on its box), so
+    // the browser holds it there as the page scrolls, on the compositor,
+    // with the finger, and its room stays the same; measured again once a
+    // frame while the page scrolls, for the end of the page, where the
+    // route's end comes up off the foot and the sticky box with it. Each
+    // value written only as it changes, so a scroll that moves nothing
+    // writes nothing: measured and written at each scroll event, the
+    // figures were a frame behind the page under the finger (the speed
+    // audit of 2026-11-21, finding 9).
+    let scrolled = 0;
+    const onScroll = () => {
+      if (!scrolled) scrolled = requestAnimationFrame(() => ((scrolled = 0), measure()));
+    };
+    page?.addEventListener("scroll", onScroll, { passive: true });
     const edge = document.querySelector<HTMLElement>(foot);
     if (edge) resized.observe(edge);
     addEventListener("resize", measure);
     return () => {
       resized.disconnect();
-      page?.removeEventListener("scroll", measure);
+      cancelAnimationFrame(scrolled);
+      page?.removeEventListener("scroll", onScroll);
       removeEventListener("resize", measure);
       letGo();
     };
@@ -163,6 +187,12 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
 }
 
 const SHEET = ".group\\/sheet";
+
+/** A custom property set only where it differs: the same value written
+ *  again at every scroll asked the row's style to be worked out again. */
+function setVar(el: HTMLElement, name: string, value: string) {
+  if (el.style.getPropertyValue(name) !== value) el.style.setProperty(name, value);
+}
 
 /** The sheet's offset at each row's last measure (setRoom). */
 const offsetAtMeasure = new WeakMap<HTMLElement, string>();
