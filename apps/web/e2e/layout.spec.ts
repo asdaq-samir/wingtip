@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import {
   closeSidebarWithTheStockKey,
   expectDrawerClosed,
@@ -17,7 +17,6 @@ import {
   frontSheet,
 } from "./helpers";
 import { fromRest } from "./startState";
-import { showPage } from "./oneSearch";
 
 /**
  * The regressions this file exists to catch (see playwright.config.ts
@@ -48,6 +47,9 @@ import { showPage } from "./oneSearch";
  * every test was here the slow ones (the altitude plans, the popups,
  * the worklist, the TAC) fell on the same two shards of eight.
  */
+
+/** FPL's first row, the one a route's link opens the sheet on. */
+const fplHead = (page: Page) => sideDrawer(page).getByTestId("fpl-head");
 
 test.describe("/app/plan", () => {
   // At rest the panel is a pill of the tabs, at the owner's ask ("When no
@@ -83,7 +85,7 @@ test.describe("/app/plan", () => {
       const pill = await sideDrawer(page).evaluate((el) => el.getBoundingClientRect().top);
       const rem = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
       expect((page.viewportSize()?.height ?? 0) - pill).toBeLessThanOrEqual(4.25 * rem + 2);
-    } else await expect(firstRow(page)).toBeVisible();
+    } else await expect(figures).toBeVisible(); // at the capsule FPL's head is not drawn, its figures are the row
     await page.getByTestId("sidebar-trigger-button").click();
     await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
     // The plan, the sheet's main content with a route.
@@ -249,13 +251,14 @@ test.describe("/app/plan", () => {
     await expect(header.getByRole("tablist")).toHaveCount(0);
     const headerBox = (await header.boundingBox())!;
     if (phone) expect(headerBox.y).toBeGreaterThan(viewport.height / 2);
-    // From md up the one search is the panel's first row (OneSearchField)
-    // under its title row (the owner's Apple Maps screenshot, 2026-11-10),
-    // the head under it.
+    // From md up a route's link opens FPL, whose head (FPL's title between
+    // Search and the ✕, the owner, 2026-11-19/20) is the panel's first row,
+    // Search's own row being the pager's other page; the route's head under it.
     else {
-      const bar = (await firstRow(page).boundingBox())!;
+      const bar = (await fplHead(page).boundingBox())!;
       expect(bar.y).toBeLessThan(100);
-      expect(headerBox.y).toBeLessThan(bar.y + bar.height + 8);
+      // The route's head 12 under the row (the sheet's own padding, measured: row ends 72, head starts 84).
+      expect(headerBox.y).toBeLessThan(bar.y + bar.height + 16);
     }
     // The route folded to its one line leads the panel, its departure at its
     // left edge.
@@ -341,7 +344,11 @@ for (const path of PAGES) {
       // With the route FPL is up, its own row Share and the ✕: the account
       // button is Search's.
       await expect(page.getByTestId("account-button")).toBeHidden();
-      await showPage(page, 0);
+      // FPL's Search button opens the search as an ask (its title and ✕, no
+      // account button), so Search's own row is the route-less page's.
+      await page.goto(path);
+      await settle(page);
+      await showTabs(page);
       const row = firstRow(page);
       await expect(row.getByTestId("account-button")).toBeVisible();
       await expect(row.getByTestId("sheet-page-toggle")).toBeVisible();
