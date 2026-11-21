@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { callEngine, engineLoaded, engineReady } from "./engine";
+import fieldStatusCases from "../fixtures/fieldStatus.json";
 import { WEB_RULES } from "./webRules";
 
 describe("the engine, by name", () => {
@@ -47,5 +48,15 @@ describe("the engine, by name", () => {
     const big = Array.from({ length: 5000 }, (_, i) => ({ t: i * 1000, lat: 42 + i / 3600, lon: -88, alt_ft: 3000 }));
     for (let i = 0; i < 20; i++) callEngine("debrief_airborne", { points: big });
     expect(callEngine("debrief_airborne", { points: big })).toEqual([[0, 4999]]);
+  });
+});
+
+// The closed-fields rule (decision 0043) through the web's WebAssembly, held
+// to the cases the engine's own test reads (engine/facade/tests/field_status.rs):
+// a map, a list or a landing site that read the answer wrongly would offer a
+// closed field as an open one.
+describe("the closed-fields rule, by the shared fixture", () => {
+  test.each(fieldStatusCases.cases)("ARPT_STATUS $status", ({ status, open, closed }) => {
+    expect(callEngine("field_status", { status })).toEqual({ open, closed });
   });
 });

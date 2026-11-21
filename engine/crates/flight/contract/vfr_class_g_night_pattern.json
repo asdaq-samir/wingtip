@@ -1,0 +1,92 @@
+{
+  "x-call": "wingtip_flight::special_vfr::call",
+  "description": "14 CFR 91.155(b)(2), Class G's one exception to 91.155(a) for an airplane (eCFR, current on 2026-11-21): below 1,200 ft above the surface (not at it: the table's low row is \"1,200 feet or less\"), at night, in an airport traffic pattern within 1/2 mile of the runway, with the visibility under 3 statute miles but not under 1, the airplane may fly clear of clouds. By day the table's low row already asks 1 sm and clear of clouds (91.155(a)); 91.155(b)(1) is the helicopter's. A visibility not given leaves the other conditions to decide.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "VfrClassGNightPatternInput",
+      "type": "object",
+      "properties": {
+        "class": {
+          "enum": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "G"
+          ]
+        },
+        "agl_ft": {
+          "type": "number",
+          "description": "Feet above the surface."
+        },
+        "night": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "in_pattern": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "In an airport traffic pattern within 1/2 mile of the runway."
+        },
+        "visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Statute miles; null where not known."
+        }
+      },
+      "required": [
+        "class",
+        "agl_ft"
+      ]
+    },
+    "answer": {
+      "title": "VfrClassGNightPatternAnswer",
+      "type": "object",
+      "properties": {
+        "applies": {
+          "type": "boolean"
+        },
+        "visibility_sm": {
+          "type": "number",
+          "description": "The least visibility it asks, 1 sm."
+        },
+        "under_visibility_sm": {
+          "type": "number",
+          "description": "It is for a visibility under this, 3 sm."
+        },
+        "below_agl_ft": {
+          "type": "number",
+          "description": "1,200 ft above the surface."
+        },
+        "words": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "applies",
+        "visibility_sm",
+        "under_visibility_sm",
+        "below_agl_ft",
+        "words",
+        "source"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

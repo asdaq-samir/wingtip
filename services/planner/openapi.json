@@ -13288,10 +13288,33 @@
             "title": "Fuel Arm In",
             "type": "number"
           },
+          "fuel_grade": {
+            "anyOf": [
+              {
+                "enum": [
+                  "avgas",
+                  "jet_a"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Fuel Grade"
+          },
           "fuel_lb_per_gal": {
-            "default": 6.0,
-            "title": "Fuel Lb Per Gal",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Fuel Lb Per Gal"
           },
           "fuel_max_gal": {
             "title": "Fuel Max Gal",

@@ -187,3 +187,9 @@ export async function airportSearch(page: Page) {
   await sheetUpToType(page);
   return search;
 }
+
+/** Past planHistory's SETTLE_MS (1500 ms, hooks/planHistory): changes
+ *  within it are one step to undo, as the page's own settling after a load
+ *  is, so a test's edit that must be a step of its own comes after it, as
+ *  a pilot's does. A window of time is the rule here, so a wait is right. */
+export const pastSettling = (page: Page) => page.waitForTimeout(1600);

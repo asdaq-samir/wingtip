@@ -225,6 +225,36 @@
       }
     },
     {
+      "name": "Class C, asked as C: 3 sm, 500 below, 1,000 above, 2,000 horizontal",
+      "rule": "vfr_minimums",
+      "source": "14 CFR 91.155(a), Class C: \"3 statute miles\", \"500 feet below\", \"1,000 feet above\", \"2,000 feet horizontal\"",
+      "input": { "class": "C", "altitude_ft": 3000 },
+      "want": {
+        "day": { "visibility_sm": 3, "below_ft": 500, "above_ft": 1000, "horizontal_ft": 2000 },
+        "night": { "visibility_sm": 3, "below_ft": 500, "above_ft": 1000, "horizontal_ft": 2000 }
+      }
+    },
+    {
+      "name": "Class G at 10,500 ft MSL but 1,000 ft above high ground: the low row, by day 1 sm and clear of clouds",
+      "rule": "vfr_minimums",
+      "source": "14 CFR 91.155(a), Class G \"1,200 feet or less above the surface (regardless of MSL altitude)\": day \"1 statute mile\", \"Clear of clouds\"; night \"3 statute miles\", 500 below, 1,000 above, 2,000 horizontal",
+      "input": { "class": "G", "altitude_ft": 10500, "agl_ft": 1000 },
+      "want": {
+        "day": { "visibility_sm": 1, "below_ft": null, "above_ft": null, "horizontal_ft": null },
+        "night": { "visibility_sm": 3, "below_ft": 500, "above_ft": 1000, "horizontal_ft": 2000 }
+      }
+    },
+    {
+      "name": "Class G at 9,999 ft MSL, high above the surface: by day 1 sm and the standard cloud distances, by night 3 sm",
+      "rule": "vfr_minimums",
+      "source": "14 CFR 91.155(a), Class G \"More than 1,200 feet above the surface but less than 10,000 feet MSL\": day \"1 statute mile\", night \"3 statute miles\", each 500 below, 1,000 above, 2,000 horizontal",
+      "input": { "class": "G", "altitude_ft": 9999, "agl_ft": 4000 },
+      "want": {
+        "day": { "visibility_sm": 1, "below_ft": 500, "above_ft": 1000, "horizontal_ft": 2000 },
+        "night": { "visibility_sm": 3, "below_ft": 500, "above_ft": 1000, "horizontal_ft": 2000 }
+      }
+    },
+    {
       "name": "Class A: no VFR",
       "rule": "vfr_minimums",
       "source": "14 CFR 91.155(a), Class A: \"Not Applicable\" (flown under IFR, 91.135; from 18,000 ft MSL, 71.33)",

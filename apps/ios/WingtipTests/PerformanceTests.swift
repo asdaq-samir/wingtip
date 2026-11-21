@@ -26,13 +26,17 @@ final class PerformanceTests: XCTestCase {
     func testReadingClearancesThroughTheEngine() throws {
         let options = XCTMeasureOptions()
         options.iterationCount = 5
+        // A reading that fails is counted, not let pass: a reader that
+        // threw at once would otherwise measure as fast.
+        var failed = 0
         measure(metrics: [XCTClockMetric(), XCTMemoryMetric()], options: options) {
             for _ in 0..<200 {
-                for heard in clearances {
-                    _ = try? Engine.callJSON("read_clearance", ["text": heard])
+                for heard in clearances where (try? Engine.callJSON("read_clearance", ["text": heard])) == nil {
+                    failed += 1
                 }
             }
         }
+        XCTAssertEqual(failed, 0, "readings the engine refused")
     }
 
     /// A hold's entry and wind, a thousand times: the figure the holding
@@ -40,11 +44,14 @@ final class PerformanceTests: XCTestCase {
     func testHoldingThroughTheEngine() throws {
         let options = XCTMeasureOptions()
         options.iterationCount = 5
+        var failed = 0
         measure(metrics: [XCTClockMetric()], options: options) {
-            for heading in stride(from: 0, to: 1000, by: 1) {
-                _ = try? Engine.callJSON("holding", ["inbound": 270, "heading": heading % 360, "turns": "right", "tas_kt": 100, "wind_from": 320, "wind_kt": 15])
+            for heading in stride(from: 0, to: 1000, by: 1)
+                where (try? Engine.callJSON("holding", ["inbound": 270, "heading": heading % 360, "turns": "right", "tas_kt": 100, "wind_from": 320, "wind_kt": 15])) == nil {
+                failed += 1
             }
         }
+        XCTAssertEqual(failed, 0, "holds the engine refused")
     }
 
     /// The fields of a box decoded as the map decodes a planner answer,
@@ -57,6 +64,9 @@ final class PerformanceTests: XCTestCase {
         // The answer's shape as Planner.airports decodes it.
         struct Answer: Decodable { let airports: [AirportPin] }
         let decoder = JSONDecoder()
+        // Decoded once outside the measure, so a shape the app no longer
+        // reads fails here rather than measuring a decoder that throws.
+        XCTAssertEqual(try decoder.decode(Answer.self, from: body).airports.count, 1000)
         measure(metrics: [XCTClockMetric(), XCTMemoryMetric()]) {
             for _ in 0..<100 {
                 _ = try? decoder.decode(Answer.self, from: body)

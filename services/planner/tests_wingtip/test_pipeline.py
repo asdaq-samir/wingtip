@@ -1,9 +1,9 @@
 """pipeline.py's actual collect/engineer_features/retrain need live
 network/real data, out of unit-test scope (see docs/CI.md's test suites,
 what is left to the developer) -- this covers the
-pure helper functions around them: the local-vs-remote-path guard, the
-temp-and-rename every output is written through, and SageMaker
-script-mode channel resolution -- and run(), the whole training run, with
+pure helper functions around them (the local-vs-remote-path guard itself
+is test_model_registry's): the temp-and-rename every output is written
+through, and SageMaker script-mode channel resolution -- and run(), the whole training run, with
 its stages stood in for.
 """
 
@@ -12,17 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from wingtip.model_registry import _reject_remote_uri
 from wingtip.pipeline_shared import _ensure_local_dir, _ensure_local_output_dir, _publish
-
-
-def test_reject_remote_uri_rejects_uri_style_paths():
-    with pytest.raises(NotImplementedError):
-        _reject_remote_uri("s3://some-bucket/some-key")
-
-
-def test_reject_remote_uri_allows_local_paths(tmp_path):
-    _reject_remote_uri(tmp_path / "features.parquet")  # must not raise
 
 
 def test_ensure_local_output_dir_creates_the_parent(tmp_path):

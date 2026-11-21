@@ -36,6 +36,15 @@ test("the dry run's map follows its airplane at one steady pace, each fix's ease
   expect(moves.length).toBeGreaterThan(4);
   // Every one the run's own, a linear ease.
   expect(moves.filter((m) => m.intent !== "dry-run" || m.call !== "easeTo" || !m.linear)).toEqual([]);
-  // Each begun as the last was due to end, not part way through it.
-  for (let i = 1; i < moves.length; i++) expect(moves[i]!.t - moves[i - 1]!.t).toBeGreaterThan(0.6 * moves[i - 1]!.duration!);
+  // Each begun as the last was due to end, not part way through it: FL-13's
+  // eases began at half their length, every one of them. Taken as the
+  // run's middle pace, not its least: each ease is logged on the frame
+  // after its fix, and on CI's two cores one late frame put the next
+  // ease's log at 217 ms of a 412 ms ease (this spec on the Mac at
+  // --cpus=2, 1 run of 3), the run's pace as it should be either side.
+  const share = moves
+    .slice(1)
+    .map((m, i) => (m.t - moves[i]!.t) / moves[i]!.duration!)
+    .sort((a, b) => a - b);
+  expect(share[Math.floor(share.length / 2)]).toBeGreaterThan(0.8);
 });

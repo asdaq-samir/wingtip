@@ -147,6 +147,26 @@ fn leaving_the_clearance_limit_at_the_efc_else_the_eta() {
     assert!(lost_comms::leave_limit(false, "1420Z", "").contains("Leave the clearance limit at the expect-further-clearance time, 1420Z"));
 }
 
+/// The shared fixture the web's and the iPhone's lost-comms pages are held
+/// to (apps/web/src/lib/fixtures/lostComms.json), held here too, through
+/// `call` as every host asks: 91.185(c)(1)'s routes in order, and (c)(3)'s
+/// leaving the clearance limit at the EFC, else the ETA. No engine test
+/// read it before, so a change of the rule's words reached only the apps.
+#[test]
+fn the_shared_lost_comms_fixture() {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures/lostComms.json");
+    let fixture: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+    let ask =
+        |input: Value| -> Value { serde_json::from_str(&wingtip_engine::call::call("lost_comms", &input.to_string()).unwrap()).unwrap() };
+    assert_eq!(ask(serde_json::json!({ "segments": [] }))["routes"], fixture["routes"]);
+    let cases = fixture["leaveLimit"].as_array().unwrap();
+    assert!(!cases.is_empty());
+    for case in cases {
+        let input = serde_json::json!({ "segments": [], "approach_fix": case["approachFix"], "efc": case["efc"], "eta": case["eta"] });
+        assert_eq!(ask(input)["leave"], case["words"], "{case}");
+    }
+}
+
 #[test]
 fn the_lost_comms_answer() {
     let d: Value = serde_json::from_str(&lost_comms::lost_comms_json(

@@ -98,7 +98,9 @@ test("the route's box is round, one line tall for a short route and the panel's 
   const first = page.getByRole("option").first();
   await expect(first).toContainText("KMSN", { timeout: slow(10000) });
   await answer;
-  await page.waitForTimeout(300);
+  // The rows the planner's answer, not the airports' copy: the list says
+  // so (AirportResults' aria-busy, `answered`), rather than a fixed wait.
+  await expect(first.locator("xpath=ancestor::*[@aria-busy][1]")).toHaveAttribute("aria-busy", "false");
   await field.press("Enter");
   await expect(page).toHaveURL(stopsAre("KMSN"));
   await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);

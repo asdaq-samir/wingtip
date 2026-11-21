@@ -54,7 +54,10 @@ def test_reject_remote_uri_rejects_uri_style_paths():
 
 
 def test_reject_remote_uri_allows_local_paths(tmp_path):
-    _reject_remote_uri(tmp_path / "candidate")  # must not raise
+    # A local path, as a Path or as text, passes the guard untouched: it
+    # raises for a URI only.
+    assert _reject_remote_uri(tmp_path / "candidate") is None
+    assert _reject_remote_uri(str(tmp_path / "features.parquet")) is None
 
 
 def test_promote_rejects_a_remote_current_dir(tmp_path):

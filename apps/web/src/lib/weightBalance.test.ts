@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import c172Json from "../../../../data/aircraft/c172.json?raw";
 import type { Loading } from "./api/types";
 import { balance, defaultLoad } from "./weightBalance";
+import { callEngine, type EngineInput } from "./engine/engine";
+import wb from "./fixtures/weightBalance.json";
 
 // The stock profile itself (data/aircraft), the 172S's POH figures in it.
 const c172 = JSON.parse(c172Json);
@@ -26,5 +28,18 @@ describe("weight and balance, the 172S's", () => {
 
   it("the default load is the sample airplane and a pilot", () => {
     expect(defaultLoad(loading, 40)).toEqual({ emptyWeightLb: 1642, emptyArmIn: 38.12, stationsLb: [170, 0, 0, 0], fuelGal: 40 });
+  });
+});
+
+// The shared cases (fixtures/weightBalance.json), a made-up POH-style
+// loading, not any real airplane's, which the engine's own test holds it
+// to as well.
+describe("weight and balance, the shared cases", () => {
+  it.each(wb.gonogo_balance)("$about", ({ input, answer }) => {
+    expect(callEngine("gonogo_balance", input as unknown as EngineInput<"gonogo_balance">)).toEqual(answer);
+  });
+
+  it.each(wb.gonogo_default_load)("$about", ({ input, answer }) => {
+    expect(callEngine("gonogo_default_load", input as unknown as EngineInput<"gonogo_default_load">)).toEqual(answer);
   });
 });

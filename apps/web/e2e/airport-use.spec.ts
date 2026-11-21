@@ -56,13 +56,24 @@ test("a private field's card says permission is required, how old the owner's ow
   });
 });
 
-test("a field NASR lists as closed says so on its card, where a private field's line would be, and is never flown to", async ({ page }) => {
-  // 00MO, Cooper Flying Service: ARPT_STATUS CI in cycle 2026-10-29. Never
-  // offered to land at: neither flown to nor added as a stop.
-  await page.goto("/app/plan?place=00MO");
-  await expect(card(page).getByTestId("place-kind")).toHaveText("Closed indefinitely", { timeout: slow(15000) });
-  await expect(card(page).getByTestId("fly-here")).toBeDisabled();
-});
+test(
+  "a field NASR lists as closed says so on its card, where a private field's line would be, and is never flown to",
+  // The hard rule of decision 0043, run with the smoke set on main's push.
+  { tag: "@smoke" },
+  async ({ page }) => {
+    // 00MO, Cooper Flying Service: ARPT_STATUS CI in cycle 2026-10-29. Never
+    // offered to land at: neither flown to nor added as a stop.
+    await page.goto("/app/plan?place=00MO");
+    await expect(card(page).getByTestId("place-kind")).toHaveText("Closed indefinitely", { timeout: slow(15000) });
+    await expect(card(page).getByTestId("fly-here")).toBeDisabled();
+    // With a route, its Add Stop greyed, saying why (PlaceActions).
+    await page.goto("/app/plan?dep=KMSN&dest=KOSH&place=00MO");
+    await expect(card(page).getByTestId("place-kind")).toHaveText("Closed indefinitely", { timeout: slow(15000) });
+    const addStop = card(page).getByTestId("place-add-stop");
+    await expect(addStop).toBeDisabled();
+    await expect(addStop).toHaveAccessibleName(/Closed indefinitely/);
+  },
+);
 
 test("a heliport's card says Heliport beside who may land there", async ({ page }) => {
   // The planner's site_type, the engine's words for NASR's SITE_TYPE_CODE H

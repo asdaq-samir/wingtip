@@ -6,7 +6,8 @@
 #
 #   always   the paths filter is scripts/areas.yml's, no aviation rule
 #            outside the engine, the legal pages, every test in one tier
-#            (and CI's tiers in shape), warnings fatal, the workflows'
+#            (and CI's tiers in shape), every test asserting and none
+#            skipped without a condition, warnings fatal, the workflows'
 #            rules, the Markdown's links, the web's engine rules
 #            (scripts/build/web_rules.py), ruff over every Python suite
 #            and the Python's layout
@@ -175,6 +176,7 @@ if part repo; then
   start "Rules boundary" python3 scripts/ci/rules_boundary.py
   start "Legal pages" scripts/build/legal_pages.py --check
   start "Test tiers" python3 scripts/ci/test_tiers.py
+  start "Test assertions" python3 scripts/ci/test_assertions.py
   start "Warnings fatal" python3 scripts/ci/warnings_fatal.py
   start "Workflow rules" python3 scripts/ci/workflow_rules.py
   start "Doc links" scripts/ci/check_links.sh

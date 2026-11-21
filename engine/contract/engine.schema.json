@@ -28315,6 +28315,186 @@
       ],
       "additionalProperties": false
     },
+    "special_vfr": {
+      "description": "14 CFR 91.157's special VFR for an airplane (eCFR, current on 2026-11-21): within the surface area of an airport's Class B, C, D or E airspace and below 10,000 ft MSL (91.157(a)), never at the airports of part 91 appendix D, section 3 (fixed-wing special VFR prohibited: O'Hare, LaGuardia and 31 more, by FAA or ICAO ident); with an ATC clearance, clear of clouds and at least 1 statute mile flight visibility (91.157(b)(1)-(3)); between sunset and sunrise (in Alaska, the sun more than 6 degrees below the horizon) only for a pilot meeting part 61's requirements for instrument flight in an airplane equipped as 91.205(d) asks (91.157(b)(4)); and to take off or land, at least 1 sm ground visibility, or flight visibility where none is reported (91.157(c)). `available` is false where anything known rules it out (each in `problems`); what is not given rules nothing out and stays in `needs`, never said to be met.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "SpecialVfrInput",
+          "type": "object",
+          "properties": {
+            "surface_area": {
+              "enum": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "E",
+                "G",
+                null
+              ],
+              "description": "The class of the surface area the airplane is in (controlled airspace designated to the surface for an airport); null or G where it is in none."
+            },
+            "airport": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The surface area's primary airport, FAA or ICAO ident, for appendix D, section 3."
+            },
+            "altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Feet MSL; null where not known."
+            },
+            "night": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Between sunset and sunrise; null where not known."
+            },
+            "alaska": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "In Alaska, where 91.157(b)(4) reads the sun's elevation."
+            },
+            "sun_elevation_deg": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The sun's elevation, degrees (negative below the horizon); read in Alaska alone."
+            },
+            "instrument_current": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "The pilot meets part 61's requirements for instrument flight (rated, and current under 61.57(c))."
+            },
+            "ifr_equipped": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "The airplane is equipped as 91.205(d) asks for IFR."
+            },
+            "flight_visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Statute miles."
+            },
+            "ground_visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Statute miles, as reported at the airport; null where none is."
+            },
+            "clear_of_clouds": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Whether the flight can keep clear of clouds."
+            },
+            "takeoff_or_landing": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Taking off or landing under special VFR (91.157(c))."
+            }
+          }
+        },
+        "answer": {
+          "title": "SpecialVfrAnswer",
+          "type": "object",
+          "properties": {
+            "available": {
+              "type": "boolean",
+              "description": "Nothing known rules special VFR out."
+            },
+            "problems": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "words": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string",
+                    "description": "The rule, \"14 CFR 91.157(b)(3)\"."
+                  }
+                },
+                "required": [
+                  "words",
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              "description": "What rules it out, each with its rule."
+            },
+            "needs": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "words": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string",
+                    "description": "The rule, \"14 CFR 91.157(b)(3)\"."
+                  }
+                },
+                "required": [
+                  "words",
+                  "source"
+                ],
+                "additionalProperties": false
+              },
+              "description": "What it asks, each with its rule."
+            },
+            "listed": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The airport's entry in part 91 appendix D, section 3, \"Chicago, IL (Chicago-O'Hare International Airport)\"; null where it is not listed."
+            },
+            "visibility_sm": {
+              "type": "number"
+            },
+            "below_msl_ft": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "available",
+            "problems",
+            "needs",
+            "listed",
+            "visibility_sm",
+            "below_msl_ft"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "squawk_meaning": {
       "description": "What a squawk says, where it says more than a code: 7500 unlawful interference (AIM 6-3-4), 7600 two-way radio failure (AIM 6-4-2), 7700 an emergency (AIM 6-2-2); null for any other.",
       "type": "object",
@@ -30385,6 +30565,97 @@
       ],
       "additionalProperties": false
     },
+    "vfr_class_g_night_pattern": {
+      "description": "14 CFR 91.155(b)(2), Class G's one exception to 91.155(a) for an airplane (eCFR, current on 2026-11-21): below 1,200 ft above the surface (not at it: the table's low row is \"1,200 feet or less\"), at night, in an airport traffic pattern within 1/2 mile of the runway, with the visibility under 3 statute miles but not under 1, the airplane may fly clear of clouds. By day the table's low row already asks 1 sm and clear of clouds (91.155(a)); 91.155(b)(1) is the helicopter's. A visibility not given leaves the other conditions to decide.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "VfrClassGNightPatternInput",
+          "type": "object",
+          "properties": {
+            "class": {
+              "enum": [
+                "A",
+                "B",
+                "C",
+                "D",
+                "E",
+                "G"
+              ]
+            },
+            "agl_ft": {
+              "type": "number",
+              "description": "Feet above the surface."
+            },
+            "night": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "in_pattern": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "In an airport traffic pattern within 1/2 mile of the runway."
+            },
+            "visibility_sm": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Statute miles; null where not known."
+            }
+          },
+          "required": [
+            "class",
+            "agl_ft"
+          ]
+        },
+        "answer": {
+          "title": "VfrClassGNightPatternAnswer",
+          "type": "object",
+          "properties": {
+            "applies": {
+              "type": "boolean"
+            },
+            "visibility_sm": {
+              "type": "number",
+              "description": "The least visibility it asks, 1 sm."
+            },
+            "under_visibility_sm": {
+              "type": "number",
+              "description": "It is for a visibility under this, 3 sm."
+            },
+            "below_agl_ft": {
+              "type": "number",
+              "description": "1,200 ft above the surface."
+            },
+            "words": {
+              "type": "string"
+            },
+            "source": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "applies",
+            "visibility_sm",
+            "under_visibility_sm",
+            "below_agl_ft",
+            "words",
+            "source"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "vfr_floors": {
       "description": "The VFR floor of each piece of the route between consecutive breaks: the ground plus 1,000 ft, or a DOF obstacle's top plus 14 CFR 91.119's clearance where it stands (1,000 ft over a congested area, (b); 500 elsewhere, (c); 1,000 where the towns are not known), rounded up to the next 100 ft; with 91.119's own minimum under it.",
       "type": "object",
@@ -32067,6 +32338,7 @@
     "solo_standing",
     "solo_xc_determinations",
     "special_use_tab",
+    "special_vfr",
     "squawk_meaning",
     "strip_fuel",
     "sua_altitudes",
@@ -32097,6 +32369,7 @@
     "vfr_altitudes",
     "vfr_at_hours",
     "vfr_basic_minimums",
+    "vfr_class_g_night_pattern",
     "vfr_floors",
     "vfr_minimums",
     "vfr_not_recommended_reasons",
@@ -35439,7 +35712,15 @@
             "number",
             "null"
           ],
-          "description": "6 where not given, avgas's standard (FAA-H-8083-1B)."
+          "description": "The airplane's handbook's figure; where null or not given, its fuel_grade's standard weight: avgas 6, Jet A 6.8 lb a US gallon (FAA-H-8083-25, chapter 10), avgas where no grade is given."
+        },
+        "fuel_grade": {
+          "enum": [
+            "avgas",
+            "jet_a",
+            null
+          ],
+          "description": "The fuel the airplane burns, for its standard weight where its handbook gives none."
         },
         "start_taxi_fuel_lb": {
           "type": [
