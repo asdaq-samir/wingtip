@@ -39,7 +39,13 @@ final class SheetPageToggleTests: XCTestCase {
         toggle.tap()
         XCTAssertTrue(app.textFields["To"].waitForExistence(timeout: 10), "the toggle did not go to FPL")
         XCTAssertEqual(toggle.label, "Show search")
-        XCTAssertFalse(search.exists && search.isHittable, "the search's row is still on the FPL page")
+        if CardTests.split {
+            // The iPad's sidebar has the height for both: the one search
+            // stays at its top over FPL (PlanSheet; docs/design/ios.md §16).
+            XCTAssertTrue(search.isHittable, "the sidebar's search left the FPL page")
+        } else {
+            XCTAssertFalse(search.exists && search.isHittable, "the search's row is still on the FPL page")
+        }
 
         toggle.tap()
         XCTAssertTrue(search.waitForExistence(timeout: 10) && search.isHittable, "the toggle did not come back to Search")
@@ -48,7 +54,13 @@ final class SheetPageToggleTests: XCTestCase {
         let threeD = app.buttons["map-3d"]
         XCTAssertTrue(threeD.exists, "no 3D button")
         XCTAssertLessThan(threeD.frame.maxY, toggle.frame.minY, "the toggle is not under the 3D")
-        XCTAssertLessThan(toggle.frame.midX, app.frame.width / 2, "the toggle is not at the left")
+        if CardTests.split {
+            // Beside the iPad's sidebar, under the map's buttons at the top
+            // right (docs/design/rules.md §7).
+            XCTAssertGreaterThan(toggle.frame.midX, app.frame.width / 2, "the toggle is not at the right")
+        } else {
+            XCTAssertLessThan(toggle.frame.midX, app.frame.width / 2, "the toggle is not at the left")
+        }
     }
 
     @MainActor
@@ -110,8 +122,12 @@ final class SheetPageToggleTests: XCTestCase {
         let fuel = app.buttons["find-nearby-fuel"]
         CardTests.scrollTo(fuel, in: app)
         fuel.tap()
-        let close = CardTests.close(app)
-        XCTAssertTrue(close.waitForExistence(timeout: 10), "the Stops did not open")
+        // A list is a page on the iPad's sidebar stack, its way back its
+        // Back (CardTests.away), where the iPhone's card has its close.
+        let stops = CardTests.card(app, "card-list")
+        XCTAssertTrue(stops.waitForExistence(timeout: 10), "the Stops did not open")
+        let close = CardTests.away(app, from: stops)
+        XCTAssertTrue(close.waitForExistence(timeout: 10), "the Stops have no way back")
         close.tap()
         XCTAssertEqual(toggle(app).label, "Show flight plan", "the Stops' close did not come back to Search")
     }
@@ -144,17 +160,24 @@ final class SheetPageToggleTests: XCTestCase {
         // the toggle is reached once the keyboard is down again.
         search.tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "the search field is not focused")
-        // The focused field's own button, no identifier of its own: Cancel
-        // up to iOS 26, Close (an ✕) on iOS 27.
-        app.buttons.matching(NSPredicate(format: "identifier == '' AND (label == 'Cancel' OR label == 'Close')")).firstMatch.tap()
-        // The keyboard down and the sheet at rest before the toggle: iOS 27
-        // brings the sheet down from full after the field's Close, and
-        // until it has the map's buttons, the toggle with them, are faded.
-        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "Close left the keyboard up")
-        CardTests.settled(toggle(app))
-        if !toggle(app).isHittable {
-            CardTests.drag(CardTests.grabber(app), in: app, to: CGVector(dx: 0.5, dy: 0.55))
+        // On the iPad the toggle stays at the map's top right beside the
+        // sidebar, in reach with the keyboard up: the pilot turns the page
+        // straight from the focused field. On the iPhone the sheet is up
+        // over the faded buttons until the field is left.
+        if !CardTests.split {
+            // The focused field's own button, no identifier of its own:
+            // Cancel up to iOS 26, Close (an ✕) on iOS 27.
+            app.buttons.matching(NSPredicate(format: "identifier == '' AND (label == 'Cancel' OR label == 'Close')")).firstMatch.tap()
+            // The keyboard down and the sheet at rest before the toggle:
+            // iOS 27 brings the sheet down from full after the field's
+            // Close, and until it has the map's buttons, the toggle with
+            // them, are faded.
+            XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "Close left the keyboard up")
             CardTests.settled(toggle(app))
+            if !toggle(app).isHittable {
+                CardTests.drag(CardTests.grabber(app), in: app, to: CGVector(dx: 0.5, dy: 0.55))
+                CardTests.settled(toggle(app))
+            }
         }
         toggle(app).tap()
         XCTAssertEqual(toggle(app).label, "Show search")
@@ -179,6 +202,10 @@ final class SheetPageToggleTests: XCTestCase {
 
     @MainActor
     func testAnUpOrDownDragStillSizesTheSheetOnBothPages() throws {
+        // The sheet is the iPhone's: the iPad's plan is in the sidebar, with
+        // no sheet to size (docs/design/ios.md §16: "Avoid: a sheet over
+        // the map on regular width").
+        if CardTests.split { throw XCTSkip("Not on an iPad, whose sidebar holds the plan with no sheet") }
         let app = launch()
         let grabber = CardTests.grabber(app)
         let toggle = toggle(app)

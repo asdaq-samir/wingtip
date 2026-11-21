@@ -15,8 +15,14 @@ final class CardSmokeTests: XCTestCase {
         let shown = CardTests.card(app, "card-airport")
         XCTAssertTrue(shown.waitForExistence(timeout: 20), "the airport card did not open")
         let search = app.searchFields[CardTests.searchPrompt]
-        XCTAssertFalse(search.exists && search.isHittable, "the search is still in reach over the card")
-        for _ in 0..<4 { app.swipeUp() }
+        // Over the search on the iPhone; on the iPad the card is in the
+        // inspector beside it, the one search at the sidebar's top
+        // (docs/design/ios.md §16), and swiped on itself, the screen's
+        // middle being the map.
+        if !CardTests.split {
+            XCTAssertFalse(search.exists && search.isHittable, "the search is still in reach over the card")
+        }
+        for _ in 0..<4 { (CardTests.split ? shown : app as XCUIElement).swipeUp() }
         let close = CardTests.close(app)
         XCTAssertTrue(close.waitForExistence(timeout: 10) && close.isHittable, "the close scrolled away")
         XCTAssertGreaterThan(close.frame.midX, app.frame.midX, "the close is not at the right")
