@@ -59,17 +59,34 @@ export interface TimelinePoint {
  * there are more options", "I meant replace the plane icon with three
  * dots"); its colour still the field's flight category. A hold on the
  * line stays the row's lift to move it (RouteGrid).
+ *
+ * The fills that change with the scheme are a filled button's (My
+ * Location the --primary with its own --primary-foreground, as a picked
+ * runway's chip is, GLASS_PICKED) or carry their glyph in the ground's
+ * colour, as a badge's figure is (TabCount): at night the tint, the red
+ * and the grey are light, and a white glyph on them read 2.5:1 and less,
+ * under WCAG 1.4.11's 3:1 for a graphic (the HIG review, 2026-11-21:
+ * Add a Stop's + on the night's tint, 2.49:1). A flight category's
+ * colour is the same at night, its glyph white.
  */
 export function TimelineMark({ point, position }: { point: TimelinePoint; position: boolean }) {
   const Glyph = point.problem ? X : position ? Navigation : !point.field ? Triangle : point.fuelStop ? Fuel : Ellipsis;
   return (
     <span
       className={cn(
-        "grid size-8 place-items-center rounded-full text-white",
-        point.problem ? "bg-destructive" : position ? "bg-tint" : !point.field && "bg-muted-foreground",
+        "grid size-8 place-items-center rounded-full",
+        point.problem
+          ? "bg-destructive text-background"
+          : position
+            ? "bg-primary text-primary-foreground"
+            : !point.field || !point.category
+              ? "bg-muted-foreground text-background"
+              : "text-white",
       )}
-      // The category's colour from the map's own scale (flightCategory).
-      style={point.field && !point.problem && !position ? { backgroundColor: colourOf(point.category) } : undefined}
+      // The category's colour from the map's own scale (flightCategory). With
+      // no report, the text's grey, as a waypoint's: on the map's own grey
+      // (CATEGORY_UNKNOWN) the white "•••" read 2.6:1 by day and night.
+      style={point.field && point.category && !point.problem && !position ? { backgroundColor: colourOf(point.category) } : undefined}
       data-testid={point.fuelStop ? "timeline-fuel" : undefined}
     >
       <Glyph className="size-4" strokeWidth={2.4} aria-label={point.fuelStop ? "fuel stop" : undefined} aria-hidden={!point.fuelStop} />
@@ -182,7 +199,11 @@ export function TimelineLine({
         {(!last || after.length > 0) && <span aria-hidden="true" className={TIMELINE_THREAD} />}
       </span>
       <div className={cn("min-w-0 flex-1", TIMELINE_END, (!first || before.length > 0) && "border-t border-border")}>
-        <div className="relative flex min-h-11 min-w-0 items-center gap-2 py-0.5">
+        {/* Wrapping where the ident, its fuel and its time do not fit on one
+            line, the time going under them at the right: at the owner's
+            19.65 px on a 375-point phone KDEN's ident was cut to "KD…" by
+            "−26 gal" and "21:48 MST" (the HIG review, 2026-11-21). */}
+        <div className="relative flex min-h-11 min-w-0 flex-wrap items-center gap-x-2 py-0.5">
           {opens && (
             <CollapsibleTrigger
               render={
@@ -261,7 +282,7 @@ export function TimelineLine({
             tank && <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />
           )}
           <span className="flex-1" />
-          <span className={cn("relative z-10 shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">
+          <span className={cn("relative z-10 ml-auto shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">
             {point.time}
           </span>
           {/* No chevron at its end (the owner, 2026-11-19: "Also remove

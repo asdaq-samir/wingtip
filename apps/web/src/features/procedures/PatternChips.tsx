@@ -203,8 +203,12 @@ export function PatternChips({
             {FOLDED_ARROW}
           </ToggleGroupItem>
         </ToggleGroup>
+        {/* Each pull-down wrapping on its own where the two do not fit beside
+            each other: held as one block, KDEN's "+ ARR" and "+ APCH" ran
+            past the card's edge, "+ APCH" cut, on a 375-point phone at the
+            owner's 19.65 px (the HIG review, 2026-11-21). */}
         {trailing && (
-          <div ref={after} className="flex shrink-0 items-center gap-2">
+          <div ref={after} className="flex max-w-full min-w-0 flex-wrap items-center gap-2">
             {trailing}
           </div>
         )}
