@@ -61,6 +61,16 @@ export const RADAR_FRAMES: RuntimeCaching = {
   },
 };
 
+/** The documents library's books (features/documents): read by the reader
+ *  a range at a time, and kept for the air, where the pilot asks, in its
+ *  own store on the device. Never through the worker's caches, which
+ *  would download a whole handbook behind the reader's first look at its
+ *  length. Before the planner's rules, which would take it. */
+export const LIBRARY_BOOKS: RuntimeCaching = {
+  urlPattern: ({ url }) => url.pathname.startsWith("/api/planner/library/") && url.pathname.endsWith(".pdf"),
+  handler: "NetworkOnly",
+};
+
 export const IN_FLIGHT_READS: RuntimeCaching = {
   // The same in flight (the page's X-Wingtip-Flying, lib/api/client):
   // four seconds for the network, not fifteen, before the last

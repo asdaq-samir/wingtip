@@ -175,6 +175,9 @@ export const addressParsers = {
   navaid: navaidAt,
   // A fix's, a VFR waypoint's or an airspace volume's card (markAt).
   mark: markAt,
+  // A document open in the reader and where in it (features/documents'
+  // docPlace: "aim@7-1-5", "phak@p42", "own:<id>"); checked there.
+  doc: parseAsString,
   // Read once and taken off: a screen a link opens (`open`,
   // lib/navigation's SCREEN_LINK), favorites a link brings, a sign-in the
   // gateway refused.

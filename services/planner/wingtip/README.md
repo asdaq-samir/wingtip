@@ -164,6 +164,7 @@ Grouped by what they are for, not alphabetically.
 | `chart_masked_lines.py` | Carrying a found band on, giving it the tint of the chart around it, and writing the sheet back (`remove_masked_lines`); reached through `chart_faces`. |
 | `osm.py` | Overpass API, for candidate landmarks. |
 | `faa_data.py` | NASR airports/navaids and the Digital Obstacle File. |
+| `library.py`, `library_catalog.py`, `ecfr.py` | The documents library: the shelf of the FAA's books, the AIM, the circulars and the CFR parts a pilot reads (named as the engine's `citations` names them), each source's current edition found (an FAA page's link, the eCFR's issue date) and fetched once a day into `data/raw/library`, a CFR part read as its sections. |
 | `weather.py` | Winds aloft (one small request), and METARs/TAFs/SIGMETs from aviationweather.gov's cache files -- the whole national dataset every five minutes, not a query per route. |
 | `airspace.py` | FAA Class B/C/D shapefiles, parsed once per 28-day cycle into a WKB cache beside them. |
 | `elevation.py` | USGS 3DEP point elevations. |

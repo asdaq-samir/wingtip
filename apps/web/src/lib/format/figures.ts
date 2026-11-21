@@ -188,3 +188,10 @@ export function hundreds(ft: number): string {
 export function knots(kt: number | null | undefined): string {
   return kt === null || kt === undefined ? "—" : `${Math.round(kt)} kt`;
 }
+
+/** A download's size: "3 MB", "0.4 MB" (Keep for the Air's toast, the
+ *  documents library's rows). */
+export function megabytes(bytes: number): string {
+  const mb = bytes / 1e6;
+  return `${mb >= 1 ? Math.round(mb) : Math.max(0.1, Math.round(mb * 10) / 10)} MB`;
+}

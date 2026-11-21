@@ -25,7 +25,7 @@ from wingtip import (
     water,
     weather,
 )
-from wingtip import airspace_at, chart_serving, congested, cycle_pack, data_cycles, phone_pack, procedures, schedule
+from wingtip import airspace_at, chart_serving, congested, cycle_pack, data_cycles, library, phone_pack, procedures, schedule
 from wingtip import airports as airport_table
 
 from . import chart_model, chart_refresh
@@ -52,6 +52,12 @@ FAA_DATA_AUTO_REFRESH = get_settings().faa_data_auto_refresh
 #: planner holds, once a cycle: on, but on a test stack, which reads the
 #: files themselves and need not write 400 MB a run.
 CYCLE_PACK = get_settings().cycle_pack
+#: Whether the documents library's publications are fetched here
+#: (wingtip.library): on, but on a test stack, whose suite stubs them.
+FAA_LIBRARY_REFRESH = get_settings().faa_library_refresh
+#: How often the library's sources are looked at for a new edition: the
+#: eCFR is issued each working day, the FAA's books a few times a year.
+LIBRARY_CHECK_EVERY_S = 24 * 3600
 # Set once the reference data below is loaded: the health probe reports
 # it, so a test run against a fresh stack can wait for a planner that
 # answers at full speed rather than one still parsing airspace under its first requests.
@@ -164,6 +170,9 @@ def _schedule_checks(on: BaseScheduler) -> None:
     # nothing.
     if REGISTRY_REFRESH:
         schedule.every(on, EDITIONS_CHECK_EVERY_S, registry.refresh, name="aircraft-registry")
+    # The documents library (wingtip.library), now and once a day.
+    if FAA_LIBRARY_REFRESH:
+        schedule.every(on, LIBRARY_CHECK_EVERY_S, library.refresh, name="faa-library")
     # The chart cycle, an hour from now: the warm-up has just checked it.
     schedule.every(on, chart_refresh.CHECK_EVERY_S, check_chart_cycle, name="chart-cycle", now=False)
 

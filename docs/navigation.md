@@ -91,6 +91,7 @@ Android, the address on the web) or `wingtipmaps://plan?open=<id>` from another 
 | `logbook` | Logbook | yes | yes | yes | The pilot's logbook and currency. |
 | `coach` | Coach | yes | yes | yes | The training coach. |
 | `minimums` | Personal Minimums | yes | yes | yes | The weather the pilot will not take off or land in. |
+| `documents` | Documents | yes | -- | -- | The documents library: the FAA's regulations, AIM, handbooks and circulars in their current editions, and the pilot's own PDFs on the device; a cited rule anywhere opens it at its paragraph. |
 | `guide` | Guide | yes | yes | -- | How the app works, and the practice drills. |
 | `downloads` | Downloads | -- | yes | yes | Charts kept for flying with no signal. |
 | `passengers` | Passenger Briefing | -- | yes | yes | The passenger briefing. |
@@ -215,7 +216,8 @@ list is where it was.
 | Map card (was the Map menu) | Map button | 1 | A card in the sheet over the search, as Apple Maps' Choose Map card (the owner, 2026-11-10): the charts as picture tiles (a tap applies), then the weather, the base map ("Overlay" until 2026-11-14), every switch and the alerts in place; its ✕ goes back to the sheet as it was; its Search row focuses the search |
 | Emergency assistant | Flying head; voice; search → Do → Emergency Assistant | 1 in flight, **2** on the ground | Its frequencies copy; the one full-height card, ✕ top right, nothing dimmed |
 | Settings (was Account and Settings, Setup) | account button (the page itself, no menu: the owner, 2026-11-10) | 1 → 2 → **1** | Layout tiles in place; covers the title row and the search, its ✕ back |
-| Airplanes, Flights, Logbook, Minimums, Checklists, Coach, Practice | account button → row on the page | 2 | Minimums inline; logbook entry edited in the row, delete with an Undo row; airplane in a popover form |
+| Airplanes, Flights, Logbook, Minimums, Documents, Checklists, Coach, Practice | account button → row on the page | 2 | Minimums inline; logbook entry edited in the row, delete with an Undo row; airplane in a popover form |
+| Documents (new, 2026-11-21) | account button → Documents; the search's Do ("documents"); a cite tapped anywhere (the Brief's why, an airspace card's entry rules) opens the reader at its paragraph | 2; a cite **1** | Own PDFs added, renamed in the row, deleted with an Undo; Keep for the Air at each row's end; the reader's bookmarks and its page left at kept on the device; `?doc=` (`aim@7-1-5`, `cfr-14-91@91.155`, `phak@p42`) opens the reader from a link, a web-only address key until the phones follow (decision 0038) |
 | Status, Guide, About | account button → row on the page; About also the map's or the search page's Legal | 3 → **2** | -- |
 | Checkride, Instructing | account button → Logbook → row | 3 | Checkride inline |
 | Squawks | account button → Airplanes → airplane → row | 4 | Squawks inline |

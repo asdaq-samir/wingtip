@@ -167,6 +167,9 @@ class Settings(BaseSettings):
     #: Whether the planner fetches a new edition of the FAA's NASR files and
     #: obstacle file on its own (0 on a test stack): on in production, whatever the charts do.
     faa_data_auto_refresh: bool = True
+    #: Whether the documents library's FAA publications and CFR parts are
+    #: fetched here once a day (wingtip.library; 0 on a test stack).
+    faa_library_refresh: bool = True
     #: The "HH:MM-HH:MM" window a cycle's render may start in, or blank for any time.
     charts_refresh_window: str = "01:00-06:00"
     #: How many render processes the charts job's run of a cycle gets (compose passes it to both).
@@ -230,6 +233,7 @@ class Settings(BaseSettings):
         "charts_auto_refresh",
         "crash_leads_auto",
         "faa_data_auto_refresh",
+        "faa_library_refresh",
         "chart_reads_in_process",
         "charts_cycle_auto",
         mode="before",

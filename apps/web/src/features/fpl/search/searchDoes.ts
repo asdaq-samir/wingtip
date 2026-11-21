@@ -32,6 +32,7 @@ const OFFERED: ScreenId[] = [
   "checklists",
   "airplanes",
   "logbook",
+  "documents",
   "coach",
   "minimums",
   "guide",

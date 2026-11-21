@@ -116,6 +116,10 @@ export type PlateOverlay = Schemas["PlateOverlay"];
 export type PlateGeoreference = Schemas["PlateGeoreference"];
 export type ProcedureFix = Schemas["ProcedureFix"];
 export type ChartPages = Schemas["ChartPages"];
+/** The documents library (features/documents): the shelf, a document, a CFR part. */
+export type Library = Schemas["Library"];
+export type LibraryDocument = Schemas["LibraryDocument"];
+export type CfrText = Schemas["CfrText"];
 export type ClearanceAsk = Schemas["ClearanceAsk"];
 export type ClearancePlaces = Schemas["ClearancePlaces"];
 /** "When should I go?": the hours and the windows (app.window). */
