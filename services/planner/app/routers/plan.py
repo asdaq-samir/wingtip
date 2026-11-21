@@ -26,7 +26,7 @@ from wingtip.engine import ask as engine
 from wingtip.planning import route_line
 from wingtip.profile import route_profile as side_view
 
-from .. import chart_model, cycle_in_address, foreflight, prefetch
+from .. import chart_model, cycle_in_address, foreflight, fuel_replan, prefetch
 from ..route_way import load_way
 from ..router_basics import load_route
 from ..schemas.plan import Checkpoints, Course, Plan, RouteProfile, Totals
@@ -196,7 +196,8 @@ def plan(q: Annotated[PlanQuery, Depends()]) -> Plan:
         candidates=scored,
         selected=selected,
         legs=leg_list,
-        totals=fp.totals_of(r, runs, outcome, asked),
+        # Its fuel stops checked by planning the route with them in.
+        totals=fuel_replan.checked(q, asked, fp.totals_of(r, runs, outcome, asked)),
         altitude_ft=outcome.altitude_ft,
         altitude_selection=outcome.selection,
         altitude_options=outcome.options,

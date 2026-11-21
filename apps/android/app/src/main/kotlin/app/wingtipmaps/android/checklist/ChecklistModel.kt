@@ -59,7 +59,7 @@ class ChecklistModel @Inject constructor(app: Application) : AndroidViewModel(ap
     fun startFromPhases() = _state.update { s ->
         ChecklistPhases.template(s.kind).fold(
             { s.copy(draft = it) },
-            { s.copy(problem = "The phases' headings could not be had: ${it.message}") },
+            { s.copy(problem = "The phases' headings could not be read: ${it.message}") },
         )
     }
 

@@ -38,7 +38,7 @@ export function DigitalAtisRows({ ident }: { ident: string }) {
         // remarks where it has any.
         const foot = (
           <>
-            <AtisRawFold title="As sent" text={b.text} />
+            <AtisRawFold title="As Sent" text={b.text} />
             <ListRow muted title={<span className={TEXT.note}>FAA D-ATIS</span>} />
           </>
         );
@@ -89,7 +89,7 @@ export function RvrRows({ ident }: { ident: string }) {
   const rows = rvrRows(data.runways, minimumSm);
   return (
     <div className="pt-5" data-testid="place-rvr">
-      <ListGroup title="Runway visual range, ft">
+      <ListGroup title="Runway Visual Range, ft">
         {rows.map((r) => (
           <ListRow
             key={r.runway}

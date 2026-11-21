@@ -83,7 +83,7 @@ private fun AskFigure(airplane: AirplaneNow, key: FigureKey) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = { ProfileOpen.open(airplane.tail, key.key) }) { Text(stringResource(R.string.ask_edit, name)) }
                 Spacer(Modifier.weight(1f))
-                TextButton(onClick = { NotNow.hide(key.key) }) { Text(stringResource(R.string.not_now)) }
+                TextButton(onClick = { NotNow.hide(key.key) }) { Text(stringResource(R.string.wording_not_now)) }
                 Button(
                     enabled = value != null && !saving,
                     onClick = {

@@ -4,6 +4,7 @@
 # listed here, so each new spec chooses its tier: give its one
 # end-to-end test @smoke (one per journey), or add it here. Paths are
 # relative to apps/web/e2e.
+a11y-screens.spec.ts
 a11y.spec.ts
 airplane-lookup.spec.ts
 airplane-mode.spec.ts

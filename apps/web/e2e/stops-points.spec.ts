@@ -73,7 +73,7 @@ test("every point's row ends in its time over its altitude and a menu: an airpor
   await expect(page).not.toHaveURL(/[?&]stops=/);
   await expect(sideDrawer(page).getByTestId("direct-strip")).toContainText("Direct to KDLH");
   await expect(route.getByRole("region", { name: "KMSN · Arrive" })).toHaveCount(0);
-  await expect(duluth).toContainText("Direct to");
+  await expect(duluth).toContainText("Direct To");
   await sideDrawer(page).getByTestId("direct-cancel").click();
   await expect(page).toHaveURL(stopsAre("KMSN"));
   await expect(page).not.toHaveURL(/[?&](direct|was)=/);

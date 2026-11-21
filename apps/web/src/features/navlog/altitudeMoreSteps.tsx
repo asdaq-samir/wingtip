@@ -44,7 +44,7 @@ export function plansStep(nav: NavLogAltitude, plansAbove: boolean, winds: Total
               }`,
             }
           : {
-              title: nav.flown === "custom" ? "Your own" : chosen ? `${PLAN_NAME[chosen.kind]} plan` : "No plan",
+              title: nav.flown === "custom" ? "Your Own" : chosen ? `${PLAN_NAME[chosen.kind]} plan` : "No Plan",
               detail:
                 nav.flown === "custom"
                   ? `${flightLevel(nav.altitude_ft)} all the way`
@@ -82,7 +82,7 @@ export function plansStep(nav: NavLogAltitude, plansAbove: boolean, winds: Total
         key: "plans",
         // Why, in the row itself: folded, the reason was the one thing a
         // pilot had to open the step to learn.
-        title: "No plan",
+        title: "No Plan",
         detail: "The winds aloft could not be read",
         body: <>No plan can be made or flown without them. Try again shortly.</>,
       };
@@ -104,7 +104,7 @@ export function performanceSteps(nav: NavLogAltitude, legs: Leg[]): Step[] {
       ? [
           {
             key: "performance",
-            title: "Performance in the day's air",
+            title: "Performance in the Day's Air",
             body: (
               <>
                 {`The airplane's ${aircraft.cruise_tas_kt} kt and ${aircraft.fuel_burn_gph} gph are its cruise${
@@ -207,7 +207,7 @@ export function airspaceSteps(nav: NavLogAltitude): Step[] {
       ? [
           {
             key: "special-use-unchecked",
-            title: "Special-use airspace not checked",
+            title: "Special-Use Airspace Not Checked",
             body: <>Look for prohibited and restricted areas and MOAs on the chart yourself.</>,
           },
         ]

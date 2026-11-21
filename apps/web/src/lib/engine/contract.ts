@@ -382,6 +382,10 @@ export type FrequencyOfAnswer = number | null;
 export type FuelInTanksAnswer = ({
   gal: number;
   low: boolean;
+  /**
+   * Where the tanks are filled (the departure, a field landed at), what they hold as the airplane leaves: the pilot's own figure, full, or what it landed with where the figure is under that; null elsewhere.
+   */
+  leaves_gal?: number | null;
 } | null)[];
 export type FuelNamesAnswer = string;
 export type GairmetTitleAnswer = string;
@@ -738,6 +742,14 @@ export type NavLogFuelStopNeedAnswer = {
   start_gal: number;
   taxi_gal: number;
   reserve_gal: number;
+  /**
+   * The fuel on to the IFR alternate the last stretch keeps with its reserve (91.167(a)(2)), for fuel_stops; 0 under VFR.
+   */
+  alternate_gal: number;
+  /**
+   * Whether the fuel on board at the start, less the start and taxi, is under the reserve already: no field is in its reach, so no stop is offered.
+   */
+  on_board_short: boolean;
 } | null;
 export type NavLogJoinFiguresAnswer = NavLogFigure[];
 export type NavLogJoinPlansAnswer = NavLogPlan[];
@@ -2144,7 +2156,7 @@ export interface EngineContract {
     answer: FuelEstimateAnswer;
   };
   /**
-   * The fuel in the tanks at each point of the route and whether it is under the reserve: at the departure the fuel on board at engine start (full, the usable fuel, unless the pilot set their own; more than usable kept as set), the start, taxi and takeoff allowance and each leg's burn taken from them after; at each field landed at the fuel on landing, the tanks then fuelled for the next flight (full unless the pilot set what to; a figure under what is left keeps it, 0 no fuel bought) and its start and taxi taken again, as the planner checks each flight; negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill.
+   * The fuel in the tanks at each point of the route and whether it is under the reserve of the flight it is on (each flight's own: 30 minutes by day, 14 CFR 91.151(a)(1); 45 at night, 91.151(a)(2), or under IFR, 91.167(a)(3); by that flight's own times and rules): at the departure the fuel on board at engine start (full, the usable fuel, unless the pilot set their own; more than usable kept as set), the start, taxi and takeoff allowance and each leg's burn taken from them after; at each field landed at the fuel on landing, the tanks then fuelled for the next flight (full unless the pilot set what to; a figure under what is left keeps it, 0 no fuel bought) and its start and taxi taken again, as the planner checks each flight; the departure low where what is on board, less the start and taxi, is under its flight's reserve, and the destination held to the IFR alternate's fuel too (91.167(a)(2)); negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill.
    */
   fuel_in_tanks: {
     input: FuelInTanksInput;
@@ -2767,7 +2779,7 @@ export interface EngineContract {
     answer: NavLogFuelPlanAnswer;
   };
   /**
-   * What a flight's fuel stops are looked for by (route options' fuel_stops): null where its fuel check passes or a figure it needs is not known (no airplane, an unflyable leg); else the worst burn a mile over a tankful's stretch of its legs and its minutes a mile, each times the route's miles for each straight one, the usable fuel, the start and taxi allowance, and the reserve -- 14 CFR 91.151(a)(2)'s 45 minutes for (a)(1)'s 30 where any of a VFR trip, its stops' turnarounds counted, is at night; 91.167(a)(3)'s under IFR as given.
+   * What a flight's fuel stops are looked for by (route options' fuel_stops): null where its fuel check passes or a figure it needs is not known (no airplane, an unflyable leg); else the worst burn a mile over a tankful's stretch of its legs and its minutes a mile, each times the route's miles for each straight one, the usable fuel, the start and taxi allowance, and the reserve -- 14 CFR 91.151(a)(2)'s 45 minutes for (a)(1)'s 30 where any of a VFR trip, its stops' turnarounds counted, is at night; 91.167(a)(3)'s under IFR as given, with the fuel on to the alternate (91.167(a)(2)) the last stretch keeps; and whether the fuel on board is under the reserve already, no field in its reach.
    */
   navlog_fuel_stop_need: {
     input: NavLogFuelStopNeedInput;
@@ -7557,7 +7569,14 @@ export interface FuelInTanksInput {
   }[];
   usable_gal: number;
   taxi_gal: number;
-  reserve_gal: number;
+  /**
+   * Each flight's own reserve, gallons, in order: the first the departure's flight, the next the one from the first field landed at (refuel), as the planner's totals give each flight's reserve_gal. A point is low against the reserve of the flight that lands at or passes it; a flight with none given (null, or past the list's end) is held to the strictest given.
+   */
+  reserves_gal: (number | null)[];
+  /**
+   * Under IFR with an alternate filed, the fuel on to it from the destination, gallons (14 CFR 91.167(a)(2)): the route's last point is held to its flight's reserve and this; null or 0 under VFR.
+   */
+  alternate_gal?: number | null;
 }
 export interface FuelNamesInput {
   types: string[];
@@ -7585,6 +7604,10 @@ export interface FuelStopsInput {
   ground_min?: number | null;
   skip?: string[] | null;
   fields?: FuelField[] | null;
+  /**
+   * Under IFR with an alternate filed, the fuel from the destination on to it, gallons (14 CFR 91.167(a)(2)): the stretch landing at the destination keeps it with the reserve. Each stop is itself a first point of intended landing under 91.167(a)(1); only the destination's alternate is counted, as the planner's fuel check counts it. Null or 0 under VFR.
+   */
+  alternate_gal?: number | null;
 }
 export interface FuelStopsAnswer {
   stops: FuelStop[];
@@ -9733,6 +9756,10 @@ export interface NavLogFuelStopNeedInput {
     reserve_gal?: number | null;
     rules?: string | null;
     night?: boolean | null;
+    /**
+     * Under IFR, the last flight's fuel on to its alternate (the alternate leg's fuel_gal, 14 CFR 91.167(a)(2)); null where none is filed.
+     */
+    alternate_gal?: number | null;
   };
   legs: {
     distance_nm?: number | null;

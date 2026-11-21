@@ -32,8 +32,9 @@ export default function SearchBox({
     model.setTyped(said);
     inputRef.current?.focus();
   });
-  // 46 tall, a white card on the sheet's grey, its own 44-point hit area
-  // (the sheet audit's F-P2, 2026-11-10).
+  // FPL's head's height (SHEET_BAR: 49 at the default size), a white card
+  // on the sheet's grey, its own 44-point hit area (the sheet audit's
+  // F-P2, 2026-11-10).
   return (
     <label
       className={cn(

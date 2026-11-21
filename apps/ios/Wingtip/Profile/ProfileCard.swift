@@ -89,7 +89,7 @@ struct ProfileCard: View {
                             if let course = plan.course { dryRun.start(course: course, checkpoints: plan.checkpoints, legs: plan.legs) }
                         }
                     }
-                } label: { Label("Dry run", systemImage: "play.fill") }
+                } label: { Label(Wording.dryRun, systemImage: "play.fill") }
                     .disabled(plan.legs.isEmpty || plan.course == nil)
             }
         }

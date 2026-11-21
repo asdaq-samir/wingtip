@@ -51,9 +51,9 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 enum class CardAction(@StringRes val label: Int, val icon: ImageVector) {
     FLY_HERE(R.string.action_fly_here, WingtipIcons.flyHere),
     DEPART_FROM(R.string.action_depart_from, WingtipIcons.departFrom),
-    DIRECT_TO(R.string.action_direct_to, WingtipIcons.directTo),
-    ADD_STOP(R.string.action_add_stop, WingtipIcons.addToRoute),
-    ADD_TO_ROUTE(R.string.action_add_to_route, WingtipIcons.addToRoute),
+    DIRECT_TO(R.string.wording_direct_to, WingtipIcons.directTo),
+    ADD_STOP(R.string.wording_add_stop, WingtipIcons.addToRoute),
+    ADD_TO_ROUTE(R.string.wording_add_to_route, WingtipIcons.addToRoute),
     HOLD_HERE(R.string.action_hold_here, WingtipIcons.holdHere),
     CALL(R.string.action_call, WingtipIcons.call),
     ADDRESS(R.string.action_address, WingtipIcons.address),

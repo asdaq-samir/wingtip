@@ -28,18 +28,18 @@ enum PlanHistory {
     /// As many steps back as a pilot would take; the oldest go first.
     static let limit = 50
 
-    /// What a change took away, the Undo's name ("Route cleared", "KMSN
-    /// removed"); nil for one that only added or changed a figure, which
+    /// What a change took away, the Undo's name ("Route Cleared", "KMSN
+    /// Removed"); nil for one that only added or changed a figure, which
     /// shake and the Edit menu still undo.
     static func note(from before: RouteState, to after: RouteState) -> String? {
-        if before.hasPoints && !after.hasPoints { return "Route cleared" }
-        if let direct = after.extras.direct, direct != before.extras.direct { return "Direct to \(direct)" }
-        if !before.dep.isEmpty, !before.dest.isEmpty, after.dep != before.dep || after.dest != before.dest { return "Route replaced" }
+        if before.hasPoints && !after.hasPoints { return "Route Cleared" }
+        if let direct = after.extras.direct, direct != before.extras.direct { return "Direct To \(direct)" }
+        if !before.dep.isEmpty, !before.dest.isEmpty, after.dep != before.dep || after.dest != before.dest { return "Route Replaced" }
         let gone = before.stops.filter { !after.stops.contains($0) }
-        if gone.count == 1 { return "\(gone[0]) removed" }
-        if gone.count > 1 { return "Stops removed" }
-        if after.procedures.count < before.procedures.count { return "Procedure removed" }
-        if after.extras.holds.count < before.extras.holds.count { return "Hold removed" }
+        if gone.count == 1 { return "\(gone[0]) Removed" }
+        if gone.count > 1 { return "Stops Removed" }
+        if after.procedures.count < before.procedures.count { return "Procedure Removed" }
+        if after.extras.holds.count < before.extras.holds.count { return "Hold Removed" }
         return nil
     }
 }

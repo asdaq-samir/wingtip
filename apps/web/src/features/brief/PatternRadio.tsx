@@ -7,6 +7,7 @@ import { type RadioPhase, altFt, feet } from "../plan";
 import { useRunwayPicks } from "../plan/lazy";
 import { Mhz } from "../place/lazy";
 import { TEXT } from "../../lib/text";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 type Facilities = Briefing["airports"][string];
 
@@ -174,7 +175,7 @@ function PatternRows({ phase, facilities, courseDeg }: { phase: RadioPhase; faci
       )}
       {pattern && (
         <ListRow
-          title="Pattern altitude"
+          title={WORDING.patternAltitude}
           description={
             pattern.published
               ? `${altFt(pattern.agl_ft)} ft above the field, as the FAA publishes it`
@@ -193,7 +194,7 @@ function PatternRows({ phase, facilities, courseDeg }: { phase: RadioPhase; faci
       )}
       {rightEnds.length > 0 && (
         <ListRow
-          title="Right traffic too"
+          title="Right Traffic Too"
           value={rightEnds.map((e) => runwayNumber(e.ident)).join(", ")}
           description="The other runway ends the FAA flies right; the rest left"
         />

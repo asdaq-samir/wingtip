@@ -143,8 +143,8 @@ struct AirplaneCard: View {
                 .disabled(plane == nil)
                 .accessibilityLabel(following ? "Stop following \(name)" : "Follow \(name) on the map")
                 Menu {
-                    Toggle("Tell me when it takes off", isOn: watchBinding(.takeoff))
-                    Toggle("Tell me when it lands", isOn: watchBinding(.land))
+                    Toggle("Tell Me When It Takes Off", isOn: watchBinding(.takeoff))
+                    Toggle("Tell Me When It Lands", isOn: watchBinding(.land))
                 } label: {
                     ActionFace(systemImage: tracking.watching(hex, .takeoff) || tracking.watching(hex, .land) ? "bell.fill" : "bell", title: "Alert")
                 }
@@ -160,7 +160,7 @@ struct AirplaneCard: View {
                 .toggleStyle(.button)
                 .glassButton()
                 .disabled(kept == nil)
-                .accessibilityLabel(starred ? "Remove from Favorites" : "Add to Favorites")
+                .accessibilityLabel(starred ? Wording.removeFromFavorites : Wording.addToFavorites)
             }
             .glassGroup(spacing: WingtipSpace.sm)
             .dynamicTypeSize(...DynamicTypeSize.accessibility2)
@@ -176,9 +176,9 @@ struct AirplaneCard: View {
             if let op = detail?.operatorName { LabeledContent("Operator", value: FlightWords.nameCase(op)) }
             LabeledContent("Registration") { RegistrationText(detail?.registration ?? plane?.registration) }
             LabeledContent("Type", value: [detail?.type ?? plane?.type, detail?.year].compactMap { $0 }.joined(separator: " · ").nonEmpty ?? "—")
-            LabeledContent("ICAO address", value: hex.uppercased())
+            LabeledContent("ICAO Address", value: hex.uppercased())
             LabeledContent("Callsign", value: plane?.callsign ?? "—")
-            if let based { LabeledContent("Based at", value: [based.ident, FlightWords.place(based)].compactMap { $0 }.joined(separator: " · ")) }
+            if let based { LabeledContent("Based At", value: [based.ident, FlightWords.place(based)].compactMap { $0 }.joined(separator: " · ")) }
             ProblemLine(model.detailProblem)
         }
         if let route {
@@ -209,12 +209,12 @@ struct AirplaneCard: View {
                 Text("No flights heard in the last six weeks").foregroundStyle(.secondary)
             }
             if let unread = history?.unreadDays, unread > 0 {
-                Text(unread >= 7 ? "adsb.lol's flight history can't be read now, so only flights followed in this app are listed."
+                Text(unread >= 7 ? "adsb.lol's flight history could not be read just now, so only flights followed in this app are listed."
                     : "\(unread == 1 ? "One day" : "\(unread) days") could not be read from adsb.lol just now, so their flights are missing.")
                     .font(.footnote).foregroundStyle(.secondary)
             }
             if history?.nextUntil != nil {
-                Button(model.fetchingMore ? "Fetching earlier flights…" : "Show earlier flights") { Task { await model.more(hex) } }
+                Button(model.fetchingMore ? "Fetching earlier flights…" : "Show Earlier Flights") { Task { await model.more(hex) } }
                     .disabled(model.fetchingMore)
             }
             ProblemLine(model.problem)

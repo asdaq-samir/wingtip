@@ -100,7 +100,7 @@ enum AirportWords {
     /// out when not reported; the time UTC, as the report gives it. The
     /// web's weatherLineOf.
     static func weatherLine(_ metar: Metar) -> String {
-        let ceiling: String? = metar.ceilingUnknown == true ? nil : metar.ceilingFt.map { "Ceiling \(Format.altitude($0))" } ?? "No ceiling"
+        let ceiling: String? = metar.ceilingUnknown == true ? nil : metar.ceilingFt.map { "Ceiling \(Format.altitude($0))" } ?? Wording.noCeiling
         let wind = shortWind(dirTrueDeg: metar.windDirTrueDeg, speedKt: metar.windSpeedKt, gustKt: metar.windGustKt)
         let time = date(metar.observedAt).map(Format.zulu)
         return [ceiling, wind, time].compactMap { $0 }.joined(separator: " · ")
@@ -154,6 +154,20 @@ enum AirportWords {
     /// Nil where the engine refuses (logged by Engine.rule): no runway is
     /// then badged Best Wind, never a guessed one.
     static func bestWind(_ runways: [Runway]) -> Int? {
+        inUse(runways).map(\.runway)
+    }
+
+    /// The runway end most nearly into the reported wind, as its number
+    /// ("24"), the same engine answer as bestWind: what FPL's line lands
+    /// on and leaves from where the pilot picks none, as the planner flies
+    /// it (wind_runways). Nil where the wind picks none.
+    static func windEnd(_ runways: [Runway]) -> String? {
+        guard let flown = inUse(runways), let end = runways[safe: flown.runway]?.runwayEnds?[safe: flown.end] else { return nil }
+        return runwayNumber(end.ident)
+    }
+
+    /// The engine's runway in use, where the wind chose it.
+    private static func inUse(_ runways: [Runway]) -> EngineContract.GonogoFlown? {
         let asked = runways.map { r in
             EngineContract.Runway(closed: r.closed, surface: r.surface, lengthFt: r.lengthFt.map(Double.init),
                                   runwayEnds: r.runwayEnds?.map { .init(ident: $0.ident, headingTrueDeg: $0.headingTrueDeg) },
@@ -161,7 +175,7 @@ enum AirportWords {
                                                            gustCrosswindKt: $0.gustCrosswindKt, inUse: $0.inUse) })
         }
         guard !asked.isEmpty, let flown = try? Engine.gonogoRunwayInUse(runways: asked), flown.byWind else { return nil }
-        return flown.runway
+        return flown
     }
 
     /// A runway's surface in words: OurAirports' "ASPH-G" is asphalt.
@@ -307,7 +321,7 @@ enum AirportWords {
     /// Where the engine refuses, its problem in their place, so a code is
     /// never passed off as the fuel's name.
     static func fuelNames(_ types: [String]) -> String {
-        do { return try Engine.fuelNames(types: types) } catch { return "the fuels couldn't be worked out: \(error.localizedDescription)" }
+        do { return try Engine.fuelNames(types: types) } catch { return "the fuels could not be worked out: \(error.localizedDescription)" }
     }
 
     /// How far a place is from the field: the minutes' walk where it is a

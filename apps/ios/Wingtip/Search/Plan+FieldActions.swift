@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The airport card's three plan actions (the one-search design,
-/// 2026-11-09: Fly Here, Depart From, Add as Stop), and the route to a
+/// 2026-11-09: Fly Here, Depart From, Add Stop), and the route to a
 /// field Siri and a Shortcut ask for, done the one way wherever they are
 /// asked. Each sets the route the planner then works out; none works a
 /// figure out here.

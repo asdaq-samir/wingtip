@@ -139,7 +139,7 @@ export default function FlightWatch() {
       </div>
       {problem && (
         <FieldError className={cn("px-1 text-destructive-ink", TEXT.note)} data-testid="flight-watch-problem">
-          {describeError(problem, "The watch could not be set")}
+          {describeError(problem, "The watch could not be set.")}
         </FieldError>
       )}
       {watch.data &&

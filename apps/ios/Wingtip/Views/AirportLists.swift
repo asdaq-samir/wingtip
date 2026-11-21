@@ -50,7 +50,7 @@ struct AirportListView: View {
                 Section("Airplanes") {
                     ForEach(tracking.favorites) { kept in airplaneRow(kept) }
                         .onDelete { at in for kept in at.map({ tracking.favorites[$0] }) { tracking.toggleFavorite(kept, undo: undoManager) } }
-                    Button { nav.searchAirplane(.favorite) } label: { Label("Add an Airplane", systemImage: "plus") }
+                    Button { nav.searchAirplane(.favorite) } label: { Label(Wording.addAirplane, systemImage: "plus") }
                         .accessibilityIdentifier("favorites-add-airplane")
                 }
             } else {
@@ -124,7 +124,7 @@ struct NearFromView: View {
                             Text("Ident").font(.headline)
                             Text("The field's name · its longest runway")
                         }
-                        .loading("Fetching the nearest fields")
+                        .loading(Wording.fetchingNearestFields)
                     }
                 }
             }

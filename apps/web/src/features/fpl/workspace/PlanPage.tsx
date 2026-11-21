@@ -21,7 +21,7 @@ const FplStrip = fromChunk(loadFplStrip, (m) => m.default).Part;
  * it (PlanCards), kept in flight when no page is drawn. The route is its
  * timeline in the row over this page (RouteHead, decision 0047); its field
  * and figures open under it here once asked for, by the timeline's Type or
- * Paste a Route or More's Type the Route (RouteEditor); in flight the
+ * Paste a Route or the keyboard button at Add a Stop's end (RouteEditor); in flight the
  * route read (the nav log's list). With no route, the timeline's card with
  * the two ends to pick over this page, and the flights saved and the
  * routes planned last under it, nothing between (the owner, 2026-11-11:

@@ -70,7 +70,7 @@ struct ChecklistView: View {
                             .foregroundStyle(WingtipInk.problem)
                     }
                     if !model.checklist.sections.isEmpty {
-                        Button("Start Over") { model.startOver() }.disabled(model.ticked.isEmpty)
+                        Button(Wording.startOver) { model.startOver() }.disabled(model.ticked.isEmpty)
                     }
                     Button(model.text.isEmpty ? "Write the \(model.kind.title)" : "Edit the \(model.kind.title)") { model.edit() }
                 }

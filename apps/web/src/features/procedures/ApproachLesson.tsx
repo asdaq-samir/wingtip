@@ -89,7 +89,7 @@ export default function ApproachLesson({
         {/* The popover shows no subtitle: the line at its top there. */}
         {!isMobile && <p className={cn("text-muted-foreground", TEXT.note)}>{AID}</p>}
         {error ? (
-          <FieldError className={cn(FINDING_TONE.stop, TEXT.prose)}>The approach could not be had: {error.message}</FieldError>
+          <FieldError className={cn(FINDING_TONE.stop, TEXT.prose)}>The approach could not be fetched: {error.message}</FieldError>
         ) : isPending || !input ? (
           <div role="status" className="flex flex-col gap-2 py-1">
             <span className="sr-only">Fetching the approach…</span>

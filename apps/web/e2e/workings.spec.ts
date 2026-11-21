@@ -25,7 +25,7 @@ test("a leg's heading worked out, and a student's magnetic heading marked", asyn
   await expect(sheet.getByTestId("working-step").nth(5)).toContainText("east is least, west is best");
   // The answer, read from the worked steps, typed back: right.
   const mh = (await sheet.getByTestId("working-step").nth(5).innerText()).match(/(\d{3})°\s*$/)![1]!;
-  await sheet.getByTestId("workings-mode").getByText("Try it").click();
+  await sheet.getByTestId("workings-mode").getByText("Try It").click();
   await sheet.getByTestId("try-mh-input").fill(mh);
   await sheet.getByTestId("try-gs-input").fill("1");
   // The card opens half way, as every card does: its button under the

@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_route::navlog::calls::call",
-  "description": "What a flight's fuel stops are looked for by (route options' fuel_stops): null where its fuel check passes or a figure it needs is not known (no airplane, an unflyable leg); else the worst burn a mile over a tankful's stretch of its legs and its minutes a mile, each times the route's miles for each straight one, the usable fuel, the start and taxi allowance, and the reserve -- 14 CFR 91.151(a)(2)'s 45 minutes for (a)(1)'s 30 where any of a VFR trip, its stops' turnarounds counted, is at night; 91.167(a)(3)'s under IFR as given.",
+  "description": "What a flight's fuel stops are looked for by (route options' fuel_stops): null where its fuel check passes or a figure it needs is not known (no airplane, an unflyable leg); else the worst burn a mile over a tankful's stretch of its legs and its minutes a mile, each times the route's miles for each straight one, the usable fuel, the start and taxi allowance, and the reserve -- 14 CFR 91.151(a)(2)'s 45 minutes for (a)(1)'s 30 where any of a VFR trip, its stops' turnarounds counted, is at night; 91.167(a)(3)'s under IFR as given, with the fuel on to the alternate (91.167(a)(2)) the last stretch keeps; and whether the fuel on board is under the reserve already, no field in its reach.",
   "type": "object",
   "properties": {
     "input": {
@@ -71,6 +71,13 @@
                 "boolean",
                 "null"
               ]
+            },
+            "alternate_gal": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Under IFR, the last flight's fuel on to its alternate (the alternate leg's fuel_gal, 14 CFR 91.167(a)(2)); null where none is filed."
             }
           }
         },
@@ -162,6 +169,14 @@
         },
         "reserve_gal": {
           "type": "number"
+        },
+        "alternate_gal": {
+          "type": "number",
+          "description": "The fuel on to the IFR alternate the last stretch keeps with its reserve (91.167(a)(2)), for fuel_stops; 0 under VFR."
+        },
+        "on_board_short": {
+          "type": "boolean",
+          "description": "Whether the fuel on board at the start, less the start and taxi, is under the reserve already: no field is in its reach, so no stop is offered."
         }
       },
       "required": [
@@ -170,7 +185,9 @@
         "usable_gal",
         "start_gal",
         "taxi_gal",
-        "reserve_gal"
+        "reserve_gal",
+        "alternate_gal",
+        "on_board_short"
       ]
     }
   },

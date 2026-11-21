@@ -62,3 +62,22 @@ export function keepTrack(flightId: number, track: KeptTrack): boolean {
   store(flightId).setState({ value: track });
   return wasKept(KEY(flightId));
 }
+
+/** Every flight's track kept in this browser forgotten, as the pilot whose
+ *  flights they were signs out (useLogout): each is a line of positions
+ *  under one of their flights, which the next person on the device has no
+ *  business reading (docs/privacy-inventory.md, the prelaunch audit). */
+export function forgetKeptTracks(): void {
+  const prefix = KEY(0).slice(0, -1);
+  const ids: number[] = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      const id = key?.startsWith(prefix) ? Number(key.slice(prefix.length)) : NaN;
+      if (Number.isInteger(id)) ids.push(id);
+    }
+  } catch {
+    return; // storage refused: nothing was kept
+  }
+  for (const id of ids) keepTrack(id, null);
+}

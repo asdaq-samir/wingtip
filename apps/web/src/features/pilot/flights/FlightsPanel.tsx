@@ -19,6 +19,7 @@ import FlightFields from "./FlightFields";
 import { flightTitle } from "./flightEdit";
 import { useSavedFlights, type SavedFlightsModel } from "./useSavedFlights";
 import { NO_FLIGHTS } from "../../../lib/emptyWords";
+import { SCREENS } from "../../../lib/navigation/generated/screens";
 
 // Edit's row menu's Share: the plan in the link itself, opened as a preview
 // (lib/sharedFlight); the menu's is the saved flight's own, which can be stopped.
@@ -174,10 +175,10 @@ export function FlightsPanel({
           <QueryState query={vm.asked} fetching="Fetching your flights…" failed="Your flights could not be fetched." />
         ) : list.length === 0 ? (
           <EmptyState icon={<Route />} title={NO_FLIGHTS}>
-            Plan a route and Save it from Share; it is kept here.
+            Plan a route, then save it from the Brief&apos;s ••• menu; it is kept here.
           </EmptyState>
         ) : (
-          <ListGroup title={onBack ? undefined : "Saved flights"} action={onBack ? undefined : edit}>
+          <ListGroup title={onBack ? undefined : SCREENS.flights.title} action={onBack ? undefined : edit}>
             {list.map((f) => (
               <SavedFlightRow key={f.id} f={f} vm={vm} />
             ))}

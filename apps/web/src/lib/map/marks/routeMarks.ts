@@ -1,6 +1,6 @@
 import type { ExpressionSpecification, SymbolLayerSpecification } from "maplibre-gl";
 import { inkOn } from "../../scoreScale";
-import { CHART, MAP } from "../../tokens";
+import { CHART, MAP_LABEL } from "../../tokens";
 import { badgeLayer, chipLayer, pictureLayer } from "../gl/markLayers";
 import type { GlSymbol } from "../gl/useGlSymbols";
 import { ROUTE_PILL, ROUTE_POINT_PILL, dotPicture, fieldMarkPicture, turnDotPicture } from "./markPictures";
@@ -31,6 +31,8 @@ export const ROUTE_MARKS = "route-marks";
 
 const KIND = (kind: string) => ["==", ["get", "kind"], kind] as ExpressionSpecification;
 const SORT = { collide: true as const, sort: ["get", "sort"] as ExpressionSpecification };
+/** A route field's ident's size (map.label.kind.route-ident), for its offset in ems. */
+const ROUTE_IDENT_SIZE = MAP_LABEL.kind.routeIdent.size;
 
 /** Bottom to top: the layers above are placed first. */
 export const ROUTE_MARK_LAYERS: SymbolLayerSpecification[] = [
@@ -46,8 +48,9 @@ export const ROUTE_MARK_LAYERS: SymbolLayerSpecification[] = [
       "route-field-idents",
       ROUTE_MARKS,
       SORT,
-      { "icon-image": ROUTE_PILL.id, "text-size": MAP.label, "text-anchor": "left", "text-offset": [20 / MAP.label, 0] },
+      { "icon-image": ROUTE_PILL.id, "text-anchor": "left", "text-offset": [20 / ROUTE_IDENT_SIZE, 0] },
       { "text-color": CHART.casing },
+      "routeIdent",
     ),
     filter: KIND("field"),
   },

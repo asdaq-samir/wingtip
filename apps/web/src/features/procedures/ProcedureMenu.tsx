@@ -15,13 +15,14 @@ import { procedureTrigger, TITLE, type TriggerLook } from "./ProcedureTrigger";
 import { faaWords } from "../../lib/advisories";
 import QueryState from "../../components/QueryState";
 import type { UseQueryResult } from "@tanstack/react-query";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 type Kind = ProcedureSummary["kind"];
 
 const ALL: Record<Kind, string> = { approach: "All approaches…", arrival: "All arrivals…", departure: "All departures…" };
 /** The one failure both the pull-down and the procedures sheet say. */
 export const PROCEDURES_FAILED = "The FAA's procedures could not be fetched.";
-const NONE: Record<Kind, string> = { approach: "No approach", arrival: "No arrival", departure: "No departure" };
+const NONE: Record<Kind, string> = { approach: "No Approach", arrival: "No Arrival", departure: "No Departure" };
 
 /** An approach's name in its runway's group, the runway said by the group:
  *  "ILS RWY 09L" is "ILS", "RNAV (GPS) Y RWY 10R" is "RNAV (GPS) Y". */
@@ -153,7 +154,7 @@ export default function ProcedureMenu({
     page && "procedure" in page
       ? faaWords(page.procedure.name)
       : page && "direct" in page
-        ? "Direct to"
+        ? WORDING.directTo
         : page
           ? runwayName(page.runway)
           : `${ident} ${TITLE[kind].toLowerCase()}`;
@@ -208,7 +209,7 @@ export default function ProcedureMenu({
             selected={picked.direct ?? NO_CHOICE}
             picks={[null, ...fixes].map((f) => ({
               id: f ?? NO_CHOICE,
-              title: f ?? "As charted",
+              title: f ?? "As Charted",
               testId: "procedure-menu-direct-fix",
               act: () => pick({ id: picked.id, transition: picked.transition, direct: f }),
             }))}
@@ -238,7 +239,7 @@ export default function ProcedureMenu({
                   picks={byRunway.get(first)!.map((p) => item(p, shortName(p)))}
                 />
                 {others.length > 0 && (
-                  <ListGroup title="Other runways">
+                  <ListGroup title="Other Runways">
                     {others.map((r) => (
                       <ListRow key={r} title={runwayName(r)} chevron value={pickedOn(r)} onClick={() => push({ runway: r })} />
                     ))}
@@ -252,8 +253,8 @@ export default function ProcedureMenu({
             {picked && fixes.length > 0 && (
               <ListGroup>
                 <ListRow
-                  title="Direct to"
-                  value={picked.direct ?? "As charted"}
+                  title={WORDING.directTo}
+                  value={picked.direct ?? "As Charted"}
                   chevron
                   onClick={() => push({ direct: true })}
                   data-testid="procedure-menu-direct"
@@ -263,7 +264,7 @@ export default function ProcedureMenu({
             <ListGroup>
               {/* The plate on the chart or not, at the owner's ask. */}
               {kind === "approach" && picked && (
-                <ListRow title="Plate on the map">
+                <ListRow title="Plate on the Map">
                   <Switch
                     checked={plates}
                     onCheckedChange={(on) => usePreferences.getState().setPlates(on)}

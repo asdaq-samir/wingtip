@@ -61,7 +61,7 @@ struct BriefView: View {
                     let weatherAt = weatherPart(briefing)
                     // The briefing kept, shown with no signal, with its age.
                     KeptAgeLine(kind: .briefing, key: ReadyToFly.flightKey(plan))
-                    WordsSection(title: "The weather in words", said: weatherWords, writing: writingWords)
+                    WordsSection(title: "The Weather in Words", said: weatherWords, writing: writingWords)
                     if let notRecommended = briefing.vfrNotRecommended, !notRecommended.isEmpty {
                         Section {
                             ForEach(Array(notRecommended.enumerated()), id: \.offset) { i, reason in
@@ -148,9 +148,9 @@ struct BriefView: View {
                     FieldsBelowVfrSection(fields: briefing.fieldsBelowVfr ?? [])
                     ForecastIcingSection(model: icing, legs: plan.legs)
                     Section("Forecast Along the Route") {
-                        LabeledContent("Lowest ceiling", value: Format.altitude(briefing.forecast.minCeilingFt))
+                        LabeledContent("Lowest Ceiling", value: Format.altitude(briefing.forecast.minCeilingFt))
                             .id(rowId("forecast", 0, anchorAt: weatherAt, anchor: VerdictTarget.weatherAnchor))
-                        LabeledContent("Lowest visibility", value: briefing.forecast.minVisibilitySm.map { String(format: "%g SM", $0) } ?? "—")
+                        LabeledContent("Lowest Visibility", value: briefing.forecast.minVisibilitySm.map { String(format: "%g sm", $0) } ?? "—")
                         ForEach(Array(briefing.forecast.stations.enumerated()), id: \.offset) { _, station in
                             if let raw = station.raw {
                                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
@@ -183,7 +183,7 @@ struct BriefView: View {
                         }
                     }
                 } else if let problem = plan.briefingProblem {
-                    ContentUnavailableView("No briefing", systemImage: "exclamationmark.triangle", description: Text(problem))
+                    ContentUnavailableView("No Briefing", systemImage: "exclamationmark.triangle", description: Text(problem))
                 } else if plan.routed {
                     // Only a route has a briefing to fetch.
                     Section("METARs") {

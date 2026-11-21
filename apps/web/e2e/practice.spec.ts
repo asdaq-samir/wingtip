@@ -18,7 +18,7 @@ async function practicePage(page: Page, name: string) {
 }
 
 test("a light-gun card: the light, its meaning on showing, and the next card on Knew it", async ({ page }) => {
-  const sheet = await practicePage(page, "Light gun signals");
+  const sheet = await practicePage(page, "Light Gun Signals");
   const prompt = sheet.getByTestId("drill-prompt");
   const first = await prompt.innerText();
   expect(first).toMatch(/^(Steady|Flashing|Alternating)/);
@@ -30,7 +30,7 @@ test("a light-gun card: the light, its meaning on showing, and the next card on 
 });
 
 test("a hold's entry from the heading to the fix, and its outbound time in the wind", async ({ page }) => {
-  const sheet = await practicePage(page, "Holding entries");
+  const sheet = await practicePage(page, "Holding Entries");
   // The page opens on a right-turn hold inbound on 360, arriving on 220.
   await expect(sheet.getByTestId("hold-entry")).toContainText("Parallel entry");
   await expect(sheet.getByTestId("hold-diagram")).toBeVisible();
@@ -49,7 +49,7 @@ test("a hold's entry from the heading to the fix, and its outbound time in the w
 });
 
 test("lost comms: each segment at the highest altitude, and when to leave the limit", async ({ page }) => {
-  const sheet = await practicePage(page, "Lost communications");
+  const sheet = await practicePage(page, "Lost Communications");
   const fly = sheet.getByTestId("lost-segment-fly");
   await expect(fly.nth(0)).toHaveText("Fly 4,000 ft: assigned");
   await expect(fly.nth(1)).toHaveText("Fly 6,000 ft: expected");

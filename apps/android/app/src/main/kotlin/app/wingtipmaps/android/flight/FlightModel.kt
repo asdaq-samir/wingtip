@@ -80,18 +80,13 @@ class FlightModel @Inject constructor(private val session: FlightSession) : View
     /** What is ahead, said aloud where the pilot asked (SpokenAlerts). */
     fun hear(ahead: List<AheadAlert>) = session.spoken.hear(ahead)
 
-    /** The strip's fuel from the planner's totals, as the engine works it for
-     *  the three apps (`strip_fuel`): with stops, each flight's own figures
-     *  (`hops`, the tanks filled at each) and the one being flown (`hop`),
-     *  as the web's figures.ts sends them (the aviation audit's AV-3: the
-     *  route-wide figures are absent with a stop); a failure where the
-     *  engine could not. */
-    fun stripFuel(totals: NavLogTotals?, hop: Int = 0, burntGal: Double? = null): Result<EngineContract.StripFuelAnswer> =
-        stripFuelOf(totals, hop, burntGal)
-
     companion object {
-        /** FlightModel.stripFuel's call, for a view with no model: the nav
-         *  log's totals ask whether any flight is short the same way. */
+        /** The fuel from the planner's totals, as the engine works it for
+         *  the three apps (`strip_fuel`): with stops, each flight's own
+         *  figures (`hops`, the tanks filled at each) and the one being
+         *  flown (`hop`), as the web's figures.ts sends them (the aviation
+         *  audit's AV-3); a failure where the engine could not. The nav
+         *  log's totals ask whether any flight is short with it. */
         fun stripFuelOf(totals: NavLogTotals?, hop: Int = 0, burntGal: Double? = null): Result<EngineContract.StripFuelAnswer> = Engine.stripFuel(
             fuelRequiredGal = totals?.fuelRequiredGal,
             fuelMarginGal = totals?.fuelMarginGal,

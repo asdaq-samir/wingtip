@@ -95,7 +95,7 @@ fun YouCard(session: Session, exit: CardExit, open: (SheetPage) -> Unit) {
             SettingsGroup {
                 YouRow(Icons.Filled.Person, stringResource(R.string.pilot_details), pilot?.homeBase, 0, rows) { open(SheetPage.PilotDetails) }
                 YouRow(Icons.Filled.Flight, stringResource(R.string.airplanes), tail, 1, rows) { open(SheetPage.YourAirplanes) }
-                YouRow(Icons.Filled.Route, stringResource(R.string.flights), null, 2, rows, enabled = signedIn) { open(SheetPage.Flights) }
+                YouRow(Icons.Filled.Route, stringResource(R.string.saved_flights), null, 2, rows, enabled = signedIn) { open(SheetPage.Flights) }
                 YouRow(Icons.AutoMirrored.Filled.MenuBook, stringResource(R.string.logbook), null, 3, rows, enabled = signedIn) {
                     open(SheetPage.Logbook)
                 }

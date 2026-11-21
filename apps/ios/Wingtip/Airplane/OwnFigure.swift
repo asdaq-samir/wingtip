@@ -35,20 +35,20 @@ enum OwnFigure: String, CaseIterable, Identifiable, Sendable {
     /// Its row's name, in the airplane form's words.
     var label: String {
         switch self {
-        case .cruiseTasKt: "Cruise speed (TAS)"
-        case .fuelBurnGph: "Cruise fuel burn"
-        case .cruisePowerPct: "Cruise power"
-        case .usableFuelGal: "Usable fuel"
-        case .climbTasKt: "Climb speed (TAS)"
-        case .climbFuelBurnGph: "Climb fuel burn"
-        case .climbRateFpm: "Climb rate at sea level"
-        case .descentIasKt: "Descent speed (IAS)"
-        case .descentFuelBurnGph: "Descent fuel burn"
-        case .serviceCeilingFt: "Service ceiling"
-        case .taxiFuelGal: "Start and taxi fuel"
-        case .glideRatio: "Glide ratio"
-        case .emptyWeightLb: "Empty weight"
-        case .emptyMomentLbIn: "Empty moment"
+        case .cruiseTasKt: "Cruise Speed (TAS)"
+        case .fuelBurnGph: "Cruise Fuel Burn"
+        case .cruisePowerPct: Wording.cruisePower
+        case .usableFuelGal: Wording.usableFuel
+        case .climbTasKt: "Climb Speed (TAS)"
+        case .climbFuelBurnGph: "Climb Fuel Burn"
+        case .climbRateFpm: Wording.climbRateAtSeaLevel
+        case .descentIasKt: "Descent Speed (IAS)"
+        case .descentFuelBurnGph: "Descent Fuel Burn"
+        case .serviceCeilingFt: Wording.serviceCeiling
+        case .taxiFuelGal: Wording.startAndTaxiFuel
+        case .glideRatio: Wording.glideRatio
+        case .emptyWeightLb: Wording.emptyWeight
+        case .emptyMomentLbIn: Wording.emptyMoment
         }
     }
 

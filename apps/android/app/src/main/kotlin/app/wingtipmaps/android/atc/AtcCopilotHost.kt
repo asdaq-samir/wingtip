@@ -125,12 +125,12 @@ private fun ListeningCapsule(words: String?, onStop: () -> Unit) {
     HorizontalFloatingToolbar(expanded = true) {
         val at = Modifier.align(Alignment.CenterVertically)
         if (words == null) {
-            Loading(at.size(CapsuleMark), description = stringResource(R.string.atc_listening))
+            Loading(at.size(CapsuleMark), description = stringResource(R.string.wording_listening_to_the_radio))
         } else {
             Icon(WingtipIcons.radio, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = at)
         }
         Text(
-            words?.let { stringResource(R.string.atc_heard, it) } ?: stringResource(R.string.atc_listening),
+            words?.let { stringResource(R.string.atc_heard, it) } ?: stringResource(R.string.wording_listening_to_the_radio),
             Modifier.align(Alignment.CenterVertically).padding(horizontal = WingtipSpace.Sm).widthIn(max = CapsuleWords).semantics { liveRegion = LiveRegionMode.Polite },
             style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis,
         )

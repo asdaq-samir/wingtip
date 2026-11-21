@@ -14,6 +14,7 @@ import NotamToolbar from "./NotamToolbar";
 import { useNotamMarks } from "./notamMarks";
 import { ALL_NOTAMS } from "./notamView";
 import { useArrangedNotams } from "./useArrangedNotams";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * The NOTAMs that matter (useNotamRanking), on Preflight, where the
@@ -47,7 +48,7 @@ export default function NotamRankingSection() {
             <Skeleton className="h-4 w-2/3" />
           </div>
         ) : error && !answer ? (
-          <p className={cn("text-muted-foreground", TEXT.note)}>{describeError(error, "The NOTAMs could not be ranked")}</p>
+          <p className={cn("text-muted-foreground", TEXT.note)}>{describeError(error, "The NOTAMs could not be ranked.")}</p>
         ) : (
           <>
             {/* The ranking kept on this device, with its age, where it could
@@ -60,7 +61,7 @@ export default function NotamRankingSection() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="relative h-auto px-1 text-tint after:absolute after:inset-x-0 after:-inset-y-3 after:content-['']"
+                  className="relative h-auto px-1 text-tint hit-y-3"
                   onClick={() => setFilter(ALL_NOTAMS)}
                   data-testid="brief-notams-show-all"
                 >
@@ -87,7 +88,7 @@ export default function NotamRankingSection() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="group relative -ml-2 self-start text-tint after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']"
+                      className="group relative -ml-2 self-start text-tint hit-y-1.5"
                       data-testid="brief-notams-more"
                     />
                   }
@@ -105,7 +106,7 @@ export default function NotamRankingSection() {
               </Collapsible>
             )}
             {answer?.unchecked.includes("tfrs") && (
-              <p className={cn("text-muted-foreground", TEXT.note)}>TFRs could not be checked just now.</p>
+              <p className={cn("text-muted-foreground", TEXT.note)}>{WORDING.tfrsNotChecked}</p>
             )}
             <p className={cn("text-muted-foreground", TEXT.note)} data-testid="brief-notams-credit">
               {notamCredit(since)}

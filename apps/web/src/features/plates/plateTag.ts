@@ -1,8 +1,11 @@
 import { drawTag } from "../../lib/map/gl/drawTag";
 import type { Layout } from "../../lib/map/gl/markLayers";
 import type { GlPicture } from "../../lib/map/gl/useGlSymbols";
-import { CHART, MAP } from "../../lib/tokens";
+import { CHART, MAP_LABEL } from "../../lib/tokens";
 import type { TagView } from "./plateTags";
+
+/** A fix's tag's type, map.label.kind.fix-tag. */
+const TAG_SIZE = MAP_LABEL.kind.fixTag.size;
 
 /** A fix's tag over its plate (TagView): a dark chip above the fix, so
  *  the procedure's own diamond and its words beside it stay clear; its
@@ -16,7 +19,7 @@ export function plateTag(tag: Pick<TagView, "ident" | "lines">): GlPicture {
   ];
   return {
     id: `plate-tag|${JSON.stringify(lines)}`,
-    draw: () => drawTag({ lines, background: CHART.tag, size: MAP.labelLarge, lineHeight: 16, padX: 6, padY: 2, radius: 6, centred: true }),
+    draw: () => drawTag({ lines, background: CHART.tag, size: TAG_SIZE, lineHeight: 16, padX: 6, padY: 2, radius: 6, centred: true }),
   };
 }
 

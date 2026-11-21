@@ -17,14 +17,14 @@ struct AirportWeatherTab: View {
             FieldWeatherSection(place: place, metar: metar)
         } else {
             Section {
-                ReceiverReportRows(ident: place.ident, otherwise: place.weatherUnavailable == true ? "The weather service could not be reached" : "No weather station reports from this field")
+                ReceiverReportRows(ident: place.ident, otherwise: place.weatherUnavailable == true ? Wording.weatherNotReached : String(localized: "No weather station reports from this field."))
             }
         }
         // The National Weather Service's Gridded LAMP at the field for the
         // hour (wingtip.glmp): planning guidance from a model, not a report.
         if place.metar == nil, let modelled = place.modelledWeather {
             Section("Modelled for \(AirportWords.date(modelled.validAt).map(Format.zulu) ?? modelled.validAt)") {
-                figure("cloud.sun", "Flight category", modelled.flightCategory, spoken: SpokenFigures.flightCategory(modelled.flightCategory))
+                figure("cloud.sun", Wording.flightCategory, modelled.flightCategory, spoken: SpokenFigures.flightCategory(modelled.flightCategory))
                 // GLMP's most is 10 sm, as a METAR's "10SM" is.
                 figure("eye", "Visibility", modelled.visibilitySm >= 10 ? "10+ sm" : "\(AirportWords.plain(modelled.visibilitySm)) sm",
                        spoken: modelled.visibilitySm >= 10 ? "ten statute miles or more" : SpokenFigures.statuteMiles(modelled.visibilitySm))
@@ -103,7 +103,7 @@ struct AirportWeatherTab: View {
                     }
                 } label: {
                     CardRow(badge: RowBadge(systemImage: "dot.radiowaves.left.and.right", colour: Badge.weather),
-                            title: listening ? "Listening to the radio…" : "Listen to ATIS",
+                            title: listening ? Wording.listeningToTheRadio : "Listen to ATIS",
                             detail: listening ? (heard.isEmpty ? "Tune the ATIS or AWOS and hold the phone to the speaker" : heard) : nil) {
                         if listening { ProgressView() }
                     }

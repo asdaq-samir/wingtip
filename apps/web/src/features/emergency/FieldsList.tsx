@@ -49,12 +49,12 @@ export default function FieldsList({ vm }: { vm: EmergencyModel }) {
   useBestFieldSaid(ranked?.fields[0]);
   if (!fix) {
     return (
-      <ListGroup title="Best fields">
-        <ListRow title="Show my position" description="The fields within a glide are worked out from it" onClick={showPosition} />
+      <ListGroup title="Best Fields">
+        <ListRow title="Show My Position" description="The fields within a glide are worked out from it" onClick={showPosition} />
       </ListGroup>
     );
   }
-  const title = ranked?.glide ? `Best fields · glide about ${Math.round(ranked.glide.still_air_nm)} nm in still air` : "Best fields";
+  const title = ranked?.glide ? `Best Fields · glide about ${Math.round(ranked.glide.still_air_nm)} nm in still air` : "Best Fields";
   return (
     <div className="flex flex-col gap-3">
       <ListGroup title={title}>
@@ -133,7 +133,7 @@ export default function FieldsList({ vm }: { vm: EmergencyModel }) {
             lines={2}
             query={asked}
             fetching="Fetching the fields round you…"
-            failed="The fields could not be had. Try again."
+            failed="The fields could not be fetched. Try again."
           />
         )}
       </ListGroup>

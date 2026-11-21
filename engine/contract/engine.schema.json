@@ -11587,7 +11587,7 @@
       "additionalProperties": false
     },
     "fuel_in_tanks": {
-      "description": "The fuel in the tanks at each point of the route and whether it is under the reserve: at the departure the fuel on board at engine start (full, the usable fuel, unless the pilot set their own; more than usable kept as set), the start, taxi and takeoff allowance and each leg's burn taken from them after; at each field landed at the fuel on landing, the tanks then fuelled for the next flight (full unless the pilot set what to; a figure under what is left keeps it, 0 no fuel bought) and its start and taxi taken again, as the planner checks each flight; negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill.",
+      "description": "The fuel in the tanks at each point of the route and whether it is under the reserve of the flight it is on (each flight's own: 30 minutes by day, 14 CFR 91.151(a)(1); 45 at night, 91.151(a)(2), or under IFR, 91.167(a)(3); by that flight's own times and rules): at the departure the fuel on board at engine start (full, the usable fuel, unless the pilot set their own; more than usable kept as set), the start, taxi and takeoff allowance and each leg's burn taken from them after; at each field landed at the fuel on landing, the tanks then fuelled for the next flight (full unless the pilot set what to; a figure under what is left keeps it, 0 no fuel bought) and its start and taxi taken again, as the planner checks each flight; the departure low where what is on board, less the start and taxi, is under its flight's reserve, and the destination held to the IFR alternate's fuel too (91.167(a)(2)); negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill.",
       "type": "object",
       "properties": {
         "input": {
@@ -11635,15 +11635,29 @@
             "taxi_gal": {
               "type": "number"
             },
-            "reserve_gal": {
-              "type": "number"
+            "reserves_gal": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "description": "Each flight's own reserve, gallons, in order: the first the departure's flight, the next the one from the first field landed at (refuel), as the planner's totals give each flight's reserve_gal. A point is low against the reserve of the flight that lands at or passes it; a flight with none given (null, or past the list's end) is held to the strictest given."
+            },
+            "alternate_gal": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Under IFR with an alternate filed, the fuel on to it from the destination, gallons (14 CFR 91.167(a)(2)): the route's last point is held to its flight's reserve and this; null or 0 under VFR."
             }
           },
           "required": [
             "points",
             "usable_gal",
             "taxi_gal",
-            "reserve_gal"
+            "reserves_gal"
           ]
         },
         "answer": {
@@ -11659,6 +11673,13 @@
                   },
                   "low": {
                     "type": "boolean"
+                  },
+                  "leaves_gal": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "Where the tanks are filled (the departure, a field landed at), what they hold as the airplane leaves: the pilot's own figure, full, or what it landed with where the figure is under that; null elsewhere."
                   }
                 },
                 "required": [
@@ -11778,6 +11799,13 @@
               "items": {
                 "$ref": "#/definitions/FuelField"
               }
+            },
+            "alternate_gal": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Under IFR with an alternate filed, the fuel from the destination on to it, gallons (14 CFR 91.167(a)(2)): the stretch landing at the destination keeps it with the reserve. Each stop is itself a first point of intended landing under 91.167(a)(1); only the destination's alternate is counted, as the planner's fuel check counts it. Null or 0 under VFR."
             }
           },
           "required": [
@@ -12235,6 +12263,185 @@
               "type": "null"
             }
           ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "gonogo_adverse_rows": {
+      "description": "The Brief's Adverse Conditions rows under its findings, the standard briefing's first element (AIM 7-1-5(b)(1)): what the flight meets on the route while it is there (OnRoute `when` \"during\", or none given) -- a TFR the route goes through (14 CFR 91.137-91.145) and a Convective SIGMET or SIGMET (AIM 7-1-6), stops; a Center Weather Advisory (AIM 7-1-6), an urgent pilot report (UUA, AIM 7-1-18) and an AIRMET or G-AIRMET (AIM 7-1-6), cautions -- in that order, of a kind the one met first along the route first, at most three, with how many more. A TFR only near the route, a routine PIREP and a hazard before or after the flight are left to their pages. Each row's time is for the host to write: `at` when the flight meets a TFR, `until` an advisory's end, `reported` a pilot report's time.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GonogoAdverseRowsInput",
+          "type": "object",
+          "properties": {
+            "advisories": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "description": "OnRoute's source: TFR, Convective SIGMET, SIGMET, CWA, PIREP, AIRMET or G-AIRMET."
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Its name in words: the hazard (sigmet_hazard, gairmet_title), a TFR's NOTAM and title, a PIREP's conditions."
+                  },
+                  "when": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "during",
+                      "before",
+                      "after",
+                      null
+                    ]
+                  },
+                  "enter": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "valid_to": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "issued": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "from_nm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "legs": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  "crosses": {
+                    "type": "boolean"
+                  },
+                  "urgent": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "source",
+                  "name",
+                  "when",
+                  "enter",
+                  "valid_to",
+                  "issued",
+                  "from_nm",
+                  "legs",
+                  "crosses",
+                  "urgent"
+                ]
+              }
+            }
+          },
+          "required": [
+            "advisories"
+          ]
+        },
+        "answer": {
+          "title": "GonogoAdverseRowsAnswer",
+          "type": "object",
+          "properties": {
+            "rows": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "finding": {
+                    "type": "string",
+                    "enum": [
+                      "stop",
+                      "caution"
+                    ]
+                  },
+                  "tab": {
+                    "type": "string",
+                    "enum": [
+                      "enroute",
+                      "preflight"
+                    ]
+                  },
+                  "section": {
+                    "type": "string"
+                  },
+                  "time_kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "at",
+                      "until",
+                      "reported",
+                      null
+                    ]
+                  },
+                  "time": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "legs": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                },
+                "required": [
+                  "source",
+                  "title",
+                  "finding",
+                  "tab",
+                  "section",
+                  "time_kind",
+                  "time",
+                  "legs"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "more": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "rows",
+            "more"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -16904,6 +17111,74 @@
       ],
       "additionalProperties": false
     },
+    "landing_runway": {
+      "description": "The runway landed on at a field the route flies an instrument approach to: the approach's own runway, straight in (AIM 5-4-20, Approach and Landing Minimums; 14 CFR 91.175, the runway of intended landing), unless the pilot picked another and the plate publishes circling minimums, a circle to land (AIM 5-4-20). A runway picked into the wind gives way to the approach's own. With no approach, or one circling only (no runway in its name), the pick stands and any runway may be picked. `circling` null (the plate still coming) is taken as no circling. The runway is answered as painted (\"9\", \"8L\").",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "LandingRunwayInput",
+          "type": "object",
+          "properties": {
+            "approach": {
+              "type": "boolean"
+            },
+            "straight_in": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "circling": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "picked": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "by_pilot": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "approach",
+            "straight_in",
+            "circling",
+            "picked",
+            "by_pilot"
+          ]
+        },
+        "answer": {
+          "title": "LandingRunwayAnswer",
+          "type": "object",
+          "properties": {
+            "runway": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "others_allowed": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "runway",
+            "others_allowed"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "least_crosswind": {
       "description": "Of a field's runways, each on the end the wind favours, the least crosswind, steady or gust, whichever is more: the runway a pilot would pick to keep the wind most nearly down it. A variable wind is all crosswind (AIM 7-1-28); calm is none. null with no wind or no runway end with a heading.",
       "type": "object",
@@ -19480,7 +19755,7 @@
       "additionalProperties": false
     },
     "navlog_fuel_stop_need": {
-      "description": "What a flight's fuel stops are looked for by (route options' fuel_stops): null where its fuel check passes or a figure it needs is not known (no airplane, an unflyable leg); else the worst burn a mile over a tankful's stretch of its legs and its minutes a mile, each times the route's miles for each straight one, the usable fuel, the start and taxi allowance, and the reserve -- 14 CFR 91.151(a)(2)'s 45 minutes for (a)(1)'s 30 where any of a VFR trip, its stops' turnarounds counted, is at night; 91.167(a)(3)'s under IFR as given.",
+      "description": "What a flight's fuel stops are looked for by (route options' fuel_stops): null where its fuel check passes or a figure it needs is not known (no airplane, an unflyable leg); else the worst burn a mile over a tankful's stretch of its legs and its minutes a mile, each times the route's miles for each straight one, the usable fuel, the start and taxi allowance, and the reserve -- 14 CFR 91.151(a)(2)'s 45 minutes for (a)(1)'s 30 where any of a VFR trip, its stops' turnarounds counted, is at night; 91.167(a)(3)'s under IFR as given, with the fuel on to the alternate (91.167(a)(2)) the last stretch keeps; and whether the fuel on board is under the reserve already, no field in its reach.",
       "type": "object",
       "properties": {
         "input": {
@@ -19551,6 +19826,13 @@
                     "boolean",
                     "null"
                   ]
+                },
+                "alternate_gal": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "description": "Under IFR, the last flight's fuel on to its alternate (the alternate leg's fuel_gal, 14 CFR 91.167(a)(2)); null where none is filed."
                 }
               }
             },
@@ -19642,6 +19924,14 @@
             },
             "reserve_gal": {
               "type": "number"
+            },
+            "alternate_gal": {
+              "type": "number",
+              "description": "The fuel on to the IFR alternate the last stretch keeps with its reserve (91.167(a)(2)), for fuel_stops; 0 under VFR."
+            },
+            "on_board_short": {
+              "type": "boolean",
+              "description": "Whether the fuel on board at the start, less the start and taxi, is under the reserve already: no field is in its reach, so no stop is offered."
             }
           },
           "required": [
@@ -19650,7 +19940,9 @@
             "usable_gal",
             "start_gal",
             "taxi_gal",
-            "reserve_gal"
+            "reserve_gal",
+            "alternate_gal",
+            "on_board_short"
           ]
         }
       },
@@ -32068,6 +32360,7 @@
     "glide_range",
     "glide_reaches",
     "glide_ring",
+    "gonogo_adverse_rows",
     "gonogo_balance",
     "gonogo_brief",
     "gonogo_default_load",
@@ -32124,6 +32417,7 @@
     "jurisdiction_of",
     "kept_age",
     "kneeboard_radio",
+    "landing_runway",
     "least_crosswind",
     "legal_cruising_altitudes",
     "lighting_read",

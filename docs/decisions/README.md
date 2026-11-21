@@ -55,3 +55,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0047 | [FPL has one route layout: folded to read, opened to edit](0047-one-fpl-layout.md) | 2026-11-17 | Accepted |
 | 0048 | [The browser specs a change reaches gate its merge](0048-browser-specs-gate.md) | 2026-11-19 | Accepted |
 | 0053 | [A route outside the United States is warned of: its figures are by US rules](0053-us-rules-outside-the-us.md) | 2026-11-21 | Accepted |
+| 0055 | [One set of words on all three apps, generated from one table](0055-one-set-of-words.md) | 2026-11-21 | Accepted |

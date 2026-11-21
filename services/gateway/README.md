@@ -286,7 +286,17 @@ tests cannot start their Postgres.
 `client.ts` echoes back; no filter of this app's forces it any more (the
 `CsrfCookieFilter` that once did is gone). A refused token is answered
 401 by Spring Security's own `HttpStatusEntryPoint`, as the caller is
-anonymous.
+anonymous. The map's tiles (a public GET of `chart-tile`, `terrain-tile`
+or `overlay-tiles`) are the exception: they go through a chain of their
+own (`TileSecurityConfig`) with no cookie and no page headers but nosniff,
+about 1.2 KB less a tile, and nothing that keeps a CDN from storing them.
+
+**Nightly housekeeping.** `Housekeeping` (03:30 UTC) lets go of the speed
+samples past 400 days, sign-in links a day past expiry, reminders' records
+whose day has passed and deletions noted over 60 days ago, then deletes
+again any deleted account a restore brought back (`DeletionsReapplied`,
+which also runs as the gateway starts; docs/README-AWS.md, "Backups and
+restore").
 
 **The planner proxy pins HTTP/1.1.** The JDK `HttpClient` defaults to
 attempting an HTTP/2 upgrade, which uvicorn (HTTP/1.1 only) rejects with

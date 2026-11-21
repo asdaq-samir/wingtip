@@ -34,7 +34,7 @@ export default function LocalDuration({
           className={cn(
             // Over the head under it (z-10), whose row starts inside its
             // area's foot (the iOS audit's P1, "Time aloft" 50×32).
-            "relative z-10 h-8 gap-1 rounded-full pr-2 pl-2.5 font-normal after:absolute after:-inset-x-1 after:-inset-y-1.5 after:content-['']",
+            "relative z-10 h-8 gap-1 rounded-full pr-2 pl-2.5 font-normal hit-x-1 hit-y-1.5",
             CHIP_TEXT,
           )}
         >

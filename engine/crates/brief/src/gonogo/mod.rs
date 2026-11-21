@@ -9,6 +9,9 @@
 //!
 //! - `verdict`: the findings and the line over them (lib/verdict), and
 //!   the IFR alternate's say in them (useAlternate, FlightBriefingView);
+//! - `adverse`: the Brief's Adverse Conditions rows under its findings, at
+//!   most three, a TFR crossed, the SIGMETs, CWAs, urgent PIREPs and
+//!   G-AIRMETs met on the route (AIM 7-1-5(b)(1), 7-1-6);
 //! - `brief`: the findings put together as the Brief shows them, with the
 //!   alternate, the fields row and no airplane's where none is picked,
 //!   and the line over them (`gonogo_brief`);
@@ -38,6 +41,7 @@
 //! are fed from stay the planner's lookups (app.routers.gonogo), and the
 //! time zones the phone's or the planner's own (pass_times).
 
+pub mod adverse;
 pub mod brief;
 pub mod calls;
 pub mod frat;

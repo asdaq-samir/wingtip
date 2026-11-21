@@ -85,7 +85,7 @@ final class AirportShelf {
         var list = favorites
         if let at = list.firstIndex(where: { $0.ident == airport.ident }) {
             list.remove(at: at)
-            setFavorites(list, undo: undo, named: "Remove Favorite")
+            setFavorites(list, undo: undo, named: Wording.removeFromFavorites)
         } else {
             list.append(airport)
             setFavorites(list, undo: nil, named: "")
@@ -95,7 +95,7 @@ final class AirportShelf {
     func removeFavorites(at offsets: IndexSet, undo: UndoManager? = nil) {
         var list = favorites
         list.remove(atOffsets: offsets)
-        setFavorites(list, undo: undo, named: offsets.count == 1 ? "Remove Favorite" : "Remove Favorites")
+        setFavorites(list, undo: undo, named: Wording.removeFromFavorites)
     }
 
     /// The Favorites as `list`, the list before registered as its undo

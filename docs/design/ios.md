@@ -76,8 +76,10 @@ Companion docs:
     chrome and the tab bar.
   - **The map buttons (owner decision 2026-11-10)** are one glass
     capsule, Map, My Position and Ask stacked in it with a hairline
-    between, each 48 points (`size.map-button`) as Maps' are, in place
-    of three separate 44-point circles (`MapButtons`).
+    between, each `size.map-button` as Maps' are, in place of three
+    separate circles (`MapButtons`). The token is 44 since 2026-11-21
+    (the scale audit; it was 48): Apple Maps' buttons are 44 and do not
+    grow with Dynamic Type, and the web pins its at 44 px.
   - **Where (owner, 2026-11-11):** the group rides the sheet's top at
     the right, 24 points over it, just above the search row, following
     the sheet between its detents and under a finger, and fades out as
@@ -198,7 +200,7 @@ view without dismissing the sheet").
     instead, where nothing else is, so nothing grows for the hit area.
   - The page is `Navigator.sheetPage`: every "show the plan" (a route
     made, Fly Here, a link, a saved flight, `-screen fpl`) turns it to
-    FPL, the search coming up (Add a Stop, ⌘F, the microphone) turns it
+    FPL, the search coming up (Add Stop, ⌘F, the microphone) turns it
     to Search, and clearing the route leaves it. A card opens over both
     pages and its close comes back to the one it was opened on.
 - **Content changes with the detent.** The owner checked Apple Maps on
@@ -355,7 +357,7 @@ and replay views are.
   something that can be undone ([HIG Alerts][hig-alerts]: "Avoid
   displaying alerts for common, undoable actions").
 - **Empty states** use `ContentUnavailableView`, with the one action
-  that fills them. For example, "No airplane picked" and Pick an
+  that fills them. For example, "No Airplane Picked" and Pick an
   Airplane.
 - **Warn, never limit.** A figure past a limit is shown, coloured
   caution or warning, with its reason. Nothing is disabled or hidden
@@ -365,7 +367,7 @@ and replay views are.
   the performance) shows an em dash and a "Pick an Airplane" row until
   one is picked. It never shows a default type's numbers.
 - **No signal says so, in place.** What the iPhone answers from its
-  own packs says it: "From this iPhone, without weather" over Nearest's
+  own packs says it: "From This iPhone, Without Weather" over Nearest's
   and Emergency's fields, "No connection: airports from the chart data
   on this iPhone only" over the search. An edit the planner must make
   (Direct To, a diversion) is not half made: the route is put back and
@@ -374,6 +376,12 @@ and replay views are.
   age by the ident. Never a spinner with nothing asked: with no GPS fix
   a list says so after ten seconds and what to do (docs/NATIVE.md, "In
   the air with no signal").
+- **Words** follow docs/design/rules.md section 15 (decision 0055):
+  names in Title Case, sentences with their stop, "Fetching …",
+  "could not". A word all three apps say is design/wording.json's, as
+  `Wording.<key>` (`Design/Generated/Wording.swift`, generated, each a
+  `String(localized:)` the string catalog keeps; `WordingTests` holds
+  it); a screen's title is `Screen.<id>.title`.
 
 ---
 
@@ -423,16 +431,98 @@ opened. Typing "traffic" offers Show Traffic in Do.
      `oneRow`), the microphone and the account beside it, as Maps' search
      row. Under it, at half and full, the route card (`RouteCard`): the
      route (KMSN → KOSH) with the engine's Ready to Fly line and the
-     route's ••• at its right; the figures in one line (distance, ETE,
-     fuel, altitude, airplane); Brief, Nav Log and Airplane; then the
-     route itself (From and To, Routes, the airplane and the altitude),
-     the stops and the rest of the plan. At the pill, the search row
-     alone. With no route, the same place holds Favorites, Recents, Find
-     Nearby and Nearest. Saved Flights, Share and Undo moved from the bar
-     into the route card's ••• with the Profile and Clear Route; Undo
-     stays on shake and the Edit menu (UndoManager); the stops' Edit is
-     at the Stops header's right. Cards still cover the search with
-     their ✕ (the card rule).
+     route's ••• and its ✕ at its right; the figures in one line
+     (distance, ETE, fuel, altitude, airplane); Brief, Nav Log and File,
+     the web's tab bar and its File button (2026-11-21); then Routes,
+     the airplane and the altitude, and the route itself as FPL's
+     timeline (`RouteTimelineSection`, the web's, 2026-11-21): a line a
+     point, the departure, each stop and the destination, their marks
+     joined by the course's magenta (`TimelineThread`). A mark is a
+     filled circle with a white glyph (`TimelineMark`): an airport's
+     "•••" in its flight category's colour, grey with no report, a fuel
+     stop's pump, a waypoint's grey triangle, the airplane's position the
+     tint's location arrow, a field that cannot be flown to the red ✕;
+     it is the point's menu (`RoutePointActions`: More Info, Change…,
+     Direct To, Set Altitude…, a fix, Hold Here…, Remove). The ident is a
+     tap that asks the one search to change the point (Change Stop,
+     Departure, Destination); then the fuel in the tanks there
+     (`TimelineGauge`: the system's capacity gauge and the gallons,
+     "−12 gal" past empty, red under the reserve, each field the airplane
+     leaves a tap to set its fuel in a sheet of a segmented Full / No
+     fuel / Gallons and a number field, Cancel and Done; the engine's
+     `fuel_in_tanks`, each point held to its own flight's reserve and
+     the destination to an IFR alternate's fuel too; the planner's
+     `tanks`); and its time at the right (`TimelineTime`): at the
+     departure when it leaves, the system's compact time picker, one
+     button with the hour and minute wheels, a time of day earlier than
+     now tomorrow's (the planner's `depart`); at the others their arrival
+     on this iPhone's clock from the planner's minutes, a dash with no
+     airplane. Once any point keeps another zone than the departure's at
+     its arrival (its card's `time_zone`), every point says its own clock
+     with its zone after it, "13:00 MST", the departure's too
+     (`TimelineClock`). A stop says when it leaves again after its
+     takeoff's chips, the same picker from its landing to a day after,
+     kept as its minutes on the ground (the planner's `ground`). A field
+     NASR lists closed, or
+     whose card could not be fetched, says why in red under it (decision
+     0043; `RouteFieldCards` asks each field's card once). Stops swipe
+     off and drag into another order (Edit at the header's right); Add a
+     Stop is the last row, then Add (or Remove) Fuel Stops (one tap puts
+     in every stop the planner's rounds found, already checked; a flight
+     short with none offered says why in their place, "No fuel stop in
+     reach on KMSN → KDLH"). Once a field's card says it is open, its
+     line has its runways and the kinds of procedure not picked under it
+     (`TimelineFieldParts`, the web's trays, 5228f10df): "Land RWY 24" and
+     "Takeoff RWY 06", each a menu of its runway ends with Into the Wind
+     first, the planner's own pick where none is (`AirportWords.windEnd`,
+     the planner's `wind_runways`; a pick is its `patterns` or `runways`),
+     a stop's landing then its takeoff; and "+ ARR", "+ APCH" and "+ DEP"
+     for each kind it publishes and the route has none of. A procedure
+     picked is no chip: its fixes are points on the route's line itself
+     (`TimelineProcedureRows`, the owner's option D), an arrival's and an
+     approach's before the field's line, a departure's after it; its head
+     row the kind and the field in the procedure's indigo over its name,
+     the whole row the kind's menu; each fix an indigo ring with "•••",
+     its menu Direct To and Cross at…, its roles under its name and its
+     altitude at the right, the ring filled in the tint where the airplane
+     is sent direct and the fixes before it dashed, skipped. The From and
+     To fields are the route typed:
+     before it is whole, while one is typed in, and until the planner's
+     course is this route's. Then the
+     rest of the plan. At the pill, the search row alone. With no route,
+     the same place holds Favorites, Recents, Find Nearby and Nearest.
+     The ••• is the web's More (2026-11-21): Route Options (the ways'
+     menu picker), Share Link and Open in ForeFlight; under a divider
+     what the iPhone keeps there as view options, Saved Flights and Show
+     Route As. Undo is the undo bar's (`UndoBar`, the web's per-edit
+     toast): after a stop or a procedure removed, the route cleared or
+     replaced, or a Direct To, the change's words and Undo in a glass
+     capsule over the figures strip for six seconds, the window's
+     UndoManager's step, so shake and ⌘Z take the same one back. The ✕ asks
+     "Clear Route?" in the system's alert. The Profile is the cruise
+     altitude's button, its caution marked on it; the rest of the
+     sharing, the checkpoints for ForeFlight and Print are the Nav Log's
+     Share; Route Checkpoints and Class B Weather are Map Settings'
+     switches. The stops' Edit is at the Stops header's right. Cards
+     still cover the search with their ✕ (the card rule). The figures
+     strip at the sheet's foot reads To, Dist, ETE, Trk and, whenever
+     the airplane's position is known, GPS Alt (no To in flight): Track
+     the magnetic track, the engine's on the route or the fix's true
+     course less the engine's WMM variation, "—" below flying speed.
+     The one search's prompt is "Search" whatever it is up for.
+   - **Picking a point (the web's Add Stop and Change Stop, 2026-11-21).**
+     Add Stop, and a tap on a point's ident on FPL's timeline, ask the
+     one search to pick (`PointAsk`, `OneSearchModel.ask`): the Search
+     page with the ask's title over the rows in Maps' words, Add Stop,
+     Change Stop, Departure or Destination, and "In place of KMSN" under
+     a change. A tap on a field anywhere on the page -- Nearest, a
+     Favorite, a Recent, a result or a waypoint -- picks it (`Plan.pick`)
+     and the sheet is back on FPL; the field's own Cancel goes back with
+     nothing changed. A field that cannot be picked is greyed with why
+     (`Plan.refusal`, `RefusalLine`): closed, in the planner's label from
+     the engine's `field_status` (decision 0043), or already on the route
+     (the two ends may be one field). The flight's card, the airplanes,
+     Find Nearby, towns and Do are left out while it picks.
    - Still the owner's to decide (2026-11-10): the altitude picker, a
      wheel or a list like ForeFlight's Altitude Advisor.
    - Use `.searchable(text:placement:prompt:)` and
@@ -822,10 +912,11 @@ edged in the waypoint magenta outside the turn, turned with the map
    - Swipe to delete.
    - "Add a Stop After" in each row's menu.
    - After a delete or a change, the system's **Undo**: the window's
-     `UndoManager`, so shake, Command-Z, the Edit menu and an Undo button
-     in the sheet's bar (`arrow.uturn.backward`, shown while there is
-     something to undo) all take it back. Never a toast or an alert
-     ([HIG Alerts][hig-alerts]).
+     `UndoManager`, so shake, Command-Z, the Edit menu and the undo bar
+     at the plan's foot (`UndoBar`, the change's words and Undo for six
+     seconds, as Mail and Photos offer one after a delete) all take it
+     back; the iPad's sidebar keeps the bar's Undo button too
+     (`UndoToolbarItem`). Never an alert ([HIG Alerts][hig-alerts]).
 6. **Options:** flight rules, departure time and airplane, as menus
    (`Picker` with `.menu`), not sliders.
 
@@ -1247,7 +1338,7 @@ by its model through `CardTriggers`; its own map at the top):**
 1. **The bar.** A Close (✕) at the top right, where iOS puts the
    system's close and every card of the app has it (the owner's card
    rule, 2026-11-10), which ends the emergency view only, and the title
-   "Emergency". HIG Modality asks only that a full-screen modal have a
+   "Emergency Assistant" (design/screens.json's). HIG Modality asks only that a full-screen modal have a
    clear way out; it names no other edge, so the platform's own place
    for close stands.
 2. **The map**, with the line to the field picked in
@@ -1260,7 +1351,7 @@ by its model through `CardTriggers`; its own map at the top):**
    `visibility_plus`; nothing where the report has none). Each row has
    one filled **Direct To** button, the row's primary action. With no
    planner the fields are the cycle packs' (`PackFields`), ranked by the
-   engine, under one row: "From this iPhone, without weather". A Direct
+   engine, under one row: "From This iPhone, Without Weather". A Direct
    To with no connection is not made, and "Not changed: no connection"
    is said under the list; the rows keep the engine's heading and
    distance. With no fix the section says so, never a spinner forever.

@@ -112,7 +112,7 @@ private struct YouHead: View {
                 }
                 Text(pilot.email).font(WingtipType.detail).foregroundStyle(.secondary)
             } else {
-                Button("Sign In", action: signIn)
+                Button(Wording.signIn, action: signIn)
                     .font(.title.bold())
                     .buttonStyle(.borderless)
                     .disabled(!session.loaded)

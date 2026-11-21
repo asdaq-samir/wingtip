@@ -78,7 +78,7 @@ export default function InstructorPage() {
         {!instructor.certificate || editing ? (
           <CertificateForm instructor={instructor} onDone={instructor.certificate ? () => setEditing(false) : undefined} />
         ) : (
-          <ListGroup title="Your certificate">
+          <ListGroup title="Your Certificate">
             <ListRow
               title={instructor.fullName ?? ""}
               description={<span className="font-mono">{instructor.certificate}</span>}
@@ -90,12 +90,13 @@ export default function InstructorPage() {
         )}
 
         {instructor.asking.length > 0 && (
-          <ListGroup title="Asking you">
+          <ListGroup title="Asking You">
             {instructor.asking.map((s) => (
               <ListRow key={s.linkId} title={s.name} description={s.email} data-testid="student-ask">
                 <span className="flex gap-1">
                   <Button type="button" variant="ghost" size="sm" disabled={leave.isPending} onClick={() => leave.mutate(s.linkId)}>
-                    Decline
+                    {/* Whose, for a reader's list of buttons (WCAG 2.4.6), after the word seen (2.5.3). */}
+                    Decline<span className="sr-only"> {s.name}</span>
                   </Button>
                   <Button
                     type="button"
@@ -104,7 +105,7 @@ export default function InstructorPage() {
                     onClick={() => accept.mutate(s.linkId)}
                     data-testid="student-accept"
                   >
-                    Accept
+                    Accept<span className="sr-only"> {s.name}</span>
                   </Button>
                 </span>
               </ListRow>
@@ -116,7 +117,7 @@ export default function InstructorPage() {
           // Who needs the instructor today (features/pilot/students): a solo
           // cross-country flown today or before still waiting on its
           // sign-off, a solo endorsement lapsing within the week.
-          <ListGroup title="Needs you today">
+          <ListGroup title="Needs You Today">
             {students.needs.map((l) => (
               <PageRow
                 key={l.row.linkId}
@@ -173,7 +174,7 @@ export default function InstructorPage() {
         {instructor.certificate && !editing && (
           <ListGroup>
             <ListRow
-              title={<span className="text-destructive">Stop instructing here</span>}
+              title={<span className="text-destructive">Stop Instructing Here</span>}
               disabled={stop.isPending}
               onClick={() => stop.mutate()}
             />

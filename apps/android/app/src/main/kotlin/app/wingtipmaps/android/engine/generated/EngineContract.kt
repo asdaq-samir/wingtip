@@ -4633,6 +4633,11 @@ object EngineContract {
     data class FuelInTanksAnswerItem(
         val gal: Double,
         val low: Boolean,
+        /**
+         * Where the tanks are filled (the departure, a field landed at), what they hold as the airplane leaves: the pilot's own figure, full, or what it landed with where the figure is under that; null elsewhere.
+         */
+        @SerialName("leaves_gal")
+        val leavesGal: Double? = null,
     )
 
     @Serializable
@@ -4642,8 +4647,16 @@ object EngineContract {
         val usableGal: Double,
         @SerialName("taxi_gal")
         val taxiGal: Double,
-        @SerialName("reserve_gal")
-        val reserveGal: Double,
+        /**
+         * Each flight's own reserve, gallons, in order: the first the departure's flight, the next the one from the first field landed at (refuel), as the planner's totals give each flight's reserve_gal. A point is low against the reserve of the flight that lands at or passes it; a flight with none given (null, or past the list's end) is held to the strictest given.
+         */
+        @SerialName("reserves_gal")
+        val reservesGal: List<Double?>,
+        /**
+         * Under IFR with an alternate filed, the fuel on to it from the destination, gallons (14 CFR 91.167(a)(2)): the route's last point is held to its flight's reserve and this; null or 0 under VFR.
+         */
+        @SerialName("alternate_gal")
+        val alternateGal: Double? = null,
     )
 
     @Serializable
@@ -4724,6 +4737,11 @@ object EngineContract {
         val groundMin: Double? = null,
         val skip: List<String>? = null,
         val fields: List<EngineContract.FuelField>? = null,
+        /**
+         * Under IFR with an alternate filed, the fuel from the destination on to it, gallons (14 CFR 91.167(a)(2)): the stretch landing at the destination keeps it with the reserve. Each stop is itself a first point of intended landing under 91.167(a)(1); only the destination's alternate is counted, as the planner's fuel check counts it. Null or 0 under VFR.
+         */
+        @SerialName("alternate_gal")
+        val alternateGal: Double? = null,
     )
 
     @Serializable
@@ -8123,6 +8141,16 @@ object EngineContract {
         val taxiGal: Double,
         @SerialName("reserve_gal")
         val reserveGal: Double,
+        /**
+         * The fuel on to the IFR alternate the last stretch keeps with its reserve (91.167(a)(2)), for fuel_stops; 0 under VFR.
+         */
+        @SerialName("alternate_gal")
+        val alternateGal: Double,
+        /**
+         * Whether the fuel on board at the start, less the start and taxi, is under the reserve already: no field is in its reach, so no stop is offered.
+         */
+        @SerialName("on_board_short")
+        val onBoardShort: Boolean,
     )
 
     @Serializable
@@ -8187,6 +8215,11 @@ object EngineContract {
         val reserveGal: Double? = null,
         val rules: String? = null,
         val night: Boolean? = null,
+        /**
+         * Under IFR, the last flight's fuel on to its alternate (the alternate leg's fuel_gal, 14 CFR 91.167(a)(2)); null where none is filed.
+         */
+        @SerialName("alternate_gal")
+        val alternateGal: Double? = null,
     )
 
     @Serializable

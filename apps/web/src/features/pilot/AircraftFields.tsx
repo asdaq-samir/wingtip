@@ -1,4 +1,5 @@
 import type { Control, FieldErrors, UseFormRegister } from "react-hook-form";
+import { errorIdOf, invalidProps } from "../../lib/fieldError";
 import FieldHit from "../../components/FieldHit";
 import { Input } from "../../components/ui/input";
 import NumberRow from "./NumberRow";
@@ -7,9 +8,17 @@ import type { AircraftFormValues } from "./aircraftForm";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { cruiseReferenceFt } from "../../lib/performance";
 import { altFt } from "../../lib/format";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** What the gateway refused of a field, or nothing, as a row's description. */
-const problem = (message?: string) => (message ? <span className="text-destructive">{message}</span> : undefined);
+// What is wrong with a field, said under its title with the id its field is
+// described by, so a reader says the two together (WCAG 3.3.1).
+const problem = (id: string, message?: string) =>
+  message ? (
+    <span id={errorIdOf(id)} className="text-destructive">
+      {message}
+    </span>
+  ) : undefined;
 
 /** The airplane form's fields: what it is, its speeds and burns, its tanks
  *  and its flight plan items, each a row of a grouped list. */
@@ -34,7 +43,7 @@ export function AircraftFields({
       phase and the units in full. The identifiers are
       capitals and never autocorrected. */}
       <ListGroup>
-        <ListRow id={`${formId}-tail`} title="Tail number" description={problem(errors.tailNumber?.message)}>
+        <ListRow id={`${formId}-tail`} title="Tail Number" description={problem(`${formId}-tail`, errors.tailNumber?.message)}>
           <FieldHit htmlFor={`${formId}-tail`}>
             <Input
               id={`${formId}-tail`}
@@ -42,7 +51,7 @@ export function AircraftFields({
               placeholder="N12345"
               className="h-8 w-32 text-right"
               aria-label="Tail number"
-              aria-invalid={!!errors.tailNumber}
+              {...invalidProps(`${formId}-tail`, errors.tailNumber?.message)}
               autoCapitalize="characters"
               autoCorrect="off"
               autoComplete="off"
@@ -50,7 +59,7 @@ export function AircraftFields({
             />
           </FieldHit>
         </ListRow>
-        <ListRow id={`${formId}-type`} title="Type" description={problem(errors.typeDesignator?.message)}>
+        <ListRow id={`${formId}-type`} title="Type" description={problem(`${formId}-type`, errors.typeDesignator?.message)}>
           <FieldHit htmlFor={`${formId}-type`}>
             <Input
               id={`${formId}-type`}
@@ -58,7 +67,7 @@ export function AircraftFields({
               placeholder="C172"
               className="h-8 w-32 text-right"
               aria-label="Type designator"
-              aria-invalid={!!errors.typeDesignator}
+              {...invalidProps(`${formId}-type`, errors.typeDesignator?.message)}
               autoCapitalize="characters"
               autoCorrect="off"
               autoComplete="off"
@@ -77,7 +86,7 @@ export function AircraftFields({
       <ListGroup title={`Cruise figures at ${altFt(cruiseReferenceFt())} ft, standard day`}>
         <NumberRow
           id={`${formId}-power`}
-          title="Cruise power"
+          title={WORDING.cruisePower}
           unit="%"
           placeholder="65"
           name="Cruise power in percent"
@@ -90,7 +99,7 @@ export function AircraftFields({
       <ListGroup>
         <NumberRow
           id={`${formId}-usable`}
-          title="Usable fuel"
+          title={WORDING.usableFuel}
           unit="gal"
           placeholder="40"
           name="Usable fuel in gallons"
@@ -105,8 +114,8 @@ export function AircraftFields({
       for GNSS); 10b, C for a transponder with Mode C, B1 or U1
       for ADS-B Out; item 19's colour and markings. Codes are
       capitals, never autocorrected. */}
-      <ListGroup title="Flight plan">
-        <ListRow id={`${formId}-equipment`} title="Equipment" description={problem(errors.equipment?.message)}>
+      <ListGroup title="Flight Plan">
+        <ListRow id={`${formId}-equipment`} title="Equipment" description={problem(`${formId}-equipment`, errors.equipment?.message)}>
           <FieldHit htmlFor={`${formId}-equipment`}>
             <Input
               id={`${formId}-equipment`}
@@ -115,7 +124,7 @@ export function AircraftFields({
               maxLength={40}
               className="h-8 w-32 text-right font-mono uppercase"
               aria-label="Equipment, flight plan item 10a"
-              aria-invalid={!!errors.equipment}
+              {...invalidProps(`${formId}-equipment`, errors.equipment?.message)}
               autoCapitalize="characters"
               autoCorrect="off"
               autoComplete="off"
@@ -123,7 +132,11 @@ export function AircraftFields({
             />
           </FieldHit>
         </ListRow>
-        <ListRow id={`${formId}-surveillance`} title="Surveillance" description={problem(errors.surveillance?.message)}>
+        <ListRow
+          id={`${formId}-surveillance`}
+          title="Surveillance"
+          description={problem(`${formId}-surveillance`, errors.surveillance?.message)}
+        >
           <FieldHit htmlFor={`${formId}-surveillance`}>
             <Input
               id={`${formId}-surveillance`}
@@ -132,7 +145,7 @@ export function AircraftFields({
               maxLength={20}
               className="h-8 w-32 text-right font-mono uppercase"
               aria-label="Surveillance, flight plan item 10b"
-              aria-invalid={!!errors.surveillance}
+              {...invalidProps(`${formId}-surveillance`, errors.surveillance?.message)}
               autoCapitalize="characters"
               autoCorrect="off"
               autoComplete="off"
@@ -140,7 +153,7 @@ export function AircraftFields({
             />
           </FieldHit>
         </ListRow>
-        <ListRow id={`${formId}-colour`} title="Color" description={problem(errors.colour?.message)}>
+        <ListRow id={`${formId}-colour`} title="Color" description={problem(`${formId}-colour`, errors.colour?.message)}>
           <FieldHit htmlFor={`${formId}-colour`}>
             <Input
               id={`${formId}-colour`}
@@ -149,7 +162,7 @@ export function AircraftFields({
               maxLength={40}
               className="h-8 w-40 text-right"
               aria-label="Color and markings, flight plan item 19"
-              aria-invalid={!!errors.colour}
+              {...invalidProps(`${formId}-colour`, errors.colour?.message)}
             />
           </FieldHit>
         </ListRow>

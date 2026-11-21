@@ -13,7 +13,8 @@ import { useBackCloses } from "../lib/backNavigation";
 import { FLOAT_PX, insetsOf, letGo, snapsOf } from "./sheet/insets";
 import { useSheetCover } from "./sheet/useSheetCover";
 import { useDrawn } from "./sheet/useDrawn";
-import { SHEET_BELOW, SheetParts, type PartsProps } from "./sheet/SheetParts";
+import { SheetParts, type PartsProps } from "./sheet/SheetParts";
+import { SHEET_BELOW } from "./sheet/sheetLayout";
 import { SheetGrabber } from "./sheet/SheetGrabber";
 import { SHEET_SIZES, SIDE_SIZES } from "./sheet/grabberSizes";
 import { CardStack, type StackProps } from "./sheet/CardStack";
@@ -201,29 +202,13 @@ export default function MapPanel(props: Props) {
   }, [onPhone]);
 
   const panelSize = useMemo(() => ({ size, to: ask, card: layer === "card" }), [size, ask, layer]);
+  // How the sheet is laid out this render, worked out once for each of its parts.
   const shared: PartsProps = {
-    ...props,
     // The pages as drawn (none in flight).
-    pages,
-    layer,
-    flying,
-    size,
-    atPill,
-    fromBottom: bottomSheet,
-    onPhone,
-    desktop,
-    footShown,
-    cardsUp,
-    barShown,
-    toEdge,
+    slots: { top, kept, controls, compact, bar, foot, children, pages },
+    layout: { layer, flying, size, atPill, fromBottom: bottomSheet, onPhone, desktop, footShown, cardsUp, barShown, toEdge },
     panelSize,
     onFootTap: () => ask("half"),
-    kept,
-    top,
-    controls,
-    compact,
-    bar,
-    children,
   };
   // The sheet's grabber and each card's, the one plain bar.
   const grabberAt = bottomSheet ? "top" : "bottom";

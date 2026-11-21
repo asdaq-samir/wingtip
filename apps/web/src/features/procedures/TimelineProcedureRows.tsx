@@ -25,7 +25,12 @@ function OnTheLine({ mark, stop, children }: { mark?: ReactNode; stop: boolean; 
         <span aria-hidden="true" className={cn(TIMELINE_THREAD, "top-0", stop && "bottom-1/2")} />
         {mark && <span className="relative z-10 flex">{mark}</span>}
       </span>
-      <div className={cn("flex min-h-11 min-w-0 flex-1 items-center gap-2 border-t border-border", TIMELINE_END)}>{children}</div>
+      {/* 44 points under its hairline, as a point's line is (TimelineLine's
+          row under its border): with the border inside the 44 a fix's
+          button was 43 tall (the HIG review's P1, 2026-11-21). */}
+      <div className={cn("box-content flex min-h-11 min-w-0 flex-1 items-center gap-2 border-t border-border", TIMELINE_END)}>
+        {children}
+      </div>
     </div>
   );
 }
@@ -105,7 +110,7 @@ export function TimelineProcedureRows({
               className={cn(
                 "grid size-8 place-items-center rounded-full border-2",
                 isDirect
-                  ? "border-tint bg-tint text-white"
+                  ? "border-primary bg-primary text-primary-foreground"
                   : skipped
                     ? "border-dashed border-muted-foreground/50 bg-card text-muted-foreground"
                     : "border-procedure bg-card text-procedure",
@@ -134,7 +139,11 @@ export function TimelineProcedureRows({
                   onClick={() => onFix(field.ident, kind, fix.ident)}
                   className={cn("flex min-w-0 flex-1 flex-col justify-center self-stretch py-1 text-left", skipped && "opacity-50")}
                 >
-                  <span className={cn("font-semibold", TEXT.row, isDirect && "text-tint")}>{fix.ident}</span>
+                  {/* In the regular weight, as the route's points are on the same
+                      line (the owner, 2026-11-20: "Stops font can be
+                      non-bold"); the procedure's name over them stays its
+                      head's bold. */}
+                  <span className={cn("font-normal", TEXT.row, isDirect && "font-semibold text-tint")}>{fix.ident}</span>
                   {sub && <span className={cn(TEXT.note, isDirect ? "font-semibold text-tint" : "text-muted-foreground")}>{sub}</span>}
                 </BaseButton>
                 <FixFigures fix={fix} own={crossings[fix.ident] ?? null} />

@@ -58,7 +58,7 @@ struct DiagramPage {
         // airplane, and says so (logged by Engine.rule).
         let words: [String]
         do { words = try Engine.diagramLabels(text: text) } catch {
-            return DiagramPage(document: document, size: box.size, graticule: nil, problem: "Its latitude and longitude marks couldn't be read.")
+            return DiagramPage(document: document, size: box.size, graticule: nil, problem: "Its latitude and longitude marks could not be read.")
         }
         var placed: [EngineContract.DiagramGraticuleInputLabelsItem] = []
         for word in words {
@@ -72,7 +72,7 @@ struct DiagramPage {
         do {
             return DiagramPage(document: document, size: box.size, graticule: try Engine.diagramGraticule(labels: placed))
         } catch {
-            return DiagramPage(document: document, size: box.size, graticule: nil, problem: "Its latitude and longitude marks couldn't be fitted.")
+            return DiagramPage(document: document, size: box.size, graticule: nil, problem: "Its latitude and longitude marks could not be fitted.")
         }
     }
 }

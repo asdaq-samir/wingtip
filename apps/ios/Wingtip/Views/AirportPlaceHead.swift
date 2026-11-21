@@ -194,7 +194,7 @@ struct AirportPlaceHead: View {
             .accessibilityHint("Hold for Depart From")
             .accessibilityIdentifier("fly-here")
             Button { plan.addStop(place.ident); done() } label: {
-                ActionFace(systemImage: CardAction.addStop.systemImage, title: "Add Stop")
+                ActionFace(systemImage: CardAction.addStop.systemImage, title: Wording.addStop)
             }
             .glassButton()
             .disabled(place.closed != nil || !plan.canAddStop(place.ident))
@@ -213,7 +213,7 @@ struct AirportPlaceHead: View {
             }
             .toggleStyle(.button)
             .glassButton()
-            .accessibilityLabel(kept ? "Remove from Favorites" : "Add to Favorites")
+            .accessibilityLabel(kept ? Wording.removeFromFavorites : Wording.addToFavorites)
             .accessibilityIdentifier("place-favorite")
         }
         .glassGroup(spacing: WingtipSpace.sm)

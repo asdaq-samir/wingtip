@@ -58,5 +58,6 @@ enum class LinkKey(
     TYPE("type"),
     RULES("rules"),
     TAIL("tail"),
+    TANKS("tanks"),
     SHARE("share"),
 }

@@ -64,7 +64,7 @@ test("the USGS's imagery over the chart, credited, at the strength picked; no Go
   // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
   await grabberTo(page, "full");
   const overlay = page.getByTestId("overlay-select");
-  await expect(page.getByTestId("map-settings").getByRole("heading", { name: "Base map" })).toBeVisible();
+  await expect(page.getByTestId("map-settings").getByRole("heading", { name: "Base Map" })).toBeVisible();
   await expect(overlay.getByRole("button")).toHaveText(["None", "USGS"]);
   await overlay.getByRole("button", { name: "USGS" }).click();
   // The map's own layer, not the choice's picture of it.

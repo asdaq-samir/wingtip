@@ -43,7 +43,7 @@ pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                    └─ everything else ──▶ the server            not cached: pages, /api, sign-in
                                             │ origin.app.example.com:443, with X-Origin-Secret
                                             ▼
-                        EC2 t3a.medium on Spot, a group of one (Amazon Linux 2023,
+                        EC2 t3a.large on Spot, a group of one (Amazon Linux 2023,
                         infra/docker-compose.prod.yml), its fixed address and data disk
                         taken over by whichever server is running
                           caddy ─▶ gateway ─▶ planner (the chart model and the engine in-process)
@@ -131,7 +131,7 @@ Prices in us-east-1, October 2026, at today's traffic:
 
 | Item | A month |
 |---|---|
-| EC2 t3a.medium on Spot, all month (on demand: $27.45) | ~$10, as Spot's price moves |
+| EC2 t3a.large on Spot, all month (on demand: about $55) | ~$19, as Spot's price moves |
 | Its public IPv4 address | $3.65 |
 | 20 GB system disk and 30 GB data disk, gp3 | $4.00 |
 | S3 tiles: a few dozen archives a cycle (cents; they were 2.2 million tile uploads, about $11), and up to three cycles stored (some 36 GB a cycle with the @2x tiles) | ~$2.50 |
@@ -142,14 +142,51 @@ Prices in us-east-1, October 2026, at today's traffic:
 | ECR, CloudWatch logs, backups, the Fargate Spot refresh (under $1 a cycle) | ~$1.50 |
 | CloudFront | $0 within the always-free 1 TB and 10 million requests |
 | SES | $0.10 per 1,000 sign-in emails |
-| **Total** | **about $27** |
+| **Total** | **about $35** |
 
 With `ServerPricing=on-demand`, for a server AWS never takes back, it
-is about $41, or about $31 with a one-year Savings Plan. The next
+is about $71, or about $45 with a one-year Savings Plan. The template's
+default is a t3a.large (8 GB) since 2026-11-21 (the owner, on the
+prelaunch audit): the services take about 3.5 GB, which a t3a.medium's
+4 GB barely holds. `InstanceType=t3a.medium` (and `SpareInstanceType=t3.medium`)
+still deploys the smaller server, at about $27. The next
 saving after Spot was the tiles' upload bill, and the archives (#535)
 took it to cents, the reader in the planner rather than the map.
 
 The template's `BudgetEmail` sets an alarm at 80% of $50 a month.
+
+### As pilots come
+
+Recomputed on 2026-11-21 (the prelaunch audit) from today's archives and
+AWS's public us-east-1 prices (CloudFront pay-as-you-go: 1 TB and 10
+million requests a month always free, then $0.085 a GB and $0.01 per
+10,000 HTTPS requests; EC2 on-demand, Spot taken at about a third). One
+cycle's archives are about 30 GB (sec@2x 18 GB, sec 6.7, tac@2x 2.3, tac
+0.9, IFR 1.8, the overlays 0.12), PNG tiles of 35 KB on average at @2x.
+An active pilot is taken as ten sessions a month of about 200 tiles and
+100 answers each, some 80 MB and 3,000 requests (the web's service
+worker keeps 20,000 tiles for the cycle, so a pilot's own area costs
+little the second time). The planner's CPU per route and its memory
+were not measured for this; the server's services add up to about
+3.5 GB (weather 768 MB, ingest 384 MB, the gateway's JVM, the planner,
+Postgres), which a t3a.medium's 4 GB barely holds, so a t3a.large is
+the launch size, and the template's default.
+
+| A month | 100 pilots | 1,000 pilots | 10,000 pilots |
+|---|---|---|---|
+| The server, Spot (on demand) | t3a.large ~$19 ($55) | t3a.large ~$19 ($55) | t3a.xlarge ~$40 ($110) |
+| IPv4 address, disks, snapshots | ~$9 | ~$9 | ~$12 (an 80 GB data disk) |
+| S3, three cycles of archives (~90 GB) | ~$2.10 | ~$2.10 | ~$2.10 |
+| CloudFront (data, requests) | $0 (8 GB, 0.3 M) | $0 (80 GB, 3 M) | ~$20 (800 GB free, 30 M requests) |
+| SES, Secrets Manager, Route 53, logs, ECR, the cycle's Fargate task | ~$5 | ~$5 | ~$9 |
+| **Total, Spot (on demand)** | **~$35 ($71)** | **~$35 ($71)** | **~$83 ($153)** |
+| Per pilot | $0.35 | $0.035 | $0.008 |
+
+The server is the cost until some 10,000 pilots; the CDN's bill is its
+requests, not its bytes, and the always-free terabyte holds about 12,000
+pilots' tiles. ADS-B Exchange's RapidAPI plan (10,000 requests a month)
+is not in the table: past a few thousand pilots its fallback needs a
+bigger plan or to be left to adsb.lol.
 
 ## Rehearse it locally
 
@@ -409,13 +446,31 @@ restore one, on the server:
 
 ```bash
 cd /srv/wingtip/repo
+infra/server/restore-deletions.sh save
 B=s3://<ServerBucketName>/backups/<date>
 aws s3 cp $B/postgres.dump - | \
   docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml \
   exec -T db pg_restore -U wingtip -d wingtip --clean --if-exists
 aws s3 cp $B/labels.tar.gz - | tar -xz -C /srv/wingtip/data
+infra/server/restore-deletions.sh apply
 docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml restart gateway planner
 ```
+
+**A deleted account stays deleted.** A dump from before a pilot deleted
+their account holds that account. The gateway notes each deletion by the
+pilot's id alone in `deleted_accounts` (V47, kept 60 days, longer than any
+backup), and `backup.sh` copies that list to `backups/deleted-accounts.csv`
+each night. `restore-deletions.sh save` keeps the live database's list (if
+it still answers) and the nightly copy before the restore; `apply` puts
+them back and moves the pilots' id sequence past them. As the gateway
+starts it deletes again every noted account the restore brought back,
+the planner's notes included (`DeletionsReapplied`), and it looks again
+each night. Restoring a snapshot of the data disk is the same: `save`
+before the new volume is attached (the nightly copy, if the old disk is
+gone), `apply` once the stack is up. Only an account deleted after the last
+night's copy, on a server whose database is lost, is not caught: the dump
+it comes back from is at most a day older than that deletion, and the pilot
+deletes it again (docs/privacy-inventory.md says so).
 
 Everything else in the data folder (the FAA's files, the chart sheets)
 is downloaded again by the planner as it is needed.

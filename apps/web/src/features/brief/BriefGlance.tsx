@@ -2,43 +2,19 @@ import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { GraduationCap } from "lucide-react";
 import { cn } from "cn";
-import { Alert, AlertDescription } from "../../components/ui/alert";
-import FindingIcon from "../../components/FindingIcon";
 import { ListGroup } from "../../components/GroupedList";
 import { Accordion } from "../../components/ui/accordion";
 import { dataWarning } from "../../lib/dataCycles";
 import { useDataCycles } from "../../lib/map/sources/layerAges";
 import { glanceLines, useGlance } from "./glance";
 import { pilotQuery, trainingQuery } from "../../lib/queryClient";
-import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
 import { useAirplaneChosen } from "../../lib/preferences";
 import { useVerdict } from "../../lib/verdict";
 import type { PanelTab } from "../plan";
+import { AdverseGroup, CautionRow } from "./AdverseRows";
 import { Line, Rest } from "./GlanceLines";
 import { BeforeRow, EnrouteRow, FieldRow } from "./glanceRows";
-
-/** One line when FAA data the plan rests on -- the airports and their
- *  frequencies, the charts, the procedures, the obstacles -- is past its
- *  cycle (the engine's data_cycle, lib/dataCycles): the plan is still
- *  made from it (warn, never limit), and a pilot should know before they
- *  go. Nothing while every edition is in force. */
-function DataWarning() {
-  const line = dataWarning(useDataCycles());
-  if (!line) return null;
-  return (
-    // The stock Alert, said politely (a status, not an alarm), in the
-    // caution's wash.
-    <Alert
-      role="status"
-      className={cn("items-center rounded-xl border-0 bg-caution-wash px-3.5 py-2.5", TEXT.detail)}
-      data-testid="brief-data-out-of-date"
-    >
-      <FindingIcon finding="caution" className="size-5 shrink-0" />
-      <AlertDescription className={cn(TEXT.detail, FINDING_TONE.caution)}>{line}</AlertDescription>
-    </Alert>
-  );
-}
 
 /** The student's instructor, where they have one (their training's
  *  accepted link): the flights put to them are what the instructor signs
@@ -54,7 +30,7 @@ function InstructorNote() {
       data-testid="brief-instructor"
     >
       <GraduationCap className="size-5 shrink-0 text-tint" aria-hidden />
-      <span>Your instructor, {link.name ?? link.email}, sees the flights you put to them and can sign off from their phone.</span>
+      <span>Your instructor, {link.name ?? link.email}, sees the flights you send them and can sign them off from their phone.</span>
     </div>
   );
 }
@@ -62,30 +38,34 @@ function InstructorNote() {
 /**
  * The Brief as it opens, at the owner's rule (2026-11-03, "a pilot
  * doesn't want to spend too much time in studying the briefs so make it
- * simpler for them to just look and go") and his pick of option A
- * (2026-11-19): one grouped list, as Settings and FPL's timeline are, a
- * hairline between its rows. Whether to go is over it, under the Brief's
- * name (VerdictPill). First the findings a pilot acts on, at most three
- * one-sentence lines (the engine's gonogo_glance_lines), each unfolding
- * to why it matters and the reports behind it, and the rest folded into
- * one row; then a row for each part of the flight -- Before You Go with
- * what is left to do, Depart with its time, En Route with its three
- * figures, Arrive -- and the NOTAMs (`notams`), each opening its page.
- * Stacked, not swiped: a swipe only ever goes back (the owner's rule).
+ * simpler for them to just look and go"), his pick of option A
+ * (2026-11-19) and of the Brief audit's option 2 (2026-11-21). Whether to
+ * go is over it, under the Brief's name (VerdictPill). Straight under it
+ * the findings a pilot acts on, at most three one-sentence lines (the
+ * engine's gonogo_glance_lines), each unfolding to why it matters and the
+ * reports behind it, the rest folded into one row, and what could not be
+ * checked one caution at their end (CautionRow). Then the Adverse
+ * Conditions on the route, as a briefer gives them first (AIM
+ * 7-1-5(b)(1); AdverseGroup), only where there are any. Then a row for
+ * each part of the flight -- Before You Go with what is left to do, Depart
+ * with its time, En Route with its three figures, Arrive -- and the
+ * NOTAMs (`notams`), each opening its page; and at the foot when to go
+ * (`foot`), the "when" after the "whether". Grouped lists, as Settings and
+ * FPL's timeline are, a hairline between rows. Stacked, not swiped: a
+ * swipe only ever goes back (the owner's rule).
  */
 export default function BriefGlance({
   onOpen,
-  before,
   notams,
+  foot,
   after,
 }: {
   onOpen: (tab: PanelTab, section?: string) => void;
-  /** Over the list: what the briefing could not check, and when to go
-   *  (BriefOverview). */
-  before?: ReactNode;
-  /** The list's last row: the NOTAMs that matter (BriefOverview). */
+  /** The flight's last row: the NOTAMs that matter (BriefOverview). */
   notams?: ReactNode;
-  /** Under the list: the flight watch (BriefOverview). */
+  /** Under the list: when to go hour by hour (BriefOverview). */
+  foot?: ReactNode;
+  /** Under that: the flight watch (BriefOverview). */
   after?: ReactNode;
 }) {
   const glance = useGlance((g) => g.glance);
@@ -94,28 +74,38 @@ export default function BriefGlance({
   // With no airplane the fuel to spare and the weight and balance are not
   // shown at all, not a dash (the owner, 2026-11-09).
   const airplane = useAirplaneChosen();
+  const rest = !!lines && lines.rest.items.length > 0 && lines.rest.finding !== "ok";
+  // The findings' group drawn only where it has a row: a line, the rest,
+  // or what could not be checked (CautionRow draws nothing without).
+  const unchecked = !!glance?.unchecked.length || !!dataWarning(useDataCycles());
+  const findings = !!lines?.act.length || rest || unchecked || !!glance?.outside || !!glance?.adiz;
   return (
     <div className="flex flex-col gap-4 pt-1 pb-4" data-testid="brief-glance">
-      {before}
-      <Accordion multiple data-testid="brief-list">
-        <ListGroup className="w-full">
-          {lines?.act.map((line) => (
-            <Line key={line.key} line={line} onOpen={onOpen} />
-          ))}
-          {/* A route outside the United States, said once among the
-              findings: its figures are by US rules (decision 0053). */}
-          {glance?.outside && (
-            <Line
-              line={{ ...glance.outside, key: "jurisdiction", finding: "caution", tab: "enroute", section: null, raw: [] }}
-              onOpen={onOpen}
-            />
-          )}
-          {/* An Air Defense Identification Zone on the way, said once:
-              what 14 CFR part 99 asks of the flight there. */}
-          {glance?.adiz && (
-            <Line line={{ ...glance.adiz, key: "adiz", finding: "caution", tab: "enroute", section: null, raw: [] }} onOpen={onOpen} />
-          )}
-          {lines && lines.rest.items.length > 0 && lines.rest.finding !== "ok" && <Rest rest={lines.rest} onOpen={onOpen} />}
+      <Accordion multiple data-testid="brief-list" className="flex flex-col gap-4">
+        {findings && (
+          <ListGroup className="w-full">
+            {lines?.act.map((line) => (
+              <Line key={line.key} line={line} onOpen={onOpen} />
+            ))}
+            {/* A route outside the United States, said once among the
+                findings: its figures are by US rules (decision 0053). */}
+            {glance?.outside && (
+              <Line
+                line={{ ...glance.outside, key: "jurisdiction", finding: "caution", tab: "enroute", section: null, raw: [] }}
+                onOpen={onOpen}
+              />
+            )}
+            {/* An Air Defense Identification Zone on the way, said once:
+                what 14 CFR part 99 asks of the flight there. */}
+            {glance?.adiz && (
+              <Line line={{ ...glance.adiz, key: "adiz", finding: "caution", tab: "enroute", section: null, raw: [] }} onOpen={onOpen} />
+            )}
+            {rest && <Rest rest={lines!.rest} onOpen={onOpen} />}
+            <CautionRow unchecked={glance?.unchecked} />
+          </ListGroup>
+        )}
+        <AdverseGroup adverse={glance?.adverse} onOpen={onOpen} />
+        <ListGroup className="w-full" title={glance?.adverse.rows.length ? "The Flight" : undefined}>
           <BeforeRow before={glance?.before} airplane={airplane} onOpen={onOpen} />
           {glance?.depart && <FieldRow tab="depart" label="Depart" field={glance.depart} landing={false} onOpen={onOpen} />}
           <EnrouteRow enroute={glance?.enroute} said={!!lines?.act.some((l) => l.key === "weather")} onOpen={onOpen} />
@@ -123,7 +113,7 @@ export default function BriefGlance({
           {notams}
         </ListGroup>
       </Accordion>
-      <DataWarning />
+      {foot}
       {after}
       <InstructorNote />
     </div>

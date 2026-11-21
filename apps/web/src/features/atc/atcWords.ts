@@ -10,6 +10,7 @@ import { altitudeWords } from "../../lib/readback";
 import type { AtcItem } from "./atcEngine";
 import { threeFigures } from "../../lib/format";
 import { capitalised } from "../../lib/capitals";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** A place as said: spelled idents as they are, words in capitals as a
  *  chart names a fix. */
@@ -108,8 +109,8 @@ export function actionOf(item: AtcItem): ItemAction | null {
 /** The action's button, in Title Case (the app's labels). */
 export const ACTION_LABEL: Record<ItemAction, string> = {
   fly: "Set Altitude",
-  direct: "Direct To",
+  direct: WORDING.directTo,
   frequency: "Set Next",
   squawk: "Set Code",
-  route: "Enter Route",
+  route: WORDING.enterRoute,
 };

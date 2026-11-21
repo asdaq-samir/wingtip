@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Radio } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
+import { FieldError } from "../../components/ui/field";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { RowBadge } from "../../components/RowBadge";
 import { BADGE } from "../../lib/rowBadges";
@@ -9,6 +10,7 @@ import { TEXT } from "../../lib/text";
 import { useCanListen } from "../../lib/speechLocal";
 import { chosenOutside, heardThrough, lostWords, useAtcRadio } from "../../lib/atcRadio";
 import { atisRows, glanceWords, heardAny, hearAtis, readAtis, type AtisReading } from "./atis";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * Listen to ATIS, on the field card's Weather tab under the report: a
@@ -97,7 +99,7 @@ export function AtisRows() {
               <Radio />
             </RowBadge>
           }
-          title={listening ? "Listening to the radio…" : "Listen to ATIS"}
+          title={listening ? WORDING.listeningToTheRadio : "Listen to ATIS"}
           description={
             listening
               ? heard ||
@@ -115,9 +117,17 @@ export function AtisRows() {
           <ListRow
             muted
             title={
-              <span className={cn(problem ? "text-destructive" : "text-caution-ink", TEXT.detail)} data-testid="place-atis-problem">
-                {problem ?? caution}
-              </span>
+              // Said as it comes, the listen just tapped (WCAG 4.1.3): a
+              // problem as the stock field error's alert, a caution as a status.
+              problem ? (
+                <FieldError className={TEXT.detail} data-testid="place-atis-problem">
+                  {problem}
+                </FieldError>
+              ) : (
+                <span role="status" className={cn("text-caution-ink", TEXT.detail)} data-testid="place-atis-problem">
+                  {caution}
+                </span>
+              )
             }
           />
         )}

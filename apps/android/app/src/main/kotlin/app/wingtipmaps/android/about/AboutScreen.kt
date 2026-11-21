@@ -83,8 +83,8 @@ fun AboutScreen(onDemo: () -> Unit, model: AboutModel = hiltViewModel(), charts:
             figures.forEachIndexed { i, (name, value) -> ValueSettingRow(name, value, index = i, count = figures.size) }
         }
 
-        SectionTitle(stringResource(R.string.about_planning_aid))
-        Text(stringResource(R.string.about_planning_aid_text), style = MaterialTheme.typography.bodyMedium)
+        SectionTitle(stringResource(R.string.wording_planning_aid_title))
+        Text(stringResource(R.string.wording_planning_aid), style = MaterialTheme.typography.bodyMedium)
 
         SectionTitle(stringResource(R.string.about_credits))
         AboutCredits.data.forEach { Credit(it) }

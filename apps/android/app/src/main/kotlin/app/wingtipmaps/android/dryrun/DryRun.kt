@@ -78,7 +78,7 @@ class DryRun @Inject constructor() : ViewModel() {
                     }
                 },
                 { e ->
-                    _state.update { it.copy(problem = "The dry run couldn't be flown: ${e.message}") }
+                    _state.update { it.copy(problem = "The dry run could not be flown: ${e.message}") }
                 },
             )
         }

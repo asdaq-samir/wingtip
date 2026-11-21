@@ -52,7 +52,7 @@ struct NotamWordsSection: View {
     var body: some View {
         Group {
             if writing || !(said?.words.sentences.isEmpty ?? true) {
-                WordsSection(title: "The NOTAMs in words", said: said, writing: writing)
+                WordsSection(title: "The NOTAMs in Words", said: said, writing: writing)
             }
         }
         .task(id: ranked.map(\.id)) {

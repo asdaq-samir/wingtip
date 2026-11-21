@@ -2,6 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { shareFile } from "../../lib/flightPlanFiles";
 import { showError } from "../../lib/problems";
 import { gateway } from "../../lib/api/http";
+import { describeError } from "../../lib/api/errors";
 
 /** The file's name as the gateway gives it (ExportController), else one
  *  of today's; never a folder, whatever the header says. */
@@ -27,7 +28,7 @@ export function useExportAccount() {
       await shareFile(exportFileName(response.headers.get("Content-Disposition")), "application/json", text ?? "");
     },
     onError: (err) => {
-      if ((err as Error).name !== "AbortError") showError("Your data was not exported", (err as Error).message);
+      if ((err as Error).name !== "AbortError") showError("Your Data Was Not Exported", describeError(err));
     },
   });
 }

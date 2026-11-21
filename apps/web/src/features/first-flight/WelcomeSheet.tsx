@@ -16,17 +16,19 @@ import { TEXT } from "../../lib/text";
 const ROWS = [
   // In the search field's own words (searchPlaceholder, the owner's "Search airports and airplanes"),
   // so the welcome promises what the field says it does (UI audit C17, 2026-11-17).
-  { icon: Search, title: "Search, like Maps", line: "Search airports and airplanes the way you would in Apple or Google Maps." },
-  // FPL's own glyph on the page toggle (PageToggle), a round route glyph
-  // at the search's end with no "FPL" word on it (the web audit's WEB-42).
+  { icon: Search, title: "Search, Like Maps", line: "Search airports and airplanes the way you would in Apple or Google Maps." },
+  // Pointing at the page toggle (PageToggle) as it is today: a round
+  // button saying FPL at the start of the search's row (the owner,
+  // 2026-11-20: "Fpl button icon can just say FPL"), where this line
+  // promised a route glyph that is no longer drawn.
   {
     icon: Route,
-    title: "FPL, like your EFB",
-    line: "The route, nav log, profile and brief, one tap away on the route button beside the search.",
+    title: "FPL, Like Your EFB",
+    line: "The route, nav log, profile and brief, one tap away on the FPL button beside the search.",
   },
   {
     icon: MapIcon,
-    title: "FAA charts that move like Maps",
+    title: "FAA Charts That Move Like Maps",
     line: "Sectional and IFR charts you pinch, pan and tap, with the weather on top.",
   },
 ] as const;

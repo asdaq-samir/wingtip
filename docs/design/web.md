@@ -137,7 +137,15 @@ These hold on every screen below and win over any reference app.
 - **Words:** "airplane" (decision 0020), Title Case labels (0021; the
   map's words are sentence case with their codes in capitals, rules.md
   §13), no explanatory footnotes (0019), FAA text in sentence case with
-  its codes kept, raw reports as sent.
+  its codes kept, raw reports as sent. Section titles, row and figure
+  names, buttons, menu items and toast titles are in Title Case; messages
+  and errors are sentences that end with a full stop and say "could
+  not". A word all three apps say is design/wording.json's, imported as
+  `WORDING` (`lib/wording/generated/wording`, rules.md §15), and a
+  screen's name is `SCREENS`' title: the planning aid in About and the
+  kneeboard's foot, the figure names (`lib/explain`, `lib/airplane/figureWords`,
+  `navlog/workings`) and the common buttons (Try Again, Sign In, Show on
+  Map, Add Stop) are never typed again by hand.
 
 ## The web platform, today
 
@@ -166,7 +174,7 @@ These hold on every screen below and win over any reference app.
   popup, kept clear of the status bar in CSS. `snapPoint` is set from the
   same constants by size and a drag maps back by identity. The pill is one
   row: on FPL the route's figures (and while flying), FPL's bar and the
-  route's row under it from half up (SheetParts' `figuresPill`, 3.25 rem under the grabber's room);
+  route's row under it from half up (SheetFoot's `figuresPill`, 3.25 rem under the grabber's room);
   on Search the search; the map's room is read from the Drawer's own
   `--drawer-snap-point-offset` (`useSheetCover`). The sheet is solid at
   every size (`GLASS_SHEET`, the look's `--sheet`), the desktop's side
@@ -215,7 +223,7 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   row and a grip, a field's ring on the group round it (the stock
   InputGroup's on the N-number, the altitude and the route box; a fine
   ring in the tint on the search fields, as Apple's field has), a banner's
-  underline. Left without one only what the keyboard never lands on: the
+  title's ring (its underline was too faint on the glass, 2026-11-21). Left without one only what the keyboard never lands on: the
   sheets' and the dialogs' own boxes and a card's name (focused by the app
   so a screen reader starts there), a list held by its field's virtual
   focus (its row lit instead), and the weather loop's hour labels (out of
@@ -403,7 +411,7 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   ([shadcn Base UI default][shadcn-base-default],
   [shadcn React Aria][shadcn-aria], [shadcn Drawer][shadcn-drawer],
   [shadcn Toast][shadcn-toast]). Wingtip's toasts are Base UI's
-  (`components/ui/toast.tsx`, `lib/toast.ts`): progress, Undo, and the
+  (`components/ui/toast.tsx`, `lib/toast.ts`; the ✓ and spinner 20, `size.glyph-row`, the corner `radius.banner` in px so it does not grow with the text size): progress, Undo, and the
   anchored confirmations, on Base UI's own 5 seconds, held under a
   touch or the pointer and swiped away (2026-11-11); a progress toast
   ("Drawing Route…") lets the pointer through to what is under it, the
@@ -440,6 +448,31 @@ screens:
 - Reflow, AA: content works at 320 CSS px wide without two-way scrolling,
   except what needs two dimensions, such as the map and a data table
   (WCAG 1.4.10, [WCAG 2.2][wcag22]).
+
+How the app meets them (the accessibility audit of 2026-11-21):
+
+- A toggle's name never changes with its state: the stock Toggle keeps
+  one name and lets `aria-pressed` say on or off (Comms assist; a
+  flight's Follow, "Following" once pressed). A button whose words say
+  what a tap does ("Show in 3D", "Hide my position") is a plain button,
+  with no pressed state to contradict them ([APG Button][apg-button]).
+- The name starts with the words seen: "NRST, nearest airports",
+  "D→, direct to KDLH", the compass's point (WCAG 2.5.3). A row's
+  repeated button ("Remove", "Accept", "Reset to book figure") says
+  whose after its word, in `sr-only` text.
+- A yes-or-no setting in a list is the stock switch, its row's title
+  its name (SwitchRow), not a pill named "Yes" or "Email".
+- A field's problem is linked to it: `invalidProps` / `ariaInvalid`
+  (lib/fieldError) on the field, `errorIdOf(id)` on the words under it,
+  in a row's description or the stock FieldError (WCAG 3.3.1).
+- What is said as it happens is the stock FieldError (an alert) or a
+  `role="status"` already in the page; what changes every second (the
+  replay's data block) is a group a reader browses, never a live region.
+- When a tap takes its own button away (Show the answer, Send Link), the
+  focus goes to what came in its place, never to `body`.
+- e2e/a11y-screens.spec reads every console place and card a link opens
+  with axe, beside a11y.spec's planner states, and checks Escape gives
+  the focus back, 320 points wide and Reduce Motion.
 
 ---
 
@@ -648,7 +681,7 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
    then the tabs, Info, Weather, Runways, Charts (`place/PlaceTabBar` on
    the shared `CardTabBar`, the pages in `CardTabPages`; each tab an icon
    from lucide-react, required on `CardTab` (Info, CloudSun, PlaneLanding,
-   FileText), every tab with its word under it (`TEXT.tabBar`, 12 on 16 regular, iOS 26's tab bar) in equal columns, each 48 points tall in the one floating bar FPL's actions share (`components/FloatingBar`: the capsule, `FloatingBarFace`, and `floatingBarLook`'s item and width; the owner, 2026-11-18: "Yes make it common ... apply the same height and width for both"), 56 tall, its items one width on every bar, 73 at the default size (`FLOATING_BAR_COLUMNS`: a quarter of 18.75 rem less the capsule's sides, so the airport card's four tabs make it 300 and FPL's three actions 227; in rem so it grows with the text as the words do, never narrower than its words, each column capped at a quarter of the room inside the sheet's 16-point sides, `FLOATING_BAR_ROOM`'s container, the same on a card and on FPL's foot; the owner, 2026-11-21: "fpl and other tabs placement look different"; 4 points over the screen's foot where there is no home indicator, else the indicator's own inset, `floatingBarLook`'s `FLOATING_BAR_FOOT_ROOM` on a card and `FLOATING_BAR_SHEET_ROOM` on FPL's foot, whose sheet already ends over the indicator: low, so FPL's figures at half clear its top with one stop or the stops' row in the route), the picked one in the tint on a soft `foreground/10` pill, all named
+   FileText), every tab with its word under it (`TEXT.tabBar`, 13 on 18 regular, iOS's Footnote, as FPL's bar; its glyph `size.glyph-bar`, 24; the scale audit, 2026-11-21) in equal columns, each 48 points tall in the one floating bar FPL's actions share (`components/FloatingBar`: the capsule, `FloatingBarFace`, and `floatingBarLook`'s item and width; the owner, 2026-11-18: "Yes make it common ... apply the same height and width for both"), 56 tall, its items one width on every bar, 73 at the default size (`FLOATING_BAR_COLUMNS`: a quarter of 18.75 rem less the capsule's sides, so the airport card's four tabs make it 300 and FPL's three actions 227; in rem so it grows with the text as the words do, never narrower than its words, each column capped at a quarter of the room inside the sheet's 16-point sides, `FLOATING_BAR_ROOM`'s container, the same on a card and on FPL's foot; the owner, 2026-11-21: "fpl and other tabs placement look different"; 4 points over the screen's foot where there is no home indicator, else the indicator's own inset, `floatingBarLook`'s `FLOATING_BAR_FOOT_ROOM` on a card and `FLOATING_BAR_SHEET_ROOM` on FPL's foot, whose sheet already ends over the indicator: low, so FPL's figures at half clear its top with one stop or the stops' row in the route), the picked one in the tint on a soft `foreground/10` pill, all named
    by aria-label, the dot and count over the icon's corner; a tab picked
    opens at its own top, just under the actions (`useTabScroll`'s
    `scrollOnPick`: the pages' top where the card was scrolled into the last
@@ -731,7 +764,7 @@ airplane picked" and Pick Airplane, never a default type (decision 0011).
 An N-number typed is taken on Enter (the keyboard's Done) or a suggestion
 picked, never as the field is left, which lets go of it ("N4" half typed
 was taken as the airplane), and a registry's answer for a tail asked
-before the last is dropped. "Pick an airplane" focuses the field within
+before the last is dropped. "Pick an Airplane" focuses the field within
 the tap that asked, so iOS gives it its keyboard. The altitude typed is
 read by the engine's `altitude_typed` (14 CFR 1.1's three figures of a
 flight level, or feet in four or five, nothing guessed: "0450" or six
@@ -836,7 +869,8 @@ its head's Search button going back to Search's resting page, the route kept (th
 (`features/fpl/workspace/ClearRouteButton`: one tap, the stock centred alert) -- a 44-point disc (iOS 26's round button) in the field's white,
 the word in the text's colour, its 44-point area its `::after`, never grown, eight
 after the bar. The bar before it is one size on both pages
-(`panelField`'s `SHEET_BAR`, 46 tall, round-ended, the row's room less
+(`panelField`'s `SHEET_BAR`, as tall as FPL's title's 25-point line over
+its pills' 24, 49 at the default size, round-ended, the row's room less
 the toggle): on Search the one search's field (`OneSearchField`), on FPL
 the airplane's strip (`features/fpl/workspace/FplBar`, its
 `RouteControls`: the N-number and the altitude alone, on one line (VFR/IFR the Profile card's top,
@@ -882,7 +916,7 @@ FPL's bar and route are laid out at the pill with `RISEN_FACE`
 visibility alone, as the cards' bodies come into sight (`PILL_BODY`,
 nothing in it eased at the pill), on a phone only: the desktop's side
 panel has no detents and no finger takes it, so there they are not laid
-out at the pill, the figures alone its pill (SheetParts' `DESK_PILL`,
+out at the pill, the figures alone its pill (SheetHead's `DESK_PILL`,
 FplRoute's `data-pill-keeps`), and the panel is as tall as what is in
 sight (503 px, mostly empty, before; the owner, 2026-11-19: desktop cards
 keep one height); a tap on the held figures raises the
@@ -894,7 +928,7 @@ the chips away. The Brief's findings
 to act on are counted on its button in the bar (the cards' `TabCount` with its finding's
 `mark`,
 from `lib/verdict` through `planWords`' `findingRows`), the findings
-themselves the Brief's). Both rows are laid out by the same `barRowOf` in `SheetParts`, so
+themselves the Brief's). Both rows are laid out by the same `SheetBarRow` (`sheet/SheetHead`), so
 a turn of the page moves nothing and the head's first row, and the map's
 room, stay the same. The route is the row under FPL's bar (`RouteHead`),
 in its one layout (the owner, 2026-11-17; decision 0047): folded, one
@@ -966,6 +1000,18 @@ is, so the Nav Log is not built again (0.6 s). They are mounted beside
 the sheet's pages, not in FPL's (`PlanPage`): in flight the sheet draws no
 pages, and the Profile card, with a dry run's controls and its figures
 and Done flying at its foot, stays up while the airplane flies.
+
+In flight (the in-flight audit, the owner's picks of 2026-11-21): flying
+mode keeps the screen on by the Screen Wake Lock API
+(`features/flying/useScreenAwake`), taken again as the page comes back in
+sight and let go on the ground or at Done flying; Done flying's words stay
+small but its target is the whole Flying row, 60 points tall, as every
+control in flight is; own ship's real-GPS follow jumps once a fix when the
+step is under 8 px (`cameraRules`' `followStep`), easing only larger steps,
+where a frame-rate ease redrew the map 60 times a second to move it a
+pixel; the dry run keeps its glide. Traffic is read against own ship's GPS
+height to the nearest 10 ft, and 3D traffic's step stops while the page is
+hidden.
 
 ### 3. The flight plan and route editing
 
@@ -1212,7 +1258,9 @@ are designed ([Vercel guidelines][vercel-guidelines]).
 **Structure, top to bottom** (decision 0012, verdict first; made less
 cluttered at the owner's word, 2026-11-16, "How do we make brief less
 cluttered?" then "Do it"; one grouped list at his pick of option A,
-2026-11-19, so the Brief reads as Settings and FPL's timeline do).
+2026-11-19, so the Brief reads as Settings and FPL's timeline do; the
+Brief audit's option 2, 2026-11-21: the findings straight under the
+verdict, then the Adverse Conditions, When to go at the foot).
 1. The head: "Brief", as the Nav Log and the Profile are named (the
    owner, 2026-11-19: "Title of brief should just say Brief like Navlog
    and others"), and under it one line, the route by its idents, the
@@ -1220,9 +1268,9 @@ cluttered?" then "Do it"; one grouped list at his pick of option A,
    a pill under that line in the pinned head (`VerdictPill`, `CardHead`'s
    `below`), in sight on every page of the Brief but not at the pill,
    where the card is its one title row; Preflight no longer says it again
-   over its checks. What the briefing could not check (`BriefingNotices`) and
-   when to go (signed in only) under the head, over the list.
-2. One grouped list (`ListGroup`, a hairline between rows, no shadowed
+   over its checks. Nothing between it and the findings: the verdict's
+   three actions come first (decision 0012).
+2. Grouped lists (`ListGroup`, a hairline between rows, no shadowed
    cards), each row opening its page:
    - at most three findings first, each two rows at most, the finding
      alone (the engine's `gonogo_glance_lines`' `lead`, the risk in plain
@@ -1230,7 +1278,18 @@ cluttered?" then "Do it"; one grouped list at his pick of option A,
      under its tap what to do first (`action`), then why it matters with
      its rule, the reports as sent and the way to its page. The rest of
      the findings folded into one row after them. No "nothing to fix"
-     row: the verdict says the rest is fine;
+     row: the verdict says the rest is fine. At their end one caution
+     row (`CautionRow`) for what could not be checked (aviationweather.gov
+     not answering) and FAA data past its cycle, where either;
+   - **Adverse Conditions**, a group of its own, only where there is
+     any: at most three rows, a TFR the route goes through, then the
+     Convective SIGMETs and SIGMETs, the CWAs, the urgent pilot reports
+     and the G-AIRMETs met on the route while the airplane is there,
+     each with its legs and its time (in force at, until, reported), in
+     the engine's order (`gonogo_adverse_rows`; AIM 7-1-5(b)(1), 7-1-6,
+     7-1-18; 14 CFR 91.137-91.145), each opening its section, and "N
+     more on the route" past three. The parts of the flight are then
+     titled "The Flight";
    - Before You Go, its value what is left to do on the device ("4 to
      do", Ready to Fly's count, the engine's `ready_to_fly` items not
      done), with an airplane its fuel to spare and its loading under it;
@@ -1244,7 +1303,8 @@ cluttered?" then "Do it"; one grouped list at his pick of option A,
    - NOTAMs, its value "3 that matter, 44 more", opening Preflight at
      its NOTAMs (the overview's `onOpen` names the section, PanelTabs
      scrolls to it).
-3. The flight watch and the instructor's note under the list.
+3. When to go (signed in only) under the list, the "when" after the
+   "whether", then the flight watch and the instructor's note.
 
 **Preflight** uses the same grouped rows: Checks (the Go / No-Go's seven
 in the engine's order, then the alternates, NOTAMs on 1800wxbrief.com and
@@ -1906,7 +1966,8 @@ them as `airspace_labels.tab`, the engine's, so `glStyle` formats no
 figure. A special use area's 3D tab is its 2D tab. A fix is tagged once:
 the plate's tag wins while a plate is drawn with its annotations. Codes
 are in capitals and words in sentence case. A tag's figures have no unit
-or tick. Sizes come from `map.label-*`, never under 11. Halos dim with
+or tick. Each kind's size, weight and halo come from `map.label.kind`
+(`labelText`, `labelHalo`), never under 11. Halos dim with
 the dark theme: `ChartGl` sets the map's `labelNight` global state, and
 `common`'s halo expression reads it. Weather areas and TFRs are named
 along their outlines. The replay's airplane is the traffic's own symbol
@@ -2088,6 +2149,7 @@ Read on 2026-11-09.
 [wcag-222]: https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html
 [wcag-214]: https://www.w3.org/TR/WCAG22/#character-key-shortcuts
 [apg-patterns]: https://www.w3.org/WAI/ARIA/apg/patterns/
+[apg-button]: https://www.w3.org/WAI/ARIA/apg/patterns/button/
 [apg-keyboard]: https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/
 [apg-tabs]: https://www.w3.org/WAI/ARIA/apg/patterns/tabs/
 [apg-combobox]: https://www.w3.org/WAI/ARIA/apg/patterns/combobox/

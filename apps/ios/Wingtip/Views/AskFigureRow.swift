@@ -51,7 +51,7 @@ struct AskFigureRow: View {
                     Task { await model.save(figure, plan: plan, signedIn: session.signedIn) }
                 }
                 .disabled(model.saving || AskFigureModel.number(model.text) == nil)
-                Button("Not Now") { typing = false; model.putOff(figure.rawValue, plan: plan) }
+                Button(Wording.notNow) { typing = false; model.putOff(figure.rawValue, plan: plan) }
                 if let tail = plan.tail {
                     Button("Edit \(tail)") { nav.push(.tail(ProfileAsk(tail: tail, focus: figure))) }
                 }
@@ -75,7 +75,7 @@ struct AskFigureRow: View {
                     Image(systemName: "chevron.right").foregroundStyle(.tertiary).accessibilityHidden(true)
                 }
             }
-            .swipeActions { Button("Not Now") { model.putOff(table, plan: plan) } }
+            .swipeActions { Button(Wording.notNow) { model.putOff(table, plan: plan) } }
         } else {
             CardRow(title: "\(name.capitalized)'s \(what) isn't given", detail: "Pick the airplane by its N-number to add it") { EmptyView() }
         }

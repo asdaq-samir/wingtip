@@ -178,7 +178,7 @@ private fun PlaneCard(hex: String, flight: FlightModel = hiltViewModel()) {
     // health app's top figures sit; a figure not heard is a dash.
     Row(Modifier.fillMaxWidth()) {
         Figure(stringResource(R.string.fact_altitude), plane.altitudeFt?.let(Format::reportedAltitude) ?: Format.NONE)
-        Figure(stringResource(R.string.fact_ground_speed), plane.speedKt?.let(Format::speed) ?: Format.NONE)
+        Figure(stringResource(R.string.wording_ground_speed), plane.speedKt?.let(Format::speed) ?: Format.NONE)
         Figure(stringResource(R.string.fact_track), plane.trackDeg?.let { "${Format.heading(it)} true" } ?: Format.NONE)
     }
     mark?.label?.takeIf { it.isNotEmpty() }?.let { Fact(stringResource(R.string.fact_height), it) }

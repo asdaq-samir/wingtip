@@ -9,7 +9,7 @@ import SwiftUI
 struct WordsSection: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// The header: "The weather in words", "The flight in words".
-    var title: LocalizedStringKey = "In words"
+    var title: LocalizedStringKey = "In Words"
     let said: SaidWords?
     /// Shown while the words are being written, where there is nothing yet.
     var writing = false

@@ -40,9 +40,9 @@ export default function SunlightBanner() {
             }}
             data-testid="sunlight-keep-off"
           >
-            Keep off
+            Keep Off
           </BannerButton>
-          <BannerButton onClick={() => see(SEEN)} aria-label="Close" data-testid="sunlight-banner-close">
+          <BannerButton onClick={() => see(SEEN)} data-testid="sunlight-banner-close">
             OK
           </BannerButton>
         </>

@@ -188,7 +188,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             plan = {
                 PlanPage(
                     plan, onClose = { pages.closePlan(); RouteHome.shared.backTo(planState.hasPoints)?.let(openField) }, onField = { pages.push(SheetPage.Airport(it)) },
-                    onNavLog = { pages.show(SheetPage.NavLog) }, onFind = { search.askRouteEnd(plan) }, onAddStop = search::addStop,
+                    onNavLog = { pages.show(SheetPage.NavLog) }, onFind = { search.askRouteEnd(plan) }, onAddStop = search::addStop, onAddStopAfter = search::addStopAfter,
                 )
             },
             card = cardView,

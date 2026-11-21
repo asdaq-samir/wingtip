@@ -90,9 +90,9 @@ export function Findings({ d }: { d: Debrief }) {
           ))}
         </ul>
       )}
-      <ListGroup title="The flight">
-        <ListRow title="Took off" value={dayMonthTime(new Date(d.takeoff))} />
-        <ListRow title="In the air" description={d.plannedMin != null ? `${hm(d.plannedMin)} planned` : undefined} value={hm(d.flownMin)} />
+      <ListGroup title="The Flight">
+        <ListRow title="Took Off" value={dayMonthTime(new Date(d.takeoff))} />
+        <ListRow title="In the Air" description={d.plannedMin != null ? `${hm(d.plannedMin)} planned` : undefined} value={hm(d.flownMin)} />
         {d.hasAltitude && <Profile d={d} />}
       </ListGroup>
 

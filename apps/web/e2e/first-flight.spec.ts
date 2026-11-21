@@ -62,7 +62,7 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   const welcome = page.getByTestId("first-flight");
   await expect(welcome).toBeVisible({ timeout: slow(15_000) });
   await expect(welcome.getByRole("heading", { name: "Welcome to Wingtip Maps" })).toBeVisible();
-  for (const row of ["Search, like Maps", "FPL, like your EFB", "FAA charts that move like Maps"])
+  for (const row of ["Search, Like Maps", "FPL, Like Your EFB", "FAA Charts That Move Like Maps"])
     await expect(welcome.getByText(row)).toBeVisible();
   // Its search row in the search field's own words (UI audit C17).
   await expect(welcome).toContainText("Search airports and airplanes the way you would in Apple or Google Maps.");
@@ -118,10 +118,10 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   await settle(page);
   await expectPage(page, 0);
   await expect(tip).toBeVisible();
-  await expect(tip).toContainText("Your flight plan is one tap away");
-  await expect(tip).toContainText("Tap here any time");
-  // Over the toggle, its arrow at it: at the search's row's end (the owner,
-  // 2026-11-14), the tip's edge reaches over it, on the screen.
+  await expect(tip).toContainText("Your Flight Plan Is One Tap Away");
+  await expect(tip).toContainText("Tap FPL any time");
+  // Over the toggle, its arrow at it: at the search's row's start (the owner,
+  // 2026-11-20), the tip's edge reaches over it, on the screen.
   const [tipBox, toggleBox] = [await tip.boundingBox(), await toggle(page).boundingBox()];
   expect(tipBox!.y + tipBox!.height).toBeLessThanOrEqual(toggleBox!.y);
   expect(tipBox!.x).toBeLessThanOrEqual(toggleBox!.x + toggleBox!.width / 2);

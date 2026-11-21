@@ -21,17 +21,17 @@ struct LogbookEntryFields: View {
         case .time:
             figure("Total", \.totalHours, unit: "h")
             figure("Night", \.nightHours, unit: "h")
-            figure("Cross-country", \.crossCountryHours, unit: "h")
-            figure("Dual received", \.dualHours, unit: "h")
+            figure("Cross-Country", \.crossCountryHours, unit: "h")
+            figure("Dual Received", \.dualHours, unit: "h")
             figure("Solo", \.soloHours, unit: "h")
-            figure("Sim. instrument", \.instrumentHours, unit: "h")
+            figure("Sim. Instrument", \.instrumentHours, unit: "h")
         case .landings:
-            count("Day landings", \.dayLandings)
-            count("Night landings", \.nightLandings)
-            count("Towered landings", \.toweredLandings)
+            count("Day Landings", \.dayLandings)
+            count("Night Landings", \.nightLandings)
+            count("Towered Landings", \.toweredLandings)
         case .distance:
             figure("Distance", \.distanceNm, unit: "nm")
-            figure("Longest leg", \.longestLegNm, unit: "nm")
+            figure("Longest Leg", \.longestLegNm, unit: "nm")
         case .instrument:
             count("Approaches", \.approaches)
             Toggle("Holding", isOn: $entry.holding)

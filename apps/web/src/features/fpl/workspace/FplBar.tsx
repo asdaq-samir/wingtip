@@ -12,9 +12,10 @@ import { HeadGrid } from "../../../components/HeadGrid";
  * asks first; the owner, 2026-11-20), and between them two rows: "Flight
  * Plan" at a heading's 20 in bold, as Directions' headline is, and under it
  * the airplane's pills (RouteControls; Route Options is More's, ShareMenu),
- * as "Now · Avoid" is under "Directions". The head keeps the search's
- * height, so a turn of the page moves nothing (the owner, 2026-11-14): the
- * title's line is 25 points and the pills 24.
+ * as "Now · Avoid" is under "Directions". The head and the search's field
+ * are one height, so a turn of the page moves nothing (the owner,
+ * 2026-11-14): the title's line is the heading's own, iOS's Title 3 at 25
+ * points, and the pills 24; the field grows to match (SHEET_BAR).
  *
  * Three columns, the two rows in the middle: either side a round button's
  * 44 points, so the title stays in the row's middle whether Search is there
@@ -32,11 +33,13 @@ export default function FplBar({ share, strip, clear }: { share?: ReactNode; str
             name="Flight Plan"
             nameSize="heading"
             nameTestId="fpl-title"
-            // The heading's 20 on the row's 22 line, so the two rows stay the
-            // search field's height and a turn of the page moves nothing
-            // (sheet-page-toggle.spec), the g of "Flight" still whole; lifted
-            // 4 points (the owner, 2026-11-21: "a bit bigger and move up a bit").
-            nameClassName="-translate-y-1 leading-[1.375rem]"
+            // On the heading's own 25 line (Title 3), not squeezed onto a
+            // 22 to keep the field's old 46: the HIG review's P3, the owner
+            // taking the rule over an exemption (2026-11-21); the search's
+            // field grows the 3 to match (SHEET_BAR, sheet-page-toggle.spec).
+            // Lifted 4 points (the owner, 2026-11-21: "a bit bigger and move
+            // up a bit").
+            nameClassName="-translate-y-1"
           />
           {strip && (
             <div className="flex h-6 max-w-full min-w-0 items-center justify-center" data-testid="route-strip">

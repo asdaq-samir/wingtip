@@ -13,26 +13,32 @@ import math
 
 from wingtip import airspace_tabs, phone_pack_shapes
 
-#: Each layer's first zoom, by what the feature is. Below it a feature is
-#: left out of the tiles; from it on, it is in every tile it touches, and
-#: none is ever dropped for a tile's size (--no-feature-limit,
-#: --no-tile-size-limit, -r1, --no-tiny-polygon-reduction).
-#: Class B and C from the archive's first zoom, a country on a phone, as
-#: ForeFlight draws them at a few states' scale (the owner, 2026-11-21:
-#: "how come we don't see big airports and airspaces at our zoom levels?");
-#: Class D a zoom in.
-AIRSPACE_MIN_ZOOM = {"B": 4, "C": 4, "D": 6}
+from . import map_zoom as zoom
+
+
+def _tiles(app_zoom: int) -> int:
+    """A zoom of the app's (map_zoom, from design/tokens.json's map.zoom)
+    in the tiles' own levels, MapLibre's, a zoom less (the web's glZoom)."""
+    return app_zoom - 1
+
+
+#: Each layer's first zoom, by what the feature is, from the zoom every
+#: app draws it from (map_zoom). Below it a feature is left out of the
+#: tiles; from it on, it is in every tile it touches, and none is ever
+#: dropped for a tile's size (--no-feature-limit, --no-tile-size-limit,
+#: -r1, --no-tiny-polygon-reduction).
+AIRSPACE_MIN_ZOOM = {"B": _tiles(zoom.AIRSPACE_B), "C": _tiles(zoom.AIRSPACE_C), "D": _tiles(zoom.AIRSPACE_D)}
 #: Class E by its LOCAL_TYPE: at the surface (E2), the extensions of a
 #: Class C's or D's surface area (E3, E4), from 700 or 1,200 ft (E5), and
 #: the en route and offshore areas (E6, E7). 14 CFR 71.71, 71.79.
-CLASS_E_MIN_ZOOM = {"CLASS_E2": 7, "CLASS_E3": 7, "CLASS_E4": 7}
-CLASS_E_OTHER_MIN_ZOOM = 8
-SPECIAL_USE_MIN_ZOOM = 5
+CLASS_E_MIN_ZOOM = dict.fromkeys(("CLASS_E2", "CLASS_E3", "CLASS_E4"), _tiles(zoom.AIRSPACE_E_SURFACE))
+CLASS_E_OTHER_MIN_ZOOM = _tiles(zoom.AIRSPACE_E)
+SPECIAL_USE_MIN_ZOOM = _tiles(zoom.SPECIAL_USE)
 #: Airports by the engine's field_mark_rank's tier: towered, public with a
 #: hard runway of 3,000 ft or more, other public, private, then heliports.
-#: The towered fields from the archive's first zoom, with the Class B and C
-#: they sit in (the owner, 2026-11-21, against ForeFlight over California).
-AIRPORT_MIN_ZOOM = (4, 6, 7, 9, 10)
+AIRPORT_MIN_ZOOM = tuple(
+    _tiles(z) for z in (zoom.AIRPORT_TOWERED, zoom.AIRPORT_LONG_HARD, zoom.AIRPORT_PUBLIC, zoom.AIRPORT_PRIVATE, zoom.AIRPORT_HELIPORT)
+)
 #: The VORs (wingtip.fix_rows.VOR_KINDS) a zoom out; the rest closer in.
 VOR_MIN_ZOOM = 5
 NAVAID_MIN_ZOOM = 7

@@ -84,7 +84,7 @@ class ClearanceModel(
                 val readBack = heard && readback.isNotEmpty()
                 return listOf(
                     "Hear" to if (heard) Step.DONE else Step.NOW,
-                    "Read back" to if (readBack) Step.DONE else if (heard) Step.NOW else Step.LATER,
+                    "Read Back" to if (readBack) Step.DONE else if (heard) Step.NOW else Step.LATER,
                     "Enter" to if (readBack && ready) Step.NOW else Step.LATER,
                     "Compare" to if (ready) Step.DONE else Step.LATER,
                 )
@@ -165,7 +165,7 @@ class ClearanceModel(
         val clearing = if (clearance?.heardAny == true) rules.cleared(s.text, s.found, s.flight.dep, s.flight.stops, s.flight.dest) else null
         val checking = if (clearance?.heardAny == true && s.readback.isNotEmpty()) rules.readback(s.text, s.readback) else null
         val problem = listOf("The clearance" to reading, "The route it gives" to clearing, "The read back" to checking)
-            .firstNotNullOfOrNull { (what, r) -> r?.exceptionOrNull()?.let { "$what couldn't be read: ${it.message}" } }
+            .firstNotNullOfOrNull { (what, r) -> r?.exceptionOrNull()?.let { "$what could not be read: ${it.message}" } }
         val altitudes = clearance?.let { ClearanceWords.altitudes(it, rules::altitude) }
         _state.update { it.copy(clearance = clearance, cleared = clearing?.getOrNull(), check = checking?.getOrNull(), altitudes = altitudes, engineProblem = problem) }
     }

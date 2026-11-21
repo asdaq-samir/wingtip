@@ -4,6 +4,8 @@ import { fieldCategory } from "../../lib/fieldWeather";
 import { worstOf } from "../../lib/findings";
 import type { VerdictItem } from "../../lib/verdict";
 import type { BriefGlance, FieldGlance } from "./glance";
+import { adverseRows } from "./adverse";
+import { WEATHER_SOURCE_LABEL } from "./briefingFigures";
 import type { runwayChecks } from "./runwayCheck";
 
 interface GlanceInputs {
@@ -96,6 +98,8 @@ export function buildGlance({
     outside: course ? (routeJurisdiction(navLogRows(course, [], legs))?.brief ?? null) : null,
     // And the ADIZs it meets on the way (14 CFR part 99).
     adiz: course ? (routeAdiz(navLogRows(course, [], legs))?.brief ?? null) : null,
+    adverse: adverseRows(briefing),
+    unchecked: (briefing?.weather_unavailable ?? []).map((source) => WEATHER_SOURCE_LABEL[source]),
     // The reports as sent, for a finding's sources under its line.
     raw: {
       metars: landings.flatMap((i) => (briefing?.metars[i]?.raw ? [{ ident: i, raw: briefing.metars[i]!.raw! }] : [])),

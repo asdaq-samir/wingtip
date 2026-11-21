@@ -48,7 +48,7 @@ const CHOICE = {
 
 /** The live nav log of the routes `when` picks answered with `fuelStops`
  *  in its totals. */
-async function answered(page: Page, when: (url: URL) => boolean, fuelStops: unknown[]) {
+async function answered(page: Page, when: (url: URL) => boolean, fuelStops: unknown[], noFuelStop: unknown[] = []) {
   await page.route(when, async (route) => {
     const body = await (await route.fetch()).text();
     const lines = body
@@ -58,6 +58,7 @@ async function answered(page: Page, when: (url: URL) => boolean, fuelStops: unkn
         const message = JSON.parse(line);
         if (message.type !== "done") return line;
         message.totals.fuel_stops = fuelStops;
+        message.totals.no_fuel_stop = noFuelStop;
         return JSON.stringify(message);
       });
     await route.fulfill({ contentType: "application/x-ndjson", body: `${lines.join("\n")}\n` });
@@ -167,7 +168,7 @@ test("a suggested stop's pin opens its card with its figures", async ({ page }) 
   const pin = (await drawnMarks(page, "fuel-stops")).find((m) => m.title === "Suggested fuel stop KRPD")!;
   await page.mouse.click(pin.x, pin.y);
   const card = page.getByTestId("place-card");
-  await expect(card.getByTestId("place-stop")).toContainText("Suggested fuel stop");
+  await expect(card.getByTestId("place-stop")).toContainText("Suggested Fuel Stop");
   await expect(card.getByTestId("place-stop-after")).toContainText("From C81");
   await expect(card.getByTestId("place-stop-after")).toContainText("1h 58m");
   await expect(card.getByTestId("place-stop-fuel")).toContainText("18 gal");
@@ -202,7 +203,7 @@ test("the airport's Info says its fuel in its details, and what is on the field 
   // The rest of On the field under its title, its first three rows Fuel,
   // its remarks and As Written (FirstFew; 263bd810d gave the remarks a row).
   await expect(services.getByTestId("services-courtesy-car")).toHaveCount(0);
-  const onTheField = services.getByRole("button", { name: /^On the field/ });
+  const onTheField = services.getByRole("button", { name: /^On the Field/ });
   await inSheet(page, onTheField);
   await onTheField.click();
   await expect(services.getByTestId("services-courtesy-car")).toBeVisible();
@@ -269,4 +270,22 @@ test("Add Fuel Stops puts in every flight's suggested stops, a later flight's to
   await expect(page).toHaveURL(stopsAre("KJVL,KMSN,KRPD"));
   await expect.poll(() => new URL(page.url()).searchParams.get("fuel")).toBe("KJVL,KRPD");
   await expect(pill).toHaveText("Remove Fuel Stops", { timeout: slow(60_000) });
+});
+
+test("a flight short with no stop offered says why where the pill would be", async ({ page }) => {
+  // The aviation audit (2026-11-21, F7.6): with too little fuel on board
+  // at the start for the start, taxi and reserve, no field is in reach and
+  // no stop is offered; the timeline says so (warn, never limit).
+  await answered(
+    page,
+    (url) => url.pathname.endsWith("/navlog") && !url.searchParams.get("stops"),
+    [],
+    [{ departure: "C81", destination: "KDLH", on_board: true }],
+  );
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  const note = sideDrawer(page).getByTestId("timeline-no-fuel-stop");
+  await expect(note).toHaveText("Too little fuel on board for C81 → KDLH", { timeout: slow(60_000) });
+  await expect(sideDrawer(page).getByTestId("timeline-fuel-stops")).toHaveCount(0);
 });

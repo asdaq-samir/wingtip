@@ -3,6 +3,7 @@ import { useFlying } from "../../lib/mapChrome";
 import { underway } from "../../lib/map/position/glide";
 import { useOwnShip } from "../../lib/map/position/ownShip";
 import { DRY_RUN, usePastFlight } from "../plan";
+import { useScreenAwake } from "./useScreenAwake";
 
 /**
  * Flying mode, the canvas's Flying screen (the owner's "Do it all",
@@ -84,6 +85,8 @@ export function useFlyingMode({
     useFlying.setState({ nearest: flying ? nearest : null, direct: flying ? direct : null });
   }, [flying, nearest, direct]);
   useEffect(() => () => useFlying.setState({ flying: false, stopped: false, nearest: null, direct: null }), []);
+  // The screen kept on while flying, let go on the ground or at Done flying.
+  useScreenAwake(flying);
   const done = () => useFlying.setState({ flying: false, stopped: true });
   return { flying, done };
 }

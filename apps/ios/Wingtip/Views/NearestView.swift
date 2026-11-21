@@ -28,9 +28,9 @@ struct NearestView: View {
             }
             if from == .device, !fields.isEmpty {
                 // The packs hold no weather or runways: said over the list.
-                CardRow(title: "From this iPhone, without weather", detail: "The planner can't be reached: the fields are the chart data kept here, nearest first")
+                CardRow(title: "From This iPhone, Without Weather", detail: "The planner could not be reached: the fields are the chart data kept here, nearest first")
             }
-            Section(fields.isEmpty ? "" : "Nearest to you") {
+            Section(fields.isEmpty ? "" : "Nearest to You") {
                 ForEach(fields) { field in
                     NavigationLink(value: SheetPage.airport(field.ident)) { NearestRow(field: field) }
 
@@ -59,7 +59,7 @@ struct NearestView: View {
                 problem = nil
             } catch {
                 guard !Task.isCancelled else { return }
-                problem = "The nearest fields could not be found: the planner didn't answer and no chart data is kept on this iPhone here."
+                problem = "The nearest fields could not be found: the planner did not answer and no chart data is kept on this iPhone here."
             }
         }
     }

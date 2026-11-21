@@ -75,7 +75,7 @@ export function MoveHandle({ label }: { label: string }) {
       aria-label={label}
       // Its drag the row's, not the stock sheet's.
       data-base-ui-swipe-ignore=""
-      className="relative inline-flex size-9 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground outline-none after:absolute after:-inset-1 after:content-[''] hover:bg-muted data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring"
+      className="relative inline-flex size-9 cursor-grab touch-none items-center justify-center rounded-md text-muted-foreground outline-none hit-1 hover:bg-muted data-[focus-visible]:ring-2 data-[focus-visible]:ring-ring"
     >
       <Menu className="size-5 text-muted-foreground/60" strokeWidth={1.25} absoluteStrokeWidth aria-hidden />
     </Button>

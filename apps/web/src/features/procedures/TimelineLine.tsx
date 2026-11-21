@@ -62,17 +62,34 @@ export interface TimelinePoint {
  * there are more options", "I meant replace the plane icon with three
  * dots"); its colour still the field's flight category. A hold on the
  * line stays the row's lift to move it (RouteGrid).
+ *
+ * The fills that change with the scheme are a filled button's (My
+ * Location the --primary with its own --primary-foreground, as a picked
+ * runway's chip is, GLASS_PICKED) or carry their glyph in the ground's
+ * colour, as a badge's figure is (TabCount): at night the tint, the red
+ * and the grey are light, and a white glyph on them read 2.5:1 and less,
+ * under WCAG 1.4.11's 3:1 for a graphic (the HIG review, 2026-11-21:
+ * Add a Stop's + on the night's tint, 2.49:1). A flight category's
+ * colour is the same at night, its glyph white.
  */
 export function TimelineMark({ point, position }: { point: TimelinePoint; position: boolean }) {
   const Glyph = point.problem ? X : position ? Navigation : !point.field ? Triangle : point.fuelStop ? Fuel : Ellipsis;
   return (
     <span
       className={cn(
-        "grid size-8 place-items-center rounded-full text-white",
-        point.problem ? "bg-destructive" : position ? "bg-tint" : !point.field && "bg-muted-foreground",
+        "grid size-8 place-items-center rounded-full",
+        point.problem
+          ? "bg-destructive text-background"
+          : position
+            ? "bg-primary text-primary-foreground"
+            : !point.field || !point.category
+              ? "bg-muted-foreground text-background"
+              : "text-white",
       )}
-      // The category's colour from the map's own scale (flightCategory).
-      style={point.field && !point.problem && !position ? { backgroundColor: colourOf(point.category) } : undefined}
+      // The category's colour from the map's own scale (flightCategory). With
+      // no report, the text's grey, as a waypoint's: on the map's own grey
+      // (CATEGORY_UNKNOWN) the white "•••" read 2.6:1 by day and night.
+      style={point.field && point.category && !point.problem && !position ? { backgroundColor: colourOf(point.category) } : undefined}
       data-testid={point.fuelStop ? "timeline-fuel" : undefined}
     >
       <Glyph className="size-4" strokeWidth={2.4} aria-label={point.fuelStop ? "fuel stop" : undefined} aria-hidden={!point.fuelStop} />
@@ -124,6 +141,9 @@ export function TimelineLine({
   const refused = vm.edit?.refusal?.index === point.index ? vm.edit.refusal.note : null;
   const tank = point.role === "Departure" ? tanks.get("departure") : row ? tanks.get(row.key) : undefined;
   const reported = reportedOf(point.ident);
+  // The gauge is a control where the fuel leaving the field is set there
+  // (FuelSet): the departure's and a stop's, where the list edits the route.
+  const fuelSet = !!tank && !!vm.onTanks && !!row && !!point.field && !point.problem && (row.kind === "departure" || row.kind === "stop");
   const parts = field ? fieldParts(vm, field, row) : [];
   // Each part's tray, a stop's takeoff a region of its own as the list
   // read in flight names it ("KMSN · Depart"); a kind not picked as
@@ -185,7 +205,11 @@ export function TimelineLine({
         {(!last || after.length > 0) && <span aria-hidden="true" className={TIMELINE_THREAD} />}
       </span>
       <div className={cn("min-w-0 flex-1", TIMELINE_END, (!first || before.length > 0) && "border-t border-border")}>
-        <div className="relative flex min-h-11 min-w-0 items-center gap-2 py-0.5">
+        {/* Wrapping where the ident, its fuel and its time do not fit on one
+            line, the time going under them at the right: at the owner's
+            19.65 px on a 375-point phone KDEN's ident was cut to "KD…" by
+            "−26 gal" and "21:48 MST" (the HIG review, 2026-11-21). */}
+        <div className="relative flex min-h-11 min-w-0 flex-wrap items-center gap-x-2 py-0.5">
           {opens && (
             <CollapsibleTrigger
               render={
@@ -227,9 +251,14 @@ export function TimelineLine({
                   // 10 before the name, where the mark's ends (6 past the
                   // marks' column, PointMenu's `bare`, in the line's 16),
                   // and runs right to 44 wide at the least, over the fuel's
-                  // gauge after a short name, which is no control.
+                  // gauge after a short name where it is no control. Where
+                  // the gauge is one (FuelSet) the two meet in the middle of
+                  // the 18 between them, 9 past the name, so neither takes
+                  // the other's taps (the HIG review, 2026-11-21: the gauge
+                  // took 2-3 of "C81: change it"'s probes).
                   className={cn(
-                    "relative min-w-0 font-normal after:absolute after:-inset-y-3 after:-left-2.5 after:w-[max(54px,calc(100%+14px))] after:content-['']",
+                    "relative min-w-0 font-normal after:absolute after:-inset-y-3 after:-left-2.5 after:content-['']",
+                    fuelSet ? "after:w-[max(44px,calc(100%+19px))]" : "after:w-[max(54px,calc(100%+14px))]",
                     point.problem && "text-destructive",
                     TEXT.row,
                   )}
@@ -252,7 +281,7 @@ export function TimelineLine({
           {/* Tapped to set the fuel leaving a field (FuelSet), where the
               list edits the route: the departure's on board, a stop's after
               fuelling; the destination's and a waypoint's read only. */}
-          {tank && vm.onTanks && row && point.field && !point.problem && (row.kind === "departure" || row.kind === "stop") ? (
+          {fuelSet && tank && row ? (
             <FuelSet
               tank={tank}
               ident={row.airport.ident}
@@ -261,10 +290,16 @@ export function TimelineLine({
               onSet={(gallons) => vm.onTanks?.(row.airport.ident, gallons)}
             />
           ) : (
-            tank && <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />
+            // As far from the ident as a gauge that is a control (FuelSet's
+            // 18), so every line's gauge stands in one place.
+            tank && (
+              <span className="ml-2.5 flex shrink-0">
+                <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />
+              </span>
+            )
           )}
           <span className="flex-1" />
-          <span className={cn("relative z-10 shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">
+          <span className={cn("relative z-10 ml-auto shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">
             {point.time}
           </span>
           {/* No chevron at its end (the owner, 2026-11-19: "Also remove

@@ -43,6 +43,8 @@ const glance: BriefGlance = {
   arrive: null,
   outside: null,
   adiz: null,
+  adverse: { rows: [], more: 0 },
+  unchecked: [],
   raw: { metars: [{ ident: "C81", raw: "METAR C81 ..." }], tafs: [], tfrs: [] },
 };
 

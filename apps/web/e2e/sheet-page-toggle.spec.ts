@@ -126,8 +126,9 @@ test("on Search the toggle starts the first row and the account button ends it, 
   expect((fpl.bar.left + fpl.bar.right) / 2, "the two rows are centred in the row").toBeCloseTo(sheetMid, -1);
   expect(fpl.bar.right).toBeLessThanOrEqual(fpl.clear!.left);
   expect(fpl.bar.left).toBeGreaterThanOrEqual(fpl.toggle.right);
-  expect(search.bar.h).toBeCloseTo(46, 0);
-  expect(fpl.bar.h, "FPL's two rows the field's height").toBeCloseTo(46, 0);
+  // The title's Title 3 line (25) over the pills (24): 49, the field the same.
+  expect(search.bar.h).toBeCloseTo(49, 0);
+  expect(fpl.bar.h, "FPL's two rows the field's height").toBeCloseTo(49, 0);
   // No bar under the sheet: the pill is the search's own 4.25 rem off the
   // screen's foot (no home indicator here), its 44 points back.
   await grabberTo(page, "peek");

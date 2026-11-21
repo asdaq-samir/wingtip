@@ -116,10 +116,10 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   await expect(kdlh.getByTestId("procedure-rows").getByTestId("fix-branch-row").first()).toBeVisible();
   await kdlh.locator("[data-testid=procedure-rows] [data-testid=procedure-kind]").click();
   const menu = page.getByTestId("procedure-menu");
-  await expect(menu.getByTestId("procedure-menu-direct")).toContainText("As charted");
+  await expect(menu.getByTestId("procedure-menu-direct")).toContainText("As Charted");
   await menu.getByTestId("procedure-menu-direct").click();
   // The procedure's own fixes, the missed approach's and the runway's not.
-  await expect(menu.getByTestId("procedure-menu-direct-fix")).toHaveText(["As charted", "DLH", "OFOFO", "FAKER"]);
+  await expect(menu.getByTestId("procedure-menu-direct-fix")).toHaveText(["As Charted", "DLH", "OFOFO", "FAKER"]);
   await menu.getByTestId("procedure-menu-direct-fix").filter({ hasText: "FAKER" }).click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:)FAKER(&|$)/);
   await settled(sideDrawer(page));
@@ -129,7 +129,7 @@ test("an approach can be flown direct to one of its fixes, as ATC sends an airpl
   // Back as charted, from the procedure's head row.
   await kdlh.locator("[data-testid=procedure-rows] [data-testid=procedure-kind]").click();
   await menu.getByTestId("procedure-menu-direct").click();
-  await menu.getByTestId("procedure-menu-direct-fix").filter({ hasText: "As charted" }).click();
+  await menu.getByTestId("procedure-menu-direct-fix").filter({ hasText: "As Charted" }).click();
   await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
 });
 

@@ -113,7 +113,7 @@ function FixCardBody({
       >
         <ListGroup>
           <ListRow title="Charted" value={charted ? capitalised(charted) : "None"} />
-          <ListRow title={<label htmlFor="fix-cross">Cross at</label>}>
+          <ListRow title={<label htmlFor="fix-cross">Cross At</label>}>
             <span className="flex items-center gap-1.5">
               <NumberField
                 id="fix-cross"
@@ -134,7 +134,7 @@ function FixCardBody({
               </Button>
             </span>
           </ListRow>
-          {own != null && <ListRow title="As charted" onClick={() => onCross(fix.ident, null)} data-testid="fix-card-charted" />}
+          {own != null && <ListRow title="As Charted" onClick={() => onCross(fix.ident, null)} data-testid="fix-card-charted" />}
         </ListGroup>
       </form>
     </div>

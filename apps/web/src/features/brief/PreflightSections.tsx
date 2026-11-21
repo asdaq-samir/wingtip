@@ -19,6 +19,7 @@ import { AskFigure } from "../../components/airplane/AskFigure";
 import { useNotInProfileSummary } from "./notInProfileSummary";
 import { NO_RUNWAYS } from "../../lib/emptyWords";
 import { loadEnvelopeChart } from "../navlog";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** The envelope's picture: Recharts, loaded with the section. */
 const EnvelopeChart = lazy(() => loadEnvelopeChart());
@@ -43,10 +44,7 @@ function NumberField({
     // pseudo-element behind them (isolate keeps it over the row): a tap
     // just above or below the 32 pt field still lands in it, and the
     // field does not grow.
-    <label
-      htmlFor={id}
-      className="relative isolate flex items-center gap-1.5 after:absolute after:inset-x-0 after:-inset-y-1.5 after:-z-10 after:content-['']"
-    >
+    <label htmlFor={id} className="relative isolate flex items-center gap-1.5 hit-y-1.5 after:-z-10">
       <StockNumberField
         id={id}
         minValue={0}
@@ -83,12 +81,12 @@ export function WeightBalanceSection({
     : `${pounds(result.takeoff.weightLb)} at ${armText(result.takeoff)}${result.problems.length ? "" : " · within limits"}`;
   return (
     <AccordionSection
-      title="Weight & Balance"
+      title={WORDING.weightAndBalance}
       summary={summary}
       aside={
         result && result.problems.length > 0 ? (
           <Flag finding="stop" testId="wb-flag">
-            Out of limits
+            Out of Limits
           </Flag>
         ) : undefined
       }
@@ -98,8 +96,8 @@ export function WeightBalanceSection({
       ) : (
         <div className="space-y-4" data-testid="weight-balance">
           {/* From its own weight and balance record; the POH's sample airplane until set. */}
-          <ListGroup title="The airplane" action={<AirplaneLink focus="empty_weight_lb" testId="wb-airplane-profile" />}>
-            <ListRow title="Empty weight">
+          <ListGroup title="The Airplane" action={<AirplaneLink focus="empty_weight_lb" testId="wb-airplane-profile" />}>
+            <ListRow title={WORDING.emptyWeight}>
               <NumberField
                 value={load.emptyWeightLb}
                 unit="lb"
@@ -108,7 +106,7 @@ export function WeightBalanceSection({
                 testId="wb-empty-weight"
               />
             </ListRow>
-            <ListRow title="Empty arm">
+            <ListRow title="Empty Arm">
               <NumberField value={load.emptyArmIn} unit="in" label="Empty arm" onChange={(n) => setLoad({ ...load, emptyArmIn: n })} />
             </ListRow>
           </ListGroup>
@@ -235,7 +233,7 @@ export function TakeoffLandingSection({
       aside={
         short.length ? (
           <Flag finding="stop" testId="tl-flag">
-            Runway too short
+            Runway Too Short
           </Flag>
         ) : gusty.length ? (
           <Flag finding="caution" testId="crosswind-flag">
@@ -325,7 +323,7 @@ export function TakeoffLandingSection({
                   />
                 ) : (
                   <ListRow
-                    title="Density altitude"
+                    title={WORDING.densityAltitude}
                     description={`Pressure altitude ${altFt(c.pressureAltFt)} ft${c.tempC != null ? ` · ${Math.round(c.tempC)} °C` : ""} ${c.reported ? "reported" : "(standard day; no report)"}`}
                     value={feet(Math.round(c.densityAltFt / 10) * 10)}
                     data-testid="density-altitude"

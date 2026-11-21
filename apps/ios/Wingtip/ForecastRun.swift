@@ -82,7 +82,7 @@ final class ForecastRun {
                 // again when it is back.
                 askedFor = nil
             } else {
-                problem = "The forecast for the run couldn't be fetched: \(error.localizedDescription)"
+                problem = "The forecast for the run could not be fetched: \(error.localizedDescription)"
             }
         }
         loading = false

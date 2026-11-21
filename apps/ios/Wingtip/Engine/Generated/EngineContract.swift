@@ -4602,19 +4602,31 @@ enum EngineContract {
     struct FuelInTanksAnswerItem: Codable, Equatable, Sendable {
         var gal: Double
         var low: Bool
+        /// Where the tanks are filled (the departure, a field landed at), what they hold as the airplane leaves: the pilot's own figure, full, or what it landed with where the figure is under that; null elsewhere.
+        var leavesGal: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case gal
+            case low
+            case leavesGal = "leaves_gal"
+        }
     }
 
     struct FuelInTanksInput: Codable, Equatable, Sendable {
         var points: [EngineContract.FuelInTanksInputPointsItem]
         var usableGal: Double
         var taxiGal: Double
-        var reserveGal: Double
+        /// Each flight's own reserve, gallons, in order: the first the departure's flight, the next the one from the first field landed at (refuel), as the planner's totals give each flight's reserve_gal. A point is low against the reserve of the flight that lands at or passes it; a flight with none given (null, or past the list's end) is held to the strictest given.
+        var reservesGal: [Double?]
+        /// Under IFR with an alternate filed, the fuel on to it from the destination, gallons (14 CFR 91.167(a)(2)): the route's last point is held to its flight's reserve and this; null or 0 under VFR.
+        var alternateGal: Double?
 
         enum CodingKeys: String, CodingKey {
             case points
             case usableGal = "usable_gal"
             case taxiGal = "taxi_gal"
-            case reserveGal = "reserve_gal"
+            case reservesGal = "reserves_gal"
+            case alternateGal = "alternate_gal"
         }
     }
 
@@ -4688,6 +4700,8 @@ enum EngineContract {
         var groundMin: Double?
         var skip: [String]?
         var fields: [EngineContract.FuelField]?
+        /// Under IFR with an alternate filed, the fuel from the destination on to it, gallons (14 CFR 91.167(a)(2)): the stretch landing at the destination keeps it with the reserve. Each stop is itself a first point of intended landing under 91.167(a)(1); only the destination's alternate is counted, as the planner's fuel check counts it. Null or 0 under VFR.
+        var alternateGal: Double?
 
         enum CodingKeys: String, CodingKey {
             case start
@@ -4701,6 +4715,7 @@ enum EngineContract {
             case groundMin = "ground_min"
             case skip
             case fields
+            case alternateGal = "alternate_gal"
         }
     }
 
@@ -7946,6 +7961,10 @@ enum EngineContract {
         var startGal: Double
         var taxiGal: Double
         var reserveGal: Double
+        /// The fuel on to the IFR alternate the last stretch keeps with its reserve (91.167(a)(2)), for fuel_stops; 0 under VFR.
+        var alternateGal: Double
+        /// Whether the fuel on board at the start, less the start and taxi, is under the reserve already: no field is in its reach, so no stop is offered.
+        var onBoardShort: Bool
 
         enum CodingKeys: String, CodingKey {
             case fuelPerNm = "fuel_per_nm"
@@ -7954,6 +7973,8 @@ enum EngineContract {
             case startGal = "start_gal"
             case taxiGal = "taxi_gal"
             case reserveGal = "reserve_gal"
+            case alternateGal = "alternate_gal"
+            case onBoardShort = "on_board_short"
         }
     }
 
@@ -8008,6 +8029,8 @@ enum EngineContract {
         var reserveGal: Double?
         var rules: String?
         var night: Bool?
+        /// Under IFR, the last flight's fuel on to its alternate (the alternate leg's fuel_gal, 14 CFR 91.167(a)(2)); null where none is filed.
+        var alternateGal: Double?
 
         enum CodingKeys: String, CodingKey {
             case fuelMarginGal = "fuel_margin_gal"
@@ -8020,6 +8043,7 @@ enum EngineContract {
             case reserveGal = "reserve_gal"
             case rules
             case night
+            case alternateGal = "alternate_gal"
         }
     }
 

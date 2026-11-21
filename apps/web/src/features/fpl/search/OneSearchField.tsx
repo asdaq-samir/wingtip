@@ -8,6 +8,7 @@ import { useVoice } from "../../voice";
 import SearchBox from "./SearchBox";
 import { AccountButton } from "../../pilot";
 import type { OneSearchModel } from "./useOneSearch";
+import { WORDING } from "../../../lib/wording/generated/wording";
 
 /**
  * The sheet's first row (the owner's one-search design, 2026-11-09), where
@@ -32,7 +33,7 @@ import type { OneSearchModel } from "./useOneSearch";
  */
 /** What a picker's ask is called over its field: its own title (Change
  *  Stop), else Add Stop for a stop, else what it asks for (Departure). */
-const askTitle = (pick: SearchPick) => pick.title ?? (pick.stop ? "Add Stop" : pick.label);
+const askTitle = (pick: SearchPick) => pick.title ?? (pick.stop ? WORDING.addStop : pick.label);
 
 export default function OneSearchField({ model, inputRef }: { model: OneSearchModel; inputRef: React.RefObject<HTMLInputElement | null> }) {
   // What is said typed in the field once a pause ends it, the field

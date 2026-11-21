@@ -8,7 +8,7 @@ import Segmented from "../../components/Segmented";
 import { Input } from "../../components/ui/input";
 import { NumberField } from "../../components/ui/number-field";
 import { WHOLE } from "../../components/ui/numberFormats";
-import TogglePill from "../../components/TogglePill";
+import SwitchRow from "../../components/SwitchRow";
 import { leaveLimit, lostCommsWords, segmentAltitudes, type RouteKey, type Segment } from "./lostComms";
 import { TEXT } from "../../lib/text";
 import { RemoveMinus } from "../../components/Favorites";
@@ -55,7 +55,7 @@ export default function LostCommsPage() {
       <p className={cn(TEXT.prose)}>{vfr}</p>
 
       <ListGroup title="Route">
-        <ListRow title="Which applies first">
+        <ListRow title="Which Applies First">
           <Segmented
             label="Route"
             value={route}
@@ -68,7 +68,7 @@ export default function LostCommsPage() {
         <ListRow title={<span className={TEXT.detail}>{routes.find((r) => r.key === route)!.rule}</span>} />
       </ListGroup>
 
-      <ListGroup title="The clearance">
+      <ListGroup title="The Clearance">
         <ListRow id={`${id}-assigned`} title="Assigned">
           <FieldHit htmlFor={`${id}-assigned`}>
             <NumberField
@@ -99,7 +99,7 @@ export default function LostCommsPage() {
 
       {/* Each segment's minimum for IFR operations: its MEA, or the OROCA
           or MOCA off airways. */}
-      <ListGroup title="The route's segments">
+      <ListGroup title="The Route's Segments">
         {/* Each segment two rows: its name and minimum, then what is flown
             on it, a tap saying the expected altitude applies from there. The
             altitude was a line under the name, and its tap area reached into
@@ -158,22 +158,22 @@ export default function LostCommsPage() {
           ];
         })}
         <ListRow
-          title="Add a segment"
+          title="Add a Segment"
           media={<Plus className="size-5" aria-hidden />}
           onClick={() => setSegments((list) => [...list, { n: Math.max(-1, ...list.map((s) => s.n)) + 1, name: "", minimum: "" }])}
         />
       </ListGroup>
 
-      <ListGroup title="Leaving the clearance limit">
-        <ListRow title="The limit is a fix an approach begins from">
-          <TogglePill
-            pressed={approachFix}
-            onPressedChange={setApproachFix}
-            label={approachFix ? "Yes" : "No"}
-            testId="lost-approach-fix"
-          />
-        </ListRow>
-        <ListRow id={`${id}-efc`} title="Expect further clearance" description="Blank where none was given">
+      <ListGroup title="Leaving the Clearance Limit">
+        {/* The stock switch, its row's title its name (WCAG 1.3.1, 4.1.2):
+            a "Yes" or "No" pill was read without the question. */}
+        <SwitchRow
+          title="The limit is a fix an approach begins from"
+          on={approachFix}
+          onChange={setApproachFix}
+          testId="lost-approach-fix"
+        />
+        <ListRow id={`${id}-efc`} title="Expect Further Clearance" description="Blank where none was given">
           <FieldHit htmlFor={`${id}-efc`}>
             <Input
               id={`${id}-efc`}
@@ -192,7 +192,8 @@ export default function LostCommsPage() {
         </ListRow>
         <ListRow
           title={
-            <span className="font-normal" data-testid="lost-leave">
+            // Worked out again as a field is typed in, and said so (WCAG 4.1.3).
+            <span className="font-normal" data-testid="lost-leave" aria-live="polite">
               {leaveLimit(approachFix, efc.trim(), eta.trim())}
             </span>
           }
