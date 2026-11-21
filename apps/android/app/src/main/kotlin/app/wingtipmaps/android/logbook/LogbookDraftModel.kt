@@ -216,8 +216,8 @@ class LogbookDraftModel(
     /** Not a flight to log: the track let go. */
     fun discard() = flight.forget()
 
-    /** The tracks kept unsent sent again, now: Try Again, and each time
-     *  the app is in front with a network (AutoLogbookHost). */
+    /** The tracks kept unsent sent again, now: Try Again. WorkManager
+     *  sends them otherwise, once there is a network (UnsentTracksWorker). */
     fun sendUnsent() {
         viewModelScope.launch { shelf.send(source::saveTrack) }
     }

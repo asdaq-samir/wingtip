@@ -22,7 +22,6 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -33,8 +32,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.R
@@ -87,14 +85,10 @@ fun WeatherLoopBar(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val loop = remember(context) { WeatherLoop.of(context) }
     val state by loop.state.collectAsStateWithLifecycle()
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    DisposableEffect(lifecycle, loop) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) loop.away(true) else if (event == Lifecycle.Event.ON_START) loop.away(false)
-        }
-        lifecycle.addObserver(observer)
-        onDispose { lifecycle.removeObserver(observer) }
-    }
+    // Lifecycle's own effects: paused at the app's stop, played again at
+    // its start where it was playing.
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { loop.away(true) }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { loop.away(false) }
     val now by AppClock.ticking(30_000L)
     if (state.kind == LoopKind.OFF) return
     val name = state.kind.label

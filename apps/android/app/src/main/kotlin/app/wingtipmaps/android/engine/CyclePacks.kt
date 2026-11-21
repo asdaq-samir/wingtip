@@ -12,6 +12,8 @@ import app.wingtipmaps.android.engine.ffi.packVerify
 import app.wingtipmaps.android.engine.generated.distanceNm
 import app.wingtipmaps.android.engine.generated.regionOf
 import app.wingtipmaps.android.engine.generated.regionsAhead
+import app.wingtipmaps.android.readWhole
+import app.wingtipmaps.android.writeWhole
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -45,7 +47,7 @@ class CyclePacks(private val root: File) {
     /** The list the packs on the phone were fetched by; null before the
      *  first keep. */
     val index: CyclePackIndex?
-        get() = runCatching { Gateway.json.decodeFromString<CyclePackIndex>(indexFile.readText()) }.getOrNull()
+        get() = indexFile.readWhole()?.let { runCatching { Gateway.json.decodeFromString<CyclePackIndex>(it) }.getOrNull() }
 
     fun path(cycle: String, region: String): File = File(root, "$cycle/$region.pack")
 
@@ -133,14 +135,9 @@ class CyclePacks(private val root: File) {
         }
     }
 
-    /** A file written beside itself (.part) and renamed over, so a reader
-     *  sees the old file or the new one whole, never half of one. */
-    private fun writeWhole(file: File, bytes: ByteArray): Boolean {
-        val part = File(file.path + ".part")
-        val written = runCatching { part.writeBytes(bytes) }.isSuccess && part.renameTo(file)
-        if (!written) part.delete()
-        return written
-    }
+    /** A file written whole or not at all (AtomicFile, WholeFiles), so a
+     *  reader sees the old file or the new one whole, never half of one. */
+    private fun writeWhole(file: File, bytes: ByteArray): Boolean = runCatching { file.writeWhole(bytes) }.isSuccess
 
     /** The packs kept again for a new cycle, or changed within it, where
      *  the phone has any. */

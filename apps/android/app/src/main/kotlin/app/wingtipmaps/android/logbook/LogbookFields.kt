@@ -22,13 +22,14 @@ import app.wingtipmaps.android.ui.rememberFieldText
  * A logbook line's fields, as the Flight Logged sheet labels them: the
  * date and airplane, the route, the total and night time, the day and
  * night landings, the remarks. One set for an entry edited in its row and
- * for a flight added by hand, so both read the same.
+ * for a flight added by hand, so both read the same; the date on
+ * Material's date picker (DateField).
  */
 @Composable
 fun LogbookFields(form: LogbookForm, onChange: (LogbookForm) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
         Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-            Field(R.string.flight_logged_date, form.date, Modifier.weight(1f)) { onChange(form.copy(date = it)) }
+            DateField(stringResource(R.string.flight_logged_date), form.date, { onChange(form.copy(date = it)) }, Modifier.weight(1f))
             Field(R.string.airplane, form.airplane, Modifier.weight(1f), letters = true) { onChange(form.copy(airplane = it)) }
         }
         Field(R.string.flight_logged_route, form.route, Modifier.fillMaxWidth(), letters = true) { onChange(form.copy(route = it)) }

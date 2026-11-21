@@ -36,4 +36,7 @@
     <string name="said_show_ahead">Show what is ahead</string>
     <string name="ahead_floor_top">%1$s to %2$s</string>
     <string name="copilot_fly_to">Fly to %1$s</string>
+
+    <!-- A logbook line's date, picked on Material's date picker. -->
+    <string name="logbook_pick_date">Pick the date</string>
 </resources>
