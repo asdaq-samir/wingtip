@@ -39,7 +39,8 @@ export const PIN_AT_FOOT =
  * the held row is (FplRoute's PINNED, z-30): a sticky box is a stacking
  * context of its own. Beside the side panel the row stays in its place.
  */
-export const PIN_STICKS = "in-data-[swipe-direction=down]:sticky in-data-[swipe-direction=down]:bottom-0 in-data-[swipe-direction=down]:z-30";
+export const PIN_STICKS =
+  "in-data-[swipe-direction=down]:sticky in-data-[swipe-direction=down]:bottom-0 in-data-[swipe-direction=down]:z-30";
 
 /**
  * A row of a sheet's head that is its pill (PIN_AT_FOOT on it): held on
