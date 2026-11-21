@@ -61,13 +61,6 @@ fun rememberShareRoute(state: Plan.State): () -> Unit {
     return { if (tail == null) send(context, planOf(state, null)) else asking = true }
 }
 
-/** The route's Share as a button of its own (the nav log's bar). */
-@Composable
-fun ShareRouteButton(state: Plan.State) {
-    val share = rememberShareRoute(state)
-    TextButton(onClick = share) { Text(stringResource(R.string.share)) }
-}
-
 /** The plan as the link carries it: the airplane's type where one is
  *  picked (the pilot's own record's, else the planner's profile), never
  *  one assumed, and the fuel set on its gauges. */

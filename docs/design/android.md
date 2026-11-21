@@ -787,8 +787,14 @@ placement wins, and the difference is noted.
      planner's, from the engine's `navlog_alternate_leg`, its fuel in the
      totals (14 CFR 91.167(a)(2)), "in still air" where the winds were
      not had.
-- **Primary action**: Share, in the top bar's actions. Nothing else
-  is a primary on a read-only log.
+- **Primary action**: Share, in the top bar's actions
+  (`share/NavLogShare`, the web's nav log Share since 2026-11-21): a
+  `DropdownMenu` with Share Link, Nav Log as Text (the sharesheet) and
+  Print the Nav Log, Android's print framework (`PrintManager` over a
+  `WebView`'s print adapter, every printer and Save as PDF;
+  `share/NavLogText` writes the text and the page). No checkpoints for
+  ForeFlight: it has no Android app. Nothing else is a primary on a
+  read-only log.
 - **Type**: the figures use `bodyLarge` with tabular figures
   (`fontFeatureSettings = "tnum"`), so columns line up.
 - **Avoid**:
