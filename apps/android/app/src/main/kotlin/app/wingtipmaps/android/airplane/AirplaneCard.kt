@@ -151,7 +151,7 @@ fun AirplaneCard(at: ProfileOpen.At, plan: Plan, exit: CardExit, onFlown: () -> 
             val page = tabs.getOrNull(section) ?: tabs.first()
             when (page) {
                 R.string.airplane_tab_flights -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { AirplaneFlights(looked, name) }
-                R.string.airplane_tab_info -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { AirplaneInfo(looked) }
+                R.string.airplane_tab_info -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { AirplaneInfo(looked, own = airplane.record != null) }
                 R.string.profile_figures -> AirplaneProfileScreen(airplane, at.focus) {
                     if (flownCard) FlownAirplaneRows(plan, onYourAirplanes = { onOpen(SheetPage.YourAirplanes) })
                     // An N-number's card has its checklists under its figures.

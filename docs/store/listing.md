@@ -220,6 +220,13 @@ and its code in the password field, and the notes say how to use them.
 >
 > The first open needs a connection; after that, the charts already
 > looked at and any downloaded in Setup under Downloads work offline.
+>
+> Airplane cards (a traffic target, or an N-number searched) show the
+> FAA registry's record. The registered owner's and co-owners' names are
+> shown only for the pilot's own airplanes and for organisations
+> (corporation, LLC, government). Anyone else's card says only the
+> owner's kind and state, for example "Individual, WI" (guideline
+> 5.1.1(viii)).
 
 The four background modes App Review will ask about are in
 `apps/ios/project.yml` (`UIBackgroundModes: [audio, location,
@@ -229,7 +236,9 @@ there. Attach a short screen recording of the copilot listening with the
 phone locked (the orange indicator and the Live Activity) for the
 `audio` mode (2.5.4).
 
-Where each note comes from: the location ask, `OwnShip.swift`
+Where each note comes from: the airplane cards' names,
+`Airplane/RegistryNames.swift` (decision 0054; Android's
+`airplane/RegistryNames.kt`, the same rule for Play); the location ask, `OwnShip.swift`
 (`askLocation`, "No question at launch") and the welcome's
 `FirstFlight/WelcomeSheet.swift` (Turn On Location, Later); the microphone, `VoiceInput`
 and `ClearanceListener.swift`; the widgets, `apps/ios/WingtipWidgets`;
@@ -400,6 +409,7 @@ signing certificate (launch-checklist.md).
 | Watch | yes | no | n/a |
 | Pilot's view / 3D terrain | no (`isPitchEnabled = false`) | no | yes (`features/plan-map/terrain`) |
 | Records across devices | iCloud (SwiftData) | the account only | the account only |
+| Registry owner names on airplane cards | own airplanes and organisations only (decision 0054) | own airplanes and organisations only | every name (the owner, 2026-11-14) |
 
 So the listings never mention a 3D or pilot's view; the web's is the
 only one, and the site may show it as the web's.

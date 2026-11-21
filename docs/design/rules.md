@@ -1455,6 +1455,26 @@ recommendation.
 | Ring and lit edge | `selectionRing` (lib/map/gl/layers/common), drawn by AirportsGl and PickedGl in the `top` slot; a card rings its point while it is drawn (`useRingWhileUp`) and lights its area (`useAreaWhileUp`: TfrGl's feature state, AirspaceGl's `airspace-picked`, WeatherGl's `wx-area-picked`); traffic's in `trafficMarks`' picture | --                                           | --      |
 | Tests             | `e2e/map-selection.spec.ts` (a ring clears on ✕ and on the chart, a route point opens its card, a new pick replaces the old card, own ship's card); `e2e/weather-map.spec.ts` and `e2e/airspace-lines.spec.ts` (an area lit while its card is up); `lib/address.test.ts` (the `mark` and `at` links)                          | --                                           | --      |
 
+## 15. Registry names in the store apps (the owner, 2026-11-21)
+
+Decision 0054. The airplane card's Info, its facts strip and a tracked
+airplane's FAA section name the FAA registry's owner and co-owners on the
+iPhone and Android only for the pilot's own airplane, or where the
+registrant's type is an organisation: Corporation, Government, LLC or
+Non-citizen corporation (Type Registrant 3, 5, 7, 8; ardata.pdf).
+Anyone else is their kind and state, "Individual, WI". There is no name,
+town or co-owner's name, and the co-owners' count stays. Past
+registrations name only organisations. A reservation names who reserved
+it only on the pilot's own airplane. App Review 5.1.1(viii) does not
+permit compiling personal data even from public databases. The web keeps
+every name, the owner's choice of 2026-11-14, as it is not on the App
+Store.
+
+|       | Web | iPhone | Android |
+| ----- | --- | ------ | ------- |
+| Rule  | Not applied: every name (`AirplaneInfo`) | `Airplane/RegistryNames.swift`, drawn by `AirplaneInfoSections`, `AirplaneFacts` and `FAARecordSection` | `airplane/RegistryNames.kt`, drawn by `AirplaneInfo` |
+| Tests | -- | `RegistryNamesTests` | `RegistryNamesTest` |
+
 ## Changing a rule
 
 A rule here changes only when the owner says so (the `owner` label). Then

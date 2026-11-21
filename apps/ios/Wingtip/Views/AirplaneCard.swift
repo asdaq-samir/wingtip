@@ -16,6 +16,7 @@ import SwiftUI
 /// avoiding it.
 struct AirplaneCard: View {
     @Environment(Tracking.self) private var tracking
+    @Environment(Airplanes.self) private var airplanes
     let hex: String
     @Environment(\.undoManager) private var undoManager
     @Environment(\.cardAtPill) private var atPill
@@ -48,6 +49,10 @@ struct AirplaneCard: View {
         return KeptAirplane(hex: hex.lowercased(), name: name, type: detail?.type ?? plane?.type)
     }
     private var link: URL { Config.gateway.appending(path: "/app/plan").appending(queryItems: [URLQueryItem(name: "flight", value: hex)]) }
+    /// One of the pilot's airplanes: its registrant is named (RegistryNames).
+    private var own: Bool {
+        RegistryNames.own(detail?.faa?.nNumber ?? detail?.registration ?? plane?.registration, among: airplanes.records.map(\.tailNumber))
+    }
     /// Its flight now, else its last: what Debrief replays.
     private var debriefed: PastFlightSummary? { flights.first }
 
@@ -68,7 +73,7 @@ struct AirplaneCard: View {
                 }
             }
             Section {
-                AirplaneFacts(record: detail?.faa, type: detail?.type ?? plane?.type, year: detail?.year)
+                AirplaneFacts(record: detail?.faa, own: own, type: detail?.type ?? plane?.type, year: detail?.year)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
             }
@@ -193,7 +198,7 @@ struct AirplaneCard: View {
                 }
             }
         }
-        if let faa = detail?.faa { FAARecordSection(faa: faa) }
+        if let faa = detail?.faa { FAARecordSection(faa: faa, own: own) }
     }
 
     /// Flights: the ones before the flight it is on, each replayed.

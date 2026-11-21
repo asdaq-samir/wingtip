@@ -39,6 +39,9 @@ struct AirplaneProfileView: View {
         self.focus = focus
     }
 
+    /// One of the pilot's airplanes: its registrant is named (RegistryNames).
+    private var own: Bool { RegistryNames.own(model.tail, among: airplanes.records.map(\.tailNumber)) }
+
     /// The card's pages, in the web's order.
     enum ProfileTab: String, CaseIterable, Identifiable {
         case flights = "Flights", info = "Info", figures = "Figures"
@@ -55,7 +58,7 @@ struct AirplaneProfileView: View {
             Section {
                 VStack(alignment: .leading, spacing: WingtipSpace.md) {
                     statusLine
-                    AirplaneFacts(record: model.registration, model: lookup.details?.model)
+                    AirplaneFacts(record: model.registration, own: own, model: lookup.details?.model)
                 }
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
@@ -65,7 +68,7 @@ struct AirplaneProfileView: View {
             }
             switch tab {
             case .flights: flights
-            case .info: AirplaneInfoSections(record: model.registration, details: lookup.details, detailsFailed: lookup.detailsFailed)
+            case .info: AirplaneInfoSections(record: model.registration, details: lookup.details, detailsFailed: lookup.detailsFailed, own: own)
             case .figures: figures
             }
         }
