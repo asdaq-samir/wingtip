@@ -467,7 +467,7 @@ change needs; a job it skips counts as passing.
 | `e2e`, `e2e-images` | The browser suite (Playwright, `apps/web/e2e`) against the stack built from the commit (`infra/docker-compose.ci.yml`): on a pull request the specs `specs` chose, which "CI passed" waits for (rule 18); the `@smoke` and `@flight-critical` sets over two shards on main's push; everything over ten at night |
 | `build-images` | Every service image whose inputs changed; each Python image imports its own code as its last step, so a missing dependency fails the build. Tier 2 |
 | `api-compat` | No breaking change to an OpenAPI document (below). Tier 1 |
-| `infra` | cfn-lint, `docker compose config` and `caddy validate` over the production files (their shell scripts are `guards`' shellcheck). Tier 1 |
+| `infra` | cfn-lint, `docker compose config` and `caddy validate` over the production files, and `health.sh` on stand-ins (`scripts/ci/health_sh_test.sh`; their shell scripts are `guards`' shellcheck). Tier 1 |
 | `dependency-review` | New dependencies' advisories, on a public repository's pull requests that change a manifest or lock (`deps` in `scripts/areas.yml`). Tier 1 |
 | `docs` | The gateway's Javadoc, the API reference and wingtip's pdoc, at night |
 | `standards` | Lighthouse and the speed lab against their thresholds, at night |

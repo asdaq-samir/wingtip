@@ -54,10 +54,11 @@ pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                           nightly pg_dump ─▶ S3 server bucket (14 days)
 
 EventBridge, daily 08:30 UTC ─▶ Fargate Spot task: the charts job (services/jobs/charts), refresh
-   a no-op until the FAA's new cycle, then fetches every sheet, draws the
-   pyramid (1.5 million tiles), packs each kind into one PMTiles archive
-   per density and publishes them to the tiles bucket, serving.json last,
-   so every planner moves to the new cycle at once
+   in the week before each new cycle, once the FAA has it up, fetches
+   every sheet, draws the pyramid (1.5 million tiles), packs each kind
+   into one PMTiles archive per density and publishes them to the tiles
+   bucket ahead, next.json last, which every planner takes at 0901Z on
+   the cycle's date; the next run makes it serving.json's
 server cron, hourly ─▶ docker compose run --rm charts-overlays
    the map's overlay tiles, built where the planner's new cycle pack has none
 ```
@@ -138,7 +139,7 @@ Prices in us-east-1, October 2026, at today's traffic:
 | Secrets Manager, three secrets | $1.20 |
 | Route 53 hosted zone | $0.50 |
 | Daily snapshots of the data disk, seven kept | ~$1 |
-| The health check (HTTPS, every 30 s) and the server's logs in CloudWatch | ~$1.60 |
+| The health check (HTTPS, every 30 s), the server's logs in CloudWatch, and its eight alarms and seven figures (`health.sh`, the gateway's alerts; within CloudWatch's free ten of each) | ~$1.60 |
 | ECR, CloudWatch logs, backups, the Fargate Spot refresh (under $1 a cycle) | ~$1.50 |
 | CloudFront | $0 within the always-free 1 TB and 10 million requests |
 | SES | $0.10 per 1,000 sign-in emails |
@@ -222,8 +223,8 @@ docker run --rm --network wingtip-prod_default -v "$PWD/apps/web:/w" -w /w \
   npx playwright test --config playwright.rehearsal.config.ts --workers=2
 ```
 
-Not rehearsed here, since they need AWS itself: `deploy.sh` and
-`backup.sh`, CloudFront's caching, the Spot group and its data disk,
+Not rehearsed here, since they need AWS itself: `deploy.sh`,
+`backup.sh` and `health.sh` (`DRY_RUN=1` prints its figures), CloudFront's caching, the Spot group and its data disk,
 and the chart refresh's publish to S3 (its bucket check has a test).
 
 ## The first deploy
@@ -403,9 +404,22 @@ with ingest and weather,
   minutes without an answer emails `BudgetEmail` (confirm the SNS
   subscription mail once); another follows when it is back. A Spot
   interruption's few minutes may send one pair.
-- **A failed backup** emails the same address (`backup.sh`).
+- **A failed backup** emails the same address (`backup.sh`), and so does
+  a night with no backup at all (`BackupLateAlarm`).
+- **The server's own checks** (`infra/server/health.sh`, every five
+  minutes from cron) send CloudWatch both disks' use, the services not
+  running or unhealthy (and restart an unhealthy one, which Docker's
+  restart policy never does), the origin certificate's days left and the
+  last backup's age; the stack's alarms on them email the same address,
+  as do the chart refresh task stopping without finishing, ACM's
+  certificate warnings and every `ALERT` line of the gateway's monitor
+  (counted from its log, so they arrive when SES is what has failed).
+  [RUNBOOKS.md](RUNBOOKS.md) has each alert and what to do.
 - **The logs:** every service's, in CloudWatch under `/<stack>/server`,
-  a stream per container, kept a month:
+  a stream per container, kept a month, one JSON object a line with the
+  page's request id (the gateway's `requestId`, the planner's
+  `request_id`), which Logs Insights queries by field
+  ([RUNBOOKS.md](RUNBOOKS.md), "Reading the logs"):
 
   ```bash
   aws logs tail /wingtip/server --region us-east-1 --follow --log-stream-name-prefix wingtip-gateway
@@ -424,9 +438,19 @@ with ingest and weather,
 
 ### Chart cycles
 
-Nothing to do: the daily task publishes each new cycle once and is a
-no-op on the other 55 days. A Spot interruption starts it over the next
-day, the old cycle served until then. Tiles are cached by their cycle,
+Nothing to do. In the week before a new cycle's date (the charts'
+`CHARTS_CYCLE_LEAD_DAYS`, 7), once the FAA has put it up, the daily task
+draws and publishes it ahead of its date under `next.json`; every planner
+takes it at 0901Z on the date, when it comes into force (14 CFR 91.103),
+and the next day's run makes it `serving.json`'s, keeping the one it
+replaced as `serving-previous.json`. On the other days a run is a read or
+two. Until 2026-11-21 the task drew a cycle only from its date, so the map
+served the expired one for the hours that took, every cycle. A run that
+fails or that Spot takes back is mailed (`ChartRefreshFailedRule`) and tried
+again the next day, with six days in hand; a bad cycle is undone by
+copying `serving-previous.json` back ([RUNBOOKS.md](RUNBOOKS.md), "A bad or
+late FAA cycle"). The server lets an older cycle's chart sheets go by
+itself (`chart_upkeep.prune_behind_served`). Tiles are cached by their cycle,
 so a tile drawn again within a cycle (a renderer change) reaches pilots
 with the next cycle.
 
@@ -434,15 +458,20 @@ with the next cycle.
 
 At 07:17 UTC every night `backup.sh` copies to
 `s3://<ServerBucketName>/backups/<date>/` what the server alone holds:
-the database (`postgres.dump`: accounts, aircraft, flights) and the planner's `data/labels` (`labels.tar.gz`: the
+the database (`postgres.dump`: accounts, aircraft, flights), each table's
+rows and the schema's version (`manifest.txt`, which a restore is checked
+against) and the planner's `data/labels` (`labels.tar.gz`: the
 checkpoint notes pilots have written). The bucket keeps 14
 days, and is versioned: a backup overwritten or deleted stays as an
 older version for 30 days more (`aws s3api list-object-versions`). The
 server may write only `backups/` and `ground_grid/`. The dump is written to a file and checked with `pg_restore --list`
 before it is uploaded, so a truncated one never replaces a good day, and a
 failed backup emails `BudgetEmail` (confirm the SNS subscription mail once).
-The data disk is also snapshotted daily at 05:00 UTC, seven kept. To
-restore one, on the server:
+The data disk is also snapshotted daily at 05:00 UTC, seven kept.
+[RUNBOOKS.md](RUNBOOKS.md), "Restore a backup", is the restore step by
+step, and its drill (`scripts/dev/restore-drill.sh`) restores a night into
+a scratch Postgres, checks it against its manifest and starts the gateway
+on it; run it monthly. In short, on the server:
 
 ```bash
 cd /srv/wingtip/repo
