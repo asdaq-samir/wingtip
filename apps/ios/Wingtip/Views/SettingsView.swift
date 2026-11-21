@@ -106,8 +106,8 @@ struct AtcPage: View {
 }
 
 /// Help & About, one row of Settings (the owner, 2026-11-13): the guide,
-/// about and where the map's data comes from, then the server and the
-/// version, and the legal pages at the foot.
+/// about and where the map's data comes from, Help Improve Wingtip Maps,
+/// then the server and the version, and the legal pages at the foot.
 struct HelpPage: View {
     var body: some View {
         List {
@@ -119,6 +119,7 @@ struct HelpPage: View {
                 NavigationLink { SourcesPage() } label: { Text("Sources") }
                     .accessibilityIdentifier("sources-row")
             }
+            HelpImproveToggle()
             Section {
                 LabeledContent("Server", value: Config.host)
                 LabeledContent("Version", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")

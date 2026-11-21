@@ -64,6 +64,15 @@ struct TrustTests {
         #expect(DiagnosticsReporter.hitchRatio(value: 0.025, symbol: "") == 0.025)
     }
 
+    @Test func reportsGoUntilThePilotTurnsHelpImproveOff() throws {
+        let defaults = try #require(UserDefaults(suiteName: "TrustTests.helpImprove"))
+        defaults.removePersistentDomain(forName: "TrustTests.helpImprove")
+        #expect(HelpImprove.allows(defaults))
+        defaults.set(false, forKey: HelpImprove.key)
+        #expect(!HelpImprove.allows(defaults))
+        defaults.removePersistentDomain(forName: "TrustTests.helpImprove")
+    }
+
     // MARK: About
 
     @Test func theVersionIsWrittenAsSettingsWritesIt() {

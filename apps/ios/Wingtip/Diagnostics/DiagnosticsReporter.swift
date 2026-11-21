@@ -40,8 +40,9 @@ enum DiagnosticsReporter {
 
     /// The day's figures the owner steers by: launch to first draw at the
     /// 50th and 95th percentile, resume at the 50th, the hang time, the
-    /// share of scrolling spent hitching, the peak memory and the exits
-    /// the system forced for memory.
+    /// share of scrolling spent hitching, the energy (CPU, GPU and GPS
+    /// time) and the disk written, the peak memory and the exits the
+    /// system forced for memory.
     static func report(_ payload: MXMetricPayload, from blank: GWDiagnosticsReport) -> GWDiagnosticsReport {
         var report = blank
         let launch = buckets(payload.applicationLaunchMetrics?.histogrammedTimeToFirstDraw, in: .milliseconds)
@@ -58,6 +59,20 @@ enum DiagnosticsReporter {
         // for using too much, in the foreground (the pilot saw it go) and
         // in the background (the chart was gone on return) -- a crash
         // report never comes for either, as no crash happened.
+        // The day's energy, which MetricKit measures by what drains the
+        // battery rather than as a share of it: CPU and GPU time, and the
+        // time the app held the GPS at its best accuracy (flying keeps
+        // it); with the time in the foreground and background to read
+        // them against, and the disk written.
+        report.measure("cpu_s", payload.cpuMetrics?.cumulativeCPUTime.converted(to: .seconds).value)
+        report.measure("gpu_s", payload.gpuMetrics?.cumulativeGPUTime.converted(to: .seconds).value)
+        if let location = payload.locationActivityMetrics {
+            report.measure("gps_best_s", (location.cumulativeBestAccuracyForNavigationTime + location.cumulativeBestAccuracyTime)
+                .converted(to: .seconds).value)
+        }
+        report.measure("foreground_s", payload.applicationTimeMetrics?.cumulativeForegroundTime.converted(to: .seconds).value)
+        report.measure("background_s", payload.applicationTimeMetrics?.cumulativeBackgroundTime.converted(to: .seconds).value)
+        report.measure("disk_writes_mb", payload.diskIOMetrics?.cumulativeLogicalWrites.converted(to: .megabytes).value)
         if let peak = payload.memoryMetrics?.peakMemoryUsage {
             report.measure("memory_mb_peak", peak.converted(to: .megabytes).value)
         }
@@ -102,11 +117,12 @@ enum DiagnosticsReporter {
         return URLSession(configuration: config)
     }()
 
-    /// The report sent; the gateway answers 204 whether it kept it or
+    /// The report sent, unless Help Improve Wingtip Maps is off; the gateway answers 204 whether it kept it or
     /// dropped it past its hourly allowance, and 400 for one it cannot
     /// read, which is logged for the next build to put right.
     static func send(_ report: GWDiagnosticsReport) async {
-        guard !report.isEmpty else { return }
+        // Nothing once the pilot has turned Help Improve Wingtip Maps off.
+        guard !report.isEmpty, HelpImprove.allows() else { return }
         do {
             var request = URLRequest(url: Config.gateway.appending(path: "/api/diagnostics"))
             request.httpMethod = "POST"
