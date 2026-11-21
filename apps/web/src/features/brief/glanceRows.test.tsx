@@ -14,7 +14,7 @@ afterEach(cleanup);
 const enroute = (ceilingFt: number | null, visibilitySm: number | null): BriefGlance["enroute"] => ({
   ceilingFt,
   visibilitySm,
-  wind: null,
+  headwind: null,
   eteMin: null,
   line: null,
   finding: "ok",

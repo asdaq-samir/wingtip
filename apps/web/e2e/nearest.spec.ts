@@ -110,7 +110,8 @@ test(
     const asked: string[] = [];
     page.on("request", (request) => {
       const url = new URL(request.url());
-      if (url.pathname.endsWith("/api/planner/airports/nearest")) asked.push(`${url.searchParams.get("lat")},${url.searchParams.get("lon")}`);
+      if (url.pathname.endsWith("/api/planner/airports/nearest"))
+        asked.push(`${url.searchParams.get("lat")},${url.searchParams.get("lon")}`);
     });
     await page.route(
       (url) => url.pathname.endsWith("/api/planner/places/search"),

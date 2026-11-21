@@ -23,7 +23,9 @@ const WORDS = "Canada: rules not checked — figures use US rules";
 // Detroit to Buffalo: both ends US fields the planner knows, the great
 // circle between them across southern Ontario. Thunder Bay (CYQT) is in no
 // FAA data set, so its row said only that its card could not be had.
-test("a route from Detroit to Buffalo across Ontario is planned and warned of where its figures are, and once in the Brief", async ({ page }) => {
+test("a route from Detroit to Buffalo across Ontario is planned and warned of where its figures are, and once in the Brief", async ({
+  page,
+}) => {
   test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's panel");
   await page.goto("/app/plan?dep=KDET&dest=KBUF&view=full");
   await settle(page);

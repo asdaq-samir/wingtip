@@ -338,7 +338,10 @@ test("where the FAA could not give the plates, the Charts tab says so, not that 
     async (route) => {
       const answer = await route.fetch();
       const publications = { plates: { state: "unavailable", edition: null }, supplement: { state: "kept", edition: "03Sep2026" } };
-      await route.fulfill({ response: answer, json: { ...(await answer.json()), airport_diagram_url: null, procedures: [], publications } });
+      await route.fulfill({
+        response: answer,
+        json: { ...(await answer.json()), airport_diagram_url: null, procedures: [], publications },
+      });
     },
   );
   await page.goto("/app/plan?place=KDLH");

@@ -96,7 +96,7 @@ export type ChartRole = "chart" | "chart-under" | "chart-terminal";
  *  last base chart picked can stay on the map, hidden, beside the new one
  *  (ChartGl), its tiles kept for a switch back, where with one id for
  *  every base the old chart had to go before the new could be added. */
-export const chartId = (role: ChartRole, kind: string) => `${role}:${kind}`;
+const chartId = (role: ChartRole, kind: string) => `${role}:${kind}`;
 
 /** The role of a chart layer's or source's id (chartId), null for any
  *  other id: what the tests and the first tile's watch read. */
@@ -141,13 +141,7 @@ export function chartStyle(
   layers.push({ id: main, type: "raster", source: main, paint });
   if (overlay && pinned) {
     const terminal = chartId("chart-terminal", overlay.kind);
-    sources[terminal] = {
-      type: "raster",
-      tiles: tiles(overlay.kind),
-      tileSize: 256,
-      minzoom: overlay.min_zoom,
-      maxzoom: overlay.max_zoom,
-    };
+    sources[terminal] = { type: "raster", tiles: tiles(overlay.kind), tileSize: 256, minzoom: overlay.min_zoom, maxzoom: overlay.max_zoom };
     layers.push({ id: terminal, type: "raster", source: terminal, minzoom: glZoom(overlay.min_zoom), paint });
   }
   return { sources, layers, maxZoom: glZoom(baseLayer.max_zoom + OVERZOOM) };

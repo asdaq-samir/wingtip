@@ -1,6 +1,10 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+// @vitest-environment jsdom
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import { PhotoSlide } from "./PictureSlides";
+
+// No test globals, so Testing Library leaves each render up unless told.
+afterEach(cleanup);
 
 describe("a photo's credit", () => {
   it("links to the photo's own page where it has one, as Commons' licences ask", () => {

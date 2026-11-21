@@ -11,8 +11,8 @@ describe("the owner's status page", () => {
     ]);
     expect(builds.map((b) => b.version)).toEqual(["1.0 (42)", "1.0 (41)"]);
     expect(builds[0]).toMatchObject({ crashes: 2, hangs: 1, other: 3, lastAt: "2026-11-21T10:00:00Z" });
-    expect(faultWords(builds[0])).toBe("2 crashes · 1 hang · 3 other");
-    expect(faultWords(builds[1])).toBe("1 crash");
+    expect(faultWords(builds[0]!)).toBe("2 crashes · 1 hang · 3 other");
+    expect(faultWords(builds[1]!)).toBe("1 crash");
   });
 
   it("says a build's headline figures by their 75th percentile", () => {
@@ -25,7 +25,7 @@ describe("the owner's status page", () => {
     const [android] = figuresByBuild([
       { source: "android", version: "1.0 (7)", metric: "jank_ratio", count: 5, p50: 0.01, p75: 0.025, p95: 0.1 },
     ]);
-    expect(android.words).toBe("Janky frames 2.5%");
+    expect(android!.words).toBe("Janky frames 2.5%");
   });
 
   it("says a route's calls, failures and times", () => {

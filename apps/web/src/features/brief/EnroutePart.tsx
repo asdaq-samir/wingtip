@@ -4,6 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
 import AccordionSection from "../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { TEXT } from "../../lib/text";
+import { clockAndZulu } from "../../lib/format";
 import { WINDS_MODELLED_LABEL, windsSource } from "../../lib/windsAloft";
 import type { Course, Leg, Totals } from "../../lib/api/types";
 import type { FlightBriefing } from "./useFlightBriefing";

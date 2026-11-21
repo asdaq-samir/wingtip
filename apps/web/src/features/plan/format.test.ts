@@ -63,6 +63,7 @@ describe("one", () => {
 
 describe("legsWithoutWind", () => {
   const base: Totals = {
+    lights: null,
     distance_nm: 210,
     procedure_nm: 0,
     ete_min: 125,

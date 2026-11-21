@@ -1,11 +1,11 @@
 import { useEffect } from "react";
-import type { Map as MlMap } from "maplibre-gl";
+import type { ErrorEvent, Map as MlMap, MapSourceDataEvent } from "maplibre-gl";
 import { clearProblem, raiseProblem } from "../../problems";
 import { chartRole } from "./glStyle";
 
 /** The map's line for a chart tile neither kept nor to be had. */
-export const CHART_MISSED_ID = "chart-not-kept";
-export const CHART_MISSED = "Chart not kept for this area: it needs a connection";
+const CHART_MISSED_ID = "chart-not-kept";
+const CHART_MISSED = "Chart not kept for this area: it needs a connection";
 
 /** Whether a map error is a chart tile that could not be had for want of
  *  a connection: one of the chart's sources (glStyle's chartRole) with the
@@ -25,10 +25,11 @@ export function chartTileMissed(e: { sourceId?: string; tile?: unknown }, online
  */
 export function useChartMissed(map: MlMap) {
   useEffect(() => {
-    const failed = (e: { sourceId?: string; tile?: unknown }) => {
+    // A tile's error carries its source and tile beside MapLibre's own.
+    const failed = (e: ErrorEvent & { sourceId?: string; tile?: unknown }) => {
       if (chartTileMissed(e, navigator.onLine)) raiseProblem({ id: CHART_MISSED_ID, title: CHART_MISSED });
     };
-    const drawn = (e: { sourceId?: string; tile?: unknown }) => {
+    const drawn = (e: MapSourceDataEvent) => {
       if (navigator.onLine && e.tile && chartRole(e.sourceId) !== null) clearProblem(CHART_MISSED_ID);
     };
     const back = () => clearProblem(CHART_MISSED_ID);

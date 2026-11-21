@@ -269,12 +269,7 @@ export function CallActions({
           </Button>
         )}
         {clearance.frequency && (
-          <Button
-            size="sm"
-            variant="secondary"
-            className={CHIP}
-            onClick={() => void copyText(clearance.frequency!).catch(() => {})}
-          >
+          <Button size="sm" variant="secondary" className={CHIP} onClick={() => void copyText(clearance.frequency!).catch(() => {})}>
             Copy {clearance.frequency}
           </Button>
         )}

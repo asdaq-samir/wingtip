@@ -3,15 +3,13 @@ import { CHART_TILES, dropOlderEditions } from "./workboxRules.ts";
 
 const tile = (kind: string, cycle: string, revision: number, xy = "9/131/190") =>
   `https://wingtip.test/api/planner/chart-tile/${kind}/${xy}@2x.png?c=${cycle}&r=${revision}`;
-const cdn = (kind: string, cycle: string, revision: number) => `https://tiles.wingtip.test/tiles/${cycle}/${kind}/9/131/190.png?r=${revision}`;
+const cdn = (kind: string, cycle: string, revision: number) =>
+  `https://tiles.wingtip.test/tiles/${cycle}/${kind}/9/131/190.png?r=${revision}`;
 
 /** A cache holding `addresses`, as the worker's chart-tiles cache would. */
 function fakeCaches(addresses: string[]) {
   const kept = new Set(addresses);
-  const cache = {
-    keys: async () => [...kept].map((url) => ({ url })),
-    delete: async (key: { url: string }) => kept.delete(key.url),
-  };
+  const cache = { keys: async () => [...kept].map((url) => ({ url })), delete: async (key: { url: string }) => kept.delete(key.url) };
   vi.stubGlobal("caches", { open: async () => cache });
   return kept;
 }

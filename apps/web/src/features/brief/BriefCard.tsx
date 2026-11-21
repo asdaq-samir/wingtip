@@ -6,7 +6,7 @@ import VerdictPill from "./VerdictPill";
 import type { PanelTab } from "../plan";
 import { useLiveRefresh } from "../../lib/liveRefresh";
 import { CardLayer } from "../../components/sheet/CardLayer";
-import { prefetchAirportSections } from "./AirportSectionsPart";
+import { prefetchAirportSections } from "./airportSectionsChunk";
 
 /**
  * FPL's Brief, a card over it as an airport's is, at the owner's ask ("we

@@ -158,7 +158,17 @@ function chartParts(spec: ChartStyle | null, shown: boolean) {
  *  the imagery under it (`fade`), faded out past its own last zoom. While
  *  not `shown` (the last base, kept), its layers are hidden, so MapLibre
  *  fetches none of its tiles but keeps those it has. */
-function ChartSources({ spec, paint, fade, shown }: { spec: ChartStyle; paint: ReturnType<typeof chartPaint>; fade: boolean; shown: boolean }) {
+function ChartSources({
+  spec,
+  paint,
+  fade,
+  shown,
+}: {
+  spec: ChartStyle;
+  paint: ReturnType<typeof chartPaint>;
+  fade: boolean;
+  shown: boolean;
+}) {
   const { map } = useGlMap();
   const ids = spec.layers.map((l) => l.id);
   const visibility = shown ? "visible" : "none";

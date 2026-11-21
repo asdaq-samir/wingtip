@@ -34,7 +34,7 @@ export async function loadDeclination(day: Date = new Date()): Promise<Declinati
  *  lines lie many miles apart (NOAA's WMM-2025 declination chart); its
  *  yearly drift is a fraction of a degree. Over one nm the variation moves
  *  by a small part of the whole degree the strip's track is written in. */
-export const VARIATION_STEP_NM = 1;
+const VARIATION_STEP_NM = 1;
 
 /** The variation (`magnetic_variation`) on the UTC day of `now()`, kept
  *  while the point stays within VARIATION_STEP_NM of the one it was asked

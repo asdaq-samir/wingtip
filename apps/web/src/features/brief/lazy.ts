@@ -8,4 +8,4 @@
 
 export { default as BriefCard } from "./BriefCard";
 export { BriefingNotices, default as FlightBriefingView, ReviewAskItem, ReviewAskSheet, SaveFlightButton } from "./FlightBriefingView";
-export { prefetchAirportSections } from "./AirportSectionsPart";
+export { prefetchAirportSections } from "./airportSectionsChunk";

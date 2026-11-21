@@ -106,16 +106,18 @@ export default function RouteTimeline({
   // pilot in Chicago planning Denver to Aspen): its unlabelled times read
   // as Denver's, an hour out, so every point says its zone then too.
   const deviceElsewhere = !!departZone && !!clockElsewhere(new Date(from), departZone, null);
-  const zoned = deviceElsewhere || routePoints.some((ident, index) => {
-    const role =
-      index === 0 && ident === planned.dep
-        ? "Departure"
-        : index === routePoints.length - 1 && ident === planned.dest
-          ? "Destination"
-          : "Stop";
-    const arrival = arrivalAt(ident, role, visitAt(routePoints, index).seen);
-    return !!arrival && !!clockElsewhere(arrival.at, cardOf(ident)?.data?.time_zone, departZone);
-  });
+  const zoned =
+    deviceElsewhere ||
+    routePoints.some((ident, index) => {
+      const role =
+        index === 0 && ident === planned.dep
+          ? "Departure"
+          : index === routePoints.length - 1 && ident === planned.dest
+            ? "Destination"
+            : "Stop";
+      const arrival = arrivalAt(ident, role, visitAt(routePoints, index).seen);
+      return !!arrival && !!clockElsewhere(arrival.at, cardOf(ident)?.data?.time_zone, departZone);
+    });
   const zoneOf = (at: Date, ident: string) => clockIn(at, fields.includes(ident) ? cardOf(ident)?.data?.time_zone : departZone);
   const timeOf = (ident: string, role: TimelinePoint["role"], seen: number) => {
     if (role === "Departure") {

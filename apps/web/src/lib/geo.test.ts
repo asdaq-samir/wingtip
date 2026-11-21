@@ -136,4 +136,3 @@ describe("a line across the antimeridian", () => {
     expect(lonBounds([-88.07, -92.19])).toEqual([-92.19, -88.07]);
   });
 });
-
