@@ -309,8 +309,12 @@ export default memo(function MiniProfile({
       </span>
     </>
   );
+  // A picture, named; but a group where the Profile card's altitude slider
+  // is laid on it (`wheelSlot`): an image holds no control, and the slider
+  // in one was axe's nested-interactive (WCAG 4.1.2; the iOS audit's
+  // "altitude on the profile").
   return (
-    <div role="img" data-testid="mini-profile" aria-label={label} className={look}>
+    <div role={wheelSlot ? "group" : "img"} data-testid="mini-profile" aria-label={label} className={look}>
       {chart}
     </div>
   );
