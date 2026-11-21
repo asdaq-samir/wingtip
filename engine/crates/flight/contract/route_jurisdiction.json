@@ -1,0 +1,170 @@
+{
+  "x-call": "wingtip_flight::jurisdiction_call::call",
+  "description": "Which of a route's points and legs lie outside the United States, each leg checked every 2 nm along its geodesic, and the Brief's one line for them. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RouteJurisdictionInput",
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "lat",
+              "lon"
+            ]
+          },
+          "description": "The route's points in order, as the nav log's rows: a leg from each to the next."
+        }
+      },
+      "required": [
+        "points"
+      ]
+    },
+    "answer": {
+      "title": "RouteJurisdictionAnswer",
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "US",
+                  "CA",
+                  "MX",
+                  "BS",
+                  "other"
+                ],
+                "description": "US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it."
+              },
+              "caution": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The warning where the figures are, \"Canada: rules not checked — figures use US rules\"; null in the United States."
+              }
+            },
+            "required": [
+              "code",
+              "caution"
+            ]
+          },
+          "description": "Each point's, in order."
+        },
+        "legs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "codes": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "US",
+                    "CA",
+                    "MX",
+                    "BS",
+                    "other"
+                  ],
+                  "description": "US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it."
+                },
+                "description": "The countries other than the United States met along the leg, its ends included, in the order met."
+              },
+              "caution": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The warning where the figures are, \"Canada: rules not checked — figures use US rules\"; null in the United States."
+              }
+            },
+            "required": [
+              "codes",
+              "caution"
+            ]
+          },
+          "description": "From each point to the next."
+        },
+        "outside": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "US",
+              "CA",
+              "MX",
+              "BS",
+              "other"
+            ],
+            "description": "US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it."
+          },
+          "description": "Every country other than the United States the route meets, once each in order."
+        },
+        "brief": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "lead": {
+                  "type": "string",
+                  "description": "The finding alone."
+                },
+                "line": {
+                  "type": "string",
+                  "description": "The finding and what to do, in one line."
+                },
+                "action": {
+                  "type": "string"
+                },
+                "why": {
+                  "type": "string"
+                },
+                "cite": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "lead",
+                "line",
+                "action",
+                "why",
+                "cite"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The Brief's line for the route, once; null where it is all in the United States."
+        }
+      },
+      "required": [
+        "points",
+        "legs",
+        "outside",
+        "brief"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

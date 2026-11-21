@@ -6972,6 +6972,28 @@ object EngineContract {
     )
 
     @Serializable
+    data class JurisdictionOfAnswer(
+        /**
+         * US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
+         */
+        val code: String,
+        /**
+         * The country's name as the warning starts, "Canada"; "Outside the US" for other.
+         */
+        val name: String,
+        /**
+         * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+         */
+        val caution: String? = null,
+    )
+
+    @Serializable
+    data class JurisdictionOfInput(
+        val lat: Double,
+        val lon: Double,
+    )
+
+    @Serializable
     data class KeptAgeAnswer(
         val kind: String,
         @SerialName("age_min")
@@ -10984,6 +11006,79 @@ object EngineContract {
         val legNm: Double? = null,
         val turns: Double? = null,
         val minutes: Double? = null,
+    )
+
+    @Serializable
+    data class RouteJurisdictionAnswer(
+        /**
+         * Each point's, in order.
+         */
+        val points: List<EngineContract.RouteJurisdictionAnswerPointsItem>,
+        /**
+         * From each point to the next.
+         */
+        val legs: List<EngineContract.RouteJurisdictionAnswerLegsItem>,
+        /**
+         * Every country other than the United States the route meets, once each in order.
+         */
+        val outside: List<String>,
+        /**
+         * The Brief's line for the route, once; null where it is all in the United States.
+         */
+        val brief: EngineContract.RouteJurisdictionAnswerBrief? = null,
+    )
+
+    @Serializable
+    data class RouteJurisdictionAnswerBrief(
+        /**
+         * The finding alone.
+         */
+        val lead: String,
+        /**
+         * The finding and what to do, in one line.
+         */
+        val line: String,
+        val action: String,
+        val why: String,
+        val cite: String,
+    )
+
+    @Serializable
+    data class RouteJurisdictionAnswerLegsItem(
+        /**
+         * The countries other than the United States met along the leg, its ends included, in the order met.
+         */
+        val codes: List<String>,
+        /**
+         * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+         */
+        val caution: String? = null,
+    )
+
+    @Serializable
+    data class RouteJurisdictionAnswerPointsItem(
+        /**
+         * US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
+         */
+        val code: String,
+        /**
+         * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+         */
+        val caution: String? = null,
+    )
+
+    @Serializable
+    data class RouteJurisdictionInput(
+        /**
+         * The route's points in order, as the nav log's rows: a leg from each to the next.
+         */
+        val points: List<EngineContract.RouteJurisdictionInputPointsItem>,
+    )
+
+    @Serializable
+    data class RouteJurisdictionInputPointsItem(
+        val lat: Double,
+        val lon: Double,
     )
 
     /**

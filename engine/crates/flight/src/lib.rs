@@ -23,6 +23,9 @@
 //!   and 61.57(b)'s night-passenger period;
 //! - vfr: 91.155's basic VFR weather minimums;
 //! - based: where an airplane is usually based, from its past flights;
+//! - jurisdiction: whose rules a point is under, the United States' or
+//!   another country's (14 CFR 91.1, 91.703; decision 0053), from Natural
+//!   Earth's outlines in data/borders.txt; jurisdiction_call asks it by name;
 //! - calls: these rules asked by name.
 
 pub mod based;
@@ -30,6 +33,10 @@ pub mod calls;
 pub mod field;
 pub mod filing;
 pub mod flight;
+pub mod jurisdiction;
+pub mod jurisdiction_call;
+#[cfg(test)]
+mod jurisdiction_tests;
 pub mod limits;
 pub mod performance;
 pub mod route_read;

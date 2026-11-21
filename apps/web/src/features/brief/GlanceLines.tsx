@@ -23,7 +23,7 @@ const ITEM = "not-last:border-b-0";
  *  reports it was read from as sent, and the way to its page. Folded,
  *  since the owner's rule is to look and go: an item of the Brief's Base
  *  UI Accordion (docs/design/web.md §5, the APG's keys). */
-export function Line({ line, onOpen }: { line: GlanceLine; onOpen: (tab: PanelTab) => void }) {
+export function Line({ line, onOpen }: { line: Omit<GlanceLine, "key"> & { key: string }; onOpen: (tab: PanelTab) => void }) {
   return (
     <AccordionItem value={line.key} className={ITEM} data-testid={`brief-line-${line.key}`} data-finding={line.finding}>
       <AccordionTrigger className={FOLD}>
