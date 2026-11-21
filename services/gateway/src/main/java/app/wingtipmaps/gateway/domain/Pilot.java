@@ -52,7 +52,7 @@ public class Pilot {
     @Column(length = 2000)
     private String appleRefreshToken;
 
-    /** The Apple client that token was issued to (V46): the iOS app's
+    /** The Apple client that token was issued to (V48): the iOS app's
      *  bundle id for the app's sign-in, null for the web's Services ID.
      *  Apple revokes a token only with the client it was issued to. */
     private String appleTokenClient;
