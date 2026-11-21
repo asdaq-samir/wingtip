@@ -829,7 +829,7 @@ the app's shadcn Toggle on Base UI's, never pressed (`aria-pressed="false"`:
 a tap goes somewhere, it turns nothing on), its name where it goes:
 `components/PageToggle`. It shows the page a tap goes to, as Apple Maps'
 2D/3D button does -- the word FPL on Search ("FPL, show flight plan"; the badge's type role, in the text's colour); FPL's page has none,
-its head's Search button going back and its ✕ clearing the route
+its head's Search button going back to Search's resting page, the route kept (the field not focused) and its ✕ clearing the route
 (`features/fpl/workspace/ClearRouteButton`: one tap, the stock centred alert) -- a 44-point disc (iOS 26's round button) in the field's white,
 the word in the text's colour, its 44-point area its `::after`, never grown, eight
 after the bar. The bar before it is one size on both pages

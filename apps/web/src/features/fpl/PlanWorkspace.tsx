@@ -30,7 +30,6 @@ import FplBar from "./workspace/FplBar";
 import ClearRouteButton from "./workspace/ClearRouteButton";
 import { Search } from "lucide-react";
 import IconButton from "../../components/IconButton";
-import { askSearch } from "../../lib/oneSearch";
 import { routesOffered } from "./workspace/routeEditing";
 import OneSearchField from "./search/OneSearchField";
 import { useOneSearch } from "./search/useOneSearch";
@@ -292,9 +291,10 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
               <FplBar
                 // Search at the head's start, where Share was (the owner,
                 // 2026-11-20: "replace the share button with search button");
-                // the sharing is More's (FplTabBar).
+                // the sharing is More's (FplTabBar). It turns to Search's resting page,
+                // the route kept, as the ✕ did (the owner, 2026-11-21): typing starts at the field.
                 share={
-                  <IconButton round label="Search" onClick={() => askSearch()} data-testid="fpl-search">
+                  <IconButton round label="Search" onClick={() => pickPage(0)} data-testid="fpl-search">
                     <Search className="size-5" aria-hidden="true" />
                   </IconButton>
                 }
