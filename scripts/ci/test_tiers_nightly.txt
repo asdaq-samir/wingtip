@@ -44,6 +44,7 @@ forecast-run.spec.ts
 forecast-wind.spec.ts
 fpl-fields.spec.ts
 fpl-one-layout.spec.ts
+fpl-strip-foot.spec.ts
 frequency-copy.spec.ts
 fuel-gauge.spec.ts
 fuel-stops.spec.ts

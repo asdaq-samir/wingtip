@@ -98,11 +98,20 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
     const resized = new ResizeObserver(measure);
     const page = row.closest("[data-sheet-scroll]");
     if (page) resized.observe(page.firstElementChild ?? page);
+    // The row's place moves with the page as it scrolls, so its room does:
+    // measured at the top alone, the translation kept as the page scrolled
+    // on and carried the figures up through the route, to its middle (the
+    // owner's iPhone, 2026-11-21: a long route at full, the strip over the
+    // approach's fixes with rows below it). Measured again at each scroll,
+    // before the frame is drawn, so the figures stay on the foot's edge
+    // while the rest of the route runs under them.
+    page?.addEventListener("scroll", measure, { passive: true });
     const edge = document.querySelector<HTMLElement>(foot);
     if (edge) resized.observe(edge);
     addEventListener("resize", measure);
     return () => {
       resized.disconnect();
+      page?.removeEventListener("scroll", measure);
       removeEventListener("resize", measure);
       barOf()?.style.removeProperty("--pin-bar-room");
     };
