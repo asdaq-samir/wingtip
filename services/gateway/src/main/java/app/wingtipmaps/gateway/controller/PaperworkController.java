@@ -27,7 +27,7 @@ public class PaperworkController {
 
     @GetMapping
     public ResponseEntity<PaperworkDto> due(Pilot pilot) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = PilotDay.today();
         return ResponseEntity.ok(PaperworkService.toDto(paperwork.of(pilot, today), today));
     }
 }

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { newRequestId } from "./requestId";
+import { deviceTimeZone, newRequestId } from "./requestId";
 
 /** The gateway takes an id of up to 64 letters, digits, dots, dashes and
  *  underscores (RequestIdFilter), and makes its own of anything else. */
@@ -19,5 +19,16 @@ describe("request id", () => {
   it("is still a token outside a secure context, where crypto.randomUUID is missing", () => {
     vi.stubGlobal("crypto", {});
     expect(newRequestId()).toMatch(TOKEN);
+  });
+
+  it("sends this device's zone as an IANA name the gateway reads the pilot's day in", () => {
+    const was = process.env.TZ;
+    process.env.TZ = "America/Chicago";
+    try {
+      expect(deviceTimeZone()).toBe("America/Chicago");
+    } finally {
+      if (was === undefined) delete process.env.TZ;
+      else process.env.TZ = was;
+    }
   });
 });

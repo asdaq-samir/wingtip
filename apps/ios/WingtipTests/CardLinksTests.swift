@@ -32,6 +32,17 @@ struct CardLinksTests {
         #expect(!TfrCard.active(tfr, now: at("2026-11-14T22:00:00Z")))
     }
 
+    @Test func aTfrsTimesKeepTheirAmOrPmOnATwelveHourPhone() throws {
+        let json = #"{"notam_id":"6/4116","kind":"Security","effective":"2026-11-14T18:00:00Z","expires":"2026-11-14T22:00:00Z","geometry":{}}"#
+        let tfr = try Planner.json.decode(APITfr.self, from: Data(json.utf8))
+        let chicago = try #require(TimeZone(identifier: "America/Chicago"))
+        // 12:00 to 16:00 CST: the hours were "12" and "04", no PM.
+        let twelve = try #require(TfrCard.times(tfr, locale: Locale(identifier: "en_US"), zone: chicago))
+        #expect(twelve.contains("PM CST (1800Z)") && twelve.contains("PM CST (2200Z)"))
+        let twentyFour = try #require(TfrCard.times(tfr, locale: Locale(identifier: "en_GB"), zone: chicago))
+        #expect(twentyFour.contains("16:00 CST (2200Z)"))
+    }
+
     @Test func theOneSearchFindsTheAirplanesHeard() {
         let planes = [
             TrafficAircraft(callsign: "UAL2088", hex: "a93f1e", lat: 0, lon: 0),

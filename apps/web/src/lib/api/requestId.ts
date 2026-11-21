@@ -10,6 +10,15 @@
  */
 export const REQUEST_ID_HEADER = "X-Request-Id";
 
+/** The zone this device keeps (an IANA name), sent with every call so the
+ *  gateway reads the pilot's currency and paperwork on the pilot's own
+ *  day, not UTC's, which turns over in the U.S. evening (PilotDay). */
+export const TIME_ZONE_HEADER = "X-Time-Zone";
+
+export function deviceTimeZone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
 export function newRequestId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;

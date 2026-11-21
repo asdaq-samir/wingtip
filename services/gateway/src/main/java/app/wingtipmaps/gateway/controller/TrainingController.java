@@ -15,7 +15,6 @@ import app.wingtipmaps.gateway.service.TrainingService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import java.time.Instant;
-import java.time.LocalDate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -134,6 +133,6 @@ public class TrainingController {
     }
 
     private TrainingDto trainingOf(Pilot pilot) {
-        return training.training(pilot, logbook.list(pilot), LocalDate.now());
+        return training.training(pilot, logbook.list(pilot), PilotDay.today());
     }
 }

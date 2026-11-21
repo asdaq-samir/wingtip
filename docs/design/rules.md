@@ -1455,6 +1455,41 @@ recommendation.
 | Ring and lit edge | `selectionRing` (lib/map/gl/layers/common), drawn by AirportsGl and PickedGl in the `top` slot; a card rings its point while it is drawn (`useRingWhileUp`) and lights its area (`useAreaWhileUp`: TfrGl's feature state, AirspaceGl's `airspace-picked`, WeatherGl's `wx-area-picked`); traffic's in `trafficMarks`' picture | --                                           | --      |
 | Tests             | `e2e/map-selection.spec.ts` (a ring clears on ✕ and on the chart, a route point opens its card, a new pick replaces the old card, own ship's card); `e2e/weather-map.spec.ts` and `e2e/airspace-lines.spec.ts` (an area lit while its card is up); `lib/address.test.ts` (the `mark` and `at` links)                          | --                                           | --      |
 
+## 15. Times, figures and the phone's region (the audit of 2026-11-21)
+
+On all three apps:
+
+- **A product's time says whose it is.** A report's, a forecast's, a
+  NOTAM's, a TFR's or a hazard's time is written on the device's clock
+  with its zone and UTC beside it, "15:00 CST (2100Z)" (the web's
+  `clockAndZulu` and `tfrTimes`, the iPhone's TfrCard), or in Zulu alone
+  where the product's line is short. A local time with no zone is the
+  airplane's own (the nav log's ETAs), and where that can be read as
+  another clock it names its zone: the nav log's ETA column, the printed
+  kneeboard and its head, the FPL timeline once the device keeps another
+  clock than the departure field's.
+- **A time from a feed with no zone is UTC** (the web's `instantOf`), and
+  one that does not read is no bound, never "not in force".
+- **A day is the pilot's own.** A logbook's or a currency's date is
+  compared with the device's day (`localDay`), not UTC's, which turns over
+  in the U.S. evening; the gateway reads the pilot's day from the zone
+  each app sends (`X-Time-Zone`).
+- **Local times follow the phone's own 12- or 24-hour setting on the
+  phones**, the AM or PM kept: a two-figure hour with no AM or PM is
+  never written.
+- **Figures are written in the FAA's U.S. form whatever the region**:
+  "4,500 ft", "8.5 gph", en_US on the iPhone (`Format.locale`), Locale.US
+  on Android, never a bare `.formatted()` or `"%,d".format`.
+- **A figure typed reads a decimal comma** ("8,5" is 8.5): the web's
+  NumberField reads the browser's locale, the phones' `Typed`.
+- **A visibility is written as a report gives it and never rounded up**:
+  "5/8 SM", "1 1/8 sm", the sixteenth below 3 sm and the whole mile from
+  3 (the engine's `statute_miles_down` for a metric report, each app's
+  `reportedVisibility`).
+- **Units are the FAA's, one set, each said**: nm for distance, sm for
+  visibility, ft, kt, inHg (a Q group converted), °C, US gallons and
+  pounds. There is no metric setting.
+
 ## Changing a rule
 
 A rule here changes only when the owner says so (the `owner` label). Then
