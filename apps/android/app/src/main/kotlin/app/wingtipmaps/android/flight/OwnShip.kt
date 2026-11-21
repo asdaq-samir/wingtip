@@ -338,7 +338,10 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
         fun fixOf(location: Location): Fix =
             Fix(
                 lat = location.latitude, lon = location.longitude,
-                altitudeFt = mslFeet(if (LocationCompat.hasMslAltitude(location)) LocationCompat.getMslAltitudeMeters(location) else null),
+                altitudeFt = mslFeet(
+                    location.hasAltitude(), LocationCompat.hasMslAltitude(location),
+                    if (LocationCompat.hasMslAltitude(location)) LocationCompat.getMslAltitudeMeters(location) else 0.0,
+                ),
                 trackDeg = if (location.hasBearing()) location.bearing.toDouble() else null,
                 groundspeedKt = if (location.hasSpeed()) location.speed * Units.KT_PER_M_S else null,
                 accuracyM = if (location.hasAccuracy()) location.accuracy.toDouble() else Double.NaN,
@@ -348,6 +351,15 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
         /** Feet above mean sea level from metres above it; none stays none,
          *  never the ellipsoid's height in its place. */
         fun mslFeet(mslMeters: Double?): Double? = mslMeters?.let { it * Units.FT_PER_M }
+
+        /** The fix's altitude: MSL only when the fix has an altitude and an
+         *  MSL one (Location.getMslAltitudeMeters on Android 14 and later,
+         *  else the geoid model's conversion, see the callback). The WGS-84
+         *  height is about 80 to 115 ft off sea level over the lower 48 and
+         *  the FAA calls uncorrected GPS altitude WGS-84 (AIM 1-1-17), so
+         *  without MSL the answer is none. */
+        fun mslFeet(hasAltitude: Boolean, hasMsl: Boolean, mslMeters: Double): Double? =
+            if (hasAltitude && hasMsl) mslFeet(mslMeters) else null
 
         /** How often the position is kept for the next launch's map. */
         const val KEEP_EVERY_MS = 60_000L

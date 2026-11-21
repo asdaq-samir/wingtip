@@ -586,7 +586,7 @@ In flight (#218, the owner's option A of 2026-11-08), as the iPhone:
 the top of the map, left of the buttons, shows what is ahead
 (`ui/InFlightViews.kt`'s AlertsBanner, the planner's or the packs'
 alerts, which were worked out and never shown before) over the
-instruments bar -- groundspeed, track, GPS altitude, vertical speed; on
+instruments bar -- groundspeed, track, GPS altitude (mean sea level: `getMslAltitudeMeters` or the geoid conversion, else "—", never the ellipsoid height), vertical speed; on
 the route the next field's distance, time to go and desired track, the
 distance off course and the destination's arrival with the fuel the
 plan leaves; Nearest one tap away (a sheet of the nearest fields, which
