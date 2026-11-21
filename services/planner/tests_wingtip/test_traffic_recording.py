@@ -260,3 +260,17 @@ def test_an_address_that_is_not_six_hex_digits_is_neither_followed_nor_recorded(
     assert traffic.followed() == set() and recorded._recorded("../../escaped") == []
     traffic.follow("~A1B2C3")
     assert traffic.followed() == {"a1b2c3"}
+
+
+def test_a_radar_messages_tracks_are_kept_in_one_write_and_its_followed_ones_recorded(clock, monkeypatch):
+    """ingest's whole message at once (heard_all_elsewhere): each track
+    kept as its latest, an older report of one left alone, and the
+    followed ones, by the set ingest already holds, recorded."""
+    wall = {"now": 1791800000.0}
+    stand_in(monkeypatch, "_wall", lambda: wall["now"])
+    followed_one = {**common._aircraft(CESSNA), "hex": "a3c858", "callsign": None, "pressure_altitude": True}
+    other = {**followed_one, "hex": "a6ed61", "lat": 41.98, "lon": -87.9}
+    traffic.heard_all_elsewhere([(followed_one, wall["now"] - 2), (other, wall["now"] - 2)], {"a3c858"})
+    assert store.radar_heard_many([(other, wall["now"] - 9)]) == [False]
+    assert store.radar_one("a6ed61", 0)[1] == wall["now"] - 2
+    assert len(recorded._recorded("a3c858")) == 1 and recorded._recorded("a6ed61") == []
