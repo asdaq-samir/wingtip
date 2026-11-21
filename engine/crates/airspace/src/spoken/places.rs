@@ -20,8 +20,13 @@ pub fn title(s: &str) -> String {
 /// COLUMNS: NASR's APT_BASE, NAV_BASE and FIX_BASE, a row each): the
 /// open airports (wingtip_flight::field: NASR ARPT_STATUS O, decision 0043)
 /// by their ICAO ident where they have one, the navaids in service of the kinds a route flies over, by
-/// their names, and every fix.
+/// their names, and every fix. Read once a pack and kept
+/// (crate::pack_kept): a clearance heard reads the same packs as the last.
 pub fn places_of(pack: &Pack) -> Vec<Place> {
+    crate::pack_kept::kept(pack, "places", read_places).as_ref().clone()
+}
+
+fn read_places(pack: &Pack) -> Vec<Place> {
     let mut out = Vec::new();
     let table = |name: &str| pack.section(name).and_then(|b| std::str::from_utf8(b).ok()).and_then(json::table);
     let num = |s: &str| s.trim().parse::<f64>().ok();
@@ -76,7 +81,13 @@ pub fn by_nearness(mut places: Vec<Place>, near: &[(f64, f64)]) -> Vec<Place> {
     }
     let squeeze = (near.iter().map(|p| p.0).sum::<f64>() / near.len() as f64).to_radians().cos();
     let d = |p: &Place| near.iter().map(|(la, lo)| (p.lat - la).powi(2) + ((p.lon - lo) * squeeze).powi(2)).fold(f64::INFINITY, f64::min);
-    places.stable_sort_by(|a, b| d(a).partial_cmp(&d(b)).unwrap());
+    // Each place's nearness worked out once, not in every comparison the
+    // sort makes; the same stable order by it.
+    let keys: Vec<f64> = places.iter().map(d).collect();
+    let mut order: Vec<usize> = (0..places.len()).collect();
+    order.stable_sort_by(|&a, &b| keys[a].partial_cmp(&keys[b]).unwrap());
+    let mut slots: Vec<Option<Place>> = places.drain(..).map(Some).collect();
+    places.extend(order.into_iter().map(|i| slots[i].take().unwrap()));
     places
 }
 

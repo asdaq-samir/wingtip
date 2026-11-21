@@ -121,8 +121,9 @@ mod tests {
         // north: the near one's ceiling is the leg's base after the first
         // cut as before it, the far one never is.
         let (a, b) = ((40.0, -90.0), (40.0, -89.0));
-        let station =
-            |ident: &str, at: Point, ceiling: f64| Station { ident: ident.into(), at, ceiling_ft: Some(ceiling), elevation_ft: Some(600.0) };
+        let station = |ident: &str, at: Point, ceiling: f64| {
+            Station { ident: ident.into(), at, ceiling_ft: Some(ceiling), elevation_ft: Some(600.0) }
+        };
         let past = destination(b.0, b.1, 90.0, CLOUD_STATION_RADIUS_NM * 0.8);
         let far = destination(a.0, a.1, 0.0, CLOUD_STATION_RADIUS_NM * 3.0);
         let bases = leg_bases(&[(a, b)], &[station("FAR", far, 500.0), station("PAST", past, 2000.0)]);
