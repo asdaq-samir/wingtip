@@ -1,5 +1,5 @@
 import { Button as BaseButton } from "@base-ui/react/button";
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Mail } from "lucide-react";
 import { cn } from "cn";
@@ -15,6 +15,7 @@ import { capabilitiesQuery } from "../lib/queryClient";
 import { TEXT } from "../lib/text";
 import { Separator } from "./ui/separator";
 import { FieldError } from "./ui/field";
+import { errorIdOf, invalidProps } from "../lib/fieldError";
 
 /**
  * Three ways in, the standard shape every "sign in" prompt (Auth.js,
@@ -67,6 +68,13 @@ export default function SignInModal({
           ? "Couldn't send that link. Reload the page and try again."
           : "Couldn't reach the sign-in service. Try again in a minute.";
   const sent = magicLink.isSuccess ? magicLink.variables : null;
+  // The form goes as the link is sent, its button with it: focus taken to
+  // what is said in its place, not left on nothing (WCAG 2.4.3, 4.1.3).
+  const sentAt = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (sent) sentAt.current?.focus();
+  }, [sent]);
+  const emailId = useId();
   // On a phone a sheet from the navigation bar's edge, the bottom unless
   // the pilot moved it, as iOS asks to sign in, in the floating sheet's
   // look, at the owner's pick of the sheets audit (D3, 2026-10-17); wider,
@@ -133,7 +141,7 @@ export default function SignInModal({
           </>
         )}
         {sent ? (
-          <p className={`text-muted-foreground ${TEXT.prose}`} role="status">
+          <p ref={sentAt} tabIndex={-1} className={`text-muted-foreground outline-none ${TEXT.prose}`} role="status">
             Check <span className="font-semibold text-foreground">{sent}</span> for a sign-in link. It expires in 15 minutes.
           </p>
         ) : (
@@ -150,6 +158,8 @@ export default function SignInModal({
                 required
                 placeholder="you@example.com"
                 aria-label="Email address"
+                id={emailId}
+                {...invalidProps(emailId, linkFailure ?? undefined)}
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -172,7 +182,7 @@ export default function SignInModal({
               </Button>
             </div>
             {linkFailure && (
-              <FieldError className={`text-destructive ${TEXT.prose}`} data-testid="sign-in-error">
+              <FieldError id={errorIdOf(emailId)} className={`text-destructive ${TEXT.prose}`} data-testid="sign-in-error">
                 {linkFailure}
               </FieldError>
             )}

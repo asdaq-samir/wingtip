@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
+import { FieldError } from "../../components/ui/field";
 import type { Pilot } from "../../lib/api/types";
 import { TEXT } from "../../lib/text";
 import { LargeFace } from "./AccountFace";
@@ -59,7 +60,8 @@ export function AvatarPhoto({ pilot }: { pilot: Pilot }) {
           if (file) photo.choose(file);
         }}
       />
-      {photo.problem && <p className={cn("px-4 text-center text-destructive", TEXT.detail)}>{photo.problem}</p>}
+      {/* Said as it happens (WCAG 4.1.3): the stock field error, an alert. */}
+      {photo.problem && <FieldError className={cn("px-4 text-center", TEXT.detail)}>{photo.problem}</FieldError>}
     </div>
   );
 }

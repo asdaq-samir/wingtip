@@ -51,7 +51,8 @@ function FigureRow({ vm, row }: { vm: AirplaneProfileModel; row: AirplaneProfile
                 disabled={vm.busy === row.key}
                 onClick={() => vm.reset(row.key)}
               >
-                Reset to book figure
+                {/* Which figure, for a reader's list of buttons (WCAG 2.4.6), after the words seen (2.5.3). */}
+                Reset to book figure<span className="sr-only">: {words.label}</span>
               </Button>
             )}
           </span>

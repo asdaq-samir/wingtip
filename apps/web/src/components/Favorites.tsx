@@ -299,13 +299,20 @@ export function ChartMark({
 export function KeptChartMark({ airport, size }: { airport: RecentAirport; size?: number }) {
   const { data } = useQuery(airportQuery(airport.ident));
   const use = data?.military === "military" ? "military" : data?.private ? "private" : null;
-  // With no report of its own, the weather modelled at it, else a station's
-  // within ten miles, as its card's chip and FPL's symbols have it.
-  const category =
+  const category = useKeptCategory(airport);
+  return <ChartMark space={data?.airspace_class ?? airport.airspace ?? null} category={category} use={use} size={size} />;
+}
+
+/** A kept airport's flight category: with no report of its own, the
+ *  weather modelled at it, else a station's within ten miles, as its
+ *  card's chip and FPL's symbols have it. The same query as its mark's. */
+function useKeptCategory(airport: RecentAirport) {
+  const { data } = useQuery(airportQuery(airport.ident));
+  return (
     data?.metar?.flight_category ??
     data?.modelled_weather?.flight_category ??
-    (data?.nearby_metar?.near ? data.nearby_metar.metar.flight_category : null);
-  return <ChartMark space={data?.airspace_class ?? airport.airspace ?? null} category={category} use={use} size={size} />;
+    (data?.nearby_metar?.near ? data.nearby_metar.metar.flight_category : null)
+  );
 }
 
 /** A kept airport -- a Favorite, a Recent -- as a pill's small tile: its
@@ -322,6 +329,7 @@ function SmallAirportTile({
   testId?: string;
 }) {
   const space = useAirspace(airport);
+  const category = useKeptCategory(airport);
   return (
     <SmallTile
       // The chart's mark on its own, no grey round it, at the owner's ask
@@ -332,7 +340,9 @@ function SmallAirportTile({
       mark={<SmallMark icon={<KeptChartMark airport={airport} size={44} />} className="[&_svg]:size-11" />}
       title={airport.ident}
       detail={detail}
-      label={`${airport.ident}, ${space.name}`}
+      // The mark's colour said in words too: its category is otherwise a
+      // colour alone, and hidden from a reader (WCAG 1.1.1, 1.4.1).
+      label={[category, space.name].filter(Boolean).join(", ")}
       onClick={onClick}
       testId={testId}
     />
