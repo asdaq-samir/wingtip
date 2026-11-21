@@ -45,8 +45,11 @@ export const TAPPABLE = [
 const HIT_EXEMPT = [".maplibregl-marker", "[data-slot=tabs-trigger]", "[data-testid=sidebar-trigger-button]"].join(", ");
 
 /** P3's: a marker's number or ident, centred in its dot or chip as a
- *  glyph is (icons.ts), not a line of text. */
-const LEADING_EXEMPT = ".maplibregl-marker";
+ *  glyph is (icons.ts), not a line of text; nor a drawing's label (the
+ *  airport card's runway sketch's numbers, RunwaySketch), an SVG <text>
+ *  set at its own point, where a line height draws nothing and the one
+ *  computed is only the card's, inherited. Its size is still on the scale. */
+const LEADING_EXEMPT = ".maplibregl-marker, svg text";
 
 /** iOS's text styles at the default text size: size → leading. */
 const IOS_TYPE: Record<number, number> = { 11: 13, 12: 16, 13: 18, 15: 20, 16: 21, 17: 22, 20: 25, 22: 28, 28: 34, 34: 41 };
