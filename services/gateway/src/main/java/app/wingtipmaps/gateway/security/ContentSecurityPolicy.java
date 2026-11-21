@@ -55,6 +55,13 @@ final class ContentSecurityPolicy {
                 + "connect-src 'self' " + OVERLAY_TILES + " " + PHOTO_CONNECT + " " + MODEL_HOSTS + "; "
                 + "object-src 'none'; "
                 + "base-uri 'self'; "
+                // The app's forms are React's, sent by script, and none
+                // posts off this site; an injected <form action=...> would,
+                // and default-src does not cover form-action (the deep
+                // security review of 2026-11-21). The connector's consent
+                // page has a policy of its own (ConnectorSecurityConfig),
+                // since its form's redirect goes on to the AI app.
+                + "form-action 'self'; "
                 + "frame-ancestors 'none'";
     }
 }

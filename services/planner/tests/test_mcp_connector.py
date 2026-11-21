@@ -118,10 +118,15 @@ def signed(**over) -> str:
 
 #: The connections that still stand, as the gateway would say (pilot, client).
 LIVE = {("42", "c1")}
+#: The tokens the gateway has revoked, though their connection stands.
+REVOKED: set[str] = set()
+#: Each token the gateway was asked about.
+ASKED_ABOUT: list[str] = []
 
 
-async def _live(pilot: str, client: str) -> bool:
-    return (pilot, client) in LIVE
+async def _live(pilot: str, client: str, token: str) -> bool:
+    ASKED_ABOUT.append(token)
+    return (pilot, client) in LIVE and token not in REVOKED
 
 
 @pytest.fixture
@@ -158,6 +163,22 @@ def test_a_token_whose_connection_is_gone_is_refused_at_once(tokens):
     token is refused though it has not run out (L4)."""
     assert anyio.run(tokens.verify_token, signed(sub="43")) is None
     assert anyio.run(tokens.verify_token, signed(client_id="another")) is None
+
+
+def test_the_gateway_is_asked_about_the_very_token_and_a_revoked_one_is_refused(tokens):
+    """The deep security review of 2026-11-21: a token revoked at
+    /oauth2/revoke while its connection's refresh token stood read as
+    live, since only the pilot and client were asked about. The token
+    itself is asked about now, and one revoked is refused though another
+    of the same connection is not."""
+    kept, revoked = signed(), signed(jti="revoked")
+    REVOKED.add(revoked)
+    try:
+        assert anyio.run(tokens.verify_token, kept) is not None
+        assert ASKED_ABOUT[-1] == kept
+        assert anyio.run(tokens.verify_token, revoked) is None
+    finally:
+        REVOKED.discard(revoked)
 
 
 def test_a_token_signed_by_another_key_is_refused(tokens):

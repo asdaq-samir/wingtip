@@ -165,7 +165,7 @@ About (docs/legal/credits.md) carry non-commercial terms:
       Play never lets it change: `app.wingtipmaps.android` (it reads
       better) or the build's default `app.wingtipmaps.android.native`
       (`apps/android/app/build.gradle.kts`, `ANDROID_NATIVE_APP_ID`), and
-      make listing.md and `APP_ANDROID_PACKAGE` agree.
+      make listing.md, `APP_ANDROID_PACKAGE` and the Maps key agree.
 - [ ] The app record, enrolled in Play App Signing, with an upload key
       kept in CI's secrets for the signed release bundle (`bundleRelease`).
 - [ ] Data safety: the answers in privacy-labels.md, with the deletion

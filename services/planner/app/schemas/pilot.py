@@ -247,6 +247,11 @@ class Inspections(BaseModel):
     due: list[PaperworkDue] = Field(description="Each recorded one named and cited, then the owner's dated items (an AD by 14 CFR 39.7).")
 
 
+#: The most asks one batch call takes: well above an instructor's
+#: students and reviews, or one owner's airplanes.
+MAX_BATCH = 500
+
+
 class RecordsBatchAsk(BaseModel):
     """Many students' records asked at once, for an instructor's page:
     each student's experience (ExperienceAsk) and every endorsements ask
@@ -254,8 +259,12 @@ class RecordsBatchAsk(BaseModel):
     a signed list's last good days), answered in the same order. One
     round trip for the page rather than two a student and two a review."""
 
-    experience: list[ExperienceAsk] = []
-    endorsements: list[EndorsementsAsk] = []
+    # A bound on one call, which only the gateway makes, from one
+    # instructor's own students and reviews (the deep security review of
+    # 2026-11-21): without one, a body of any length held a worker through
+    # one engine call an ask.
+    experience: list[ExperienceAsk] = Field(default=[], max_length=MAX_BATCH)
+    endorsements: list[EndorsementsAsk] = Field(default=[], max_length=MAX_BATCH)
 
 
 class RecordsBatch(BaseModel):

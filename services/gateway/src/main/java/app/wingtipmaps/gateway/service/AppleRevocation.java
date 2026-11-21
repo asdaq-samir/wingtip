@@ -1,6 +1,8 @@
 package app.wingtipmaps.gateway.service;
 
 import app.wingtipmaps.gateway.config.AppProperties;
+import com.nimbusds.jwt.JWTParser;
+import java.text.ParseException;
 import java.util.Map;
 import java.util.Optional;
 import org.slf4j.Logger;
@@ -79,8 +81,17 @@ public class AppleRevocation {
      * kept for revoking. Empty where there is no code, the app's client is
      * not configured, or Apple refuses or cannot be reached; a sign-in
      * never fails for it. A failure is logged, never the code.
+     *
+     * <p>Kept only where the ID token Apple answers with is the signed-in
+     * Apple account's ({@code subject}, the identity token's): the code
+     * arrives beside the identity token but nothing ties the two, so a code
+     * of another Apple account's would otherwise be kept with this pilot,
+     * and deleting this account would revoke that one's grant (the deep
+     * security review of 2026-11-21). The ID token comes straight from
+     * Apple's token endpoint over TLS, which OpenID Connect Core 3.1.3.7
+     * lets stand for its signature.
      */
-    public Optional<String> tradeAppCode(String authorizationCode) {
+    public Optional<String> tradeAppCode(String authorizationCode, String subject) {
         if (authorizationCode == null || authorizationCode.isBlank() || app == null) {
             return Optional.empty();
         }
@@ -102,10 +113,29 @@ public class AppleRevocation {
                     .retrieve()
                     .body(new ParameterizedTypeReference<Map<String, Object>>() {});
             Object token = answer == null ? null : answer.get("refresh_token");
-            return token instanceof String value && !value.isBlank() ? Optional.of(value) : Optional.empty();
+            if (!(token instanceof String value) || value.isBlank()) {
+                return Optional.empty();
+            }
+            if (subject == null || !subject.equals(subjectOf(answer.get("id_token")))) {
+                log.warn("Apple traded the iOS app's code for another Apple account than the one signing in; not kept");
+                return Optional.empty();
+            }
+            return Optional.of(value);
         } catch (RestClientException failed) {
             log.error("Apple refused or could not be reached to trade the iOS app's authorization code", failed);
             return Optional.empty();
+        }
+    }
+
+    /** The subject of the ID token Apple's token endpoint answered, or null. */
+    private static String subjectOf(Object idToken) {
+        if (!(idToken instanceof String value)) {
+            return null;
+        }
+        try {
+            return JWTParser.parse(value).getJWTClaimsSet().getSubject();
+        } catch (ParseException unreadable) {
+            return null;
         }
     }
 

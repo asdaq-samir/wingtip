@@ -174,13 +174,20 @@ public class DeleteAccountController {
         message.setText("Someone asked to delete the Wingtip Maps account for this address. To delete it, "
                 + "open this link within 15 minutes and press Delete Account. If it was not you, ignore this "
                 + "email: nothing is deleted.\n\n" + url);
-        try {
-            mailer.send(message);
-        } catch (RuntimeException failed) {
-            log.warn(
-                    "A deletion link not sent (no address logged): {}",
-                    failed.getClass().getSimpleName());
-        }
+        // Sent off the request's thread: the SMTP round trip, 100 ms to a
+        // second, was spent only for an address with an account, so the
+        // page's time to answer told anyone which addresses have one,
+        // though its words are the same either way (the deep security
+        // review of 2026-11-21).
+        Thread.ofVirtual().name("deletion-link").start(() -> {
+            try {
+                mailer.send(message);
+            } catch (RuntimeException failed) {
+                log.warn(
+                        "A deletion link not sent (no address logged): {}",
+                        failed.getClass().getSimpleName());
+            }
+        });
     }
 
     /** As MagicLinkController builds its link: the configured address, else (a machine that mails nothing) the request's. */

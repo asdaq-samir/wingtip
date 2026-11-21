@@ -68,4 +68,18 @@ class LinksTest {
         assertNull(Links.parse("https://wingtipmaps.app/api/auth/magic-link/verify", host = "wingtipmaps.app"))
         assertNull(Links.parse("https://wingtipmaps.app/about"))
     }
+
+    /** The deep security review of 2026-11-21: URLDecoder throws on a bad
+     *  escape, and any page or app can send such a link, which closed the
+     *  app. The bad part is left out and the rest read. */
+    @Test
+    fun aLinkWithABadEscapeIsReadWithoutIt() {
+        assertNull(Links.parse("wingtipmaps://plan?x=%"))
+        assertNull(Links.parse("https://wingtipmaps.app/app/plan?dep=%zz&dest=KMSN"))
+        assertEquals(
+            Links.Route("KUGN", "KMSN", emptyList()),
+            Links.parse("https://wingtipmaps.app/app/plan?dep=KUGN&dest=KMSN&junk=%E0%A4%A"),
+        )
+        assertNull(Links.parse("https://wingtipmaps.app/api/auth/magic-link/verify?token=%", host = "wingtipmaps.app"))
+    }
 }

@@ -10,6 +10,8 @@ import java.util.Set;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.Session;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -40,16 +42,20 @@ public class PilotService {
 
     private final PilotRepository pilots;
     private final Set<String> developerEmails;
+    private final FindByIndexNameSessionRepository<? extends Session> sessions;
 
     /**
      * @param pilots the pilots kept
      * @param app the settings, whose {@code app.developer-emails} lists the
      *     addresses whose pilot is a developer, comma-separated, case ignored
+     * @param sessions the signed-in sessions, by the name signed in under
      */
-    public PilotService(PilotRepository pilots, AppProperties app) {
+    public PilotService(
+            PilotRepository pilots, AppProperties app, FindByIndexNameSessionRepository<? extends Session> sessions) {
         String developerEmails = app.developerEmails();
         this.pilots = pilots;
         this.developerEmails = Typed.addresses(developerEmails);
+        this.sessions = sessions;
     }
 
     /** The pilot, made a developer when `app.developer-emails` lists
@@ -102,8 +108,18 @@ public class PilotService {
             if (!email.equalsIgnoreCase(pilot.getEmail())
                     && emailVerified(user)
                     && pilots.findByEmail(email).isEmpty()) {
+                String before = pilot.getEmail();
                 pilot.changeEmail(email);
-                return pilots.save(pilot);
+                Pilot changed = pilots.save(pilot);
+                // An emailed link's session is signed in under the address
+                // (MagicLinkAuthenticationToken) and found by it at each
+                // request. Left standing, it named the old address, which
+                // is free now: whoever signs up with it next would be
+                // signed in on those sessions as soon as they did (the deep
+                // security review of 2026-11-21). The pilot signs in on
+                // those devices again, with the new address.
+                sessions.findByPrincipalName(before).keySet().forEach(sessions::deleteById);
+                return changed;
             }
             return pilot;
         }

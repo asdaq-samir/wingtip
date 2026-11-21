@@ -3,9 +3,12 @@ import { api } from "./api/client";
 import type { Pilot } from "./api/types";
 import { PILOT_CACHE, PLANNER_CACHES, forgetPilotCache, forgetPlannerAnswers, signedInPilot } from "./pilotCache";
 
-function stubCaches() {
+function stubCaches(held: string[] = []) {
   const deleted: string[] = [];
-  vi.stubGlobal("caches", { delete: async (name: string) => (deleted.push(name), true) });
+  vi.stubGlobal("caches", {
+    delete: async (name: string) => (deleted.push(name), true),
+    has: async (name: string) => held.includes(name),
+  });
   return deleted;
 }
 
@@ -19,6 +22,21 @@ describe("the pilot's cached copies", () => {
     const deleted = stubCaches();
     vi.spyOn(api, "me").mockResolvedValue(null);
     await expect(signedInPilot()).resolves.toBeNull();
+    expect(deleted).toEqual([PILOT_CACHE]);
+  });
+
+  it("take the planner's answers at the last pilot's points with them when a session lapses", async () => {
+    // The deep security review of 2026-11-21: only Log Out forgot them.
+    const deleted = stubCaches([PILOT_CACHE, ...PLANNER_CACHES]);
+    vi.spyOn(api, "me").mockResolvedValue(null);
+    await signedInPilot();
+    expect(deleted).toEqual([PILOT_CACHE, ...PLANNER_CACHES]);
+  });
+
+  it("leave a page that was never signed in its answers for flying offline", async () => {
+    const deleted = stubCaches(["planner-api"]);
+    vi.spyOn(api, "me").mockResolvedValue(null);
+    await signedInPilot();
     expect(deleted).toEqual([PILOT_CACHE]);
   });
 

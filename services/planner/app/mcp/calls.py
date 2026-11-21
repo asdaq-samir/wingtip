@@ -16,6 +16,8 @@ sends through planner() here."""
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from typing import Any
 
 import httpx2
@@ -93,7 +95,7 @@ async def planner(method: str, path: str, *, query: dict | None = None, body: An
     async with httpx2.AsyncClient(transport=transport, base_url="http://planner", timeout=PLANNER_TIMEOUT_S) as client:
         resp = await client.request(method, path, params=params, json=body, headers=sent)
     if resp.status_code < 400:
-        return resp.json()
+        return as_data(resp.json())
     said = _said(resp)
     if resp.status_code == 404:
         raise ToolError(f"{said} Check the identifier: search_airports finds one by name.")
@@ -104,6 +106,34 @@ async def planner(method: str, path: str, *, query: dict | None = None, body: An
     if resp.status_code == 504:
         raise ToolError(f"{said} Ask again in a minute: the answer is being worked out and kept.")
     raise ToolError(f"Wingtip could not answer ({resp.status_code}): {said}. Try again in a minute.")
+
+
+# What no report a pilot reads needs, and what hides words from the pilot
+# while the model still reads them: control characters but the line
+# breaks and the tab, and Unicode's format characters (category Cf: zero
+# widths, bidirectional overrides, and the tag characters U+E0000 to
+# U+E007F that spell out ASCII invisibly).
+_HIDDEN = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
+def as_data(value: Any) -> Any:
+    """A planner answer as the connector hands it to the pilot's AI app,
+    every string with its hidden characters taken out, through lists and
+    dicts. The answers carry text a third party wrote (a NOTAM's, a METAR's
+    remarks, a field's remarks, a registry name), which the model reads
+    beside the pilot's own words; text the pilot cannot see on the screen
+    could carry instructions only the model would read (the deep security
+    review of 2026-11-21). What can be seen stays as sent, and the server's
+    instructions tell the model it is data (server.INSTRUCTIONS)."""
+    if isinstance(value, str):
+        if value.isascii():
+            return _HIDDEN.sub("", value)
+        return "".join(c for c in _HIDDEN.sub("", value) if unicodedata.category(c) != "Cf")
+    if isinstance(value, list):
+        return [as_data(v) for v in value]
+    if isinstance(value, dict):
+        return {k: as_data(v) for k, v in value.items()}
+    return value
 
 
 def editions(*keys: str) -> list[dict]:

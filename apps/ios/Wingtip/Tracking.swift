@@ -307,7 +307,7 @@ final class Tracking {
             do {
                 status = try await Planner.flightStatus(hex)
             } catch {
-                Log.records.notice("the watched airplane \(hex, privacy: .public) could not be asked about: \(error.localizedDescription, privacy: .public)")
+                Log.records.notice("the watched airplane \(hex, privacy: .private) could not be asked about: \(error.localizedDescription, privacy: .public)")
                 continue
             }
             let before = airborne[hex]
@@ -328,7 +328,7 @@ final class Tracking {
                     continue
                 }
                 if let words {
-                    Log.records.notice("watch went off: \(words, privacy: .public)")
+                    Log.records.notice("watch went off: \(words, privacy: .private)")
                     // The banner over the map and the voice in the app; a
                     // time-sensitive notification with the app put away.
                     fired = words

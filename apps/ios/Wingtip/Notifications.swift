@@ -44,7 +44,10 @@ enum Notifications {
         content.interruptionLevel = .timeSensitive
         if !about.isEmpty { content.appEntityIdentifiers = about }
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
-        Log.records.notice("notified: \(title, privacy: .public)")
+        // Private: a title names traffic, a watched airplane or a call to
+        // the pilot, and a public line goes into any sysdiagnose they share
+        // (the deep security review of 2026-11-21).
+        Log.records.notice("notified: \(title, privacy: .private)")
         return true
     }
 }

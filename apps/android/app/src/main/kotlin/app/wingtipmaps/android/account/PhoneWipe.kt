@@ -18,6 +18,7 @@ import app.wingtipmaps.android.widget.NextFlightWidget
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.Cache
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -31,7 +32,8 @@ import java.util.logging.Logger
  * records (kept airplanes, watches, planned routes), the path flown and
  * the flight recorded (own-trail.json, flight-recorded.json), the last
  * position, the pilot's own airplanes' figures, their minimums, the Next
- * Flight widget's snapshot, and the session's cookies, last. The public
+ * Flight widget's snapshot, the answers OkHttp kept, and the session's
+ * cookies, last. The public
  * aviation data kept for the air (KeptForAir, the cycle packs, the
  * charts) is nobody's and stays.
  *
@@ -57,6 +59,17 @@ class PhoneWipe(private val parts: List<Pair<String, suspend () -> Unit>>) {
     companion object {
         private val log = Logger.getLogger("Wingtip")
 
+        /**
+         * OkHttp's cache of the gateway's and the planner's answers
+         * (Gateway.client, cacheDir/answers, 256 MB) emptied: it keeps any
+         * answer marked to be kept, the planner's asked at the pilot's
+         * points among them (Nearest, the airspace there), which say where
+         * they were. The iPhone empties its URLCache as it forgets the
+         * device; this wipe left the cache behind (the deep security review
+         * of 2026-11-21).
+         */
+        fun answers(cache: Cache?): suspend () -> Unit = { cache?.evictAll() }
+
         fun of(context: Context, flight: FlightSession): PhoneWipe {
             val app = context.applicationContext
             return PhoneWipe(
@@ -75,6 +88,7 @@ class PhoneWipe(private val parts: List<Pair<String, suspend () -> Unit>>) {
                     "widget" to {
                         if (FlightSnapshot.write(app, null)) NextFlightWidget().updateAll(app)
                     },
+                    "answers kept" to answers(Gateway.client.cache),
                     // Last: the gateway's sign-out, before this, needed them.
                     "cookies" to { Gateway.cookies.clear() },
                 ),

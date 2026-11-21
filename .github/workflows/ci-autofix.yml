@@ -1,103 +1,94 @@
 name: CI autofix
 
-# What happens when CI fails (the owner, 2026-11-15: "the autofix bot only
-# formats"):
-#
-# - A job GitHub never ran ("not acquired by Runner", as main's run
-#   37366678665 had four) is the runner's fault, not the code's: the
-#   failed jobs run again, once.
-# - Otherwise, on an open pull request from a claude/ branch of this
-#   repository, the branch is formatted (scripts/dev/format.sh, for the
-#   languages the pull request changes) and those of its own files that
-#   changed are committed and pushed: once per failed head commit, never
-#   over the bot's own commit, and only while the branch still ends at the
-#   commit that failed (scripts/ci/autofix_format.sh).
-#   It edits nothing else, opens no pull request or issue and comments
-#   nowhere: a failure that is not layout is the branch's own to fix, and
-#   main's is nightly-issue.yml's to report.
-#
-# The token: a push made with the workflow's own GITHUB_TOKEN starts no
-# workflow (update-branches.yml says the same), so the formatting is
-# pushed with MERGE_TOKEN, the owner's, and starts CI like any push of
-# his. Without that secret it is pushed with GITHUB_TOKEN, and CI is then
-# started on the branch by hand (workflow_dispatch).
-#
-# The script that decides and pushes is main's; the formatters and their
-# settings are the branch's, run with no token in their environment. Fine
-# on a repository only its owner pushes to, which this one is (forks'
-# pull requests are left out).
+# When CI fails: a job GitHub never ran runs again, once; else a claude/
+# pull request is formatted ("the autofix bot only formats"). The branch's
+# formatters run with no token on a machine of their own, and only their
+# diff reaches the push: scripts/ci/autofix_format.sh says why.
 
 on:
   workflow_run:
     workflows: [CI]
     types: [completed]
 
-# contents: the push where there is no MERGE_TOKEN. actions: the rerun,
-# and CI started by hand. pull-requests: finding the branch's own.
 permissions:
-  contents: write
-  actions: write
-  pull-requests: read
+  contents: read
 
 concurrency:
   group: ci-autofix-${{ github.event.workflow_run.head_branch }}
   cancel-in-progress: false
 
 jobs:
-  autofix:
+  plan:
     if: >-
       github.event.workflow_run.conclusion == 'failure' &&
       github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    timeout-minutes: 15
+    timeout-minutes: 5
+    permissions: { contents: read, actions: write, pull-requests: read }
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       RUN_ID: ${{ github.event.workflow_run.id }}
       ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+    outputs:
+      langs: ${{ steps.plan.outputs.langs }}
     steps:
-      - name: The runner's failure, or the code's
-        id: cause
-        run: |
-          set -euo pipefail
-          runner=false
-          for job in $(gh api "repos/$GH_REPO/actions/runs/$RUN_ID/jobs" --jq '.jobs[] | select(.conclusion == "failure" or .conclusion == "cancelled") | .id'); do
-            if gh api "repos/$GH_REPO/check-runs/$job/annotations" --jq '.[].message' | grep -q "not acquired by Runner"; then runner=true; fi
-          done
-          echo "runner=$runner" >> "$GITHUB_OUTPUT"
-      - name: The runner's -- run the failed jobs again, once
-        if: steps.cause.outputs.runner == 'true' && env.ATTEMPT == '1'
-        run: gh run rerun "$RUN_ID" --failed
-
-      # Main's script, which only reads GitHub to decide: most runs end here.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        if: steps.cause.outputs.runner != 'true'
-        with:
-          persist-credentials: false
-          sparse-checkout: scripts/ci
-      - name: Whether to format, and which languages
+        with: { persist-credentials: false, sparse-checkout: scripts/ci }
+      - name: The runner's failure, run once more, or the code's to format
         id: plan
-        if: steps.cause.outputs.runner != 'true'
         run: scripts/ci/autofix_format.sh plan
-      # The commit that failed, beside main's script. format.sh fetches each
-      # formatter itself, or skips its language with a note; the Java's wants its JDK
-      # (main's .tool-versions, which the sparse checkout keeps at the root).
+
+  format:
+    needs: plan
+    if: needs.plan.outputs.langs != ''
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    timeout-minutes: 10
+    permissions: { contents: read }
+    steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        if: steps.plan.outputs.langs != ''
+        with: { persist-credentials: false, sparse-checkout: scripts/ci }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           path: branch
           persist-credentials: false
       - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78  # v6.2.0
-        if: contains(steps.plan.outputs.langs, 'java')
+        if: contains(needs.plan.outputs.langs, 'java')
         with:
           distribution: temurin
           java-version-file: .tool-versions
-      - name: Format, commit the files that changed, and push
-        if: steps.plan.outputs.langs != ''
+      - name: Format, with no token on this machine
         working-directory: branch
         env:
-          LANGS: ${{ steps.plan.outputs.langs }}
+          LANGS: ${{ needs.plan.outputs.langs }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: ../scripts/ci/autofix_format.sh format ../formatted.patch
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with: { name: formatted, path: formatted.patch, retention-days: 1 }
+
+  push:
+    needs: [plan, format]
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    timeout-minutes: 5
+    permissions: { contents: write, actions: write, pull-requests: read }
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RUN_ID: ${{ github.event.workflow_run.id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with: { persist-credentials: false, sparse-checkout: scripts/ci }
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with: { name: formatted }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          path: branch
+          persist-credentials: false
+      - name: Apply the pull request's own files of the diff, commit and push
+        working-directory: branch
+        env:
           PUSH_TOKEN: ${{ secrets.MERGE_TOKEN || github.token }}
           HAS_MERGE_TOKEN: ${{ secrets.MERGE_TOKEN != '' }}
-        run: ../scripts/ci/autofix_format.sh format
+        run: ../scripts/ci/autofix_format.sh push ../formatted.patch

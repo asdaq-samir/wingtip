@@ -79,10 +79,14 @@ def _charts_of(xml_bytes: bytes) -> dict:
     arrivals (STR) and takeoff and alternate minimums (MIN)."""
     found = {}
     for airport in ET.fromstring(xml_bytes).iter("airport_name"):
+        # Only a PDF's own name, as _PDF_NAME has it: the name is put into
+        # the links the card hands out, so one with a path in it (the
+        # metafile's, however it came) leads nowhere else (the security
+        # reviews of 2026-11-21, L16).
         charts = [
             [record.findtext("chart_code") or "", record.findtext("chart_name") or "", record.findtext("pdf_name")]
             for record in airport.iter("record")
-            if record.findtext("pdf_name")
+            if _PDF_NAME.match(record.findtext("pdf_name") or "")
         ]
         for ident in (airport.get("apt_ident"), airport.get("icao_ident")):
             if ident and charts:
@@ -96,7 +100,7 @@ def _supplements_of(xml_bytes: bytes) -> dict:
     found = {}
     for airport in ET.fromstring(xml_bytes).iter("airport"):
         ident = airport.findtext("aptid")
-        pdfs = [pdf.text.strip() for pdf in airport.iterfind("pages/pdf") if pdf.text and pdf.text.strip()]
+        pdfs = [pdf.text.strip() for pdf in airport.iterfind("pages/pdf") if _PDF_NAME.match((pdf.text or "").strip())]
         if ident and pdfs:
             found.setdefault(ident.upper(), pdfs)
     return found

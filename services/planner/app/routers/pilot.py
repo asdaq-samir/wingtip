@@ -14,11 +14,13 @@ reads them, and the answers its CurrencyDto and ExperienceItemDto, so the
 gateway hands them on as they come."""
 
 from datetime import date
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Body, HTTPException
 
 from ..gonogo import ask as engine
 from ..schemas.pilot import (
+    MAX_BATCH,
     Currency,
     CurrencyAsk,
     EndorsementFillAsk,
@@ -155,8 +157,9 @@ def records_batch(ask: RecordsBatchAsk) -> RecordsBatch:
 
 
 @router.post("/api/aircraft/inspections-batch")
-def inspections_batch(asks: list[InspectionsAsk]) -> list[Inspections]:
+def inspections_batch(asks: Annotated[list[InspectionsAsk], Body(max_length=MAX_BATCH)]) -> list[Inspections]:
     """Many airplanes' inspections in one call, each as
     /api/aircraft/inspections answers it, in the order asked: a pilot's
-    aircraft list and the daily reminders ask every airplane at once."""
+    aircraft list and the daily reminders ask every airplane at once, at
+    most MAX_BATCH."""
     return [inspections(a) for a in asks]

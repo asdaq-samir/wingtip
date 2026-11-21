@@ -84,11 +84,15 @@ object Links {
 
     private fun ident(text: String?): String = text.orEmpty().trim().uppercase()
 
+    // A part whose escapes are bad ("%", "%zz") is left out: URLDecoder
+    // throws on one, and any page or app can hand MainActivity such a link,
+    // which closed the app, moving map and all, mid-flight (the deep
+    // security review of 2026-11-21). The iPhone's URLComponents never threw.
     private fun query(raw: String?): Map<String, String> =
-        raw.orEmpty().split("&").filter { it.isNotEmpty() }.associate { part ->
+        raw.orEmpty().split("&").filter { it.isNotEmpty() }.mapNotNull { part ->
             val at = part.indexOf('=')
             val name = if (at < 0) part else part.substring(0, at)
             val value = if (at < 0) "" else part.substring(at + 1)
-            URLDecoder.decode(name, "UTF-8") to URLDecoder.decode(value, "UTF-8")
-        }
+            runCatching { URLDecoder.decode(name, "UTF-8") to URLDecoder.decode(value, "UTF-8") }.getOrNull()
+        }.toMap()
 }

@@ -80,3 +80,32 @@ write-up: the gateway's plain HTTP port on the Wi-Fi in the phone mode
 launch, the offline cuts' disk on a machine with the archives, a link's
 Home and Favorites applied without asking, and the CI hardening of the
 review workflow's tools.
+
+## The deep review of 2026-11-21
+
+An adversarial pass (claude/security-deep, from claude/fpl-edit with
+claude/security-fix, claude/server-later and claude/store-review merged)
+over sign-in, the connector, access control, parsing, the web, the phones,
+the AWS template and CI. Nothing critical. The outside test's brief is
+[security/pentest-scope.md](security/pentest-scope.md). What it fixed:
+
+| Finding | Now |
+|---|---|
+| H: the CI autofix bot ran a branch's own formatters in the job that pushed with `MERGE_TOKEN`, the owner's, which a branch's `format.sh` could read from `/proc` or a `pre-push` hook | Three jobs on three machines: the formatters run with no token at all, and only their diff reaches the push, which applies changes to existing files of the pull request's own, hooks off (`ci-autofix.yml`, `autofix_format.sh`). The review's address job, which pushes, no longer fetches pages (the first review's L11). |
+| M: on AWS a container reached the instance's metadata (hop limit 2) and so the server role's keys: every secret and backup | `HttpPutResponseHopLimit: 1`; both buckets refuse requests not over TLS. |
+| M: a connector token revoked while its connection's refresh token stood, or one of a second connection through the same client, kept working | The planner asks about the token itself (`X-Connector-Token`, an introspection); `LiveConnections` keeps a yes per token, never past its expiry. |
+| M: five link requests from anyone locked a pilot out of signing in for the hour | The address's five are counted per caller, 30 an hour in all (`MagicLinkController.ADDRESS_CALLERS`). |
+| M (availability): the AWS tile path asked the planner for `/chart-tile/...` under the origin's Host, a 404 then a 403, which CloudFront would have kept | Rewritten as the gateway does (`/api/planner/X` is `/api/X`), the planner named `planner`. |
+| M (availability): two migrations numbered V46, so the merged gateway would not start | The Apple token's client is V48; `MigrationVersionsTest` refuses a repeat. |
+| L: an iPhone sign-in kept the Apple refresh token of whatever code came with it, another account's too | Kept only where Apple's ID token for the code names the signing-in subject. |
+| L: the Apple nonce route made a 30-day session per call, for anyone | 30 an hour a client. |
+| L: the delete-account page's time told which addresses have an account (the mail sent on the request's thread) | Sent on a thread of its own. |
+| L: a provider's email change left magic-link sessions under the old, now free, address | They end with the change. |
+| L: NOTAM, METAR and remark text reached the pilot's AI app with nothing saying it is data, hidden Unicode included | The server's instructions say it is data; `calls.as_data` takes out control and format characters. |
+| L: the batch routes took any number of asks | 500 a call. |
+| L: deleting an account on the web, or a session lapsing, kept the planner's answers at the pilot's points, the tracks and the trail; Android's sign-out kept OkHttp's cache | Forgotten as Log Out forgets them (`forgetWhereTheyFlew`); Android's wipe empties the cache. |
+| L: Android closed on a link with a bad escape (`wingtipmaps://plan?x=%`) | The part is left out. |
+| L: the iPhone logged notification titles, watched airplanes and route fields as public | Private. |
+| Info: no `form-action` in the page's CSP; the airport mark's class unescaped (L17); a `..` path parameter in the connector's calls; FAA index PDF names unchecked (L16) | `form-action 'self'`; escaped; sent as `%2E`; checked against `_PDF_NAME`. |
+
+What stands, with why, is the scope's section 7.

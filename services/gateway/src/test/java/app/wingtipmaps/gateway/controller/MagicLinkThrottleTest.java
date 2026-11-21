@@ -53,12 +53,36 @@ class MagicLinkThrottleTest {
     }
 
     @Test
-    void theSixthLinkInAnHourForOneAddressIsRefused() throws Exception {
+    void theSixthLinkInAnHourForOneAddressFromOneCallerIsRefused() throws Exception {
         for (int i = 0; i < 5; i++) {
-            ask("target@example.com", "10.0.0." + i, 202);
+            ask("target@example.com", "192.0.2.10", 202);
         }
-        ask("TARGET@example.com", "10.0.0.99", 429);
-        ask("someone-else@example.com", "10.0.0.99", 202);
+        ask("TARGET@example.com", "192.0.2.10", 429);
+        ask("someone-else@example.com", "192.0.2.10", 202);
+    }
+
+    /** The deep security review of 2026-11-21: the address's five were
+     *  every caller's, so five asks from anywhere locked its pilot out of
+     *  signing in for the hour. A stranger spends only their own five; the
+     *  pilot asking from their own address still gets a link. */
+    @Test
+    void aStrangerAskingForAnAddressDoesNotLockItsPilotOut() throws Exception {
+        for (int i = 0; i < 5; i++) {
+            ask("pilot@example.com", "198.51.100.66", 202);
+        }
+        ask("pilot@example.com", "198.51.100.66", 429);
+        ask("pilot@example.com", "192.0.2.44", 202);
+    }
+
+    /** And the address's inbox still takes ADDRESS_CALLERS callers' worth
+     *  an hour in all, whoever asks. */
+    @Test
+    void anAddressTakesSoManyLinksAnHourInAll() throws Exception {
+        int all = 5 * MagicLinkController.ADDRESS_CALLERS;
+        for (int i = 0; i < all; i++) {
+            ask("inbox@example.com", "203.0.113." + (i / 5), 202);
+        }
+        ask("inbox@example.com", "203.0.113.200", 429);
     }
 
     @Autowired

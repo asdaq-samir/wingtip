@@ -188,7 +188,7 @@ sequenceDiagram
 | Registration | RFC 7591 at `/oauth2/register`, open, public clients only (`none`), PKCE required, consent required; 10 an hour per address, a name of 100 characters, 4 callbacks of 200, a 16 KB body (`RegistrationLimit`, `ConnectorClients`); clients nobody connected through let go a day after, and connections whose tokens have all run out a day after the last, each night (`ConnectorHousekeeping`) |
 | Callbacks allowed | `https://claude.ai/api/mcp/auth_callback`, `https://chatgpt.com/connector_platform_oauth_redirect`, `https://chatgpt.com/connector/oauth/*`, loopback `localhost` and `127.0.0.1` on any port (`MCP_REDIRECT_URIS`) |
 | Scopes | `wingtip:read` (tools), `wingtip:write` (save a flight); both in `scopes_supported`, so the pilot approves both once; no `openid` |
-| Access token | JWT, RS256, 15 minutes: `iss`, `aud` = the resource, `sub` = the pilot's id, `scope`, `client_id`; on every call the planner also asks the gateway (`/internal/mcp/connection`) whether the connection still stands, so a disconnect or a deleted account cuts it off at once |
+| Access token | JWT, RS256, 15 minutes: `iss`, `aud` = the resource, `sub` = the pilot's id, `scope`, `client_id`; on every call the planner also asks the gateway (`/internal/mcp/connection`, with the token itself, as an RFC 7662 introspection) whether that token still stands, so a revoked token, a disconnect or a deleted account cuts it off at once, though another connection through the same client stands |
 | Refresh token | 30 days, rotated on every use; a spent one presented again revokes the whole connection (`RotatedRefreshTokens`, V42) |
 | Signing key | `MCP_SIGNING_KEY` (PKCS#8 PEM); blank makes one at start, so tokens end with a restart (development only) |
 
@@ -239,6 +239,18 @@ the host's own and the action is additive and undone in the app by deleting
 the flight. Should a directory reviewer read it otherwise, drop the tool
 (and the `wingtip:write` scope) rather than mark it destructive, which it
 is not.
+
+**Third parties' text is data.** The answers quote text Wingtip did not
+write: NOTAMs (written by airport operators and the FAA), METAR, TAF and
+PIREP remarks, a field's remarks, registry names. The pilot's AI app reads
+them beside the pilot's own words, so a NOTAM could try to give it
+instructions. The server's `instructions` tell the model such text is data
+to report, never instructions, and no tool is called because it asks; every
+planner answer loses the characters a pilot never sees (control characters,
+Unicode's format characters, the tag characters that spell ASCII
+invisibly) before it is handed on (`calls.as_data`). The one write is
+confirmed by the pilot in the host, and adds a flight only (the deep
+security review of 2026-11-21).
 
 The tool list is a contract: `services/planner/tests/mcp_tools.snapshot.json`
 holds every name, description, schema and hint, and
