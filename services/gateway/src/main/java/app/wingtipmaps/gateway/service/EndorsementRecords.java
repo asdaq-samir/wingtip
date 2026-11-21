@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
@@ -103,6 +104,17 @@ final class EndorsementRecords {
     }
 
     static CrossCountryReviewDto dto(PlannerClient planner, CrossCountryReview r, List<ReviewCheckDto> checks) {
+        return dto(r, checks, e -> dtos(planner, List.of(e)).get(0));
+    }
+
+    /** A review as sent, its endorsement as {@code signedDto} gives it: the
+     *  student's signed list already worked out, where a record has it,
+     *  rather than one more ask of the planner for its last good day (the
+     *  engine's endorsement_records gives each one's on its own). */
+    static CrossCountryReviewDto dto(
+            CrossCountryReview r,
+            List<ReviewCheckDto> checks,
+            Function<SignedEndorsement, SignedEndorsementDto> signedDto) {
         SignedEndorsement e = r.getEndorsement();
         return new CrossCountryReviewDto(
                 r.getId(),
@@ -115,7 +127,7 @@ final class EndorsementRecords {
                 r.getNote(),
                 r.getAskedAt(),
                 checks,
-                e == null ? null : dtos(planner, List.of(e)).get(0),
+                e == null ? null : signedDto.apply(e),
                 r.getDeclinedNote(),
                 r.getAnsweredAt());
     }
