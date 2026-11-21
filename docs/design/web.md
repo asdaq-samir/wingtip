@@ -828,9 +828,9 @@ sheet, and before it a sideways pager and a split grabber, were. It is
 the app's shadcn Toggle on Base UI's, never pressed (`aria-pressed="false"`:
 a tap goes somewhere, it turns nothing on), its name where it goes:
 `components/PageToggle`. It shows the page a tap goes to, as Apple Maps'
-2D/3D button does -- lucide's Route on Search ("Show flight plan"), the
+2D/3D button does -- the word FPL on Search ("FPL, show flight plan"; the badge's type role, in the text's colour), the
 magnifier on FPL ("Show search") -- a 44-point disc (iOS 26's round button) in the field's white,
-the tint's glyph, its 44-point area its `::after`, never grown, eight
+the word or ✕ in the text's colour, its 44-point area its `::after`, never grown, eight
 after the bar. The bar before it is one size on both pages
 (`panelField`'s `SHEET_BAR`, 46 tall, round-ended, the row's room less
 the toggle): on Search the one search's field (`OneSearchField`), on FPL
