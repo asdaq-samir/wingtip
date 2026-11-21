@@ -16,7 +16,7 @@ own maps follow this table.
 | close | lucide `X` | `xmark` (`Button(role: .close)` on iOS 26) | `close` | Every level's close, at the right; it goes back one level (decision 0015). |
 | back | none | none: close goes back | system and predictive back | No Back buttons (decision 0015). |
 | share | lucide `Share` | `square.and.arrow.up` | `share` | A card's share; the minimized bar's left. |
-| more | lucide `Ellipsis` | `ellipsis.circle` | `more_vert` | The route box's ••• (share, print, nav log). |
+| more | lucide `Ellipsis` | `ellipsis.circle` | `more_vert` | FPL's More: Route Options, Share link, Open in ForeFlight. |
 | myLocation | lucide `Navigation` | `location` / `location.fill` | `near_me` | The map's position button. |
 | brief | lucide `Sparkles` | `sparkles` | `auto_awesome` | The route box's AI brief. |
 | navLog | lucide `ListOrdered` | `list.number` | `format_list_numbered` | The nav log, in the route's menu. |

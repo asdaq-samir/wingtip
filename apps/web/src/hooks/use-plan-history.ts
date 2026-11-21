@@ -45,9 +45,9 @@ function keep(h: PlanHistory) {
 /**
  * The plan's Undo and Redo (hooks/planHistory), from the address the page
  * keeps it in and the airplane flown: each change taken in as it lands,
- * whichever button made it. Their one place is the route's ••• menu
- * (lib/planUndo; the FPL redesign, the owner 2026-11-17), named by what
- * they put back. One that took something away -- the route cleared, a
+ * whichever button made it. Their one place is the toast's Undo and a
+ * keyboard's Cmd-Z (lib/planUndo; the ••• menu's items went, the owner
+ * 2026-11-21), named by what they put back. One that took something away -- the route cleared, a
  * stop removed, the route replaced by Fly Here or a Direct to, a
  * procedure taken off -- also puts up "Route Cleared · Undo" as a toast
  * with its Undo, the web's stock confirmation (the owner, 2026-11-10). A

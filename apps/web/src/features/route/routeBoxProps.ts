@@ -64,7 +64,7 @@ export interface RouteBoxProps extends RouteParts {
   unknownPoint?: UnknownPlace | null;
   /** Half a route cleared, by the stock ✕ at the box's end while nothing
    *  is typed (the owner, 2026-11-18): its one Clear before there is a
-   *  route, as More's is after. None where it does not apply. */
+   *  route, as FPL's ✕ is after. None where it does not apply. */
   onClear?: () => void;
   /** A route just cleared put back, by Undo at the empty box's end, till
    *  a new one is started (the owner, 2026-11-18): the plan's own Undo

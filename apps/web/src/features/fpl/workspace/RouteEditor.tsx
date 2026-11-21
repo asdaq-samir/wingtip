@@ -11,7 +11,7 @@ import { FlightFigures } from "./FlightFoot";
 /**
  * FPL's route's field, open under its timeline (RouteHead) once asked for
  * (routeBoxOpen; decision 0047): the timeline's Type or Paste a Route
- * before the route is whole, More's Type the Route after. The route's
+ * before the route is whole, the keyboard button at Add a Stop's end after. The route's
  * field to type or paste a whole route in, read by the engine's route_read
  * as it always was (RouteBox); and once the route is whole its figures
  * under it, changing as it is edited, till Done.
@@ -35,7 +35,7 @@ export default function RouteEditor({
   const covered = useSheetCards((c) => !!coverCard(c.stack));
   // The empty box's Undo while the plan's last step took the route away
   // (a clear, or its last point removed), gone once a new one is started:
-  // the plan's one Undo (lib/planUndo), as More's is.
+  // the plan's one Undo (lib/planUndo), as every edit's toast has.
   const routeUndo = usePlanUndo((u) => (u.undoName === "Route" ? u.undo : null));
   return (
     <div
@@ -78,7 +78,7 @@ export default function RouteEditor({
               unknownPoint={s.unknownPlace}
               addAt={addAt}
               // Half a route cleared by the box's ✕ (the owner, 2026-11-18);
-              // a route planned, by More's Clear.
+              // a route planned, by FPL's ✕.
               onClear={hasPoints && !routed ? clearRoute : undefined}
               onUndo={!hasPoints && routeUndo ? routeUndo : undefined}
             />

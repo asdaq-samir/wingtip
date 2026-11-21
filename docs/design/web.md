@@ -850,9 +850,9 @@ The phone's sheet and the desktop's side panel hold two peer pages,
 Search and FPL ([rules.md](rules.md) §4a), turned by one round button
 (the owner, 2026-11-13: "Why not make the same tab on the right toggle
 between search and fpl") in each page's first row: at the start of
-Search's, the account button at its end (the owner, 2026-11-20), and at
-the end of FPL's bar, where a tab bar under the
-sheet, and before it a sideways pager and a split grabber, were. It is
+Search's, the account button at its end (the owner, 2026-11-20), where a
+tab bar under the sheet, and before it a sideways pager and a split
+grabber, were; FPL's page has none (95fd57f19). It is
 the app's shadcn Toggle on Base UI's, never pressed (`aria-pressed="false"`:
 a tap goes somewhere, it turns nothing on), its name where it goes:
 `components/PageToggle`. It shows the page a tap goes to, as Apple Maps'
@@ -878,7 +878,8 @@ name; each 20 wide in the 24 pill, its area a pseudo-element 44 tall and 32 wide
 past the pill's end, never over the field's words (`pillLook`'s
 `PILL_END`);
 the Brief, the Nav Log and the route's ••• ("More", the
-route's one menu with its sharing; the owner, 2026-11-17: "move
+route's one menu, three items: Route Options, Share link and Open in
+ForeFlight, e401f646d; the owner, 2026-11-17: "move
 everything to the tab bar with a ... instead of share") are the floating
 glass bar at the sheet's foot
 from half up, `FplTabBar` in `FlightFoot`: Base UI's stock Toolbar (one
@@ -1041,12 +1042,14 @@ Edit and Done.
    SkyVector's, under the rows, and the figures under it. Before the
    route is whole it is folded into the card's last row, where Add a Stop
    is after: "Type or Paste a Route", in the tint, after a filled tint
-   circle with More's keyboard glyph (`TypeRouteRow`); a tap opens the
+   circle with a keyboard glyph (`TypeRouteRow`); a tap opens the
    field under the card, focused in the tap so a phone's keyboard comes
-   up (`routeBoxOpen`). On a whole route More's Type the Route opens it.
+   up (`routeBoxOpen`). On a whole route a keyboard button at Add a Stop's end opens it
+   (`route-type-open`; it is no longer an item of More, e401f646d).
 4. The altitude (`FL045` style, decision 0009) and the figure strip at
-   the foot: Leg or Dest, Distance, ETE, Fuel (ETE and Fuel only with
-   an airplane), named in short words in sentence case. The first is
+   the foot: Leg or Dest, Distance, ETE, Track, GPS alt (ETE only with
+   an airplane; Track a dash with no course or below flying speed, the
+   owner, 2026-11-21: "replace Fuel with Track", 2b759e3ce), named in short words in sentence case. The first is
    "Leg" while it shows the next stop and "Dest" once a tap shows the
    destination, as it always is on a route with no stops (the owner,
    2026-11-18). A distance in a
@@ -1092,9 +1095,11 @@ Edit and Done.
 5. A toast with Undo after a change that takes something away
    (`toast.undo`); and every edit -- the route, the altitude, the
    procedures and stops, the departure time, the airplane -- undone and
-   redone from the first items of the route's ••• menu ("Undo Altitude",
-   `features/share/PlanUndoItems` over `lib/planUndo`), the history kept
-   in the tab's session across a reload (rules.md §11). Before there is
+   redone by its own toast's Undo where it was made ("Altitude Changed",
+   "Procedures Changed", `hooks/planHistory` over `lib/planUndo`) and
+   Cmd-Z and Shift-Cmd-Z, the history kept in the tab's session across
+   a reload (rules.md §11; the ••• menu holds no Undo or Redo since
+   2026-11-21, e401f646d). Before there is
    a route there is no •••: a route just cleared comes back from Undo at
    the end of the empty route's Type or Paste a Route row (the field's
    own while it is open, `RouteEditor`'s `onUndo`; the same
@@ -1188,8 +1193,8 @@ legs, the selected row's leg grid in shorthand (memory: nav log
 "compact"), the rest one line each.
 
 **Checkpoints only when asked.** Finding checkpoints is an action after
-the route is drawn, the FPL's More menu's Checkpoints (the `waypoints`
-map preference, off by default; the owner, 2026-11-18). Until it is on,
+the route is drawn, the Map card's Route Checkpoints switch (the
+`waypoints` map preference, no longer More's item, e401f646d; off by default; the owner, 2026-11-18). Until it is on,
 nothing finds them: the nav log, the figures, the Departure Window and
 every read ahead plan the route point to point (`checkpoints` is false
 unless sent, on /api/plan, /api/navlog and the Go / No-Go), no
@@ -1207,8 +1212,11 @@ editable ([APG grid][apg-grid]). Column resizing on desktop, if wanted:
 React Aria's `ResizableTableContainer` ([React Aria Table][ra-table]), or
 TanStack's own sizing; one, not both.
 
-**Primary action.** Print / Share in the screen's ••• (Share at the bar's
-left); the nav log stays behind the route's ••• (decision 0029).
+**Primary action.** Print and Share in the nav log card's own Share menu
+(its link, the checkpoints, then Print the nav log; the owner, 2026-11-21:
+"Print navlog should be in navlog share, not in more", 741ded143). The
+nav log opens from FPL's floating bar (Brief, Nav Log, More), not from the
+route's ••• (decision 0029, amended by 0049).
 
 **Keyboard and hover.** A static table needs no keys of its own
 ([APG table][apg-table]); a leg's Workings is a disclosure (Enter or Space,

@@ -16,7 +16,7 @@ type StartSlices = PlanSlices<"route" | "routeList">;
  * card (RouteEditor), focused in the tap itself, so a phone's keyboard
  * comes up with it. At its end the field's own controls while it is
  * folded, where they were at its end: half a route's ✕, and a route
- * just cleared, its Undo (the plan's one Undo, as More's is). None while
+ * just cleared, its Undo (the plan's one Undo, as every edit's toast has). None while
  * the field is open, which is the row then.
  */
 export function TypeRow({ vm }: { vm: StartSlices }) {
