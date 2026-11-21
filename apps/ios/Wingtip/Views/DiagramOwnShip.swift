@@ -44,13 +44,13 @@ struct DiagramOwnShipView: View {
                     } description: {
                         Text(problem)
                     } actions: {
-                        Button("Try Again") { Task { await load() } }
+                        Button(Wording.tryAgain) { Task { await load() } }
                     }
                 } else {
                     ProgressView("Fetching…")
                 }
             }
-            .navigationTitle("\(ident) airport diagram")
+            .navigationTitle("\(ident) Airport Diagram")
             .navigationBarTitleDisplayMode(.inline)
             .closeButton { dismiss() }
             .safeAreaInset(edge: .bottom) {
@@ -79,10 +79,10 @@ struct DiagramOwnShipView: View {
         if let problem = diagram.problem { return "\(problem) \(aid)" }
         guard diagram.graticule != nil else { return "This diagram has no latitude and longitude marks to place the airplane by. \(aid)" }
         let usable = Result { try DiagramPage.usable(inFlight.fix, now: Date()) }
-        if case .failure = usable { return "Your fix couldn't be checked for age and accuracy, so the airplane isn't drawn. \(aid)" }
+        if case .failure = usable { return "Your fix could not be checked for age and accuracy, so the airplane isn't drawn. \(aid)" }
         guard let fix = try? usable.get() else { return "Finding your position… \(aid)" }
         switch Result(catching: { try diagram.place(fix) }) {
-        case .failure: return "Your position couldn't be placed on this diagram. \(aid)"
+        case .failure: return "Your position could not be placed on this diagram. \(aid)"
         case .success(let at): return at?.onPage == true ? aid : "You are off this diagram. \(aid)"
         }
     }

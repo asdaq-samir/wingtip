@@ -200,7 +200,7 @@ view without dismissing the sheet").
     instead, where nothing else is, so nothing grows for the hit area.
   - The page is `Navigator.sheetPage`: every "show the plan" (a route
     made, Fly Here, a link, a saved flight, `-screen fpl`) turns it to
-    FPL, the search coming up (Add a Stop, ⌘F, the microphone) turns it
+    FPL, the search coming up (Add Stop, ⌘F, the microphone) turns it
     to Search, and clearing the route leaves it. A card opens over both
     pages and its close comes back to the one it was opened on.
 - **Content changes with the detent.** The owner checked Apple Maps on
@@ -357,7 +357,7 @@ and replay views are.
   something that can be undone ([HIG Alerts][hig-alerts]: "Avoid
   displaying alerts for common, undoable actions").
 - **Empty states** use `ContentUnavailableView`, with the one action
-  that fills them. For example, "No airplane picked" and Pick an
+  that fills them. For example, "No Airplane Picked" and Pick an
   Airplane.
 - **Warn, never limit.** A figure past a limit is shown, coloured
   caution or warning, with its reason. Nothing is disabled or hidden
@@ -367,7 +367,7 @@ and replay views are.
   the performance) shows an em dash and a "Pick an Airplane" row until
   one is picked. It never shows a default type's numbers.
 - **No signal says so, in place.** What the iPhone answers from its
-  own packs says it: "From this iPhone, without weather" over Nearest's
+  own packs says it: "From This iPhone, Without Weather" over Nearest's
   and Emergency's fields, "No connection: airports from the chart data
   on this iPhone only" over the search. An edit the planner must make
   (Direct To, a diversion) is not half made: the route is put back and
@@ -376,6 +376,12 @@ and replay views are.
   age by the ident. Never a spinner with nothing asked: with no GPS fix
   a list says so after ten seconds and what to do (docs/NATIVE.md, "In
   the air with no signal").
+- **Words** follow docs/design/rules.md section 15 (decision 0055):
+  names in Title Case, sentences with their stop, "Fetching …",
+  "could not". A word all three apps say is design/wording.json's, as
+  `Wording.<key>` (`Design/Generated/Wording.swift`, generated, each a
+  `String(localized:)` the string catalog keeps; `WordingTests` holds
+  it); a screen's title is `Screen.<id>.title`.
 
 ---
 
@@ -458,7 +464,7 @@ opened. Typing "traffic" offers Show Traffic in Do.
      takeoff's chips, the same picker from its landing to a day after,
      kept as its minutes on the ground (the planner's `ground`). A field
      NASR lists closed, or
-     whose card could not be had, says why in red under it (decision
+     whose card could not be fetched, says why in red under it (decision
      0043; `RouteFieldCards` asks each field's card once). Stops swipe
      off and drag into another order (Edit at the header's right); Add a
      Stop is the last row, then Add (or Remove) Fuel Stops (one tap puts
@@ -505,7 +511,7 @@ opened. Typing "traffic" offers Show Traffic in Do.
      course less the engine's WMM variation, "—" below flying speed.
      The one search's prompt is "Search" whatever it is up for.
    - **Picking a point (the web's Add Stop and Change Stop, 2026-11-21).**
-     Add a Stop, and a tap on a point's ident on FPL's timeline, ask the
+     Add Stop, and a tap on a point's ident on FPL's timeline, ask the
      one search to pick (`PointAsk`, `OneSearchModel.ask`): the Search
      page with the ask's title over the rows in Maps' words, Add Stop,
      Change Stop, Departure or Destination, and "In place of KMSN" under
@@ -1332,7 +1338,7 @@ by its model through `CardTriggers`; its own map at the top):**
 1. **The bar.** A Close (✕) at the top right, where iOS puts the
    system's close and every card of the app has it (the owner's card
    rule, 2026-11-10), which ends the emergency view only, and the title
-   "Emergency". HIG Modality asks only that a full-screen modal have a
+   "Emergency Assistant" (design/screens.json's). HIG Modality asks only that a full-screen modal have a
    clear way out; it names no other edge, so the platform's own place
    for close stands.
 2. **The map**, with the line to the field picked in
@@ -1345,7 +1351,7 @@ by its model through `CardTriggers`; its own map at the top):**
    `visibility_plus`; nothing where the report has none). Each row has
    one filled **Direct To** button, the row's primary action. With no
    planner the fields are the cycle packs' (`PackFields`), ranked by the
-   engine, under one row: "From this iPhone, without weather". A Direct
+   engine, under one row: "From This iPhone, Without Weather". A Direct
    To with no connection is not made, and "Not changed: no connection"
    is said under the list; the rows keep the engine's heading and
    distance. With no fix the section says so, never a spinner forever.

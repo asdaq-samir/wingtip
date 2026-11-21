@@ -65,7 +65,7 @@ struct TfrCard: View {
                 tfr = try await Planner.tfrs().first { $0.notamId == notamId }
                 gone = tfr == nil
             } catch {
-                problem = "The TFRs didn't load. Check tfr.faa.gov before flight."
+                problem = Wording.tfrsNotLoaded
             }
         }
     }

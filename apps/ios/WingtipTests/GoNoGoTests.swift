@@ -83,7 +83,7 @@ struct GoNoGoTests {
         #expect(PersonalMinimums.Key.ceilingFt.choices == [1000, 1500, 2000, 2500, 3000, 4000, 5000])
         #expect(PersonalMinimums.Key.ceilingFt.words(1500) == "1,500 ft")
         #expect(PersonalMinimums.Key.visibilitySm.words(5) == "5 sm")
-        #expect(PersonalMinimums.Key.windKt.title == "Wind, with gusts" && PersonalMinimums.Key.windKt.words(25) == "25 kt")
+        #expect(PersonalMinimums.Key.windKt.title == "Wind, with Gusts" && PersonalMinimums.Key.windKt.words(25) == "25 kt")
         var minimums = PersonalMinimums()
         minimums[.crosswindKt] = 12
         #expect(minimums.crosswindKt == 12 && minimums[.ceilingFt] == nil)

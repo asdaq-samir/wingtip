@@ -24,7 +24,7 @@ struct WeatherAtIntent: AppIntent {
         do {
             place = try await Planner.place(ident)
         } catch {
-            return .result(dialog: "\(ident)'s weather could not be had; check the connection.")
+            return .result(dialog: "\(ident)'s weather could not be fetched; check the connection.")
         }
         guard let metar = place.metar, metar.raw != nil else { return .result(dialog: "No report at \(ident).") }
         let words = IntentLookups.metarWords(name: place.name.isEmpty ? ident : place.name, metar)

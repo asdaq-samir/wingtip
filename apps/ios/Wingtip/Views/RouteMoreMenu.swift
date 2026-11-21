@@ -24,7 +24,7 @@ struct RouteMoreMenu: View {
                 Label("Route Options", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
             }
             .disabled(plan.course == nil)
-            ShareLink(item: RouteShare.link(plan)) { Label("Share Link", systemImage: "link") }
+            ShareLink(item: RouteShare.link(plan)) { Label(Wording.shareLink, systemImage: "link") }
             Button { RouteShare.openInForeFlight(plan, openURL: openURL) } label: {
                 Label("Open in ForeFlight", systemImage: WingtipIcon.send)
             }

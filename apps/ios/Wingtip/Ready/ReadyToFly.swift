@@ -110,7 +110,7 @@ final class ReadyToFly {
                                            fields: input.fields, notams: input.notams, kept: input.kept, device: input.device, receiver: input.receiver)
             problem = nil
         } catch {
-            problem = "Ready to fly couldn't be checked: \(error.localizedDescription)"
+            problem = "Ready to fly could not be checked: \(error.localizedDescription)"
         }
     }
 
@@ -149,7 +149,7 @@ final class ReadyToFly {
             notams = found.value; notamsAt = found.keptAt ?? Date(); notamsFor = key; notamsProblem = nil
         } catch {
             guard !(error is CancellationError) else { return }
-            notamsProblem = "The NOTAMs couldn't be fetched: \(error.localizedDescription)"
+            notamsProblem = "The NOTAMs could not be fetched: \(error.localizedDescription)"
             Log.planner.notice("the NOTAMs for the route failed: \(error.localizedDescription, privacy: .public)")
         }
     }

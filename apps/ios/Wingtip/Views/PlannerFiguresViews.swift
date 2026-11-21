@@ -42,7 +42,7 @@ struct DebriefSections: View {
     var body: some View {
         Section("Debrief") {
             if let d = answer?.debrief {
-                LabeledContent("Took off", value: Date(timeIntervalSince1970: d.takeoff / 1000).formatted(.dateTime.day().month(.abbreviated).hour().minute()))
+                LabeledContent("Took Off", value: Date(timeIntervalSince1970: d.takeoff / 1000).formatted(.dateTime.day().month(.abbreviated).hour().minute()))
                 LabeledContent {
                     Text(Format.duration(d.flownMin)).monospacedDigit()
                 } label: {
@@ -166,13 +166,13 @@ struct HoldingView: View {
     var body: some View {
         List {
             Section("The Hold") {
-                number("Inbound course", $inbound, "°")
+                number("Inbound Course", $inbound, "°")
                 Picker("Turns", selection: $turns) {
                     Text("Right").tag("right")
                     Text("Left").tag("left")
                 }
                 .pickerStyle(.segmented)
-                number("Your heading to the fix", $heading, "°")
+                number("Your Heading to the Fix", $heading, "°")
             }
             if let answer, let i = Double(inbound), let h = Double(heading) {
                 Section {
@@ -197,16 +197,16 @@ struct HoldingView: View {
             // clearance gives the course (winds aloft are true, so the row
             // says which).
             Section("In the Wind") {
-                number("True airspeed", $tas, "kt")
-                number("Wind from, magnetic", $windFrom, "°")
-                number("Wind speed", $windKt, "kt")
+                number(Wording.trueAirspeed, $tas, "kt")
+                number("Wind From, Magnetic", $windFrom, "°")
+                number("Wind Speed", $windKt, "kt")
                 number("Altitude", $altitude, "ft")
             }
             if let wind = answer?.wind {
                 Section {
-                    row("Inbound heading", wind.inboundWords, Format.heading(wind.inbound.heading))
-                    row("Outbound heading", wind.outboundWords, Format.heading(wind.outbound.heading))
-                    row("Outbound time", wind.timeWords, "\(Int(wind.outboundSec.rounded())) s")
+                    row("Inbound Heading", wind.inboundWords, Format.heading(wind.inbound.heading))
+                    row("Outbound Heading", wind.outboundWords, Format.heading(wind.outbound.heading))
+                    row("Outbound Time", wind.timeWords, "\(Int(wind.outboundSec.rounded())) s")
                 }
             } else if let line = answer?.windProblem {
                 Text(line).foregroundStyle(.secondary)

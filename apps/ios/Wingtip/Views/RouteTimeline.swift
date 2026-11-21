@@ -35,7 +35,7 @@ struct RouteTimelineSection: View {
             }
             .onDelete { plan.removeTimeline(at: $0) }
             .onMove { plan.moveTimeline(from: $0, to: $1) }
-            Button { ask(.addStop) } label: { Label("Add a Stop", systemImage: "plus") }
+            Button { ask(.addStop) } label: { Label(Wording.addStop, systemImage: "plus") }
                 .accessibilityIdentifier("timeline-add-stop")
             FuelStopsButton()
         } header: {
@@ -199,7 +199,7 @@ struct TimelineDepartPicker: View {
     var body: some View {
         let zone = clock.zone(point)
         HStack(alignment: .firstTextBaseline, spacing: WingtipSpace.xxs) {
-            DatePicker("Departure time", selection: Binding(get: { clock.leaves }, set: { picked in
+            DatePicker("Departure Time", selection: Binding(get: { clock.leaves }, set: { picked in
                 plan.setDepart(TimelineClock.next(picked, in: zone))
             }), displayedComponents: [.hourAndMinute])
                 .labelsHidden()

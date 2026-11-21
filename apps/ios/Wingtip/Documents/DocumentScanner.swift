@@ -88,7 +88,7 @@ struct ReadingRow: View {
     var body: some View {
         HStack(spacing: WingtipSpace.sm) {
             ProgressView()
-            Text("Reading the page…").foregroundStyle(.secondary)
+            Text(Wording.readingThePage).foregroundStyle(.secondary)
         }
         .accessibilityElement(children: .combine)
     }

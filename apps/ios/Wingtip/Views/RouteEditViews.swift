@@ -36,7 +36,7 @@ struct PointAlerts: ViewModifier {
     func body(content: Content) -> some View {
         let ui = flightUI
         content
-            .alert(ui.fixFrom.map { "A fix from \($0)" } ?? "A fix", isPresented: shown(\.fixFrom), presenting: ui.fixFrom) { from in
+            .alert(ui.fixFrom.map { "A Fix from \($0)" } ?? "A Fix", isPresented: shown(\.fixFrom), presenting: ui.fixFrom) { from in
                 TextField("Course, as 090", text: $course).keyboardType(.numberPad)
                 TextField("Distance, nm", text: $distance).keyboardType(.decimalPad)
                 Button("Add") {
@@ -47,7 +47,7 @@ struct PointAlerts: ViewModifier {
             } message: { from in
                 Text("Its magnetic course from \(from), a VOR's radial, and how far. Flown over next.")
             }
-            .alert(ui.crossAt.map { "Cross \($0) at" } ?? "Cross at", isPresented: shown(\.crossAt), presenting: ui.crossAt) { fix in
+            .alert(ui.crossAt.map { "Cross \($0) At" } ?? "Cross At", isPresented: shown(\.crossAt), presenting: ui.crossAt) { fix in
                 TextField("Feet", text: $typed).keyboardType(.numberPad)
                 Button("Set") {
                     if let feet = refused({ try PointAltitude.feet(typed, waypoint: false) }) { plan.setCrossing(at: fix, feet: feet) }
@@ -60,7 +60,7 @@ struct PointAlerts: ViewModifier {
             } message: { _ in
                 Text("The altitude ATC gave you to cross it at, in feet above sea level.")
             }
-            .alert("Couldn't Read That", isPresented: shown(\.problem), presenting: ui.problem) { _ in
+            .alert("Could Not Read That", isPresented: shown(\.problem), presenting: ui.problem) { _ in
                 Button("OK", role: .cancel) {}
             } message: { problem in
                 Text(problem)
@@ -90,7 +90,7 @@ struct DirectStrip: View {
     var body: some View {
         if let direct = plan.extras.direct {
             HStack {
-                Label("Direct to \(direct)", systemImage: "arrow.up.right").font(.body.weight(.semibold))
+                Label("Direct To \(direct)", systemImage: "arrow.up.right").font(.body.weight(.semibold))
                 Spacer()
                 Button("Cancel") { plan.cancelDirect() }
             }
@@ -222,11 +222,11 @@ struct HoldSheet: View {
                 }
                 .pickerStyle(.segmented)
                 if timed {
-                    Picker("Leg time", selection: $legMin) {
+                    Picker("Leg Time", selection: $legMin) {
                         ForEach(Self.legMinutes, id: \.self) { Text("\(String(format: "%g", $0)) min").tag($0) }
                     }
                 } else {
-                    Picker("Leg distance", selection: $legNm) {
+                    Picker("Leg Distance", selection: $legNm) {
                         ForEach(Self.legMiles, id: \.self) { Text("\(String(format: "%g", $0)) nm").tag($0) }
                     }
                 }
@@ -234,7 +234,7 @@ struct HoldSheet: View {
                     ForEach(Self.lengths, id: \.self) { Text(Self.lengthWords($0)).tag($0) }
                 }
                 if let problem {
-                    Text("The leg time for this altitude couldn't be worked out: \(problem)").foregroundStyle(WingtipInk.caution)
+                    Text("The leg time for this altitude could not be worked out: \(problem)").foregroundStyle(WingtipInk.caution)
                 }
             }
             if was != nil {
@@ -343,7 +343,7 @@ struct ProcedureFixesView: View {
                                     plan.setProcedureDirect(pick, fix: direct == fix.ident ? nil : fix.ident)
                                 }
                                 .glassButton()
-                                Button("Cross at…") { flightUI.crossAt = fix.ident }
+                                Button("Cross At…") { flightUI.crossAt = fix.ident }
                                     .glassButton()
                             }
                         }

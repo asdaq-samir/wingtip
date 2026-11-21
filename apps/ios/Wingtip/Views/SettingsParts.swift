@@ -99,7 +99,7 @@ struct PilotDetailsView: View {
                     ExportDataButton()
                 }
                 Section {
-                    Button("Sign Out", role: .destructive) {
+                    Button(Wording.signOut, role: .destructive) {
                         Task { await session.signOut(); plan.forgetPilot(); dismiss() }
                     }
                 }

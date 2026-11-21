@@ -118,7 +118,7 @@ struct StripHead: View {
             ShowRouteAs()
             Divider()
             // Asked first, as the route card's ✕ asks (the owner, 2026-11-20).
-            Button(role: .destructive) { clearing = true } label: { Label("Clear Route", systemImage: WingtipIcon.close) }
+            Button(role: .destructive) { clearing = true } label: { Label(Wording.clearRoute, systemImage: WingtipIcon.close) }
         } label: {
             Image(systemName: WingtipIcon.more)
                 .font(.body.weight(.medium))
@@ -127,8 +127,8 @@ struct StripHead: View {
                 .contentShape(Rectangle().inset(by: -6))
         }
         .accessibilityLabel("The route's menu")
-        .alert("Clear Route?", isPresented: $clearing) {
-            Button("Clear Route", role: .destructive) { plan.clear() }
+        .alert(Wording.clearRouteQuestion, isPresented: $clearing) {
+            Button(Wording.clearRoute, role: .destructive) { plan.clear() }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("The route, its stops and what was set on it go. Shake to undo.")

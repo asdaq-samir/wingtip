@@ -57,7 +57,7 @@ struct OwnAircraftListView: View {
         .toolbar {
             if session.signedIn {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { adding = true } label: { Label("New Airplane", systemImage: "plus") }
+                    Button { adding = true } label: { Label(Wording.newAirplane, systemImage: "plus") }
                 }
             }
         }

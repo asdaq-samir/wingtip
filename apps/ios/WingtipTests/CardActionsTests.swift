@@ -5,7 +5,7 @@ import Testing
 /// apps/web/src/lib/cardActions.ts; docs/design/icons.md).
 @Suite struct CardActionsTests {
     @Test func eachCardKindOffersTheWebsActionsInItsOrder() {
-        #expect(CardKind.airport.actions.map(\.title) == ["Fly Here", "Add as Stop", "Call", "Favorite"])
+        #expect(CardKind.airport.actions.map(\.title) == ["Fly Here", "Add Stop", "Call", "Favorite"])
         #expect(CardKind.point.actions.map(\.title) == ["Direct To", "Add to Route", "Hold Here"])
         #expect(CardKind.navaid.actions.map(\.title) == ["Direct To", "Add to Route", "Copy"])
     }

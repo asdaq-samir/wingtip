@@ -48,7 +48,7 @@ struct ProceduresRow: View {
                 problem = nil
             } catch {
                 list = nil
-                problem = "Its procedures couldn't be fetched."
+                problem = "Its procedures could not be fetched."
             }
         }
     }

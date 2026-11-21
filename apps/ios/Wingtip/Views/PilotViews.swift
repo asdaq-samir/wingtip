@@ -15,9 +15,9 @@ struct FlightsView: View {
     var body: some View {
         List {
             if !session.signedIn {
-                ContentUnavailableView("Sign in to save flights", systemImage: "person.crop.circle", description: Text("Your flights are kept with your account, on every device."))
+                ContentUnavailableView("Sign In to Save Flights", systemImage: "person.crop.circle", description: Text("Your flights are kept with your account, on every device."))
             } else if model.flights.isEmpty {
-                ContentUnavailableView("No saved flights", systemImage: "tray", description: Text("Save the plan on the page with the button above."))
+                ContentUnavailableView("No Saved Flights", systemImage: "tray", description: Text("Save the plan on the page with the button above."))
             }
             ForEach(model.flights) { flight in
                 if model.editingID == flight.id {
@@ -51,7 +51,7 @@ struct FlightsView: View {
             }
             ProblemLine(model.problem)
         }
-        .navigationTitle("Saved Flights")
+        .navigationTitle(Screen.flights.title)
         .toolbar {
             UndoToolbarItem()
             ToolbarItem(placement: .topBarTrailing) {
@@ -84,7 +84,7 @@ struct FlightsView: View {
         let share = Label("Share…", systemImage: "square.and.arrow.up")
         if let tail = flight.aircraftTailNumber {
             Menu {
-                shareLink(flight, includeTail: false) { Text("Share Link") }
+                shareLink(flight, includeTail: false) { Text(Wording.shareLink) }
                 shareLink(flight, includeTail: true) { Text("Share Link with \(tail)") }
             } label: { share }
         } else {

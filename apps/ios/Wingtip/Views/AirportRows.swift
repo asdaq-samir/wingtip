@@ -301,7 +301,7 @@ private enum PreviewData {
     List {
         CardRow(badge: RowBadge(systemImage: "fuelpump", colour: Badge.fuel), title: "100LL, Jet A", detail: "Self-serve, 24 h")
         CardRow(badge: RowBadge(systemImage: "cloud", colour: Badge.weather), title: "Ceiling") { Text("3,500 ft").fontWeight(.semibold) }
-        CardRow(title: "Landing fee") { Text("None").foregroundStyle(.secondary) }
+        CardRow(title: "Landing Fee") { Text("None").foregroundStyle(.secondary) }
     }
 }
 

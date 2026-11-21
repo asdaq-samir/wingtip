@@ -16,7 +16,7 @@ enum PointAsk: Equatable, Hashable, Sendable {
     /// Stop, or the end being changed.
     func title(points: Int) -> String {
         switch self {
-        case .addStop: "Add Stop"
+        case .addStop: Wording.addStop
         case .change(let index, _) where index == 0: "Departure"
         case .change(let index, _) where index == points - 1: "Destination"
         case .change: "Change Stop"

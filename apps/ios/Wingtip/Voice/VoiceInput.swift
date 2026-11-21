@@ -59,7 +59,7 @@ final class VoiceInput {
             return nil
         }
         guard canListen else {
-            problem = "Speech can't be recognised on this iPhone; type it instead."
+            problem = "Speech cannot be recognised on this iPhone; type it instead."
             return nil
         }
         guard await ClearanceListener.allowed() else {

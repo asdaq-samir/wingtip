@@ -217,11 +217,11 @@ final class SheetPageToggleTests: XCTestCase {
         // Planned, the fields put away: the route is its timeline.
         app.buttons["plan-button"].tap()
         let add = app.buttons["timeline-add-stop"]
-        XCTAssertTrue(add.waitForExistence(timeout: 10), "no Add a Stop on the timeline")
+        XCTAssertTrue(add.waitForExistence(timeout: 10), "no Add Stop on the timeline")
         CardTests.scrollTo(add, in: app)
         add.tap()
         let title = app.staticTexts["point-ask-title"]
-        XCTAssertTrue(title.waitForExistence(timeout: 10), "Add a Stop did not ask the search")
+        XCTAssertTrue(title.waitForExistence(timeout: 10), "Add Stop did not ask the search")
         XCTAssertEqual(title.label, "Add Stop")
         XCTAssertEqual(toggle(app).label, "Show flight plan", "the ask is not on the Search page")
         app.buttons["Cancel"].firstMatch.tap()
