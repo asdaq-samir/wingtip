@@ -9,6 +9,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -126,10 +127,30 @@ public class StreamingProxy {
 
     /** Copies upstream to the client, flushing each chunk. */
     public static StreamingResponseBody pipe(InputStream upstreamBody) {
-        return out -> copy(upstreamBody, out);
+        return pipe(upstreamBody, true);
     }
 
-    private static void copy(InputStream in, OutputStream out) throws IOException {
+    /** Copies upstream to the client, flushing each chunk only where
+     *  `eachChunk` (a stream the client reads as it comes, {@link
+     *  #isStream}): a flush per 8 KB of a whole JSON answer or a file was
+     *  a socket write and, with compression on, a gzip sync flush each,
+     *  for an answer the client reads only once it is all there. The
+     *  container writes its buffer as it fills and at the end either way. */
+    public static StreamingResponseBody pipe(InputStream upstreamBody, boolean eachChunk) {
+        return out -> copy(upstreamBody, out, eachChunk);
+    }
+
+    /** Whether a Content-Type is one read as it comes: the planner's NDJSON
+     *  streams, a server's events. */
+    public static boolean isStream(String contentType) {
+        if (contentType == null) {
+            return false;
+        }
+        String type = contentType.toLowerCase(Locale.ROOT);
+        return type.startsWith("application/x-ndjson") || type.startsWith("text/event-stream");
+    }
+
+    private static void copy(InputStream in, OutputStream out, boolean eachChunk) throws IOException {
         try (in) {
             byte[] buffer = new byte[8192];
             while (true) {
@@ -155,7 +176,9 @@ public class StreamingProxy {
                 }
                 try {
                     out.write(buffer, 0, read);
-                    out.flush();
+                    if (eachChunk) {
+                        out.flush();
+                    }
                 } catch (RuntimeException gone) {
                     // Tomcat recycles a response once its client has gone (a
                     // page that moved on mid-stream), and a write to it then
