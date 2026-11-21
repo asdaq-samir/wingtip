@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ListItem
@@ -36,6 +37,7 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
+import app.wingtipmaps.android.ui.rememberFieldText
 
 /**
  * An airplane's profile by its N-number (the owner, 2026-11-09): its
@@ -117,11 +119,11 @@ private fun EditRow(key: FigureKey, state: AirplaneProfileModel.State, model: Ai
     LaunchedEffect(key) { focus.requestFocus() }
     Column(Modifier.fillMaxWidth().padding(vertical = WingtipSpace.Xs)) {
         OutlinedTextField(
-            value = state.text,
-            onValueChange = model::type,
+            // The model's text: it is set to the figure when the edit opens.
+            state = rememberFieldText(state.text, model::type),
             label = { Text(stringResource(key.label)) },
             suffix = { Text(key.unit) },
-            singleLine = true,
+            lineLimits = TextFieldLineLimits.SingleLine,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
             modifier = Modifier.fillMaxWidth().focusRequester(focus),
         )

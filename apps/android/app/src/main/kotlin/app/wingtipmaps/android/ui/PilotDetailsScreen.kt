@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ListItemDefaults
@@ -19,9 +21,6 @@ import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -53,7 +52,8 @@ fun PilotDetailsScreen(session: Session, pickAirport: (onPicked: (String) -> Uni
     val problem by session.problem.collectAsStateWithLifecycle()
     val checkFailed by session.checkFailed.collectAsStateWithLifecycle()
     val linkSent by session.linkSent.collectAsStateWithLifecycle()
-    var email by rememberSaveable { mutableStateOf("") }
+    val emailField = rememberTextFieldState()
+    val email = emailField.text.toString()
     val context = LocalContext.current
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
@@ -71,8 +71,8 @@ fun PilotDetailsScreen(session: Session, pickAirport: (onPicked: (String) -> Uni
             }
             else -> {
                 OutlinedTextField(
-                    value = email, onValueChange = { email = it }, modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.email)) }, singleLine = true,
+                    state = emailField, modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.email)) }, lineLimits = TextFieldLineLimits.SingleLine,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Done),
                 )
                 Button(onClick = { session.requestMagicLink(email) }, enabled = email.contains('@')) {

@@ -160,12 +160,12 @@ class EmergencyModel(
     fun tick(key: String) = _state.update { it.copy(ticked = if (key in it.ticked) it.ticked - key else it.ticked + key) }
 
     fun souls(text: String) {
-        _state.update { it.copy(souls = text.filter(Char::isDigit).take(3)) }
+        _state.update { it.copy(souls = soulsTyped(text)) }
         refill()
     }
 
     fun fuel(text: String) {
-        _state.update { it.copy(fuelMin = text.filter(Char::isDigit).take(4)) }
+        _state.update { it.copy(fuelMin = fuelTyped(text)) }
         refill()
     }
 
@@ -218,5 +218,11 @@ class EmergencyModel(
         const val STEP_DEG = 0.01
 
         fun step(deg: Double): Double = Math.round(deg / STEP_DEG) * STEP_DEG
+
+        /** The souls and the fuel's minutes as kept: digits, three and
+         *  four at most; the fields keep their text to the same. */
+        fun soulsTyped(text: String): String = text.filter(Char::isDigit).take(3)
+
+        fun fuelTyped(text: String): String = text.filter(Char::isDigit).take(4)
     }
 }

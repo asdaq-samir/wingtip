@@ -49,6 +49,7 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.LocalWingtipPalette
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
+import app.wingtipmaps.android.ui.rememberShownText
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
 
@@ -161,8 +162,7 @@ private fun CertificateMenu(certificate: Certificate, onPick: (Certificate) -> U
     var expanded by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
         OutlinedTextField(
-            value = stringResource(label(certificate)),
-            onValueChange = {},
+            state = rememberShownText(stringResource(label(certificate))),
             readOnly = true,
             label = { Text(stringResource(R.string.coach_certificate_short)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },

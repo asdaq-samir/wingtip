@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -59,6 +60,7 @@ import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
 import app.wingtipmaps.android.ui.WingtipIcons
+import app.wingtipmaps.android.ui.rememberFieldText
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
 import java.util.Locale
@@ -175,8 +177,9 @@ fun ClearancePage(plan: Plan, fix: OwnShip.Fix?, exit: CardExit, onEntered: () -
                 if (transcript) {
                     WordsField(state.text, model::type, voice)
                     OutlinedTextField(
-                        value = state.readback, onValueChange = model::typeReadback, modifier = Modifier.fillMaxWidth(),
-                        label = { Text(stringResource(R.string.clearance_readback_hint)) }, minLines = 2,
+                        // The model's readback: the radio's words are written into it as heard.
+                        state = rememberFieldText(state.readback, model::typeReadback), modifier = Modifier.fillMaxWidth(),
+                        label = { Text(stringResource(R.string.clearance_readback_hint)) }, lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 2),
                     )
                     HeardLog(heardLog, model::type)
                 }
@@ -221,7 +224,8 @@ private fun Steps(steps: List<Pair<String, ClearanceModel.Step>>) {
 @Composable
 private fun WordsField(text: String, onType: (String) -> Unit, voice: Boolean) {
     OutlinedTextField(
-        value = text, onValueChange = onType, modifier = Modifier.fillMaxWidth(), minLines = 3,
+        // The model's words: the radio's and a photo's are written into it from outside.
+        state = rememberFieldText(text, onType), modifier = Modifier.fillMaxWidth(), lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 3),
         placeholder = { Text(stringResource(if (voice) R.string.clearance_words_hint_voice else R.string.clearance_words_hint)) },
     )
     ClearancePhotoRow(onUse = onType)

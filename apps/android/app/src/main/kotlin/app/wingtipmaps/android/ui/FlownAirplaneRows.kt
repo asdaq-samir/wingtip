@@ -2,6 +2,11 @@ package app.wingtipmaps.android.ui
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.allCaps
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenu
@@ -14,14 +19,17 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -50,6 +58,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -121,8 +130,7 @@ internal fun AirplanePicker(profiles: List<AircraftProfileSummary>, selected: St
     val picked = profiles.firstOrNull { it.name == selected }
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
         OutlinedTextField(
-            value = picked?.let(::label) ?: selected.uppercase().ifEmpty { stringResource(R.string.no_airplane) },
-            onValueChange = {},
+            state = rememberShownText(picked?.let(::label) ?: selected.uppercase().ifEmpty { stringResource(R.string.no_airplane) }),
             readOnly = true,
             label = { Text(stringResource(R.string.airplane)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -163,8 +171,21 @@ private fun RegistrationField() {
     val choices = remember(context) { FlightChoices.of(context) }
     val tail by choices.tail.collectAsStateWithLifecycle()
     val own by remember(context) { OwnAirplanes.of(context) }.records.collectAsStateWithLifecycle()
-    var typed by remember { mutableStateOf(tail.orEmpty()) }
+    val field = rememberTextFieldState(tail.orEmpty())
+    val typed = field.text.toString()
     var open by remember { mutableStateOf(false) }
+    // A pick fills the field: that is no typing, so it opens no menu.
+    var filled by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(field) {
+        snapshotFlow { field.text.toString() }.drop(1).collect {
+            if (it == filled) {
+                filled = null
+            } else {
+                choices.setTail(it)
+                open = true
+            }
+        }
+    }
     val hits by produceState(emptyList<AirplaneHit>(), typed, own) {
         value = emptyList()
         if (typed.isBlank()) return@produceState
@@ -177,15 +198,12 @@ private fun RegistrationField() {
     }
     ExposedDropdownMenuBox(expanded = open && hits.isNotEmpty(), onExpandedChange = { open = it }) {
         OutlinedTextField(
-            value = typed,
-            onValueChange = {
-                typed = it.uppercase()
-                choices.setTail(it)
-                open = true
-            },
+            state = field,
+            // Upper-cased as it is typed, as the registration is kept.
+            inputTransformation = InputTransformation.allCaps(LocalLocale.current),
             label = { Text(stringResource(R.string.registration)) },
             placeholder = { Text(stringResource(R.string.registration_hint)) },
-            singleLine = true,
+            lineLimits = TextFieldLineLimits.SingleLine,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Done),
             modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable),
         )
@@ -205,7 +223,8 @@ private fun RegistrationField() {
                             // A type has no N-number: the plan's airplane, the field kept.
                             is AirplaneHit.Type -> ProfileOpen.open(null, type = hit.profile.name)
                             else -> {
-                                typed = name
+                                if (name != typed) filled = name
+                                field.setTextAndPlaceCursorAtEnd(name)
                                 choices.setTail(name)
                             }
                         }

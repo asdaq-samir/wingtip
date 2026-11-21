@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -20,10 +22,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -116,24 +116,27 @@ fun PlanPage(plan: Plan, onClose: () -> Unit, onField: (String) -> Unit, onNavLo
 private fun RouteFields(plan: Plan, state: Plan.State, dryRun: DryRun) {
     // The fields hold what is typed; the plan's own route comes back into
     // them when it changes from elsewhere (a link, the kept plan, a card).
-    var dep by rememberSaveable(state.dep) { mutableStateOf(state.dep) }
-    var dest by rememberSaveable(state.dest) { mutableStateOf(state.dest) }
-    var stops by rememberSaveable(state.stops) { mutableStateOf(state.stops.joinToString(", ")) }
+    val depField = rememberSaveable(state.dep, saver = TextFieldState.Saver) { TextFieldState(state.dep) }
+    val destField = rememberSaveable(state.dest, saver = TextFieldState.Saver) { TextFieldState(state.dest) }
+    val stopsField = rememberSaveable(state.stops, saver = TextFieldState.Saver) { TextFieldState(state.stops.joinToString(", ")) }
+    val dep = depField.text.toString()
+    val dest = destField.text.toString()
+    val stops = stopsField.text.toString()
     val idents = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Next)
     Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             OutlinedTextField(
-                value = dep, onValueChange = { dep = it }, modifier = Modifier.weight(1f),
-                label = { Text(stringResource(R.string.departure)) }, singleLine = true, keyboardOptions = idents,
+                state = depField, modifier = Modifier.weight(1f),
+                label = { Text(stringResource(R.string.departure)) }, lineLimits = TextFieldLineLimits.SingleLine, keyboardOptions = idents,
             )
             OutlinedTextField(
-                value = dest, onValueChange = { dest = it }, modifier = Modifier.weight(1f),
-                label = { Text(stringResource(R.string.destination)) }, singleLine = true, keyboardOptions = idents,
+                state = destField, modifier = Modifier.weight(1f),
+                label = { Text(stringResource(R.string.destination)) }, lineLimits = TextFieldLineLimits.SingleLine, keyboardOptions = idents,
             )
         }
         OutlinedTextField(
-            value = stops, onValueChange = { stops = it }, modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.stops)) }, supportingText = { Text(stringResource(R.string.stops_help)) }, singleLine = true,
+            state = stopsField, modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(R.string.stops)) }, supportingText = { Text(stringResource(R.string.stops_help)) }, lineLimits = TextFieldLineLimits.SingleLine,
             keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Done),
         )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {

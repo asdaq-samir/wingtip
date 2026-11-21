@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -63,6 +64,7 @@ import app.wingtipmaps.android.design.lookShape
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.ui.LocalWingtipPalette
 import app.wingtipmaps.android.ui.ProblemLine
+import app.wingtipmaps.android.ui.rememberShownText
 import kotlin.math.roundToInt
 
 /**
@@ -237,10 +239,9 @@ private fun LevelMenu(state: FlowState, field: FlowKind, model: ModelWeather) {
     var open by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(expanded = open, onExpandedChange = { open = it }) {
         TextField(
-            value = levelName(shown),
-            onValueChange = {},
+            state = rememberShownText(levelName(shown)),
             readOnly = true,
-            singleLine = true,
+            lineLimits = TextFieldLineLimits.SingleLine,
             label = { Text(stringResource(R.string.flow_level)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = open) },
             modifier = Modifier.width(150.dp).menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),

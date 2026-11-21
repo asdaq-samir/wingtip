@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,6 +16,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.ui.rememberFieldText
 
 /**
  * A logbook line's fields, as the Flight Logged sheet labels them: the
@@ -56,7 +58,9 @@ private fun Field(
     onChange: (String) -> Unit,
 ) {
     OutlinedTextField(
-        value = value, onValueChange = onChange, modifier = modifier, singleLine = single,
+        // The form's value, which a draft from the flight fills from outside.
+        state = rememberFieldText(value, onChange), modifier = modifier,
+        lineLimits = if (single) TextFieldLineLimits.SingleLine else TextFieldLineLimits.Default,
         label = { Text(stringResource(label)) },
         keyboardOptions = KeyboardOptions(capitalization = if (letters) KeyboardCapitalization.Characters else KeyboardCapitalization.Sentences, keyboardType = keyboard),
     )

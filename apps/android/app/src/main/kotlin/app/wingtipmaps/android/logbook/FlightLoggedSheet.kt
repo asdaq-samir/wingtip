@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -33,6 +34,7 @@ import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
+import app.wingtipmaps.android.ui.rememberFieldText
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
 /**
@@ -126,8 +128,9 @@ private fun DraftRows(draft: LogbookDraft, state: LogbookDraftModel.State, model
 @Composable
 private fun Figure(title: String, value: String, why: String?, text: Boolean = false, onChange: (String) -> Unit) {
     OutlinedTextField(
-        value = value, onValueChange = onChange, modifier = Modifier.fillMaxWidth(),
-        label = { Text(title) }, singleLine = true,
+        // The model's figure: the engine's draft fills it once it is in.
+        state = rememberFieldText(value, onChange), modifier = Modifier.fillMaxWidth(),
+        label = { Text(title) }, lineLimits = TextFieldLineLimits.SingleLine,
         supportingText = why?.let { { Text(it) } },
         keyboardOptions = KeyboardOptions(keyboardType = if (text) KeyboardType.Text else KeyboardType.Decimal),
     )

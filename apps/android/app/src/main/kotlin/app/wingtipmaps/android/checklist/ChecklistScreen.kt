@@ -35,6 +35,7 @@ import app.wingtipmaps.android.design.ChoiceGroup
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.emergency.EmergencyOpen
 import app.wingtipmaps.android.ui.ProblemLine
+import app.wingtipmaps.android.ui.rememberFieldText
 
 /**
  * An airplane's checklists (ChecklistModel): normal or emergency picked
@@ -133,7 +134,8 @@ private fun EditView(state: ChecklistModel.State, model: ChecklistModel, modifie
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         OutlinedTextField(
-            value = state.draft, onValueChange = model::draft,
+            // The model's draft: Start from Phases writes it from outside.
+            state = rememberFieldText(state.draft, model::draft),
             label = { Text("${state.kind.title} checklist") },
             textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
             modifier = Modifier.fillMaxWidth().weight(1f),

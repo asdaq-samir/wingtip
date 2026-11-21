@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -59,21 +61,21 @@ private fun AskFigure(airplane: AirplaneNow, key: FigureKey) {
     val context = LocalContext.current
     val own = remember(context) { OwnAirplanes.of(context) }
     val scope = rememberCoroutineScope()
-    var text by rememberSaveable(key) { mutableStateOf("") }
+    // The field's own text, the figure's alone: a new figure asked starts empty.
+    val field = rememberSaveable(key, saver = TextFieldState.Saver) { TextFieldState() }
     var saving by remember { mutableStateOf(false) }
     var problem by remember { mutableStateOf<String?>(null) }
     val name = airplane.name ?: stringResource(R.string.this_airplane)
-    val value = FigureKey.parse(key, text)
+    val value = FigureKey.parse(key, field.text.toString())
     val couldNot = stringResource(R.string.profile_problem, "%s")
     Surface(shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(WingtipSpace.Md), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
             Text(stringResource(key.question, name), style = MaterialTheme.typography.bodyMedium)
             OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
+                state = field,
                 label = { Text(stringResource(key.label)) },
                 suffix = { Text(key.unit) },
-                singleLine = true,
+                lineLimits = TextFieldLineLimits.SingleLine,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
                 modifier = Modifier.fillMaxWidth(),
             )

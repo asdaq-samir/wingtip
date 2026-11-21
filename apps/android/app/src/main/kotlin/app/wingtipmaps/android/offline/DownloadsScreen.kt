@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
@@ -57,7 +59,8 @@ fun DownloadsScreen(model: DownloadsModel = hiltViewModel()) {
     val scale by model.scale.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
     val problem by model.problem.collectAsStateWithLifecycle()
-    var search by rememberSaveable { mutableStateOf("") }
+    val searchField = rememberTextFieldState()
+    val search = searchField.text.toString()
     var asking by rememberSaveable { mutableStateOf<String?>(null) }
     var map by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) { model.load() }
@@ -93,7 +96,7 @@ fun DownloadsScreen(model: DownloadsModel = hiltViewModel()) {
                 onPick = model::setScale,
             )
             ActionSettingRow(stringResource(R.string.offline_pick_map), index = 0, count = 1, modifier = Modifier.padding(vertical = WingtipSpace.Sm)) { map = true }
-            OutlinedTextField(search, { search = it }, Modifier.fillMaxWidth(), singleLine = true,
+            OutlinedTextField(searchField, Modifier.fillMaxWidth(), lineLimits = TextFieldLineLimits.SingleLine,
                 label = { Text(stringResource(R.string.offline_search)) })
             ProblemLine(problem)
         }
