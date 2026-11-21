@@ -40,6 +40,25 @@ test("a point's grip in FPL's list moves it anywhere, by a mouse or the keyboard
   // Its row under half's edge, reached by pulling the sheet up, as a
   // pilot's finger would: half way the sheet's body does not scroll there.
   await inSheet(page, row("KDLH"));
+  // And C81's row's top brought out from under FPL's head row, which sticks
+  // at the sheet's top over a route taller than the sheet (each field open
+  // to its runways and procedures, since "option D" rows on the line of
+  // their own), as a finger scrolls before it drags: the drop's point
+  // under that row made Playwright scroll the list to reach it after the
+  // press, and KMSN, under the pressed point by then, went first.
+  await row("C81").evaluate((el) => {
+    el.scrollIntoView({ block: "start" });
+    let scroller = el.parentElement;
+    while (scroller && !/auto|scroll/.test(getComputedStyle(scroller).overflowY)) scroller = scroller.parentElement;
+    if (!scroller) return;
+    const heads = [...scroller.querySelectorAll<HTMLElement>("*")].filter(
+      (e) => !e.contains(el) && getComputedStyle(e).position === "sticky",
+    );
+    const under = Math.max(scroller.getBoundingClientRect().top, ...heads.map((e) => e.getBoundingClientRect().bottom));
+    scroller.scrollTop -= under + 8 - el.getBoundingClientRect().top;
+  });
+  await expect(row("C81")).toBeInViewport();
+  await expect(row("KDLH")).toBeInViewport();
   const target = (await row("C81").boundingBox())!;
   // By the row, sixteen in from its end: React Aria's GridList leaves the
   // drag button to the keyboard (out of sight since the owner's "replace

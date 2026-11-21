@@ -407,7 +407,10 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   anchored confirmations, on Base UI's own 5 seconds, held under a
   touch or the pointer and swiped away (2026-11-11); a progress toast
   ("Drawing Route…") lets the pointer through to what is under it, the
-  map's problem line and its Try again on a phone (2026-11-18).
+  map's problem line and its Try again on a phone (2026-11-18). Each
+  stands at Base UI's own offset (`--toast-offset-y`, `--toast-index`) and
+  slides there by a transform, so an Undo under a progress line that comes
+  and goes moves smoothly, not laid out again (2026-11-21).
 - **React Aria Components 1.22** adds a swipeable Sheet and positions
   overlays round the virtual keyboard ([React Aria 1.22][ra-122]). Its drag
   and drop works by keyboard (Enter to start, Tab between targets, arrows,
