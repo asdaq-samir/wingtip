@@ -13,7 +13,7 @@ import { one } from "../plan";
  * night (14 CFR 91.151), 45 whatever the hour under IFR (91.167) --
  * against the tanks' usable fuel, red where they do not hold it. With
  * stops, the tanks filled at each, a row for each flight between two
- * landings (app.planning.route_totals). FPL says the fuel required alone,
+ * landings (wingtip.route_join.route_totals). FPL says the fuel required alone,
  * in a line (NavLogView).
  */
 export default function FuelSection({ totals }: { totals: Totals | null }) {

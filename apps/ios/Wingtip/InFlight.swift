@@ -138,7 +138,7 @@ final class InFlight {
 
     /// The points (indices into RouteShare.points) the plan refuels at:
     /// each stop, where the planner's hops begin (the tanks filled at each,
-    /// app.planning.route_totals); none on a route without stops.
+    /// wingtip.route_join.route_totals); none on a route without stops.
     static func refuelAt(_ plan: Plan) -> [Int]? {
         guard (plan.totals?.hops ?? []).count > 1 else { return nil }
         let points = RouteShare.points(plan)

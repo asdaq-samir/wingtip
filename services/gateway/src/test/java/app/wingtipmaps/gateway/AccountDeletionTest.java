@@ -48,14 +48,14 @@ class AccountDeletionTest extends AccountTestBase {
                 .isZero();
         assertThat(rowsOf(staying)).isEqualTo(before);
         // The planner was asked to forget the pilot's own notes, by their id.
-        assertThat(plannerAsked).containsExactly("DELETE /api/checkpoint-notes/mine pilot=" + leaving.getId());
+        assertThat(FakePlanner.asked).containsExactly("DELETE /api/checkpoint-notes/mine pilot=" + leaving.getId());
     }
 
     @Test
     void whenThePlannerCannotTakeTheNotesNothingIsDeleted() throws Exception {
         Pilot pilot = pilotWithEverything();
         List<Integer> before = rowsOf(pilot);
-        plannerStatus = 503;
+        FakePlanner.status = 503;
 
         mockMvc.perform(delete("/api/me")
                         .with(csrf())
@@ -113,6 +113,6 @@ class AccountDeletionTest extends AccountTestBase {
     @Test
     void nobodySignedInDeletesNothing() throws Exception {
         mockMvc.perform(delete("/api/me").with(csrf())).andExpect(status().isUnauthorized());
-        assertThat(plannerAsked).isEmpty();
+        assertThat(FakePlanner.asked).isEmpty();
     }
 }

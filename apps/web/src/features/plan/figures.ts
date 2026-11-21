@@ -48,7 +48,7 @@ interface TripInput {
 }
 
 /** The flight to the next landing: the route's first hop where it has
- *  stops (the tanks filled at each, app.planning.route_totals), else the
+ *  stops (the tanks filled at each, wingtip.route_join.route_totals), else the
  *  whole route -- what the strip's figures are of; a dry run's, the hop it
  *  is flying (`hop`). */
 export function nextLanding(totals: Totals | null, destination: string, hop = 0): { to: string; totals: Totals | null } {
@@ -132,7 +132,7 @@ export function tripFigures({
   // To the destination, past the stops, where the pilot asked for it: the
   // whole route's distance and time. The fuel stays the next landing's,
   // what goes in the tanks before this flight: they are filled at each
-  // stop (app.planning.route_totals), and the route has no one figure.
+  // stop (wingtip.route_join.route_totals), and the route has no one figure.
   const next = toDestination ? { to: destination, totals } : landing;
   const leg = next.totals;
   // A dry run's left from where the airplane is: to the hop's landing, or

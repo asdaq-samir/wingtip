@@ -7,15 +7,15 @@ import pytest
 import rasterio
 from rasterio.transform import from_bounds
 from rasterio.warp import transform_bounds
-from wingtip import chart_faces, chart_grid, chart_kinds, chart_render, chart_sheets, chart_warp
+from wingtip import chart_edges, chart_faces, chart_grid, chart_kinds, chart_render, chart_sheets, chart_warp
 
 from .helpers import PALETTE, _palette_raster, _rgb_raster
 
 
 def test_snap_pulls_a_sectional_edge_onto_the_quarter_degree():
-    assert chart_faces._snap(43.9994) == 44.0
-    assert chart_faces._snap(-92.9971) == -93.0
-    assert chart_faces._snap(41.4416) == 41.4416  # a TAC-like edge stays measured
+    assert chart_edges.snap(43.9994) == 44.0
+    assert chart_edges.snap(-92.9971) == -93.0
+    assert chart_edges.snap(41.4416) == 41.4416  # a TAC-like edge stays measured
 
 
 def test_a_tile_coarser_than_the_sheet_keeps_a_thin_line_as_a_fainter_one(tmp_path):

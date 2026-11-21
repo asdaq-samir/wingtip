@@ -190,6 +190,15 @@ def main(argv: list) -> int:
             elif n > new_allowed[path]:
                 errors.append((path, f"{n} lines, grown past the {new_allowed[path]} scripts/ci/file_sizes_new_allow.txt holds"))
 
+    # A listed file keeps its recorded size once it is on main too: the loop
+    # above skips the older ones, and one grew toward 400 unseen (the audit of
+    # 2026-11-21, finding 1).
+    for path, count in sorted(new_allowed.items()):
+        if sizes.get(path, 0) > count:
+            errors.append(
+                (path, f"{sizes[path]} lines, grown past the {count} scripts/ci/file_sizes_new_allow.txt holds: take what grew out")
+            )
+
     if ref:
         shown = subprocess.run(
             ["git", "-C", str(ROOT), "show", f"{ref}:{ALLOW.relative_to(ROOT).as_posix()}"], capture_output=True, text=True

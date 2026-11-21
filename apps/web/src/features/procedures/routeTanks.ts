@@ -21,7 +21,7 @@ export interface TankAt {
  * we set the fuel tank by tapping on it?", 2026-11-21), the start, taxi
  * and takeoff allowance and the legs' own burn taken from them after,
  * fuelled again at each field landed at (full, or the pilot's own), as
- * the planner checks each flight (app.planning.route_totals); under the
+ * the planner checks each flight (wingtip.route_join.route_totals); under the
  * reserve of the flight it is on (each flight's own, `reservesGal`: day,
  * night or IFR by its own times and rules), the destination's with the
  * fuel on to an IFR alternate too (`alternateGal`), and the departure's

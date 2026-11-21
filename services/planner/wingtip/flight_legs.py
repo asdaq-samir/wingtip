@@ -115,7 +115,7 @@ def on_airway(legs: list[dict], end: dict) -> list[dict]:
 def totals_of(r, runs: list[HopRun], outcome: Flown, asked: Asked) -> dict:
     """The trip's totals: each flight's own, from one landing to the next
     through any waypoints (Route.flights), with its fuel check, joined
-    (wingtip.planning.route_totals). Under IFR with an alternate filed
+    (wingtip.route_join.route_totals). Under IFR with an alternate filed
     (Asked.alternate), the last flight's check carries the leg on to it
     (alternate_leg). Each flight's check is against the fuel in the tanks
     as it leaves (Asked.tanks: the pilot's own, at engine start or fuelled

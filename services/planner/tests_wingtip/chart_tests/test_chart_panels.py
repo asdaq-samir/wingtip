@@ -5,7 +5,7 @@ tinted insets in the collar stay out of the face."""
 import numpy as np
 import pytest
 import rasterio
-from wingtip import chart_faces, chart_grid, chart_kinds, chart_panels, chart_render, chart_sheets
+from wingtip import chart_edges, chart_faces, chart_grid, chart_kinds, chart_panels, chart_render, chart_sheets
 
 from .helpers import _palette_raster, _tile_at
 
@@ -172,4 +172,4 @@ def test_a_face_starts_where_the_chart_does_not_at_tinted_insets_in_the_collar(t
     ],
 )
 def test_the_chart_starts_at_the_tinted_run_the_search_ends_in(tinted, first):
-    assert chart_faces._chart_run_start(np.array([c == "#" for c in tinted])) == first
+    assert chart_edges._chart_run_start(np.array([c == "#" for c in tinted])) == first

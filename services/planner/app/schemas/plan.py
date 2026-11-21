@@ -128,7 +128,7 @@ class Totals(BaseModel):
     alternate: AlternateLeg | None = None
     #: A route with stops: each flight between two landings with its own
     #: fuel check, the tanks filled at each stop -- the route's own fuel
-    #: figures are None then (wingtip.planning.route_totals). Empty without.
+    #: figures are None then (wingtip.route_join.route_totals). Empty without.
     hops: list["HopTotals"] = []
     #: Where a flight the tanks do not hold could land for fuel
     #: (wingtip.fuelstops), one entry a flight short of fuel; empty where every
