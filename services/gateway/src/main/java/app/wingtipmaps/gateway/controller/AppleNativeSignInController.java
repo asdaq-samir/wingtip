@@ -209,7 +209,7 @@ public class AppleNativeSignInController {
                             "Apple did not share a verified email address, which an account here needs."))
                     .build();
         }
-        keepRefreshToken(pilot, body.authorizationCode());
+        keepRefreshToken(pilot, body.authorizationCode(), jwt.getSubject());
         Authentication authentication = new OAuth2AuthenticationToken(user, user.getAuthorities(), "apple");
         SessionSignIn.signIn(authentication, request, response);
         return ResponseEntity.ok(new SignedIn(SignInLanding.after(pilot)));
@@ -217,12 +217,12 @@ public class AppleNativeSignInController {
 
     /** The sheet's code traded for Apple's refresh token and kept with
      *  the pilot, best effort: the sign-in stands whatever Apple says. */
-    private void keepRefreshToken(Pilot pilot, @Nullable String authorizationCode) {
+    private void keepRefreshToken(Pilot pilot, @Nullable String authorizationCode, String subject) {
         if (appleGrants == null || appClient == null || authorizationCode == null || authorizationCode.isBlank()) {
             return;
         }
         appleGrants
-                .tradeAppCode(authorizationCode)
+                .tradeAppCode(authorizationCode, subject)
                 .ifPresent(token -> pilots.keepAppleRefreshToken(pilot, token, appClient.clientId()));
     }
 }

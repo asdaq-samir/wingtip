@@ -193,7 +193,7 @@ class AppleNativeSignInControllerTest {
     void theSheetsCodeIsTradedAndKeptForRevokingLater() {
         PilotService pilots = aPilot();
         AppleRevocation apple = mock(AppleRevocation.class);
-        given(apple.tradeAppCode("c.code")).willReturn(Optional.of("r.app"));
+        given(apple.tradeAppCode("c.code", "apple-sub-1")).willReturn(Optional.of("r.app"));
         AppleAppTokens app = mock(AppleAppTokens.class);
         given(app.clientId()).willReturn("app.wingtipmaps.ios");
         var controller =
@@ -212,7 +212,7 @@ class AppleNativeSignInControllerTest {
     void aTradeAppleRefusesStillSignsIn() {
         PilotService pilots = aPilot();
         AppleRevocation apple = mock(AppleRevocation.class);
-        given(apple.tradeAppCode("c.code")).willReturn(Optional.empty());
+        given(apple.tradeAppCode("c.code", "apple-sub-1")).willReturn(Optional.empty());
         var controller = new AppleNativeSignInController(
                 pilots, value -> token("app.wingtipmaps.ios"), false, apple, mock(AppleAppTokens.class));
 
