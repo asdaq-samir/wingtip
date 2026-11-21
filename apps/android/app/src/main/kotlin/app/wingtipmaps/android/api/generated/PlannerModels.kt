@@ -5575,6 +5575,9 @@ data class Totals (
     @SerialName("night_passengers")
     val nightPassengers: Boolean? = null,
 
+    @SerialName("no_fuel_stop")
+    val noFuelStop: List<NoFuelStop>? = null,
+
     @SerialName("on_board_gal")
     val onBoardGal: Double? = null,
 
@@ -5651,7 +5654,9 @@ data class FuelStopSuggestion (
     val choices: List<FuelStop>? = null,
     val departure: String,
     val destination: String,
+    val passes: Boolean? = null,
     val reason: String? = null,
+    val short: ShortFlight? = null,
     val stops: List<FuelStop>,
 
     @SerialName("usable_gal")
@@ -5690,6 +5695,30 @@ data class FuelStop (
 
     @SerialName("runway_ft")
     val runwayFt: Int
+)
+
+/**
+ * A flight between two landings, by its two ends.
+ */
+@Serializable
+data class ShortFlight (
+    val departure: String,
+    val destination: String
+)
+
+/**
+ * A flight short of fuel the planner offers no stop on, and why: the
+ * fuel on board at the start under its start, taxi and reserve already
+ * (`on_board`, 14 CFR 91.151(a), 91.167(a)), or no field with fuel in
+ * reach of the tanks.
+ */
+@Serializable
+data class NoFuelStop (
+    val departure: String,
+    val destination: String,
+
+    @SerialName("on_board")
+    val onBoard: Boolean? = null
 )
 
 /**

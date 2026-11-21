@@ -156,6 +156,7 @@ def suggest(
     usable_gal: float,
     taxi_gal: float,
     reserve_gal: float,
+    alternate_gal: float = 0.0,
     start_gal: float | None = None,
     ground_min: float = 30.0,
     skip: set | None = None,
@@ -165,7 +166,8 @@ def suggest(
     the reserve left on every landing -- the tanks filled at each -- and
     other fields the first could be: ([], []) where none is needed or no
     fields reach. The first stretch is flown on `start_gal`, the fuel on
-    board at the start (None, full). The engine's choice (fuel_stops): the quickest trip, the
+    board at the start (None, full); the stretch into `end` keeps
+    `alternate_gal` more under IFR (91.167(a)(2)). The engine's choice (fuel_stops): the quickest trip, the
     first stop nearest the line among those as quick, then the one whose
     landings keep the most fuel."""
     fields = fields_with_fuel() if fields is None else fields
@@ -179,6 +181,9 @@ def suggest(
         start_gal=start_gal,
         taxi_gal=taxi_gal,
         reserve_gal=reserve_gal,
+        # Under IFR the last stretch keeps the fuel on to the alternate too
+        # (14 CFR 91.167(a)(2)).
+        alternate_gal=alternate_gal,
         ground_min=ground_min,
         skip=sorted(skip or ()),
         fields=_table(fields),

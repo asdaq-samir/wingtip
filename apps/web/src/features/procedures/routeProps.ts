@@ -136,9 +136,10 @@ interface StopPlans {
    *  has the leg to the point, for the course flown to it. */
   askHold?: string | null;
   /** The tanks, for the fuel in them at each point: their usable fuel, the
-   *  start, taxi and takeoff allowance and the reserve the flight is held
-   *  to (the totals' fuel check); none known, no fuel shown. */
-  fuel?: { usableGal: number; taxiGal: number; reserveGal: number } | null;
+   *  start, taxi and takeoff allowance, each flight's own reserve, in
+   *  order, and under IFR the fuel on to the alternate (the totals' fuel
+   *  check); none known, no fuel shown. */
+  fuel?: { usableGal: number; taxiGal: number; reservesGal: (number | null)[]; alternateGal?: number | null } | null;
   /** The pilot's own fuel leaving a field, gallons by its ident (the
    *  address's `tanks`), and setting it from the field's gauge (FuelSet);
    *  null back to full. None, the gauges are read only. */
