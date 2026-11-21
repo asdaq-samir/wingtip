@@ -13,6 +13,7 @@ import { TEXT } from "../lib/text";
 import { openEmergency } from "../lib/emergencyStore";
 import { readBackNow } from "../lib/radioListeningLoad";
 import { eachCapitalised } from "../lib/capitals";
+import { copyText } from "../lib/share";
 
 /** A place's words as a chip says them: spelled idents as they are. */
 const named = (words: string) => (/[a-z]/.test(words) ? eachCapitalised(words) : words);
@@ -272,7 +273,7 @@ export function CallActions({
             size="sm"
             variant="secondary"
             className={CHIP}
-            onClick={() => void navigator.clipboard?.writeText(clearance.frequency!).catch(() => {})}
+            onClick={() => void copyText(clearance.frequency!).catch(() => {})}
           >
             Copy {clearance.frequency}
           </Button>

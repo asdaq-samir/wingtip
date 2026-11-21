@@ -4,6 +4,7 @@ import { ACTION } from "../../../lib/cardActions";
 import { CardCloseContext } from "../../../lib/map/cards/cardClose";
 import { cn } from "cn";
 import { CardAction } from "../../CardAction";
+import { copyText } from "../../../lib/share";
 import { usePointActions, type ChartPoint } from "../../../lib/map/cards/pointActions";
 
 /**
@@ -61,7 +62,7 @@ export function PointActions({
           spoken={`Copy ${copy.label}`}
           onClick={() => {
             // Called in the tap, as the clipboard asks; refused, nothing said.
-            void navigator.clipboard?.writeText(copy.text).then(
+            void copyText(copy.text).then(
               () => setCopied(true),
               () => {},
             );
