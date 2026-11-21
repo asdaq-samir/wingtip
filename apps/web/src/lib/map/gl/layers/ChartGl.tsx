@@ -11,6 +11,7 @@ import { CLOSE_MAX_ZOOM, chartFade } from "../closeZoom";
 import { CloseImageryGl } from "./CloseImageryGl";
 import { LABEL_NIGHT, LABEL_SCALE, labelScale } from "./common";
 import { useCloseImagery } from "../useCloseImagery";
+import { useChartMissed } from "../useChartMissed";
 
 /**
  * The FAA chart (glStyle's chartStyle): the base
@@ -62,6 +63,8 @@ export function ChartGl({ course, publicOnly = false }: { course: Course | null;
   // Which charts are drawn and how, on the map's element, for the browser
   // tests: each part's kind (its tiles' path) and the paint's look.
   const { map } = useGlMap();
+  // A tile neither kept nor to be had offline says so, not a blank square.
+  useChartMissed(map);
   // With no chart to set it, the map goes in as far as over the imagery:
   // the overlay and the vector layers have their detail that far.
   useEffect(() => {

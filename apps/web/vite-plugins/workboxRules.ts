@@ -82,3 +82,61 @@ export const IN_FLIGHT_READS: RuntimeCaching = {
     plugins: [markFromCache],
   },
 };
+
+// As a chart tile of a newer edition is kept, the tiles of every older
+// edition of its kind go: the 56-day cycle's 20,000 tiles were held to
+// their 60 days, past the next cycle's start, and filled the cache a new
+// route's tiles wanted (the offline audit of 2026-11-21; owner recs, item
+// 48). Only older ones: a page still on a kept chart answer of the last
+// cycle asking its tiles never sends the new ones away. Once a kind and
+// edition in the worker's life, so a run of tiles reads the cache's keys
+// once. Each tile's kind and edition from its address, the planner's
+// (/api/planner/chart-tile/<kind>/{z}/{x}/{y}.png?c=<cycle>&r=<revision>) or
+// the CDN's (<base>/<cycle>/<kind>/{z}/{x}/{y}.png?r=<revision>), lib/map/
+// sources/tiles' tileTemplate; the edition as a text that sorts, the
+// cycle's MM-DD-YYYY turned year first and the revision padded. Written
+// out whole inside the function: Workbox copies it into the worker as text.
+export const dropOlderEditions = {
+  cacheDidUpdate: async ({ cacheName, request }: { cacheName: string; request: Request }) => {
+    const editionOf = (address: string) => {
+      const url = new URL(address);
+      const parts = url.pathname.split("/");
+      const at = parts.indexOf("chart-tile");
+      const kind = at >= 0 ? parts[at + 1] : parts[parts.length - 4];
+      const cycle = at >= 0 ? url.searchParams.get("c") : parts[parts.length - 5];
+      const day = /^(\d{2})-(\d{2})-(\d{4})$/.exec(cycle ?? "");
+      if (!kind || !day) return null;
+      return { kind, edition: `${day[3]}-${day[1]}-${day[2]}|${(url.searchParams.get("r") ?? "0").padStart(6, "0")}` };
+    };
+    const now = editionOf(request.url);
+    if (!now) return;
+    const seen = ((globalThis as unknown as { __chartEditions?: Record<string, string> }).__chartEditions ??= {});
+    if ((seen[now.kind] ?? "") >= now.edition) return;
+    seen[now.kind] = now.edition;
+    const cache = await caches.open(cacheName);
+    for (const key of await cache.keys()) {
+      const kept = editionOf(key.url);
+      if (kept && kept.kind === now.kind && kept.edition < now.edition) await cache.delete(key);
+    }
+  },
+};
+
+export const CHART_TILES: RuntimeCaching = {
+  // The chart tiles, served by the planner (…/chart-tile/…) or from the
+  // CDN (…/tiles/<cycle>/…): cache first, they are the same for the whole
+  // 56-day cycle. The planner's 204, no sheet there (the sea, Canada round
+  // the country), is kept as a drawn tile is: left out, every view by a
+  // coast or a border asked the network for each of its empty tiles
+  // again. An opaque answer (status 0) is never kept: the tiles are the
+  // planner's own or the CDN's with CORS, and an opaque error kept here
+  // would stand for the chart for 60 days. A tile neither kept nor to be
+  // had offline is said on the map (lib/map/gl/useChartMissed).
+  urlPattern: ({ url }) => url.pathname.includes("/chart-tile/") || url.pathname.includes("/tiles/"),
+  handler: "CacheFirst",
+  options: {
+    cacheName: "chart-tiles",
+    expiration: { maxEntries: 20000, maxAgeSeconds: 60 * 24 * 3600, purgeOnQuotaError: true },
+    cacheableResponse: { statuses: [200, 204] },
+    plugins: [dropOlderEditions],
+  },
+};

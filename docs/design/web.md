@@ -1825,6 +1825,16 @@ WebAssembly and what Keep for the Air fetched; the page asks it first.
   "offlineFirst"`, `lib/queryClient`), so the worker's kept answer
   reaches the page; one it did not keep says "No connection" in place
   (`QueryState`, `lib/problems`), never a blank or a skeleton for good.
+- The chart's tiles are kept cache first (`vite-plugins/workboxRules`'
+  `CHART_TILES`): a drawn tile or the planner's empty 204, never an
+  opaque answer, which an error from a CDN would be, held for 60 days; as
+  a newer edition of a kind is kept, its older cycles' and revisions'
+  tiles go (`dropOlderEditions`, older only, so a page still on a kept
+  chart of the last cycle never sends the new tiles away). A tile neither
+  kept nor to be had says "Chart not kept for this area: it needs a
+  connection" on the map's problem line (`lib/map/gl/useChartMissed`),
+  gone as the connection comes back, where it was a blank square (owner
+  recs of 2026-11-21, item 48).
 - Emergency's best fields and Nearest rank the fields round the airplane
   on the device when the planner cannot be had: the airport index the
   browser keeps, the engine's `best_fields` (`lib/fieldsOnDevice`), said
