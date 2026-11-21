@@ -37,11 +37,19 @@ export const TIMELINE_END = "pr-4";
 export const TIMELINE_GAP = "gap-4";
 
 /** The circle in the marks' column: the tint's wash with the tint's glyph,
- *  as a point's "•••" (TimelineMark), or filled in the tint with a white
- *  glyph, as Apple Maps' Add Stop. */
+ *  as a point's "•••" (TimelineMark), or filled with a white glyph, as
+ *  Apple Maps' Add Stop: a filled button's --primary and its own
+ *  foreground, as a picked runway's chip is (GLASS_PICKED), the same as the
+ *  tint by day; at night the tint is a light blue a white + read 2.49:1 on
+ *  (the HIG review, 2026-11-21; WCAG 1.4.11 asks 3:1). */
 function RowMark({ glyph, filled }: { glyph: ReactNode; filled: boolean }) {
   return (
-    <span className={cn("grid size-8 shrink-0 place-items-center rounded-full", filled ? "bg-tint text-white" : "bg-tint/12 text-tint")}>
+    <span
+      className={cn(
+        "grid size-8 shrink-0 place-items-center rounded-full",
+        filled ? "bg-primary text-primary-foreground" : "bg-tint/12 text-tint",
+      )}
+    >
       {glyph}
     </span>
   );

@@ -110,7 +110,7 @@ export function TimelineProcedureRows({
               className={cn(
                 "grid size-8 place-items-center rounded-full border-2",
                 isDirect
-                  ? "border-tint bg-tint text-white"
+                  ? "border-primary bg-primary text-primary-foreground"
                   : skipped
                     ? "border-dashed border-muted-foreground/50 bg-card text-muted-foreground"
                     : "border-procedure bg-card text-procedure",
