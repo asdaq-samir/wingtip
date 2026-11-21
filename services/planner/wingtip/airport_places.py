@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from . import geo
-from .airport_tables import DEFAULT_CACHE_PATH, OURAIRPORTS_URL, _ensure_cached, _faa_key, _read_table
+from .airport_tables import DEFAULT_CACHE_PATH, FAA_COUNTRIES, OURAIRPORTS_URL, _ensure_cached, _faa_key, _read_table, countries_of
 from .airport_us import _US_AIRPORTS_LOCK, _us_airports, _us_airports_of
 from .single_flight import once
 
@@ -197,7 +197,7 @@ def _abroad_of(path: str, _mtime: float) -> pd.DataFrame:
     planning, which is the US's alone (`_us_airports_of`). Its ident the
     ICAO code where it has one, else OurAirports' own."""
     df = _read_table(path, _mtime)
-    abroad = df[(df["iso_country"] != "US") & df["type"].isin(list(_FIELD_KINDS))].copy()
+    abroad = df[~countries_of(df).isin(FAA_COUNTRIES) & df["type"].isin(list(_FIELD_KINDS))].copy()
     has_icao = abroad["icao_code"].notna() & (abroad["icao_code"] != "")
     abroad["_display_ident"] = abroad["icao_code"].where(has_icao, abroad["ident"])
     return abroad

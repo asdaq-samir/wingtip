@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 
 from . import field_status, field_use, geo, nasr_fields
-from .airport_tables import DEFAULT_CACHE_PATH, OURAIRPORTS_URL, _ensure_cached, _faa_key, _read_table
+from .airport_tables import DEFAULT_CACHE_PATH, FAA_COUNTRIES, OURAIRPORTS_URL, _ensure_cached, _faa_key, _read_table, countries_of
 from .single_flight import once
 
 #: One build of the US table at a time. lru_cache keeps a built one, but
@@ -44,7 +44,7 @@ def _us_airports_of(path: str, _mtime: float, faa_path: str = "", _faa_mtime: fl
     df = _read_table(path, _mtime)
     # FAA charts and aviationweather.gov alone: a non-US field would be a
     # dead end once picked, not a suggestion.
-    us = df[df["iso_country"] == "US"]
+    us = df[countries_of(df).isin(FAA_COUNTRIES)]
     # Only the fields the FAA lists (the owner, 2026-10-27: "I would take
     # it out if it's not showing with FAA"): OurAirports keeps some 3,300
     # strips and airports the FAA no longer lists -- closed, or never

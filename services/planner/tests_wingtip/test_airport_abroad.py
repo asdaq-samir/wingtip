@@ -68,3 +68,30 @@ def test_a_table_without_iso_country_reads_the_region(tmp_path):
     with pytest.raises(OutsideCharts):
         get_airport("IGN", cache_path=path)
     assert get_airport("KLWD", cache_path=path)["ident"] == "LWD"
+
+
+SAN_JUAN = {
+    "ident": "TJSJ",
+    "type": "large_airport",
+    "local_code": "SJU",
+    "icao_code": "TJSJ",
+    "gps_code": "TJSJ",
+    "name": "Luis Munoz Marin International Airport",
+    "latitude_deg": 18.4394,
+    "longitude_deg": -66.0018,
+    "elevation_ft": 9,
+    "municipality": "San Juan",
+    "iso_country": "PR",
+    "iso_region": "PR-U-A",
+}
+
+
+def test_a_us_territory_s_field_is_the_faa_s_and_has_its_card(tmp_path):
+    # Puerto Rico is "PR" in OurAirports, not "US", and its fields are
+    # NASR's: San Juan's card said "Not found" (the owner, 2026-11-20).
+    from wingtip.airport_places import find_place
+
+    path = _table(tmp_path, {**INDAGEN, "type": "small_airport"}, SAN_JUAN, {**LAMONI, "type": "small_airport"})
+    for ident in ("TJSJ", "SJU"):
+        assert find_place(ident, cache_path=path)["name"] == "Luis Munoz Marin International Airport"
+    assert find_place("AYID", cache_path=path) is None
