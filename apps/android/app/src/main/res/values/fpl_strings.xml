@@ -14,4 +14,6 @@
     <string name="share_link">Share Link</string>
     <string name="nav_log_text">Nav Log as Text</string>
     <string name="nav_log_print">Print the Nav Log</string>
+    <string name="pick_closed">Closed</string>
+    <string name="pick_on_route">On the route already</string>
 </resources>

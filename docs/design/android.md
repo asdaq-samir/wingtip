@@ -435,6 +435,13 @@ placement wins, and the difference is noted.
        - trailing: the flight category's pip for reporting fields
   3. Picking a result collapses the bar, flies the map to it, and opens
      its card ([§3.2](#32-the-airport-card-and-the-airplane-card)).
+  4. Asked to pick (Add a Stop, a point's Add a Stop After, an end of the
+     route), a tap on a result, a Nearest row, a Favorite or a Recent
+     picks it rather than opening its card; a field the pick cannot take
+     is greyed and disabled, its reason in its detail's place, "Closed"
+     (the planner's `closed`, the engine's `field_status`; decision 0043)
+     or, for a stop, "On the route already" (`search/PickRefusal`, the
+     web's pickRefusal, 2026-11-21), and a tap on it does nothing.
 - **Primary action**: the result row itself. There is no Search button,
   and the keyboard's action key searches.
 - **Motion**: the stock bar's expand and collapse, which runs on the
