@@ -43,11 +43,13 @@ flying-mode.spec.ts
 forecast-run.spec.ts
 forecast-wind.spec.ts
 fpl-fields.spec.ts
+fpl-head.spec.ts
 fpl-one-layout.spec.ts
 fpl-strip-foot.spec.ts
 frequency-copy.spec.ts
 fuel-gauge.spec.ts
 fuel-stops.spec.ts
+fullscreen.spec.ts
 hazard-legs.spec.ts
 ifr-icing.spec.ts
 inspections.spec.ts
