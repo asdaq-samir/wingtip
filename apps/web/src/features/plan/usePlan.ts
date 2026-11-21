@@ -35,6 +35,8 @@ import { type BriefingState, navlogQuery, PLAN_KEY_RUNWAYS, type PlanParams, pla
  *  to 6 s) -- which no longer slows the planner's other answers, being
  *  read in a process of its own (app.chart_model). */
 const AS_ENTERED_AFTER_MS = 600;
+/** How long the course waits on the chart's cycle for its key, at most, ms. */
+const CHART_WAIT_MS = 1000;
 
 /** How long the nav log's legs hold before the briefing is asked for with
  *  them: the ETE and the legs come a render or two apart. */
@@ -79,8 +81,23 @@ export function usePlan({
 
   // The previous route's course stays on the map until the new one is
   // charted, so the map is never taken down between routes.
-  const { data: cycle } = useQuery({ ...chartQuery, select: (chart) => chart.chart_cycle });
-  const course = useQuery({ ...courseQuery(dep, dest, stops, cycle), enabled: briefable, placeholderData: keepPreviousData });
+  // Asked once the chart's cycle is known (kept from the last visit, or
+  // the chart's answer, about a millisecond), which is in their keys: on a
+  // first visit the course and the checkpoints were asked without it and
+  // again with it, and the first draw rendered twice (the speed audit of
+  // 2026-11-21). A chart that fails, or has not answered in a second,
+  // lets them go without it.
+  const chartCycleQuery = useQuery({ ...chartQuery, select: (chart) => chart.chart_cycle });
+  const cycle = chartCycleQuery.data;
+  const chartPending = chartCycleQuery.isPending;
+  const [chartWaited, setChartWaited] = useState(false);
+  useEffect(() => {
+    if (!chartPending) return;
+    const timer = window.setTimeout(() => setChartWaited(true), CHART_WAIT_MS);
+    return () => window.clearTimeout(timer);
+  }, [chartPending]);
+  const cycleKnown = !chartPending || chartWaited;
+  const course = useQuery({ ...courseQuery(dep, dest, stops, cycle), enabled: briefable && cycleKnown, placeholderData: keepPreviousData });
   const localFlight = useQuery({
     queryKey: ["localFlight", dep, localMin, depart, aircraft.profile, aircraft.fuelBurnGph ?? null, aircraft.usableFuelGal ?? null, rules],
     queryFn: () => api.localFlight(dep, localMin, aircraft, depart || undefined, rules),
@@ -94,7 +111,7 @@ export function usePlan({
   // out the checkpoints for the nav log itself (and once for both:
   // app.checkpoint_scoring) -- and starts on the chart's read and the ground under
   // the route as the course is asked for (app.prefetch).
-  const checkpoints = useQuery({ ...checkpointsQuery(dep, dest, stops, cycle), enabled: routeKnown && withCheckpoints });
+  const checkpoints = useQuery({ ...checkpointsQuery(dep, dest, stops, cycle), enabled: routeKnown && withCheckpoints && cycleKnown });
   const plan = {
     dep,
     dest,
