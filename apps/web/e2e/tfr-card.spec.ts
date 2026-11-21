@@ -138,9 +138,13 @@ test("in 3D a tap on a TFR's volume opens its card by its address", async ({ pag
   await mapStill(page);
   const map = (await gl.boundingBox())!;
   // Inside the stub's box, which stands over most of the country in the
-  // view, its top a quarter of the way down the screen: two fifths down
-  // is on it, clear of the fields' marks.
-  await page.mouse.click(map.x + map.width * 0.4, map.y + map.height * 0.4);
+  // view, its top a quarter of the way down the screen: two fifths down,
+  // over the country's middle the map opened on (data-offset), is on it,
+  // clear of the fields' marks. Not the window's two fifths across: on a
+  // desktop the view stands right of the side panel, and there the box's
+  // near edge leans in past it.
+  const [middle] = ((await gl.getAttribute("data-offset")) ?? "").split(",").map(Number);
+  await page.mouse.click(map.x + middle, map.y + map.height * 0.4);
 
   await expect(page.getByTestId("tfr-card")).toBeVisible();
   expect(new URL(page.url()).searchParams.get("tfr")).toBe("6/4116");
