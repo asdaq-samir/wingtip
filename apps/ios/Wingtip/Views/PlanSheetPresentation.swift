@@ -7,6 +7,8 @@ import SwiftUI
 struct PlanSheetPresentation: ViewModifier {
     @Binding var detent: PresentationDetent
     @Environment(FlightSession.self) private var flight
+    @Environment(WeatherLoop.self) private var weatherLoop
+    @Environment(ModelWeather.self) private var modelWeather
 
     func body(content: Content) -> some View {
         content
@@ -24,8 +26,8 @@ struct PlanSheetPresentation: ViewModifier {
             // The weather timelines paused, and the traffic on the ground not
             // asked, while the sheet covers the map.
             .onChange(of: detent, initial: true) { _, now in
-                WeatherLoop.shared.covered(now == .large)
-                ModelWeather.shared.covered(now == .large)
+                weatherLoop.covered(now == .large)
+                modelWeather.covered(now == .large)
                 flight.traffic.covered = now == .large
             }
         // The system sheet settles at its detents with its own feel; no

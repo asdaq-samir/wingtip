@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_wording::wording::answer",
-  "description": "A text cut into pieces, each cited rule among them named by the document that holds it and the place in it, for the documents library to open (docs/decisions/0056-documents-library.md): 14 CFR and 49 CFR sections with their paragraphs (\"14 CFR 91.211(a)(1)\", \"49 CFR 830.5\", a list after one, a bare section after a title or with its paragraph, never a bare figure such as 121.5), 14 CFR's parts (\"Part 135\"), AIM paragraphs (\"AIM 7-1-5\") and advisory circulars (\"AC 61-65K\", named without the edition's letter). A document is cfr-<title>-<part>, aim or ac-<number>; the pieces' texts joined are the text.",
+  "description": "A text cut into pieces, each cited rule among them named by the document that holds it and the place in it, for the documents library to open (docs/decisions/0057-documents-library.md): 14 CFR and 49 CFR sections with their paragraphs (\"14 CFR 91.211(a)(1)\", \"49 CFR 830.5\", a list after one, a bare section after a title or with its paragraph, never a bare figure such as 121.5), 14 CFR's parts (\"Part 135\"), AIM paragraphs (\"AIM 7-1-5\") and advisory circulars (\"AC 61-65K\", named without the edition's letter). A document is cfr-<title>-<part>, aim or ac-<number>; the pieces' texts joined are the text.",
   "type": "object",
   "properties": {
     "input": {

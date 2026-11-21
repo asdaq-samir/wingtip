@@ -578,6 +578,10 @@ jobs:
                 - tools/xplane-driver/wingtip_replay/shots.schema.json
                 - infra/sim-trial/**
                 - scripts/ci/sim_suite.sh
+                - tools/sim-flight/**
+                - scripts/dev/sim-flight.sh
+                - services/planner/wingtip/units.py
+                - apps/web/src/lib/fixtures/gdl90.json
               test-xplane:
                 - tools/xplane-driver/**
                 - scripts/dev/xplane-trial.sh
@@ -673,16 +677,12 @@ jobs:
   # commit's keys, Postgres and Mailpit (infra/docker-compose.ci.yml). It
   # catches what no unit test can: a lost tap, a drawer that opens empty.
   #
-  # After merge (docs/CI.md, "The tiers"; the owner, 2026-11-10): main's
-  # push runs the @smoke and @flight-critical tests on the phone project,
-  # over two shards; the night runs everything over ten. A pull request
-  # runs every spec its change reaches, and "CI passed" waits for them
-  # (decision 0048, after #585 merged with three red); a failure on main is
-  # one issue (nightly-issue.yml). Each
-  # shard pulls its images and restores its caches in the background and
-  # starts each service the moment it can: setup is about a minute and a
-  # half. Not after e2e-images, which it would wait on; it pulls the image
-  # the moment it is pushed.
+  # After merge (docs/CI.md, "The tiers"; the owner, 2026-11-10): main's push runs the @smoke and
+  # @flight-critical tests on the phone project over two shards; the night runs everything over ten. A pull
+  # request runs every spec its change reaches, and "CI passed" waits for them (decision 0048, after #585
+  # merged with three red); a failure on main is one issue (nightly-issue.yml). Each shard pulls its images
+  # and restores its caches in the background and starts each service the moment it can (setup is about a
+  # minute and a half); not after e2e-images, which it would wait on: it pulls the image once it is pushed.
   e2e:
     name: e2e (${{ matrix.shard }}/${{ strategy.job-total }})
     needs: [changes, specs]

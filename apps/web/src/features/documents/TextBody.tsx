@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "cn";
+import SectionTitle from "../../components/SectionTitle";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { TEXT } from "../../lib/text";
 import type { OutlineRow } from "./pdfPlaces";
@@ -105,13 +106,14 @@ export default function TextBody({ source, startPage, startAt, find, goto, onOut
           </ListGroup>
         </div>
       )}
-      <h1 className={cn("pt-4 pb-2 font-semibold", TEXT.heading)}>{text.head}</h1>
+      {/* The part's title as the app's section titles are (SectionTitle), its groups under it. */}
+      <SectionTitle className="pt-4 pb-2">{text.head}</SectionTitle>
       {text.groups.map((g, gi) => (
         <div key={gi}>
-          {g.head && <h2 className={cn("pt-5 pb-1 font-semibold text-muted-foreground", TEXT.row)}>{g.head}</h2>}
+          {g.head && <h4 className={cn("pt-5 pb-1 font-semibold text-muted-foreground", TEXT.row)}>{g.head}</h4>}
           {g.sections.map((s) => (
             <section key={s.id} id={sectionAnchor(s.id)} className="scroll-mt-2 pt-4">
-              <h3 className={cn("pb-1 font-semibold", TEXT.row)}>{s.head}</h3>
+              <h4 className={cn("pb-1 font-semibold", TEXT.row)}>{s.head}</h4>
               {s.paragraphs.map((p, pi) => (
                 <p key={pi} className={cn("pb-2", TEXT.prose)}>
                   {p}

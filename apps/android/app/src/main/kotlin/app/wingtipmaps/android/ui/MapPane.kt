@@ -63,7 +63,6 @@ import app.wingtipmaps.android.map.MapWeather
 import app.wingtipmaps.android.map.RouteWorse
 import app.wingtipmaps.android.map.StationLayer
 import app.wingtipmaps.android.map.StationMarks
-import app.wingtipmaps.android.map.TrafficDrawing
 import app.wingtipmaps.android.map.WeatherAge
 import app.wingtipmaps.android.map.WeatherAgeChip
 import app.wingtipmaps.android.map.WeatherLoopBar
@@ -74,7 +73,6 @@ import app.wingtipmaps.android.route.RouteLegModel
 import app.wingtipmaps.android.route.RoutePoints
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -136,12 +134,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     // The airplanes to draw, read only in ChartMap's lambda, as the fix is:
     // read here, each answer (every 5 s, each second with a receiver) drew
     // the whole pane again, its field actions, bars and emergency line.
-    val targets = remember(traffic) {
-        combine(traffic.planes, traffic.marks, traffic.heardAtMs) { planes, marks, heardAtMs ->
-            val heard = heardAtMs ?: AppClock.nowMs()
-            planes.mapIndexed { i, p -> TrafficDrawing.Target(p, marks.getOrNull(i), heard - ((p.seenS ?: 0.0) * 1000).toLong()) }
-        }
-    }.collectAsStateWithLifecycle(emptyList())
+    val targets = traffic.targets.collectAsStateWithLifecycle(emptyList())
     // The cockpit's ADS-B receiver, listened for from the first map on
     // (Receiver: once a second while its setting is Auto).
     LaunchedEffect(Unit) { Receiver.of(context).start() }

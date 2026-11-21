@@ -17,15 +17,18 @@ import app.wingtipmaps.android.engine.generated.ownShipHex
 import app.wingtipmaps.android.engine.generated.trafficFresh
 import app.wingtipmaps.android.engine.generated.trafficMarks
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.map.TrafficDrawing
 import app.wingtipmaps.android.notify.Notifications
 import app.wingtipmaps.android.receiver.Receiver
 import app.wingtipmaps.android.settings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -101,6 +104,12 @@ class Traffic(
      *  answer's time less its own age (TrafficAnswer.age_s). */
     private val _heardAtMs = MutableStateFlow<Long?>(null)
     val heardAtMs: StateFlow<Long?> = _heardAtMs.asStateFlow()
+
+    /** The airplanes as the map draws them: each with its mark and when it was heard. */
+    val targets: Flow<List<TrafficDrawing.Target>> = combine(planes, marks, heardAtMs) { planes, marks, heardAtMs ->
+        val heard = heardAtMs ?: AppClock.nowMs()
+        planes.mapIndexed { i, p -> TrafficDrawing.Target(p, marks.getOrNull(i), heard - ((p.seenS ?: 0.0) * 1000).toLong()) }
+    }
 
     /** The middle of the map and the miles to its corner, as the map last
      *  rested: the screen sets them. */

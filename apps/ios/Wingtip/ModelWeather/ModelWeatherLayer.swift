@@ -237,7 +237,8 @@ final class ModelWeatherLayer: NSObject, UIGestureRecognizerDelegate {
         }
         if let point = annotation as? FlowPointAnnotation {
             let view = map.dequeueReusableAnnotationView(withIdentifier: FlowBadgeView.reuse, for: point) as? FlowBadgeView
-            view?.show(ModelWeather.shared.reading, dark: ModelWeather.shared.field == .precip)
+            let weather = ModelWeather.shared
+            view?.show(weather.reading, dark: weather.field == .precip)
             return view
         }
         return nil

@@ -1,10 +1,8 @@
-//! A rule's citation as the documents library opens it: the text the app
-//! shows ("14 CFR 91.155; AIM 7-1-5", a Go / No-Go finding's why, a Class
-//! B's entry rule) cut into pieces, each cited regulation, AIM paragraph
-//! or advisory circular among them named by the document that holds it
-//! and the place in it. The engine's own cite strings stay where each rule
-//! states them, once; this reads them, so no screen keeps a copy of where
-//! a rule lives (docs/decisions/0056-documents-library.md).
+//! A rule's citation as the documents library opens it: the text the app shows ("14 CFR 91.155;
+//! AIM 7-1-5", a Go / No-Go finding's why, a Class B's entry rule) cut into pieces, each cited
+//! regulation, AIM paragraph or advisory circular among them named by the document that holds it and
+//! the place in it. The engine's own cite strings stay where each rule states them, once; this reads
+//! them, so no screen keeps a copy of where a rule lives (docs/decisions/0057-documents-library.md).
 //!
 //! The forms read are the ones the FAA writes and the engine's texts use:
 //! - "14 CFR 91.155", "14 CFR 91.211(a)(1)", "49 CFR 830.5", "14 CFR part

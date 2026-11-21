@@ -19,6 +19,8 @@ struct WingtipApp: App {
     @Environment(\.scenePhase) private var scenePhase
     /// iOS's hand-over of the chart downloads finished in the background.
     @UIApplicationDelegateAdaptor(OfflineAppDelegate.self) private var offlineDelegate
+    /// The pilot's kept fields (Home, Favorites), read here for the widgets.
+    private let shelf = AirportShelf.shared
 
     init() {
         // Apple's own measurements of this app on this phone -- launch,
@@ -89,8 +91,8 @@ struct WingtipApp: App {
                 // fields the weather widget's settings offer first, written
                 // as the home base or the favourites change, not each 15 s.
                 .task { await Repeating.every(15) { WidgetFeed.shared.update(plan: plan, verdict: flight.verdict) } }
-                .onChange(of: [session.pilot?.homeBase ?? ""] + AirportShelf.shared.favorites.map(\.ident), initial: true) {
-                    WidgetFeed.shared.airports(homeBase: session.pilot?.homeBase, favorites: AirportShelf.shared.favorites)
+                .onChange(of: [session.pilot?.homeBase ?? ""] + shelf.favorites.map(\.ident), initial: true) {
+                    WidgetFeed.shared.airports(homeBase: session.pilot?.homeBase, favorites: shelf.favorites)
                 }
                 // The route's weather watched after the Brief (WeatherWatch):
                 // a look every quarter hour while the app runs, and iOS's
