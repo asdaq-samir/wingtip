@@ -23,6 +23,23 @@ fn action(codes: &[&str]) -> &'static str {
 }
 
 #[cfg_attr(target_arch = "wasm32", inline(always))]
+/// The Brief's one line for a route's finding, as gonogo_glance_lines
+/// words its own: `{"lead", "line", "action", "why", "cite"}`, the line
+/// the lead and what to do; route_adiz's too.
+pub(crate) fn brief_line(out: &mut String, lead: &str, act: &str, why: &str, cite: &str) {
+    out.push_str("{\"lead\":");
+    json::string(out, lead);
+    out.push_str(",\"line\":");
+    json::string(out, &format!("{lead}. {act}"));
+    out.push_str(",\"action\":");
+    json::string(out, act);
+    out.push_str(",\"why\":");
+    json::string(out, why);
+    out.push_str(",\"cite\":");
+    json::string(out, cite);
+    out.push('}');
+}
+
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let mut out = String::new();
@@ -80,20 +97,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
     out.push_str(",\"brief\":");
     match caution(&outside) {
         None => out.push_str("null"),
-        Some(lead) => {
-            let act = action(&outside);
-            out.push_str("{\"lead\":");
-            json::string(&mut out, &lead);
-            out.push_str(",\"line\":");
-            json::string(&mut out, &format!("{lead}. {act}"));
-            out.push_str(",\"action\":");
-            json::string(&mut out, act);
-            out.push_str(",\"why\":");
-            json::string(&mut out, WHY);
-            out.push_str(",\"cite\":");
-            json::string(&mut out, CITE);
-            out.push('}');
-        }
+        Some(lead) => brief_line(&mut out, &lead, action(&outside), WHY, CITE),
     }
     out.push('}');
     Ok(out)

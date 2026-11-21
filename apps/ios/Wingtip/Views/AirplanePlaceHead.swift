@@ -72,15 +72,9 @@ struct AirplanePlaceHead: View {
             .glassButton()
             .disabled(hex == nil)
             .accessibilityIdentifier("airplane-follow")
-            Toggle(isOn: Binding(get: { starred }, set: { _ in if let kept { tracking.toggleFavorite(kept, undo: undoManager) } })) {
-                ActionFace(systemImage: starred ? "\(WingtipIcon.favorite).fill" : WingtipIcon.favorite, title: "Favorite",
-                           symbolColour: starred ? Color(uiColor: WingtipColor.Brand.taxiwayYellow) : nil)
-            }
-            .toggleStyle(.button)
-            .glassButton()
-            .disabled(kept == nil)
-            .accessibilityLabel(starred ? Wording.removeFromFavorites : Wording.addToFavorites)
-            .accessibilityIdentifier("airplane-favorite")
+            FavoriteToggle(starred: starred) { if let kept { tracking.toggleFavorite(kept, undo: undoManager) } }
+                .disabled(kept == nil)
+                .accessibilityIdentifier("airplane-favorite")
             ShareLink(item: Config.gateway.appending(path: "/app/plan").appending(queryItems: [URLQueryItem(name: "airplane", value: model.tail)]),
                       subject: Text(model.tail)) {
                 ActionFace(systemImage: "square.and.arrow.up", title: "Share")

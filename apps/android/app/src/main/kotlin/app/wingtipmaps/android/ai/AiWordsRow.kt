@@ -11,7 +11,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
@@ -40,7 +39,7 @@ import app.wingtipmaps.android.ui.WingtipIcons
 @Composable
 fun AiWordsRow(task: AiTask, key: String, sources: () -> List<AssistantSource>, modifier: Modifier = Modifier) {
     val model: AiWordsModel = hiltViewModel(key = "ai-words-${task.name}-$key")
-    val state by model.state.collectAsStateWithLifecycle()
+    val state = model.state.collectAsStateWithLifecycle().value
     LaunchedEffect(key) { model.sourcesAre(key) }
     if (!state.offered) return
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {

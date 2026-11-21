@@ -18,7 +18,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -84,7 +83,8 @@ fun LiveAirportRows(ident: String, model: LiveAirportModel = hiltViewModel()) {
 
 @Composable
 private fun BroadcastGroup(b: LiveAirportModel.Broadcast) {
-    var sent by rememberSaveable(b.title) { mutableStateOf(false) }
+    // Whether the words as sent are shown, held as the state itself.
+    val sent = rememberSaveable(b.title) { mutableStateOf(false) }
     SectionTitle(b.title)
     b.glance?.let { glance ->
         Row(glance, bold = true, lead = { Icon(Icons.Filled.Radio, contentDescription = null) })
@@ -96,10 +96,10 @@ private fun BroadcastGroup(b: LiveAirportModel.Broadcast) {
             content = { Text(row.label) },
         )
     }
-    TextButton(onClick = { sent = !sent }) {
-        Text(stringResource(if (sent) R.string.live_hide_sent else R.string.live_as_sent))
+    TextButton(onClick = { sent.value = !sent.value }) {
+        Text(stringResource(if (sent.value) R.string.live_hide_sent else R.string.live_as_sent))
     }
-    if (sent) {
+    if (sent.value) {
         Text(b.text, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     Credit(stringResource(R.string.live_atis_credit))

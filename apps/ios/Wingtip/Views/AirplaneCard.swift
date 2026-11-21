@@ -158,14 +158,8 @@ struct AirplaneCard: View {
                     .glassButton()
                     .disabled(debriefed == nil)
                 let starred = tracking.isFavorite(hex)
-                Toggle(isOn: Binding(get: { starred }, set: { _ in if let kept { tracking.toggleFavorite(kept, undo: undoManager) } })) {
-                    ActionFace(systemImage: starred ? "\(WingtipIcon.favorite).fill" : WingtipIcon.favorite, title: "Favorite",
-                               symbolColour: starred ? Color(uiColor: WingtipColor.Brand.taxiwayYellow) : nil)
-                }
-                .toggleStyle(.button)
-                .glassButton()
-                .disabled(kept == nil)
-                .accessibilityLabel(starred ? Wording.removeFromFavorites : Wording.addToFavorites)
+                FavoriteToggle(starred: starred) { if let kept { tracking.toggleFavorite(kept, undo: undoManager) } }
+                    .disabled(kept == nil)
             }
             .glassGroup(spacing: WingtipSpace.sm)
             .dynamicTypeSize(...DynamicTypeSize.accessibility2)

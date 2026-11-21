@@ -3,6 +3,7 @@
 //! them, what part 99 asks of the flight in the pilot's words.
 
 use crate::adiz::{leg_zones, zone_at, zone_name};
+use crate::jurisdiction_call::brief_line;
 use wingtip_core::ask::{num_in, strings, Ask};
 use wingtip_core::json::{self, Value};
 
@@ -82,17 +83,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         Some(lead) => {
             // What the first zone met asks; the rest are said by name.
             let (act, cite) = asks(met[0]);
-            out.push_str("{\"lead\":");
-            json::string(&mut out, &lead);
-            out.push_str(",\"line\":");
-            json::string(&mut out, &format!("{lead}. {act}"));
-            out.push_str(",\"action\":");
-            json::string(&mut out, act);
-            out.push_str(",\"why\":");
-            json::string(&mut out, WHY);
-            out.push_str(",\"cite\":");
-            json::string(&mut out, cite);
-            out.push('}');
+            brief_line(&mut out, &lead, act, WHY, cite);
         }
     }
     out.push('}');

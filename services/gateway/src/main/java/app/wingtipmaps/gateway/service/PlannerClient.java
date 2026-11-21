@@ -324,8 +324,8 @@ public class PlannerClient {
      * ask is PaperworkClient#askOf's; nothing is asked of none. An
      * aircraft list asked once an airplane (waste-server audit C).
      *
-     * @throws PlannerUnavailableException when the planner cannot be reached or refuses,
-     *     or answers a list of another length
+     * @throws PlannerUnavailableException where the planner is out of reach, refuses, or
+     *     answers more or fewer airplanes than were asked
      */
     public List<PlannerInspections> inspections(List<PlannerInspectionsAsk> asks) {
         return asks.isEmpty() ? List.of() : inspectionsOf(planner, "the inspections", asks);
