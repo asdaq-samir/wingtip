@@ -2015,6 +2015,10 @@ What each fix asks for, by the phones' wasted-work audit:
   emergency line only while the assistant is open, so a fix runs neither
   RootMap's body nor ChartMap's update, with its route, checkpoint and
   procedure comparisons.
+- **Where the airplane is on the route** (`in_flight`) is asked only
+  once it is under way (the engine's `underway`): the engine's `on_route`
+  needs the same motion, so parked there was nothing to show, and the
+  strip keeps the planned totals.
 
 ---
 

@@ -1355,6 +1355,8 @@ for, by the phones' wasted-work audit:
   only with the app in front (`Ticker.inFront`); the airport card's
   live rows only while the card can be seen (`LifecycleStartEffect`),
   their programs each five minutes, as the iPhone asks them.
+- **Where the airplane is on the route** (`in_flight`) is asked only
+  once it is under way (the engine's `underway`), as on the iPhone.
 
 ## 4. Not verified
 
