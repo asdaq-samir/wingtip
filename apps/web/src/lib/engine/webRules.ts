@@ -207,6 +207,7 @@ export const WEB_RULES = [
   "sim_flight",
   "solo_standing",
   "solo_xc_determinations",
+  "special_vfr",
   "squawk_meaning",
   "strip_fuel",
   "sua_altitudes",

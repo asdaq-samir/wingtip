@@ -11890,6 +11890,8 @@ extension Components {
             public var envelope: [[Swift.Double]]
             /// - Remark: Generated from `#/components/schemas/Loading/fuel_arm_in`.
             public var fuelArmIn: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/Loading/fuel_grade`.
+            public var fuelGrade: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Loading/fuel_lb_per_gal`.
             public var fuelLbPerGal: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/Loading/fuel_max_gal`.
@@ -11916,6 +11918,7 @@ extension Components {
             ///   - baggageCombinedMaxLb:
             ///   - envelope:
             ///   - fuelArmIn:
+            ///   - fuelGrade:
             ///   - fuelLbPerGal:
             ///   - fuelMaxGal:
             ///   - maxLandingLb:
@@ -11930,6 +11933,7 @@ extension Components {
                 baggageCombinedMaxLb: Swift.Double? = nil,
                 envelope: [[Swift.Double]],
                 fuelArmIn: Swift.Double,
+                fuelGrade: Swift.String? = nil,
                 fuelLbPerGal: Swift.Double? = nil,
                 fuelMaxGal: Swift.Double,
                 maxLandingLb: Swift.Double,
@@ -11944,6 +11948,7 @@ extension Components {
                 self.baggageCombinedMaxLb = baggageCombinedMaxLb
                 self.envelope = envelope
                 self.fuelArmIn = fuelArmIn
+                self.fuelGrade = fuelGrade
                 self.fuelLbPerGal = fuelLbPerGal
                 self.fuelMaxGal = fuelMaxGal
                 self.maxLandingLb = maxLandingLb
@@ -11959,6 +11964,7 @@ extension Components {
                 case baggageCombinedMaxLb = "baggage_combined_max_lb"
                 case envelope
                 case fuelArmIn = "fuel_arm_in"
+                case fuelGrade = "fuel_grade"
                 case fuelLbPerGal = "fuel_lb_per_gal"
                 case fuelMaxGal = "fuel_max_gal"
                 case maxLandingLb = "max_landing_lb"

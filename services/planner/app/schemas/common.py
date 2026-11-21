@@ -99,7 +99,11 @@ class Loading(BaseModel):
     baggage_combined_max_lb: float | None = None
     fuel_arm_in: float
     fuel_max_gal: float
-    fuel_lb_per_gal: float = 6.0
+    #: The handbook's own pounds a gallon; None where it gives none, and
+    #: the engine weighs the fuel at `fuel_grade`'s standard weight (avgas
+    #: 6, Jet A 6.8, FAA-H-8083-25 chapter 10; wingtip_flight::fuel_weight).
+    fuel_lb_per_gal: float | None = None
+    fuel_grade: Literal["avgas", "jet_a"] | None = None
     start_taxi_fuel_lb: float = 0.0
     envelope: list[tuple[float, float]]
 

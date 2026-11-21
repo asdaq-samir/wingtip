@@ -16,18 +16,6 @@ def num(n) -> str:
     return ask("words_num", n=n)
 
 
-def to_fixed(n: float, digits: int = 1) -> str:
-    """JavaScript's toFixed: the nearest, a tie to the larger, on the
-    float's exact value."""
-    return ask("words_to_fixed", n=n, digits=digits)
-
-
-def grouped(n: float) -> str:
-    """A whole number with a comma between each three figures, "12,500",
-    as the FAA writes altitudes and weights (lib/format grouped)."""
-    return ask("words_grouped", n=n)
-
-
 def alt_ft(ft: float | None) -> str:
     """ "12,500"; an em dash for none (lib/format altFt)."""
     return ask("words_alt_ft", ft=ft)

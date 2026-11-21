@@ -61,7 +61,15 @@
         "number",
         "null"
       ],
-      "description": "6 where not given, avgas's standard (FAA-H-8083-1B)."
+      "description": "The airplane's handbook's figure; where null or not given, its fuel_grade's standard weight: avgas 6, Jet A 6.8 lb a US gallon (FAA-H-8083-25, chapter 10), avgas where no grade is given."
+    },
+    "fuel_grade": {
+      "enum": [
+        "avgas",
+        "jet_a",
+        null
+      ],
+      "description": "The fuel the airplane burns, for its standard weight where its handbook gives none."
     },
     "start_taxi_fuel_lb": {
       "type": [

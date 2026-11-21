@@ -5387,10 +5387,15 @@ object EngineContract {
         @SerialName("fuel_max_gal")
         val fuelMaxGal: Double,
         /**
-         * 6 where not given, avgas's standard (FAA-H-8083-1B).
+         * The airplane's handbook's figure; where null or not given, its fuel_grade's standard weight: avgas 6, Jet A 6.8 lb a US gallon (FAA-H-8083-25, chapter 10), avgas where no grade is given.
          */
         @SerialName("fuel_lb_per_gal")
         val fuelLbPerGal: Double? = null,
+        /**
+         * The fuel the airplane burns, for its standard weight where its handbook gives none.
+         */
+        @SerialName("fuel_grade")
+        val fuelGrade: String? = null,
         @SerialName("start_taxi_fuel_lb")
         val startTaxiFuelLb: Double? = null,
         /**
@@ -12214,6 +12219,109 @@ object EngineContract {
         val desc: String? = null,
     )
 
+    @Serializable
+    data class SpecialVfrAnswer(
+        /**
+         * Nothing known rules special VFR out.
+         */
+        val available: Boolean,
+        /**
+         * What rules it out, each with its rule.
+         */
+        val problems: List<EngineContract.SpecialVfrAnswerProblemsItem>,
+        /**
+         * What it asks, each with its rule.
+         */
+        val needs: List<EngineContract.SpecialVfrAnswerNeedsItem>,
+        /**
+         * The airport's entry in part 91 appendix D, section 3, "Chicago, IL (Chicago-O'Hare International Airport)"; null where it is not listed.
+         */
+        val listed: String? = null,
+        @SerialName("visibility_sm")
+        val visibilitySm: Double,
+        @SerialName("below_msl_ft")
+        val belowMslFt: Double,
+    )
+
+    @Serializable
+    data class SpecialVfrAnswerNeedsItem(
+        val words: String,
+        /**
+         * The rule, "14 CFR 91.157(b)(3)".
+         */
+        val source: String,
+    )
+
+    @Serializable
+    data class SpecialVfrAnswerProblemsItem(
+        val words: String,
+        /**
+         * The rule, "14 CFR 91.157(b)(3)".
+         */
+        val source: String,
+    )
+
+    @Serializable
+    data class SpecialVfrInput(
+        /**
+         * The class of the surface area the airplane is in (controlled airspace designated to the surface for an airport); null or G where it is in none.
+         */
+        @SerialName("surface_area")
+        val surfaceArea: String? = null,
+        /**
+         * The surface area's primary airport, FAA or ICAO ident, for appendix D, section 3.
+         */
+        val airport: String? = null,
+        /**
+         * Feet MSL; null where not known.
+         */
+        @SerialName("altitude_ft")
+        val altitudeFt: Double? = null,
+        /**
+         * Between sunset and sunrise; null where not known.
+         */
+        val night: Boolean? = null,
+        /**
+         * In Alaska, where 91.157(b)(4) reads the sun's elevation.
+         */
+        val alaska: Boolean? = null,
+        /**
+         * The sun's elevation, degrees (negative below the horizon); read in Alaska alone.
+         */
+        @SerialName("sun_elevation_deg")
+        val sunElevationDeg: Double? = null,
+        /**
+         * The pilot meets part 61's requirements for instrument flight (rated, and current under 61.57(c)).
+         */
+        @SerialName("instrument_current")
+        val instrumentCurrent: Boolean? = null,
+        /**
+         * The airplane is equipped as 91.205(d) asks for IFR.
+         */
+        @SerialName("ifr_equipped")
+        val ifrEquipped: Boolean? = null,
+        /**
+         * Statute miles.
+         */
+        @SerialName("flight_visibility_sm")
+        val flightVisibilitySm: Double? = null,
+        /**
+         * Statute miles, as reported at the airport; null where none is.
+         */
+        @SerialName("ground_visibility_sm")
+        val groundVisibilitySm: Double? = null,
+        /**
+         * Whether the flight can keep clear of clouds.
+         */
+        @SerialName("clear_of_clouds")
+        val clearOfClouds: Boolean? = null,
+        /**
+         * Taking off or landing under special VFR (91.157(c)).
+         */
+        @SerialName("takeoff_or_landing")
+        val takeoffOrLanding: Boolean? = null,
+    )
+
     /**
      * A place a clearance may name, as the planner or a phone's pack holds it: an airport, a navaid (NASR NAV_BASE, by its NAME) or a fix (no name).
      */
@@ -13173,6 +13281,49 @@ object EngineContract {
         override fun equals(other: Any?): Boolean = other is VfrBasicMinimumsInput
         override fun hashCode(): Int = 0
     }
+
+    @Serializable
+    data class VfrClassGNightPatternAnswer(
+        val applies: Boolean,
+        /**
+         * The least visibility it asks, 1 sm.
+         */
+        @SerialName("visibility_sm")
+        val visibilitySm: Double,
+        /**
+         * It is for a visibility under this, 3 sm.
+         */
+        @SerialName("under_visibility_sm")
+        val underVisibilitySm: Double,
+        /**
+         * 1,200 ft above the surface.
+         */
+        @SerialName("below_agl_ft")
+        val belowAglFt: Double,
+        val words: String,
+        val source: String,
+    )
+
+    @Serializable
+    data class VfrClassGNightPatternInput(
+        val `class`: String,
+        /**
+         * Feet above the surface.
+         */
+        @SerialName("agl_ft")
+        val aglFt: Double,
+        val night: Boolean? = null,
+        /**
+         * In an airport traffic pattern within 1/2 mile of the runway.
+         */
+        @SerialName("in_pattern")
+        val inPattern: Boolean? = null,
+        /**
+         * Statute miles; null where not known.
+         */
+        @SerialName("visibility_sm")
+        val visibilitySm: Double? = null,
+    )
 
     @Serializable
     data class VfrFloorsAnswerItem(
