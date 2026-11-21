@@ -85,6 +85,14 @@ export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
     const intent = simulated ? "dry-run" : "own-ship";
     if (flown.current !== recentred) {
       flown.current = flownRecentre = recentred;
+      // A recentre still waiting on its first fix is let go once the
+      // follow it started has ended, as a drag lets it go: a route opened
+      // by link, fitted while a desktop's Wi-Fi fix took seconds to come,
+      // was left for own ship at the open's zoom when the fix came (the
+      // owner's desktop, 2026-11-21, Wisconsin for a route to KPWK;
+      // desk-route-link.spec). The fit ended the follow (camera's
+      // endFollows); the recentre had asked for it before the route came.
+      if (!follow) return;
       const zoom = recentreZoom !== null ? glZoom(recentreZoom) : Math.max(map.getZoom(), glZoom(LOCAL_ZOOM));
       camera.pick([fix.lon, fix.lat], { zoom, duration: SHEET_SECONDS * 2000, keeps: intent });
       return;
