@@ -1,6 +1,6 @@
 import type { EaseToOptions, Map as GlMap } from "maplibre-gl";
 import { picked, watchPilotMoves } from "./pilotCamera";
-import { followMs, linear, pickHow, verdict, FOLLOW_LEAST_PX, type Follow, type Intent } from "./cameraRules";
+import { followMs, followStep, linear, pickHow, verdict, FOLLOW_LEAST_PX, type Follow, type Intent } from "./cameraRules";
 import {
   endFollows,
   inRoom,
@@ -251,7 +251,18 @@ class Camera {
       return;
     }
     const middle = map.project(map.getCenter());
-    if (Math.hypot(there.x - middle.x, there.y - middle.y) < FOLLOW_LEAST_PX) return;
+    const step = Math.hypot(there.x - middle.x, there.y - middle.y);
+    if (step < FOLLOW_LEAST_PX) return;
+    if (followStep(p.intent, step) === "jump") {
+      // Own ship a few pixels on: one redraw for the fix, not a frame-rate
+      // ease (cameraRules' FOLLOW_JUMP_UNDER_PX).
+      this.running = { intent: p.intent, aim: null };
+      this.fresh = null;
+      this.followAim = p.at;
+      log(p.intent, "jumpTo");
+      map.jumpTo({ center: p.at });
+      return;
+    }
     this.ease(p.intent, p.at);
   }
 

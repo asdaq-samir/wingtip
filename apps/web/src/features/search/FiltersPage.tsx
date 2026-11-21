@@ -85,7 +85,7 @@ export default function FiltersPage() {
       </ListGroup>
       <ListGroup title="Weather">
         {sw("vfrNow", "VFR Now")}
-        <ListRow title="VFR at">
+        <ListRow title="VFR At">
           <StepMenu
             value={draft.vfrInHours}
             steps={vfrAtSteps}

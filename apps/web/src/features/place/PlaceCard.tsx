@@ -33,6 +33,7 @@ import { PlaceTabBar, type PlaceTab } from "./PlaceTabBar";
 import { useFlyHereMinutes } from "./flyHereTime";
 import { useShown } from "../../lib/shown";
 import StatusBadge from "../../components/StatusBadge";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * An airport's card in the panel, as a place's is in Maps, laid out at
@@ -318,7 +319,7 @@ export default function PlaceCard({
         <div className="pt-4">
           <ListGroup>
             <ListRow
-              title={<span className="text-tint">{isFetching ? "Trying again…" : "Try again"}</span>}
+              title={<span className="text-tint">{isFetching ? "Trying again…" : WORDING.tryAgain}</span>}
               onClick={isFetching ? undefined : () => void refetch()}
               data-testid="place-retry"
             />

@@ -164,7 +164,9 @@ function Head({ off = false, children }: { off?: boolean; children: ReactNode })
   );
 }
 
-/** "Emergency", labelled in the system red, a 44-point target. */
+/** "Emergency", labelled in the system red: a 32-point button whose
+ *  target is flying mode's 60 points (FLYING_STACK's size, a hand in
+ *  turbulence), a pseudo-element 14 out round it, the button not grown. */
 function EmergencyEntry() {
   return (
     <Button
@@ -172,7 +174,7 @@ function EmergencyEntry() {
       variant="ghost"
       size="sm"
       data-testid="flying-emergency"
-      className="pointer-events-auto relative -mr-2 font-semibold text-destructive after:absolute after:-inset-1.5"
+      className="pointer-events-auto relative -mr-2 font-semibold text-destructive after:absolute after:-inset-3.5"
       onClick={() => openEmergency("flying")}
     >
       Emergency

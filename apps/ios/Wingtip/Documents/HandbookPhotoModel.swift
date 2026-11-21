@@ -54,7 +54,7 @@ final class HandbookPhotoModel {
             self.page = edited
             problem = nil
         } catch {
-            problem = "The figures couldn't be checked: \(error.localizedDescription)"
+            problem = "The figures could not be checked: \(error.localizedDescription)"
         }
     }
 

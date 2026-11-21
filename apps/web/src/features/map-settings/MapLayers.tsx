@@ -16,7 +16,7 @@ import { FlowMenu } from "../weather-flow";
  *  writes every altitude, the owner's pick (lib/format mapLevel). */
 const WINDS: { value: WindsAt; label: string }[] = [
   { value: "off", label: "Off" },
-  { value: "plan", label: "The plan's" },
+  { value: "plan", label: "The Plan's" },
   { value: 3000, label: "FL030" },
   { value: 6000, label: "FL060" },
   { value: 9000, label: "FL090" },
@@ -60,7 +60,7 @@ export default function MapLayers() {
           glyph={CloudSun}
           on={prefs.weather}
           onChange={prefs.setWeather}
-          menuLabel="Weather to show"
+          menuLabel="Weather to Show"
           menuTestId="weather-more"
         >
           <WeatherPicks />
@@ -88,6 +88,16 @@ export default function MapLayers() {
       <div className="pt-2">
         <ListGroup>
           <SwitchRow title="Route Checkpoints" on={prefs.waypoints} onChange={prefs.setWaypoints} testId="waypoints-toggle" />
+          {/* The map's words grown with the pilot's text size, at most
+              1.2x, for a pilot who reads larger text (the owner,
+              2026-11-21); off by default, the chart's own lettering, as
+              Apple Maps and ForeFlight keep theirs. */}
+          <SwitchRow
+            title="Larger Map Labels"
+            on={prefs.largerMapLabels}
+            onChange={prefs.setLargerMapLabels}
+            testId="larger-map-labels-toggle"
+          />
         </ListGroup>
       </div>
     </section>

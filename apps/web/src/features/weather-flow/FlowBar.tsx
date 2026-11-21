@@ -7,6 +7,7 @@ import { TEXT } from "../../lib/text";
 import { lookOf, type ShownField } from "./flowLook";
 import { FlowTrack } from "./FlowTrack";
 import { hourName, useWeatherFlow, type FlowFrame, type Span } from "./useWeatherFlow";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 const DATE = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" });
 /** The date beside the precipitation's 1h | 12h, short, so it fits a
@@ -48,7 +49,7 @@ export function FlowBar() {
   const status = flow.failed
     ? "Model weather isn't available right now"
     : flow.loading
-      ? "Fetching model weather…"
+      ? WORDING.fetchingModelWeather
       : !flow.frames.length
         ? "No model weather yet"
         : null;

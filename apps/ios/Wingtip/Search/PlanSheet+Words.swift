@@ -12,15 +12,15 @@ extension PlanSheet {
             guard routed else { return "Plan a route first: a field, a town or two idents." }
             openScreen(.brief)
         case .navlog:
-            guard routed, plan.course != nil else { return "Plan a route first." }
+            guard routed, plan.course != nil else { return Wording.planARouteFirst }
             openScreen(.navlog)
         case .altitude, .profile:
             guard routed, plan.profile != nil else { return "Plan a route first; then say an altitude, \"altitude 5500\"." }
             openScreen(.profile)
         case .dryrun:
-            guard routed, plan.profile != nil else { return "Plan a route first." }
+            guard routed, plan.profile != nil else { return Wording.planARouteFirst }
             openScreen(.profile)
-            return "Dry run is the Profile's button, at the side view's foot."
+            return "Dry Run is the Profile's button, at the side view's foot."
         case .fuel, .food, .stops:
             // The fuel, food and rest stops are the web app's for now; the
             // nearest fields, which have the fuel, are here.
@@ -32,7 +32,7 @@ extension PlanSheet {
             guard routed else { return "Plan a route first, then its other ways are under its ends." }
             showPlan()
         case .share:
-            guard routed else { return "Plan a route first." }
+            guard routed else { return Wording.planARouteFirst }
             showPlan()
             return "Share is at the plan's bar's left."
         case .file:

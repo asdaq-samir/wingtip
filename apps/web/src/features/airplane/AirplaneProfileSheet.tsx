@@ -27,6 +27,7 @@ import { AirplaneFacts } from "../../components/airplane/AirplaneFacts";
 import { useTabScroll } from "../../lib/tabScroll";
 import AirplaneInfo from "./AirplaneInfo";
 import { StatusLine } from "../../components/StatusBadge";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** One figure: its name and where it comes from, its field (typed in place,
  *  kept as the pilot's when it changes), and Reset to book figure where
@@ -51,7 +52,8 @@ function FigureRow({ vm, row }: { vm: AirplaneProfileModel; row: AirplaneProfile
                 disabled={vm.busy === row.key}
                 onClick={() => vm.reset(row.key)}
               >
-                Reset to book figure
+                {/* Which figure, for a reader's list of buttons (WCAG 2.4.6), after the words seen (2.5.3). */}
+                Reset to book figure<span className="sr-only">: {words.label}</span>
               </Button>
             )}
           </span>
@@ -100,7 +102,7 @@ function PhotoRead({ vm }: { vm: AirplaneProfileModel }) {
       >
         <ListGroup>
           <Pressable isDisabled={busy}>
-            <ListRow title={busy ? "Reading the page…" : "Read from a Photo"} disabled={busy} />
+            <ListRow title={busy ? WORDING.readingThePage : "Read from a Photo"} disabled={busy} />
           </Pressable>
         </ListGroup>
       </FileTrigger>

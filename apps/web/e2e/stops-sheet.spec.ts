@@ -135,8 +135,8 @@ test("with a course drawn, the Stops along it, each with a line for each kind it
   const card = await findNearby(page, "fuel");
   // Along the route, picked where there is one.
   await card.getByTestId("stops-distance").click();
-  await page.getByTestId("stops-distance-option").filter({ hasText: "Along Route" }).click();
-  await expect(card.getByTestId("stops-distance")).toHaveText("Along Route");
+  await page.getByTestId("stops-distance-option").filter({ hasText: "Along the Route" }).click();
+  await expect(card.getByTestId("stops-distance")).toHaveText("Along the Route");
   await expect.poll(() => asked).toContain("along");
   await card.getByTestId("stops-kind-all").click();
 

@@ -63,7 +63,7 @@ fun FiguresStrip(state: Plan.State, model: FlightModel = hiltViewModel()) {
     val gpsAlt = stringResource(R.string.figure_gps_alt)
     val saidTo = stringResource(R.string.said_to)
     val saidDist = stringResource(R.string.leg_distance)
-    val saidEte = stringResource(R.string.leg_time)
+    val saidEte = stringResource(R.string.wording_time_en_route)
     val saidTrack = stringResource(R.string.said_track)
     val saidNoTrack = stringResource(R.string.said_no_track)
     val saidGpsAlt = stringResource(R.string.said_gps_alt)
@@ -150,6 +150,6 @@ fun ProblemLine(problem: String?, modifier: Modifier = Modifier, onRetry: (() ->
             Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(WingtipSpace.Lg + WingtipSpace.Xs))
             Text(problem, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
         }
-        if (onRetry != null) TextButton(onClick = onRetry) { Text(stringResource(R.string.try_again)) }
+        if (onRetry != null) TextButton(onClick = onRetry) { Text(stringResource(R.string.wording_try_again)) }
     }
 }

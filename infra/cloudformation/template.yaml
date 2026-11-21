@@ -51,16 +51,17 @@ Parameters:
       server, keeping the data disk.
   InstanceType:
     Type: String
-    Default: t3a.medium
+    Default: t3a.large
     AllowedValues: [t3a.medium, t3a.large, t3.medium, t3.large, m6a.large, m7a.large]
     Description: >
-      2 cores and 4 GB run the stack once the planner no longer draws tiles
-      (the production stack held 1.8 GB at rest in the local rehearsal,
-      2026-10-08). x86, so CI's images run as built; a large (8 GB) if it
-      ever runs short.
+      2 cores and 8 GB. The services' limits add up to about 3.5 GB
+      (weather 768 MB, ingest 384 MB, the gateway's JVM, the planner,
+      Postgres; the prelaunch audit, 2026-11-21), which a medium's 4 GB
+      barely holds, so the launch size is a large (the owner, 2026-11-21).
+      x86, so CI's images run as built.
   SpareInstanceType:
     Type: String
-    Default: t3.medium
+    Default: t3.large
     AllowedValues: [t3a.medium, t3a.large, t3.medium, t3.large, m6a.large, m7a.large]
     Description: >
       A second type of the same size, for when Spot has none of the first:

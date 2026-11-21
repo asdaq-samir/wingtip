@@ -2,7 +2,6 @@ package app.wingtipmaps.gateway.service;
 
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.AccountRecordsDto;
-import app.wingtipmaps.gateway.dto.AccountRecordsDto.FeatureUse;
 import app.wingtipmaps.gateway.dto.AccountRecordsDto.SentReminder;
 import app.wingtipmaps.gateway.dto.AccountRecordsDto.SubscriptionRow;
 import java.sql.Timestamp;
@@ -13,8 +12,8 @@ import org.springframework.stereotype.Service;
 
 /**
  * The rows of a pilot's that no endpoint reads back whole, read for their
- * export (ExportController): reminders_sent (V23), the subscriptions row
- * and paid_feature_uses (V19). Read here, in one place, rather than given
+ * export (ExportController): reminders_sent (V23) and the subscriptions
+ * row (V19). Read here, in one place, rather than given
  * endpoints of their own that no screen would call.
  */
 @Service
@@ -26,7 +25,7 @@ public class AccountRecords {
         this.jdbc = jdbc;
     }
 
-    /** Everything of those three tables that is the pilot's. */
+    /** Everything of those two tables that is the pilot's. */
     public AccountRecordsDto of(Pilot pilot) {
         Long id = pilot.getId();
         List<SentReminder> sent = jdbc.query(
@@ -49,11 +48,7 @@ public class AccountRecords {
                         r.getString(6),
                         r.getTimestamp(7).toInstant()),
                 id);
-        List<FeatureUse> uses = jdbc.query(
-                "SELECT month, feature, uses FROM paid_feature_uses WHERE pilot_id = ? ORDER BY month, feature",
-                (r, n) -> new FeatureUse(r.getDate(1).toLocalDate(), r.getString(2), r.getInt(3)),
-                id);
-        return new AccountRecordsDto(sent, subscription.isEmpty() ? null : subscription.get(0), uses);
+        return new AccountRecordsDto(sent, subscription.isEmpty() ? null : subscription.get(0));
     }
 
     private static Instant instant(Timestamp at) {

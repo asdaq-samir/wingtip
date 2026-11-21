@@ -37,7 +37,7 @@ struct RoutePointActions: View {
             Button {
                 if plan.extras.direct == ident { plan.cancelDirect() } else { plan.directTo(ident, from: dryRun.fix ?? ownShip.fix) }
             } label: {
-                Label(plan.extras.direct == ident ? "Fly as Planned" : "Direct To", systemImage: WingtipIcon.directTo)
+                Label(plan.extras.direct == ident ? String(localized: "Fly as Planned") : Wording.directTo, systemImage: WingtipIcon.directTo)
             }
             // The Profile, open on this point's Start At / Cross At
             // popover: the app's one altitude control.

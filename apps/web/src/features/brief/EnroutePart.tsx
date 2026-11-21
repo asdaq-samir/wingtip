@@ -15,6 +15,7 @@ import FindingIcon from "../../components/FindingIcon";
 import { Flag, Pending } from "./BriefingBits";
 import { hazardAltitudeRange } from "./briefingWords";
 import ForecastIcingRows from "./ForecastIcingRows";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 interface Props {
   vm: FlightBriefing;
@@ -44,7 +45,7 @@ export default function EnroutePart({ vm, course, legs, depart, winds }: Props) 
           phase="enroute"
         />
       ) : (
-        <AccordionSection title="Along the Route">
+        <AccordionSection title={WORDING.alongTheRoute}>
           <Pending>{briefingPendingMessage}</Pending>
         </AccordionSection>
       )}
@@ -66,19 +67,19 @@ function AdverseConditions({ vm, legs }: { vm: FlightBriefing; legs: Leg[] }) {
       aside={
         vnrReasons.length > 0 ? (
           <Flag finding="stop" testId="vnr-flag">
-            VFR not recommended
+            VFR Not Recommended
           </Flag>
         ) : underMine.length > 0 ? (
           <Flag finding="stop" testId="minimums-flag">
-            Under your minimums
+            Under Your Minimums
           </Flag>
         ) : icing || icingForecast ? (
           <Flag finding="caution" testId="icing-flag">
-            {icing ? "Icing possible" : "Icing forecast"}
+            {icing ? "Icing Possible" : WORDING.forecastIcing}
           </Flag>
         ) : hazardNames.length > 0 ? (
           <Flag finding="caution" testId="hazards-flag">
-            {hazardNames.length === 1 ? "A hazard" : `${hazardNames.length} hazards`}
+            {hazardNames.length === 1 ? "A Hazard" : `${hazardNames.length} Hazards`}
           </Flag>
         ) : undefined
       }
@@ -86,8 +87,8 @@ function AdverseConditions({ vm, legs }: { vm: FlightBriefing; legs: Leg[] }) {
       {/* Its own standard element (AIM 7-1-5(b)), stated first, the
           way a live briefer states it before the detail that
           justifies it. Red on pale red at 7:1, in both themes. */}
-      {vnrReasons.length > 0 && <StopAlert title="VFR flight not recommended" reasons={vnrReasons} />}
-      {underMine.length > 0 && <StopAlert title="Under your personal minimums" reasons={underMine} testId="minimums-alert" />}
+      {vnrReasons.length > 0 && <StopAlert title="VFR Flight Not Recommended" reasons={vnrReasons} />}
+      {underMine.length > 0 && <StopAlert title="Under Your Personal Minimums" reasons={underMine} testId="minimums-alert" />}
       {icing && (
         // Under IFR, in cloud at or above the freezing level.
         <Alert className={cn("mb-2 border-caution/30 bg-caution-wash text-caution-ink", TEXT.prose)} data-testid="icing-alert">
@@ -108,7 +109,7 @@ function AdverseConditions({ vm, legs }: { vm: FlightBriefing; legs: Leg[] }) {
         <Pending>{briefingPendingMessage}</Pending>
       ) : unchecked("hazards") && unchecked("gairmets") ? (
         <p className="text-caution-ink">
-          SIGMET and G-AIRMET data could not be checked — aviationweather.gov didn’t respond. Verify separately before flight.
+          SIGMET and G-AIRMET data could not be checked: aviationweather.gov did not answer. Verify them separately before flight.
         </p>
       ) : (
         // A row a SIGMET or G-AIRMET, marked with the warning

@@ -8,6 +8,7 @@ import { NumberField } from "../../components/ui/number-field";
 import { approachRelative, entrySteps, holdingEntry, holdingWind, type Entry, type Turns } from "../../lib/holdEntry";
 import { bearing } from "../../lib/format";
 import { TEXT } from "../../lib/text";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 const ENTRY_NAME: Record<Entry, string> = { direct: "Direct", teardrop: "Teardrop", parallel: "Parallel" };
 
@@ -154,9 +155,13 @@ function NumberRow({
             onTyped={(v) => onChange(v == null ? "" : String(v))}
             minValue={0}
             data-testid={testId}
+            // Its unit beside it read with it: "kt", "°" (WCAG 1.3.1).
+            aria-describedby={`${id}-unit`}
           />
         </FieldHit>
-        <span className={cn("w-7 text-muted-foreground", TEXT.detail)}>{unit}</span>
+        <span id={`${id}-unit`} className={cn("w-7 text-muted-foreground", TEXT.detail)}>
+          {unit}
+        </span>
       </span>
     </ListRow>
   );
@@ -189,8 +194,8 @@ export default function HoldingPage() {
 
   return (
     <div className="space-y-4">
-      <ListGroup title="The hold">
-        <NumberRow id={`${id}-in`} title="Inbound course" value={inbound} onChange={setInbound} unit="°" />
+      <ListGroup title="The Hold">
+        <NumberRow id={`${id}-in`} title="Inbound Course" value={inbound} onChange={setInbound} unit="°" />
         <ListRow title="Turns">
           <Segmented
             label="Turns"
@@ -205,7 +210,7 @@ export default function HoldingPage() {
         </ListRow>
         <NumberRow
           id={`${id}-hdg`}
-          title="Your heading to the fix"
+          title="Your Heading to the Fix"
           value={headingTo}
           onChange={setHeadingTo}
           unit="°"
@@ -213,32 +218,35 @@ export default function HoldingPage() {
         />
       </ListGroup>
 
-      {found && (
-        <>
-          <HoldDiagram inbound={i} headingTo={h} turns={turns} entry={found.entry} />
-          {/* AIM 5-3-8's three sectors, divided by the holding course and the
+      {/* The entry worked out again as the fields are typed, and said so (WCAG 4.1.3). */}
+      <div aria-live="polite" className="space-y-4 empty:hidden">
+        {found && (
+          <>
+            <HoldDiagram inbound={i} headingTo={h} turns={turns} entry={found.entry} />
+            {/* AIM 5-3-8's three sectors, divided by the holding course and the
               70° line on the holding side; within 5° of a line between two,
               either entry is allowed, said in a row of its own. */}
-          <ListGroup>
-            <ListRow
-              title={<span className="font-semibold">{ENTRY_NAME[found.entry]} entry</span>}
-              description={entrySteps(i, h, turns, num(altitude))}
-              data-testid="hold-entry"
-            />
-            {found.either && (
-              <ListRow title={`Or ${ENTRY_NAME[found.either].toLowerCase()}`} description="Within 5° of the line between the two" />
-            )}
-          </ListGroup>
-        </>
-      )}
+            <ListGroup>
+              <ListRow
+                title={<span className="font-semibold">{ENTRY_NAME[found.entry]} entry</span>}
+                description={entrySteps(i, h, turns, num(altitude))}
+                data-testid="hold-entry"
+              />
+              {found.either && (
+                <ListRow title={`Or ${ENTRY_NAME[found.either].toLowerCase()}`} description="Within 5° of the line between the two" />
+              )}
+            </ListGroup>
+          </>
+        )}
+      </div>
 
       {/* The course and the wind in the same reference: magnetic, as a
           clearance gives the course (winds aloft are true, so the row says
           which). Turns at standard rate. */}
-      <ListGroup title="In the wind">
-        <NumberRow id={`${id}-tas`} title="True airspeed" value={tas} onChange={setTas} unit="kt" />
-        <NumberRow id={`${id}-wd`} title="Wind from, magnetic" value={windFrom} onChange={setWindFrom} unit="°" testId="hold-wind-from" />
-        <NumberRow id={`${id}-ws`} title="Wind speed" value={windKt} onChange={setWindKt} unit="kt" testId="hold-wind-kt" />
+      <ListGroup title="In the Wind">
+        <NumberRow id={`${id}-tas`} title={WORDING.trueAirspeed} value={tas} onChange={setTas} unit="kt" />
+        <NumberRow id={`${id}-wd`} title="Wind From, Magnetic" value={windFrom} onChange={setWindFrom} unit="°" testId="hold-wind-from" />
+        <NumberRow id={`${id}-ws`} title="Wind Speed" value={windKt} onChange={setWindKt} unit="kt" testId="hold-wind-kt" />
         <NumberRow id={`${id}-alt`} title="Altitude" value={altitude} onChange={setAltitude} unit="ft" />
       </ListGroup>
       {wind ? (
@@ -246,10 +254,10 @@ export default function HoldingPage() {
         // a half above (AIM 5-3-8); outbound timing from over or abeam the
         // fix, whichever is later.
         <ListGroup>
-          <ListRow title="Inbound heading" description={wind.words.inbound} value={bearing(wind.inbound.heading)} />
-          <ListRow title="Outbound heading" description={wind.words.outbound} value={bearing(wind.outbound.heading)} />
+          <ListRow title="Inbound Heading" description={wind.words.inbound} value={bearing(wind.inbound.heading)} />
+          <ListRow title="Outbound Heading" description={wind.words.outbound} value={bearing(wind.outbound.heading)} />
           <ListRow
-            title="Outbound time"
+            title="Outbound Time"
             description={wind.words.time}
             value={`${Math.round(wind.outboundSec)} s`}
             data-testid="hold-out-time"

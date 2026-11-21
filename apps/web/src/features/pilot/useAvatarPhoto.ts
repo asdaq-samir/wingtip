@@ -26,6 +26,6 @@ export function useAvatarPhoto() {
       remove.mutate();
     },
     busy: choose.isPending || remove.isPending,
-    problem: failed ? describeError(failed, "The photo was not saved") : null,
+    problem: failed ? describeError(failed, "The photo was not saved.") : null,
   };
 }

@@ -62,10 +62,7 @@ export function KeyframesPanel() {
             <ListRow
               key={k.id}
               title={
-                <BaseButton
-                  className="relative tabular-nums text-primary after:absolute after:-inset-3 after:content-['']"
-                  onClick={() => usePastFlight.setState({ at: k.t })}
-                >
+                <BaseButton className="relative tabular-nums text-primary hit-3" onClick={() => usePastFlight.setState({ at: k.t })}>
                   {replayTimes(k.t).zulu}
                 </BaseButton>
               }

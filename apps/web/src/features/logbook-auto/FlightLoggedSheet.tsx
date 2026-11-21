@@ -14,6 +14,7 @@ import { TEXT } from "../../lib/text";
 import type { Edits } from "./draftEntry";
 import type { AutoLogbook } from "./useAutoLogbook";
 import { FieldError } from "../../components/ui/field";
+import { SCREENS } from "../../lib/navigation/generated/screens";
 
 // Its own chunk: the approaches' debrief is drawn only when asked for.
 const ApproachDebriefs = lazy(() => import("../../components/ApproachDebrief"));
@@ -163,7 +164,7 @@ export default function FlightLoggedSheet({ log }: { log: AutoLogbook }) {
         description={`${logged.entry.route ?? ""} · ${logged.entry.totalHours.toFixed(1)} h, in your logbook; your currency is worked out again from it.`}
       >
         {logged.entry.flightId !== null && (
-          <p className={TEXT.prose}>The track is with the saved flight too: its debrief is there in Saved.</p>
+          <p className={TEXT.prose}>{`The track is with the saved flight too: its debrief is there in ${SCREENS.flights.title}.`}</p>
         )}
         {logged.fields.length > 0 && !debrief && (
           <Button variant="outline" onClick={() => setDebrief(true)}>

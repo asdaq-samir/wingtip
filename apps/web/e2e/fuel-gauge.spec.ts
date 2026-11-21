@@ -52,7 +52,7 @@ test("a field's gauge sets the fuel on board at the start and after a stop, in t
   await expect(stop).toBeVisible();
   await pastSettling(page);
   await stop.click();
-  await page.getByTestId("fuel-set-pick").getByRole("button", { name: "No fuel" }).click();
+  await page.getByTestId("fuel-set-pick").getByRole("button", { name: "No Fuel" }).click();
   await page.getByTestId("fuel-set-done").click();
   await expect(page).toHaveURL(/[?&]tanks=[^&]*KMSN(%3A|:)0/);
 

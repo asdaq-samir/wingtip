@@ -86,7 +86,7 @@ export function ifrSteps(nav: NavLogAltitude): Step[] {
   return [
     {
       key: "floor",
-      title: "Minimum IFR altitude",
+      title: "Minimum IFR Altitude",
       // 14 CFR 91.177(a): an airway's MEA, else 1,000 ft (2,000 in the
       // mountains) over the highest obstacle within 4 nm of the course.
       detail: airways.length > 0 ? "The airway's MEA, or obstacles within 4 nm" : "Obstacles within 4 nm, with margin",

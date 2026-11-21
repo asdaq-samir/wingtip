@@ -20,7 +20,7 @@ struct LinkSignInPrompt: ViewModifier {
                     // The link the alert was put up for, held here: the
                     // alert's dismissal clears the pending one first.
                     if link.usable {
-                        Button(link.replacing == nil ? "Sign In" : "Switch") { Task { await session.confirmLink(link) } }
+                        Button(link.replacing == nil ? Wording.signIn : String(localized: "Switch")) { Task { await session.confirmLink(link) } }
                         Button("Cancel", role: .cancel) { session.cancelLink() }
                     } else {
                         Button("OK", role: .cancel) { session.cancelLink() }

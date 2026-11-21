@@ -68,15 +68,10 @@ export default function RadioButton() {
           pressed={busy}
           render={
             <IconButton
-              label={
-                mode === "once"
-                  ? "Stop listening"
-                  : mode === "radio"
-                    ? "The radio, listening: open the log"
-                    : voice
-                      ? "Comms assist: listen"
-                      : "Comms assist"
-              }
+              // One name in every state, its pressed state saying whether it
+              // listens: "Stop listening, pressed" said the opposite of the
+              // state (WAI-ARIA APG, Button: a toggle's label does not change).
+              label="Comms assist"
               data-testid="radio-button"
               onClick={tap}
               className={cn(busy && "text-tint", mode === "radio" && "animate-pulse")}

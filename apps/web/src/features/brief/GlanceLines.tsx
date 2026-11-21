@@ -54,7 +54,7 @@ export function Line({ line, onOpen }: { line: GlanceLine; onOpen: (tab: PanelTa
           onClick={() => onOpen(line.tab)}
           className={cn("relative font-semibold no-underline! after:absolute after:-inset-x-2 after:-inset-y-3", TEXT.detail)}
         >
-          See it in full
+          See It in Full
         </Button>
       </AccordionContent>
     </AccordionItem>

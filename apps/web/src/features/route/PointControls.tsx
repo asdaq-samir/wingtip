@@ -19,6 +19,7 @@ import IconButton from "../../components/IconButton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
 import { DROPDOWN, useAfterMenu, type MenuKit } from "./pointMenu";
 import { TEXT } from "../../lib/text";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** What a point's altitude is: a field's elevation, the plan's cruise to
  *  it, the chart's crossing at a procedure's fix, or the pilot's own. */
@@ -137,7 +138,7 @@ export function PointMenuItems({
       {a.onDirect && (
         <Item onClick={a.onDirect} data-testid={`${testId}-direct`}>
           <MoveUpRight aria-hidden="true" />
-          {a.direct ? "Fly as Planned" : "Direct To"}
+          {a.direct ? "Fly as Planned" : WORDING.directTo}
         </Item>
       )}
       {a.onAltitude && (
@@ -257,7 +258,7 @@ export function PointMenu({
               // lines"): its column centres it (ProceduresRoute).
               // The stock Button's glass at its icon size; the mark's picture
               // filling its own box (AirportMark's), not the stock 16 a glyph.
-              className="relative -mx-1 rounded-full after:absolute after:-inset-1 after:content-[''] [&_svg:not([class*='size-'])]:size-full"
+              className="relative -mx-1 rounded-full hit-1 [&_svg:not([class*='size-'])]:size-full"
             >
               {face}
             </Button>

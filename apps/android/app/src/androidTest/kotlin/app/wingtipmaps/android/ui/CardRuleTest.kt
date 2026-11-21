@@ -250,7 +250,7 @@ class CardRuleTest {
         // on the rows it greys.
         val you = CARDS.first { it.page == SheetPage.You }
         open(you, you.ways.first())
-        val signIn = text(R.string.you_sign_in)
+        val signIn = text(R.string.wording_sign_in)
         compose.waitUntil(TIMEOUT_MS) { compose.onAllNodes(hasText(signIn)).fetchSemanticsNodes().isNotEmpty() }
         assertEquals(1, compose.onAllNodes(hasText(signIn, substring = true)).fetchSemanticsNodes().size)
         assertEquals(0, compose.onAllNodes(hasText(text(R.string.you)) and hasAnyAncestor(hasTestTag(CardPageTags.BAR))).fetchSemanticsNodes().size)

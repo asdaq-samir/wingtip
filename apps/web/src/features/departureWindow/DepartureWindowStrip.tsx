@@ -68,7 +68,7 @@ export default function DepartureWindowStrip() {
         <>
           {!m.best && (
             <p className={cn(TEXT.detail, "text-muted-foreground")}>
-              No hour with nothing against it before {clock(m.hours.at(-1)!.depart)}.
+              None of the hours to {clock(m.hours.at(-1)!.depart)} is a {HOUR_WORD.go}.
             </p>
           )}
           {/* Across, as far as the forecasts reach: the strip slides, the

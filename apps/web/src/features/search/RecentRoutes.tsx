@@ -15,6 +15,7 @@ import { NO_RECENT_ROUTES } from "../../lib/emptyWords";
 import { cancelled, shareOrCopy } from "../../lib/share";
 import { showError } from "../../lib/problems";
 import { describeError } from "../../lib/api/client";
+import { SCREENS } from "../../lib/navigation/generated/screens";
 
 /** The plan's address for a route planned again: its ends, its stops and
  *  what was picked for it (its runways, procedures, holds, altitudes…). */
@@ -83,7 +84,7 @@ export function RecentRoutesPage({ onBack }: { onBack: () => void }) {
               action={
                 <ClearList
                   title={`Clear ${group.title === "Earlier" ? "the earlier" : `${group.title.toLowerCase()}'s`} Recents?`}
-                  description="Those routes are forgotten in this browser. Saved flights stay."
+                  description={`Those routes are forgotten in this browser. ${SCREENS.flights.title} stay.`}
                   onClear={() => group.routes.forEach((r) => remove(recentRouteKey(r)))}
                   testId="route-recents-clear"
                 />
@@ -134,7 +135,7 @@ function RecentRouteRows({
         const shareLink = { title: `${dep} → ${dest}`, url: new URL(`/app${hrefOf(route)}`, location.origin).toString() };
         const share = () => {
           shareOrCopy(shareLink).catch((err) => {
-            if (!cancelled(err)) showError("Not shared", describeError(err));
+            if (!cancelled(err)) showError("Not Shared", describeError(err));
           });
         };
         return (

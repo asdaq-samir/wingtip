@@ -35,7 +35,7 @@ fun SpecialUseRows(lat: Double, lon: Double, model: SpecialUseModel = hiltViewMo
     SectionTitle(stringResource(R.string.special_use))
     when {
         state.loading -> LoadingRow()
-        state.unavailable -> Text(stringResource(R.string.special_use_unavailable), color = LocalInk.current.cautionInk)
+        state.unavailable -> Text(stringResource(R.string.wording_special_use_no_answer), color = LocalInk.current.cautionInk)
         state.areas.isNullOrEmpty() -> Text(stringResource(R.string.special_use_none), color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     state.areas.orEmpty().forEach { area ->

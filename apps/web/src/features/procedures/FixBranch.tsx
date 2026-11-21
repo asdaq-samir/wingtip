@@ -60,7 +60,7 @@ export default function FixBranch({
             data-testid="fix-branch-toggle"
             className={cn(
               "group relative flex min-w-0 flex-1 flex-col items-start text-left outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              "after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-['']",
+              "hit-y-1.5",
             )}
           >
             <span className={cn("flex max-w-full items-center gap-1 font-semibold text-tint", TEXT.row)}>

@@ -76,7 +76,7 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Pr
             aside={
               assessment && assessment.level !== "low" ? (
                 <Flag finding={assessment.level === "high" ? "stop" : "caution"} testId="risk-flag">
-                  {assessment.level === "high" ? "High risk" : "Risk raised"}
+                  {assessment.level === "high" ? "High Risk" : "Raised Risk"}
                 </Flag>
               ) : undefined
             }
@@ -139,11 +139,11 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
       aside={
         tfrsCrossed.length > 0 ? (
           <Flag finding="stop" testId="tfr-flag">
-            TFR on the route
+            TFR on the Route
           </Flag>
         ) : specialUse.some((s) => s.when === "active") ? (
           <Flag finding="caution" testId="sua-flag">
-            Area in use
+            Area in Use
           </Flag>
         ) : undefined
       }
@@ -153,7 +153,7 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
       ) : (
         <div className="space-y-4">
           <div data-testid="tfrs">
-            <ListGroup title="Temporary flight restrictions">
+            <ListGroup title="Temporary Flight Restrictions">
               {unchecked("tfrs") ? (
                 <ListRow
                   media={<FindingIcon finding="caution" />}
@@ -212,7 +212,7 @@ function AirspaceSection({ vm }: { vm: FlightBriefing }) {
               {/* Times of use as the FAA publishes them, LOCAL read as
                   this device's time: whether each is active is flight
                   service's or the controlling agency's to say. */}
-              <ListGroup title="Special-use airspace">
+              <ListGroup title="Special-Use Airspace">
                 {specialUse.map(({ area, pass, when }) => (
                   <ListRow
                     key={area.name}

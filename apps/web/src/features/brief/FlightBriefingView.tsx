@@ -18,6 +18,7 @@ import type { FiledProcedure } from "./flightPlanForm";
 import { Pending } from "./BriefingBits";
 import PreflightPart from "./PreflightPart";
 import EnroutePart from "./EnroutePart";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 // Save and the review asked from the route, at the path the routePanel
 // chunk imports them from.
@@ -175,7 +176,7 @@ export default memo(function FlightBriefingView(props: Props) {
         // of how the planner got there -- a row a step, its working folded
         // under it, the steps the FL chip's popover shows (AltitudeReasoning).
         // From `nav.altitude_selection`, which arrives with the nav log.
-        <AccordionSection title="Cruise Altitude">
+        <AccordionSection title={WORDING.cruiseAltitude}>
           {!nav ? (
             <Pending>Waiting on the nav log&apos;s altitude…</Pending>
           ) : (
@@ -267,7 +268,7 @@ export function BriefingNotices({ briefing: state }: { briefing: BriefingState }
         <CloudOff />
         <AlertTitle>Could not check {gaps.join(", ")}</AlertTitle>
         <AlertDescription className={cn("text-caution-ink", TEXT.prose)}>
-          aviationweather.gov didn’t respond. Verify separately before flight.
+          aviationweather.gov did not answer. Verify them separately before flight.
         </AlertDescription>
       </Alert>
     </div>

@@ -70,7 +70,7 @@ test("a quiet day is low, what the pilot ticks raises it, and Save files it with
   await expect(drawer.getByTestId("risk-check-fatigue")).toHaveAttribute("aria-checked", "true");
   await drawer.getByTestId("risk-check-alcohol").click();
   await expect(drawer.getByTestId("risk-level")).toContainText("High");
-  await expect(drawer.getByTestId("risk-flag")).toContainText("High risk");
+  await expect(drawer.getByTestId("risk-flag")).toContainText("High Risk");
 
   await controlsInSight(page);
   await openBriefMenu(page);

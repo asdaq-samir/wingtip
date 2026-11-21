@@ -38,7 +38,7 @@ object RecognizerErrors {
         // The on-device recognizer needs no network: one asking for it has
         // no offline model for the language.
         SpeechRecognizer.ERROR_NETWORK, SpeechRecognizer.ERROR_NETWORK_TIMEOUT, SpeechRecognizer.ERROR_SERVER ->
-            Outcome(false, "speech can't be recognised on this phone without its offline language download")
+            Outcome(false, "speech cannot be recognised on this phone without its offline language download")
         else -> Outcome(false, "the phone's speech recognizer failed (error $code)")
     }
 }

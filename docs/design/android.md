@@ -401,6 +401,10 @@ Every screen keeps the owner's rules:
 - Warn, never limit (0008).
 - Verdict first (0012).
 - Labels are Title Case, and the FAA's text is sentence case (0021).
+  A word all three apps say is design/wording.json's, as
+  `R.string.wording_<key>` (res/values/wording_strings.xml, generated;
+  `WordingTest` holds it to rules.md, section 15); a screen's title is
+  design/screens.json's `R.string.screen_<id>`.
 - The word is "airplane" (0020).
 - There are no footnotes (0019).
 
@@ -435,12 +439,12 @@ placement wins, and the difference is noted.
        - trailing: the flight category's pip for reporting fields
   3. Picking a result collapses the bar, flies the map to it, and opens
      its card ([§3.2](#32-the-airport-card-and-the-airplane-card)).
-  4. Asked to pick (Add a Stop, a point's Add a Stop After, an end of the
+  4. Asked to pick (Add Stop, a point's Add a Stop After, an end of the
      route), a tap on a result, a Nearest row, a Favorite or a Recent
      picks it rather than opening its card; a field the pick cannot take
      is greyed and disabled, its reason in its detail's place, "Closed"
      (the planner's `closed`, the engine's `field_status`; decision 0043)
-     or, for a stop, "On the route already" (`search/PickRefusal`, the
+     or, for a stop, "Already on the route" (`search/PickRefusal`, the
      web's pickRefusal, 2026-11-21), and a tap on it does nothing.
 - **Primary action**: the result row itself. There is no Search button,
   and the keyboard's action key searches.
@@ -493,11 +497,11 @@ placement wins, and the difference is noted.
   search and what it shows with nothing typed) and FPL (the plan), a
   sideways swipe apart, with two page dots under the stock drag handle
   (rules.md records the decision). The FPL page has no field of its
-  own: Add a Stop and Find bring the Search page and open its field.
+  own: Add Stop and Find bring the Search page and open its field.
   With no route the FPL page is the plan with its empty rows and its ✕,
   which goes back a level to Search (no "Plan a Flight" of its own, the
   owner, 2026-11-11). A route made, opened or changed from anywhere
-  (Fly Here, Depart From, Direct To, Add a Stop, a link) brings the FPL
+  (Fly Here, Depart From, Direct To, Add Stop, a link) brings the FPL
   page, the route's points its key; a card's route action closes the
   cards onto it, so Fly Here to the same airport again shows it too;
   clearing it leaves the page as it is. A page put away gives up the
@@ -598,8 +602,8 @@ placement wins, and the difference is noted.
   plays it on the map with its path behind it (`PastFlightReplay`, its bar
   over the map). Info is its public record in groups: Registration (the
   owner shown, the FAA registry being public), Airplane, Engine,
-  Airworthiness, Usually based at, Safety history (the NTSB's cases, each
-  its CAROL report), Ownership history and Documents filed
+  Airworthiness, Usually Based At, Safety History (the NTSB's cases, each
+  its CAROL report), Ownership History and Documents Filed
   (`airplane/AirplaneInfo`). The search's registry row draws the record's
   type at once with the same status after it.
 - **Primary action**: the first, filled button of the row.
@@ -769,11 +773,11 @@ placement wins, and the difference is noted.
      and the destination's to an IFR alternate's fuel too (the totals'
      hops' `reserve_gal` and `alternate.fuel_gal`, `PlanTanks.Figures`);
      a field the airplane leaves a tap to set its fuel
-     in Material's `AlertDialog` (Full / No fuel / Gallons as a connected
+     in Material's `AlertDialog` (Full / No Fuel / Gallons as a connected
      button group, a number field), sent as the planner's `tanks`. Add
      Fuel Stops (every flight's, in one plan: the planner checks them
      itself, claude/fuel-engine's fuel rounds) or Remove Fuel Stops
-     under Add a Stop (`route/FuelStops`); a flight short with no stop in
+     under Add Stop (`route/FuelStops`); a flight short with no stop in
      reach says so in the row's place ("No fuel stop in reach on KMSN →
      KDLH", "Too little fuel on board for C81 → KDLH", the totals'
      `no_fuel_stop`). The plan's ••• Clear Route
@@ -838,7 +842,7 @@ placement wins, and the difference is noted.
 - **Primary action**: Share, in the top bar's actions
   (`share/NavLogShare`, the web's nav log Share since 2026-11-21): a
   `DropdownMenu` with Share Link, Nav Log as Text (the sharesheet) and
-  Print the Nav Log, Android's print framework (`PrintManager` over a
+  Print Nav Log, Android's print framework (`PrintManager` over a
   `WebView`'s print adapter, every printer and Save as PDF;
   `share/NavLogText` writes the text and the page). No checkpoints for
   ForeFlight: it has no Android app. Nothing else is a primary on a
@@ -1016,7 +1020,7 @@ a Material `Badge` at the top of the map, beside the receiver's, says
   - There is no map button (0010). It opens from the airplane's
     Emergency row and from Ask.
   - In order:
-    1. A `ModalBottomSheet` at full height, titled "Emergency", with
+    1. A `ModalBottomSheet` at full height, titled "Emergency Assistant", with
        Close.
     2. The nearest suitable fields from the engine as `ListItem`s, each
        with distance, bearing and the runway, and the glide ring's
@@ -1618,7 +1622,7 @@ its sheet in place of the strip.
 - **Emergency** is the one full-screen page: Material's full-screen
   dialog, ✕ at the start of its app bar, where a full-screen dialog keeps
   its close.
-- **One search field:** Add a Stop and a point's Add a Stop After open
+- **One search field:** Add Stop and a point's Add a Stop After open
   the one search for the stop (`SearchControl.stopAfter`); the point
   menu's own field is gone.
 - **By name:** "dry run" flies the dry run (with a route), "profile"

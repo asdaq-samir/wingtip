@@ -50,8 +50,8 @@ struct SquawksView: View {
                 // or a mechanic who finds it no hazard (14 CFR 91.213(d)).
                 Section("Write a Squawk") {
                     TextField("What was found", text: $text, axis: .vertical).lineLimit(1...4)
-                    DatePicker("Found on", selection: $foundOn, in: ...Date(), displayedComponents: .date)
-                    Toggle("Inoperative equipment", isOn: $inoperative)
+                    DatePicker("Found On", selection: $foundOn, in: ...Date(), displayedComponents: .date)
+                    Toggle("Inoperative Equipment", isOn: $inoperative)
                         .onChange(of: inoperative) { _, on in if !on { deferredFor = nil } }
                     if inoperative {
                         Picker("91.213(d)", selection: $deferredFor) {
@@ -79,7 +79,7 @@ struct SquawksView: View {
                                     do { try await Gateway.deleteSquawk(aircraft.id, s.id) } catch { failed += 1 }
                                 }
                                 await load()
-                                if failed > 0 { problem = failed == 1 ? "A squawk couldn't be deleted." : "\(failed) squawks couldn't be deleted." }
+                                if failed > 0 { problem = failed == 1 ? "A squawk could not be deleted." : "\(failed) squawks could not be deleted." }
                             }
                         }
                     }

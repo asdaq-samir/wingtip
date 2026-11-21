@@ -12,7 +12,7 @@ import { cn } from "cn";
  *  (CLAUDE.md: controls never grow to it). Also Base UI's Autocomplete
  *  clear's look (ui/command's CommandClear), so every field's is one. */
 export const FIELD_CLEAR =
-  "relative grid size-5 shrink-0 place-items-center rounded-full bg-muted-foreground/50 text-background outline-none focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-3 after:content-['']";
+  "relative grid size-5 shrink-0 place-items-center rounded-full bg-muted-foreground/50 text-background outline-none focus-visible:ring-2 focus-visible:ring-ring hit-3";
 
 /** The cross in it, drawn heavy as SF Symbols' xmark.circle.fill. */
 export function FieldClearGlyph() {

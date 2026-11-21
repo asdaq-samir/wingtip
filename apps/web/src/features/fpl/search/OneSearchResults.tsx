@@ -10,10 +10,13 @@ import { usePointerHover } from "../../../hooks/use-pointer-hover";
 import { keyHint } from "../../../lib/shortcutKeys";
 import type { AirportSearchRow } from "../../../lib/airportIndex";
 import AirportPreview from "../../../components/AirportPreview";
-import type { AirplaneHit, DoHit, OneSearchModel } from "./useOneSearch";
+import type { OneSearchModel } from "./useOneSearch";
+import type { AirplaneHit } from "./searchAirplanes";
+import type { DoHit } from "./searchDoes";
 import { useVoiceInput } from "../../voice";
 import { AirportIcon, Matched, QuickAction, ResultGroup, ResultRow, RoundIcon, RowLine } from "./ResultRows";
 import { FieldError } from "../../../components/ui/field";
+import { WORDING } from "../../../lib/wording/generated/wording";
 
 /** A Do row's glyph: the arrow for Direct To, My Location's filled one,
  *  the Brief's, Nearest's, the emergency's in red, the traffic's, a screen's. */
@@ -142,7 +145,7 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
       testId="search-airplane"
       actions={
         top && a.fly ? (
-          <QuickAction label="Fly This Airplane" onClick={() => model.flyAirplane(a)} />
+          <QuickAction label={WORDING.flyThisAirplane} onClick={() => model.flyAirplane(a)} />
         ) : a.track ? (
           <QuickAction label="Track" onClick={a.track} testId="search-airplane-track" wide />
         ) : undefined
@@ -167,12 +170,12 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
 
   // The groups in Apple's order, a hairline between each two as between rows.
   const groups: { heading: string; rows: ReactNode }[] = [];
-  if (topAirport) groups.push({ heading: direct ? "Direct To" : "Top Hit", rows: airportRow(topAirport, true) });
+  if (topAirport) groups.push({ heading: direct ? WORDING.directTo : "Top Hit", rows: airportRow(topAirport, true) });
   else if (topAirplane) groups.push({ heading: "Top Hit", rows: airplaneRow(topAirplane, true) });
   if (asks.length > 0) groups.push({ heading: "Suggestions", rows: lined(asks, (d) => d.key, doRow) });
   if (moreAirports.length > 0)
     groups.push({
-      heading: direct ? "Direct To" : "Airports",
+      heading: direct ? WORDING.directTo : "Airports",
       rows: lined(
         moreAirports,
         (r) => r.ident,

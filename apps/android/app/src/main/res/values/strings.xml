@@ -17,7 +17,6 @@
     <string name="search_hint">Search</string>
     <string name="search_hint_spoken">Search airports and airplanes</string>
     <string name="search_hint_flying">Tap the mic and say it</string>
-    <string name="search_add_stop">Add a stop</string>
     <string name="say_it">Ask by voice</string>
     <!-- Ask by voice (voice/VoiceInput): the mic's own words, never the radio's. -->
     <string name="voice_listening">Listening…</string>
@@ -27,7 +26,7 @@
     <string name="nothing_heard">Nothing was heard.</string>
     <string name="allow_microphone">Allow the microphone to ask by voice. What you say is recognised on this phone and never leaves it.</string>
     <string name="your_flight">Your Flight</string>
-    <string name="no_flight">No flight yet</string>
+    <string name="no_flight">No Flight Yet</string>
     <string name="no_flight_line">Search for where to, or tap to plan one.</string>
     <string name="favorites">Favorites</string>
     <string name="recents">Recents</string>
@@ -38,7 +37,7 @@
     <!-- A field's use beside it in a list (the planner's `use`, NASR's facility use and ownership), the web's marks. -->
     <string name="use_private">Private</string>
     <string name="use_military">Military</string>
-    <string name="use_joint">Joint use</string>
+    <string name="use_joint">Joint Use</string>
     <string name="do_direct_to">Direct To %1$s</string>
     <string name="do_ask">Ask: “%1$s”</string>
     <string name="airplane_yours">Yours</string>
@@ -47,8 +46,6 @@
     <string name="waypoint_add">Adds it to the route</string>
     <string name="waypoint_direct">Direct to it</string>
     <string name="plan_a_route_first">Plan a route first to add %1$s.</string>
-    <string name="fly_this_airplane">Fly This Airplane</string>
-    <string name="add_a_stop">Add a Stop</string>
     <string name="nav_log">Nav Log</string>
     <string name="route_depart">Depart</string>
     <string name="route_stop">Stop</string>
@@ -69,7 +66,6 @@
     <string name="picture_chart">The chart around the field</string>
     <string name="section_overview">Overview</string>
     <string name="section_charts">Charts</string>
-    <string name="no_ceiling">No ceiling</string>
     <string name="weather_line_ceiling">Ceiling %1$s</string>
     <string name="fact_weather">Weather</string>
     <string name="fact_wind">Wind</string>
@@ -83,14 +79,11 @@
     <!-- Sheets and their controls (decision 0015). -->
     <string name="close">Close</string>
     <string name="back">Back</string>
-    <string name="discard_title">Discard Your Changes?</string>
     <string name="discard_line">What you typed hasn\'t been saved.</string>
-    <string name="discard">Discard</string>
     <string name="keep_editing">Keep Editing</string>
     <string name="share">Share</string>
     <string name="send">Send</string>
     <string name="stop">Stop</string>
-    <string name="not_now">Not Now</string>
     <string name="allow">Allow</string>
     <string name="allow_precise">Allow Precise</string>
 
@@ -108,7 +101,6 @@
     <!-- What TalkBack says for a figure's name and for a control's state,
          where the written word is an abbreviation or nothing at all. -->
     <string name="said_to">To</string>
-    <string name="said_fuel_required">Fuel required</string>
     <string name="said_track">Track</string>
     <string name="said_no_track">Track: none from this position</string>
     <string name="said_gps_alt">GPS altitude</string>
@@ -138,7 +130,6 @@
     <string name="own_ship_approximate">Your airplane is not shown: location is allowed only approximately, which can be off by a mile or more. Allow precise location here or in Settings.</string>
     <string name="own_ship_denied">Your airplane is not shown: location is off for Wingtip Maps. Allow it here or in Settings.</string>
     <string name="ask">Ask</string>
-    <string name="ask_about_flight">Ask About the Flight</string>
     <string name="ask_help">The figures are the app\'s; Gemini Nano puts them in words on this phone and shows what it read.</string>
 
     <!-- The flight plan. -->
@@ -151,15 +142,8 @@
     <string name="under_reserve_on">Under the reserve the planner holds the flight to on %1$s. Fly it with a fuel stop.</string>
 
     <!-- A leg (LegSheet). -->
-    <string name="leg_altitude">Cruise Altitude</string>
-    <string name="leg_true_course">True Course</string>
-    <string name="leg_magnetic_course">Magnetic Course</string>
-    <string name="leg_magnetic_heading">Magnetic Heading</string>
     <string name="leg_variation">Variation</string>
     <string name="leg_distance">Distance</string>
-    <string name="leg_time">Time En Route</string>
-    <string name="leg_groundspeed">Groundspeed</string>
-    <string name="leg_airspeed">True Airspeed</string>
     <string name="leg_fuel">Fuel</string>
 
     <!-- The Brief (decision 0012). -->
@@ -173,10 +157,7 @@
 
     <!-- Card actions (lib/cardActions.ts ACTION, docs/design/icons.md). -->
     <string name="action_fly_here">Fly Here</string>
-    <string name="action_direct_to">Direct To</string>
-    <string name="action_add_stop">Add as Stop</string>
     <string name="action_depart_from">Depart From</string>
-    <string name="action_add_to_route">Add to Route</string>
     <string name="action_hold_here">Hold Here</string>
     <string name="action_call">Call</string>
     <string name="action_address">Address</string>
@@ -207,7 +188,6 @@
     <string name="fact_position">Position</string>
     <string name="fact_height">Height</string>
     <string name="fact_altitude">Altitude</string>
-    <string name="fact_ground_speed">Ground Speed</string>
     <string name="fact_track">Track</string>
     <string name="call_approach">Call Approach</string>
     <string name="call_tower">Call the Tower</string>
@@ -236,7 +216,6 @@
     <string name="layout_plan">Plan</string>
     <string name="layout_strip">Strip</string>
     <string name="theme">Theme</string>
-    <string name="sign_out">Sign Out</string>
     <string name="email">Email</string>
     <string name="email_sign_in_link">Email Me a Sign-In Link</string>
     <string name="check_email">Check your email: the link opens the app and signs you in.</string>
@@ -249,16 +228,14 @@
     <string name="loop_frame">%1$s frame</string>
     <string name="loop_old">Old: %1$s</string>
     <string name="loop_fetching">Fetching %1$s…</string>
-    <string name="loop_unavailable">%1$s isn\'t available right now</string>
+    <string name="loop_unavailable">%1$s is not available right now.</string>
     <string name="layer_airspace">Airspace</string>
     <string name="layer_navaids">VORs and Fixes</string>
     <string name="layer_tac">Terminal Area Charts</string>
     <string name="layer_private">Private Fields</string>
     <string name="layer_military">Military Fields</string>
     <string name="layer_plates">Approach Plates</string>
-    <string name="airport_weather">Airport Weather</string>
     <string name="airport_weather_off">Off</string>
-    <string name="airport_weather_category">Flight Category</string>
     <string name="airport_weather_wind">With Wind</string>
     <string name="airport_weather_station">Station Model</string>
     <string name="speak_alerts">Speak Alerts Ahead</string>
@@ -268,14 +245,10 @@
     <string name="server">Server</string>
     <string name="cancel">Cancel</string>
     <string name="sign_in_link_title">Sign In With This Link?</string>
-    <string name="sign_in_link_yes">Sign In</string>
     <!-- The account's own data (account/): given back as a file, or deleted. -->
-    <string name="export_my_data">Export My Data</string>
     <string name="export_my_data_line">Everything kept for your account, as one JSON file</string>
     <string name="export_saved">Saved.</string>
-    <string name="delete_account">Delete Account</string>
-    <string name="delete_account_title">Delete your account?</string>
-    <string name="delete_account_text">Your airplanes, flights, logbook and endorsements go, and you are signed out on every device. This can\'t be undone.</string>
+    <string name="delete_account_text">Your airplanes, flights, logbook and endorsements go, and you are signed out on every device. This cannot be undone.</string>
     <!-- About (about/), from the foot of Setup; the planning aid in the
          words every app says (docs/legal/credits.md). -->
     <string name="about">About</string>
@@ -283,11 +256,8 @@
     <string name="about_build">Build</string>
     <string name="about_chart_edition">Chart Edition</string>
     <string name="about_cycle_packs">Cycle Packs</string>
-    <string name="about_planning_aid">A Planning Aid</string>
-    <!-- The first launch's notice (about/PlanningAidNotice), the terms' heading. -->
-    <string name="planning_aid_title">A Planning Aid, Not for Navigation</string>
+    <!-- The first launch's notice (about/PlanningAidNotice), its button; its words are wording_strings.xml's. -->
     <string name="planning_aid_accept">I Understand</string>
-    <string name="about_planning_aid_text">Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1‑800‑WX‑BRIEF), current FAA charts and publications, or the pilot in command’s judgement and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103).</string>
     <string name="about_credits">Credits</string>
     <string name="about_legal">Legal</string>
     <string name="about_privacy">Privacy Policy</string>
@@ -308,11 +278,6 @@
     <string name="live_atis_credit">FAA D-ATIS</string>
     <string name="special_use">Special Use</string>
     <string name="special_use_none">None here</string>
-    <string name="special_use_unavailable">The FAA\'s special-use airspace did not answer. Check the chart.</string>
-
-    <!-- The Brief's forecast icing (brief/). -->
-    <string name="icing_forecast">Forecast Icing</string>
-    <string name="icing_unchecked">The forecast icing could not be checked: aviationweather.gov didn\'t respond. Verify separately before flight.</string>
 
     <!-- The Route Leg sheet, from a tap on the route's line (route/). -->
     <string name="route_leg">Route Leg</string>
@@ -333,8 +298,8 @@
     <string name="show_my_position">Show My Position</string>
     <string name="show_my_position_line">The fields within a glide are worked out from it</string>
     <string name="this_airplane">this airplane</string>
-    <string name="emergency_no_checklist">No emergency checklist for %1$s</string>
-    <string name="emergency_no_checklist_line">Write it from the airplane\'s handbook in the Airplane tab\'s Checklists</string>
+    <string name="emergency_no_checklist">No Emergency Checklist for %1$s</string>
+    <string name="emergency_no_checklist_line">Write it from the airplane\'s handbook in the Airplane tab\'s Checklists.</string>
     <string name="emergency_other">Other</string>
     <string name="emergency_radio">Transponder and Radio</string>
     <string name="emergency_squawk">Squawk %1$s</string>
@@ -355,7 +320,6 @@
 
     <!-- No airplane chosen (decision 0011). -->
     <string name="no_airplane">No Airplane</string>
-    <string name="pick_an_airplane">Pick an Airplane</string>
     <string name="pick_an_airplane_line">For its glide, checklist and figures; until then, general guidance only</string>
     <string name="emergency_guidance">What to Do</string>
     <string name="no_airplane_line">Distances and courses only: choose an airplane for times, fuel and headings.</string>
@@ -378,11 +342,8 @@
     <string name="atc_off">Off</string>
     <string name="atc_while_flying">While Flying</string>
     <string name="atc_put_away">Put away</string>
-    <string name="atc_read_back">Read Back</string>
-    <string name="atc_read_back_again">Read Back Again</string>
     <string name="atc_read_it_back">Read it back…</string>
     <string name="atc_set">Set</string>
-    <string name="atc_direct_to">Direct To</string>
     <string name="atc_set_next">Set Next</string>
     <string name="atc_set_code">Set Code</string>
     <string name="atc_kept_next">Next: %1$s</string>
@@ -446,7 +407,6 @@
     <string name="log">Log</string>
     <string name="later">Later</string>
     <string name="not_a_flight">Not a Flight to Log</string>
-    <string name="try_again">Try Again</string>
     <!-- Add from a Photo (documents/): a handbook page or a logbook page
          read on the phone and checked by the engine, every item
          confirmed by the pilot before anything is kept. -->
@@ -456,10 +416,8 @@
     <string name="photo_airplane_line">Pick the page, then scan it or choose a photo of it. Nothing is kept until you confirm it and save.</string>
     <string name="photo_logbook_line">Scan a logbook page, or choose a photo of one. Nothing is logged until you confirm it.</string>
     <string name="photo_performance">Performance</string>
-    <string name="photo_weight_balance">Weight &amp; Balance</string>
     <string name="scan_page">Scan the Page</string>
     <string name="scan_again">Scan Another Page</string>
-    <string name="reading_page">Reading the page…</string>
     <string name="photo_unreadable">Not read: %1$s</string>
     <string name="photo_review_line">Confirm each item that matches the page.</string>
     <string name="use_confirmed">Use Confirmed Figures</string>
@@ -512,15 +470,15 @@
     <string name="shared_altitude">Altitude</string>
     <string name="shared_departs">Departs</string>
     <string name="shared_departs_now">About now</string>
-    <string name="shared_airplane">Airplane type</string>
+    <string name="shared_airplane">Airplane Type</string>
     <string name="shared_airplane_note">Planned with your own airplane when you use it.</string>
-    <string name="shared_rules">Flight rules</string>
-    <string name="shared_tail">N-number</string>
+    <string name="shared_rules">Flight Rules</string>
+    <string name="shared_tail">N-Number</string>
     <string name="shared_nav_log">Nav Log</string>
     <string name="shared_totals">%1$s · %2$s · %3$s</string>
     <string name="share_route">Share the Route</string>
-    <string name="share_include_tail">Include N-number %1$s</string>
-    <string name="share_send">Share the flight</string>
+    <string name="share_include_tail">Include N-Number %1$s</string>
+    <string name="share_send">Share the Flight</string>
     <!-- An approach plate on the map and its card (plates/PlateCard). -->
     <string name="plate_hide">Hide Plate</string>
     <string name="plate_full_screen">View Full Screen</string>
@@ -529,12 +487,10 @@
     <string name="plate_opacity">Plate transparency</string>
     <string name="plate_clear">Clear</string>
     <string name="plate_solid">Solid</string>
-    <string name="plate_no_page">The FAA\'s page for this plate could not be had.</string>
-    <string name="plate_show_on_map">Show on Map</string>
-    <string name="plate_not_placed">This plate can\'t be placed on the map.</string>
-    <string name="climb_fuel_unknown">Climb fuel not counted: the airplane has no climb fuel flow</string>
+    <string name="plate_no_page">The FAA\'s page for this plate could not be fetched.</string>
+    <string name="plate_not_placed">This plate cannot be placed on the map.</string>
+    <string name="climb_fuel_unknown">Climb fuel not counted: the airplane has no climb fuel flow.</string>
     <string name="emergency_visibility">Visibility %1$s</string>
-    <string name="flights">Flights</string>
     <string name="saved_flights">Saved Flights</string>
     <string name="saved_flights_none">No saved flights yet. Save a plan from its share menu to see it here.</string>
     <string name="replay_play">Play</string>
@@ -545,20 +501,18 @@
     <string name="airplane_unfollow">Following</string>
     <string name="airplane_photo_by">Photo: %1$s, Planespotters.net</string>
     <string name="said_replay_flight">Replay %1$s</string>
-    <string name="share_airplane">Share the airplane</string>
+    <string name="share_airplane">Share the Airplane</string>
     <string name="coming_up_none">Nothing dated yet: your flight review, medical and airplanes\' inspections show here once given.</string>
     <!-- Words once typed in Kotlin (the Android audit's AND-14). -->
     <string name="checklist_write_it">Write It</string>
-    <string name="checklist_start_over">Start Over</string>
     <string name="checklist_edit">Edit</string>
     <string name="checklist_start_from_phases">Start from the Phases</string>
     <string name="nearest_finding_position">Finding your position…</string>
-    <string name="nearest_fetching">Fetching the nearest fields…</string>
     <string name="passenger_plan_first">Plan a route first, and the flight is written here to send.</string>
     <string name="notify_own_ship_text">Your position is being read for the alerts ahead and the path flown.</string>
     <string name="notify_atc_text">The ATC copilot is listening for calls to your airplane.</string>
     <string name="notify_receiver_text">Traffic and FIS-B weather from the receiver on your Wi-Fi.</string>
-    <string name="traffic_near_you">Traffic near you</string>
+    <string name="traffic_near_you">Traffic Near You</string>
     <string name="traffic_place">%1$d nm %2$s of you</string>
     <!-- The airplane card's Info and status line (the airplane card's typed words, the Android audit's AND-14). -->
     <string name="info_registration">Registration</string>
@@ -566,37 +520,37 @@
     <string name="info_engine">Engine</string>
     <string name="info_airworthiness">Airworthiness</string>
     <string name="info_history">History</string>
-    <string name="info_based_at">Usually based at</string>
-    <string name="info_safety">Safety history</string>
-    <string name="info_ownership">Ownership history</string>
-    <string name="info_documents">Documents filed</string>
+    <string name="info_based_at">Usually Based At</string>
+    <string name="info_safety">Safety History</string>
+    <string name="info_ownership">Ownership History</string>
+    <string name="info_documents">Documents Filed</string>
     <string name="info_owner">Owner</string>
-    <string name="info_owner_type">Owner type</string>
+    <string name="info_owner_type">Owner Type</string>
     <string name="info_town">Town</string>
-    <string name="info_co_owners">Co-owners</string>
+    <string name="info_co_owners">Co-Owners</string>
     <string name="info_status">Status</string>
     <string name="info_issued">Issued</string>
     <string name="info_expires">Expires</string>
-    <string name="info_last_action">Last action</string>
-    <string name="info_faa_region">FAA region</string>
-    <string name="info_fractional">Fractional ownership</string>
+    <string name="info_last_action">Last Action</string>
+    <string name="info_faa_region">FAA Region</string>
+    <string name="info_fractional">Fractional Ownership</string>
     <string name="info_type">Type</string>
     <string name="info_year">Year</string>
     <string name="info_category">Category</string>
-    <string name="info_builder_cert">Builder certification</string>
+    <string name="info_builder_cert">Builder Certification</string>
     <string name="info_seats">Seats</string>
     <string name="info_engines">Engines</string>
-    <string name="info_weight_class">Weight class</string>
-    <string name="info_ref_cruise">FAA reference cruise</string>
+    <string name="info_weight_class">Weight Class</string>
+    <string name="info_ref_cruise">FAA Reference Cruise</string>
     <string name="info_kit">Kit</string>
     <string name="info_serial">Serial</string>
-    <string name="info_mode_s">Mode S address</string>
-    <string name="info_mode_s_octal">Mode S (octal)</string>
+    <string name="info_mode_s">Mode S Address</string>
+    <string name="info_mode_s_octal">Mode S (Octal)</string>
     <string name="info_model">Model</string>
     <string name="info_horsepower">Horsepower</string>
     <string name="info_thrust">Thrust</string>
-    <string name="info_class_ops">Class and operations</string>
-    <string name="info_tcds">Type certificate data sheet</string>
+    <string name="info_class_ops">Class and Operations</string>
+    <string name="info_tcds">Type Certificate Data Sheet</string>
     <string name="info_holder">Holder</string>
     <string name="info_not_in_record">Not in the record</string>
     <string name="info_yes">Yes</string>
@@ -617,7 +571,7 @@
     <string name="info_document">Document</string>
     <string name="info_received">received %1$s</string>
     <string name="info_entered">entered %1$s</string>
-    <string name="info_reserved">N-number reserved</string>
+    <string name="info_reserved">N-Number Reserved</string>
     <string name="info_changing_to">changing to %1$s</string>
     <string name="info_no_icao">No ICAO address to look its flights up by.</string>
     <string name="info_fetching_flights">Fetching its flights…</string>
@@ -625,7 +579,7 @@
     <string name="status_checking">Checking whether it\'s in the air…</string>
     <string name="status_in_the_air">In the air</string>
     <string name="status_ground">Not in the air now</string>
-    <string name="status_unknown">Whether it\'s in the air isn\'t known now. Try again in a moment.</string>
+    <string name="status_unknown">Whether it is in the air is not known now. Try again in a moment.</string>
     <string name="status_landed">On the ground · landed %1$s %2$s</string>
     <string name="status_last_heard">Not in the air · last heard %1$s</string>
     <string name="status_none_heard">Not heard in the last 6 weeks</string>

@@ -72,7 +72,7 @@ test("a flight is filed once, whole, and a new plan is offered for saving again"
   // mid-stream, and filed null totals. An item of Share's menu, its state
   // its name, said again in the menu as it changes.
   await openBriefMenu(page);
-  await expect(save).toHaveAccessibleName("Save this flight", { timeout: 90_000 });
+  await expect(save).toHaveAccessibleName("Save This Flight", { timeout: 90_000 });
   await expect(save).toBeEnabled({ timeout: 90_000 });
   await planSettled(page);
   await expect(save).toBeEnabled();
@@ -104,7 +104,7 @@ test("a flight is filed once, whole, and a new plan is offered for saving again"
   await page.getByTestId("depart-done").click();
   await expect(page).toHaveURL(/[?&]depart=/);
   await openBriefMenu(page);
-  await expect(save).toHaveAccessibleName("Save this flight", { timeout: 90_000 });
+  await expect(save).toHaveAccessibleName("Save This Flight", { timeout: 90_000 });
   await expect(save).toBeEnabled({ timeout: 90_000 });
 });
 

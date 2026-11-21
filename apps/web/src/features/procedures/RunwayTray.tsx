@@ -39,6 +39,7 @@ function RunwayTray({
   /** The runway chips, with the pull-downs after them as their trailing part. */
   chips: ReactNode;
 }) {
+  const folded = foldable && !lineOpen && !!a.runways?.length;
   // The head and its runways one tray, at the owner's pick of the canvas (2026-10-27, G2, artifact
   //  JMQabZH2W33kzmvUuahbad): "RWY" at its head (RunwayWord; it was the landing's or the takeoff's glyph), the runway picked after it
   //  with its arrow while it is folded, every runway in it while it is open. The head is the line's button
@@ -54,7 +55,11 @@ function RunwayTray({
     <Collapsible
       open={foldable && lineOpen}
       onOpenChange={(next) => setRunwayLine(lineKey, next)}
-      render={<div className="flex min-w-0 flex-1 items-start" />}
+      // As wide as its chips, sharing its line with a stop's leaving time
+      // where both fit (PartTray). Folded, the runway picked and the
+      // pull-downs are laid out in this row itself (PatternChips' folded
+      // line, `contents`), wrapping from its leading edge.
+      render={<div className={cn("flex min-w-0 flex-auto items-start", folded && "flex-wrap gap-y-3")} />}
     >
       {foldable ? (
         <CollapsibleTrigger
@@ -79,7 +84,7 @@ function RunwayTray({
           <RunwayWord role={role} />
         </span>
       )}
-      <div className={cn("min-w-0 flex-1", a.runways?.length === 0 && "pl-2")}>{chips}</div>
+      <div className={cn(folded ? "contents" : "min-w-0 flex-1", a.runways?.length === 0 && "pl-2")}>{chips}</div>
     </Collapsible>
   );
 }
@@ -107,7 +112,11 @@ export function PartTray({
     // runways and pull-downs it ran past the card, and a slide on the open
     // tray panned the whole sheet sideways (the owner's screenshot,
     // 2026-11-17), where they are to slide inside the tray's own scroller.
-    <div className="flex w-full min-w-0 items-center gap-2" data-testid="field-part" data-role={part.role}>
+    // The leaving time on a line of its own, at the right, where it does
+    // not fit beside the tray: at the owner's 19.65 px on a 375-point
+    // phone KMSN's "22:11" ran past the card's edge, cut to "22:1" (the HIG
+    // review, 2026-11-21).
+    <div className="flex w-full min-w-0 flex-wrap items-center gap-2" data-testid="field-part" data-role={part.role}>
       <RunwayTray
         a={a}
         role={part.role}

@@ -23,11 +23,11 @@ import { callEngine } from "../../lib/engine/engine";
  *  each allows is the engine's (`vor_check_limit_deg`). */
 const VOR_CHECKS: { value: VorCheckRequest["kind"]; label: string }[] = [
   { value: "VOT", label: "VOT" },
-  { value: "REPAIR_STATION", label: "Repair station signal" },
-  { value: "GROUND", label: "Ground checkpoint" },
-  { value: "AIRBORNE", label: "Airborne checkpoint" },
-  { value: "RADIAL", label: "Airway radial in flight" },
-  { value: "DUAL", label: "Dual receivers" },
+  { value: "REPAIR_STATION", label: "Repair Station Signal" },
+  { value: "GROUND", label: "Ground Checkpoint" },
+  { value: "AIRBORNE", label: "Airborne Checkpoint" },
+  { value: "RADIAL", label: "Airway Radial in Flight" },
+  { value: "DUAL", label: "Dual Receivers" },
 ];
 
 // The server's own limits on a VOR check (VorCheckRequest.java): the day
@@ -91,9 +91,9 @@ export function VorCheckGroup({ aircraft }: { aircraft: Aircraft }) {
     // For IFR by VOR: every 30 days, within 4° at a VOT, a repair station's
     // signal, a ground checkpoint or between two receivers, within 6° at an
     // airborne checkpoint or on an airway's radial (14 CFR 91.171).
-    <ListGroup title="VOR check">
+    <ListGroup title="VOR Check">
       <ListRow
-        title="Last check"
+        title="Last Check"
         description={
           last
             ? `${last.checkedOn} · ${VOR_CHECKS.find((k) => k.value === last.kind)?.label ?? last.kind}${last.place ? ` · ${last.place}` : ""} · ${last.errorDeg}°`
@@ -107,7 +107,7 @@ export function VorCheckGroup({ aircraft }: { aircraft: Aircraft }) {
           )
         }
       />
-      <ListRow id={`${id}-on`} title="Checked on">
+      <ListRow id={`${id}-on`} title="Checked On">
         <RowField id={`${id}-on`} error={errors.checkedOn?.message}>
           <FormDateField
             control={control}
@@ -116,7 +116,7 @@ export function VorCheckGroup({ aircraft }: { aircraft: Aircraft }) {
             className="h-8 w-40"
             max={today}
             {...ariaInvalid(`${id}-on`, errors.checkedOn?.message)}
-            aria-label="VOR check date"
+            aria-label="Checked on, VOR check date"
           />
         </RowField>
       </ListRow>
@@ -151,7 +151,7 @@ export function VorCheckGroup({ aircraft }: { aircraft: Aircraft }) {
           </FieldHit>
         </RowField>
       </ListRow>
-      <ListRow id={`${id}-error`} title="Bearing error">
+      <ListRow id={`${id}-error`} title="Bearing Error">
         <RowField id={`${id}-error`} error={errors.errorDeg?.message}>
           <FieldHit htmlFor={`${id}-error`}>
             <FormNumberField
@@ -168,7 +168,7 @@ export function VorCheckGroup({ aircraft }: { aircraft: Aircraft }) {
         </RowField>
       </ListRow>
       <ListRow
-        title={<span className="font-medium text-tint">Record check</span>}
+        title={<span className="font-medium text-tint">Record Check</span>}
         onClick={() => void onRecord()}
         disabled={record.isPending}
         data-testid="vor-check-record"

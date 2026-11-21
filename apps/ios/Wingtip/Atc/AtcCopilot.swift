@@ -71,7 +71,7 @@ final class AtcCopilot {
         for t in heard where t.final && read[t.id] != t.text {
             read[t.id] = t.text
             do { cards = try Self.heardInto(cards, id: t.id, text: t.text, at: t.at, tail: tail) } catch {
-                problem = "Couldn't read that call: \(error.localizedDescription)"
+                problem = "Could not read that call: \(error.localizedDescription)"
             }
         }
         announceReadbacks()
@@ -120,7 +120,7 @@ final class AtcCopilot {
         do {
             cards[j].readback = (said, try Engine.readbackCheck(cleared: cards[j].text, said: said, tail: tail))
         } catch {
-            problem = "Couldn't check the readback: \(error.localizedDescription)"
+            problem = "Could not check the readback: \(error.localizedDescription)"
         }
         cards[j].awaiting = false
         announceReadbacks()

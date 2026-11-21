@@ -161,7 +161,7 @@ final class Tracking {
         let record = self.record(kept)
         record.favorite.toggle()
         if record.favorite { record.addedAt = Date() }
-        let name = record.favorite ? "Add Favorite" : "Remove Favorite"
+        let name = record.favorite ? Wording.addToFavorites : Wording.removeFromFavorites
         prune(record)
         saved()
         undo?.register(self, named: name) { $0.toggleFavorite(kept, undo: undo) }
@@ -318,13 +318,13 @@ final class Tracking {
             } catch {
                 // The engine could not say: shown over the map, and no
                 // watch goes off on a guess.
-                watchProblem = "Couldn't tell whether \(hex) is flying: \(error.localizedDescription)"
+                watchProblem = "Could not tell whether \(hex) is flying: \(error.localizedDescription)"
                 continue
             }
             for watch in watches where watch.hex == hex {
                 let words: String?
                 do { words = try Self.fired(watch, before: before, now: now, status: status) } catch {
-                    watchProblem = "Couldn't check the watch on \(watch.name): \(error.localizedDescription)"
+                    watchProblem = "Could not check the watch on \(watch.name): \(error.localizedDescription)"
                     continue
                 }
                 if let words {

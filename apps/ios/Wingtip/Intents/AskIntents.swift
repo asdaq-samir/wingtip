@@ -119,7 +119,7 @@ struct AtisIntent: AppIntent {
            let first = await MainActor.run(body: { AirportLive.broadcasts(datis).first.map { (title: $0.title, text: $0.text) } }) {
             return .result(dialog: IntentDialog(full: "\(first.text)", supporting: "\(first.title)"))
         }
-        guard let place = try? await Planner.place(ident) else { return .result(dialog: "\(ident)'s ATIS couldn't be had; check the connection.") }
+        guard let place = try? await Planner.place(ident) else { return .result(dialog: "\(ident)'s ATIS could not be fetched; check the connection.") }
         let weather = place.frequencies.first { ["ATIS", "AWOS", "ASOS"].contains(($0.type ?? "").uppercased()) }
             .map { FrequencyEntity(field: ident, $0).spoken + "." } ?? ""
         guard let metar = place.metar, metar.raw != nil else { return .result(dialog: "No D-ATIS or report at \(ident). \(weather)") }
@@ -152,7 +152,7 @@ struct BriefApproachIntent: AppIntent {
                 .map { EngineContract.FieldFrequency(type: $0.type, description: $0.description, frequencyMhz: $0.frequencyMhz) }
             items = try Engine.approachBrief(drawing: drawing, frequencies: frequencies)
         } catch {
-            return .result(dialog: "The \(a.name) at \(a.field) couldn't be briefed: \(error.localizedDescription)", view: SiriLines(title: a.name, lines: []))
+            return .result(dialog: "The \(a.name) at \(a.field) could not be briefed: \(error.localizedDescription)", view: SiriLines(title: a.name, lines: []))
         }
         let lines = items.map { "\($0.title): \($0.lines.joined(separator: " "))" }
         let spoken = lines.prefix(4).joined(separator: " ")

@@ -14,7 +14,7 @@ struct MapLoading: View {
         GeometryReader { proxy in
             ZStack {
                 Color(uiColor: .systemBackground)
-                ProgressView("Loading the map")
+                ProgressView(Wording.fetchingTheMap)
                     .labelsHidden()
                     .controlSize(.large)
                     .position(x: proxy.size.width / 2,

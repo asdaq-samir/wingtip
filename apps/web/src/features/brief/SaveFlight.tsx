@@ -84,7 +84,7 @@ export function SaveFlightButton(flight: FlightToSave) {
       data-testid="save-flight-button"
     >
       {saving ? <Spinner aria-hidden /> : saved ? <Check /> : <Save />}
-      {saving ? "Saving…" : saved ? "Saved" : "Save this flight"}
+      {saving ? "Saving…" : saved ? "Saved" : "Save This Flight"}
     </DropdownMenuItem>
   );
 }
@@ -103,7 +103,7 @@ export function ReviewAskItem({ flight, onAsk }: { flight: FlightToSave; onAsk: 
   return (
     <DropdownMenuItem disabled={!request} onClick={onAsk} data-testid="ask-review">
       <GraduationCap />
-      Ask for a solo cross-country review
+      Ask for a Solo Cross-Country Review…
     </DropdownMenuItem>
   );
 }
@@ -141,7 +141,7 @@ export function ReviewAskSheet({ flight, onDone }: { flight: FlightToSave; onDon
   const theirs = training?.instructors.filter((l) => l.accepted) ?? [];
   return (
     <ResponsivePopoverContent
-      title="Solo cross-country review"
+      title="Solo Cross-Country Review"
       align="end"
       className="w-96 max-w-[calc(100vw-2rem)] p-3"
       data-testid="review-sheet"

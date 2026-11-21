@@ -86,10 +86,12 @@ function viewOf(map: ReturnType<typeof useGlMap>["map"]) {
 
 function Traffic({ geo }: { geo: Geo }) {
   const { map } = useGlMap();
-  // Own ship's height alone, exact (the 1,000 ft "near own height" rule is
-  // the engine's traffic_marks, read against it as it is, not rounded), so
-  // the traffic is not drawn again at a fix that moved only sideways.
-  const ownFt = useOwnShip((s) => (s.enabled ? (s.fix?.altitudeFt ?? null) : null));
+  // Own ship's height alone, to the nearest 10 ft, so the traffic is not
+  // drawn again at every fix (the in-flight audit; the owner's Q4,
+  // 2026-11-21): a GPS height wanders by tens of feet from fix to fix,
+  // so 10 ft changes no real answer of the engine's 1,000 ft "near own
+  // height" rule (traffic_marks), which still decides.
+  const ownFt = useOwnShip((s) => (s.enabled && s.fix?.altitudeFt != null ? Math.round(s.fix.altitudeFt / 10) * 10 : null));
   const hex = useTracking((s) => s.hex);
   const follow = useTracking((s) => s.follow);
   const followed = useTracking((s) => (s.hex && s.follow && s.latest ? s.latest.plane : null));
@@ -156,7 +158,7 @@ function Traffic({ geo }: { geo: Geo }) {
   if (data && !isPlaceholderData && answer?.at !== dataUpdatedAt) setAnswer({ data, at: dataUpdatedAt });
   const gone = isError && (!answer || errorUpdatedAt - answer.at > STALE_MS);
   useEffect(() => {
-    if (gone) raiseProblem({ id: PROBLEM, title: "Traffic isn't available right now." });
+    if (gone) raiseProblem({ id: PROBLEM, title: "Traffic is not available right now." });
     else clearProblem(PROBLEM);
   }, [gone]);
   // Own ship's own transponder, not drawn as traffic over itself: its fix

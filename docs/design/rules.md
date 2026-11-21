@@ -323,7 +323,7 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
 
 |                   | Web                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | iPhone                                                                                                                                                                                                                                                                                                            | Android                                                                                                                                                                                                                               |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Pinned head       | One scroller per sheet (SheetParts' `data-sheet-scroll`), its scroll indicator the browser's own, shown while it scrolls (iOS's transient bar; 2026-11-11), its head band (the search, the route's row) `position: sticky; top: 0` in it and frosted, and in the flow while it is taller than the scroller (`sheet/bandFits`: FPL's open route ran 795 points in a 757-point scroller and hid the route's field, 2026-11-19), the grabber's room inside it; on a phone frosted only all the way up, the sheet's solid ground at the pill and half, where its body does not scroll and the frost redrawn as the sheet slid striped the route's card in iPhone Safari (`SOLID_BAND`, 2026-11-17), and solid too while the sheet moves from all the way up, a finger on it or settling (`FULL_BAND`, 2026-11-18); tab pages laid out whole in it, nothing measured and no scroller pulled up under the head (2026-11-11); a card has its own nested drawer's scroller (CardStack). `PinnedHead`: one row sticky at the sheet's top from the start (under the search's row, a fixed height, `--sheet-head`, on a tab's list), frosted (index.css `frost-head`: the sheet's ground at the head fill, 0.94 (tokens.json `head-fill`), over the sheet blur, solid without backdrop-filter and under Reduce Transparency); on `CardTitle`, `CardHead`, `SheetCard`, `ListPageHead`, Settings' title row and a console page's head. The airport card's tabs float at its foot instead (C1, the owner, 2026-11-14): a glass bar sticky at its scroller's foot, held at the foot of the part in sight by the Drawer's offset (`CardTabBar`, the airport's `place/PlaceTabBar`), its pages starting under the head (`PINNED_BELOW`, `CardTabPages`); the airplane cards' the same (2026-11-14) | The stock large navigation title collapsing to inline; nothing forces `.inline` but forms. The airport and airplane cards' tabs are the stock `.tabs` picker in the system's bottom toolbar, floating Liquid Glass at the card's foot and put away at the pill (`Design/CardParts`' `CardTabBar`, C1, 2026-11-14) | Material 3 Expressive's large flexible top app bar with `exitUntilCollapsed` on every card and page at full height, the plan included, and the small `TopAppBar` at half (`LocalSheetFull`); the airport card's tabs a `stickyHeader` |
+| Pinned head       | One scroller per sheet (`sheet/SheetScroller`'s `data-sheet-scroll`), its scroll indicator the browser's own, shown while it scrolls (iOS's transient bar; 2026-11-11), its head band (the search, the route's row) `position: sticky; top: 0` in it and frosted, and in the flow while it is taller than the scroller (`sheet/bandFits`: FPL's open route ran 795 points in a 757-point scroller and hid the route's field, 2026-11-19), the grabber's room inside it; on a phone frosted only all the way up, the sheet's solid ground at the pill and half, where its body does not scroll and the frost redrawn as the sheet slid striped the route's card in iPhone Safari (`SOLID_BAND`, 2026-11-17), and solid too while the sheet moves from all the way up, a finger on it or settling (`FULL_BAND`, 2026-11-18); tab pages laid out whole in it, nothing measured and no scroller pulled up under the head (2026-11-11); a card has its own nested drawer's scroller (CardStack). `PinnedHead`: one row sticky at the sheet's top from the start (under the search's row, a fixed height, `--sheet-head`, on a tab's list), frosted (index.css `frost-head`: the sheet's ground at the head fill, 0.94 (tokens.json `head-fill`), over the sheet blur, solid without backdrop-filter and under Reduce Transparency); on `CardTitle`, `CardHead`, `SheetCard`, `ListPageHead`, Settings' title row and a console page's head. The airport card's tabs float at its foot instead (C1, the owner, 2026-11-14): a glass bar sticky at its scroller's foot, held at the foot of the part in sight by the Drawer's offset (`CardTabBar`, the airport's `place/PlaceTabBar`), its pages starting under the head (`PINNED_BELOW`, `CardTabPages`); the airplane cards' the same (2026-11-14) | The stock large navigation title collapsing to inline; nothing forces `.inline` but forms. The airport and airplane cards' tabs are the stock `.tabs` picker in the system's bottom toolbar, floating Liquid Glass at the card's foot and put away at the pill (`Design/CardParts`' `CardTabBar`, C1, 2026-11-14) | Material 3 Expressive's large flexible top app bar with `exitUntilCollapsed` on every card and page at full height, the plan included, and the small `TopAppBar` at half (`LocalSheetFull`); the airport card's tabs a `stickyHeader` |
 | Grow, then scroll | Base UI's Drawer gives a drag to any scroller that can scroll, so below full the sheet's scroller and any in its body are `overflow-y: hidden` (index.css), which its arbitration skips; a script, the keyboard and a focused row still scroll them, the sheet left at its size                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | The system sheet's own behaviour, with nothing overriding it; no zoom push inside a resizable sheet, whose pull-down would pop the page                                                                                                                                                                           | The sheet's nested scroll; every card shown from the search or the map opens at half (`halfWindow`) and grows to full; one pushed inside a card keeps the height                                                                      |
 | Detents           | A card's nested drawer has its own snap point among the sheet's three sizes, the same fixed values in the Drawer's own units (`"4.25rem"`, `"23rem"`, `1`; `components/sheet/insets`), never px worked out from the window: it opens at half, every card but Emergency (`lib/sheetCards`' `cardOpening`), and the sheet under it stays where it was; what is drawn follows the snap point the moment it is set; a swipe moves one size however fast, by the Drawer's own `snapToSequentialPoints` (the owner, 2026-11-11, "enforce the detents, regardless of how fast you swipe")                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Every card opens at `.medium` (Emergency at `.large`) and the pilot's drag sizes it, a card opened inside a card keeping the height; the map stays live under it up to `.medium` (`presentationBackgroundInteraction`); questions and forms stay modal                                                            | A card from the search or the map opens at half and grows to full; one opened inside a card keeps the height                                                                                                                          |
 | Sideways rows     | The Embla carousels (`CardPictures`, `RecentCards`, a field's hours `HourlyForecast` and the Brief's departure hours `DepartureWindowStrip`, shadcn's Carousel since 2026-11-17 where they were scroll-snap rows) and the route's pills carry `data-base-ui-swipe-ignore="x"`; every native sideways row `overscroll-x-contain` and, in the sheet, `overflow-y: hidden` (index.css: `overflow-x: auto` alone made it a few points' vertical scroller, which took a drag up at half); the upright altitude Slider and the sortable rows' grips keep `""`, their drag being up and down                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | No control takes the sheet's drag: the Profile's upright altitude slider is a stock `Slider` the sheet does not take; the flown track's chart moves the replay on a tap                                                                                                                                           | A sideways row takes only a sideways drag; the sheet's nested scroll takes the rest                                                                                                                                                   |
@@ -523,9 +523,13 @@ off by default (the owner, 2026-11-13).
    after it -- at the departure and at a stop the gauge is a button
    (the owner, 2026-11-21: "can we set the fuel tank by tapping on it?";
    `procedures/FuelSet`), named with its gallons ("36 gal, fuel on
-   board: change"), opening a stock Popover from a tablet's width up and
-   the app's sheet with Cancel and Done on a phone, as a waypoint's
-   altitude does: at the departure the fuel on board at engine start,
+   board: change"; its 44-point area 13 above and below, meeting the
+   ident's 9 past the name so neither takes the other's taps), opening a
+   stock Popover from a tablet's width up and on a phone a card over FPL
+   (the stock Drawer's nested drawer, `SheetCard`) with Cancel and Done in
+   its head, so FPL and the gauge stay in sight under it (the HIG review,
+   2026-11-21; iOS stacks a sheet over a sheet), its gallons field 44 tall
+   with "gal" at the figure's size: at the departure the fuel on board at engine start,
    Full (the airplane's usable fuel) or the gallons; at a stop what the
    tanks are fuelled to, Full, No fuel (what it lands with, kept) or the
    gallons -- a segmented control and a number field, no Tabs pick, as
@@ -576,7 +580,16 @@ off by default (the owner, 2026-11-13).
    line opens it, one at a time: its wind at the left and elevation at the
    right, then one row of runway and procedure chips, wrapping where they
    do not fit, each runway's tray saying what it is for, "Land RWY 24"
-   and "Takeoff RWY 24"; a kind not picked stays its "+ APCH" chip. A
+   and "Takeoff RWY 24"; a kind not picked stays its "+ APCH" chip. With
+   an approach picked the landing runway is the approach's own, folded to
+   "Land RWY 9" as soon as the approach is in the route, a wind's pick
+   giving way to it; another only where the pilot picks it and the plate
+   publishes circling minimums (the engine's `landing_runway`, AIM
+   5-4-20; the HIG review's Q3, the owner 2026-11-21). With the tray
+   folded to its runway the chips wrap from the line's leading edge,
+   under "Land RWY", not under the runway's chip; open, they slide with
+   the runways (the HIG review, 2026-11-21). The chips stand 12 apart, so
+   their 44-point areas meet and never cross. A
    procedure picked is no chip: its fixes are points on the route's
    magenta line itself, in the order they are flown (the owner's option
    D, 2026-11-21), an arrival's and an approach's before the field's line
@@ -627,14 +640,20 @@ off by default (the owner, 2026-11-13).
    strip is at the bottom, on the sheet's foot, at every size and scroll,
    the route sliding and scrolling under it (the owner, 2026-11-21: "they
    would go to bottom and stay there while the rest slides under it").
+   Under the bar, iOS 26's soft scroll edge: what scrolls under it fades
+   towards the sheet's colour from just over the bar's top, so the route
+   shows through but its words never run into the bar's (the HIG review,
+   2026-11-21; not a solid band).
    Sitting on it, 4 points over it, from half up a floating glass bar, the one floating bar the airport card's
    tabs are drawn in, the same height and width (`FloatingBar`, 2026-11-18),
    round Base UI's stock Toolbar (one tab stop, the arrows between them),
    of three buttons: Brief and Nav Log, each opening its card over FPL,
-   and the route's •••, "More", its one menu, three items (the owner, 2026-11-21): Route Options, Share link and Open in ForeFlight. Undo and Redo, Clear route, the map's choices,
+   and the route's •••, "More", its one menu, three items (the owner, 2026-11-21): Route Options, Share link and Open in ForeFlight, their glyphs and words lined up with Route Options' checkmark column as an iOS menu lines them up. Undo and Redo, Clear route, the map's choices,
    Show Fuel Stops, Refresh, Save and Type the Route are no longer its items:
    Undo is the toast's, "Route Cleared · Undo" or "Altitude Changed · Undo",
-   with Cmd-Z and Shift-Cmd-Z on a keyboard; Clear is FPL's ✕; Checkpoints
+   with Cmd-Z and Shift-Cmd-Z on a keyboard (the toast 5 s on screen, held
+   while hovered or focused: on a phone it lies over FPL's head; the HIG
+   review, 2026-11-21); Clear is FPL's ✕; Checkpoints
    a switch in the Map card (Route Checkpoints); Add Fuel Stops (also asking
    again for any taken out) the timeline's pill; Refresh and Save the Brief's
    Share menu (Refresh replans too); Type the Route a keyboard button at Add a
@@ -766,12 +785,18 @@ off by default (the owner, 2026-11-13).
   never a card, the page staying up, Undo bringing the route back; with no
   route it is dimmed, as iOS dims a toolbar button with nothing to do.
   The FPL button closes the page to Search, the route kept. Its title
-  "Flight Plan" is a heading's 20 in bold (CardHeadRow's name at
-  `nameSize="heading"`, the owner, 2026-11-21: "a bit bigger and move up a
-  bit"), lifted 4 points, the pills under it. The search in use on Search ends its row
+  "Flight Plan" is a heading's 20 in bold on the heading's own 25-point
+  line, iOS's Title 3 (CardHeadRow's name at `nameSize="heading"`, the
+  owner, 2026-11-21: "a bit bigger and move up a bit"; the rule over an
+  exemption, the HIG review), lifted 4 points, the pills under it; Search's
+  field is as tall as the two rows (49 at the default size), so a turn of
+  the page moves nothing. The search in use on Search ends its row
   with a round ✕, not the word Cancel. The map's buttons are 44-point
   buttons in their glass, Apple Maps' size, the right-hand group one
-  capsule.
+  capsule. They stay 44 and their glyphs 20 whatever the pilot's text
+  size, as Apple Maps' do not grow with Dynamic Type (`size.map-button`,
+  `size.glyph-map`; the scale audit, the owner, 2026-11-21): the 3D
+  button, the compass, the page toggle and the radio's circle too.
 - **One round toggle button turns the page** (the owner, 2026-11-13), a
   44-point disc in the field's white: on Search at the start of the first
   row, before the field, with the account button at its end, as Apple
@@ -811,7 +836,7 @@ off by default (the owner, 2026-11-13).
 
 | Web                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | iPhone                                                                                                                                                       | Android                                                                                                                                                                         |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| shadcn's Toggle on Base UI's (`components/PageToggle`), never pressed, at the start of Search's first row and the end of FPL's (`OneSearchField`, `features/fpl/workspace/FplBar`), drawn on the page that is up, told the pages by `MapPanel` (`sheet/pageToggle`); the bar before it one size on both (`panelField`'s `SHEET_BAR`), each page's first row laid out by the same `barRowOf` (`SheetParts`); the account button at the end of Search's first row (`OneSearchField`); the two pages the sheet's scrollers (`SheetParts`, `sheet/SheetPages`, kept by `data-hidden`), the grabber the plain `SheetGrabber`; FPL's body `features/fpl/workspace/PlanPage` (the open route's field and figures `RouteEditor`), the route's row under the bar `RouteHead` (folded, `route/RouteSummary`; whether it is open, `routeEditing`) | One round glass button in the map's left column under 3D (`Views/MapButtonsDock`), in sight over any card; a tap closes the cards and turns the sheet's page | One round button in the left column's floating toolbar under 3D (`SheetSideButtons`), in sight over any card; a tap closes the cards and turns the page (`SheetNav.togglePage`) |
+| shadcn's Toggle on Base UI's (`components/PageToggle`), never pressed, at the start of Search's first row and the end of FPL's (`OneSearchField`, `features/fpl/workspace/FplBar`), drawn on the page that is up, told the pages by `MapPanel` (`sheet/pageToggle`); the bar before it one size on both (`panelField`'s `SHEET_BAR`), each page's first row laid out by the same `SheetBarRow` (`sheet/SheetHead`); the account button at the end of Search's first row (`OneSearchField`); the two pages the sheet's scrollers (`SheetParts`, `sheet/SheetPages`, kept by `data-hidden`), the grabber the plain `SheetGrabber`; FPL's body `features/fpl/workspace/PlanPage` (the open route's field and figures `RouteEditor`), the route's row under the bar `RouteHead` (folded, `route/RouteSummary`; whether it is open, `routeEditing`) | One round glass button in the map's left column under 3D (`Views/MapButtonsDock`), in sight over any card; a tap closes the cards and turns the sheet's page | One round button in the left column's floating toolbar under 3D (`SheetSideButtons`), in sight over any card; a tap closes the cards and turns the page (`SheetNav.togglePage`) |
 
 The iPhone's and Android's columns are still the tab bar's design; the
 toggle reaches them at the owner's word (web first), and so does the
@@ -872,10 +897,11 @@ At each airport the chart already shows, from the map's own
   fields with 3,000 ft of hard runway, the Class D rings, the restricted
   areas and MOAs, and the rings at their full width with their band; the
   other public fields from 8, private ones from 10, heliports from 11,
-  and the altitude tabs from 9. The overlay tiles hold each from that
-  zoom (the charts job's `AIRPORT_MIN_ZOOM`, `AIRSPACE_MIN_ZOOM`). Where
-  marks would overlap, the rule's order keeps them, each 2 px from the
-  next.
+  and the altitude tabs from 9. Each number is a token, design/tokens.json's
+  `map.zoom`, which the web, the iPhone and Android read and the charts
+  job's overlay tiles hold each kind from (`map_zoom`, a zoom less in the
+  tiles' own levels), so no app keeps a tier of its own. Where marks
+  would overlap, the rule's order keeps them, each 2 px from the next.
 - **Station model from zoom 10 in** (the matching span on the iPhone):
   the engine's `wind_barb` (5, 10 and 50 kt barbs and flags, a ring for
   calm, 0 to 2 kt calm), and two lines beside the field, the visibility with its weather
@@ -1390,15 +1416,48 @@ word and figure drawn on the map, on all three apps, follows these rules:
    traffic's height when own ship's is unknown. On a chart MSL is implied.
    Weather and TCAS codes keep their source's form: a PIREP's "065", a
    METAR's "CIG 008", the traffic's "+05".
-5. **One type scale, one font.** Map labels use the sizes in
-   `design/tokens.json` `map.label-*`: 11 (`label-small`, the floor no
-   label goes under), 12, 13, the 14 of a cluster's count and the 16 of a
-   runway's number close in. They are set in Inter in every look. A
-   letter inside a mark's picture (R, M, H, a PIREP's glyph) is the
-   system's sans serif (`MARK_FONT`), never the browser's default serif.
-6. **Halos dim after dark.** The white halo (`map.label-halo`, 2 px) is
-   white at `map.label-halo-night` (0.6) in the page's dark theme, read
-   from `useDarkTheme`.
+5. **One type scale, one font, one look a kind.** Map labels use the
+   sizes in `design/tokens.json` `map.label`: 11 (`size-small`, the floor
+   no label goes under), 12, 13, the 14 of a cluster's count, the 16 of a
+   runway's number close in and the 17 of the open card's field. Each kind
+   of label (`map.label.kind`: a field's ident, a fix's, an airspace tab,
+   a checkpoint's name, a hazard's words …) has one size, by zoom where it
+   grows, one weight and one halo, and every layer that writes it takes
+   them (`labelText`, `labelHalo`), so a Class B tab and a special-use
+   area's tab, or a field's ident on the tiles and on a stop's mark, are
+   lettered alike. Idents and figures are bold; a place's name (a
+   checkpoint's) is regular, as the chart sets a town's. They are set in
+   Inter in every look. A letter inside a mark's picture (R, M, H, a
+   PIREP's glyph) is the system's sans serif (`MARK_FONT`), never the
+   browser's default serif. Map words do not follow Dynamic Type: a
+   chart's lettering is fixed, and the map's density sets it. The one
+   exception is the Map card's **Larger Map Labels** switch (the owner,
+   2026-11-21, for his larger text size): on, every kind grows by the
+   pilot's text size over the standard 16 px, at most
+   `map.label.scale-max` (1.2x), one global state the layers' sizes read
+   (`labelScale`, `LABEL_SCALE`). Off by default. Words drawn as a picture
+   (a procedure's or a plate's tag, a way's chip, traffic's tag) keep
+   their size.
+6. **After dark, light words on a dark halo** (the owner, 2026-11-21,
+   in place of the white halo dimmed to 0.6 of 2026-11-18). The halo is
+   one width (`map.label.halo`, 2 px), light (the chart's white round
+   coloured or dark words) or dark (the tag's dark round white words: a
+   runway's number, the open field's ident); words on their own chip, tab
+   or pill have none. By day, coloured words reach 4.5:1 on the white
+   halo: a VFR waypoint's ident is the green a step deeper
+   (`chart.vfr-green-text`), a cluster's count sits on `map-blue-ink`.
+   In the page's dark theme (`useDarkTheme`), as Apple Maps letters its
+   dark map, the light halo turns to the tag's dark at
+   `map.label.halo-night` (0.85) and each word's ink to its night ink
+   (`map.label.night-ink`: the towered blue #82b4ff, the untowered
+   magenta #f28ddc, the VFR green #62d48e, the fixes' near-white #eef1f5,
+   the TFR's and a limit's red #ff8a8a, and each hazard's colour lighter),
+   `labelInk` on every light-haloed layer. Worked out from the tokens
+   (WCAG 2.x relative luminance), on that halo over the chart dimmed to
+   half each ink is 6.5:1 or more, and 4.9:1 or more over an undimmed
+   white, so no word glares white and none falls under 4.5:1. Under the
+   white halo at 0.6 the coloured idents fell to about 2.5:1. The day
+   inks are the chart's own and stay as they are.
 7. **A field's ident looks the same whoever draws it.** Its colour is
    blue where it is towered and magenta where it is not, as the chart
    sets it. Its size follows the zoom. This holds on the tiles, a Class B
@@ -1408,16 +1467,21 @@ word and figure drawn on the map, on all three apps, follows these rules:
    FL160", "Convective SIGMET to FL450"). A TFR carries its NOTAM number
    ("6/4116"). Words in a hazard's colour must reach 4.5:1 on white, so
    turbulence's amber is deepened for words (`weather.turbulence-text`).
-9. **No new range or leg labels.** Nothing is added to the range rings
-   or the legs.
-10. **Only own ship is an HTML marker.** The replay's airplane is drawn
+9. **Where words collide, the more important keeps its place.** The
+   route's marks and own ship are over everything; then the fields, by
+   the engine's rank (a Class B's field first); then the VORs, the VFR
+   waypoints and the enroute fixes, in that order, as the sectional
+   weighs them; then the airspace and special-use tabs, under every mark.
+10. **No new range or leg labels.** Nothing is added to the range rings
+    or the legs.
+11. **Only own ship is an HTML marker.** The replay's airplane is drawn
     with the traffic's own layers (`trafficMarks`), and its height is
     lifted with it in 3D.
 
-|       | Web                                                                                                                                                                                                                                                                                                                  | iPhone                                                                        | Android           |
-| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------- |
-| Where | `lib/map/gl/layers/common` (`LABEL_SIZE`, `LABEL_HALO`, `labelByZoom`), `glStyle`'s `airspaceLayers`, `glSuaLabels`, `airportIcons`' `AIRPORT_IDENT_INK`/`_SIZE`, `procedureMarks`' `fixMarks(plated)`, `plates/plateLook`'s `usePlateTagged`, `plan-map/weatherMap`'s `areaLabel`, `TfrGl`, `TracksGl`'s `ReplayGl` | Not yet, on the owner's word (decision 0038): the tokens are generated for it | Not yet: the same |
-| Tests | `glStyle.test`, `glOverlays.test`, `procedureMarks.test`, `plateTags.test`, `weatherMap.test`; `airspace-lines.spec`, `plates-map.spec`, `weather-map.spec`, `route-line.spec`; the tiles' `tab` in `services/jobs/charts/tests/test_overlays.py`, `services/planner/tests_wingtip/test_airspace_tabs.py`            | --                                                                            | --                |
+|       | Web                                                                                                                                                                                                                                                                                                                                                 | iPhone                                                                        | Android           |
+| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------- |
+| Where | `lib/map/gl/layers/common` (`labelText`, `labelHalo`, `labelInk`, `labelScale`, `LABEL_HALO`), ChartGl's `LABEL_NIGHT` and `LABEL_SCALE`, MapLayers' Larger Map Labels, `glStyle`'s `airspaceLayers` and `TAB_BOX`, `glSuaLabels`, `glOverlays`' marks' order, `airportIcons`' `AIRPORT_IDENT_INK`, `procedureMarks`' `fixMarks(plated)`, `plates/plateLook`'s `usePlateTagged`, `plan-map/weatherMap`'s `areaLabel`, `TfrGl`, `TracksGl`'s `ReplayGl` | Not yet, on the owner's word (decision 0038): the tokens are generated for it | Not yet: the same |
+| Tests | `layers/common.test`, `glStyle.test`, `glOverlays.test`, `procedureMarks.test`, `plateTags.test`, `weatherMap.test`; `airspace-lines.spec`, `plates-map.spec`, `weather-map.spec`, `route-line.spec`; the tiles' `tab` in `services/jobs/charts/tests/test_overlays.py`, `services/planner/tests_wingtip/test_airspace_tabs.py`                     | --                                                                            | --                |
 
 ## 14. What is picked on the map (the owner, 2026-11-18)
 
@@ -1472,6 +1536,165 @@ recommendation.
 | One pick          | `lib/map/mapPick`: each kind's card says how it is put away while it is up (`useMapPickOwner`), a pick puts the others away (`pickOnMap`), a tap on the chart all (GlMapShell); the map's own card's ring goes with it (`openCard`'s companions)                                                                              | Not yet: on the owner's word (decision 0038) | Not yet |
 | Ring and lit edge | `selectionRing` (lib/map/gl/layers/common), drawn by AirportsGl and PickedGl in the `top` slot; a card rings its point while it is drawn (`useRingWhileUp`) and lights its area (`useAreaWhileUp`: TfrGl's feature state, AirspaceGl's `airspace-picked`, WeatherGl's `wx-area-picked`); traffic's in `trafficMarks`' picture | --                                           | --      |
 | Tests             | `e2e/map-selection.spec.ts` (a ring clears on ✕ and on the chart, a route point opens its card, a new pick replaces the old card, own ship's card); `e2e/weather-map.spec.ts` and `e2e/airspace-lines.spec.ts` (an area lit while its card is up); `lib/address.test.ts` (the `mark` and `at` links)                          | --                                           | --      |
+
+## 15. The app's words (the owner, 2026-11-21)
+
+The owner took the words audit's fixes on 2026-11-21 ("Yes to all").
+Every word a pilot reads, on all three apps, follows these rules
+(decision [0055](../decisions/0055-one-set-of-words.md), which carries
+on from [0020](../decisions/0020-airplane-not-aircraft.md) and
+[0021](../decisions/0021-title-case-labels.md)):
+
+1. **One thing, one name, on all three apps.** A screen's title is
+   `design/screens.json`'s; a word every app says (a control, a figure's
+   name, a shared message) is `design/wording.json`'s, generated into each
+   app by `scripts/build/wording.sh` as the tokens are: the web's
+   `WORDING` (`lib/wording/generated`), the iPhone's `Wording`
+   (`Design/Generated/Wording.swift`, each kept by the string catalog) and
+   Android's `R.string.wording_*`. A word added to a second app goes into
+   the table, not into the app.
+2. **A name is in Title Case.** Titles, section headings, tabs, segments,
+   buttons, menu items, toggles, row and figure names, empty states'
+   titles and toasts' titles are in Apple's title style: every word
+   capitalised but the articles, the conjunctions and the prepositions of
+   four letters or fewer, unless one begins or ends it ("Add to Route",
+   "Read from a Photo", "Cross At", "Time En Route"). A menu item that asks
+   for more before it acts ends with "…" ("Hold Here…", "Set Altitude…");
+   one that only asks to confirm does not ("Delete Account"), as the HIG
+   says.
+3. **A sentence is in sentence case and ends with its stop.** Messages,
+   errors, empty states' lines, hints, notes and a question that is a
+   whole sentence ("Discard your changes?") begin with a capital and end
+   with a full stop or a question mark. A figure's value ("No ceiling",
+   "Not on record") has no stop. The map's words are sentence case
+   (section 13), and the FAA's own capitals are set in sentence case with
+   their codes kept (`faaWords`); a raw report stays as sent.
+4. **Progress says "Fetching".** "Fetching the NOTAMs…", one ellipsis
+   character, never three full stops (decision 0021's "Fetching").
+5. **An error says what could not be done, plainly.** "The NOTAMs could
+   not be fetched." with "could not", never "couldn't" or "can't", and
+   "did not answer" for a service that was asked and gave nothing; what
+   to do next follows as a second sentence ("Try again in a moment.").
+6. **The FAA's words, as the FAA writes them.** "Airplane" for the
+   pilot's own (decision 0020), "aircraft" only where the FAA's text or
+   form says it (ICAO flight plan items 7 and 9, the FAA Aircraft
+   Registry, 14 CFR 91.103's "aircraft performance"). Flight categories are
+   VFR, MVFR, IFR and LIFR, said "marginal VFR" and "low IFR". "Ceiling"
+   is 14 CFR 1.1's, "visibility" the report's, airspace "Class B" with the
+   capital, and the FAA's codes in capitals: TFR, NOTAM, METAR, TAF, ETE,
+   ETA, SM and NM spelled as the units module writes them (nm, sm). The
+   nav log is "Nav Log" as a name and "nav log" in a sentence.
+
+The words the three apps share, generated from `design/wording.json`:
+
+<!-- BEGIN generated from design/wording.json by scripts/build/wording.sh -->
+
+| Key | Kind | Words | Where |
+|---|---|---|---|
+| `planning_aid_title` | label | A Planning Aid | About's heading over the planning aid's words. |
+| `planning_aid_notice_title` | label | A Planning Aid, Not for Navigation | The planning aid's notice, where an app shows it on its own. |
+| `planning_aid` | sentence | Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1‑800‑WX‑BRIEF), current FAA charts and publications, or the pilot in command’s judgement and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103). | What the app is and is not, in About and at the briefing's foot (14 CFR 91.3, 91.103; docs/legal/credits.md, "A planning aid"). |
+| `planning_aid_kneeboard` | sentence | Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight. | The printed kneeboard's foot. |
+| `try_again` | label | Try Again | The button that asks again after an error. |
+| `sign_in` | label | Sign In | The button that starts signing in. |
+| `add_stop` | label | Add Stop | Adds the place shown as a stop on the route (decision 0021's own example). |
+| `add_to_route` | label | Add to Route | Adds the place shown to the route. |
+| `add_to_favorites` | label | Add to Favorites | Keeps the airport or airplane shown among the favorites. |
+| `add_airplane` | label | Add Airplane | Adds one of the pilot's own airplanes. |
+| `edit_airplane` | label | Edit Airplane | Opens the pilot's airplane's figures to change. |
+| `delete_airplane` | label | Delete Airplane | Deletes one of the pilot's airplanes. |
+| `pick_an_airplane` | label | Pick an Airplane | Where the times and the fuel need an airplane. |
+| `fly_this_airplane` | label | Fly This Airplane | Makes the airplane shown the one the plan flies. |
+| `clear_route` | label | Clear Route | The menu item that clears the route. |
+| `clear_route_question` | label | Clear Route? | The question before the route is cleared. |
+| `direct_to` | label | Direct To | Flies straight to the point picked, the avionics' own name. |
+| `enter_route` | label | Enter Route | Puts a clearance's route into the plan. |
+| `read_back` | label | Read Back | Starts the pilot's read back of a clearance. |
+| `read_back_again` | label | Read Back Again | Reads the clearance back once more. |
+| `print_nav_log` | label | Print Nav Log | Prints the nav log, in the share menu. |
+| `share_link` | label | Share Link | Shares the plan as a link. |
+| `show_on_map` | label | Show on Map | Shows the thing in the row on the map. |
+| `start_over` | label | Start Over | Starts a drill or a form again from its beginning. |
+| `save_to_account` | label | Save to Account | Keeps the thing shown in the pilot's account. |
+| `ask_about_the_flight` | label | Ask About the Flight | Opens Ask on the flight planned. |
+| `file_with_flight_service` | label | File with Flight Service | Files the flight plan with Leidos Flight Service. |
+| `delete_account` | label | Delete Account | Deletes the pilot's account. |
+| `delete_account_question` | sentence | Delete your account? | The question before the account is deleted. |
+| `discard` | label | Discard | Throws away what was typed. |
+| `discard_changes_question` | sentence | Discard your changes? | The question when a form with changes is closed. |
+| `weight_and_balance` | label | Weight & Balance | The weight and balance's section and row. |
+| `forecast_icing` | label | Forecast Icing | The forecast icing along the route (aviationweather.gov's CIP/FIP). |
+| `along_the_route` | label | Along the Route | What lies along the route, a section's heading. |
+| `airport_weather` | label | Airport Weather | The map's airport weather marks, as a setting. |
+| `flight_category` | label | Flight Category | A report's flight category, VFR, MVFR, IFR or LIFR (the FAA's names). |
+| `time_en_route` | label | Time En Route | ETE written out. |
+| `top_of_climb` | label | Top of Climb | The nav log's TOC written out. |
+| `top_of_descent` | label | Top of Descent | The nav log's TOD written out. |
+| `true_airspeed` | label | True Airspeed | TAS, a figure's name. |
+| `indicated_airspeed` | label | Indicated Airspeed | IAS, a figure's name. |
+| `ground_speed` | label | Ground Speed | GS, a figure's name. |
+| `true_course` | label | True Course | TC, a figure's name. |
+| `magnetic_course` | label | Magnetic Course | MC, a figure's name. |
+| `magnetic_heading` | label | Magnetic Heading | MH, a figure's name. |
+| `cruise_altitude` | label | Cruise Altitude | The plan's cruise altitude. |
+| `cruise_power` | label | Cruise Power | An airplane's cruise power setting, a percentage. |
+| `density_altitude` | label | Density Altitude | A field's density altitude. |
+| `usable_fuel` | label | Usable Fuel | An airplane's usable fuel. |
+| `fuel_burn` | label | Fuel Burn | An airplane's fuel burn an hour. |
+| `start_and_taxi_fuel` | label | Start and Taxi Fuel | The fuel an airplane burns before takeoff. |
+| `empty_weight` | label | Empty Weight | An airplane's basic empty weight. |
+| `empty_moment` | label | Empty Moment | An airplane's basic empty moment. |
+| `service_ceiling` | label | Service Ceiling | An airplane's service ceiling. |
+| `glide_ratio` | label | Glide Ratio | An airplane's best glide ratio. |
+| `climb_rate_at_sea_level` | label | Climb Rate at Sea Level | An airplane's climb rate at sea level. |
+| `fetching_nearest_fields` | progress | Fetching the nearest fields… | Nearest, while it is asked for. |
+| `fetching_notams` | progress | Fetching the NOTAMs… | A field's or the route's NOTAMs, while they are asked for. |
+| `fetching_model_weather` | progress | Fetching model weather… | Model Weather's picture, while it is asked for. |
+| `fetching_logbook` | progress | Fetching your logbook… | The logbook, while it is asked for. |
+| `fetching_services` | progress | Fetching the services… | A stop's services, while they are asked for. |
+| `reading_the_page` | progress | Reading the page… | A photographed page, while it is read. |
+| `listening_to_the_radio` | progress | Listening to the radio… | The radio's words, while they are heard. |
+| `planner_not_reached` | sentence | The planner could not be reached. | Where the planner did not answer. |
+| `notams_not_fetched` | sentence | The NOTAMs could not be fetched. | Where the NOTAMs did not come. |
+| `tfrs_not_checked` | sentence | TFRs could not be checked just now. | The route's NOTAMs where the TFR list did not come. |
+| `tfr_list_not_read` | sentence | The TFR list could not be read: check the FAA's TFRs before flying. | A field's NOTAMs where the TFR list did not come. |
+| `tfrs_not_loaded` | sentence | The TFRs did not load. Check tfr.faa.gov before flight. | The map's TFR card where tfr.faa.gov did not answer. |
+| `special_use_no_answer` | sentence | The FAA's special-use airspace did not answer. Check the chart. | The airspace card where the SUA feed did not answer. |
+| `airspace_not_read` | sentence | The planner could not read the airspace here. Try again in a moment. | The airspace card where the planner did not answer. |
+| `weather_not_reached` | sentence | The weather service could not be reached. | An airport's weather where aviationweather.gov did not answer. |
+| `services_not_fetched` | sentence | The services could not be fetched. | A stop's services where they did not come. |
+| `places_not_looked_up` | sentence | Places near the field could not be looked up. | A stop's places where they did not come. |
+| `logbook_not_fetched` | sentence | Your logbook could not be fetched. | The logbook where it did not come. |
+| `nearest_not_found` | sentence | The nearest fields could not be found. | Nearest where it did not come. |
+| `page_not_read` | sentence | The page could not be read. | A photographed page that could not be read. |
+| `read_back_not_checked` | sentence | The read back could not be checked. | A clearance's read back that could not be checked. |
+| `forecast_icing_not_checked` | sentence | The forecast icing could not be checked: aviationweather.gov did not answer. Verify it separately before flight. | The Brief's icing where aviationweather.gov did not answer. |
+| `history_not_fetched` | sentence | Its history could not be fetched. Try again in a moment. | An airplane's registry history where it did not come. |
+| `past_flights_not_fetched` | sentence | Its past flights could not be fetched. Try again in a moment. | An airplane's past flights where they did not come. |
+| `coming_up_not_fetched` | sentence | What falls due could not be fetched. | Coming Up where it did not come. |
+| `plan_a_route_first` | sentence | Plan a route first. | What needs a route, where there is none. |
+| `no_ceiling` | value | No ceiling | A report with no broken or overcast layer, a figure's value (14 CFR 1.1, "ceiling"). |
+| `remove_from_favorites` | label | Remove from Favorites | Takes the airport or airplane shown out of the favorites. |
+| `remove_from_account` | label | Remove from Account | Takes the thing shown out of the pilot's account. |
+| `hide_from_map` | label | Hide from Map | Takes the thing shown off the map. |
+| `sign_out` | label | Sign Out | Signs the pilot out. |
+| `not_now` | label | Not Now | Puts an offer off (the owner's word, a shared flight's). |
+| `new_airplane` | label | New Airplane | The title over a new airplane's figures. |
+| `export_my_data` | label | Export My Data | Saves the pilot's account as a file. |
+| `dry_run` | label | Dry Run | Flies the route on the map before the flight. |
+| `wind_correction` | label | Wind Correction | WCA, a figure's name. |
+| `true_heading` | label | True Heading | TH, a figure's name. |
+| `compass_heading` | label | Compass Heading | CH, a figure's name. |
+| `fuel_required` | label | Fuel Required | The fuel a leg or the flight needs. |
+| `pattern_altitude` | label | Pattern Altitude | A field's traffic pattern altitude. |
+| `fetching_the_map` | progress | Fetching the map… | The map, while its chart is asked for. |
+
+<!-- END generated wording -->
+
+|       | Web | iPhone | Android |
+| ----- | --- | ------ | ------- |
+| Words | `lib/wording/generated/wording.ts` (`WORDING`) | `Design/Generated/Wording.swift` (`Wording`), kept by `Localizable.xcstrings` | `res/values/wording_strings.xml` (`R.string.wording_*`) |
+| Tests | `lib/wording/wording.test.ts` | `WingtipTests/WordingTests.swift` | `WordingTest` |
 
 ## Changing a rule
 

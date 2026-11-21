@@ -25,7 +25,12 @@ export function DataBlock({ track, className }: { track: ReplayTrack; className?
     <div
       className={cn(GLASS, "pointer-events-none flex min-w-36 flex-col gap-0.5 rounded-(--radius-card) px-3 py-2 tabular-nums", className)}
       data-testid="replay-data-block"
-      role="status"
+      // A group a reader browses, not a live region: as a status it was
+      // read again at every second of the replay, faster at 8x, over
+      // everything else (WCAG 4.1.3 asks a status be said, not repeated);
+      // the timeline's slider says the time as it moves.
+      role="group"
+      aria-label="Flight data"
     >
       <span className={cn("font-semibold", TEXT.row)} data-testid="replay-data-time">
         {time}

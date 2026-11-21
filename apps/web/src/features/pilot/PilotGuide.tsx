@@ -12,6 +12,7 @@ import { cruiseReferenceFt } from "../../lib/performance";
 import { TEXT } from "../../lib/text";
 import { altFt } from "../../lib/format";
 import { scoreColor } from "../../lib/scoreScale";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 const BUCKETS: [string, string][] = [
   [scoreColor(4.5), "4.5 and up: you will see it and know it"],
@@ -48,56 +49,56 @@ export default function PilotGuide() {
 
         <TipsGroup />
 
-        <ListGroup title="Plan a flight">
+        <ListGroup title="Plan a Flight">
           <StepRow
             n={1}
-            title="Type your route"
+            title="Type Your Route"
             description="Departure and destination on the FPL tab, by identifier or name. The course draws on the chart at once."
           />
           <StepRow
             n={2}
-            title="Set your airplane and altitude"
+            title="Set Your Airplane and Altitude"
             description="Your N-number and cruise altitude sit beside the route. Every time, fuel figure and altitude choice uses them."
           />
           <StepRow
             n={3}
-            title="Read the brief"
+            title="Read the Brief"
             description="Brief opens on a verdict and at most three things to act on. Tap any of them for the why, the sources and the raw reports."
           />
           <StepRow
             n={4}
-            title="Fly the nav log"
+            title="Fly the Nav Log"
             description="Each leg's heading, time and fuel, checkpoint by checkpoint, worked in the forecast winds at your altitude."
           />
         </ListGroup>
 
-        <ListGroup title="The sheet">
-          <Tip title="Three sizes">
+        <ListGroup title="The Sheet">
+          <Tip title="Three Sizes">
             Drag the sheet between a pill, half and full. A flick moves it one size, so the chart is never far away.
           </Tip>
-          <Tip title="Four tabs">
+          <Tip title="Four Tabs">
             FPL is your flight, Airport any field you pick, Airplane yours and the traffic around you, and Setup your settings, airplanes,
             logbook and this guide.
           </Tip>
-          <Tip title="Close goes back">The close button at a page's top goes back one step, not all the way out.</Tip>
+          <Tip title="Close Goes Back">The close button at a page's top goes back one step, not all the way out.</Tip>
         </ListGroup>
 
-        <ListGroup title="On the chart">
-          <Tip title="Hold for the airspace">
+        <ListGroup title="On the Chart">
+          <Tip title="Hold for the Airspace">
             Hold a finger on the chart for every class of airspace over that point, its VFR minimums by day and night, and any TFR or
             special-use airspace there.
           </Tip>
-          <Tip title="Tap an airport">Its weather, frequencies, runways and procedures. Fly Here makes it your destination.</Tip>
-          <Tip title="The Map button">
+          <Tip title="Tap an Airport">Its weather, frequencies, runways and procedures. Fly Here makes it your destination.</Tip>
+          <Tip title="The Map Button">
             Chooses the chart (sectional, IFR low or high, the terminal area chart) and its layers, and keeps the charts on this phone for
             the air.
           </Tip>
-          <Tip title="Your position">
+          <Tip title="Your Position">
             The arrow button puts you on the chart from the phone's GPS and keeps the map on you; tap it again to let go.
           </Tip>
         </ListGroup>
 
-        <ListGroup title="Checkpoint colours">
+        <ListGroup title="Checkpoint Colours">
           {/* A row a colour, its dot before the words, as the app's lists
               are (the developer's rating scale is the same). */}
           {BUCKETS.map(([color, label]) => (
@@ -109,8 +110,8 @@ export default function PilotGuide() {
           ))}
         </ListGroup>
 
-        <ListGroup title="With no signal">
-          <Tip title="Open your route before you go">
+        <ListGroup title="With No Signal">
+          <Tip title="Open Your Route Before You Go">
             With signal on the ground, open your route and its brief: the app keeps the chart, the nav log, the weather and the TFRs it
             showed you.
           </Tip>
@@ -118,22 +119,22 @@ export default function PilotGuide() {
             Turn on Keep for the Air in the Map button's settings, and each route's charts, briefing, NOTAMs, airport cards and plates stay
             on this phone, shown with their age when there is no signal.
           </Tip>
-          <Tip title="It stays quiet in the air">
+          <Tip title="It Stays Quiet in the Air">
             Losing coverage is normal in flight, so the app shows no errors for it and asks again by itself when the signal comes back.
           </Tip>
-          <Tip title="Check how old it is">
+          <Tip title="Check How Old It Is">
             Setup's Status page shows whether you are online and how old each piece of weather and the TFRs are. Saved weather is not a
             briefing: get a fresh one when you can.
           </Tip>
         </ListGroup>
 
-        <ListGroup title="Good to know">
-          <Tip title="Your airplane's figures">
+        <ListGroup title="Good to Know">
+          <Tip title="Your Airplane's Figures">
             Cruise speed and fuel burn start from your airplane's cruise power at {altFt(cruiseReferenceFt())} ft on a standard day, then
             each leg flies them in the day's air at its altitude. A model within a few percent of most handbooks: yours governs.
           </Tip>
-          <Tip title="A planning aid">Check everything against the current charts, NOTAMs and an official briefing before you fly.</Tip>
-          <Tip title="Add it to your Home Screen">
+          <Tip title={WORDING.planningAidTitle}>Check everything against the current charts, NOTAMs and an official briefing before you fly.</Tip>
+          <Tip title="Add It to Your Home Screen">
             In Safari tap Share, then Add to Home Screen: it opens as its own app, the whole screen, with no browser bar over the chart.
           </Tip>
         </ListGroup>

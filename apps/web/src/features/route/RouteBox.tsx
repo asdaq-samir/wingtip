@@ -290,7 +290,7 @@ export default function RouteBox({
                 size="inline"
                 onClick={onUndo}
                 data-testid="route-undo"
-                className={cn("relative mt-1 mr-1 px-1 text-tint after:absolute after:-inset-2 after:content-['']", TEXT.row)}
+                className={cn("relative mt-1 mr-1 px-1 text-tint hit-2", TEXT.row)}
               >
                 Undo
               </Button>
@@ -329,7 +329,7 @@ export default function RouteBox({
             <AlertDescription className={cn("text-destructive", TEXT.detail)}>
               {unknownPoint.ident
                 ? `${unknownPoint.ident} ${unknownWhy(unknownPoint)}. Tap it to change it.`
-                : "A point of the route isn't an airport or waypoint we know."}
+                : "A point of the route is not an airport or waypoint we know."}
             </AlertDescription>
             {unknownPoint.ident && points.includes(unknownPoint.ident) && (
               <AlertAction className="top-1/2 right-0 -translate-y-1/2">

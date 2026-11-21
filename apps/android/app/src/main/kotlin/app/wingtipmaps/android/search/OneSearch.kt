@@ -184,7 +184,7 @@ fun OneSearch(
             when {
                 listening -> R.string.voice_speak
                 control.picking != null -> control.pickHint
-                control.addingStop -> R.string.search_add_stop
+                control.addingStop -> R.string.wording_add_stop
                 flying && voice -> R.string.search_hint_flying
                 else -> R.string.search_hint
             },

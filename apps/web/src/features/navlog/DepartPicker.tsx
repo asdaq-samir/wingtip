@@ -92,7 +92,7 @@ export default function DepartPicker({
               // 44 tall round its 20 (12 over and under), so a tap just
               // above or below "Now" picks the time, not the field's row
               // toggle under it (the audit's WEB-5); 10 either side.
-              "relative shrink-0 gap-0.5 font-semibold tabular-nums after:absolute after:-inset-x-2.5 after:-inset-y-3 after:content-['']",
+              "relative shrink-0 gap-0.5 font-semibold tabular-nums hit-x-2.5 hit-y-3",
               TEXT.detail,
             )}
           >
@@ -150,7 +150,8 @@ export default function DepartPicker({
       <ResponsivePopoverContent
         title={label}
         description={date ? `Leaving ${leaveWhen(date)}` : "Leaving now"}
-        className="w-auto p-0"
+        className="w-auto"
+        bleed
         align="start"
         closeButton={false}
         leading={

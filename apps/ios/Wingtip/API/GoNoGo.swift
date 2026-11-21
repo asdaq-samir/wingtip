@@ -24,7 +24,7 @@ extension PersonalMinimums {
             case .ceilingFt: "Ceiling"
             case .visibilitySm: "Visibility"
             case .crosswindKt: "Crosswind"
-            case .windKt: "Wind, with gusts"
+            case .windKt: "Wind, with Gusts"
             }
         }
 

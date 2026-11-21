@@ -62,7 +62,7 @@ fun ProfileCard(plan: Plan, exit: CardExit, flight: FlightModel = hiltViewModel(
             item(key = "side") {
                 val profile = shown.profile
                 if (profile == null) {
-                    ProblemLine(shown.problem ?: stringResource(R.string.profile_needs_route).takeIf { !state.routed }, Modifier.padding(horizontal = WingtipSpace.Lg))
+                    ProblemLine(shown.problem ?: stringResource(R.string.wording_plan_a_route_first).takeIf { !state.routed }, Modifier.padding(horizontal = WingtipSpace.Lg))
                     return@item
                 }
                 val line = remember(state.course, state.legs, profile) { ProfileModel.line(state, profile.lengthNm) }

@@ -4,6 +4,7 @@ import { cancelled, shareOrCopy, useCopied } from "../../lib/share";
 import { passengerItems } from "./passengers";
 import { usePreflight, useTicked } from "./preflight";
 import { showError } from "../../lib/problems";
+import { describeError } from "../../lib/api/client";
 
 /**
  * The Brief's Passengers: the briefing 14 CFR 91.107 asks of the pilot in
@@ -20,7 +21,7 @@ export default function PassengerBriefing({ flight, message }: { flight: string;
     try {
       if ((await shareOrCopy({ title: "Our flight", text: message })) === "copied") markCopied("message");
     } catch (err) {
-      if (!cancelled(err)) showError("Could not send the flight", (err as Error).message);
+      if (!cancelled(err)) showError("Could Not Send the Flight", describeError(err));
     }
   };
   const PASSENGER_ITEMS = passengerItems();
@@ -45,7 +46,7 @@ export default function PassengerBriefing({ flight, message }: { flight: string;
         {/* What is sent, under the row that sends it, where it was a footnote. */}
         <ListGroup>
           <ListRow
-            title={copied === "message" ? "Copied" : "Send the flight to your passengers"}
+            title={copied === "message" ? "Copied" : "Send the Flight to Your Passengers"}
             description={message.split("\n").join(" ")}
             onClick={() => void send()}
             data-testid="passenger-send"

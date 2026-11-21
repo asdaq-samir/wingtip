@@ -2,7 +2,7 @@ import { useState, type RefObject } from "react";
 import type { AltitudeChoice, Leg, NavLogAltitude, RouteProfile } from "../../../lib/api/types";
 import { altFt, feet, flightLevel } from "../../../lib/format";
 import { useFlying } from "../../../lib/mapChrome";
-import { useOwnFix } from "../../../lib/map/position/ownShip";
+import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { clearanceAt, clearanceWords, strikeWords, type AlongPoint } from "./clearance";
 import { advisorRows, flownOf, planAt } from "./plans";
 
@@ -53,9 +53,17 @@ export function useAltitudePreview({
   // put there on: once another is flown or the route changes, it is gone.
   const [preview, setPreview] = useState<{ altitude: number; against: number | null; route: string } | null>(null);
   const flying = useFlying((s) => s.flying);
-  const gpsFt = useOwnFix()?.altitudeFt ?? null;
   const [auto, setAuto] = useState(false);
-  const autoFt = flying && auto && gpsFt !== null ? Math.round(gpsFt / 100) * 100 : null;
+  // Whether the GPS gives a height, which the slider can follow.
+  const gpsHeight = useOwnShip((s) => s.enabled && s.fix?.altitudeFt != null);
+  // The GPS's height to the 100 ft the slider shows, and only while it
+  // follows it: read whole, the fix redrew the Profile at every second's
+  // fix in flight (its height changes by a few feet each time) for a
+  // figure that moves once in a hundred feet.
+  const autoFt = useOwnShip((s) => {
+    const ft = flying && auto && s.enabled ? (s.fix?.altitudeFt ?? null) : null;
+    return ft === null ? null : Math.round(ft / 100) * 100;
+  });
   const shownAt =
     autoFt ??
     (preview && preview.against === flown && preview.route === route
@@ -120,7 +128,7 @@ export function useAltitudePreview({
     live,
     rest,
     fly,
-    flying: flying && gpsFt !== null,
+    flying: flying && gpsHeight,
     auto: autoFt !== null,
     setAuto,
     /** The slider's spoken value: the altitude, what it clears, its plan. */
@@ -129,7 +137,7 @@ export function useAltitudePreview({
       const words = clearanceAt(profile, altitude, points)?.words ?? feet(altitude);
       const marks = [
         row?.fastest && "Fastest",
-        row?.economical && "Most economical",
+        row?.economical && "Most Economical",
         row && !row.legal && "outside the legal altitudes",
       ].filter(Boolean);
       return `${words.replace(/ ft\b/, " feet")}${marks.length ? `, ${marks.join(", ")}` : ""}`;

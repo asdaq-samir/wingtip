@@ -15,7 +15,7 @@ const PLAN = {
     {
       key: "night_passengers",
       id: "due:night_passengers",
-      label: "Passengers at night",
+      label: "Passengers at Night",
       rule: "14 CFR 61.57(b)",
       until: "2026-11-18",
       from: null,

@@ -40,7 +40,7 @@ async function save(pilot: Pilot, ident: string | null) {
   } catch {
     raiseProblem({
       id: PROBLEM,
-      title: "Couldn't save your home airport to your account",
+      title: "Your home airport could not be saved to your account.",
       retry: () => {
         const now = queryClient.getQueryData(pilotQuery.queryKey);
         if (now) void save(now, usePreferences.getState().homeAirport?.ident ?? null);

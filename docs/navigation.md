@@ -202,7 +202,7 @@ list is where it was.
 | Nav log card | plan → Nav Log tile; Dist tapped; search → Do → Nav Log | 1 | Rows select; a field's name opens its card |
 | Profile | plan → Profile tile | 2 → **1** with a route | altitude in the side view, Dry run (VFR/IFR is FPL's first row's, beside the altitude, 2026-11-17) |
 | Search results (Airports, Waypoints and Navaids, Airplanes, Do, Ask) | the search field, typed | **new: 1** | -- |
-| Saved flights | search → Saved; account → Flights | 2 | Name and notes edited in the row; delete with a confirm |
+| Saved Flights | search → Saved; account → Flights | 2 | Name and notes edited in the row; delete with a confirm |
 | Airport card | Tap a field; a search result; a route row's More Info; a nav log field | 1 (2 from the search) | **Fly Here, Depart From, Add as Stop at its top (new)**, favorite; frequencies copy |
 | Favorites, Recents (airports' and airplanes') | search → Favorites / Recents | 2 | Drag to reorder (Edit's grip), swipe left to remove (a full swipe removes), Undo in the toast; the airplanes after the airports in each, and in the search page's rows |
 | Nearest | search → Nearest; search → Do → Nearest | 2 | Change the place it is from in the one search's field, scoped to it (no second field) |

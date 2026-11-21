@@ -46,9 +46,9 @@ struct ProcedureMenuItems: View {
                 Button(procedure.name) { take(procedure, nil) }
             } else {
                 Menu(procedure.name) {
-                    Button("As published") { take(procedure, nil) }
+                    Button("As Published") { take(procedure, nil) }
                     ForEach(procedure.transitions, id: \.self) { transition in
-                        Button("\(transition) transition") { take(procedure, transition) }
+                        Button("\(transition) Transition") { take(procedure, transition) }
                     }
                 }
             }
@@ -191,9 +191,9 @@ struct TimelineProcedureRows: View {
                     Menu {
                         Text(fix.ident)
                         Button { plan.setProcedureDirect(pick, fix: isDirect ? nil : fix.ident) } label: {
-                            Label(isDirect ? "Fly \(pick.name) as Charted" : "Direct To", systemImage: WingtipIcon.directTo)
+                            Label(isDirect ? String(localized: "Fly \(pick.name) as Charted") : Wording.directTo, systemImage: WingtipIcon.directTo)
                         }
-                        Button { flightUI.crossAt = fix.ident } label: { Label("Cross at…", systemImage: "arrow.up.and.down") }
+                        Button { flightUI.crossAt = fix.ident } label: { Label("Cross At…", systemImage: "arrow.up.and.down") }
                     } label: {
                         FixRing(direct: isDirect, skipped: skipped).hitArea()
                     }

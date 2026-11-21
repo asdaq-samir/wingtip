@@ -97,7 +97,7 @@ private fun Card(
                 search.pickAirport(R.string.home_airport_pick) { ident -> onPicked(ident); sheet.show(SheetPage.PilotDetails) }
             }
         }
-        SheetPage.Minimums -> Page(stringResource(R.string.minimums), exit) { MinimumsScreen() }
+        SheetPage.Minimums -> Page(stringResource(R.string.screen_minimums), exit) { MinimumsScreen() }
         SheetPage.Settings -> Page(stringResource(R.string.settings), exit) { SettingsScreen(open = sheet::push) }
         SheetPage.Atc -> Page(stringResource(R.string.atc), exit) { AtcPage() }
         SheetPage.Help -> Page(stringResource(R.string.help_and_about), exit) { HelpPage(open = sheet::push) }

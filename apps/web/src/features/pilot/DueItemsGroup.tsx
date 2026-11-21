@@ -18,7 +18,7 @@ import { daysBetween, dueFinding, whenWords } from "./paperwork";
 import { done } from "../../lib/doneNote";
 
 const KINDS: { value: DueItemRequest["kind"]; label: string }[] = [
-  { value: "AD", label: "Airworthiness directive" },
+  { value: "AD", label: "Airworthiness Directive" },
   { value: "OTHER", label: "Other" },
 ];
 
@@ -121,7 +121,7 @@ export default function DueItemsGroup({ aircraft }: { aircraft: Aircraft }) {
 
   return (
     <ListGroup
-      title="ADs and other items"
+      title="ADs and Other Items"
       action={
         !open ? (
           <IconButton
@@ -161,9 +161,9 @@ export default function DueItemsGroup({ aircraft }: { aircraft: Aircraft }) {
             <PullDown label="What the item is" value={draft.kind} options={KINDS} onChange={(kind) => set({ kind })} />
           </ListRow>
           {field("title", "Title", draft.kind === "AD" ? "Oil filter adapter" : "Fire extinguisher", 120)}
-          {field("reference", draft.kind === "AD" ? "AD number" : "Reference", draft.kind === "AD" ? "AD 2011-10-09" : "", 60)}
-          {field("method", "Method of compliance", "Inspect each 100 h", 200)}
-          <ListRow id={`${id}-on`} title="Next due on">
+          {field("reference", draft.kind === "AD" ? "AD Number" : "Reference", draft.kind === "AD" ? "AD 2011-10-09" : "", 60)}
+          {field("method", "Method of Compliance", "Inspect each 100 h", 200)}
+          <ListRow id={`${id}-on`} title="Next Due On">
             <DateField
               id={`${id}-on`}
               className="h-8 w-40"
@@ -173,7 +173,7 @@ export default function DueItemsGroup({ aircraft }: { aircraft: Aircraft }) {
               data-testid="due-item-dueOn"
             />
           </ListRow>
-          <ListRow id={`${id}-at`} title="Next due at hours">
+          <ListRow id={`${id}-at`} title="Next Due at Hours">
             <FieldHit htmlFor={`${id}-at`}>
               <NumberField
                 id={`${id}-at`}
@@ -186,10 +186,21 @@ export default function DueItemsGroup({ aircraft }: { aircraft: Aircraft }) {
               />
             </FieldHit>
           </ListRow>
-          {problem && <ListRow muted title={<span className={FINDING_TONE.stop}>{problem}</span>} />}
+          {problem && (
+            <ListRow
+              muted
+              title={
+                <span id={`${id}-problem`} className={FINDING_TONE.stop}>
+                  {problem}
+                </span>
+              }
+            />
+          )}
           <ListRow
-            title={<span className="font-medium text-tint">Save item</span>}
+            title={<span className="font-medium text-tint">Save Item</span>}
             disabled={!!problem || save.isPending}
+            // Why it cannot be saved yet, read with the button (WCAG 3.3.1).
+            aria-describedby={problem ? `${id}-problem` : undefined}
             data-testid="due-item-save"
             onClick={() =>
               save.mutate({
@@ -207,7 +218,7 @@ export default function DueItemsGroup({ aircraft }: { aircraft: Aircraft }) {
           />
           {open.id != null && (
             <ListRow
-              title={<span className="font-medium text-destructive">Delete item</span>}
+              title={<span className="font-medium text-destructive">Delete Item…</span>}
               onClick={askDelete}
               disabled={remove.isPending}
             />

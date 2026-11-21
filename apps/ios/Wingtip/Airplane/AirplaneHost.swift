@@ -46,7 +46,7 @@ struct AirplaneFigureAlerts: ViewModifier {
         let offered = offer.offered
         content
             .alert(Self.title(offered), isPresented: Binding(get: { active && !offer.offered.isEmpty }, set: { if !$0 { offer.offered = [:] } })) {
-                Button("Save to Account") { Task { await keep() } }
+                Button(Wording.saveToAccount) { Task { await keep() } }
                 Button("Keep on This iPhone", role: .cancel) { offer.offered = [:] }
             } message: {
                 Text("You set figures for \(offered.keys.sorted().joined(separator: ", ")) while signed out. Save them with your airplanes?")

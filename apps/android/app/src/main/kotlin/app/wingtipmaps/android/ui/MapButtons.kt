@@ -127,7 +127,7 @@ fun MapButtons(
         val ask: (@Composable () -> Unit)? = onAsk?.let { open ->
             {
                 FilledTonalIconButton(onClick = open, shapes = IconButtonDefaults.shapes()) {
-                    Icon(WingtipIcons.brief, contentDescription = stringResource(R.string.ask_about_flight), tint = MaterialTheme.colorScheme.primary)
+                    Icon(WingtipIcons.brief, contentDescription = stringResource(R.string.wording_ask_about_the_flight), tint = MaterialTheme.colorScheme.primary)
                 }
             }
         }
@@ -267,7 +267,7 @@ fun OwnShipNote(approximate: Boolean, onAskAgain: () -> Unit, onClose: () -> Uni
                 modifier = Modifier.padding(end = WingtipSpace.Sm),
             )
             Row(Modifier.align(Alignment.End)) {
-                TextButton(onClick = onClose) { Text(stringResource(R.string.not_now)) }
+                TextButton(onClick = onClose) { Text(stringResource(R.string.wording_not_now)) }
                 TextButton(onClick = onAskAgain) { Text(stringResource(if (approximate) R.string.allow_precise else R.string.allow)) }
             }
         }

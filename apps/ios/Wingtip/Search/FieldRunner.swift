@@ -99,7 +99,7 @@ struct FieldRunner {
     /// where one was done; else why not.
     func spoken(_ text: String) async -> String? {
         let direct: String?
-        do { direct = try HeardCall.directOf(text) } catch { return "The words couldn't be read: \(error.localizedDescription)" }
+        do { direct = try HeardCall.directOf(text) } catch { return "The words could not be read: \(error.localizedDescription)" }
         if let said = direct {
             guard plan.routed else { return "Direct To needs a route." }
             var near: [(Double, Double)] = []

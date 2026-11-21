@@ -31,7 +31,7 @@ struct FlightLockScreen: View {
                     Text(lines.nextLine).font(WingtipType.detail.monospacedDigit().weight(.semibold)).lineLimit(1)
                         .accessibilityLabel(lines.nextSentence)
                     Spacer(minLength: WingtipSpace.sm)
-                    if let fuel = lines.fuel { Figure(value: fuel, name: "Planned fuel left") }
+                    if let fuel = lines.fuel { Figure(value: fuel, name: "Planned Fuel Left") }
                 }
                 // The small family (the Watch, CarPlay) keeps to the route,
                 // the bar and the next fix.
@@ -117,7 +117,7 @@ struct ExpandedBottom: View {
                 ProgressView(value: lines.progress)
                     .tint(Color(WingtipColor.Chart.mapBlue))
                     .accessibilityLabel("\(Int((lines.progress * 100).rounded())) percent flown")
-                if let fuel = lines.fuel { Figure(value: fuel, name: "Planned fuel left") }
+                if let fuel = lines.fuel { Figure(value: fuel, name: "Planned Fuel Left") }
             }
             Notes(lines: lines)
         }

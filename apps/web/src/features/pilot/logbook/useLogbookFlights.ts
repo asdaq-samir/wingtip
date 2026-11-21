@@ -66,7 +66,7 @@ export function useLogbookFlights() {
       // The form again, on what was typed.
       if (id) setChanging(id);
       else setAdding(true);
-      return { id, entry, problem: describeError(err, id ? "The flight could not be saved" : "The flight could not be logged") };
+      return { id, entry, problem: describeError(err, id ? "The flight could not be saved." : "The flight could not be logged.") };
     }
   }, null);
   const ask = (next: SaveAsk) => startTransition(() => send(next));

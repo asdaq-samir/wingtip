@@ -2,6 +2,7 @@ import type { Control, FieldErrors } from "react-hook-form";
 import { ListGroup } from "../../components/GroupedList";
 import type { AircraftFormValues } from "./aircraftForm";
 import NumberRow from "./NumberRow";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * The airplane form's speeds and fuel burns, phase by phase: the climb's
@@ -23,7 +24,7 @@ export default function SpeedAndBurnGroups({
 }) {
   return (
     <>
-      <ListGroup title="True airspeed">
+      <ListGroup title={WORDING.trueAirspeed}>
         <NumberRow
           id={`${formId}-climb-tas`}
           title="Climb"
@@ -45,7 +46,7 @@ export default function SpeedAndBurnGroups({
           error={errors.cruiseTasKt?.message}
         />
       </ListGroup>
-      <ListGroup title="Indicated airspeed">
+      <ListGroup title={WORDING.indicatedAirspeed}>
         <NumberRow
           id={`${formId}-descent-ias`}
           title="Descent"
@@ -57,7 +58,7 @@ export default function SpeedAndBurnGroups({
           error={errors.descentIasKt?.message}
         />
       </ListGroup>
-      <ListGroup title="Fuel burn">
+      <ListGroup title={WORDING.fuelBurn}>
         <NumberRow
           id={`${formId}-climb-burn`}
           title="Climb"

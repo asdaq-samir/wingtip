@@ -59,7 +59,7 @@ export default function StudentLessons({ studentId, training }: { studentId: num
       />
     );
   return (
-    <ListGroup title="Approach lessons">
+    <ListGroup title="Approach Lessons">
       {training.lessons.map((l) => (
         <ListRow
           key={l.id}
@@ -109,7 +109,7 @@ function AssignForm({ studentId, onDone, onCancel }: { studentId: number; onDone
   });
   return (
     <div className="space-y-4" data-testid="lesson-form">
-      <ListGroup title="Assign an approach">
+      <ListGroup title="Assign an Approach">
         <ListRow id={ids.field} title="Airport">
           <FieldHit htmlFor={ids.field}>
             <Input
@@ -140,7 +140,7 @@ function AssignForm({ studentId, onDone, onCancel }: { studentId: number; onDone
           </p>
         ) : list.error ? (
           <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
-            Its approaches could not be had ({list.error.message}).
+            Its approaches could not be fetched ({list.error.message}).
           </FieldError>
         ) : approaches.length === 0 ? (
           <p className={cn("px-1 text-muted-foreground", TEXT.prose)}>No instrument approaches at {ident}</p>
@@ -176,12 +176,12 @@ function AssignForm({ studentId, onDone, onCancel }: { studentId: number; onDone
           </p>
         ) : drawing.error ? (
           <FieldError className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
-            Its fixes could not be had ({drawing.error.message}).
+            Its fixes could not be fetched ({drawing.error.message}).
           </FieldError>
         ) : (
           // A note at a fix, shown to the student on the lesson's brief and
           // as it is flown there ("Your instructor: …").
-          <ListGroup title="Your notes at its fixes">
+          <ListGroup title="Your Notes at Its Fixes">
             {fixes.map((fix) => (
               <NoteRow key={fix} fix={fix} value={notes[fix] ?? ""} onChange={(v) => setNotes((n) => ({ ...n, [fix]: v }))} />
             ))}
@@ -203,8 +203,9 @@ function AssignForm({ studentId, onDone, onCancel }: { studentId: number; onDone
 
 function NoteRow({ fix, value, onChange }: { fix: string; value: string; onChange: (v: string) => void }) {
   const id = useId();
+  const place = /^RW\d/.test(fix) ? `Runway ${fix.slice(2)}` : fix;
   return (
-    <ListRow id={id} title={<span className="font-mono">{/^RW\d/.test(fix) ? `Runway ${fix.slice(2)}` : fix}</span>}>
+    <ListRow id={id} title={<span className="font-mono">{place}</span>}>
       <FieldHit htmlFor={id}>
         <Input
           id={id}
@@ -213,7 +214,8 @@ function NoteRow({ fix, value, onChange }: { fix: string; value: string; onChang
           placeholder="A note"
           className="h-8 w-44 sm:w-56"
           autoComplete="off"
-          aria-label={`Your note at ${fix}`}
+          // The row's own words first, "Runway 27" for RW27 (WCAG 2.5.3).
+          aria-label={`${place}, your note`}
           onChange={(e) => onChange(e.target.value)}
           data-testid={`lesson-note-${fix}`}
         />
@@ -233,7 +235,7 @@ function LessonDetail({ lesson, studentId, onDone }: { lesson: ApproachLesson; s
       <ListGroup title={`${lesson.procedureName} · ${lesson.airportIdent}`}>
         <ListRow title="Progress" value={lessonStatus(lesson)} />
         {lesson.briefedAt && <ListRow title="Briefed" value={said(lesson.briefedAt.slice(0, 10))} />}
-        {lesson.flownAt && <ListRow title="Flown in the lesson" value={said(lesson.flownAt.slice(0, 10))} />}
+        {lesson.flownAt && <ListRow title="Flown in the Lesson" value={said(lesson.flownAt.slice(0, 10))} />}
         {lesson.dueOn && <ListRow title="Due" value={said(lesson.dueOn)} />}
         {notes.map(([fix, note]) => (
           <ListRow key={fix} title={<span className="font-mono">{fix}</span>} description={note} />
@@ -287,7 +289,7 @@ function LessonDebrief({ lesson, studentId }: { lesson: ApproachLesson; studentI
   return (
     <div className="space-y-3">
       <ListChoices value={String(flight.id)} onChange={(id) => setPicked(Number(id))} label="Flight to debrief">
-        <ListGroup title="Flown, put to you">
+        <ListGroup title="Flown, Put to You">
           {lesson.flights.map((f) => (
             <ListRow
               key={f.id}

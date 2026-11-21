@@ -120,7 +120,7 @@ private fun RunView(state: ChecklistModel.State, model: ChecklistModel, modifier
             }
         }
         Row(Modifier.fillMaxWidth().padding(vertical = WingtipSpace.Sm), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-            OutlinedButton(onClick = model::startOver, enabled = state.ticked.isNotEmpty()) { Text(stringResource(R.string.checklist_start_over)) }
+            OutlinedButton(onClick = model::startOver, enabled = state.ticked.isNotEmpty()) { Text(stringResource(R.string.wording_start_over)) }
             TextButton(onClick = model::edit) { Text(stringResource(R.string.checklist_edit)) }
         }
     }

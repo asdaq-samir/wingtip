@@ -25,7 +25,7 @@ final class ClearanceLookup {
             wordsProblem = nil
         } catch {
             words = []
-            wordsProblem = "The route's place names couldn't be had, so listening goes without them."
+            wordsProblem = "The route's place names could not be fetched, so listening goes without them."
         }
     }
 

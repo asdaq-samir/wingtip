@@ -99,7 +99,7 @@ export function Chips({
         // track has, so a tap just over or under a row of chips is the
         // group's and not the page's (isolate keeps it over what is round).
         className={cn(
-          "relative isolate w-max flex-nowrap after:absolute after:inset-x-0 after:-inset-y-1.5 after:-z-10 after:content-['']",
+          "relative isolate w-max flex-nowrap hit-y-1.5 after:-z-10",
           !trailing && !tray && "min-w-full",
           tray && TRAY_BODY,
           enter,
@@ -107,8 +107,10 @@ export function Chips({
       >
         {children}
       </ToggleGroup>
+      {/* 12 between the pull-downs, so their 44-point areas (6 round a
+          32-point chip) meet and do not cross, as the folded line's. */}
       {trailing && (
-        <div ref={trailingRef} className="flex shrink-0 items-center gap-2">
+        <div ref={trailingRef} className="flex shrink-0 items-center gap-3">
           {trailing}
         </div>
       )}
@@ -120,9 +122,12 @@ export function Chips({
  *  the round start of a pale tint capsule, and its chips' body, the rest
  *  of it, hugging them. Two boxes, not one, as the chips scroll sideways
  *  under the head while the line is open: the body goes under the head's
- *  edge, and the tray reads as one. 38 high, the 32 chips three in; the
+ *  edge, and the tray reads as one. 38 high, the 32 chips three in, in
+ *  rem as the chips are, so the two stay one height at a larger text size
+ *  (at 19.65 px the 38-pixel head stood 4 short of its body; the HIG
+ *  review, 2026-11-21); the
  *  head 44 across at the least ("Land RWY"), so the chip against it takes none of its 44 points
  *  (the iOS audit's P1). */
 export const TRAY_HEAD =
-  "relative flex h-[38px] min-w-11 shrink-0 items-center justify-center rounded-l-full bg-tint/12 pr-1.5 pl-3 text-tint";
+  "relative flex h-[2.375rem] min-w-11 shrink-0 items-center justify-center rounded-l-full bg-tint/12 pr-1.5 pl-3 text-tint";
 export const TRAY_BODY = "rounded-r-full bg-tint/12 p-0.75 pl-0";

@@ -159,7 +159,7 @@ private struct NoFlight: View {
             HStack(spacing: WingtipSpace.sm) {
                 Image(systemName: "airplane")
                     .foregroundStyle(WingtipInk.tint)
-                Text("No flight planned")
+                Text("No Flight Planned")
                     .font(.headline)
             }
             if family != .accessoryRectangular {

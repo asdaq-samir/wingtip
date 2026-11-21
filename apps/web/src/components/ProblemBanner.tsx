@@ -1,6 +1,7 @@
 import { CircleAlert } from "lucide-react";
 import MapBanner, { BannerButton } from "./MapBanner";
 import { useSystemProblems } from "../lib/problems";
+import { WORDING } from "../lib/wording/generated/wording";
 
 /**
  * What the app could not do that is not the pilot's doing -- the planner
@@ -37,7 +38,7 @@ export default function ProblemBanner() {
           </ul>
         )
       }
-      actions={retries.length > 0 && <BannerButton onClick={() => retries.forEach((p) => p.retry!())}>Try again</BannerButton>}
+      actions={retries.length > 0 && <BannerButton onClick={() => retries.forEach((p) => p.retry!())}>{WORDING.tryAgain}</BannerButton>}
     />
   );
 }

@@ -27,7 +27,7 @@ export default function ActionsList({ vm }: { vm: EmergencyModel }) {
   const { mayday, souls, setSouls, fuelMin, setFuelMin, phone, picked } = vm;
   return (
     <>
-      <ListGroup title="Transponder and radio">
+      <ListGroup title="Transponder and Radio">
         {/* The code and the guard frequency large, each a tap that copies
             it (FrequencyButton), as the doc's §8 has them: read at a
             glance in a cockpit that is shaking. */}
@@ -67,7 +67,7 @@ export default function ActionsList({ vm }: { vm: EmergencyModel }) {
         </div>
         <div className="grid grid-cols-2 gap-2 px-4 pb-3">
           <div className={cn("grid gap-1", TEXT.note)}>
-            <label htmlFor="emergency-souls">People on board</label>
+            <label htmlFor="emergency-souls">People on Board</label>
             <NumberField
               id="emergency-souls"
               defaultValue={souls === "" ? null : Number(souls)}
@@ -79,7 +79,7 @@ export default function ActionsList({ vm }: { vm: EmergencyModel }) {
             />
           </div>
           <div className={cn("grid gap-1", TEXT.note)}>
-            <label htmlFor="emergency-fuel">Fuel, minutes</label>
+            <label htmlFor="emergency-fuel">Fuel, Minutes</label>
             <NumberField
               id="emergency-fuel"
               defaultValue={fuelMin === "" ? null : Number(fuelMin)}

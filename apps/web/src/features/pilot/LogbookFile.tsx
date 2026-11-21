@@ -58,7 +58,7 @@ export default function LogbookFile({ entries, onImported }: { entries: LogbookE
     const rows = csvRows(text);
     const headerAt = headerRowOf(rows);
     if (headerAt < 0) {
-      showError("Could not import the logbook", `${file.name} has no rows.`);
+      showError("Could Not Import the Logbook", `${file.name} has no rows.`);
       return;
     }
     setStep({ kind: "columns", name: file.name, mapping: { rows, headerAt, columns: guessColumns(rows[headerAt] ?? []) } });
@@ -79,14 +79,14 @@ export default function LogbookFile({ entries, onImported }: { entries: LogbookE
       setStep({ kind: "idle" });
       onImported();
     },
-    onError: (err) => showError("Could not import the logbook", describeError(err)),
+    onError: (err) => showError("Could Not Import the Logbook", describeError(err)),
   });
 
   const exportFile = async () => {
     try {
       await shareFile(`logbook-${localDay()}.csv`, "text/csv", logbookCsv(entries ?? []));
     } catch (err) {
-      if ((err as Error).name !== "AbortError") showError("Could not export the logbook", (err as Error).message);
+      if ((err as Error).name !== "AbortError") showError("Could Not Export the Logbook", describeError(err));
     }
   };
 
@@ -119,7 +119,7 @@ export default function LogbookFile({ entries, onImported }: { entries: LogbookE
           >
             <Pressable>
               <ListRow
-                title="Import a logbook"
+                title="Import a Logbook"
                 description="ForeFlight, MyFlightbook or any CSV"
                 media={<FileUp className="size-5" />}
                 data-testid="logbook-import"
@@ -178,7 +178,7 @@ function ColumnRows({ step, onStep }: { step: Extract<Step, { kind: "columns" }>
         </ListRow>
       ))}
       <ListRow
-        title={<span className="font-medium text-tint">Read the flights</span>}
+        title={<span className="font-medium text-tint">Read the Flights</span>}
         onClick={read}
         disabled={missing.length > 0}
         data-testid="logbook-columns-read"
@@ -244,7 +244,7 @@ function PreviewRows({
         disabled={importing || !entries.length}
         data-testid="logbook-preview-import"
       />
-      {onColumns && <ListRow title={<span className="text-tint">Change columns</span>} onClick={onColumns} />}
+      {onColumns && <ListRow title={<span className="text-tint">Change Columns</span>} onClick={onColumns} />}
       <ListRow title={<span className="text-tint">Cancel</span>} onClick={onCancel} />
     </>
   );

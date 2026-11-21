@@ -7,6 +7,7 @@ import { checklistOf } from "../lib/checklist";
 import { checklistText, phasesText, saveChecklist, useChecklists, type ChecklistKind } from "../lib/checklists";
 import { TEXT } from "../lib/text";
 import { openEmergency } from "../lib/emergencyStore";
+import { WORDING } from "../lib/wording/generated/wording";
 
 const KINDS = [
   { value: "normal", label: "Normal" },
@@ -69,7 +70,7 @@ export default function ChecklistPage({
         </ListGroup>
         <ListGroup>
           <ListRow
-            title={<span className="font-medium text-tint">Save checklist</span>}
+            title={<span className="font-medium text-tint">Save Checklist</span>}
             onClick={() => {
               saveChecklist(airplane, kind, writing);
               setWriting(null);
@@ -80,7 +81,7 @@ export default function ChecklistPage({
           {/* Only into an empty editor: it never writes over the pilot's. */}
           {!writing.trim() && (
             <ListRow
-              title="Start from the phases"
+              title="Start from the Phases"
               description="Their headings only, to write your airplane's items under"
               onClick={() => setWriting(phasesText(kind))}
               data-testid="checklist-phases"
@@ -99,7 +100,7 @@ export default function ChecklistPage({
       {empty && (
         <ListGroup>
           <ListRow
-            title={kind === "emergency" ? "No emergency checklist yet" : "No checklist yet"}
+            title={kind === "emergency" ? "No Emergency Checklist Yet" : "No Checklist Yet"}
             description="Write it from your airplane's handbook"
           />
         </ListGroup>
@@ -146,14 +147,14 @@ export default function ChecklistPage({
       <ListGroup>
         {!empty && (
           <ListRow
-            title="Start over"
+            title={WORDING.startOver}
             onClick={() => setTicked({})}
             disabled={!Object.values(ticked).some(Boolean)}
             data-testid="checklist-reset"
           />
         )}
         <ListRow
-          title={empty ? "Write the checklist" : "Edit the checklist"}
+          title={empty ? "Write the Checklist" : "Edit the Checklist"}
           onClick={() => setWriting(text)}
           data-testid="checklist-edit"
         />

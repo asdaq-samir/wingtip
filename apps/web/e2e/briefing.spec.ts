@@ -171,7 +171,7 @@ test("each card's Share is its own: the Brief's prints the briefing, the nav log
   await expect(drawer.getByTestId("brief-card")).toHaveCount(0);
   await openNavLog(page);
   await page.getByTestId("card-share").click();
-  await expect(menu.getByTestId("print-kneeboard")).toHaveText("Print the nav log");
+  await expect(menu.getByTestId("print-kneeboard")).toHaveText("Print Nav Log");
   await expect(menu.getByTestId("print-briefing")).toHaveCount(0);
   await expect(menu.getByTestId("brief-refresh")).toHaveCount(0);
   await expect(menu.getByTestId("route-clear")).toHaveCount(0);

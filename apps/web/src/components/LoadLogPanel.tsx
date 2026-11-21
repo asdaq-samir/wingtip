@@ -32,7 +32,7 @@ export default function LoadLogPanel() {
       {fresh.length > 0 && <Middle title={`Fresh loads, middle of ${fresh.length}`} loads={fresh} />}
       {cached.length > 0 && <Middle title={`From the cache, middle of ${cached.length}`} loads={cached} />}
       {loads.length > 0 && (
-        <ListGroup title="Each load">
+        <ListGroup title="Each Load">
           {loads.map((l) => (
             <LoadRow key={l.at} load={l} />
           ))}

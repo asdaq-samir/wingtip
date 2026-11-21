@@ -55,7 +55,7 @@ fun HereCard(lat: Double, lon: Double, model: HereModel = hiltViewModel()) {
         state.loading -> LoadingRow()
         state.problem != null -> {
             ProblemLine(state.problem)
-            TextButton(onClick = model::retry) { Text(stringResource(R.string.try_again)) }
+            TextButton(onClick = model::retry) { Text(stringResource(R.string.wording_try_again)) }
         }
         here != null -> {
             SectionTitle(stringResource(R.string.airspace_here))
@@ -116,7 +116,7 @@ private fun Tfrs(tfrs: List<TfrHere>, unavailable: Boolean) {
     val context = LocalContext.current
     SectionTitle(stringResource(R.string.tfrs))
     when {
-        unavailable -> Text(stringResource(R.string.tfrs_unavailable), color = LocalInk.current.cautionInk)
+        unavailable -> Text(stringResource(R.string.wording_tfrs_not_loaded), color = LocalInk.current.cautionInk)
         tfrs.isEmpty() -> Text(stringResource(R.string.tfrs_none), color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     tfrs.forEach { tfr ->

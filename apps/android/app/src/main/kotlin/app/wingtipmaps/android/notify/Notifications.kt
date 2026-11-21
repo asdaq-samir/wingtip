@@ -67,24 +67,24 @@ object Notifications {
     fun channels(context: Context) {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         manager.createNotificationChannel(
-            NotificationChannel(CHANNEL_TRAFFIC, "Traffic near you", NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "An airplane within a few miles and within 1,000 ft of your height"
+            NotificationChannel(CHANNEL_TRAFFIC, "Traffic Near You", NotificationManager.IMPORTANCE_HIGH).apply {
+                description = "An airplane within a few miles and within 1,000 ft of your height."
             },
         )
         manager.createNotificationChannel(
-            NotificationChannel(CHANNEL_WATCHES, "Watched airplanes", NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "A watched airplane took off or landed"
+            NotificationChannel(CHANNEL_WATCHES, "Watched Airplanes", NotificationManager.IMPORTANCE_HIGH).apply {
+                description = "A watched airplane took off or landed."
             },
         )
         manager.createNotificationChannel(
-            NotificationChannel(CHANNEL_OWN_SHIP, "Position in flight", NotificationManager.IMPORTANCE_LOW).apply {
-                description = "Shown while your position is read with the screen off"
+            NotificationChannel(CHANNEL_OWN_SHIP, "Position in Flight", NotificationManager.IMPORTANCE_LOW).apply {
+                description = "Shown while your position is read with the screen off."
                 setShowBadge(false)
             },
         )
         manager.createNotificationChannel(
-            NotificationChannel(CHANNEL_ATC, "Listening to the radio", NotificationManager.IMPORTANCE_LOW).apply {
-                description = "Shown while the ATC copilot listens for calls to your airplane"
+            NotificationChannel(CHANNEL_ATC, "Listening to the Radio", NotificationManager.IMPORTANCE_LOW).apply {
+                description = "Shown while the ATC copilot listens for calls to your airplane."
                 setShowBadge(false)
             },
         )

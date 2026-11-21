@@ -34,7 +34,7 @@ export default function SubscriptionPanel() {
       <ListGroup>
         <ListRow title="Status" value={standing(subscription)} data-testid="subscription-standing" />
         {subscription.plan && <ListRow title="Plan" value={PLANS[subscription.plan]} />}
-        {subscription.store && <ListRow title="Bought on" value={STORES[subscription.store]} />}
+        {subscription.store && <ListRow title="Bought On" value={STORES[subscription.store]} />}
         <ListRow title="Adds" description="The debrief" />
         <ListRow title="Price" value={`${PRICE.monthly} or ${PRICE.yearly}`} />
       </ListGroup>

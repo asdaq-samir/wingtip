@@ -191,7 +191,7 @@ export default function NavLogView({
   const checkpointCount = data.filter((r) => r.kind === "checkpoint").length;
   const navLogList =
     data.length === 0 ? (
-      <p className={cn("py-3", TEXT.detail)}>No route planned yet</p>
+      <p className={cn("py-3", TEXT.detail)}>Plan a route on FPL; its legs are listed here.</p>
     ) : (
       <>
         <div className="flex items-center justify-between pt-2 pl-1.5 empty:hidden" data-testid="navlog-head">

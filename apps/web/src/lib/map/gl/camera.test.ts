@@ -204,6 +204,19 @@ describe("the camera's one owner", () => {
     expect(calls).toHaveLength(1);
   });
 
+  it("moves the map once a fix for own ship a few pixels on, and eases it when the step is larger", () => {
+    const { map, calls, state } = fakeMap();
+    const camera = cameraOf(map);
+    // 0.03 degrees is 3 px on the fake map: under the jump's 8.
+    camera.follow("own-ship", [0.03, 0]);
+    nextFrame();
+    expect(calls.map((c) => c.name)).toEqual(["jumpTo"]);
+    state.center = { lng: 0.03, lat: 0 };
+    camera.follow("own-ship", [0.5, 0]);
+    nextFrame();
+    expect(calls.at(-1)!.name).toBe("easeTo");
+  });
+
   it("keeps a tracked airplane where it is on the screen, moving the map by its own move, not drawing it to the middle", () => {
     const { map, calls } = fakeMap();
     const camera = cameraOf(map);

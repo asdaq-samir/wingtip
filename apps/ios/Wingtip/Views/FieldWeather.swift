@@ -133,12 +133,12 @@ struct WeatherModules: View {
             }
             switch FieldDensity.altitudeFt(elevationFt: place.elevationFt, altimeterInHg: metar.altimeterInHg, tempC: metar.tempC) {
             case .success(let density)?:
-                module("Density Altitude", "arrow.up.and.down", Format.altitude(density), line: "The engine's, at this report",
+                module(Wording.densityAltitude, "arrow.up.and.down", Format.altitude(density), line: "The engine's, at this report",
                        spoken: SpokenFigures.feet(density))
             case .failure(let error)?:
                 // Said in its module, never left out as if the report lacked it.
                 VStack(alignment: .leading, spacing: WingtipSpace.xs) {
-                    Label("Density Altitude", systemImage: "arrow.up.and.down").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+                    Label(Wording.densityAltitude, systemImage: "arrow.up.and.down").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
                     ProblemLine(Result<Void, any Error>.failure(error), "The density altitude")
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

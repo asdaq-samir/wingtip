@@ -16,6 +16,7 @@ import { categoryAt, nearestStation, ownStation, placesOf, tafReachNm, type Stat
 import { FINDING_TONE } from "../../lib/findings";
 import OnRouteRow from "./OnRouteRow";
 import { useGeo } from "../../lib/geo";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 type Pirep = Briefing["pireps"][number];
 
@@ -148,7 +149,7 @@ export default function WeatherAlongRoute({
   return (
     // A field's weather under its own tab's title, Weather; the way between
     // Along the Route.
-    <AccordionSection title={phase === "depart" || phase === "arrive" ? "Weather" : "Along the Route"}>
+    <AccordionSection title={phase === "depart" || phase === "arrive" ? "Weather" : WORDING.alongTheRoute}>
       <div className="space-y-4" data-testid="weather-places">
         {places.map((place, i) => {
           const metar = briefing.metars[place.ident];

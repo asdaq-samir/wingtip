@@ -4,7 +4,7 @@
 # claude/integration where it was cut from that): TypeScript and ESLint for apps/web/, ruff for
 # the Python, `cargo check` for engine/, each changed language's formatter
 # (scripts/dev/format.sh --check), and the generated files and budgets CI
-# checks (the screens, the design tokens, the toolchain versions, the file
+# checks (the screens, the shared words, the design tokens, the toolchain versions, the file
 # sizes, the brand guard), each only when the push changes what it covers. A type error or a lint failure
 # then stops on the Mac in seconds rather than in CI minutes later (the
 # owner, 2026-11-06: development faster). The full checks -- the tests --
@@ -336,6 +336,9 @@ gen() {   # gen <pattern of the paths it covers> <label> <fix> <command>...
 gen '^(design/screens\.json$|scripts/build/screens\.|docs/navigation\.md$|apps/web/src/lib/navigation/generated/|apps/ios/Wingtip/Navigation/Generated/|apps/android/app/src/main/kotlin/app/wingtipmaps/android/navigation/generated/|apps/android/app/src/main/res/xml/shortcuts\.xml$|apps/android/app/src/main/res/values/screens_strings\.xml$)' \
   "the screens' links are design/screens.json's" "scripts/build/screens.sh writes them" \
   "$here/scripts/build/screens.sh" --check
+gen '^(design/wording\.json$|scripts/build/wording\.|docs/design/rules\.md$|apps/web/src/lib/wording/generated/|apps/ios/Wingtip/Design/Generated/Wording\.swift$|apps/android/app/src/main/res/values/wording_strings\.xml$)' \
+  "the shared words are design/wording.json's" "scripts/build/wording.sh writes them" \
+  "$here/scripts/build/wording.sh" --check
 gen '^(design/|scripts/build/design[-_]tokens|apps/web/src/styles/tokens\.css$|apps/web/src/lib/tokens\.ts$|apps/web/src/lib/fixtures/formats\.json$|apps/ios/Wingtip/Design/Generated/|apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/)' \
   "the design tokens are design/tokens.json's" "scripts/build/design-tokens.sh writes them" \
   "$here/scripts/build/design-tokens.sh" --check

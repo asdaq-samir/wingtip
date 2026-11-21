@@ -48,7 +48,7 @@ struct MapButtons: View {
             if let ask {
                 Divider().frame(width: side * 0.6)
                 Button(action: ask) { glyph(WingtipIcon.brief) }
-                    .accessibilityLabel("Ask about this flight")
+                    .accessibilityLabel(Wording.askAboutTheFlight)
                     .foregroundStyle(accent)
             }
         }

@@ -222,12 +222,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       align={align}
       testId={testId}
       card={card}
-      planned={planned}
-      course={course}
-      selected={selected}
-      altitudeFt={s.nav?.altitude_ft ?? undefined}
-      routed={routed}
-      local={!!s.local}
+      route={{ planned, course, selected, altitudeFt: s.nav?.altitude_ft ?? undefined, routed, local: !!s.local }}
       saving={(askReview) => (
         <Suspense fallback={null}>
           <SaveFlightButton {...flightToSave} />

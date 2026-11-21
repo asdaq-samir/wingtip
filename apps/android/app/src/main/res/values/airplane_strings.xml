@@ -3,18 +3,10 @@
      inline asks for a missing figure, the glide ring's switch. Labels are
      Title Case (decision 0021); questions and lines are sentences. -->
 <resources>
-    <string name="own_cruise">Cruise Speed</string>
-    <string name="own_burn">Cruise Burn</string>
-    <string name="own_power">Cruise Power</string>
-    <string name="own_usable">Usable Fuel</string>
-    <string name="own_climb_tas">Climb Speed</string>
-    <string name="own_climb_burn">Climb Burn</string>
-    <string name="own_climb_rate">Climb Rate at Sea Level</string>
-    <string name="own_ceiling">Service Ceiling</string>
-    <string name="own_taxi">Start and Taxi Fuel</string>
-    <string name="own_glide">Glide Ratio</string>
-    <string name="own_empty_weight">Empty Weight</string>
-    <string name="own_empty_moment">Empty Moment</string>
+    <string name="own_cruise">Cruise Speed (TAS)</string>
+    <string name="own_burn">Cruise Fuel Burn</string>
+    <string name="own_climb_tas">Climb Speed (TAS)</string>
+    <string name="own_climb_burn">Climb Fuel Burn</string>
 
     <string name="ask_cruise">How fast does %1$s cruise, true airspeed?</string>
     <string name="ask_burn">How much fuel does %1$s burn an hour in cruise?</string>

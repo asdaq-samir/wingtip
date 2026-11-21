@@ -13,7 +13,7 @@ struct PickAirplaneRow: View {
 
     var body: some View {
         Button { nav.push(.screen(.airplane)) } label: {
-            CardRow(title: "Pick an Airplane", detail: detail) {
+            CardRow(title: Wording.pickAnAirplane, detail: detail) {
                 Image(systemName: "chevron.right").foregroundStyle(.tertiary).accessibilityHidden(true)
             }
         }

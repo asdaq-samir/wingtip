@@ -85,7 +85,7 @@ fun PassengerScreen(plan: Plan, modifier: Modifier = Modifier) {
                         putExtra(Intent.EXTRA_SUBJECT, "Our flight")
                         putExtra(Intent.EXTRA_TEXT, message)
                     }
-                    context.startActivity(Intent.createChooser(send, "Send the flight"))
+                    context.startActivity(Intent.createChooser(send, "Send the Flight"))
                 },
                 contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                 modifier = Modifier.padding(bottom = WingtipSpace.Xl),

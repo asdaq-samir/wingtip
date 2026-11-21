@@ -8,6 +8,7 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import { RemovableRow } from "../../components/RemovableRow";
 import { usePreferences, type KeptAircraft } from "../../lib/preferences";
 import { toast } from "../../lib/toast";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * The airplanes in the Favorites in full (FavoritesList's `airplanes`), after
@@ -56,7 +57,7 @@ export default function AircraftFavoriteGroups({
         {!mine ? (
           <ListRow
             media={<Plus className="size-5" />}
-            title="Add your Airplane"
+            title={WORDING.addAirplane}
             onClick={onChangeMine}
             data-testid="aircraft-favorites-mine"
           />
@@ -133,7 +134,7 @@ export default function AircraftFavoriteGroups({
             </RemovableRow>
           ))
         )}
-        <ListRow media={<Plus className="size-5" />} title="Add an Airplane" onClick={onAdd} />
+        <ListRow media={<Plus className="size-5" />} title={WORDING.addAirplane} onClick={onAdd} />
       </ListGroup>
     </>
   );

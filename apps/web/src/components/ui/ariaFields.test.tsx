@@ -57,11 +57,11 @@ describe("the React Aria fields", () => {
 
   it("a number field gives its figure as it is left, null when emptied, without grouping", () => {
     const changed = vi.fn();
-    render(<NumberField aria-label="Hours now" defaultValue={2550} onChange={changed} data-testid="n" />);
+    render(<NumberField aria-label="Hours Now" defaultValue={2550} onChange={changed} data-testid="n" />);
     const field = screen.getByTestId<HTMLInputElement>("n");
     expect(field.value).toBe("2550");
     // Named once, on the figure: a search by its name finds it alone.
-    expect(screen.getAllByLabelText("Hours now")).toEqual([field]);
+    expect(screen.getAllByLabelText("Hours Now")).toEqual([field]);
     act(() => field.focus());
     fireEvent.change(field, { target: { value: "1262.3" } });
     act(() => field.blur());
@@ -79,7 +79,7 @@ describe("the React Aria fields", () => {
     const typed = vi.fn();
     render(
       <I18nProvider locale="de-DE">
-        <NumberField aria-label="Fuel burn" defaultValue={null} onChange={changed} onTyped={typed} data-testid="n" />
+        <NumberField aria-label="Fuel Burn" defaultValue={null} onChange={changed} onTyped={typed} data-testid="n" />
       </I18nProvider>,
     );
     const field = screen.getByTestId<HTMLInputElement>("n");

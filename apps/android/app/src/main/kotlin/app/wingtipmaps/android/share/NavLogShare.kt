@@ -46,7 +46,7 @@ fun NavLogShare(state: Plan.State) {
         IconButton(onClick = { open = true }) { Icon(WingtipIcons.share, contentDescription = stringResource(R.string.share)) }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.share_link)) },
+                text = { Text(stringResource(R.string.wording_share_link)) },
                 leadingIcon = { Icon(WingtipIcons.share, contentDescription = null) },
                 onClick = {
                     open = false
@@ -62,7 +62,7 @@ fun NavLogShare(state: Plan.State) {
                 },
             )
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.nav_log_print)) },
+                text = { Text(stringResource(R.string.wording_print_nav_log)) },
                 leadingIcon = { Icon(WingtipIcons.print, contentDescription = null) },
                 onClick = {
                     open = false

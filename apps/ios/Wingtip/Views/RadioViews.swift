@@ -33,7 +33,7 @@ struct RadioOverlay: View {
                             if let problem = listener.problem {
                                 ProblemLine(problem)
                             } else if listener.heard.isEmpty {
-                                Text("Listening to the radio…").foregroundStyle(.secondary)
+                                Text(Wording.listeningToTheRadio).foregroundStyle(.secondary)
                             }
                             ForEach(listener.heard.suffix(2)) { t in
                                 Text("Heard: \(t.text)").lineLimit(2)
@@ -102,7 +102,7 @@ struct RadioCallBanner: View {
                         Button("Direct To \(direct.capitalized)") { Task { await go(direct) } }.disabled(busy)
                     }
                     if clearance.limit != nil || !clearance.route.isEmpty {
-                        Button("Enter Route") {
+                        Button(Wording.enterRoute) {
                             listener.sheetText = call.text
                             listener.seen = call.id
                             listener.sheetShown = true

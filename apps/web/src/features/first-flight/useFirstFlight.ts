@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../../lib/api/client";
 import { positionNow } from "../../lib/map/position/ownShip";
 import { askSearchPick, useSearchPick, type SearchPick } from "../../lib/oneSearch";
 import { usePreferences } from "../../lib/preferences";
+import { useProgressToast } from "../../lib/useProgressToast";
 import { FIRST_FLIGHT, FPL_TIP, unseen, useTips } from "../../lib/firstRunTips";
 import type { RouteParts } from "../route";
 import type { PanelState } from "../../lib/mapChrome";
@@ -44,11 +45,18 @@ export function useFirstFlight({
   const lastDeparture = usePreferences((s) => s.recentRoutes[0]?.dep ?? s.homeAirport?.ident ?? null);
   const welcome = !routed && unseen(seen, FIRST_FLIGHT);
   const tip = routed && unseen(seen, FPL_TIP);
+  // The wait of up to 4 s for a fix once the destination is picked, said
+  // as the page's progress line (the owner's Q2, 2026-11-21), so the pilot
+  // isn't left with nothing happening; shown only past 400 ms, as every
+  // progress line is (useProgressToast).
+  const [finding, setFinding] = useState(false);
+  useProgressToast(finding ? FINDING_YOU : null);
 
   const planTo = useCallback(
     (dest: string) => {
       void planFirstFlight(dest, null, {
         lastDeparture,
+        onFinding: setFinding,
         onPlan: (parts) => {
           onPlan(parts);
           pickView("plan");
@@ -83,6 +91,9 @@ export function useFirstFlight({
   return { welcome, go, tip, closeTip };
 }
 
+/** The progress line while the first route waits for a position. */
+export const FINDING_YOU = "Finding where you are…";
+
 /**
  * The airport picked planned to: from `from` where the search was asked
  * for it, else own ship's nearest field, else the last departure or Home;
@@ -92,14 +103,19 @@ export function useFirstFlight({
 async function planFirstFlight(
   dest: string,
   from: string | null,
-  to: { lastDeparture: string | null; onPlan: (parts: RouteParts) => void },
+  to: { lastDeparture: string | null; onFinding: (finding: boolean) => void; onPlan: (parts: RouteParts) => void },
 ): Promise<void> {
   let dep = from;
   if (!dep) {
-    const fix = await positionNow(4000);
-    // The nearest field not to be had (no connection): the last
-    // departure, else the pilot is asked, as with no position.
-    if (fix) dep = (await api.nearestAirports(fix.lat, fix.lon).catch(() => []))[0]?.ident ?? null;
+    to.onFinding(true);
+    try {
+      const fix = await positionNow(4000);
+      // The nearest field not to be had (no connection): the last
+      // departure, else the pilot is asked, as with no position.
+      if (fix) dep = (await api.nearestAirports(fix.lat, fix.lon).catch(() => []))[0]?.ident ?? null;
+    } finally {
+      to.onFinding(false);
+    }
   }
   dep ??= to.lastDeparture;
   if (!dep) {

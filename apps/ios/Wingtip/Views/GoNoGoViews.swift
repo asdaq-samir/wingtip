@@ -94,7 +94,7 @@ struct GoNoGoSection: View {
             BriefSummarySection(answer: answer)
         }
         if verdict.answer != nil {
-            WordsSection(title: "The flight in words", said: riskWords, writing: writingWords)
+            WordsSection(title: "The Flight in Words", said: riskWords, writing: writingWords)
         }
         Section {
             if let answer = verdict.answer {
@@ -162,7 +162,7 @@ struct GoNoGoSection: View {
                 instructor = (try await Gateway.training())?.instructors.first { $0.accepted }
                 instructorProblem = nil
             } catch {
-                instructorProblem = "Whether an instructor reviews your flights couldn't be fetched."
+                instructorProblem = "Whether an instructor reviews your flights could not be fetched."
             }
         }
         // The words for the answer on the page; the findings stay as they
@@ -232,11 +232,11 @@ struct FindingFold: View {
             }
             switch VerdictTarget.of(item) {
             case .section(let anchor)?:
-                Button("See the reports") { open(anchor) }
+                Button("See the Reports") { open(anchor) }
             case .loading?:
-                NavigationLink("See the loading") { LoadingView() }
+                NavigationLink("See the Loading") { LoadingView() }
             case .risk?:
-                NavigationLink("See the risk assessment") { RiskView() }
+                NavigationLink("See the Risk Assessment") { RiskView() }
             case .airplane?:
                 AirplaneFiguresLink { Text("See the Airplane's Figures") }
             case nil:

@@ -173,7 +173,7 @@ export default function FlightCard({
   // which N654FL's card claimed while its history was unread (the
   // owner's iPhone, 2026-11-13).
   const notHad = pastFailed || lastFailed || (!newest && (past?.pages[0]?.unread_days ?? 0) > 0);
-  const sketchNote = notHad ? "Its flights could not be fetched" : past ? "No flights heard" : "Fetching its flights…";
+  const sketchNote = notHad ? "Its flights could not be fetched." : past ? "No flights heard" : "Fetching its flights…";
   // Its ends: where its trace says it took off, else its flight number's
   // route's first, and the route's last where it is flying the route; not
   // heard, its last flight's ends.
@@ -300,7 +300,9 @@ export default function FlightCard({
               filled
               pressed={following}
               testId="flight-follow"
-              spoken={following ? `Stop following ${name}` : `Follow ${name} on the map`}
+              // The pressed state says whether it follows: "Stop following, pressed"
+              // said the opposite (WAI-ARIA APG, Button); the visible word in it (WCAG 2.5.3).
+              spoken={`${following ? "Following" : "Follow"} ${name} on the map`}
             />
           }
         />
@@ -352,7 +354,7 @@ export default function FlightCard({
         </CardTabPanel>
         {/* The ones before the flight it is on, each replayed (PastFlights), and a day to look back from. */}
         <CardTabPanel value="flights">
-          <PillSection title="Earlier flights" testId="flight-earlier">
+          <PillSection title="Earlier Flights" testId="flight-earlier">
             <PastFlights
               hex={hex}
               onOpen={onOpenPast}

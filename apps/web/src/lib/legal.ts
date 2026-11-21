@@ -8,7 +8,7 @@
  * sign-in dialog link them from this one list.
  */
 export const LEGAL_PAGES = [
-  { key: "privacy", title: "Privacy policy", href: "/app/privacy.html" },
-  { key: "terms", title: "Terms of use", href: "/app/terms.html" },
+  { key: "privacy", title: "Privacy Policy", href: "/app/privacy.html" },
+  { key: "terms", title: "Terms of Use", href: "/app/terms.html" },
   { key: "support", title: "Support", href: "/app/support.html" },
 ] as const;

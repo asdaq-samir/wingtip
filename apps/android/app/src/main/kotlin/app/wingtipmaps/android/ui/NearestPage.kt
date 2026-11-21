@@ -83,7 +83,7 @@ fun NearestPage(ownShip: OwnShip, plan: Plan, exit: CardExit, onOpen: (String) -
             when {
                 fix == null -> Text(stringResource(R.string.nearest_finding_position), style = MaterialTheme.typography.bodyMedium)
                 problem != null -> ProblemLine(problem)
-                fields == null -> Text(stringResource(R.string.nearest_fetching), style = MaterialTheme.typography.bodyMedium)
+                fields == null -> Text(stringResource(R.string.wording_fetching_nearest_fields), style = MaterialTheme.typography.bodyMedium)
                 onPhone -> Text(stringResource(R.string.from_this_phone), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             // The airplane's glide ratio asked for where it is missing.

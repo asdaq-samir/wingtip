@@ -16,6 +16,7 @@ import { placeWind } from "./placeWind";
 import { AtisRows } from "./AtisRows";
 import { HourlyForecast } from "./HourlyForecast";
 import { DigitalAtisRows } from "./LiveAirportRows";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * An airport's card's Weather tab (PlaceCard): the weather there hour by
@@ -173,7 +174,7 @@ export function PlaceWeatherTab({
             ) : (
               <ListRow
                 title={
-                  place.weather_unavailable ? "The weather service could not be reached" : "No weather station reports from this field"
+                  place.weather_unavailable ? WORDING.weatherNotReached : "No weather station reports from this field"
                 }
               />
             )}
@@ -192,7 +193,7 @@ export function PlaceWeatherTab({
                       <CloudSun />
                     </RowBadge>
                   }
-                  title="Flight category"
+                  title={WORDING.flightCategory}
                   value={<span className="font-semibold text-foreground">{modelled.flight_category}</span>}
                 />
                 <ListRow

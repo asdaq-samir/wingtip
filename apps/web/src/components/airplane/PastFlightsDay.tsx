@@ -36,7 +36,7 @@ export default function PastFlightsDay({ from, onPick }: { from: string | null; 
         <div>
           <ListGroup>
             <ListRow
-              title="Flights before a date"
+              title="Flights Before a Date"
               value={picked ? dayOf(picked) : "Pick a day"}
               chevron
               onClick={() => setPicking(true)}
@@ -46,7 +46,7 @@ export default function PastFlightsDay({ from, onPick }: { from: string | null; 
         </div>
       </ResponsivePopoverAnchor>
       {/* Its Done at the foot its way out (no close). */}
-      <ResponsivePopoverContent title="Flights before a date" className="w-auto p-0" align="start" closeButton={false}>
+      <ResponsivePopoverContent title="Flights Before a Date" className="w-auto" bleed align="start" closeButton={false}>
         <div className="flex flex-col items-center gap-3 pb-3" data-testid="past-flights-picker">
           <Suspense fallback={<div className="h-[21rem] w-[17rem]" />}>
             <DayCalendar

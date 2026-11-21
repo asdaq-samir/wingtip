@@ -32,7 +32,7 @@ struct ShareMenu: View {
 
     /// The ways the route goes out.
     @ViewBuilder private var ways: some View {
-        ShareLink(item: RouteShare.link(plan, includeTail: includeTail)) { Label("Share Link", systemImage: "link") }
+        ShareLink(item: RouteShare.link(plan, includeTail: includeTail)) { Label(Wording.shareLink, systemImage: "link") }
         if let tail = plan.tail { Toggle("Include \(tail)", isOn: $includeTail) }
         ShareLink(item: RouteShare.navLogText(plan)) { Label("Nav Log as Text", systemImage: WingtipIcon.navLog) }
         ShareLink(item: navLogPDF, preview: SharePreview("Nav Log")) { Label("Nav Log as PDF", systemImage: "doc.richtext") }
@@ -53,7 +53,7 @@ struct ShareMenu: View {
         } label: {
             Label("Save as File", systemImage: "square.and.arrow.down")
         }
-        Button { print() } label: { Label("Print Nav Log", systemImage: "printer") }
+        Button { print() } label: { Label(Wording.printNavLog, systemImage: "printer") }
     }
 
     /// The kneeboard's page in the system's print panel (UIKit's
@@ -112,7 +112,7 @@ struct ShareMenu: View {
             plan.shareProblem = nil
             return made
         } catch {
-            plan.shareProblem = "\(what) couldn't be made, so nothing was sent: \(error.localizedDescription)"
+            plan.shareProblem = "\(what) could not be made, so nothing was sent: \(error.localizedDescription)"
             throw error
         }
     }

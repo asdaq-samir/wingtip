@@ -73,7 +73,7 @@ export function SignedRow({
       />
       <CollapsibleContent>
         <SignedWords text={e.text} signature={e.signature} />
-        {onVoid && !e.voided && <ListRow title={<span className="text-destructive">Void it</span>} disabled={voiding} onClick={onVoid} />}
+        {onVoid && !e.voided && <ListRow title={<span className="text-destructive">Void It</span>} disabled={voiding} onClick={onVoid} />}
       </CollapsibleContent>
     </Collapsible>
   );
@@ -158,7 +158,7 @@ export function SignForm({
       </ListGroup>
       {crossCountry && (
         // 14 CFR 61.93(d): the instructor's to determine before a solo cross-country.
-        <ListGroup title="Your determination">
+        <ListGroup title="Your Determination">
           {DETERMINATIONS.map((d, i) => (
             <ListRow
               key={d.rule}
@@ -176,7 +176,7 @@ export function SignForm({
       {/* The words, and under them the signature with the date, the
           certificate number and its date, as AC 61-65K asks; once signed it
           is not changed, and a correction voids it for a new one. */}
-      <ListGroup title="Instructor's signature">
+      <ListGroup title="Instructor's Signature">
         <SignedWords text={text} signature={signatureLine(instructor, signedOn)} />
         <ListRow
           title={<span className="font-medium text-tint">Sign as {instructor.fullName}</span>}

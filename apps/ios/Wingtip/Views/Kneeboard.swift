@@ -18,6 +18,8 @@ struct Kneeboard: View {
     /// speed), and the groundspeed, time and fuel are left blank, not
     /// assumed (docs/decisions/0011).
     var airplane = true
+    /// The page's foot, the planning aid in the words every app prints.
+    static let foot = Wording.planningAidKneeboard
 
     var body: some View {
         VStack(alignment: .leading, spacing: WingtipSpace.sm) {
@@ -52,7 +54,7 @@ struct Kneeboard: View {
             .font(.system(size: 8.5).monospacedDigit())
             Text("Squawk ______   Clearance ____________________   Hobbs out ______ in ______").font(.system(size: 9)).padding(.top, WingtipSpace.sm)
             Spacer(minLength: 0)
-            Text("Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight.").font(.system(size: 6.5))
+            Text(Self.foot).font(.system(size: 6.5))
         }
         .padding(WingtipSpace.xl)
         .frame(width: 396, height: 612, alignment: .topLeading)

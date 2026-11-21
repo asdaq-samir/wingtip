@@ -61,7 +61,7 @@ struct SearchSuggestions: View {
                 // Maps' search asks where; not while a point is picked.
                 ForEach(model.picking == nil ? Array(model.towns.prefix(3)) : []) { place in
                     Button { pick(.airport(AirportRoute.nearFrom(lat: place.lat, lon: place.lon, label: place.label).text)) } label: {
-                        Label("Fields near \(place.label)", systemImage: place.kind == "address" ? "mappin" : "building.2")
+                        Label("Fields Near \(place.label)", systemImage: place.kind == "address" ? "mappin" : "building.2")
                     }
                 }
             } header: { Text("Airports") }

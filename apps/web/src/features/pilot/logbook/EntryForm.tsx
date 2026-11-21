@@ -1,4 +1,4 @@
-import { useCallback, useEffect, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useId, type KeyboardEvent } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useBeforeUnload } from "react-router";
 import { FormDateField } from "../../../components/FormFields";
@@ -12,6 +12,9 @@ import type { LogbookEntryRequest } from "../../../lib/api/types";
 import { TEXT } from "../../../lib/text";
 import { entryProblems } from "./entryChecks";
 import { FieldError } from "../../../components/ui/field";
+import { ariaInvalid } from "../../../components/ui/ariaInvalid";
+import { errorIdOf, invalidProps } from "../../../lib/fieldError";
+import { WORDING } from "../../../lib/wording/generated/wording";
 
 /**
  * One entry's form: a paper logbook's columns. In the plus's popover for a
@@ -43,6 +46,7 @@ export default function EntryForm({
    *  popover round it to ask before it closes on it. */
   onDirtyChange?: (dirty: boolean) => void;
 }) {
+  const formId = useId();
   // react-hook-form keeps what is typed, whether it differs from what the
   // form opened on (isDirty), what is missing (the resolver, from
   // entryProblems) and, on Save, the focus on the first field that needs
@@ -76,9 +80,9 @@ export default function EntryForm({
     ),
   );
   const [askDiscard, discardDialog] = useConfirm({
-    title: "Discard Changes?",
+    title: WORDING.discardChangesQuestion,
     description: "What you typed in this flight is not saved.",
-    confirmLabel: "Discard",
+    confirmLabel: WORDING.discard,
     destructive: true,
     onConfirm: () => onCancel?.(),
   });
@@ -100,6 +104,8 @@ export default function EntryForm({
   };
   const field = (key: keyof LogbookEntryRequest, label: string, type: "text" | "number" | "date" = "text") => {
     const said = errors[key]?.message;
+    // Each box described by its problem, so a reader says the two together (WCAG 3.3.1).
+    const id = `${formId}-${key}`;
     // A figure on React Aria's number field and the day on its date
     // field, where the native ones were, each named by its label.
     const box =
@@ -117,6 +123,7 @@ export default function EntryForm({
               onChange={(v) => bound.onChange(v ?? 0)}
               onBlur={bound.onBlur}
               onKeyDown={escapeAria}
+              {...ariaInvalid(id, said)}
             />
           )}
         />
@@ -128,10 +135,10 @@ export default function EntryForm({
           className="h-8"
           data-testid={`logbook-${key}`}
           onKeyDown={escapeAria}
-          isInvalid={!!said}
+          {...ariaInvalid(id, said)}
         />
       ) : (
-        <Input className="h-8" data-testid={`logbook-${key}`} {...register(key)} onKeyDown={escape} />
+        <Input className="h-8" data-testid={`logbook-${key}`} {...register(key)} onKeyDown={escape} {...invalidProps(id, said)} />
       );
     return (
       <div>
@@ -141,7 +148,7 @@ export default function EntryForm({
         </label>
         {/* Said under its own field, where the eye is (WCAG 3.3.1). */}
         {said && (
-          <p className={cn("mt-1 pl-34 text-destructive-ink", TEXT.note)} data-testid={`logbook-${key}-problem`}>
+          <p id={errorIdOf(id)} className={cn("mt-1 pl-34 text-destructive-ink", TEXT.note)} data-testid={`logbook-${key}-problem`}>
             {said}
           </p>
         )}
@@ -154,24 +161,25 @@ export default function EntryForm({
       {field("route", "Route")}
       {field("aircraft", "Airplane")}
       {field("aircraftType", "Type")}
-      {field("totalHours", "Total hours", "number")}
-      {field("nightHours", "Night hours", "number")}
+      {field("totalHours", "Total Hours", "number")}
+      {field("nightHours", "Night Hours", "number")}
       {field("crossCountryHours", "Cross-country", "number")}
-      {field("dayLandings", "Day landings", "number")}
-      {field("nightLandings", "Night landings", "number")}
+      {field("dayLandings", "Day Landings", "number")}
+      {field("nightLandings", "Night Landings", "number")}
       {/* What a student's 61.109 experience is counted from: the
           Checkride page. */}
-      {field("dualHours", "Dual received", "number")}
+      {field("dualHours", "Dual Received", "number")}
       {field("soloHours", "Solo", "number")}
-      {field("instrumentHours", "Sim. instrument", "number")}
-      {field("toweredLandings", "Towered landings", "number")}
+      {field("instrumentHours", "Sim. Instrument", "number")}
+      {field("toweredLandings", "Towered Landings", "number")}
       {field("distanceNm", "Distance (nm)", "number")}
-      {field("longestLegNm", "Longest leg (nm)", "number")}
+      {field("longestLegNm", "Longest Leg (nm)", "number")}
       {/* What instrument currency is counted from (14 CFR 61.57(c)): the
           approaches, holding and tracking courses, actual or simulated. */}
       {field("approaches", "Approaches", "number")}
-      <div className={cn("grid grid-cols-[8rem_1fr] items-center gap-2", TEXT.detail)}>
-        <span>Also flew</span>
+      {/* Its two toggles a group named by its words (WCAG 1.3.1). */}
+      <div role="group" aria-labelledby={`${formId}-also`} className={cn("grid grid-cols-[8rem_1fr] items-center gap-2", TEXT.detail)}>
+        <span id={`${formId}-also`}>Also Flew</span>
         <span className="flex gap-2">
           <Controller
             control={control}
