@@ -145,14 +145,6 @@ export default function RouteTimeline({
   // outside the United States (the engine's route_jurisdiction, decision
   // 0053): the nav log's rows from the point before's to its own.
   const cautions = rowCautions(routeRows);
-  let fromRow = -1;
-  const cautionTo = (row: (typeof routeRows)[number] | undefined) => {
-    const at = row ? routeRows.indexOf(row) : -1;
-    if (at < 0) return null;
-    const said = cautions.slice(fromRow + 1, at + 1).find(Boolean) ?? null;
-    fromRow = at;
-    return said;
-  };
   const points: TimelinePoint[] = routePoints.map((ident, index) => {
     const role =
       index === 0 && ident === planned.dep
@@ -173,12 +165,21 @@ export default function RouteTimeline({
       time: timeOf(ident, role, seen),
       category: unknown || !field ? null : metarCategory(ident),
       problem: unknown ?? (status.closed ? `${status.closed}. Pick another field.` : status.failed),
-      caution: cautionTo(visitRow(routeRows, role, ident, seen)),
+      caution: null,
       checking: status.checking,
       fuelStop: role === "Stop" && fuel.some((f) => sameField(f, ident)),
       field,
     };
   });
+  // In route order, each point said from the row after the point before's.
+  let fromRow = -1;
+  for (const point of points) {
+    const row = visitRow(routeRows, point.role, point.ident, point.seen);
+    const at = row ? routeRows.indexOf(row) : -1;
+    if (at < 0) continue;
+    point.caution = cautions.slice(fromRow + 1, at + 1).find(Boolean) ?? null;
+    fromRow = at;
+  }
   // Half a route, open to edit: the end it lacks in its place, and the
   // route typed or pasted where Add a Stop is on a whole one (RouteStart).
   const half = !read && !wholeRoute;

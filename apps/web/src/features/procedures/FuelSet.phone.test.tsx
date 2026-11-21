@@ -13,7 +13,19 @@ import { FuelSet } from "./FuelSet";
 
 vi.mock("../../hooks/use-mobile", () => ({ useIsMobile: () => true }));
 vi.mock("../../components/SheetCard", () => ({
-  SheetCard: ({ title, leading, action, children, testId }: { title: string; leading: ReactNode; action: ReactNode; children: ReactNode; testId: string }) => (
+  SheetCard: ({
+    title,
+    leading,
+    action,
+    children,
+    testId,
+  }: {
+    title: string;
+    leading: ReactNode;
+    action: ReactNode;
+    children: ReactNode;
+    testId: string;
+  }) => (
     <div data-testid={testId}>
       <div>
         {leading}

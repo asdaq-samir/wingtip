@@ -90,4 +90,4 @@ export const MAP_LABEL = {
     /** Model Weather's pinned value on its white pill. */
     flowPin: { size: 13, bold: true, halo: "none" },
   },
-} as const satisfies { kind: Record<string, MapLabelKind> };
+} as const satisfies { kind: Record<string, MapLabelKind>; [rest: string]: unknown };

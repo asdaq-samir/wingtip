@@ -11,9 +11,7 @@ import { useSearchPick } from "../../lib/oneSearch";
 import { useTips } from "../../lib/firstRunTips";
 
 const fix = vi.hoisted(() => ({ settle: (_: null) => undefined as void }));
-vi.mock("../../lib/map/position/ownShip", () => ({
-  positionNow: () => new Promise((resolve) => (fix.settle = resolve)),
-}));
+vi.mock("../../lib/map/position/ownShip", () => ({ positionNow: () => new Promise((resolve) => (fix.settle = resolve)) }));
 const toasts = vi.hoisted(() => ({ add: vi.fn(), close: vi.fn() }));
 vi.mock("../../lib/toast", () => ({ toast: toasts }));
 

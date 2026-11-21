@@ -60,13 +60,7 @@ const LABEL: SymbolLayerSpecification = {
   id: "tfrs-label",
   type: "symbol",
   source: SOURCE,
-  layout: {
-    "symbol-placement": "line",
-    "symbol-spacing": 320,
-    "text-field": ["get", "id"],
-    ...labelText("hazard"),
-    "text-max-angle": 30,
-  },
+  layout: { "symbol-placement": "line", "symbol-spacing": 320, "text-field": ["get", "id"], ...labelText("hazard"), "text-max-angle": 30 },
   paint: { "text-color": labelInk(TFR_RED), ...labelHalo("hazard") },
 };
 const ALL = [...LAYERS, LINE, LINE_LATER, LABEL];

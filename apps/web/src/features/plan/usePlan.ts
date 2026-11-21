@@ -103,7 +103,17 @@ export function usePlan({
   // return to the window and every mount of the page, which asked the
   // planner for the same local flight each time.
   const localFlight = useQuery({
-    queryKey: ["localFlight", dep, localMin, depart, aircraft.profile, aircraft.fuelBurnGph ?? null, aircraft.usableFuelGal ?? null, rules, load],
+    queryKey: [
+      "localFlight",
+      dep,
+      localMin,
+      depart,
+      aircraft.profile,
+      aircraft.fuelBurnGph ?? null,
+      aircraft.usableFuelGal ?? null,
+      rules,
+      load,
+    ],
     queryFn: () => api.localFlight(dep, localMin, aircraft, depart || undefined, rules),
     enabled: local,
     staleTime: Infinity,

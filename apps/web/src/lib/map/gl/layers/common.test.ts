@@ -58,7 +58,12 @@ describe("the map's words (map.label)", () => {
     const get: ExpressionSpecification = ["get", "ink"];
     const ink = labelInk(get) as unknown[];
     expect(ink[2]).toEqual(["match", get, ...Object.entries(MAP_LABEL.nightInk).flat(), get]);
-    expect(LABEL_HALO["text-halo-color"]).toEqual(["case", NIGHT, `${CHART.tag}${Math.round(MAP_LABEL.haloNight * 255).toString(16)}`, CHART.casing]);
+    expect(LABEL_HALO["text-halo-color"]).toEqual([
+      "case",
+      NIGHT,
+      `${CHART.tag}${Math.round(MAP_LABEL.haloNight * 255).toString(16)}`,
+      CHART.casing,
+    ]);
   });
 
   it("give every day ink of a light-haloed kind its night ink, at 4.5:1 or more on the night's halo", () => {
@@ -72,6 +77,7 @@ describe("the map's words (map.label)", () => {
     };
     const a = MAP_LABEL.haloNight;
     const halo = rgbOf(CHART.tag).map((v) => v * a + 255 * (1 - a));
-    for (const night of Object.values(MAP_LABEL.nightInk)) expect((lum(rgbOf(night)) + 0.05) / (lum(halo) + 0.05), night).toBeGreaterThanOrEqual(4.5);
+    for (const night of Object.values(MAP_LABEL.nightInk))
+      expect((lum(rgbOf(night)) + 0.05) / (lum(halo) + 0.05), night).toBeGreaterThanOrEqual(4.5);
   });
 });

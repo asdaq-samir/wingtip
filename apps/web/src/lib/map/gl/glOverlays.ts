@@ -2,13 +2,7 @@ import type { ExpressionSpecification, LayerSpecification, Map as MlMap, SourceS
 import type { OverlayTiles } from "../../api/types";
 import { usePreferences } from "../../preferences";
 import { stationPictures } from "../marks/stationModel";
-import {
-  AIRPORT_IDENT_INK,
-  AIRPORT_WEATHER,
-  TILE_AIRPORT_ICON,
-  airportIconSize,
-  airportPictures,
-} from "./airportIcons";
+import { AIRPORT_IDENT_INK, AIRPORT_WEATHER, TILE_AIRPORT_ICON, airportIconSize, airportPictures } from "./airportIcons";
 import { overlaySource } from "../sources/overlayTiles";
 import { SLOTS, slotId, type Slot } from "./glLayer";
 import { drawSvg, type DrawnImage } from "./drawSvg";

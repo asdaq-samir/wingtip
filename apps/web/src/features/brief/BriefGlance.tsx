@@ -77,7 +77,8 @@ export default function BriefGlance({
   const rest = !!lines && lines.rest.items.length > 0 && lines.rest.finding !== "ok";
   // The findings' group drawn only where it has a row: a line, the rest,
   // or what could not be checked (CautionRow draws nothing without).
-  const unchecked = !!glance?.unchecked.length || !!dataWarning(useDataCycles());
+  const cycles = useDataCycles();
+  const unchecked = !!glance?.unchecked.length || !!dataWarning(cycles);
   const findings = !!lines?.act.length || !!glance?.outside || rest || unchecked;
   return (
     <div className="flex flex-col gap-4 pt-1 pb-4" data-testid="brief-glance">

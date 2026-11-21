@@ -7,12 +7,11 @@ import { gpsFigure } from "./gpsFigure";
 import { trackFigure } from "./trackFigure";
 
 /** The engine's WMM variation at a point today (`magnetic_variation`). */
-const variation = (lat: number, lon: number) =>
-  callEngine("magnetic_variation", { lat, lon, date: new Date().toISOString().slice(0, 10) });
+const variation = (lat: number, lon: number) => callEngine("magnetic_variation", { lat, lon, date: new Date().toISOString().slice(0, 10) });
 
 /** The strip's two figures from the fix: its GPS altitude (gpsFigure) and
  *  its magnetic track (trackFigure), exactly as each is written. */
-export function fixFigures(fix: Fix | null): { gps: StripFigure | null; track: StripFigure } {
+function fixFigures(fix: Fix | null): { gps: StripFigure | null; track: StripFigure } {
   return { gps: gpsFigure(fix), track: trackFigure(fix, underway(fix), variation) };
 }
 

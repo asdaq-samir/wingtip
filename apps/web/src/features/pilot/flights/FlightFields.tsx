@@ -88,16 +88,16 @@ export default function FlightFields({
         />
       </RowField>
       <RowField id={notesId} error={undefined} wide label="Notes">
-      <Textarea
-        id={notesId}
-        value={notes}
-        rows={2}
-        maxLength={NOTES_MAX}
-        readOnly={saving}
-        onChange={(e) => setNotes(e.target.value)}
-        onKeyDown={(e) => keys(e, true)}
-        data-testid="saved-flight-notes"
-      />
+        <Textarea
+          id={notesId}
+          value={notes}
+          rows={2}
+          maxLength={NOTES_MAX}
+          readOnly={saving}
+          onChange={(e) => setNotes(e.target.value)}
+          onKeyDown={(e) => keys(e, true)}
+          data-testid="saved-flight-notes"
+        />
       </RowField>
     </div>
   );

@@ -30,12 +30,7 @@ const LAYERS: (LineLayerSpecification | SymbolLayerSpecification)[] = [
     id: "flow-gairmet-label",
     type: "symbol",
     source: SOURCE,
-    layout: {
-      "symbol-placement": "line",
-      "text-field": ["get", "label"],
-      ...labelText("hazard"),
-      "symbol-spacing": 320,
-    },
+    layout: { "symbol-placement": "line", "text-field": ["get", "label"], ...labelText("hazard"), "symbol-spacing": 320 },
     paint: { "text-color": labelInk(["get", "ink"]), ...labelHalo("hazard") },
   },
 ];

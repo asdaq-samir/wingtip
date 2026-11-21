@@ -182,7 +182,14 @@ export function FuelSet({
             onClose={() => openWith(false)}
             testId="fuel-set"
             leading={
-              <Button type="button" variant="ghost" size="sm" className="-ml-2" onClick={() => openWith(false)} data-testid="fuel-set-cancel">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="-ml-2"
+                onClick={() => openWith(false)}
+                data-testid="fuel-set-cancel"
+              >
                 Cancel
               </Button>
             }

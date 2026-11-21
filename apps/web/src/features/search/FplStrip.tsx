@@ -82,8 +82,7 @@ function SavedTiles({ signedIn }: { signedIn: boolean }) {
   // (QueryState), where the strip was left blank.
   if (flightsAsked.isError)
     return <QueryState query={flightsAsked} fetching="Fetching your flights…" failed="Your flights could not be fetched." />;
-  if (flights && !shown.length)
-    return <StripNote>Plan a route, then save it from the Brief&apos;s ••• menu; it is kept here.</StripNote>;
+  if (flights && !shown.length) return <StripNote>Plan a route, then save it from the Brief&apos;s ••• menu; it is kept here.</StripNote>;
   return (
     <PillStrip testId="saved-strip">
       {shown.map((f) => {

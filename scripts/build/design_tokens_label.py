@@ -100,7 +100,7 @@ def ts(tree):
         size = "%g" % k["stops"][0][1] if k["stops"][0][0] is None else "[%s]" % ", ".join("[%g, %g]" % s for s in k["stops"])
         line = '    %s: { size: %s, bold: %s, halo: "%s" },' % (_camel(name), size, str(k["bold"]).lower(), k["halo"])
         out += ["    /** %s */" % k["about"], line]
-    return "\n".join(out + ["  },", "} as const satisfies { kind: Record<string, MapLabelKind> };"])
+    return "\n".join(out + ["  },", "} as const satisfies { kind: Record<string, MapLabelKind>; [rest: string]: unknown };"])
 
 
 def swift(tree):

@@ -228,14 +228,12 @@ export default function AirspaceCard({
                 (summary ? data.bands.slice(0, 2) : data.bands).map((band) => (
                   <BandRow key={`${band.floor_ft}-${band.class}`} band={band} ground={ground} />
                 ))
+              ) : // The lowest two while they come, each a band's height: its
+              // class, its range and its minimums.
+              offline ? (
+                <ListRow muted title={NO_CONNECTION} />
               ) : (
-                // The lowest two while they come, each a band's height: its
-                // class, its range and its minimums.
-                offline ? (
-                  <ListRow muted title={NO_CONNECTION} />
-                ) : (
-                  <SkeletonRows rows={2} lines={2} fetching="Fetching the airspace here…" />
-                )
+                <SkeletonRows rows={2} lines={2} fetching="Fetching the airspace here…" />
               )}
             </ListGroup>
           </PillSection>

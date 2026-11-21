@@ -26,7 +26,10 @@ describe("the Brief's Adverse Conditions (the engine's gonogo_adverse_rows)", ()
   test("a TFR crossed first, then the convective SIGMET, then the G-AIRMET, at most three", () => {
     const answer = adverseRows(
       briefing({
-        gairmets: [{ hazard: "IFR", on_route: during("G-AIRMET", 10) }, { hazard: "Mountain obscuration", on_route: during("G-AIRMET", 60) }],
+        gairmets: [
+          { hazard: "IFR", on_route: during("G-AIRMET", 10) },
+          { hazard: "Mountain obscuration", on_route: during("G-AIRMET", 60) },
+        ],
         hazards: [{ hazard: "CONVECTIVE", type: "SIGMET", on_route: during("Convective SIGMET", 40) }],
         tfrs: [{ notam_id: "6/4116", title: "Madison", crosses: true, along_track_nm: 80, active_now: false, on_route: during("TFR", 80) }],
       } as unknown as Partial<Briefing>),

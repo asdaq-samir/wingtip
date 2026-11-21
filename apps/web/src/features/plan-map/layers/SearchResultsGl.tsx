@@ -38,11 +38,7 @@ const COUNT: SymbolLayerSpecification = {
   type: "symbol",
   source: SOURCE,
   filter: ["has", "point_count"],
-  layout: {
-    "text-field": ["get", "point_count_abbreviated"],
-    ...labelText("clusterCount"),
-    "text-allow-overlap": true,
-  },
+  layout: { "text-field": ["get", "point_count_abbreviated"], ...labelText("clusterCount"), "text-allow-overlap": true },
   paint: { "text-color": CHART.casing },
 };
 /** One result: a round mark in its flight category's colour (AIM 7-1-7's

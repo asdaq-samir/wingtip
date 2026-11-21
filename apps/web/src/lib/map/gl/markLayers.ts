@@ -86,14 +86,7 @@ export function chipLayer(
     id,
     type: "symbol",
     source,
-    layout: {
-      "icon-image": ICON,
-      "icon-text-fit": "both",
-      "text-field": TEXT,
-      ...labelText(kind),
-      ...giving(how),
-      ...layout,
-    },
+    layout: { "icon-image": ICON, "icon-text-fit": "both", "text-field": TEXT, ...labelText(kind), ...giving(how), ...layout },
     paint: { "text-color": CHART.fixInk, ...paint },
   };
 }

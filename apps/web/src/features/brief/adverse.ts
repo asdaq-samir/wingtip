@@ -21,7 +21,7 @@ const NONE: Adverse = { rows: [], more: 0 };
  */
 export function adverseRows(briefing: Briefing | null): Adverse {
   if (!briefing) return NONE;
-  const met = (o: Briefing["hazards"][number]["on_route"]) => ({
+  const met = (o: Briefing["hazards"][number]["on_route"] | undefined) => ({
     when: o?.when ?? null,
     enter: o?.enter ?? null,
     valid_to: o?.valid_to ?? null,
