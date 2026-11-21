@@ -1382,7 +1382,10 @@ bar's look) could not be confirmed from windy.com.
 on the map, the loop bar at the foot above the sheet's pill: play/pause,
 the scrubber with the frame's time (UTC and local), Now. Observed frames
 and forecast frames look different on the bar, as Windy's red nowcast
-does.
+does. The model weather's layer (deck.gl and weatherlayers-gl, about
+960 KB) is a chunk of its own, asked for as the Weather menu opens
+(`weather-flow/flowChunk`), so a field picked there draws without first
+fetching and parsing it.
 
 **Stock parts.** Play/Pause: shadcn Toggle (`aria-pressed`); the
 scrubber: Base UI Slider (a playback position, not a setting, so decision
