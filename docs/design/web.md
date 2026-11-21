@@ -166,7 +166,7 @@ These hold on every screen below and win over any reference app.
   popup, kept clear of the status bar in CSS. `snapPoint` is set from the
   same constants by size and a drag maps back by identity. The pill is one
   row: on FPL the route's figures (and while flying), FPL's bar and the
-  route's row under it from half up (SheetParts' `figuresPill`, 3.25 rem under the grabber's room);
+  route's row under it from half up (SheetFoot's `figuresPill`, 3.25 rem under the grabber's room);
   on Search the search; the map's room is read from the Drawer's own
   `--drawer-snap-point-offset` (`useSheetCover`). The sheet is solid at
   every size (`GLASS_SHEET`, the look's `--sheet`), the desktop's side
@@ -882,7 +882,7 @@ FPL's bar and route are laid out at the pill with `RISEN_FACE`
 visibility alone, as the cards' bodies come into sight (`PILL_BODY`,
 nothing in it eased at the pill), on a phone only: the desktop's side
 panel has no detents and no finger takes it, so there they are not laid
-out at the pill, the figures alone its pill (SheetParts' `DESK_PILL`,
+out at the pill, the figures alone its pill (SheetHead's `DESK_PILL`,
 FplRoute's `data-pill-keeps`), and the panel is as tall as what is in
 sight (503 px, mostly empty, before; the owner, 2026-11-19: desktop cards
 keep one height); a tap on the held figures raises the
@@ -894,7 +894,7 @@ the chips away. The Brief's findings
 to act on are counted on its button in the bar (the cards' `TabCount` with its finding's
 `mark`,
 from `lib/verdict` through `planWords`' `findingRows`), the findings
-themselves the Brief's). Both rows are laid out by the same `barRowOf` in `SheetParts`, so
+themselves the Brief's). Both rows are laid out by the same `SheetBarRow` (`sheet/SheetHead`), so
 a turn of the page moves nothing and the head's first row, and the map's
 room, stay the same. The route is the row under FPL's bar (`RouteHead`),
 in its one layout (the owner, 2026-11-17; decision 0047): folded, one
