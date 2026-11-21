@@ -63,8 +63,9 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
 
   // The dry run closed from the Profile: on the ground at once, everything
   // back -- the small buttons, and at half FPL's page with the route's box,
-  // and the page toggle at FPL's bar's end, which goes in flight (docs/design/rules.md:
-  // the search is the other page since 2026-11-13, not over the route).
+  // and FPL's Search at its head's start, which goes in flight (docs/design/rules.md:
+  // the search is the other page since 2026-11-13, not over the route; the
+  // FPL toggle is on Search's page alone since 2026-11-21).
   await grabberTo(page, "half");
   await sideDrawer(page).getByTestId("dry-run-close").click();
   await expect(page.locator("[data-own-ship]")).toHaveCount(0);
@@ -76,7 +77,7 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   await closeProfile(page);
   await grabberTo(page, "half");
   await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeVisible();
-  await expect(page.getByTestId("sheet-page-toggle")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("fpl-search")).toBeVisible();
 });
 
 test("Done flying leaves flying mode with one tap while the airplane flies on", async ({ page }) => {

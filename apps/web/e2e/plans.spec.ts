@@ -321,5 +321,5 @@ test("plan page: no legal altitude is the route's own problem: its chip says so 
   }).toPass({ timeout: slow(30000) });
   const search = page.getByTestId("search-airports");
   await expect(search).toBeFocused();
-  await expect(search).toHaveAttribute("placeholder", "Search airports and waypoints");
+  await expect(search).toHaveAccessibleName("Search airports and waypoints");
 });
