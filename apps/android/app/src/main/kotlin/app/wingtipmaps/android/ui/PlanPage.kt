@@ -106,6 +106,7 @@ fun PlanPage(plan: Plan, onClose: () -> Unit, onField: (String) -> Unit, onNavLo
             onBrief = { ScreenRequests.ask(Screen.BRIEF) },
             onNavLog = onNavLog,
             onRouteOptions = { CardRequests.open(SheetPage.RouteOptions) },
+            onFile = { CardRequests.open(SheetPage.Filing) },
         )
     }
     CardPage(title = stringResource(R.string.flight_plan), exit = exit, navigationIcon = search, bottomBar = foot) { padding ->

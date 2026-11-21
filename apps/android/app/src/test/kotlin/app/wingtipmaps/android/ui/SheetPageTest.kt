@@ -43,6 +43,7 @@ class SheetPageTest {
         SheetPage.NavLog,
         SheetPage.Emergency,
         SheetPage.RouteOptions,
+        SheetPage.Filing,
         SheetPage.YourAirplanes,
         SheetPage.Checklist("C172", "NORMAL"),
     )

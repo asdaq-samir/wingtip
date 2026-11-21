@@ -642,7 +642,18 @@ placement wins, and the difference is noted.
      labelled, over the figure strip. More (`route/PlanMore`) holds Route
      Options (`route/RouteOptionsCard`, the planner's `/route-options`,
      each with Use) and Share Link; no Open in ForeFlight, which has no
-     Android app. In the air the toolbar goes and the strip stays.
+     Android app. Where the plan can be filed (an airport to leave from,
+     its nav log in) the toolbar carries File as its own floating action
+     button (`FloatingToolbarDefaults.StandardFloatingActionButton`), which
+     opens **File Flight Plan** (`filing/FilingPage`): FAA Form 7233-4 a
+     flight to a group of `ListItem`s, item by item as AIM Appendix 4
+     names them, every item the engine's (`filed_speed`, `filed_level`,
+     `filed_route`, `filed_times`, `filed_dof`; `plan/PlanFiling`), the
+     persons on board a number field, Copy the Flight Plan, File with
+     Flight Service where the gateway has it connected and the pilot is
+     signed in (its reference on the row), then 1800wxbrief.com and Flight
+     Service's numbers (AIM 5-1-1, 5-1-5, 5-1-6). In the air the toolbar
+     goes and the strip stays.
   1. The tabs row.
   2. The route box:
      - the route as `InputChip`s, one per point, removable with the

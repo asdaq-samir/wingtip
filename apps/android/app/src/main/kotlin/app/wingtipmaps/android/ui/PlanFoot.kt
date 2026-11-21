@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -14,12 +15,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.FlightModel
+import app.wingtipmaps.android.plan.PlanFiling
 import app.wingtipmaps.android.route.PlanMore
 import app.wingtipmaps.android.strip.StripCard
 
@@ -30,7 +34,8 @@ import app.wingtipmaps.android.strip.StripCard
  * bar over the figure strip. The bar is Material 3 Expressive's floating
  * toolbar -- Brief, Nav Log and More (Route Options, Share Link), each
  * labelled, since Google's research found actions harder to use with
- * their words taken off. In the air the bar goes and the figures stay,
+ * their words taken off -- and File beside it where the plan can be
+ * filed (PlanFiling.fileable). In the air the bar goes and the figures stay,
  * counting down (FiguresStrip).
  */
 @Composable
@@ -39,6 +44,7 @@ fun PlanFoot(
     onBrief: () -> Unit,
     onNavLog: () -> Unit,
     onRouteOptions: () -> Unit,
+    onFile: () -> Unit,
     flight: FlightModel = hiltViewModel(),
 ) {
     val state by plan.state.collectAsStateWithLifecycle()
@@ -60,7 +66,23 @@ fun PlanFoot(
                 }
                 PlanMore(state, onRouteOptions)
             }
-            HorizontalFloatingToolbar(expanded = true, content = actions)
+            // File, where the plan can be filed, the toolbar's own floating
+            // action button beside it (the web's File, "a separate button
+            // next to tabs", the owner, 2026-11-21).
+            if (PlanFiling.fileable(state)) {
+                val said = stringResource(R.string.file_flight_plan)
+                HorizontalFloatingToolbar(
+                    expanded = true,
+                    floatingActionButton = {
+                        FloatingToolbarDefaults.StandardFloatingActionButton(onClick = onFile, modifier = Modifier.semantics { contentDescription = said }) {
+                            Icon(WingtipIcons.file, contentDescription = null)
+                        }
+                    },
+                    content = actions,
+                )
+            } else {
+                HorizontalFloatingToolbar(expanded = true, content = actions)
+            }
         }
         if (state.routed) {
             StripCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(vertical = WingtipSpace.Sm)) { FiguresStrip(state, flight) } }
