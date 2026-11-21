@@ -35,8 +35,12 @@ final class LaunchTests: XCTestCase {
     @MainActor
     func testTheAccountButtonOpensYou() throws {
         let app = XCUIApplication()
-        // The Search page, the account button's (the FPL page has no bar).
-        app.launchArguments += ["-layout", "plan", "-screen", "search"]
+        // The Search page, the account button's (the FPL page has no bar),
+        // fresh: else the pages the last test's scene kept come back
+        // (RootView's SceneStorage), and on the iPad You stood pushed on
+        // the sidebar over the search's bar (main's nightly run
+        // 44927130075).
+        app.launchArguments += ["-layout", "plan", "-screen", "search", "-fresh"]
         app.launch()
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 30), "the app did not come to the foreground")
         let account = app.buttons["account-button"]
