@@ -96,10 +96,9 @@ test("a field's approach is picked on its own page with its transition, drawn on
   // the address, and off the map once the sheet is put away.
   await openTab(page, "Nav Log");
   await openRoute(page);
-  // A procedure picked is a light blue pill opening its fixes, the button to pick another at their head (the owner, 2026-11-20).
-  await expect(kdlh.locator("[data-testid=procedure-pill][data-kind=approach]")).toContainText("ILS 09 · DLH");
-  await kdlh.locator("[data-testid=procedure-pill][data-kind=approach]").click();
-  await kdlh.locator("[data-testid=procedure-pill-fixes] [data-testid=procedure-kind]").click();
+  // A procedure picked is its own grouped box of its fixes, open, the button to pick another at its head (the owner, 2026-11-21).
+  await expect(kdlh.locator("[data-testid=procedure-box][data-kind=approach]")).toContainText("ILS 09 · DLH");
+  await kdlh.locator("[data-testid=procedure-box] [data-testid=procedure-kind]").click();
   await page.getByTestId("procedure-menu-all").click();
   const ils = page.getByTestId("procedure-option").filter({ hasText: "ILS RWY 09" });
   await expect(ils).toContainText("In the route, from DLH");
@@ -167,7 +166,7 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await openTab(page, "Nav Log");
   await openRoute(page);
   await expect(kdlh.getByRole("button", { name: /^Runway 9\b/ })).toHaveAttribute("aria-pressed", "true");
-  await expect(kdlh.locator("[data-testid=procedure-pill][data-kind=approach]")).toContainText("ILS 09 · DLH");
+  await expect(kdlh.locator("[data-testid=procedure-box][data-kind=approach]")).toContainText("ILS 09 · DLH");
   // The field's arrival, a pull-down beside it once the list is in.
   await kdlh.locator("[data-testid=procedure-kind][data-kind=arrival]").click();
   await page.getByTestId("procedure-menu").getByTestId("procedure-menu-item").filter({ hasText: "SKETC1" }).click();
@@ -176,9 +175,8 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await openTab(page, "Nav Log");
   await openRoute(page);
   // The plate switched off from the approach's pull-down, and on again:
-  // its pill opened, then its pick-another button.
-  await kdlh.locator("[data-testid=procedure-pill][data-kind=approach]").click();
-  await kdlh.locator("[data-testid=procedure-pill-fixes][data-kind=approach] [data-testid=procedure-kind]").click();
+  // the pick-another button at its box's head.
+  await kdlh.locator("[data-testid=procedure-box][data-kind=approach] [data-testid=procedure-kind]").click();
   // The one picked is the stock listbox's selected option, as a reader
   // hears it; the arrow keys move between the choices without picking.
   const ils = page.getByTestId("procedure-menu").getByRole("option", { name: /^ILS/ }).first();

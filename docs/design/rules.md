@@ -538,11 +538,15 @@ off by default (the owner, 2026-11-13).
    putting either back. A tap on a field's
    line opens it, one at a time: its wind at the left and elevation at the
    right, then one row of runway and procedure chips, wrapping where they
-   do not fit: a procedure picked is a light blue pill of its short name,
-   "ILS 26 ⌄", on a line of its own under them, which opens its fixes
-   under it in the order they are
-   flown, each with its altitude and Direct To, the button to pick another
-   at their head (the owner, 2026-11-20; `TimelineProcedure`, `FixList`);
+   do not fit: a procedure picked is a grouped box of its own under them,
+   always open (the owner, 2026-11-21: "Can we make the selected approach
+   a grouped box showing the fixes etc?"): its head row its name, wrapping,
+   never cut, "Approach · 4 fixes" in a note's grey under it and the
+   button to pick another at its end, then a 44-point row a fix in the
+   order they are flown, each with its altitude, Direct To and its •••,
+   hairlines between them; past six fixes the first five and "Show All N
+   Fixes" (`TimelineProcedure`, `FixList`'s `boxed`); a kind not picked
+   stays its "+ APCH" chip;
    the map centres
    it above the sheet and shows the route's points alone (the chart and
    the TFRs kept; lib/map/routeOnly). My Location and a waypoint open
