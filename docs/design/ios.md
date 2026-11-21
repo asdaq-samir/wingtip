@@ -459,6 +459,19 @@ opened. Typing "traffic" offers Show Traffic in Do.
      the magnetic track, the engine's on the route or the fix's true
      course less the engine's WMM variation, "—" below flying speed.
      The one search's prompt is "Search" whatever it is up for.
+   - **Picking a point (the web's Add Stop and Change Stop, 2026-11-21).**
+     Add a Stop, and a tap on a point's ident on FPL's timeline, ask the
+     one search to pick (`PointAsk`, `OneSearchModel.ask`): the Search
+     page with the ask's title over the rows in Maps' words, Add Stop,
+     Change Stop, Departure or Destination, and "In place of KMSN" under
+     a change. A tap on a field anywhere on the page -- Nearest, a
+     Favorite, a Recent, a result or a waypoint -- picks it (`Plan.pick`)
+     and the sheet is back on FPL; the field's own Cancel goes back with
+     nothing changed. A field that cannot be picked is greyed with why
+     (`Plan.refusal`, `RefusalLine`): closed, in the planner's label from
+     the engine's `field_status` (decision 0043), or already on the route
+     (the two ends may be one field). The flight's card, the airplanes,
+     Find Nearby, towns and Do are left out while it picks.
    - Still the owner's to decide (2026-11-10): the altitude picker, a
      wheel or a list like ForeFlight's Altitude Advisor.
    - Use `.searchable(text:placement:prompt:)` and

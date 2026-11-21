@@ -201,6 +201,30 @@ final class SheetPageToggleTests: XCTestCase {
         }
     }
 
+    /// Add a Stop asks the one search to pick, titled as Maps' Add Stop
+    /// sheet, and the field's Cancel goes back to the plan unchanged.
+    @MainActor
+    func testAddAStopAsksTheSearchToPickAndCancelGoesBack() throws {
+        let app = launch()
+        toggle(app).tap()
+        let from = app.textFields["From"], to = app.textFields["To"]
+        XCTAssertTrue(to.waitForExistence(timeout: 10), "the toggle did not go to FPL")
+        from.tap()
+        from.typeText("KMSN")
+        to.tap()
+        to.typeText("KOSH")
+        let add = app.buttons["Add a Stop"]
+        CardTests.scrollTo(add, in: app)
+        add.tap()
+        let title = app.staticTexts["point-ask-title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 10), "Add a Stop did not ask the search")
+        XCTAssertEqual(title.label, "Add Stop")
+        XCTAssertEqual(toggle(app).label, "Show flight plan", "the ask is not on the Search page")
+        app.buttons["Cancel"].firstMatch.tap()
+        XCTAssertTrue(title.waitForNonExistence(timeout: 10), "Cancel left the ask up")
+        XCTAssertEqual(toggle(app).label, "Show search", "Cancel did not go back to the plan")
+    }
+
     @MainActor
     func testTheRoutesCloseAsksBeforeClearing() throws {
         let app = launch()

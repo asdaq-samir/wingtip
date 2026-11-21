@@ -44,7 +44,7 @@ struct PlanSheet: View {
                 }
                 .accessibilityIdentifier("sheet-page-search")
             } fpl: {
-                PlanView(open: openScreen, addStop: { search.presented = true })
+                PlanView(open: openScreen, addStop: { search.ask(.addStop) })
                     .accessibilityIdentifier("sheet-page-fpl")
             }
             .oneSearch(search, host: host, oneRow: !split)
