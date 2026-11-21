@@ -98,8 +98,7 @@ export const TEXT_POINTS = { caption: TYPE_POINTS.caption, row: TYPE_POINTS.row 
  *  all the way up (MapPanel's --sheet-progress, 0 at half, 1 at the other
  *  two; the owner, 2026-11-05), each with its iOS leading at either end (the audit's P3: 15
  *  on 20 to 20 on 25, 11 on 13 to 13 on 18), eased between as the size
- *  is. The value's size is `--fig`, which FigureStrip sets smaller to fit
- *  its column (`FIT`); the unit is a share of it, so the two shrink
+ *  is. The value's size is `--fig`; the unit is a share of it, so the two grow
  *  together, 11 of 15 at half to 13 of 20 at the pill. */
 const GROW_SMALL =
   "text-[length:calc(0.6875rem+0.0625rem*var(--sheet-progress,1))] leading-[calc(0.8125rem+0.1875rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(0.6875rem+0.125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(0.8125rem+0.3125rem*var(--sheet-progress,1))]";
@@ -130,11 +129,7 @@ export const FIXED_FIGURE = {
   unitScale: 0.65,
 };
 
-/** The strip's one size, as iOS shrinks a label to fit its width
- *  (UILabel's adjustsFontSizeToFitWidth, minimumScaleFactor 0.7, the owner's pick, 2026-11-17): the
- *  value's own size (`--fig`) while the strip's widest figure fits its
- *  column, else the column's width (100cqi, each column a container)
- *  over the room that figure takes (`--fit-room` digits, figureRoom, of
- *  the face's `--figure-digit` ems, index.css), never under 0.7 of its
- *  size; past that cut short. */
-export const FIT = "text-[length:clamp(calc(var(--fig)*0.7),calc(100cqi/(var(--fit-room,7)*var(--figure-digit,0.6))),var(--fig))]";
+/** The strip's value at its own size (`--fig`), never shrunk to fit a
+ *  column: the columns are as wide as their content (FigureStrip; the owner,
+ *  2026-11-21: "make the text size ... match"). */
+export const FIGURE_SIZE = "text-[length:var(--fig)]";

@@ -555,10 +555,12 @@ off by default (the owner, 2026-11-13).
    timeline the route's figures (To,
    Distance, ETE (ETA for an arrival), Fuel: short words, ETE and ETA the FAA's (2026-11-20), the distance whole
    miles, "1,334 nm", the owner's list, 2026-11-17) at their own size, always
-   exact and one column each, never wrapped; where the widest does not fit
-   its column all of them are set smaller together, as iOS fits a label
-   (minimumScaleFactor 0.7), and past 0.7 cut with "…", never a rounded
-   form in their place (the owner's pick of the stock fit, 2026-11-17); in
+   exact and one column each, never wrapped, and never set smaller to fit:
+   a long figure ("1,320 nm", "⚠ 111.3 gal") is the size of a short one
+   ("262 nm", "23.1 gal"), the columns as wide as their content, the first
+   flush left, the last flush right and the rest spread between, and only
+   where even that is too wide cut with "…", never a rounded form in their
+   place (the owner, 2026-11-21, replacing the shrink-to-fit of 2026-11-17); in
    flight and in a dry run no To, which the flying head names, so Distance,
    ETE, Fuel and the GPS altitude are its four columns; whenever the
    airplane's position is known, on the ground too, "GPS alt" is the last

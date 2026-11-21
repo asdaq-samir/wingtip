@@ -1027,14 +1027,13 @@ Edit and Done.
    centred in their equal columns, so the strip spans the sheet's width
    (the owner, 2026-11-20: "Why aren't we using the full width for the
    figures at the bottom?"). The figures are always
-   exact and fitted as iOS fits a label to its width
-   (`adjustsFontSizeToFitWidth`, `minimumScaleFactor` 0.7, the owner's pick of 2026-11-17): all of them
-   set smaller together where the widest does not fit its column, never
-   under 0.7 of their size, and past that cut with "…" -- CSS alone
-   (lib/text's `FIT`: each column a container, its `100cqi` over the
-   widest figure's room from `components/figureRoom`), where until the
-   trial of 2026-11-17 they were measured in the page and the one too
-   wide rounded ("13h 38m" read "13.6h"). In flight the head over
+   exact and at their full size, never shrunk to fit (the owner,
+   2026-11-21: a long "1,320 nm" read smaller than a short "262 nm"): the
+   grid's columns are as wide as their content (`max-content`, spread
+   between the first and last), and only past that cut with "…" -- CSS
+   alone, where from 2026-11-17 to 2026-11-21 they were set smaller together
+   to 0.7 (`FIT`, `figureRoom`, both gone) and before that measured in the
+   page and the one too wide rounded ("13h 38m" read "13.6h"). In flight the head over
    the map gives the next checkpoint only while the engine's `in_flight`
    says the airplane is on the route (`on_route`), as the iPhone's
    instruments do; off it, the head is Emergency alone (`FlyingHead`).

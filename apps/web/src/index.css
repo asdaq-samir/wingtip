@@ -757,13 +757,3 @@ body[data-map-sheet]:is([data-map-panel="peek"], [data-map-panel="half"])
     }
   }
 }
-
-/* A digit's width in the figures' face, in ems, at their semibold
-   (FigureStrip's FIT, components/figureRoom): Barlow's in the looks that
-   set it, Inter's in the Native look (measured 2026-11-17). */
-:root {
-  --figure-digit: 0.54;
-}
-:root[data-brand="native"] {
-  --figure-digit: 0.65;
-}
