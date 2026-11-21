@@ -142,8 +142,11 @@ fn density_altitude_is_the_pressure_altitude_on_a_standard_day_and_higher_the_ho
 
 #[test]
 fn a_fields_air_off_the_altimeter_and_a_standard_days_temperature_where_none_is_reported() {
+    // FAA-H-8083-25C Figure 11-22: 29.4 inHg is +485 ft and 29.5 +392, so
+    // 29.42 is about +466 (the table's whole feet: within 2), not a flat
+    // thousand feet an inch's +500.
     let (pa, t) = runways::field_air(900.0, Some(29.42), Some(25.0));
-    assert!(near(pa, 1400.0, 1e-9));
+    assert!(near(pa, 1366.4, 2.0));
     assert_eq!(t, 25.0);
     let (pa, t) = runways::field_air(900.0, None, None);
     assert_eq!(pa, 900.0);

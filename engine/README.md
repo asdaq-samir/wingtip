@@ -220,7 +220,11 @@ A rule goes in this way, each step in the same pull request:
    in `apps/web/` and `scripts/build/engine-contract-apps.sh`; commit what
    they write.
 4. A test against the shared fixtures in `apps/web/src/lib/fixtures`, so the
-   web, the phones and the planner are held to the same examples.
+   web, the phones and the planner are held to the same examples. Where
+   the FAA's handbooks, knowledge-test supplement or AIM work an example
+   of the rule, it goes in `fixtures/reference` too: the inputs, the
+   expected figure, the tolerance the source's rounding implies and its
+   page and figure, asked by name in `facade/tests/reference.rs`.
 5. Where the web asks it, `python3 scripts/build/web_rules.py` (the web's
    module is built with only the rules the web asks, below), then
    `scripts/build/build-engine-wasm.sh`, and the `.wasm` committed; the

@@ -1,0 +1,253 @@
+{
+  "_note": "Independent worked examples for time, speed, distance, fuel and endurance, from the FAA's handbooks (fetched from faa.gov on 2026-11-21), never from the code. Shape and checks as reference/atmosphere.json says.",
+  "cases": [
+    {
+      "name": "210 NM at a GS of 140 kt takes 1:30",
+      "rule": "fuel_estimate",
+      "input": {
+        "distance_nm": 210,
+        "cruise_tas_kt": 140,
+        "fuel_burn_gph": null
+      },
+      "expect": [
+        {
+          "path": "minutes",
+          "value": 90,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 16, p. 16-11, \"Time T = D/GS\": \"The time to fly 210 NM at a GS of 140 knots is 210 ÷ 140 or 1.5 hours ... Answer: 1:30.\"",
+      "method": "The engine's book estimate is the distance over the speed with no wind, so the handbook's ground speed is given as the speed. Exact."
+    },
+    {
+      "name": "120 kt for 1 hour 45 minutes covers 210 NM",
+      "rule": "fuel_estimate",
+      "input": {
+        "distance_nm": 210,
+        "cruise_tas_kt": 120,
+        "fuel_burn_gph": null
+      },
+      "expect": [
+        {
+          "path": "minutes",
+          "value": 105,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 16, p. 16-11, \"Distance D = GS X T\": \"The distance flown in 1 hour 45 minutes at a GS of 120 knots is 120 × 1.75 or 210 NM.\"",
+      "method": "Read the other way: 210 NM at 120 kt is 105 minutes. Exact."
+    },
+    {
+      "name": "400 NM at 100 kt burning 5 gal an hour: 4 hours and 20 gal",
+      "rule": "fuel_estimate",
+      "input": {
+        "distance_nm": 400,
+        "cruise_tas_kt": 100,
+        "fuel_burn_gph": 5
+      },
+      "expect": [
+        {
+          "path": "minutes",
+          "value": 240,
+          "tolerance": 0.01
+        },
+        {
+          "path": "trip_gal",
+          "value": 20,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 16, p. 16-12, \"Fuel Consumption\": \"a flight of 400 NM at 100 knots GS takes 4 hours to complete. If an aircraft consumes 5 gallons of fuel per hour, the total fuel consumption is 20 gallons ... there is no wind; therefore, true airspeed (TAS) is also 100 knots\".",
+      "method": "Exact. The handbook gives the trip's fuel only; the engine's required fuel adds a reserve, not checked here."
+    },
+    {
+      "name": "220 NM at a GS of 88 kt burning 8 gal an hour: 2:30 and about 20 gal",
+      "rule": "fuel_estimate",
+      "input": {
+        "distance_nm": 220,
+        "cruise_tas_kt": 88,
+        "fuel_burn_gph": 8
+      },
+      "expect": [
+        {
+          "path": "minutes",
+          "value": 150,
+          "tolerance": 0.01
+        },
+        {
+          "path": "trip_gal",
+          "value": 20,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 16, p. 16-15: \"If the distance measures 220 NM, divide by the GS of 88 knots, which gives 2.5 hours, or 2:30 ... If fuel consumption is 8 gallons an hour, 8 × 2.5 or about 20 gallons is used.\"",
+      "method": "The handbook's ground speed given as the speed. Exact."
+    },
+    {
+      "name": "Chickasha to Guthrie: 53 NM at 106 kt is 30 minutes",
+      "rule": "fuel_estimate",
+      "input": {
+        "distance_nm": 53,
+        "cruise_tas_kt": 106,
+        "fuel_burn_gph": null
+      },
+      "expect": [
+        {
+          "path": "minutes",
+          "value": 30,
+          "tolerance": 0.5
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 16, p. 16-21: \"the GS is 106 knots and the total time is 35 minutes (30 minutes plus 5 minutes for climb) with a fuel burn of 4.7 gallons\"; Figure 16-26: total 53 NM.",
+      "method": "Whole minutes: within 0.5. The handbook adds 5 minutes for the climb and burns 8 gal an hour over all 35 (4.7 gal); the book estimate has no climb (the nav log's navlog_with_climbs works the climb from the airplane's own figures), so only the cruise's 30 minutes is checked."
+    },
+    {
+      "name": "Chickasha to Guthrie: a 11 NM leg at 106 kt is 6 minutes",
+      "rule": "fuel_estimate",
+      "input": {
+        "distance_nm": 11,
+        "cruise_tas_kt": 106,
+        "fuel_burn_gph": null
+      },
+      "expect": [
+        {
+          "path": "minutes",
+          "value": 6,
+          "tolerance": 0.5
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 16, p. 16-20, Figure 16-26 (visual flight log): the checkpoints' legs of 11, 10, 10.5, 13 and 8.5 NM at 106 kt, estimated at 6, 6, 6, 7 and 5 minutes",
+      "method": "Whole minutes: within 0.5."
+    },
+    {
+      "name": "Chickasha to Guthrie: a 10 NM leg at 106 kt is 6 minutes",
+      "rule": "fuel_estimate",
+      "input": {
+        "distance_nm": 10,
+        "cruise_tas_kt": 106,
+        "fuel_burn_gph": null
+      },
+      "expect": [
+        {
+          "path": "minutes",
+          "value": 6,
+          "tolerance": 0.5
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 16, p. 16-20, Figure 16-26 (visual flight log): the checkpoints' legs of 11, 10, 10.5, 13 and 8.5 NM at 106 kt, estimated at 6, 6, 6, 7 and 5 minutes",
+      "method": "Whole minutes: within 0.5."
+    },
+    {
+      "name": "Chickasha to Guthrie: a 10.5 NM leg at 106 kt is 6 minutes",
+      "rule": "fuel_estimate",
+      "input": {
+        "distance_nm": 10.5,
+        "cruise_tas_kt": 106,
+        "fuel_burn_gph": null
+      },
+      "expect": [
+        {
+          "path": "minutes",
+          "value": 6,
+          "tolerance": 0.5
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 16, p. 16-20, Figure 16-26 (visual flight log): the checkpoints' legs of 11, 10, 10.5, 13 and 8.5 NM at 106 kt, estimated at 6, 6, 6, 7 and 5 minutes",
+      "method": "Whole minutes: within 0.5."
+    },
+    {
+      "name": "Chickasha to Guthrie: a 13 NM leg at 106 kt is 7 minutes",
+      "rule": "fuel_estimate",
+      "input": {
+        "distance_nm": 13,
+        "cruise_tas_kt": 106,
+        "fuel_burn_gph": null
+      },
+      "expect": [
+        {
+          "path": "minutes",
+          "value": 7,
+          "tolerance": 0.5
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 16, p. 16-20, Figure 16-26 (visual flight log): the checkpoints' legs of 11, 10, 10.5, 13 and 8.5 NM at 106 kt, estimated at 6, 6, 6, 7 and 5 minutes",
+      "method": "Whole minutes: within 0.5."
+    },
+    {
+      "name": "Chickasha to Guthrie: a 8.5 NM leg at 106 kt is 5 minutes",
+      "rule": "fuel_estimate",
+      "input": {
+        "distance_nm": 8.5,
+        "cruise_tas_kt": 106,
+        "fuel_burn_gph": null
+      },
+      "expect": [
+        {
+          "path": "minutes",
+          "value": 5,
+          "tolerance": 0.5
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 16, p. 16-20, Figure 16-26 (visual flight log): the checkpoints' legs of 11, 10, 10.5, 13 and 8.5 NM at 106 kt, estimated at 6, 6, 6, 7 and 5 minutes",
+      "method": "Whole minutes: within 0.5."
+    },
+    {
+      "name": "270 NM in 3 hours is a GS of 90 kt",
+      "rule": "average_groundspeed_kt",
+      "input": {
+        "distance_nm": 270,
+        "minutes": 180
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 90,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 16, p. 16-11, \"GS = D/T\": \"If an aircraft flies 270 NM in 3 hours, the GS is 270 ÷ 3 = 90 knots.\"",
+      "method": "Exact."
+    },
+    {
+      "name": "38 gal usable at 8 gal an hour is 4 hours 45 minutes of fuel",
+      "rule": "endurance",
+      "input": {
+        "usable_gal": 38,
+        "burn_gph": 8,
+        "reserve": "none"
+      },
+      "expect": [
+        {
+          "path": "minutes",
+          "value": 285,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 16, pp. 16-19 to 16-21, Figures 16-25 to 16-27: usable fuel 38 gallons, fuel rate 8 GPH; the flight plan's item 12, fuel on board, \"4 45\", \"determined by dividing the total usable fuel aboard in gallons by the estimated rate of fuel consumption\".",
+      "method": "Exact: 4.75 hours."
+    },
+    {
+      "name": "A 45-minute reserve at 16 gal an hour is 12 gal",
+      "rule": "endurance",
+      "input": {
+        "usable_gal": null,
+        "burn_gph": 16,
+        "reserve": "ifr"
+      },
+      "expect": [
+        {
+          "path": "reserve_gal",
+          "value": 12,
+          "tolerance": 0.01
+        },
+        {
+          "path": "reserve_min",
+          "value": 45,
+          "tolerance": 0
+        }
+      ],
+      "source": "FAA-H-8083-1B (Aircraft Weight and Balance Handbook, 2016), ch. 6, p. 6-3: \"Cruise fuel flow = 16 gallons per hour ... Reserve fuel = 45 minutes = 12 gallons\".",
+      "method": "Exact. The handbook names no flight rules; 45 minutes is the IFR reserve (14 CFR 91.167(a)(3)) and the VFR one at night (91.151(a)(2)) alike."
+    }
+  ]
+}

@@ -1,0 +1,1292 @@
+{
+  "_note": "Independent worked examples for the standard atmosphere: pressure altitude from an altimeter setting, density altitude and standard temperature, each from the FAA's own handbook or testing supplement (fetched from faa.gov on 2026-11-21), never from the code. Each case names the engine rule asked by name (engine/facade/tests/reference.rs), the expected figure, the tolerance the source's rounding implies, the source's page and figure, and where the source's method differs from the engine's, what it is. Checks: value within tolerance of the answer at path (\"\" the whole answer), at_least, equals.",
+  "cases": [
+    {
+      "name": "Pressure altitude conversion factor at 28.0 inHg: +1,824 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 28.0
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 1824,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 28.0",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 28.1 inHg: +1,727 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 28.1
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 1727,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 28.1",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 28.2 inHg: +1,630 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 28.2
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 1630,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 28.2",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 28.3 inHg: +1,533 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 28.3
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 1533,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 28.3",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 28.4 inHg: +1,436 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 28.4
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 1436,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 28.4",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 28.5 inHg: +1,340 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 28.5
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 1340,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 28.5",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 28.6 inHg: +1,244 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 28.6
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 1244,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 28.6",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 28.7 inHg: +1,148 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 28.7
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 1148,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 28.7",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 28.8 inHg: +1,053 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 28.8
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 1053,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 28.8",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 28.9 inHg: +957 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 28.9
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 957,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 28.9",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 29.0 inHg: +863 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 29.0
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 863,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 29.0",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 29.1 inHg: +768 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 29.1
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 768,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 29.1",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 29.2 inHg: +673 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 29.2
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 673,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 29.2",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 29.3 inHg: +579 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 29.3
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 579,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 29.3",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 29.4 inHg: +485 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 29.4
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 485,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 29.4",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 29.5 inHg: +392 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 29.5
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 392,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 29.5",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 29.6 inHg: +298 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 29.6
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 298,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 29.6",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 29.7 inHg: +205 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 29.7
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 205,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 29.7",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 29.8 inHg: +112 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 29.8
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 112,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 29.8",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 29.9 inHg: +20 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 29.9
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 20,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 29.9",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 29.92 inHg: +0 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 29.92
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 0,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 29.92",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 30.0 inHg: -73 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 30.0
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -73,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 30.0",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 30.1 inHg: -165 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 30.1
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -165,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 30.1",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 30.2 inHg: -257 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 30.2
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -257,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 30.2",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 30.3 inHg: -348 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 30.3
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -348,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 30.3",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 30.4 inHg: -440 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 30.4
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -440,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 30.4",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 30.5 inHg: -531 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 30.5
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -531,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 30.5",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 30.6 inHg: -622 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 30.6
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -622,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 30.6",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 30.7 inHg: -712 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 30.7
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -712,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 30.7",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 30.8 inHg: -803 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 30.8
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -803,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-21, Figure 11-22 (density altitude chart), the altimeter setting / pressure altitude conversion factor table, row 30.8",
+      "method": "The table is the standard atmosphere's height of the setting above 29.92 inHg in whole feet; the engine works the same atmosphere exactly (ICAO Doc 7488), so the table's rounding is within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 30.9 inHg: -893 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 30.9
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -893,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-CT-8080-2H (Airman Knowledge Testing Supplement for Sport, Recreational, Remote and Private Pilot, 2018), p. 2-8, Figure 8 (Density Altitude Chart), conversion factor table, row 30.9 (PHAK Figure 11-22 stops at 30.8)",
+      "method": "Whole feet, as above: within 2 ft."
+    },
+    {
+      "name": "Pressure altitude conversion factor at 31.0 inHg: -983 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 31.0
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -983,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-CT-8080-2H (Airman Knowledge Testing Supplement for Sport, Recreational, Remote and Private Pilot, 2018), p. 2-8, Figure 8 (Density Altitude Chart), conversion factor table, row 31.0 (PHAK Figure 11-22 stops at 30.8)",
+      "method": "Whole feet, as above: within 2 ft."
+    },
+    {
+      "name": "Figure 11-3: a sea-level field at 29.7 inHg is at a pressure altitude of 205 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 29.7
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 205,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-3 caption: \"Set the altimeter to the current altimeter setting (29.7). The difference of 205 feet is added to the elevation or a PA of 205 feet.\"",
+      "method": "Whole feet: within 2 ft."
+    },
+    {
+      "name": "Sample Problem 1: 5,883 ft and 30.10 inHg is a pressure altitude of 5,718 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 5883,
+        "altimeter_inhg": 30.1
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 5718,
+          "tolerance": 2
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-20, Sample Problem 1: \"Find 30.10 under the altimeter heading ... It reads “–165.” Therefore, it is necessary to subtract 165 from the airport elevation giving a pressure altitude of 5,718 feet.\"",
+      "method": "The table's factor in whole feet: within 2 ft."
+    },
+    {
+      "name": "Sample Problem 1: 5,718 ft pressure altitude at 70 °F is a density altitude of about 7,700 ft",
+      "rule": "gonogo_density_altitude",
+      "input": {
+        "pressure_alt_ft": 5718,
+        "temp_c": 21.11
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 7700,
+          "tolerance": 100
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-20, Sample Problem 1 (Figure 11-22): \"From 70°, draw a line up to the 5,718 feet pressure altitude line ... The approximate density altitude in thousands of feet is 7,700 feet.\" 70 °F is 21.11 °C.",
+      "method": "The handbook reads its chart to the nearest hundred feet; the engine works density altitude from the standard atmosphere's density (about 7,709 ft), more exact than the chart, so within 100 ft."
+    },
+    {
+      "name": "A pressure altitude of 5,000 ft at 20 °C above standard is a density altitude above 7,000 ft",
+      "rule": "gonogo_density_altitude",
+      "input": {
+        "pressure_alt_ft": 5000,
+        "temp_c": 25.1
+      },
+      "expect": [
+        {
+          "path": "",
+          "at_least": 7000
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-4: \"the altimeter may indicate a pressure altitude of 5,000 feet ... if the temperature is 20 °C above standard ... it may be found that the density level is above 7,000 feet\". Standard at 5,000 ft is 5.1 °C (Figure 11-2), so 25.1 °C.",
+      "method": "The handbook gives a bound, not a figure: the engine's (about 7,270 ft) must be above it."
+    },
+    {
+      "name": "Standard temperature at 0 ft: 15.0 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 0
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 15.0,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 0 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 1,000 ft: 13.0 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 1000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 13.0,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 1,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 2,000 ft: 11.0 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 2000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 11.0,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 2,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 3,000 ft: 9.1 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 3000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 9.1,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 3,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 4,000 ft: 7.1 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 4000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 7.1,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 4,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 5,000 ft: 5.1 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 5000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 5.1,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 5,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 6,000 ft: 3.1 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 6000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 3.1,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 6,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 7,000 ft: 1.1 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 7000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 1.1,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 7,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 8,000 ft: -0.9 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 8000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -0.9,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 8,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 9,000 ft: -2.8 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 9000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -2.8,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 9,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 10,000 ft: -4.8 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 10000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -4.8,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 10,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 11,000 ft: -6.8 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 11000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -6.8,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 11,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 12,000 ft: -8.8 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 12000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -8.8,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 12,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 13,000 ft: -10.8 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 13000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -10.8,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 13,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 14,000 ft: -12.7 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 14000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -12.7,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 14,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 15,000 ft: -14.7 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 15000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -14.7,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 15,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 16,000 ft: -16.7 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 16000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -16.7,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 16,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 17,000 ft: -18.7 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 17000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -18.7,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 17,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 18,000 ft: -20.7 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 18000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -20.7,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 18,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 19,000 ft: -22.6 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 19000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -22.6,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 19,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "Standard temperature at 20,000 ft: -24.6 °C",
+      "rule": "isa_temp_c",
+      "input": {
+        "altitude_ft": 20000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": -24.6,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 20,000 ft",
+      "method": "The table gives tenths of a degree: within 0.05 °C."
+    },
+    {
+      "name": "The standard atmosphere's 28.86 inHg is at 1,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 28.86
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 1000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 1,000 ft: 28.86 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 27.82 inHg is at 2,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 27.82
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 2000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 2,000 ft: 27.82 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 26.82 inHg is at 3,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 26.82
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 3000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 3,000 ft: 26.82 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 25.84 inHg is at 4,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 25.84
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 4000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 4,000 ft: 25.84 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 24.89 inHg is at 5,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 24.89
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 5000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 5,000 ft: 24.89 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 23.98 inHg is at 6,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 23.98
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 6000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 6,000 ft: 23.98 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 23.09 inHg is at 7,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 23.09
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 7000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 7,000 ft: 23.09 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 22.22 inHg is at 8,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 22.22
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 8000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 8,000 ft: 22.22 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 21.38 inHg is at 9,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 21.38
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 9000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 9,000 ft: 21.38 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 20.57 inHg is at 10,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 20.57
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 10000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 10,000 ft: 20.57 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 19.79 inHg is at 11,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 19.79
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 11000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 11,000 ft: 19.79 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 19.02 inHg is at 12,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 19.02
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 12000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 12,000 ft: 19.02 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 18.29 inHg is at 13,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 18.29
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 13000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 13,000 ft: 18.29 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 17.57 inHg is at 14,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 17.57
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 14000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 14,000 ft: 17.57 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 16.88 inHg is at 15,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 16.88
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 15000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 15,000 ft: 16.88 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 16.21 inHg is at 16,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 16.21
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 16000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 16,000 ft: 16.21 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 15.56 inHg is at 17,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 15.56
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 17000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 17,000 ft: 15.56 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 14.94 inHg is at 18,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 14.94
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 18000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 18,000 ft: 14.94 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 14.33 inHg is at 19,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 14.33
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 19000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 19,000 ft: 14.33 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    },
+    {
+      "name": "The standard atmosphere's 13.74 inHg is at 20,000 ft",
+      "rule": "pressure_altitude_ft",
+      "input": {
+        "elevation_ft": 0,
+        "altimeter_inhg": 13.74
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 20000,
+          "tolerance": 20
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge, 2023), ch. 11, p. 11-3, Figure 11-2 (Properties of standard atmosphere), row 20,000 ft: 13.74 inHg",
+      "method": "Read backwards: the height in the standard atmosphere of the table's pressure. The table gives hundredths of an inch, worth up to 9 ft at 20,000 ft, and its own rows round the atmosphere a hundredth off in places (20,000 ft: 13.74 inHg where ICAO Doc 7488 gives 13.75, 17 ft); the engine works ICAO's atmosphere exactly, so within 20 ft."
+    }
+  ]
+}

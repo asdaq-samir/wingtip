@@ -1,0 +1,139 @@
+{
+  "_note": "Independent examples for a hold's entry and leg, from the AIM and the Instrument Flying Handbook (fetched from faa.gov on 2026-11-21), never from the code. Neither gives a worked entry with courses, so the entry cases read the AIM's own figure. Shape and checks as reference/atmosphere.json says.",
+  "cases": [
+    {
+      "name": "Sector (a): the parallel entry drawn from the northwest",
+      "rule": "hold_entry",
+      "input": {
+        "arrival_deg": 135,
+        "inbound_deg": 270,
+        "turns": "right"
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "parallel"
+        }
+      ],
+      "source": "AIM (current edition, faa.gov aim_html, read 2026-11-21) 5-3-8 j.3, FIG 5-3-4 (Holding Pattern Entry Procedures), standard pattern, no wind: \"Parallel Procedure. When approaching the holding fix from anywhere in sector (a) ... Teardrop Procedure ... sector (b) ... Direct Entry Procedure ... sector (c)\". The figure draws the fix with the inbound leg along the page from right to left and the pattern above it; read with north up, the inbound course is 270 and the 70 degree line runs 020-200 through the fix.",
+      "method": "The dashed entry track drawn in sector (a) comes from about 315 degrees off the fix, a course of about 135 to it. The figure names no courses: the case reads its drawing with north up, and the entry depends only on the courses' difference. Tracks well inside a sector, never near its edge, where AIM 5-3-8 j.8(d) allows either entry within 5 degrees."
+    },
+    {
+      "name": "Sector (b): the teardrop entry drawn from the west-southwest",
+      "rule": "hold_entry",
+      "input": {
+        "arrival_deg": 65,
+        "inbound_deg": 270,
+        "turns": "right"
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "teardrop"
+        }
+      ],
+      "source": "AIM (current edition, faa.gov aim_html, read 2026-11-21) 5-3-8 j.3, FIG 5-3-4 (Holding Pattern Entry Procedures), standard pattern, no wind: \"Parallel Procedure. When approaching the holding fix from anywhere in sector (a) ... Teardrop Procedure ... sector (b) ... Direct Entry Procedure ... sector (c)\". The figure draws the fix with the inbound leg along the page from right to left and the pattern above it; read with north up, the inbound course is 270 and the 70 degree line runs 020-200 through the fix.",
+      "method": "The dotted entry track drawn in sector (b) comes from about 245 degrees off the fix, a course of about 065 to it. The figure names no courses: the case reads its drawing with north up, and the entry depends only on the courses' difference. Tracks well inside a sector, never near its edge, where AIM 5-3-8 j.8(d) allows either entry within 5 degrees."
+    },
+    {
+      "name": "Sector (c) on the holding side: direct",
+      "rule": "hold_entry",
+      "input": {
+        "arrival_deg": 235,
+        "inbound_deg": 270,
+        "turns": "right"
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "direct"
+        }
+      ],
+      "source": "AIM (current edition, faa.gov aim_html, read 2026-11-21) 5-3-8 j.3, FIG 5-3-4 (Holding Pattern Entry Procedures), standard pattern, no wind: \"Parallel Procedure. When approaching the holding fix from anywhere in sector (a) ... Teardrop Procedure ... sector (b) ... Direct Entry Procedure ... sector (c)\". The figure draws the fix with the inbound leg along the page from right to left and the pattern above it; read with north up, the inbound course is 270 and the 70 degree line runs 020-200 through the fix.",
+      "method": "The middle of sector (c) on the holding side lies about 055 degrees off the fix, a course of about 235 to it. The figure names no courses: the case reads its drawing with north up, and the entry depends only on the courses' difference. Tracks well inside a sector, never near its edge, where AIM 5-3-8 j.8(d) allows either entry within 5 degrees."
+    },
+    {
+      "name": "Sector (c) on the non-holding side: direct",
+      "rule": "hold_entry",
+      "input": {
+        "arrival_deg": 315,
+        "inbound_deg": 270,
+        "turns": "right"
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "direct"
+        }
+      ],
+      "source": "AIM (current edition, faa.gov aim_html, read 2026-11-21) 5-3-8 j.3, FIG 5-3-4 (Holding Pattern Entry Procedures), standard pattern, no wind: \"Parallel Procedure. When approaching the holding fix from anywhere in sector (a) ... Teardrop Procedure ... sector (b) ... Direct Entry Procedure ... sector (c)\". The figure draws the fix with the inbound leg along the page from right to left and the pattern above it; read with north up, the inbound course is 270 and the 70 degree line runs 020-200 through the fix.",
+      "method": "The middle of sector (c) on the non-holding side lies about 135 degrees off the fix, a course of about 315 to it. The figure names no courses: the case reads its drawing with north up, and the entry depends only on the courses' difference. Tracks well inside a sector, never near its edge, where AIM 5-3-8 j.8(d) allows either entry within 5 degrees."
+    },
+    {
+      "name": "Left turns, sector (a) mirrored: parallel",
+      "rule": "hold_entry",
+      "input": {
+        "arrival_deg": 45,
+        "inbound_deg": 270,
+        "turns": "left"
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "parallel"
+        }
+      ],
+      "source": "AIM (current edition, faa.gov aim_html, read 2026-11-21) 5-3-8 j.3, FIG 5-3-4 (Holding Pattern Entry Procedures), standard pattern, no wind: \"Parallel Procedure. When approaching the holding fix from anywhere in sector (a) ... Teardrop Procedure ... sector (b) ... Direct Entry Procedure ... sector (c)\". The figure draws the fix with the inbound leg along the page from right to left and the pattern above it; read with north up, the inbound course is 270 and the 70 degree line runs 020-200 through the fix.",
+      "method": "Sector (a)'s drawn track mirrored across the holding course (AIM 5-3-8 j.3(d): a nonstandard pattern's entries are oriented to the 70 degree line on the holding side just as in the standard pattern): from about 225 degrees, a course of about 045. The figure names no courses: the case reads its drawing with north up, and the entry depends only on the courses' difference. Tracks well inside a sector, never near its edge, where AIM 5-3-8 j.8(d) allows either entry within 5 degrees."
+    },
+    {
+      "name": "Left turns, sector (b) mirrored: teardrop",
+      "rule": "hold_entry",
+      "input": {
+        "arrival_deg": 115,
+        "inbound_deg": 270,
+        "turns": "left"
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "teardrop"
+        }
+      ],
+      "source": "AIM (current edition, faa.gov aim_html, read 2026-11-21) 5-3-8 j.3, FIG 5-3-4 (Holding Pattern Entry Procedures), standard pattern, no wind: \"Parallel Procedure. When approaching the holding fix from anywhere in sector (a) ... Teardrop Procedure ... sector (b) ... Direct Entry Procedure ... sector (c)\". The figure draws the fix with the inbound leg along the page from right to left and the pattern above it; read with north up, the inbound course is 270 and the 70 degree line runs 020-200 through the fix.",
+      "method": "Sector (b)'s drawn track mirrored: from about 295 degrees, a course of about 115. The figure names no courses: the case reads its drawing with north up, and the entry depends only on the courses' difference. Tracks well inside a sector, never near its edge, where AIM 5-3-8 j.8(d) allows either entry within 5 degrees."
+    },
+    {
+      "name": "The inbound leg at 14,000 ft MSL: 1 minute",
+      "rule": "holding_leg_minutes",
+      "input": {
+        "altitude_ft": 14000
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 1,
+          "tolerance": 0
+        }
+      ],
+      "source": "AIM (current edition, faa.gov aim_html, read 2026-11-21) 5-3-8 j.4(a), Timing, Inbound Leg: \"At or below 14,000 feet MSL: 1 minute. Above 14,000 feet MSL: 1 1/2 minutes.\" Also FAA-H-8083-15B (Instrument Flying Handbook), ch. 10, p. 10-12, \"Time Factors\".",
+      "method": "Exact, the boundary from both sides."
+    },
+    {
+      "name": "The inbound leg at 14,001 ft MSL: 1.5 minutes",
+      "rule": "holding_leg_minutes",
+      "input": {
+        "altitude_ft": 14001
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 1.5,
+          "tolerance": 0
+        }
+      ],
+      "source": "AIM (current edition, faa.gov aim_html, read 2026-11-21) 5-3-8 j.4(a), Timing, Inbound Leg: \"At or below 14,000 feet MSL: 1 minute. Above 14,000 feet MSL: 1 1/2 minutes.\" Also FAA-H-8083-15B (Instrument Flying Handbook), ch. 10, p. 10-12, \"Time Factors\".",
+      "method": "Exact, the boundary from both sides."
+    }
+  ]
+}
