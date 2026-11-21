@@ -81,7 +81,7 @@ def test_a_tile_as_webp_is_the_same_pixels_and_webp_is_kept_as_it_is():
     assert chart_render.is_webp(webp)
     before = Image.open(io.BytesIO(palette.getvalue())).convert("RGBA")
     after = Image.open(io.BytesIO(webp)).convert("RGBA")
-    assert list(before.getdata()) == list(after.getdata())
+    assert before.tobytes() == after.tobytes()
     assert chart_render.to_webp(webp) is webp
 
 
@@ -242,3 +242,18 @@ def test_a_cycle_packed_as_png_is_transcoded_to_webp_once(cache):
     assert _webp_of(OLD, chart_tiles.tile_bytes(65, 94, 8, "sec"))
     assert chart_serving.tiles_revision(CYCLE) == 0
     assert chart_archives.transcode(CYCLE, ("sec",), workers=1) == {}
+
+
+def test_a_cycle_transcoded_into_staging_leaves_the_served_archive_alone(cache, tmp_path):
+    """`transcode --out`: the WebP archive written under the staging
+    folder, the served PNG one untouched; run again, it is not written
+    twice."""
+    served = cache / CYCLE / "sec.pmtiles"
+    tile_archive.write(served, [(8, 65, 94, len(_png(OLD)), lambda: _png(OLD))], {})
+    before = served.read_bytes()
+    staging = tmp_path / "staging"
+    assert chart_archives.transcode(CYCLE, ("sec",), workers=1, out=staging) == {"sec.pmtiles": 1}
+    assert served.read_bytes() == before
+    staged = tile_archive.on_disk(staging / CYCLE / "sec.pmtiles")
+    assert staged.header["tile_type"] == tile_archive.TileType.WEBP and _webp_of(OLD, staged.get(8, 65, 94))
+    assert chart_archives.transcode(CYCLE, ("sec",), workers=1, out=staging) == {}
