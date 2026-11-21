@@ -63,3 +63,16 @@ def test_an_inspections_batch_answers_each_airplane_in_order():
         assert got == client.post("/api/aircraft/inspections", json=ask).json()
     assert body[1]["annualUntil"] is None
     assert client.post("/api/aircraft/inspections-batch", json=[]).json() == []
+
+
+def test_a_batch_longer_than_its_bound_is_refused_before_any_engine_call():
+    """The deep security review of 2026-11-21: a batch of any length held a
+    worker through one engine call an ask. MAX_BATCH (500) is well above an
+    instructor's students or an owner's airplanes; one more is a 422."""
+    from app.schemas.pilot import MAX_BATCH
+
+    too_many = [{}] * (MAX_BATCH + 1)
+    assert client.post("/api/aircraft/inspections-batch", json=too_many).status_code == 422
+    asks = [{"held": [], "flightOn": None}] * (MAX_BATCH + 1)
+    assert client.post("/api/pilot/records-batch", json={"endorsements": asks}).status_code == 422
+    assert client.post("/api/aircraft/inspections-batch", json=[{}] * MAX_BATCH).status_code == 200
