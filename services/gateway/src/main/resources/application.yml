@@ -306,6 +306,8 @@ app:
     unused-client-days: ${MCP_UNUSED_CLIENT_DAYS:1}
     housekeeping-cron: ${MCP_HOUSEKEEPING_CRON:0 45 3 * * *}
   magic-link:
+    # Per address from each caller; an address takes six callers' worth in
+    # all (MagicLinkController.ADDRESS_CALLERS).
     per-address-per-hour: ${APP_MAGIC_LINK_PER_ADDRESS_PER_HOUR:5}
     per-client-per-hour: ${APP_MAGIC_LINK_PER_CLIENT_PER_HOUR:20}
     # Asks of whose account a link is for (MagicLinkAccountController).
