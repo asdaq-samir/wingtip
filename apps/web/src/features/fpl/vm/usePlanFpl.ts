@@ -1,4 +1,5 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
+import { prefetchMiniProfile } from "../../navlog";
 import type { PanelState } from "../../../lib/mapChrome";
 import { useFplCards } from "./useFplCards";
 import type { PlanRoute } from "./usePlanRoute";
@@ -47,7 +48,18 @@ export function usePlanFpl(
     setViewPick("plan");
     openProfileCard();
   }, [setViewPick, openProfileCard]);
-  return { ...cards, openProfile, profileReady: routed && !!course && !s.local };
+  const profileReady = routed && !!course && !s.local;
+  // The Profile's side view's chunk once there is a route to draw it for,
+  // at idle: its card opened on a fetch and a suspended first draw (the
+  // speed audit of 2026-11-21).
+  useEffect(() => {
+    if (!profileReady) return;
+    const idle = window.requestIdleCallback ?? ((go: () => void) => window.setTimeout(go, 1000));
+    const cancel = window.cancelIdleCallback ?? window.clearTimeout;
+    const handle = idle(prefetchMiniProfile);
+    return () => cancel(handle);
+  }, [profileReady]);
+  return { ...cards, openProfile, profileReady };
 }
 
 /** The cards over FPL, as the workspace's hooks read them. */

@@ -12,12 +12,16 @@ import type { NavLogRow } from "../plan";
 import { wantPlace } from "../../lib/navigation/wanted";
 import { TEXT } from "../../lib/text";
 import { PointMark } from "./PointMark";
+import { useCardUp } from "../../components/sheet/useCardUp";
 
 /** The rail's middle, across the row: the row's own 6 and half the
  *  mark's column (2.125 rem). */
 const RAIL = "left-[calc(0.375rem+1.0625rem)]";
 /** A mark's middle, down the row: the row's 8 and half a mark's 24. */
 const MARK_MIDDLE = "1.25rem";
+/** The rows drawn as a card comes up, more than a phone's first screen
+ *  holds (NavLogList): the rest once it is up. */
+const FIRST_ROWS = 12;
 
 /** The way a leg is flown, magnetic and named so, as a paper nav log's
  *  MC and MH columns are: its heading with an airplane picked ("MH 252°"),
@@ -153,6 +157,12 @@ export function NavLogList({
   const rail = railOf(rows);
   // Outside the United States the figures are still the FAA's (0053).
   const cautions = rowCautions(rows);
+  // The first screen's rows as the card comes up, the rest once it is up
+  // (useCardUp), so the list is not one long task in its ease; past them a
+  // row picked or flown to, which is scrolled to, at once.
+  const up = useCardUp();
+  const wanted = up ? -1 : Math.max(flying ?? -1, rows.map((r) => isSelected(r)).lastIndexOf(true));
+  const upTo = up ? rows.length : Math.max(FIRST_ROWS, wanted + 1);
   return (
     <>
       {/* Its age where it is the one kept on this device (lib/kept). */}
@@ -194,6 +204,7 @@ export function NavLogList({
         </div>
         <div role="rowgroup">
           {rows.map((row, at) => {
+            if (at >= upTo) return null;
             const leg = legOf(row);
             const selected = isSelected(row);
             const first = at === 0,

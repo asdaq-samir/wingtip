@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
-import { useWindPicks, holdsOf, holdsParam, type PlanParams, departureRunways, landingRunways, namesRoute } from "../../plan";
+import {
+  askedRunways,
+  firstWindPicks,
+  holdsOf,
+  holdsParam,
+  type FirstWindPicks,
+  type PlanParams,
+  departureRunways,
+  landingRunways,
+  namesRoute,
+  windPickedEnds,
+} from "../../plan";
 import type { PlannedRoute, PlanCourse } from "../../plan";
 import {
   altitudesOf,
@@ -19,8 +30,9 @@ import { addressParams, useAddress } from "../../../lib/address";
 import { usePlanHistory } from "../../../hooks/use-plan-history";
 import { picksOf } from "../../../lib/flightLink";
 import { proceduresOf, proceduresParam, sameField } from "../../../lib/procedures";
-import { airportQuery, procedureQuery } from "../../../lib/queryClient";
+import { procedureQuery } from "../../../lib/queryClient";
 import { drawnOnly } from "../../procedures";
+import { patternsOf } from "../../../lib/trafficPattern";
 import { useRouteEdits } from "../../route";
 
 /**
@@ -99,30 +111,13 @@ export function usePlanRoute() {
   );
   const pickQueries = useMemo(() => routePicks.map(procedureQuery), [routePicks]);
   const drawnPickList = useQueries({ queries: pickQueries, combine: drawnOnly });
-  // Each picked procedure's drawing in or given up on, and no runway into
-  // the wind still to be picked (useWindPicks): only then is the nav log
-  // asked for (usePlan's `settling`), once, not again for each as it came.
+  // Each picked procedure's drawing in or given up on: only then is the nav
+  // log asked for (usePlan's `settling`), once, not again for each as it
+  // came. Not the runways into the wind: the planner picks those itself
+  // (askedRunways, below), so the nav log no longer waits on the fields'
+  // cards and the page's picks, about a second on each new route (the speed
+  // audit of 2026-11-21).
   const picksComing = useQueries({ queries: pickQueries, combine: (rs) => rs.some((r) => r.isPending && r.fetchStatus !== "idle") });
-  const windPending = useWindPicks((w) => w.pending);
-  // Settled for this route only once a commit has gone by with nothing
-  // coming: the route list's wind picks are set in its effects, which run
-  // after the render that would otherwise have asked for the nav log
-  // without them (the store read here, after them). A route not settled
-  // yet -- each new one -- waits that one commit.
-  // The route's fields' cards too, whose reports the runways are picked
-  // into the wind from: the route list that picks them may be drawn after
-  // the plan is first asked for, and the cards are asked for with the
-  // route in any case.
-  const fieldIdents = routeFields.split(",").filter(Boolean);
-  const cardsComing = useQueries({
-    queries: fieldIdents.map((ident) => airportQuery(ident)),
-    combine: (rs) => rs.some((r) => r.isPending && r.fetchStatus !== "idle"),
-  });
-  const settlingNow = picksComing || windPending || cardsComing;
-  const settledFor = useWindPicks((w) => w.settledFor);
-  useEffect(() => {
-    useWindPicks.setState({ settledFor: !settlingNow && !useWindPicks.getState().pending ? routeFields : null });
-  }, [settlingNow, routeFields]);
   // Those the CIFP has, once drawn, each with the fix ATC sent the airplane
   // direct to where there is one: one string, so the plan's key changes
   // only as a procedure does.
@@ -159,9 +154,9 @@ export function usePlanRoute() {
   // departure field's runway picked, a stop's to leave from -- flown by its
   // runway transition for it (wingtip.procedure_paths), where St. Louis's
   // BERYY6 went out by its first, runway 11's, off 30R (the audit of
-  // 2026-10-21). A runway picked into the wind as the route comes in asks
-  // for the log again, which the planner answers from its cache: the legs
-  // are planned without the runways, their paths laid on after
+  // 2026-10-21). A runway the wind turns, or the pilot picks, asks for the
+  // log again, which the planner answers from its cache: the legs are
+  // planned without the runways, their paths laid on after
   // (with_procedures).
   const patternText = address.pattern,
     takeoffText = address.takeoff;
@@ -173,8 +168,24 @@ export function usePlanRoute() {
   // 2026-10-27: "is it not flying that and landing?"). The departure's own
   // runway is the one in `pattern` (ProceduresRoute's departChips), a
   // round trip's in `takeoff`.
-  const runwaysText = useMemo(() => departureRunways(patternText, takeoffText, routeFields), [patternText, takeoffText, routeFields]);
-  const landingsText = useMemo(() => landingRunways(patternText, routeFields), [patternText, routeFields]);
+  // Less those picked into the wind and still as first picked for the
+  // route, which the planner picks itself (features/plan/windRunways): the
+  // nav log asked at once, and not again as the page's own picks come in.
+  const autoText = address.auto;
+  const windEnds = useMemo(() => windPickedEnds(autoText, patternText, takeoffText), [autoText, patternText, takeoffText]);
+  const [firstWind, setFirstWind] = useState<FirstWindPicks>({ route: "", ends: {} });
+  const firstNow = firstWindPicks(firstWind, routeFields, windEnds);
+  if (firstNow !== firstWind) setFirstWind(firstNow);
+  const firstEnds = firstNow.ends;
+  const runwaysText = useMemo(() => {
+    const takeoffs = patternsOf(takeoffText);
+    const all = departureRunways(patternText, takeoffText, routeFields);
+    return askedRunways(all, (ident) => (takeoffs.has(ident) ? "takeoff" : "land"), windEnds, firstEnds);
+  }, [patternText, takeoffText, routeFields, windEnds, firstEnds]);
+  const landingsText = useMemo(
+    () => askedRunways(landingRunways(patternText, routeFields), () => "land", windEnds, firstEnds),
+    [patternText, routeFields, windEnds, firstEnds],
+  );
   const local = !!planned.dep && planned.dep === planned.dest && planned.stops.length === 0;
   // A route on screen: one the planner plans, or a local flight -- an
   // airport to itself with no stop (usePlan's `local`).
@@ -196,7 +207,7 @@ export function usePlanRoute() {
     procedures,
     runways: runwaysText,
     patterns: landingsText,
-    settling: settlingNow || settledFor !== routeFields,
+    settling: picksComing,
     crossings: altitudesParam(crossings),
     ground: altitudesParam(ground),
     holds: holdsParam(holds),

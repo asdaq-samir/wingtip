@@ -13,6 +13,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Course, NavLogMessage } from "../../lib/api/types";
 import { useSystemProblems } from "../../lib/problems";
 import { queryClient } from "../../lib/queryClient";
+import { keptStore } from "../../lib/storage";
 import type { PlanParams } from "./planQuery";
 import { usePlan } from "./usePlan";
 
@@ -85,7 +86,9 @@ beforeEach(() => {
   vi.mocked(api.briefing).mockReturnValue(new Promise(() => {})); // never answers; not what these tests are about
   vi.mocked(api.checkpoints).mockReturnValue(new Promise(() => {}));
   vi.mocked(api.me).mockResolvedValue(null);
-  vi.mocked(api.chart).mockReturnValue(new Promise(() => {}));
+  // The chart answers at once, as it does (about a millisecond): the course
+  // waits on its cycle.
+  vi.mocked(api.chart).mockResolvedValue({ chart_cycle: "09-03-2026" } as never);
   vi.mocked(api.checkpointNotes).mockResolvedValue({ departure_ident: "C81", checkpoints: [] });
 });
 
@@ -95,6 +98,8 @@ afterEach(() => {
   // after the file's jsdom had gone, "window is not defined" (CI, 0a7aa8ee).
   cleanup();
   queryClient.clear();
+  // The chart kept from a test's answer is not the next test's first visit's.
+  keptStore("wingtip.chart", null).setState({ value: null });
   vi.clearAllMocks();
 });
 
@@ -352,6 +357,18 @@ describe("an altitude asked for", () => {
     expect(result.current.replanning).toBe(true);
   });
 
+  test("as the fuel in the tanks is set, keeps the legs before it, for the gauges to be walked from at once", async () => {
+    vi.mocked(api.course).mockResolvedValue({ ...courseFixture(), checkpoints_ready: true });
+    // The tanks are arg 21, as FuelSet's Done writes them.
+    vi.mocked(api.navlog).mockImplementation((...args: Parameters<typeof api.navlog>) => (args[21] ? waiting() : whole(4500)));
+    const { result, rerender } = renderHook((plan: PlanParams) => usePlan(plan), { wrapper, initialProps: params });
+    await waitFor(() => expect(result.current.totals).not.toBeNull());
+    rerender({ ...params, tanks: "C81:30" });
+    await waitFor(() => expect(vi.mocked(api.navlog).mock.calls.some((call) => call[21] === "C81:30")).toBe(true));
+    expect(result.current.legs).toHaveLength(1);
+    expect(result.current.replanning).toBe(true);
+  });
+
   test("on another route, is not held over it", async () => {
     vi.mocked(api.course).mockResolvedValue({ ...courseFixture(), checkpoints_ready: true });
     vi.mocked(api.navlog).mockImplementation((...args: Parameters<typeof api.navlog>) => (args[1] === "KMSP" ? waiting() : whole(4500)));
@@ -364,11 +381,20 @@ describe("an altitude asked for", () => {
 });
 
 describe("the chart cycle", () => {
-  test("the course and checkpoints are asked again in the chart's cycle, as the tiles are", async () => {
+  test("the course and checkpoints are asked once, in the chart's cycle, as the tiles are", async () => {
     vi.mocked(api.chart).mockResolvedValue({ ...courseFixture(), chart_cycle: "11-27-2026" } as never);
     renderHook(() => usePlan(params), { wrapper });
 
     await waitFor(() => expect(api.course).toHaveBeenCalledWith("C81", "KDLH", [], expect.anything(), "11-27-2026"));
     await waitFor(() => expect(api.checkpoints).toHaveBeenCalledWith("C81", "KDLH", [], expect.anything(), false, "11-27-2026"));
+    expect(api.course).toHaveBeenCalledTimes(1); // not first without it (a first visit, none kept)
+    expect(api.checkpoints).toHaveBeenCalledTimes(1);
+  });
+
+  test("a chart that does not answer holds the course a second at most", async () => {
+    vi.mocked(api.chart).mockReturnValue(new Promise(() => {}));
+    renderHook(() => usePlan(params), { wrapper });
+
+    await waitFor(() => expect(api.course).toHaveBeenCalledWith("C81", "KDLH", [], expect.anything(), undefined), { timeout: 2000 });
   });
 });

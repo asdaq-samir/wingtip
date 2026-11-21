@@ -105,6 +105,7 @@ export {
   suggestedStopAt,
 } from "./planAddress";
 export type { PlanAnswer, PlanCourse } from "./planTypes";
+export { type FirstWindPicks, askedRunways, firstWindPicks, windPickedEnds } from "./windRunways";
 export type { Landing, ProcedureAirport, ProcedureKind } from "./procedureTypes";
 export { landingRunway } from "./landingRunway";
 export { type RadioCall, type RadioPhase, callSign, fieldPhases, placeName } from "./radio";
