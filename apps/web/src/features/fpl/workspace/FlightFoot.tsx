@@ -30,7 +30,7 @@ export function FlightFigures({
 }) {
   const { depart, directParam, planned } = vm.route;
   const { directToPoint, s } = vm.plan;
-  const { firstFuelStop } = vm.stops;
+  const { fuelToAdd } = vm.stops;
   const { dryRunning, flying } = vm.flight;
   const { estimate } = vm.brief;
   const line = { totals: s.totals, estimate, destination: `${planned.dest}`, depart, local: s.local, flying };
@@ -52,7 +52,7 @@ export function FlightFigures({
         </div>
       )}
       <div data-testid="flight-line">
-        <TripFigures {...line} grow={grow} fuelStop={firstFuelStop} unknown={s.unknownPlace} />
+        <TripFigures {...line} grow={grow} fuelStop={fuelToAdd} unknown={s.unknownPlace} />
       </div>
     </EngineGate>
   );

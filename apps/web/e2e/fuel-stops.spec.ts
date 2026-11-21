@@ -46,23 +46,28 @@ const CHOICE = {
   lands_with_gal: 21.2,
 };
 
+/** The live nav log of the routes `when` picks answered with `fuelStops`
+ *  in its totals. */
+async function answered(page: Page, when: (url: URL) => boolean, fuelStops: unknown[]) {
+  await page.route(when, async (route) => {
+    const body = await (await route.fetch()).text();
+    const lines = body
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => {
+        const message = JSON.parse(line);
+        if (message.type !== "done") return line;
+        message.totals.fuel_stops = fuelStops;
+        return JSON.stringify(message);
+      });
+    await route.fulfill({ contentType: "application/x-ndjson", body: `${lines.join("\n")}\n` });
+  });
+}
+
 async function suggested(page: Page, departure = "C81", reason: "fuel" | "break" = "fuel") {
-  await page.route(
-    (url) => url.pathname.endsWith("/navlog") && !url.searchParams.get("stops"),
-    async (route) => {
-      const body = await (await route.fetch()).text();
-      const lines = body
-        .split("\n")
-        .filter(Boolean)
-        .map((line) => {
-          const message = JSON.parse(line);
-          if (message.type !== "done") return line;
-          message.totals.fuel_stops = [{ departure, destination: "KDLH", usable_gal: 48, reason, stops: [STOP], choices: [CHOICE] }];
-          return JSON.stringify(message);
-        });
-      await route.fulfill({ contentType: "application/x-ndjson", body: `${lines.join("\n")}\n` });
-    },
-  );
+  await answered(page, (url) => url.pathname.endsWith("/navlog") && !url.searchParams.get("stops"), [
+    { departure, destination: "KDLH", usable_gal: 48, reason, stops: [STOP], choices: [CHOICE] },
+  ]);
 }
 
 test.afterEach(async ({ page }) => {
@@ -237,4 +242,25 @@ test("FPL's Add a Stop row has Add Fuel Stops, and once they are in, Remove Fuel
   await page.screenshot({ path: "test-results/fuel-pill-remove.png" });
   await pill.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("stops")).toBeNull();
+});
+
+test("Add Fuel Stops puts in every flight's suggested stops, a later flight's too", async ({ page }) => {
+  // The owner's trip (2026-11-20): to KLAS and on to KPWK, the pill put in
+  // the first flight's stops alone and the last flight still read 21 gal
+  // short. Here the route C81, KMSN, KDLH, each flight with a stop of its
+  // own suggested; once in, the plan suggests none and the pill takes them
+  // out again.
+  await answered(page, (url) => url.pathname.endsWith("/navlog") && url.searchParams.get("stops") === "KMSN", [
+    { departure: "C81", destination: "KMSN", usable_gal: 48, reason: "fuel", stops: [{ ...CHOICE, ident: "KJVL" }], choices: [] },
+    { departure: "KMSN", destination: "KDLH", usable_gal: 48, reason: "fuel", stops: [STOP], choices: [] },
+  ]);
+  await page.goto("/app/plan?dep=C81&stops=KMSN&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  const pill = sideDrawer(page).getByTestId("timeline-add-stop").locator("..").getByTestId("timeline-fuel-stops");
+  await expect(pill).toHaveText("Add Fuel Stops", { timeout: slow(60_000) });
+  await pill.click();
+  await expect(page).toHaveURL(stopsAre("KJVL,KMSN,KRPD"));
+  await expect.poll(() => new URL(page.url()).searchParams.get("fuel")).toBe("KJVL,KRPD");
+  await expect(pill).toHaveText("Remove Fuel Stops", { timeout: slow(60_000) });
 });

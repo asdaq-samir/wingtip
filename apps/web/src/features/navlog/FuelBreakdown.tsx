@@ -36,7 +36,7 @@ export default function FuelBreakdown({
   burnt?: number;
   /** The route's flights the tanks do not hold the fuel for (shortFlights),
    *  a later stop's as well as this one's. */
-  short?: { name: string; shortGal: number }[];
+  short?: { name: string; shortGal: number; noStop?: boolean }[];
 }) {
   const short = totals.fuel_margin_gal != null && totals.fuel_margin_gal < 0 ? -totals.fuel_margin_gal : null;
   // The airplane's figures open its profile, on the figure (lib/airplane).
@@ -44,7 +44,9 @@ export default function FuelBreakdown({
   return (
     <div className="flex flex-col gap-3" data-testid="fuel-breakdown">
       {shortOnes.some((f) => f.name) && (
-        <p className="font-semibold text-destructive-ink">Short: {shortOnes.map((f) => `${f.name}, ${gal(f.shortGal)}`).join("; ")}</p>
+        <p className="font-semibold text-destructive-ink">
+          Short: {shortOnes.map((f) => `${f.name}, ${gal(f.shortGal)}${f.noStop ? ", no fuel stop in reach" : ""}`).join("; ")}
+        </p>
       )}
       <ListGroup>
         <ListRow

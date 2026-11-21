@@ -3,4 +3,4 @@
  */
 
 export { useStopsAlong } from "./stopsAlong";
-export { useSuggestedStops, withStopsAfter } from "./useSuggestedStops";
+export { useSuggestedStops } from "./useSuggestedStops";

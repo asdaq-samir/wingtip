@@ -5,6 +5,7 @@ import { duration, grouped, NOT_KNOWN, spokenDistance, spokenDuration, spokenFue
 import { SM_PER_NM } from "../../lib/geo";
 import { callEngine } from "../../lib/engine/engine";
 import { pointName } from "../../lib/identSchema";
+import { sameField } from "../../lib/procedures";
 
 /** One of the flight's figures: its name over it, its unit after it. */
 interface Figure {
@@ -170,8 +171,12 @@ export function tripFigures({
 }
 
 /** The flights of a route the tanks do not hold the fuel for: each hop
- *  between two landings, or the whole route with no stops -- "C81 → KMSN". */
-export function shortFlights(totals: Totals | null): { name: string; shortGal: number }[] {
+ *  between two landings, or the whole route with no stops -- "C81 → KMSN";
+ *  `noStop` where the planner found no field with fuel that the tanks
+ *  reach on it (the totals' fuel_stops have none for it), so the pilot is
+ *  told the flight stays short rather than offered nothing (warn, never
+ *  limit). */
+export function shortFlights(totals: Totals | null): { name: string; shortGal: number; noStop: boolean }[] {
   if (!totals) return [];
   // Each named by its two ends' own names (pointName), found by the
   // flight's index (`hop`), not the engine's raw idents, where a pilot's
@@ -179,7 +184,9 @@ export function shortFlights(totals: Totals | null): { name: string; shortGal: n
   // with no stops has no flight to name: "".
   return stripFuel(totals).short.map((s) => {
     const hop = s.hop == null ? undefined : totals.hops[s.hop];
-    return { name: hop ? `${pointName(hop.departure)} → ${pointName(hop.destination)}` : "", shortGal: s.short_gal };
+    const from = hop?.departure ?? totals.hops[0]?.departure;
+    const noStop = !(totals.fuel_stops ?? []).some((f) => f.reason !== "break" && (from == null || sameField(f.departure, from)));
+    return { name: hop ? `${pointName(hop.departure)} → ${pointName(hop.destination)}` : "", shortGal: s.short_gal, noStop };
   });
 }
 /** The figures from the airplane's book alone (TripFigures' `estimate`):
