@@ -48,7 +48,7 @@ const CHOICE = {
 
 /** The live nav log of the routes `when` picks answered with `fuelStops`
  *  in its totals. */
-async function answered(page: Page, when: (url: URL) => boolean, fuelStops: unknown[]) {
+async function answered(page: Page, when: (url: URL) => boolean, fuelStops: unknown[], noFuelStop: unknown[] = []) {
   await page.route(when, async (route) => {
     const body = await (await route.fetch()).text();
     const lines = body
@@ -58,6 +58,7 @@ async function answered(page: Page, when: (url: URL) => boolean, fuelStops: unkn
         const message = JSON.parse(line);
         if (message.type !== "done") return line;
         message.totals.fuel_stops = fuelStops;
+        message.totals.no_fuel_stop = noFuelStop;
         return JSON.stringify(message);
       });
     await route.fulfill({ contentType: "application/x-ndjson", body: `${lines.join("\n")}\n` });
@@ -269,4 +270,22 @@ test("Add Fuel Stops puts in every flight's suggested stops, a later flight's to
   await expect(page).toHaveURL(stopsAre("KJVL,KMSN,KRPD"));
   await expect.poll(() => new URL(page.url()).searchParams.get("fuel")).toBe("KJVL,KRPD");
   await expect(pill).toHaveText("Remove Fuel Stops", { timeout: slow(60_000) });
+});
+
+test("a flight short with no stop offered says why where the pill would be", async ({ page }) => {
+  // The aviation audit (2026-11-21, F7.6): with too little fuel on board
+  // at the start for the start, taxi and reserve, no field is in reach and
+  // no stop is offered; the timeline says so (warn, never limit).
+  await answered(
+    page,
+    (url) => url.pathname.endsWith("/navlog") && !url.searchParams.get("stops"),
+    [],
+    [{ departure: "C81", destination: "KDLH", on_board: true }],
+  );
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  const note = sideDrawer(page).getByTestId("timeline-no-fuel-stop");
+  await expect(note).toHaveText("Too little fuel on board for C81 → KDLH", { timeout: slow(60_000) });
+  await expect(sideDrawer(page).getByTestId("timeline-fuel-stops")).toHaveCount(0);
 });

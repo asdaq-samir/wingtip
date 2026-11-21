@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.NearMe
@@ -70,6 +71,7 @@ object WingtipIcons {
     val addToRoute = Icons.Filled.AddLocation
     val holdHere = Icons.Filled.Sync
     val undo = Icons.AutoMirrored.Filled.Undo
+    val fuel = Icons.Filled.LocalGasStation
     val redo = Icons.AutoMirrored.Filled.Redo
     val call = Icons.Filled.Call
     val address = Icons.Filled.Place

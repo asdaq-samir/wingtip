@@ -423,16 +423,98 @@ opened. Typing "traffic" offers Show Traffic in Do.
      `oneRow`), the microphone and the account beside it, as Maps' search
      row. Under it, at half and full, the route card (`RouteCard`): the
      route (KMSN → KOSH) with the engine's Ready to Fly line and the
-     route's ••• at its right; the figures in one line (distance, ETE,
-     fuel, altitude, airplane); Brief, Nav Log and Airplane; then the
-     route itself (From and To, Routes, the airplane and the altitude),
-     the stops and the rest of the plan. At the pill, the search row
-     alone. With no route, the same place holds Favorites, Recents, Find
-     Nearby and Nearest. Saved Flights, Share and Undo moved from the bar
-     into the route card's ••• with the Profile and Clear Route; Undo
-     stays on shake and the Edit menu (UndoManager); the stops' Edit is
-     at the Stops header's right. Cards still cover the search with
-     their ✕ (the card rule).
+     route's ••• and its ✕ at its right; the figures in one line
+     (distance, ETE, fuel, altitude, airplane); Brief, Nav Log and File,
+     the web's tab bar and its File button (2026-11-21); then Routes,
+     the airplane and the altitude, and the route itself as FPL's
+     timeline (`RouteTimelineSection`, the web's, 2026-11-21): a line a
+     point, the departure, each stop and the destination, their marks
+     joined by the course's magenta (`TimelineThread`). A mark is a
+     filled circle with a white glyph (`TimelineMark`): an airport's
+     "•••" in its flight category's colour, grey with no report, a fuel
+     stop's pump, a waypoint's grey triangle, the airplane's position the
+     tint's location arrow, a field that cannot be flown to the red ✕;
+     it is the point's menu (`RoutePointActions`: More Info, Change…,
+     Direct To, Set Altitude…, a fix, Hold Here…, Remove). The ident is a
+     tap that asks the one search to change the point (Change Stop,
+     Departure, Destination); then the fuel in the tanks there
+     (`TimelineGauge`: the system's capacity gauge and the gallons,
+     "−12 gal" past empty, red under the reserve, each field the airplane
+     leaves a tap to set its fuel in a sheet of a segmented Full / No
+     fuel / Gallons and a number field, Cancel and Done; the engine's
+     `fuel_in_tanks`, each point held to its own flight's reserve and
+     the destination to an IFR alternate's fuel too; the planner's
+     `tanks`); and its time at the right (`TimelineTime`): at the
+     departure when it leaves, the system's compact time picker, one
+     button with the hour and minute wheels, a time of day earlier than
+     now tomorrow's (the planner's `depart`); at the others their arrival
+     on this iPhone's clock from the planner's minutes, a dash with no
+     airplane. Once any point keeps another zone than the departure's at
+     its arrival (its card's `time_zone`), every point says its own clock
+     with its zone after it, "13:00 MST", the departure's too
+     (`TimelineClock`). A stop says when it leaves again after its
+     takeoff's chips, the same picker from its landing to a day after,
+     kept as its minutes on the ground (the planner's `ground`). A field
+     NASR lists closed, or
+     whose card could not be had, says why in red under it (decision
+     0043; `RouteFieldCards` asks each field's card once). Stops swipe
+     off and drag into another order (Edit at the header's right); Add a
+     Stop is the last row, then Add (or Remove) Fuel Stops (one tap puts
+     in every stop the planner's rounds found, already checked; a flight
+     short with none offered says why in their place, "No fuel stop in
+     reach on KMSN → KDLH"). Once a field's card says it is open, its
+     line has its runways and the kinds of procedure not picked under it
+     (`TimelineFieldParts`, the web's trays, 5228f10df): "Land RWY 24" and
+     "Takeoff RWY 06", each a menu of its runway ends with Into the Wind
+     first, the planner's own pick where none is (`AirportWords.windEnd`,
+     the planner's `wind_runways`; a pick is its `patterns` or `runways`),
+     a stop's landing then its takeoff; and "+ ARR", "+ APCH" and "+ DEP"
+     for each kind it publishes and the route has none of. A procedure
+     picked is no chip: its fixes are points on the route's line itself
+     (`TimelineProcedureRows`, the owner's option D), an arrival's and an
+     approach's before the field's line, a departure's after it; its head
+     row the kind and the field in the procedure's indigo over its name,
+     the whole row the kind's menu; each fix an indigo ring with "•••",
+     its menu Direct To and Cross at…, its roles under its name and its
+     altitude at the right, the ring filled in the tint where the airplane
+     is sent direct and the fixes before it dashed, skipped. The From and
+     To fields are the route typed:
+     before it is whole, while one is typed in, and until the planner's
+     course is this route's. Then the
+     rest of the plan. At the pill, the search row alone. With no route,
+     the same place holds Favorites, Recents, Find Nearby and Nearest.
+     The ••• is the web's More (2026-11-21): Route Options (the ways'
+     menu picker), Share Link and Open in ForeFlight; under a divider
+     what the iPhone keeps there as view options, Saved Flights and Show
+     Route As. Undo is the undo bar's (`UndoBar`, the web's per-edit
+     toast): after a stop or a procedure removed, the route cleared or
+     replaced, or a Direct To, the change's words and Undo in a glass
+     capsule over the figures strip for six seconds, the window's
+     UndoManager's step, so shake and ⌘Z take the same one back. The ✕ asks
+     "Clear Route?" in the system's alert. The Profile is the cruise
+     altitude's button, its caution marked on it; the rest of the
+     sharing, the checkpoints for ForeFlight and Print are the Nav Log's
+     Share; Route Checkpoints and Class B Weather are Map Settings'
+     switches. The stops' Edit is at the Stops header's right. Cards
+     still cover the search with their ✕ (the card rule). The figures
+     strip at the sheet's foot reads To, Dist, ETE, Trk and, whenever
+     the airplane's position is known, GPS Alt (no To in flight): Track
+     the magnetic track, the engine's on the route or the fix's true
+     course less the engine's WMM variation, "—" below flying speed.
+     The one search's prompt is "Search" whatever it is up for.
+   - **Picking a point (the web's Add Stop and Change Stop, 2026-11-21).**
+     Add a Stop, and a tap on a point's ident on FPL's timeline, ask the
+     one search to pick (`PointAsk`, `OneSearchModel.ask`): the Search
+     page with the ask's title over the rows in Maps' words, Add Stop,
+     Change Stop, Departure or Destination, and "In place of KMSN" under
+     a change. A tap on a field anywhere on the page -- Nearest, a
+     Favorite, a Recent, a result or a waypoint -- picks it (`Plan.pick`)
+     and the sheet is back on FPL; the field's own Cancel goes back with
+     nothing changed. A field that cannot be picked is greyed with why
+     (`Plan.refusal`, `RefusalLine`): closed, in the planner's label from
+     the engine's `field_status` (decision 0043), or already on the route
+     (the two ends may be one field). The flight's card, the airplanes,
+     Find Nearby, towns and Do are left out while it picks.
    - Still the owner's to decide (2026-11-10): the altitude picker, a
      wheel or a list like ForeFlight's Altitude Advisor.
    - Use `.searchable(text:placement:prompt:)` and
@@ -822,10 +904,11 @@ edged in the waypoint magenta outside the turn, turned with the map
    - Swipe to delete.
    - "Add a Stop After" in each row's menu.
    - After a delete or a change, the system's **Undo**: the window's
-     `UndoManager`, so shake, Command-Z, the Edit menu and an Undo button
-     in the sheet's bar (`arrow.uturn.backward`, shown while there is
-     something to undo) all take it back. Never a toast or an alert
-     ([HIG Alerts][hig-alerts]).
+     `UndoManager`, so shake, Command-Z, the Edit menu and the undo bar
+     at the plan's foot (`UndoBar`, the change's words and Undo for six
+     seconds, as Mail and Photos offer one after a delete) all take it
+     back; the iPad's sidebar keeps the bar's Undo button too
+     (`UndoToolbarItem`). Never an alert ([HIG Alerts][hig-alerts]).
 6. **Options:** flight rules, departure time and airplane, as menus
    (`Picker` with `.menu`), not sliders.
 

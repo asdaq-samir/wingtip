@@ -12,8 +12,10 @@ import SwiftUI
 /// on; then the app's Look, its Theme and Appearance (the owner,
 /// 2026-11-14, moved from Settings so each control has one home). The
 /// TFRs, the public fields, the route and own ship have no switch: always
-/// drawn. The route's checkpoints and the Class B fields' weather are the
-/// route's ••• menu's (RouteOnMapToggles). How the map behaves -- the
+/// drawn. The route's checkpoints and the Class B fields' weather are
+/// switches under the layers (RouteOnMapToggles), as the web's Map card
+/// has its Route Checkpoints since FPL's More kept three items
+/// (2026-11-21). How the map behaves -- the
 /// airport weather, the glide ring, the alerts, the data kept -- is the
 /// app's Settings, which the gear at the card's top left opens at its Map
 /// group, pushed in this card so its Back comes back here.
@@ -69,6 +71,7 @@ struct MapSettingsView: View {
                     ModelWeatherRows()
                 }
             }
+            RouteOnMapToggles()
             Section("Look") {
                 ThemeRow()
                 AppearanceRow()
@@ -97,7 +100,7 @@ struct RouteOnMapToggles: View {
 
     var body: some View {
         Section("On the Map") {
-            Toggle("Checkpoints", isOn: $waypointsOn)
+            Toggle("Route Checkpoints", isOn: $waypointsOn)
             Toggle("Class B Weather", isOn: $classBOn)
         }
     }
