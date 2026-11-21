@@ -165,4 +165,15 @@ struct RepeatedWorkTests {
         #expect(FieldWeatherMarks.lastWorse[.alternates]?.answer == alternates)
         #expect(FieldWeatherMarks.worse(now: [field("KMSN", 5000)], atEta: [field("KMSN", 800)]) == route)
     }
+
+    @Test func trafficIsNotAskedUnderAFullSheetOnTheGroundButIsInFlight() {
+        func fix(kt: Double) -> OwnShip.Fix {
+            OwnShip.Fix(coordinate: CLLocationCoordinate2D(latitude: 42, longitude: -88), altitudeFt: 800, trackDeg: 0,
+                        groundspeedKt: kt, accuracyM: 5, at: Date())
+        }
+        #expect(Traffic.wanted(covered: false, fix: nil))
+        #expect(!Traffic.wanted(covered: true, fix: fix(kt: 0)))
+        #expect(!Traffic.wanted(covered: true, fix: nil))
+        #expect(Traffic.wanted(covered: true, fix: fix(kt: 100)))
+    }
 }
