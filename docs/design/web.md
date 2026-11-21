@@ -66,6 +66,19 @@ These hold on every screen below and win over any reference app.
   the air on its own, and React Aria is off it whole -- a ✕ outside its
   SearchField is `ui/field-clear`'s Base UI `FieldClearButton`, never
   `SearchFieldClear`, which brought 169 KB of it in through one row.
+- **A route opened loads only what it draws.** The route's panel chunk
+  (`features/fpl/routePanel`: the nav log, the route's list and timeline,
+  the Brief's findings that Save and the tabs' marks read) no longer
+  carries the cards a route draws only at a tap: an airport's and an
+  airspace's (`placePanel`), a flight's, its past flight, the Stops and
+  the flying parts (`cardsPanel`), each group a chunk of its own through
+  `routePanelParts`' `panelChunk`, and the Brief's airport sections
+  (`brief/AirportSectionsPart`), which drew an airport card's rows and so
+  brought the whole card's chunk with every route. They are fetched six
+  seconds after the page is idle (`usePrefetchWhenIdle`'s
+  `prefetchTapCards`), and the airport sections as the Brief's card comes
+  up, so a tap still opens its card at once (the speed audit of
+  2026-11-21: the route panel was 507 KB, every card in it).
 - **A return visit fetches nothing but the worker's own check.** The
   service worker precaches the app shell, every first-load chunk and the
   engine's `.wasm` (`globPatterns`), so a second load is served from it

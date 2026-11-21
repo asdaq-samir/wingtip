@@ -19,11 +19,13 @@ export const { Part: PilotPanel, prefetch: prefetchPilotPanel } = fromChunk(load
 // whole panel -- its tabs, with the focus in them -- while it did.
 // The chunk's type read from its import(), not from a `typeof import()`
 // type, which the layers check reads as a static import and so as a loop
-// through every part of the chunk that reads the view model.
+// through every part of the chunk that reads the view model. The cards
+// drawn at a tap are chunks of their own (placePanel, cardsPanel), so a
+// route opened loads only what it draws.
 const importRoutePanel = () => import("./routePanel");
-type RoutePanel = Awaited<ReturnType<typeof importRoutePanel>>;
+const importPlacePanel = () => import("./placePanel");
+const importCardsPanel = () => import("./cardsPanel");
 type PropsOf<C> = C extends ComponentType<infer P extends object> ? P : never;
-let routePanel: RoutePanel | null = null;
 // Asked for once the page has painted, not as its first render draws the
 // chips and the hidden nav log: 608 KB, 203 KB gzipped, that shared a
 // phone's connection with the fonts, the map's chunks and the engine the
@@ -47,27 +49,51 @@ const painted = new Promise<void>((resolve) => {
   // Where no paint is reported (a hidden tab, an old browser), soon anyway.
   window.setTimeout(resolve, 3000);
 });
-export const loadRoutePanel = () => painted.then(importRoutePanel).then((m) => (routePanel = m));
-// Each part drawn again only when its own props change (memo): the
-// workspace renders at each answer that streams in, and the route's box,
-// the chips and the nav log were all drawn again each time -- 60 to 85 ms
-// a time on a phone, a dozen times between Fly Here and the nav log.
-function fromRoutePanel<K extends keyof RoutePanel>(name: K) {
-  type Props = PropsOf<RoutePanel[K]>;
-  const Waited = lazy(() => loadRoutePanel().then((m) => ({ default: m[name] as ComponentType<Props> })));
-  return memo(function RoutePanelPart(props: Props) {
-    // Not compiled: the React Compiler (1.0.0) lost `Waited`, this
-    // factory's own, from the compiled part, and the page failed to draw
-    // ("Waited is not defined"). Memoised by hand already (memo).
-    "use no memo";
-    // The one it was first drawn with, for good: a part drawn before the
-    // chunk came, switched to the module's own once it had, was a new part
-    // from nothing, its state lost -- and drawn again only when its props
-    // change (memo), the switch could come at any moment.
-    const [Part] = useState(() => (routePanel?.[name] ?? Waited) as ComponentType<Props>);
-    return <Part {...props} />;
-  });
+
+/** One of the planner's panel chunks: its loader and its parts. Each part
+ *  drawn again only when its own props change (memo): the workspace
+ *  renders at each answer that streams in, and the route's box, the chips
+ *  and the nav log were all drawn again each time -- 60 to 85 ms a time on
+ *  a phone, a dozen times between Fly Here and the nav log. */
+function panelChunk<M>(importer: () => Promise<M>) {
+  let kept: M | null = null;
+  const load = () => painted.then(importer).then((m) => (kept = m));
+  function part<K extends keyof M>(name: K) {
+    type Props = PropsOf<M[K]>;
+    const Waited = lazy(() => load().then((m) => ({ default: m[name] as ComponentType<Props> })));
+    return memo(function PanelPart(props: Props) {
+      // Not compiled: the React Compiler (1.0.0) lost `Waited`, this
+      // factory's own, from the compiled part, and the page failed to draw
+      // ("Waited is not defined"). Memoised by hand already (memo).
+      "use no memo";
+      // The one it was first drawn with, for good: a part drawn before the
+      // chunk came, switched to the module's own once it had, was a new part
+      // from nothing, its state lost -- and drawn again only when its props
+      // change (memo), the switch could come at any moment.
+      const [Part] = useState(() => (kept?.[name] ?? Waited) as ComponentType<Props>);
+      return <Part {...props} />;
+    });
+  }
+  return { load, part };
 }
+
+const routePanel = panelChunk(importRoutePanel);
+const placePanel = panelChunk(importPlacePanel);
+const cardsPanel = panelChunk(importCardsPanel);
+export const loadRoutePanel = routePanel.load;
+/** The chunks drawn only at a tap, and the Brief's airport sections,
+ *  asked for some seconds after the page is idle (usePrefetchWhenIdle),
+ *  once a route has had its time to draw, so a tap still opens its card
+ *  at once. */
+export function prefetchTapCards() {
+  void placePanel.load().catch(() => {});
+  void cardsPanel.load().catch(() => {});
+  void routePanel
+    .load()
+    .then((m) => m.prefetchAirportSections())
+    .catch(() => {});
+}
+const fromRoutePanel = routePanel.part;
 export const NavLogView = fromRoutePanel("NavLogView");
 // FPL's route list, drawn only inside the nav log's view (its `route`),
 // which waits on this chunk already: 61 KB off the first load, which
@@ -92,15 +118,16 @@ export const RouteProblem = fromRoutePanel("RouteProblem");
 export const LocalDuration = fromRoutePanel("LocalDuration");
 export const BriefCard = fromRoutePanel("BriefCard");
 // The cards for an airplane or a point held on the map are drawn only at a
-// tap, so they ride with the route panel rather than the first load.
-export const AirspaceCard = fromRoutePanel("AirspaceCard");
-export const FlightCard = fromRoutePanel("FlightCard");
-export const PastFlightCard = fromRoutePanel("PastFlightCard");
+// tap, so they are on chunks of their own rather than the first load.
+export const AirspaceCard = placePanel.part("AirspaceCard");
+export const FlightCard = cardsPanel.part("FlightCard");
+export const PastFlightCard = cardsPanel.part("PastFlightCard");
 // An airport's card and the dry run's panel too, each drawn at a tap: with
-// the React Compiler on, the first load was 11 KB past CI's 1.10 MB.
-export const PlaceCard = fromRoutePanel("PlaceCard");
+// the React Compiler on, the first load was 11 KB past CI's 1.10 MB; and
+// out of the route's panel since, which a route opened loads.
+export const PlaceCard = placePanel.part("PlaceCard");
 // The map's Stops (StopsCard), drawn at its button's tap.
-export const StopsCard = fromRoutePanel("StopsCard");
-export const DryRunControls = fromRoutePanel("DryRunControls");
-export const DryRunFigures = fromRoutePanel("DryRunFigures");
-export const FlyingHead = fromRoutePanel("FlyingHead");
+export const StopsCard = cardsPanel.part("StopsCard");
+export const DryRunControls = cardsPanel.part("DryRunControls");
+export const DryRunFigures = cardsPanel.part("DryRunFigures");
+export const FlyingHead = cardsPanel.part("FlyingHead");
