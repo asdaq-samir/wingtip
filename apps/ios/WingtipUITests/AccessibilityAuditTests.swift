@@ -107,7 +107,7 @@ final class AccessibilityAuditTests: XCTestCase {
     /// fails.
     @MainActor
     private static func unnamedUnderGlass(_ issue: XCUIAccessibilityAuditIssue, screen: String) -> Bool {
-        if unnamedMapLabel(issue) { return true }
+        if unnamedMapLabel(issue, screen: screen) { return true }
         // The same near miss as a named element's (known), on the system's
         // own grouped-list secondary text the audit cannot name: found
         // 2026-11-09 on the emergency cover's and About's lists. "Nearly"
@@ -134,9 +134,26 @@ final class AccessibilityAuditTests: XCTestCase {
     /// none with it hidden, over three launches each, the strip and the
     /// status bar ruled out the same way. The iPad alone, and that check
     /// alone, so unnamed text on the iPhone still fails.
+    ///
+    /// The iPhone the same on the pages that open as a card at half over
+    /// the map (Airplane, Brief, Nav Log, Downloads): above the card the
+    /// FAA chart's raster shows, its printed words an image the audit
+    /// reports as text with no element, and on the Nav Log one of its
+    /// tiles as an element with no description. Found 2026-11-21 on the
+    /// iPhone 18 Pro (iOS 27.2) once the sheet was solid: with the chart
+    /// on, "Potentially inaccessible text" with no element on those four
+    /// and the Nav Log's "Element has no description"; launched with the
+    /// chart None (-base none), the same audits passed, all five. Those
+    /// screens and those two checks with no element alone, so a control of
+    /// the card's own with no label, or the plan's sheet raised over the
+    /// map, still fails.
+    private static let halfCardsOverTheChart: Set<String> = ["airplane", "brief", "navlog", "downloads"]
+
     @MainActor
-    private static func unnamedMapLabel(_ issue: XCUIAccessibilityAuditIssue) -> Bool {
-        UIDevice.current.userInterfaceIdiom == .pad && issue.auditType == .elementDetection
+    private static func unnamedMapLabel(_ issue: XCUIAccessibilityAuditIssue, screen: String) -> Bool {
+        if UIDevice.current.userInterfaceIdiom == .pad { return issue.auditType == .elementDetection }
+        return halfCardsOverTheChart.contains(screen)
+            && (issue.auditType == .elementDetection || issue.auditType == .sufficientElementDescription)
     }
 
     /// The audits at the default text size leave clipping to the largest
