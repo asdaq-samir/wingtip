@@ -367,8 +367,9 @@ the suite prints that reason. What runs when is [docs/CI.md](../CI.md).
 The sheet's Search page (§4a: its pages turned by one round toggle
 button at the end of their first row, the owner, 2026-11-14) has one
 field as its first row, "Search airports and
-airplanes" on every app (the owner, 2026-11-14: "Just say Search airports
-and airplanes"; no Ask on the web since decision 0041, the phones' on-device
+airplanes" on the phones (the owner, 2026-11-14) and on the web the placeholder
+"Search" alone, named "Search airports and airplanes" to a screen reader (the
+owner, 2026-11-20: "just say Search"; no Ask on the web since decision 0041, the phones' on-device
 answers still offered among the suggestions), with the on-device microphone and, on the web, the page
 toggle beside it (on the phones still the account button, until the owner's word); the account button,
 on the web over the map under the 3D, opens You, who the pilot is and what is
@@ -679,8 +680,8 @@ off by default (the owner, 2026-11-13).
   side of search and avatar to the right side"); on FPL its ✕ at the end
   of FPL's bar. Both hide while the search is in use, Cancel in their
   place. The toggle shows the page a tap goes to, as
-  Apple Maps' 2D/3D button shows the mode it switches to: on Search FPL's
-  route glyph ("Show flight plan" to a screen reader), on FPL the
+  Apple Maps' 2D/3D button shows the mode it switches to: on Search the word
+  FPL ("FPL, show flight plan" to a screen reader; the owner, 2026-11-20), on FPL the
   magnifier ("Show search"). A real button, never pressed, its name
   saying where it goes; a 44-point tap by its hit area, never grown. It
   turns the page and leaves the sheet's size. A card over the sheet

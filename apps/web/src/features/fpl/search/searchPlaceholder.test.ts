@@ -13,15 +13,15 @@ describe("placeholderOf", () => {
     expect(placeholderOf(false, null, "favorite")).toBe("Search for an airport to keep");
     expect(placeholderOf(false, null, "mine")).toBe("Search for your airplane");
     expect(placeholderOf(false, null, "airplane")).toBe("Search for an airplane to keep");
-    expect(placeholderOf(false, null, "place")).toBe("Search airports and airplanes");
+    expect(placeholderOf(false, null, "place")).toBe("Search");
   });
 });
 
 describe("searchWords", () => {
-  it("shows the default whole, as its name says it (the owner, 2026-11-14)", () => {
+  it("shows the default as Search, its name saying what it finds (the owner, 2026-11-20)", () => {
     expect(searchWords(false, null, "place")).toEqual({
       label: "Search airports and airplanes",
-      placeholder: "Search airports and airplanes",
+      placeholder: "Search",
     });
   });
 });
