@@ -113,6 +113,7 @@ The plan's own keys go beside it, and alone they open what they name:
 - `type`: A shared plan's airplane type, its designator (C172); shown, never assumed: the receiver flies their own.
 - `rules`: A shared plan's flight rules, vfr or ifr.
 - `tail`: A shared plan's N-number, only where its pilot chose to send it.
+- `tanks`: A shared plan's fuel as the airplane leaves a field, where its pilot set it on a gauge: idents and whole gallons, KOSH:30,KJVL:0 (the planner's tanks); none named, full.
 - `share`: A saved flight shared by its pilot, by its token (GET /api/shared-flights/{token}); read-only, until they stop sharing it.
 
 <!-- END generated -->

@@ -21,6 +21,7 @@ import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.plan.FlightChoices
+import app.wingtipmaps.android.plan.PlanTanks
 
 /**
  * The route's Share, on the plan: the plan as a link
@@ -62,7 +63,7 @@ fun ShareRouteButton(state: Plan.State) {
 
 /** The plan as the link carries it: the airplane's type where one is
  *  picked (the pilot's own record's, else the planner's profile), never
- *  one assumed. */
+ *  one assumed, and the fuel set on its gauges. */
 internal fun planOf(state: Plan.State, tail: String?): SharedPlan = SharedPlan(
     dep = state.dep,
     dest = state.dest,
@@ -73,6 +74,8 @@ internal fun planOf(state: Plan.State, tail: String?): SharedPlan = SharedPlan(
     type = state.own?.type?.ifEmpty { null } ?: state.aircraft.takeIf { it.isNotEmpty() && it != "own" }?.uppercase(),
     rules = state.rules,
     tail = tail,
+    // The fuel the pilot set on the route's gauges, its fields' alone.
+    tanks = PlanTanks.state.value.own.filterKeys { k -> (listOf(state.dep) + state.stops + state.dest).any { it.equals(k, ignoreCase = true) } },
 )
 
 private fun send(context: Context, plan: SharedPlan) {

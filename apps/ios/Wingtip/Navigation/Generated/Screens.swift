@@ -75,5 +75,6 @@ enum LinkKey: String, CaseIterable, Sendable {
     case type
     case rules
     case tail
+    case tanks
     case share
 }

@@ -17,6 +17,7 @@
     <string name="done">Done</string>
     <string name="fuel_no_stop_in_reach">No fuel stop in reach on %1$s</string>
     <string name="fuel_too_little_on_board">Too little fuel on board for %1$s</string>
+    <string name="shared_fuel_set">Fuel set</string>
     <string name="clear_route_ask">Clear Route?</string>
     <string name="clear_route_ask_line">The route, its stops and what was set on it go. Undo brings them back.</string>
 </resources>
