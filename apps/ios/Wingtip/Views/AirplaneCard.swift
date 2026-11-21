@@ -290,7 +290,7 @@ struct NowFlightRow: View {
     /// Its height to the 100 ft (Format.trafficAltitude), its climb, ground speed and track, as sent.
     private var flying: String {
         let rate = plane.verticalFpm ?? 0
-        let climb = abs(rate) >= 100 ? "\(rate > 0 ? "↑" : "↓") \((Int((abs(rate) / 100).rounded()) * 100).formatted()) fpm" : "level"
+        let climb = abs(rate) >= 100 ? "\(rate > 0 ? "↑" : "↓") \((Int((abs(rate) / 100).rounded()) * 100).formatted(.number.locale(Format.locale))) fpm" : "level"
         let height = Format.trafficAltitude(plane.altitudeFt)
         let speed = Format.speed(plane.speedKt)
         let track = plane.trackDeg.map { " · \(Format.heading($0)) true" } ?? ""

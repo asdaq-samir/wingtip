@@ -9,7 +9,7 @@ enum FigureWords {
     /// "+300 ft", "−2 min", "0 ft".
     static func signed(_ value: Double, _ unit: String) -> String {
         let whole = Int(value.rounded())
-        return "\(whole > 0 ? "+" : whole < 0 ? "−" : "")\(abs(whole).formatted())\(unit)"
+        return "\(whole > 0 ? "+" : whole < 0 ? "−" : "")\(abs(whole).formatted(.number.locale(Format.locale)))\(unit)"
     }
 
     static func percent(_ share: Double) -> String { "\(Int((share * 100).rounded()))%" }
@@ -380,7 +380,7 @@ struct LostCommsSegmentsSections: View {
             approachFix: approachFix, efc: efc, eta: eta)
     }
 
-    static func feet(_ text: String) -> Double? { Double(text.trimmingCharacters(in: .whitespaces)) }
+    static func feet(_ text: String) -> Double? { Typed.number(text) }
 
     var body: some View {
         Section("The Clearance") {

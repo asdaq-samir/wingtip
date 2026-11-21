@@ -105,7 +105,7 @@ struct FAARecordSection: View {
                                value: [faa.year.map { String($0) }, faa.seats.map { "\($0) seats" }].compactMap { $0 }.joined(separator: " · "))
             }
             if let engine = faa.engine {
-                LabeledContent(engine, value: [faa.engineType, faa.horsepower.map { "\($0.formatted()) hp" } ?? faa.thrustLb.map { "\($0.formatted()) lb thrust" }]
+                LabeledContent(engine, value: [faa.engineType, faa.horsepower.map { "\($0.formatted(.number.locale(Format.locale))) hp" } ?? faa.thrustLb.map { "\($0.formatted(.number.locale(Format.locale))) lb thrust" }]
                     .compactMap { $0 }.joined(separator: " · "))
             }
             if let airworthiness = faa.airworthiness {

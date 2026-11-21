@@ -5,6 +5,7 @@ import app.wingtipmaps.android.api.deleteLogbook
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryRequest
 import app.wingtipmaps.android.api.updateLogbook
+import app.wingtipmaps.android.format.Typed
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
@@ -69,7 +70,7 @@ data class LogbookForm(
 
         /** A time typed, in hours and tenths, none below nought. */
         fun hours(text: String, name: String): Double =
-            text.trim().toDoubleOrNull()?.takeIf { it >= 0 } ?: throw IllegalArgumentException("The $name time reads as hours, 1.4 or 0.")
+            Typed.number(text)?.takeIf { it >= 0 } ?: throw IllegalArgumentException("The $name time reads as hours, 1.4 or 0.")
 
         /** A count typed: landings, a whole number. */
         fun count(text: String, name: String): Int =

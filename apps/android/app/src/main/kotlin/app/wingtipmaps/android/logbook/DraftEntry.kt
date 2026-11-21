@@ -6,6 +6,7 @@ import app.wingtipmaps.android.api.generated.gateway.LogbookEntryRequest
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.logbookFromTrack
+import app.wingtipmaps.android.format.Typed
 import java.util.Locale
 
 /** The engine's own reading of the track on the phone, as much as says
@@ -73,7 +74,7 @@ object DraftEntry {
      */
     fun request(draft: LogbookDraft, edits: Map<DraftField, String>, byInstruments: Boolean, flightId: Long? = null): LogbookEntryRequest {
         val e = draft.entry
-        fun hours(f: DraftField, had: Double) = edits[f]?.trim()?.toDoubleOrNull()?.takeIf { it >= 0 } ?: had
+        fun hours(f: DraftField, had: Double) = edits[f]?.let(Typed::number)?.takeIf { it >= 0 } ?: had
         fun count(f: DraftField, had: Int) = edits[f]?.trim()?.toIntOrNull()?.takeIf { it >= 0 } ?: had
         return LogbookEntryRequest(
             flownOn = edits[DraftField.DATE]?.trim()?.ifEmpty { null } ?: e.flownOn,

@@ -54,19 +54,20 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.Locale
 import kotlin.math.roundToInt
 
 /** A frame's time as the bar writes it: Zulu, this phone's clock and zone, its age, and whether it is old. */
 data class FrameTime(val zulu: String, val local: String, val age: String, val old: Boolean) {
     companion object {
-        private val ZULU = DateTimeFormatter.ofPattern("HHmm'Z'").withZone(ZoneOffset.UTC)
+        private val ZULU = DateTimeFormatter.ofPattern("HHmm'Z'", Locale.US).withZone(ZoneOffset.UTC)
 
         fun of(frame: app.wingtipmaps.android.api.generated.LoopFrame, now: Instant, oldAfterS: Double): FrameTime? {
             val at = runCatching { Instant.parse(frame.valid) }.getOrNull() ?: return null
             val minutes = Duration.between(at, now).toMinutes()
             val zone = ZoneId.systemDefault()
             val local = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withZone(zone).format(at) + " " +
-                DateTimeFormatter.ofPattern("zzz").withZone(zone).format(at)
+                DateTimeFormatter.ofPattern("zzz", Locale.US).withZone(zone).format(at)
             val age = if (minutes < 1) "just now" else "${Format.duration(minutes.toDouble())} ago"
             return FrameTime(ZULU.format(at), local, age, Duration.between(at, now).seconds > oldAfterS)
         }

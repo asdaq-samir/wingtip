@@ -48,13 +48,13 @@ struct LoadingView: View {
                 Section("Loaded") {
                     ForEach(Array(loading.stations.enumerated()), id: \.offset) { i, station in
                         figure(station.name, unit: "lb", value: i < load.stationsLb.count ? load.stationsLb[i] : 0,
-                               note: station.maxLb.map { "\(Int($0).formatted()) lb at most" }) { value in
+                               note: station.maxLb.map { "\(Int($0).formatted(.number.locale(Format.locale))) lb at most" }) { value in
                             var l = load
                             l.stationsLb = loading.stations.indices.map { k in k == i ? value : (k < load.stationsLb.count ? load.stationsLb[k] : 0) }
                             save(l)
                         }
                     }
-                    figure("Fuel", unit: "gal", value: load.fuelGal, note: "\(loading.fuelMaxGal.formatted()) gal usable") { var l = load; l.fuelGal = $0; save(l) }
+                    figure("Fuel", unit: "gal", value: load.fuelGal, note: "\(loading.fuelMaxGal.formatted(.number.locale(Format.locale))) gal usable") { var l = load; l.fuelGal = $0; save(l) }
                 }
                 if let balance = verdict.answer?.balance {
                     Section("Balance") {

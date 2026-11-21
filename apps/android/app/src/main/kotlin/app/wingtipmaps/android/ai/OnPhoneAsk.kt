@@ -15,6 +15,7 @@ import com.google.mlkit.genai.prompt.Content
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import org.xmlpull.v1.XmlPullParser
+import java.util.Locale
 
 /**
  * Ask answered on the phone by Gemini Nano (docs/android-ai.md), with the
@@ -79,7 +80,8 @@ object OnPhoneAsk {
         if (c.dep.isNotEmpty() && c.dest.isNotEmpty()) lines += "The route planned: ${(listOf(c.dep) + c.stops + c.dest).joinToString(" ")}."
         if (c.aircraft.isNotEmpty()) lines += "The airplane chosen: ${c.aircraft}." else lines += "No airplane is chosen; give no airplane figure."
         c.altitudeFt?.let { lines += "Cruise altitude: ${it.toLong()} ft." }
-        c.ownShip?.let { lines += "The airplane is at ${"%.4f".format(it.lat)}, ${"%.4f".format(it.lon)}." }
+        // Locale.US: a German phone wrote "46,7842, -92,1005", four numbers to the model.
+        c.ownShip?.let { lines += "The airplane is at ${String.format(Locale.US, "%.4f, %.4f", it.lat, it.lon)}." }
         c.pilot?.homeBase?.let { lines += "The pilot's home field: $it." }
         return lines.joinToString(" ")
     }

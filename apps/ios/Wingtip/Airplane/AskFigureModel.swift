@@ -65,7 +65,7 @@ final class AskFigureModel {
     /// The typed answer as a number; nil where it is not one above zero
     /// (the gateway and the planner hold each to its own limits, and say so).
     static func number(_ text: String) -> Double? {
-        Double(text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: ".")).flatMap { $0 > 0 ? $0 : nil }
+        Typed.number(text).flatMap { $0 > 0 ? $0 : nil }
     }
 
     /// The answer saved where it belongs and flown at once.

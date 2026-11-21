@@ -99,6 +99,10 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     shared `apps/web/src/lib/fixtures/formats.json` (FormatTest), which
     design/tokens.json generates: FL-045 on the cruise controls
     (decision 0009), 4,500 ft, 1h 5m, 0:18, 1432Z, 045° with north 360.
+    Every figure is written in Locale.US whatever the phone's region
+    (no bare `"%,d".format` or `"%.1f".format`, which wrote "1.200 ft"
+    on a German phone), and a figure the pilot types is read by
+    `format/Typed.kt`, which takes a decimal comma ("8,5") as the point.
 - `app/src/test`: JUnit, on the JVM. `app/src/androidTest`: on an
   emulator, with the web's shared fixtures as the test APK's assets.
 

@@ -79,6 +79,11 @@ behind Compose and MapLibre, is [NATIVE-ANDROID.md](NATIVE-ANDROID.md).
   them into the engine. Every other figure
   comes from the planner; the app shows the server's answer, with its
   date when offline.
+- Figures are written by `Format` in en_US whatever the phone's region
+  (a number's bare `.formatted()` wrote "4.500" on a German phone), and a
+  figure the pilot types is read by `Format/Typed.swift`, which takes the
+  decimal keypad's comma ("8,5") as the point: a field that kept only
+  digits and points read it as 85.
 - The ACS table (`AcsTable`) is the web's own `apps/web/src/lib/acs.json`,
   bundled by project.yml as `acs.json`.
 - Judge every screen on the phone against Apple's Human Interface

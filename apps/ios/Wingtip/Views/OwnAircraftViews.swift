@@ -136,9 +136,9 @@ struct OwnAircraftPage: View {
     @State private var problem: String?
 
     static func figuresLine(_ a: OwnAircraftRecord) -> String {
-        var line = "Cruise \(a.cruiseTasKt.formatted()) kt, \(a.fuelBurnGph.formatted()) gph"
-        if let p = a.cruisePowerPct { line += " at \(p.formatted())%" }
-        if let u = a.usableFuelGal { line += " · \(u.formatted()) gal usable" }
+        var line = "Cruise \(a.cruiseTasKt.formatted(.number.locale(Format.locale))) kt, \(a.fuelBurnGph.formatted(.number.locale(Format.locale))) gph"
+        if let p = a.cruisePowerPct { line += " at \(p.formatted(.number.locale(Format.locale)))%" }
+        if let u = a.usableFuelGal { line += " · \(u.formatted(.number.locale(Format.locale))) gal usable" }
         return line
     }
 
@@ -278,8 +278,8 @@ struct InspectionsSection: View {
         saving = true
         defer { saving = false }
         var request = form
-        request.hundredHourAtHours = Double(hoursAt.trimmingCharacters(in: .whitespaces))
-        request.hoursNow = Double(hoursNow.trimmingCharacters(in: .whitespaces))
+        request.hundredHourAtHours = Typed.number(hoursAt)
+        request.hoursNow = Typed.number(hoursNow)
         do { record = try await Gateway.saveInspections(record.id, request); problem = nil; onChange() } catch { problem = error.localizedDescription }
     }
 }
@@ -302,20 +302,20 @@ struct VorCheckSection: View {
             if let last = record.vorCheck {
                 LabeledContent {
                     if !last.withinLimit {
-                        Text("Over \(last.limitDeg.formatted())°").foregroundStyle(WingtipInk.problem)
+                        Text("Over \(last.limitDeg.formatted(.number.locale(Format.locale)))°").foregroundStyle(WingtipInk.problem)
                     } else {
                         StandingText(through: last.goodThrough, good: "To", past: "Ended")
                     }
                 } label: {
                     Text("Last check")
-                    Text([Day.said(last.checkedOn), VorCheckKind.label(last.kind), last.place, "\(last.errorDeg.formatted())°"].compactMap { $0 }.joined(separator: " · "))
+                    Text([Day.said(last.checkedOn), VorCheckKind.label(last.kind), last.place, "\(last.errorDeg.formatted(.number.locale(Format.locale)))°"].compactMap { $0 }.joined(separator: " · "))
                 }
             } else {
                 LabeledContent("Last check", value: "None recorded")
             }
             DatePicker("Checked on", selection: $checkedOn, in: ...Date(), displayedComponents: .date)
             Picker("How", selection: $kind) {
-                ForEach(VorCheckKind.all, id: \.value) { k in Text((try? VorCheckKind.limitDeg(k.value)).map { "\(k.label) (±\($0.formatted())°)" } ?? k.label).tag(k.value) }
+                ForEach(VorCheckKind.all, id: \.value) { k in Text((try? VorCheckKind.limitDeg(k.value)).map { "\(k.label) (±\($0.formatted(.number.locale(Format.locale)))°)" } ?? k.label).tag(k.value) }
             }
             LabeledContent("Where") { TextField("KDLH VOT", text: $place).multilineTextAlignment(.trailing) }
             LabeledContent("Bearing error") {
@@ -333,7 +333,7 @@ struct VorCheckSection: View {
         saving = true
         defer { saving = false }
         let trimmed = place.trimmingCharacters(in: .whitespaces)
-        let request = VorCheckRequest(checkedOn: Day.string(checkedOn), errorDeg: Double(errorText.trimmingCharacters(in: .whitespaces)) ?? 0,
+        let request = VorCheckRequest(checkedOn: Day.string(checkedOn), errorDeg: Typed.number(errorText) ?? 0,
                                       kind: kind, place: trimmed.isEmpty ? nil : trimmed)
         do { record = try await Gateway.recordVorCheck(record.id, request); problem = nil; onChange() } catch { problem = error.localizedDescription }
     }

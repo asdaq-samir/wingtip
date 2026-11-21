@@ -108,7 +108,7 @@ struct HandbookReviewView: View {
             TextField(figure.unit, text: $editText).keyboardType(.decimalPad)
             Button("Cancel", role: .cancel) {}
             Button("Correct") {
-                if let n = Double(editText.trimmingCharacters(in: .whitespaces)) { model.edit(figure.path, to: n) }
+                if let n = Typed.number(editText) { model.edit(figure.path, to: n) }
             }
         } message: { figure in
             Text("As printed on the page, in \(figure.unit).")

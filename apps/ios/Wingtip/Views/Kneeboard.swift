@@ -36,7 +36,7 @@ struct Kneeboard: View {
                 ForEach(Array(legs.enumerated()), id: \.offset) { _, leg in
                     GridRow {
                         Text(leg.to).lineLimit(1)
-                        Text(Int(leg.altitudeFt).formatted())
+                        Text(Int(leg.altitudeFt).formatted(.number.locale(Format.locale)))
                         Text((airplane ? leg.magneticHeadingDeg : Optional(leg.magneticCourseDeg)).map { Format.number($0, decimals: 0).leftPadded(to: 3) } ?? "")
                         Text(Format.number(leg.distanceNm, decimals: 1))
                         Text(airplane ? leg.groundspeedKt.map { Format.number($0, decimals: 0) } ?? "" : "")

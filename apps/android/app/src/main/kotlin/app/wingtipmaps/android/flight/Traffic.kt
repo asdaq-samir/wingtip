@@ -16,6 +16,7 @@ import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.ownShipHex
 import app.wingtipmaps.android.engine.generated.trafficFresh
 import app.wingtipmaps.android.engine.generated.trafficMarks
+import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.notify.Notifications
 import app.wingtipmaps.android.receiver.Receiver
 import app.wingtipmaps.android.settings
@@ -278,8 +279,10 @@ class Traffic(
             val rounded = (deltaFt / 100).roundToInt() * 100
             return when {
                 rounded == 0 -> "at your height"
-                rounded > 0 -> "${"%,d".format(rounded)} ft above"
-                else -> "${"%,d".format(-rounded)} ft below"
+                // Grouped as the FAA writes it whatever the phone's region:
+                // "%,d" wrote "1.200 ft above" on a German phone.
+                rounded > 0 -> "${Format.altitude(rounded.toDouble())} above"
+                else -> "${Format.altitude(-rounded.toDouble())} below"
             }
         }
 

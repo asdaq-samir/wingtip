@@ -93,7 +93,7 @@ final class DiversionDrillModel {
     /// The estimates checked against the planner's solution.
     func check(aircraft: String?, figures: Figures) {
         guard let ident = chosen, let at = from?.coordinate, let altitude = altitudeFt else { return }
-        let estimates = typed.compactMapValues { Double($0.replacingOccurrences(of: ",", with: ".").trimmingCharacters(in: .whitespaces)) }
+        let estimates = typed.compactMapValues(Typed.number)
         stopped = Date()
         checking = true
         Task {

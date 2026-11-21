@@ -9,6 +9,7 @@ import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.format.Typed
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -196,8 +197,8 @@ class EmergencyModel(
             position = s.fix?.let { position(data) },
             headingMagDeg = trackMagDeg,
             altitudeFt = s.fix?.altitudeFt?.let { (it / 100).roundToInt() * 100.0 },
-            fuelMin = s.fuelMin.toDoubleOrNull(),
-            souls = s.souls.toDoubleOrNull(),
+            fuelMin = Typed.number(s.fuelMin),
+            souls = Typed.number(s.souls),
         )
         _state.update { it.copy(mayday = rules.mayday(facts, data).getOrNull() ?: it.mayday) }
     }

@@ -202,7 +202,7 @@ struct AirplaneProfileView: View {
             LabeledContent {
                 HStack(spacing: WingtipSpace.sm) {
                     TextField("—", text: Binding(get: { model.text(figure) },
-                                                 set: { model.drafts[figure] = $0.filter { $0.isNumber || $0 == "." } }))
+                                                 set: { model.drafts[figure] = $0.filter { $0.isNumber || $0 == "." || $0 == "," } }))
                         .keyboardType(.decimalPad).multilineTextAlignment(.trailing).font(WingtipType.row.monospacedDigit()).frame(width: fieldWidth)
                         .focused($focused, equals: figure)
                         .accessibilityLabel(figure.label)

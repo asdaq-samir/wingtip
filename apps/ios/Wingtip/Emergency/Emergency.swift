@@ -218,8 +218,8 @@ final class Emergency {
             position: fix != nil ? Self.positionWords(answer?.fields.first) : nil,
             headingMagDeg: Self.magnetic(fix?.trackDeg, variationDeg: variation),
             altitudeFt: fix?.altitudeFt.map { ($0 / 100).rounded() * 100 },
-            fuelMin: Double(fuelMin.trimmingCharacters(in: .whitespaces)),
-            souls: Double(souls.trimmingCharacters(in: .whitespaces)),
+            fuelMin: Typed.number(fuelMin),
+            souls: Typed.number(souls),
             frequencies: frequencies)
     }
 
