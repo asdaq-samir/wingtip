@@ -44,8 +44,16 @@ S13). Tick each as it is done.
       `aps-environment` is `production`
       (`codesign -d --entitlements - <app>`).
 - [ ] A Sign in with Apple key, for the gateway to revoke a deleted
-      pilot's Apple sign-in (`APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`,
-      `AppleRevocation`).
+      pilot's Apple sign-in (`APPLE_TEAM_ID`, `APPLE_KEY_ID`,
+      `APPLE_PRIVATE_KEY`, `AppleRevocation`), with `app.wingtipmaps.ios`
+      as its primary App ID and the web's Services ID grouped under it:
+      the same key signs the iPhone's client secret, which trades the
+      app's authorization code for the token deleting the account
+      revokes (`AppleAppTokens`, docs/NATIVE.md, "Sign in with Apple:
+      revoked when the account goes"). Set `APP_IOS_BUNDLE_ID` on the
+      gateway too. After the first review build, sign in on an iPhone,
+      delete the account, and check the app has left Settings, Apple
+      Account, Sign in with Apple.
 
 ## App Store Connect
 

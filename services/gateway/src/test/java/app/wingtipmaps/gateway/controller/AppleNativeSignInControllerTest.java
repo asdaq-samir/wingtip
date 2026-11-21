@@ -5,12 +5,17 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import app.wingtipmaps.gateway.domain.Pilot;
+import app.wingtipmaps.gateway.service.AppleAppTokens;
+import app.wingtipmaps.gateway.service.AppleRevocation;
 import app.wingtipmaps.gateway.service.PilotService;
 import app.wingtipmaps.gateway.service.UnverifiedEmailException;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -179,5 +184,44 @@ class AppleNativeSignInControllerTest {
                 .isEqualTo(200);
         assertThat(signIn(new AppleNativeSignInController(aPilot(), decoder, true), new MockHttpServletRequest(), null))
                 .isEqualTo(401);
+    }
+
+    /** 5.1.1(v): the sheet's authorization code is traded for Apple's
+     *  refresh token, kept with the pilot under the app's client so that
+     *  deleting the account can revoke it; without a code nothing is. */
+    @Test
+    void theSheetsCodeIsTradedAndKeptForRevokingLater() {
+        PilotService pilots = aPilot();
+        AppleRevocation apple = mock(AppleRevocation.class);
+        given(apple.tradeAppCode("c.code")).willReturn(Optional.of("r.app"));
+        AppleAppTokens app = mock(AppleAppTokens.class);
+        given(app.clientId()).willReturn("app.wingtipmaps.ios");
+        var controller =
+                new AppleNativeSignInController(pilots, value -> token("app.wingtipmaps.ios"), false, apple, app);
+
+        var answer = controller.signIn(
+                new AppleNativeSignInController.AppleToken("c.code", "apple-token", null),
+                new MockHttpServletRequest(),
+                new MockHttpServletResponse());
+
+        assertThat(answer.getStatusCode().value()).isEqualTo(200);
+        verify(pilots).keepAppleRefreshToken(any(Pilot.class), eq("r.app"), eq("app.wingtipmaps.ios"));
+    }
+
+    @Test
+    void aTradeAppleRefusesStillSignsIn() {
+        PilotService pilots = aPilot();
+        AppleRevocation apple = mock(AppleRevocation.class);
+        given(apple.tradeAppCode("c.code")).willReturn(Optional.empty());
+        var controller = new AppleNativeSignInController(
+                pilots, value -> token("app.wingtipmaps.ios"), false, apple, mock(AppleAppTokens.class));
+
+        var answer = controller.signIn(
+                new AppleNativeSignInController.AppleToken("c.code", "apple-token", null),
+                new MockHttpServletRequest(),
+                new MockHttpServletResponse());
+
+        assertThat(answer.getStatusCode().value()).isEqualTo(200);
+        verify(pilots, never()).keepAppleRefreshToken(any(Pilot.class), any(), any());
     }
 }

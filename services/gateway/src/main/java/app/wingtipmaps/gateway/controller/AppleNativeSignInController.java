@@ -4,6 +4,8 @@ import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.security.SessionSignIn;
 import app.wingtipmaps.gateway.security.SignInLanding;
+import app.wingtipmaps.gateway.service.AppleAppTokens;
+import app.wingtipmaps.gateway.service.AppleRevocation;
 import app.wingtipmaps.gateway.service.PilotService;
 import app.wingtipmaps.gateway.service.UnverifiedEmailException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,7 +50,10 @@ import org.springframework.web.bind.annotation.RestController;
  * it -- Apple's signature (its published keys), Apple as the issuer, this
  * app's bundle id as the audience, not expired -- and signs the pilot in
  * on this session, as the web's own Apple sign-in does (the same pilot,
- * found by Apple's subject, PilotService.fromOidcUser). The web view
+ * found by Apple's subject, PilotService.fromOidcUser). The sheet's
+ * authorization code, where the app sends it, is traded for the refresh
+ * token that deleting the account revokes (AppleRevocation.tradeAppCode, App Review
+ * 5.1.1(v)). The web view
  * cannot use the web flow: Apple's page does not load inside an app's
  * app-bound web view, and App Review expects the native sheet.
  *
@@ -66,15 +71,22 @@ public class AppleNativeSignInController {
     /** Whether a token must come with its nonce (AppleNonce): off until
      *  the app sends one, then on (APP_APPLE_REQUIRE_NONCE). */
     private final boolean requireNonce;
+    /** Trades the sheet's authorization code; null where none is traded. */
+    private final @Nullable AppleRevocation appleTokens;
+    /** The app's client at Apple, which the traded token is kept under. */
+    private final @Nullable AppleAppTokens appClient;
 
     @Autowired
-    public AppleNativeSignInController(PilotService pilots, AppProperties app) {
+    public AppleNativeSignInController(
+            PilotService pilots, AppProperties app, AppleRevocation appleTokens, AppleAppTokens appClient) {
         this(
                 pilots,
                 app.ios().bundleId().isBlank()
                         ? null
                         : appleTokens(app.ios().bundleId().trim()),
-                app.apple().requireNonce());
+                app.apple().requireNonce(),
+                appleTokens,
+                appClient);
     }
 
     AppleNativeSignInController(PilotService pilots, JwtDecoder decoder) {
@@ -82,9 +94,20 @@ public class AppleNativeSignInController {
     }
 
     AppleNativeSignInController(PilotService pilots, JwtDecoder decoder, boolean requireNonce) {
+        this(pilots, decoder, requireNonce, null, null);
+    }
+
+    AppleNativeSignInController(
+            PilotService pilots,
+            JwtDecoder decoder,
+            boolean requireNonce,
+            @Nullable AppleRevocation appleTokens,
+            @Nullable AppleAppTokens appClient) {
         this.pilots = pilots;
         this.decoder = decoder;
         this.requireNonce = requireNonce;
+        this.appleTokens = appleTokens;
+        this.appClient = appClient;
     }
 
     /** Apple's identity tokens for this app alone. */
@@ -104,14 +127,22 @@ public class AppleNativeSignInController {
                 : OAuth2TokenValidatorResult.failure(new OAuth2Error("invalid_token", "not this app's token", null));
     }
 
-    /** What the app's Apple sheet answered, and the nonce it was asked
-     *  with (AppleNonce), which an app before it asks for one leaves out. */
+    /** What the app's Apple sheet answered: the identity token, the nonce
+     *  it was asked with (AppleNonce), and the authorization code
+     *  (ASAuthorizationAppleIDCredential.authorizationCode) traded for the
+     *  token deleting the account revokes; an app before either leaves
+     *  them out. */
     public record AppleToken(
+            @Nullable @Size(max = 2000) String authorizationCode,
             @NotBlank @Size(max = 8000) String identityToken,
             @Nullable @Size(max = 200) String nonce) {
 
         public AppleToken(String identityToken) {
-            this(identityToken, null);
+            this(null, identityToken, null);
+        }
+
+        public AppleToken(String identityToken, @Nullable String nonce) {
+            this(null, identityToken, nonce);
         }
     }
 
@@ -133,8 +164,9 @@ public class AppleNativeSignInController {
     @Operation(
             summary = "Sign in with Apple from the iOS app",
             description = "Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, "
-                    + "and its nonce where one is sent) and signs the pilot in on this session. 404 where no iOS "
-                    + "app is set up.")
+                    + "and its nonce where one is sent) and signs the pilot in on this session; an authorization "
+                    + "code sent with it is traded for the refresh token deleting the account revokes. 404 where "
+                    + "no iOS app is set up.")
     @ApiResponses({
         @ApiResponse(
                 responseCode = "200",
@@ -177,8 +209,20 @@ public class AppleNativeSignInController {
                             "Apple did not share a verified email address, which an account here needs."))
                     .build();
         }
+        keepRefreshToken(pilot, body.authorizationCode());
         Authentication authentication = new OAuth2AuthenticationToken(user, user.getAuthorities(), "apple");
         SessionSignIn.signIn(authentication, request, response);
         return ResponseEntity.ok(new SignedIn(SignInLanding.after(pilot)));
+    }
+
+    /** The sheet's code traded for Apple's refresh token and kept with
+     *  the pilot, best effort: the sign-in stands whatever Apple says. */
+    private void keepRefreshToken(Pilot pilot, @Nullable String authorizationCode) {
+        if (appleTokens == null || appClient == null || authorizationCode == null || authorizationCode.isBlank()) {
+            return;
+        }
+        appleTokens
+                .tradeAppCode(authorizationCode)
+                .ifPresent(token -> pilots.keepAppleRefreshToken(pilot, token, appClient.clientId()));
     }
 }

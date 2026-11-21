@@ -87,7 +87,7 @@ public class AccountService {
      */
     public void delete(Pilot pilot) {
         forgetNotes(pilot);
-        apple.revoke(pilot.getAppleRefreshToken());
+        apple.revoke(pilot.getAppleRefreshToken(), pilot.getAppleTokenClient());
         transaction.executeWithoutResult(status -> {
             magicLinks.deleteByEmail(pilot.getEmail());
             // Claude's and ChatGPT's tokens for the connector end with it.

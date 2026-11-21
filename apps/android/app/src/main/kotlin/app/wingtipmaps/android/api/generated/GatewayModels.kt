@@ -831,6 +831,7 @@ data class AppleNonceAnswer (
 
 @Serializable
 data class AppleToken (
+    val authorizationCode: String? = null,
     val identityToken: String,
     val nonce: String? = null
 )

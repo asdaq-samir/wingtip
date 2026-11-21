@@ -84,14 +84,17 @@ public record AppProperties(
 
     /** Sign in with Apple: the web's (team, key, Services ID and the .p8
      *  key's PEM), whether the iOS app's sign-in must carry its nonce,
-     *  and where a deleted pilot's grant is revoked. */
+     *  where a deleted pilot's grant is revoked, and where the iOS app's
+     *  authorization code is traded for the token to revoke
+     *  (AppleAppTokens). */
     public record Apple(
             String teamId,
             String keyId,
             String servicesId,
             String privateKey,
             boolean requireNonce,
-            @NotBlank String revokeUrl) {}
+            @NotBlank String revokeUrl,
+            @NotBlank String tokenUrl) {}
 
     public record Google(String clientId, String clientSecret) {}
 

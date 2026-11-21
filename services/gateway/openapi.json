@@ -267,6 +267,11 @@
       },
       "AppleToken" : {
         "properties" : {
+          "authorizationCode" : {
+            "maxLength" : 2000,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
+          },
           "identityToken" : {
             "maxLength" : 8000,
             "minLength" : 0,
@@ -278,7 +283,7 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "identityToken", "nonce" ],
+        "required" : [ "authorizationCode", "identityToken", "nonce" ],
         "type" : "object"
       },
       "ApproachLessonDto" : {
@@ -3580,7 +3585,7 @@
     },
     "/api/auth/apple/native" : {
       "post" : {
-        "description" : "Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session. 404 where no iOS app is set up.",
+        "description" : "Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session; an authorization code sent with it is traded for the refresh token deleting the account revokes. 404 where no iOS app is set up.",
         "operationId" : "signIn",
         "requestBody" : {
           "content" : {

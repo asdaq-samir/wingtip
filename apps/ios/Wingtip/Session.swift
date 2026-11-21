@@ -50,10 +50,10 @@ final class Session {
         SHA256.hash(data: Data(nonce.utf8)).map { String(format: "%02x", $0) }.joined()
     }
 
-    func signInWithApple(identityToken: String, nonce: String?) async {
+    func signInWithApple(identityToken: String, authorizationCode: String?, nonce: String?) async {
         defer { Task { await prepareAppleNonce() } }
         do {
-            try await Gateway.signInWithApple(identityToken: identityToken, nonce: nonce)
+            try await Gateway.signInWithApple(identityToken: identityToken, authorizationCode: authorizationCode, nonce: nonce)
             await refresh()
         } catch {
             problem = "Apple's sign-in was not accepted: \(error.localizedDescription)"
