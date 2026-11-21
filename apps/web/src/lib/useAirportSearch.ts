@@ -12,6 +12,10 @@ import { useDebounced } from "./useDebounced";
  *  (the planner's `near`). Empty off a route. */
 export const SearchNear = createContext("");
 
+/** How long a search's answer is good for: the fields and waypoints it
+ *  reads change with the FAA's 28-day cycle, not while a pilot types. */
+const SEARCH_FRESH_MS = 10 * 60_000;
+
 /**
  * The airports whose ident or name starts with what is typed -- the
  * route form's pickers (AirportPicker) and the panel's search bar
@@ -55,6 +59,10 @@ export function useAirportSearch(text: string, enabled = true, fixes = false) {
     queryFn: () => api.airportSearch(q, fixes, by),
     // Airports alone and the copy in: nothing to ask.
     enabled: enabled && q.length > 0 && (fixes || !index),
+    // The same letters' answer kept (SEARCH_FRESH_MS): with none, each
+    // letter taken back and typed again, and each picker opened on them,
+    // asked the planner the same question again.
+    staleTime: SEARCH_FRESH_MS,
     placeholderData: keepPreviousData,
   });
   const asked = q === typed && !isPlaceholderData && !!data;

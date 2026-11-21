@@ -1,3 +1,4 @@
+import { create } from "zustand";
 import { keptStore, wasKept } from "../../lib/storage";
 import type { Fix } from "../../lib/map/position/ownShip";
 
@@ -28,7 +29,31 @@ interface Recorded {
 }
 
 const KEY = "wingtip.autolog.track";
-export const recorded = keptStore<Recorded>(KEY, { points: [], askedTo: null });
+/** The track as written down in this browser, apart from the track
+ *  recorded: that is set at each point, this at most every SAVE_EVERY_MS
+ *  and as the page is put away. Each write is the whole track as JSON,
+ *  some 200 KB by the fourth hour, and written at every point (each five
+ *  seconds) a flight's writes came to hundreds of megabytes on the
+ *  phone's main thread, as own ship's trail (ownTrail) already found. */
+const kept = keptStore<Recorded>(KEY, { points: [], askedTo: null });
+export const recorded = create<{ value: Recorded }>(() => ({ value: kept.getState().value }));
+/** How often the track is written down while it grows: at most this much
+ *  of it is lost to a page closed without its pagehide (a crash). */
+export const SAVE_EVERY_MS = 30_000;
+let savedAt = -Infinity;
+/** The track recorded, written down now. */
+function save() {
+  savedAt = Date.now();
+  kept.setState({ value: recorded.getState().value });
+}
+// Written down as the page goes, whatever the half minute: an iPhone's
+// Safari put away may never run this page again.
+if (typeof window !== "undefined") {
+  window.addEventListener("pagehide", save);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") save();
+  });
+}
 /** The same store as a hook, by a hook's name: called as `recorded(…)` in a
  *  component, the React Compiler took it for a plain function and kept its
  *  first answer, so the next render called one hook fewer and React threw
@@ -51,15 +76,18 @@ export function record(fix: Fix): boolean {
   if (points.length >= MOST_POINTS) return true;
   const point: RecordedPoint = { t: fix.at, lat: fix.lat, lon: fix.lon, alt_ft: fix.altitudeFt };
   recorded.setState((s) => ({ value: { ...s.value, points: [...s.value.points, point] } }));
+  if (Date.now() - savedAt >= SAVE_EVERY_MS) save();
   return wasKept(KEY);
 }
 
 /** The flight ending at `to` offered: not again until a later one. */
 export function asked(to: number) {
   recorded.setState((s) => ({ value: { ...s.value, askedTo: to } }));
+  save();
 }
 
 /** The track let go: logged, or the pilot does not want it. */
 export function forget() {
   recorded.setState({ value: { points: [], askedTo: null } });
+  save();
 }

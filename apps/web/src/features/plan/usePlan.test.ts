@@ -24,6 +24,7 @@ vi.mock("../../lib/api/client", async (importOriginal) => ({
     checkpoints: vi.fn(),
     navlog: vi.fn(),
     briefing: vi.fn(),
+    localFlight: vi.fn(),
     saveCheckpointNote: vi.fn(),
     checkpointNotes: vi.fn(),
     me: vi.fn(),
@@ -396,5 +397,19 @@ describe("the chart cycle", () => {
     renderHook(() => usePlan(params), { wrapper });
 
     await waitFor(() => expect(api.course).toHaveBeenCalledWith("C81", "KDLH", [], expect.anything(), undefined), { timeout: 2000 });
+  });
+});
+
+describe("a local flight", () => {
+  test("is not asked again as the page mounts again; Load asks again", async () => {
+    vi.mocked(api.localFlight).mockResolvedValue({ ete_min: 60 } as never);
+    const local = { ...params, dest: "C81" };
+    renderHook(() => usePlan(local), { wrapper }).unmount();
+    await waitFor(() => expect(api.localFlight).toHaveBeenCalledTimes(1));
+    const { rerender } = renderHook((p) => usePlan(p), { wrapper, initialProps: local });
+    await act(async () => {});
+    expect(api.localFlight).toHaveBeenCalledTimes(1);
+    rerender({ ...local, load: 1 });
+    await waitFor(() => expect(api.localFlight).toHaveBeenCalledTimes(2));
   });
 });

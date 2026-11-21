@@ -6,11 +6,10 @@
  * planner.
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { api } from "../../../lib/api/client";
 import type { Currency, LogbookEntry, Training } from "../../../lib/api/types";
 import { localDay } from "../../../lib/format";
 import { keptStore } from "../../../lib/storage";
-import { currencyQuery, pilotQuery, trainingQuery } from "../../../lib/queryClient";
+import { currencyQuery, logbookQuery, pilotQuery, trainingQuery } from "../../../lib/queryClient";
 import { coachApi, type CoachAsk, type ProficiencyPlan } from "./coachApi";
 import { recentDebriefs } from "./coachDebriefs";
 
@@ -69,7 +68,7 @@ export function askOf(
 }
 
 export function useCoach() {
-  const entries = useQuery({ queryKey: ["logbook"], queryFn: api.logbook.list, meta: { silent: true } });
+  const entries = useQuery(logbookQuery);
   const { data: currency } = useQuery(currencyQuery);
   const { data: training } = useQuery(trainingQuery);
   const { data: pilot } = useQuery(pilotQuery);

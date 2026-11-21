@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { nearestQuery } from "../../../lib/queryClient";
-import { useMapCentre } from "../../../lib/map/mapCentre";
+import { useSearchCentre } from "./useSearchCentre";
 import { useSearchPanel } from "../search/useSearchPanel";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanCards } from "./usePlanCards";
@@ -22,8 +22,9 @@ export function usePlanSearch(
   // while it is: the list's own question, shared.
   const homeShown = view === "search" && !place && !heldPoint && !nearOpen && !favoritesOpen && !airportRecentsOpen;
   // With no position, the fields nearest the map's middle (lib/map/mapCentre;
-  // the UI audit's C9): the strip says which it is near (`nearMap`).
-  const centre = useMapCentre();
+  // the UI audit's C9): the strip says which it is near (`nearMap`). Only
+  // while that page asks, so a pan elsewhere draws nothing here (useSearchCentre).
+  const centre = useSearchCentre(homeShown && !nearOrigin);
   const near = nearOrigin ?? centre;
   const { data: nearStrip } = useQuery({ ...nearestQuery(near?.lat ?? 0, near?.lon ?? 0), enabled: homeShown && !!near });
   // The search bars (useSearchPanel).
