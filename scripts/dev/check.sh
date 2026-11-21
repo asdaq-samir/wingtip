@@ -196,12 +196,15 @@ run_area() {
     sim)
       # The MSFS replay agent: built (without the SDK's SimConnect, which
       # only the trial's instance has), its format checked and its tests
-      # run (scripts/ci/sim_suite.sh, which CI runs too); then the
-      # trial's template (cfn-lint) and scripts (shellcheck).
+      # run, and the test flight's feed and report linted and tested
+      # (scripts/ci/sim_suite.sh, which CI runs too); then the trial's
+      # template (cfn-lint) and the scripts (shellcheck), the test
+      # flight's runner among them.
       "$here/scripts/ci/sim_suite.sh"
       docker run --rm -v "$here/infra/sim-trial:/data" -w /data "python:$PYTHON-slim" \
         sh -c 'pip install -q --root-user-action=ignore cfn-lint && cfn-lint template.yaml'
-      docker run --rm -v "$here:/mnt" -w /mnt koalaman/shellcheck:stable infra/sim-trial/trial.sh tools/msfs-agent/prepare-track.sh
+      docker run --rm -v "$here:/mnt" -w /mnt koalaman/shellcheck:stable infra/sim-trial/trial.sh tools/msfs-agent/prepare-track.sh \
+        scripts/dev/sim-flight.sh
       ;;
     # The X-Plane trial's plugin (tools/xplane-driver): its plain parts,
     # and the player against a stub of XPPython3 (seconds).
