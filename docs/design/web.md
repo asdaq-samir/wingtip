@@ -1373,7 +1373,8 @@ the place.
 the first frame, End and the Now button to now; Space toggles play while
 the bar has focus. The slider follows the APG slider keys
 ([APG slider][apg-slider]); tapping the track sets the frame (WCAG 2.5.7).
-On desktop, hovering the scrubber shows that frame's time.
+On desktop, hovering the scrubber shows that frame's time, while its
+tiles still load as well as after, as its keys and taps do.
 
 **Motion.** The loop never autoplays under reduced motion, and it stops
 by itself after one pass otherwise; any loop longer than 5 s has a pause,
