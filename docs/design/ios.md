@@ -447,7 +447,8 @@ opened. Typing "traffic" offers Show Traffic in Do.
      `tanks`); and its time at the right (`TimelineTime`): at the
      departure when it leaves, the system's compact time picker, one
      button with the hour and minute wheels, a time of day earlier than
-     now tomorrow's (the planner's `depart`); at the others their arrival
+     now tomorrow's (the planner's `depart`, which the Brief's forecast is
+     read for too, and the weather watch's); at the others their arrival
      on this iPhone's clock from the planner's minutes, a dash with no
      airplane. Once any point keeps another zone than the departure's at
      its arrival (its card's `time_zone`), every point says its own clock
@@ -459,7 +460,12 @@ opened. Typing "traffic" offers Show Traffic in Do.
      whose card could not be had, says why in red under it (decision
      0043; `RouteFieldCards` asks each field's card once). Stops swipe
      off and drag into another order (Edit at the header's right); Add a
-     Stop is the last row, then Add (or Remove) Fuel Stops (one tap puts
+     Stop is the last row, Type Route at its end (`TypeRouteButton`, the
+     web's keyboard chip: the keyboard glyph in a small bordered capsule
+     opening a sheet whose text field holds the route as it is, to edit
+     or paste a whole one, "KPWK DCT OBK V100 KLAS", read by the engine's
+     `route_read` as item 15 has it, a level group its cruise;
+     `TypedRoute`), then Add (or Remove) Fuel Stops (one tap puts
      in every stop the planner's rounds found, already checked; a flight
      short with none offered says why in their place, "No fuel stop in
      reach on KMSN → KDLH"). Once a field's card says it is open, its
@@ -474,7 +480,15 @@ opened. Typing "traffic" offers Show Traffic in Do.
      (`TimelineProcedureRows`, the owner's option D), an arrival's and an
      approach's before the field's line, a departure's after it; its head
      row the kind and the field in the procedure's indigo over its name,
-     the whole row the kind's menu; each fix an indigo ring with "•••",
+     the whole row the kind's menu, an approach's with a section of
+     Approach Brief, Dry Run and Plate after the picks
+     (`ApproachMenuItems`): Brief and Dry Run open one sheet on their
+     page, a segmented control at its head (`ApproachLessonSheet`, the
+     web's Learn This Approach), "Training aid, fly the FAA plate" its
+     subtitle; the brief the engine's `approach_brief` items, the dry run
+     its `approach_coaching` steps one at a time with Back and Next at a
+     final's ground speed of 70, 90 or 120 kt; Plate opens the plate's
+     card (`PlateCard`). Each fix an indigo ring with "•••",
      its menu Direct To and Cross at…, its roles under its name and its
      altitude at the right, the ring filled in the tint where the airplane
      is sent direct and the fixes before it dashed, skipped. The From and

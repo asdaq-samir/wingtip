@@ -646,12 +646,19 @@ placement wins, and the difference is noted.
   0a. **The foot** (`ui/PlanFoot`), the Scaffold's bottom bar, so it stays
      while the route scrolls under it: Material 3 Expressive's
      `HorizontalFloatingToolbar` with Brief, Nav Log and More, each
-     labelled, over the figure strip. More (`route/PlanMore`) holds Route
+     labelled, over the figure strip. Brief's glyph carries Material's
+     `Badge` with what the Brief found to act on, every stop and caution
+     of the Go / No-Go (`BriefModel.State.found`, the web's findingRows),
+     red with a stop among them, the caution ink where all are cautions;
+     the Go / No-Go is asked for the plan's departure time (`depart`).
+     More (`route/PlanMore`) holds Route
      Options (`route/RouteOptionsCard`, the planner's `/route-options`,
      each with Use) and Share Link; no Open in ForeFlight, which has no
-     Android app. Where the plan can be filed (an airport to leave from,
-     its nav log in) the toolbar carries File as its own floating action
-     button (`FloatingToolbarDefaults.StandardFloatingActionButton`), which
+     Android app. File stands beside the toolbar, a separate
+     `FilledTonalButton` with its glyph and word, greyed until the plan
+     can be filed (an airport to leave from, its nav log in;
+     `PlanFiling.fileable`): the floating action button it was has no
+     disabled state, so it came and went and the bar moved with it. It
      opens **File Flight Plan** (`filing/FilingPage`): FAA Form 7233-4 a
      flight to a group of `ListItem`s, item by item as AIM Appendix 4
      names them, every item the engine's (`filed_speed`, `filed_level`,
@@ -712,8 +719,28 @@ placement wins, and the difference is noted.
      the planner's `ground` (`plan/PlanGround`), the destination's landing;
      a time zone said on every time only once a point keeps another zone
      than the departure's ("13:00 MST", `plan/StopTimes`). No times without
-     an airplane (0011). Procedures on the line (the web's runway pills
-     and a procedure's fixes before or after its field) are not ported yet.
+     an airplane (0011). **Procedures on the line** (2026-11-21, the web's
+     and the iPhone's): once a field's card says it is open (0043), its
+     row has Material's `AssistChip`s "Land RWY 24" and "Takeoff RWY 06",
+     each a `DropdownMenu` of its open runway ends with Into the Wind
+     first (`AirportReads.windEnd`, the engine's gonogo_runway_in_use), a
+     stop's landing then its takeoff, and "+ ARR", "+ APCH", "+ DEP" for
+     each kind it publishes and the route has none of
+     (`ui/TimelineFieldParts`; a procedure's transitions open in the
+     menu's place). A procedure picked is rows of the line
+     (`ui/TimelineProcedureRows`), an arrival's and an approach's before
+     the field, a departure's after it: its head (the kind and field in
+     the procedure's indigo over its name, a tap its kind's menu) and a
+     row a fix, an indigo ring, its roles, its altitude (the pilot's
+     crossing, else the engine's altitude_lines words) and its ⋮: Direct
+     To (Fly as Charted once direct; the fixes before it said skipped) and
+     Cross at… (Material's `AlertDialog`, the engine's altitude_typed).
+     `plan/PlanProcedures` holds the picks, runways, direct fixes and
+     crossings and sends them with the nav log (`procedures`, `runways`,
+     `patterns`, `crossings`, `wind_runways`); `plan/RouteProcedures`
+     asks each open field's list and each pick's drawing once. An
+     approach's Brief, Dry Run and Plate, and an Undo for a procedure
+     removed, are not ported yet.
   5. Legs as `ListItem`s (`route/RouteLegs`). Each has a leading
      waypoint symbol, the leg's figures, and a trailing drag handle.
      Long press drags to reorder; a swipe removes the leg and shows
