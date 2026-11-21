@@ -18,6 +18,10 @@ struct TileTemplate: Equatable, Sendable {
     let tilesBase: String?
     let kind: String
     var scale: Int = 1
+    /// A kept cycle later than `cycle` that has taken over, drawn where a
+    /// region of it is kept (OfflineStore.keptInForce): the map drawn
+    /// again, and its tiles kept in memory apart, when it turns at 0901Z.
+    var keptInForce: String?
 
     /// The name's density mark: none for the 256-pixel tile.
     var density: String { scale == 1 ? "" : "@\(scale)x" }

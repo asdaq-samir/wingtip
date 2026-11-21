@@ -68,6 +68,7 @@ struct WingtipApp: App {
                     if session.signedIn { await PendingDeletes().sendLeftOver(PendingDeletes.gateway) }
                 }
                 .task { await charts.load() }
+                .task { await charts.watchChangeover() }
                 .task { OfflineDownloads.shared.start() }
                 .task { await plan.restore() }
                 // Under IFR, the alternate checked for the plan's ETA, asked

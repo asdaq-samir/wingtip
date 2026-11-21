@@ -364,7 +364,10 @@ map from the network as before; the TAC and IFR area archives follow
 the terminal switch as the style is built. The style is built again as
 a download lands. The cycle's update, its expiry at 0901Z on the next
 one's date (the engine's `data_cycle`, asked at the minute) and the sweep
-once the update is whole are the iPhone's.
+once the update is whole are the iPhone's, and so is the next cycle's
+region updated ahead drawn over the old chart from 0901Z on its date
+while the phone is offline (`OfflineStore.keptInForce`; the style built
+again when it turns, asked each minute).
 
 With no signal in the air (the offline audit of 2026-11-10): Emergency
 and Nearest rank the packs' fields on the phone (`emergency/PhoneFields`,

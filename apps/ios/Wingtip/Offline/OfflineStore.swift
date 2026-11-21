@@ -33,6 +33,15 @@ struct OfflineKept: Codable, Equatable, Sendable, Identifiable {
         return answer.state == "expired"
     }
 
+    /// Whether a kept cycle has taken over by `now`: in force, or since
+    /// replaced (the engine's `data_cycle`, 0901Z on its date). A region of
+    /// the next cycle kept ahead is drawn from then on (`keptInForce`).
+    static func begun(_ cycle: String, now: Date = .now) -> Bool {
+        guard let effective = isoDay(cycle),
+              let answer = try? Engine.dataCycle(kind: "chart", effective: effective, on: utcTime(now)) else { return false }
+        return answer.state == "in_force" || answer.state == "expired"
+    }
+
     /// A chart cycle's name, "10-29-2026" as the FAA's links write it, as
     /// "2026-10-29"; nil where it is no such name.
     static func isoDay(_ cycle: String) -> String? {
@@ -61,6 +70,8 @@ final class OfflineStore: @unchecked Sendable {
     private let lock = NSLock()
     private var kept: [OfflineKept]?
     private var readers: [URL: PMTilesReader] = [:]
+    /// Kept cycles known to have begun: once begun, always.
+    private var begun: Set<String> = []
 
     init(root: URL? = nil) {
         self.root = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -122,17 +133,38 @@ final class OfflineStore: @unchecked Sendable {
         }
     }
 
-    /// A tile of the cycle from a downloaded region: the density asked for
-    /// first, else the other (a 256-pixel tile drawn over the same map
-    /// rect, ChartTileRenderer). nil where no region kept holds it.
-    func tile(cycle: String, kind: String, z: Int, x: Int, y: Int, scale: Int) -> Data? {
+    /// The newest kept cycle later than `cycle` that has taken over by
+    /// `now`, nil where none has: the phone offline across a changeover,
+    /// its chart answer still the old cycle's, draws the next cycle where
+    /// a region of it is kept, from 0901Z on its date (the data-cycles
+    /// audit's 14, the owner's word 2026-11-21). Past the region the old
+    /// chart stays, and Ready to Fly says it is out of date.
+    func keptInForce(after cycle: String, now: Date = .now) -> String? {
+        let later = Set(all().map(\.cycle).filter { $0.reversedDate > cycle.reversedDate }).sorted { $0.reversedDate > $1.reversedDate }
+        return later.first { kept in
+            if lock.withLock({ begun.contains(kept) }) { return true }
+            guard OfflineKept.begun(kept, now: now) else { return false }
+            lock.withLock { _ = begun.insert(kept) }
+            return true
+        }
+    }
+
+    /// A tile of the cycle from a downloaded region: of the kept cycle in
+    /// force where one later than `cycle` covers it (`keptInForce`), else
+    /// of `cycle`; the density asked for first, else the other (a 256-pixel
+    /// tile drawn over the same map rect, ChartTileRenderer). nil where no
+    /// region kept holds it.
+    func tile(cycle: String, kind: String, z: Int, x: Int, y: Int, scale: Int, now: Date = .now) -> Data? {
         let names = [Self.archive(kind: kind, scale: scale), Self.archive(kind: kind, scale: scale == 1 ? 2 : 1)]
         let (lat, lon) = Self.centre(z: z, x: x, y: y)
-        let regions = lock.withLock { loaded() }.filter { $0.cycle == cycle && $0.covers(lat: lat, lon: lon, z: z) }
-        for name in names {
-            for region in regions where region.done.contains(name) {
-                if let data = reader(path(cycle: cycle, region: region.region, archive: name))?.tile(z: z, x: x, y: y) {
-                    return data
+        let cycles = [keptInForce(after: cycle, now: now), cycle].compactMap { $0 }
+        let covering = lock.withLock { loaded() }.filter { $0.covers(lat: lat, lon: lon, z: z) }
+        for drawn in cycles {
+            for name in names {
+                for region in covering where region.cycle == drawn && region.done.contains(name) {
+                    if let data = reader(path(cycle: drawn, region: region.region, archive: name))?.tile(z: z, x: x, y: y) {
+                        return data
+                    }
                 }
             }
         }

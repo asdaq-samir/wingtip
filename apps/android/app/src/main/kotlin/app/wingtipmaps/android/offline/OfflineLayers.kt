@@ -3,9 +3,11 @@ package app.wingtipmaps.android.offline
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.tiles.TileTemplate
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -28,6 +30,8 @@ object OfflineLayers {
     /** The id of the map's chart layer the regions go over (MapStyle.CHART). */
     const val CHART = "chart"
     private const val PREFIX = "offline-"
+    /** How often the map asks whether a kept cycle has taken over. */
+    private const val CHANGEOVER_LOOK_MS = 60_000L
 
     fun url(file: File): String = "pmtiles://file://${file.absolutePath}"
 
@@ -69,13 +73,24 @@ object OfflineLayers {
         return JsonObject(root + mapOf("sources" to JsonObject(sources), "layers" to JsonArray(list))).toString()
     }
 
-    /** The map restyles when a region finishes or goes (Setup → Downloads):
-     *  the tiles done in each kept region, read as the effect's key. */
+    /** The map restyles when a region finishes or goes (Setup → Downloads),
+     *  and when a kept cycle takes over at 0901Z with the app open (asked
+     *  each minute; the data-cycles audit's 14): the tiles done in each
+     *  kept region and the kept cycles begun, read as the effect's key. */
     @Composable
     fun rememberDownloadsKey(context: Context): List<List<String>> {
-        val kept by remember(context) { OfflineStore.of(context) }.kept.collectAsStateWithLifecycle()
-        return kept.map { it.done }
+        val store = remember(context) { OfflineStore.of(context) }
+        val kept by store.kept.collectAsStateWithLifecycle()
+        val begun by produceState(begunCycles(store), store) {
+            while (true) {
+                delay(CHANGEOVER_LOOK_MS)
+                value = begunCycles(store)
+            }
+        }
+        return kept.map { it.done } + listOf(begun)
     }
+
+    private fun begunCycles(store: OfflineStore): List<String> = store.kept.value.filter { it.begun() }.map { it.cycle }.distinct().sorted()
 
     /** `json`, the map's style for `template`, with the regions downloaded
      *  for the air drawn over the network's chart. */

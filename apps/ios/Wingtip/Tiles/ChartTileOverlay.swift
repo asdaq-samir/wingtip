@@ -251,7 +251,7 @@ final class ChartTileRenderer: MKOverlayRenderer, @unchecked Sendable {
 
     private func key(_ tile: ChartTile) -> String {
         let t = chart.template
-        return TileCache.key(cycle: t.cycle, kind: t.kind + (chart.lift ? "+lift" : ""), z: tile.z, x: tile.x, y: tile.y, scale: t.scale)
+        return TileCache.key(cycle: t.cycle + (t.keptInForce.map { "+\($0)" } ?? ""), kind: t.kind + (chart.lift ? "+lift" : ""), z: tile.z, x: tile.x, y: tile.y, scale: t.scale)
     }
 
     private func level(zoomScale: MKZoomScale) -> Int? {
