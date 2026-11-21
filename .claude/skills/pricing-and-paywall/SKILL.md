@@ -23,7 +23,7 @@ The app is free to plan and fly with; the subscription ($1 a month or $10 a year
 - **One entitlement, on the server:** the gateway records each pilot's plan (store or Stripe, trial, renewal date) from the stores' server notifications (App Store Server Notifications, Google Real-time Developer Notifications) and Stripe webhooks; the planner and the gateway check it on every paid request. The app's own state is only for display.
 - **Stores' rules:** a paid digital feature in the iOS app is sold through in-app purchase (StoreKit 2); the trial is the store's introductory offer, once per account. Read the current App Store Review Guidelines section 3.1 before shipping.
 - **Caps:** none today. The server's Claude features and their monthly caps were taken out on 2026-11-12 (docs/decisions/0041-claude-taken-out.md); the AI left runs on the phone (Apple's models, Gemini Nano) or in the pilot's own AI app through the MCP connector, and costs the app nothing per use. A per-use feature added later gets a monthly allowance per subscriber, counted on the server, with the remaining count shown where the feature is.
-- **The paywall:** shown where the paid feature is, in the app's own iOS look (the `iphone-review` skill), saying what it unlocks, the price and the trial; never a modal over planning, never over safety information.
+- **The paywall:** shown where the paid feature is, in the app's own iOS look (the `ipad-iphone-review` skill), saying what it unlocks, the price and the trial; never a modal over planning, never over safety information.
 - **API:** a changed request or response regenerates `openapi.json` and the web types (CLAUDE.md, "Checks"); tests cover free, trial, paid and expired (and capped, where a feature has a cap).
 
 ## Report

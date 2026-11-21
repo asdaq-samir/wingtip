@@ -262,9 +262,9 @@ under a minute.
 | What | Expected |
 |---|---|
 | `e2e-images`: the browser suite's images and page, each built once per key (on a pull request too, for its specs) | 1-3 min |
-| `e2e` (2 shards): the `@smoke` and `@flight-critical` browser tests on the phone project, and `sheet-webkit.spec.ts` on `webkit-phone`, against the whole stack, in a slim copy of the Playwright image (`.github/ci-images.hcl`: no full Chrome or Firefox; WebKit kept, keyed on the recipe too by `scripts/ci/playwright_slim_key.sh`) | 5-8 min |
+| `e2e` (3 shards): the `@smoke` and `@flight-critical` browser tests on the phone project and on `webkit-ipad` (Safari's engine on an 11-inch iPad Pro upright, touch: the iPad is the primary device, decision 0058; its project runs only that set, at night too), and `sheet-webkit.spec.ts` on `webkit-phone`, against the whole stack, in a slim copy of the Playwright image (`.github/ci-images.hcl`: no full Chrome or Firefox; WebKit kept, keyed on the recipe too by `scripts/ci/playwright_slim_key.sh`) | 5-8 min |
 | `build-images`: every service image whose inputs changed, pushed as `:sha-<commit>` for Promote | 1-4 min |
-| Native iOS's own run: the unit tests and the `CardSmokeTests` UI smoke on the iPhone, then TestFlight | 6-8 min |
+| Native iOS's own run: the unit tests and the `CardSmokeTests` UI smoke on the iPhone and the iPad, each its own runner (`test`, `test (iPad)`), then TestFlight | 6-8 min |
 | Native Android's own run: the build, unit tests, lint and a debug APK | 4-6 min |
 | CodeQL (`codeql.yml`): the six languages on main's push and on Mondays, `build-mode: none`, no dependency cache; never on a pull request. It takes over once the repository's default setup is off (Settings, Code security, CodeQL analysis, "Disable CodeQL"): GitHub runs that one on every pull request too, and refuses an advanced workflow's results while it is on | 4-6 min |
 
@@ -312,8 +312,8 @@ run is the night's, but for the audits, the flake hunt and the issue:
 |---|---|---|
 | `guards` (three legs), `test-web` (three), `test-engine` (every crate), `test-python` (every suite), `test-gateway`, `test-sim`, `infra` | one runner each | 1-5 min |
 | `build-images`: every service image, built, not pushed | 1 | 2-6 min |
-| `e2e`: every spec on `mobile`, `desktop` and `webkit-phone` (`browser_specs.py`'s `WAVE_SHARDS`), after `e2e-images` | 16 | ~15-20 min |
-| `ios`: `native-ios.yml` with `unit_only`, the build and `WingtipTests` on the newest iPhone, on macOS | 1 | 5-8 min |
+| `e2e`: every spec on `mobile`, `desktop` and `webkit-phone`, and the smoke set on `webkit-ipad` (`browser_specs.py`'s `WAVE_SHARDS`), after `e2e-images` | 16 | ~15-20 min |
+| `ios`: `native-ios.yml` without `unit_only`, as main's push runs it: the build, `WingtipTests` and `CardSmokeTests` on the newest iPhone and the newest iPad (decision 0058), on macOS | 2 | 6-10 min |
 | `android`: `native-android.yml`, `testDebugUnitTest lintDebug assembleDebug` (the APK kept with the run) | 1 | 4-6 min |
 
 About 20 minutes from the push, the browser shards being the longest;
@@ -519,7 +519,7 @@ change needs; a job it skips counts as passing.
 | `engine-wheel` | wingtip's Rust extension (`engine/bindings/py`), built once a run by `.github/actions/engine-wheel` (`mode: build`) and uploaded as the `engine-wheel` artifact, which `guards`, `test-python`, `docs` and the flake hunt install (`mode: install`). The wheel's cache is keyed on everything under `engine/` and the toolchains, so a run that leaves the engine alone restores it in seconds; an engine change builds from main's last Cargo build. Main and the night save both. It was built in six jobs before (2026-11-10). Tier 1 |
 | `android`, `ios` | The phone builds (`native-android.yml`, `native-ios.yml` with `unit_only`), when a pull request touches them (above). Tier 1 |
 | `specs` | "Browser specs reached": what `e2e` runs and on how many shards (`scripts/ci/browser_specs.py`): on a pull request, the specs its change reaches (rule 18); the smoke set on main's push; everything at night |
-| `e2e`, `e2e-images` | The browser suite (Playwright, `apps/web/e2e`) against the stack built from the commit (`infra/docker-compose.ci.yml`): on a pull request the specs `specs` chose, which "CI passed" waits for (rule 18); the `@smoke` and `@flight-critical` sets over two shards on main's push; everything over ten at night, and on the phone, desktop and WebKit phone projects over sixteen in a wave's validation |
+| `e2e`, `e2e-images` | The browser suite (Playwright, `apps/web/e2e`) against the stack built from the commit (`infra/docker-compose.ci.yml`): on a pull request the specs `specs` chose, which "CI passed" waits for (rule 18); the `@smoke` and `@flight-critical` sets on the phone and WebKit iPad projects over three shards on main's push; everything over ten at night, and on the phone, desktop and WebKit phone projects (and the WebKit iPad's smoke set) over sixteen in a wave's validation |
 | `build-images` | Every service image whose inputs changed; each Python image imports its own code as its last step, so a missing dependency fails the build. Tier 2 |
 | `api-compat` | No breaking change to an OpenAPI document (below). Tier 1 |
 | `infra` | cfn-lint, `docker compose config` and `caddy validate` over the production files (their shell scripts are `guards`' shellcheck). Tier 1 |

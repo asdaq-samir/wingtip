@@ -78,6 +78,6 @@ said | grep -nE "error:|error\b|Could not|Test (Case|Suite)|Executed|\*\* (BUILD
 said | grep -E "✔ Test|✘ Test|Test run with" || true
 # Not `grep -q`, which stops at the verdict and fails the pipe it closes.
 if ! said | grep -E "\*\* $verdict \*\*" > /dev/null; then
-  echo "::error title=iPhone $step failed::xcodebuild $action did not end in ** $verdict ** (its errors above; the whole log is the run's native-ios-log artifact)"
+  echo "::error title=iOS $step failed::xcodebuild $action did not end in ** $verdict ** (its errors above; the whole log is the run's native-ios-log artifact)"
   exit 1
 fi

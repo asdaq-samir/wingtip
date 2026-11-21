@@ -668,8 +668,8 @@ jobs:
   # catches what no unit test can: a lost tap, a drawer that opens empty.
   #
   # After merge (docs/CI.md, "The tiers"; the owner, 2026-11-10): main's
-  # push runs the @smoke and @flight-critical tests on the phone project,
-  # over two shards; the night runs everything over ten. A pull request
+  # push runs the @smoke and @flight-critical tests on the phone project and
+  # the iPad's WebKit, over three; the night everything over ten. A pull request
   # runs every spec its change reaches, and "CI passed" waits for them
   # (decision 0048, after #585 merged with three red); a failure on main is
   # one issue (nightly-issue.yml). Each
@@ -695,8 +695,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The smoke set over two shards on main's push (5-9 min of tests on
-        # one, 2026-11-10); everything over ten at night or by hand; on a
+        # The smoke set over three shards on main's push (5-9 min a shard of two
+        # on 2026-11-10, before webkit-ipad); everything over ten at night; on a
         # pull request, the specs it reaches, three a shard (browser_specs.py).
         shard: ${{ fromJSON(needs.specs.outputs.shards) }}
     steps:
@@ -713,8 +713,8 @@ jobs:
       # done to /tmp/e2e-out/timeline (the shard's annotation lists it). Postgres
       # and Mailpit first, being small; Mailpit's start makes the network the
       # others need. The Playwright image is the slim copy e2e-images makes (no
-      # full Chrome, no Firefox; WebKit kept for the webkit-phone smoke on
-      # main's push), except at night, whose iOS audit and Lighthouse need
+      # full Chrome, no Firefox; WebKit kept for the webkit-phone and webkit-ipad
+      # smoke on main's push), except at night, whose iOS audit and Lighthouse need
       # the image itself.
       - name: The public images, in the background
         env:
@@ -1321,9 +1321,9 @@ jobs:
   # CI), where `changes` finds the pull request touches what they build
   # from; skipped, and so passing, otherwise. A pull request's set: Android
   # compiled, unit-tested and linted; iOS built and its unit tests
-  # (WingtipTests) on the iPhone. CardSmokeTests is main's push's, in
-  # native-ios.yml's own run, and the rest each workflow's night
-  # (docs/CI.md, "The tiers").
+  # (WingtipTests) on the iPhone. CardSmokeTests on the iPhone and iPad is
+  # main's push's, in native-ios.yml's own run, and a wave's here; the rest
+  # each workflow's night (docs/CI.md, "The tiers").
   android:
     name: Native Android
     needs: [changes]
@@ -1336,7 +1336,7 @@ jobs:
     if: needs.changes.outputs.ios == 'true'
     uses: ./.github/workflows/native-ios.yml
     with:
-      unit_only: true
+      unit_only: ${{ !inputs.wave }}
 
   # Nothing a phone already calls may break: a released app calls these
   # servers for months. oasdiff compares each OpenAPI document with main's

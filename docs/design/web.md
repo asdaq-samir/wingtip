@@ -1,5 +1,13 @@
 # The web app's look and feel: every screen, the web's way
 
+**The iPad is the primary device.** The owner, 2026-11-21: "Primary app
+users are on iPad, so make sure we pay special attention to iPad layout
+etc." (decision 0058). Every screen here is judged in iPad Safari first,
+in portrait, landscape and split views (Slide Over's 320 points up to the
+13-inch iPad's 1376), with touch, the pointer and a hardware keyboard,
+then on the phone and the desktop ("Layout: two rooms, one content" says
+which layout each width gets); the `ipad-iphone-review` skill measures it.
+
 The owner, 2026-11-09: "Can you do research on everything and let's make it
 consistent look and feel to its platform." On the web the platform is the
 modern web app: a phone's browser, the same page installed to the Home

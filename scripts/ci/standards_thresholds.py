@@ -98,7 +98,7 @@ for theme, what, shown, bound, unit in misses:
                 theme,
                 "--body",
                 note + "\n\nThe Lighthouse report is in the run's artifacts. Follow the measure-speed skill (speed) "
-                "or the iphone-review skill (design): measure, change, measure again, with the numbers in the pull request.",
+                "or the ipad-iphone-review skill (design): measure, change, measure again, with the numbers in the pull request.",
             ],
             check=True,
         )

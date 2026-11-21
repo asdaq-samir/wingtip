@@ -695,12 +695,16 @@ SDK), so a build or a test runs there through `scripts/dev/one-at-a-time.sh`
 
 - a pull request that touches `apps/ios/`, the engine, the web files the
   app bundles (`apps/web/src/lib/fixtures`, `apps/web/src/lib/acs.json`)
-  or the workflow: XcodeGen, then `xcodebuild test` on the newest iPhone
-  simulator with `-only-testing` the unit tests (`WingtipTests`) and
-  `CardSmokeTests` (an airport card opened from the search, scrolled with
-  its close in sight, closed back to the search), about ten minutes;
+  or the workflow: XcodeGen, the build, then the unit tests
+  (`WingtipTests`, the `WingtipUnit` scheme) on the newest iPhone
+  simulator (`scripts/ci/ios_test.sh`), a few minutes;
   DerivedData is restored from main's last build, its inputs stamped by
   content (`scripts/ci/content-mtimes.py`) so only what changed compiles;
+- `main`'s push, and a wave's validation (`validate-wave.yml`): those and
+  `CardSmokeTests` (an airport card opened from the search, scrolled with
+  its close in sight, closed back to the search) on the newest iPhone and
+  the newest iPad, each its own runner, the iPad being the device most
+  pilots fly with (decision 0058);
 - every night (`native-ios.yml`, `full`): the whole suite (the launch,
   flow and accessibility tests, the store shots and the card rule's full
   suites, `CardRuleTests` and `CardScrollTests`) on the iPhone, the iPad
