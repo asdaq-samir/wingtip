@@ -40,17 +40,8 @@ export interface FitInputs {
  *  runway ("19R"), or any runway's. */
 export type ProceduresAt = { ident: string; kind: Kind; pick?: { approach: string; runway: string | null } | null } | null;
 
-/** What FPL's route list (ProceduresRoute) is given. */
-export interface ProceduresRouteProps {
-  airports: ProcedureAirport[];
-  /** The route's rows as the nav log has them (navLogRows), for its
-   *  fields' times and the points between them; empty until the course
-   *  is in, the fields then listed alone. */
-  rows: NavLogRow[];
-  /** The departure time picked, ISO; empty for now. */
-  depart: string;
-  /** An airport's weather colour, as its chip on the map. */
-  weather: (ident: string) => string | undefined;
+/** The runways picked at the route's fields, for landing and for leaving. */
+interface RunwayPicks {
   /** The runway end picked for each field's pattern. */
   picked: Map<string, string>;
   onPick: (ident: string, end: string | null) => void;
@@ -69,9 +60,10 @@ export interface ProceduresRouteProps {
   /** The airplane's figures and weights its runways' fit is worked from;
    *  none, no fit marked. */
   fit: FitInputs | null;
-  /** The destination's approach charts, in its card. */
-  onCharts: () => void;
-  chartsDisabled: boolean;
+}
+
+/** The instrument procedures picked, their sheet and their charts. */
+interface ProcedurePicks {
   /** The instrument procedures picked (lib/procedures). */
   procedures: PickedProcedure[];
   /** Those drawn, by field and kind, as the route's box names them, an
@@ -95,15 +87,18 @@ export interface ProceduresRouteProps {
   /** The sheet's kind and field, null while it is put away. */
   at: ProceduresAt;
   onAt: (at: ProceduresAt) => void;
-  /** Minutes on the ground at each stop, by ident (the address's
-   *  `ground`), and the pick of one, from the time it leaves: a stop not
-   *  named, the planner's turnaround (groundMinAt). */
-  ground?: Record<string, number>;
-  onGround: (ident: string, minutes: number) => void;
   /** The pilot's own altitudes to cross the procedures' fixes at, by fix. */
   crossings: Record<string, number>;
   /** A fix of a procedure picked, tapped on its branch: its card (FixCard). */
   onFix: (field: string, kind: Kind, fix: string) => void;
+  /** The destination's approach charts, in its card. */
+  onCharts: () => void;
+  chartsDisabled: boolean;
+}
+
+/** What a point's menu does with it: its time, altitude, Direct to, card,
+ *  removal and a fix off it. */
+interface PointActions {
   /** The departure's time picked on its step (DepartPicker). */
   onDepart: (iso: string) => void;
   /** The altitude at a point of the route, as the route box's menu offers
@@ -123,6 +118,15 @@ export interface ProceduresRouteProps {
   /** The pilot's own point off one of the route's, flown over after it
    *  (FixFromDialog): "VPBNG/090/30". */
   onCreateFix: (after: string, ident: string) => void;
+}
+
+/** What is planned at the stops and fixes: time on the ground, holds and fuel. */
+interface StopPlans {
+  /** Minutes on the ground at each stop, by ident (the address's
+   *  `ground`), and the pick of one, from the time it leaves: a stop not
+   *  named, the planner's turnaround (groundMinAt). */
+  ground?: Record<string, number>;
+  onGround: (ident: string, minutes: number) => void;
   /** The pilot's holds (features/plan/routeHolds), each its own row after its point, and
    *  one set, changed or (null) taken off (HoldSheet). */
   holds: Hold[];
@@ -131,13 +135,6 @@ export interface ProceduresRouteProps {
    *  and when, AirspaceCard's Hold here): its sheet opened once the plan
    *  has the leg to the point, for the course flown to it. */
   askHold?: string | null;
-  /** The route's points as the address has them, the departure first:
-   *  a row not among them -- a fix along an airway typed as V100 -- has no
-   *  Direct to, Remove or Create a fix, which work on the typed points
-   *  (the audit's finding: they did nothing there, or the wrong thing). */
-  routePoints: string[];
-  /** As many stops as the planner takes (MAX_STOPS): no Create a fix. */
-  stopsFull?: boolean;
   /** The tanks, for the fuel in them at each point: their usable fuel, the
    *  start, taxi and takeoff allowance and the reserve the flight is held
    *  to (the totals' fuel check); none known, no fuel shown. */
@@ -147,6 +144,32 @@ export interface ProceduresRouteProps {
    *  null back to full. None, the gauges are read only. */
   tanks?: Record<string, number>;
   onTanks?: (ident: string, gallons: number | null) => void;
+}
+
+/** What FPL's route list (ProceduresRoute) is given: the route's data, and
+ *  what can be done to it in groups, each made once (useRouteListProps) and
+ *  read flat by the list's view model (useProceduresRoute). */
+export interface ProceduresRouteProps {
+  airports: ProcedureAirport[];
+  /** The route's rows as the nav log has them (navLogRows), for its
+   *  fields' times and the points between them; empty until the course
+   *  is in, the fields then listed alone. */
+  rows: NavLogRow[];
+  /** The departure time picked, ISO; empty for now. */
+  depart: string;
+  /** An airport's weather colour, as its chip on the map. */
+  weather: (ident: string) => string | undefined;
+  /** The route's points as the address has them, the departure first:
+   *  a row not among them -- a fix along an airway typed as V100 -- has no
+   *  Direct to, Remove or Create a fix, which work on the typed points
+   *  (the audit's finding: they did nothing there, or the wrong thing). */
+  routePoints: string[];
+  /** As many stops as the planner takes (MAX_STOPS): no Create a fix. */
+  stopsFull?: boolean;
+  runways: RunwayPicks;
+  procedurePicks: ProcedurePicks;
+  pointActions: PointActions;
+  stopPlans: StopPlans;
   /** The route line under the departure (RouteLine): the planner's ways as
    *  chips, the one picked, and the way to pick one; none, no line. */
   routeLine?: RouteLineChoices | null;
