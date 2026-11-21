@@ -239,7 +239,7 @@ owner, 2026-11-03):
   `vertical_speed`, `glide_ring` -- and FiguresStrip, both strip layouts,
   the bar and the map read it. At flying speed `Views/InstrumentsBar.swift`
   sits over the map under the alerts and the radio: groundspeed, track
-  (magnetic on a route, else marked T), GPS altitude, vertical speed; on
+  (magnetic on a route, else marked T), GPS altitude (Core Location's sea-level `altitude`, none when `verticalAccuracy` is 0 or less, never `ellipsoidalAltitude`), vertical speed; on
   the route the next waypoint's distance, time to go and desired track,
   the distance off course and the destination's arrival in Zulu with the
   fuel the plan leaves; Nearest (the Nearest list with Divert) one tap

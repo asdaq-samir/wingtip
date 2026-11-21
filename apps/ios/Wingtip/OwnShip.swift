@@ -95,15 +95,25 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
         asking?.cancel()
     }
 
+    /// Own ship's altitude is the platform's own height above mean sea level
+    /// (the owner, 2026-11-21): CLLocation.altitude is MSL, the geoid
+    /// corrected; ellipsoidalAltitude is the WGS-84 height, which over the
+    /// lower 48 sits about 80 to 115 ft off the sea-level figure the chart,
+    /// the airspace and the traffic are in. The FAA says GPS altitude is
+    /// not barometric and is referenced to WGS-84 unless corrected (AIM
+    /// 1-1-17). A vertical accuracy of zero or less is Core Location's
+    /// "no valid altitude" (zero is not a measured accuracy), so none.
+    nonisolated static func seaLevelFeet(altitudeM: Double, verticalAccuracyM: Double) -> Double? {
+        verticalAccuracyM > 0 ? Measurement(value: altitudeM, unit: UnitLength.meters).converted(to: .feet).value : nil
+    }
+
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let last = locations.last else { return }
-        // Core Location's altitude is metres above mean sea level and its
-        // speed metres a second; the foot is Foundation's exact one, the
+        // Speed is metres a second; the foot is Foundation's exact one, the
         // knot Units' (UnitSpeed.knots is rounded).
         let fix = Fix(
             coordinate: last.coordinate,
-            altitudeFt: last.verticalAccuracy >= 0
-                ? Measurement(value: last.altitude, unit: UnitLength.meters).converted(to: .feet).value : nil,
+            altitudeFt: Self.seaLevelFeet(altitudeM: last.altitude, verticalAccuracyM: last.verticalAccuracy),
             trackDeg: last.course >= 0 ? last.course : nil,
             groundspeedKt: last.speed >= 0 ? last.speed * Units.ktPerMS : nil,
             accuracyM: last.horizontalAccuracy, at: last.timestamp)

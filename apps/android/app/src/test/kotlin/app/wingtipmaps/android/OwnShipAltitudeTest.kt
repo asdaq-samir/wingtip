@@ -18,4 +18,12 @@ class OwnShipAltitudeTest {
     fun noSeaLevelAltitudeIsNone() {
         assertNull(OwnShip.mslFeet(null))
     }
+
+    @Test
+    fun selectionTakesMslOnlyWhenPresent() {
+        assertEquals(3280.839895, OwnShip.mslFeet(hasAltitude = true, hasMsl = true, mslMeters = 1000.0)!!, 1e-6)
+        // An ellipsoid-only fix (no MSL) and a fix without any altitude give none.
+        assertNull(OwnShip.mslFeet(hasAltitude = true, hasMsl = false, mslMeters = 1000.0))
+        assertNull(OwnShip.mslFeet(hasAltitude = false, hasMsl = true, mslMeters = 1000.0))
+    }
 }
