@@ -4,7 +4,8 @@ import Observation
 /// A portable ADS-B receiver in the cockpit (Stratux, Sentry, Garmin's GDL
 /// 39 and 52, uAvionix's): its traffic and the FIS-B weather it is sent,
 /// with no internet. The listener gathers its GDL 90; once a second the
-/// engine reads the bytes into the picture (`receiver_read`), which this
+/// engine reads the bytes into the picture (`receiver_read`), off the main
+/// actor and once a minute where it has gone quiet (`due`), which this
 /// model keeps and hands back; the map's traffic, the airport card's
 /// reports and the NEXRAD overlay are the engine's views of it. Traffic
 /// helps see other airplanes, never avoid them (AIM 4-5-7); FIS-B is not
@@ -53,25 +54,64 @@ final class Receiver {
     /// Listen and read once a second while the app runs (Repeating,
     /// slower with the app put away).
     func run() async {
-        await Repeating.every(1) { [weak self] in self?.read() }
+        await Repeating.every(1) { [weak self] in await self?.read() }
     }
 
-    func read(now: Date = Date()) {
-        guard mode == .auto else { return }
+    /// When the picture was last read, for its slow ageing (`due`).
+    @ObservationIgnored private var readAt = Date.distantPast
+    @ObservationIgnored private var reading = false
+
+    /// The bytes read into the picture by the engine, off the main actor:
+    /// the picture holds the FIS-B texts and blocks, often hundreds of kB
+    /// each way. Traffic is told only where the picture's airplanes or
+    /// whether a receiver was heard changed.
+    func read(now: Date = Date()) async {
+        guard mode == .auto, !reading else { return }
         listener.start()
         let bytes = listener.drain()
-        // Nothing heard, ever: no picture to age.
-        if bytes.isEmpty, picture == nil { return }
-        do {
-            let before = picture?.nexrad
-            picture = try Engine.receiverRead(data: bytes.base64EncodedString(), at: now.timeIntervalSince1970, picture: picture)
+        guard Self.due(picture, heard: !bytes.isEmpty, sinceS: now.timeIntervalSince(readAt)) else { return }
+        let before = picture
+        reading = true
+        defer { reading = false }
+        let read = await Task.detached(priority: .userInitiated) { () -> Result<(EngineContract.ReceiverPicture, EngineContract.ReceiverNexradAnswer?), any Error> in
+            Result {
+                let picture = try Engine.receiverRead(data: bytes.base64EncodedString(), at: now.timeIntervalSince1970, picture: before)
+                return (picture, picture.nexrad != before?.nexrad ? (try? Engine.receiverNexrad(picture: picture)) : nil)
+            }
+        }.value
+        guard mode == .auto else { return }
+        readAt = now
+        switch read {
+        case let .success((next, drawn)):
             problem = nil
+            if next != picture { picture = next }
+            if next.nexrad != before?.nexrad { nexrad = drawn }
             if live, !Self.used { UserDefaults.standard.set(true, forKey: Self.usedKey) }
-            if picture?.nexrad != before { nexrad = try? Engine.receiverNexrad(picture: picture) }
-        } catch {
+            if Self.trafficChanged(before, next) { onRead?() }
+        case let .failure(error):
             problem = error.localizedDescription
         }
-        onRead?()
+    }
+
+    /// Quiet, with nothing left that ages by the second, the picture is
+    /// aged once a minute: the FIS-B products it keeps are held minutes to
+    /// hours (the engine's REGIONAL_HOLD_S and text_hold_s).
+    nonisolated static let quietEveryS: TimeInterval = 60
+
+    /// Whether to read now: bytes heard; or, with none, while the receiver
+    /// was heard or still holds airplanes, whose 5 s and 20 s (the
+    /// engine's LIVE_S and TARGET_HOLD_S) want ageing each second; else
+    /// once each `quietEveryS`. Never heard: nothing to age.
+    nonisolated static func due(_ picture: EngineContract.ReceiverPicture?, heard: Bool, sinceS: TimeInterval) -> Bool {
+        if heard { return true }
+        guard let picture else { return false }
+        return picture.receiver.live || !picture.targets.isEmpty || sinceS >= quietEveryS
+    }
+
+    /// Whether the traffic merged from the picture can have changed: its
+    /// airplanes, or whether a receiver has been heard at all.
+    nonisolated static func trafficChanged(_ before: EngineContract.ReceiverPicture?, _ after: EngineContract.ReceiverPicture?) -> Bool {
+        before?.targets != after?.targets || (before?.receiver.heartbeatAt == nil) != (after?.receiver.heartbeatAt == nil)
     }
 
     /// The traffic to draw: the receiver's own airplanes first, then the

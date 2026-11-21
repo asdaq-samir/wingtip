@@ -159,15 +159,21 @@ enum FieldWeatherMarks {
         return worse(now: now, atEta: atEta)
     }
 
-    /// The last readings asked and their answer: the map asks on every
-    /// render, the engine only when the readings change.
-    @MainActor private static var lastWorse: (now: [EngineContract.WorseField], atEta: [EngineContract.WorseField], answer: Set<String>)?
+    /// Who asks: the route's fields (RootMap, each render) and the
+    /// alternates' (FieldWeatherState), each kept in its own slot. One
+    /// slot shared, the two asks evicted each other and each asked the
+    /// engine again.
+    enum Asker: Hashable { case route, alternates }
+
+    /// The last readings each asker asked and their answer: the map asks
+    /// on every render, the engine only when the readings change.
+    @MainActor private(set) static var lastWorse: [Asker: (now: [EngineContract.WorseField], atEta: [EngineContract.WorseField], answer: Set<String>)] = [:]
 
     /// The same from the readings in hand (the shared fixtures' shape).
     @MainActor
-    static func worse(now: [EngineContract.WorseField], atEta: [EngineContract.WorseField]) -> Set<String> {
+    static func worse(now: [EngineContract.WorseField], atEta: [EngineContract.WorseField], asker: Asker = .route) -> Set<String> {
         guard !atEta.isEmpty else { return [] }
-        if let last = lastWorse, last.now == now, last.atEta == atEta { return last.answer }
+        if let last = lastWorse[asker], last.now == now, last.atEta == atEta { return last.answer }
         let worse: Set<String>
         do {
             let answer = try Engine.weatherWorse(then: .init(metars: nil, advisories: nil, tafs: now),
@@ -179,7 +185,7 @@ enum FieldWeatherMarks {
             Log.app.error("weather_worse refused the map's fields: \(error.localizedDescription, privacy: .public)")
             worse = []
         }
-        lastWorse = (now, atEta, worse)
+        lastWorse[asker] = (now, atEta, worse)
         return worse
     }
 
@@ -194,7 +200,7 @@ enum FieldWeatherMarks {
             guard let w = reports[field.ident]?.weather else { return nil }
             return .init(ident: field.ident, ceilingFt: w.ceilingFt, visibilitySm: w.visibilitySm, ceilingUnknown: w.ceilingUnknown, arrival: true)
         }
-        return worse(now: now, atEta: shown)
+        return worse(now: now, atEta: shown, asker: .alternates)
     }
 
     // MARK: The airplane

@@ -78,7 +78,7 @@ final class WeatherLoop {
     /// The frame shown; nil follows the newest, so a refresh shows it.
     private(set) var index: Int?
     private var started = false
-    private var resume = false
+    private var sight = LoopSight()
     private var fetching: Task<Void, Never>?
     private var clock: Task<Void, Never>?
 
@@ -96,8 +96,9 @@ final class WeatherLoop {
     private func restart() {
         fetching?.cancel()
         clock?.cancel()
-        (frames, index, playing, ready, started, failed, resume) = ([], nil, false, false, false, false, false)
-        guard kind != .off else { return }
+        (frames, index, playing, ready, started, failed) = ([], nil, false, false, false, false)
+        sight.picked()
+        guard kind != .off, !sight.away else { return }
         fetching = Task { await self.fetchForever() }
     }
 
@@ -144,7 +145,7 @@ final class WeatherLoop {
 
     func toggle() {
         started = true
-        resume = false
+        sight.picked()
         if playing { pause() } else { play() }
     }
 
@@ -176,15 +177,28 @@ final class WeatherLoop {
         }
     }
 
-    /// The app gone to the background or back: paused while away, and
-    /// on again on return if it was playing.
+    /// The app gone to the background or back: paused and not fetched
+    /// while away (LoopSight), the list asked again on return, and on
+    /// again if it was playing.
     func away(_ away: Bool) {
+        see(.away, hidden: away)
         if away {
-            resume = playing
-            pause()
-        } else if resume {
-            resume = false
-            play()
+            fetching?.cancel()
+            fetching = nil
+        } else if fetching == nil, kind != .off {
+            fetching = Task { await self.fetchForever() }
+        }
+    }
+
+    /// The iPhone's sheet at full height over the map, or down again:
+    /// paused under it, no frame drawn that nobody sees.
+    func covered(_ covered: Bool) { see(.covered, hidden: covered) }
+
+    private func see(_ reason: LoopSight.Reason, hidden: Bool) {
+        switch sight.set(reason, hidden: hidden, playing: playing) {
+        case .pause: pause()
+        case .play: play()
+        case nil: break
         }
     }
 

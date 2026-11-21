@@ -52,14 +52,27 @@ final class Traffic {
         // The receiver's airplanes merged as each second's bytes are read.
         Receiver.shared.onRead = { [weak self] in self?.merge() }
         await Repeating.every(Self.everyS) { [weak self] in
-            await self?.ask(near: ownShip())
+            guard let self else { return }
+            let fix = ownShip()
+            guard Self.wanted(covered: covered, fix: fix) else { return }
+            await ask(near: fix)
         }
+    }
+
+    /// The iPhone's sheet at full height over the map (PlanSheetPresentation).
+    var covered = false
+
+    /// Whether the clock asks: not under a full-height sheet on the
+    /// ground, where nothing of it is seen; flying, always, for the near
+    /// ones told (tellNear). The engine's underway.
+    static func wanted(covered: Bool, fix: OwnShip.Fix?) -> Bool {
+        !covered || (try? Flight.underway(fix?.groundspeedKt)) == true
     }
 
     /// One answer about a point, where traffic is on and there is one: on
     /// the clock, and when a traffic list is pulled down (TrafficFindView).
     func ask(near fix: OwnShip.Fix?) async {
-        ownFt = fix?.altitudeFt
+        ownFt = Self.markedFt(fix?.altitudeFt)
         guard on, let at = fix?.coordinate ?? mapCentre else { return }
         let radius = min(60, max(10, mapRadiusNm))
         let answer: TrafficAnswer
@@ -167,6 +180,19 @@ final class Traffic {
             planes: planes.map { .init(altitudeFt: $0.altitudeFt, verticalFpm: $0.verticalFpm, lat: $0.lat, lon: $0.lon,
                                        pressureAltitude: $0.pressureAltitude) },
             own: own.map { .init(lat: $0.latitude, lon: $0.longitude) })
+    }
+
+    /// Own ship's height as the traffic is marked against it: to the
+    /// nearest 10 ft, as the web's TrafficGl reads it, so the map's marks
+    /// are not asked again at every fix for a GPS height that wanders by
+    /// tens of feet from one to the next. A 5 ft change of own height
+    /// moves the engine's 1,000 ft near band (2,000 ft for a pressure
+    /// altitude, traffic_marks after 14 CFR 91.159's spacing) and its
+    /// hundreds, cut toward own ship, only for an airplane within 5 ft of
+    /// a boundary: far inside the error of a phone's GNSS height and of
+    /// the airplane's own report, so no answer a pilot could act on moves.
+    nonisolated static func markedFt(_ ft: Double?) -> Double? {
+        ft.map { ($0 / 10).rounded() * 10 }
     }
 
     /// The marks to draw: none where the engine cannot answer, and why in

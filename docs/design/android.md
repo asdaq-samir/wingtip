@@ -1067,7 +1067,10 @@ a Material `Badge` at the top of the map, beside the receiver's, says
   4. A new entry (`LogbookForm`) opens as a full-height sheet with its
      fields.
   5. Flights recorded automatically arrive as drafts (`DraftEntry`) at
-     the top, with Keep and Discard. A logged flight is linked to the
+     the top, with Keep and Discard. The recorder (`FlightRecorder`)
+     keeps only the last ten minutes until the airplane first reaches
+     flying speed (the engine's `underway`), as the iPhone's does, and the
+     engine reads the track only once it has flown, off the main thread. A logged flight is linked to the
      saved flight whose ends are its route's, and its flown track is sent
      to it (PUT /api/flights/{id}/track). Where that fails (no signal
      after landing), the track is kept on the phone (`UnsentTracks`,
@@ -1359,6 +1362,42 @@ From the offline and store audits of 2026-11-10:
   60 s; streams and downloads use `Gateway.streaming`.
 - **Sign-out and Delete Account** forget everything the phone kept of the
   pilot (`account/PhoneWipe`).
+
+### 3.19 Work at each fix, and with the app put away (2026-11-21)
+
+Own ship's GPS gives a fix a second. What each fix and each clock asks
+for, by the phones' wasted-work audit:
+
+- **The cockpit receiver.** Its picture goes through the engine off the
+  main thread, each second while bytes come or while the receiver was
+  live or still holds airplanes (their 5 s and 20 s are the engine's);
+  once only the FIS-B products are left, once a minute. Traffic merges
+  again only where the receiver's airplanes changed (`Receiver.due`,
+  `trafficChanged`), as on the iPhone.
+- **With the app put away.** Android keeps the process, so the loops
+  stop themselves: the traffic poll and the receiver's listening go on
+  only while own ship's service is up (a flight under way) or a receiver
+  is heard; the map's carrying of each airplane runs only while the map
+  is started; the radar loop's and the model weather's lists are asked
+  only with the app in front (`Ticker.inFront`); the airport card's
+  live rows only while the card can be seen (`LifecycleStartEffect`),
+  their programs each five minutes, as the iPhone asks them.
+- **Where the airplane is on the route** (`in_flight`) is asked only
+  once it is under way (the engine's `underway`), as on the iPhone.
+- **The airport card** reads own ship's place to a thousandth of a
+  degree, told only as it changes (`AirportFacts.From.near`), and the
+  card's actions read the fix when tapped (`RouteActions`), so neither
+  the card nor a point's card is drawn again at every fix.
+- **Own ship put away on the ground** stops reading (OwnShipControl's
+  ON_STOP), as OwnShip says it does, and starts again at ON_RESUME; with
+  own ship's service up (a flight under way) it goes on.
+- **The copilot** checks whether the planner or the engine is due, on a
+  key of tenths of a degree, before it measures the route
+  (`route_position`), so it measures at most every 3 s, as the iPhone
+  looks.
+- **The map pane** hands ChartMap the traffic as a lambda, as it hands
+  it the fix, so a traffic answer draws the map's traffic, not the
+  whole pane with its bars and field actions.
 
 ## 4. Not verified
 

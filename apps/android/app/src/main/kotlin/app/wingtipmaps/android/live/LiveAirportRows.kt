@@ -13,7 +13,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.pilot.MinimumsStore
@@ -47,9 +47,11 @@ fun LiveAirportRows(ident: String, model: LiveAirportModel = hiltViewModel()) {
     val context = LocalContext.current
     val minimums by remember(context) { MinimumsStore.of(context) }.minimums.collectAsStateWithLifecycle()
     LaunchedEffect(minimums.visibilitySm) { model.judgeAgainst(minimums.visibilitySm) }
-    DisposableEffect(ident) {
+    // Asked only while the card can be seen: an activity stopped with the
+    // card still composed asks nothing (Android keeps the process).
+    LifecycleStartEffect(ident) {
         model.watch(ident)
-        onDispose { model.stop() }
+        onStopOrDispose { model.stop() }
     }
     if (state.ident != ident.trim().uppercase()) return
     Column(Modifier.fillMaxWidth()) {

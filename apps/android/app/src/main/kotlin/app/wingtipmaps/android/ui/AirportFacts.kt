@@ -8,6 +8,7 @@ import app.wingtipmaps.android.engine.generated.distanceNm
 import app.wingtipmaps.android.engine.generated.frequenciesInOrder
 import app.wingtipmaps.android.engine.generated.fuelEstimate
 import app.wingtipmaps.android.engine.generated.windCalm
+import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.format.Format
 
 /**
@@ -37,7 +38,15 @@ data class AirportFacts(
     val fromIdent: String? = null,
 ) {
     /** Where the distance starts: own ship (no ident), else a departure. */
-    data class From(val lat: Double, val lon: Double, val ident: String? = null)
+    data class From(val lat: Double, val lon: Double, val ident: String? = null) {
+        companion object {
+            /** Own ship's place to a thousandth of a degree: at most some
+             *  0.03 nm off, under the tenth a card shows, and the same
+             *  for a parked airplane's jitter, so the card is not drawn
+             *  and its facts not asked again at every fix. */
+            fun near(fix: OwnShip.Fix): From = From(Math.round(fix.lat * 1000) / 1000.0, Math.round(fix.lon * 1000) / 1000.0)
+        }
+    }
 
     companion object {
         /** The field's frequencies in the order a pilot dials them, the

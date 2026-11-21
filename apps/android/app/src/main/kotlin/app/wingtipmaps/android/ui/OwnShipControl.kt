@@ -20,6 +20,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.flight.OwnShipService
 import app.wingtipmaps.android.notify.Notifications
 
 /**
@@ -98,6 +99,11 @@ fun rememberOwnShipControl(flight: FlightModel = hiltViewModel()): OwnShipContro
     // allowed, and the reading stops if it was taken away.
     LaunchedEffect(on.value) { if (on.value) ownShip.start() }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { if (on.value) ownShip.start() }
+    // Put away on the ground the reading stops, as OwnShip says it does:
+    // the request stayed registered, and the traffic and the recorder went
+    // on ticking for fixes the system withholds. Flying, own ship's
+    // service keeps it; back in front, ON_RESUME starts it again.
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { if (!OwnShipService.running) ownShip.stop() }
     // A watch set or traffic near asked for notifications (Notifications
     // .allow): the system's dialog on Android 13 and later.
     val notificationsWanted by Notifications.wanted.collectAsStateWithLifecycle()

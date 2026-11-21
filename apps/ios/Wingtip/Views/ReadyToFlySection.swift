@@ -94,7 +94,7 @@ struct ReadyToFlySection: View {
         let keep = keepForAir
         let keeping = keep.sizeMb.map { "kept \($0)" } ?? keep.keeping.map { $0.kept >= $0.wanted ? "tiles" : "keeping" } ?? ""
         return [ReadyToFly.flightKey(plan), plan.airplaneName ?? "", "\(plan.altitudeFt ?? 0)", "\(plan.briefedAt?.timeIntervalSince1970 ?? 0)",
-                "\(plan.totals?.eteMin ?? 0)", keeping, "\(receiver.live)"].joined(separator: "|")
+                "\(plan.totals?.eteMin ?? 0)", keeping].joined(separator: "|")
     }
 
     var body: some View {
@@ -112,6 +112,9 @@ struct ReadyToFlySection: View {
                 try? await Task.sleep(for: .seconds(60))
             }
         }
+        // A receiver heard or lost: the facts again, not the NOTAMs. In the
+        // key, a heartbeat flapping fetched the route's NOTAMs each time.
+        .onChange(of: receiver.live) { Task { await model.refresh() } }
     }
 }
 

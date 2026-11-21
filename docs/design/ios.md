@@ -1997,6 +1997,68 @@ The iOS speed audit measured three things; what changed for each:
   the loading mark read it. A drag after that runs neither the root's
   body nor the map's update.
 
+## 19. Work at each fix (2026-11-21)
+
+Own ship's GPS gives a fix a second, and in the air the map follows it.
+What each fix asks for, by the phones' wasted-work audit:
+
+- **The fields at rest.** Following, MapKit's camera comes to rest at
+  every fix. The fields in view are asked for a box of four views at the
+  planner's most (1,000), and again only when the view leaves that box or
+  its level, or after ten minutes (`RestedFetch`), as FieldWeatherFeed
+  asks for their weather.
+- **The cockpit receiver.** Its picture goes through the engine off the
+  main actor, each second while bytes come or while the receiver was
+  live or still holds airplanes (their 5 s and 20 s are the engine's);
+  once only the FIS-B products are left, once a minute. Traffic merges
+  again only where the receiver's airplanes changed (`Receiver.due`,
+  `trafficChanged`).
+- **The watch.** The phone hands the watch its fix only for the nearest
+  fields, where the watch's own location does not come. The context is
+  sent again only when the checklist or the airplane changes, or the fix
+  has moved about a mile or is five minutes old (`WatchLink.fixToSend`),
+  not every 5 s; the checklist is read into the watch's shape once per
+  text.
+- **Traffic against own height.** Own ship's GPS height is read to the
+  nearest 10 ft for the traffic's marks (`Traffic.markedFt`), as the web
+  reads it, so the map asks `traffic_marks` again at a new report or a
+  real change of height, not at each fix's wander. The engine's 1,000 ft
+  band and its hundreds cut toward own ship still decide.
+- **The map's body.** RootMap reads own ship's height as `markedFt`,
+  set only when the rounded height changes, and the fix for the
+  emergency line only while the assistant is open, so a fix runs neither
+  RootMap's body nor ChartMap's update, with its route, checkpoint and
+  procedure comparisons.
+- **Where the airplane is on the route** (`in_flight`) is asked only
+  once it is under way (the engine's `underway`): the engine's `on_route`
+  needs the same motion, so parked there was nothing to show, and the
+  strip keeps the planned totals.
+- **The airport card's head** reads own ship's place to a thousandth of
+  a degree (`OwnShip.coarseCoordinate`, at most some 0.03 nm off), so a
+  parked airplane's jitter does not draw it again or ask the engine for
+  its distance and time again.
+- **The GPS's accuracy.** Core Location is asked for its best, a fix a
+  second, while flying, while the flight recorder waits for the airplane
+  to come to rest after landing (14 CFR 1.1's flight time ends there),
+  while the map follows the airplane and while an airport diagram with
+  own ship is up (AC 120-76D 11.17.2.3 takes the airplane off a
+  three-second-old fix). Otherwise, on the ground, to ten metres and
+  only after a ten-metre move (`OwnShip.isPrecise`), which a parked
+  phone answers with almost nothing.
+- **The radar loop and the model weather** pause while the sheet is at
+  full height over the map and while the app is put away, and play again
+  once back in sight if they were playing (`LoopSight`); put away, their
+  lists are not fetched either, and are asked again on return.
+- **Smaller ones.** The traffic is not asked under a full-height sheet
+  on the ground (in flight it goes on, for the near ones told); the
+  route's and the alternates' "worse by then" asks each keep their own
+  answer; Ready to Fly refreshes, without fetching the NOTAMs again, when
+  a receiver is heard or lost; the weather widget's fields are written
+  as the home base or the favourites change; Next Flight's widget for
+  the plan on the page waits for the app's reload (`.never`), a saved
+  flight's every 15 minutes; and the flight recorder writes its file
+  every five minutes on the ground, every 30 s from the takeoff.
+
 ---
 
 ## What could not be verified

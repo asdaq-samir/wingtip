@@ -62,11 +62,17 @@ class CopilotModel @Inject constructor(
             return
         }
         if (startedAtMs == null) startedAtMs = fix.atMs
+        // Whether either is due, on a key of tenths of a degree, before the
+        // route is measured: route_position over the whole line ran at
+        // every fix, then the throttles threw most of it away. A leg passed
+        // inside one tenth is asked about within the minute.
+        val question = listOf(Math.round(fix.lat * 10) / 10.0, Math.round(fix.lon * 10) / 10.0, flight.dest, flight.alternate).joinToString("|")
+        val askDue = question != askedFor || nowMs - askedAtMs >= ASK_MS
+        val lookDue = lookedAtMs?.let { nowMs - it >= LOOK_MS } != false
+        if (!askDue && !lookDue) return
         val along = rules.along(fix.lat, fix.lon, flight.line)
-        val question = listOf(Math.round(fix.lat * 10) / 10.0, Math.round(fix.lon * 10) / 10.0, flight.dest, flight.alternate,
-            CopilotShapes.restOfRoute(fix.lat, fix.lon, flight.line, along?.leg ?: 0)).joinToString("|")
-        if (question != askedFor || nowMs - askedAtMs >= ASK_MS) ask(question, fix, flight, along, nowMs)
-        if (lookedAtMs?.let { nowMs - it < LOOK_MS } == true) return
+        if (askDue) ask(question, fix, flight, along, nowMs)
+        if (!lookDue) return
         lookedAtMs = nowMs
         val got = around ?: return
         val answer = rules.watch(input(fix, flight, got, along, ahead, minimums)) ?: return

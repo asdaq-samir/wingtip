@@ -144,6 +144,10 @@ class Traffic(
     /** One answer about a point, where traffic is on and there is one. */
     private suspend fun ask(fix: OwnShip.Fix?) {
         if (!on.value) return
+        // Put away on the ground, nothing is drawn or told: Android keeps
+        // the process, and the clock would ask every 10 s. Flying (own
+        // ship's service up) it goes on, for the near ones' heads-up.
+        if (ticker.background && !OwnShipService.running) return
         lastFix = fix
         val at = fix?.let { it.lat to it.lon } ?: mapCentre ?: return
         val radius = mapRadiusNm.coerceIn(10.0, 60.0)
