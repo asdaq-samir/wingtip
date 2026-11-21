@@ -18,7 +18,7 @@ test("Print offers the kneeboard card, and prints it alone on half-letter paper"
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
 
   // Off screen until printed, and whole: every row of the log, both fields.
   const card = page.getByTestId("kneeboard");

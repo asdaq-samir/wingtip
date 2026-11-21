@@ -42,7 +42,7 @@ test("plan page: a click or Enter selects a nav log checkpoint, with the briefin
   // FPL's figure strip has its fuel once they are in, under the Nav Log's
   // card now (95f9e953b: a card of its own over FPL), so in the page, not
   // in sight.
-  await expect(page.getByTestId("navlog-fuel")).toBeAttached({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeAttached({ timeout: slow(120000) });
   const selectedRow = table.locator('[role="row"][data-selected]');
   await expect(selectedRow).toHaveCount(0);
 

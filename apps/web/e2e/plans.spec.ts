@@ -159,9 +159,8 @@ test("plan page: a departure time gives every checkpoint its time, and the nav l
   // itself.
   await openNavLog(page);
   await expect(times.first()).toHaveText("15:00");
-  // The route's figures say where it lands, the time en route and the
-  // fuel required (the owner's "To, Dist, ETE, Fuel").
-  await expect(page.getByTestId("navlog-fuel")).toHaveText(/^\d+\.\d\s?gal$/, { timeout: slow(60000) });
+  // The route's figures say where it lands, the time en route
+  // (the owner's "To, Dist, ETE"; its fuel is the timeline's gauges' and the nav log's).
   await expect(page.getByTestId("navlog-to")).toHaveText("KDLH");
   await expect(page.getByTestId("navlog-ete")).toHaveText(/^(\d+h( \d+m)?|\d+m)$/);
   // Every later row has a time once its leg is in.
@@ -172,21 +171,11 @@ test("plan page: a departure time gives every checkpoint its time, and the nav l
   await expect(page.getByTestId("navlog-eta")).toHaveText(/^\d\d:\d\d$/);
   await page.getByTestId("ete-eta-toggle").click();
   await expect(page.getByTestId("navlog-ete")).toHaveText(/^(\d+h( \d+m)?|\d+m)$/);
-  // The fuel tapped, what it is made of, summing to it.
-  await page.getByTestId("fuel-breakdown-open").click();
-  const breakdown = page.getByTestId("fuel-breakdown");
-  await expect(breakdown).toContainText("Flying the legs");
-  await expect(breakdown).toContainText("Start, taxi and takeoff");
-  await expect(breakdown).toContainText(/Reserve, (30|45) min/);
-  await expect(breakdown).toContainText(/Fuel required\s*\d+\.\d gal/);
-  await page.keyboard.press("Escape");
-  await expect(breakdown).toHaveCount(0);
   // And the fuel check, against the stock C172's 40 usable gallons, with
   // the day reserve for a mid-afternoon flight: the figure's alone now,
   // no line under the route (the owner's "Remove fuel required at the
   // bottom of arrival"), and in full in the Brief.
   await expect(page.getByTestId("fuel-check")).toHaveCount(0);
-  await expect(page.getByTestId("fuel-breakdown-open")).not.toHaveAttribute("data-alert");
   await openTab(page, "Preflight"); // the Brief pulled up first, as above
   await openSection(page, "Fuel");
   const detail = page.getByTestId("fuel-detail");

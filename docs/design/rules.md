@@ -553,7 +553,7 @@ off by default (the owner, 2026-11-13).
    figures under it and the Routes' chips put away; a present position is "My Location" (Apple Maps' words)
    wherever the route shows it, never an ident (decision 0047); under the
    timeline the route's figures (To,
-   Distance, ETE (ETA for an arrival), Fuel: short words, ETE and ETA the FAA's (2026-11-20), the distance whole
+   Distance, ETE (ETA for an arrival), Track: short words, ETE and ETA the FAA's (2026-11-20), the distance whole
    miles, "1,334 nm", the owner's list, 2026-11-17) at their own size, always
    exact and one column each, never wrapped, and never set smaller to fit:
    a long figure ("1,320 nm", "⚠ 111.3 gal") is the size of a short one
@@ -562,13 +562,21 @@ off by default (the owner, 2026-11-13).
    where even that is too wide cut with "…", never a rounded form in their
    place (the owner, 2026-11-21, replacing the shrink-to-fit of 2026-11-17); in
    flight and in a dry run no To, which the flying head names, so Distance,
-   ETE, Fuel and the GPS altitude are its four columns; whenever the
+   ETE, Track and the GPS altitude are its four columns; whenever the
    airplane's position is known, on the ground too, "GPS alt" is the last
    column, in feet to the nearest 10, "—" where the fix gives no altitude
    (the owner, 2026-11-20: "The figures don't show gps altitude"). It is
    the GPS's height, the W3C Geolocation API's metres above the WGS84
    ellipsoid (section 9.2), never named MSL or the altimeter's
-   (`gpsFigure`); and at the sheet's foot from
+   (`gpsFigure`). Track, in the fuel's place (the owner, 2026-11-21:
+   "replace Fuel with Track"), is the airplane's GPS track over the ground
+   in degrees magnetic, three figures and north 360 ("274°", "004°"): the
+   fix's true course (the W3C Geolocation API's `coords.heading`; a dry
+   run's, the plan's track) less the engine's WMM variation at the fix
+   (`magnetic_variation`; `trackFigure`), "—" with no position, no course
+   or below flying speed (the engine's `underway`), a column always. The
+   fuel stays on the timeline's tank gauges, the nav log and the Brief,
+   no longer on the strip, so the strip no longer opens its breakdown. At the sheet's foot from
    half up a floating glass bar, the one floating bar the airport card's
    tabs are drawn in, the same height and width (`FloatingBar`, 2026-11-18),
    round Base UI's stock Toolbar (one tab stop, the arrows between them),

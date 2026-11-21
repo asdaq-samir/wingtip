@@ -36,7 +36,7 @@ test(
     await settle(page);
 
     // The nav log: every leg to the destination, with its time and fuel.
-    await expect(page.getByTestId("navlog-fuel").first()).toBeVisible({ timeout: slow(120_000) });
+    await expect(page.getByTestId("navlog-ete").first()).toBeVisible({ timeout: slow(120_000) });
     await openPanel(page);
     await openNavLog(page);
     // A phone's list, or a desktop's table with its time column.
@@ -117,7 +117,7 @@ test(
   async ({ page, context }) => {
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
-    await expect(page.getByTestId("navlog-fuel").first()).toBeVisible({ timeout: slow(120_000) });
+    await expect(page.getByTestId("navlog-ete").first()).toBeVisible({ timeout: slow(120_000) });
 
     const keeping = await page.evaluate(() => "serviceWorker" in navigator && window.isSecureContext);
     if (keeping) {
@@ -199,9 +199,6 @@ test(
     await expect(page).toHaveURL(/[?&]direct=KDLH\b/, { timeout: slow(10_000) });
     await expect(page.getByTestId("page-error")).toHaveCount(0);
     await expect(strip).toContainText(/\d+(\.\d)? nm/);
-    // Its fuel required too, the engine's fuel plan over the direct's legs
-    // (navlog_fuel_plan), where it read "—" for want of the rule on the device.
-    await expect(strip.getByTestId("navlog-fuel")).toHaveText(/\d/);
     await context.setOffline(false);
   },
 );

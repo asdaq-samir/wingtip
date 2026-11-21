@@ -39,7 +39,7 @@ test("plan page: a route from an airport to itself is a local flight: the field'
   await expect(aloft.locator("[aria-hidden]")).toHaveText("Aloft");
   await expect(aloft.locator(".sr-only")).toHaveText("Time aloft, one hour");
   // Its fuel required among the figures.
-  await expect(page.getByTestId("navlog-fuel")).toHaveText(/^\d+\.\d\s?gal$/, { timeout: slow(30000) });
+  await expect(page.getByTestId("navlog-ete")).toHaveText(/^(\d+h( \d+m)?|\d+m)$/, { timeout: slow(30000) });
 
   // Longer aloft: its chip in the pill, in the address, and more fuel.
   await controlsInSight(page);
@@ -185,7 +185,7 @@ test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks
   expect(await numbered()).toBe(0);
   await expect.poll(async () => (await drawn(page, "candidate-marks")).length).toBe(0);
   await openPanel(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeAttached({ timeout: slow(60000) });
+  await expect(page.getByTestId("navlog-ete")).toBeAttached({ timeout: slow(60000) });
   await openNavLog(page);
   const rows = navLogSheet(page).locator('[role="row"][data-kind]');
   await expect(navLogSheet(page).locator('[role="row"][data-kind="checkpoint"]')).toHaveCount(0);

@@ -62,7 +62,7 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   await openBrief(page);
   const card = sideDrawer(page).getByTestId("brief-card");
   const glance = card.getByTestId("brief-glance");
@@ -128,7 +128,7 @@ test("a private destination is a line of the Brief: land only with the owner's p
   // the tabs' findings.
   await page.goto("/app/plan?dep=C81&dest=IL11&view=full");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   await openBrief(page);
   const glance = sideDrawer(page).getByTestId("brief-glance");
   await expect(sideDrawer(page).getByTestId("brief-card").getByTestId("brief-verdict")).toBeVisible({ timeout: slow(30_000) });

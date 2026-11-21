@@ -51,7 +51,7 @@ test("the search bar, with no route", async ({ page }) => {
 test("a route's panel out, each of its tabs", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   for (const tab of ["Nav Log", "Weather", "Brief", "Performance"] as const) {
     await openTab(page, tab);
     await atRest(page);
@@ -118,7 +118,7 @@ for (const look of [
     await inLook(page, look);
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
-    await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+    await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
     await expect(page.locator("html")).toHaveAttribute("data-brand", look.brand);
     expect(await violations(page)).toEqual([]);
   });
@@ -130,7 +130,7 @@ test("asked for more contrast, the glass is solid", async ({ page }) => {
   await page.emulateMedia({ contrast: "more" });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   const glass = await page.locator(".liquid-glass").evaluateAll((els) =>
     els
       .filter((el) => (el as HTMLElement).offsetParent)
@@ -151,7 +151,7 @@ test("asked for more contrast, the glass is solid", async ({ page }) => {
 test("at twice the text size the route's panel reflows: nothing sideways, the figures whole", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await expect(page.getByTestId("navlog-fuel")).toBeVisible({ timeout: slow(120000) });
+  await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   // Every rem twice the size, as a browser's text zoom or the iPhone's
   // largest Larger Text sets the root (features/shell/dynamicType).
   await page.evaluate(() => {
@@ -159,10 +159,9 @@ test("at twice the text size the route's panel reflows: nothing sideways, the fi
   });
   await atRest(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  // The flight's figures shrink to fit rather than cut (FigureStrip): the
-  // fuel's whole figure is still in its box.
-  const fuel = page.getByTestId("navlog-fuel");
-  expect(await fuel.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+  // The flight's figures stay whole in their columns (FigureStrip).
+  const ete = page.getByTestId("navlog-ete");
+  expect(await ete.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
 });
 
 test("by keyboard: a visible focus ring, and the chart's airports reached and opened", async ({ page }) => {
