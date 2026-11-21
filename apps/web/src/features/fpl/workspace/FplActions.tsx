@@ -106,8 +106,12 @@ export function FplRoute({
         </section>
       )}
       <RouteHead vm={vm} />
+      {/* The figures 4 in from the head's 12, so their words are iOS's 16
+          from the sheet's side as the pinned pill's are (PINNED's px-4),
+          where the first figure flush with the head's edge read "Dest" at
+          12 (the iOS audit's margin, a local flight). */}
       <div className={cn("pt-2 pb-1", editing && "hidden")} data-pill-keeps="">
-        <div ref={figures} data-pin-foot="" className={cn(PIN_AT_FOOT, PINNED)}>
+        <div ref={figures} data-pin-foot="" className={cn(PIN_AT_FOOT, "px-1", PINNED)}>
           {!editing && <FlightFigures vm={vm} grow={false} />}
         </div>
       </div>

@@ -42,6 +42,11 @@ export function PlacePictures({
 }) {
   const [diagramOpen, setDiagramOpen] = useState<"faa" | "sketch" | null>(null);
   const [picture, setPicture] = useState<"aerial" | "photo" | null>(null);
+  // The sketch's numbers as written (RunwaySketch's onWritten), for its
+  // tile's name: the words in sight are in the name a pilot's voice
+  // control is told to tap (WCAG 2.5.3, Label in Name; axe's
+  // label-content-name-mismatch on the iOS audit's reference iPhone).
+  const [written, setWritten] = useState("");
   const ident = place.ident;
   const sketched = sketchedRunways.length > 0;
   // Its runways closed where the Runways tab says Closed, NOTAMs in force
@@ -89,7 +94,7 @@ export function PlacePictures({
               className="absolute inset-0 size-full bg-white object-cover dark:invert"
             />
           ) : (
-            <RunwaySketch runways={runways} lat={place.lat} lon={place.lon} />
+            <RunwaySketch runways={runways} lat={place.lat} lon={place.lon} onWritten={setWritten} />
           )}
         </div>
       ) : (
@@ -115,7 +120,10 @@ export function PlacePictures({
       picture: runwaysSlide,
       testId: "place-diagram-open",
       open: sketched ? () => setDiagramOpen(place.airport_diagram_url ? "faa" : "sketch") : undefined,
-      label: place.airport_diagram_url ? `${ident} airport diagram, full screen` : `${ident} runways sketch, full screen`,
+      // The sketch's numbers in its name while it is drawn, the FAA's
+      // diagram there or not (its picture not to be had, or a NOTAM's
+      // closure in force).
+      label: `${ident} ${place.airport_diagram_url ? "airport diagram" : "runways sketch"}${!runwaysPicture && written ? `, ${written}` : ""}, full screen`,
     },
     photos?.photo && {
       key: "photo",

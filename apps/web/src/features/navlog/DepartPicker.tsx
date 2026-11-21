@@ -124,11 +124,20 @@ export default function DepartPicker({
             // the airplane beside it (FlightInputs).
             variant="glass"
             size="sm"
-            className={cn("rounded-full px-2.5 font-normal pointer-coarse:px-1.5", CHIP_TEXT)}
-            aria-label={`${label} date`}
+            // Over the head under it (z-10), whose row starts inside its
+            // 44-point area's foot, and 4 more after the pill before it,
+            // whose end's glyph's area runs 12 past that pill (pillLook's
+            // PILL_END): its own area's edge clear of both (the iOS
+            // audit's P1, "Departure date" 57×32 on a local flight).
+            className={cn("relative z-10 ml-1 rounded-full px-2.5 font-normal pointer-coarse:px-1.5", CHIP_TEXT)}
             data-testid={testId}
           >
-            {!date && <CalendarIcon className="text-muted-foreground" />}
+            {/* Named by what it shows, its label before it for a screen
+                reader alone, as the time's look is: "Departure date" held
+                none of the "Now" in sight (WCAG 2.5.3, Label in Name; axe's
+                label-content-name-mismatch on a local flight). */}
+            <span className="sr-only">{label}, </span>
+            {!date && <CalendarIcon className="text-muted-foreground" aria-hidden="true" />}
             {date ? leaveWhen(date) : "Now"}
           </Button>
         )}

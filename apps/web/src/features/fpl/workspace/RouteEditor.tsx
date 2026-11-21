@@ -88,7 +88,8 @@ export default function RouteEditor({
       {/* The figures under the cards while they are edited, so each change
           is read as it is made (the canvas's "Tap the route to expand"). */}
       {wholeRoute && (
-        <div className="pt-3" data-testid="route-editor-figures">
+        // 4 in from the head's 12, at iOS's 16, as the folded route's (FplActions).
+        <div className="px-1 pt-3" data-testid="route-editor-figures">
           <FlightFigures vm={vm} grow={false} />
         </div>
       )}

@@ -164,7 +164,19 @@ export default function AltitudeGroup({
           of our own: the keyboard's own ✓ leaves the field, whose blur
           flies what was typed (the owner, 2026-11-19: "What's Done for?"). */}
       {!feet && (
-        <InputGroupAddon className={PILL_PREFIX} aria-hidden="true">
+        // Its after the field's own 44-point band, centred as the field's
+        // is (PILL_FIELD's), no further: so a tap just above or below "FL-" is the
+        // field's, as a tap on it is (the addon focuses the field), where
+        // the three figures' field alone was 31 wide, the head round it
+        // (the iOS audit's P1, "altitude-input" 31×44); over the head under
+        // it (z-10), as the field is, where the band's foot reaches it.
+        <InputGroupAddon
+          className={cn(
+            PILL_PREFIX,
+            "relative z-10 after:absolute after:inset-x-0 after:top-1/2 after:h-11 after:-translate-y-1/2 after:content-['']",
+          )}
+          aria-hidden="true"
+        >
           FL-
         </InputGroupAddon>
       )}
