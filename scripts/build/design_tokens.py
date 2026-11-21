@@ -4,10 +4,10 @@
 One source for Wingtip's design language (colours, type, spacing, radii,
 materials, motion, tap targets), written into each platform in its own
 idiom: CSS custom properties and a TypeScript module for the web, Swift
-constants (Dynamic Type styles) for iOS, Compose values (Color,
-Typography, Dp) for Android. Standard library only,
-so it needs nothing installed and nothing to pin; run it through
-scripts/build/design-tokens.sh, which CI runs with --check.
+constants (Dynamic Type styles) for iOS, Compose values (Color, Typography,
+Dp) for Android, the map's zooms for the charts job (design_tokens_zoom).
+Standard library only, so it needs nothing installed and nothing to pin;
+run it through scripts/build/design-tokens.sh, which CI runs with --check.
 
 Usage: design_tokens.py [--check]
 """
@@ -23,6 +23,7 @@ import design_tokens_haptic as haptic
 import design_tokens_stock as stock
 import design_tokens_system as system
 import design_tokens_typography as typography
+import design_tokens_zoom as zoom
 from design_tokens_webtype import fixed, rem, web_class
 from design_tokens_colour import hex6, rgba
 from design_tokens_formats import gen_formats
@@ -412,8 +413,7 @@ def gen_swift(tree, sch):
     L.append("enum WingtipSize {")
     for k, t in tokens(tree["size"]).items():
         L.append("    static let %s: CGFloat = %g" % (camel(k), t["$value"]))
-    mat = tokens(tree["material"])
-    L.append("    static let glassBlur: CGFloat = %g" % mat["glass-blur"]["$value"])
+    L.append("    static let glassBlur: CGFloat = %g" % tree["material"]["glass-blur"]["$value"])
     L.append("}")
     return "\n".join(L) + "\n"
 
@@ -462,8 +462,7 @@ def gen_kotlin(tree, sch):
         L.append("    }")
     L += ["}", ""]
     L.append("/** One scheme's surfaces, words and states, as the web's cascade resolves them. */")
-    L.append("@Immutable")
-    L.append("class WingtipPalette(")
+    L += ["@Immutable", "class WingtipPalette("]
     L += ["    val %s: Color," % camel(n) for n in names]
     L.append(")")
     L.append("")
@@ -527,6 +526,7 @@ def main():
         IOS_SWIFT: gen_swift(tree, sch),
         ANDROID_KT: gen_kotlin(tree, sch),
         FORMATS: gen_formats(tokens(tree["format"]), camel, BANNER),
+        **zoom.outputs(tree, ROOT, BANNER),
     }
     stale = []
     for path, text in outputs.items():

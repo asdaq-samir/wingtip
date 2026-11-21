@@ -53,9 +53,9 @@ final class ChartMarks {
         let vfr: Bool
     }
 
-    /// From which Leaflet zoom each is drawn: the areas from 7 (Android's
-    /// SUA_FROM), the fixes from 10 (the web's FIX_ZOOM).
-    static let areasFrom = 7.0
+    /// From which Leaflet zoom each is drawn: the areas from map.zoom's
+    /// special-use (design/tokens.json), the fixes from 10 (the web's FIX_ZOOM).
+    static let areasFrom = WingtipMapZoom.specialUse
     static let fixesFrom = 10.0
 
     private var areaFetch = ViewFetch()

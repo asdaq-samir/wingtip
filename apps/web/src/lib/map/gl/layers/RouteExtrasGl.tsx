@@ -35,7 +35,7 @@ const PATTERN_LAYERS: SymbolLayerSpecification[] = [
     ...pictureLayer("pattern-arrows", "pattern-marks", {}, { "icon-rotate": ["get", "rotate"], "icon-rotation-alignment": "map" }),
     filter: KIND("arrow"),
   },
-  { ...chipLayer("pattern-labels", "pattern-marks", {}, {}, { "text-color": CHART.casing }), filter: KIND("label") },
+  { ...chipLayer("pattern-labels", "pattern-marks", {}, {}, { "text-color": CHART.casing }, "patternLeg"), filter: KIND("label") },
 ];
 
 /** A procedure's fixes: the tag beside each diamond, its left edge seven

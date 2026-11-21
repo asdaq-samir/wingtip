@@ -1,5 +1,5 @@
 import type { CircleLayerSpecification, ExpressionSpecification } from "maplibre-gl";
-import { CHART, MAP } from "../../../tokens";
+import { CHART, MAP_LABEL, type MapLabelKind } from "../../../tokens";
 /** The map's words, in the page's Inter (GlMapShell's font-faces), in
  *  every look: the map's colours are the chart's own, not the look's. */
 export const GL_FONT = ["Inter"];
@@ -7,40 +7,53 @@ export const GL_FONT = ["Inter"];
  *  Inter at weight 700 (GlMapShell's second font-face). */
 export const GL_FONT_BOLD = ["Inter Bold"];
 
-/** The map's label sizes, px, from design/tokens.json's map.label-*: one
- *  scale for every layer, and none under `small`, 11, the floor. */
-export const LABEL_SIZE = {
-  small: MAP.labelSmall,
-  normal: MAP.label,
-  large: MAP.labelLarge,
-  count: MAP.labelCount,
-  runway: MAP.labelRunway,
-} as const;
-
 /** A label's size by the map's zoom: MapLibre's zooms and the sizes at
  *  them, interpolated between. */
-export function labelByZoom(stops: [glZoom: number, px: number][]): ExpressionSpecification {
+function labelByZoom(stops: readonly (readonly [glZoom: number, px: number])[]): ExpressionSpecification {
   return ["interpolate", ["linear"], ["zoom"], ...stops.flat()] as unknown as ExpressionSpecification;
 }
 
 /** The map's global state (MapLibre's `global-state`) that says it is
  *  dark: set from the page's dark theme (useDarkTheme) by ChartGl. */
 export const LABEL_NIGHT = "labelNight";
-/** The halo's colour: the chart's white by day; after dark the same white
- *  at map.label-halo-night, so it does not glare over a chart dimmed to
- *  half. One expression, read by every layer's paint, so the theme's
+/** The light halo's colour: the chart's white by day; after dark the same
+ *  white at map.label.halo-night, so it does not glare over a chart dimmed
+ *  to half. One expression, read by every layer's paint, so the theme's
  *  change is one setGlobalStateProperty. */
 const HALO_COLOUR: ExpressionSpecification = [
   "case",
   ["boolean", ["global-state", LABEL_NIGHT], false],
-  `${CHART.casing}${Math.round(MAP.labelHaloNight * 255)
+  `${CHART.casing}${Math.round(MAP_LABEL.haloNight * 255)
     .toString(16)
     .padStart(2, "0")}`,
   CHART.casing,
 ];
 /** The halo round the map's labels: white and wide enough to read on the
  *  chart's own ink. */
-export const LABEL_HALO = { "text-halo-color": HALO_COLOUR, "text-halo-width": MAP.labelHalo } as const;
+export const LABEL_HALO = { "text-halo-color": HALO_COLOUR, "text-halo-width": MAP_LABEL.halo } as const;
+
+export type LabelKind = keyof typeof MAP_LABEL.kind;
+
+/** A kind of label's words as design/tokens.json's map.label.kind letters
+ *  them: Inter in its weight, at its size, fixed or by zoom (the token's
+ *  zooms are the app's levels, glZoom's less one). Every layer that writes
+ *  words on the map takes these, so one kind reads alike wherever it is. */
+export function labelText(kind: LabelKind): { "text-font": string[]; "text-size": number | ExpressionSpecification } {
+  const k: MapLabelKind = MAP_LABEL.kind[kind];
+  const size = typeof k.size === "number" ? k.size : labelByZoom(k.size.map(([z, px]) => [z - 1, px] as const));
+  return { "text-font": k.bold ? GL_FONT_BOLD : GL_FONT, "text-size": size };
+}
+
+/** And its halo: the chart's white (dimmed after dark) round dark or
+ *  coloured words, the tag's dark round white ones, or none for words on
+ *  their own chip, tab or pill, which is their ground. Each at the one
+ *  width, map.label.halo. */
+export function labelHalo(kind: LabelKind): { "text-halo-color"?: ExpressionSpecification | string; "text-halo-width"?: number } {
+  const halo = MAP_LABEL.kind[kind].halo;
+  if (halo === "light") return LABEL_HALO;
+  if (halo === "dark") return { "text-halo-color": CHART.tag, "text-halo-width": MAP_LABEL.halo };
+  return {};
+}
 
 /** A tap's reach and order: a mark within a finger's half-width (a 44 pt
  *  target), a line within 10 px; the route's airports

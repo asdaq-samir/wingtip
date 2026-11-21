@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.map
 
 import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.design.generated.WingtipMapZoom
 import app.wingtipmaps.android.map.MapStyle.e
 import app.wingtipmaps.android.map.MapStyle.glZoom
 import kotlinx.serialization.json.JsonArray
@@ -36,9 +37,9 @@ object SpecialUseLayers {
     const val TAB_RESTRICTED = "sua|tab|restricted"
     const val TAB_MOA = "sua|tab|moa"
 
-    /** The lines from Leaflet's 7, a few states across, as Class C; the
-     *  tabs from 8, with the Class B, C and D tabs. */
-    const val FROM = 7.0
+    /** The lines from a few states across, with Class D; the tabs with the
+     *  Class B, C and D tabs (design/tokens.json's map.zoom, the web's SUA_FROM). */
+    const val FROM = WingtipMapZoom.SPECIAL_USE
     const val LABELS = "sua-labels"
     val IDS = listOf("sua-band", "sua-line", LABELS)
 
