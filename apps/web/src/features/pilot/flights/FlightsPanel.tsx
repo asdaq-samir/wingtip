@@ -174,7 +174,7 @@ export function FlightsPanel({
           <QueryState query={vm.asked} fetching="Fetching your flights…" failed="Your flights could not be fetched." />
         ) : list.length === 0 ? (
           <EmptyState icon={<Route />} title={NO_FLIGHTS}>
-            Plan a route and Save it from Share; it is kept here.
+            {"Plan a route and Save it from the Brief's Share menu; it is kept here."}
           </EmptyState>
         ) : (
           <ListGroup title={onBack ? undefined : "Saved flights"} action={onBack ? undefined : edit}>
