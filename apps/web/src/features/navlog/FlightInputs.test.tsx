@@ -5,13 +5,15 @@
  * for an airplane picked before never puts it back. The suggestions and the
  * registry are stood in for; the N-number test is the engine's
  * (lib/engine/vitestSetup.ts loads it). And "Pick the airplane" asked from
- * a card over FPL lands in the field once the card has gone.
+ * a card over FPL lands in the field once the card has gone. Its ⓘ opens
+ * the airplane's card, or with none picked asks for one in the field.
  */
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import FlightInputs from "./FlightInputs";
 import { requestAirplanePick, useAirplanePick } from "../../lib/pickAirplane";
+import { useProfileOpen } from "../../lib/airplane/profileStore";
 
 // Each tail's registry answer, settled by the test.
 const answers = new Map<string, (record: { profile: string }) => void>();
@@ -119,5 +121,19 @@ describe("FlightInputs' airplane", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  test("its ⓘ opens the airplane's card, and with none picked puts the focus in the field", () => {
+    useProfileOpen.setState({ open: null });
+    const { input } = pills("mine", [{ value: "mine", label: "N12345" }]);
+    fireEvent.click(screen.getByRole("button", { name: "Airplane info" }));
+    expect(useProfileOpen.getState().open).toEqual({ tail: "N12345", focus: null });
+    cleanup();
+    useProfileOpen.setState({ open: null });
+    const none = pills();
+    fireEvent.click(screen.getByRole("button", { name: "Airplane info" }));
+    expect(useProfileOpen.getState().open).toBeNull();
+    expect(document.activeElement).toBe(none.input);
+    expect(input.isConnected).toBe(false);
   });
 });

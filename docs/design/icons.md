@@ -20,7 +20,8 @@ own maps follow this table.
 | myLocation | lucide `Navigation` | `location` / `location.fill` | `near_me` | The map's position button. |
 | brief | lucide `Sparkles` | `sparkles` | `auto_awesome` | The route box's AI brief. |
 | navLog | lucide `ListOrdered` | `list.number` | `format_list_numbered` | The nav log, in the route's menu. |
-| profile | lucide `ChartArea` | `chart.xyaxis.line` | `show_chart` | The side view. |
+| profile | lucide `ChartArea` | `chart.xyaxis.line` | `show_chart` | The side view; FPL's altitude pill's end. |
+| info | lucide `Info` | `info.circle` | `info` | The airplane's card, at the end of FPL's N-number pill. |
 | mapLayers | lucide `Map` | `map` | `layers` | The map's layers and weather. |
 | flightPlan | lucide `Route` | `point.topleft.down.to.point.bottomright.curvepath` | `route` | A route as a list's mark. |
 | nearest | lucide `LocateFixed` | `scope` | `my_location` | Nearest fields. |

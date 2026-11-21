@@ -9,8 +9,10 @@ import DepartPicker from "./DepartPicker";
 import AirplaneSuggestions, { type SuggestionRow } from "./AirplaneSuggestions";
 import { useAirplaneSuggestions } from "./useAirplaneSuggestions";
 import { Combobox, ComboboxContent, ComboboxInput } from "../../components/ui/combobox";
-import { PILL, PILL_FIELD, PILL_PREFIX, PREFIXED_FIELD } from "./pillLook";
-import { InputGroupAddon } from "../../components/ui/input-group";
+import { PILL, PILL_END, PILL_END_ADDON, PILL_FIELD, PILL_PREFIX, PREFIXED_FIELD } from "./pillLook";
+import { InputGroupAddon, InputGroupButton } from "../../components/ui/input-group";
+import { openAirplaneProfile } from "../../lib/airplane/profileStore";
+import { ICON } from "../../lib/icons";
 
 /**
  * The two inputs the nav log is computed from, in the planning panel's
@@ -224,6 +226,21 @@ export default function FlightInputs({
         >
           <InputGroupAddon className={PILL_PREFIX} aria-hidden="true">
             N-
+          </InputGroupAddon>
+          {/* Its ⓘ after the number (the owner, 2026-11-20: "can N number
+              show an info button"): the airplane's card, the one any
+              N-number opens (lib/airplane/profileStore); with none picked,
+              the field, as a tap on the pill asks for one. */}
+          <InputGroupAddon align="inline-end" className={PILL_END_ADDON}>
+            <InputGroupButton
+              size="icon-xs"
+              className={PILL_END}
+              aria-label="Airplane info"
+              onClick={() => (tailNow ? openAirplaneProfile(tailNow) : field.current?.focus())}
+              data-testid="aircraft-info"
+            >
+              <ICON.info aria-hidden="true" />
+            </InputGroupButton>
           </InputGroupAddon>
         </ComboboxInput>
         <ComboboxContent data-testid="aircraft-suggestions">

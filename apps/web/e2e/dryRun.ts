@@ -5,8 +5,8 @@ import { openPanel, sideDrawer, slow } from "./helpers";
  * and its start. helpers re-exports them, as the specs import them there. */
 
 /** The side view, a card over FPL, with the altitude's wheel in its
- *  corner: opened at rest from the route's Profile button, beside the AI
- *  brief's (the owner, 2026-11-04). */
+ *  corner: opened at rest from the Profile's button at the altitude pill's
+ *  end (ProfilePillButton; the owner, 2026-11-20). */
 export async function openProfile(page: Page) {
   await openPanel(page);
   const card = page.getByTestId("profile-card");
