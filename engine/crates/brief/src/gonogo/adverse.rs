@@ -12,13 +12,14 @@
 //!
 //! - a TFR the route goes through: flight in it is prohibited unless the
 //!   NOTAM allows it (14 CFR 91.137-91.145), a stop;
-//! - a Convective SIGMET or a SIGMET, weather hazardous to all aircraft
-//!   (AIM 7-1-6), a stop;
+//! - a Convective SIGMET, weather "hazardous to all categories of
+//!   aircraft", or a SIGMET, weather "expected to affect the safety of
+//!   aircraft operations" (AIM 7-1-6), a stop;
 //! - a Center Weather Advisory (AIM 7-1-6) and an urgent pilot report, the
 //!   UUA filed for hazardous weather such as severe turbulence or icing
 //!   (AIM 7-1-18), cautions;
-//! - an AIRMET or G-AIRMET, weather of lesser intensity than a SIGMET's
-//!   (AIM 7-1-6), a caution.
+//! - an AIRMET or G-AIRMET, weather "at intensities lower than those which
+//!   require the issuance of a SIGMET" (AIM 7-1-6), a caution.
 //!
 //! In that order -- the stops first, then the AIM's own sequence from the
 //! prohibition to the light-aircraft advisory -- and, of a kind, the one met
