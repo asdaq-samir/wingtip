@@ -7,7 +7,7 @@ Google Play's Data safety form and the iOS app's privacy manifest
 (`PrivacyInfo.xcprivacy`). Change it
 whenever the code changes what leaves a device or what the server keeps.
 Checked against the code on 2026-11-10 (the privacy and store audit: the phone number, the third parties the apps call directly, the traffic view's region, the export, deletion from the web).
-Last checked on 2026-11-21 (the prelaunch audit: the web's device storage and what sign-out clears, the backups' and snapshots' retention, the logs).
+Last checked on 2026-11-21 (the prelaunch audit: the web's device storage and what sign-out clears, the backups' and snapshots' retention, the logs; then the vitals work: Help Improve Wingtip Maps, the web's sampled speed figures, the iPhone's energy and disk figures, the planner's route counters).
 
 "Collected" is App Store Connect's meaning: sent off the device and kept
 longer than it takes to answer the request.
@@ -28,8 +28,8 @@ longer than it takes to answer the request.
 | Identifiers, User ID | The AI apps a pilot connects Wingtip to (the MCP connector, `docs/design/mcp-connector.md`): the app's registration (its name and callback, no pilot's), and for the pilot the consent given and the connection's tokens, under the account's id; no record of what was asked | Yes | App Functionality (answering the pilot's own AI app) | `oauth2_registered_client`, `oauth2_authorization`, `oauth2_authorization_consent` (Postgres, V40); the tokens last 15 minutes and refresh for 30 days |
 | Location, Precise | A flight's track, when a pilot saves it to a flight (the phones' flight recorder, the logbook drafted from it): linked to the account, unlike the live position below | Yes | App Functionality | `flight_tracks` |
 | Purchases, Purchase History | The subscription: when the free month started and ends, and a paid plan's term, its store and the store's own id for it | Yes | App Functionality (the paid features) | `subscriptions` |
-| Diagnostics, Crash Data | A fault on the device: the web's uncaught errors (message, stack, page path, browser; `lib/errorReports`), the iPhone's MetricKit crash, hang, CPU and disk-write diagnostics (`Diagnostics/`), Android's exit reasons, ANR traces and uncaught exceptions (`diagnostics/`); each with the app's version, the OS version and phone/tablet/desktop, scrubbed of queries, emails, home folders and UUIDs (`DiagnosticText`) | No | App Functionality (finding faults) | `diagnostics` (Postgres), 30 days; a line in the server's log (30 days) |
-| Diagnostics, Performance Data | How fast the app was on the device: the web's Core Web Vitals (LCP, INP, CLS, FCP, TTFB) and long tasks, the iPhone's launch, resume, hang and scroll-hitch figures, peak memory and memory exits (MetricKit), Android's launch time and janky frames (JankStats); the page's name, phone, tablet or desktop, and the app's build; nothing of the pilot's (`lib/speed`, `lib/longTasks`, SpeedController, DiagnosticsController) | No | App Functionality (keeping the app fast) | `speed_samples` (Postgres), 400 days |
+| Diagnostics, Crash Data | A fault on the device: the web's uncaught errors (message, stack, page path, browser; `lib/errorReports`), the iPhone's MetricKit crash, hang, CPU and disk-write diagnostics (`Diagnostics/`), Android's exit reasons, ANR traces and uncaught exceptions (`diagnostics/`); each with the app's version, the OS version and phone/tablet/desktop, scrubbed of queries, emails, home folders and UUIDs (`DiagnosticText`); sent only while Help Improve Wingtip Maps is on (Help & About, on unless the pilot turns it off, kept on the device: `lib/helpImprove`, `Diagnostics/HelpImprove.swift`, `diagnostics/HelpImprove.kt`) | No | App Functionality (finding faults) | `diagnostics` (Postgres), 30 days; a line in the server's log (30 days) |
+| Diagnostics, Performance Data | How fast the app was on the device: the web's Core Web Vitals (LCP, INP, CLS, FCP, TTFB) and long tasks, from a quarter of page loads (`SPEED_SAMPLE`), the iPhone's launch, resume, hang and scroll-hitch figures, peak memory and memory exits, and the day's energy and disk use as MetricKit measures them (CPU and GPU time, time the GPS was held at its best accuracy, time in the foreground and background, megabytes written), Android's launch time and janky frames (JankStats); the page's name, phone, tablet or desktop, and the app's build; nothing of the pilot's; only while Help Improve Wingtip Maps is on, as above (`lib/speed`, `lib/longTasks`, SpeedController, DiagnosticsController) | No | App Functionality (keeping the app fast) | `speed_samples` (Postgres), 400 days |
 
 ## Data that leaves the device but is not collected
 
@@ -225,7 +225,11 @@ see above),
 **App activity** (other user-generated content: aircraft, flights,
 logbook, notes) and **App info and performance** (crash logs and
 diagnostics, not linked: not tied to the account; crash logs gone from
-the log after 30 days, speed measurements after 400).
+the log after 30 days, speed measurements after 400; sent only while
+Help Improve Wingtip Maps is on). Google Play's Android vitals (crash and
+ANR rates, start-up, battery) come from the system for users who share
+usage and diagnostics with Google, under Android's own setting: Google's
+collection, not the app's, and nothing the app sends.
 All collected for app functionality and account management,
 none shared with third parties as Google defines sharing (the
 recipients above process data for the app), all encrypted in transit,
@@ -290,6 +294,15 @@ on `wingtip.schedule` started in `app.main`), whether or not ingest runs:
   not the airplane is heard again. No pilot or account is stored with
   them; a pilot who opens their own airplane's card has its public
   flights recorded the same way.
+
+The planner counts its own calls, for the owner's status page
+(`app.route_metrics`, Prometheus's client): for each route its template
+(`/api/airport/{ident}`, never the address asked), the method, the
+status, and how long it took, in memory from its start, gone when it
+restarts; served at `/metrics` on its own port, which the gateway does
+not forward. No point, ident, query or pilot is in them. The status page
+reads the apps' faults and speed figures by build from the rows above
+(`AppHealthController`), keeping nothing more.
 
 In the gateway, a connection an AI app holds (`oauth2_authorization`)
 whose every code and token ran out over a day ago is let go each night,

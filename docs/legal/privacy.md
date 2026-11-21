@@ -1,6 +1,6 @@
 # Privacy policy
 
-*Draft for the owner to review. Checked against the code on 12 November 2026; not yet in effect.*
+*Draft for the owner to review. Checked against the code on 21 November 2026; not yet in effect.*
 
 Wingtip Maps is a flight planner for VFR and IFR flight, on the web, the iPhone and Android. This page says what the app keeps about you, where it keeps it, what leaves your device and who receives it. It describes what the app does today; where it says "we", it means the people who run Wingtip Maps.
 
@@ -78,14 +78,16 @@ Only what you ask about leaves Wingtip, and only to the app you connected. We do
 So we hear when the app breaks without you having to write in, each app sends us a report when something goes wrong:
 
 - **the web app:** an error nobody caught, with its message and where in the app's code it happened;
-- **the iPhone app:** the crash, hang and exception reports Apple's MetricKit gives the app, and its daily launch time, hang time, scrolling smoothness, most memory used and how often the system closed it for using too much;
+- **the iPhone app:** the crash, hang and exception reports Apple's MetricKit gives the app, and its daily launch time, hang time, scrolling smoothness, most memory used, how often the system closed it for using too much, and how much battery and storage it used as MetricKit measures them (processor and graphics time, time the GPS was held at its most accurate, time open and in the background, data written);
 - **the Android app:** why the app last stopped when the system stopped it (a crash, an app not responding, low memory), a crash's stack trace, and how long it took to start and how many frames were slow.
 
 Each report carries the app's version, the system's version and whether the device is a phone, tablet or computer. It carries nothing of yours: no account, no address, no route, no position. Our server takes out any web address's query, any email address, any user name in a folder's path and any per-install identifier before keeping it. Faults are kept 30 days.
 
-The web app also sends, when you leave a page, how fast it was on your device (Google's Core Web Vitals and how long the browser was busy), with the page's name, the kind of device and the app's version, nothing else. Speed figures from all three apps are kept 400 days, to see whether the app is getting faster or slower.
+The web app also sends, when you leave a page (from about one page load in four), how fast it was on your device (Google's Core Web Vitals and how long the browser was busy), with the page's name, the kind of device and the app's version, nothing else. Speed figures from all three apps are kept 400 days, to see whether the app is getting faster or slower.
 
-There is no analytics or advertising kit in any of the apps, and no third party receives these reports.
+**You can turn these reports off.** *Help Improve Wingtip Maps*, in Settings under Help & About, is on until you turn it off; off, the app on that device sends no fault report and no speed figure. The choice is kept on the device, not with your account.
+
+There is no analytics or advertising kit in any of the apps, and no third party receives these reports. On Android, Google Play's own vitals (crash and battery figures the system shares with Google if you allow it in Android's settings) are Google's, not ours.
 
 ## Other airplanes' tracks
 

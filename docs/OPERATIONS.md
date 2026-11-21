@@ -80,8 +80,8 @@ folders and install ids, `DiagnosticText`):
 
 | App | Faults | Speed |
 |---|---|---|
-| Web | uncaught errors, unhandled promises, renders React could not finish (`lib/errorReports`) | Core Web Vitals (`lib/speed`, Google's web-vitals), long tasks (`lib/longTasks`) |
-| iPhone | MetricKit's crash, hang, CPU and disk-write diagnostics (`Diagnostics/DiagnosticsReporter`) | MetricKit's launch, resume, hang time, scroll hitches, peak memory, memory exits |
+| Web | uncaught errors, unhandled promises, renders React could not finish (`lib/errorReports`) | Core Web Vitals (`lib/speed`, Google's web-vitals), long tasks (`lib/longTasks`), from a quarter of page loads (`lib/helpImprove`'s `SPEED_SAMPLE`) |
+| iPhone | MetricKit's crash, hang, CPU and disk-write diagnostics (`Diagnostics/DiagnosticsReporter`) | MetricKit's launch, resume, hang time, scroll hitches, peak memory, memory exits, and the day's energy and disk (CPU, GPU and best-accuracy GPS time, foreground and background time, MB written) |
 | Android | `ApplicationExitInfo` (crashes, ANRs with traces, low-memory kills), the uncaught handler (`diagnostics/`) | start-up time, slow frames (JankStats); Play vitals covers the rest once published |
 
 Faults are kept **30 days** in the `diagnostics` table (let go each
@@ -90,4 +90,25 @@ log as one line each, and read by a developer at `GET
 /api/diagnostics?days=N` (newest 200, up to 30 days). Speed figures go
 to `speed_samples` (400 days), read on the console's Speed page. A
 caller may send 30 reports an hour; the rest are dropped.
+Nothing is sent from a device whose pilot turned **Help Improve Wingtip
+Maps** off (Settings, Help & About; on by default, kept on the device:
+`lib/helpImprove`, `Diagnostics/HelpImprove.swift`,
+`diagnostics/HelpImprove.kt`).
+
+## The owner's status page
+
+The web's developer console, System (the developer role only), is the
+status page:
+
+- **Live feeds**: each SWIM feed and weather product, its state, when it
+  last came in and since when it is stale (`app.feeds`).
+- **Routes**: each planner route by its template, its calls since the
+  planner started, those of 500 or more and their share, and p50 and p95
+  times (`app.route_metrics`, Prometheus's client; the same counters in
+  Prometheus's text at the planner's own `/metrics`, not forwarded by the
+  gateway). In memory: a restart starts them again.
+- **Apps**: each build's crashes, hangs and other faults, and its
+  headline speed figures at the 75th percentile, over a day, 7 or 30
+  (`GET /api/diagnostics/versions`, `AppHealthController`).
+- **Recent errors** and **Speed**, as before.
 docs/privacy-inventory.md lists what is collected.
