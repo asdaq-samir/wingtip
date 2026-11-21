@@ -6,7 +6,8 @@ to the site), App Store Connect's App Privacy answers,
 Google Play's Data safety form and the iOS app's privacy manifest
 (`PrivacyInfo.xcprivacy`). Change it
 whenever the code changes what leaves a device or what the server keeps.
-Last checked against the code on 2026-11-10 (the privacy and store audit: the phone number, the third parties the apps call directly, the traffic view's region, the export, deletion from the web).
+Checked against the code on 2026-11-10 (the privacy and store audit: the phone number, the third parties the apps call directly, the traffic view's region, the export, deletion from the web).
+Last checked on 2026-11-21 (the prelaunch audit: the web's device storage and what sign-out clears, the backups' and snapshots' retention, the logs).
 
 "Collected" is App Store Connect's meaning: sent off the device and kept
 longer than it takes to answer the request.
@@ -296,6 +297,46 @@ nobody connected through goes with its consents
 (`ConnectorHousekeeping`, 03:45 UTC); a consent otherwise stays until
 the pilot deletes their account. Fault reports go after 30 days, speed
 figures after 400, sign-in links a day after they expire.
+
+## Kept in backups
+
+The nightly `pg_dump` and the planner's notes (`infra/server/backup.sh`)
+go to the server bucket, whose `backups/` expire after 14 days and whose
+overwritten or expired copies after 30 more (`ServerBucket`'s lifecycle,
+`infra/cloudformation/template.yaml`); the data disk's daily snapshots
+keep seven (`SnapshotPolicy`). So a deleted account's rows can stay in a
+backup for up to 44 days, and in a snapshot for 7, until each ages out.
+A backup is restored only to recover the service, never an account; a
+restore from before a deletion brings the account back, and nothing yet
+deletes it again by itself (the prelaunch audit's P3: the owner deletes
+it by hand after a restore, until a log of deletions does). The privacy
+policy says so ("Your copy and deleting it").
+
+## Kept on the device (the web)
+
+Nothing below leaves the browser unless a row above says so; it is the
+browser's storage, cleared with the site's data.
+
+- **localStorage, every key under `wingtip.`**: the preferences
+  (`wingtip.preferences`: the map's look, Home, Favorites, recents,
+  minimums, loads, the airplane flown and those followed), a flight's
+  track opened from a file (`wingtip.track.<flight>`), the GPS track the
+  phone recorded for a logbook draft (`wingtip.autolog.track`), own
+  ship's trail (`wingtip.owntrail`, cleared by its own button), the
+  checklists, the plan's undo history, the risk assessment, the routes
+  and charts kept for the air, the coach's certificate, the drills.
+- **The service worker's caches** (`vite.config.ts`): chart tiles,
+  airport diagrams and pictures, and the planner's answers
+  (`planner-now` a day, `planner-steady` 60 days, `planner-api` 30 days),
+  whose addresses can carry a point asked about (Nearest, the airspace
+  at a point); `pilot-own`, the pilot's account, airplanes and flights,
+  30 days.
+- **Signing out** (`useLogout`) forgets what was the pilot's: their part
+  of the preferences, the checklists, the route kept for the air, the
+  flights' tracks and the recorded GPS track (since the prelaunch audit,
+  2026-11-21), and `pilot-own`. The map's look, the trail and the public
+  answers stay, the device's. **Deleting the account**
+  (`useDeleteAccount`) removes every `wingtip.` key and `pilot-own`.
 
 ## Kept after an account is deleted
 

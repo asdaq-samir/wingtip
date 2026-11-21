@@ -151,6 +151,39 @@ took it to cents, the reader in the planner rather than the map.
 
 The template's `BudgetEmail` sets an alarm at 80% of $50 a month.
 
+### As pilots come
+
+Recomputed on 2026-11-21 (the prelaunch audit) from today's archives and
+AWS's public us-east-1 prices (CloudFront pay-as-you-go: 1 TB and 10
+million requests a month always free, then $0.085 a GB and $0.01 per
+10,000 HTTPS requests; EC2 on-demand, Spot taken at about a third). One
+cycle's archives are about 30 GB (sec@2x 18 GB, sec 6.7, tac@2x 2.3, tac
+0.9, IFR 1.8, the overlays 0.12), PNG tiles of 35 KB on average at @2x.
+An active pilot is taken as ten sessions a month of about 200 tiles and
+100 answers each, some 80 MB and 3,000 requests (the web's service
+worker keeps 20,000 tiles for the cycle, so a pilot's own area costs
+little the second time). The planner's CPU per route and its memory
+were not measured for this; the server's services add up to about
+3.5 GB (weather 768 MB, ingest 384 MB, the gateway's JVM, the planner,
+Postgres), which a t3a.medium's 4 GB barely holds, so a t3a.large is
+the launch size.
+
+| A month | 100 pilots | 1,000 pilots | 10,000 pilots |
+|---|---|---|---|
+| The server, Spot (on demand) | t3a.large ~$19 ($55) | t3a.large ~$19 ($55) | t3a.xlarge ~$40 ($110) |
+| IPv4 address, disks, snapshots | ~$9 | ~$9 | ~$12 (an 80 GB data disk) |
+| S3, three cycles of archives (~90 GB) | ~$2.10 | ~$2.10 | ~$2.10 |
+| CloudFront (data, requests) | $0 (8 GB, 0.3 M) | $0 (80 GB, 3 M) | ~$20 (800 GB free, 30 M requests) |
+| SES, Secrets Manager, Route 53, logs, ECR, the cycle's Fargate task | ~$5 | ~$5 | ~$9 |
+| **Total, Spot (on demand)** | **~$35 ($71)** | **~$35 ($71)** | **~$83 ($153)** |
+| Per pilot | $0.35 | $0.035 | $0.008 |
+
+The server is the cost until some 10,000 pilots; the CDN's bill is its
+requests, not its bytes, and the always-free terabyte holds about 12,000
+pilots' tiles. ADS-B Exchange's RapidAPI plan (10,000 requests a month)
+is not in the table: past a few thousand pilots its fallback needs a
+bigger plan or to be left to adsb.lol.
+
 ## Rehearse it locally
 
 [`infra/rehearsal/run.sh`](../infra/rehearsal/run.sh) runs the production stack on this machine before anything goes to AWS. It is
