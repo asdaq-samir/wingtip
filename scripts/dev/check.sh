@@ -54,12 +54,33 @@ worktree_hash() { echo "$here" | sha | cut -c1-8; }
 # test-python reads too) in the image of its requirements: ruff, its import
 # contracts, then its tests, as CI runs them. The X-Plane driver needs the
 # standard library alone and runs in wingtip's image.
+#
+# Each leg has a data/raw volume of its own (wingtip-check-raw-<leg>), since
+# all-changed runs the legs side by side and they share nothing else: the
+# suites fetch and refresh the FAA files in data/raw (airports.csv, faa_nasr,
+# the stores), so one leg could read a file another was replacing, and the
+# planner's navlog test once saw altitude 10500 where 4500 was expected while
+# the other legs ran beside it (2026-11-20; it passed alone and on a rerun).
+# CI is unaffected: each suite is its own job with its own cache. A leg's
+# first run copies the old shared volume, if there is one, so it starts warm.
+raw_volume() {
+  local vol=wingtip-check-raw-$1 old=wingtip-check-raw
+  if ! docker volume inspect "$vol" >/dev/null 2>&1; then
+    docker volume create "$vol" >/dev/null
+    if docker volume inspect "$old" >/dev/null 2>&1; then
+      docker run --rm -v "$old:/from:ro" -v "$vol:/to" busybox cp -a /from/. /to/ >/dev/null 2>&1 || true
+    fi
+  fi
+  echo "$vol"
+}
+
 run_py() {
-  local leg=$1 dir dev tag
+  local leg=$1 dir dev tag raw
   read -r dir dev < <("$here/scripts/ci/python_suite.sh" --where "$leg")
   [ -n "$dev" ] || { dir=services/planner dev=requirements-dev-wingtip.txt; }
   tag=$(py_image "$dir" "$dev")
-  docker run --rm -v "$here:/repo" -v wingtip-check-raw:/repo/data/raw -e PYTEST_ADDOPTS="-p no:cacheprovider" \
+  raw=$(raw_volume "$leg")
+  docker run --rm -v "$here:/repo" -v "$raw:/repo/data/raw" -e PYTEST_ADDOPTS="-p no:cacheprovider" \
     -w /repo "$tag" scripts/ci/python_suite.sh --local "$leg"
 }
 
