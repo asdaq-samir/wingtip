@@ -633,7 +633,9 @@ off by default (the owner, 2026-11-13).
    in degrees magnetic, three figures and north 360 ("274°", "004°"): the
    fix's true course (the W3C Geolocation API's `coords.heading`; a dry
    run's, the plan's track) less the engine's WMM variation at the fix
-   (`magnetic_variation`; `trackFigure`), "—" with no position, no course
+   (`magnetic_variation`; `trackFigure`), asked again only a mile on or
+   on a new UTC day (`lib/magnetic`'s `nearVariation`: the WMM's field
+   changes over miles and years, its track written in whole degrees), "—" with no position, no course
    or below flying speed (the engine's `underway`), a column always. The
    fuel stays on the timeline's tank gauges, the nav log and the Brief,
    no longer on the strip, so the strip no longer opens its breakdown. The

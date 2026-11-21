@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { loadDeclination, magneticOf } from "./magnetic";
+import { engineReady } from "./engine/engine";
+import { loadDeclination, magneticOf, nearVariation } from "./magnetic";
 
 describe("the variation at a point (WMM-2025)", () => {
   it("agrees with the declinations NOAA's calculator gave the planner", async () => {
@@ -34,5 +35,21 @@ describe("a true direction as a magnetic one", () => {
     expect(magneticOf(90, -4)).toBe(94);
     expect(magneticOf(5, 10)).toBe(355);
     expect(magneticOf(358, -4)).toBe(2);
+  });
+
+  it("keeps the variation within a mile of where it was asked, and asks again a mile on or on a new day", async () => {
+    await engineReady;
+    let day = new Date("2026-09-21T12:00:00Z");
+    const near = nearVariation(() => day);
+    const exact = await loadDeclination(day);
+    const first = near(44.58, -90.14);
+    expect(first).toBe(exact(44.58, -90.14));
+    // Half a mile north (1/120 of a degree): the same figure, not asked again.
+    expect(near(44.58 + 0.5 / 60, -90.14)).toBe(first);
+    // Thirty miles east: asked again, the engine's own figure there.
+    expect(near(44.58, -90.14 + 0.7)).toBe(exact(44.58, -90.14 + 0.7));
+    // Back near the first point on another day: asked again for that day.
+    day = new Date("2028-09-21T12:00:00Z");
+    expect(near(44.58, -90.14)).toBe((await loadDeclination(day))(44.58, -90.14));
   });
 });

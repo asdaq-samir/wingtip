@@ -1821,6 +1821,8 @@ WebAssembly and what Keep for the Air fetched; the page asks it first.
   newest radar frame over the corridor (`radar-frames`, capped).
 - The glide ring keeps the last field elevation it was given (within 20
   nm of that field).
+  Off, its default, it reads no fix at all, so it is not drawn again at
+  each GPS fix for nothing (`GlideRingGl`).
 - Ages: the airport weather marks say "Field weather 45m old" in the
   map's credits past half an hour; the briefing's age is the network's,
   after a reload too.
@@ -1955,7 +1957,11 @@ apart (`terrain/airspaceShelves`):
   mountain there would mislead (`terrain/heightStretch`'s
   `drawnStretch`); the Heights picked come back as the view ends, and a
   line under the control says "True height in the pilot's view" (or
-  while a replay camera follows) meanwhile, no toast. The map tilts to 85 degrees in 3D
+  while a replay camera follows) meanwhile, no toast. Both cameras move
+  in the frame after the run's or the replay's clock moves (a store
+  subscription), not in a loop of every frame: paused, they ask for no
+  frame at all, and only an orbit, which turns by itself, draws each
+  frame (the waste audit of 2026-11-21). The map tilts to 85 degrees in 3D
   (`map.pitch-max`), low enough to see the shelves from the side.
 
 - Each Class B, C and D shelf is labelled at its top, facing the screen,
