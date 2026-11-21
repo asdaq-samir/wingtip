@@ -342,6 +342,9 @@ export function usePlan({
     stage,
     unflyable,
     unknownPlace,
+    // The nav log failed (no legal altitude, the winds, the planner down):
+    // what waits on the plan asks without it (usePlanAnswer's Routes).
+    planFailed: !!navlog.error,
     // The log on screen is the one before the altitude asked for, whose
     // own is still coming.
     replanning: holding,

@@ -920,7 +920,7 @@ the search's pill, each way's name and time, the one flown filled; on the
 map `WaysGl` draws it solid magenta and the others dotted, their chips
 white at 12 points, the flown way's words in the map's blue a step
 deeper for words, `map-blue-ink` (5.4:1 on the white chip; `routeWays`' `wayInk`), named and kept apart by MapLibre's collision)
-under the folded route's figures. The toggle is drawn only on the page that is up,
+under the folded route's figures. The ways are asked once, when the route's plan is in (or has failed), at its highest leg's altitude for Avoid Class B (`useRouteWays`' `planSettled`), not before it and again at it: the planner's costliest call had been made twice for every route. The toggle is drawn only on the page that is up,
 so there is one in the page. The account button took the toggle's
 place over the map: a glass circle the size of the 3D's in the left-hand
 column (`MapControls`' `AccountCircle`), so on a bottom sheet it rides
