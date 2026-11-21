@@ -233,8 +233,8 @@ export function EndRow({
 
 /** The route typed or pasted whole, the last row of the timeline before
  *  the route is whole, where Add a Stop is after: a tap opens the route's
- *  field (RouteBox), as More's Type the Route does on a whole route, with
- *  More's keyboard glyph. `trailing`, the field's own ✕ or Undo while it
+ *  field (RouteBox), as the keyboard button at Add a Stop's end does on a
+ *  whole route (TypeRouteButton), with its glyph. `trailing`, the field's own ✕ or Undo while it
  *  is folded away. */
 export function TypeRouteRow({ onType, trailing }: { onType: () => void; trailing?: ReactNode }) {
   return (
