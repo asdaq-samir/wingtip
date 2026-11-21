@@ -59,8 +59,10 @@ public class DeletionsReapplied {
                 }
             } catch (RuntimeException failed) {
                 // The id alone, never the address: the log outlives the account.
-                log.error("A deleted account ({}) came back and could not be deleted again: {}",
-                        id, failed.getClass().getSimpleName());
+                log.error(
+                        "A deleted account ({}) came back and could not be deleted again: {}",
+                        id,
+                        failed.getClass().getSimpleName());
             }
         }
         if (again > 0) {

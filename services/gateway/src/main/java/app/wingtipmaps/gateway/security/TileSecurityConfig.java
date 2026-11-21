@@ -35,8 +35,8 @@ public class TileSecurityConfig {
 
     /** The tile routes' addresses through the gateway (the planner's
      *  /api/chart-tile, /api/terrain-tile and /api/overlay-tiles). */
-    static final List<String> TILE_PREFIXES = List.of(
-            "/api/planner/chart-tile/", "/api/planner/terrain-tile/", "/api/planner/overlay-tiles");
+    static final List<String> TILE_PREFIXES =
+            List.of("/api/planner/chart-tile/", "/api/planner/terrain-tile/", "/api/planner/overlay-tiles");
 
     static RequestMatcher tiles(UpstreamRoutes upstream) {
         RequestMatcher open = upstream.matcher(UpstreamRoutes.Access.PUBLIC);

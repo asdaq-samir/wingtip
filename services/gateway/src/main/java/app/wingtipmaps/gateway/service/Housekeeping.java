@@ -52,10 +52,7 @@ public class Housekeeping {
     private final DeletionsReapplied deletions;
 
     public Housekeeping(
-            SpeedSampleRepository samples,
-            MagicLinkRepository links,
-            JdbcTemplate jdbc,
-            DeletionsReapplied deletions) {
+            SpeedSampleRepository samples, MagicLinkRepository links, JdbcTemplate jdbc, DeletionsReapplied deletions) {
         this.samples = samples;
         this.links = links;
         this.jdbc = jdbc;

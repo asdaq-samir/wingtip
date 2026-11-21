@@ -40,8 +40,6 @@ public interface PilotRepository extends JpaRepository<Pilot, Long> {
      *  transaction, so a restore from an older backup deletes the account
      *  again (DeletionsReapplied). Its first deletion's time is kept. */
     @Modifying
-    @Query(
-            value = "INSERT INTO deleted_accounts (pilot_id) VALUES (:id) ON CONFLICT DO NOTHING",
-            nativeQuery = true)
+    @Query(value = "INSERT INTO deleted_accounts (pilot_id) VALUES (:id) ON CONFLICT DO NOTHING", nativeQuery = true)
     int noteDeleted(@Param("id") Long id);
 }

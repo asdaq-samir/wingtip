@@ -228,7 +228,8 @@ public class PlannerProxyController {
             for (String name : route.headers()) {
                 response.headers().firstValue(name).ifPresent(value -> builder.header(name, value));
             }
-            String type = response.headers().firstValue(HttpHeaders.CONTENT_TYPE).orElse(null);
+            String type =
+                    response.headers().firstValue(HttpHeaders.CONTENT_TYPE).orElse(null);
             boolean stream = StreamingProxy.isStream(type);
             return builder.body(StreamingProxy.pipe(response.body(), stream));
         });

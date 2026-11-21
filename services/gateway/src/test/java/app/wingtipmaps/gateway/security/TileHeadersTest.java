@@ -64,7 +64,8 @@ class TileHeadersTest {
 
     @Test
     void aPageKeepsItsHeaders() throws Exception {
-        MockHttpServletResponse page = mockMvc.perform(get("/api/me")).andReturn().getResponse();
+        MockHttpServletResponse page =
+                mockMvc.perform(get("/api/me")).andReturn().getResponse();
         assertThat(page.getHeader("Content-Security-Policy")).isNotBlank();
         assertThat(page.getHeader("X-Frame-Options")).isEqualTo("DENY");
     }

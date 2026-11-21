@@ -75,11 +75,15 @@ class HousekeepingTest extends AccountTestBase {
                         "SELECT count(*) FROM speed_samples WHERE recorded_at > ?",
                         Timestamp.from(now.minus(Duration.ofDays(400)))))
                 .isEqualTo(1);
-        assertThat(count("SELECT count(*) FROM magic_links WHERE email = ?", email)).isEqualTo(1);
+        assertThat(count("SELECT count(*) FROM magic_links WHERE email = ?", email))
+                .isEqualTo(1);
         // The reminder whose day is past guards nothing; today's and next week's still do.
-        assertThat(count("SELECT count(*) FROM reminders_sent WHERE pilot_id = ?", pilot.getId())).isEqualTo(2);
-        assertThat(count("SELECT count(*) FROM deleted_accounts WHERE pilot_id = -1")).isZero();
-        assertThat(count("SELECT count(*) FROM deleted_accounts WHERE pilot_id = -2")).isEqualTo(1);
+        assertThat(count("SELECT count(*) FROM reminders_sent WHERE pilot_id = ?", pilot.getId()))
+                .isEqualTo(2);
+        assertThat(count("SELECT count(*) FROM deleted_accounts WHERE pilot_id = -1"))
+                .isZero();
+        assertThat(count("SELECT count(*) FROM deleted_accounts WHERE pilot_id = -2"))
+                .isEqualTo(1);
     }
 
     @Test
@@ -105,8 +109,10 @@ class HousekeepingTest extends AccountTestBase {
 
         assertThat(deletions.reapply()).isEqualTo(1);
 
-        assertThat(count("SELECT count(*) FROM pilots WHERE id = ?", leaving.getId())).isZero();
-        assertThat(count("SELECT count(*) FROM pilots WHERE id = ?", staying.getId())).isEqualTo(1);
+        assertThat(count("SELECT count(*) FROM pilots WHERE id = ?", leaving.getId()))
+                .isZero();
+        assertThat(count("SELECT count(*) FROM pilots WHERE id = ?", staying.getId()))
+                .isEqualTo(1);
         // The planner was asked again to forget the notes the restore brought back.
         assertThat(FakePlanner.asked).containsExactly("DELETE /api/checkpoint-notes/mine pilot=" + leaving.getId());
         // And again finds nothing to do.

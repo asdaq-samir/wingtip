@@ -173,8 +173,10 @@ class FlightPersistenceTest {
         Flight saved =
                 flights.save(new Flight(pilot, null, "C81", "KDLH").fileNavLog(navLog(), 2500, 323.6, 171.0, 24.2));
 
-        FlightCheckpoint last =
-                flights.findWithNavLogById(saved.getId()).orElseThrow().getCheckpoints().get(2);
+        FlightCheckpoint last = flights.findWithNavLogById(saved.getId())
+                .orElseThrow()
+                .getCheckpoints()
+                .get(2);
 
         assertThat(last.getLegDistanceNm()).isNull();
         assertThat(last.getEteMin()).isNull();

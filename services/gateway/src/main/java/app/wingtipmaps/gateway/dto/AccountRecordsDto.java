@@ -10,7 +10,8 @@ import org.jspecify.annotations.Nullable;
  * the pilot's export: the reminders already emailed (so none is sent
  * twice) and the subscription row.
  */
-public record AccountRecordsDto(List<SentReminder> remindersSent, @Nullable SubscriptionRow subscription) {
+public record AccountRecordsDto(
+        List<SentReminder> remindersSent, @Nullable SubscriptionRow subscription) {
 
     /** A reminder emailed: what it was of, the day it runs out, how many days before. */
     public record SentReminder(String what, LocalDate dueOn, int daysBefore, Instant sentAt) {}

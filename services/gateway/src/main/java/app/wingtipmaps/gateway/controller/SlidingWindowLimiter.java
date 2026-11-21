@@ -41,6 +41,7 @@ public final class SlidingWindowLimiter {
      *  the next call scanned it all again (10,000 checks a request on the
      *  open speed and diagnostics endpoints under a spray of addresses). */
     static final Duration PRUNE_EVERY = Duration.ofMinutes(1);
+
     static final int MOST_KEYS = 10_000;
 
     private final Duration window;
