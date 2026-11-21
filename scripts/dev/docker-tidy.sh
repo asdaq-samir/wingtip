@@ -40,7 +40,7 @@ case "${1:-}" in
 esac
 
 # The volumes kept whether or not a container uses them (shell patterns).
-KEEP=(wingtip-cargo-* "wingtip-sccache*" wingtip-npm* wingtip-format-npm wingtip-m2 fp-m2 wingtip-check-raw "wingtip_*" "fpam_*")
+KEEP=(wingtip-cargo-* "wingtip-sccache*" wingtip-npm* wingtip-format-npm wingtip-m2 fp-m2 "wingtip-check-raw*" "wingtip_*" "fpam_*")
 kept() {
   local p
   for p in "${KEEP[@]}"; do

@@ -26,8 +26,8 @@
 #   downloads), wingtip-cargo-target-tests-<rust>-<arch>-<hash of the worktree's path>
 #   (the engine tests' build, one per worktree; tidy-build-caches.sh removes
 #   those of worktrees that are gone), wingtip-cargo-tools (cargo-machete),
-#   wingtip-check-raw (the FAA files the Python tests fetch into
-#   data/raw, as CI's cache keeps them), fp-m2 (Maven's repository).
+#   wingtip-check-raw-<leg> (the FAA files each Python leg's tests fetch
+#   into data/raw, as CI's cache keeps them, one volume a leg), fp-m2 (Maven's repository).
 # Every worktree is mounted at /w in the engine's container, so sccache
 # shares the engine's own crates between worktrees by their content; the
 # target stays the worktree's own, since Cargo's freshness is by mtime.
