@@ -23,7 +23,7 @@ from collections import Counter
 from datetime import datetime
 
 
-from . import chart_archives, chart_cycle, chart_prepare, chart_publish, chart_pyramid, chart_serving, chart_sheets, config
+from . import chart_archives, chart_cuts, chart_cycle, chart_prepare, chart_publish, chart_pyramid, chart_serving, chart_sheets, config
 from .chart_kinds import KINDS
 
 log = logging.getLogger(__name__)
@@ -101,6 +101,9 @@ def build_cycle(cycle: str, kinds: tuple = tuple(KINDS), workers: int | None = 2
         log.info("cycle %s: preparing sheets", cycle)
         say(f"fetching and preparing sheets ({', '.join(todo)})")
         chart_prepare.prepare_all(todo, cycle)
+        # Before a tile is drawn: a cycle that cuts what the served one
+        # did not stops here, unserved, until `charts accept-cuts`.
+        chart_cuts.gate(cycle)
         for key in todo:
             log.info("cycle %s: rendering the %s pyramid", cycle, key)
             say(f"rendering the {key} pyramid")

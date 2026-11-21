@@ -22,7 +22,9 @@ entry point):
   passes; on its own, the one-off conversion of a cycle drawn before
   there were archives.
 - `prepare` fetches every sheet, `pyramid` renders every tile, `check`
-  looks for daylight between adjacent sheets, `publish` uploads a
+  looks for daylight between adjacent sheets and for cuts a new cycle made
+  that the served one did not (it fails on those, with a preview of each;
+  `accept-cuts <cycle>` records the set once looked at), `publish` uploads a
   complete cycle's archives, and `unmask` takes the masked lines out of
   sheets prepared before `prepare` did it itself and renders their tiles
   again.
@@ -44,6 +46,7 @@ from pathlib import Path
 from wingtip import (
     altitude,
     chart_archives,
+    chart_cuts,
     chart_cycle,
     chart_grid,
     chart_kinds,
@@ -93,7 +96,7 @@ def main(argv: list | None = None) -> int:
         prog="python -m charts", description="FAA charts: fetch every sheet, render every tile, build the overlays."
     )
     sub = parser.add_subparsers(dest="command", required=True)
-    for name in ("run", "overlays", "prepare", "pyramid", "refresh", "check", "publish", "unmask", "pack", "next"):
+    for name in ("run", "overlays", "prepare", "pyramid", "refresh", "check", "publish", "unmask", "pack", "next", "accept-cuts"):
         p = sub.add_parser(name)
         if name in ("prepare", "pyramid"):
             p.add_argument("--kind", nargs="+", choices=list(chart_kinds.KINDS), default=list(chart_kinds.KINDS))
@@ -113,6 +116,10 @@ def main(argv: list | None = None) -> int:
                 default=get_settings().charts_cycle_lead_days,
                 help="how many days before its date the next cycle is staged (CHARTS_CYCLE_LEAD_DAYS)",
             )
+        if name == "accept-cuts":
+            p.add_argument("cycle", help="the cycle whose cuts were looked at (the previews `check` wrote)")
+        if name == "check":
+            p.add_argument("--cycle", help="the cycle to check; the newest prepared one by default")
         if name == "unmask":
             p.add_argument("--cycle", help="the cycle whose sheets and tiles to clean; the served one by default")
             p.add_argument(
@@ -157,6 +164,23 @@ def main(argv: list | None = None) -> int:
         args.command = "refresh"
         return _locked(args, parser) or status
     return _locked(args, parser)
+
+
+def _check_cuts(cycle: str | None) -> bool:
+    """Whether the cycle (the newest prepared one by default) cuts what the
+    served cycle did not and nobody has accepted: each finding printed with
+    its preview's path (wingtip.chart_cuts)."""
+    cycle = cycle or next(iter(chart_cycle.cycles_on_disk(config.CHARTS_DIR)), None)
+    if cycle is None:
+        print("no prepared cycle to check the cuts of")
+        return False
+    baseline, findings = chart_cuts.review(cycle)
+    for f in findings:
+        print(f"CUT {f.line()}")
+    print(f"{len(findings)} new or grown cuts and moved edges in {cycle} against {baseline or 'nothing to compare with'}")
+    if findings:
+        print(f"look at the previews, then: python -m charts accept-cuts {cycle}")
+    return bool(findings)
 
 
 def _locked(args, parser) -> int:
@@ -209,7 +233,11 @@ def _run(args, parser) -> int:
         for a, b, gap in gaps:
             print(f"GAP {gap:.3f} deg between {a} and {b}")
         print(f"{len(gaps)} gaps between adjacent sheets ({chart_serving.serving_cycle()})")
-        return 1 if gaps else 0
+        return 1 if gaps or _check_cuts(args.cycle) else 0
+    if args.command == "accept-cuts":
+        data = chart_cuts.accept(args.cycle)
+        log.info("cycle %s: %d cuts accepted", args.cycle, sum(len(s["cuts"]) for s in data["sheets"].values()))
+        return 0
     zooms = None
     if args.zooms:
         lo, _, hi = args.zooms.partition("-")
