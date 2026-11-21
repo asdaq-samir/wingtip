@@ -1,135 +1,140 @@
-import { useState, type Ref } from "react";
+import { Suspense, lazy, useState, type FocusEventHandler, type KeyboardEventHandler, type Ref } from "react";
 import { cn } from "cn";
-import { parseDate, parseTime, type CalendarDate, type Time } from "@internationalized/date";
-import {
-  DateField as AriaDateField,
-  DateInput,
-  DateSegment,
-  TimeField as AriaTimeField,
-  type DateFieldProps,
-  type TimeFieldProps,
-} from "react-aria-components";
+import { dayMonthYear, fromIso } from "../../lib/format";
+import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../ResponsivePopover";
+import { Button } from "./button";
+
+/** The month grid is React Aria's, only ever seen once the field is
+ *  tapped -- so it arrives then, not with the page. */
+const DayCalendar = lazy(() => import("./calendar").then((m) => ({ default: m.DayCalendar })));
 
 /**
- * React Aria's date and time fields, where the browser's `<input
- * type="date">` and `type="time"` were: a box of segments (month, day,
- * year; hours, minutes) that every browser draws alike, typed or stepped
- * with the arrow keys, in the stock Input's look (ui/input). Their values
- * stay the strings the native fields gave -- "2026-11-09", "15:00", "" for
- * none -- so a form and the gateway see no change.
+ * A day, as iOS's compact date picker is: one button showing the day ("31
+ * Dec 2027"), a tap opening the calendar (React Aria's, ui/calendar) in a
+ * popover, a card on a phone, with the month and year as pull-downs to
+ * jump by, a day's tap picking it and closing. Where it was React Aria's
+ * DateField, a box of month, day and year segments some 20 points wide and
+ * 25 apart, which no finger could each hit and no 44-point square could
+ * each own without one covering the next (the iOS audit's P1 on the
+ * Logbook's Instructing page; the owner, 2026-11-21: "one button ... as
+ * iOS does"). Its value stays the string the field gave -- "2026-11-09",
+ * "" for none -- so a form and the gateway see no change; Clear, where a
+ * day is set, gives "".
  *
- * A finger's 44: the box is 32 or 36, and a band six points proud of it
- * above and below (::after, taking no room) is the box's own, which React
- * Aria answers by focusing a segment -- where FieldHit's label did it for
- * a native field, which a label cannot do for segments. The band is under
- * the segments (isolate, -z-10), so a finger on the minutes takes the
- * minutes: over them, every tap was the box's (stops.spec, 2026-11-13).
+ * Its name holds the day in sight, the field's label and "change" round
+ * it ("Certificate expires, 31 Dec 2027: change"; WCAG 2.5.3).
  */
-const BOX =
-  "relative isolate flex h-9 w-full min-w-0 items-center rounded-md border border-input bg-transparent px-2.5 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none md:text-sm pointer-coarse:text-(length:--type-row) dark:bg-input/30 after:absolute after:inset-x-0 after:-inset-y-1.5 after:-z-10 after:content-[''] data-focus-within:border-ring data-focus-within:ring-2 data-focus-within:ring-ring data-focus-within:ring-offset-2 data-focus-within:ring-offset-background data-disabled:pointer-events-none data-disabled:opacity-50 data-invalid:border-destructive data-invalid:ring-3 data-invalid:ring-destructive/20 dark:data-invalid:border-destructive/50";
-
-/** A segment: the one in focus filled in the tint, as iOS marks the part
- *  of a date being set; a blank one's placeholder grey. */
-const SEGMENT =
-  "rounded-sm px-px tabular-nums caret-transparent outline-none data-placeholder:text-muted-foreground data-[type=literal]:px-0 data-[type=literal]:text-muted-foreground data-focused:bg-primary data-focused:text-primary-foreground data-focused:data-placeholder:text-primary-foreground";
-
-/** "2026-11-09" as React Aria's day, or null for none or nonsense. */
-function dayOf(iso: string | undefined | null): CalendarDate | null {
-  if (!iso) return null;
-  try {
-    return parseDate(iso);
-  } catch {
-    return null;
-  }
-}
-
-/** "15:00" as React Aria's time, or null for none or nonsense. */
-function timeOf(hhmm: string | undefined | null): Time | null {
-  if (!hhmm) return null;
-  try {
-    return parseTime(hhmm);
-  } catch {
-    return null;
-  }
-}
-
-type Own = "value" | "defaultValue" | "onChange" | "minValue" | "maxValue" | "className" | "children";
-
-/** A day, as an ISO date: `value` (or `defaultValue`), `onChange` with each
- *  whole day typed ("" when cleared), `min` and `max` as the native field's
- *  were. The test id is on the box of segments, which a test types into. */
 function DateField({
   value,
   defaultValue,
   onChange,
+  onBlur,
+  onKeyDown,
   min,
   max,
+  id,
+  isInvalid,
   className,
+  ref,
+  "aria-label": label,
+  "aria-describedby": describedBy,
   "data-testid": testId,
-  ...props
-}: Omit<DateFieldProps<CalendarDate>, Own> & {
-  /** React Aria's field's own box, round the segments. */
-  ref?: Ref<HTMLDivElement>;
+}: {
+  ref?: Ref<HTMLButtonElement>;
   value?: string | null;
   defaultValue?: string | null;
   onChange?: (iso: string) => void;
+  onBlur?: FocusEventHandler<HTMLButtonElement>;
+  /** A form's own keys on the button (Escape to cancel its row). */
+  onKeyDown?: KeyboardEventHandler<HTMLButtonElement>;
   min?: string;
   max?: string;
+  id?: string;
+  /** Marked wrong, as ariaInvalid says it. */
+  isInvalid?: boolean;
   className?: string;
+  "aria-label": string;
+  "aria-describedby"?: string;
   "data-testid"?: string;
 }) {
-  // Uncontrolled where only a first value is given: what is typed is
-  // kept here, as the native field kept its own.
-  const [own, setOwn] = useState(() => dayOf(defaultValue));
-  const controlled = value !== undefined;
+  // Uncontrolled where only a first value is given: what is picked is
+  // kept here, as the segmented field kept its own.
+  const [own, setOwn] = useState(defaultValue ?? "");
+  const [open, setOpen] = useState(false);
+  const day = (value !== undefined ? value : own) ?? "";
+  const pick = (iso: string) => {
+    if (value === undefined) setOwn(iso);
+    onChange?.(iso);
+  };
+  const shown = /^\d{4}-\d\d-\d\d$/.test(day) ? dayMonthYear(fromIso(day)) : "";
   return (
-    <AriaDateField
-      {...props}
-      value={controlled ? dayOf(value) : own}
-      onChange={(day) => {
-        if (!controlled) setOwn(day);
-        onChange?.(day ? day.toString() : "");
-      }}
-      minValue={dayOf(min) ?? undefined}
-      maxValue={dayOf(max) ?? undefined}
-      data-slot="date-field"
-      className="min-w-0"
-    >
-      <DateInput className={cn(BOX, className)} data-testid={testId}>
-        {(segment) => <DateSegment segment={segment} className={SEGMENT} />}
-      </DateInput>
-    </AriaDateField>
+    <ResponsivePopover open={open} onOpenChange={setOpen}>
+      <ResponsivePopoverTrigger asChild>
+        <Button
+          ref={ref}
+          id={id}
+          type="button"
+          variant="secondary"
+          size="sm"
+          aria-invalid={isInvalid || undefined}
+          aria-label={`${label}, ${shown || "none"}: change`}
+          aria-describedby={describedBy}
+          onBlur={onBlur}
+          onKeyDown={onKeyDown}
+          data-slot="date-field"
+          data-testid={testId}
+          // A finger's 44 round its 32: a band eight proud above and below,
+          // taking no room.
+          className={cn(
+            "relative justify-start font-normal tabular-nums after:absolute after:inset-x-0 after:-inset-y-2 after:content-['']",
+            className,
+          )}
+        >
+          {shown || <span className="text-muted-foreground">None</span>}
+        </Button>
+      </ResponsivePopoverTrigger>
+      <ResponsivePopoverContent
+        title={label}
+        className="w-auto p-0"
+        align="start"
+        leading={
+          day ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-tint"
+              onClick={() => {
+                pick("");
+                setOpen(false);
+              }}
+              data-testid={testId ? `${testId}-clear` : undefined}
+            >
+              Clear
+            </Button>
+          ) : undefined
+        }
+      >
+        <div className="flex justify-center pb-3">
+          {/* Sized like the grid it stands in for, so the popover does
+              not jump once it arrives. */}
+          <Suspense fallback={<div className="h-[21rem] w-[17rem]" />}>
+            <DayCalendar
+              aria-label={label}
+              value={shown ? day : null}
+              captionLayout="dropdown"
+              min={min}
+              max={max}
+              onChange={(iso) => {
+                pick(iso);
+                setOpen(false);
+              }}
+            />
+          </Suspense>
+        </div>
+      </ResponsivePopoverContent>
+    </ResponsivePopover>
   );
 }
 
-/** A time of day, "HH:mm" on the 24-hour clock a pilot reads, `onChange`
- *  with each whole time typed. */
-function TimeField({
-  value,
-  onChange,
-  className,
-  "data-testid": testId,
-  ...props
-}: Omit<TimeFieldProps<Time>, Own> & {
-  value?: string | null;
-  onChange?: (hhmm: string) => void;
-  className?: string;
-  "data-testid"?: string;
-}) {
-  return (
-    <AriaTimeField
-      hourCycle={24}
-      {...props}
-      value={timeOf(value)}
-      onChange={(time) => onChange?.(time ? time.toString().slice(0, 5) : "")}
-      data-slot="time-field"
-      className="min-w-0"
-    >
-      <DateInput className={cn(BOX, className)} data-testid={testId}>
-        {(segment) => <DateSegment segment={segment} className={SEGMENT} />}
-      </DateInput>
-    </AriaTimeField>
-  );
-}
-
-export { DateField, TimeField };
+export { DateField };

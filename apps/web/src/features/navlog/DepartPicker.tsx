@@ -1,14 +1,14 @@
 import { Suspense, lazy, useState } from "react";
-import { clockTime, localDay, twoFigures } from "../../lib/format";
+import { clockTime, localDay, twoFigures, zoneName } from "../../lib/format";
 import { leaveWhen } from "../../lib/format/leaveWhen";
 import { CalendarIcon } from "lucide-react";
 import { Button } from "../../components/ui/button";
 
-/** The month grid and the time field are React Aria's, only ever seen
+/** The month grid and the time's wheels are React Aria's, only ever seen
  *  inside this popover -- so they arrive with the popover rather than
  *  with the page. */
 const DayCalendar = lazy(() => import("../../components/ui/calendar").then((m) => ({ default: m.DayCalendar })));
-const TimeField = lazy(() => import("../../components/ui/date-field").then((m) => ({ default: m.TimeField })));
+const TimeField = lazy(() => import("../../components/ui/time-field").then((m) => ({ default: m.TimeField })));
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../components/ResponsivePopover";
 import { cn } from "cn";
 import { CHIP_TEXT } from "../../lib/mapChrome";
@@ -181,18 +181,17 @@ export default function DepartPicker({
       >
         <div className="flex flex-col items-center gap-3 pb-3" data-testid="depart-picker">
           {/* The time once a day is picked -- picking one gives it the
-              next whole hour: React Aria's time field, hours and minutes
-              on the 24-hour clock, 16px below md so a phone does not zoom
-              on it, its 44 a band round it (ui/date-field). */}
+              next whole hour: one button showing it, the zone after it, a
+              tap opening the hours and minutes as two wheels under it, as
+              iOS's compact time picker does (ui/time-field; the owner,
+              2026-11-21), on the 24-hour clock. */}
           {date && (
             <Suspense fallback={<div className="h-8 w-28" />}>
               <TimeField
                 value={time}
-                onChange={(hhmm) => {
-                  if (hhmm) onChange(instantAt(date, hhmm));
-                }}
+                zone={zoneName(date)}
+                onChange={(hhmm) => onChange(instantAt(date, hhmm))}
                 aria-label={`${label} time`}
-                className="h-8 w-28 bg-background"
                 data-testid="depart-time"
               />
             </Suspense>

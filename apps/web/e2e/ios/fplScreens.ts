@@ -231,7 +231,10 @@ export const FPL_SCREENS: Screen[] = [
       // sight, where the click waited on it till the test's six minutes.
       await grabberTo(page, "full");
       await page.locator('[data-slot="calendar"] td [role="button"]:not([aria-disabled="true"]):not([data-outside-month])').last().click();
-      await expect(page.getByTestId("depart-time")).toBeVisible();
+      // The time one button, its hours and minutes two wheels under it
+      // (ui/time-field), opened so the audit measures them too.
+      await page.getByTestId("depart-time").click();
+      await expect(page.getByTestId("depart-time-wheels")).toBeVisible();
       // The plan made again for that day, its arrival in behind the sheet:
       // not judged greyed out mid-plan.
       await expect(page.getByTestId("navlog-ete")).toBeAttached({ timeout: slow(120000) });

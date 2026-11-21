@@ -148,7 +148,7 @@ test("an AD is kept on the airplane with its next due day, and comes up in the L
               aircraftId: 5,
               tailNumber: "N12345",
               itemId: 1,
-              dueOn: "2099-12-01",
+              dueOn: "2035-12-01",
               daysLeft: 26690,
               dueAtHours: null,
               hoursLeft: null,
@@ -169,7 +169,7 @@ test("an AD is kept on the airplane with its next due day, and comes up in the L
   await form.getByTestId("due-item-title").fill("Oil filter adapter");
   await form.getByTestId("due-item-reference").fill("AD 2011-10-09");
   await form.getByTestId("due-item-method").fill("Inspect each 100 h");
-  await fillDate(form.getByTestId("due-item-dueOn"), "2099-12-01");
+  await fillDate(form.getByTestId("due-item-dueOn"), "2035-12-01");
   await tap(page, form.getByTestId("due-item-save"));
   await expect
     .poll(() => written[0])
@@ -178,7 +178,7 @@ test("an AD is kept on the airplane with its next due day, and comes up in the L
       title: "Oil filter adapter",
       reference: "AD 2011-10-09",
       method: "Inspect each 100 h",
-      dueOn: "2099-12-01",
+      dueOn: "2035-12-01",
       dueAtHours: null,
     });
 

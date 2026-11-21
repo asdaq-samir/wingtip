@@ -83,6 +83,10 @@ export function CertificateForm({ instructor, onDone }: { instructor: Instructor
                 {...register("fullName")}
                 placeholder="J. J. Jones"
                 maxLength={120}
+                // The return key moves on, the name AutoFill's own (the iOS
+                // audit's P19).
+                autoComplete="name"
+                enterKeyHint="next"
                 className="h-8 w-44 sm:w-56"
                 {...invalidProps(ids.name, errors.fullName?.message)}
                 data-testid="cfi-name"
@@ -98,6 +102,8 @@ export function CertificateForm({ instructor, onDone }: { instructor: Instructor
                 {...register("certificate")}
                 placeholder="987654321CFI"
                 maxLength={20}
+                autoComplete="off"
+                enterKeyHint="done"
                 className="h-8 w-44 font-mono sm:w-56"
                 autoCapitalize="characters"
                 {...invalidProps(ids.number, errors.certificate?.message)}

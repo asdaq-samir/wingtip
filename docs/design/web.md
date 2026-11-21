@@ -1463,7 +1463,7 @@ an entry opens as a card (side panel on desktop, sheet card on phone);
 Export in the screen's •••.
 
 **Stock parts.** shadcn Data Table (TanStack Table) on desktop, Item rows
-on phone; React Aria DatePicker for dates (`components/ui/date-field.tsx`);
+on phone; one button a date, opening React Aria's calendar, as iOS's compact date picker (`components/ui/date-field.tsx`);
 Base UI Number Field for times; shadcn Field for labels and errors.
 
 **Primary action.** Add Entry, at the top right of the screen's head.

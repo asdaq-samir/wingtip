@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { GraduationCap, Mail, MailX, Target, Users } from "lucide-react";
 import { cn } from "cn";
@@ -41,13 +41,8 @@ function Until({ date, from, what }: { date: string | null | undefined; from?: s
   );
 }
 
-/** A date the pilot gives (the flight review's, the medical's expiry, the
- *  IPC's), saved as it changes. While the pilot is in it the field shows
- *  what they type, not the gateway's answer: a whole day is sent the
- *  moment it is typed, so the "1" of "18" was sent as the 1st and its
- *  answer, back while the "8" was typed, put the 1st in the field and
- *  lost the 8 (instrument-currency.spec, nights of 2026-11). Out of it,
- *  the gateway's date. */
+/** A currency date (the flight review's, the medical's, the IPC's), saved
+ *  as it is picked: a whole day at a time, from the calendar. */
 function DateField({
   value,
   label,
@@ -59,18 +54,13 @@ function DateField({
   onChange: (v: string | null) => void;
   testId?: string;
 }) {
-  const [typing, setTyping] = useState<string | null>(null);
   return (
     <StockDateField
       aria-label={label}
-      value={(typing ?? value) || ""}
+      value={value || ""}
       className="h-8 w-40"
       data-testid={testId}
-      onFocusChange={(inside) => setTyping(inside ? (value ?? "") : null)}
-      onChange={(day) => {
-        setTyping(day);
-        onChange(day || null);
-      }}
+      onChange={(day) => onChange(day || null)}
     />
   );
 }

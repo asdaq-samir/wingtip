@@ -127,7 +127,19 @@ Compose. Nothing here is built by hand where a stock part does it.
    a menu or a segmented control, never a slider (decision 0017); a
    continuous one, such as the Map card's Dimmer and Contrast, is the
    stock `Slider`, its thumb's 44-point reach a pseudo-element's
-   (`THUMB_HIT`) and its name its row's.
+   (`THUMB_HIT`) and its name its row's. A day or a time of day is one
+   button showing it, as iOS's compact date and time pickers are (the
+   owner, 2026-11-21): a day's (`ui/date-field`, "31 Dec 2027") opens
+   the calendar in a popover, a card on a phone, its month and year
+   pull-downs and a day's tap picking and closing, Clear where one is
+   set; a time's (`ui/time-field`, "15:00 CST", the 24-hour clock and
+   the zone as the app writes it) opens the hours and minutes under it
+   as two wheels, React Aria's ListBox, rows of 44. Never segments a
+   finger must hit one by one (React Aria's DateField and TimeField,
+   20 points each and 25 apart, the iOS audit's P1), nor the browser's
+   `<input type="time">`, which an iPhone on the 12-hour clock writes
+   "3:00 PM". Its name holds what it shows ("Departure time, 15:00 CST:
+   change").
    `scripts/ci/shared_parts_guard.py` fails a heading or a ✕ drawn by
    hand, past its allow-list of what is rightly its own (a form sheet's
    Cancel, title and Done; a page's content heading).
