@@ -27,6 +27,11 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     /// Traffic.markedFt), changed only when it changes: what the map reads,
     /// so it is not drawn again at every fix's wander of a few feet.
     private(set) var markedFt: Double?
+    /// The fix's place to a thousandth of a degree (at most some 0.03 nm
+    /// off, under the tenth a card shows), changed only when it changes:
+    /// what a card's distance from the airplane reads, so a parked
+    /// airplane's jitter does not draw it again and ask the engine again.
+    private(set) var coarseCoordinate: CLLocationCoordinate2D?
     private(set) var denied = false
     /// The position's permission as iOS last said it, for the welcome's
     /// foot (WelcomeFoot).
@@ -128,6 +133,8 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
         self.fix = fix
         let marked = Traffic.markedFt(fix.altitudeFt)
         if marked != markedFt { markedFt = marked }
+        let coarse = Self.coarse(fix.coordinate)
+        if coarse.latitude != coarseCoordinate?.latitude || coarse.longitude != coarseCoordinate?.longitude { coarseCoordinate = coarse }
         // The path flown, and the phone's position kept in the background
         // only while flying (the location background mode, project.yml):
         // on the ground the reading stops with the app, as any map's does.
@@ -137,6 +144,11 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
         let recording = recorder.took(fix)
         let flying = trail.took(fix) || recording
         if manager.allowsBackgroundLocationUpdates != flying { manager.allowsBackgroundLocationUpdates = flying }
+    }
+
+    /// A place to a thousandth of a degree (coarseCoordinate).
+    nonisolated static func coarse(_ at: CLLocationCoordinate2D) -> CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: (at.latitude * 1000).rounded() / 1000, longitude: (at.longitude * 1000).rounded() / 1000)
     }
 
     /// What is ahead, asked of the latest fix every ten seconds while the

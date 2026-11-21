@@ -87,4 +87,15 @@ struct RepeatedWorkTests {
         await take(1_000.3, at: 2)
         #expect(ownShip.markedFt == 3_280)
     }
+
+    // MARK: The airport card's distance (item 8)
+
+    @Test func theCardsDistanceReadsAPlaceThatAParkedAirplanesJitterLeavesAlone() {
+        let a = OwnShip.coarse(CLLocationCoordinate2D(latitude: 42.12301, longitude: -88.45702))
+        let b = OwnShip.coarse(CLLocationCoordinate2D(latitude: 42.12305, longitude: -88.45698))
+        #expect(a.latitude == 42.123 && a.longitude == -88.457)
+        #expect(a.latitude == b.latitude && a.longitude == b.longitude)
+        // A tenth of a mile north is a new place.
+        #expect(OwnShip.coarse(CLLocationCoordinate2D(latitude: 42.1247, longitude: -88.457)).latitude != a.latitude)
+    }
 }

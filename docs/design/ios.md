@@ -2019,6 +2019,10 @@ What each fix asks for, by the phones' wasted-work audit:
   once it is under way (the engine's `underway`): the engine's `on_route`
   needs the same motion, so parked there was nothing to show, and the
   strip keeps the planned totals.
+- **The airport card's head** reads own ship's place to a thousandth of
+  a degree (`OwnShip.coarseCoordinate`, at most some 0.03 nm off), so a
+  parked airplane's jitter does not draw it again or ask the engine for
+  its distance and time again.
 
 ---
 

@@ -1357,6 +1357,10 @@ for, by the phones' wasted-work audit:
   their programs each five minutes, as the iPhone asks them.
 - **Where the airplane is on the route** (`in_flight`) is asked only
   once it is under way (the engine's `underway`), as on the iPhone.
+- **The airport card** reads own ship's place to a thousandth of a
+  degree, told only as it changes (`AirportFacts.From.near`), and the
+  card's actions read the fix when tapped (`RouteActions`), so neither
+  the card nor a point's card is drawn again at every fix.
 
 ## 4. Not verified
 
