@@ -114,7 +114,7 @@ private fun Timeline(state: FlowState, model: ModelWeather) {
         Column(Modifier.weight(1f).padding(vertical = WingtipSpace.Xs)) {
             when {
                 state.failed -> Text(stringResource(R.string.flow_unavailable), color = LocalWingtipPalette.current.cautionInk, style = MaterialTheme.typography.bodyMedium)
-                state.frames.isEmpty() || steps.isEmpty() -> Text(stringResource(R.string.flow_fetching), style = MaterialTheme.typography.bodyMedium)
+                state.frames.isEmpty() || steps.isEmpty() -> Text(stringResource(R.string.wording_fetching_model_weather), style = MaterialTheme.typography.bodyMedium)
                 else -> {
                     val first = steps.first()
                     val last = steps.last()

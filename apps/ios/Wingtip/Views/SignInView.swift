@@ -61,7 +61,7 @@ struct SignInView: View {
                 }
             }
             .task { await session.prepareAppleNonce() }
-            .navigationTitle("Sign In")
+            .navigationTitle(Wording.signIn)
             .navigationBarTitleDisplayMode(.inline)
             .closeButton { dismiss() }
         }

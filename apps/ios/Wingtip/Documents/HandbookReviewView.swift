@@ -96,7 +96,7 @@ struct HandbookReviewView: View {
                 }
             }
         }
-        .navigationTitle(model.kind == .weightBalance ? "Weight & Balance" : "Performance")
+        .navigationTitle(model.kind == .weightBalance ? Wording.weightAndBalance : String(localized: "Performance"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) { Button("Cancel") { model.close() } }
@@ -121,7 +121,7 @@ struct HandbookReviewView: View {
             model.close()
             dismiss()
         } catch {
-            model.problem = "The confirmed figures couldn't be checked: \(error.localizedDescription)"
+            model.problem = "The confirmed figures could not be checked: \(error.localizedDescription)"
         }
     }
 }

@@ -60,7 +60,7 @@ export function useKeepRouteToast() {
       const { total, failed } = job.progress;
       if (failed >= total) {
         toast.close(TOAST_ID);
-        raiseProblem({ id: TOAST_ID, title: "Charts not kept: none of the tiles could be fetched" });
+        raiseProblem({ id: TOAST_ID, title: "Charts not kept: none of the tiles could be fetched." });
       } else {
         // The route's answers kept with them, and their size (keptForAir).
         const answers = keptRecordStore().getState().value;

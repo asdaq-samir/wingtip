@@ -128,7 +128,7 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AskScreenM
         ) {
             OutlinedTextField(
                 state = question, modifier = Modifier.weight(1f),
-                placeholder = { Text(stringResource(R.string.ask_about_flight)) }, lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 4),
+                placeholder = { Text(stringResource(R.string.wording_ask_about_the_flight)) }, lineLimits = TextFieldLineLimits.MultiLine(maxHeightInLines = 4),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                 onKeyboardAction = { send(question.text.toString()) },
             )
@@ -144,7 +144,7 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AskScreenM
 @Composable
 private fun Suggestions(onAsk: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-        SectionTitle(stringResource(R.string.ask_about_flight))
+        SectionTitle(stringResource(R.string.wording_ask_about_the_flight))
         Text(
             stringResource(R.string.ask_help),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,

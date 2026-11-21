@@ -20,7 +20,7 @@ const LOOKS: (Look & { name: string })[] = [];
 for (const brand of ["wingtip", "cockpit", "ink", "native"] as const) {
   for (const dark of [false, true]) {
     for (const bright of [false, true]) {
-      const name = `${{ wingtip: "Wingtip", cockpit: "Glass Cockpit", ink: "Chart ink", native: "Native" }[brand]}, ${dark ? "night" : "day"}${bright ? ", sunlight" : ""}`;
+      const name = `${{ wingtip: "Wingtip", cockpit: "Glass Cockpit", ink: "Chart Ink", native: "Native" }[brand]}, ${dark ? "night" : "day"}${bright ? ", sunlight" : ""}`;
       LOOKS.push({ name, brand, dark, bright });
     }
   }

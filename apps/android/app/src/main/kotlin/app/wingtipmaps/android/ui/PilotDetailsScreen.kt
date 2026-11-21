@@ -68,7 +68,7 @@ fun PilotDetailsScreen(session: Session, pickAirport: (onPicked: (String) -> Uni
             signedIn != null -> {
                 AccountRow(signedIn)
                 Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-                    OutlinedButton(onClick = { session.signOut(context) }) { Text(stringResource(R.string.sign_out)) }
+                    OutlinedButton(onClick = { session.signOut(context) }) { Text(stringResource(R.string.wording_sign_out)) }
                     DeleteAccountButton(session)
                 }
             }

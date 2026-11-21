@@ -45,7 +45,7 @@ class FilingModel @Inject constructor() : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(statusProblem = "Whether filing is connected here couldn't be checked: ${e.message}") }
+                _state.update { it.copy(statusProblem = "Whether filing is connected here could not be checked: ${e.message}") }
             }
         }
     }

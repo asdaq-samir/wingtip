@@ -49,8 +49,8 @@ struct RouteCard: View {
             .controlSize(.small)
             .labelStyle(.titleAndIcon)
         }
-        .alert("Clear Route?", isPresented: $clearing) {
-            Button("Clear Route", role: .destructive) { plan.clear() }
+        .alert(Wording.clearRouteQuestion, isPresented: $clearing) {
+            Button(Wording.clearRoute, role: .destructive) { plan.clear() }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("The route, its stops and what was set on it go. Undo brings them back.")
@@ -60,7 +60,7 @@ struct RouteCard: View {
     /// The ✕: one tap asks, in the centred alert, and the page stays.
     private var clear: some View {
         Button { clearing = true } label: {
-            Label("Clear Route", systemImage: WingtipIcon.close).labelStyle(.iconOnly).imageScale(.large).hitArea()
+            Label(Wording.clearRoute, systemImage: WingtipIcon.close).labelStyle(.iconOnly).imageScale(.large).hitArea()
         }
         .buttonStyle(.borderless)
         .accessibilityIdentifier("route-clear")
@@ -121,7 +121,7 @@ struct RouteCard: View {
         Button { nav.open(.flight("file")) } label: { Label("File", systemImage: WingtipIcon.send) }
             .hitArea()
             .disabled(plan.legs.isEmpty)
-            .accessibilityLabel("File flight plan")
+            .accessibilityLabel("File Flight Plan")
             .accessibilityIdentifier("route-file")
     }
 }

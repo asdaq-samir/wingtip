@@ -23,7 +23,7 @@ function Worked({ workings }: { workings: Workings }) {
           burn: a row, where it was a footnote. */}
       {workings.climb && (
         <ListRow
-          title="Climb, added"
+          title="Climb, Added"
           description={workings.climb.gal === null ? "At climb speed; its fuel not known" : "At climb speed and burn"}
           value={`${Math.round(workings.climb.min)} min · ${workings.climb.gal === null ? "fuel —" : gal(workings.climb.gal)}`}
           data-testid="working-climb"
@@ -34,7 +34,7 @@ function Worked({ workings }: { workings: Workings }) {
       {workings.climb && workings.climb.gal === null && <AskFigure figure="climb" what="The climb's fuel" />}
       {workings.procedure && (
         <ListRow
-          title={workings.procedure.landing ? "Pattern or approach, added" : "Departure, added"}
+          title={workings.procedure.landing ? "Pattern or Approach, Added" : "Departure, Added"}
           description={`${nm(workings.procedure.nm)} more than the leg's line, at its ground speed`}
           value={`${Math.round(workings.procedure.min)} min · ${gal(workings.procedure.gal)}`}
         />
@@ -141,7 +141,7 @@ export default function LegWorkings({ leg, phase = "cruise" }: { leg: Leg; phase
           onClick={(e) => e.stopPropagation()}
           data-testid="leg-workings"
         >
-          Show the work
+          Show the Work
         </Button>
       </ResponsivePopoverTrigger>
       <ResponsivePopoverContent
@@ -156,8 +156,8 @@ export default function LegWorkings({ leg, phase = "cruise" }: { leg: Leg; phase
             value={mode}
             onChange={setMode}
             options={[
-              { value: "worked", label: "Worked out" },
-              { value: "try", label: "Try it" },
+              { value: "worked", label: "Worked Out" },
+              { value: "try", label: "Try It" },
             ]}
             testId="workings-mode"
           />

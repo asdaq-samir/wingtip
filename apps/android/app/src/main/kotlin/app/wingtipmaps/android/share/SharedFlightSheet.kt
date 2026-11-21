@@ -67,7 +67,7 @@ private fun Shown(s: SharedFlightModel.State.Shown, onUse: () -> Unit, onNotNow:
     val p = s.plan
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         Button(onClick = onUse) { Text(stringResource(R.string.shared_use)) }
-        TextButton(onClick = onNotNow) { Text(stringResource(R.string.not_now)) }
+        TextButton(onClick = onNotNow) { Text(stringResource(R.string.wording_not_now)) }
     }
     LazyColumn(Modifier.fillMaxWidth()) {
         item { Fact(R.string.shared_route, (listOf(p.dep) + p.stops + p.dest).joinToString(" → ")) }

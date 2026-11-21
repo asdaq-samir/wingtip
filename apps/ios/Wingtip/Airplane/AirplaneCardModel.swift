@@ -36,7 +36,7 @@ final class AirplaneCardModel {
             flights = history?.flights ?? []
             problem = nil
         } catch {
-            problem = "Its past flights could not be had. Try again in a moment."
+            problem = Wording.pastFlightsNotFetched
         }
         do { based = try await basedAsk.based.additionalProperties[hex.lowercased()] ?? nil } catch { failed.append("where it is based") }
         detailProblem = failed.isEmpty ? nil : "Not all of it could be had: \(failed.joined(separator: " and ")) missing."
@@ -52,7 +52,7 @@ final class AirplaneCardModel {
             history = page
             flights += page.flights.filter { f in !flights.contains { $0.id == f.id } }
         } catch {
-            problem = "Earlier flights could not be had: \(error.localizedDescription)"
+            problem = "Earlier flights could not be fetched: \(error.localizedDescription)"
         }
     }
 
@@ -63,7 +63,7 @@ final class AirplaneCardModel {
             towerLine = LiveWords.departureLine(try await Planner.liveDepartures(ident).first)
         } catch {
             towerLine = nil
-            nowProblem = "Its tower departures could not be had."
+            nowProblem = "Its tower departures could not be fetched."
         }
     }
 
@@ -72,7 +72,7 @@ final class AirplaneCardModel {
         do {
             route = try await Planner.flightRoute(callsign: callsign, lat: lat, lon: lon)
         } catch {
-            nowProblem = "Its scheduled route could not be had."
+            nowProblem = "Its scheduled route could not be fetched."
         }
     }
 }

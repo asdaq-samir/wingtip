@@ -46,13 +46,6 @@ final class AboutModel {
     }
 }
 
-/// The words every app says of what it is (docs/legal/credits.md, "A
-/// planning aid"; the web's components/planningAid.ts): the same in all
-/// three, changed there first.
-enum PlanningAid {
-    static let words = "Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1-800-WX-BRIEF), current FAA charts and publications, or the pilot in command’s judgement and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103)."
-}
-
 /// What About credits, in docs/legal/credits.md's order and words: the
 /// data the app is made from, then the maps and software the iPhone draws
 /// with (Apple MapKit under the chart; MapLibre is the web's and Android's, Google's tiles the web's, not used here). Change

@@ -30,13 +30,13 @@ import app.wingtipmaps.android.ui.WingtipIcons
 fun ClearRouteAsk(plan: Plan, onDone: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDone,
-        title = { Text(stringResource(R.string.clear_route_ask)) },
+        title = { Text(stringResource(R.string.wording_clear_route_question)) },
         text = { Text(stringResource(R.string.clear_route_ask_line)) },
         confirmButton = {
             TextButton(onClick = {
                 onDone()
                 plan.clearRoute()
-            }) { Text(stringResource(R.string.clear_route), color = MaterialTheme.colorScheme.error) }
+            }) { Text(stringResource(R.string.wording_clear_route), color = MaterialTheme.colorScheme.error) }
         },
         dismissButton = { TextButton(onClick = onDone) { Text(stringResource(R.string.cancel)) } },
     )
@@ -67,7 +67,7 @@ fun PlanMore(state: Plan.State, onRouteOptions: () -> Unit) {
                 },
             )
             DropdownMenuItem(
-                text = { Text(stringResource(R.string.share_link)) },
+                text = { Text(stringResource(R.string.wording_share_link)) },
                 leadingIcon = { Icon(WingtipIcons.share, contentDescription = null) },
                 enabled = state.routed && !state.planning,
                 onClick = {

@@ -196,7 +196,7 @@ test("Depart has the takeoff's runway check: a runway too short is red, on the t
   await expect(drawer.getByTestId("route-brief")).toHaveAttribute("data-finding", "stop");
   await openTab(page, "Depart");
   await expect(page.getByTestId("panel-tab-mark-depart")).toHaveAttribute("data-finding", "stop");
-  await expect(drawer.getByTestId("tl-flag")).toContainText("Runway too short");
+  await expect(drawer.getByTestId("tl-flag")).toContainText("Runway Too Short");
   const takeoff = drawer.getByTestId("runway-takeoff");
   await expect(takeoff).toContainText(/ft past the end/);
   await expect(drawer.getByTestId("density-altitude").first()).toContainText(/Pressure altitude [\d,]+ ft/);
@@ -297,7 +297,7 @@ test("the Brief opens on whether to go and one grouped list, a row for each part
   await expect(glance.getByTestId("brief-line-weather").getByTestId("brief-line-words")).toContainText(
     "VFR not recommended: KDLH currently reporting IFR",
   );
-  await expect(glance.getByTestId("brief-glance-enroute")).not.toContainText("VFR not recommended");
+  await expect(glance.getByTestId("brief-glance-enroute")).not.toContainText("VFR Not Recommended");
   // The verdict the one red wash: a no-go row as plain as the others, its
   // red in its icon and figures alone (the design review, 2026-10-28).
   // Read with the pointer off the rows, as a finger lifts: the Brief opens

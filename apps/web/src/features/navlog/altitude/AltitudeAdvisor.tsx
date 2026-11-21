@@ -75,7 +75,7 @@ export default function AltitudeAdvisor({
                   <ItemTitle className={cn("tabular-nums", TEXT.row, r.flown && "text-tint")}>
                     {flightLevel(r.altitude_ft)}
                     {r.fastest && <Badge variant="secondary">Fastest</Badge>}
-                    {r.economical && <Badge variant="secondary">Most economical</Badge>}
+                    {r.economical && <Badge variant="secondary">Most Economical</Badge>}
                   </ItemTitle>
                   {r.warning && (
                     // The note's size on its own leading: the stock xs item's

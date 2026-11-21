@@ -128,7 +128,7 @@ class ReadyFixer internal constructor(
             val crossed = regions.getOrNull()
             when {
                 // Said where Ready to Fly is, not kept in silence (AND-3).
-                crossed == null -> model.say("The route's chart packs could not be worked out, so none were kept")
+                crossed == null -> model.say("The route's chart packs could not be worked out, so none were kept.")
                 crossed.isEmpty() -> packs.refresh()
                 else -> packs.keep(crossed)
             }

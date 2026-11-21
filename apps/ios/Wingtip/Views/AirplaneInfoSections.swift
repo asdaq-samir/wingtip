@@ -120,7 +120,7 @@ struct AirplaneHistorySections: View {
     var body: some View {
         if let details {
             if details.based?.field != nil || details.basedPending == true {
-                Section("Usually based at") {
+                Section("Usually Based At") {
                     if let based = details.based, let field = based.field {
                         CardRow(title: [field.ident, field.name].compactMap { $0 }.joined(separator: " · "),
                                 detail: based.count.flatMap { count in based.ends.map { "\(count) of \($0) takeoffs and landings" } })
@@ -129,7 +129,7 @@ struct AirplaneHistorySections: View {
                     }
                 }
             }
-            Section("Safety history") {
+            Section("Safety History") {
                 let cases = details.ntsb ?? []
                 if cases.isEmpty { Text("No NTSB accident or incident on record since 2008.").foregroundStyle(.secondary) }
                 ForEach(cases, id: \.evId) { c in
@@ -144,7 +144,7 @@ struct AirplaneHistorySections: View {
                     }
                 }
             }
-            Section("Ownership history") {
+            Section("Ownership History") {
                 let past = (details.pastRegistrations ?? []).sorted { ($0.sameAirframe == true ? 1 : 0) > ($1.sameAirframe == true ? 1 : 0) }
                 if past.isEmpty { Text("No past registrations.").foregroundStyle(.secondary) }
                 ForEach(Array(past.enumerated()), id: \.offset) { _, p in
@@ -154,7 +154,7 @@ struct AirplaneHistorySections: View {
                                      p.exportCountry.map { "exported to \($0)" }].compactMap { $0 }.joined(separator: " · ").nonEmpty)
                 }
             }
-            Section("Documents filed") {
+            Section("Documents Filed") {
                 let documents = details.documents ?? []
                 if documents.isEmpty, details.reservation == nil { Text("None filed in the last month.").foregroundStyle(.secondary) }
                 ForEach(Array(documents.enumerated()), id: \.offset) { _, d in
@@ -163,14 +163,14 @@ struct AirplaneHistorySections: View {
                                      d.entered.flatMap { AirplaneInfoSections.day($0).map { "entered \($0)" } }].compactMap { $0 }.joined(separator: " · ").nonEmpty)
                 }
                 if let r = details.reservation {
-                    CardRow(title: "N-number reserved",
+                    CardRow(title: "N-Number Reserved",
                             detail: [RegistryNames.reservedBy(r.registrant, city: r.city, state: r.state, own: own), AirplaneInfoSections.day(r.reserved), r.kind,
                                      r.changeTo.map { "changing to \($0)" }].compactMap { $0 }.joined(separator: " · ").nonEmpty)
                 }
             }
         } else {
             Section("History") {
-                Text(failed ? "Its history couldn't be fetched. Try again in a moment." : "Fetching its history…")
+                Text(failed ? Wording.historyNotFetched : String(localized: "Fetching its history…"))
                     .foregroundStyle(failed ? AnyShapeStyle(WingtipInk.problem) : AnyShapeStyle(.secondary))
             }
         }

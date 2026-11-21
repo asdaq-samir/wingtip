@@ -73,7 +73,7 @@ struct FindNearbyView: View {
             } else if let problem {
                 Section {
                     ProblemLine(problem)
-                    Button("Try Again") { Task { await load() } }
+                    Button(Wording.tryAgain) { Task { await load() } }
                 }
             } else if let fields {
                 let found = fields.filter(kind.at)

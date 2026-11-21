@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { csvRows, guessColumns, headerRowOf, missingColumns, remapped } from "./logbookColumns";
+import { isTitleCase } from "../../lib/wording/titleCase";
+import { COLUMN_TARGETS, csvRows, guessColumns, headerRowOf, missingColumns, remapped } from "./logbookColumns";
 import { importLogbook } from "./logbookCsv";
 
 /** A MyFlightbook export's columns as it names them, a few of its many:
@@ -50,5 +51,12 @@ describe("a logbook whose columns are not ForeFlight's", () => {
   it("names the fields the engine cannot do without when no column is given them", () => {
     const columns = guessColumns(["When", "Plane", "Hours"]);
     expect(missingColumns(columns).map((t) => t.field)).toEqual(["Date", "AircraftID", "TotalTime"]);
+  });
+});
+
+// The import's column names are names, in Title Case (docs/design/rules.md, section 18).
+describe("the columns' names", () => {
+  it("are in Title Case", () => {
+    expect(COLUMN_TARGETS.map((c) => c.label).filter((name) => !isTitleCase(name))).toEqual([]);
   });
 });

@@ -28,7 +28,7 @@ test("a list asked for in airplane mode says No connection, and answers by itsel
   await library(console, "Logbook");
   // Each of the page's lists says so in its own place: the logbook's
   // flights and what is coming up (/api/paperwork, asked offline too).
-  for (const list of ["Flights", "Coming up"])
+  for (const list of ["Flights", "Coming Up"])
     await expect(console.getByRole("group", { name: list }).getByText(/No connection\./)).toBeVisible();
   await expect(console.getByText("Your logbook could not be fetched.")).toHaveCount(0);
 

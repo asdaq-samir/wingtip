@@ -1683,6 +1683,165 @@ Store.
 | Rule  | Not applied: every name (`AirplaneInfo`) | `Airplane/RegistryNames.swift`, drawn by `AirplaneInfoSections`, `AirplaneFacts` and `FAARecordSection` | `airplane/RegistryNames.kt`, drawn by `AirplaneInfo` |
 | Tests | -- | `RegistryNamesTests` | `RegistryNamesTest` |
 
+## 18. The app's words (the owner, 2026-11-21)
+
+The owner took the words audit's fixes on 2026-11-21 ("Yes to all").
+Every word a pilot reads, on all three apps, follows these rules
+(decision [0055](../decisions/0056-one-set-of-words.md), which carries
+on from [0020](../decisions/0020-airplane-not-aircraft.md) and
+[0021](../decisions/0021-title-case-labels.md)):
+
+1. **One thing, one name, on all three apps.** A screen's title is
+   `design/screens.json`'s; a word every app says (a control, a figure's
+   name, a shared message) is `design/wording.json`'s, generated into each
+   app by `scripts/build/wording.sh` as the tokens are: the web's
+   `WORDING` (`lib/wording/generated`), the iPhone's `Wording`
+   (`Design/Generated/Wording.swift`, each kept by the string catalog) and
+   Android's `R.string.wording_*`. A word added to a second app goes into
+   the table, not into the app.
+2. **A name is in Title Case.** Titles, section headings, tabs, segments,
+   buttons, menu items, toggles, row and figure names, empty states'
+   titles and toasts' titles are in Apple's title style: every word
+   capitalised but the articles, the conjunctions and the prepositions of
+   four letters or fewer, unless one begins or ends it ("Add to Route",
+   "Read from a Photo", "Cross At", "Time En Route"). A menu item that asks
+   for more before it acts ends with "…" ("Hold Here…", "Set Altitude…");
+   one that only asks to confirm does not ("Delete Account"), as the HIG
+   says.
+3. **A sentence is in sentence case and ends with its stop.** Messages,
+   errors, empty states' lines, hints, notes and a question that is a
+   whole sentence ("Discard your changes?") begin with a capital and end
+   with a full stop or a question mark. A figure's value ("No ceiling",
+   "Not on record") has no stop. The map's words are sentence case
+   (section 13), and the FAA's own capitals are set in sentence case with
+   their codes kept (`faaWords`); a raw report stays as sent.
+4. **Progress says "Fetching".** "Fetching the NOTAMs…", one ellipsis
+   character, never three full stops (decision 0021's "Fetching").
+5. **An error says what could not be done, plainly.** "The NOTAMs could
+   not be fetched." with "could not", never "couldn't" or "can't", and
+   "did not answer" for a service that was asked and gave nothing; what
+   to do next follows as a second sentence ("Try again in a moment.").
+6. **The FAA's words, as the FAA writes them.** "Airplane" for the
+   pilot's own (decision 0020), "aircraft" only where the FAA's text or
+   form says it (ICAO flight plan items 7 and 9, the FAA Aircraft
+   Registry, 14 CFR 91.103's "aircraft performance"). Flight categories are
+   VFR, MVFR, IFR and LIFR, said "marginal VFR" and "low IFR". "Ceiling"
+   is 14 CFR 1.1's, "visibility" the report's, airspace "Class B" with the
+   capital, and the FAA's codes in capitals: TFR, NOTAM, METAR, TAF, ETE,
+   ETA, SM and NM spelled as the units module writes them (nm, sm). The
+   nav log is "Nav Log" as a name and "nav log" in a sentence.
+
+The words the three apps share, generated from `design/wording.json`:
+
+<!-- BEGIN generated from design/wording.json by scripts/build/wording.sh -->
+
+| Key | Kind | Words | Where |
+|---|---|---|---|
+| `planning_aid_title` | label | A Planning Aid | About's heading over the planning aid's words. |
+| `planning_aid_notice_title` | label | A Planning Aid, Not for Navigation | The planning aid's notice, where an app shows it on its own. |
+| `planning_aid` | sentence | Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1‑800‑WX‑BRIEF), current FAA charts and publications, or the pilot in command’s judgement and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103). | What the app is and is not, in About and at the briefing's foot (14 CFR 91.3, 91.103; docs/legal/credits.md, "A planning aid"). |
+| `planning_aid_kneeboard` | sentence | Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight. | The printed kneeboard's foot. |
+| `try_again` | label | Try Again | The button that asks again after an error. |
+| `sign_in` | label | Sign In | The button that starts signing in. |
+| `add_stop` | label | Add Stop | Adds the place shown as a stop on the route (decision 0021's own example). |
+| `add_to_route` | label | Add to Route | Adds the place shown to the route. |
+| `add_to_favorites` | label | Add to Favorites | Keeps the airport or airplane shown among the favorites. |
+| `add_airplane` | label | Add Airplane | Adds one of the pilot's own airplanes. |
+| `edit_airplane` | label | Edit Airplane | Opens the pilot's airplane's figures to change. |
+| `delete_airplane` | label | Delete Airplane | Deletes one of the pilot's airplanes. |
+| `pick_an_airplane` | label | Pick an Airplane | Where the times and the fuel need an airplane. |
+| `fly_this_airplane` | label | Fly This Airplane | Makes the airplane shown the one the plan flies. |
+| `clear_route` | label | Clear Route | The menu item that clears the route. |
+| `clear_route_question` | label | Clear Route? | The question before the route is cleared. |
+| `direct_to` | label | Direct To | Flies straight to the point picked, the avionics' own name. |
+| `enter_route` | label | Enter Route | Puts a clearance's route into the plan. |
+| `read_back` | label | Read Back | Starts the pilot's read back of a clearance. |
+| `read_back_again` | label | Read Back Again | Reads the clearance back once more. |
+| `print_nav_log` | label | Print Nav Log | Prints the nav log, in the share menu. |
+| `share_link` | label | Share Link | Shares the plan as a link. |
+| `show_on_map` | label | Show on Map | Shows the thing in the row on the map. |
+| `start_over` | label | Start Over | Starts a drill or a form again from its beginning. |
+| `save_to_account` | label | Save to Account | Keeps the thing shown in the pilot's account. |
+| `ask_about_the_flight` | label | Ask About the Flight | Opens Ask on the flight planned. |
+| `file_with_flight_service` | label | File with Flight Service | Files the flight plan with Leidos Flight Service. |
+| `delete_account` | label | Delete Account | Deletes the pilot's account. |
+| `delete_account_question` | sentence | Delete your account? | The question before the account is deleted. |
+| `discard` | label | Discard | Throws away what was typed. |
+| `discard_changes_question` | sentence | Discard your changes? | The question when a form with changes is closed. |
+| `weight_and_balance` | label | Weight & Balance | The weight and balance's section and row. |
+| `forecast_icing` | label | Forecast Icing | The forecast icing along the route (aviationweather.gov's CIP/FIP). |
+| `along_the_route` | label | Along the Route | What lies along the route, a section's heading. |
+| `airport_weather` | label | Airport Weather | The map's airport weather marks, as a setting. |
+| `flight_category` | label | Flight Category | A report's flight category, VFR, MVFR, IFR or LIFR (the FAA's names). |
+| `time_en_route` | label | Time En Route | ETE written out. |
+| `top_of_climb` | label | Top of Climb | The nav log's TOC written out. |
+| `top_of_descent` | label | Top of Descent | The nav log's TOD written out. |
+| `true_airspeed` | label | True Airspeed | TAS, a figure's name. |
+| `indicated_airspeed` | label | Indicated Airspeed | IAS, a figure's name. |
+| `ground_speed` | label | Ground Speed | GS, a figure's name. |
+| `true_course` | label | True Course | TC, a figure's name. |
+| `magnetic_course` | label | Magnetic Course | MC, a figure's name. |
+| `magnetic_heading` | label | Magnetic Heading | MH, a figure's name. |
+| `cruise_altitude` | label | Cruise Altitude | The plan's cruise altitude. |
+| `cruise_power` | label | Cruise Power | An airplane's cruise power setting, a percentage. |
+| `density_altitude` | label | Density Altitude | A field's density altitude. |
+| `usable_fuel` | label | Usable Fuel | An airplane's usable fuel. |
+| `fuel_burn` | label | Fuel Burn | An airplane's fuel burn an hour. |
+| `start_and_taxi_fuel` | label | Start and Taxi Fuel | The fuel an airplane burns before takeoff. |
+| `empty_weight` | label | Empty Weight | An airplane's basic empty weight. |
+| `empty_moment` | label | Empty Moment | An airplane's basic empty moment. |
+| `service_ceiling` | label | Service Ceiling | An airplane's service ceiling. |
+| `glide_ratio` | label | Glide Ratio | An airplane's best glide ratio. |
+| `climb_rate_at_sea_level` | label | Climb Rate at Sea Level | An airplane's climb rate at sea level. |
+| `fetching_nearest_fields` | progress | Fetching the nearest fields… | Nearest, while it is asked for. |
+| `fetching_notams` | progress | Fetching the NOTAMs… | A field's or the route's NOTAMs, while they are asked for. |
+| `fetching_model_weather` | progress | Fetching model weather… | Model Weather's picture, while it is asked for. |
+| `fetching_logbook` | progress | Fetching your logbook… | The logbook, while it is asked for. |
+| `fetching_services` | progress | Fetching the services… | A stop's services, while they are asked for. |
+| `reading_the_page` | progress | Reading the page… | A photographed page, while it is read. |
+| `listening_to_the_radio` | progress | Listening to the radio… | The radio's words, while they are heard. |
+| `planner_not_reached` | sentence | The planner could not be reached. | Where the planner did not answer. |
+| `notams_not_fetched` | sentence | The NOTAMs could not be fetched. | Where the NOTAMs did not come. |
+| `tfrs_not_checked` | sentence | TFRs could not be checked just now. | The route's NOTAMs where the TFR list did not come. |
+| `tfr_list_not_read` | sentence | The TFR list could not be read: check the FAA's TFRs before flying. | A field's NOTAMs where the TFR list did not come. |
+| `tfrs_not_loaded` | sentence | The TFRs did not load. Check tfr.faa.gov before flight. | The map's TFR card where tfr.faa.gov did not answer. |
+| `special_use_no_answer` | sentence | The FAA's special-use airspace did not answer. Check the chart. | The airspace card where the SUA feed did not answer. |
+| `airspace_not_read` | sentence | The planner could not read the airspace here. Try again in a moment. | The airspace card where the planner did not answer. |
+| `weather_not_reached` | sentence | The weather service could not be reached. | An airport's weather where aviationweather.gov did not answer. |
+| `services_not_fetched` | sentence | The services could not be fetched. | A stop's services where they did not come. |
+| `places_not_looked_up` | sentence | Places near the field could not be looked up. | A stop's places where they did not come. |
+| `logbook_not_fetched` | sentence | Your logbook could not be fetched. | The logbook where it did not come. |
+| `nearest_not_found` | sentence | The nearest fields could not be found. | Nearest where it did not come. |
+| `page_not_read` | sentence | The page could not be read. | A photographed page that could not be read. |
+| `read_back_not_checked` | sentence | The read back could not be checked. | A clearance's read back that could not be checked. |
+| `forecast_icing_not_checked` | sentence | The forecast icing could not be checked: aviationweather.gov did not answer. Verify it separately before flight. | The Brief's icing where aviationweather.gov did not answer. |
+| `history_not_fetched` | sentence | Its history could not be fetched. Try again in a moment. | An airplane's registry history where it did not come. |
+| `past_flights_not_fetched` | sentence | Its past flights could not be fetched. Try again in a moment. | An airplane's past flights where they did not come. |
+| `coming_up_not_fetched` | sentence | What falls due could not be fetched. | Coming Up where it did not come. |
+| `plan_a_route_first` | sentence | Plan a route first. | What needs a route, where there is none. |
+| `no_ceiling` | value | No ceiling | A report with no broken or overcast layer, a figure's value (14 CFR 1.1, "ceiling"). |
+| `remove_from_favorites` | label | Remove from Favorites | Takes the airport or airplane shown out of the favorites. |
+| `remove_from_account` | label | Remove from Account | Takes the thing shown out of the pilot's account. |
+| `hide_from_map` | label | Hide from Map | Takes the thing shown off the map. |
+| `sign_out` | label | Sign Out | Signs the pilot out. |
+| `not_now` | label | Not Now | Puts an offer off (the owner's word, a shared flight's). |
+| `new_airplane` | label | New Airplane | The title over a new airplane's figures. |
+| `export_my_data` | label | Export My Data | Saves the pilot's account as a file. |
+| `dry_run` | label | Dry Run | Flies the route on the map before the flight. |
+| `wind_correction` | label | Wind Correction | WCA, a figure's name. |
+| `true_heading` | label | True Heading | TH, a figure's name. |
+| `compass_heading` | label | Compass Heading | CH, a figure's name. |
+| `fuel_required` | label | Fuel Required | The fuel a leg or the flight needs. |
+| `pattern_altitude` | label | Pattern Altitude | A field's traffic pattern altitude. |
+| `fetching_the_map` | progress | Fetching the map… | The map, while its chart is asked for. |
+
+<!-- END generated wording -->
+
+|       | Web | iPhone | Android |
+| ----- | --- | ------ | ------- |
+| Words | `lib/wording/generated/wording.ts` (`WORDING`) | `Design/Generated/Wording.swift` (`Wording`), kept by `Localizable.xcstrings` | `res/values/wording_strings.xml` (`R.string.wording_*`) |
+| Tests | `lib/wording/wording.test.ts` | `WingtipTests/WordingTests.swift` | `WordingTest` |
+
 ## Changing a rule
 
 A rule here changes only when the owner says so (the `owner` label). Then

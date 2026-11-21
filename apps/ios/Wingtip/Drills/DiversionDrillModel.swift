@@ -65,7 +65,7 @@ final class DiversionDrillModel {
                 fields = try Self.ranked(near, fix: fix)
             } catch {
                 fields = []
-                fieldsProblem = "The nearest fields couldn't be found: \(error.localizedDescription)"
+                fieldsProblem = "The nearest fields could not be found: \(error.localizedDescription)"
             }
         }
     }

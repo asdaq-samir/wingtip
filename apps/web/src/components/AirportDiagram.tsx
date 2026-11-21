@@ -52,12 +52,12 @@ export function DiagramRow({
     <>
       <ListRow
         media={media}
-        title="Airport diagram"
+        title="Airport Diagram"
         onClick={open}
         chevron
         data-testid={testId}
         aria-busy={loading || undefined}
-        description={shown === "missing" ? "The airport diagram could not be loaded" : undefined}
+        description={shown === "missing" ? "The airport diagram could not be fetched." : undefined}
       >
         {loading && <Spinner className="text-muted-foreground" />}
       </ListRow>

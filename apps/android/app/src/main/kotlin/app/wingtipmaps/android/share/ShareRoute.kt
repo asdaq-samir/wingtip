@@ -55,7 +55,7 @@ fun rememberShareRoute(state: Plan.State): () -> Unit {
                     send(context, planOf(state, number.takeIf { withTail }))
                 }) { Text(stringResource(R.string.share)) }
             },
-            dismissButton = { TextButton(onClick = { asking = false }) { Text(stringResource(R.string.not_now)) } },
+            dismissButton = { TextButton(onClick = { asking = false }) { Text(stringResource(R.string.wording_not_now)) } },
         )
     }
     return { if (tail == null) send(context, planOf(state, null)) else asking = true }

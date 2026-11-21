@@ -105,7 +105,7 @@ export function BeforeRow({ before, airplane, onOpen }: { before?: BriefGlance["
                 "Fuel spare" was no pilot's term (the Brief audit of
                 2026-11-21, finding 10). */}
             <Stat
-              label="Beyond reserve"
+              label="Beyond Reserve"
               value={before?.spareGal != null ? `${before.spareGal.toFixed(1)} gal` : DASH}
               finding={before?.spareGal != null && before.spareGal < 0 ? "stop" : undefined}
             />
@@ -205,7 +205,7 @@ export function EnrouteRow({ enroute, said, onOpen }: { enroute?: BriefGlance["e
         <Figures note={said ? undefined : (enroute?.line ?? undefined)}>
           {/* The lowest ceiling any TAF near the route forecasts over the
               flight, not a ceiling now: named so (finding 12). */}
-          <Stat label="Lowest ceiling" value={ceiling} finding={stop && enroute.ceilingFt != null ? "stop" : undefined} />
+          <Stat label="Lowest Ceiling" value={ceiling} finding={stop && enroute.ceilingFt != null ? "stop" : undefined} />
           <Stat
             label="Visibility"
             value={enroute?.visibilitySm != null ? `${enroute.visibilitySm} sm` : DASH}
@@ -215,7 +215,7 @@ export function EnrouteRow({ enroute, said, onOpen }: { enroute?: BriefGlance["e
               over every leg, where the first stretch's wind said nothing of
               a later leg flown into a strong one (finding 11); "None" with
               tailwinds all the way. */}
-          <Stat label="Most headwind" value={headwindText(enroute?.headwind)} />
+          <Stat label="Most Headwind" value={headwindText(enroute?.headwind)} />
         </Figures>
       }
       chevron

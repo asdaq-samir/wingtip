@@ -61,7 +61,7 @@ struct PermissionAsk: View {
         } actions: {
             Button(action: allow) { Text("Allow").frame(maxWidth: .infinity) }
                 .glassProminentButton().controlSize(.large)
-            Button(action: notNow) { Text("Not Now").frame(maxWidth: .infinity) }
+            Button(action: notNow) { Text(Wording.notNow).frame(maxWidth: .infinity) }
                 .glassButton().controlSize(.large)
         }
         .accessibilityIdentifier("permission-\(permission.title.lowercased())")

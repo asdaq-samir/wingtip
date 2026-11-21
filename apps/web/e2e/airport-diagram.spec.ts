@@ -86,7 +86,7 @@ test("an airport's card has its diagram as a row, and a tap shows it full screen
   // A row, as the Chart Supplement's is, not the sheet itself in the tab.
   const row = card(page).getByTestId("airport-diagram");
   await row.scrollIntoViewIfNeeded();
-  await expect(row).toHaveText(/^Airport diagram/);
+  await expect(row).toHaveText(/^Airport Diagram/);
   await expect(card(page).getByTestId("chart-supplement")).toBeVisible();
   await expect(card(page).locator("img[src*='/airport-diagram/2610/KDLH.png']")).toHaveCount(0);
 
@@ -171,7 +171,7 @@ test("where the picture cannot be had and the FAA gives no PDF, the row says the
   const row = card(page).getByTestId("airport-diagram");
   await row.scrollIntoViewIfNeeded();
   await row.click();
-  await expect(row).toContainText("The airport diagram could not be loaded");
+  await expect(row).toContainText("The airport diagram could not be fetched.");
   await expect(page.getByTestId("airport-diagram-viewer")).toHaveCount(0);
 });
 
@@ -286,7 +286,7 @@ test("a field the FAA draws no diagram for has the row all the same, showing the
   await settle(page);
   await toCharts(page);
   const row = card(page).getByTestId("airport-diagram-sketch");
-  await expect(row).toContainText("Airport diagram");
+  await expect(row).toContainText("Airport Diagram");
   await expect(row).toContainText("A sketch of the runways");
   await row.click();
   const viewer = page.getByTestId("airport-sketch-viewer");

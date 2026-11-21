@@ -199,9 +199,9 @@ test("an answer missed while the map is panned is not said; traffic is said unav
   await expect.poll(async () => (await drawn(page, "traffic-marks")).length, { timeout: slow(15_000) }).toBe(2);
   down = true;
   await page.clock.runFor(10_000);
-  await expect(page.getByText("Traffic isn't available right now.")).toHaveCount(0);
+  await expect(page.getByText("Traffic is not available right now.")).toHaveCount(0);
   await page.clock.runFor(35_000);
-  await expect(page.getByText("Traffic isn't available right now.")).toBeVisible({ timeout: slow(10_000) });
+  await expect(page.getByText("Traffic is not available right now.")).toBeVisible({ timeout: slow(10_000) });
 });
 
 test("an airplane's card opens at its size: where it left and its record come into the lines held for them", async ({ page }) => {

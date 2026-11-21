@@ -465,6 +465,10 @@ jobs:
                 - apps/ios/Wingtip/Navigation/Generated/**
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/navigation/generated/**
                 - apps/ios/Wingtip/Design/Generated/**
+                - scripts/build/wording.sh
+                - scripts/build/wording.py
+                - docs/design/rules.md
+                - apps/android/app/src/main/res/values/wording_strings.xml
                 - apps/ios/Wingtip/Assets.xcassets/**
                 - docs/brand/**
                 - scripts/build/app-icons.sh

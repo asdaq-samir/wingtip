@@ -18,7 +18,7 @@ struct SharedFlightView: View {
                 if let totals = model.totals {
                     Section("Totals") {
                         LabeledContent("Distance", value: Format.distance(totals.distanceNm))
-                        LabeledContent("Time En Route", value: totals.eteMin.map(Format.duration) ?? "—")
+                        LabeledContent(Wording.timeEnRoute, value: totals.eteMin.map(Format.duration) ?? "—")
                         LabeledContent("Fuel", value: Format.fuel(totals.fuelGal))
                     }
                 }
@@ -34,7 +34,7 @@ struct SharedFlightView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button(model.gone ? "Close" : "Not Now") { model.notNow() }
+                Button(model.gone ? String(localized: "Close") : Wording.notNow) { model.notNow() }
             }
             if !model.gone {
                 ToolbarItem(placement: .confirmationAction) {

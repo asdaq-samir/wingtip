@@ -60,7 +60,7 @@ final class ForecastIcing {
         } catch {
             guard !Task.isCancelled else { return }
             asked = nil
-            problem = "The forecast icing could not be checked: aviationweather.gov didn't respond. Verify it separately before flight."
+            problem = Wording.forecastIcingNotChecked
         }
     }
 

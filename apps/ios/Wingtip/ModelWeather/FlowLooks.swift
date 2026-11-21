@@ -18,13 +18,13 @@ enum FlowFieldKind: String, CaseIterable, Identifiable, Sendable {
         case .precip: "Precipitation"
         case .cloud: "Clouds"
         case .ceiling: "Ceiling"
-        case .cape: "Thunderstorm energy"
+        case .cape: "Thunderstorm Energy"
         case .temp: "Temperature"
         case .vis: "Visibility"
         case .icing: "Icing"
         case .turb: "Turbulence"
-        case .frzlvl: "Freezing level"
-        case .tops: "Cloud tops"
+        case .frzlvl: "Freezing Level"
+        case .tops: "Cloud Tops"
         }
     }
 }

@@ -27,7 +27,7 @@ struct ContactView: View {
                 LabeledContent("Phone") {
                     TextField("218 555 0100", text: $phone).multilineTextAlignment(.trailing).keyboardType(.phonePad).textContentType(.telephoneNumber)
                 }
-                LabeledContent("Home base") {
+                LabeledContent("Home Base") {
                     TextField("KDLH", text: $homeBase).multilineTextAlignment(.trailing).font(.body.monospaced())
                         .textInputAutocapitalization(.characters).autocorrectionDisabled()
                 }
@@ -66,10 +66,10 @@ struct DeleteAccountButton: View {
     @State private var problem: String?
 
     var body: some View {
-        Button(deleting ? "Deleting…" : "Delete Account", role: .destructive) { asking = true }
+        Button(deleting ? String(localized: "Deleting…") : Wording.deleteAccount, role: .destructive) { asking = true }
             .disabled(deleting)
-            .confirmationDialog("Delete your account?", isPresented: $asking, titleVisibility: .visible) {
-                Button("Delete Account", role: .destructive) {
+            .confirmationDialog(Wording.deleteAccountQuestion, isPresented: $asking, titleVisibility: .visible) {
+                Button(Wording.deleteAccount, role: .destructive) {
                     deleting = true
                     Task {
                         do {
@@ -84,7 +84,7 @@ struct DeleteAccountButton: View {
                     }
                 }
             } message: {
-                Text("Your airplanes, flights, logbook and endorsements go, and you are signed out on every device. This can't be undone.")
+                Text("Your airplanes, flights, logbook and endorsements go, and you are signed out on every device. This cannot be undone.")
             }
         ProblemLine(problem)
     }
@@ -100,7 +100,7 @@ struct ExportDataButton: View {
     var body: some View {
         ShareLink(item: SharedFile(name: nil, type: .json) { [export] in try await export.fetch() },
                   preview: SharePreview("Your Wingtip Maps data")) {
-            Text("Export My Data")
+            Text(Wording.exportMyData)
         }
         ProblemLine(export.problem)
     }

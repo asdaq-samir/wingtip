@@ -37,13 +37,13 @@ fun IcingRows(plan: Plan.State, model: IcingModel = hiltViewModel()) {
     val ifr = plan.rules == "ifr"
     LaunchedEffect(points, plan.legs, plan.planning, ifr) { if (!plan.planning) model.brief(if (ifr) points else emptyList(), plan.legs) }
     when {
-        state.unchecked -> Text(stringResource(R.string.icing_unchecked), color = LocalInk.current.cautionInk, style = MaterialTheme.typography.bodyMedium)
+        state.unchecked -> Text(stringResource(R.string.wording_forecast_icing_not_checked), color = LocalInk.current.cautionInk, style = MaterialTheme.typography.bodyMedium)
         state.loading -> {
-            SectionTitle(stringResource(R.string.icing_forecast))
+            SectionTitle(stringResource(R.string.wording_forecast_icing))
             LoadingRow()
         }
         state.rows.isNotEmpty() -> {
-            SectionTitle(stringResource(R.string.icing_forecast))
+            SectionTitle(stringResource(R.string.wording_forecast_icing))
             state.rows.forEach { row ->
                 ListItem(
                     leadingContent = { FindingIcon(row.finding) },

@@ -9,7 +9,7 @@ const MINIMUM_ROWS: { key: keyof Minimums; title: string; unit: (n: number) => s
   { key: "ceilingFt", title: "Ceiling", unit: feet },
   { key: "visibilitySm", title: "Visibility", unit: miles },
   { key: "crosswindKt", title: "Crosswind", unit: (n) => `${n} kt` },
-  { key: "windKt", title: "Wind, with gusts", unit: (n) => `${n} kt` },
+  { key: "windKt", title: "Wind, with Gusts", unit: (n) => `${n} kt` },
 ];
 
 /** The pilot's personal minimums: the weather they will not take off or
@@ -25,7 +25,7 @@ export default function MinimumsPanel() {
   const setRouteWeather = usePreferences((s) => s.setRouteWeather);
   return (
     // The briefing says where the weather is under them.
-    <ListGroup title="Personal minimums">
+    <ListGroup title="Personal Minimums">
       {MINIMUM_ROWS.map(({ key, title, unit }) => (
         <ListRow key={key} title={title}>
           <PullDown
@@ -40,14 +40,14 @@ export default function MinimumsPanel() {
       {/* What FPL's Routes go round: these, or 14 CFR 91.155's alone --
           thunderstorms either way (lib/routeOptions), at the owner's "This
           can be a setting. But also avoid thunderstorms etc". */}
-      <ListRow title="Routes keep to">
+      <ListRow title="Routes Keep To">
         <PullDown<RouteWeather>
           label="Routes keep to"
           value={routeWeather}
           onChange={setRouteWeather}
           options={[
-            { value: "personal", label: "These minimums" },
-            { value: "legal", label: "VFR minimums" },
+            { value: "personal", label: "These Minimums" },
+            { value: "legal", label: "VFR Minimums" },
           ]}
         />
       </ListRow>

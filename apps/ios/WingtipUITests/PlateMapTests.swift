@@ -42,7 +42,7 @@ final class PlateMapTests: XCTestCase {
         let ils = app.buttons["ILS RWY 36"].firstMatch
         XCTAssertTrue(ils.waitForExistence(timeout: 10), "no ILS RWY 36 in the menu")
         ils.tap()
-        let published = app.buttons["As published"].firstMatch
+        let published = app.buttons["As Published"].firstMatch
         if published.waitForExistence(timeout: 5) { published.tap() }
         // Picked, its fixes are rows on the route's line before KOSH.
         XCTAssertTrue(app.descendants(matching: .any)["procedure-rows-approach"].waitForExistence(timeout: Self.planner),

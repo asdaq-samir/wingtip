@@ -9,7 +9,7 @@ import { useChunkFailure } from "../lib/chunkRecovery";
 const WORDS = {
   newer: { title: "A newer version is ready", line: "Reload to use it." },
   offline: { title: "No connection", line: "Part of the app is not on this device yet. Reload once the connection is back." },
-  failed: { title: "Part of the app didn’t load", line: "Check the connection, then reload." },
+  failed: { title: "Part of the app did not load", line: "Check the connection, then reload." },
 } as const;
 
 /**

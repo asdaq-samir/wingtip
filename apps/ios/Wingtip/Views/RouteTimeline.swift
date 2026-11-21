@@ -38,7 +38,7 @@ struct RouteTimelineSection: View {
             .onMove { plan.moveTimeline(from: $0, to: $1) }
             // Type Route at Add a Stop's end, as the web's keyboard chip.
             HStack {
-                Button { ask(.addStop) } label: { Label("Add a Stop", systemImage: "plus") }
+                Button { ask(.addStop) } label: { Label(Wording.addStop, systemImage: "plus") }
                     .buttonStyle(.borderless)
                     .accessibilityIdentifier("timeline-add-stop")
                 Spacer(minLength: WingtipSpace.sm)
@@ -206,7 +206,7 @@ struct TimelineDepartPicker: View {
     var body: some View {
         let zone = clock.zone(point)
         HStack(alignment: .firstTextBaseline, spacing: WingtipSpace.xxs) {
-            DatePicker("Departure time", selection: Binding(get: { clock.leaves }, set: { picked in
+            DatePicker("Departure Time", selection: Binding(get: { clock.leaves }, set: { picked in
                 plan.setDepart(TimelineClock.next(picked, in: zone))
             }), displayedComponents: [.hourAndMinute])
                 .labelsHidden()

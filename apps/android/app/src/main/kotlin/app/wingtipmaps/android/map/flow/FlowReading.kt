@@ -51,7 +51,7 @@ object FlowReading {
             FlowKind.CLOUD -> "${v.roundToInt()}%"
             // The engine reads the ceiling rounded to its picture's 50 ft, and
             // its top as none (flow_sample's no_ceiling, AIM 7-1-7).
-            FlowKind.CEILING -> if (read.noCeiling) context.getString(R.string.flow_no_ceiling) else "${whole(v)} ft"
+            FlowKind.CEILING -> if (read.noCeiling) context.getString(R.string.wording_no_ceiling) else "${whole(v)} ft"
             FlowKind.CAPE -> listOfNotNull("${whole(v)} J/kg", Engine.capeCategory(v).getOrThrow()).joinToString(", ")
             FlowKind.TEMP -> "${v.roundToInt()}°C"
             FlowKind.VIS -> String.format(Locale.US, "%.1f SM", v)

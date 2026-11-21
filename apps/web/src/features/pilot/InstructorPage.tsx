@@ -79,7 +79,7 @@ export default function InstructorPage() {
         {!instructor.certificate || editing ? (
           <CertificateForm instructor={instructor} onDone={instructor.certificate ? () => setEditing(false) : undefined} />
         ) : (
-          <ListGroup title="Your certificate">
+          <ListGroup title="Your Certificate">
             <ListRow
               title={instructor.fullName ?? ""}
               description={<span className="font-mono">{instructor.certificate}</span>}
@@ -91,7 +91,7 @@ export default function InstructorPage() {
         )}
 
         {instructor.asking.length > 0 && (
-          <ListGroup title="Asking you">
+          <ListGroup title="Asking You">
             {instructor.asking.map((s) => (
               <ListRow key={s.linkId} title={s.name} description={s.email} data-testid="student-ask">
                 <span className="flex gap-1">
@@ -118,7 +118,7 @@ export default function InstructorPage() {
           // Who needs the instructor today (features/pilot/students): a solo
           // cross-country flown today or before still waiting on its
           // sign-off, a solo endorsement lapsing within the week.
-          <ListGroup title="Needs you today">
+          <ListGroup title="Needs You Today">
             {students.needs.map((l) => (
               <PageRow
                 key={l.row.linkId}
@@ -175,7 +175,7 @@ export default function InstructorPage() {
         {instructor.certificate && !editing && (
           <ListGroup>
             <ListRow
-              title={<span className="text-destructive">Stop instructing here</span>}
+              title={<span className="text-destructive">Stop Instructing Here</span>}
               disabled={stop.isPending}
               onClick={() => stop.mutate()}
             />

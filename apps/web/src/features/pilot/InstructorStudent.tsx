@@ -18,6 +18,7 @@ import { acDay, inForce, reviewRoute, said } from "../../lib/endorsements";
 import { GoodTo, SignedRow, SignForm } from "./Endorsements";
 import StudentLessons from "./LessonAssign";
 import { FieldError } from "../../components/ui/field";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** What the student's record answers of 61.93(d), and the flight as saved. */
 function ReviewSection({
@@ -65,11 +66,11 @@ function ReviewSection({
           />
         )}
         <ConsoleClose>
-          <ListRow title="Open on the map" description="Its nav log, and today's weather and NOTAMs along it" to={planHrefOf(f)} />
+          <ListRow title={WORDING.showOnMap} description="Its nav log, and today's weather and NOTAMs along it" to={planHrefOf(f)} />
         </ConsoleClose>
       </ListGroup>
       {/* 14 CFR 61.93(d)(4) and (5), as their record has them. */}
-      <ListGroup title="The student's endorsements">
+      <ListGroup title="The Student's Endorsements">
         {review.checks.map((c) => (
           <ListRow
             key={c.rule}
@@ -106,9 +107,9 @@ function ReviewSection({
         />
       ) : answering === "decline" ? (
         // The note goes to the student by email and on their Checkride page.
-        <ListGroup title="Not endorsed">
+        <ListGroup title="Not Endorsed">
           <div className="p-2">
-            <RowField id={noteId} error={undefined} wide label="Why not">
+            <RowField id={noteId} error={undefined} wide label="Why Not">
               <Textarea
                 id={noteId}
                 value={note}
@@ -129,12 +130,12 @@ function ReviewSection({
       ) : (
         <ListGroup>
           <ListRow
-            title={<span className="font-medium text-tint">Endorse this flight</span>}
+            title={<span className="font-medium text-tint">Endorse This Flight</span>}
             onClick={() => setAnswering("sign")}
             data-testid="review-endorse"
           />
           <ListRow
-            title={<span className="font-medium text-destructive">Not endorsed</span>}
+            title={<span className="font-medium text-destructive">Not Endorsed</span>}
             onClick={() => setAnswering("decline")}
             data-testid="review-decline"
           />

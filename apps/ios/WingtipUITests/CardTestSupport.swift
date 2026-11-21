@@ -55,7 +55,7 @@ enum CardTests {
         Card(name: "Airplane", id: "card-airplane", entries: [.link("airplane")]),
         Card(name: "You", id: "card-setup", entries: [.link("setup"), .button("account-button")]),
         Card(name: "Downloads", id: "card-downloads", entries: [.link("downloads")]),
-        Card(name: "Ask", id: "card-ask", entries: [.link("ask"), .button("Ask about this flight")]),
+        Card(name: "Ask", id: "card-ask", entries: [.link("ask"), .button("Ask About the Flight")]),
         // A plate's card, as a tap on its page on the map opens it; offline,
         // its title from its key and its settings all there.
         Card(name: "Plate", id: "card-plate", entries: [.card("+plate:KOSH:I36")]),

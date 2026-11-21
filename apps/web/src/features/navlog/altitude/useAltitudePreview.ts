@@ -137,7 +137,7 @@ export function useAltitudePreview({
       const words = clearanceAt(profile, altitude, points)?.words ?? feet(altitude);
       const marks = [
         row?.fastest && "Fastest",
-        row?.economical && "Most economical",
+        row?.economical && "Most Economical",
         row && !row.legal && "outside the legal altitudes",
       ].filter(Boolean);
       return `${words.replace(/ ft\b/, " feet")}${marks.length ? `, ${marks.join(", ")}` : ""}`;

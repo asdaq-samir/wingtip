@@ -87,7 +87,7 @@ export function FuelSet({
     : "The fuel in the tanks at engine start: full, or the gallons.";
   const options = [
     { value: "full", label: `Full (${usable} gal)` },
-    ...(stop ? [{ value: "none", label: "No fuel" }] : []),
+    ...(stop ? [{ value: "none", label: "No Fuel" }] : []),
     { value: "own", label: "Gallons" },
   ];
   const body = (

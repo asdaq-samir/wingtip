@@ -291,7 +291,7 @@ final class Plan {
         do { try extras.apply(to: &extra, procedures: picks) } catch {
             // A hold or a procedure the engine could not write is said, not
             // left out of a route planned without it.
-            problem = NavLogError(advice: nil, brief: nil, detail: "Your holds and procedures couldn't be written for the planner: \(error.localizedDescription)", reasons: nil)
+            problem = NavLogError(advice: nil, brief: nil, detail: "Your holds and procedures could not be written for the planner: \(error.localizedDescription)", reasons: nil)
             return
         }
         self.dep = dep; self.dest = dest; self.stops = stops
@@ -330,7 +330,7 @@ final class Plan {
                         self?.sideProblems[.checkpoints] = nil
                         self?.keep()
                     } catch {
-                        self?.sideProblems[.checkpoints] = "The checkpoints couldn't be fetched: \(error.localizedDescription)"
+                        self?.sideProblems[.checkpoints] = "The checkpoints could not be fetched: \(error.localizedDescription)"
                     }
                 }
                 if self.profile == nil || self.profile?.lengthNm != course.distanceNm {
@@ -342,7 +342,7 @@ final class Plan {
                             self?.sideProblems[.profile] = nil
                             self?.keep()
                         } catch {
-                            self?.sideProblems[.profile] = "The ground along the route couldn't be fetched: \(error.localizedDescription)"
+                            self?.sideProblems[.profile] = "The ground along the route could not be fetched: \(error.localizedDescription)"
                         }
                     }
                 }

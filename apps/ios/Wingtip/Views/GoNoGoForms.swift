@@ -42,8 +42,8 @@ struct LoadingView: View {
         Form {
             if let loading = verdict.answer?.loading, let load = verdict.load(for: plan.loadKey) ?? verdict.answer?.balance?.load {
                 Section("The Airplane") {
-                    figure("Empty weight", unit: "lb", value: load.emptyWeightLb) { var l = load; l.emptyWeightLb = $0; save(l) }
-                    figure("Empty arm", unit: "in", value: load.emptyArmIn) { var l = load; l.emptyArmIn = $0; save(l) }
+                    figure(Wording.emptyWeight, unit: "lb", value: load.emptyWeightLb) { var l = load; l.emptyWeightLb = $0; save(l) }
+                    figure("Empty Arm", unit: "in", value: load.emptyArmIn) { var l = load; l.emptyArmIn = $0; save(l) }
                 }
                 Section("Loaded") {
                     ForEach(Array(loading.stations.enumerated()), id: \.offset) { i, station in
@@ -80,7 +80,7 @@ struct LoadingView: View {
                 ProgressView()
             }
         }
-        .navigationTitle("Weight & Balance")
+        .navigationTitle(Wording.weightAndBalance)
         .navigationBarTitleDisplayMode(.inline)
         .task(id: verdict.key(for: plan)) { await verdict.refresh(plan: plan, signedIn: session.signedIn) }
     }

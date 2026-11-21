@@ -97,7 +97,7 @@ enum LiveWords {
             return RvrRow(
                 runway: r.runway,
                 readings: [reading(r.touchdownFt, more: r.touchdownMore), reading(r.midpointFt, more: r.midpointMore), reading(r.rolloutFt, more: r.rolloutMore)].joined(separator: " · "),
-                under: under && minimumSm != nil ? "Under your \(smWords(minimumSm!)) SM minimum (14 CFR 91.175(h))" : nil)
+                under: under && minimumSm != nil ? "Under your \(smWords(minimumSm!)) sm minimum (14 CFR 91.175(h))" : nil)
         }
     }
 

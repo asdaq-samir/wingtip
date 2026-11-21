@@ -79,7 +79,7 @@ test("it offers a way out, the way out works, and the line goes with the problem
   await plannerDown(page);
   await page.goto(PLAN);
 
-  const retry = banner(page).getByRole("button", { name: "Try again" });
+  const retry = banner(page).getByRole("button", { name: "Try Again" });
   await expect(retry).toBeVisible({ timeout: 20000 });
   // The map's one banner (MapBanner): on the map buttons' glass at the
   // banner's corner, a row 44 tall at the least, its glyph, line and

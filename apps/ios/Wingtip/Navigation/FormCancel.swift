@@ -14,8 +14,8 @@ struct FormCancel: ToolbarContent {
     var body: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
             Button("Cancel") { if edited { asking = true } else { cancel() } }
-                .confirmationDialog("Discard your changes?", isPresented: $asking, titleVisibility: .visible) {
-                    Button("Discard Changes", role: .destructive) { cancel() }
+                .confirmationDialog(Wording.discardChangesQuestion, isPresented: $asking, titleVisibility: .visible) {
+                    Button(Wording.discard, role: .destructive) { cancel() }
                     Button("Keep Editing", role: .cancel) {}
                 }
         }

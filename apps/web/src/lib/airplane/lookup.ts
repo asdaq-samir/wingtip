@@ -97,11 +97,11 @@ export function inAirWords(inAir: InAir): StatusWords {
     case "unknown":
       return inAir.again
         ? { text: "adsb.lol is busy; checking again…", problem: false }
-        : { text: "Whether it's in the air isn't known now. Try again in a moment.", problem: true };
+        : { text: "Whether it is in the air is not known now. Try again in a moment.", problem: true };
     case "failed":
       return inAir.offline
         ? { text: NO_CONNECTION, problem: true }
-        : { text: "Couldn't check whether it's in the air. Try again in a moment.", problem: true };
+        : { text: "Whether it is in the air could not be checked. Try again in a moment.", problem: true };
   }
 }
 

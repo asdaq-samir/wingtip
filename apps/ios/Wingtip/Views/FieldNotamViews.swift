@@ -153,7 +153,7 @@ struct FieldNotamsSection: View {
                 case let failed: ProblemLine(failed, "Whether this field has NOTAMs")
                 }
             } else if notams.ranked == nil {
-                Text("A NOTAM's words and its times").loading("Fetching NOTAMs")
+                Text("A NOTAM's words and its times").loading(Wording.fetchingNotams)
             }
             if !(notams.all && notams.long) { rows(notams.shown) }
             if notams.long {
@@ -171,7 +171,7 @@ struct FieldNotamsSection: View {
             header
         } footer: {
             if notams.ranked?.unchecked?.isEmpty == false {
-                Text("The TFR list could not be read: check the FAA's TFRs before flying.").foregroundStyle(WingtipInk.caution)
+                Text(Wording.tfrListNotRead).foregroundStyle(WingtipInk.caution)
             }
         }
     }

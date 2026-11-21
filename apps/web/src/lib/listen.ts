@@ -65,7 +65,7 @@ export function noMicrophone(): string {
 }
 
 /** Why nothing listens: speech cannot be recognised on this device. */
-const NOT_HERE = "Speech can't be recognised on this device; type the clearance instead.";
+const NOT_HERE = "Speech cannot be recognised on this device; type the clearance instead.";
 
 /** Why nothing listens: this browser's recognizer is a server's, and
  *  there is no connection to it. */

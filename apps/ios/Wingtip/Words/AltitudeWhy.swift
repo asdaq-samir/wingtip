@@ -50,7 +50,7 @@ enum AltitudeWhy {
             : "14 CFR 91.159(a): more than 3,000 ft above the surface, odd thousands plus 500 ft on a magnetic course of 0° through 179°, even thousands plus 500 ft on 180° through 359°"
         let given: String
         switch legal {
-        case nil: given = "; the cruising altitudes it gives here couldn't be worked out."
+        case nil: given = "; the cruising altitudes it gives here could not be worked out."
         case let list? where list.isEmpty: given = "; it gives no cruising altitude between the floor and the ceiling here."
         case let list?: given = "; the cruising altitudes it gives here are \(list.prefix(6).map { Format.altitude($0) }.joined(separator: ", "))."
         }

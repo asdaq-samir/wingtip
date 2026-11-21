@@ -7,6 +7,7 @@ import { feet, hm, weekdayDayMonthTime, zoneName } from "../../lib/format";
 import { routeName } from "../../lib/identSchema";
 import { faaWords } from "../../lib/advisories";
 import { altFt, feetRange, gal, nm } from "../../lib/format";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** The altitudes the legs fly: "4,500 ft", or "2,500-3,000 ft" where it steps. */
 function altitudes(legs: Leg[], fallback: number | null | undefined): string | null {
@@ -182,7 +183,7 @@ export default function Kneeboard({
         <Blank label="Hobbs out" />
         <Blank label="in" />
       </p>
-      <p className="mt-2 text-[6.5pt]">Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight.</p>
+      <p className="mt-2 text-[6.5pt]">{WORDING.planningAidKneeboard}</p>
     </section>,
     document.body,
   );

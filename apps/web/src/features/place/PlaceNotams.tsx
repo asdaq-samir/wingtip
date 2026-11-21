@@ -25,6 +25,7 @@ import {
 import { NotamsState } from "./NotamsState";
 import { timeLines } from "./notamTimes";
 import { TfrDetails } from "./TfrDetails";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** The NOTAMs section's test id. */
 const SECTION = "place-notams";
@@ -197,7 +198,7 @@ function NotamState({ n }: { n: FieldNotam }) {
  *  the list. */
 function Unchecked({ data }: { data: FieldNotams | undefined }) {
   return data && data.unchecked.length > 0 ? (
-    <p className={cn("pt-2 text-caution-ink", TEXT.note)}>The TFR list could not be read: check the FAA's TFRs before flying.</p>
+    <p className={cn("pt-2 text-caution-ink", TEXT.note)}>{WORDING.tfrListNotRead}</p>
   ) : null;
 }
 

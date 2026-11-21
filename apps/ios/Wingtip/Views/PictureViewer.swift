@@ -168,7 +168,7 @@ struct PictureViewer: View {
                     } description: {
                         Text(problem)
                     } actions: {
-                        Button("Try Again") { Task { await load() } }
+                        Button(Wording.tryAgain) { Task { await load() } }
                     }
                 } else {
                     ProgressView("Fetching…")
@@ -384,7 +384,7 @@ final class PageOwnShipView: UIView {
 
 #Preview("PictureViewer") {
     // A picture drawn here, so the viewer shows a page without the planner.
-    PictureViewer(picture: ShownPicture(title: "Airport diagram", credit: "FAA") {
+    PictureViewer(picture: ShownPicture(title: "Airport Diagram", credit: "FAA") {
         [UIGraphicsImageRenderer(size: CGSize(width: 600, height: 800)).image { context in
             UIColor.white.setFill()
             context.fill(CGRect(x: 0, y: 0, width: 600, height: 800))

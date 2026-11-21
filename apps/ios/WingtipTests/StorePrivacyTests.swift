@@ -105,7 +105,7 @@ struct StorePrivacyTests {
         defaults.set(true, forKey: PlanningAidNotice.acceptedKey)
         #expect(!PlanningAidNotice.wanted(defaults: defaults, arguments: [], environment: app))
         // The words are About's and the listing's.
-        #expect(PlanningAidNotice.message.hasPrefix(PlanningAid.words))
+        #expect(PlanningAidNotice.message.hasPrefix(Wording.planningAid))
         #expect(PlanningAidNotice.message.contains("Not for navigation"))
     }
 

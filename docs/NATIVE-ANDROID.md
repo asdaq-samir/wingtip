@@ -607,8 +607,8 @@ instruments bar -- groundspeed, track, GPS altitude (mean sea level: `getMslAlti
 the route the next field's distance, time to go and desired track, the
 distance off course and the destination's arrival with the fuel the
 plan leaves; Nearest one tap away (a sheet of the nearest fields, which
-are within a still-air glide by `glide_reaches`); and "Planning aid ·
-not for navigation". The glide ring is a dashed line under the route
+are within a still-air glide by `glide_reaches`); and "A Planning Aid, Not for
+Navigation" (`R.string.wording_planning_aid_notice_title`). The glide ring is a dashed line under the route
 (`ChartMap`'s `glide`), over the higher of the packs' ground (ahead's
 `ground_ft`) and the nearest field. FiguresStrip counts down from the
 airplane on the route. Settings › In Flight has Speak Alerts Ahead

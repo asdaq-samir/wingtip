@@ -28,7 +28,7 @@ struct AircraftFormView: View {
                 field("Type", text: $form.typeDesignator, placeholder: "C172", key: "typeDesignator", problems: problems, codes: true)
             }
             HandbookPhotoSection(form: $form, pending: $handbook, kept: record?.handbook)
-            Section("True Airspeed") {
+            Section(Wording.trueAirspeed) {
                 number("Climb", unit: "kt", text: $form.climbTasKt, placeholder: "74", key: "climbTasKt", problems: problems)
                 number("Cruise", unit: "kt", text: $form.cruiseTasKt, placeholder: "110", key: "cruiseTasKt", problems: problems)
             }
@@ -36,11 +36,11 @@ struct AircraftFormView: View {
             // it true at the descent's altitude (FAA-H-8083-25C ch. 8). Left
             // blank, the descent is flown on the cruise's figures and the
             // nav log says so.
-            Section("Indicated Airspeed") {
+            Section(Wording.indicatedAirspeed) {
                 number("Descent", unit: "kt", text: $form.descentIasKt, placeholder: "110", key: "descentIasKt", problems: problems)
             }
             // Climb left blank climbs at the type's book figures.
-            Section("Fuel Burn") {
+            Section(Wording.fuelBurn) {
                 number("Climb", unit: "gph", text: $form.climbFuelBurnGph, placeholder: "11", key: "climbFuelBurnGph", problems: problems)
                 number("Cruise", unit: "gph", text: $form.fuelBurnGph, placeholder: "8.5", key: "fuelBurnGph", problems: problems)
                 number("Descent", unit: "gph", text: $form.descentFuelBurnGph, placeholder: "6", key: "descentFuelBurnGph", problems: problems)
@@ -50,11 +50,11 @@ struct AircraftFormView: View {
             // handbook's cruise table (planning_figures' cruise_reference_ft).
             Section((try? Self.cruiseReference.get()).map { "Cruise figures at \(Format.altitude($0)), standard day" } ?? "Cruise figures, standard day") {
                 ProblemLine(Self.cruiseReference, "The altitude these figures are at")
-                number("Cruise power", unit: "%", text: $form.cruisePowerPct, placeholder: "65", key: "cruisePowerPct", problems: problems)
+                number(Wording.cruisePower, unit: "%", text: $form.cruisePowerPct, placeholder: "65", key: "cruisePowerPct", problems: problems)
             }
             // Without usable fuel the nav log makes no fuel check.
             Section {
-                number("Usable fuel", unit: "gal", text: $form.usableFuelGal, placeholder: "40", key: "usableFuelGal", problems: problems)
+                number(Wording.usableFuel, unit: "gal", text: $form.usableFuelGal, placeholder: "40", key: "usableFuelGal", problems: problems)
             }
             // FAA Form 7233-4's items (AIM Appendix 4): 10a equipment, 10b
             // surveillance, 19 colour and markings.
@@ -65,7 +65,7 @@ struct AircraftFormView: View {
             }
             ProblemLine(problem ?? problems[AircraftForm.formKey])
         }
-        .navigationTitle(record == nil ? "New Airplane" : "Edit Airplane")
+        .navigationTitle(record == nil ? Wording.newAirplane : Wording.editAirplane)
         .toolbar {
             if record == nil {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
@@ -161,19 +161,19 @@ struct OwnAircraftPage: View {
             InspectionsSection(record: $record, onChange: onChange)
             VorCheckSection(record: $record, onChange: onChange)
             Section {
-                Button("Delete Airplane", role: .destructive) { askingDelete = true }
+                Button(Wording.deleteAirplane, role: .destructive) { askingDelete = true }
             }
             ProblemLine(problem)
         }
         .navigationTitle(record.tailNumber)
         .confirmationDialog("Delete \(record.tailNumber)?", isPresented: $askingDelete, titleVisibility: .visible) {
-            Button("Delete Airplane", role: .destructive) {
+            Button(Wording.deleteAirplane, role: .destructive) {
                 Task {
                     do { try await Gateway.deleteAircraft(record.id); onChange(); dismiss() } catch { problem = error.localizedDescription }
                 }
             }
         } message: {
-            Text("It goes from your airplanes and from the nav log's picker. This can't be undone.")
+            Text("It goes from your airplanes and from the nav log's picker. This cannot be undone.")
         }
     }
 
@@ -182,7 +182,7 @@ struct OwnAircraftPage: View {
             if let fresh = try await Gateway.aircraftRecords().first(where: { $0.id == record.id }) { record = fresh }
         } catch {
             // Said here, so what is shown is not taken for what was just saved.
-            problem = "Its record couldn't be fetched again: \(error.localizedDescription)"
+            problem = "Its record could not be fetched again: \(error.localizedDescription)"
         }
         onChange()
     }
@@ -232,7 +232,7 @@ struct InspectionsSection: View {
                 }
             }
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                OptionalDayRow(title: "ELT battery replace by", day: $form.eltBatteryDueOn)
+                OptionalDayRow(title: "ELT Battery Replace By", day: $form.eltBatteryDueOn)
                 HStack(spacing: WingtipSpace.xs) {
                     Text("As marked on the transmitter, 91.207(c)")
                     if let due = record.inspections.eltBatteryDueOn { Text("·"); StandingText(through: due, good: "By", past: "Due since") }
@@ -246,12 +246,12 @@ struct InspectionsSection: View {
                 Text("Hire or instruction for hire: the 100-hour, 91.409(b)")
             }
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                LabeledContent("Hours at last 100-hour") {
+                LabeledContent("Hours at Last 100-Hour") {
                     TextField("0", text: $hoursAt).multilineTextAlignment(.trailing).keyboardType(.decimalPad)
                 }
                 Text(hundredHourLine).font(.footnote).foregroundStyle(.secondary)
             }
-            LabeledContent("Hours now") {
+            LabeledContent("Hours Now") {
                 TextField("0", text: $hoursNow).multilineTextAlignment(.trailing).keyboardType(.decimalPad)
             }
             Button(saving ? "Saving…" : "Save Inspections") { Task { await save() } }.disabled(saving)
@@ -311,14 +311,14 @@ struct VorCheckSection: View {
                     Text([Day.said(last.checkedOn), VorCheckKind.label(last.kind), last.place, "\(last.errorDeg.formatted(.number.locale(Format.locale)))°"].compactMap { $0 }.joined(separator: " · "))
                 }
             } else {
-                LabeledContent("Last check", value: "None recorded")
+                LabeledContent("Last Check", value: "None recorded")
             }
-            DatePicker("Checked on", selection: $checkedOn, in: ...Date(), displayedComponents: .date)
+            DatePicker("Checked On", selection: $checkedOn, in: ...Date(), displayedComponents: .date)
             Picker("How", selection: $kind) {
                 ForEach(VorCheckKind.all, id: \.value) { k in Text((try? VorCheckKind.limitDeg(k.value)).map { "\(k.label) (±\($0.formatted(.number.locale(Format.locale)))°)" } ?? k.label).tag(k.value) }
             }
             LabeledContent("Where") { TextField("KDLH VOT", text: $place).multilineTextAlignment(.trailing) }
-            LabeledContent("Bearing error") {
+            LabeledContent("Bearing Error") {
                 HStack(spacing: WingtipSpace.xs) {
                     TextField("0", text: $errorText).multilineTextAlignment(.trailing).keyboardType(.numbersAndPunctuation)
                     Text("°").foregroundStyle(.secondary)
@@ -355,8 +355,8 @@ private enum PreviewData {
     @Previewable @State var day: String? = "2026-06-14"
     @Previewable @State var none: String? = nil
     List {
-        OptionalDayRow(title: "Flight review", day: $day, upTo: Date())
-        OptionalDayRow(title: "Medical expires", day: $none)
+        OptionalDayRow(title: "Flight Review", day: $day, upTo: Date())
+        OptionalDayRow(title: "Medical Expires", day: $none)
     }
 }
 

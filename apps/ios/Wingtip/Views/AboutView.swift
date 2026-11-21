@@ -33,8 +33,8 @@ struct AboutView: View {
                 if let edition = charts.info?.chartCycle { LabeledContent("Chart Edition", value: edition) }
                 if let cycle = model.packCycle { LabeledContent("Data Cycle", value: cycle) }
             }
-            Section("A Planning Aid") {
-                Text(PlanningAid.words)
+            Section(Wording.planningAidTitle) {
+                Text(Wording.planningAid)
             }
             Section("Credits") {
                 ForEach(AboutCredits.data + AboutCredits.software, id: \.self) { credit in

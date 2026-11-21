@@ -9,6 +9,7 @@ import { useAskFigure } from "../../lib/airplane/useAskFigure";
 import { requestAirplanePick } from "../../lib/pickAirplane";
 import { TEXT } from "../../lib/text";
 import { FieldError } from "../ui/field";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * Where an airplane figure is needed and the airplane has none, the one ask
@@ -41,7 +42,7 @@ export function AskFigure({
       <div className={cn("flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground", TEXT.prose)} data-testid={testId}>
         <span>{what} needs an airplane.</span>
         <Button variant="link" size="sm" className={LINK} onClick={requestAirplanePick}>
-          Pick an airplane
+          {WORDING.pickAnAirplane}
         </Button>
       </div>
     );
@@ -85,7 +86,7 @@ export function AskFigure({
             {vm.saving ? "Saving…" : "Save"}
           </Button>
           <Button type="button" variant="link" size="sm" className={LINK} onClick={vm.notNow}>
-            Not now
+            Not Now
           </Button>
           {edit}
         </span>

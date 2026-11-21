@@ -250,7 +250,7 @@ struct AirportExtrasTests {
         shelf.toggleFavorite(dlh, undo: undo)
         undo.endUndoGrouping()
         #expect(!shelf.isFavorite("KDLH"))
-        #expect(undo.undoActionName == "Remove Favorite")
+        #expect(undo.undoActionName == "Remove from Favorites")
         undo.undo()
         #expect(shelf.favorites.map(\.ident) == ["C81", "KDLH"])
         undo.redo()

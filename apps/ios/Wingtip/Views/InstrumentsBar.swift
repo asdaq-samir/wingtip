@@ -76,7 +76,7 @@ struct InstrumentsBar: View {
                     Spacer(minLength: 0)
                     // The planning aid's words, where the figures are (the
                     // web's planningAid, README's "A planning aid").
-                    Text("Planning aid · not for navigation")
+                    Text(Wording.planningAidNoticeTitle)
                         .font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.trailing)
                 }
             }

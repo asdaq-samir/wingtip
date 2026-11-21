@@ -43,7 +43,7 @@ struct LogbookView: View {
     var body: some View {
         List {
             if !session.signedIn {
-                ContentUnavailableView("Sign in for your logbook", systemImage: "book.closed", description: Text("Your logbook and currency are kept with your account."))
+                ContentUnavailableView("Sign In for Your Logbook", systemImage: "book.closed", description: Text("Your logbook and currency are kept with your account."))
             } else {
                 comingUpSection
                 currencySection
@@ -56,7 +56,7 @@ struct LogbookView: View {
                     Section("Totals") {
                         LabeledContent("Total", value: Format.hours(currency.totalHours))
                         LabeledContent("Night", value: Format.hours(currency.nightHours))
-                        LabeledContent("Cross-country", value: Format.hours(currency.crossCountryHours))
+                        LabeledContent("Cross-Country", value: Format.hours(currency.crossCountryHours))
                         LabeledContent("Landings", value: "\(currency.landings)")
                     }
                 }
@@ -203,29 +203,29 @@ struct LogbookView: View {
             LabeledContent {
                 UntilText(date: currency?.dayPassengersUntil)
             } label: {
-                Text("Passengers by day")
+                Text("Passengers by Day")
                 Text("3 takeoffs and landings in 90 days")
             }
             LabeledContent {
                 UntilText(date: currency?.nightPassengersUntil)
             } label: {
-                Text("Passengers at night")
+                Text("Passengers at Night")
                 Text("3 to a full stop at night in 90 days")
             }
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                OptionalDayRow(title: "Flight review", day: dateBinding(\.flightReviewOn), upTo: Date())
+                OptionalDayRow(title: "Flight Review", day: dateBinding(\.flightReviewOn), upTo: Date())
                 if let until = currency?.flightReviewUntil { UntilText(date: until).font(.footnote) } else {
                     Text("Within 24 calendar months").font(.footnote).foregroundStyle(.secondary)
                 }
             }
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                OptionalDayRow(title: "Medical expires", day: dateBinding(\.medicalExpiresOn))
+                OptionalDayRow(title: "Medical Expires", day: dateBinding(\.medicalExpiresOn))
                 if let on = currency?.medicalExpiresOn { UntilText(date: on).font(.footnote) } else {
                     Text("The day it expires").font(.footnote).foregroundStyle(.secondary)
                 }
             }
             Toggle(isOn: Binding(get: { reminders?.on ?? false }, set: { on in Task { await remind(on) } })) {
-                Text("Email reminders")
+                Text("Email Reminders")
                 Text("30 and 7 days before each runs out, your airplanes' too")
             }
             .disabled(reminders == nil)
@@ -246,10 +246,10 @@ struct LogbookView: View {
                     UntilText(date: currency?.instrumentCurrentUntil, from: currency?.instrumentCurrentFrom)
                 }
             } label: {
-                Text("Instrument currency")
+                Text("Instrument Currency")
                 Text("\(currency?.approachesInWindow ?? 0) of 6 approaches\(currency?.holdingInWindow == true ? ", holding" : "")\(currency?.trackingInWindow == true ? ", tracking" : "") in the window")
             }
-            OptionalDayRow(title: "Proficiency check", day: dateBinding(\.ipcOn), upTo: Date())
+            OptionalDayRow(title: "Proficiency Check", day: dateBinding(\.ipcOn), upTo: Date())
         }
     }
 
@@ -276,7 +276,7 @@ struct LogbookView: View {
                 do {
                     return SavedFile(data: try Data(contentsOf: exportFile), type: .commaSeparatedText, name: exportFile.lastPathComponent)
                 } catch {
-                    $problem.wrappedValue = "The CSV couldn't be made, so nothing was sent: \(error.localizedDescription)"
+                    $problem.wrappedValue = "The CSV could not be made, so nothing was sent: \(error.localizedDescription)"
                     throw error
                 }
             }) { label }
@@ -293,7 +293,7 @@ struct LogbookView: View {
                     LabeledContent("The day · the route", value: "Hours").font(WingtipType.title)
                     Text("The airplane · its landings · remarks").foregroundStyle(.secondary)
                 }
-                .loading("Fetching your logbook")
+                .loading(Wording.fetchingLogbook)
             }
         }
     }
@@ -323,10 +323,10 @@ struct LogbookView: View {
             flights.entries = list.filter { !held.contains($0.id) }
             currency = try await Gateway.currency()
             do { reminders = try await Gateway.reminders(); remindersProblem = nil } catch {
-                remindersProblem = "Whether reminders are on couldn't be fetched: \(error.localizedDescription)"
+                remindersProblem = "Whether reminders are on could not be fetched: \(error.localizedDescription)"
             }
             do { paperwork = try await Gateway.paperwork(); paperworkProblem = nil } catch {
-                paperworkProblem = "What falls due couldn't be fetched: \(error.localizedDescription)"
+                paperworkProblem = "What falls due could not be fetched: \(error.localizedDescription)"
             }
             problem = nil
             do { exportFile = try Self.write(list) } catch {

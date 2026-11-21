@@ -89,7 +89,7 @@ export default function DrillPage({ deck: key }: { deck: DeckKey }) {
             description={next ? `The next one is due in ${strictDistance(next, now)}.` : "Every card is new: start whenever you like."}
           />
           <ListRow
-            title="Practice them all"
+            title="Practice Them All"
             onClick={() => {
               setPractice(true);
               setQueue(deck.cards.map((c) => c.id));
@@ -119,17 +119,17 @@ export default function DrillPage({ deck: key }: { deck: DeckKey }) {
           </div>
         ) : (
           <Button type="button" variant="outline" className="w-full" onClick={() => setRevealed(true)} data-testid="drill-reveal">
-            Show the answer
+            Show the Answer
           </Button>
         )}
       </div>
       {revealed && (
         <div className="grid grid-cols-2 gap-2">
           <Button type="button" variant="outline" onClick={() => answer(false)}>
-            Missed it
+            Missed It
           </Button>
           <Button type="button" onClick={() => answer(true)} data-testid="drill-knew">
-            Knew it
+            Knew It
           </Button>
         </div>
       )}

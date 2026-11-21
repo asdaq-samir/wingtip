@@ -68,7 +68,7 @@ fun EmergencySheet(
     airplanePicker: @Composable () -> Unit = {},
 ) {
     MaterialTheme(motionScheme = MotionScheme.standard()) {
-        CardPage(title = stringResource(R.string.emergency), exit = exit) { padding ->
+        CardPage(title = stringResource(R.string.screen_emergency), exit = exit) { padding ->
             Column(
                 Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
                 verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),

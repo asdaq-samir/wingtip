@@ -74,7 +74,7 @@ function PilotFields({ pilot }: { pilot: Pilot }) {
 
   return (
     <section aria-label="Pilot details">
-      <ListGroup title="For your flight plans">
+      <ListGroup title="For Your Flight Plans">
         <NameFieldRow
           id={`${id}-name`}
           title="Name"
@@ -110,7 +110,7 @@ function PilotFields({ pilot }: { pilot: Pilot }) {
             />
           </FieldHit>
         </ListRow>
-        <ListRow id={`${id}-home`} title="Home base" description={problem(`${id}-home`, homeWrong)}>
+        <ListRow id={`${id}-home`} title="Home Base" description={problem(`${id}-home`, homeWrong)}>
           <FieldHit htmlFor={`${id}-home`}>
             <Input
               id={`${id}-home`}

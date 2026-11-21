@@ -69,7 +69,7 @@ struct EmergencySheet: View {
                 .font(.title3)
             }
         }
-        .navigationTitle("Emergency")
+        .navigationTitle(Screen.emergency.title)
         .navigationBarTitleDisplayMode(.inline)
         .task(id: fix.map { Emergency.key($0, aircraft: emergencyAircraft, glideRatio: plan.figures.glideRatio) }) {
             await model.refresh(fix: fix, aircraft: emergencyAircraft, glideRatio: plan.figures.glideRatio)
@@ -163,7 +163,7 @@ struct EmergencySheet: View {
             }
         } else {
             Section("Checklist") {
-                CardRow(title: "No emergency checklist for \(checklist.airplane)",
+                CardRow(title: "No Emergency Checklist for \(checklist.airplane)",
                         detail: "Write it from the airplane's handbook in its Checklists")
             }
         }

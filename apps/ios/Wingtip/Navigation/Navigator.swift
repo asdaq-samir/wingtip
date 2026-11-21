@@ -37,7 +37,7 @@ final class Navigator {
     /// link, Siri and every "show the plan" turn it.
     var sheetPage: PlanPage = .search
     /// The field's card the plan was shown from (Fly Here, Depart From,
-    /// Add as Stop): where the empty route box's close goes back to, a
+    /// Add Stop): where the empty route box's close goes back to, a
     /// level back, as the web's clearRoute goes back to the airport flown
     /// to (`under`).
     private(set) var planFrom: SheetPage?

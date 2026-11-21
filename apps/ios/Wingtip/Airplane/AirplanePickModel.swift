@@ -26,7 +26,7 @@ final class AirplanePickModel {
             own = try await Gateway.aircraftRecords()
             ownProblem = nil
         } catch {
-            ownProblem = "Your airplanes couldn't be fetched: \(error.localizedDescription)"
+            ownProblem = "Your airplanes could not be fetched: \(error.localizedDescription)"
         }
     }
 }

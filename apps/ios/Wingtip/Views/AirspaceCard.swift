@@ -78,13 +78,13 @@ struct AirspaceCard: View {
                         // 14 CFR 91.215(b)(2) and 91.225(d)(2): within 30 nm
                         // of an airport in part 91's appendix D, section 1,
                         // from the surface to 10,000 ft MSL.
-                        CardRow(badge: RowBadge(systemImage: "dot.radiowaves.left.and.right", colour: Badge.rule), title: "In a Mode C veil",
+                        CardRow(badge: RowBadge(systemImage: "dot.radiowaves.left.and.right", colour: Badge.rule), title: "In a Mode C Veil",
                                 detail: "\(Format.distance(veil.distanceNm)) from \(veil.ident): a transponder with altitude reporting and ADS-B Out from the surface to 10,000 ft (91.215, 91.225).")
                     }
                 }
                 Section("Special Use") {
                     if here.specialUseUnavailable == true {
-                        ProblemLine("The FAA's special-use airspace did not answer. Check the chart.")
+                        ProblemLine(Wording.specialUseNoAnswer)
                     } else if (here.specialUse ?? []).isEmpty {
                         Text("None here").foregroundStyle(.secondary)
                     } else {
@@ -119,7 +119,7 @@ struct AirspaceCard: View {
             } else if let problem {
                 Section {
                     ProblemLine(problem)
-                    Button("Try Again") { Task { await load() } }
+                    Button(Wording.tryAgain) { Task { await load() } }
                 }
             } else {
                 Section { ProgressView("Fetching the airspace here…") }
@@ -148,7 +148,7 @@ struct AirspaceCard: View {
             if let kept = CyclePacks.shared.airspaceAt(lat: lat, lon: lon) {
                 here = kept
             } else {
-                problem = "The planner could not read the airspace here. Try again in a moment."
+                problem = Wording.airspaceNotRead
             }
         }
     }

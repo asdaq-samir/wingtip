@@ -21,7 +21,7 @@ export const CONSOLE_SCREENS: Screen[] = [
       await showTabs(page);
       await openConsole(page);
       await consolePage(page, "Guide");
-      await expect(page.getByRole("heading", { name: "Plan a flight" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Plan a Flight" })).toBeVisible();
     },
   },
   {
@@ -57,8 +57,8 @@ export const CONSOLE_SCREENS: Screen[] = [
   // for a flight instructor certificate.
   ...(
     [
-      ["Checkride", "Private pilot experience"],
-      ["Instructing", "Your flight instructor certificate"],
+      ["Checkride", "Private Pilot Experience"],
+      ["Instructing", "Your Flight Instructor Certificate"],
     ] as const
   ).map(([row, heading]): Screen => ({
     name: `pilot console, Logbook's ${row} page`,
@@ -81,7 +81,7 @@ export const CONSOLE_SCREENS: Screen[] = [
     [
       [
         "practice, a drill card",
-        "Light gun signals",
+        "Light Gun Signals",
         async (page: Page) => {
           await page.getByTestId("drill-reveal").click();
           await expect(page.getByTestId("drill-knew")).toBeVisible();
@@ -89,14 +89,14 @@ export const CONSOLE_SCREENS: Screen[] = [
       ],
       [
         "practice, holding entries",
-        "Holding entries",
+        "Holding Entries",
         async (page: Page) => {
           await expect(page.getByTestId("hold-diagram")).toBeVisible();
         },
       ],
       [
         "practice, lost communications",
-        "Lost communications",
+        "Lost Communications",
         async (page: Page) => {
           await expect(page.getByTestId("lost-segment").first()).toBeVisible();
         },

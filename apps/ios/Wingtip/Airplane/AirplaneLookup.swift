@@ -81,7 +81,7 @@ final class AirplaneLookup {
             flights = try await Planner.pastFlights(hex.lowercased()).flights
             flightsProblem = nil
         } catch {
-            flightsProblem = "Its flights couldn't be fetched. Try again in a moment."
+            flightsProblem = "Its flights could not be fetched. Try again in a moment."
         }
     }
 
@@ -112,7 +112,7 @@ final class AirplaneLookup {
         case .unknown where flights == nil:
             return ("Whether it's in the air isn't known now. Try again in a moment.", true)
         case .failed(let offline) where flights == nil:
-            return (offline ? "No connection: whether it's in the air can't be checked." : "Couldn't check whether it's in the air. Try again in a moment.", true)
+            return (offline ? "No connection: whether it's in the air cannot be checked." : "Whether it's in the air could not be checked. Try again in a moment.", true)
         default:
             break
         }
@@ -126,7 +126,7 @@ final class AirplaneLookup {
         case .checking: return ("Checking whether it's in the air…", false)
         case .ground: return ("Not in the air now", false)
         case .unknown: return ("Whether it's in the air isn't known now. Try again in a moment.", true)
-        case .failed(let offline): return (offline ? "No connection: whether it's in the air can't be checked." : "Couldn't check whether it's in the air. Try again in a moment.", true)
+        case .failed(let offline): return (offline ? "No connection: whether it's in the air cannot be checked." : "Whether it's in the air could not be checked. Try again in a moment.", true)
         case .flying: return ("In the air", false)
         }
     }

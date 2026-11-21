@@ -67,7 +67,7 @@ struct PastFlightCard: View {
                 points = try await Planner.pastFlight(hex, id: flight.id).points
                 tracking.past = points.map { PathPoint(t: $0.t, lat: $0.lat, lon: $0.lon, altFt: $0.altFt) }
             } catch {
-                problem = "Its track could not be had."
+                problem = "Its track could not be fetched."
             }
         }
         .onDisappear {

@@ -2,6 +2,7 @@ import type { AirportPlace } from "../../lib/api/types";
 import { compassPoint } from "../../lib/compass";
 import { feet, miles, nm } from "../../lib/format";
 import { placeWind } from "./placeWind";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * What an airport's card says of its weather, from the field's own answer
@@ -43,7 +44,7 @@ export function placeWeather(place: AirportPlace | undefined, known: { category:
     ? [
         placeWind(metar),
         metar.visibility_sm != null ? miles(metar.visibility_sm, metar.visibility_plus) : null,
-        metar.ceiling_ft == null ? "No ceiling" : `Ceiling ${feet(metar.ceiling_ft)}`,
+        metar.ceiling_ft == null ? WORDING.noCeiling : `Ceiling ${feet(metar.ceiling_ft)}`,
       ]
         .filter(Boolean)
         .join(" · ")
@@ -52,7 +53,7 @@ export function placeWeather(place: AirportPlace | undefined, known: { category:
       : nearby
         ? `Nearest report ${nearby.ident}, ${nm(nearby.distance_nm)} ${compassPoint(nearby.bearing_deg)}`
         : place?.weather_unavailable
-          ? "The weather service could not be reached"
+          ? WORDING.weatherNotReached
           : "No weather station reports from this field";
   const observedAt = (metar ? metar.observed_at : nearby?.metar.observed_at) ?? null;
   return { metar, weather, approximate, category, weatherLine, observedAt };

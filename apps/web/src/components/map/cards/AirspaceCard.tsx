@@ -57,7 +57,7 @@ export function AirspaceCardBody({ volume, at }: { volume: AirspaceVolume; at?: 
           at the owner's ask for cards that say what a pilot does there
           (2026-10-30). */}
       <div>
-        <ListGroup title="To enter">
+        <ListGroup title="To Enter">
           {entryRules(volume.airspace_class).map((r) => (
             <ListRow key={r.rule} title={<span className={TEXT.detail}>{r.rule}</span>} description={<Cited text={r.cite} />} />
           ))}
@@ -97,7 +97,7 @@ function AirspaceCall({ volume }: { volume: AirspaceVolume }) {
   if (!shown.length) return null;
   return (
     <div>
-      <ListGroup title={first === "APP" ? "Call approach" : "Call the tower"}>
+      <ListGroup title={first === "APP" ? "Call Approach" : "Call the Tower"}>
         {shown.map((f, i) => (
           <ListRow
             key={`${f.frequency_mhz}-${i}`}

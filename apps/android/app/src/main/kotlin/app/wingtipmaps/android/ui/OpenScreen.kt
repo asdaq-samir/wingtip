@@ -96,7 +96,7 @@ internal object OpenScreen {
             return null
         }
         val named = screenOf(screen)
-            ?: return "${screen.name.lowercase().replaceFirstChar { it.uppercase() }.replace('_', ' ')} isn't on this phone yet."
+            ?: return "${screen.name.lowercase().replaceFirstChar { it.uppercase() }.replace('_', ' ')} is not on this phone yet."
         ScreenRequests.ask(named)
         return null
     }

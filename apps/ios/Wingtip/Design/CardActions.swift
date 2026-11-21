@@ -10,7 +10,7 @@ import Foundation
 /// - Depart From: the field the route's departure, the plan shown (the
 ///   owner's one-search design, 2026-11-09).
 /// - Direct To: from the airplane to the point, then on along the route.
-/// - Add as Stop: the field a landing on the way, as Maps' Add Stop.
+/// - Add Stop: the field a landing on the way, as Maps' Add Stop.
 /// - Add to Route: the point a turn on the way, where it bends the route
 ///   least; not a landing.
 /// - Hold Here: a hold at the point (AIM 5-3-8).
@@ -24,9 +24,9 @@ enum CardAction: String, CaseIterable, Sendable {
         switch self {
         case .flyHere: "Fly Here"
         case .departFrom: "Depart From"
-        case .directTo: "Direct To"
-        case .addStop: "Add as Stop"
-        case .addToRoute: "Add to Route"
+        case .directTo: Wording.directTo
+        case .addStop: Wording.addStop
+        case .addToRoute: Wording.addToRoute
         case .holdHere: "Hold Here"
         case .call: "Call"
         case .address: "Address"

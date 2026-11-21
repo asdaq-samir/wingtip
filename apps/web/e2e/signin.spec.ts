@@ -81,16 +81,16 @@ test("signed out, Personal says once what signing in keeps, its minimums need no
   await expect(sheet.getByTestId("setup-page").getByRole("button", { name: "Sign In", exact: true })).toBeVisible();
   // This stack registers neither Google nor Apple: their buttons opened a blank 401.
   await sheet.getByTestId("setup-page").getByRole("button", { name: "Sign In", exact: true }).click();
-  const dialog = page.getByRole("dialog", { name: "Sign in to Wingtip Maps" });
-  await expect(dialog.getByLabel("Email address")).toBeVisible();
+  const dialog = page.getByRole("dialog", { name: "Sign In to Wingtip Maps" });
+  await expect(dialog.getByLabel("Email Address")).toBeVisible();
   await expect(dialog.getByRole("link", { name: /Continue with/ })).toHaveCount(0);
   // An address that can't be one is said under the field, not in the
   // browser's bubble (the owner's Q3, 2026-11-21), and goes as it is typed.
-  await dialog.getByLabel("Email address").fill("pilot@");
+  await dialog.getByLabel("Email Address").fill("pilot@");
   await dialog.getByRole("button", { name: "Send Link" }).click();
   await expect(dialog.getByTestId("sign-in-error")).toHaveText("Enter an email address like you@example.com");
-  await expect(dialog.getByLabel("Email address")).toHaveAttribute("aria-invalid", "true");
-  await dialog.getByLabel("Email address").fill("pilot@example.com");
+  await expect(dialog.getByLabel("Email Address")).toHaveAttribute("aria-invalid", "true");
+  await dialog.getByLabel("Email Address").fill("pilot@example.com");
   await expect(dialog.getByTestId("sign-in-error")).toHaveCount(0);
   await page.keyboard.press("Escape");
 
@@ -130,14 +130,14 @@ test("the emailed link opens the app's own sign-in dialog, over the planner, nam
   // into the address, which is why it is not looked for here: the
   // dialog has the token by then, and checking the address for it was
   // a race the test lost once the page got quicker.)
-  await expect(page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("button", { name: "Sign In", exact: true })).toBeVisible();
   // It names the account the link signs in to, masked, before it is used.
   await expect(page.getByRole("dialog")).toContainText(`${address[0]}•••${address.slice(address.indexOf("@"))}`);
   // The planner under it, its one search there.
   await expect(page.getByTestId("search-airports")).toBeVisible();
   expect(new URL(page.url()).search).not.toContain("signin");
 
-  await page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Sign In", exact: true }).click();
   await page.waitForURL((url) => url.pathname === "/app/plan" && url.hash === "");
   await showTabs(page);
   await openConsole(page);
@@ -151,7 +151,7 @@ test("the emailed link opens the app's own sign-in dialog, over the planner, nam
   // Spent: said before anything is pressed, and nothing to press.
   await page.goto(link);
   await expect(page.getByRole("dialog").getByRole("alert")).toContainText("expired or was already used");
-  await expect(page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true })).toBeDisabled();
+  await expect(page.getByRole("dialog").getByRole("button", { name: "Sign In", exact: true })).toBeDisabled();
 });
 
 test("a pilot's link lands on the planner, with no dev switch, and the pilot console logs out", async ({ page }, testInfo) => {
@@ -177,7 +177,7 @@ test("a pilot's link lands on the planner, with no dev switch, and the pilot con
   await page.keyboard.press("Escape");
   await expect(page.getByRole("menu")).toHaveCount(0);
   await consoleSheet(page).getByTestId("role-menu").click();
-  await page.getByRole("menuitem", { name: "Sign out" }).click();
+  await page.getByRole("menuitem", { name: "Sign Out" }).click();
   await expect(consoleSheet(page).getByRole("button", { name: "Sign In", exact: true })).toBeVisible();
   await expect(consoleSheet(page).getByTestId("role-menu")).toHaveCount(0);
   await page.reload();
@@ -209,7 +209,7 @@ test("a developer's link lands in dev mode, and the dev console logs out to the 
   await page.keyboard.press("Escape");
   await expect(page.getByRole("menu")).toHaveCount(0);
   await consoleSheet(page).getByTestId("role-menu").click();
-  await page.getByRole("menuitem", { name: "Sign out" }).click();
+  await page.getByRole("menuitem", { name: "Sign Out" }).click();
 
   await page.waitForURL("**/app/plan**");
   // The planner drawn, not the training page's bar on its way out: its

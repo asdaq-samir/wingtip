@@ -45,6 +45,6 @@ export function useDeleteAccount() {
       forgetAccountOnThisDevice();
       window.location.assign("/app/plan");
     },
-    onError: (err) => showError("Your account was not deleted", describeError(err)),
+    onError: (err) => showError("Your Account Was Not Deleted", describeError(err)),
   });
 }

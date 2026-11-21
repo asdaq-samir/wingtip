@@ -61,7 +61,7 @@ struct AirportChartsTab: View {
             .frame(width: 900, height: 900).background(Color.white).environment(\.colorScheme, .light))
         renderer.scale = 2
         let image = renderer.uiImage
-        return ShownPicture(title: "\(place.ident) runways") { image.map { [$0] } ?? [] }
+        return ShownPicture(title: "\(place.ident) Runways") { image.map { [$0] } ?? [] }
     }
 
     var body: some View {
@@ -76,20 +76,20 @@ struct AirportChartsTab: View {
                 .foregroundStyle(.secondary)
             }
             if let cycle = place.airportDiagramCycle {
-                row("Airport diagram", "map") {
+                row("Airport Diagram", "map") {
                     shown = .paths("\(place.ident) airport diagram", [Planner.diagramPath(ident: place.ident, cycle: cycle)])
                 }
             } else if let url = place.airportDiagramUrl {
-                row("Airport diagram", "map") { shown = .faaChart("\(place.ident) airport diagram", url: url, airport: place.ident) }
+                row("Airport Diagram", "map") { shown = .faaChart("\(place.ident) Airport Diagram", url: url, airport: place.ident) }
             } else if sketched {
-                row("Airport diagram", "map", detail: "A sketch of the runways: the FAA publishes none") { shown = Self.sketch(place) }
+                row("Airport Diagram", "map", detail: "A sketch of the runways: the FAA publishes none") { shown = Self.sketch(place) }
             } else if place.publications?.plates?.state != "unavailable" {
                 Text("The FAA publishes no airport diagram for this field").foregroundStyle(.secondary)
             }
             // The FAA's diagram with the airplane on it, by the diagram's
             // own latitude and longitude marks (#218), under the diagram.
             if let url = place.airportDiagramUrl {
-                row("Diagram with your position", "location.north.circle") { ownShipDiagram = true }
+                row("Diagram with Your Position", "location.north.circle") { ownShipDiagram = true }
                     .fullScreenCover(isPresented: $ownShipDiagram) { DiagramOwnShipView(ident: place.ident, url: url) }
             }
             if let supplement = place.chartSupplementUrl {

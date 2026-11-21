@@ -50,12 +50,12 @@ struct DryRunControls: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(DryRunClock.spoken(zulu: zulu, flownMin: dryRun.flownS / 60, forecastHour: forecast.on ? forecast.now.map(ForecastPlay.hourZ) : nil))
                 Spacer(minLength: 0)
-                SpeedPicker(name: "Dry run speed", speed: $dryRun.speed)
+                SpeedPicker(name: "Dry Run Speed", speed: $dryRun.speed)
                 // Forecast mode: the run meets the weather forecast for when it
                 // gets there. The system's button toggle, which draws its own
                 // on look and says on or off to VoiceOver.
                 Toggle(isOn: Binding(get: { forecast.on }, set: { forecast.on = $0 })) {
-                    Label("Forecast mode", systemImage: forecast.on ? "cloud.sun.fill" : "cloud.sun").symbolSwap()
+                    Label("Forecast Mode", systemImage: forecast.on ? "cloud.sun.fill" : "cloud.sun").symbolSwap()
                 }
                 .toggleStyle(.button)
                 .labelStyle(.iconOnly)
@@ -63,7 +63,7 @@ struct DryRunControls: View {
             }
             if dryRun.totalS > 0 {
                 Slider(value: Binding(get: { dryRun.flownS }, set: { dryRun.scrub(to: $0) }), in: 0...dryRun.totalS) {
-                    Text("Along the route")
+                    Text(Wording.alongTheRoute)
                 }
                 .overlay(alignment: .bottom) { ticks }
                 .accessibilityValue("\(SpokenFigures.minutes(dryRun.flownS / 60)) flown of \(SpokenFigures.minutes(dryRun.totalS / 60))")

@@ -24,6 +24,7 @@ import { useReadback } from "./useReadback";
 import { NotYet, Step, Verdict } from "./ClearanceSteps";
 import { ROW_BUTTON, ROW_MIC, routeLine } from "../lib/clearanceRows";
 import { clockTime, zoneName } from "../lib/format";
+import { WORDING } from "../lib/wording/generated/wording";
 
 // The app's own clock and zone, as every other time it writes: the
 // browser's locale wrote "02:05 PM" here, in a 24-hour app, with no zone.
@@ -135,7 +136,7 @@ export default function ClearanceCard({
     error ?? readbackProblem ?? (found.isError ? "The places in it could not be looked up; check the connection and try again." : null);
   const mic = useCanListen();
 
-  const hearState = onRadio ? "Listening to the radio…" : heardIt ? heardAt ? `Heard ${time(heardAt)}` : "Heard" : <NotYet />;
+  const hearState = onRadio ? WORDING.listeningToTheRadio : heardIt ? heardAt ? `Heard ${time(heardAt)}` : "Heard" : <NotYet />;
   const readbackState = readingBack ? (
     "Listening for your read back…"
   ) : !check ? (
@@ -233,7 +234,7 @@ export default function ClearanceCard({
         </Step>
         <Step
           id="readback"
-          title="Read back"
+          title={WORDING.readBack}
           state={readbackState}
           open={open.readback}
           onOpenChange={openRow("readback")}

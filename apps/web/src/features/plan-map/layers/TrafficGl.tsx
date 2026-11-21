@@ -158,7 +158,7 @@ function Traffic({ geo }: { geo: Geo }) {
   if (data && !isPlaceholderData && answer?.at !== dataUpdatedAt) setAnswer({ data, at: dataUpdatedAt });
   const gone = isError && (!answer || errorUpdatedAt - answer.at > STALE_MS);
   useEffect(() => {
-    if (gone) raiseProblem({ id: PROBLEM, title: "Traffic isn't available right now." });
+    if (gone) raiseProblem({ id: PROBLEM, title: "Traffic is not available right now." });
     else clearProblem(PROBLEM);
   }, [gone]);
   // Own ship's own transponder, not drawn as traffic over itself: its fix

@@ -4,6 +4,7 @@ import type { RouteParts } from "./RouteBox";
 import { placeAllowed, placeRefusal } from "./routeEdit";
 import type { PlanCourse } from "../plan";
 import { askSearchPick } from "../../lib/oneSearch";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** The route's points with one moved from `from` to `to`, as FPL's list
  *  drags them: the ends kept airports or a position (`isEnd`), as the box
@@ -121,7 +122,7 @@ export function useRouteListEdit({
   const typeStopAt = useCallback(
     (index: number) => {
       askSearchPick({
-        label: "Add a Stop",
+        label: WORDING.addStop,
         fixes: true,
         stop: true,
         taken: routePoints,

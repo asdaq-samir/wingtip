@@ -21,6 +21,8 @@ src/lib/fixtures/formats.json
 src/lib/generated
 # The screens a link opens (scripts/build/screens.sh).
 src/lib/navigation/generated
+# The words every app says the same (scripts/build/wording.sh).
+src/lib/wording/generated
 # The engine's shared fixtures and the tests' recorded answers: data.
 src/lib/fixtures
 src/lib/acs.json

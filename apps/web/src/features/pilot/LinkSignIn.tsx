@@ -6,6 +6,7 @@ import { ApiError, api } from "../../lib/api/client";
 import { TEXT } from "../../lib/text";
 import { linkAccount } from "./linkAccount";
 import { FieldError } from "../../components/ui/field";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * The last step of an emailed-link sign-in, in the app's own dialog
@@ -55,19 +56,19 @@ export default function LinkSignIn({ token }: { token: string }) {
       onOpenChange={(next) => {
         if (!next) close();
       }}
-      title="Sign in"
+      title={WORDING.signIn}
       description={
         account.data
           ? `This link signs in to ${account.data}. Sign in only if that is your email address.`
           : "Finish signing in with the link from your email."
       }
-      action={{ label: "Sign in", onClick: () => finish.mutate(token), disabled: finish.isPending || spent || account.isPending }}
+      action={{ label: WORDING.signIn, onClick: () => finish.mutate(token), disabled: finish.isPending || spent || account.isPending }}
     >
       {(finish.isError || spent) && (
         <FieldError className={`text-destructive ${TEXT.prose}`}>
           {spent
             ? "This link has expired or was already used. Ask for a new one from the pilot console."
-            : "Couldn't sign in just now. Try again."}
+            : "Sign-in could not be finished just now. Try again."}
         </FieldError>
       )}
     </SheetDialog>

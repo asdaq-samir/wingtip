@@ -160,13 +160,13 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
     const add = (item: string, key: string, label: string, value: string | null, note?: string) =>
       items.push({ item, key, label, value, ...(note ? { note } : {}) });
 
-    add("8", "rules", "Flight rules", ifr ? "IFR" : "VFR");
-    add("7", "ident", "Aircraft identification", input.aircraft.ident);
+    add("8", "rules", "Flight Rules", ifr ? "IFR" : "VFR");
+    add("7", "ident", "Aircraft Identification", input.aircraft.ident);
     // Item 9's wake turbulence category, the engine's (`filed_wake`: L up
     // to 15,500 lb, AIM Appendix 4); said only where the airplane's is known.
     const category = callEngine("filed_wake", { max_takeoff_lb: input.aircraft.maxTakeoffLb });
     const wake = category ? `/${category}` : "";
-    add("9", "type", "Type of aircraft", input.aircraft.type ? `${input.aircraft.type}${wake}` : null);
+    add("9", "type", "Type of Aircraft", input.aircraft.type ? `${input.aircraft.type}${wake}` : null);
     // Item 10a: S for VHF radio, VOR and ILS, N for none, and TBL 4-2's
     // letters for the rest (G for GNSS); 10b: TBL 4-3's, C for a
     // transponder with Mode C, B1 or U1 for ADS-B Out, N for none (AIM
@@ -182,12 +182,12 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
     add(
       "13",
       "time",
-      "Departure time (UTC)",
+      "Departure Time (UTC)",
       depart ? utcFigures(depart) : null,
       i > 0 ? `When you leave ${hop.departure}.` : depart ? undefined : "No departure time picked.",
     );
 
-    add("15", "speed", "Cruising speed", first?.tas_kt != null ? cruisingSpeed(first.tas_kt) : null);
+    add("15", "speed", "Cruising Speed", first?.tas_kt != null ? cruisingSpeed(first.tas_kt) : null);
     // The level of the flight's first leg; a plan that steps says where.
     // Under IFR the next is asked of ATC on the way: the FAA's systems
     // neither process nor show a change filed in item 15 (AIM Appendix 4).
@@ -195,7 +195,7 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
     add(
       "15",
       "level",
-      "Cruising level",
+      "Cruising Level",
       first ? cruisingLevel(first.altitude_ft) : null,
       step ? `Then ${feet(step.altitude_ft)} from ${step.from}${ifr ? ", asked of ATC on the way" : ""}.` : undefined,
     );
@@ -238,7 +238,7 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
     // Item 18's date of flight, where it is not today: the engine's
     // `filed_dof` (AIM Appendix 4, TBL 4-1, the UTC date).
     const dof = depart ? callEngine("filed_dof", { depart: depart.toISOString(), today: input.now.toISOString() }) : null;
-    if (dof) add("18", "other", "Other information", dof);
+    if (dof) add("18", "other", "Other Information", dof);
 
     const burn = times.burn_gph;
     add(
@@ -255,16 +255,16 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
     // telephone number" valid at the ETA, for search and rescue (AIM
     // Appendix 4), and the home base the domestic form asks beside them
     // (FAA Form 7233-1, block 14).
-    add("19", "persons", "Persons on board", null);
-    add("19", "colour", "Color and markings", input.aircraft.colour || null, input.aircraft.colour ? undefined : where);
+    add("19", "persons", "Persons on Board", null);
+    add("19", "colour", "Color and Markings", input.aircraft.colour || null, input.aircraft.colour ? undefined : where);
     const pic = input.pilot;
     const contact = [pic?.name, pic?.phone, pic?.homeBase ? `home base ${pic.homeBase}` : null].filter(Boolean).join(", ");
     add(
       "19",
       "pilot",
-      "Pilot in command",
+      "Pilot in Command",
       contact || null,
-      pic?.name && pic.phone ? undefined : "Your name and a phone number good at your ETA, from Pilot details in Setup.",
+      pic?.name && pic.phone ? undefined : "Your name and a phone number good at your ETA, from Pilot Details in Setup.",
     );
 
     const value = (key: string) => items.find((f) => f.key === key)?.value ?? null;

@@ -28,6 +28,6 @@ fun StartFlightAsk(ship: OwnShip) {
         title = { Text(stringResource(R.string.start_flight_title)) },
         text = { Text(stringResource(R.string.start_flight_line)) },
         confirmButton = { TextButton(onClick = ship::startFlight) { Text(stringResource(R.string.start_flight)) } },
-        dismissButton = { TextButton(onClick = ship::notNow) { Text(stringResource(R.string.not_now)) } },
+        dismissButton = { TextButton(onClick = ship::notNow) { Text(stringResource(R.string.wording_not_now)) } },
     )
 }

@@ -104,7 +104,7 @@ class EmergencyModel(
         // own checklist could not be read, which is said (the audit's
         // AND-4): the one screen used in an emergency never goes blank.
         val guidance = if (this.aircraft == null || read.isFailure) rules.guidance() else emptyList()
-        val problem = if (read.isFailure) "Your checklist could not be read" else null
+        val problem = if (read.isFailure) "Your checklist could not be read." else null
         _state.update { it.copy(airplaneName = airplaneName, guidance = guidance, sections = sections, section = section, ticked = emptySet(), checklistProblem = problem) }
         refill()
     }
@@ -147,7 +147,7 @@ class EmergencyModel(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            _state.update { it.copy(loading = false, problem = if (data == null) Problems.say("The fields could not be had", planner) else null) }
+            _state.update { it.copy(loading = false, problem = if (data == null) Problems.say("The fields could not be fetched", planner) else null) }
         }
     }
 
