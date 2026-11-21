@@ -28,8 +28,11 @@ struct SignInView: View {
                               let credential = auth.credential as? ASAuthorizationAppleIDCredential,
                               let token = credential.identityToken, let identity = String(data: token, encoding: .utf8)
                         else { return }
+                        // The code the gateway trades for the token it
+                        // revokes when the account is deleted (5.1.1(v)).
+                        let code = credential.authorizationCode.flatMap { String(data: $0, encoding: .utf8) }
                         Task {
-                            await session.signInWithApple(identityToken: identity, nonce: nonce)
+                            await session.signInWithApple(identityToken: identity, authorizationCode: code, nonce: nonce)
                             if session.signedIn { dismiss() }
                         }
                     }

@@ -51,9 +51,13 @@ enum Gateway {
     }
 
     /// Apple's identity token from the system's sheet, checked by the
-    /// gateway against this app's bundle id (AppleNativeSignInController).
-    static func signInWithApple(identityToken: String, nonce: String?) async throws {
-        _ = try await call { try await $0.signIn(body: .json(GWAppleToken(identityToken: identityToken, nonce: nonce))).ok }
+    /// gateway against this app's bundle id (AppleNativeSignInController),
+    /// and the sheet's authorization code, which only the gateway can trade
+    /// for the token that deleting the account revokes at Apple (App Review
+    /// 5.1.1(v); AppleAppTokens).
+    static func signInWithApple(identityToken: String, authorizationCode: String?, nonce: String?) async throws {
+        let token = GWAppleToken(authorizationCode: authorizationCode, identityToken: identityToken, nonce: nonce)
+        _ = try await call { try await $0.signIn(body: .json(token)).ok }
     }
 
     /// A nonce for one Sign in with Apple attempt, issued to this session

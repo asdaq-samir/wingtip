@@ -27,6 +27,15 @@ S13). Tick each as it is done.
 
 ## Apple Developer
 
+- [ ] Enroll as an organization (a legal entity with a D-U-N-S number),
+      not as an individual, and use the same entity on Google Play.
+      App Review 5.1.1(ix) asks that apps in highly regulated fields,
+      "air travel" among them, be submitted by a legal entity, and the
+      seller name both stores show is the one the policy and terms name
+      as who offers the app (docs/legal/privacy.md's and terms.md's
+      notes). An individual account can be migrated to an organization
+      later, but not quickly: start it first (the store-review audit,
+      2026-11-21).
 - [ ] The App ID `app.wingtipmaps.ios` with its capabilities: Sign in with
       Apple; iCloud with the CloudKit container `iCloud.app.wingtipmaps.ios`;
       Push Notifications; the App Group `group.app.wingtipmaps` (on the
@@ -37,6 +46,14 @@ S13). Tick each as it is done.
       receiver: Stratux and SkyEcho broadcast GDL 90, which the app hears
       only with it (`Receiver/ReceiverListener.swift`). Until Apple grants
       it, qualify the listing's receiver line (listing.md).
+- [ ] Sign in with Apple for Email Communication (Certificates,
+      Identifiers & Profiles, Services): register `wingtipmaps.app` and
+      the sending address (`MAIL_FROM`, `no-reply@wingtipmaps.app`), with
+      the domain's SPF and DKIM passing. A pilot who signs in with Hide My
+      Email has a `privaterelay.appleid.com` address, and Apple's relay
+      drops mail from an unregistered sender: their sign-in links,
+      reminders and instructor mail would never arrive (the store-review
+      audit, 2026-11-21).
 - [ ] Optional: request the Private Cloud Compute entitlement
       (`apps/ios/project.yml`, `WingtipPrivateCloudCompute`).
 - [ ] A distribution certificate, and App Store profiles for the app,
@@ -44,8 +61,16 @@ S13). Tick each as it is done.
       `aps-environment` is `production`
       (`codesign -d --entitlements - <app>`).
 - [ ] A Sign in with Apple key, for the gateway to revoke a deleted
-      pilot's Apple sign-in (`APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`,
-      `AppleRevocation`).
+      pilot's Apple sign-in (`APPLE_TEAM_ID`, `APPLE_KEY_ID`,
+      `APPLE_PRIVATE_KEY`, `AppleRevocation`), with `app.wingtipmaps.ios`
+      as its primary App ID and the web's Services ID grouped under it:
+      the same key signs the iPhone's client secret, which trades the
+      app's authorization code for the token deleting the account
+      revokes (`AppleAppTokens`, docs/NATIVE.md, "Sign in with Apple:
+      revoked when the account goes"). Set `APP_IOS_BUNDLE_ID` on the
+      gateway too. After the first review build, sign in on an iPhone,
+      delete the account, and check the app has left Settings, Apple
+      Account, Sign in with Apple.
 
 ## App Store Connect
 
@@ -67,7 +92,26 @@ S13). Tick each as it is done.
       (the review account's address and code, below), and the screen
       recording of the copilot listening with the phone locked.
 - [ ] Screenshots: iPhone 6.9" ×5 and iPad 13" ×2 from
-      `docs/store/screenshots/`.
+      `docs/store/screenshots/`, and at least one Apple Watch screenshot,
+      which App Store Connect asks of an app that has a Watch app (the
+      shot list is in `screenshots/README.md`, "Still to take"; not yet
+      captured).
+
+## Data the apps show under someone else's terms
+
+App Review 5.2.2 asks that an app showing a third-party service's
+content be "specifically permitted to do so under the service's terms of
+use", with the authorization given on request; Play's Intellectual
+Property policy asks the same. Two of the traffic sources credited in
+About (docs/legal/credits.md) carry non-commercial terms:
+
+- [ ] adsb.fi: "Personal, non-commercial use, credited and linked".
+      Ask adsb.fi in writing for use in an app distributed on the App
+      Store and Google Play, or turn the source off for the store builds
+      (the planner's traffic sources, docs/privacy-inventory.md).
+- [ ] ADS-B Exchange (RapidAPI): check that the plan the key is on allows
+      a published app, or ask ADS-B Exchange for a licence.
+- [ ] Keep each answer where a reviewer's request can be met at once.
 
 ## The review account (both stores)
 
@@ -89,7 +133,7 @@ S13). Tick each as it is done.
       Play never lets it change: `app.wingtipmaps.android` (it reads
       better) or the build's default `app.wingtipmaps.android.native`
       (`apps/android/app/build.gradle.kts`, `ANDROID_NATIVE_APP_ID`), and
-      make listing.md and `APP_ANDROID_PACKAGE` agree.
+      make listing.md, `APP_ANDROID_PACKAGE` and the Maps key agree.
 - [ ] The app record, enrolled in Play App Signing, with an upload key
       kept in CI's secrets for the signed release bundle (`bundleRelease`).
 - [ ] Data safety: the answers in privacy-labels.md, with the deletion
@@ -102,6 +146,9 @@ S13). Tick each as it is done.
       covers the copilot and the flight recorder; film the ADS-B
       receiver's setup too.
 - [ ] App access: the review account's instructions from listing.md.
+- [ ] Phone screenshots, at least two (Play needs two to publish):
+      `screenshots/android-phone/`, not yet captured (screenshots/README.md,
+      "Still to take").
 - [ ] Content rating (IARC), target audience 18 and over, no ads, and
       the rest of App content as listing.md says.
 - [ ] `APP_ANDROID_CERT_SHA256` in the AppSecret with Play's app signing
@@ -109,7 +156,6 @@ S13). Tick each as it is done.
 
 ## Google Cloud
 
-- [ ] Nothing for Android: its close-in map is the USGS's imagery
-      (`map/CloseMap.kt`) and it asks Google for nothing, so the app
-      carries no Maps key. A Google overlay there would come as the web's
-      does, only after the pilot picks it, with its own restricted key.
+Nothing for Android: its close-in map is the USGS's imagery
+(`map/CloseMap.kt`), and the app carries no Maps key. The web's Google
+overlay keeps the planner's browser key (docs/GOOGLE-MAPS.md).

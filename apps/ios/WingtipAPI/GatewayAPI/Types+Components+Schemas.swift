@@ -403,6 +403,8 @@ extension Components {
         }
         /// - Remark: Generated from `#/components/schemas/AppleToken`.
         public struct AppleToken: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AppleToken/authorizationCode`.
+            public var authorizationCode: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AppleToken/identityToken`.
             public var identityToken: Swift.String
             /// - Remark: Generated from `#/components/schemas/AppleToken/nonce`.
@@ -410,16 +412,20 @@ extension Components {
             /// Creates a new `AppleToken`.
             ///
             /// - Parameters:
+            ///   - authorizationCode:
             ///   - identityToken:
             ///   - nonce:
             public init(
+                authorizationCode: Swift.String? = nil,
                 identityToken: Swift.String,
                 nonce: Swift.String? = nil
             ) {
+                self.authorizationCode = authorizationCode
                 self.identityToken = identityToken
                 self.nonce = nonce
             }
             public enum CodingKeys: String, CodingKey {
+                case authorizationCode
                 case identityToken
                 case nonce
             }

@@ -165,6 +165,16 @@ public class PilotService {
         });
     }
 
+    /** Keeps the refresh token the iOS app's authorization code was traded
+     *  for (AppleAppTokens), with the client it was issued to. */
+    @Transactional
+    public void keepAppleRefreshToken(Pilot pilot, String refreshToken, String client) {
+        pilots.findById(pilot.getId()).ifPresent(kept -> {
+            kept.keepAppleRefreshToken(refreshToken, client);
+            pilots.save(kept);
+        });
+    }
+
     /** Their telephone number, its spaces made single, and their home
      *  base in capitals, for a flight plan's item 19 C/; blank is none. */
     @Transactional

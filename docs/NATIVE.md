@@ -674,8 +674,8 @@ a nonce it issued to this session, used once:
 2. Set `ASAuthorizationAppleIDRequest.nonce` to the nonce's SHA-256 as
    lowercase hex (`SHA256.hash(data: Data(nonce.utf8))`, each byte `%02x`).
    Apple writes that into the token's `nonce` claim.
-3. `POST /api/auth/apple/native` with `{"identityToken": ..., "nonce":
-   "<the nonce itself, not its hash>"}`.
+3. `POST /api/auth/apple/native` with `{"identityToken": ...,
+   "authorizationCode": ..., "nonce": "<the nonce itself, not its hash>"}`.
 
 The gateway checks the nonce is the one this session was given and the
 token's claim is its hash; a nonce is spent by the attempt, so a failed one
@@ -685,6 +685,26 @@ Today the nonce is optional, so an older build keeps signing in; once
 the app that sends it has shipped, the owner sets
 `APP_APPLE_REQUIRE_NONCE=true` on the gateway, and a token without one is
 refused. A token that carries a nonce claim is always refused without it.
+
+## Sign in with Apple: revoked when the account goes
+
+Apple asks an app that offers Sign in with Apple to revoke the pilot's
+tokens at Apple when the account is deleted (App Review 5.1.1(v); Apple's
+"Revoke tokens" and TN3194), so the app leaves the pilot's Apple Account
+list of apps using Sign in with Apple. The identity token alone gives the
+server nothing to revoke, so the app sends the sheet's
+`authorizationCode` too (`SignInView`, `Session.signInWithApple`). The
+gateway trades it at Apple's `/auth/token` with the bundle id as the
+client and a client secret signed for it with the team's key
+(`AppleAppTokens`, `AppleClientSecret`; the same `APPLE_TEAM_ID`,
+`APPLE_KEY_ID` and `APPLE_PRIVATE_KEY` as the web's sign-in, the key
+enabled for Sign in with Apple on the app's App ID), and keeps the refresh
+token with the pilot and the client it was issued to (`pilots
+.apple_token_client`, V46). Deleting the account revokes it with that
+client (`AppleRevocation`); the web's own token goes with the Services
+ID as before. Both are best effort: a sign-in or a deletion never fails
+because Apple did not answer. A pilot who signed in on the iPhone before
+this build has no token kept; their next sign-in keeps one.
 
 ## Building
 

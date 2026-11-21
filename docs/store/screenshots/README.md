@@ -62,8 +62,28 @@ verdict wait for one. The airport is O'Hare's card as it opens.
   real flight's takeoff, landing and stop. Not captured yet; a GPX
   played through `xcrun simctl location <udid> start` at flying speed
   is the way to try.
-- **Android (`android-phone/`):** not captured. The emulator cannot
-  trust the throwaway stack's certificate (the app allows only HTTPS
-  and trusts no user CA), so its captures wait for a debug-only network
-  security config or a deployed site; `store-frames.sh` frames
-  `raw/android/` at 1080 x 1920 once the PNGs are there.
+- **Android (`android-phone/`):** not captured yet. The debug build now
+  trusts the local authority (`apps/android/app/src/debug`), so an
+  emulator can reach the throwaway stack; see "Still to take".
+
+## Still to take
+
+Found missing by the store-review audit of 2026-11-21; both block a
+submission, and both are captured as above, from a simulator or an
+emulator against the throwaway stack.
+
+- **Apple Watch** (`watch/`, App Store Connect's Apple Watch slot, at the
+  size it lists for the largest watch; at least one): App Store Connect
+  asks for a Watch screenshot whenever the build carries a Watch app
+  (`apps/ios/WingtipWatch`). Three, each the watch app's own screen with
+  nothing drawn in: the nearest airports (`NearestView`), a timer
+  running, and the airplane's checklist. Captions as the iPhone's, short
+  enough for the watch's frame, in `captions.json` under `watch-*`.
+- **Google Play phone** (`android-phone/`, 1080 x 1920; Play needs two
+  to publish, up to eight): the same five screens as the iPhone, C81 to
+  KDLH flown by N3429J, from an emulator whose debug build trusts the
+  local authority (`apps/android/app/src/debug`, build.gradle.kts's "The
+  local authority"), framed by `store-frames.sh` from `raw/android/`.
+  Tablet screenshots are optional on Play; leave them out unless the
+  listing is to be promoted on tablets.
+

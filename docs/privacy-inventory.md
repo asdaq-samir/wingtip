@@ -19,7 +19,7 @@ longer than it takes to answer the request.
 | Contact Info, Email Address | The address a pilot signs in with | Yes | App Functionality (sign-in, the sign-in link; currency and airplane due-date reminders where the pilot turns them on) | `pilots`, `magic_links`, `reminders_sent` (Postgres) |
 | Contact Info, Phone Number | The telephone number a pilot adds, optional: the contact a flight plan's item 19 asks for (`Session.setContact` on iOS, the web's account) | Yes | App Functionality | `pilots.phone` (V29) |
 | Contact Info, Name | The name Google or Apple gives at sign-in (otherwise the address); the name as on their pilot certificate, where they give it for endorsements | Yes | App Functionality | `pilots` |
-| Identifiers, User ID | The account's id; Google's and Apple's subject for that sign-in; Apple's refresh token, kept only to revoke the Apple sign-in when the account is deleted (`AppleRevocation`) | Yes | App Functionality | `pilots` (`apple_refresh_token`, V18), the session |
+| Identifiers, User ID | The account's id; Google's and Apple's subject for that sign-in; Apple's refresh token (the web's, or the one the iPhone's authorization code is traded for, `AppleAppTokens`) and the Apple client it was issued to, kept only to revoke the Apple sign-in when the account is deleted (`AppleRevocation`) | Yes | App Functionality | `pilots` (`apple_refresh_token`, V18), the session |
 | User Content, Other | The pilot's own record: home base (V29), the medical's, flight review's and instrument proficiency check's dates and the knowledge tests' codes (V12, V13, V20) | Yes | App Functionality (currency, reminders, a flight plan's item 18 and 19) | `pilots` |
 | User Content, Other | Flight watch, for a saved flight the pilot asks to be watched: its departure time, the last briefing kept to compare the next with (the planner's JSON, never read in the gateway), when it was checked and the changes found; ends at departure | Yes | App Functionality (the changes emailed) | `flight_watch` (V31) |
 | User Content, Other | Instructing: the address a student asks an instructor in by (`instructor_students.email`, V26), a solo cross-country put to an instructor (`cross_country_reviews`) and the approaches an instructor sets as lessons (`approach_lessons`, V30) | Yes | App Functionality | Postgres |
@@ -116,7 +116,16 @@ longer than it takes to answer the request.
   (`ai/OnPhoneAsk.kt`), In Plain Words (`ai/AiWords.kt`), a drafted
   logbook remark and a photographed page (ML Kit's on-device text
   recognition, then Nano, `ai/read/OnPhoneReader.kt`) are made on the
-  phone and nothing of them goes to us or Google. Ask's tools
+  phone and nothing of them goes to us or Google. ML Kit itself (the
+  Prompt API, text recognition and the document scanner) sends Google
+  its own diagnostics as it is used: the device's maker, model and
+  Android version, the app's package and version, an identifier for the
+  install (for the Prompt API a device or user identifier too), and the
+  call's speed, settings, sizes and error codes, never the photo, the
+  question or the words (ML Kit's "Data disclosure",
+  developers.google.com/ml-kit/android-data-disclosure, read
+  2026-11-21). Play counts what an SDK in the app sends as the app's
+  collection, so the Data safety form declares it (below). Ask's tools
   fetch from the planner what the screens fetch (an airport, the route's
   NOTAMs); the question itself stays on the phone. Without Nano they are
   not offered.
@@ -181,8 +190,8 @@ longer than it takes to answer the request.
 | NOAA nowCOAST (nowcoast.noaa.gov) | The satellite loop's tiles in view, asked by the device the same way | As IEM |
 | Planespotters (api.planespotters.net, t.plnspttrs.net) | The web app, when a traffic card opens: that airplane's transponder address, to show its photo (`features/traffic/planePhoto.ts`), from the browser | The browser's internet address and the address of the airplane looked at; no account |
 | USGS (epqs.nationalmap.gov) | Sample points along a route, for the ground's height where the terrain tiles have none (`wingtip/elevation_sources.py`), from the server | None: points on a route, no account |
-| USGS (basemap.nationalmap.gov) | With its imagery overlay on, the map's tiles in view, asked by the device | None: the tiles' coordinates, as any web map's |
-| Google (tile.googleapis.com) | On the web only, and only once the pilot picks a Google overlay in the Map menu (`useCloseImagery`): a session and the map's tiles in view, asked by the device with the deployment's key. Android asks Google for nothing: close in it draws the USGS's public-domain imagery, as the web does by default (`map/CloseMap.kt`, since b5b72427e) | None of the pilot's: the device's internet address, the tiles' coordinates and the view, as any Google map's; Google's own terms and privacy policy apply to the request |
+| USGS (basemap.nationalmap.gov) | On the web, with its imagery overlay on; on Android, by itself once the map is zoomed close in past the chart's own detail (`map/CloseMap.kt`, since b5b72427e): the map's tiles in view, asked by the device | None: the tiles' coordinates, as any web map's |
+| Google (tile.googleapis.com) | On the web only, and only once the pilot picks a Google overlay in the Map menu (`useCloseImagery`): a session and the map's tiles in view, asked by the browser with the planner's key. The Android app asks Google for no map tile (its close-in imagery is the USGS's since b5b72427e, and the store-review audit of 2026-11-21 took its unused Maps key out of the manifest) | None of the pilot's: the device's internet address, the tiles' coordinates and the view, as any Google map's; Google's own terms and privacy policy apply to the request |
 | US Census Bureau (geocoding.geo.census.gov) | A street address typed in Nearest's field, to place it; its gazetteer of towns is downloaded once | The address typed, from the server, not the device; kept in the planner's memory for an hour so the same address is not asked twice (`geocode.py`), never written to disk or a log (a failure logs the error's kind only), and a place picked is in the page address (`nearName`, `nearAt`) |
 | Amazon Web Services | Hosting all of the above (us-east-1) | As above |
 
@@ -223,9 +232,13 @@ name, user IDs, phone number, optional), **Location** (precise, only a
 saved flight's track, linked; the device's live position is not kept,
 see above),
 **App activity** (other user-generated content: aircraft, flights,
-logbook, notes) and **App info and performance** (crash logs and
+logbook, notes), **App info and performance** (crash logs and
 diagnostics, not linked: not tied to the account; crash logs gone from
-the log after 30 days, speed measurements after 400).
+the log after 30 days, speed measurements after 400; and ML Kit's
+diagnostics to Google, above) and **Device or other IDs** (ML Kit's
+install and device identifiers, sent to Google only when Add from a
+Photo or the on-phone AI is used, so optional, for analytics as ML Kit
+states its purpose).
 All collected for app functionality and account management,
 none shared with third parties as Google defines sharing (the
 recipients above process data for the app), all encrypted in transit,
@@ -260,10 +273,16 @@ table:
 
 The widget extension has its own, `apps/ios/WingtipWidgets/PrivacyInfo.xcprivacy`:
 nothing collected, UserDefaults under `1C8F.1` for the App Group it
-reads. The Watch app's, `apps/ios/WingtipWatch/PrivacyInfo.xcprivacy`,
-declares nothing, as it calls no required-reason API; it is there so a
-reason added later has its place. `WingtipTests/StorePrivacyTests` reads
-the app's bundled manifest and fails where one of these is missing.
+reads and `CA92.1` for its own standard defaults, which `Design/Ink.swift`
+(compiled into the extension) reads for the look (the store-review audit
+of 2026-11-21: the extension declared only the App Group's). The Watch
+app's, `apps/ios/WingtipWatch/PrivacyInfo.xcprivacy`, declares nothing,
+as it calls no required-reason API; it is there so a reason added later
+has its place. `WingtipTests/StorePrivacyTests` reads the app's bundled
+manifest and the widgets' from the source tree, and fails where one of
+these is missing. A source compiled into an extension
+(`project.yml`'s `WingtipWidgets` sources) brings its required-reason APIs
+with it: check the extension's manifest when one is added.
 Check the files against this list before each submission.
 
 ## Kept without an account, and for how long
