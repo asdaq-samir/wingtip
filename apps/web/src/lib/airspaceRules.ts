@@ -23,3 +23,14 @@ export function entryRules(airspaceClass: "B" | "C" | "D"): AirspaceRule[] {
 export function callTypes(airspaceClass: "B" | "C" | "D"): string[] {
   return callEngine("airspace_entry_rules", { class: airspaceClass }).call;
 }
+
+type SpecialVfrLine = EngineAnswer<"special_vfr">["needs"][number];
+
+/** Special VFR in an airport's surface area (14 CFR 91.157), for the
+ *  volume's card: what it asks, each with its rule, or what rules it out
+ *  there -- an airport of part 91 appendix D, section 3, where an
+ *  airplane may not fly it. The engine's (`special_vfr`). */
+export function specialVfr(airspaceClass: "B" | "C" | "D", airport: string | null): { available: boolean; lines: SpecialVfrLine[] } {
+  const a = callEngine("special_vfr", { surface_area: airspaceClass, airport });
+  return { available: a.available, lines: a.available ? a.needs : a.problems };
+}

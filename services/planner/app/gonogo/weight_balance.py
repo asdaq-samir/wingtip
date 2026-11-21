@@ -19,7 +19,7 @@ def balance(loading: dict, load: dict, trip_fuel_gal: float | None) -> dict:
     """The weight and centre of gravity at takeoff -- the ramp's, less the
     start and taxi fuel -- and at landing, less the trip's fuel, each
     against the loading's limits: the most it may weigh, the envelope,
-    and each station's and the baggage's own most."""
-    b = ask("gonogo_balance", loading=loading, load=load, trip_fuel_gal=trip_fuel_gal)
-    del b["takeoff_words"]
-    return b
+    and each station's and the baggage's own most; with the takeoff's
+    weight and centre of gravity in the Go / No-Go row's words,
+    `takeoff_words` ("2,407 lb at 41.2 in"), the engine's too."""
+    return ask("gonogo_balance", loading=loading, load=load, trip_fuel_gal=trip_fuel_gal)

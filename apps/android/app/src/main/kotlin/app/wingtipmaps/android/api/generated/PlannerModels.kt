@@ -4223,6 +4223,9 @@ data class Loading (
     @SerialName("fuel_arm_in")
     val fuelArmIn: Double,
 
+    @SerialName("fuel_grade")
+    val fuelGrade: String? = null,
+
     @SerialName("fuel_lb_per_gal")
     val fuelLbPerGal: Double? = null,
 

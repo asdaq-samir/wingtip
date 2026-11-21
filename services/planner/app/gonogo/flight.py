@@ -22,7 +22,7 @@ from .pass_times import pass_time, sua_when, tfr_when
 from .runways import runway_checks
 from .schemas import GoNoGoAsk
 from .weight_balance import balance, default_load
-from .words import PLAN_NAME, WEATHER_SOURCE_LABEL, alt_ft, ceiling_and_visibility, gairmet_title, grouped, sigmet_hazard, to_fixed
+from .words import PLAN_NAME, WEATHER_SOURCE_LABEL, alt_ft, ceiling_and_visibility, gairmet_title, sigmet_hazard
 from .. import route_briefing
 from ..plan_query import PlanQuery, named_checkpoints
 
@@ -303,6 +303,9 @@ def findings_for(
         else (default_load(loading, usable if usable is not None else loading["fuel_max_gal"]) if loading else None)
     )
     loaded = balance(loading, load, (totals or {}).get("fuel_gal")) if loading and load else None
+    # The row's "2,407 lb at 41.2 in" is the engine's words (takeoff_words),
+    # not written again here; the loading's answer goes on without them.
+    takeoff_words = loaded.pop("takeoff_words") if loaded else None
     # The verdict's balance and runways as the web's, which wait on the nav log.
     nav_loaded = loaded if nav else None
     checks = runway_checks(
@@ -373,9 +376,7 @@ def findings_for(
             "pending": not nav,
             "worked": bool(nav_loaded),
             "problems": nav_loaded["problems"] if nav_loaded else [],
-            "takeoff": f"{grouped(nav_loaded['takeoff']['weight_lb'])} lb at {to_fixed(nav_loaded['takeoff']['arm_in'])} in"
-            if nav_loaded
-            else None,
+            "takeoff": takeoff_words if nav_loaded else None,
         },
     }
     return Findings(verdict=verdict, risk_in=risk_in, loading=loading, load=load, loaded=loaded)

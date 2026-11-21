@@ -3495,6 +3495,13 @@ export interface EngineContract {
     answer: SpecialUseTabAnswer;
   };
   /**
+   * 14 CFR 91.157's special VFR for an airplane (eCFR, current on 2026-11-21): within the surface area of an airport's Class B, C, D or E airspace and below 10,000 ft MSL (91.157(a)), never at the airports of part 91 appendix D, section 3 (fixed-wing special VFR prohibited: O'Hare, LaGuardia and 31 more, by FAA or ICAO ident); with an ATC clearance, clear of clouds and at least 1 statute mile flight visibility (91.157(b)(1)-(3)); between sunset and sunrise (in Alaska, the sun more than 6 degrees below the horizon) only for a pilot meeting part 61's requirements for instrument flight in an airplane equipped as 91.205(d) asks (91.157(b)(4)); and to take off or land, at least 1 sm ground visibility, or flight visibility where none is reported (91.157(c)). `available` is false where anything known rules it out (each in `problems`); what is not given rules nothing out and stays in `needs`, never said to be met.
+   */
+  special_vfr: {
+    input: SpecialVfrInput;
+    answer: SpecialVfrAnswer;
+  };
+  /**
    * What a squawk says, where it says more than a code: 7500 unlawful interference (AIM 6-3-4), 7600 two-way radio failure (AIM 6-4-2), 7700 an emergency (AIM 6-2-2); null for any other.
    */
   squawk_meaning: {
@@ -3696,6 +3703,13 @@ export interface EngineContract {
   vfr_basic_minimums: {
     input: VfrBasicMinimumsInput;
     answer: VfrBasicMinimumsAnswer;
+  };
+  /**
+   * 14 CFR 91.155(b)(2), Class G's one exception to 91.155(a) for an airplane (eCFR, current on 2026-11-21): below 1,200 ft above the surface (not at it: the table's low row is "1,200 feet or less"), at night, in an airport traffic pattern within 1/2 mile of the runway, with the visibility under 3 statute miles but not under 1, the airplane may fly clear of clouds. By day the table's low row already asks 1 sm and clear of clouds (91.155(a)); 91.155(b)(1) is the helicopter's. A visibility not given leaves the other conditions to decide.
+   */
+  vfr_class_g_night_pattern: {
+    input: VfrClassGNightPatternInput;
+    answer: VfrClassGNightPatternAnswer;
   };
   /**
    * The VFR floor of each piece of the route between consecutive breaks: the ground plus 1,000 ft, or a DOF obstacle's top plus 14 CFR 91.119's clearance where it stands (1,000 ft over a congested area, (b); 500 elsewhere, (c); 1,000 where the towns are not known), rounded up to the next 100 ft; with 91.119's own minimum under it.
@@ -6825,9 +6839,6 @@ export interface EndorsementRecordsInput {
   flight_on?: string | null;
 }
 export interface EndorsementRecordsAnswer {
-  /**
-   * Items: YYYY-MM-DD
-   */
   until: (string | null)[];
   /**
    * YYYY-MM-DD
@@ -7685,9 +7696,13 @@ export interface GonogoLoading {
   fuel_arm_in: number;
   fuel_max_gal: number;
   /**
-   * 6 where not given, avgas's standard (FAA-H-8083-1B).
+   * The airplane's handbook's figure; where null or not given, its fuel_grade's standard weight: avgas 6, Jet A 6.8 lb a US gallon (FAA-H-8083-25, chapter 10), avgas where no grade is given.
    */
   fuel_lb_per_gal?: number | null;
+  /**
+   * The fuel the airplane burns, for its standard weight where its handbook gives none.
+   */
+  fuel_grade?: "avgas" | "jet_a" | null;
   start_taxi_fuel_lb?: number | null;
   /**
    * The CG envelope's points, [arm in, weight lb].
@@ -8734,9 +8749,6 @@ export interface IfrAlternateWindowAnswer {
   end: number;
 }
 export interface IfrAlternatesRankedInput {
-  /**
-   * Items: An ifr_alternate_check answer with its distance_nm.
-   */
   checks: {}[];
   limit?: number;
 }
@@ -9121,9 +9133,6 @@ export interface LogbookCsvReadAnswer {
   }[];
 }
 export interface LogbookCsvWriteInput {
-  /**
-   * Items: The gateway's LogbookEntry, camelCase.
-   */
   entries: {}[];
 }
 export interface LogbookFromTrackInput {
@@ -12696,6 +12705,88 @@ export interface SpecialUseTabInput {
   ceiling?: SpecialUseTabLimit;
   excluded?: boolean | null;
 }
+export interface SpecialVfrInput {
+  /**
+   * The class of the surface area the airplane is in (controlled airspace designated to the surface for an airport); null or G where it is in none.
+   */
+  surface_area?: "A" | "B" | "C" | "D" | "E" | "G" | null;
+  /**
+   * The surface area's primary airport, FAA or ICAO ident, for appendix D, section 3.
+   */
+  airport?: string | null;
+  /**
+   * Feet MSL; null where not known.
+   */
+  altitude_ft?: number | null;
+  /**
+   * Between sunset and sunrise; null where not known.
+   */
+  night?: boolean | null;
+  /**
+   * In Alaska, where 91.157(b)(4) reads the sun's elevation.
+   */
+  alaska?: boolean | null;
+  /**
+   * The sun's elevation, degrees (negative below the horizon); read in Alaska alone.
+   */
+  sun_elevation_deg?: number | null;
+  /**
+   * The pilot meets part 61's requirements for instrument flight (rated, and current under 61.57(c)).
+   */
+  instrument_current?: boolean | null;
+  /**
+   * The airplane is equipped as 91.205(d) asks for IFR.
+   */
+  ifr_equipped?: boolean | null;
+  /**
+   * Statute miles.
+   */
+  flight_visibility_sm?: number | null;
+  /**
+   * Statute miles, as reported at the airport; null where none is.
+   */
+  ground_visibility_sm?: number | null;
+  /**
+   * Whether the flight can keep clear of clouds.
+   */
+  clear_of_clouds?: boolean | null;
+  /**
+   * Taking off or landing under special VFR (91.157(c)).
+   */
+  takeoff_or_landing?: boolean | null;
+}
+export interface SpecialVfrAnswer {
+  /**
+   * Nothing known rules special VFR out.
+   */
+  available: boolean;
+  /**
+   * What rules it out, each with its rule.
+   */
+  problems: {
+    words: string;
+    /**
+     * The rule, "14 CFR 91.157(b)(3)".
+     */
+    source: string;
+  }[];
+  /**
+   * What it asks, each with its rule.
+   */
+  needs: {
+    words: string;
+    /**
+     * The rule, "14 CFR 91.157(b)(3)".
+     */
+    source: string;
+  }[];
+  /**
+   * The airport's entry in part 91 appendix D, section 3, "Chicago, IL (Chicago-O'Hare International Airport)"; null where it is not listed.
+   */
+  listed: string | null;
+  visibility_sm: number;
+  below_msl_ft: number;
+}
 export interface SquawkMeaningInput {
   squawk?: string | null;
 }
@@ -13161,6 +13252,39 @@ export interface VfrBasicMinimumsInput {}
 export interface VfrBasicMinimumsAnswer {
   ceiling_ft: number;
   visibility_sm: number;
+}
+export interface VfrClassGNightPatternInput {
+  class: "A" | "B" | "C" | "D" | "E" | "G";
+  /**
+   * Feet above the surface.
+   */
+  agl_ft: number;
+  night?: boolean | null;
+  /**
+   * In an airport traffic pattern within 1/2 mile of the runway.
+   */
+  in_pattern?: boolean | null;
+  /**
+   * Statute miles; null where not known.
+   */
+  visibility_sm?: number | null;
+}
+export interface VfrClassGNightPatternAnswer {
+  applies: boolean;
+  /**
+   * The least visibility it asks, 1 sm.
+   */
+  visibility_sm: number;
+  /**
+   * It is for a visibility under this, 3 sm.
+   */
+  under_visibility_sm: number;
+  /**
+   * 1,200 ft above the surface.
+   */
+  below_agl_ft: number;
+  words: string;
+  source: string;
 }
 export interface VfrFloorsInput {
   /**
