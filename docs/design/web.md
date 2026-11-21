@@ -1728,7 +1728,10 @@ WebAssembly and what Keep for the Air fetched; the page asks it first.
 - Emergency's best fields and Nearest rank the fields round the airplane
   on the device when the planner cannot be had: the airport index the
   browser keeps, the engine's `best_fields` (`lib/fieldsOnDevice`), said
-  "From this device, without weather".
+  "From this device, without weather". As the airplane moves on they are
+  asked again, and the newest answer for the airplane, from wherever it
+  was asked, is ranked from own ship now while the next is under way
+  (`useEmergency`), so a slow answer never leaves the list empty.
 - Direct To works its leg out on the device (the engine's `navlog_leg`
   and `navlog_totals`, `features/plan/directOnDevice`), "Worked out
   on this device" under the Direct strip, and its fuel check as the
