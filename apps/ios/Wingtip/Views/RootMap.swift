@@ -3,9 +3,11 @@ import SwiftUI
 
 /// The chart map with its buttons, banners and chips, under the iPhone's
 /// sheet or beside the iPad's sidebar (RootView). A view of its own, so
-/// what it reads at every fix -- own ship's height, the dry run, the
-/// traffic -- runs this body alone and leaves the root's, with its sheet,
-/// as it was.
+/// what it reads as the flight goes -- the dry run, the traffic -- runs
+/// this body alone and leaves the root's, with its sheet, as it was. Own
+/// ship's fix itself is not read here (its height is `markedFt`), so a
+/// fix on the ground or in cruise runs neither this body nor the map's
+/// update, with its route and checkpoint comparisons.
 struct RootMap: View {
     let layout: RootLayout
     /// The height of the map the sheet covers.
@@ -48,7 +50,9 @@ struct RootMap: View {
             trackedHex: tracking.hex, tracked: tracking.latest, follow: tracking.follow,
             path: tracking.path, past: tracking.past, flown: tracking.flown,
             glide: flight.inFlight.glide?.coordinates ?? [],
-            emergency: emergency.line(from: dryRun.fix ?? ownShip.fix),
+            // The fix read only while the assistant is open: read here at
+            // every fix, it ran this body and the map's update once a second.
+            emergency: emergency.open == nil ? [] : emergency.line(from: dryRun.fix ?? ownShip.fix),
             onTraffic: { plane in
                 tracking.track(plane.hex, plane: plane)
                 nav.open(.traffic(plane.hex.lowercased()))
@@ -64,7 +68,7 @@ struct RootMap: View {
             // A flown track's replay, else the dry run: the same airplane.
             simulated: replay.fix ?? dryRun.fix,
             traffic: traffic.on ? traffic.planes : [],
-            ownFt: Traffic.markedFt((dryRun.fix ?? ownShip.fix)?.altitudeFt),
+            ownFt: dryRun.fix.map { Traffic.markedFt($0.altitudeFt) } ?? ownShip.markedFt,
             onRegion: { centre, radius in traffic.mapCentre = centre; traffic.mapRadiusNm = radius },
             // A field tapped on the chart opens its card, half way up, as
             // the web app does.

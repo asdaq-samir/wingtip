@@ -23,6 +23,10 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     }
 
     private(set) var fix: Fix?
+    /// The fix's height as the traffic is marked against it (to 10 ft,
+    /// Traffic.markedFt), changed only when it changes: what the map reads,
+    /// so it is not drawn again at every fix's wander of a few feet.
+    private(set) var markedFt: Double?
     private(set) var denied = false
     /// The position's permission as iOS last said it, for the welcome's
     /// foot (WelcomeFoot).
@@ -122,6 +126,8 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
 
     private func took(_ fix: Fix) {
         self.fix = fix
+        let marked = Traffic.markedFt(fix.altitudeFt)
+        if marked != markedFt { markedFt = marked }
         // The path flown, and the phone's position kept in the background
         // only while flying (the location background mode, project.yml):
         // on the ground the reading stops with the app, as any map's does.

@@ -2010,6 +2010,11 @@ What each fix asks for, by the phones' wasted-work audit:
   reads it, so the map asks `traffic_marks` again at a new report or a
   real change of height, not at each fix's wander. The engine's 1,000 ft
   band and its hundreds cut toward own ship still decide.
+- **The map's body.** RootMap reads own ship's height as `markedFt`,
+  set only when the rounded height changes, and the fix for the
+  emergency line only while the assistant is open, so a fix runs neither
+  RootMap's body nor ChartMap's update, with its route, checkpoint and
+  procedure comparisons.
 
 ---
 

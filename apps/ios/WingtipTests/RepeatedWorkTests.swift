@@ -1,5 +1,6 @@
 import CoreLocation
 import Foundation
+import Observation
 import Testing
 @testable import Wingtip
 
@@ -62,5 +63,28 @@ struct RepeatedWorkTests {
         // 1,000 ft above the rounded one: "+10", hundreds cut toward own ship.
         let plane = TrafficAircraft(altitudeFt: 4_500, hex: "a93f1e", lat: 42, lon: -88)
         #expect(try Traffic.label(plane, ownFt: 3_497) == Traffic.label(plane, ownFt: Traffic.markedFt(3_497)))
+    }
+
+    // MARK: The map's body (item 6)
+
+    @Test func ownShipsMarkedHeightChangesOnlyWithTheRoundedHeight() async {
+        let file = FileManager.default.temporaryDirectory.appending(path: "rec-\(UUID().uuidString).json")
+        let ownShip = OwnShip(recorder: FlightRecorder(file: file))
+        func take(_ metres: Double, at s: TimeInterval) async {
+            let location = CLLocation(coordinate: CLLocationCoordinate2D(latitude: 42, longitude: -88), altitude: metres,
+                                      horizontalAccuracy: 5, verticalAccuracy: 5, course: 0, speed: 0,
+                                      timestamp: Date(timeIntervalSince1970: s))
+            ownShip.locationManager(CLLocationManager(), didUpdateLocations: [location])
+            // The fix is taken on the main actor, a hop after the callback.
+            for _ in 0..<20 where ownShip.fix?.at != location.timestamp { await Task.yield() }
+        }
+        // 1,000 m is 3,280.8 ft: read as 3,280.
+        await take(1_000, at: 1)
+        #expect(ownShip.markedFt == 3_280)
+        // A foot of wander leaves it, and the map reading it, alone.
+        let seen = withObservationTracking { ownShip.markedFt } onChange: { Issue.record("markedFt changed for a foot of wander") }
+        #expect(seen == 3_280)
+        await take(1_000.3, at: 2)
+        #expect(ownShip.markedFt == 3_280)
     }
 }
