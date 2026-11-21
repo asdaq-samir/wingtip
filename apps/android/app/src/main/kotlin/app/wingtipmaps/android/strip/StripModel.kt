@@ -21,6 +21,7 @@ import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.HomeAirport
+import app.wingtipmaps.android.route.replaceRoute
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -173,7 +174,7 @@ class StripModel @Inject constructor() : ViewModel() {
         if (dep.isEmpty()) dep = HomeAirport.mirrored(pilot?.homeBase, FlightChoices.of(plan.getApplication<Application>()).home.value) ?: ""
         if (dep.isEmpty()) return "Say where from too: \"C81 KDLH\", or turn on Show my airplane."
         if (dep == command.dest && command.stops.isEmpty()) return "${command.dest} is where you are. Say somewhere to fly to."
-        plan.plan(dep, command.dest, command.stops)
+        plan.replaceRoute(dep, command.dest, command.stops)
         return null
     }
 

@@ -107,6 +107,7 @@ struct PlanView: View {
                     .onDelete { at in plan.stops.remove(atOffsets: at); plan.plan() }
                     .onMove { from, to in plan.stops.move(fromOffsets: from, toOffset: to); plan.plan() }
                     Button(action: addStop) { Label("Add a Stop", systemImage: "plus") }
+                    FuelStopsButton()
                 } header: {
                     // The stops' Edit (delete, move) at the header's
                     // right, as iOS's lists put it, since the bar it was
@@ -118,6 +119,8 @@ struct PlanView: View {
                     }
                 }
             }
+            // The fuel in the tanks at each field, each a tap to set it.
+            if plan.routed { FuelTanksSection() }
             // The route's own edits and the flight in the air.
             RouteExtrasSection()
             if plan.course != nil {

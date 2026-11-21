@@ -113,6 +113,7 @@ The plan's own keys go beside it, and alone they open what they name:
 - `type`: A shared plan's airplane type, its designator (C172); shown, never assumed: the receiver flies their own.
 - `rules`: A shared plan's flight rules, vfr or ifr.
 - `tail`: A shared plan's N-number, only where its pilot chose to send it.
+- `tanks`: A shared plan's fuel as the airplane leaves a field, where its pilot set it on a gauge: idents and whole gallons, KOSH:30,KJVL:0 (the planner's tanks); none named, full.
 - `share`: A saved flight shared by its pilot, by its token (GET /api/shared-flights/{token}); read-only, until they stop sharing it.
 
 <!-- END generated -->
@@ -235,10 +236,11 @@ with the sheet at rest: the search or a row of the plan is 1.
 **One row (owner decision 2026-11-10).** The "Flight Plan" title bar is
 gone on the iPhone: the sheet's top row is the search with the microphone
 and the account button beside it, and the route card sits under it (the
-route, Ready to Fly, the figures, Brief, Nav Log, Airplane, •••). Saved
-Flights, Share and Undo, which were the bar's, are in the route card's
-•••: Flights 1 → 2, Share 1 → 2 (its ways a submenu, 3 to pick one), Undo
-1 → 2, and Undo is still 0 taps by shaking the iPhone or ⌘Z.
+route, Ready to Fly, the figures, Brief, Nav Log, File, ••• and ✕). The
+••• is the web's More since 2026-11-21: Route Options, Share Link and
+Open in ForeFlight, then Undo, Saved Flights and Show Route As; the
+nav log's Share holds the other ways out, the checkpoints for ForeFlight
+and Print. Undo is still 0 taps by shaking the iPhone or ⌘Z.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
@@ -251,9 +253,9 @@ Flights, Share and Undo, which were the bar's, are in the route card's
 | Figures strip | the sheet's foot, with a route | 0 | Tapped, the nav log |
 | Nav Log | the route card's Nav Log; the strip | 2 → **1** / 1 | -- |
 | Brief | the route card's Brief; the search's Do | 2 → **1** | the Brief's one foot bar, Start Flight |
-| Profile | the route card's ••• → Profile; the cruise altitude in the route section; a stop's Set Altitude… (on that waypoint's Start At / Cross At popover); the search's Do | 1 / 2 | The vertical altitude slider (Set, Auto in flight); the Altitude Advisor's rows pick the cruise; a waypoint's altitude, typed or stepped |
+| Profile | the cruise altitude in the route section, its caution marked on it; a stop's Set Altitude… (on that waypoint's Start At / Cross At popover); the search's Do | 1 / 2 | The vertical altitude slider (Set, Auto in flight); the Altitude Advisor's rows pick the cruise; a waypoint's altitude, typed or stepped |
 | Saved Flights | the route card's ••• → Saved Flights (was the bar's, 1); the search's Do; Settings' Flights row | 1 → **2** (one-row header, owner decision 2026-11-10) | Swipe to delete with an Undo row |
-| Share | the route card's ••• → Share → a way (was the bar's Share, 1 → 2) | 2 → **3** | -- |
+| Share | the route card's ••• → Share Link or Open in ForeFlight; the Nav Log's Share → a way, the checkpoints for ForeFlight, Print | 2 / 3 | -- |
 | Undo | the route card's ••• → Undo (was the bar's, 1); shake; ⌘Z | 1 → **2**, shake 0 | -- |
 | Nearest | the instruments bar; the search's All Nearest; the plan's Nearest for a Diversion; Siri | 1–2 | **One list** from every way in: Divert on a swipe or a hold, Diversion Drill |
 | Map card (new) | the map's own Map button; Settings' Map row | **1** (was 2, Settings) | The layers, airport weather, traffic, the weather loop and the alerts, each switch in place |
@@ -278,8 +280,10 @@ in the search is not counted.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
-| Plan (was FPL; its legs are the nav log) | the flight's card | 1 → 1 | Route fields, stops, VFR/IFR as before; Add a Stop and a point's Add a Stop After open the one search for the stop; each field of the route opens its card; under IFR an Alternate row after the destination (its card), or Add Alternate, which opens the Brief's Alternate (2026-11-10) |
-| Nav Log, Profile | the flight's card → Nav Log (or the figures); the plan's Profile row or "profile" in the search opens the Profile card: the side view, its vertical altitude slider (Set, Auto in flight), a waypoint's Start At / Cross At sheet | 2 → 2 | as the plan; the Altitude Advisor's rows pick the cruise |
+| Plan (was FPL; its legs are the nav log) | the flight's card | 1 → 1 | Titled "Flight Plan", Search at its bar's start (back to the search, the route kept) and ✕ at its end ("Clear Route?" first, 2026-11-21); the airplane's pill (its ⓘ the airplane's card), the altitude's (its end the Profile) and the time's (Material's time picker); the route as a timeline, each point's ⋮ (its menu) and times at its end, a stop's "Leaves" a tap that sets its time on the ground; route fields, stops, VFR/IFR as before; Add a Stop and a point's Add a Stop After open the one search for the stop, which greys a closed field or one already on the route; each field of the route opens its card; under IFR an Alternate row after the destination (its card), or Add Alternate, which opens the Brief's Alternate (2026-11-10); at its foot the floating toolbar (Brief, Nav Log, More) over the figure strip |
+| Route Options | the plan's More → Route Options | 2 | Use puts an option's stops in the route ("Route Replaced", with its Undo) |
+| File Flight Plan | the plan's File (beside its toolbar, where the plan can be filed) | 1 | Persons on board typed; Copy the Flight Plan; File with Flight Service where connected and signed in; 1800wxbrief.com and Flight Service's numbers |
+| Nav Log, Profile | the flight's card → Nav Log (the foot's toolbar, or the figures); the altitude pill's end, the plan's Profile row or "profile" in the search opens the Profile card: the side view, its vertical altitude slider (Set, Auto in flight), a waypoint's Start At / Cross At sheet | 2 → 2 | as the plan; the Altitude Advisor's rows pick the cruise |
 | A leg | a leg on the map, a nav log row, or a strip checkpoint: the one leg card | 1 / 2 | Direct, Remove |
 | Brief | the flight's card → Brief; or search "brief" | 2 → 2 | Departure hour; Ready to Fly at its head; under IFR the Alternate (14 CFR 91.169): an alternate filed from those that will do, or taken off, as the web's (2026-11-10) |
 | Airport card | search → the field; tap it on the map; a list row; the plan's field | 1 + typing (map 1) | Fly Here (with its time), Add as Stop, Call and Favorite under its head, in sight at half; Overview, Weather, Frequencies, Runways, Charts, NOTAMs pinned right under them, and the field's report in a line |

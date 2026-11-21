@@ -103,6 +103,14 @@ struct RouteExtras: Equatable, Sendable {
     /// the engine's navlog_alternate_leg) to the totals, as the web's
     /// `alternate` does.
     var alternate: String?
+    /// The fuel in the tanks as the airplane leaves a field, whole gallons
+    /// by its ident, where the pilot set it on FPL's gauge (RouteTanks): at
+    /// the departure the fuel at engine start, at a stop what it is
+    /// fuelled to, 0 none bought; none named, full. Sent as the planner's
+    /// `tanks` ("C81:20,KMSN:0"), whose fuel checks fly the same figure.
+    var tanks: [String: Int] = [:]
+    /// The stops Add Fuel Stops put in, for its Remove Fuel Stops.
+    var fuelStops: [String] = []
 
     /// The alternate as the planner takes it: only under IFR, VFR having
     /// none to file.
@@ -123,6 +131,7 @@ struct RouteExtras: Equatable, Sendable {
     func apply(to query: inout NavLogQuery, procedures: [ProcedurePick], rules: FlightRules = .saved()) throws {
         if let altitudes = Self.pairs(altitudes) { query.altitudes = altitudes }
         if let crossings = Self.pairs(crossings) { query.crossings = crossings }
+        if let tanks = Self.pairs(tanks) { query.tanks = tanks }
         let started = starts.filter { altitudes[$0] != nil }.sorted()
         if !started.isEmpty { query.altitudeStarts = started.joined(separator: ",") }
         if !holds.isEmpty { query.holds = try holds.map { try $0.text() }.joined(separator: ",") }
