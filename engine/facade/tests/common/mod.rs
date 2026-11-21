@@ -51,3 +51,28 @@ pub fn copilot_input(base: &Value, case: &Value) -> Value {
     }
     input
 }
+
+/// A shared fixture of apps/web/src/lib/fixtures, read as JSON.
+pub fn fixture(name: &str) -> Value {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../apps/web/src/lib/fixtures").join(name);
+    serde_json::from_str(&std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()))).unwrap()
+}
+
+/// Each case of `rule` (`{"about", "input", "answer"}`) asked by name, its
+/// answer the case's and of the contract's shape
+/// (engine/contract/engine.schema.json), as every host reads it.
+pub fn holds_cases(rule: &str, cases: &[Value]) {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../contract/engine.schema.json");
+    let mut schema: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+    schema["required"] = serde_json::json!([]);
+    let validator = jsonschema::draft7::new(&schema).expect("the contract is a draft 7 schema");
+    assert!(!cases.is_empty(), "{rule}: no cases");
+    for case in cases {
+        let text = wingtip_engine::call::call(rule, &case["input"].to_string()).unwrap_or_else(|e| panic!("{}: {e}", case["about"]));
+        let got: Value = serde_json::from_str(&text).unwrap_or_else(|e| panic!("{}: {text}: {e}", case["about"]));
+        assert_same(&got, &case["answer"], &case["about"]);
+        let asked = serde_json::json!({ rule: { "input": case["input"], "answer": got } });
+        let errors: Vec<String> = validator.iter_errors(&asked).map(|e| format!("{e} at {}", e.instance_path())).collect();
+        assert!(errors.is_empty(), "{}: {}", case["about"], errors.join("\n"));
+    }
+}

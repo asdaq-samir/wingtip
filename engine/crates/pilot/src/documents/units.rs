@@ -85,9 +85,8 @@ impl Units {
         }
     }
 
-    /// Pounds an hour are taken as avgas at 6 lb a gallon, the weight the
-    /// FAA's Aircraft Weight and Balance Handbook (FAA-H-8083-1B, chapter
-    /// 2) gives for it; the item says so, since a jet-fuel engine's are
+    /// Pounds an hour are taken as avgas at 6 lb a gallon, the FAA's
+    /// standard weight for it (FAA-H-8083-25, chapter 10); the item says so, since a jet-fuel engine's are
     /// heavier.
     pub fn gph(&self, v: f64) -> f64 {
         match self.burn {
@@ -98,5 +97,6 @@ impl Units {
     }
 }
 
-/// Avgas's standard weight, pounds a US gallon (FAA-H-8083-1B, chapter 2).
-pub const AVGAS_LB_PER_GAL: f64 = 6.0;
+/// Avgas's standard weight, pounds a US gallon: the one copy,
+/// wingtip_flight::fuel_weight's (FAA-H-8083-25, chapter 10).
+pub use wingtip_flight::fuel_weight::AVGAS_LB_PER_GAL;

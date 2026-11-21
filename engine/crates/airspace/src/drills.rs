@@ -124,7 +124,14 @@ fn vfr_cards() -> Vec<Card> {
     let g_low = G_LOW_AGL_FT - 200.0;
     let g_mid = G_LOW_AGL_FT + 300.0;
     vec![
-        Card { id: "a", prompt: "Class A", answer: "Not applicable".to_owned(), detail: Some("Class A is flown under IFR (91.135)."), colours: &[], flashing: false },
+        Card {
+            id: "a",
+            prompt: "Class A",
+            answer: "Not applicable".to_owned(),
+            detail: Some("Class A is flown under IFR (91.135)."),
+            colours: &[],
+            flashing: false,
+        },
         card("b", "Class B", 'B', low, low, false, None),
         card("c", "Class C", 'C', low, low, false, None),
         card("d", "Class D", 'D', low, low, false, None),
@@ -138,7 +145,8 @@ fn vfr_cards() -> Vec<Card> {
             g_low,
             g_low,
             true,
-            Some("Under 3 sm but not under 1 sm at night, an airplane in the traffic pattern within 1/2 mile of the runway may fly clear of clouds (91.155(b)(2))."),
+            // The exception's words are its rule's (vfr_class_g_night_pattern).
+            Some(wingtip_flight::vfr::NIGHT_PATTERN_WORDS),
         ),
         card("g-mid-day", "Class G, more than 1,200 ft above the surface but below 10,000 ft MSL, by day", 'G', low, g_mid, false, None),
         card("g-mid-night", "Class G, more than 1,200 ft above the surface but below 10,000 ft MSL, at night", 'G', low, g_mid, true, None),
