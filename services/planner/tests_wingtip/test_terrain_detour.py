@@ -4,6 +4,7 @@ search), on the ground and the fields read here."""
 
 import numpy as np
 import pandas as pd
+from cachetools import FIFOCache
 
 from wingtip import fixes, terrain_detour
 
@@ -44,3 +45,23 @@ def test_a_turn_with_no_field_is_named_off_a_fix_or_the_way_is_none(monkeypatch)
     assert way and all(w["ident"] == "OWN" for w in way)
     monkeypatch.setattr(fixes, "frd_near", lambda lat, lon: None)
     assert terrain_detour.way_round((0.0, 0.0), (0.0, 3.0), 10_950, fields=_fields()) is None
+
+
+def test_a_way_is_kept_and_the_oldest_let_go_past_64(monkeypatch):
+    monkeypatch.setattr(terrain_detour, "_KEPT", FIFOCache(maxsize=64))
+    monkeypatch.setattr(terrain_detour, "engine", lambda name, **asked: {"top_ft": 10_500})
+    found = []
+
+    def way(start, end, ceiling_ft, fields=None):
+        found.append(start)
+        return [{"ident": "A", "name": "A FIELD", "lat": 0.0, "lon": 1.0}]
+
+    monkeypatch.setattr(terrain_detour, "_way_round", way)
+    first = terrain_detour.way_round((0.0, 0.0), (0.0, 3.0), 10_950)
+    # The same route again, at a ceiling a forecast moved: the way kept, a copy each time.
+    again = terrain_detour.way_round((0.0, 0.0), (0.0, 3.0), 10_990)
+    assert again == first and again is not first and len(found) == 1
+    for i in range(1, 65):
+        terrain_detour.way_round((float(i), 0.0), (0.0, 3.0), 10_950)
+    terrain_detour.way_round((0.0, 0.0), (0.0, 3.0), 10_950)
+    assert len(found) == 66
