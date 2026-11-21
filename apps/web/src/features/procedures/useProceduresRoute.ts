@@ -68,7 +68,10 @@ function fieldsOpenAtFirst(): boolean {
  * and the fuel in the tanks at each point. The list itself is drawn by
  * ProceduresRoute and its parts (features/procedures).
  */
-export function useProceduresRoute(props: ProceduresRouteProps) {
+export function useProceduresRoute(given: ProceduresRouteProps) {
+  // Read flat by the list's parts: the route's data and each group's fields.
+  const { runways, procedurePicks, pointActions, stopPlans, ...data } = given;
+  const props = { ...data, ...runways, ...procedurePicks, ...pointActions, ...stopPlans };
   const {
     airports,
     rows,

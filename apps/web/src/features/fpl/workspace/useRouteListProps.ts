@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { MAX_STOPS } from "../../../lib/identSchema";
 import type { PlanSlices } from "../vm/planSlices";
+import type { ProceduresRouteProps } from "../../procedures/lazy";
 
 export type RouteListSlices = PlanSlices<"route" | "plan" | "cards" | "picks" | "stops" | "routeList" | "leg" | "brief" | "flight">;
 
@@ -12,7 +13,7 @@ export type RouteListSlices = PlanSlices<"route" | "plan" | "cards" | "picks" | 
  * between, and the sheets they open. `edit`, the route changed in place
  * (useRouteListEdit), on the ground alone.
  */
-export function useRouteListProps(vm: RouteListSlices) {
+export function useRouteListProps(vm: RouteListSlices): ProceduresRouteProps {
   const { crossings, depart, directParam, ground, holds, insertStopAfter, planned, removeStop, routePoints, setPointAltitude, tanks } =
     vm.route;
   const { changeDepart, directToPoint, setGround, setHold, setTanks } = vm.plan;
@@ -48,48 +49,56 @@ export function useRouteListProps(vm: RouteListSlices) {
       rows: routeRows,
       depart,
       weather: metarColour,
-      picked: pickedPatterns,
-      onPick: pickPattern,
-      onPreselect: preselectPattern,
-      takeoffs: pickedTakeoffs,
-      onTakeoff: setTakeoff,
-      onPreselectTakeoff: preselectTakeoff,
-      autoPicked,
-      fit: runwayFitInputs,
-      procedures: pickedProcedures,
-      inRoute: routeProcedures,
-      onProcedures: pickProcedures,
-      onPreview: previewProcedure,
-      at: proceduresAt,
-      onAt: setProceduresShown,
-      crossings,
-      onFix: showFix,
-      onDepart: changeDepart,
-      ground,
-      onGround: setGround,
-      pointAltitude: altitudeAt,
-      onPointAltitude: setPointAltitude,
-      directTo: directParam,
-      onDirectTo: directToPoint,
-      onInfo: selectPlace,
-      onRemove: removeStop,
-      onCreateFix: insertStopAfter,
-      holds,
-      onHoldSet: setHold,
-      askHold: holdAsk,
       routePoints,
       stopsFull: planned.stops.length >= MAX_STOPS,
-      fuel: tankFigures,
-      // The gauges set where the list edits the route, on the ground.
-      tanks,
-      onTanks: read ? undefined : setTanks,
-      onCharts: () => {
-        if (planned.dest) {
-          setApproachesOf(planned.dest);
-          selectPlace(planned.dest);
-        }
+      runways: {
+        picked: pickedPatterns,
+        onPick: pickPattern,
+        onPreselect: preselectPattern,
+        takeoffs: pickedTakeoffs,
+        onTakeoff: setTakeoff,
+        onPreselectTakeoff: preselectTakeoff,
+        autoPicked,
+        fit: runwayFitInputs,
       },
-      chartsDisabled: !planned.dest || noApproaches,
+      procedurePicks: {
+        procedures: pickedProcedures,
+        inRoute: routeProcedures,
+        onProcedures: pickProcedures,
+        onPreview: previewProcedure,
+        at: proceduresAt,
+        onAt: setProceduresShown,
+        crossings,
+        onFix: showFix,
+        onCharts: () => {
+          if (planned.dest) {
+            setApproachesOf(planned.dest);
+            selectPlace(planned.dest);
+          }
+        },
+        chartsDisabled: !planned.dest || noApproaches,
+      },
+      pointActions: {
+        onDepart: changeDepart,
+        pointAltitude: altitudeAt,
+        onPointAltitude: setPointAltitude,
+        directTo: directParam,
+        onDirectTo: directToPoint,
+        onInfo: selectPlace,
+        onRemove: removeStop,
+        onCreateFix: insertStopAfter,
+      },
+      stopPlans: {
+        ground,
+        onGround: setGround,
+        holds,
+        onHoldSet: setHold,
+        askHold: holdAsk,
+        fuel: tankFigures,
+        // The gauges set where the list edits the route, on the ground.
+        tanks,
+        onTanks: read ? undefined : setTanks,
+      },
       // The Routes' chips over the list in flight alone: on the ground
       // they are under the timeline's figures (FplRoute).
       routeLine: flying ? routeLine : null,
