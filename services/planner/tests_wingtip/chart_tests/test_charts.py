@@ -259,3 +259,24 @@ def test_serving_cycle_is_the_newest_complete_pyramid(tmp_path, monkeypatch):
     assert not (tmp_path / "charts" / "09-03-2026").exists()
     assert (tmp_path / "charts" / "10-29-2026").exists()
     assert not (tmp_path / "tiles" / "09-03-2026").exists()
+
+
+def test_a_sectional_draws_over_the_caribbean_chart_where_they_overlap():
+    # The first sheet in draw_order wins where two faces overlap. The FAA's
+    # Caribbean VFR charts are drawn at 1:1,000,000, half a sectional's
+    # 1:500,000 detail (FAA Aeronautical Chart User's Guide, "VFR
+    # Aeronautical Charts"), so over Florida the Miami and Jacksonville
+    # sectionals must draw first, and Caribbean 2 before Caribbean 1 where
+    # those two overlap. Reverse name order gives that today only because
+    # the names sort so; this pins it against a change of order.
+    sectionals = chart_coverage.COVERAGE["sec"]
+    order = chart_render.draw_order(list(sectionals))
+    car1 = chart_coverage.boxes(sectionals["Caribbean_1_VFR"])
+    over_car1 = {
+        name
+        for name, entry in sectionals.items()
+        if name != "Caribbean_1_VFR" and any(chart_coverage.intersects(a, b) for a in chart_coverage.boxes(entry) for b in car1)
+    }
+    assert {"Miami", "Jacksonville", "Caribbean_2_VFR"} <= over_car1
+    for name in ("Miami", "Jacksonville", "Caribbean_2_VFR"):
+        assert order.index(name) < order.index("Caribbean_1_VFR"), name
