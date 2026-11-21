@@ -27,6 +27,15 @@ S13). Tick each as it is done.
 
 ## Apple Developer
 
+- [ ] Enroll as an organization (a legal entity with a D-U-N-S number),
+      not as an individual, and use the same entity on Google Play.
+      App Review 5.1.1(ix) asks that apps in highly regulated fields,
+      "air travel" among them, be submitted by a legal entity, and the
+      seller name both stores show is the one the policy and terms name
+      as who offers the app (docs/legal/privacy.md's and terms.md's
+      notes). An individual account can be migrated to an organization
+      later, but not quickly: start it first (the store-review audit,
+      2026-11-21).
 - [ ] The App ID `app.wingtipmaps.ios` with its capabilities: Sign in with
       Apple; iCloud with the CloudKit container `iCloud.app.wingtipmaps.ios`;
       Push Notifications; the App Group `group.app.wingtipmaps` (on the
@@ -37,6 +46,14 @@ S13). Tick each as it is done.
       receiver: Stratux and SkyEcho broadcast GDL 90, which the app hears
       only with it (`Receiver/ReceiverListener.swift`). Until Apple grants
       it, qualify the listing's receiver line (listing.md).
+- [ ] Sign in with Apple for Email Communication (Certificates,
+      Identifiers & Profiles, Services): register `wingtipmaps.app` and
+      the sending address (`MAIL_FROM`, `no-reply@wingtipmaps.app`), with
+      the domain's SPF and DKIM passing. A pilot who signs in with Hide My
+      Email has a `privaterelay.appleid.com` address, and Apple's relay
+      drops mail from an unregistered sender: their sign-in links,
+      reminders and instructor mail would never arrive (the store-review
+      audit, 2026-11-21).
 - [ ] Optional: request the Private Cloud Compute entitlement
       (`apps/ios/project.yml`, `WingtipPrivateCloudCompute`).
 - [ ] A distribution certificate, and App Store profiles for the app,
@@ -79,6 +96,22 @@ S13). Tick each as it is done.
       which App Store Connect asks of an app that has a Watch app (the
       shot list is in `screenshots/README.md`, "Still to take"; not yet
       captured).
+
+## Data the apps show under someone else's terms
+
+App Review 5.2.2 asks that an app showing a third-party service's
+content be "specifically permitted to do so under the service's terms of
+use", with the authorization given on request; Play's Intellectual
+Property policy asks the same. Two of the traffic sources credited in
+About (docs/legal/credits.md) carry non-commercial terms:
+
+- [ ] adsb.fi: "Personal, non-commercial use, credited and linked".
+      Ask adsb.fi in writing for use in an app distributed on the App
+      Store and Google Play, or turn the source off for the store builds
+      (the planner's traffic sources, docs/privacy-inventory.md).
+- [ ] ADS-B Exchange (RapidAPI): check that the plan the key is on allows
+      a published app, or ask ADS-B Exchange for a licence.
+- [ ] Keep each answer where a reviewer's request can be met at once.
 
 ## The review account (both stores)
 
