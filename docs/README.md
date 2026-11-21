@@ -18,6 +18,7 @@ Each fact lives in one doc; the others link to it.
 | [decisions/](decisions/README.md) | The owner's standing decisions, one page each with the reason, so none is undone by accident |
 | [LEARNING-GUIDE.md](LEARNING-GUIDE.md) | Why it is built this way, concept by concept, to build something like it yourself |
 | [SECURITY.md](SECURITY.md) | The security audit's findings and what changed, the standing security decisions (public API documents, open Dependabot alerts), and the owner's console steps |
+| [security/pentest-scope.md](security/pentest-scope.md) | The outside penetration test's brief: targets, test accounts, what is out of scope, the rules, and the items already known and accepted |
 | [privacy-inventory.md](privacy-inventory.md) | What the app collects, what leaves the device, and the stores' privacy forms |
 | [versions.md](versions.md) | What each part pins today, the version rules, the upgrades coming and what blocks each, and how an upgrade lands |
 
