@@ -50,7 +50,7 @@ test("Search to FPL and back by the toggle, the sheet's size kept", { tag: "@smo
   await expectPage(page, 0);
 });
 
-test("on Search the toggle starts the first row and the account button ends it, on FPL the ✕ ends it, the bars one size", async ({
+test("on Search the toggle starts the first row and the account button ends it, on FPL its FPL button ends it, the ✕ before it, the bars one size", async ({
   page,
 }) => {
   test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
@@ -66,7 +66,7 @@ test("on Search the toggle starts the first row and the account button ends it, 
       };
       const up = document.querySelector('[data-testid="sheet-pages"]')!.getAttribute("data-page");
       // The page's first row's middle: the search's field on Search, FPL's
-      // two rows on FPL, its title over its pills between Share and the ✕
+      // two rows on FPL, its title over its pills between Search and the ✕ and FPL
       // (the owner, 2026-11-19: "Make two rows between the close and share
       // button").
       const bar = up === "0" ? '[data-sheet-page="0"] label:has([data-testid="search-airports"])' : '[data-testid="fpl-head"]';
@@ -87,7 +87,7 @@ test("on Search the toggle starts the first row and the account button ends it, 
   await expectPage(page, 0);
   const search = await measure();
   const mid = (b: { top: number; h: number }) => b.top + b.h / 2;
-  // On FPL the ✕ at the row's end, sixteen in from the sheet's edge, level
+  // On FPL the FPL button at the row's end, sixteen in from the sheet's edge, level
   // with the two rows; no account button in sight (it is Search's).
   expect(fpl.viewport - fpl.toggle.right).toBeCloseTo(16, 0);
   expect(mid(fpl.toggle)).toBeCloseTo(mid(fpl.bar), 0);
@@ -111,7 +111,7 @@ test("on Search the toggle starts the first row and the account button ends it, 
   for (const k of ["top", "w", "h"] as const) expect(search.toggle[k], `the toggle's ${k}`).toBeCloseTo(fpl.toggle[k], 0);
   expect(search.toggle.w).toBeCloseTo(44, 0);
   // FPL's strip is centred between the row's ends (Share's slot at the
-  // left, which may be empty, and the ✕ at the right).
+  // left, which may be empty, and the ✕ and FPL button at the right).
   const sheetMid = (fpl.sheet.left + fpl.sheet.right) / 2;
   expect((fpl.bar.left + fpl.bar.right) / 2, "the two rows are centred in the row").toBeCloseTo(sheetMid, -1);
   expect(fpl.bar.right).toBeLessThanOrEqual(fpl.toggle.left);
@@ -338,4 +338,34 @@ test("a card open covers the row, its toggle and account button, and its close a
   await toggle(page).click();
   await expectShown(page, 1);
   await expect(page.getByTestId("account-button")).toBeHidden();
+});
+
+test("on FPL one tap on the ✕ asks to clear the route in a centred alert, the page staying up; FPL closes it", async ({ page }) => {
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await grabberTo(page, "half");
+  await settled(sideDrawer(page));
+  // A route opens the sheet on FPL's page.
+  await expectPage(page, 1);
+  const clear = sideDrawer(page).getByTestId("fpl-clear");
+  await expect(clear).toBeEnabled();
+  // The stock alert in the middle of the screen at every width, no card, no
+  // sheet; Cancel keeps the route and the page.
+  await clear.click();
+  const ask = page.getByRole("alertdialog", { name: "Clear Route?" });
+  await expect(ask).toBeVisible();
+  await expect(ask).toHaveAttribute("data-slot", "alert-dialog-content");
+  await ask.getByRole("button", { name: "Cancel" }).click();
+  await expect(ask).toHaveCount(0);
+  await expectPage(page, 1);
+  await expect(page).toHaveURL(/dep=C81/);
+  // Clear Route clears it, the page still up, the ✕ then with nothing to do.
+  await clear.click();
+  await page.getByRole("alertdialog", { name: "Clear Route?" }).getByRole("button", { name: "Clear Route" }).click();
+  await expect(page).not.toHaveURL(/dep=C81/);
+  await expectPage(page, 1);
+  await expect(clear).toBeDisabled();
+  // FPL's button is what goes back to Search.
+  await toggle(page).click();
+  await expectPage(page, 0);
 });

@@ -27,10 +27,10 @@ import FlightFoot from "./workspace/FlightFoot";
 import { FplRoute } from "./workspace/FplActions";
 import RouteControls from "./workspace/RouteControls";
 import FplBar from "./workspace/FplBar";
+import ClearRouteButton from "./workspace/ClearRouteButton";
 import { Search } from "lucide-react";
 import IconButton from "../../components/IconButton";
 import { askSearch } from "../../lib/oneSearch";
-import { useConfirm } from "../../components/useConfirm";
 import { routesOffered } from "./workspace/routeEditing";
 import OneSearchField from "./search/OneSearchField";
 import { useOneSearch } from "./search/useOneSearch";
@@ -212,15 +212,6 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     ],
   );
 
-  // FPL's ✕ held asks to clear the route (the owner, 2026-11-20), as
-  // More's Clear route does at a tap; the plan's Undo brings it back.
-  const [askClear, clearAsked] = useConfirm({
-    title: "Clear Route?",
-    description: "The route's points, stops and procedures come off the plan. Undo brings them back.",
-    confirmLabel: "Clear Route",
-    destructive: true,
-    onConfirm: vm.routeList.clearRoute,
-  });
   const shareMenu = (align: "start" | "end", testId?: string, card?: RouteCard, look?: "bar" | "tile" | "head") => (
     <ShareMenu
       look={look}
@@ -301,9 +292,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
                   </IconButton>
                 }
                 strip={<RouteControls vm={vm} flightInputs={flightInputs} />}
-                onHold={vm.route.hasPoints ? askClear : undefined}
+                clear={<ClearRouteButton hasRoute={vm.route.hasPoints} onClear={vm.routeList.clearRoute} />}
               />
-              {clearAsked}
             </>
           ),
           second: <PlanPage vm={vm} navLog={navLog} more={shareMenu("end", undefined, undefined, "tile")} />,
