@@ -21,7 +21,11 @@
 //!   speed and level groups);
 //! - sun: night and civil twilight (14 CFR 1.1), NOAA's solar calculation,
 //!   and 61.57(b)'s night-passenger period;
-//! - vfr: 91.155's basic VFR weather minimums;
+//! - vfr: 91.155's basic VFR weather minimums, and 91.155(b)(2)'s night
+//!   pattern exception in Class G;
+//! - special_vfr: 91.157's special VFR, and the airports of part 91
+//!   appendix D, section 3 where an airplane may not fly it
+//!   (special_vfr_airports);
 //! - based: where an airplane is usually based, from its past flights;
 //! - calls: these rules asked by name.
 
@@ -33,6 +37,8 @@ pub mod flight;
 pub mod limits;
 pub mod performance;
 pub mod route_read;
+pub mod special_vfr;
+pub mod special_vfr_airports;
 pub mod sun;
 pub mod typed;
 pub mod vfr;
