@@ -257,6 +257,12 @@ test("with a route drawn, the location arrow goes only between the position and 
   await context.setGeolocation({ latitude: 42.3247, longitude: -88.0742 });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
+  // The route drawn and fitted first, as the test's title has it. Tapped
+  // while the route was still coming, the arrow was own ship's alone, and
+  // a tap on a position followed puts it away, as it should: own ship
+  // was hidden, the route then fitted, and the ship 111 px off the middle
+  // (CI run 44621875032; 3 of 3 here with three workers).
+  await fittedClearOf(page, sideDrawer(page));
   const arrow = page.locator("[data-map-controls]").getByTestId("my-position-button");
   await expect(arrow).toHaveAttribute("data-face", "position");
   for (let i = 0; i < 2; i++) {
