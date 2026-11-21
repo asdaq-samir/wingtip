@@ -39,8 +39,14 @@
 		path_regexp ^/api/planner/(chart-tile/[a-z_]+/[0-9]+/[0-9]+/[0-9]+(@2x)?\.png|terrain-tile/[0-9]+/[0-9]+/[0-9]+\.png|overlay-tiles(/[A-Za-z0-9._-]+\.pmtiles)?)$
 	}
 	handle @tiles {
-		uri strip_prefix /api/planner
+		# The gateway hands /api/planner/X to the planner as /api/X
+		# (UpstreamRoutes), so this does the same: stripping the whole
+		# prefix asked the planner for /chart-tile/..., a 404. And the
+		# planner answers only its own names (app/local_guard.py), so it is
+		# asked as "planner", not by the origin's name, which it refuses.
+		uri replace /api/planner/ /api/ 1
 		reverse_proxy planner:8000 {
+			header_up Host planner
 			header_up -Cookie
 			header_up -X-Pilot-Id
 			header_up -X-Origin-Secret
