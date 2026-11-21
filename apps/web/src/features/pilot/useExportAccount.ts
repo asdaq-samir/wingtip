@@ -3,15 +3,18 @@ import { shareFile } from "../../lib/flightPlanFiles";
 import { showError } from "../../lib/problems";
 import { gateway } from "../../lib/api/http";
 import { describeError } from "../../lib/api/errors";
+import { localDay } from "../../lib/format";
 
 /** The file's name as the gateway gives it (ExportController), else one
- *  of today's; never a folder, whatever the header says. */
+ *  of today's, this device's day (lib/format's localDay: an ISO string's
+ *  is UTC's, tomorrow by the evening across the U.S.); never a folder,
+ *  whatever the header says. */
 export function exportFileName(disposition: string | null, today: Date = new Date()): string {
   const named = /filename="?([^";]+)"?/
     .exec(disposition ?? "")?.[1]
     ?.split(/[\\/]/)
     .pop();
-  return named || `wingtip-maps-${today.toISOString().slice(0, 10)}.json`;
+  return named || `wingtip-maps-${localDay(today)}.json`;
 }
 
 /** Everything the gateway keeps for the signed-in pilot, as one JSON

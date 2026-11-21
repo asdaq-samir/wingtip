@@ -1,16 +1,17 @@
-const DAY_MS = 86_400_000;
-
 /** The routes by when they were planned, newest first, as Maps' Recents
  *  head them: since midnight, the last seven days, the last thirty, and
- *  before; a heading with nothing under it is left out. */
+ *  before; a heading with nothing under it is left out. The days are the
+ *  calendar's, counted by Date's own calendar (a day of the month past its
+ *  start rolls back into the month before), where midnight less six times
+ *  24 hours was an hour off across a change of clocks, and a route planned
+ *  in the hour either side of that midnight went under the wrong heading. */
 export function whenGroups<T extends { at: number }>(routes: T[], now: number): { title: string; routes: T[] }[] {
-  const midnight = new Date(now);
-  midnight.setHours(0, 0, 0, 0);
-  const today = midnight.getTime();
+  const today = new Date(now);
+  const midnight = (daysBack: number) => new Date(today.getFullYear(), today.getMonth(), today.getDate() - daysBack).getTime();
   const bounds: [string, number][] = [
-    ["Today", today],
-    ["This Week", today - 6 * DAY_MS],
-    ["This Month", today - 29 * DAY_MS],
+    ["Today", midnight(0)],
+    ["This Week", midnight(6)],
+    ["This Month", midnight(29)],
     ["Earlier", -Infinity],
   ];
   return bounds
