@@ -31,9 +31,20 @@ export function forgetPlannerAnswers(): void {
 /** Who is signed in (api.me); signed out -- the server's 204, a session
  *  that expired or was ended elsewhere -- the last pilot's cached copies
  *  forgotten, which the worker's network-first answer would otherwise show
- *  the next start with no signal. */
+ *  the next start with no signal. Where a pilot's copy was there to
+ *  forget, so someone had been signed in, the planner's answers asked at
+ *  their points go too, as at Log Out (the deep security review of
+ *  2026-11-21: a session that lapsed kept them); a page that was never
+ *  signed in keeps its own, for flying offline. */
 export async function signedInPilot(): Promise<Pilot | null> {
   const pilot = await api.me();
-  if (pilot === null) forgetPilotCache();
+  if (pilot === null) await forgetSignedOut();
   return pilot;
+}
+
+async function forgetSignedOut(): Promise<void> {
+  if (!("caches" in globalThis)) return;
+  const someoneWasSignedIn = await caches.has(PILOT_CACHE).catch(() => false);
+  forgetPilotCache();
+  if (someoneWasSignedIn) forgetPlannerAnswers();
 }

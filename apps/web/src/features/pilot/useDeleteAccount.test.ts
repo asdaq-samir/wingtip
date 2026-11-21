@@ -1,5 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { forgetThisDevice } from "./useDeleteAccount";
+import { describe, expect, it, vi } from "vitest";
+import { forgetAccountOnThisDevice, forgetThisDevice } from "./useDeleteAccount";
+import { forgetWhereTheyFlew } from "./useLogout";
+
+vi.mock("./useLogout", () => ({ forgetWhereTheyFlew: vi.fn() }));
 
 /** The part of Storage forgetThisDevice reads, kept in a Map. */
 function fakeStorage(entries: Record<string, string>): Storage {
@@ -27,5 +30,20 @@ describe("forgetThisDevice", () => {
     const storage = fakeStorage({});
     forgetThisDevice(storage);
     expect(storage.length).toBe(0);
+  });
+});
+
+describe("forgetAccountOnThisDevice", () => {
+  it("forgets this tab's copies and what signing out forgets, not only localStorage", () => {
+    // The deep security review of 2026-11-21: deleting kept the planner's
+    // answers at the pilot's points, the tracks and trail, and the tab's
+    // plan history, which Log Out forgot.
+    const local = fakeStorage({ "wingtip.preferences": "1", "other.key": "3" });
+    const session = fakeStorage({ "wingtip.planHistory": "[]", "other.tab": "4" });
+    forgetAccountOnThisDevice(local, session);
+    expect(local.length).toBe(1);
+    expect(session.getItem("wingtip.planHistory")).toBeNull();
+    expect(session.getItem("other.tab")).toBe("4");
+    expect(forgetWhereTheyFlew).toHaveBeenCalledOnce();
   });
 });
