@@ -5,7 +5,7 @@
 //! same order -- as the shared fixtures (services/planner/tests_wingtip/fixtures/native) hold it to.
 
 use crate::sums::{pairwise, Neumaier};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 /// A grid's array, read an element at a time: a Vec here, numpy's own
 /// memory in the planner, whatever the phone holds later.
@@ -171,67 +171,146 @@ pub enum StraightError<E> {
 /// farthest point on whose straight line crosses no more closed cells than
 /// the way did, is no more than `slower_min` slower, and (with a marginal
 /// cost) crosses no more marginal cells. `nm_from(i)` is the distance from
-/// point i to every point, asked for only where needed: the planner's are
-/// PROJ's own, so the miles are the same wherever the engine runs.
+/// point i to the points after it (entries at or before i are not read),
+/// asked for only where needed: the planner's are PROJ's own, so the miles
+/// are the same wherever the engine runs.
 pub fn straightened<E>(
-    g: Geom, costs: &Costs, points: &[Point], leg_nm: &[f64], mut nm_from: impl FnMut(usize) -> Result<Vec<f64>, E>, how: &Straighten,
+    g: Geom, costs: &Costs, points: &[Point], leg_nm: &[f64], nm_from: impl FnMut(usize) -> Result<Vec<f64>, E>, how: &Straighten,
 ) -> Result<Vec<usize>, StraightError<E>> {
-    let n = points.len();
-    if leg_nm.len() + 1 != n {
-        return Err(StraightError::Legs);
+    Straightener::new(g, costs, points, leg_nm, nm_from, how.marginal_cost, how.water_cost)?.turns(how.slower_min)
+}
+
+/// One way's straightening, kept between passes at a growing `slower_min`
+/// (route options try up to five until the turns are few enough): each
+/// leg's cells and minutes, each turn's sums of the way on, each straight
+/// line's closed and marginal cells and minutes, and each distance row
+/// depend on the way alone, never on `slower_min`, so each is worked out
+/// once and every pass reads the same numbers the one-pass loop did. The
+/// turns are exactly `straightened`'s at each `slower_min`.
+pub struct Straightener<'c, 'a, E, F: FnMut(usize) -> Result<Vec<f64>, E>> {
+    g: Geom,
+    costs: &'c Costs<'a>,
+    points: &'c [Point],
+    mc: f64,
+    wc: f64,
+    nm_from: F,
+    legs: Vec<f64>,
+    leg_closed: Vec<Vec<Cell>>,
+    leg_marginal: Vec<usize>,
+    /// From turn i: the way's closed cells as a set, minutes and marginal
+    /// cells to each j.
+    ahead: Vec<Option<Ahead>>,
+    rows: Vec<Option<Vec<f64>>>,
+    /// The line i -> j: None where it crosses more closed cells than the
+    /// way (never a turn, whatever the pass); else its minutes and its
+    /// marginal cells.
+    lines: HashMap<(usize, usize), Option<(f64, usize)>>,
+}
+
+struct Ahead {
+    crossed: Vec<usize>,
+    spent: Vec<f64>,
+    marginals: Vec<usize>,
+}
+
+impl<'c, 'a, E, F: FnMut(usize) -> Result<Vec<f64>, E>> Straightener<'c, 'a, E, F> {
+    pub fn new(
+        g: Geom, costs: &'c Costs<'a>, points: &'c [Point], leg_nm: &[f64], nm_from: F, mc: f64, wc: f64,
+    ) -> Result<Self, StraightError<E>> {
+        let n = points.len();
+        if leg_nm.len() + 1 != n {
+            return Err(StraightError::Legs);
+        }
+        let mut legs = Vec::with_capacity(n - 1);
+        let mut leg_closed: Vec<Vec<Cell>> = Vec::with_capacity(n - 1);
+        let mut leg_marginal = Vec::with_capacity(n - 1);
+        for k in 0..n - 1 {
+            let cells = line_cells(g, points[k], points[k + 1]);
+            legs.push(costs.minutes(&cells, points[k], points[k + 1], leg_nm[k], mc, wc));
+            leg_closed.push(cells.iter().copied().filter(|&c| !costs.is_open(c)).collect());
+            leg_marginal.push(cells.iter().filter(|&&c| costs.is_marginal(c)).count());
+        }
+        let (ahead, rows) = ((0..n).map(|_| None).collect(), (0..n).map(|_| None).collect());
+        Ok(Straightener { g, costs, points, mc, wc, nm_from, legs, leg_closed, leg_marginal, ahead, rows, lines: HashMap::new() })
     }
-    let (mc, wc) = (how.marginal_cost, how.water_cost);
-    let mut legs = Vec::with_capacity(n - 1);
-    let mut leg_closed: Vec<Vec<Cell>> = Vec::with_capacity(n - 1);
-    let mut leg_marginal = Vec::with_capacity(n - 1);
-    for k in 0..n - 1 {
-        let cells = line_cells(g, points[k], points[k + 1]);
-        legs.push(costs.minutes(&cells, points[k], points[k + 1], leg_nm[k], mc, wc));
-        leg_closed.push(cells.iter().copied().filter(|&c| !costs.is_open(c)).collect());
-        leg_marginal.push(cells.iter().filter(|&&c| costs.is_marginal(c)).count());
-    }
-    let mut out = vec![0usize];
-    let mut i = 0usize;
-    while i + 1 < n {
-        // The way's own from i to each j: its closed cells as a set (a turn's
-        // cell is on both its legs), its minutes as Python's sum() adds them,
-        // and its marginal cells.
-        let mut crossed: Vec<usize> = vec![0; n];
-        let mut spent: Vec<f64> = vec![0.0; n];
-        let mut marginals: Vec<usize> = vec![0; n];
+
+    /// The way's own from i to each j: its closed cells as a set (a turn's
+    /// cell is on both its legs), its minutes as Python's sum() adds them,
+    /// and its marginal cells.
+    fn ahead_of(&self, i: usize) -> Ahead {
+        let n = self.points.len();
+        let mut a = Ahead { crossed: vec![0; n], spent: vec![0.0; n], marginals: vec![0; n] };
         let mut seen: HashSet<Cell> = HashSet::new();
         let mut sum = Neumaier::default();
         let mut count = 0usize;
         for j in i + 1..n {
-            seen.extend(leg_closed[j - 1].iter().copied());
-            sum.add(legs[j - 1]);
-            count += leg_marginal[j - 1];
-            crossed[j] = seen.len();
-            spent[j] = sum.value();
-            marginals[j] = count;
+            seen.extend(self.leg_closed[j - 1].iter().copied());
+            sum.add(self.legs[j - 1]);
+            count += self.leg_marginal[j - 1];
+            a.crossed[j] = seen.len();
+            a.spent[j] = sum.value();
+            a.marginals[j] = count;
         }
-        let mut row: Option<Vec<f64>> = None;
-        let mut j = n - 1;
-        while j > i + 1 {
-            let cells = line_cells(g, points[i], points[j]);
-            let shut = cells.iter().filter(|&&c| !costs.is_open(c)).count();
-            if shut <= crossed[j] {
-                if row.is_none() {
-                    row = Some(nm_from(i).map_err(StraightError::Distances)?);
-                }
-                let nm = row.as_ref().unwrap()[j];
-                if costs.minutes(&cells, points[i], points[j], nm, mc, wc) <= spent[j] + how.slower_min
-                    && (mc == 0.0 || cells.iter().filter(|&&c| costs.is_marginal(c)).count() <= marginals[j])
-                {
-                    break;
-                }
-            }
-            j -= 1;
-        }
-        out.push(j);
-        i = j;
+        a
     }
-    Ok(out)
+
+    fn line(&mut self, i: usize, j: usize, crossed: usize) -> Result<Option<(f64, usize)>, StraightError<E>> {
+        if let Some(&known) = self.lines.get(&(i, j)) {
+            return Ok(known);
+        }
+        let (a, b) = (self.points[i], self.points[j]);
+        let cells = line_cells(self.g, a, b);
+        let shut = cells.iter().filter(|&&c| !self.costs.is_open(c)).count();
+        let got = if shut <= crossed {
+            if self.rows[i].is_none() {
+                self.rows[i] = Some((self.nm_from)(i).map_err(StraightError::Distances)?);
+            }
+            let nm = self.rows[i].as_ref().unwrap()[j];
+            let minutes = self.costs.minutes(&cells, a, b, nm, self.mc, self.wc);
+            Some((minutes, cells.iter().filter(|&&c| self.costs.is_marginal(c)).count()))
+        } else {
+            None
+        };
+        self.lines.insert((i, j), got);
+        Ok(got)
+    }
+
+    /// The turns at `slower_min`, as `straightened` gives them.
+    pub fn turns(&mut self, slower_min: f64) -> Result<Vec<usize>, StraightError<E>> {
+        let n = self.points.len();
+        let mut out = vec![0usize];
+        let mut i = 0usize;
+        while i + 1 < n {
+            if self.ahead[i].is_none() {
+                self.ahead[i] = Some(self.ahead_of(i));
+            }
+            let ahead = self.ahead[i].take().unwrap();
+            let mut j = n - 1;
+            let mut failed = None;
+            while j > i + 1 {
+                match self.line(i, j, ahead.crossed[j]) {
+                    Err(e) => {
+                        failed = Some(e);
+                        break;
+                    }
+                    Ok(Some((minutes, marginal)))
+                        if minutes <= ahead.spent[j] + slower_min && (self.mc == 0.0 || marginal <= ahead.marginals[j]) =>
+                    {
+                        break;
+                    }
+                    Ok(_) => {}
+                }
+                j -= 1;
+            }
+            self.ahead[i] = Some(ahead);
+            if let Some(e) = failed {
+                return Err(e);
+            }
+            out.push(j);
+            i = j;
+        }
+        Ok(out)
+    }
 }
 
 #[cfg(test)]
@@ -261,5 +340,43 @@ mod tests {
         assert_eq!(STEPS[way_of((40.0, -100.0), (39.0, -101.3))], (-1, -1));
         assert_eq!(way_of((40.0, -100.0), (40.0, -100.0)), step_index(1, 0));
         assert_eq!((0..8).map(|k| step_index(STEPS[k].0, STEPS[k].1)).collect::<Vec<_>>(), (0..8).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn a_kept_straightener_turns_as_a_fresh_one_at_each_pass() {
+        // A way through a grid with a closed block and a marginal strip:
+        // every pass of one Straightener gives the one-pass turns, and each
+        // point's distances are asked for once in all.
+        let g = Geom::new(40.0, -100.0, 0.25, 6, 12).unwrap();
+        let n = 6 * 12;
+        let closed: Vec<i64> = (0..n).map(|i| if (i / 12 == 2 || i / 12 == 3) && (4..7).contains(&(i % 12)) { 0 } else { -1 }).collect();
+        let marginal: Vec<i64> = (0..n).map(|i| if i % 12 == 9 { 1 } else { -1 }).collect();
+        let dear = vec![0.0; n];
+        let offshore: Vec<f64> = (0..n).map(|i| if i / 12 == 0 { 0.5 } else { 0.0 }).collect();
+        let gs: Vec<f64> = (0..n * 8).map(|k| 100.0 + (k % 8) as f64 * 3.0).collect();
+        let ends = HashSet::new();
+        let costs = Costs::new(6, 12, &closed, &marginal, &dear, &offshore, &gs, &ends).unwrap();
+        let centre = |r: i64, c: i64| (40.0 + (r as f64 + 0.5) * 0.25, -100.0 + (c as f64 + 0.5) * 0.25);
+        let path = [(1, 0), (1, 1), (1, 2), (1, 3), (0, 4), (0, 5), (0, 6), (1, 7), (2, 8), (3, 9), (4, 10), (4, 11)];
+        let points: Vec<Point> = path.iter().map(|&(r, c)| centre(r, c)).collect();
+        let flat = |a: Point, b: Point| ((a.0 - b.0).powi(2) + (a.1 - b.1).powi(2)).sqrt() * 60.0;
+        let leg_nm: Vec<f64> = points.windows(2).map(|w| flat(w[0], w[1])).collect();
+        let row = |i: usize| -> Result<Vec<f64>, ()> { Ok(points.iter().map(|&p| flat(points[i], p)).collect()) };
+        for mc in [0.0, 0.5] {
+            let asked = std::cell::Cell::new(vec![0usize; points.len()]);
+            let counted = |i: usize| {
+                let mut a = asked.take();
+                a[i] += 1;
+                asked.set(a);
+                row(i)
+            };
+            let mut kept = Straightener::new(g, &costs, &points, &leg_nm, counted, mc, 1.0).unwrap();
+            for slower in [0.0, 1.0, 3.0, 6.0, 12.0, 24.0] {
+                let how = Straighten { marginal_cost: mc, slower_min: slower, water_cost: 1.0 };
+                assert_eq!(kept.turns(slower).unwrap(), straightened(g, &costs, &points, &leg_nm, row, &how).unwrap(), "{mc} {slower}");
+            }
+            drop(kept);
+            assert!(asked.take().iter().all(|&k| k <= 1));
+        }
     }
 }

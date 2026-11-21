@@ -8,7 +8,7 @@ use super::words::r1;
 use crate::geo;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
-use wingtip_core::grid::{straightened as straighten_turns, way_of, Cell, Costs, Point, Straighten, STEPS};
+use wingtip_core::grid::{way_of, Cell, Costs, Point, Straightener, STEPS};
 
 fn costs<'a>(grid: &'a Grid, gs: &'a Vec<f64>) -> Costs<'a> {
     Costs::new(grid.rows, grid.cols, &grid.closed, &grid.marginal, &grid.dear, &grid.offshore, gs, &grid.ends)
@@ -134,16 +134,33 @@ pub fn way(
 
 /// The way's turns: from each point the farthest on along it a straight
 /// line reaches over open cells -- over no more closed ones than the way
-/// itself crossed, where it had to -- no more than `slower_min` slower.
-pub fn straightened(grid: &Grid, gs: &Vec<f64>, points: &[Point], marginal_cost: f64, slower_min: f64, water_cost: f64) -> Vec<Point> {
+/// itself crossed, where it had to -- no more than `slower_min` slower,
+/// tried at each of `steps` in turn until there are no more than
+/// `max_turns` turns (the last step's where none gets there). The way's
+/// legs, lines and distances are worked out once for every step
+/// (core's Straightener), and each distance row only for the points on.
+pub fn straightened(
+    grid: &Grid, gs: &Vec<f64>, points: &[Point], marginal_cost: f64, water_cost: f64, steps: &[f64], max_turns: usize,
+) -> Vec<Point> {
     let leg_nm: Vec<f64> = points.windows(2).map(|w| geo::distance_nm(w[0].0, w[0].1, w[1].0, w[1].1)).collect();
-    let from =
-        |i: usize| -> Result<Vec<f64>, ()> { Ok(points.iter().map(|p| geo::distance_nm(points[i].0, points[i].1, p.0, p.1)).collect()) };
-    let how = Straighten { marginal_cost, slower_min, water_cost };
-    match straighten_turns(grid.geom, &costs(grid, gs), points, &leg_nm, from, &how) {
-        Ok(turns) => turns.into_iter().map(|k| points[k]).collect(),
-        Err(_) => points.to_vec(),
+    let from = |i: usize| -> Result<Vec<f64>, ()> {
+        Ok(points.iter().enumerate().map(|(j, p)| if j > i { geo::distance_nm(points[i].0, points[i].1, p.0, p.1) } else { 0.0 }).collect())
+    };
+    let costs = costs(grid, gs);
+    let Ok(mut s) = Straightener::new(grid.geom, &costs, points, &leg_nm, from, marginal_cost, water_cost) else {
+        return points.to_vec();
+    };
+    let mut turns = points.to_vec();
+    for &slower in steps {
+        turns = match s.turns(slower) {
+            Ok(t) => t.into_iter().map(|k| points[k]).collect(),
+            Err(_) => points.to_vec(),
+        };
+        if turns.len().saturating_sub(2) <= max_turns {
+            break;
+        }
     }
+    turns
 }
 
 /// The hazards a way through `points` crosses -- those that close a cell

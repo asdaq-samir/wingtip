@@ -127,13 +127,7 @@ pub(super) fn options(a: &Ask) -> Result<String, String> {
             points.extend(cells[1..cells.len() - 1].iter().map(|&c| grid.centre(c)));
         }
         points.push(end);
-        let mut turns = points.clone();
-        for slower in STRAIGHTEN_STEPS_MIN {
-            turns = straightened(&grid, &gs, &points, marginal_cost, slower, water_cost);
-            if turns.len().saturating_sub(2) <= MAX_TURNS {
-                break;
-            }
-        }
+        let turns = straightened(&grid, &gs, &points, marginal_cost, water_cost, &STRAIGHTEN_STEPS_MIN, MAX_TURNS);
         let marginal_stop = MARGINAL_STOP_MIN * if kind == "weather" { 3.0 } else { 1.0 };
         let stops = stops::stops(&grid, &gs, &turns, &fuel, kind == "stops", marginal_stop);
         // No chain of fields reaches: the way offered all the same, with
