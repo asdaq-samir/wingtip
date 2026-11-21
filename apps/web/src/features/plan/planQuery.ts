@@ -88,6 +88,8 @@ export type BriefingState =
 
 /** Where the runways left from are in a plan's key (planKeyOf). */
 export const PLAN_KEY_RUNWAYS = 14;
+/** Where the fuel set in the tanks is in a plan's key (planKeyOf). */
+export const PLAN_KEY_TANKS = 19;
 
 /** Everything the nav log is computed from. */
 export function planKeyOf({

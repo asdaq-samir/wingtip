@@ -1167,7 +1167,11 @@ the planner picks the runway into the wind at every other field itself
 report as the page's picks), so the page no longer waits about a second
 for the fields' cards and its own picks, nor asks again as they come in.
 A runway the wind turns afterwards, or one the pilot picks, is asked for by
-name and the route planned again.
+name and the route planned again. The log on screen is kept while the
+route is planned again for another altitude, runway or fuel in the tanks
+(usePlan's `holdKey`): FPL's fuel gauges are walked on the device from its
+legs and the gallons just set (the engine's `fuel_in_tanks`), so a gauge
+shows its new figure at Done, not after the re-plan.
 
 **Stock parts.** Wingtip's `NavLogView` is TanStack Table v9 over
 shadcn's Table, which is what shadcn's Data Table guide uses

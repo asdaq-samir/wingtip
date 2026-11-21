@@ -357,6 +357,18 @@ describe("an altitude asked for", () => {
     expect(result.current.replanning).toBe(true);
   });
 
+  test("as the fuel in the tanks is set, keeps the legs before it, for the gauges to be walked from at once", async () => {
+    vi.mocked(api.course).mockResolvedValue({ ...courseFixture(), checkpoints_ready: true });
+    // The tanks are arg 21, as FuelSet's Done writes them.
+    vi.mocked(api.navlog).mockImplementation((...args: Parameters<typeof api.navlog>) => (args[21] ? waiting() : whole(4500)));
+    const { result, rerender } = renderHook((plan: PlanParams) => usePlan(plan), { wrapper, initialProps: params });
+    await waitFor(() => expect(result.current.totals).not.toBeNull());
+    rerender({ ...params, tanks: "C81:30" });
+    await waitFor(() => expect(vi.mocked(api.navlog).mock.calls.some((call) => call[21] === "C81:30")).toBe(true));
+    expect(result.current.legs).toHaveLength(1);
+    expect(result.current.replanning).toBe(true);
+  });
+
   test("on another route, is not held over it", async () => {
     vi.mocked(api.course).mockResolvedValue({ ...courseFixture(), checkpoints_ready: true });
     vi.mocked(api.navlog).mockImplementation((...args: Parameters<typeof api.navlog>) => (args[1] === "KMSP" ? waiting() : whole(4500)));
@@ -375,8 +387,7 @@ describe("the chart cycle", () => {
 
     await waitFor(() => expect(api.course).toHaveBeenCalledWith("C81", "KDLH", [], expect.anything(), "11-27-2026"));
     await waitFor(() => expect(api.checkpoints).toHaveBeenCalledWith("C81", "KDLH", [], expect.anything(), false, "11-27-2026"));
-    // Not first without the cycle (a first visit, no chart kept).
-    expect(api.course).toHaveBeenCalledTimes(1);
+    expect(api.course).toHaveBeenCalledTimes(1); // not first without it (a first visit, none kept)
     expect(api.checkpoints).toHaveBeenCalledTimes(1);
   });
 

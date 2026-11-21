@@ -9,7 +9,7 @@ import { briefingLegs } from "./briefingLegs";
 import { useDirectHere } from "./directOnDevice";
 import { useSaved } from "../../lib/fromCache";
 import { sameRoute, stripType } from "./planMessages";
-import { type BriefingState, navlogQuery, PLAN_KEY_RUNWAYS, type PlanParams, planKeyOf, type Unflyable } from "./planQuery";
+import { type BriefingState, navlogQuery, PLAN_KEY_RUNWAYS, PLAN_KEY_TANKS, type PlanParams, planKeyOf, type Unflyable } from "./planQuery";
 
 /**
  * The plan as TanStack Query sees it: one query per stage, keyed on
@@ -178,8 +178,15 @@ export function usePlan({
   // the key's last): the runways picked into the wind as the field's report
   // comes in are the ones the first plan already flew (the planner's
   // wind_picks), and the figures went to ≈ and back to the same for the
-  // re-plan's second or so.
-  const holdKey = planKey.filter((_, i) => i < 3 || (i >= 5 && i !== PLAN_KEY_RUNWAYS && i < planKey.length - 1)).join("|");
+  // re-plan's second or so. And over the fuel set in the tanks (`tanks`),
+  // which changes no leg, only the fuel checks: FPL's gauges are walked on
+  // the device from the legs on screen and the figure just set (the
+  // engine's fuel_in_tanks, routeTanks), so the gauge shows the new gallons
+  // at Done, where the legs went and it waited 543 ms on the re-plan (the
+  // speed audit of 2026-11-21).
+  const holdKey = planKey
+    .filter((_, i) => i < 3 || (i >= 5 && i !== PLAN_KEY_RUNWAYS && i !== PLAN_KEY_TANKS && i < planKey.length - 1))
+    .join("|");
   const whole = streamed.some((m) => m.type === "done");
   const [held, setHeld] = useState<{ key: string; messages: NavLogMessage[] } | null>(null);
   if (whole && !pointToPoint && (held?.messages !== streamed || held.key !== holdKey)) {
