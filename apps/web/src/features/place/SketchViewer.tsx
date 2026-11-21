@@ -1,5 +1,5 @@
 import type { SketchRunway } from "./runwayDrawing";
-import { TEXT, TEXT_POINTS } from "../../lib/text";
+import { TEXT } from "../../lib/text";
 import { cn } from "cn";
 import FullScreenViewer from "../../components/FullScreenViewer";
 import { RunwaySketch } from "./RunwaySketch";
@@ -32,7 +32,7 @@ export default function SketchViewer({
   return (
     <FullScreenViewer title={`${ident} runways`} testId="airport-sketch-viewer" closeTestId="airport-sketch-close" onClose={onClose}>
       <div className="relative min-h-0 flex-1 text-foreground">
-        <RunwaySketch runways={runways} lat={lat} lon={lon} numberSize={TEXT_POINTS.row} />
+        <RunwaySketch runways={runways} lat={lat} lon={lon} numbers="row" />
         <span
           aria-hidden="true"
           className={cn("pointer-events-none absolute right-4 bottom-2 flex items-center gap-1.5 opacity-50", TEXT.note)}

@@ -88,9 +88,9 @@ export const SECTION_TITLE = `font-medium text-foreground ${TEXT.heading}`;
  *  where the nav log's were a row's size in black, at the pilot's ask. */
 export const GROUP_HEADING = `font-semibold uppercase tracking-wide text-muted-foreground ${TEXT.note}`;
 
-/** The sizes of text drawn in points rather than by class (the runway
- *  sketch's numbers in an SVG): TEXT.caption's 11 and TEXT.row's 17 as
- *  a touch screen sets them. */
+/** The sizes of text in an SVG, in points, as a touch screen sets them:
+ *  TEXT.caption's 11 and TEXT.row's 17, for the room a drawing leaves its
+ *  words (the runway sketch's numbers, set by those classes). */
 export const TEXT_POINTS = { caption: TYPE_POINTS.caption, row: TYPE_POINTS.row } as const;
 
 /** A figure pinned at the map panel's foot (FigureStrip), its
