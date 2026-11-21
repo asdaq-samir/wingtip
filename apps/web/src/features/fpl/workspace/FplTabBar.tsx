@@ -7,7 +7,7 @@ import { ICON } from "../../../lib/icons";
 import type { PlanSlices } from "../vm/planSlices";
 import { MAKES_WAY } from "../../../components/sheet/pinAtFoot";
 import { EDGE_ROOM } from "../../../components/sheet/insets";
-import { FLOATING_BAR_SHEET_ROOM } from "../../../components/floatingBarLook";
+import { FLOATING_BAR_ROOM, FLOATING_BAR_SHEET_ROOM } from "../../../components/floatingBarLook";
 import { cn } from "cn";
 
 /**
@@ -61,7 +61,7 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
     // margin takes back the difference, 4 points with no home indicator.
     <div
       data-makes-way=""
-      className={cn("pointer-events-none -mx-4 flex justify-center px-4 pt-2", MAKES_WAY)}
+      className={cn("pointer-events-none -mx-4 flex justify-center px-4 pt-2", FLOATING_BAR_ROOM, MAKES_WAY)}
       style={{ marginBottom: `calc(${FLOATING_BAR_SHEET_ROOM} - ${EDGE_ROOM})` }}
       data-testid="fpl-actions"
     >
@@ -70,8 +70,11 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
           buttons and centred, as the airport card's is, not stretched
           across the sheet, which spread its buttons further apart than
           the card's tabs (the owner, 2026-11-20: "How come fpl tab bar is
-          more spaced out then airport one?"). */}
-      <Toolbar.Root aria-label="Route" render={<FloatingBar className="pointer-events-auto min-w-0" />}>
+          more spaced out then airport one?"). Its own classes the card's
+          but the taps: a min-w-0 here overrode the bar's least width and
+          drew FPL's items 62 to the card's 73 (the owner, 2026-11-21: "fpl
+          and other tabs placement look different"). */}
+      <Toolbar.Root aria-label="Route" render={<FloatingBar className="pointer-events-auto" />}>
         <BarAction
           icon={<ICON.brief />}
           badge={briefMark && found > 0 && <TabCount count={found} mark={briefMark} testId="route-brief-count" />}
