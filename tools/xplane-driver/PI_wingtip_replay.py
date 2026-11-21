@@ -15,6 +15,12 @@ How the airplane is replayed ("source" in shots.json):
   trial finds out), and follow X-Plane's replay if it does; otherwise drive.
 - menu: the .fdr was loaded through Load Flight; follow X-Plane's replay.
 - drive: the plugin places the airplane from the file's rows each frame.
+
+The test flight (docs/SIM-FLIGHT.md): "Fly the test flight" (and the
+command wingtip/flight/fly) flies Output/wingtip/flight.json, which
+scripts/dev/sim-flight.sh writes, and sends the airplane's state to the
+Mac's feed (wingtip_replay/flight.py); with "autostart" in it, a few
+seconds after a flight has loaded.
 """
 
 import json
@@ -26,6 +32,7 @@ from XPPython3 import xp
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from wingtip_replay import shots  # noqa: E402
+from wingtip_replay.flight import FlightRun  # noqa: E402
 from wingtip_replay.player import Log, Player  # noqa: E402
 from wingtip_replay.track import parse_fdr  # noqa: E402
 
@@ -41,13 +48,18 @@ class PythonInterface:
         self.player = None
         self.waiting = None  # (flight, settings, shots, log, until) while X-Plane loads the .fdr
         self.autostart_at = None
+        self.flight = None
+        self.flight_at = None
         self.loop = None
         self.play_cmd = xp.createCommand("wingtip/replay/play", "Wingtip replay: play the shot list")
         self.stop_cmd = xp.createCommand("wingtip/replay/stop", "Wingtip replay: stop")
         xp.registerCommandHandler(self.play_cmd, self._on_play, 1, None)
         xp.registerCommandHandler(self.stop_cmd, self._on_stop, 1, None)
+        self.fly_cmd = xp.createCommand("wingtip/flight/fly", "Wingtip: fly the test flight")
+        xp.registerCommandHandler(self.fly_cmd, self._on_fly, 1, None)
         self.menu = xp.createMenu("Wingtip replay", handler=None)
         xp.appendMenuItemWithCommand(self.menu, "Play the shot list", self.play_cmd)
+        xp.appendMenuItemWithCommand(self.menu, "Fly the test flight", self.fly_cmd)
         xp.appendMenuItemWithCommand(self.menu, "Stop", self.stop_cmd)
         return "Wingtip replay", "app.wingtipmaps.replay", "Replays a Studio flight with scripted cameras and records it."
 
@@ -59,6 +71,8 @@ class PythonInterface:
     def XPluginDisable(self):
         if self.player:
             self.player.stop("plugin disabled")
+        if self.flight:
+            self.flight.stop("plugin disabled")
         if self.loop:
             xp.destroyFlightLoop(self.loop)
             self.loop = None
@@ -66,11 +80,14 @@ class PythonInterface:
     def XPluginStop(self):
         xp.unregisterCommandHandler(self.play_cmd, self._on_play, 1, None)
         xp.unregisterCommandHandler(self.stop_cmd, self._on_stop, 1, None)
+        xp.unregisterCommandHandler(self.fly_cmd, self._on_fly, 1, None)
         xp.destroyMenu(self.menu)
 
     def XPluginReceiveMessage(self, inFromWho, inMessage, inParam):
         if inMessage == xp.MSG_AIRPORT_LOADED and self._spec().get("autostart"):
             self.autostart_at = xp.getElapsedTime() + AUTOSTART_AFTER_S
+        if inMessage == xp.MSG_AIRPORT_LOADED and self._read("flight.json").get("autostart"):
+            self.flight_at = xp.getElapsedTime() + AUTOSTART_AFTER_S
 
     # The commands.
 
@@ -82,14 +99,41 @@ class PythonInterface:
     def _on_stop(self, _cmd, phase, _ref):
         if phase == xp.CommandBegin and self.player:
             self.player.stop("stopped by hand")
+        if phase == xp.CommandBegin and self.flight:
+            self.flight.stop("stopped by hand")
         return 0
 
-    def _spec(self):
+    def _on_fly(self, _cmd, phase, _ref):
+        if phase == xp.CommandBegin:
+            self.fly()
+        return 0
+
+    def _read(self, name):
         try:
-            with open(os.path.join(self.folder, "shots.json"), encoding="utf-8") as f:
+            with open(os.path.join(self.folder, name), encoding="utf-8") as f:
                 return json.load(f)
         except (OSError, ValueError):
             return {}
+
+    def _spec(self):
+        return self._read("shots.json")
+
+    def fly(self):
+        """The test flight, from Output/wingtip/flight.json."""
+        os.makedirs(self.folder, exist_ok=True)
+        log = Log(os.path.join(self.folder, "flight-log.txt"))
+        if self.flight and not self.flight.done:
+            self.flight.stop("flown again")
+        spec = self._read("flight.json")
+        if not spec.get("points"):
+            log(f"cannot fly: no flight.json in {self.folder} (scripts/dev/sim-flight.sh install)")
+            return
+        try:
+            self.flight = FlightRun(spec, log)
+        except (KeyError, ValueError) as err:
+            log(f"cannot fly: {err}")
+            return
+        self.flight.start()
 
     def play(self):
         os.makedirs(self.folder, exist_ok=True)
@@ -144,4 +188,9 @@ class PythonInterface:
                 self._go(flight, settings, shot_list, "drive", log)
         if self.player and not self.player.done:
             self.player.frame(since_last)
+        if self.flight_at is not None and now >= self.flight_at:
+            self.flight_at = None
+            self.fly()
+        if self.flight and not self.flight.done:
+            self.flight.frame(since_last)
         return -1

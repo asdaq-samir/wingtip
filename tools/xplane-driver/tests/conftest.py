@@ -18,6 +18,7 @@ class FakeXp(types.ModuleType):
 
     Type_Int, Type_Float, Type_Double = 1, 2, 8
     ControlCameraForever = 2
+    ProbeY = 0
 
     def __init__(self):
         super().__init__("xp")
@@ -44,6 +45,10 @@ class FakeXp(types.ModuleType):
         self.data[ref] = value
         if ref.endswith("/psi"):  # the stub's grid is true north
             self.data["sim/flightmodel/position/true_psi"] = value
+        if ref.endswith(("/local_x", "/local_y", "/local_z")):  # X-Plane works its latitude out of the local place
+            pos = "sim/flightmodel/position/"
+            lat, lon, alt = self.localToWorld(*(self.data.get(pos + f"local_{a}", 0.0) for a in "xyz"))
+            self.data.update({pos + "latitude": lat, pos + "longitude": lon, pos + "elevation": alt})
 
     setDataf = setDatai = setDatad
 
@@ -58,6 +63,17 @@ class FakeXp(types.ModuleType):
 
     def worldToLocal(self, lat, lon, alt):
         return lon * 100000.0 * math.cos(math.radians(lat)), alt, -lat * 100000.0
+
+    def localToWorld(self, x, y, z):
+        lat = -z / 100000.0
+        return lat, x / (100000.0 * math.cos(math.radians(lat))), y
+
+    def createProbe(self, kind):
+        return "probe"
+
+    def probeTerrainXYZ(self, probe, x, y, z):
+        """The stub's ground is at sea level everywhere."""
+        return types.SimpleNamespace(result=0, locationY=0.0)
 
     def commandOnce(self, name):
         self.commands.append(name)
@@ -80,6 +96,7 @@ def fake_xp(monkeypatch):
     monkeypatch.setitem(sys.modules, "XPPython3", package)
     monkeypatch.setitem(sys.modules, "XPPython3.xp", fake)
     monkeypatch.delitem(sys.modules, "wingtip_replay.player", raising=False)
+    monkeypatch.delitem(sys.modules, "wingtip_replay.flight", raising=False)
     return fake
 
 
