@@ -1,5 +1,5 @@
 import { useEffect, useEffectEvent } from "react";
-import { checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
+import { airportQuery, checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
 import { navlogQuery, suggestedStopAt } from "../../plan";
 import { useSuggestedStops } from "../../stops";
 import { useMapActions } from "../../route";
@@ -36,6 +36,9 @@ export function usePlanStops(route: PlanRoute, answer: PlanAnswerModel, { place 
     void queryClient.prefetchQuery(courseQuery(ahead.dep, ahead.dest, nextStops));
     if (showWaypoints) void queryClient.prefetchQuery(checkpointsQuery(ahead.dep, ahead.dest, nextStops));
     void queryClient.prefetchQuery(navlogQuery(ahead, showWaypoints));
+    // And the new stops' cards, whose reports their runways are picked into
+    // the wind from as they land in the route: in by then, not asked after.
+    for (const ident of nextStops) void queryClient.prefetchQuery(airportQuery(ident));
   });
   useEffect(() => prefetchAhead(), [aheadKey]); // keyed on the route and the plan's choices
   // The map's cards' and the radio's actions on the route (useMapActions).

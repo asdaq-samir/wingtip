@@ -210,7 +210,11 @@ const prefetchCourse = () => {
   if (routeOf(openingDep, openingDest, openingStops)) {
     // Quiet: if the planner is down, the page's own course query says so
     // once it mounts and asks again -- under the page's rule, not this one.
-    void queryClient.prefetchQuery({ ...courseQuery(openingDep!, openingDest!, openingStops), meta: { silent: true } });
+    // With the chart's cycle in its key, as the page asks it (usePlan): on a
+    // first visit, none kept, the chart first (about a millisecond), where
+    // the course was asked without the cycle and again with it.
+    const ask = () => void queryClient.prefetchQuery({ ...courseQuery(openingDep!, openingDest!, openingStops), meta: { silent: true } });
+    void queryClient.ensureQueryData({ ...chartQuery, meta: { silent: true } }).then(ask, ask);
   }
 };
 // A stop's form is the engine's (lib/identSchema stopOf), so a route with
