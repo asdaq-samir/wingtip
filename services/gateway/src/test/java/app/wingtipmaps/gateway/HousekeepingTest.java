@@ -101,14 +101,14 @@ class HousekeepingTest extends AccountTestBase {
                 leaving.getId(),
                 leaving.getEmail(),
                 Timestamp.from(Instant.now().minus(Duration.ofDays(1))));
-        plannerAsked.clear();
+        FakePlanner.asked.clear();
 
         assertThat(deletions.reapply()).isEqualTo(1);
 
         assertThat(count("SELECT count(*) FROM pilots WHERE id = ?", leaving.getId())).isZero();
         assertThat(count("SELECT count(*) FROM pilots WHERE id = ?", staying.getId())).isEqualTo(1);
         // The planner was asked again to forget the notes the restore brought back.
-        assertThat(plannerAsked).containsExactly("DELETE /api/checkpoint-notes/mine pilot=" + leaving.getId());
+        assertThat(FakePlanner.asked).containsExactly("DELETE /api/checkpoint-notes/mine pilot=" + leaving.getId());
         // And again finds nothing to do.
         assertThat(deletions.reapply()).isZero();
     }

@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import numpy as np
 
-# Pooled blocks of the face search (chart_faces._POOL_PX, 4 px).
+# Pooled blocks of the face search (chart_edges.POOL_PX, 4 px).
 #
 # An arm is a run of ink along one raster row or column (or the next,
 # for a line astride two) at least this long: 600 px, where the longest

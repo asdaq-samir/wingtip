@@ -28,7 +28,7 @@ from pathlib import Path
 
 from . import chart_cut_preview, chart_cycle, chart_sheets, config
 from .atomic import atomic_path
-from .chart_faces import _POOL_PX
+from .chart_edges import POOL_PX
 from .chart_kinds import Box, ChartKind
 
 log = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ VERSION = 1
 #: and still be the same cut (0.05 deg is 3 nautical miles of latitude: a
 #: panel redrawn a few hundred pixels over, not a new one), and how far a
 #: face edge may move before it is a finding. Sectional faces snap to
-#: the chart's own graticule (chart_faces._snap), so a real move is
+#: the chart's own graticule (chart_edges.snap), so a real move is
 #: larger than any detection jitter.
 CUT_TOLERANCE = 0.05
 FACE_TOLERANCE = 0.05
@@ -91,7 +91,7 @@ def _mask_cuts(mask: Path, kind: ChartKind) -> list[dict]:
                 "kind": _cut_kind(kind),
                 "box": [round(west, 4), round(south, 4), round(east, 4), round(north, 4)],
                 "size_deg": [round(east - west, 4), round(north - south, 4)],
-                "size_px": [(cols.stop - cols.start) * _POOL_PX, (rows.stop - rows.start) * _POOL_PX],
+                "size_px": [(cols.stop - cols.start) * POOL_PX, (rows.stop - rows.start) * POOL_PX],
             }
         )
     return sorted(cuts, key=lambda c: c["box"])
