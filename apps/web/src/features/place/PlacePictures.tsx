@@ -135,8 +135,9 @@ export function PlacePictures({
           alt=""
           label={`${ident} from the ground`}
           testId="place-photo"
-          // Its photographer and licence, as Commons' licences ask.
+          // Its photographer and licence, linked to its page, as Commons' licences ask.
           credit={`${photos.photo.credit}${photos.photo.license ? ` · ${photos.photo.license}` : ""}`}
+          creditHref={photos.photo.source_url ?? undefined}
         />
       ),
     },

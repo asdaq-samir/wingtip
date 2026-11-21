@@ -99,7 +99,16 @@ services:
     environment:
       # The map's Google overlay (routers/basemaps), where the owner has a key.
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
-      ADSBX_RAPIDAPI_KEY: ${ADSBX_RAPIDAPI_KEY:-}
+      # ADS-B Exchange through RapidAPI is its personal-use plan; JETNET's
+      # terms (jetnet.com/legal/terms-of-use, 2(d)) let no API account
+      # present its data to anyone who is not a subscriber of theirs: off
+      # for the public app until an enterprise agreement says otherwise
+      # (wingtip.traffic.adsbx; docs/legal/credits.md).
+      ADSBX_RAPIDAPI_KEY: ""
+      # adsb.lol's API key, where the owner has one (a free adhoc key's
+      # 1,000 requests a day, a feeder's 7,200): with none, the server's
+      # address has 500 a day (adsb.lol's API page, read 2026-11-21).
+      ADSBLOL_API_KEY: ${ADSBLOL_API_KEY:-}
       # adsb.fi's open data is for personal, non-commercial use only
       # (github.com/adsbfi/opendata): off for the public app until adsb.fi
       # agrees to it (wingtip.traffic).

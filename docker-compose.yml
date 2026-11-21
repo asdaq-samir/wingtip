@@ -338,6 +338,12 @@ services:
       # ADS-B Exchange through RapidAPI, the traffic's fallback where
       # adsb.lol turns the planner away (wingtip.traffic): off without it.
       ADSBX_RAPIDAPI_KEY: ${ADSBX_RAPIDAPI_KEY:-}
+      # adsb.lol's API key, where there is one (wingtip.traffic.common).
+      ADSBLOL_API_KEY: ${ADSBLOL_API_KEY:-}
+      # The FAA's radar from SWIM shown with no LADD list kept: this stack
+      # is the owner's own, not public (wingtip.traffic.ladd; production
+      # keeps the default, 1, and shows none until a list is saved).
+      LADD_REQUIRED: ${LADD_REQUIRED:-0}
       # Traces to Jaeger, with the tracing profile up and TRACING=1 (see
       # the jaeger service below); unset, the planner sends none and loads
       # none of OpenTelemetry (app.tracing, wingtip.tracing).
@@ -381,6 +387,8 @@ services:
       FILED_STORE: /live/filed.sqlite
       REPORTS_STORE: /live/reports.sqlite
       PYTHONPATH: /workspace/services/ingest:/workspace/services/planner
+      # The radar kept with no LADD list, as the planner above shows it.
+      LADD_REQUIRED: ${LADD_REQUIRED:-0}
       # The FAA's SWIM feeds (ingest.swim); each off without its own. The
       # owner's SCDS subscriptions' login and queues.
       SWIM_HOST: ${SWIM_HOST:-}
@@ -655,6 +663,10 @@ services:
     working_dir: /w
     volumes:
       - ./apps/web:/w
+      # The engine's open-source notices, which each build adds to the
+      # page's (vite-plugins/licences.ts reads ../../../engine/licences,
+      # which from /w is /engine/licences).
+      - ./engine/licences:/engine/licences:ro
     # VITE_PUBLISH_DIR (read by vite.config.ts): each build is written
     # whole into apps/web/.dist-next and then renamed into dist file by
     # file, index.html last, so a page loading mid-build gets the old

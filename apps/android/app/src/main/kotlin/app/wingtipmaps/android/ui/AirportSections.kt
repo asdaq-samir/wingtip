@@ -171,11 +171,17 @@ private fun cardPictures(place: AirportPlace, state: AirportModel.State): List<C
     val info by charts.info.collectAsStateWithLifecycle()
     val photos = state.photos
     if (photos != null) {
-        return listOfNotNull(CardPicture(aerial, photos.aerialUrl, "USGS National Map"), photos.photo?.let { CardPicture(ground, it.url, it.credit) })
+        return listOfNotNull(CardPicture(aerial, photos.aerialUrl, "USGS National Map"), photos.photo?.let { groundPicture(ground, it.url, it.credit, it.license, it.sourceUrl) })
     }
     if (!state.photosAsked) return emptyList()
     return listOfNotNull(Charts.template(info)?.let { CardPicture(chart, it.around(place.lat, place.lon, CHART_ZOOM), "FAA") })
 }
+
+/** A field's photo from the ground (Wikimedia Commons): its photographer
+ *  and its licence, as Commons' licences ask, the credit a link to its
+ *  page, where both are given in full. */
+internal fun groundPicture(label: String, address: String, credit: String, license: String?, page: String?): CardPicture =
+    CardPicture(label, address, if (license.isNullOrEmpty()) credit else "$credit · $license", page)
 
 /** The chart's zoom for the field's tile: a sectional's few miles about it. */
 private const val CHART_ZOOM = 11

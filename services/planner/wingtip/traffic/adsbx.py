@@ -16,7 +16,10 @@ from .common import HEADERS, TIMEOUT_S, TrafficUnavailable, _LOCK, _aircraft, _c
 #: adsb.lol's (`ac`), asked only where adsb.lol has refused or not
 #: answered, at the owner's ask ("a hybrid solution of adsb.lol and adsb
 #: exchange community version"): its non-commercial plan, 10,000 requests
-#: a month. Off unless ADSBX_RAPIDAPI_KEY is set.
+#: a month. Off unless ADSBX_RAPIDAPI_KEY is set, and production leaves it
+#: unset: the plan is for personal use, and JETNET's terms
+#: (jetnet.com/legal/terms-of-use, 2(d), read 2026-11-21) let no API
+#: account present its data to anyone who is not their subscriber.
 ADSBX_HOST = "adsbexchange-com1.p.rapidapi.com"
 ADSBX_URL = "https://adsbexchange-com1.p.rapidapi.com/v2/{path}/"
 #: Requests a month at most, short of the plan's 10,000 so a month's end
