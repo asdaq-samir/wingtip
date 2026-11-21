@@ -99,6 +99,15 @@ server cron, hourly ─▶ docker compose run --rm charts-overlays
 - **No SSH.** A shell on the server is SSM Session Manager; deploys are
   SSM Run Command. The server's role can pull its own images, read its
   own secrets and write its own backups, and nothing else.
+- **The gateway changes rows, never the schema.** Flyway signs in as the
+  database's owner (`DbPasswordSecret`, `POSTGRES_PASSWORD`); the app
+  signs in as `wingtip_app` with a secret of its own
+  (`AppDbPasswordSecret`, `APP_DB_PASSWORD`), which may read and write
+  the rows of every table and nothing more: no CREATE, ALTER, DROP or
+  TRUNCATE. Flyway's `db/callback/afterMigrate.sql` makes the role and
+  sets its password at each start, so a fresh database, an old one and
+  a restored backup all end the same, and a rotated secret takes at the
+  next deploy (docs/SECURITY.md, N4).
 - **The planner no longer draws tiles** (`CHARTS_AUTO_REFRESH=0`,
   `CHART_TILES_URL`): it reads each one out of the published archive by
   a range request through CloudFront (`wingtip.tile_archive`, the
@@ -150,7 +159,7 @@ Prices in us-east-1, October 2026, at today's traffic:
 | Its public IPv4 address | $3.65 |
 | 20 GB system disk and 30 GB data disk, gp3 | $4.00 |
 | S3 tiles: a few dozen archives a cycle (cents; they were 2.2 million tile uploads, about $11), and up to three cycles stored (some 36 GB a cycle with the @2x tiles) | ~$2.50 |
-| Secrets Manager, three secrets | $1.20 |
+| Secrets Manager, four secrets | $1.60 |
 | Route 53 hosted zone | $0.50 |
 | Daily snapshots of the data disk, seven kept | ~$1 |
 | The health check (HTTPS, every 30 s), the server's logs in CloudWatch, and its eight alarms and seven figures (`health.sh`, the gateway's alerts; within CloudWatch's free ten of each) | ~$1.60 |
@@ -237,6 +246,18 @@ docker run --rm --network wingtip-prod_default -v "$PWD/apps/web:/w" -w /w \
   -e BASE_URL=https://cdn:9443 -e MAILPIT_URL=http://mailpit:8025 \
   mcr.microsoft.com/playwright:v1.65.0-noble \
   npx playwright test --config playwright.rehearsal.config.ts --workers=2
+```
+
+The gateway's two roles are checked here as on the server: the app's
+role reads rows and may not touch the schema.
+
+```bash
+docker compose -p wingtip-prod exec -T db psql -U wingtip -d wingtip -Atc \
+  "SELECT has_table_privilege('wingtip_app', 'pilots', 'DELETE'),
+          has_table_privilege('wingtip_app', 'pilots', 'TRUNCATE'),
+          has_schema_privilege('wingtip_app', 'public', 'CREATE'),
+          (SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND tableowner = 'wingtip_app')"
+# t|f|f|0
 ```
 
 Not rehearsed here, since they need AWS itself: `deploy.sh`,
@@ -332,7 +353,7 @@ its settings, but has no images to run until the first push to ECR.
    ```
 
 `deploy.sh` writes the server's `.env` from the stack's settings and the
-three secrets, pulls the images and starts what changed. It is safe to run
+four secrets, pulls the images and starts what changed. It is safe to run
 at any time.
 
 ### Mail

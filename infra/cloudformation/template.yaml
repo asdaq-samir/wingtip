@@ -263,13 +263,22 @@ Resources:
             ExpiredObjectDeleteMarker: true
 
   # ---------------------------------------------------------------------
-  # Secrets: two the stack generates, one the owner fills in
-  # (infra/server/env.example). deploy.sh reads all three.
+  # Secrets: three the stack generates, one the owner fills in
+  # (infra/server/env.example). deploy.sh reads all four.
   # ---------------------------------------------------------------------
   DbPasswordSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Description: Postgres password on the server.
+      Description: Postgres password of the database's owner on the server, which Flyway signs in as.
+      GenerateSecretString: { PasswordLength: 32, ExcludePunctuation: true }
+
+  # The gateway's own role, which may read and write rows and nothing else
+  # (db/callback/afterMigrate.sql; docs/SECURITY.md, N4). Letters and
+  # digits only: the callback quotes it into its ALTER ROLE.
+  AppDbPasswordSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: Postgres password of the gateway's DML-only role (wingtip_app) on the server.
       GenerateSecretString: { PasswordLength: 32, ExcludePunctuation: true }
 
   OriginSecret:
@@ -329,7 +338,7 @@ Resources:
                   - !GetAtt ChartsRepository.Arn
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
-                Resource: [!Ref DbPasswordSecret, !Ref OriginSecret, !Ref AppSecret]
+                Resource: [!Ref DbPasswordSecret, !Ref AppDbPasswordSecret, !Ref OriginSecret, !Ref AppSecret]
               # Reads anything (models/ comes from the owner); writes only
               # where it keeps things: backup.sh's backups/ and the ground
               # grid deploy.sh builds once (ground_grid/). So a server
@@ -487,6 +496,7 @@ Resources:
               SERVER_BUCKET=${ServerBucket}
               APP_SECRET_ARN=${AppSecret}
               DB_SECRET_ARN=${DbPasswordSecret}
+              APP_DB_SECRET_ARN=${AppDbPasswordSecret}
               ORIGIN_SECRET_ARN=${OriginSecret}
               BACKUP_TOPIC_ARN=${BackupTopicArn}
               LOG_GROUP=${ServerLogGroup}
