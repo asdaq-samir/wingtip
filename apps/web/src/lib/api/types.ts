@@ -316,6 +316,12 @@ export type FlightServiceStatus = Gateway["FlightServiceStatus"];
 export type FlightPlanFiled = Gateway["FlightPlanFiled"];
 /** One day of one speed metric from one source and kind of device (SpeedController). */
 export type SpeedDay = Gateway["SpeedDay"];
+/** The apps' faults and speed figures by build (AppHealthController). */
+export type AppVersions = Gateway["AppVersionsDto"];
+export type VersionFaults = Gateway["VersionFaultsDto"];
+export type VersionFigure = Gateway["VersionFigureDto"];
+/** One planner route's calls, failures and times since it started (app.route_metrics). */
+export type RouteStat = Schemas["RouteStat"];
 /** A page's Core Web Vitals from this browser (SpeedController, lib/speed). */
 export type SpeedFieldReport = Gateway["FieldReport"];
 

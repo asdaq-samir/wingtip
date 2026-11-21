@@ -36,6 +36,13 @@ class DiagnosticsTest {
     }
 
     @Test
+    fun reportsGoUntilThePilotTurnsHelpImproveOff() {
+        assertTrue(HelpImprove.allows(null))
+        assertTrue(HelpImprove.allows(true))
+        assertEquals(false, HelpImprove.allows(false))
+    }
+
+    @Test
     fun nothingToSayIsNoBody() {
         assertNull(DiagnosticsBodies.build("1.0", 1, "16", false, emptyList(), emptyMap()))
     }

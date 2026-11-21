@@ -60,10 +60,11 @@ Crashlytics, Firebase or analytics kit: a grep of `apps/ios` finds none).
 |---|---|---|
 | Location: Precise Location | The airplane's position, sent to the planner to answer (Nearest, the copilot's look ahead, `/api/copilot/around`) and not kept | `OwnShip.swift`, `Copilot/Copilot.swift`; `PrivacyInfo.xcprivacy` has one Precise Location entry, linked for the saved track |
 | Diagnostics: Crash Data | MetricKit's crash, hang, CPU and disk-write exception diagnostics (the call stack, the exception or signal), with the app's version, the iOS version and phone or tablet; no account, no cookie, no position or route; kept 30 days | `Diagnostics/DiagnosticsReporter.swift`, `DiagnosticsReport.swift`; the gateway's `diagnostics` |
-| Diagnostics: Performance Data | MetricKit's daily launch and resume times, hang time, scroll hitches, peak memory and the exits the system forced for memory, the same way; kept 400 days | `Diagnostics/DiagnosticsReporter.swift`; the gateway's `speed_samples` |
+| Diagnostics: Performance Data | MetricKit's daily launch and resume times, hang time, scroll hitches, peak memory and the exits the system forced for memory, and the day's energy and disk use (CPU and GPU time, best-accuracy GPS time, foreground and background time, megabytes written), the same way; kept 400 days | `Diagnostics/DiagnosticsReporter.swift`; the gateway's `speed_samples` |
 
 Both go to Wingtip's own gateway (`POST /api/diagnostics`, a session
-of its own with no cookie), not to any third party: there is no crash
+of its own with no cookie), only while Help Improve Wingtip Maps is on
+(Help & About, on until turned off, `Diagnostics/HelpImprove.swift`), not to any third party: there is no crash
 or analytics kit in the app. `PrivacyInfo.xcprivacy` declares both,
 unlinked, for App Functionality. Apple's own crash reports, from users
 who share analytics with developers, are Apple's collection, not the
@@ -145,7 +146,7 @@ pilot without the app asks by email and confirms from the link
 | Location: Precise location | Yes, a logged flight's track | No | Yes | App functionality | `logbook/FlightRecorder.kt`, `logbook/AutoLogbookHost.kt` |
 | App activity: Other user-generated content | Yes (airplanes, flights, logbook, notes) | No | Yes | App functionality | `logbook/`, `records/` |
 | App info and performance: Crash logs | Yes: the exits Android kept (`ApplicationExitInfo`: crashes, ANRs with their traces, low-memory kills) and an uncaught exception's stack, with the app's version, the Android version and phone or tablet; sent as the phone has it and scrubbed on receipt (queries, emails, home folders and UUIDs, `DiagnosticText`), no account; kept 30 days | No | No | App functionality (finding faults) | `diagnostics/ExitReasons.kt`, `CrashCatcher.kt`, `DiagnosticsReporter.kt` |
-| App info and performance: Diagnostics | Yes: the start-up time and the share of slow frames (JankStats), the same way; kept 400 days | No | No | App functionality (keeping the app fast) | `diagnostics/FrameStats.kt` |
+| App info and performance: Diagnostics | Yes: the start-up time and the share of slow frames (JankStats), the same way; kept 400 days; both rows only while Help Improve Wingtip Maps is on (`diagnostics/HelpImprove.kt`), and Play's Android vitals are Google's own, not the app's | No | No | App functionality (keeping the app fast) | `diagnostics/FrameStats.kt` |
 | Photos and videos: Photos | **No**: a page photographed for Add from a Photo is read on the phone with Gemini Nano (ML Kit text recognition, then Nano, `ai/read/OnPhoneReader.kt`) and sent nowhere; without Nano, Add from a Photo is not offered | | | | `documents/` |
 | Audio: Voice or sound recordings | **No**: the radio is heard by the phone's on-device `SpeechRecognizer` only (`createOnDeviceSpeechRecognizer`, `atc/RadioListener.kt`) and read on the phone, and a question asked by voice by its own on-device recognizer (`voice/VoiceInput.kt`, since 2026-11-10), its words typed into the field as a typed question; nothing is sent by the app or to Google; without an on-device recognizer voice is not offered | | | | |
 

@@ -1,6 +1,7 @@
 import { gateway, data, csrfHeaders } from "./http";
 import { ApiError, failIfNotOk } from "./errors";
 import type {
+  AppVersions,
   FlightPlanFiled,
   FlightPlanFilingRequest,
   FlightServiceStatus,
@@ -123,4 +124,7 @@ export const gatewayPilot = {
   /** The web app's speed, a day at a time (SpeedController): the
    *  developer's Speed page. */
   speedTrend: (days = 90) => gateway.GET("/api/speed", { params: { query: { days } } }).then(data<SpeedDay[]>),
+  /** The apps' crashes, hangs and speed figures by build
+   *  (AppHealthController): the developer's Apps page. */
+  appVersions: (days = 7) => gateway.GET("/api/diagnostics/versions", { params: { query: { days } } }).then(data<AppVersions>),
 };

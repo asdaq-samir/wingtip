@@ -14,6 +14,7 @@ import { COPILOT_MODES, useCopilotMode, type CopilotMode } from "../../component
 import { useMicPrimer } from "../../components/MicPrimer";
 import { setCommsAssist, useCommsAssist } from "../../lib/atc/commsAssist";
 import { ATC_LISTEN_MODES, setAtcListen, useAtcListen, type AtcListen } from "../../lib/atc/listenSetting";
+import { setHelpImprove, useHelpImprove } from "../../lib/helpImprove";
 import { LEGAL_PAGES } from "../../lib/legal";
 import { useCanListen } from "../../lib/speechLocal";
 import { usePreferences } from "../../lib/preferences";
@@ -103,6 +104,7 @@ export type HelpPages = Record<"guide" | "status" | "log" | "about", { title: st
  *  the status, the log, about and the sources a row each, the legal
  *  pages a link each at its foot. */
 export function HelpPage({ pages }: { pages: HelpPages }) {
+  const helpImprove = useHelpImprove((s) => s.value);
   return (
     <ConsolePages back="Help & About" pages={{ ...pages, sources: { title: "Sources", content: <SourcesPage /> } }}>
       <div className="flex flex-col gap-5">
@@ -116,6 +118,18 @@ export function HelpPage({ pages }: { pages: HelpPages }) {
           <PageRow page="about" title="About" testId="about-link" />
           {/* Where the map's data comes from and how old it is. */}
           <PageRow page="sources" title="Sources" testId="sources-row" />
+        </ListGroup>
+        {/* Faults and speed figures sent with nothing of the pilot's
+            (lib/helpImprove; docs/privacy-inventory.md): on until turned
+            off, as on the phones. */}
+        <ListGroup>
+          <SwitchRow
+            title="Help Improve Wingtip Maps"
+            description="Sends crashes and speed figures, with nothing of yours"
+            on={helpImprove}
+            onChange={setHelpImprove}
+            testId="help-improve-toggle"
+          />
         </ListGroup>
         {/* Privacy, Terms and Legal (about's list of every data source and
             its licence), links at the foot (the owner, 2026-11-11). Sixteen

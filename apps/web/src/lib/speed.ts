@@ -1,5 +1,6 @@
 import type { Metric } from "web-vitals";
 import type { SpeedFieldReport } from "./api/types";
+import { helpImproveOn, inSpeedSample } from "./helpImprove";
 
 /**
  * How fast the page is on this pilot's device, sent to the server
@@ -17,9 +18,13 @@ import type { SpeedFieldReport } from "./api/types";
  * observers ask for what was measured before them (buffered), so starting
  * late loses nothing. Not in a browser driven by tests (navigator.webdriver),
  * whose runs on a busy machine would only blur the trend.
+ *
+ * Sampled: a quarter of page loads report (lib/helpImprove's SPEED_SAMPLE),
+ * enough for the trend's percentiles; and none once the pilot turns Help
+ * Improve Wingtip Maps off, checked again as each report would go.
  */
 export function startSpeedReports(win: Window = window) {
-  if (win.navigator.webdriver) return;
+  if (win.navigator.webdriver || !inSpeedSample()) return;
   const idle = win.requestIdleCallback ?? ((go: () => void) => win.setTimeout(go, 3000));
   idle(() => {
     void import("web-vitals").then(({ onCLS, onFCP, onINP, onLCP, onTTFB }) => {
@@ -31,7 +36,7 @@ export function startSpeedReports(win: Window = window) {
       // After the library's own listeners, which are added as each onX
       // is called and give their final values as the page is hidden.
       const flush = () => {
-        if (win.document.visibilityState !== "hidden" || Object.keys(pending).length === 0) return;
+        if (win.document.visibilityState !== "hidden" || Object.keys(pending).length === 0 || !helpImproveOn()) return;
         const report = reportOf(pending, win);
         for (const name of Object.keys(pending)) delete pending[name];
         if (typeof win.navigator.sendBeacon === "function") {

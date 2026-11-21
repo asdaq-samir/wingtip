@@ -1,6 +1,7 @@
 import { originOf, type DiagnosticsReport } from "./diagnostics";
 import { sendDiagnostics } from "./api/diagnostics";
 import { pageOf } from "./speed";
+import { inSpeedSample } from "./helpImprove";
 
 /**
  * How long the page kept the main thread busy on this pilot's device: the
@@ -12,11 +13,14 @@ import { pageOf } from "./speed";
  * and again only if more came since. Nothing of the pilot's goes.
  *
  * Safari has no Long Tasks: there it measures nothing and sends nothing.
- * Not in a browser driven by tests, as lib/speed.
+ * Not in a browser driven by tests, as lib/speed; only in the page loads
+ * lib/speed samples, and not once Help Improve Wingtip Maps is off
+ * (sendDiagnostics asks).
  */
 export function startLongTaskReports(win: Window = window) {
   if (
     win.navigator.webdriver ||
+    !inSpeedSample() ||
     typeof PerformanceObserver === "undefined" ||
     !PerformanceObserver.supportedEntryTypes?.includes("longtask")
   )

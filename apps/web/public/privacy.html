@@ -27,7 +27,7 @@
 </head>
 <body>
 <h1 id="privacy-policy">Privacy policy</h1>
-<p><em>Draft for the owner to review. Checked against the code on 12 November 2026; not yet in effect.</em></p>
+<p><em>Draft for the owner to review. Checked against the code on 21 November 2026; not yet in effect.</em></p>
 <p>Wingtip Maps is a flight planner for VFR and IFR flight, on the web, the iPhone and Android. This page says what the app keeps about you, where it keeps it, what leaves your device and who receives it. It describes what the app does today; where it says &quot;we&quot;, it means the people who run Wingtip Maps.</p>
 <p>You can use the map and plan a route without an account. Most of what follows is about the account you may make, and about the features that send something off your device to work.</p>
 <h2 id="what-we-keep-for-your-account">What we keep for your account</h2>
@@ -78,12 +78,13 @@
 <p>So we hear when the app breaks without you having to write in, each app sends us a report when something goes wrong:</p>
 <ul>
 <li><strong>the web app:</strong> an error nobody caught, with its message and where in the app's code it happened;</li>
-<li><strong>the iPhone app:</strong> the crash, hang and exception reports Apple's MetricKit gives the app, and its daily launch time, hang time, scrolling smoothness, most memory used and how often the system closed it for using too much;</li>
+<li><strong>the iPhone app:</strong> the crash, hang and exception reports Apple's MetricKit gives the app, and its daily launch time, hang time, scrolling smoothness, most memory used, how often the system closed it for using too much, and how much battery and storage it used as MetricKit measures them (processor and graphics time, time the GPS was held at its most accurate, time open and in the background, data written);</li>
 <li><strong>the Android app:</strong> why the app last stopped when the system stopped it (a crash, an app not responding, low memory), a crash's stack trace, and how long it took to start and how many frames were slow.</li>
 </ul>
 <p>Each report carries the app's version, the system's version and whether the device is a phone, tablet or computer. It carries nothing of yours: no account, no address, no route, no position. Our server takes out any web address's query, any email address, any user name in a folder's path and any per-install identifier before keeping it. Faults are kept 30 days.</p>
-<p>The web app also sends, when you leave a page, how fast it was on your device (Google's Core Web Vitals and how long the browser was busy), with the page's name, the kind of device and the app's version, nothing else. Speed figures from all three apps are kept 400 days, to see whether the app is getting faster or slower.</p>
-<p>There is no analytics or advertising kit in any of the apps, and no third party receives these reports.</p>
+<p>The web app also sends, when you leave a page (from about one page load in four), how fast it was on your device (Google's Core Web Vitals and how long the browser was busy), with the page's name, the kind of device and the app's version, nothing else. Speed figures from all three apps are kept 400 days, to see whether the app is getting faster or slower.</p>
+<p><strong>You can turn these reports off.</strong> <em>Help Improve Wingtip Maps</em>, in Settings under Help &amp; About, is on until you turn it off; off, the app on that device sends no fault report and no speed figure. The choice is kept on the device, not with your account.</p>
+<p>There is no analytics or advertising kit in any of the apps, and no third party receives these reports. On Android, Google Play's own vitals (crash and battery figures the system shares with Google if you allow it in Android's settings) are Google's, not ours.</p>
 <h2 id="other-airplanes-tracks">Other airplanes' tracks</h2>
 <p>When anyone opens an airplane's card on the traffic map, our planner follows that airplane for 30 days from the last time its card was opened, and records its positions from the public ADS-B networks and the FAA's radar, so its card can show where it has flown. Each position is kept 30 days. Nothing about who opened the card is kept with it. If you open your own airplane's card, its flights are recorded the same way, as any airplane's are.</p>
 <h2 id="who-else-receives-anything">Who else receives anything</h2>

@@ -28,8 +28,12 @@ object DiagnosticsReporter {
     private val client: OkHttpClient by lazy { Gateway.client.newBuilder().cookieJar(CookieJar.NO_COOKIES).callTimeout(Gateway.WRITE_TIMEOUT_S, TimeUnit.SECONDS).build() }
 
     /** Sent and taken (any answer but a server's error: a 400 would come
-     *  back the same next time, so its faults are not kept for it). */
+     *  back the same next time, so its faults are not kept for it), or
+     *  not to be sent at all. */
     suspend fun send(context: Context, faults: List<FaultReport>, metrics: Map<String, Double>): Boolean {
+        // The pilot has turned Help Improve Wingtip Maps off: nothing is
+        // sent, and it counts as taken, so what was waiting is let go.
+        if (!HelpImprove.on(context).value) return true
         val body = DiagnosticsBodies.build(
             versionName = BuildConfig.VERSION_NAME,
             versionCode = BuildConfig.VERSION_CODE,

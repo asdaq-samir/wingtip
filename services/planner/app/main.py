@@ -36,12 +36,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from prometheus_client import make_asgi_app
 from wingtip import chart_upkeep, log_lines, schedule, weather
 from wingtip import traffic as traffic_store
 from wingtip.aircraft import UnknownAircraft
 from wingtip.planning import StillComputing
 
-from . import errors, local_guard, openapi_document, tracing
+from . import errors, local_guard, openapi_document, route_metrics, tracing
 from .feeds import watch as feeds_watch
 from .request_ids import RequestIds
 from .mcp import server as mcp
@@ -98,6 +99,11 @@ app = FastAPI(title="Wingtip Maps planner", lifespan=_lifespan)
 app.add_middleware(local_guard.LocalOnly)
 # What failed lately, for the Dev console (app.errors).
 app.add_middleware(errors.RecordFailures)
+# Each route's calls, failures and times, for the owner's status page
+# (app.route_metrics); the same figures in Prometheus's text at /metrics,
+# on the planner's own port only (the gateway forwards /api/planner/*).
+app.add_middleware(route_metrics.CountCalls)
+app.mount("/metrics", make_asgi_app(registry=route_metrics.METRICS.registry))
 # The page's request id on each log line (app.request_ids); added last, so
 # it is outermost and RecordFailures' own lines carry it too.
 app.add_middleware(RequestIds)
