@@ -2,6 +2,7 @@ package app.wingtipmaps.android.offline
 
 import app.wingtipmaps.android.api.generated.LoopFrame
 import app.wingtipmaps.android.tiles.TileGrid
+import app.wingtipmaps.android.writeWhole
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -61,7 +62,7 @@ class KeptLoopTiles(private val dir: File) {
                 kept++
             }
         }
-        if (kept > 0) File(dir, FRAMES).writeText(frame.valid)
+        if (kept > 0) File(dir, FRAMES).writeWhole(frame.valid)
         kept
     }
 

@@ -70,7 +70,7 @@ class Charts @Inject constructor(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             if (_info.value == null) {
                 val last = withContext(Dispatchers.IO) {
-                    runCatching { Gateway.json.decodeFromString<ChartInfo>(kept.readText()) }.getOrNull()
+                    kept.readWhole()?.let { runCatching { Gateway.json.decodeFromString<ChartInfo>(it) }.getOrNull() }
                 }
                 if (last != null) _info.value = last
             }
@@ -79,7 +79,7 @@ class Charts @Inject constructor(app: Application) : AndroidViewModel(app) {
                 _info.value = fresh
                 _problem.value = null
                 withContext(Dispatchers.IO) {
-                    runCatching { kept.writeText(Gateway.json.encodeToString(fresh)) }
+                    runCatching { kept.writeWhole(Gateway.json.encodeToString(fresh)) }
                 }
                 // The airspace kept for the air, fetched again where the
                 // FAA's cycle has turned since it was, as the iOS app's
@@ -98,7 +98,7 @@ class Charts @Inject constructor(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             if (_overlays.value == null) {
                 val last = withContext(Dispatchers.IO) {
-                    runCatching { Gateway.json.decodeFromString<OverlayTiles>(keptOverlays.readText()) }.getOrNull()
+                    keptOverlays.readWhole()?.let { runCatching { Gateway.json.decodeFromString<OverlayTiles>(it) }.getOrNull() }
                 }
                 if (last != null) {
                     _overlays.value = last
@@ -113,7 +113,7 @@ class Charts @Inject constructor(app: Application) : AndroidViewModel(app) {
                 val fresh = Planner.overlayTiles()
                 _overlays.value = fresh
                 withContext(Dispatchers.IO) {
-                    runCatching { if (fresh == null) keptOverlays.delete() else keptOverlays.writeText(Gateway.json.encodeToString(fresh)) }
+                    runCatching { if (fresh == null) keptOverlays.delete() else keptOverlays.writeWhole(Gateway.json.encodeToString(fresh)) }
                 }
                 if (fresh != null) launch { keepForTheAir(fresh) }
             } catch (e: CancellationException) {

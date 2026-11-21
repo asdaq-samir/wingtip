@@ -35,7 +35,8 @@ class KeptFileTest {
         kept.write { "two" }
         settled()
         assertEquals("two", kept.read())
-        assertFalse(File(file.path + ".part").exists())
+        // Written through AtomicFile (WholeFiles): nothing left beside it.
+        assertFalse(File(file.path + ".new").exists())
     }
 
     @Test
