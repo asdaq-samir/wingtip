@@ -116,7 +116,16 @@ longer than it takes to answer the request.
   (`ai/OnPhoneAsk.kt`), In Plain Words (`ai/AiWords.kt`), a drafted
   logbook remark and a photographed page (ML Kit's on-device text
   recognition, then Nano, `ai/read/OnPhoneReader.kt`) are made on the
-  phone and nothing of them goes to us or Google. Ask's tools
+  phone and nothing of them goes to us or Google. ML Kit itself (the
+  Prompt API, text recognition and the document scanner) sends Google
+  its own diagnostics as it is used: the device's maker, model and
+  Android version, the app's package and version, an identifier for the
+  install (for the Prompt API a device or user identifier too), and the
+  call's speed, settings, sizes and error codes, never the photo, the
+  question or the words (ML Kit's "Data disclosure",
+  developers.google.com/ml-kit/android-data-disclosure, read
+  2026-11-21). Play counts what an SDK in the app sends as the app's
+  collection, so the Data safety form declares it (below). Ask's tools
   fetch from the planner what the screens fetch (an airport, the route's
   NOTAMs); the question itself stays on the phone. Without Nano they are
   not offered.
@@ -222,9 +231,13 @@ name, user IDs, phone number, optional), **Location** (precise, only a
 saved flight's track, linked; the device's live position is not kept,
 see above),
 **App activity** (other user-generated content: aircraft, flights,
-logbook, notes) and **App info and performance** (crash logs and
+logbook, notes), **App info and performance** (crash logs and
 diagnostics, not linked: not tied to the account; crash logs gone from
-the log after 30 days, speed measurements after 400).
+the log after 30 days, speed measurements after 400; and ML Kit's
+diagnostics to Google, above) and **Device or other IDs** (ML Kit's
+install and device identifiers, sent to Google only when Add from a
+Photo or the on-phone AI is used, so optional, for analytics as ML Kit
+states its purpose).
 All collected for app functionality and account management,
 none shared with third parties as Google defines sharing (the
 recipients above process data for the app), all encrypted in transit,
