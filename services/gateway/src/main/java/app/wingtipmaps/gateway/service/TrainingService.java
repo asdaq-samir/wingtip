@@ -7,6 +7,8 @@ import app.wingtipmaps.gateway.domain.SignedEndorsement;
 import app.wingtipmaps.gateway.dto.CrossCountryReviewDto;
 import app.wingtipmaps.gateway.dto.EndorsementDto;
 import app.wingtipmaps.gateway.dto.InstructorLinkDto;
+import app.wingtipmaps.gateway.dto.ReviewCheckDto;
+import app.wingtipmaps.gateway.dto.SignedEndorsementDto;
 import app.wingtipmaps.gateway.dto.TrainingDto;
 import app.wingtipmaps.gateway.repository.CrossCountryReviewRepository;
 import app.wingtipmaps.gateway.repository.EndorsementRepository;
@@ -15,7 +17,10 @@ import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.repository.SignedEndorsementRepository;
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -85,12 +90,24 @@ public class TrainingService {
                         l.isAccepted(),
                         l.getAskedAt()))
                 .toList();
+        // The signed list's last good days asked once, and 61.93(d)'s checks
+        // once a day flown: each review asked the planner for both again,
+        // two round trips a review on every load and edit of the record.
+        List<SignedEndorsementDto> theirDtos = EndorsementRecords.dtos(planner, theirs);
+        Map<Long, SignedEndorsementDto> theirById = new HashMap<>();
+        theirDtos.forEach(d -> theirById.putIfAbsent(d.id(), d));
+        Map<LocalDate, List<ReviewCheckDto>> checksOn = new HashMap<>();
         List<CrossCountryReviewDto> asked = (instructor == null
                         ? reviews.findByStudentIdOrderByAskedAtDesc(pilot.getId())
                         : reviews.findByStudentIdAndInstructorIdOrderByAskedAtDesc(pilot.getId(), instructor.getId()))
                 .stream()
                         .map(r -> EndorsementRecords.dto(
-                                planner, r, EndorsementRecords.checks(planner, r.getFlightOn(), paper, theirs)))
+                                r,
+                                checksOn.computeIfAbsent(
+                                        r.getFlightOn(), on -> EndorsementRecords.checks(planner, on, paper, theirs)),
+                                e -> Optional.ofNullable(theirById.get(e.getId()))
+                                        .orElseGet(() -> EndorsementRecords.dtos(planner, List.of(e))
+                                                .get(0))))
                         .toList();
         // Each paper endorsement's last good day, the engine's, in order.
         List<LocalDate> paperUntil = paper.isEmpty()
@@ -108,7 +125,7 @@ public class TrainingService {
                         .mapToObj(i -> new EndorsementDto(
                                 paper.get(i).getKey().code(), paper.get(i).getEndorsedOn(), paperUntil.get(i)))
                         .toList(),
-                EndorsementRecords.dtos(planner, theirs),
+                theirDtos,
                 planner.endorsementKinds(),
                 pilot.getFullName(),
                 instructors,

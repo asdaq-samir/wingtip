@@ -115,3 +115,25 @@ fn a_box_around_a_point_is_a_route_of_one_point() {
     assert!((w + 93.0 + east).abs() < 1e-12 && (e + 93.0 - east).abs() < 1e-12);
     assert_eq!(box_around(-30.0, 150.0, 25.0), corridor_bbox((-30.0, 150.0), (-30.0, 150.0), 25.0));
 }
+
+#[test]
+fn the_nearest_is_the_one_a_scan_of_every_geodesic_finds() {
+    // Points every 0.6 degree of latitude and 1 of longitude over the lower 48, some twice (a tie: the first).
+    let mut points: Vec<(f64, f64)> = (0..40).flat_map(|i| (0..60).map(move |j| (25.0 + i as f64 * 0.6, -125.0 + j as f64))).collect();
+    points.push(points[100]);
+    for k in 0..200 {
+        let (lat, lon) = (24.0 + (k as f64 * 0.137) % 26.0, -126.0 + (k as f64 * 0.311) % 62.0);
+        let mut scan = (f64::INFINITY, 0usize);
+        for (i, p) in points.iter().enumerate() {
+            let d = distance_nm(lat, lon, p.0, p.1);
+            if d < scan.0 {
+                scan = (d, i);
+            }
+        }
+        let exact = |a: f64, b: f64| distance_nm(lat, lon, a, b);
+        assert_eq!(nearest(lat, lon, points.iter().copied(), exact), Some((scan.1, scan.0)), "at {lat}, {lon}");
+        let sphere = sphere_nm(lat, lon, points[scan.1].0, points[scan.1].1);
+        assert!((sphere - scan.0).abs() <= SPHERE_WITHIN * scan.0 + 1e-9);
+    }
+    assert_eq!(nearest(40.0, -90.0, std::iter::empty(), |_, _| 0.0), None);
+}

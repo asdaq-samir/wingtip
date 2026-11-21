@@ -128,15 +128,12 @@ pub fn stops(grid: &Grid, gs: &Vec<f64>, way: &[Point], fuel: &Fuel, fewest: boo
     let mut found: Vec<(f64, f64, (f64, f64), &Field)> = near
         .iter()
         .map(|f| {
-            let mut best = (f64::INFINITY, 0usize);
-            for (i, s) in samples.iter().enumerate() {
-                let d = geo::distance_nm(s.0, s.1, f.lat, f.lon);
-                if d < best.0 {
-                    best = (d, i);
-                }
-            }
-            let s = samples[best.1];
-            (s.2, best.0, (s.0, s.1), *f)
+            // The ellipsoid solved only for the samples the sphere cannot
+            // rule out (geo::nearest), not for every sample of the way.
+            let exact = |s_lat: f64, s_lon: f64| geo::distance_nm(s_lat, s_lon, f.lat, f.lon);
+            let (i, off) = geo::nearest(f.lat, f.lon, samples.iter().map(|s| (s.0, s.1)), exact).unwrap_or((0, f64::INFINITY));
+            let s = samples[i];
+            (s.2, off, (s.0, s.1), *f)
         })
         .collect();
     found.stable_sort_by(|a, b| a.0.total_cmp(&b.0));

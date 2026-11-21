@@ -29,3 +29,14 @@ def test_no_metar_no_marks_and_a_light_wind_no_crosswind(monkeypatch):
     monkeypatch.setattr(map_weather, "end_headings", lambda ident: [[["18", 180.0], ["36", 360.0]]])
     marks = map_weather.marks_of(kdlh, {"wind_dir_true_deg": 270, "wind_speed_kt": 6})
     assert marks["crosswind_kt"] is None and marks["ceiling_unknown"] is False
+
+
+def test_the_fields_in_view_ask_the_engine_once_a_wind_not_once_a_field(monkeypatch):
+    map_weather._arrow_shown.cache_clear()
+    asked = []
+    real = map_weather.ask
+    monkeypatch.setattr(map_weather, "ask", lambda name, **given: asked.append(name) or real(name, **given))
+    monkeypatch.setattr(map_weather, "end_headings", lambda ident: [])
+    for i in range(5):
+        map_weather.marks_of({"ident": f"K{i}", "lat": 46.8, "lon": -92.2}, {"wind_dir_true_deg": 270, "wind_speed_kt": 6})
+    assert asked == ["wind_arrow"]

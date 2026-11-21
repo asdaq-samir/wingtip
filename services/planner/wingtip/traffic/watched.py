@@ -12,7 +12,7 @@ from .common import STALE_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _slee
 from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, _paced
 from .adsbx import ADSBX_SOURCE, _adsbx
 from .adsbfi import ADSBFI_MIN_GAP_S, ADSBFI_SOURCE, _ADSBFI, _adsbfi
-from .recorded import _record, _recorded, followed
+from .recorded import _last_recorded, _record, _recorded, followed
 from .radar import _heard_elsewhere_now
 
 log = logging.getLogger(__name__)
@@ -47,16 +47,41 @@ _WATCH_SOURCE: dict[str, str] = {}
 #: one request a second; adsb.lol's map and ADS-B Exchange's paid month
 #: are left to the map and an open card.
 FOLLOW_EVERY_S = 30.0
+#: A followed airplane nothing has heard for this long, s, is on the
+#: ground or out of every feeder's reach: it is asked for every
+#: FOLLOW_QUIET_EVERY_S instead of each round. Followed for 30 days
+#: (FOLLOW_KEEP_S), most are quiet most of the time, and asking each one
+#: every 30 s was 2,880 asks a day an airplane, a round of 21 taking 23 s
+#: of its 30 at adsb.fi's second a request (2026-11-06's profile). The
+#: FAA's radar still hears a followed one wherever a terminal does
+#: (radar_wanted), so a departure is recorded from there at once.
+FOLLOW_QUIET_AFTER_S = 600.0
+FOLLOW_QUIET_EVERY_S = 120.0
+#: When each followed airplane was last asked of adsb.fi (_clock).
+_FOLLOW_ASKED: dict[str, float] = {}
+
+
+def _follow_due(hex_id: str) -> bool:
+    """Whether a followed airplane is asked for this round: each round
+    while heard lately, every FOLLOW_QUIET_EVERY_S while quiet."""
+    last = _last_recorded(hex_id)
+    quiet = last is None or _wall() - last["t"] > FOLLOW_QUIET_AFTER_S
+    now = _clock()
+    with _LOCK:
+        if quiet and now - _FOLLOW_ASKED.get(hex_id, -math.inf) < FOLLOW_QUIET_EVERY_S:
+            return False
+        _FOLLOW_ASKED[hex_id] = now
+    return True
 
 
 def follow_round() -> int:
     """Each followed airplane not heard elsewhere just now (the FAA's
-    radar records it, heard_elsewhere) asked of adsb.fi by its address,
-    a request a second at most, and what it hears recorded. How many
-    were heard."""
+    radar records it, heard_elsewhere) and due (_follow_due) asked of
+    adsb.fi by its address, a request a second at most, and what it hears
+    recorded. How many were heard."""
     heard = 0
     for hex_id in sorted(followed()):
-        if _heard_elsewhere_now(hex_id) is not None:
+        if _heard_elsewhere_now(hex_id) is not None or not _follow_due(hex_id):
             continue
         # adsb.fi's pace, a little over a second, between asks.
         with _LOCK:

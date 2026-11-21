@@ -176,9 +176,9 @@ WANTED_EVERY_S = 1.0
 def _radar(data: bytes | str) -> int:
     """A radar message's tracks round the places the map shows traffic,
     and the followed ones wherever they are, into the store."""
-    found = select(data, *WANTED[0])
-    for plane, at in found:
-        traffic.heard_elsewhere(plane, at)
+    views, following = WANTED[0]
+    found = select(data, views, following)
+    traffic.heard_all_elsewhere(found, following)
     return len(found)
 
 

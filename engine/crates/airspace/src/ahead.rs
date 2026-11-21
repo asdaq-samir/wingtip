@@ -231,4 +231,18 @@ mod tests {
         assert!(flying.contains("\"terrain\""), "{flying}");
         assert!(flying.ends_with(",\"ground_ft\":null}"), "{flying}");
     }
+
+    #[test]
+    fn a_tfr_far_from_the_look_ahead_is_passed_over_by_its_box() {
+        let near = "-93.0 45.05,-92.9 45.05,-92.9 45.15,-93.0 45.15,-93.0 45.05";
+        let far = "-80.0 30.0,-79.9 30.0,-79.9 30.1,-80.0 30.1,-80.0 30.0";
+        let lines = format!("6/1	Near				3000	AGL			{near}
+6/2	Far				3000	AGL			{far}");
+        let none: [Pack; 0] = [];
+        let flying = ahead(&none, 45.0, -92.95, 0.0, 120.0, Some(2000.0), 0.0, 0, Some(&lines), Some(0));
+        assert!(flying.contains("\"id\":\"tfr:6/1\"") && !flying.contains("tfr:6/2"), "{flying}");
+        let track = Track::new(45.0, -92.95, 0.0, 120.0, Some(2000.0), 0.0, 300.0, 5.0);
+        let far_box = shape_box(&tfrs_of(&lines)[1].shape).unwrap();
+        assert!(!meets(far_box, track.bbox(1.0)));
+    }
 }

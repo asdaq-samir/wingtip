@@ -86,3 +86,11 @@ def test_days_past_keeping_are_let_go():
     notam_archive.snapshot(NOW)
     days = sorted(p.name for p in (notam_archive.archive_dir() / "notams").glob("*.json.gz"))
     assert days == ["2026-11-10.json.gz"]
+
+
+def test_an_hour_that_brings_nothing_new_leaves_the_days_file_alone(monkeypatch):
+    notam_archive.snapshot(NOW)
+    written = []
+    monkeypatch.setattr(notam_archive, "_write", lambda path, items: written.append(path))
+    assert notam_archive.snapshot(NOW) == {"notams": 3, "tfrs": 1}
+    assert written == []
