@@ -173,6 +173,26 @@ pub fn passenger_night(lat: f64, lon: f64, at_s: f64) -> bool {
     }
 }
 
+/// Whether an instant is in 14 CFR 91.209(a)'s period for an
+/// aircraft's position lights at a point: "from sunset to sunrise (or, in
+/// Alaska, during the period a prominent unlighted object cannot be seen
+/// from a distance of 3 statute miles or the sun is more than six degrees
+/// below the horizon)". Not 1.1's night, which waits for civil
+/// twilight's end: twenty minutes after sunset a flight needs its lights
+/// but is not yet at night for 91.151 or 91.205(c). Alaska's own period
+/// is narrower than sunset to sunrise by its sun test, so sunset to
+/// sunrise is read there too, erring toward the lights; its visibility
+/// test is the reported visibility below 3 statute miles where the
+/// caller has one (`alaska_visibility_sm`, None outside Alaska or not
+/// known).
+pub fn lights_on(lat: f64, lon: f64, at_s: f64, alaska_visibility_sm: Option<f64>) -> bool {
+    sun_down(lat, lon, at_s) || alaska_visibility_sm.is_some_and(|sm| sm < LIGHTS_ALASKA_SM)
+}
+
+/// 14 CFR 91.209(a): in Alaska the lights are on wherever a prominent
+/// unlighted object cannot be seen from 3 statute miles, sm.
+pub const LIGHTS_ALASKA_SM: f64 = 3.0;
+
 /// How often a flight's way is looked at for the night: every half hour,
 /// the planner's own figure (the sun's twilight moves no faster along a
 /// light airplane's track than its own few minutes an hour).
@@ -197,13 +217,23 @@ pub fn passenger_night_on_the_way(start: (f64, f64), end: (f64, f64), depart_s: 
     on_the_way(start, end, depart_s, minutes, passenger_night)
 }
 
-fn on_the_way(start: (f64, f64), end: (f64, f64), depart_s: f64, minutes: f64, test: fn(f64, f64, f64) -> bool) -> bool {
+fn on_the_way(start: (f64, f64), end: (f64, f64), depart_s: f64, minutes: f64, test: impl Fn(f64, f64, f64) -> bool) -> bool {
     let steps = ((minutes / NIGHT_STEP_MIN).floor() as i64 + 1).max(1);
     (0..=steps).any(|k| {
         let at = if minutes > 0.0 { (k as f64 * NIGHT_STEP_MIN).min(minutes) / minutes } else { 0.0 };
         let (lat, lon) = (start.0 + (end.0 - start.0) * at, start.1 + (end.1 - start.1) * at);
         test(lat, lon, depart_s + at * minutes * 60.0)
     })
+}
+
+/// Whether any of a flight from `start` to `end` of `minutes`, leaving at
+/// `depart_s`, falls in 91.209(a)'s period for position lights
+/// (lights_on, sunset to sunrise), judged as night_on_the_way judges the
+/// night: an open squawk on the lights deferred for day flight grounds
+/// such a flight even where none of it is 1.1's night. In Alaska the
+/// reported visibility (`alaska_visibility_sm`) counts all the way.
+pub fn lights_on_the_way(start: (f64, f64), end: (f64, f64), depart_s: f64, minutes: f64, alaska_visibility_sm: Option<f64>) -> bool {
+    on_the_way(start, end, depart_s, minutes, |lat, lon, at| lights_on(lat, lon, at, alaska_visibility_sm))
 }
 
 /// Whether a flight is at night at either end: leaving `start` at
@@ -290,6 +320,33 @@ mod tests {
         assert!(passenger_night(lat, lon, utc(2026, 3, 21, 1, 15)));
         assert!(passenger_night(lat, lon, utc(2026, 3, 21, 6, 0)));
         assert!(!passenger_night(lat, lon, utc(2026, 3, 20, 18, 0)));
+    }
+
+    #[test]
+    fn position_lights_from_sunset_before_the_night() {
+        // Chicago on the 2026 equinox: sunset about 00:03 UTC on the 21st,
+        // civil twilight's end about 00:30. At 00:20 the lights are on
+        // (91.209(a)) though it is not 1.1's night.
+        let (lat, lon) = (41.88, -87.63);
+        assert!(!lights_on(lat, lon, utc(2026, 3, 20, 23, 50), None));
+        assert!(lights_on(lat, lon, utc(2026, 3, 21, 0, 20), None));
+        assert!(!is_night(lat, lon, utc(2026, 3, 21, 0, 20)));
+        // A 20-minute flight leaving at 23:50: day at both its ends by 1.1
+        // and its lights still needed at its end.
+        let leave = utc(2026, 3, 20, 23, 50);
+        assert!(!night_at_either_end((lat, lon), leave, (lat, lon), leave + 30.0 * 60.0));
+        assert!(lights_on_the_way((lat, lon), (lat, lon), leave, 30.0, None));
+        assert!(!lights_on_the_way((lat, lon), (lat, lon), utc(2026, 3, 20, 18, 0), 60.0, None));
+    }
+
+    #[test]
+    fn alaska_lights_where_an_object_is_not_seen_at_three_miles() {
+        // Anchorage at midday in June: the sun is up, so only Alaska's
+        // visibility test can call for the lights; 3 sm itself does not.
+        let at = utc(2026, 6, 21, 22, 0);
+        assert!(!lights_on(61.22, -149.90, at, None));
+        assert!(!lights_on(61.22, -149.90, at, Some(3.0)));
+        assert!(lights_on(61.22, -149.90, at, Some(2.5)));
     }
 
     #[test]

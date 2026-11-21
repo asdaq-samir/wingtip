@@ -86,3 +86,15 @@ def test_offline_weather_counts_only_until_it_expires(case):
         valid_to=case.get("validTo"),
     )
     assert got == case["inForce"]
+
+
+def test_position_lights_are_91_209s_from_sunset_not_1_1s_night():
+    # Chicago, 41.88 N 87.63 W, on the 2026 March equinox: sunset about
+    # 00:03 UTC on the 21st, civil twilight's end about 00:30. A half-hour
+    # flight leaving at 23:50 UTC lands in the lights' period (91.209(a),
+    # sunset to sunrise) though neither of its ends is 1.1's night.
+    chicago = [41.88, -87.63]
+    leave = 1_774_050_600  # 2026-03-20 23:50 UTC
+    assert engine("night_at_either_end", start=chicago, depart_s=leave, end=chicago, arrive_s=leave + 1800) is False
+    assert engine("lights_on_the_way", start=chicago, end=chicago, depart_s=leave, minutes=30) is True
+    assert engine("lights_on_the_way", start=chicago, end=chicago, depart_s=leave - 6 * 3600, minutes=60) is False

@@ -46,6 +46,11 @@ pub struct Input {
     /// passenger_night_on_the_way); None where the caller did not work it
     /// out, when `night` stands for it.
     pub night_passengers: Option<bool>,
+    /// Whether any of the flight is in 14 CFR 91.209(a)'s period for
+    /// lighted position lights, sunset to sunrise (flight::sun's
+    /// lights_on_the_way); None where the caller did not work it out, when
+    /// `night` stands for it.
+    pub lights: Option<bool>,
     /// The nav log's fuel margin, gallons; below zero the tanks do not
     /// hold the fuel and its reserve.
     pub fuel_margin_gal: Option<f64>,
@@ -102,7 +107,11 @@ pub(super) fn found(f: &Input) -> Vec<Factor> {
         factors.extend(inspection_factors(i, day, f.ifr));
     }
     if let Some(s) = &f.squawks {
-        factors.extend(squawk_factors(s, f.night, f.ifr));
+        // An open squawk deferred for day flight grounds a flight after
+        // sunset, not only at 1.1's night: 91.209(a) wants the position
+        // lights lit from sunset, and the deferral's "day" is read as
+        // ending there, erring toward the squawk.
+        factors.extend(squawk_factors(s, f.night || f.lights.unwrap_or(false), f.ifr));
     }
     if f.fuel_margin_gal.is_some_and(|m| m < 0.0) {
         factors.push(factor("fuel", "The tanks do not hold the fuel and its reserve", if f.ifr { "91.167" } else { "91.151" }, 0, true));

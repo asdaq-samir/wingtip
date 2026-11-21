@@ -144,6 +144,7 @@ export function useFlightBriefing({
         hazards: unchecked("hazards") && unchecked("gairmets") ? 0 : hazardNames.length,
         night: totals?.night === true,
         nightPassengers: totals?.night_passengers,
+        lights: totals?.lights,
         fuelMarginGal: leastMarginGal,
         ifr,
         vorCheck:
