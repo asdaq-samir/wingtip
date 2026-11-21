@@ -154,9 +154,13 @@ function NumberRow({
             onTyped={(v) => onChange(v == null ? "" : String(v))}
             minValue={0}
             data-testid={testId}
+            // Its unit beside it read with it: "kt", "°" (WCAG 1.3.1).
+            aria-describedby={`${id}-unit`}
           />
         </FieldHit>
-        <span className={cn("w-7 text-muted-foreground", TEXT.detail)}>{unit}</span>
+        <span id={`${id}-unit`} className={cn("w-7 text-muted-foreground", TEXT.detail)}>
+          {unit}
+        </span>
       </span>
     </ListRow>
   );
@@ -213,24 +217,27 @@ export default function HoldingPage() {
         />
       </ListGroup>
 
-      {found && (
-        <>
-          <HoldDiagram inbound={i} headingTo={h} turns={turns} entry={found.entry} />
-          {/* AIM 5-3-8's three sectors, divided by the holding course and the
+      {/* The entry worked out again as the fields are typed, and said so (WCAG 4.1.3). */}
+      <div aria-live="polite" className="space-y-4 empty:hidden">
+        {found && (
+          <>
+            <HoldDiagram inbound={i} headingTo={h} turns={turns} entry={found.entry} />
+            {/* AIM 5-3-8's three sectors, divided by the holding course and the
               70° line on the holding side; within 5° of a line between two,
               either entry is allowed, said in a row of its own. */}
-          <ListGroup>
-            <ListRow
-              title={<span className="font-semibold">{ENTRY_NAME[found.entry]} entry</span>}
-              description={entrySteps(i, h, turns, num(altitude))}
-              data-testid="hold-entry"
-            />
-            {found.either && (
-              <ListRow title={`Or ${ENTRY_NAME[found.either].toLowerCase()}`} description="Within 5° of the line between the two" />
-            )}
-          </ListGroup>
-        </>
-      )}
+            <ListGroup>
+              <ListRow
+                title={<span className="font-semibold">{ENTRY_NAME[found.entry]} entry</span>}
+                description={entrySteps(i, h, turns, num(altitude))}
+                data-testid="hold-entry"
+              />
+              {found.either && (
+                <ListRow title={`Or ${ENTRY_NAME[found.either].toLowerCase()}`} description="Within 5° of the line between the two" />
+              )}
+            </ListGroup>
+          </>
+        )}
+      </div>
 
       {/* The course and the wind in the same reference: magnetic, as a
           clearance gives the course (winds aloft are true, so the row says

@@ -1,6 +1,6 @@
 import type { ExpressionSpecification, SymbolLayerSpecification } from "maplibre-gl";
 import { useMemo } from "react";
-import { WAY_CHIP_PLACE, WAY_SHARES, WAY_TEXT_SIZE, wayAt, wayChip, wayInk, type RouteWay } from "../../route/routeWays";
+import { WAY_CHIP_PLACE, WAY_SHARES, wayAt, wayChip, wayInk, type RouteWay } from "../../route/routeWays";
 import { chipLayer, type Layout } from "../markLayers";
 import { useGlLines, type GlRun } from "../useGlLines";
 import { useGlSymbols, type GlSymbol } from "../useGlSymbols";
@@ -25,13 +25,13 @@ const wayChipLayer = (id: string, how: Parameters<typeof chipLayer>[2], shown: b
         ["get", "name"],
         { "text-font": ["literal", GL_FONT] },
       ] as ExpressionSpecification,
-      "text-size": WAY_TEXT_SIZE,
       "text-line-height": 1.25,
       "text-justify": "left",
       ...WAY_CHIP_PLACE,
       ...place,
     },
     { "text-color": ["get", "ink"] as ExpressionSpecification },
+    "way",
   ),
   filter: ["==", ["get", "shown"], shown],
 });

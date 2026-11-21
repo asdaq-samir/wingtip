@@ -6,7 +6,7 @@ import { framed } from "../../lib/map/marks/markPictures";
 import { MARK_FONT } from "../../lib/map/marks/airportMark";
 import { hazardTextInk } from "../../lib/map/weatherColours";
 import { barbId } from "../../lib/map/marks/stationModel";
-import { CHART, MAP } from "../../lib/tokens";
+import { CHART, MAP_LABEL } from "../../lib/tokens";
 
 // The weather on the planner's map, at the pilot's pick: where its box
 // comes from, and its marks (features/plan-map/layers/WeatherGl draws
@@ -51,7 +51,7 @@ export function pirepMarks(p: MapPirep): { picture: GlPicture; text: string; col
 }
 /** The level's shift right of the point, ems of its 12 points: the chip
  *  runs 20 points left of the words and 7 right. */
-export const PIREP_SHIFT = 6.5 / MAP.label;
+export const PIREP_SHIFT = 6.5 / MAP_LABEL.kind.pirep.size;
 
 /** A station's wind aloft as the station model's barb (stationModel's
  *  pictures, which the chart's airport weather wears too): its flags,

@@ -91,7 +91,7 @@ export default function RatingCard({
         // track has: a group of toggles, a control of its own
         // to the iOS audit, and its row is 40 (isolate keeps the area over
         // the card). The row does not grow.
-        className="relative isolate grid w-full grid-cols-6 gap-2 rounded-none after:absolute after:inset-x-0 after:-inset-y-0.5 after:-z-10 after:content-['']"
+        className="relative isolate grid w-full grid-cols-6 gap-2 rounded-none hit-y-0.5 after:-z-10"
       >
         {RATINGS.map((r) => (
           <ToggleGroupItem

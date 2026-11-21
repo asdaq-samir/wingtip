@@ -72,6 +72,10 @@ export function tileDensity(
  * cycle, and the service worker answers from its cache before it ever
  * asks the network -- one phone showed a white sliver the planner had
  * long since stopped drawing.
+ *
+ * The `.png` names the tile, not its encoding: out of an archive packed
+ * since 2026-11-21 the planner sends lossless WebP at the same address,
+ * with its own Content-Type, which MapLibre decodes as it does a PNG.
  */
 export function tileTemplate(chart: ChartInfo, kind: string): string {
   const { cycle, revision } = kindCycle(chart, kind);

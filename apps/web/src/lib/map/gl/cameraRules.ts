@@ -83,3 +83,20 @@ export function pickHow(distancePx: number, screenPx: number, zoomChange: number
  *  than this from the middle is left (a GPS standing still, an airplane
  *  far out at a slow pace), so a follow moves the map only when it shows. */
 export const FOLLOW_LEAST_PX = 1;
+
+/** The step under which own ship's real-GPS follow jumps once a fix
+ *  rather than easing, px. A linear ease redraws the whole map every
+ *  frame, 60 a second, to move the chart a pixel or two at cruise (at
+ *  120 kt about 0.5 px/s at zoom 9, 2 px/s at zoom 11: the in-flight
+ *  audit, 2026-11-21), which is battery for nothing; a step this small
+ *  looks the same jumped. The owner took it (Q1, 2026-11-21). */
+export const FOLLOW_JUMP_UNDER_PX = 8;
+
+/**
+ * How a follow's step moves the map: own ship's real fixes jump under
+ * FOLLOW_JUMP_UNDER_PX, one redraw a fix; every other follow eases, the
+ * dry run's glide above all, which is the point of it.
+ */
+export function followStep(intent: Follow, stepPx: number): "ease" | "jump" {
+  return intent === "own-ship" && stepPx < FOLLOW_JUMP_UNDER_PX ? "jump" : "ease";
+}

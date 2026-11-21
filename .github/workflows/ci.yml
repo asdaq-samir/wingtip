@@ -472,6 +472,7 @@ jobs:
                 - apps/site/assets/**
                 - docs/store/*.png
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/**
+                - services/jobs/charts/map_zoom.py
                 - apps/ios/Wingtip/API/Generated/**
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated/**
                 - apps/ios/Wingtip/Engine/Generated/**

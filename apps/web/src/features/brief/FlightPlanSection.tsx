@@ -62,7 +62,7 @@ export default function FlightPlanSection({ forms, ifr }: { forms: FlightPlanFor
       await copyText(text);
       setCopied(key);
     } catch (err) {
-      showError("Could not copy the flight plan", (err as Error).message);
+      showError("Could not copy the flight plan", describeError(err));
     }
   };
 

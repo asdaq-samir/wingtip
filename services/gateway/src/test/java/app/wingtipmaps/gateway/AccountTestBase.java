@@ -212,12 +212,8 @@ abstract class AccountTestBase {
                         + " updated_at) VALUES (?, ?, 'KDLH', 'I09', 'ILS RWY 09', now(), now())",
                 pilot.getId(),
                 pilot.getId());
-        // The free month started, and a written briefing counted against its cap.
+        // The free month started.
         subscriptions.save(new Subscription(pilot.getId(), Instant.now()));
-        jdbc.update(
-                "INSERT INTO paid_feature_uses (pilot_id, month, feature, uses) VALUES (?, ?, 'NARRATIVE', 1)",
-                pilot.getId(),
-                LocalDate.of(2026, 10, 1));
         // Shared by link, watched, a reminder sent, and an AI app connected
         // (V39, V31, V23, V40): what the export and both deletions must reach.
         jdbc.update(
@@ -310,7 +306,6 @@ abstract class AccountTestBase {
                         "SELECT count(*) FROM cross_country_reviews WHERE student_id = ?", Integer.class, id),
                 jdbc.queryForObject("SELECT count(*) FROM approach_lessons WHERE student_id = ?", Integer.class, id),
                 jdbc.queryForObject("SELECT count(*) FROM subscriptions WHERE pilot_id = ?", Integer.class, id),
-                jdbc.queryForObject("SELECT count(*) FROM paid_feature_uses WHERE pilot_id = ?", Integer.class, id),
                 jdbc.queryForObject(
                         "SELECT count(*) FROM magic_links WHERE email = ?", Integer.class, pilot.getEmail()),
                 jdbc.queryForObject(

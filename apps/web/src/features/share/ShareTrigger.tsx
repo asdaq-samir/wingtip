@@ -56,19 +56,23 @@ export function TriggerButton({
     <IconButton
       round
       label={SHARE_LABEL[card]}
-      {...(card === "route" ? { variant: "ghost" as const, className: "size-[32px]" } : {})}
+      // The route's ••• the stock small icon button (32, in rem), not a 32
+      // px one among rem neighbours, so it grows with the text as they do
+      // (the scale audit, the owner, 2026-11-21).
+      {...(card === "route" ? { variant: "ghost" as const, size: "icon-sm" as const } : {})}
       data-testid={testId}
       {...trigger}
     />
   );
 }
 
-/** The round button's glyph: the route's ••• a size down, as the first
- *  row's other buttons are; a card's Share. */
+/** The round button's glyph: the route's ••• a size down (18, in rem so
+ *  it grows with its button), as the first row's other buttons are; a
+ *  card's Share. */
 export function TriggerFace({ card, share = false }: { card: "route" | RouteCard; share?: boolean }) {
   return (
     <span className="relative">
-      {card === "route" && !share ? <Ellipsis className="size-[18px]" strokeWidth={2.4} /> : <Share className="size-5" strokeWidth={2} />}
+      {card === "route" && !share ? <Ellipsis className="size-4.5" strokeWidth={2.4} /> : <Share className="size-5" strokeWidth={2} />}
     </span>
   );
 }

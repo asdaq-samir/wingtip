@@ -100,9 +100,12 @@ export default function RoutePill({
   const mark = isPosition(ident) ? null : waypoint ? (
     <span aria-hidden="true" className="ml-0.5 size-2 shrink-0 rotate-45 rounded-[1px]" style={{ backgroundColor: CHART.waypoint }} />
   ) : (
+    // 14 at a 16 px root, in rem as the pill, its ident and the waypoint's
+    // diamond are, so the mark keeps its share of the pill at a larger
+    // text size (it was 14 px at every size: the scale audit, 2026-11-21).
     <span
       aria-hidden="true"
-      className="block size-[14px] shrink-0"
+      className="block size-3.5 shrink-0"
       dangerouslySetInnerHTML={{
         __html: airportMarkSvg(spaceClass, metarColourOf(ident) ?? colourOf(null), null, "block size-full overflow-visible"),
       }}

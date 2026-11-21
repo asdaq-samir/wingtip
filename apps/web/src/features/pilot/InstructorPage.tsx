@@ -95,7 +95,8 @@ export default function InstructorPage() {
               <ListRow key={s.linkId} title={s.name} description={s.email} data-testid="student-ask">
                 <span className="flex gap-1">
                   <Button type="button" variant="ghost" size="sm" disabled={leave.isPending} onClick={() => leave.mutate(s.linkId)}>
-                    Decline
+                    {/* Whose, for a reader's list of buttons (WCAG 2.4.6), after the word seen (2.5.3). */}
+                    Decline<span className="sr-only"> {s.name}</span>
                   </Button>
                   <Button
                     type="button"
@@ -104,7 +105,7 @@ export default function InstructorPage() {
                     onClick={() => accept.mutate(s.linkId)}
                     data-testid="student-accept"
                   >
-                    Accept
+                    Accept<span className="sr-only"> {s.name}</span>
                   </Button>
                 </span>
               </ListRow>

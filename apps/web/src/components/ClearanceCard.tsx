@@ -217,7 +217,7 @@ export default function ClearanceCard({
                   <BaseButton
                     onClick={() => pick(t.text)}
                     className={cn(
-                      "relative w-full py-1 text-left text-tint outline-none after:absolute after:inset-x-0 after:-inset-y-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+                      "relative w-full py-1 text-left text-tint outline-none hit-y-2 focus-visible:ring-2 focus-visible:ring-ring",
                       t.forUs && "font-semibold",
                     )}
                   >

@@ -75,8 +75,10 @@ public class PaperworkService {
         List<Aircraft> theirs = aircraft.findByPilotIdOrderByTailNumberAsc(pilot.getId());
         Map<Long, List<AircraftDueItem>> kept =
                 items.of(theirs.stream().map(Aircraft::getId).toList());
-        for (Aircraft a : theirs) {
-            out.addAll(ofAircraft(a, planner.aircraft(a, kept.getOrDefault(a.getId(), List.of()))));
+        // Every airplane asked in one call, its answers in the same order.
+        List<List<PlannerPaperworkDue>> due = planner.aircraft(theirs, kept);
+        for (int i = 0; i < theirs.size() && i < due.size(); i++) {
+            out.addAll(ofAircraft(theirs.get(i), due.get(i)));
         }
         return out;
     }
@@ -97,7 +99,7 @@ public class PaperworkService {
         String key = a == null
                 ? d.getWhat()
                 : itemId != null ? "item-" + itemId : "aircraft-" + a.getId() + "-" + d.getWhat();
-        Double hours = PlannerClient.number(d.getDueAtHours());
+        Double hours = PlannerAsks.number(d.getDueAtHours());
         return new Due(
                 d.getWhat(),
                 key,

@@ -5,6 +5,7 @@ pub use crate::view_airports::airports_in_view;
 
 // --- Navaids ------------------------------------------------------------------
 
+#[derive(Clone)]
 pub(super) struct Vor {
     pub(super) ident: String,
     pub(super) name: Option<String>,
@@ -24,65 +25,77 @@ pub(super) fn some_text(s: &str) -> Option<String> {
     (!s.is_empty()).then(|| s.to_owned())
 }
 
+/// A pack's navaids in service of the kinds kept, every row
+/// navaids_in_view would weigh wherever it is, in the table's order: read
+/// once a pack (crate::pack_kept).
+fn navaids_of(p: &Pack) -> Vec<Vor> {
+    let Some(t) = p.section("navaids").and_then(|b| std::str::from_utf8(b).ok()).and_then(json::table) else { return Vec::new() };
+    let (id, kind, name, status, lat, lon, elev, var, hemis, freq, chan, alt, hours) = (
+        t.col("NAV_ID"),
+        t.col("NAV_TYPE"),
+        t.col("NAME"),
+        t.col("NAV_STATUS"),
+        t.col("LAT_DECIMAL"),
+        t.col("LONG_DECIMAL"),
+        t.col("ELEV"),
+        t.col("MAG_VARN"),
+        t.col("MAG_VARN_HEMIS"),
+        t.col("FREQ"),
+        t.col("CHAN"),
+        t.col("ALT_CODE"),
+        t.col("OPER_HOURS"),
+    );
+    let mut out = Vec::new();
+    for r in &t.rows {
+        let get = |c: Option<usize>| c.and_then(|c| r.get(c)).map(|s| s.trim()).unwrap_or("");
+        let Some(&kind) = NAVAID_KINDS.iter().find(|k| **k == get(kind)) else { continue };
+        let ident = get(id).to_uppercase();
+        if ident.is_empty() || get(status) == "SHUTDOWN" {
+            continue;
+        }
+        let (Ok(la), Ok(lo)) = (get(lat).parse::<f64>(), get(lon).parse::<f64>()) else { continue };
+        let mag_var = get(var).parse::<f64>().ok().map(|d| if get(hemis).eq_ignore_ascii_case("W") { -d } else { d });
+        out.push(Vor {
+            ident,
+            name: some_text(&crate::spoken::title(get(name))),
+            kind,
+            freq: some_text(get(freq)),
+            lat: la,
+            lon: lo,
+            mag_var,
+            elevation_ft: get(elev).parse::<f64>().ok(),
+            channel: some_text(get(chan)),
+            service_volume: alt.map(|_| some_text(get(alt))),
+            hours: hours.map(|_| some_text(get(hours))),
+            restricted: get(status).to_uppercase().contains("RESTRICTED"),
+        });
+    }
+    out
+}
+
 /// The planner's NavaidsInView for the box, JSON: the VORs of the packs'
 /// tables inside it by ident, at most NAVAID_LIMIT, and no fixes.
 pub fn navaids_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east: f64) -> String {
     let view: Bbox = [west, south, east, north];
     let mut vors: Vec<Vor> = Vec::new();
     for p in packs {
-        let Some(t) = p.section("navaids").and_then(|b| std::str::from_utf8(b).ok()).and_then(json::table) else { continue };
-        let (id, kind, name, status, lat, lon, elev, var, hemis, freq, chan, alt, hours) = (
-            t.col("NAV_ID"),
-            t.col("NAV_TYPE"),
-            t.col("NAME"),
-            t.col("NAV_STATUS"),
-            t.col("LAT_DECIMAL"),
-            t.col("LONG_DECIMAL"),
-            t.col("ELEV"),
-            t.col("MAG_VARN"),
-            t.col("MAG_VARN_HEMIS"),
-            t.col("FREQ"),
-            t.col("CHAN"),
-            t.col("ALT_CODE"),
-            t.col("OPER_HOURS"),
-        );
-        for r in &t.rows {
-            let get = |c: Option<usize>| c.and_then(|c| r.get(c)).map(|s| s.trim()).unwrap_or("");
-            let Some(&kind) = NAVAID_KINDS.iter().find(|k| **k == get(kind)) else { continue };
-            let ident = get(id).to_uppercase();
-            if ident.is_empty() || get(status) == "SHUTDOWN" {
-                continue;
-            }
-            let (Ok(la), Ok(lo)) = (get(lat).parse::<f64>(), get(lon).parse::<f64>()) else { continue };
-            if !in_box((lo, la), view) {
+        for v in crate::pack_kept::kept(p, "navaids-in-view", navaids_of).iter() {
+            if !in_box((v.lon, v.lat), view) {
                 continue;
             }
             let likelier = |k: &str| NAVAID_KINDS.iter().position(|n| *n == k).unwrap();
             // One facility filed as two kinds at one place is one, the
             // likelier to fly to (wingtip.fixes' _read_navaids).
-            if let Some(at) = vors.iter().position(|v| v.ident == ident && crate::geo::distance_nm(la, lo, v.lat, v.lon) < SAME_FACILITY_NM)
+            if let Some(at) =
+                vors.iter().position(|w| w.ident == v.ident && crate::geo::distance_nm(v.lat, v.lon, w.lat, w.lon) < SAME_FACILITY_NM)
             {
-                if likelier(kind) < likelier(vors[at].kind) {
+                if likelier(v.kind) < likelier(vors[at].kind) {
                     vors.remove(at);
                 } else {
                     continue;
                 }
             }
-            let mag_var = get(var).parse::<f64>().ok().map(|d| if get(hemis).eq_ignore_ascii_case("W") { -d } else { d });
-            vors.push(Vor {
-                ident,
-                name: some_text(&crate::spoken::title(get(name))),
-                kind,
-                freq: some_text(get(freq)),
-                lat: la,
-                lon: lo,
-                mag_var,
-                elevation_ft: get(elev).parse::<f64>().ok(),
-                channel: some_text(get(chan)),
-                service_volume: alt.map(|_| some_text(get(alt))),
-                hours: hours.map(|_| some_text(get(hours))),
-                restricted: get(status).to_uppercase().contains("RESTRICTED"),
-            });
+            vors.push(v.clone());
         }
     }
     vors.retain(|v| VOR_KINDS.contains(&v.kind));

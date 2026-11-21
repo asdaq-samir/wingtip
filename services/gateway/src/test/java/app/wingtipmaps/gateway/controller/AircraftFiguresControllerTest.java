@@ -62,8 +62,8 @@ class AircraftFiguresControllerTest {
 
     @BeforeEach
     void nothingDue() {
-        given(planner.inspections(any(), any(), any(), any(), any(), any(), any(), any()))
-                .willReturn(new PlannerInspections());
+        given(planner.inspections(any()))
+                .willAnswer(InspectionsStub.each(new PlannerInspections()));
         given(pilotService.current(any())).willReturn(Optional.of(pilot()));
     }
 

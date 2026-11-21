@@ -141,7 +141,11 @@ export function ringAround([x0, y0, x1, y1]: [number, number, number, number], z
  * now (a vector source's: the whole level under the map's, within the
  * archive's zooms), fetched while the map is at rest so a pan's first
  * frame has them. Each is kept until the map asks for it (`tile`), and a
- * tile already fetched or being fetched is not asked for twice.
+ * tile already fetched or being fetched is not asked for twice. None
+ * farther out than the archive's first zoom: there the source asks for no
+ * tile, so the ring was the archive's first zoom round the whole country
+ * (the map's first view with no position kept), a dozen tiles fetched
+ * that nothing drew.
  */
 export function prefetchRing(
   tiles: OverlayTiles,
@@ -149,7 +153,8 @@ export function prefetchRing(
   mapZoom: number,
   origin?: string,
 ): void {
-  const z = Math.max(tiles.min_zoom, Math.min(tiles.max_zoom, Math.floor(mapZoom)));
+  if (Math.floor(mapZoom) < tiles.min_zoom) return;
+  const z = Math.min(tiles.max_zoom, Math.floor(mapZoom));
   const archive = archiveOf(tiles, origin);
   const base = `pmtiles://${overlayArchiveUrl(tiles, origin)}`;
   for (const [x, y] of ringAround(tileRange(box, z), z)) {

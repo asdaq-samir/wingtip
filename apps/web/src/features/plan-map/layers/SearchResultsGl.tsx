@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { CATEGORY, CHART } from "../../../lib/tokens";
 import { useGlData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
 import { cameraOf } from "../../../lib/map/gl/camera";
-import { GL_FONT_BOLD, LABEL_SIZE, TAP } from "../../../lib/map/gl/layers/common";
+import { TAP, labelText } from "../../../lib/map/gl/layers/common";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { useSearchResultRows, useSearchResults } from "../../search";
 import { useGlFit } from "../useGlFit";
@@ -29,7 +29,9 @@ const BUBBLE: CircleLayerSpecification = {
   type: "circle",
   source: SOURCE,
   filter: ["has", "point_count"],
-  paint: { "circle-color": CHART.mapBlue, "circle-radius": 16, "circle-stroke-color": CHART.casing, "circle-stroke-width": 2 },
+  // Map blue a step deeper (map-blue-ink): the count's white on systemBlue
+  // was 4.0:1, under the 4.5:1 small words need; on this 5.4:1.
+  paint: { "circle-color": CHART.mapBlueInk, "circle-radius": 16, "circle-stroke-color": CHART.casing, "circle-stroke-width": 2 },
 };
 const COUNT: SymbolLayerSpecification = {
   id: "search-results-count",
@@ -38,8 +40,7 @@ const COUNT: SymbolLayerSpecification = {
   filter: ["has", "point_count"],
   layout: {
     "text-field": ["get", "point_count_abbreviated"],
-    "text-font": GL_FONT_BOLD,
-    "text-size": LABEL_SIZE.count,
+    ...labelText("clusterCount"),
     "text-allow-overlap": true,
   },
   paint: { "text-color": CHART.casing },

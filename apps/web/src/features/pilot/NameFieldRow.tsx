@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { invalidProps } from "../../lib/fieldError";
 import FieldHit from "../../components/FieldHit";
 import { ListRow } from "../../components/GroupedList";
 import { Input } from "../../components/ui/input";
@@ -17,6 +18,7 @@ export function NameFieldRow({
   onSave,
   testId,
   className,
+  error,
 }: {
   id: string;
   title: string;
@@ -28,6 +30,8 @@ export function NameFieldRow({
   onSave: (name: string) => void;
   testId: string;
   className: string;
+  /** What is wrong with it, said in `description` under errorIdOf(id). */
+  error?: string | null;
 }) {
   return (
     <ListRow id={id} title={title} description={description}>
@@ -39,6 +43,7 @@ export function NameFieldRow({
           maxLength={120}
           className={className}
           autoComplete="name"
+          {...invalidProps(id, error ?? undefined)}
           onChange={(e) => onChange(e.target.value)}
           data-testid={testId}
           onBlur={() => {

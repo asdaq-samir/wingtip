@@ -16,6 +16,8 @@
 //!   (crate::gonogo::runways);
 //! - `circuit`: the pattern's legs and its 45° entry, and the way out of
 //!   a field (web lib/trafficPattern, wingtip.pattern's circuits);
+//! - `landing`: the runway landed on with an instrument approach, its own
+//!   straight in, another only by circling (AIM 5-4-20);
 //! - `marks`: the wind as the map marks a field: its least crosswind, its
 //!   arrow and its station model's barb;
 //! - `calls`: the rules by name, as crate::call lists them.
@@ -30,6 +32,7 @@ pub mod calls;
 pub mod circuit;
 #[cfg(test)]
 mod crosswind_tests;
+pub mod landing;
 pub mod marks;
 pub mod performance;
 pub mod pick;

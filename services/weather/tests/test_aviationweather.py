@@ -258,7 +258,7 @@ def test_a_request_refused_as_asked_is_not_retried_and_one_too_many_is():
 
 def test_an_unchanged_product_is_not_downloaded_or_parsed_again(monkeypatch):
     """The stored copy's ETag asks whether it has changed: a 304 keeps it,
-    stored again as fetched now."""
+    and the engine does not read it again (tests/test_unchanged.py)."""
     first = MagicMock(
         status_code=200, content=gzip.compress(b"<response/>"), headers={"ETag": '"abc"', "Last-Modified": "Wed, 07 Oct 2026 16:11:35 GMT"}
     )

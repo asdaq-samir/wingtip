@@ -284,7 +284,7 @@ export function NavLogList({
                             event.stopPropagation();
                             wantPlace(field);
                           }}
-                          className="relative justify-start text-left after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-['']"
+                          className="relative justify-start text-left hit-y-[11px]"
                         >
                           {name}
                         </Button>

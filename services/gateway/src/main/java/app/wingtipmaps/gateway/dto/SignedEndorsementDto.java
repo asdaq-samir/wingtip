@@ -19,4 +19,11 @@ public record SignedEndorsementDto(
         @Nullable LocalDate until,
         boolean voided,
         /* SHA-256 of the words, the signature line and the moment signed. */
-        String digest) {}
+        String digest) {
+
+    /** The same endorsement with its last good day, the engine's, filled
+     *  in once the planner is asked. */
+    public SignedEndorsementDto withUntil(@Nullable LocalDate until) {
+        return new SignedEndorsementDto(id, code, studentName, fields, text, signature, signedOn, until, voided, digest);
+    }
+}

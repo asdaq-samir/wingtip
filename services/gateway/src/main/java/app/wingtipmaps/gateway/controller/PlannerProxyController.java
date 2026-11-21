@@ -54,8 +54,13 @@ public class PlannerProxyController {
      *  collection job is minutes. The client is what should give up. */
     private static final Duration TIMEOUT = Duration.ofMinutes(10);
 
-    private static final StreamingProxy.Upstream PLANNER =
-            new StreamingProxy.Upstream("planner service", "planner service unreachable", "planner service timed out");
+    /** Its two details reach a pilot as they are, the map's problem line
+     *  on the web and the phones' alike: said as what happened and what to
+     *  do, where "planner service unreachable" read as a log line. */
+    private static final StreamingProxy.Upstream PLANNER = new StreamingProxy.Upstream(
+            "planner service",
+            "The planner isn't answering. Try again in a moment.",
+            "The planner took too long to answer. Try again in a moment.");
 
     /** The largest body forwarded on any POST. The biggest sent is a flown
      *  track for its debrief: a three-hour flight logged once a second is
@@ -223,7 +228,9 @@ public class PlannerProxyController {
             for (String name : route.headers()) {
                 response.headers().firstValue(name).ifPresent(value -> builder.header(name, value));
             }
-            return builder.body(StreamingProxy.pipe(response.body()));
+            String type = response.headers().firstValue(HttpHeaders.CONTENT_TYPE).orElse(null);
+            boolean stream = StreamingProxy.isStream(type);
+            return builder.body(StreamingProxy.pipe(response.body(), stream));
         });
     }
 

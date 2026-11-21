@@ -27,6 +27,7 @@ pub mod class_b_band;
 pub mod drills;
 pub mod field_name;
 pub mod pack;
+mod pack_kept;
 pub mod pack_query;
 pub mod regions_ahead;
 pub mod rules;

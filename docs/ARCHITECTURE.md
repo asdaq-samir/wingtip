@@ -104,7 +104,8 @@ a restart of the planner drops no feed (issue #535):
   otherwise; the planner reads it. [services/weather/README.md](../services/weather/README.md)
 - **The chart tiles** (`data/raw/chart_tiles.nosync/<cycle>/`): one
   PMTiles archive per chart kind and density (`@2x` for sharp tiles on a
-  phone), written by the charts job and served by the planner.
+  phone), its tiles lossless WebP, written by the charts job and served
+  by the planner.
 
 ### Feed health
 

@@ -7,7 +7,8 @@ These are the renderer's own work, shared by the tile drawn on request
 (wingtip.chart_tiles), the whole pyramid (wingtip.chart_pyramid) and a
 tile drawn again (wingtip.chart_rerender), so each draws a tile the same
 way. RENDERER_VERSION is raised with any change to what a drawn tile
-looks like.
+looks like. A tile is drawn and kept loose as a palette PNG; packed into
+its kind's archive it is the same pixels as lossless WebP (to_webp).
 """
 
 from __future__ import annotations
@@ -82,6 +83,38 @@ def encode_png(rgba: np.ndarray) -> bytes:
     image = Image.fromarray(rgba, "RGBA").quantize(256, method=Image.Quantize.FASTOCTREE)
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+#: How a finished tile is kept in its archive: lossless WebP of the
+#: palette PNG's own pixels, at libwebp's method 4 and quality (its
+#: effort, in lossless) 25. Measured on 48 tiles of the 10-29-2026 cycle
+#: (sec, sec@2x, tac@2x, ifr_low@2x; z6, 9 and 11 or 10 to 12, over
+#: Chicago and Los Angeles; 2026-11-21): 88.6% of the palette PNGs'
+#: bytes, every drawn pixel the same, about 9 ms a tile on one core.
+#: Method 6 at quality 100 took 86% but 2.5 s a tile; Pillow's PNG
+#: optimiser saved 1 to 3.6%. Lossy WebP was no good for a chart: q90 was
+#: larger than the PNG on three of the four, q80 only 12 to 29% smaller,
+#: and both at 24 to 26 dB PSNR on the VFR charts with 13 to 16% of the
+#: pixels at a letter's or a line's edge off by more than 48 in a channel
+#: -- its 4:2:0 colour blurs the magenta and blue type on the yellow and
+#: green tints. WebP is read by MapLibre on the web, iOS 14's ImageIO and
+#: Android's BitmapFactory, which every reader of the tiles uses.
+WEBP_TILE = {"lossless": True, "method": 4, "quality": 25, "exact": True}
+
+
+def is_webp(tile: bytes) -> bool:
+    return tile[:4] == b"RIFF" and tile[8:12] == b"WEBP"
+
+
+def to_webp(tile: bytes) -> bytes:
+    """A finished tile as its archive keeps it (WEBP_TILE): the palette
+    PNG encode_png made, its pixels unchanged; a tile already WebP as it
+    is. A top-level function, as a pool of processes asks it."""
+    if is_webp(tile):
+        return tile
+    buffer = io.BytesIO()
+    Image.open(io.BytesIO(tile)).convert("RGBA").save(buffer, format="WEBP", **WEBP_TILE)
     return buffer.getvalue()
 
 

@@ -87,6 +87,11 @@ export function describeError(err: unknown, fallback = "request failed"): string
   if (err instanceof DOMException && err.name === "TimeoutError") {
     return "No answer in time";
   }
+  // An answer that is not the JSON asked for -- a proxy's HTML error page
+  // sent with a 200 -- rejects in the browser's parser's words ("Unexpected
+  // token '<', "<!doctype "... is not valid JSON"), which said nothing a
+  // pilot can act on: said as the stream reader says it (./http's parsed).
+  if (err instanceof SyntaxError) return "The planner's answer came back garbled. Try again in a moment.";
   const firstLine = err instanceof Error ? err.message.split("\n")[0] : undefined;
   // An answer with no words of its own but HTTP's reason ("Not Found",
   // "Bad Gateway"), which the Brief printed raw ("Words unavailable: Not

@@ -27,7 +27,12 @@ const keptPath = keptStore<PathPoint[] | null>(KEY, null);
 function kept(): PathPoint[] {
   const held = keptPath.getState().value;
   const last = Array.isArray(held) ? held.at(-1) : undefined;
-  return held && last && Date.now() - last.t < NEW_FLIGHT_MS ? held : [];
+  if (held && last && Date.now() - last.t < NEW_FLIGHT_MS) return held;
+  // A path past its flight is not shown, so not kept either: it was a
+  // record of where the airplane went, kept in the browser for good (the
+  // prelaunch audit's P5).
+  if (held) keptPath.setState({ value: null });
+  return [];
 }
 
 export const useOwnTrail = create<{ path: PathPoint[] }>(() => ({ path: kept() }));
@@ -56,7 +61,8 @@ void geoLoaded.then((geo) =>
   }),
 );
 
-/** The path put away, as its button in the map's settings asks. */
+/** The path put away, as its button in the map's settings asks, and as
+ *  a pilot signs out (useLogout): where the airplane went is theirs. */
 export function clearOwnTrail() {
   useOwnTrail.setState({ path: [] });
   keptPath.setState({ value: null });

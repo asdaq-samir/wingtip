@@ -37,6 +37,11 @@ async def inspections(*, body: dict[str, Any]) -> Any:
     return await _send('POST', '/api/aircraft/inspections', query={}, body=body, headers={})
 
 
+async def inspections_batch(*, body: dict[str, Any]) -> Any:
+    """POST /api/aircraft/inspections-batch: Inspections Batch"""
+    return await _send('POST', '/api/aircraft/inspections-batch', query={}, body=body, headers={})
+
+
 async def check_airplane(*, body: dict[str, Any] | None = None) -> Any:
     """POST /api/aircraft/problems: Check Airplane"""
     return await _send('POST', '/api/aircraft/problems', query={}, body=body, headers={})
@@ -425,6 +430,11 @@ async def experience(*, body: dict[str, Any]) -> Any:
 async def instructor_records_since(*, today: str) -> Any:
     """GET /api/pilot/instructor-records-since: Instructor Records Since"""
     return await _send('GET', '/api/pilot/instructor-records-since', query={'today': today}, body=None, headers={})
+
+
+async def records_batch(*, body: dict[str, Any]) -> Any:
+    """POST /api/pilot/records-batch: Records Batch"""
+    return await _send('POST', '/api/pilot/records-batch', query={}, body=body, headers={})
 
 
 async def places_search(*, q: str | None = None) -> Any:

@@ -75,7 +75,12 @@ export default function AlertsBanner() {
       }
       actions={
         alerts.length > 0 && (
-          <BannerButton data-testid="alerts-acknowledge" onClick={() => acknowledge(alerts.map((a) => a.id))}>
+          <BannerButton
+            data-testid="alerts-acknowledge"
+            // Its "OK" first, then what it is OK to (WCAG 2.4.6, 2.5.3).
+            aria-label="OK, alerts ahead seen"
+            onClick={() => acknowledge(alerts.map((a) => a.id))}
+          >
             OK
           </BannerButton>
         )

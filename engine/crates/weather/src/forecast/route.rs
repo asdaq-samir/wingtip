@@ -289,13 +289,25 @@ fn told(report: &Value, now: f64) -> bool {
 /// Unix time) left out.
 pub fn pireps_along_route(reports: &[Value], path: &[(f64, f64)], corridor_nm: f64, now: f64) -> String {
     let mut found: Vec<(bool, f64, &Value)> = Vec::new();
+    // Each leg's miles and course solved once for every report, not once a
+    // report (track_from is track_nm with the course given).
+    let legs: Vec<(f64, f64)> = path
+        .windows(2)
+        .map(|w| (geo::distance_nm(w[0].0, w[0].1, w[1].0, w[1].1), geo::bearing_deg(w[0].0, w[0].1, w[1].0, w[1].1)))
+        .collect();
     for report in reports.iter().filter(|r| told(r, now)) {
         let (Some(lat), Some(lon)) = (num(report, "lat"), num(report, "lon")) else { continue };
         let mut offset = 0.0;
         let mut nearest = None;
-        for leg in path.windows(2) {
-            let (cross, along) = geo::track_nm(lat, lon, leg[0], leg[1]);
-            let leg_nm = geo::distance_nm(leg[0].0, leg[0].1, leg[1].0, leg[1].1);
+        for (leg, &(leg_nm, course)) in path.windows(2).zip(&legs) {
+            // A report surely more than the corridor off the leg's line
+            // (core's surely_off_nm) fails the cross-track test below on
+            // the ellipsoid too: let go after one inverse solve.
+            if geo::surely_off_nm(lat, lon, leg[0], course, corridor_nm) {
+                offset += leg_nm;
+                continue;
+            }
+            let (cross, along) = geo::track_from(lat, lon, leg[0], course);
             if -corridor_nm <= along && along <= leg_nm + corridor_nm && cross.abs() <= corridor_nm {
                 nearest = Some(offset + along.clamp(0.0, leg_nm));
                 break;

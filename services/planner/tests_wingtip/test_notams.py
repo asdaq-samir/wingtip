@@ -353,3 +353,18 @@ def test_an_icao_notam_is_listed_at_the_place_its_own_a_item_names():
     notams.heard(feed, now=NOW)
     [kept] = notams.at_fields(["KSHV"], now=NOW)
     assert kept["location"] == "SHV"
+
+
+def test_notams_past_their_keep_are_let_go_once_an_hour_not_on_every_message():
+    """The DELETE scans the whole table; at about a message a second it
+    runs once an hour (PRUNE_EVERY_S), not each time."""
+
+    def kept() -> int:
+        return notams._connection().execute("SELECT COUNT(*) FROM notams").fetchone()[0]
+
+    later = NOW + 2 * notams.KEEP_ENDED_S
+    notams.heard("<not xml", now=later)  # the first message prunes
+    notams.heard(RUNWAY, now=later + 60)  # one long past its end, a minute on
+    assert kept() == 1, "a minute later the table is not scanned again"
+    notams.heard("<not xml", now=later + notams.PRUNE_EVERY_S)
+    assert kept() == 0

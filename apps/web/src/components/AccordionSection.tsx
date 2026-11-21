@@ -66,7 +66,7 @@ export default function AccordionSection({
         )}
       >
         {/* The heading its title alone, the flag beside it: inside it, a
-            flag's words ("Risk raised") became part of the heading's name. */}
+            flag's words ("Raised risk") became part of the heading's name. */}
         <div className={cn("mb-2 flex flex-wrap items-center gap-x-2 gap-y-1", TEXT.row)}>
           {/* Every section's title (SectionTitle), the strips' (PillSection)
               too, not bold, at the owner's ask ("Section labels don't need

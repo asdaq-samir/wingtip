@@ -150,7 +150,7 @@ def test_a_seam_tile_is_never_served_half_drawn(two_sheet_country, monkeypatch):
             drawn.append(args[0])
         if len(drawn) == 2 and not between:  # the first sheet drawn, the second not begun
             between.append((seam.exists(), seam.with_suffix(".partial").exists()))
-            served = chart_render.decode_rgba(chart_tiles.tile_png(65, 94, 8))  # drawn whole, on demand
+            served = chart_render.decode_rgba(chart_tiles.tile_bytes(65, 94, 8))  # drawn whole, on demand
             between.append((tuple(served[200, col(-88.3)]), tuple(served[200, col(-87.7)])))
         return real_row(args)
 

@@ -8,7 +8,7 @@ import Segmented from "../../components/Segmented";
 import { Input } from "../../components/ui/input";
 import { NumberField } from "../../components/ui/number-field";
 import { WHOLE } from "../../components/ui/numberFormats";
-import TogglePill from "../../components/TogglePill";
+import SwitchRow from "../../components/SwitchRow";
 import { leaveLimit, lostCommsWords, segmentAltitudes, type RouteKey, type Segment } from "./lostComms";
 import { TEXT } from "../../lib/text";
 import { RemoveMinus } from "../../components/Favorites";
@@ -165,14 +165,14 @@ export default function LostCommsPage() {
       </ListGroup>
 
       <ListGroup title="Leaving the clearance limit">
-        <ListRow title="The limit is a fix an approach begins from">
-          <TogglePill
-            pressed={approachFix}
-            onPressedChange={setApproachFix}
-            label={approachFix ? "Yes" : "No"}
-            testId="lost-approach-fix"
-          />
-        </ListRow>
+        {/* The stock switch, its row's title its name (WCAG 1.3.1, 4.1.2):
+            a "Yes" or "No" pill was read without the question. */}
+        <SwitchRow
+          title="The limit is a fix an approach begins from"
+          on={approachFix}
+          onChange={setApproachFix}
+          testId="lost-approach-fix"
+        />
         <ListRow id={`${id}-efc`} title="Expect further clearance" description="Blank where none was given">
           <FieldHit htmlFor={`${id}-efc`}>
             <Input
@@ -192,7 +192,8 @@ export default function LostCommsPage() {
         </ListRow>
         <ListRow
           title={
-            <span className="font-normal" data-testid="lost-leave">
+            // Worked out again as a field is typed in, and said so (WCAG 4.1.3).
+            <span className="font-normal" data-testid="lost-leave" aria-live="polite">
               {leaveLimit(approachFix, efc.trim(), eta.trim())}
             </span>
           }

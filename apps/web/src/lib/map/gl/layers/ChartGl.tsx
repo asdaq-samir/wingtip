@@ -9,7 +9,7 @@ import { chartPaint, chartStyle, type ChartStyle } from "../glStyle";
 import { chartBrightness } from "../../chartLook";
 import { CLOSE_MAX_ZOOM, chartFade } from "../closeZoom";
 import { CloseImageryGl } from "./CloseImageryGl";
-import { LABEL_NIGHT } from "./common";
+import { LABEL_NIGHT, LABEL_SCALE, labelScale } from "./common";
 import { useCloseImagery } from "../useCloseImagery";
 
 /**
@@ -68,6 +68,20 @@ export function ChartGl({ course, publicOnly = false }: { course: Course | null;
   useEffect(() => {
     if (map.style) map.setGlobalStateProperty(LABEL_NIGHT, night);
   }, [map, night]);
+  // The map's words grown with the pilot's text size, at most 1.2x, while
+  // the Map card's Larger Map Labels is on (common's labelScale): read
+  // from the page's root size, again as the window changes (iOS sets a
+  // new text size on the page as it comes back).
+  const larger = usePreferences((s) => s.largerMapLabels);
+  useEffect(() => {
+    const apply = () => {
+      const root = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      if (map.style) map.setGlobalStateProperty(LABEL_SCALE, labelScale(larger, root));
+    };
+    apply();
+    window.addEventListener("resize", apply);
+    return () => window.removeEventListener("resize", apply);
+  }, [map, larger]);
   const kinds = parts
     .map((p) => /\/(?:chart-tile\/)?([a-z_]+)\/\{z\}/.exec(Object.values(p.spec.sources).at(-1)?.tiles?.[0] ?? "")?.[1] ?? "")
     .join(" ");

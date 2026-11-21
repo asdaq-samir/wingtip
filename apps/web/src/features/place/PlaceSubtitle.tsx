@@ -104,7 +104,7 @@ export function PlaceSubtitle({
     <>
       <BaseButton
         onClick={() => sheet.show(mark)}
-        className="relative flex min-w-0 items-center justify-center gap-2 outline-none after:absolute after:-inset-y-3 after:inset-x-0 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring"
+        className="relative flex min-w-0 items-center justify-center gap-2 outline-none hit-y-3 focus-visible:ring-2 focus-visible:ring-ring"
         data-testid="place-full-name"
       >
         {words}

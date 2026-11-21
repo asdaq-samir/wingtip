@@ -4,7 +4,7 @@
             <root>
                 <mxCell id="0" />
                 <mxCell id="1" parent="0" />
-                <mxCell id="title" value="Wingtip Maps on AWS — the design (#115, not deployed yet): one server behind CloudFront, about $27 a month. docs/README-AWS.md has the whole of it." style="text;html=1;fontSize=13.5;fontStyle=2;fontColor=#6E6656;align=left;verticalAlign=middle;" vertex="1" parent="1">
+                <mxCell id="title" value="Wingtip Maps on AWS — the design (#115, not deployed yet): one server behind CloudFront, about $35 a month. docs/README-AWS.md has the whole of it." style="text;html=1;fontSize=13.5;fontStyle=2;fontColor=#6E6656;align=left;verticalAlign=middle;" vertex="1" parent="1">
                     <mxGeometry x="20" y="-18" width="1270" height="24" as="geometry" />
                 </mxCell>
                 <mxCell id="box-cicd" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=4;fillColor=none;strokeColor=#B8722A;strokeWidth=1.6;" vertex="1" parent="1">
@@ -67,11 +67,11 @@
                 <mxCell id="box-server" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=3;fillColor=none;strokeColor=#8B6C3E;strokeWidth=1.6;dashed=1;dashPattern=6 4;" vertex="1" parent="1">
                     <mxGeometry x="260" y="450" width="700" height="452" as="geometry" />
                 </mxCell>
-                <mxCell id="lbl-server" value="&lt;b&gt;EC2 server&lt;/b&gt; — t3a.medium on Spot, an Auto Scaling group of one · Amazon Linux 2023 · infra/docker-compose.prod.yml&lt;br&gt;its fixed address (EIP) and data disk (EBS, daily snapshots) taken over by each new server · no SSH, a shell through SSM" style="text;html=1;whiteSpace=wrap;fontSize=11.5;fontColor=#6E6656;align=left;verticalAlign=top;" vertex="1" parent="1">
+                <mxCell id="lbl-server" value="&lt;b&gt;EC2 server&lt;/b&gt; — t3a.large on Spot, an Auto Scaling group of one · Amazon Linux 2023 · infra/docker-compose.prod.yml&lt;br&gt;its fixed address (EIP) and data disk (EBS, daily snapshots) taken over by each new server · no SSH, a shell through SSM" style="text;html=1;whiteSpace=wrap;fontSize=11.5;fontColor=#6E6656;align=left;verticalAlign=top;" vertex="1" parent="1">
                     <mxGeometry x="276" y="458" width="670" height="36" as="geometry" />
                 </mxCell>
-                <mxCell id="caddy" value="&lt;b&gt;caddy&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;origin.&amp;lt;host&amp;gt;:443&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;Let's Encrypt&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;404 without the origin secret&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=13;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="280" y="520" width="170" height="78" as="geometry" />
+                <mxCell id="caddy" value="&lt;b&gt;caddy&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;origin.&amp;lt;host&amp;gt;:443&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;Let's Encrypt&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;404 without the origin secret&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;tiles straight to the planner&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=13;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="520" width="170" height="92" as="geometry" />
                 </mxCell>
                 <mxCell id="gateway" value="&lt;b&gt;gateway&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;Spring Boot&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;accounts · sign-in · records&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;public API · mail&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=13;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
                     <mxGeometry x="480" y="520" width="190" height="78" as="geometry" />
@@ -117,6 +117,14 @@
                 </mxCell>
                 <mxCell id="e-caddy-gw" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="caddy" target="gateway" edge="1">
                     <mxGeometry relative="1" as="geometry" />
+                </mxCell>
+                <mxCell id="e-caddy-planner" value="the map's tiles (chart, terrain, overlays)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;dashed=1;exitX=0.5000;exitY=0.0000;exitDx=0;exitDy=0;entryX=0.5000;entryY=0.0000;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="caddy" target="planner" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="365" y="508" />
+                            <mxPoint x="820" y="508" />
+                        </Array>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="e-gw-planner" value="/api/planner/*" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;exitX=1.0000;exitY=0.5000;exitDx=0;exitDy=0;entryX=0.0000;entryY=0.4200;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="gateway" target="planner" edge="1">
                     <mxGeometry relative="1" as="geometry" />

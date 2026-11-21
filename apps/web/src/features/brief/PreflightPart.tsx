@@ -76,7 +76,7 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Pr
             aside={
               assessment && assessment.level !== "low" ? (
                 <Flag finding={assessment.level === "high" ? "stop" : "caution"} testId="risk-flag">
-                  {assessment.level === "high" ? "High risk" : "Risk raised"}
+                  {assessment.level === "high" ? "High risk" : "Raised risk"}
                 </Flag>
               ) : undefined
             }

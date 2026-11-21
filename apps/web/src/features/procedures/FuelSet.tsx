@@ -1,6 +1,6 @@
 import { useId, useState } from "react";
 import { cn } from "cn";
-import SheetDialog from "../../components/SheetDialog";
+import { SheetCard } from "../../components/SheetCard";
 import Segmented from "../../components/Segmented";
 import { Button } from "../../components/ui/button";
 import { NumberField } from "../../components/ui/number-field";
@@ -26,9 +26,13 @@ type Pick = "full" | "none" | "own";
  * is assumed. More than the tanks hold is kept with a warning (warn, never
  * limit); the engine's fuel_in_tanks walks the tanks from it, and the
  * planner's fuel checks fly the same figure (the query's `tanks`). A stock
- * Popover at the gauge from a tablet's width up, on a phone the app's
- * sheet with Cancel and Done (as LegAltitude); Undo is the plan's, in the
- * route's menu and Cmd-Z ("Undo Fuel").
+ * Popover at the gauge from a tablet's width up. On a phone a card over
+ * FPL, the stock Drawer's nested drawer as every card is (SheetCard), with
+ * Cancel and Done in its head as an iOS form sheet has them: it had been
+ * the app's own sheet (SheetDialog), which took FPL off the screen and the
+ * gauge it changes out of sight (the HIG review, 2026-11-21; iOS stacks a
+ * sheet over a sheet). Undo is the per-edit Undo toast ("Fuel Changed")
+ * and Cmd-Z.
  */
 export function FuelSet({
   tank,
@@ -59,6 +63,10 @@ export function FuelSet({
   const form = useId();
   const shown = pick === "full" ? usable : pick === "none" ? left : typed;
   const over = shown !== null && shown > tank.usable;
+  // A stop's figure under what the airplane lands with keeps what it lands
+  // with: the fuel is not taken out (the engine's tanks_leaving, which
+  // fuel_in_tanks and the planner's check fly). Said, not kept silently.
+  const kept = stop && pick === "own" && typed !== null && typed < tank.gal;
   const valid = pick !== "own" || (typed !== null && typed >= 0);
   const openWith = (next: boolean) => {
     if (next) {
@@ -113,7 +121,8 @@ export function FuelSet({
         minValue={0}
         unit="gal"
         aria-label={`${title}, gallons`}
-        className="h-10"
+        // 44 tall, an iOS text field's height (it was 38, the HIG review).
+        className="h-11"
         data-testid="fuel-set-input"
       />
       {/* Warn, never limit: more than the airplane's usable fuel is the
@@ -123,7 +132,13 @@ export function FuelSet({
         aria-live="polite"
         data-testid="fuel-set-note"
       >
-        {over ? `More than the ${usable} gal the tanks hold` : stop ? `Lands with ${gaugeWords(tank.gal)}` : null}
+        {over
+          ? `More than the ${usable} gal the tanks hold`
+          : kept
+            ? `Keeps the ${gaugeWords(tank.gal)} it lands with`
+            : stop
+              ? `Lands with ${gaugeWords(tank.gal)}`
+              : null}
       </p>
       {!phone && (
         <div className="flex justify-end gap-2">
@@ -139,7 +154,10 @@ export function FuelSet({
   );
   // The gauge is the button: its name carries the gallons in sight
   // (WCAG 2.5.3), its 44-point area a pseudo-element, over the line's own
-  // tap that opens the field (z-10, as the ident's).
+  // tap that opens the field (z-10, as the ident's). The gauge is 18 tall,
+  // so 13 above and below make the 44 (it was 12, 42 in all: the HIG
+  // review); 18 from the ident, the two areas meeting 9 out from each
+  // (TimelineLine's ident), so neither takes the other's taps.
   const gauge = (
     <Button
       variant="plain"
@@ -147,7 +165,7 @@ export function FuelSet({
       type="button"
       aria-label={stop ? `${words}, fuel at ${ident}: change` : `${words}, fuel on board: change`}
       data-testid={stop ? "fuel-set-stop" : "fuel-set-departure"}
-      className="relative z-10 shrink-0 after:absolute after:-inset-x-1 after:-inset-y-3 after:content-['']"
+      className="relative z-10 ml-2.5 shrink-0 hit-x-[9px] hit-y-[13px]"
       onClick={phone ? () => openWith(true) : undefined}
     >
       <FuelGauge gal={tank.gal} usable={tank.usable} tone={tone} />
@@ -157,18 +175,27 @@ export function FuelSet({
     return (
       <>
         {gauge}
-        <SheetDialog
-          open={open}
-          onOpenChange={openWith}
-          cancel
-          size="sm"
-          title={title}
-          description={description}
-          action={{ label: "Done", form, disabled: !valid, testId: "fuel-set-done" }}
-          initialFocus={(sheet) => sheet.querySelector("input")}
-        >
-          {body}
-        </SheetDialog>
+        {open && (
+          <SheetCard
+            title={title}
+            description={description}
+            onClose={() => openWith(false)}
+            testId="fuel-set"
+            leading={
+              <Button type="button" variant="ghost" size="sm" className="-ml-2" onClick={() => openWith(false)} data-testid="fuel-set-cancel">
+                Cancel
+              </Button>
+            }
+            action={
+              <Button type="submit" form={form} size="sm" disabled={!valid} data-testid="fuel-set-done">
+                Done
+              </Button>
+            }
+            initialFocus={() => document.querySelector<HTMLElement>('input[data-testid="fuel-set-input"]') ?? true}
+          >
+            {body}
+          </SheetCard>
+        )}
       </>
     );
   return (

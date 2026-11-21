@@ -79,14 +79,18 @@ export default function FlightFoot({
   const { panelOpen } = vm.view;
   // In flight, the one way out of flying mode (useFlyingMode): a small
   // Done flying at the figures' foot, as the canvas has the line there;
-  // the tabs come back on the ground by themselves.
+  // the tabs come back on the ground by themselves. Its words stay small,
+  // but its target is the whole Flying row, 60 points tall, as every
+  // other control in flight is (FLYING_STACK; the owner's Q3,
+  // 2026-11-21): the row holds the area (relative), the link not, so its
+  // pseudo-element spans the row and nothing grows.
   const doneFlyingRow = flying && (
-    <div className={cn("flex items-center justify-between pt-1 text-foreground/65", TEXT.note)}>
+    <div className={cn("relative flex items-center justify-between pt-1 text-foreground/65", TEXT.note)}>
       <span>Flying</span>
       <Button
         variant="link"
         size="inline"
-        className="relative font-semibold after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
+        className="static font-semibold after:absolute after:inset-x-0 after:top-1/2 after:h-[60px] after:-translate-y-1/2"
         data-testid="done-flying"
         onClick={doneFlying}
       >

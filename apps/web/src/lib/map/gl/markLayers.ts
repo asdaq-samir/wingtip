@@ -1,7 +1,7 @@
 import type { ExpressionSpecification, SymbolLayerSpecification } from "maplibre-gl";
 import { CHART } from "../../tokens";
-import { GL_FONT, GL_FONT_BOLD, LABEL_HALO, LABEL_SIZE } from "./layers/common";
-import { AIRPORT_IDENT_INK, AIRPORT_IDENT_SIZE } from "./airportIcons";
+import { labelHalo, labelInk, labelText, type LabelKind } from "./layers/common";
+import { AIRPORT_IDENT_INK } from "./airportIcons";
 
 /**
  * The symbol layers the app's own marks are drawn with (useGlSymbols):
@@ -44,7 +44,7 @@ export function pictureLayer(id: string, source: string, how: Giving = {}, layou
 /** A field's mark with its ident beside it on the chart's white halo, as
  *  the chart letters a field: in bold to the right of its mark, in the
  *  tiles' fields' ink and size (airportIcons' AIRPORT_IDENT_INK and
- *  AIRPORT_IDENT_SIZE), by the feature's `towered`, so a Class B field or
+ *  map.label.kind.airport-ident), by the feature's `towered`, so a Class B field or
  *  a stop reads as the same field would on the chart. */
 export function labelledLayer(
   id: string,
@@ -60,27 +60,27 @@ export function labelledLayer(
     layout: {
       "icon-image": ICON,
       "text-field": TEXT,
-      "text-font": GL_FONT_BOLD,
-      "text-size": AIRPORT_IDENT_SIZE,
+      ...labelText("airportIdent"),
       "text-anchor": "left",
       // Just clear of a field's 26-point mark.
       "text-offset": [1.3, 0],
       ...giving(how),
       ...layout,
     },
-    paint: { "text-color": AIRPORT_IDENT_INK, ...LABEL_HALO, ...paint },
+    paint: { "text-color": labelInk(AIRPORT_IDENT_INK), ...labelHalo("airportIdent"), ...paint },
   };
 }
 
 /** Words on a chip that stretches to fit them (icon-text-fit): a route
- *  field's ident on its dark pill, a top of climb's, a pattern's leg. */
+ *  field's ident on its dark pill, a top of climb's, a pattern's leg, each
+ *  lettered as its kind (map.label.kind; a route point's by default). */
 export function chipLayer(
   id: string,
   source: string,
   how: Giving = {},
   layout: Layout = {},
   paint: Paint = {},
-  bold = true,
+  kind: LabelKind = "routePoint",
 ): SymbolLayerSpecification {
   return {
     id,
@@ -90,8 +90,7 @@ export function chipLayer(
       "icon-image": ICON,
       "icon-text-fit": "both",
       "text-field": TEXT,
-      "text-font": bold ? GL_FONT_BOLD : GL_FONT,
-      "text-size": LABEL_SIZE.small,
+      ...labelText(kind),
       ...giving(how),
       ...layout,
     },
@@ -106,7 +105,7 @@ export function badgeLayer(id: string, source: string, how: Giving = {}, paint: 
     id,
     type: "symbol",
     source,
-    layout: { "icon-image": ICON, "text-field": TEXT, "text-font": GL_FONT_BOLD, "text-size": LABEL_SIZE.small, ...giving(how) },
+    layout: { "icon-image": ICON, "text-field": TEXT, ...labelText("checkpointNumber"), ...giving(how) },
     paint: { "text-color": ["get", "ink"] as ExpressionSpecification, ...paint },
   };
 }

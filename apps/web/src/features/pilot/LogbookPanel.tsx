@@ -1,11 +1,11 @@
 import { lazy, Suspense } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { GraduationCap, Mail, MailX, Target, Users } from "lucide-react";
+import { GraduationCap, Target, Users } from "lucide-react";
 import { cn } from "cn";
 import { ConsolePages, PageRow } from "../../components/ConsolePages";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { DateField as StockDateField } from "../../components/ui/date-field";
-import TogglePill from "../../components/TogglePill";
+import SwitchRow from "../../components/SwitchRow";
 import { api } from "../../lib/api/client";
 import type { Currency } from "../../lib/api/types";
 import CheckridePage from "./CheckridePage";
@@ -192,16 +192,16 @@ function SignedInLogbook({ aircraft }: { aircraft?: string }) {
           <ListRow title="Medical" description={medicalOn ? <Until date={medicalOn} what="medical" /> : "The day it expires"}>
             <DateField value={medicalOn} label="Medical expires" onChange={(v) => setDates({ medicalExpiresOn: v })} />
           </ListRow>
-          <ListRow title="Reminders" description="An email 30 and 7 days before each runs out, your airplanes' too">
-            <TogglePill
-              pressed={!!reminders?.on}
-              onPressedChange={(on) => remind.mutate(on)}
-              disabled={!reminders || remind.isPending}
-              icon={reminders?.on ? <Mail /> : <MailX />}
-              label="Email"
-              testId="reminders-toggle"
-            />
-          </ListRow>
+          {/* The stock switch, named by its row's title: a pill named "Email"
+              was read without the Reminders it turns on (WCAG 1.3.1, 2.4.6). */}
+          <SwitchRow
+            title="Reminders"
+            description="An email 30 and 7 days before each runs out, your airplanes' too"
+            on={!!reminders?.on}
+            onChange={(on) => remind.mutate(on)}
+            disabled={!reminders || remind.isPending}
+            testId="reminders-toggle"
+          />
         </ListGroup>
 
         {/* Instrument currency (14 CFR 61.57(c), (d)), from the approaches,

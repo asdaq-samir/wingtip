@@ -300,7 +300,9 @@ export default function FlightCard({
               filled
               pressed={following}
               testId="flight-follow"
-              spoken={following ? `Stop following ${name}` : `Follow ${name} on the map`}
+              // The pressed state says whether it follows: "Stop following, pressed"
+              // said the opposite (WAI-ARIA APG, Button); the visible word in it (WCAG 2.5.3).
+              spoken={`${following ? "Following" : "Follow"} ${name} on the map`}
             />
           }
         />

@@ -15,7 +15,9 @@ it and else its number turned true with the field's magnetic variation
 
 from __future__ import annotations
 
+import functools
 import math
+from datetime import date
 
 import pandas as pd
 
@@ -76,6 +78,20 @@ def end_headings(ident: str) -> list[list]:
     return _end_headings_of(str(path), path.stat().st_mtime).get(ident.upper(), [])
 
 
+# The fields in view are up to 300 a pan, each asking the engine whether
+# its wind earns an arrow and, where it does, its variation: the same few
+# winds and the same fields over and over. Both answers are the engine's,
+# kept by what they are asked of (the variation by the day as well).
+@functools.lru_cache(maxsize=1024)
+def _arrow_shown(speed_kt, gust_kt) -> bool:
+    return ask("wind_arrow", speed_kt=speed_kt, gust_kt=gust_kt)["shown"]
+
+
+@functools.lru_cache(maxsize=8192)
+def _variation(lat: float, lon: float, on: date) -> float:
+    return magnetic_variation_deg(lat, lon, on)
+
+
 def marks_of(place: dict, metar: dict | None) -> dict:
     """The METAR's members the station model and the wind arrow read, and
     `crosswind_kt`, the least crosswind on the place's runways (by its
@@ -88,7 +104,7 @@ def marks_of(place: dict, metar: dict | None) -> dict:
     out["ceiling_unknown"] = bool(out["ceiling_unknown"])
     out["visibility_plus"] = bool(out["visibility_plus"])
     out["wx"] = out["wx"] or None
-    shown = ask("wind_arrow", speed_kt=metar.get("wind_speed_kt"), gust_kt=metar.get("wind_gust_kt"))["shown"]
+    shown = _arrow_shown(metar.get("wind_speed_kt"), metar.get("wind_gust_kt"))
     least = None
     if shown:
         idents = (place.get("ident"), place.get("source_ident"))
@@ -98,7 +114,7 @@ def marks_of(place: dict, metar: dict | None) -> dict:
                 "least_crosswind",
                 runways=[{"end_headings": ends} for ends in runways],
                 metar={k: metar.get(k) for k in ("wind_dir_true_deg", "wind_speed_kt", "wind_gust_kt")},
-                variation_deg=magnetic_variation_deg(place["lat"], place["lon"]),
+                variation_deg=_variation(place["lat"], place["lon"], date.today()),
             )
     out["crosswind_kt"] = least["crosswind_kt"] if least else None
     return out

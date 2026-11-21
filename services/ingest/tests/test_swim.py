@@ -107,7 +107,7 @@ def test_a_tracks_code_says_its_emergency_in_the_ads_b_words():
 
 def test_the_tracks_kept_are_those_round_a_view_and_the_followed_ones(monkeypatch):
     heard = []
-    monkeypatch.setattr(traffic, "heard_elsewhere", lambda plane, at: heard.append(plane["hex"]))
+    monkeypatch.setattr(traffic, "heard_all_elsewhere", lambda found, following: heard.extend(p["hex"] for p, _ in found))
     # The map on Chicago, 20 nm round O'Hare: the airliner over it, not
     # N3429J 39 nm north-west.
     monkeypatch.setattr(swim, "WANTED", [([(41.98, -87.9, 20)], set())])

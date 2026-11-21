@@ -30,6 +30,16 @@ the fields they take (GET /api/pilot/endorsement-kinds, POST
 /api/pilot/endorsement-fill: the engine's endorsement_kinds and
 endorsement_fill). Add no rule here.
 
+A page of records asks the planner once, after its reads: the
+Checkride page and an instructor's page gather every student's
+experience and every endorsements ask while they read (`RecordsAsks`)
+and send them together (POST /api/pilot/records-batch), and the
+aircraft list, the Coming up list and the daily reminders ask every
+airplane at once (POST /api/aircraft/inspections-batch). The reads run
+in a short read-only transaction of their own (`ReadOnly`), and the
+planner is asked after it ends, so no pooled connection waits on the
+planner.
+
 ## Contents
 
 - [Running it](#running-it)
@@ -167,7 +177,7 @@ One job per class.
 | Package | What lives there |
 |---|---|
 | `controller/` | HTTP endpoints. `PlannerProxyController` forwards `/api/planner/*` to `planner`; `GlobalExceptionHandler` turns exceptions into JSON; `MagicLinkController` is the email sign-in flow's own two steps (request, verify). |
-| `service/` | The records' logic: `PilotService`, `AircraftService`, `FlightService`, `LogbookService` and the rest, each scoped to the signed-in pilot; `PlannerClient`, the planner asked on this app's own behalf; `InstructorService` (a student's instructors, their reviews and an instructor's page) beside `EndorsementSigning` (an instructor's signature and its voiding) and `InstructorMail` (the mail between them); `ReminderService` and `FlightWatchService`, the scheduled mail. |
+| `service/` | The records' logic: `PilotService`, `AircraftService`, `FlightService`, `LogbookService` and the rest, each scoped to the signed-in pilot; `PlannerClient`, the planner asked on this app's own behalf; `InstructorService` (a student's instructors and their reviews) and `InstructorPage` (an instructor's page, read then asked of the planner in one call) beside `EndorsementSigning` (an instructor's signature and its voiding) and `InstructorMail` (the mail between them); `ReminderService` and `FlightWatchService`, the scheduled mail. |
 | `repository/` | Spring Data interfaces. No implementations — Spring writes them. |
 | `domain/` | JPA entities: `Pilot`, `Aircraft`, `Flight`, `FlightCheckpoint`, `MagicLink`, `LogbookEntry`, `Endorsement` and the rest. |
 | `dto/` | Request and response shapes, kept separate from entities so the API and the schema can change independently. |
@@ -286,7 +296,17 @@ tests cannot start their Postgres.
 `client.ts` echoes back; no filter of this app's forces it any more (the
 `CsrfCookieFilter` that once did is gone). A refused token is answered
 401 by Spring Security's own `HttpStatusEntryPoint`, as the caller is
-anonymous.
+anonymous. The map's tiles (a public GET of `chart-tile`, `terrain-tile`
+or `overlay-tiles`) are the exception: they go through a chain of their
+own (`TileSecurityConfig`) with no cookie and no page headers but nosniff,
+about 1.2 KB less a tile, and nothing that keeps a CDN from storing them.
+
+**Nightly housekeeping.** `Housekeeping` (03:30 UTC) lets go of the speed
+samples past 400 days, sign-in links a day past expiry, reminders' records
+whose day has passed and deletions noted over 60 days ago, then deletes
+again any deleted account a restore brought back (`DeletionsReapplied`,
+which also runs as the gateway starts; docs/README-AWS.md, "Backups and
+restore").
 
 **The planner proxy pins HTTP/1.1.** The JDK `HttpClient` defaults to
 attempting an HTTP/2 upgrade, which uvicorn (HTTP/1.1 only) rejects with

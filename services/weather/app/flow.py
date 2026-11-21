@@ -172,3 +172,6 @@ def fetch(now: datetime | None = None) -> None:
     weather_store.write("flow", record, fetched_at=time.time(), until=(newest + timedelta(hours=1)).timestamp())
     weather_store.remove_blobs("flow-", names, ".png")
     weather_store.remove_arrays(flow_store.NUMBERS_PREFIX, numbers)
+    grids = {g for f in frames for g in (f["parts"].get("nomads") or {}).get("grids", [])}
+    weather_store.remove_arrays(flow_nomads.GRIDS_PREFIX, grids)
+    weather_store.remove_blobs(flow_nomads.GRIDS_PREFIX, grids, flow_nomads.GRID_FIELDS)

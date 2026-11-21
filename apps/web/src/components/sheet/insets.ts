@@ -22,7 +22,7 @@ export const SETTLE_MS = DRAWER_MS + 50;
  * each where it belongs, and a render never hands it a new number.
  *
  * - The pill: the one search's band with the grabber over it, 4.25 rem on
- *   a bottom sheet (SheetParts' barRowPad: the grabber's 16-point room, the
+ *   a bottom sheet (SheetHead's barRowPad: the grabber's 16-point room, the
  *   least iOS keeps, the 46-point field, six under: the owner, 2026-11-13,
  *   "taking minimal space"); on a top sheet the band's 4.25 rem and the
  *   grabber's own 1 rem row under it, 5.25 rem. Standing on the screen's

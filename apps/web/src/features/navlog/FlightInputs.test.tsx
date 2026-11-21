@@ -11,7 +11,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import FlightInputs from "./FlightInputs";
+import FlightInputs, { FIRST_AIRPLANE_ASK } from "./FlightInputs";
+import { FPL_TIP, useTips } from "../../lib/firstRunTips";
 import { requestAirplanePick, useAirplanePick } from "../../lib/pickAirplane";
 import { useProfileOpen } from "../../lib/airplane/profileStore";
 
@@ -135,5 +136,17 @@ describe("FlightInputs' airplane", () => {
     expect(useProfileOpen.getState().open).toBeNull();
     expect(document.activeElement).toBe(none.input);
     expect(input.isConnected).toBe(false);
+  });
+
+  test("asks for an airplane in words on the first flight, the blanks after it", () => {
+    act(() => useTips.setState({ seen: [] }));
+    const first = pills();
+    expect(first.input.placeholder).toBe(FIRST_AIRPLANE_ASK);
+    cleanup();
+    act(() => useTips.setState({ seen: [FPL_TIP] }));
+    expect(pills().input.placeholder).toBe("_____");
+    cleanup();
+    act(() => useTips.setState({ seen: [] }));
+    expect(pills("c172", [{ value: "c172", label: "C172" }]).input.placeholder).toBe("_____");
   });
 });

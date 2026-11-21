@@ -74,12 +74,12 @@ _TFRS_LOCK = threading.Lock()
 TFRS_CACHE = "public, max-age=60"
 
 
-def _tfrs_body(found: list, fetched_at: float | None) -> tuple[bytes, str]:
+def _tfrs_body(found: list, written_at: float | None) -> tuple[bytes, str]:
     """The answer's bytes and their ETag, kept by the copy of the list they
-    were made from (when it was fetched) and the TFRs kept of it: a copy is
+    were made from (when it was written) and the TFRs kept of it: a copy is
     written once and never changed (wingtip.weather_store), so the same key
     is the same bytes. None for a list with no copy behind it: made again."""
-    key = None if fetched_at is None else (fetched_at, tuple(t.get("notam_id") for t in found))
+    key = None if written_at is None else (written_at, tuple(t.get("notam_id") for t in found))
     with _TFRS_LOCK:
         held = _TFRS_HELD.get("held")
     if key is not None and held is not None and held[0] == key:
@@ -99,13 +99,15 @@ def tfrs(request: Request) -> Response:
     tfr.faa.gov does not answer, for the map to say so rather than draw
     a sky with none."""
     # Kept a minute (TFRS_CACHE), with an ETag: a 304 for the list held.
-    fetched_at = tfr.fetched_at()
+    # Keyed by when the copy was written, not when it was last confirmed:
+    # the service confirms an unchanged list without writing it again.
+    written_at = tfr.copy_written_at()
     try:
         found = tfr.all_tfrs()
     except tfr.TfrUnavailable as err:
         raise HTTPException(502, "tfr.faa.gov did not answer, so the map has no TFRs on it.") from err
     # A copy written between the two reads is not kept by the older's key.
-    body, etag = _tfrs_body(found, fetched_at if tfr.fetched_at() == fetched_at else None)
+    body, etag = _tfrs_body(found, written_at if tfr.copy_written_at() == written_at else None)
     headers = {"ETag": etag, "Cache-Control": TFRS_CACHE}
     if etag in request.headers.get("if-none-match", ""):
         return Response(status_code=304, headers=headers)

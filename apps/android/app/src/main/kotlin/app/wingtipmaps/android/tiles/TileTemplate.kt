@@ -16,6 +16,10 @@ import app.wingtipmaps.android.Config
  * screen's density. The raster source keeps tileSize 256, so each tile
  * still covers 256 dp, now with two pixels or more to each. Only where the
  * kind was drawn at it (its layer's `scales`).
+ *
+ * The `.png` names the tile, not its encoding: out of an archive packed
+ * since 2026-11-21 the planner sends lossless WebP at the same address,
+ * which MapLibre decodes (Android's own decoder) as it does a PNG.
  */
 data class TileTemplate(
     val cycle: String,
