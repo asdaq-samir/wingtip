@@ -36,13 +36,14 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from wingtip import schedule, weather
+from wingtip import chart_upkeep, log_lines, schedule, weather
 from wingtip import traffic as traffic_store
 from wingtip.aircraft import UnknownAircraft
 from wingtip.planning import StillComputing
 
 from . import errors, local_guard, openapi_document, tracing
 from .feeds import watch as feeds_watch
+from .request_ids import RequestIds
 from .mcp import server as mcp
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan, clearance
 from .routers import airport_card, airport_charts, airport_stops, navlog
@@ -61,12 +62,14 @@ from .warm_up import WARM, warm_reference_data
 # logging.getLogger(__name__) anywhere else in the process. Found while
 # adding the timing lines in wingtip.altitude and app.routers.classb
 # (2026-09-23) and running one live to see it -- nothing appeared.
-# LOG_LEVEL, not a hardcoded INFO, so a noisy deploy can be turned down.
+# LOG_LEVEL, not a hardcoded INFO, so a noisy deploy can be turned down;
+# LOG_FORMAT=json in production, one JSON object a line with the page's
+# request id (wingtip.log_lines, app.request_ids).
 # The environment is read and checked here at the latest (wingtip.config
 # reads it on import): a malformed value -- a word where a number goes --
 # stops the planner at boot with SettingsError naming the variable,
 # rather than on the first request that needs it.
-logging.basicConfig(level=get_settings().log_level)
+log_lines.configure(get_settings().log_level, get_settings().log_format)
 
 log = logging.getLogger(__name__)
 
@@ -81,6 +84,8 @@ async def _lifespan(app: FastAPI):
     on = schedule.scheduler()
     schedule.every(on, feeds_watch.CHECK_EVERY_S, feeds_watch.check, name="feed-watch")
     schedule.every(on, traffic_store.PRUNE_EVERY_S, traffic_store.prune, name="live-store-prune")
+    # On AWS, older cycles' chart sheets off the data disk (chart_upkeep.prune_behind_served).
+    schedule.every(on, chart_upkeep.PRUNE_EVERY_S, chart_upkeep.prune_behind_served, name="chart-sheets-prune", now=False)
     on.start()
     threading.Thread(target=warm_reference_data, args=(on,), name="reference-data-warm-up", daemon=True).start()
     yield
@@ -93,6 +98,9 @@ app = FastAPI(title="Wingtip Maps planner", lifespan=_lifespan)
 app.add_middleware(local_guard.LocalOnly)
 # What failed lately, for the Dev console (app.errors).
 app.add_middleware(errors.RecordFailures)
+# The page's request id on each log line (app.request_ids); added last, so
+# it is outermost and RecordFailures' own lines carry it too.
+app.add_middleware(RequestIds)
 # Traces, where an OTLP endpoint is set (app.tracing).
 tracing.instrument(app)
 

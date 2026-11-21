@@ -178,16 +178,35 @@ def forget_serving() -> None:
     _kind_serving.clear()
 
 
-def _published_pointer() -> dict | None:
-    """The published pyramid's own pointer -- the cycle it names, and the
-    scales each kind was drawn at -- or None when it cannot be read (and
-    the planner falls back to its disk)."""
+def _pointer_at(name: str) -> dict | None:
+    """One of the bucket's pointers (serving.json, next.json) through the
+    CDN, or None when it is not there or cannot be read."""
     try:
-        resp = requests.get(f"{config.CHART_TILES_URL}/serving.json", headers=REQUEST_HEADERS, timeout=5)
+        resp = requests.get(f"{config.CHART_TILES_URL}/{name}", headers=REQUEST_HEADERS, timeout=5)
         pointer = resp.json() if resp.ok else None
     except (requests.RequestException, ValueError):
         return None
     return pointer if isinstance(pointer, dict) and pointer.get("cycle") else None
+
+
+def _published_pointer() -> dict | None:
+    """The published pyramid's own pointer -- the cycle it names, and the
+    scales each kind was drawn at -- or None when it cannot be read (and
+    the planner falls back to its disk). A cycle the refresh task staged
+    ahead of its date (next.json, wingtip.chart_publish) is taken from
+    0901Z on that date, newer than the one serving.json names: the swap
+    at the FAA's changeover, not hours after it while the task draws, and
+    with no task to run at that minute (the next day's refresh moves
+    serving.json on to it)."""
+    from .data_cycles import chart_effective
+
+    serving = _pointer_at("serving.json")
+    ahead = _pointer_at("next.json")
+    if ahead and chart_cycle.in_force(ahead["cycle"]):
+        ahead_on, serving_on = chart_effective(ahead["cycle"]), serving and chart_effective(serving["cycle"])
+        if serving is None or (ahead_on and serving_on and ahead_on > serving_on):
+            return ahead
+    return serving
 
 
 def tile_scales(kind: str) -> list[int]:

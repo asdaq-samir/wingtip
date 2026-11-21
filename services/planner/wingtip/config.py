@@ -138,6 +138,9 @@ class Settings(BaseSettings):
     # The planner (services/planner/app)
     #: The logging level for the planner.
     log_level: str = "INFO"
+    #: How the planner, the weather service and ingest write their log:
+    #: "text", or "json" (production) for CloudWatch Logs Insights (wingtip.log_lines).
+    log_format: str = "text"
     #: Whether the FAA aircraft registry is downloaded and read (0 on a test stack).
     registry_refresh: bool = True
     #: The contact URL or email Planespotters.net's photo API asks a server

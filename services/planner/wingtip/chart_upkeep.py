@@ -74,6 +74,14 @@ def refresh(kinds: tuple = tuple(KINDS), workers: int = 2, prune: bool = True, p
     if publish_bucket and chart_publish.bucket_cycle(publish_bucket, client=client) == cycle:
         log.info("cycle %s is already published to %s", cycle, publish_bucket)
         return cycle
+    # Staged ahead of its date (charts.next_cycle.stage_to_bucket): the
+    # planners take it from next.json at 0901Z, so nothing is drawn again;
+    # once it is in force serving.json is moved on to it.
+    if publish_bucket and chart_publish.bucket_cycle(publish_bucket, client=client, pointer=chart_publish.NEXT_POINTER) == cycle:
+        if chart_cycle.in_force(cycle):
+            chart_publish.promote(publish_bucket, client=client)
+        log.info("cycle %s was staged ahead to %s", cycle, publish_bucket)
+        return cycle
     build_cycle(cycle, kinds, workers)
     if publish_bucket and chart_serving.pyramid_complete(cycle, kinds):
         chart_publish.publish(cycle, publish_bucket, client=client)
@@ -128,6 +136,23 @@ def prune_cycles(keep: str) -> list[str]:
             log.info("removed %s/%s", root.name, cycle)
     chart_serving.forget_serving()
     return removed
+
+
+#: How often a planner reading its tiles from the cloud lets older cycles' sheets go.
+PRUNE_EVERY_S = 6 * 3600
+
+
+def prune_behind_served() -> list[str]:
+    """Where the tiles are published (CHART_TILES_URL, the AWS server), the
+    sheets of cycles older than the one served, deleted. The server fetches
+    a corridor's sheets as routes need them, some 6 GB for the whole
+    country a cycle, and only the refresh pruned them, which runs in its
+    own task with its own disk: the server's data disk kept every cycle's
+    until it filled (the ops audit, 2026-11-21). Locally the refresh
+    prunes, and this does nothing."""
+    if not config.CHART_TILES_URL:
+        return []
+    return prune_cycles(keep=chart_serving.serving_cycle())
 
 
 def refresh_running() -> bool:

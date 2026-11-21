@@ -60,7 +60,13 @@ def chart_info(response: Response) -> ChartInfo:
 def _chart_tile(request: Request, kind: chart_kinds.ChartKind, z: int, x: int, y: int, scale: int = 1) -> Response:
     if not (kind.min_zoom <= z <= kind.max_zoom):
         raise HTTPException(404, f"{kind.key} tiles exist for zoom {kind.min_zoom}-{kind.max_zoom}")
-    tile = chart_tiles.tile_bytes(x, y, z, kind.key, scale)
+    try:
+        tile = chart_tiles.tile_bytes(x, y, z, kind.key, scale)
+    except chart_tiles.TileUnavailable as err:
+        # The published archive out of reach (chart_tiles.TileUnavailable):
+        # a 503 that no cache keeps (CloudFront caches no 503, the stack's
+        # ErrorCachingMinTTL), so the map's next ask gets the tile.
+        return Response(status_code=503, content=str(err), headers={"Cache-Control": "no-store", "Retry-After": "30"})
     if tile is None:
         # No sheet covers it -- the sea, Canada, Mexico round the country
         # as it opens: nothing to draw, which is no failure, so 204, kept

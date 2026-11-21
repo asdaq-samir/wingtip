@@ -16,7 +16,9 @@ entry point):
   work first (charts.turn). The planner starts it (app.chart_refresh,
   CHARTS_CYCLE_AUTO) through the dev-services sidecar.
 - `refresh`: the chart cycle alone (wingtip.chart_upkeep.refresh), published to
-  CHART_TILES_BUCKET where one is set: the AWS scheduled task.
+  CHART_TILES_BUCKET where one is set: the AWS scheduled task, which then
+  stages the next cycle ahead of its date in the bucket
+  (next_cycle.stage_to_bucket).
 - `pack`: every finished kind's loose tiles into its archives
   (wingtip.chart_archives.pack_complete), which `refresh` does at the end of its
   passes; on its own, the one-off conversion of a cycle drawn before
@@ -225,7 +227,14 @@ def _run(args, parser) -> int:
     if args.command == "refresh":
         cycle = chart_upkeep.refresh(workers=args.workers, publish_bucket=args.bucket)
         log.info("cycle %s complete; serving %s", cycle, chart_serving.serving_cycle())
-        return 0
+        if not args.bucket:
+            return 0
+        # The AWS task: the next cycle published ahead of its date, so the
+        # map swaps at 0901Z rather than hours later (next_cycle.stage_to_bucket).
+        # A failure exits non-zero, which the stack's ChartRefreshFailedRule mails.
+        state = next_cycle.stage_to_bucket(args.bucket, workers=args.workers, lead_days=get_settings().charts_cycle_lead_days)
+        log.info("next cycle: %s", state)
+        return 1 if state == chart_next.FAILED else 0
     if args.command == "publish":
         if not args.bucket:
             parser.error("publish needs --bucket or CHART_TILES_BUCKET")
