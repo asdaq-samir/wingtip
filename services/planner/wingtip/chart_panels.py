@@ -34,7 +34,7 @@ from . import chart_insets
 log = logging.getLogger(__name__)
 
 # Everything here works in the pooled blocks of the face search
-# (chart_faces._POOL_PX, 4 px), from the fraction of each block that is
+# (chart_edges.POOL_PX, 4 px), from the fraction of each block that is
 # paper.
 #
 # Paper is looked for over this many blocks on a side (128 px, 2.7 km
