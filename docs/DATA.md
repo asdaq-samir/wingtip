@@ -114,6 +114,21 @@ The live store (radar, NOTAMs, filed routes, the SWIM reports) is not in
 `data/` locally but on the `live-store` Docker volume
 ([ARCHITECTURE.md](ARCHITECTURE.md#the-shared-stores)).
 
+### The FAA's LADD list
+
+The FAA's terminal radar that ingest reads from SWIM is shown to pilots
+only without the aircraft on the FAA's LADD list (Limiting Aircraft Data
+Displayed), as the SWIM Cloud Distribution Service's Service Access
+Agreement asks of anyone who shows SWIM's data to the public
+(`wingtip.traffic.ladd`). The list is had from the FAA's Aeronautical Data
+Exchange (adx.faa.gov, "IndustryLADD", with an account; ladd@faa.gov for
+access), published monthly and to be in force within five business days:
+the owner saves each one into `data/raw/faa_ladd/` on the server. While no
+list younger than 37 days is there, the radar is shown to no one;
+`LADD_REQUIRED=0` (the local `docker-compose.yml`'s) lets it through on a
+stack that is not public. adsb.lol's and the other community feeds are not
+SWIM's and are not filtered by it.
+
 ### An airplane's public record
 
 An airplane's card (`GET /api/airplanes/{n_number}`,

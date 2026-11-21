@@ -157,6 +157,16 @@ build of the engine, so it needs no entry: the facade's `build.rs` reads
 the rules' contract files with `serde_json`. A dev-dependency is the
 tests' alone.
 
+Every crate the engine is built with ships in the App Store and Google
+Play binaries and the web's WebAssembly, so its licence must be one
+`about.toml` accepts (MIT, Apache-2.0, BSD, ISC, Zlib, Unicode-3.0,
+Unlicense, MPL-2.0; never GPL, LGPL or AGPL). A new dependency, or a
+`Cargo.lock` change, is followed by `scripts/build/licences.sh engine`,
+which writes `licences/NOTICES.txt` (cargo-about) and Android's copy of
+it; the guards fail where either is stale or a licence is not accepted,
+and the three apps' open-source notices carry it
+(docs/legal/credits.md, "Open-source licences").
+
 Inside a crate, the modules under it are used at the root by the names
 they had in the one crate (`use wingtip_core::json;` in its lib.rs), so
 the code still reads `crate::json` and the move changed no rule. A new

@@ -1,0 +1,11 @@
+{
+  "uniqueId": "app.wingtipmaps:wingtip-engine",
+  "artifactVersion": "",
+  "name": "Wingtip engine (Rust crates)",
+  "description": "The planner's rules on the phone, linked in through JNA: the Rust crates it is built from and their licences (engine/licences/NOTICES.txt, cargo-about).",
+  "website": "https://github.com/asdaq-samir/wingtip/tree/main/engine",
+  "developers": [],
+  "licenses": [
+    "wingtip-engine"
+  ]
+}

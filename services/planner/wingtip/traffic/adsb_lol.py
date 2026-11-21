@@ -11,7 +11,7 @@ import requests
 from cachetools import TTLCache
 
 from ..geo import distance_nm
-from .common import HEADERS, TIMEOUT_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _number, _sleep, _wall
+from .common import HEADERS, TIMEOUT_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _number, _sleep, _wall, lol_headers, refused_for_s
 
 URL = "https://api.adsb.lol/v2/point/{lat:.2f}/{lon:.2f}/{radius}"
 
@@ -37,17 +37,15 @@ MAX_RADIUS_NM = 165
 FRESH_S = 5.0
 #: Never two requests to adsb.lol closer together than this.
 MIN_GAP_S = 5.0
-#: Turned away or not answered, nothing is asked for this long.
+#: Turned away or not answered, nothing is asked for this long (a 429's Retry-After where longer).
 BACKOFF_S = 15.0
-#: A region's last answer is given while adsb.lol cannot be asked, until
-#: it is this old; then traffic is said to be unavailable.
+#: A region's last answer is given while adsb.lol cannot be asked, until it is this old; then it is unavailable.
 KEEP_S = 60.0
 
 #: Each region's last answer: (when it came, monotonic, airplanes).
 _REGIONS: dict = {}
-#: When adsb.lol may next be asked for a region (the regions' turns are
-#: taken in order from it), when the last request went, when a search's
-#: turn is, and until when nothing is asked after a refusal; monotonic.
+#: When adsb.lol may next be asked for a region (the regions' turns taken in order from it), when
+#: the last request went, a search's turn, and until when nothing is asked after a refusal.
 _STATE = {"next_ask": 0.0, "last_ask": -math.inf, "search_at": -math.inf, "blocked_until": -math.inf}
 #: Regions being asked for now; the rest of a region's askers wait on this.
 _FLIGHTS: dict = {}
@@ -68,7 +66,8 @@ def _ask(region: tuple[float, float, int]) -> list[dict]:
     """adsb.lol's airplanes round a region's middle. Raises
     TrafficUnavailable where it turns the request away or does not answer."""
     try:
-        resp = requests.get(URL.format(lat=region[0], lon=region[1], radius=region[2]), headers=HEADERS, timeout=TIMEOUT_S)
+        resp = requests.get(URL.format(lat=region[0], lon=region[1], radius=region[2]), headers=lol_headers(), timeout=TIMEOUT_S)
+        _STATE["blocked_until"] = max(_STATE["blocked_until"], _clock() + refused_for_s(resp))
         resp.raise_for_status()
         entries = resp.json().get("ac") or []
     except (requests.RequestException, ValueError) as err:
@@ -142,8 +141,8 @@ def _region_answer(region: tuple[float, float, int]) -> tuple[float, list[dict]]
             answer = None
         with _LOCK:
             if answer is None:
-                _STATE["next_ask"] = asked + BACKOFF_S
-                _STATE["blocked_until"] = asked + BACKOFF_S
+                _STATE["blocked_until"] = max(_STATE["blocked_until"], asked + BACKOFF_S)
+                _STATE["next_ask"] = _STATE["blocked_until"]
             else:
                 _REGIONS[region] = answer
                 _FROM_ADSBX.discard(region)
@@ -222,12 +221,13 @@ def _paced(url: str) -> dict:
     with _LOCK:
         _STATE["last_ask"] = max(_STATE["last_ask"], _clock())
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=TIMEOUT_S)
+        resp = requests.get(url, headers=lol_headers(), timeout=TIMEOUT_S)
         resp.raise_for_status()
         return resp.json()
     except (requests.RequestException, ValueError) as err:
         with _LOCK:
-            _STATE["next_ask"] = _STATE["blocked_until"] = _clock() + BACKOFF_S
+            wait = max(BACKOFF_S, refused_for_s(err.response) if getattr(err, "response", None) is not None else 0.0)
+            _STATE["next_ask"] = _STATE["blocked_until"] = max(_STATE["blocked_until"], _clock() + wait)
         raise TrafficUnavailable(f"adsb.lol did not answer: {err}") from err
 
 

@@ -95,6 +95,7 @@
     "jsdom": "^31.0.0",
     "json-schema-to-typescript": "16.0.0",
     "knip": "6.44.2",
+    "license-checker-rseidelsohn": "^5.0.1",
     "openapi-typescript": "7.13.0",
     "prettier": "3.10.1",
     "tailwindcss": "^4.3.5",

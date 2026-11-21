@@ -29,6 +29,9 @@ COPY services/gateway/openapi.json /repo/services/gateway/openapi.json
 # The engine's contract, from which it generates the engine calls' types
 # (apps/web/src/lib/engine/contract.ts, committed, made again here).
 COPY engine/contract/engine.schema.json /repo/engine/contract/engine.schema.json
+# The engine's open-source notices, which the build adds to the page's
+# own (vite-plugins/licences.ts, /app/licences.txt).
+COPY engine/licences/NOTICES.txt /repo/engine/licences/NOTICES.txt
 RUN npm run types && npx vite build --outDir /web/dist --emptyOutDir
 
 # 25, not the truly-latest 26: spring-boot-maven-plugin 3.5.3's bundled

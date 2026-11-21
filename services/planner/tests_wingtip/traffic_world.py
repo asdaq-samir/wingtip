@@ -87,6 +87,9 @@ def clock_fixture(monkeypatch, tmp_path):
     stand_in(monkeypatch, "_GLOBE", {"blocked_until": -1e9})
     # adsb.fi not asked over the network here: its own test turns it on.
     monkeypatch.setenv("ADSBFI_OPEN_DATA", "0")
+    # The FAA's radar shown with no LADD list kept, as the owner's own stack
+    # has it; the list's own tests hold it (test_traffic_ladd.py).
+    monkeypatch.setenv("LADD_REQUIRED", "0")
     get_settings.cache_clear()
     # No METAR near: pressure altitudes as sent (on_altimeter's own test).
     monkeypatch.setattr(weather, "nearest_report", lambda lat, lon, **kw: None)

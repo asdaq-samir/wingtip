@@ -49,6 +49,13 @@ actionlint 1.7.12
 zizmor 1.32.0
 lychee 0.24.2
 
+# The open-source notices' tools (scripts/build/licences.sh), release
+# binaries checked there against their sums: cargo-about (MIT OR
+# Apache-2.0) for the engine's crates, LicensePlist (MIT) for the
+# iPhone's Swift packages.
+cargo-about 0.9.3
+license-plist 3.28.3
+
 # The simplicity guards (CLAUDE.md, "Simplicity rules"). Semgrep's free
 # command line (LGPL-2.1, metrics off, no login), run by uvx at this version;
 # jscpd (MIT) and dependency-cruiser (MIT) by npx (dependency-cruiser pinned

@@ -283,6 +283,14 @@ owner, 2026-11-03):
   adds or drops a string, `scripts/build/ios-strings.sh` syncs the catalog
   from the build's `.stringsdata` (`xcrun xcstringstool sync`), and CI's
   iOS job fails with `--check` when the committed one differs.
+- **Acknowledgements** (`Wingtip/Settings.bundle`, About's
+  "Acknowledgements", which opens the app's page in Settings): the
+  open-source licences of the Swift packages, written by LicensePlist from
+  a build's SourcePackages, with the engine's crates and Apple's NOTICE
+  files (`license_plist.yml`). After a change of package, run
+  `scripts/build/licences.sh ios <DerivedData>/SourcePackages` and commit
+  the bundle; CI's iOS job fails with `--check` when it is stale
+  (docs/legal/credits.md, "Open-source licences").
 - **Scene restoration**: the pages a scene was on come back with it
   (`@SceneStorage` in `RootView`).
 - **A UI smoke test** (`WingtipUITests/LaunchTests`): the app launched

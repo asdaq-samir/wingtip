@@ -431,6 +431,16 @@ runner:
 - No upload to Google Play from CI: the bundle is uploaded by hand
   (Releasing to Google Play, below).
 
+Every build also collects the open-source licences of the libraries it
+packs (AboutLibraries' Gradle plugin, `aboutLibraries` in
+`app/build.gradle.kts`), for About's "Open-Source Licences"
+(`about/LicencesScreen`), and fails on a licence not on its list: a GPL,
+LGPL or AGPL library, or one that grants no right to ship it, cannot reach
+Google Play. The engine's crates and Inter's glyphs are added from
+`app/aboutlibraries` (the engine's licence written there by
+`scripts/build/licences.sh engine`; docs/legal/credits.md, "Open-source
+licences").
+
 `WINGTIP_HOST` is the build's host (the repo variable `WINGTIP_URL`'s);
 it is the gateway's address and the App Links domain in the manifest.
 The emailed sign-in link is followed only as `https` on that host

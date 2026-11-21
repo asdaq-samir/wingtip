@@ -1,9 +1,11 @@
 import SwiftUI
+import UIKit
 
 /// About, as Settings > General > About has it: the app and its build, the
 /// editions of the FAA data in use, what the app is and is not (the
 /// planning aid's words, the same in every app), whose data and software
-/// it is made with, the site's legal pages, and the demo flight for a
+/// it is made with, the site's legal pages, the open-source acknowledgements
+/// (the app's page in Settings), and the demo flight for a
 /// pilot or App Review trying it. Reached from Setup's last section.
 struct AboutView: View {
     @Environment(\.appCommand) private var appCommand
@@ -47,6 +49,12 @@ struct AboutView: View {
                 Link("Privacy Policy", destination: AboutModel.page("privacy"))
                 Link("Terms of Use", destination: AboutModel.page("terms"))
                 Link("Support", destination: AboutModel.page("support"))
+                // The open-source licences of the code the app ships with,
+                // where iOS apps keep them: the app's page in Settings, from
+                // Settings.bundle (LicensePlist, scripts/build/licences.sh ios).
+                if let settings = URL(string: UIApplication.openSettingsURLString) {
+                    Link("Acknowledgements", destination: settings)
+                }
             }
             // The flight planned and the map shown with the FPL tab up; the
             // route the pilot had is one Undo away (PlanHistory).
