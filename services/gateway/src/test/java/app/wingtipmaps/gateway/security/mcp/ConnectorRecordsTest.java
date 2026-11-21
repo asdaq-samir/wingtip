@@ -32,6 +32,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
@@ -226,10 +227,13 @@ class ConnectorRecordsTest {
     @Autowired
     private OAuth2AuthorizationService authorizations;
 
-    /** Asked before every MCP call (L4): live while the pilot is connected,
-     *  not once they disconnect or delete their account. The first 204 is
-     *  kept (LiveConnections), so each 404 after it is the kept answer
-     *  forgotten by the revoke or the deletion, not read afresh. */
+    /** Asked before every MCP call (L4): the token presented is live while
+     *  the pilot is connected, not once it is revoked, its connection is
+     *  removed or the account goes. The first 204 is kept (LiveConnections),
+     *  so each 404 after it is the kept answer forgotten by the revoke or
+     *  the deletion, not read afresh. Since the deep security review of
+     *  2026-11-21 it is that token that is asked about, not any of the
+     *  pilot's connections through the client. */
     @Test
     void aConnectionIsLiveUntilItIsRevokedOrTheAccountGoes() throws Exception {
         Pilot pilot =
@@ -241,40 +245,68 @@ class ConnectorRecordsTest {
         clients.save(client);
         Instant now = Instant.now();
         OAuth2RefreshToken refresh = new OAuth2RefreshToken("r-" + UUID.randomUUID(), now, now.plusSeconds(3600));
+        OAuth2AccessToken access = access(now);
         OAuth2Authorization connection = OAuth2Authorization.withRegisteredClient(client)
                 .principalName(String.valueOf(pilot.getId()))
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .accessToken(access)
                 .refreshToken(refresh)
                 .build();
         authorizations.save(connection);
         String id = String.valueOf(pilot.getId());
+        String token = access.getTokenValue();
 
-        mvc.perform(connection(id, client.getClientId())).andExpect(status().isNoContent());
-        mvc.perform(connection(id, "another-client")).andExpect(status().isNotFound());
-        mvc.perform(connection("999999", client.getClientId())).andExpect(status().isNotFound());
+        mvc.perform(connection(id, client.getClientId(), token)).andExpect(status().isNoContent());
+        mvc.perform(connection(id, "another-client", token)).andExpect(status().isNotFound());
+        mvc.perform(connection("999999", client.getClientId(), token)).andExpect(status().isNotFound());
+        mvc.perform(connection(id, client.getClientId(), "a-token-never-issued")).andExpect(status().isNotFound());
+
+        // A second connection through the same client, its access token
+        // revoked while its refresh token stands: refused, the first not.
+        OAuth2AccessToken second = access(now);
+        OAuth2Authorization other = OAuth2Authorization.withRegisteredClient(client)
+                .id(UUID.randomUUID().toString())
+                .principalName(id)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .accessToken(second)
+                .refreshToken(new OAuth2RefreshToken("r-" + UUID.randomUUID(), now, now.plusSeconds(3600)))
+                .build();
+        authorizations.save(other);
+        mvc.perform(connection(id, client.getClientId(), second.getTokenValue())).andExpect(status().isNoContent());
+        authorizations.save(OAuth2Authorization.from(other).invalidate(second).build());
+        mvc.perform(connection(id, client.getClientId(), second.getTokenValue())).andExpect(status().isNotFound());
+        mvc.perform(connection(id, client.getClientId(), token)).andExpect(status().isNoContent());
 
         // Disconnected: its refresh token revoked.
         authorizations.save(
                 OAuth2Authorization.from(connection).invalidate(refresh).build());
-        mvc.perform(connection(id, client.getClientId())).andExpect(status().isNotFound());
+        mvc.perform(connection(id, client.getClientId(), token)).andExpect(status().isNotFound());
 
         // Connected again, then the account deleted.
+        OAuth2AccessToken again = access(now);
         authorizations.save(OAuth2Authorization.withRegisteredClient(client)
                 .id(UUID.randomUUID().toString())
                 .principalName(id)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .accessToken(again)
                 .refreshToken(new OAuth2RefreshToken("r-" + UUID.randomUUID(), now, now.plusSeconds(3600)))
                 .build());
-        mvc.perform(connection(id, client.getClientId())).andExpect(status().isNoContent());
+        mvc.perform(connection(id, client.getClientId(), again.getTokenValue())).andExpect(status().isNoContent());
         grants.forget(pilot.getId());
-        mvc.perform(connection(id, client.getClientId())).andExpect(status().isNotFound());
+        mvc.perform(connection(id, client.getClientId(), again.getTokenValue())).andExpect(status().isNotFound());
     }
 
-    private static MockHttpServletRequestBuilder connection(String pilotId, String clientId) {
+    private static OAuth2AccessToken access(Instant now) {
+        return new OAuth2AccessToken(
+                OAuth2AccessToken.TokenType.BEARER, "a-" + UUID.randomUUID(), now, now.plusSeconds(900));
+    }
+
+    private static MockHttpServletRequestBuilder connection(String pilotId, String clientId, String token) {
         return internal(get("/internal/mcp/connection"))
                 .header("X-Internal-Token", TOKEN)
                 .header("X-Pilot-Id", pilotId)
-                .header("X-Client-Id", clientId);
+                .header("X-Client-Id", clientId)
+                .header("X-Connector-Token", token);
     }
 
     @Autowired

@@ -1,10 +1,14 @@
 package app.wingtipmaps.gateway.security.mcp;
 
 import app.wingtipmaps.gateway.dto.ConnectorGrantDto;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
@@ -33,25 +37,34 @@ public class ConnectorGrants {
     }
 
     /**
-     * Whether the pilot still has a live connection through this client:
-     * one whose tokens are neither revoked (disconnected, or a refresh token
-     * replayed) nor run out, and gone with the account. The planner asks
-     * on every MCP call, since its JWTs are checked by signature alone and
-     * would otherwise outlive both by up to 15 minutes (the security
-     * audit's L4). By V41's index on the pilot, a pilot's few rows.
+     * Whether this very access token still stands: issued to the pilot
+     * through this client, on a connection that is not removed (the
+     * account deleted, a refresh token replayed), and itself neither
+     * revoked nor run out. The planner asks on every MCP call, since its
+     * JWTs are checked by signature alone and would otherwise outlive all
+     * of that by up to 15 minutes (the security audit's L4). It asked
+     * only whether the pilot had any live connection through the client
+     * until the deep review of 2026-11-21: an access token revoked at
+     * /oauth2/revoke, while its refresh token stood, or one of a second
+     * connection removed beside a live one, still read as live. So the
+     * token itself is looked for among the pilot's connections through the
+     * client (V41's index on the pilot: a pilot's few rows), as an
+     * introspection would (RFC 7662).
      *
-     * <p>A live answer is kept by LiveConnections for at most a minute and
-     * never past the first of its tokens' own expiries, and forgotten the
-     * moment this app changes any of the pilot's connections (a revoke, a
-     * rotation, a replay, the account deleted): the check stays as strict,
-     * without its 2 + 2k queries and k row parses on every call.
+     * <p>A live answer is kept by LiveConnections, for that token alone,
+     * for at most a minute and never past the token's own expiry, and
+     * forgotten the moment this app changes any of the pilot's
+     * connections (a revoke, a rotation, a replay, the account deleted).
      */
-    public boolean live(long pilotId, String clientId) {
-        if (kept.isLive(pilotId, clientId)) {
+    public boolean live(long pilotId, String clientId, String accessToken) {
+        if (accessToken == null || accessToken.isBlank()) {
+            return false;
+        }
+        if (kept.isLive(pilotId, clientId, accessToken)) {
             return true;
         }
         long seen = kept.changes();
-        List<Instant> expiries = jdbc
+        Optional<Instant> expiry = jdbc
                 .queryForList(
                         "SELECT a.id FROM oauth2_authorization a JOIN oauth2_registered_client c"
                                 + " ON c.id = a.registered_client_id WHERE a.principal_name = ? AND c.client_id = ?",
@@ -60,33 +73,22 @@ public class ConnectorGrants {
                         clientId)
                 .stream()
                 .map(authorizations::findById)
-                .filter(ConnectorGrants::live)
-                .map(ConnectorGrants::firstExpiry)
-                .toList();
-        if (expiries.isEmpty()) {
+                .filter(Objects::nonNull)
+                .map(OAuth2Authorization::getAccessToken)
+                .filter(token -> token != null
+                        && token.isActive()
+                        && MessageDigest.isEqual(bytes(token.getToken().getTokenValue()), bytes(accessToken)))
+                .findFirst()
+                .map(token -> Objects.requireNonNullElse(token.getToken().getExpiresAt(), Instant.MAX));
+        if (expiry.isEmpty()) {
             return false;
         }
-        kept.live(pilotId, clientId, expiries.stream().min(Instant::compareTo).orElseThrow(), seen);
+        kept.live(pilotId, clientId, accessToken, expiry.get(), seen);
         return true;
     }
 
-    private static boolean live(OAuth2Authorization connection) {
-        return connection != null && (active(connection.getAccessToken()) || active(connection.getRefreshToken()));
-    }
-
-    private static boolean active(OAuth2Authorization.Token<?> token) {
-        return token != null && token.isActive();
-    }
-
-    /** The first moment one of a live connection's active tokens runs out
-     *  (Instant.MAX where none says): after it the answer may be no. */
-    private static Instant firstExpiry(OAuth2Authorization connection) {
-        return java.util.stream.Stream.of(connection.getAccessToken(), connection.getRefreshToken())
-                .filter(ConnectorGrants::active)
-                .map(t -> t.getToken().getExpiresAt())
-                .filter(java.util.Objects::nonNull)
-                .min(Instant::compareTo)
-                .orElse(Instant.MAX);
+    private static byte[] bytes(String value) {
+        return value.getBytes(StandardCharsets.UTF_8);
     }
 
     /**

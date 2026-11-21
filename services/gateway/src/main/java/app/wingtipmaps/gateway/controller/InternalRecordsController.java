@@ -48,6 +48,8 @@ public class InternalRecordsController {
 
     static final String TOKEN_HEADER = "X-Internal-Token";
     static final String CLIENT_HEADER = "X-Client-Id";
+    /** The connector token the planner was sent, asked about whole. */
+    static final String ACCESS_TOKEN_HEADER = "X-Connector-Token";
 
     private final ConnectorSettings settings;
     private final PilotService pilots;
@@ -100,17 +102,20 @@ public class InternalRecordsController {
     }
 
     /**
-     * Whether the pilot's connection through this client is still live
-     * (ConnectorGrants.live): 204, or 404 once they deleted their account
-     * or disconnected. The planner asks before every MCP call.
+     * Whether the access token the pilot's AI app presented still stands
+     * (ConnectorGrants.live): 204, or 404 once it was revoked, its
+     * connection removed or the account deleted. The planner asks before
+     * every MCP call, with the token it was sent: back to the gateway that
+     * issued it, on the internal port alone.
      */
     @GetMapping("/connection")
     public ResponseEntity<Void> connection(
             @RequestHeader(value = TOKEN_HEADER, required = false) String token,
             @RequestHeader(value = PlannerProxyController.PILOT_HEADER, required = false) String pilotId,
-            @RequestHeader(value = CLIENT_HEADER, required = false) String clientId) {
+            @RequestHeader(value = CLIENT_HEADER, required = false) String clientId,
+            @RequestHeader(value = ACCESS_TOKEN_HEADER, required = false) String accessToken) {
         return pilot(token, pilotId)
-                        .filter(pilot -> clientId != null && grants.live(pilot.getId(), clientId))
+                        .filter(pilot -> clientId != null && grants.live(pilot.getId(), clientId, accessToken))
                         .isPresent()
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();

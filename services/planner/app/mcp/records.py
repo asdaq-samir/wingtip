@@ -54,18 +54,27 @@ async def save_flight(pilot_id: str, request: dict) -> dict:
     return await _ask("POST", "/flights", pilot_id, request)
 
 
-async def connection_live(pilot_id: str, client_id: str) -> bool:
-    """Whether the pilot's connection through this client still stands: not
-    disconnected, not revoked, the account not deleted. The gateway's JWTs
-    are checked here by signature alone and last 15 minutes, which would
-    outlive all three (the security audit's L4); so every call asks, on the
-    internal port, a 204 or a 404. False, refusing the call, wherever the
-    gateway cannot say: no secret set, or no answer."""
+async def connection_live(pilot_id: str, client_id: str, token: str) -> bool:
+    """Whether this access token still stands: issued to the pilot through
+    this client, not revoked, its connection not removed, the account not
+    deleted. The gateway's JWTs are checked here by signature alone and last
+    15 minutes, which would outlive all of these (the security audit's L4);
+    so every call asks, on the internal port, a 204 or a 404. The token
+    itself goes back to the gateway that issued it, as an introspection
+    (RFC 7662) would: asking only whether the pilot had any live connection
+    through the client let a revoked token of a still-live connection go on
+    working (the deep security review of 2026-11-21). False, refusing the
+    call, wherever the gateway cannot say: no secret set, or no answer."""
     settings = get_settings()
     if not settings.mcp_internal_token:
         log.error("connector: MCP_INTERNAL_TOKEN is not set, so no connection can be checked; every call is refused")
         return False
-    headers = {"X-Internal-Token": settings.mcp_internal_token, "X-Pilot-Id": pilot_id, "X-Client-Id": client_id}
+    headers = {
+        "X-Internal-Token": settings.mcp_internal_token,
+        "X-Pilot-Id": pilot_id,
+        "X-Client-Id": client_id,
+        "X-Connector-Token": token,
+    }
     try:
         async with httpx2.AsyncClient(base_url=settings.gateway_internal_url, timeout=TIMEOUT_S) as client:
             resp = await client.get("/internal/mcp/connection", headers=headers)
