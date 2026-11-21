@@ -6,7 +6,7 @@ to the site), App Store Connect's App Privacy answers,
 Google Play's Data safety form and the iOS app's privacy manifest
 (`PrivacyInfo.xcprivacy`). Change it
 whenever the code changes what leaves a device or what the server keeps.
-Last checked against the code on 2026-11-10 (the privacy and store audit: the phone number, the third parties the apps call directly, the traffic view's region, the export, deletion from the web).
+Last checked against the code on 2026-11-10 (the privacy and store audit: the phone number, the third parties the apps call directly, the traffic view's region, the export, deletion from the web); the documents library added 2026-11-21.
 
 "Collected" is App Store Connect's meaning: sent off the device and kept
 longer than it takes to answer the request.
@@ -164,6 +164,17 @@ longer than it takes to answer the request.
   widget keeps its last answer in the App Group, and the currency is
   dropped there when the gateway says no one is signed in.
 
+- **The documents library** (`features/documents`, decision 0056). The
+  pilot's own PDFs (a POH, checklists, insurance, club rules) are kept in
+  the browser's IndexedDB on the device and never leave it: no upload, no
+  sync, no copy in an account's export; they go with the browser's site
+  data. Their last pages, bookmarks and the reader's night setting stay
+  in the browser's storage too. The FAA's documents are fetched from the
+  planner like any of its answers (the shelf, a book's PDF or a CFR
+  part's text by its edition), which tells the server which public
+  document was opened; no account rides with it and nothing of it is
+  kept, as the planner writes no access log in production.
+
 ## Who else receives what
 
 | Recipient | What | Personal |
@@ -173,6 +184,7 @@ longer than it takes to answer the request.
 | The student's instructor | Once they take the student on: the student's name and address, 61.109 experience from their logbook, knowledge test codes, endorsements, and the saved flights the student puts to them | Yes: the student asks them in, and either ends it |
 | Google, Apple | Their own sign-in, when a pilot uses it | Their own |
 | FAA, NOAA (aviationweather.gov) | Chart and data downloads, weather for airports | None: the server asks, not the device |
+| eCFR (ecfr.gov, the Office of the Federal Register) | The documents library's CFR parts, fetched once a day (`wingtip/library.py`) | None: the server asks, not the device |
 | adsb.lol | For the traffic on the map, the middle of a region: a 0.5 degree cell, 2 degrees zoomed out (`traffic/adsb_lol.py`); for an airplane a pilot opens, its transponder's address (its trace); for its route, its callsign (`traffic/routes.py`, `vrs-standing-data.adsb.lol`); and a registration, callsign or address a pilot types in Find (`/api/traffic/find`; the FAA record's `/api/traffic/registered` asks no one, the registry being on the planner's disk), which may be their own N-number | None of the pilot's beyond what they type: the server asks, not the device; the device's position itself is not sent |
 | ADS-B Exchange (adsbexchange.com, through RapidAPI) | The same asks where adsb.lol turns one away or is down: a region's middle (`traffic/view.py`), a searched registration, callsign or address (`traffic/lookup.py`), and a followed airplane's address (`traffic/watched.py`); the request carries the operator's RapidAPI key | As adsb.lol |
 | adsb.fi (opendata.adsb.fi) | The followed airplanes' transponder addresses, asked by ingest every half minute (`traffic/adsbfi.py`) | None of the pilot's: other airplanes' public addresses |

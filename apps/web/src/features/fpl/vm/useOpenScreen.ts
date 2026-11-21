@@ -23,6 +23,7 @@ const SETUP_PAGES: Partial<Record<ScreenId, string[]>> = {
   coach: ["training", "coach"],
   checklists: ["aircraft", "checklists"],
   minimums: ["minimums"],
+  documents: ["documents"],
   guide: ["settings", "help", "guide"],
   about: ["settings", "help", "about"],
 };
@@ -135,6 +136,7 @@ export function useOpenScreen({
       case "coach":
       case "checklists":
       case "minimums":
+      case "documents":
       case "guide":
       case "about":
         return;

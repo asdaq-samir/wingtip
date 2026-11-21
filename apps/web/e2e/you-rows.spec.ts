@@ -61,7 +61,7 @@ test("You is a card over the sheet as every card is: the avatar over one list, t
   // One list of rows in order, each opening its page; Pilot Details is a
   // tap on the avatar and name, not a row (the owner, 2026-11-20).
   const rows = sheet.getByTestId("library-section").getByRole("button");
-  await expect(rows).toHaveText([/^Airplanes/, /^Flights/, /^Logbook/, /^Minimums/, /^Training/, /^Emergency/]);
+  await expect(rows).toHaveText([/^Airplanes/, /^Flights/, /^Logbook/, /^Minimums/, /^Documents/, /^Training/, /^Emergency/]);
   await expect(sheet.getByTestId("library-section").getByRole("group")).toHaveCount(1);
   // Signed out: Sign In said once, the head's large line, no "You" and no
   // "Sign In to Use" on the greyed rows (the owner, 2026-11-13: "Instead

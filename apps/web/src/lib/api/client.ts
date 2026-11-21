@@ -2,6 +2,7 @@ import { plannerRoute } from "./plannerRoute";
 import { plannerAirports } from "./plannerAirports";
 import { plannerMap } from "./plannerMap";
 import { plannerDev } from "./plannerDev";
+import { plannerLibrary } from "./plannerLibrary";
 import { gatewayPilot } from "./gatewayPilot";
 import { gatewayRecords } from "./gatewayRecords";
 
@@ -31,9 +32,10 @@ export { csrfHeaders, data, gateway, planner } from "./http";
  *
  * One object for the pages, made of a module per area: the planner's
  * route and plan (./plannerRoute), airports and places (./plannerAirports),
- * the map's layers (./plannerMap) and the developer's (./plannerDev);
+ * the map's layers (./plannerMap), the developer's (./plannerDev) and the
+ * documents library (./plannerLibrary);
  * and the gateway's, by its OpenAPI tags, who the pilot is
  * (./gatewayPilot) and what they keep (./gatewayRecords). The clients and the rules every call keeps are in
  * ./http, and why a call failed in ./errors.
  */
-export const api = { ...plannerRoute, ...plannerAirports, ...plannerMap, ...plannerDev, ...gatewayPilot, ...gatewayRecords };
+export const api = { ...plannerRoute, ...plannerAirports, ...plannerMap, ...plannerDev, ...plannerLibrary, ...gatewayPilot, ...gatewayRecords };

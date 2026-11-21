@@ -12,6 +12,7 @@ import { ListGroup, ListRow } from "../../GroupedList";
 import { callTypes, entryRules } from "../../../lib/airspaceRules";
 import FrequencyButton from "../../FrequencyButton";
 import { airportQuery } from "../../../lib/queryClient";
+import { Cited } from "../../../features/documents";
 
 /**
  * The card a tap on a Class B, C or D line opens (the map draws them from
@@ -58,7 +59,7 @@ export function AirspaceCardBody({ volume, at }: { volume: AirspaceVolume; at?: 
       <div>
         <ListGroup title="To enter">
           {entryRules(volume.airspace_class).map((r) => (
-            <ListRow key={r.rule} title={<span className={TEXT.detail}>{r.rule}</span>} description={r.cite} />
+            <ListRow key={r.rule} title={<span className={TEXT.detail}>{r.rule}</span>} description={<Cited text={r.cite} />} />
           ))}
         </ListGroup>
       </div>

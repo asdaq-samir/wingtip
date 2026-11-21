@@ -23,6 +23,7 @@ import type { Minimums } from "../../lib/minimums";
 import { TEXT } from "../../lib/text";
 import { useDevMode } from "../../hooks/use-dev-mode";
 import { SettingsPage, type HelpPages } from "../settings";
+import { DocumentsPage, DocumentsRow } from "../documents";
 import { FlightsPanel } from "./AccountPanels";
 import { LargeFace } from "./AccountFace";
 import { LogbookPanel } from "./LogbookPanel";
@@ -111,6 +112,7 @@ function Personal({
     flights: { title: "Flights", content: <FlightsPanel /> },
     logbook: { title: "Logbook", content: <LogbookPanel aircraft={shortName(aircraft.label)} /> },
     minimums: { title: "Minimums", content: <MinimumsPanel /> },
+    documents: { title: "Documents", content: <DocumentsPage /> },
     training: { title: "Training", content: <TrainingPage signedIn={signedIn} /> },
     settings: { title: "Settings", content: <SettingsPage help={help} /> },
     subscription: { title: "Subscription", content: <SubscriptionPanel /> },
@@ -181,6 +183,8 @@ function Personal({
                   </RowBadge>
                 }
               />
+              {/* The documents library (features/documents): the FAA's and the pilot's own, on this device. */}
+              <DocumentsRow />
               <TrainingRow />
               <EmergencyRow />
               {signedIn && sold && <SubscriptionRow />}

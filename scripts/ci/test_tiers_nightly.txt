@@ -31,6 +31,7 @@ desktop.spec.ts
 devswitch.spec.ts
 direct-to.spec.ts
 diversion.spec.ts
+documents.spec.ts
 dry-run-bar.spec.ts
 dry-run-follow.spec.ts
 dry-run-profile.spec.ts
