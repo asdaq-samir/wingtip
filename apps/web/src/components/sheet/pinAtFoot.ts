@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
 import { usePanelDragging } from "../../lib/mapChrome";
-import { SETTLE_MS } from "./insets";
+import { SETTLE_MS, shownPx } from "./insets";
 
 /**
  * The row held by its CSS, as the sheet's foot is (sheet/insets'
@@ -17,9 +17,20 @@ import { SETTLE_MS } from "./insets";
  * the owner's pointer ("how does airport card do it?"). The row is marked
  * data-pin-foot so that nothing stops its ease at the pill
  * (sheet/insets' PILL_BODY).
+ *
+ * Off the pill its lowest place is the foot's top, not its edge
+ * (--pin-lift, the foot's height; usePinAtFoot), so the figures sit over
+ * the floating bar, never under it: a route longer than the sheet held
+ * them on the foot's edge behind FPL's actions, their names showing past
+ * the capsule's ends and their values not at all, at half and all the way
+ * up, where the page's scroller ends at the foot's top and cut them off
+ * whole (the owner's iPhone at his larger text, 2026-11-21). The lift
+ * goes in the last stretch of a slide to the pill (--pin-pill, the
+ * sheet's offset there), as the bar makes way, so the figures come down
+ * onto the foot's edge there as before.
  */
 export const PIN_AT_FOOT =
-  "[transform:translateY(min(0px,calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
+  "[transform:translateY(min(0px,calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px)-min(var(--pin-lift,0px),max(0px,calc(var(--pin-pill,0px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px)))))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
 
 /**
  * A row of a sheet's head that is its pill (PIN_AT_FOOT on it): held on
@@ -73,7 +84,7 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
     if (!row) return;
     const barOf = () => document.querySelector<HTMLElement>(foot)?.querySelector<HTMLElement>("[data-makes-way]");
     if (!on) {
-      row.style.removeProperty("--pin-room");
+      for (const name of ["--pin-room", "--pin-lift", "--pin-pill"]) row.style.removeProperty(name);
       barOf()?.style.removeProperty("--pin-bar-room");
       return;
     }
@@ -89,8 +100,12 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       const sheet = row.closest(SHEET);
       const natural = row.getBoundingClientRect().bottom - moved(row) - moved(sheet);
       const room = restingEdge(edge) - natural;
+      const lift = liftOf(edge, sheet);
       setRoom(row, `${room}px`, sheet ? getComputedStyle(sheet).getPropertyValue("--sheet-offset") : "");
-      row.toggleAttribute("data-pinned", pinnedNow(heldNow.current, moved(row.closest(SHEET)), room));
+      row.style.setProperty("--pin-lift", `${lift.lift}px`);
+      row.style.setProperty("--pin-pill", `${lift.pill}px`);
+      const slid = moved(sheet);
+      row.toggleAttribute("data-pinned", pinnedNow(heldNow.current, slid, room, liftAt(slid, lift.lift, lift.pill)));
       const bar = edge?.querySelector<HTMLElement>("[data-makes-way]");
       if (bar) bar.style.setProperty("--pin-bar-room", `${barRoom(restingTop(bar), natural)}px`);
     };
@@ -125,8 +140,9 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       return;
     }
     const check = () => {
-      const room = parseFloat(row.style.getPropertyValue("--pin-room")) || 0;
-      row.toggleAttribute("data-pinned", pinnedNow(held, moved(row.closest(SHEET)), room));
+      const px = (name: string) => parseFloat(row.style.getPropertyValue(name)) || 0;
+      const slid = moved(row.closest(SHEET));
+      row.toggleAttribute("data-pinned", pinnedNow(held, slid, px("--pin-room"), liftAt(slid, px("--pin-lift"), px("--pin-pill"))));
     };
     let frame = 0;
     const until = dragging ? Infinity : performance.now() + SETTLE_MS;
@@ -196,9 +212,26 @@ function restingTop(bar: HTMLElement) {
 
 /** Whether the row is held now: always at the pill, else once the sheet
  *  has slid further than its room (how far it may slide before the row
- *  reaches the foot's edge). */
-export function pinnedNow(held: boolean, slid: number, room: number) {
-  return held || slid > room;
+ *  reaches the foot's edge) less the lift it has there (liftAt). */
+export function pinnedNow(held: boolean, slid: number, room: number, lift = 0) {
+  return held || slid + lift > room;
+}
+
+/** How far over the foot's edge the row is held with the sheet slid
+ *  `slid`: the whole lift (the foot's height, so it sits on the foot's
+ *  top, over the floating bar) until the sheet is within that of the pill
+ *  (`pill`, its offset there), then less, to none at the pill, where the
+ *  row is the pill's face on the foot's edge. PIN_AT_FOOT's CSS, as a sum. */
+export function liftAt(slid: number, lift: number, pill: number) {
+  return Math.min(lift, Math.max(0, pill - slid));
+}
+
+/** The foot's height, the row's lift off its edge, and the sheet's offset
+ *  at the pill: a phone's bottom sheet only (Base UI's data-swipe-direction
+ *  on its popup), none beside the side panel, which slides nowhere. */
+function liftOf(foot: HTMLElement | null, sheet: Element | null) {
+  if (!foot || !(sheet instanceof HTMLElement) || sheet.dataset.swipeDirection !== "down") return { lift: 0, pill: 0 };
+  return { lift: foot.offsetHeight, pill: sheet.offsetHeight - shownPx("peek", true, sheet.offsetHeight) };
 }
 
 /** How far the sheet may slide down before the row's foot reaches the

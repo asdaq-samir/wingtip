@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAKES_WAY, barRoom, pinnedNow } from "./pinAtFoot";
+import { MAKES_WAY, barRoom, liftAt, pinnedNow } from "./pinAtFoot";
 
 describe("pinAtFoot", () => {
   it("holds the row at the pill whatever the slide", () => {
@@ -12,6 +12,19 @@ describe("pinAtFoot", () => {
     // A short landscape half: their place is below it, so they wait on the
     // foot's edge (under the bar, which makes way as a pull begins).
     expect(pinnedNow(false, 300, 200)).toBe(true);
+  });
+
+  it("holds the row on the foot's top, over the bar, off the pill, and lets it down onto the foot's edge at the pill", () => {
+    // All the way up and at half: the foot's whole height (88) under it.
+    expect(liftAt(0, 88, 760)).toBe(88);
+    expect(liftAt(392, 88, 760)).toBe(88);
+    // The last 88 of a slide to the pill, less and less; none at the pill.
+    expect(liftAt(720, 88, 760)).toBe(40);
+    expect(liftAt(760, 88, 760)).toBe(0);
+    // A row whose place is 17 over the foot's edge, all the way up: held,
+    // since the foot's top is 88 over that edge.
+    expect(pinnedNow(false, 0, 17, liftAt(0, 88, 760))).toBe(true);
+    expect(pinnedNow(false, 0, 120, liftAt(0, 88, 760))).toBe(false);
   });
 
   it("measures the bar's room from its top, not the foot's edge", () => {
