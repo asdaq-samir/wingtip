@@ -144,7 +144,18 @@ final class SheetPageToggleTests: XCTestCase {
         // the toggle is reached once the keyboard is down again.
         search.tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "the search field is not focused")
-        app.buttons["Cancel"].firstMatch.tap()
+        // The focused field's own button, no identifier of its own: Cancel
+        // up to iOS 26, Close (an ✕) on iOS 27.
+        app.buttons.matching(NSPredicate(format: "identifier == '' AND (label == 'Cancel' OR label == 'Close')")).firstMatch.tap()
+        // The keyboard down and the sheet at rest before the toggle: iOS 27
+        // brings the sheet down from full after the field's Close, and
+        // until it has the map's buttons, the toggle with them, are faded.
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "Close left the keyboard up")
+        CardTests.settled(toggle(app))
+        if !toggle(app).isHittable {
+            CardTests.drag(CardTests.grabber(app), in: app, to: CGVector(dx: 0.5, dy: 0.55))
+            CardTests.settled(toggle(app))
+        }
         toggle(app).tap()
         XCTAssertEqual(toggle(app).label, "Show search")
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "the keyboard stayed up on FPL")
