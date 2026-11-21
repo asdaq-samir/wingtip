@@ -12,6 +12,9 @@ import { forgetPilotCache } from "../../lib/pilotCache";
  *  what this device kept of theirs forgotten (forgetPilot, their
  *  airplanes' checklists, and the service worker's pilot-own cache), at
  *  the owner's pick of the audit's recommendation. */
+/** The queries that are the pilot's own records, by their first key. */
+const PILOT_RECORDS = ["aircraft", "flights", "logbook", "currency", "training", "paperwork", "reminders", "instructor"] as const;
+
 export function useLogout() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -29,8 +32,9 @@ export function useLogout() {
       // flights (vite.config.ts, pilot-own), which a start with no
       // signal would otherwise show the next person to pick up the phone.
       forgetPilotCache();
-      queryClient.removeQueries({ queryKey: ["aircraft"] });
-      queryClient.removeQueries({ queryKey: ["flights"] });
+      // Their records too, each fresh for a minute (RECORDS_FRESH_MS):
+      // kept, the next pilot signed in within it was shown them.
+      for (const key of PILOT_RECORDS) queryClient.removeQueries({ queryKey: [key] });
       void queryClient.invalidateQueries({ queryKey: pilotQuery.queryKey });
     },
   });
