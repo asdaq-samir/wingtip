@@ -22,7 +22,9 @@ Two things make that more than a file download:
   neatline (the black border the chart face ends at) in each raster, and
   the renderer clips to it so adjacent charts butt together. A TAC's
   paper panels printed over its own face (Puerto Rico's route panels
-  over the Atlantic) are cut out with a mask (chart_panels).
+  over the Atlantic) and a sectional's framed insets (Los Angeles's
+  basin over the Pacific) are cut out with a mask (chart_panels,
+  chart_insets).
 
 - Charts overlap (the sheets of the 36-40N row share a degree or so
   with their neighbours; a TAC sits inside its sectional), so a tile is
@@ -40,7 +42,7 @@ The modules, lowest first, each with one job:
   composite, the PNG, the cache path, the draw order).
 - chart_sheets: a prepared sheet on disk; chart_prepare: fetching and
   preparing one (the face and masked lines are chart_faces', a TAC's
-  paper panels chart_panels').
+  paper panels chart_panels', a sectional's insets chart_insets').
 - chart_serving: each cycle's pyramid record, the cycle the map is drawn
   from, and the tile revision.
 - chart_archives: a finished pyramid packed into its archives;

@@ -158,6 +158,7 @@ Grouped by what they are for, not alphabetically.
 | `chart_workers.py`, `chart_pyramid.py`, `chart_rerender.py` | The whole country drawn ahead of time, with as many workers as the memory holds; tiles drawn again after a sheet changed (`unmask_prepared`). |
 | `chart_publish.py`, `chart_upkeep.py` | A complete cycle's archives to S3 and `serving.json`; keeping up with the cycle (`refresh`, `build_cycle`, `prune_cycles`), its lock, and the Dev console's `status`. |
 | `chart_faces.py` | Finding a chart's face on its raster -- the neatline, or where the chart runs out -- and cleaning the raster: the lines the FAA's own masking left, found and given their tint back. Split out of `charts.py` first, because it changed on its own. |
+| `chart_panels.py`, `chart_insets.py` | What a sheet prints over its own face, cut out by a mask raster beside it: a TAC's paper panels with their titles (Puerto Rico's route panels), a sectional's framed insets (Los Angeles's basin, Dutch Harbor's two). |
 | `chart_raster.py` | A chart raster's palette and RGB read, and the paper rim of a scan; shared by the face finding and the masked-line cleaning. |
 | `chart_bands.py` | Searching a sectional's raster for the masked-line bands (paper strips along another chart's boundary), measured before anything is touched. |
 | `chart_masked_lines.py` | Carrying a found band on, giving it the tint of the chart around it, and writing the sheet back (`remove_masked_lines`); reached through `chart_faces`. |

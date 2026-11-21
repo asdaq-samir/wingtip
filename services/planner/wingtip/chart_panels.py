@@ -1,5 +1,7 @@
 """The paper panels a terminal area chart prints over its own face, found
-and cut out of the face's mask, and the mask raster itself.
+and cut out of the face's mask with their titles, and the mask raster
+itself, which cuts out a sectional's framed insets (wingtip.chart_insets)
+the same way.
 
 A TAC lays some of its notes and route diagrams over the chart: Puerto
 Rico-VI's Low Offshore, Kemmo and Sunny & Eccho route panels and the
@@ -22,9 +24,14 @@ is framed, but its lines run on.
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import numpy as np
+
+from . import chart_insets
+
+log = logging.getLogger(__name__)
 
 # Everything here works in the pooled blocks of the face search
 # (chart_faces._POOL_PX, 4 px), from the fraction of each block that is
@@ -146,6 +153,51 @@ def find_paper_panels(white: np.ndarray, tint: np.ndarray, dark: np.ndarray, ins
     return panels
 
 
+# A panel's cut reaches past its edges by this much: Puerto Rico prints
+# each route panel's title above its frame ("LOW OFFSHORE ROUTES", 64 to
+# 68 px from the frame's top to the letters' top), and a cut along the
+# frame itself left the title and a line of the frame over the sea
+# (the owner's comparison with ForeFlight, 2026-11-21).
+_CUT_MARGIN_BLOCKS = 25  # 100 px
+# A cut that ends this close to the face's edge, or to the next panel's
+# cut, runs on to it, rather than leave a strip of chart a few hundred
+# pixels wide between: the procedures text box began 120 px below the
+# neatline and the panels stand 80 to 190 px apart.
+_CUT_JOIN_BLOCKS = 75  # 300 px
+
+
+def panel_cuts(panels: list, inside: np.ndarray) -> list:
+    """The boxes cut out of the face for `panels` (find_paper_panels):
+    each panel with its title and frame, run on to the face's edge or
+    the next panel's cut where either is near."""
+    rows, cols = inside.shape
+    m, j = _CUT_MARGIN_BLOCKS, _CUT_JOIN_BLOCKS
+    cuts = []
+    for r0, r1, c0, c1 in panels:
+        # The middle half of each side, away from the corners, where the
+        # face's own edge may be near the other sides.
+        ra, rb = r0 + (r1 - r0) // 4, r1 - (r1 - r0) // 4
+        ca, cb = c0 + (c1 - c0) // 4, c1 - (c1 - c0) // 4
+        r0, r1, c0, c1 = max(0, r0 - m), min(rows, r1 + m), max(0, c0 - m), min(cols, c1 + m)
+        # Off the face within reach on a side: run the cut to the
+        # raster's edge (past the face nothing is drawn).
+        top = not inside[max(0, r0 - j) : r0, ca:cb].all()
+        bottom = not inside[r1 : r1 + j, ca:cb].all()
+        left = not inside[ra:rb, max(0, c0 - j) : c0].all()
+        right = not inside[ra:rb, c1 : c1 + j].all()
+        cuts.append((0 if top else r0, rows if bottom else r1, 0 if left else c0, cols if right else c1))
+    joins = []
+    for a in cuts:
+        for b in cuts:
+            rows_both = (max(a[0], b[0]), min(a[1], b[1]))
+            cols_both = (max(a[2], b[2]), min(a[3], b[3]))
+            if rows_both[0] < rows_both[1] and 0 < b[2] - a[3] <= j:
+                joins.append((rows_both[0], rows_both[1], a[3], b[2]))
+            if cols_both[0] < cols_both[1] and 0 < b[0] - a[1] <= j:
+                joins.append((a[1], b[0], cols_both[0], cols_both[1]))
+    return cuts + joins
+
+
 def _ruled_past(line: np.ndarray, a: int, b: int) -> bool:
     """Whether a line of ink along [a, b) carries on past both its ends."""
     ends = [line[max(0, a - _GRATICULE_REACH) : max(0, a - 4)], line[b + 4 : b + _GRATICULE_REACH]]
@@ -198,3 +250,33 @@ def write_mask(path: Path, keep: np.ndarray, crs, transform, pool: int) -> None:
         compress="deflate",
     ) as out:
         out.write(np.where(keep, 255, 0).astype(np.uint8), 1)
+
+
+def cut_mask(path: Path, kind, ink, inside: np.ndarray, pool: int) -> Path | None:
+    """For a kind that prints paper panels (the TAC) or framed insets
+    (the sectional) over its face, the mask raster beside the sheet at
+    `path` that cuts them out, None when the sheet has none; a mask left
+    by an earlier detection is removed with it. `ink` is the face
+    search's pooled paper, tint and ink, `inside` its blocks in the face."""
+    if not (kind.paper_panels or kind.framed_insets):
+        return None
+    mask_path = path.with_name(f"{path.stem}.mask.tif")
+    cuts = []
+    if kind.paper_panels:
+        panels = find_paper_panels(ink.white, ink.tint, ink.dark, inside)
+        for r0, r1, c0, c1 in panels:
+            log.info("%s: paper panel cut out, %d x %d px", path.name, (c1 - c0) * pool, (r1 - r0) * pool)
+        cuts += panel_cuts(panels, inside)
+    if kind.framed_insets:
+        insets = chart_insets.find_framed_insets(ink.dark, inside)
+        for r0, r1, c0, c1 in insets:
+            log.info("%s: framed inset cut out, %d x %d px", path.name, (c1 - c0) * pool, (r1 - r0) * pool)
+        cuts += insets
+    if not cuts:
+        mask_path.unlink(missing_ok=True)
+        return None
+    keep = np.ones(ink.white.shape, dtype=bool)
+    for r0, r1, c0, c1 in cuts:
+        keep[r0:r1, c0:c1] = False
+    write_mask(mask_path, keep, ink.crs, ink.transform, pool)
+    return mask_path

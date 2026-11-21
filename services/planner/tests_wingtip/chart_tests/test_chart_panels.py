@@ -131,8 +131,9 @@ def test_a_tac_is_drawn_without_its_paper_panel(tmp_path):
     raster = chart_sheets.Raster(tmp_path / "tac.tif", face=face, envelope=envelope, mask=mask)
     assert _drawn(raster, 850, 1700)[3] == 0  # inside the panel, off its print and ring
     assert tuple(_drawn(raster, 1800, 1100)) == (216, 232, 206, 255)  # the chart south of it
-    # The sectional has no such panels, and gets no mask.
-    assert chart_faces.detect_face(tmp_path / "tac.tif", chart_kinds.SECTIONAL)[2] is None
+    # A sectional cuts the same box out by its frame, which stops at its
+    # corners, as a framed inset (chart_insets).
+    assert chart_faces.detect_face(tmp_path / "tac.tif", chart_kinds.SECTIONAL)[2] is not None
     # Detected again once the panel is gone, the TAC's mask goes with it.
     data[400:1200, 1300:2100] = 8
     _palette_raster(tmp_path / "tac.tif", box, data)

@@ -72,6 +72,11 @@ class ChartKind:
     # of it when the face is found (wingtip.chart_panels): a TAC's route
     # diagrams and notes laid over open water.
     paper_panels: bool = False
+    # Whether the sheets lay framed insets over the face, tinted maps of
+    # a busy area at a larger scale (wingtip.chart_insets), cut out of
+    # it as the paper panels are: the sectional's Los Angeles basin over
+    # the Pacific.
+    framed_insets: bool = False
 
 
 SECTIONAL = ChartKind(
@@ -83,6 +88,7 @@ SECTIONAL = ChartKind(
     VFR_SECTIONAL_MAX_ZOOM,
     (1.1, 0.2, 0.35, 0.55),
     masked_lines=True,
+    framed_insets=True,
 )
 TAC = ChartKind(
     "tac",

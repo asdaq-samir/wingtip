@@ -60,6 +60,19 @@ _MIN_CONTINUITY = 0.55
 _OUTSIDE_STRIP_PX = (140, 350)
 _MIN_OUTSIDE_WHITE = 0.6
 _MAX_OUTSIDE_TINT = 0.15
+# A sheet can also carry its sea's tint on past the neatline, as bleed,
+# with its legend panels printed over that: Los Angeles's west neatline
+# (121 30W) has its title panel and then bare ocean blue outside it, 0.38
+# paper over the strip (0.03 inside), so the search went on to where the
+# tint starts and drew the panel and a strip of bleed over the Pacific
+# (the owner's phone, 2026-11-21). On a sectional, whose sheets end on
+# whole and quarter degrees (on_grid), a line there with this much paper
+# outside it and this much more than inside it is the neatline too: the
+# chart's own graticule has chart either side, the same paper both ways.
+# A TAC's edges are not on the grid, and the frame of an inset in its
+# collar has paper and tint outside it as well.
+_BLEED_MIN_OUTSIDE_WHITE = 0.3
+_BLEED_MIN_WHITE_STEP = 0.25
 # Where there is no neatline (the chart runs on past its nominal edge
 # and is cut by the sheet's edge, or by the boxes printed above it), the
 # face ends where the tint does: sampled this often, and pulled this
@@ -139,11 +152,13 @@ def _sample(ink: _Ink, lats: np.ndarray, lons: np.ndarray) -> tuple:
     return dark, white, tint, inside
 
 
-def _find_edge(ink: _Ink, envelope: Box, res_m: float, edge: str, search: float = 0.25) -> tuple:
+def _find_edge(ink: _Ink, envelope: Box, res_m: float, edge: str, search: float = 0.25, on_grid: bool = False) -> tuple:
     """Where the chart face ends along one edge: (position in degrees,
     how it was found), the position None when nothing chart-like lies
     within `search` of the raster (a share of its width or height) of
-    that edge (the kind's edge_search).
+    that edge (the kind's edge_search). `on_grid` for a kind whose sheets
+    end on the quarter degree (the sectional), whose neatline may have
+    bleed past it.
 
     Walks inward from the raster's edge, sampling each candidate line
     along the chart's middle three-fifths -- along the geographic
@@ -196,10 +211,14 @@ def _find_edge(ink: _Ink, envelope: Box, res_m: float, edge: str, search: float 
         for cluster in clusters:
             best = max(cluster, key=lambda i: continuity[i])
             line = positions[best]
-            strip = line - inward * np.linspace(_OUTSIDE_STRIP_PX[0], _OUTSIDE_STRIP_PX[1], 6) * deg_per_px
-            _, white, tint, _ = sample_lines(strip)
+            offsets = np.linspace(_OUTSIDE_STRIP_PX[0], _OUTSIDE_STRIP_PX[1], 6) * deg_per_px
+            _, white, tint, _ = sample_lines(line - inward * offsets)
             if white.mean() >= _MIN_OUTSIDE_WHITE or tint.mean() <= _MAX_OUTSIDE_TINT:
                 return float(line), "neatline"
+            if on_grid and _on_grid(float(line)) and white.mean() >= _BLEED_MIN_OUTSIDE_WHITE:
+                _, white_in, _, _ = sample_lines(line + inward * offsets)
+                if white.mean() - white_in.mean() >= _BLEED_MIN_WHITE_STEP:
+                    return float(line), "neatline"
 
     # From just inside the sheet's edge (the edge itself samples as
     # outside the raster) inward.
@@ -229,6 +248,10 @@ def _chart_run_start(tinted: np.ndarray) -> int | None:
             break
         first = int(i)
     return first
+
+
+def _on_grid(value: float) -> bool:
+    return abs(value - round(value / _SNAP_GRID_DEG) * _SNAP_GRID_DEG) <= _SNAP_TOLERANCE_DEG
 
 
 def _snap(value: float) -> float:
@@ -354,7 +377,7 @@ def detect_face(path: Path, kind: ChartKind) -> tuple[Box, Box, Path | None]:
     fallback = {"w": west + collar[0], "s": south + collar[1], "e": east - collar[2], "n": north - collar[3]}
     face = []
     for i, edge in enumerate("wsen"):
-        position, how = _find_edge(ink, envelope, res_m, edge, kind.edge_search)
+        position, how = _find_edge(ink, envelope, res_m, edge, kind.edge_search, kind.key == SECTIONAL.key)
         if position is None:
             log.warning("%s: nothing chart-like near the %s edge; assuming a %.2f-degree collar", path.name, edge, collar[i])
             face.append(fallback[edge])
@@ -367,25 +390,6 @@ def detect_face(path: Path, kind: ChartKind) -> tuple[Box, Box, Path | None]:
         log.info("%s: %s edge at %.4f (%s)", path.name, edge, position, how)
         face.append(position)
     face = tuple(face)
-    return envelope, face, _cut_paper_panels(path, kind, ink, face)
-
-
-def _cut_paper_panels(path: Path, kind: ChartKind, ink: _Ink, face: Box) -> Path | None:
-    """For a kind that prints paper panels over its face (the TAC), the
-    mask raster that cuts them out (chart_panels), None when the sheet
-    has none; a mask left by an earlier detection is removed with it."""
-    if not kind.paper_panels:
-        return None
-    mask_path = path.with_name(f"{path.stem}.mask.tif")
     # The band search's blocks are the face search's pooled ones, 4 px.
     inside = faces_in_blocks(ink.crs, ink.transform, [face], ink.white.shape)
-    panels = chart_panels.find_paper_panels(ink.white, ink.tint, ink.dark, inside)
-    if not panels:
-        mask_path.unlink(missing_ok=True)
-        return None
-    keep = np.ones(ink.white.shape, dtype=bool)
-    for r0, r1, c0, c1 in panels:
-        keep[r0:r1, c0:c1] = False
-        log.info("%s: paper panel cut out, %d x %d px", path.name, (c1 - c0) * _POOL_PX, (r1 - r0) * _POOL_PX)
-    chart_panels.write_mask(mask_path, keep, ink.crs, ink.transform, _POOL_PX)
-    return mask_path
+    return envelope, face, chart_panels.cut_mask(path, kind, ink, inside, _POOL_PX)
