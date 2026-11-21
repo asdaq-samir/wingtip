@@ -8,6 +8,10 @@ scripts that keep the owner's Mac tidy. What the services are is
 
 - **Docker Desktop** with Compose v2. Nothing else is installed natively:
   every service builds its own image, and the checks run in containers.
+  Its containers' logs are kept whole by default and grow inside Docker's
+  disk for as long as a container lives; in Settings, Docker Engine, add
+  `"log-opts": {"max-size": "20m", "max-file": "3"}` to bound them (it
+  takes effect for containers made after it; the ops audit, 2026-11-21).
 - **Git** and **make** (it ships with macOS and every Linux).
 - **No API key for a model.** The server calls none: its Claude features
   were taken out on 2026-11-12
@@ -293,6 +297,7 @@ All in `scripts/dev/`, each with its usage at its top.
 | `tidy-branches.sh [--dry-run]` | Removes the `~/Developer/wingtip-*` worktrees whose commit is on `origin/claude/integration` or `origin/main`, with nothing uncommitted and untouched for six hours (never `wingtip`, `wingtip-live` or a locked one), then deletes local `worktree-agent-*` branches already on `origin/main` |
 | `docker-tidy.sh [--dry-run]` | Reclaims Docker disk: images no container uses (`docker image prune -a`), build cache unused for 24 hours, and volumes no container uses except the named caches (`wingtip-cargo-*`, `wingtip-sccache*`, `wingtip-npm*`, `wingtip-format-npm`, `wingtip-m2`, `fp-m2`, `wingtip-check-raw-<leg>`, one per Python leg) and the stacks' own (`wingtip_*`, `fpam_*`, the database among them); never a container; prints the space freed; then `tidy-build-caches.sh` (Shared build caches, below) |
 | `backup-db.sh`, `install-backup.sh` | The nightly database dump (below) |
+| `restore-drill.sh [backup]` | A backup (the server's night from S3, or the Mac's newest dump) restored into a scratch Postgres, checked against its manifest, the gateway started on it; everything removed after ([RUNBOOKS.md](RUNBOOKS.md#the-restore-drill)) |
 | `install-hooks.sh` | Installs the pre-push hook (tsc and ESLint, ruff, `cargo check`, the formatters, and the generated-file and budget checks CI runs -- `screens.sh --check`, `design-tokens.sh --check`, `toolchain.sh --check`, `file_sizes.py`, `brand_guard.py` -- each for what a push changes) |
 | `mcp_token.py` | A token for the connector (`/mcp`) from the stack's own sign-in, as Claude gets one; the Inspector and Claude or ChatGPT through a tunnel are in [MCP-CONNECTOR.md](MCP-CONNECTOR.md) |
 
@@ -322,6 +327,9 @@ counts compressed memory as free: on 2026-11-12 the Mac swapped about
 whole, the newest 14 kept, hand-named dumps (`db-before-*.sql.gz`) never
 touched. Its log is `~/Library/Logs/wingtip-db-backup.log`;
 `install-backup.sh --now` runs one at once and `--remove` takes it out.
+`scripts/dev/restore-drill.sh` restores the newest into a scratch Postgres
+and starts the gateway on it, to prove it restores
+([RUNBOOKS.md](RUNBOOKS.md#the-restore-drill)).
 The server's backups are in [README-AWS.md](README-AWS.md#backups-and-restore).
 
 ## The linters and formatters

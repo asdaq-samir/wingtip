@@ -131,3 +131,15 @@ def test_an_faa_data_set_past_its_cycle_is_stale():
     assert lines["nasr"]["state"] == "stale" and lines["nasr"]["kind"] == "cycle"
     assert "ended 2026-10-29" in lines["nasr"]["detail"]
     assert lines["charts"]["state"] == "ok" and "2026-12-24" in lines["charts"]["detail"]
+
+
+def test_ingest_with_no_swim_feed_set_up_has_a_line_of_its_own():
+    # The ops audit, 2026-11-21: every SWIM line "off" never alerts, so an
+    # ingest that had stopped said nothing.
+    quiet = feed_health.ingest_line({"ingest": {"at": NOW - 5, "feeds": []}}, NOW)
+    assert [(line["name"], line["kind"], line["state"]) for line in quiet] == [("ingest", "service", "ok")]
+    stopped = feed_health.ingest_line({"ingest": {"at": NOW - 600, "feeds": []}}, NOW)
+    assert stopped[0]["state"] == "stale" and "10 min" in stopped[0]["detail"]
+    # A feed set up already goes stale with the beat; no beat at all already asks.
+    assert feed_health.ingest_line(_beats(STDDS={"connected": True}), NOW) == []
+    assert feed_health.ingest_line({}, NOW) == []

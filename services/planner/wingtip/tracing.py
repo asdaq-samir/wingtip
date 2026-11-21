@@ -130,7 +130,11 @@ class _TraceStamp(logging.Formatter):
         line = self.inner.format(record)
         context = trace.get_current_span().get_span_context()
         if context.is_valid:
-            line += f" trace_id={context.trace_id:032x} span_id={context.span_id:016x}"
+            ids = {"trace_id": f"{context.trace_id:032x}", "span_id": f"{context.span_id:016x}"}
+            # A JSON line (wingtip.log_lines, LOG_FORMAT=json) stays one object.
+            if line.endswith("}") and line.startswith("{"):
+                return line[:-1] + "".join(f',"{k}":"{v}"' for k, v in ids.items()) + "}"
+            line += f" trace_id={ids['trace_id']} span_id={ids['span_id']}"
         return line
 
 

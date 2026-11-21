@@ -40,7 +40,11 @@ longer than it takes to answer the request.
   coordinates (the airspace router's and the geocoder's failures name the
   error only), and the traffic view keeps only its half-degree region for
   a minute ("Kept without an account" below). The gateway's log of a
-  planner outage names the path only. The position itself is read on the
+  planner outage names the path only. The request id on the gateway's and
+  the planner's log lines is a random token the page makes, tied to no
+  account. Postgres logs a statement slower than half a second by its
+  text alone, never the values bound to it (`log_parameter_max_length=0`),
+  so no address or position reaches the log that way. The position itself is read on the
   device, with the permission the browser, iOS or Android asks for.
 - **What a pilot's own AI app asks the connector.** A pilot who connects Wingtip to their own Claude or ChatGPT (the MCP connector, `services/planner/app/mcp`) has that app call Wingtip's tools: the airports, weather, NOTAMs, a route's nav log and briefing, and their own airplanes and saved flights. Each answer goes only to the app the pilot connected, only when the pilot's conversation asks for it, and is then under that app's own terms (Anthropic's or OpenAI's): Wingtip neither chooses nor pays for the model. Nothing of the call is kept beyond the rate limit's count of calls per pilot, in the planner's memory for a day (`app.mcp.calls`). The tools never return the pilot's name, address or logbook. Saving a flight from there (`save_flight`) is a saved flight as above, confirmed in the AI app first.
 - **The Apple Watch** (`apps/ios/WingtipWatch`): the paired iPhone sends

@@ -224,7 +224,11 @@ def test_the_published_archive_is_read_by_range_requests(cache, monkeypatch):
     assert _webp_of(PLAIN, chart_tiles.tile_bytes(65, 94, 8, "sec"))
     assert chart_tiles.tile_bytes(65, 95, 8, "sec") is None
     assert chart_serving.tiles_revision(CYCLE) == 3
-    assert set(asked) == {"https://d123.cloudfront.net/tiles/serving.json", f"https://d123.cloudfront.net/tiles/{CYCLE}/sec-abc.pmtiles"}
+    assert set(asked) == {
+        "https://d123.cloudfront.net/tiles/serving.json",
+        "https://d123.cloudfront.net/tiles/next.json",  # a cycle staged ahead, none here
+        f"https://d123.cloudfront.net/tiles/{CYCLE}/sec-abc.pmtiles",
+    }
     # The header and directory once; then a tile is one request of its own bytes.
     before = len(asked)
     chart_tiles.tile_bytes(65, 94, 8, "sec")
@@ -242,3 +246,28 @@ def test_a_cycle_packed_as_png_is_transcoded_to_webp_once(cache):
     assert _webp_of(OLD, chart_tiles.tile_bytes(65, 94, 8, "sec"))
     assert chart_serving.tiles_revision(CYCLE) == 0
     assert chart_archives.transcode(CYCLE, ("sec",), workers=1) == {}
+
+
+def test_the_aws_server_never_draws_a_tile_its_published_archive_did_not_give(cache, monkeypatch):
+    # The ops audit, 2026-11-21: a CDN or S3 outage made every tile a sheet
+    # fetched and drawn on the server's two cores, starving every route.
+    monkeypatch.setattr(config, "CHART_TILES_URL", "https://d123.cloudfront.net/tiles")
+    monkeypatch.setattr(tile_archive, "_remote", {})
+    monkeypatch.setattr(chart_tiles.chart_render, "render_tile", lambda *a: pytest.fail("drawn on the server"))
+    monkeypatch.setattr(chart_tiles, "rasters_covering", lambda *a, **k: pytest.fail("sheets read on the server"))
+
+    # The pointer unreadable: nothing published to read from.
+    monkeypatch.setattr(chart_serving, "serving_pointer", lambda: {})
+    with pytest.raises(chart_tiles.TileUnavailable):
+        chart_tiles.tile_bytes(65, 94, 8, "sec")
+
+    # The pointer read, the archive's bytes not.
+    monkeypatch.setattr(chart_serving, "serving_pointer", lambda: {"cycle": CYCLE, "archives": {"sec": {"1": "sec-abc.pmtiles"}}})
+
+    class Unreachable:
+        def get(self, z, x, y):
+            raise chart_tiles.requests.ConnectionError("CloudFront 502")
+
+    monkeypatch.setattr(chart_tiles.tile_archive, "over_http", lambda url, session: Unreachable())
+    with pytest.raises(chart_tiles.TileUnavailable):
+        chart_tiles.tile_bytes(65, 94, 8, "sec")
