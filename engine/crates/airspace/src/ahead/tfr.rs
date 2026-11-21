@@ -27,6 +27,14 @@ pub(super) fn polygons_hold(shape: &Polygons, x: f64, y: f64) -> bool {
     shape.iter().any(|rings| rings.iter().filter(|r| r.len() >= 3 && geo::ring_holds(r, x, y)).count() % 2 == 1)
 }
 
+/// [west, south, east, north] round polygons' rings, as Track::bbox gives
+/// its box; None for polygons with no point.
+pub(super) fn shape_box(shape: &Polygons) -> Option<[f64; 4]> {
+    let mut points = shape.iter().flatten().flatten();
+    let &(x, y) = points.next()?;
+    Some(points.fold([x, y, x, y], |b, &(x, y)| [b[0].min(x), b[1].min(y), b[2].max(x), b[3].max(y)]))
+}
+
 /// The phone's kept TFRs, one a tab-separated line: its NOTAM, title,
 /// rule, floor and its reference, ceiling and its reference, start and
 /// end (Unix seconds, empty where not given), and its outer ring as "lon
@@ -69,9 +77,17 @@ pub(super) fn tfrs_of(text: &str) -> Vec<Tfr> {
 /// them (AIM 3-5-3); one with neither is taken as in force.
 pub(super) fn tfr_alerts(track: &Track, ground: Option<f64>, now: i64, list: &[Tfr]) -> Vec<Alert> {
     let until = now + *track.times.last().unwrap() as i64;
+    // The look-ahead's box, as the classes and special-use areas are met
+    // (areas.rs): a TFR whose box misses it holds none of the track's
+    // samples, and testing each of them against every ring was some 60
+    // point-in-polygon tests a TFR on every GPS tick.
+    let window = track.bbox(1.0);
     let mut found = Vec::new();
     for t in list {
         if t.to.is_some_and(|e| e < now) || t.from.is_some_and(|s| s > until) {
+            continue;
+        }
+        if !shape_box(&t.shape).is_some_and(|b| meets(b, window)) {
             continue;
         }
         let under = t.under.or(ground);
