@@ -6,6 +6,8 @@ import {
   airspaceLayers,
   OVERLAY_SOURCE,
   chartPaint,
+  chartRole,
+  chartSource,
   chartStyle,
   DAY_CONTRAST,
   DAY_SATURATION,
@@ -38,14 +40,14 @@ const chart = {
 describe("chartStyle", () => {
   it("asks for the chart's tiles at the chart's own zooms", () => {
     const style = chartStyle(chart, "sec", false, "https://wingtip.test")!;
-    expect(style.sources.chart!.tiles).toEqual(["https://wingtip.test/api/planner/chart-tile/sec/{z}/{x}/{y}.png?c=10-29-2026&r=6"]);
-    expect(style.sources.chart).toMatchObject({ minzoom: 3, maxzoom: 12, tileSize: 256 });
+    expect(style.sources["chart:sec"]!.tiles).toEqual(["https://wingtip.test/api/planner/chart-tile/sec/{z}/{x}/{y}.png?c=10-29-2026&r=6"]);
+    expect(style.sources["chart:sec"]).toMatchObject({ minzoom: 3, maxzoom: 12, tileSize: 256 });
     // The region's level under it, while the chart's own tiles come in.
-    expect(style.sources["chart-under"]).toMatchObject({ minzoom: 5, maxzoom: 5 });
+    expect(style.sources["chart-under:sec"]).toMatchObject({ minzoom: 5, maxzoom: 5 });
     // Two levels past the chart's last, in MapLibre's zoom (the app's less
     // one), where there is no imagery to fade into.
     expect(style.maxZoom).toBe(13);
-    expect(style.layers.map((l) => l.id)).toEqual(["chart-under", "chart"]);
+    expect(style.layers.map((l) => l.id)).toEqual(["chart-under:sec", "chart:sec"]);
   });
 
   it("fades the chart out over one level past its own last zoom, into the imagery under it", () => {
@@ -72,8 +74,16 @@ describe("chartStyle", () => {
 
   it("puts the terminal sheet over the chart only while pinned", () => {
     const style = chartStyle(chart, "sec", true, "https://wingtip.test")!;
-    expect(style.layers.map((l) => l.id)).toEqual(["chart-under", "chart", "chart-terminal"]);
+    expect(style.layers.map((l) => l.id)).toEqual(["chart-under:sec", "chart:sec", "chart-terminal:tac"]);
     expect(style.layers[2]!.minzoom).toBe(glZoom(10));
+  });
+
+  it("names each base's layers apart, so the last base can stay on the map beside the next", () => {
+    const sec = chartStyle(chart, "sec", true, "https://wingtip.test")!;
+    expect(sec.layers.map((l) => chartRole(l.id))).toEqual(["chart-under", "chart", "chart-terminal"]);
+    expect(chartSource(sec, "chart")).toBe(sec.sources["chart:sec"]);
+    expect(chartRole("close-imagery")).toBeNull();
+    expect(chartRole(undefined)).toBeNull();
   });
 
   it("lifts the chart's contrast and colour by day, leaving the night and the sunlight as they were", () => {

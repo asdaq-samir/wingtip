@@ -87,12 +87,36 @@ export function chartPaint(
   };
 }
 
+/** What each of the chart's layers is: the base chart, the same chart at
+ *  a region's level under it, and the terminal sheet over it. */
+export type ChartRole = "chart" | "chart-under" | "chart-terminal";
+
+/** A chart layer's and its source's id: its role and the kind of tiles it
+ *  draws ("chart:sec", "chart-under:sec", "chart-terminal:tac"), so the
+ *  last base chart picked can stay on the map, hidden, beside the new one
+ *  (ChartGl), its tiles kept for a switch back, where with one id for
+ *  every base the old chart had to go before the new could be added. */
+export const chartId = (role: ChartRole, kind: string) => `${role}:${kind}`;
+
+/** The role of a chart layer's or source's id (chartId), null for any
+ *  other id: what the tests and the first tile's watch read. */
+export function chartRole(id: string | undefined): ChartRole | null {
+  const role = id?.split(":")[0];
+  return role === "chart" || role === "chart-under" || role === "chart-terminal" ? role : null;
+}
+
+/** A chart style's source or layer in the given role, if it has one. */
+export function chartSource(style: ChartStyle, role: ChartRole): RasterSourceSpecification | undefined {
+  return Object.entries(style.sources).find(([id]) => chartRole(id) === role)?.[1];
+}
+
 /**
  * The FAA chart: the base chart (the sectional or
  * an IFR enroute chart, per the preferences), the same chart at a
  * region's level under it, and the terminal sheet over it while pinned --
  * the same tile addresses (tiles.ts tileTemplate, with the cycle and the
- * revision), the same zooms, the same two levels of enlargement.
+ * revision), the same zooms, the same two levels of enlargement. Each id
+ * is chartId's, by its role and its tiles' kind.
  */
 export function chartStyle(
   chart: ChartInfo,
@@ -107,21 +131,24 @@ export function chartStyle(
   const layers: RasterLayerSpecification[] = [];
   const tiles = (kind: string) => [absoluteTiles(tileTemplate(chart, kind), origin)];
   const underlay = Math.max(baseLayer.min_zoom, UNDERLAY_ZOOM);
+  const under = chartId("chart-under", baseLayer.kind);
+  const main = chartId("chart", baseLayer.kind);
   if (underlay < baseLayer.max_zoom) {
-    sources["chart-under"] = { type: "raster", tiles: tiles(baseLayer.kind), tileSize: 256, minzoom: underlay, maxzoom: underlay };
-    layers.push({ id: "chart-under", type: "raster", source: "chart-under", minzoom: glZoom(underlay), paint });
+    sources[under] = { type: "raster", tiles: tiles(baseLayer.kind), tileSize: 256, minzoom: underlay, maxzoom: underlay };
+    layers.push({ id: under, type: "raster", source: under, minzoom: glZoom(underlay), paint });
   }
-  sources.chart = { type: "raster", tiles: tiles(baseLayer.kind), tileSize: 256, minzoom: baseLayer.min_zoom, maxzoom: baseLayer.max_zoom };
-  layers.push({ id: "chart", type: "raster", source: "chart", paint });
+  sources[main] = { type: "raster", tiles: tiles(baseLayer.kind), tileSize: 256, minzoom: baseLayer.min_zoom, maxzoom: baseLayer.max_zoom };
+  layers.push({ id: main, type: "raster", source: main, paint });
   if (overlay && pinned) {
-    sources["chart-terminal"] = {
+    const terminal = chartId("chart-terminal", overlay.kind);
+    sources[terminal] = {
       type: "raster",
       tiles: tiles(overlay.kind),
       tileSize: 256,
       minzoom: overlay.min_zoom,
       maxzoom: overlay.max_zoom,
     };
-    layers.push({ id: "chart-terminal", type: "raster", source: "chart-terminal", minzoom: glZoom(overlay.min_zoom), paint });
+    layers.push({ id: terminal, type: "raster", source: terminal, minzoom: glZoom(overlay.min_zoom), paint });
   }
   return { sources, layers, maxZoom: glZoom(baseLayer.max_zoom + OVERZOOM) };
 }

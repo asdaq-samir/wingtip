@@ -155,7 +155,10 @@ test("opened on the whole country, land and water lie under the charts where the
   // Under every chart layer, the sectional's included. The map's layers bottom to top (GlMapShell's data-layers).
   // Both read in one look, as the probe writes the layers as each is added.
   const order = async () => ((await page.getByTestId("gl-map").getAttribute("data-layers")) ?? "").split(" ");
-  await expect.poll(async () => (await order()).filter((id) => id === "land-water" || id === "chart")).toEqual(["land-water", "chart"]);
+  // The base chart's layer is "chart:<kind>" (glStyle's chartId), the last base picked kept beside it.
+  await expect
+    .poll(async () => (await order()).filter((id) => id === "land-water" || id.startsWith("chart:")).slice(0, 2))
+    .toEqual(["land-water", "chart:sec"]);
 });
 
 test("opened fresh where the position was given before, it is asked for again as the page opens", async ({ page }) => {
