@@ -534,7 +534,17 @@ off by default (the owner, 2026-11-13).
    limit). The figure is the address's `tanks` ("C81:20,KMSN:0"), the
    engine's `fuel_in_tanks` walks the gauges from it and the planner's
    fuel check, fuel stops and loading fly the same (its `tanks` query,
-   `navlog_fuel_plan`'s `on_board_gal`); the plan's Undo ("Undo Fuel")
+   `navlog_fuel_plan`'s `on_board_gal`). A gauge is red under the reserve
+   of the flight it is on, each flight's own as the planner's totals give
+   it (30 minutes by day, 45 at night or under IFR: 14 CFR 91.151(a),
+   91.167(a)(3)), so a day flight after a night one is not held to the
+   night's 45 minutes; the departure's is red where what is on board, less
+   the start and taxi, is under its reserve, and under IFR the
+   destination's where it lands without the fuel on to the alternate too
+   (91.167(a)(2)); the web passes each flight's reserve and the alternate's
+   fuel and the engine says which point is low. A stop's gallons typed
+   under what the airplane lands with keep what it lands with, and the
+   field says so ("Keeps the 13 gal it lands with"). The plan's Undo ("Undo Fuel")
    puts it back. The destination's gauge and a waypoint's are read only,
    and with no airplane there is no gauge (the one ask for an airplane
    stays the N-number field, the UI audit's C3), at the right its time (the departure's a picker); no city; below full, two stops

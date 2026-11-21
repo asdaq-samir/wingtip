@@ -55,4 +55,20 @@ describe("Add Fuel Stops", () => {
     expect(setStops).toHaveBeenCalledTimes(2);
     expect(hook.result.current.fuelToAdd).toBeNull();
   });
+
+  it("holds each flight's gauges to its own reserve, as the planner gave it", () => {
+    // A night flight's 45 minutes then a day flight's 30 (14 CFR 91.151(a)):
+    // each flight's reserve_gal, in order, for the engine (fuel_in_tanks).
+    const totals = {
+      hops: [
+        { departure: POS, destination: "KLAS", totals: { usable_fuel_gal: 36, taxi_gal: 1.4, reserve_gal: 7.5 } },
+        { departure: "KLAS", destination: "KPWK", totals: { usable_fuel_gal: 36, taxi_gal: 1.4, reserve_gal: 5 } },
+      ],
+      fuel_stops: [],
+    } as unknown as Totals;
+    const hook = renderHook(() =>
+      useSuggestedStops({ totals, local: false, planned: { dep: POS, stops: ["KLAS"], dest: "KPWK" }, setStops: vi.fn() }),
+    );
+    expect(hook.result.current.tankFigures).toEqual({ usableGal: 36, taxiGal: 1.4, reservesGal: [7.5, 5], alternateGal: null });
+  });
 });

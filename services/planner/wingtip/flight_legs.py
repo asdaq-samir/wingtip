@@ -173,7 +173,10 @@ def fuel_stops_of(r, per_flight: list[dict], flown: list[tuple[list[dict], datet
                     "rules",
                     "night",
                 )
-            },
+            }
+            # Under IFR the last flight's fuel on to its alternate, which its
+            # last stretch keeps (14 CFR 91.167(a)(2)).
+            | {"alternate_gal": (t.get("alternate") or {}).get("fuel_gal")},
             legs=[{"distance_nm": leg.get("distance_nm"), "fuel_gal": leg.get("fuel_gal")} for leg in legs],
             start={"lat": flight.start[0], "lon": flight.start[1]},
             end={"lat": flight.end[0], "lon": flight.end[1]},
@@ -181,6 +184,7 @@ def fuel_stops_of(r, per_flight: list[dict], flown: list[tuple[list[dict], datet
         )
         if need is None:
             continue
+        need.pop("on_board_short", None)
         try:
             stops, choices = fuelstops.suggest(flight.start, flight.end, **need, skip=set(r.idents))
         except (OSError, ValueError, KeyError):

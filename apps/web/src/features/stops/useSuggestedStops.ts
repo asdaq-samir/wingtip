@@ -75,10 +75,12 @@ export function useSuggestedStops({
   // departure, in order, as many as the planner takes.
   const allFuelStops = local ? NO_FUEL_STOPS : (totals?.fuel_stops ?? NO_FUEL_STOPS);
   // Suggested fuel stops the pilot took out of the route box (its chip's
-  // Remove), for this route: left out of the box, the list and the map,
-  // and put back by the route menu's Show Fuel Stops, at the owner's ask
-  // ("Fuel stops should also have a way to delete them and add them back
-  // as pleased", 2026-10-24). FPL's Routes keep their own card for them.
+  // Remove), for this route: left out of the box, the list and the map
+  // till the route changes, when they are suggested again (the More
+  // menu's Show Fuel Stops went on 2026-11-21; the timeline's Add Fuel
+  // Stops pill puts stops in), at the owner's ask ("Fuel stops should also
+  // have a way to delete them and add them back as pleased", 2026-10-24).
+  // FPL's Routes keep their own card for them.
   const fuelRoute = `${planned.dep}|${planned.stops.join(",")}|${planned.dest ?? ""}`;
   const [hiddenFuel, setHiddenFuel] = useState<{ route: string; idents: string[] }>({ route: "", idents: [] });
   const hiddenHere = hiddenFuel.route === fuelRoute ? hiddenFuel.idents : NO_IDENTS;
@@ -93,15 +95,23 @@ export function useSuggestedStops({
     (ident: string) => setHiddenFuel((was) => ({ route: fuelRoute, idents: [...(was.route === fuelRoute ? was.idents : []), ident] })),
     [fuelRoute],
   );
-  // The tanks for FPL's fuel at each point: the fuel check's usable fuel,
-  // allowance and reserve, the first flight's where the route has stops
-  // (each is filled again), the strictest reserve of them.
+  // The tanks for FPL's fuel at each point: the fuel check's usable fuel
+  // and allowance, the first flight's where the route has stops (each is
+  // filled again), and each flight's own reserve as the planner gave it,
+  // in order, which the engine holds each point to (fuel_in_tanks).
   const tankFigures = useMemo(() => {
     const t = local ? null : totals;
     const flights = t?.hops?.length ? t.hops.map((h) => h.totals) : t ? [t] : [];
     const usable = flights[0]?.usable_fuel_gal;
     if (!usable) return null;
-    return { usableGal: usable, taxiGal: flights[0]?.taxi_gal ?? 0, reserveGal: Math.max(0, ...flights.map((f) => f.reserve_gal ?? 0)) };
+    return {
+      usableGal: usable,
+      taxiGal: flights[0]?.taxi_gal ?? 0,
+      reservesGal: flights.map((f) => f.reserve_gal ?? null),
+      // Under IFR, the fuel on to the alternate the destination is held to
+      // too (14 CFR 91.167(a)(2)): the last flight's, the route's own.
+      alternateGal: t?.alternate?.fuel_gal ?? null,
+    };
   }, [local, totals]);
   // Their pins on the map, every flight's.
   const fuelStopPins = useMemo(
