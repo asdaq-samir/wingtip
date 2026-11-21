@@ -33,6 +33,13 @@
         "usable_gal": {
           "type": "number"
         },
+        "start_gal": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The fuel in the tanks at the start, gallons (the pilot's own, at engine start; null, full, usable_gal): the first stretch's reach and its landing's fuel. Each stop fills the tanks."
+        },
         "taxi_gal": {
           "type": "number"
         },

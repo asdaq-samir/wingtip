@@ -75,6 +75,7 @@ describe("legsWithoutWind", () => {
     fuel_required_gal: null,
     usable_fuel_gal: null,
     fuel_margin_gal: null,
+    on_board_gal: null,
     night: null,
     night_passengers: null,
     rules: "vfr",

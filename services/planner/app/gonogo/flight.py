@@ -290,12 +290,13 @@ def findings_for(
             risk_in["squawks"] = [s.model_dump() for s in own.squawks]
 
     # The loading (lib/weightBalance): the pilot's, else the POH's sample
-    # airplane with the usable fuel aboard.
+    # airplane with the fuel aboard at engine start -- the pilot's own on
+    # FPL's gauge (the totals' on_board_gal), else the usable fuel.
     # With no airplane (no `aircraft` asked) there is no loading to balance.
     airplane = q.profile()
     profile = (nav or {}).get("aircraft") or ({"name": q.aircraft, **airplane} if airplane else {})
     loading = profile.get("loading")
-    usable = profile.get("usable_fuel_gal")
+    usable = (totals or {}).get("on_board_gal") or profile.get("usable_fuel_gal")
     load = (
         ask.load.model_dump()
         if ask.load

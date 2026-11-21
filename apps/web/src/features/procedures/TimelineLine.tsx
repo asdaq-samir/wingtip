@@ -8,6 +8,7 @@ import { TEXT } from "../../lib/text";
 import { pointName } from "../../lib/identSchema";
 import type { NavLogRow, ProcedureAirport } from "../plan";
 import { FuelGauge } from "./FuelGauge";
+import { FuelSet } from "./FuelSet";
 import { WindLine } from "./FieldHead";
 import { fieldParts, kindMenu, kindPicked, windWords } from "./fieldParts";
 import { PartTray } from "./RunwayTray";
@@ -275,7 +276,20 @@ export function TimelineLine({
           {/* The fuel right after the ident, the time at the right (the
               owner, 2026-11-17: "Fuel should go right after airport"; kept
               as the gauge, 2026-11-20: "I like the previous fuel tanks"). */}
-          {tank && <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />}
+          {/* Tapped to set the fuel leaving a field (FuelSet), where the
+              list edits the route: the departure's on board, a stop's after
+              fuelling; the destination's and a waypoint's read only. */}
+          {tank && vm.onTanks && row && point.field && !point.problem && (row.kind === "departure" || row.kind === "stop") ? (
+            <FuelSet
+              tank={tank}
+              ident={row.airport.ident}
+              stop={row.kind === "stop"}
+              tone={tank.low ? "low" : undefined}
+              onSet={(gallons) => vm.onTanks?.(row.airport.ident, gallons)}
+            />
+          ) : (
+            tank && <FuelGauge gal={tank.gal} usable={tank.usable} tone={tank.low ? "low" : undefined} />
+          )}
           <span className="flex-1" />
           <span className={cn("relative z-10 shrink-0 text-muted-foreground tabular-nums", TEXT.row)} data-testid="timeline-time">
             {point.time}

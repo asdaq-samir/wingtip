@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_procedures::figures::calls::fuel",
-  "description": "The fuel in the tanks at each point of the route and whether it is under the reserve: full at the departure, the start, taxi and takeoff allowance and each leg's burn taken from them after, filled again at each field landed at, as the planner checks each flight; negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill.",
+  "description": "The fuel in the tanks at each point of the route and whether it is under the reserve: at the departure the fuel on board at engine start (full, the usable fuel, unless the pilot set their own; more than usable kept as set), the start, taxi and takeoff allowance and each leg's burn taken from them after; at each field landed at the fuel on landing, the tanks then fuelled for the next flight (full unless the pilot set what to; a figure under what is left keeps it, 0 no fuel bought) and its start and taxi taken again, as the planner checks each flight; negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill.",
   "type": "object",
   "properties": {
     "input": {
@@ -31,6 +31,13 @@
                   "null"
                 ],
                 "description": "The tanks filled on landing there."
+              },
+              "fill_gal": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "The pilot's own figure for the tanks as the airplane leaves there, gallons: at the departure the fuel on board at engine start, at a field landed at what it is fuelled to (under what is left keeps what is left; 0, no fuel bought); null, full."
               }
             }
           }

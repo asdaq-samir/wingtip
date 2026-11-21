@@ -43,7 +43,13 @@ def now() -> datetime:
 
 
 def flight_totals(
-    leg_list: list, profile: dict | None, r, depart: datetime | None, rules: str = "vfr", alternate: dict | None = None
+    leg_list: list,
+    profile: dict | None,
+    r,
+    depart: datetime | None,
+    rules: str = "vfr",
+    alternate: dict | None = None,
+    tanks: tuple[float | None, float | None] = (None, None),
 ) -> dict:
     """The legs' totals plus the fuel check, the engine's (navlog_totals,
     navlog_fuel_plan). Night is judged at both ends
@@ -54,7 +60,9 @@ def flight_totals(
     day's 30 for want of a time. Under IFR the reserve is 45 minutes
     whatever the hour (14 CFR 91.167(a)(3)), and `alternate`, the leg on to
     the alternate (alternate_leg), is flown before it (14 CFR
-    91.167(a)(2))."""
+    91.167(a)(2)). `tanks` is the pilot's own fuel leaving (None, full)
+    and what the flight before landed with (None at the departure): the
+    fuel check is against what is in the tanks (navlog_fuel_plan)."""
     t = engine("navlog_totals", legs=leg_list)
     # When the plan was made and the winds it flies, for the nav log to
     # say: planned for "now", its winds go out of date as the day goes on.
@@ -74,6 +82,8 @@ def flight_totals(
             night=bool(night),
             rules=rules,
             alternate_gal=(alternate or {}).get("fuel_gal") or 0.0,
+            fill_gal=tanks[0],
+            left_gal=tanks[1],
         )
     )
     # 14 CFR 61.57(b)'s night-passenger period, an hour after sunset to an

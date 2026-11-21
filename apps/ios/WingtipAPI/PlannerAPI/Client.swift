@@ -6907,6 +6907,13 @@ public struct Client: APIProtocol {
                     in: &request,
                     style: .form,
                     explode: true,
+                    name: "tanks",
+                    value: input.query.tanks
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
                     name: "checkpoints",
                     value: input.query.checkpoints
                 )
@@ -7612,6 +7619,13 @@ public struct Client: APIProtocol {
                     explode: true,
                     name: "ground",
                     value: input.query.ground
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "tanks",
+                    value: input.query.tanks
                 )
                 try converter.setQueryItemAsURI(
                     in: &request,
@@ -9509,6 +9523,13 @@ public struct Client: APIProtocol {
                     explode: true,
                     name: "ground",
                     value: input.query.ground
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "tanks",
+                    value: input.query.tanks
                 )
                 try converter.setQueryItemAsURI(
                     in: &request,

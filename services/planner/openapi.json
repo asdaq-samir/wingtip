@@ -24360,6 +24360,18 @@
             "default": null,
             "title": "Night Passengers"
           },
+          "on_board_gal": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "On Board Gal"
+          },
           "planned_at": {
             "anyOf": [
               {
@@ -30236,6 +30248,16 @@
           },
           {
             "in": "query",
+            "name": "tanks",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Tanks",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "checkpoints",
             "required": false,
             "schema": {
@@ -30865,6 +30887,16 @@
             "schema": {
               "default": "",
               "title": "Ground",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tanks",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Tanks",
               "type": "string"
             }
           },
@@ -32106,6 +32138,16 @@
             "schema": {
               "default": "",
               "title": "Ground",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tanks",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Tanks",
               "type": "string"
             }
           },

@@ -75,6 +75,7 @@ export const plannerRoute = {
     patterns = "",
     ahead = false,
     altitudeStarts = "",
+    tanks = "",
   ): AsyncGenerator<NavLogMessage> {
     const result = await planner.GET("/api/navlog", {
       params: {
@@ -113,6 +114,8 @@ export const plannerRoute = {
           crossings: crossings || undefined,
           ground: ground || undefined,
           holds: holds || undefined, // flown on the legs leaving their points
+          // The fuel the pilot set leaving a field, each flight's check.
+          tanks: tanks || undefined,
         },
       },
       parseAs: "stream",

@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import type { SetAddress } from "../../lib/address";
 import type { AltitudeChoice } from "../../lib/api/types";
-import { altitudesParam, groundOf, positionIdent, stopsOf } from "../../lib/identSchema";
+import { altitudesParam, groundOf, positionIdent, stopsOf, tanksOf } from "../../lib/identSchema";
 import { useOwnShip } from "../../lib/map/position/ownShip";
 import { feel } from "../../lib/haptics";
 import { sameField } from "../../lib/procedures";
@@ -42,6 +42,20 @@ export function usePlanSetters(
         if (minutes === turnaroundMin()) delete own[ident];
         else own[ident] = minutes;
         return { ground: altitudesParam(own) || null };
+      });
+    },
+    [setAddress],
+  );
+  // The fuel in the tanks as the airplane leaves a field, from FPL's gauge
+  // (procedures/FuelSet): the address's `tanks`, gallons, null back to
+  // full (not written).
+  const setTanks = useCallback(
+    (ident: string, gallons: number | null) => {
+      void setAddress((prev) => {
+        const own = tanksOf(prev.tanks);
+        if (gallons === null) delete own[ident];
+        else own[ident] = Math.round(gallons);
+        return { tanks: altitudesParam(own) || null };
       });
     },
     [setAddress],
@@ -113,5 +127,5 @@ export function usePlanSetters(
     },
     [setAddress],
   );
-  return { changeLocalMin, setGround, directToPoint, setHold, directToChartPoint, changeDepart, changeAltitudeChoice };
+  return { changeLocalMin, setGround, setTanks, directToPoint, setHold, directToChartPoint, changeDepart, changeAltitudeChoice };
 }

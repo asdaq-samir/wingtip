@@ -209,6 +209,22 @@ export function groundOf(value: string | null | undefined): Record<string, numbe
   return out;
 }
 
+/** The fuel the pilot set in the tanks as the airplane leaves a field
+ *  ("KOSH:30,KJVL:0", the address's `tanks`), whole gallons by its
+ *  ident: at the departure on board at engine start, at a stop what it is
+ *  fuelled to, 0 none bought (the engine's fuel_in_tanks). Up to five
+ *  figures, as the planner reads a point's figure; more than the tanks
+ *  hold is the pilot's word, kept with a warning (warn, never limit). */
+export function tanksOf(value: string | null | undefined): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const part of (value ?? "").split(",")) {
+    const [ident, gallons] = part.split(":");
+    const point = stopOf(ident);
+    if (point && /^\d{1,5}$/.test(gallons ?? "")) out[point] = Number(gallons);
+  }
+  return out;
+}
+
 /** And back, for the address: "" with none. */
 export const altitudesParam = (altitudes: Record<string, number>) =>
   Object.entries(altitudes)

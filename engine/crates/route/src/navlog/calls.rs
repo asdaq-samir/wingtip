@@ -189,6 +189,8 @@ fn answer(name: &str, v: &Value) -> R<String> {
                 night,
                 rules,
                 opt_num(name, v, "alternate_gal")?.unwrap_or(0.0),
+                opt_num(name, v, "fill_gal")?,
+                opt_num(name, v, "left_gal")?,
             ))
         }
         "navlog_alternate_leg" => {

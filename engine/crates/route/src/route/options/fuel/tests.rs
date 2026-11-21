@@ -5,7 +5,8 @@ use super::*;
 // 10 gal/h at 100 kt, a tenth of a gallon and 0.6 min a mile.
 const START: Point = (0.0, 0.0);
 const END: Point = (0.0, 10.0);
-const FIG: Figures = Figures { fuel_per_nm: 0.1, min_per_nm: 0.6, usable_gal: 40.0, taxi_gal: 1.0, reserve_gal: 5.0, ground_min: 30.0 };
+const FIG: Figures =
+    Figures { fuel_per_nm: 0.1, min_per_nm: 0.6, usable_gal: 40.0, start_gal: 40.0, taxi_gal: 1.0, reserve_gal: 5.0, ground_min: 30.0 };
 
 fn fields(rows: &[(&str, f64, f64)]) -> Vec<Field> {
     rows.iter()
@@ -91,4 +92,17 @@ fn the_fields_along_each_flight_in_route_order() {
     let got: Vec<(&str, usize, &str)> = found.iter().map(|a| (a.field.ident.as_str(), a.flight, a.departure.as_str())).collect();
     assert_eq!(got, vec![("EARLY", 0, "A"), ("LATE", 0, "A"), ("SECOND", 1, "MID")]);
     assert!((found[0].from_nm - 60.0).abs() <= 1.0);
+}
+
+#[test]
+fn less_fuel_at_the_start_lands_sooner() {
+    // 480 nm. Full, 340 nm the first stretch: MIDDLE, 300 nm out, its
+    // landings keeping the more fuel. With 25 gal on board at engine start
+    // the first stretch reaches 190 nm: the stop is EARLY, 150 nm out,
+    // landing with 25 - 1 - 15 = 9 gal, the tanks filled there for the 330.
+    let (end, fields) = ((0.0, 8.0), fields(&[("EARLY", 0.0, 2.5), ("MIDDLE", 0.0, 5.0)]));
+    assert_eq!(idents(&suggest(START, end, &FIG, &fields, &[]).0), vec!["MIDDLE"]);
+    let (s, _) = suggest(START, end, &Figures { start_gal: 25.0, ..FIG }, &fields, &[]);
+    assert_eq!(idents(&s), vec!["EARLY"]);
+    assert!((s[0].lands_with_gal - 9.0).abs() <= 0.3);
 }

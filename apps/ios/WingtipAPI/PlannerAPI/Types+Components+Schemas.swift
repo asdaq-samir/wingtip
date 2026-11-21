@@ -21609,6 +21609,8 @@ extension Components {
             public var night: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/Totals/night_passengers`.
             public var nightPassengers: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/Totals/on_board_gal`.
+            public var onBoardGal: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/Totals/planned_at`.
             public var plannedAt: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Totals/procedure_nm`.
@@ -21642,6 +21644,7 @@ extension Components {
             ///   - legsWithoutWind:
             ///   - night:
             ///   - nightPassengers:
+            ///   - onBoardGal:
             ///   - plannedAt:
             ///   - procedureNm:
             ///   - reserveGal:
@@ -21664,6 +21667,7 @@ extension Components {
                 legsWithoutWind: Swift.Int,
                 night: Swift.Bool? = nil,
                 nightPassengers: Swift.Bool? = nil,
+                onBoardGal: Swift.Double? = nil,
                 plannedAt: Swift.String? = nil,
                 procedureNm: Swift.Double? = nil,
                 reserveGal: Swift.Double? = nil,
@@ -21686,6 +21690,7 @@ extension Components {
                 self.legsWithoutWind = legsWithoutWind
                 self.night = night
                 self.nightPassengers = nightPassengers
+                self.onBoardGal = onBoardGal
                 self.plannedAt = plannedAt
                 self.procedureNm = procedureNm
                 self.reserveGal = reserveGal
@@ -21709,6 +21714,7 @@ extension Components {
                 case legsWithoutWind = "legs_without_wind"
                 case night
                 case nightPassengers = "night_passengers"
+                case onBoardGal = "on_board_gal"
                 case plannedAt = "planned_at"
                 case procedureNm = "procedure_nm"
                 case reserveGal = "reserve_gal"

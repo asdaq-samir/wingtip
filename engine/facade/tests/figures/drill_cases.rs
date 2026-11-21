@@ -269,3 +269,25 @@ fn the_tanks_are_walked_and_filled_at_each_field_landed_at() {
     assert_eq!(a[4], serde_json::Value::Null);
     assert_eq!(a[5], serde_json::Value::Null);
 }
+
+#[test]
+fn the_pilots_own_fuel_at_engine_start_and_after_a_stop() {
+    use serde_json::json;
+    // 25 on board of 40 at engine start, 1.4 taxi, 10 burned: 13.6 on
+    // landing; no fuel bought there (0), 1.4 taxi and 8 more: 4.2, under
+    // the 6 gal reserve. More than the tanks hold at the start is kept.
+    let a = ask(
+        "fuel_in_tanks",
+        json!({"usable_gal": 40.0, "taxi_gal": 1.4, "reserve_gal": 6.0, "points": [
+        {"departure": true, "fill_gal": 25.0}, {"fuel_gal": 10.0, "refuel": true, "fill_gal": 0.0}, {"fuel_gal": 8.0}]}),
+    );
+    assert_eq!(a[0], json!({"gal": 25.0, "low": false}));
+    assert!((a[1]["gal"].as_f64().unwrap() - 13.6).abs() < 1e-9);
+    assert!((a[2]["gal"].as_f64().unwrap() - 4.2).abs() < 1e-9);
+    assert_eq!(a[2]["low"], json!(true));
+    let over = ask(
+        "fuel_in_tanks",
+        json!({"usable_gal": 40.0, "taxi_gal": 1.4, "reserve_gal": 6.0, "points": [{"departure": true, "fill_gal": 44.0}]}),
+    );
+    assert_eq!(over[0], json!({"gal": 44.0, "low": false}));
+}
