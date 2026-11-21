@@ -1983,6 +1983,17 @@ The iOS speed audit measured three things; what changed for each:
   the loading mark read it. A drag after that runs neither the root's
   body nor the map's update.
 
+## 19. Work at each fix (2026-11-21)
+
+Own ship's GPS gives a fix a second, and in the air the map follows it.
+What each fix asks for, by the phones' wasted-work audit:
+
+- **The fields at rest.** Following, MapKit's camera comes to rest at
+  every fix. The fields in view are asked for a box of four views at the
+  planner's most (1,000), and again only when the view leaves that box or
+  its level, or after ten minutes (`RestedFetch`), as FieldWeatherFeed
+  asks for their weather.
+
 ---
 
 ## What could not be verified

@@ -522,6 +522,7 @@ struct ChartMap: UIViewRepresentable {
 
         let overlays = ChartOverlays()
         private var liveAirports = ViewFetch()
+        private var restedAirports = RestedFetch()
         private(set) var symbolScale: CGFloat = 1
 
         /// The view moving, frame by frame: the chart's fade and the marks'
@@ -591,27 +592,26 @@ struct ChartMap: UIViewRepresentable {
                 overlays.runways(mapView, fields: shownPins, chart: overlay)
                 weather.rested(mapView)
             }
-            fetching?.cancel()
             let region = mapView.region
             let (c, span) = (region.center, region.span) // The miles to the corner the engine's (distance_nm), else the last view's kept: a real one, not a guess.
             if let nm = try? Flight.distanceNm(c, CLLocationCoordinate2D(latitude: c.latitude + span.latitudeDelta / 2, longitude: c.longitude + span.longitudeDelta / 2)) { onRegion?(c, nm) }
+            // Following own ship the camera rests at every fix: the box last
+            // asked serves until the view leaves it or changes level (RestedFetch).
+            let zoom = Self.zoom(of: mapView)
+            guard restedAirports.wants(ViewBox(region), zoom: zoom) else { return }
+            fetching?.cancel()
+            let asked = restedAirports.ask(ViewBox(region), zoom: zoom)
             fetching = Task { [weak self, weak mapView] in
                 try? await Task.sleep(for: .milliseconds(300))
                 guard !Task.isCancelled, let self, let mapView else { return }
-                let south = region.center.latitude - region.span.latitudeDelta / 2
-                let north = region.center.latitude + region.span.latitudeDelta / 2
-                let west = region.center.longitude - region.span.longitudeDelta / 2
-                let east = region.center.longitude + region.span.longitudeDelta / 2
-                // From the phone's own packs where the engine has them,
-                // the planner otherwise (PackMapData).
-                let pins = try? await PackMapData.airports(south: south, west: west, north: north, east: east)
+                let pins = try? await PackMapData.airports(asked, limit: RestedFetch.most)
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     // In, or not to be had: either way the map need not
                     // wait for them to show.
                     self.airportsIn = true
                     self.revealIfIn()
-                    guard let pins else { return }
+                    guard let pins else { return self.restedAirports.forget() }
                     self.pins = pins
                     self.showFields(on: mapView)
                     self.overlays.runways(mapView, fields: self.shownPins, chart: self.overlay)

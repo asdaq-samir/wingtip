@@ -14,13 +14,14 @@ import Foundation
 enum PackMapData {
     /// The fields in the box: the packs' (pack_airports_in_view), else the
     /// planner's /api/airports/in-view.
-    static func airports(south: Double, west: Double, north: Double, east: Double) async throws -> [AirportPin] {
+    /// `limit` is the planner's most (its own 300 where nil).
+    static func airports(_ box: ViewBox, limit: Int? = nil) async throws -> [AirportPin] {
         // The packs first, through the engine's reader (CyclePacks.airportsInView,
         // WingtipEngine.airportsInView): a region never kept, or no index yet, is nil.
         // Off the main actor, as the map's own asks are.
-        if let kept = await CyclePacks.shared.airportsInView(ViewBox(south: south, west: west, north: north, east: east)) {
+        if let kept = await CyclePacks.shared.airportsInView(box) {
             return kept
         }
-        return try await Planner.airports(south: south, west: west, north: north, east: east)
+        return try await Planner.airports(south: box.south, west: box.west, north: box.north, east: box.east, limit: limit)
     }
 }
