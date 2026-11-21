@@ -15,11 +15,15 @@
 //! stop put in is the real check: this only chooses where.
 
 use super::ask::Reader;
-use super::stops::MIN_RUNWAY_FT;
 use super::words::r1;
 use crate::geo;
 use crate::json::{self, Value};
+use std::cell::Cell;
+use std::collections::HashSet;
 use wingtip_core::{grid::Point, sort::StableSort};
+
+mod corridor;
+use corridor::{corridor, Apart, Near};
 
 /// How far off the straight line a stop may take the flight, the miles it
 /// adds: beyond that, a field nearer the line is always the better stop.
@@ -51,21 +55,6 @@ pub struct Field {
     pub elevation_ft: Option<f64>,
     pub fuel_types: String,
     pub runway_ft: f64,
-}
-
-/// The fields no more than MAX_ADDED_NM off the straight line from
-/// `start` to `end`, on a paved runway of MIN_RUNWAY_FT, not the route's
-/// own (`skip`, by either ident), in the table's order.
-fn corridor<'a>(start: Point, end: Point, fields: &'a [Field], skip: &[String]) -> Vec<&'a Field> {
-    let direct = geo::distance_nm(start.0, start.1, end.0, end.1);
-    fields
-        .iter()
-        .filter(|f| {
-            geo::distance_nm(start.0, start.1, f.lat, f.lon) + geo::distance_nm(f.lat, f.lon, end.0, end.1) - direct <= MAX_ADDED_NM
-        })
-        .filter(|f| !skip.contains(&f.ident) && !skip.contains(&f.faa_ident))
-        .filter(|f| f.runway_ft >= MIN_RUNWAY_FT)
-        .collect()
 }
 
 pub struct Figures {
@@ -121,7 +110,8 @@ pub fn suggest(start: Point, end: Point, fig: &Figures, fields: &[Field], skip: 
     if fig.start_gal - fig.taxi_gal - direct * fig.fuel_per_nm >= fig.reserve_gal + fig.alternate_gal {
         return (Vec::new(), Vec::new());
     }
-    let nodes = corridor(start, end, fields, skip);
+    let skip: HashSet<String> = skip.iter().cloned().collect();
+    let nodes = corridor(start, end, direct, fields, &skip);
     if nodes.is_empty() || fig.fuel_per_nm <= 0.0 {
         return (Vec::new(), Vec::new());
     }
@@ -130,9 +120,9 @@ pub fn suggest(start: Point, end: Point, fig: &Figures, fields: &[Field], skip: 
     let reach_end_nm = reach_nm - fig.alternate_gal / fig.fuel_per_nm;
     let first_reach_nm = (fig.start_gal - fig.taxi_gal - fig.reserve_gal) / fig.fuel_per_nm;
     // Index 0 the destination, then the fields.
-    let at: Vec<Point> = std::iter::once(end).chain(nodes.iter().map(|n| (n.lat, n.lon))).collect();
+    let at: Vec<Point> = std::iter::once(end).chain(nodes.iter().map(|n| (n.field.lat, n.field.lon))).collect();
     let n = at.len();
-    let apart: Vec<Vec<f64>> = at.iter().map(|a| at.iter().map(|b| geo::distance_nm(a.0, a.1, b.0, b.1)).collect()).collect();
+    let apart = Apart { at: &at, nm: vec![Cell::new(f64::NAN); n * n] };
     // Minutes from each to the destination, the stops on the way counted,
     // and the next place on the quickest way there.
     let mut to_go = vec![f64::INFINITY; n];
@@ -149,17 +139,23 @@ pub fn suggest(start: Point, end: Point, fig: &Figures, fields: &[Field], skip: 
         let Some(here) = here.filter(|&h| to_go[h].is_finite()) else { break };
         done[here] = true;
         for i in 0..n {
+            // A place settled is never bettered: its leg not solved.
+            if done[i] {
+                continue;
+            }
             // Landing at `here` from field i: its leg, and the stop's time
             // on the ground where `here` is a field, not the destination.
-            let via = apart[i][here] * fig.min_per_nm + if here > 0 { fig.ground_min } else { 0.0 } + to_go[here];
+            let leg = apart.get(i, here);
+            let via = leg * fig.min_per_nm + if here > 0 { fig.ground_min } else { 0.0 } + to_go[here];
             let reach = if here == 0 { reach_end_nm } else { reach_nm };
-            if apart[i][here] <= reach && via < to_go[i] && !done[i] {
+            if leg <= reach && via < to_go[i] {
                 to_go[i] = via;
                 then[i] = here as i64;
             }
         }
     }
-    let from_start: Vec<f64> = at.iter().map(|p| geo::distance_nm(start.0, start.1, p.0, p.1)).collect();
+    // The destination's is the direct line's, the fields' the corridor's.
+    let from_start: Vec<f64> = std::iter::once(direct).chain(nodes.iter().map(|n| n.to_it)).collect();
     let chain = |i: usize| -> Vec<usize> {
         let mut out = vec![i];
         while then[*out.last().unwrap()] > 0 {
@@ -176,7 +172,7 @@ pub fn suggest(start: Point, end: Point, fig: &Figures, fields: &[Field], skip: 
         for (k, &a) in c.iter().enumerate() {
             let next = *c.get(k + 1).unwrap_or(&0);
             let kept = if next == 0 { fig.alternate_gal } else { 0.0 };
-            least = least.min(fig.usable_gal - fig.taxi_gal - apart[a][next] * fig.fuel_per_nm - kept);
+            least = least.min(fig.usable_gal - fig.taxi_gal - apart.get(a, next) * fig.fuel_per_nm - kept);
         }
         least
     };
@@ -186,17 +182,21 @@ pub fn suggest(start: Point, end: Point, fig: &Figures, fields: &[Field], skip: 
         return (Vec::new(), Vec::new());
     }
     let quickest = first.iter().map(|&i| trip(i)).fold(f64::INFINITY, f64::min);
-    let off_line: Vec<f64> = at.iter().map(|p| geo::track_nm(p.0, p.1, start, end).0.abs()).collect();
+    // The course solved once for every field (track_from is track_nm with
+    // it given).
+    let course = geo::bearing_deg(start.0, start.1, end.0, end.1);
+    let off_line: Vec<f64> = at.iter().map(|p| geo::track_from(p.0, p.1, start, course).0.abs()).collect();
     let mut ranked = first.clone();
     let key = |i: usize| (trip(i) > quickest + SAME_MINUTES, off_line[i].round_ties_even(), -least_landing(i), trip(i));
     ranked.stable_sort_by(|&a, &b| key(a).partial_cmp(&key(b)).unwrap_or(std::cmp::Ordering::Equal));
     let stop = |i: usize, prev: Option<usize>, flown_nm: f64| {
-        let f = nodes[i - 1];
+        let near = &nodes[i - 1];
+        let f = near.field;
         let (leg, tanks) = match prev {
             None => (from_start[i], fig.start_gal),
-            Some(p) => (apart[p][i], fig.usable_gal),
+            Some(p) => (apart.get(p, i), fig.usable_gal),
         };
-        let off = geo::distance_nm(start.0, start.1, f.lat, f.lon) + geo::distance_nm(f.lat, f.lon, end.0, end.1) - direct;
+        let off = near.to_it + near.then - direct;
         let at_nm = flown_nm + leg;
         FuelStop {
             field: f.clone(),
@@ -235,17 +235,14 @@ pub struct Along {
 /// route order. A field near two flights is listed on the first; the
 /// ALONG_MOST nearest the line kept.
 pub fn along(flights: &[(String, Point, Point)], skip: &[String], fields: &[Field]) -> Vec<Along> {
-    let mut seen: Vec<String> = skip.to_vec();
+    let mut seen: HashSet<String> = skip.iter().cloned().collect();
     let mut out: Vec<Along> = Vec::new();
     for (k, (departure, start, end)) in flights.iter().enumerate() {
         let direct = geo::distance_nm(start.0, start.1, end.0, end.1);
-        for f in corridor(*start, *end, fields, &seen.clone()) {
-            if seen.contains(&f.ident) {
+        for Near { field: f, to_it, then } in corridor(*start, *end, direct, fields, &seen) {
+            if !seen.insert(f.ident.clone()) {
                 continue;
             }
-            seen.push(f.ident.clone());
-            let to_it = geo::distance_nm(start.0, start.1, f.lat, f.lon);
-            let then = geo::distance_nm(f.lat, f.lon, end.0, end.1);
             out.push(Along {
                 field: f.clone(),
                 flight: k,

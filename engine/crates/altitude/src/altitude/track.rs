@@ -20,20 +20,10 @@ pub fn track_from(p: Point, a: Point, course: f64) -> (f64, f64) {
     crate::geo::track_from(p.0, p.1, a, course)
 }
 
-/// Whether `p` is surely more than `width_nm` off the geodesic from `a` on
-/// `course`, from one inverse solve where track_from takes two or three
-/// inverse and direct solves: the cross-track of the right spherical
-/// triangle the inverse's distance and angle make (track_from's own first
-/// step, sin x = sin s sin A). The sphere's answer is within a small part of
-/// a percent of the ellipsoid's (WGS-84's flattening is 1/298, NGA
-/// TR8350.2), so the margin of 2 nm and 1% of the distance keeps every
-/// point the exact cross-track would keep; a leg's obstacle box, read 7 nm
-/// round the whole leg, is mostly far outside its 5 nm corridor.
+/// Whether `p` is surely more than `width_nm` off the geodesic from `a`
+/// on `course`: core's surely_off_nm, the corridors' one first cut.
 pub fn surely_off_nm(p: Point, a: Point, course: f64, width_nm: f64) -> bool {
-    let (s, to_p) = crate::geo::distance_and_bearing(a.0, a.1, p.0, p.1);
-    let r = crate::geo::EARTH_RADIUS_NM;
-    let cross = ((s / r).sin() * (to_p - course).to_radians().sin()).clamp(-1.0, 1.0).asin() * r;
-    cross.abs() > width_nm + 2.0 + 0.01 * s
+    crate::geo::surely_off_nm(p.0, p.1, a, course, width_nm)
 }
 
 /// A point's distance from the segment `a` to `b` (its ends rounded, as

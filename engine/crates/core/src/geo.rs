@@ -207,6 +207,24 @@ pub fn track_from(lat: f64, lon: f64, a: (f64, f64), course: f64) -> (f64, f64) 
     unreachable!("the tenth try returns")
 }
 
+/// Whether (lat, lon) is surely more than `width_nm` off the geodesic from
+/// `a` on `course`, from one inverse solve where track_from takes two or
+/// three inverse and direct solves: the cross-track of the right spherical
+/// triangle the inverse's distance and angle make (track_from's own first
+/// step, sin x = sin s sin A). The sphere's answer is within a small part
+/// of a percent of the ellipsoid's (WGS-84's flattening is 1/298, NGA
+/// TR8350.2), so the margin of 2 nm and 1% of the distance keeps every
+/// point whose exact cross-track is `width_nm` or less. A corridor's first
+/// cut: a point it lets go is off the line by more than the width on the
+/// ellipsoid too, and so, as the inverse's own distance s is never less
+/// than the cross-track, more than the width from `a` as well.
+pub fn surely_off_nm(lat: f64, lon: f64, a: (f64, f64), course: f64, width_nm: f64) -> bool {
+    let (s, to_p) = distance_and_bearing(a.0, a.1, lat, lon);
+    let r = EARTH_RADIUS_NM;
+    let cross = ((s / r).sin() * (to_p - course).to_radians().sin()).clamp(-1.0, 1.0).asin() * r;
+    cross.abs() > width_nm + 2.0 + 0.01 * s
+}
+
 /// A padded (min_lat, min_lon, max_lat, max_lon) box round the route a ->
 /// b (wingtip.geo.corridor_bbox): `buffer_nm` at WGS-84's shortest degree
 /// of latitude, the equator's 59.7 nm (110,574 m), and of longitude

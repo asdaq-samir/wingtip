@@ -85,9 +85,17 @@ pub(super) fn obstacle_alerts(track: &Track, obstacles: &[Obstacle], gs_kt: f64)
     }
     let n = track.times.len();
     let (start, end) = ((track.lats[0], track.lons[0]), (track.lats[n - 1], track.lons[n - 1]));
+    // The track's course solved once for every obstacle (track_from is
+    // track_nm with it given), and one surely more than SWATH_NM off its
+    // line (core's surely_off_nm), which fails the cross-track test below
+    // on the ellipsoid too, let go after one inverse solve.
+    let course = crate::geo::bearing_deg(start.0, start.1, end.0, end.1);
     let mut found = Vec::new();
     for o in obstacles {
-        let (cross, along) = crate::geo::track_nm(o.lat, o.lon, start, end);
+        if crate::geo::surely_off_nm(o.lat, o.lon, start, course, SWATH_NM) {
+            continue;
+        }
+        let (cross, along) = crate::geo::track_from(o.lat, o.lon, start, course);
         if cross.abs() > SWATH_NM || along < 0.0 || along > reach {
             continue;
         }
