@@ -215,7 +215,7 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   row and a grip, a field's ring on the group round it (the stock
   InputGroup's on the N-number, the altitude and the route box; a fine
   ring in the tint on the search fields, as Apple's field has), a banner's
-  underline. Left without one only what the keyboard never lands on: the
+  title's ring (its underline was too faint on the glass, 2026-11-21). Left without one only what the keyboard never lands on: the
   sheets' and the dialogs' own boxes and a card's name (focused by the app
   so a screen reader starts there), a list held by its field's virtual
   focus (its row lit instead), and the weather loop's hour labels (out of
@@ -440,6 +440,31 @@ screens:
 - Reflow, AA: content works at 320 CSS px wide without two-way scrolling,
   except what needs two dimensions, such as the map and a data table
   (WCAG 1.4.10, [WCAG 2.2][wcag22]).
+
+How the app meets them (the accessibility audit of 2026-11-21):
+
+- A toggle's name never changes with its state: the stock Toggle keeps
+  one name and lets `aria-pressed` say on or off (Comms assist; a
+  flight's Follow, "Following" once pressed). A button whose words say
+  what a tap does ("Show in 3D", "Hide my position") is a plain button,
+  with no pressed state to contradict them ([APG Button][apg-button]).
+- The name starts with the words seen: "NRST, nearest airports",
+  "D→, direct to KDLH", the compass's point (WCAG 2.5.3). A row's
+  repeated button ("Remove", "Accept", "Reset to book figure") says
+  whose after its word, in `sr-only` text.
+- A yes-or-no setting in a list is the stock switch, its row's title
+  its name (SwitchRow), not a pill named "Yes" or "Email".
+- A field's problem is linked to it: `invalidProps` / `ariaInvalid`
+  (lib/fieldError) on the field, `errorIdOf(id)` on the words under it,
+  in a row's description or the stock FieldError (WCAG 3.3.1).
+- What is said as it happens is the stock FieldError (an alert) or a
+  `role="status"` already in the page; what changes every second (the
+  replay's data block) is a group a reader browses, never a live region.
+- When a tap takes its own button away (Show the answer, Send Link), the
+  focus goes to what came in its place, never to `body`.
+- e2e/a11y-screens.spec reads every console place and card a link opens
+  with axe, beside a11y.spec's planner states, and checks Escape gives
+  the focus back, 320 points wide and Reduce Motion.
 
 ---
 
@@ -2076,6 +2101,7 @@ Read on 2026-11-09.
 [wcag-222]: https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html
 [wcag-214]: https://www.w3.org/TR/WCAG22/#character-key-shortcuts
 [apg-patterns]: https://www.w3.org/WAI/ARIA/apg/patterns/
+[apg-button]: https://www.w3.org/WAI/ARIA/apg/patterns/button/
 [apg-keyboard]: https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/
 [apg-tabs]: https://www.w3.org/WAI/ARIA/apg/patterns/tabs/
 [apg-combobox]: https://www.w3.org/WAI/ARIA/apg/patterns/combobox/

@@ -147,7 +147,8 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
             <Button
               type="button"
               variant="ghost"
-              aria-label="Nearest airports"
+              // Its visible "NRST" first in its name, as a voice-control user says it (WCAG 2.5.3).
+              aria-label="NRST, nearest airports"
               data-testid="flying-nearest"
               className={cn(FLYING_BUTTON, "text-(length:--type-note)")}
               onClick={nearest}
@@ -159,7 +160,8 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
             <Button
               type="button"
               variant="ghost"
-              aria-label={`Direct to ${direct.to}`}
+              // "D→" is read "D arrow" by a reader; voice control is told "Direct to" (WCAG 2.5.3).
+              aria-label={`D→, direct to ${direct.to}`}
               data-testid="flying-direct"
               className={cn(FLYING_BUTTON, TEXT.row)}
               onClick={direct.go}
