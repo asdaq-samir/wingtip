@@ -729,7 +729,10 @@ off by default (the owner, 2026-11-13).
   More's. One tap on the ✕ asks "Clear Route?" in the stock centred alert,
   never a card, the page staying up, Undo bringing the route back; with no
   route it is dimmed, as iOS dims a toolbar button with nothing to do.
-  The FPL button closes the page to Search, the route kept. The search in use on Search ends its row
+  The FPL button closes the page to Search, the route kept. Its title
+  "Flight Plan" is a heading's 20 in bold (CardHeadRow's name at
+  `nameSize="heading"`, the owner, 2026-11-21: "a bit bigger and move up a
+  bit"), lifted 4 points, the pills under it. The search in use on Search ends its row
   with a round ✕, not the word Cancel. The map's buttons are 44-point
   buttons in their glass, Apple Maps' size, the right-hand group one
   capsule.

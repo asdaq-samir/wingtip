@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { cn } from "cn";
-import { TEXT } from "../../../lib/text";
+import { CardHeadMiddle } from "../../../components/CardHead";
+import { HeadGrid } from "../../../components/HeadGrid";
 
 /**
  * FPL's head under the grabber, as Apple Maps' Directions is (the owner,
@@ -10,11 +10,11 @@ import { TEXT } from "../../../lib/text";
  * start (the search's button, which goes back to Search with the route kept)
  * and the ✕ at its end, which clears the route (ClearRouteButton: one tap
  * asks first; the owner, 2026-11-20), and between them two rows: "Flight
- * Plan" at the row's 17 in bold, as Directions' headline is, and under it
+ * Plan" at a heading's 20 in bold, as Directions' headline is, and under it
  * the airplane's pills (RouteControls; Route Options is More's, ShareMenu),
  * as "Now · Avoid" is under "Directions". The head keeps the search's
  * height, so a turn of the page moves nothing (the owner, 2026-11-14): the
- * title's line is 18 points and the pills 28, the search field's 46.
+ * title's line is 25 points and the pills 24.
  *
  * Three columns, the two rows in the middle: either side a round button's
  * 44 points, so the title stays in the row's middle whether Search is there
@@ -24,27 +24,28 @@ import { TEXT } from "../../../lib/text";
  */
 export default function FplBar({ share, strip, clear }: { share?: ReactNode; strip?: ReactNode; clear?: ReactNode }) {
   return (
-    <div className="grid w-full grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-2">
-      <div className="flex justify-start">{share}</div>
-      <div className="flex min-w-0 flex-col items-center" data-testid="fpl-head">
-        <h2
-          // Its line the row's own 22, so a descender (the g of "Flight")
-          // is not cut, the pills right under it (the owner, 2026-11-20: "move
-          // the pills a bit lower so the g above it is not cutting out"),
-          // lifted 3 points, its whole line with it, so nothing is cut ("Can
-          // you move the flight plan up a bit").
-          className={cn("max-w-full -translate-y-[3px] truncate font-bold text-foreground", TEXT.row, "leading-[1.375rem]")}
-          data-testid="fpl-title"
-        >
-          Flight Plan
-        </h2>
-        {strip && (
-          <div className="flex h-6 max-w-full min-w-0 items-center justify-center" data-testid="route-strip">
-            {strip}
-          </div>
-        )}
-      </div>
-      <div className="flex justify-end">{clear}</div>
-    </div>
+    <HeadGrid
+      start={share}
+      middle={
+        <div className="flex min-w-0 max-w-full flex-col items-center" data-testid="fpl-head">
+          <CardHeadMiddle
+            name="Flight Plan"
+            nameSize="heading"
+            nameTestId="fpl-title"
+            // Its line the heading's own 25, so a descender (the g of
+            // "Flight") is not cut, the pills right under it; lifted 4
+            // points, its whole line with it, so nothing is cut (the owner,
+            // 2026-11-21: "a bit bigger and move up a bit").
+            nameClassName="-translate-y-1"
+          />
+          {strip && (
+            <div className="flex h-6 max-w-full min-w-0 items-center justify-center" data-testid="route-strip">
+              {strip}
+            </div>
+          )}
+        </div>
+      }
+      end={clear}
+    />
   );
 }
