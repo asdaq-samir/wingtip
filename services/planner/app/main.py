@@ -41,7 +41,7 @@ from wingtip import traffic as traffic_store
 from wingtip.aircraft import UnknownAircraft
 from wingtip.planning import StillComputing
 
-from . import errors, openapi_document, tracing
+from . import errors, local_guard, openapi_document, tracing
 from .feeds import watch as feeds_watch
 from .mcp import server as mcp
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan, clearance
@@ -88,6 +88,9 @@ async def _lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Wingtip Maps planner", lifespan=_lifespan)
+# Nothing but the gateway and the machine's own tools: no web page, by a
+# rebound name or from another site (app.local_guard).
+app.add_middleware(local_guard.LocalOnly)
 # What failed lately, for the Dev console (app.errors).
 app.add_middleware(errors.RecordFailures)
 # Traces, where an OTLP endpoint is set (app.tracing).
