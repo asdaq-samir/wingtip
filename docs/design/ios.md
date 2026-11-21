@@ -1999,6 +1999,12 @@ What each fix asks for, by the phones' wasted-work audit:
   once only the FIS-B products are left, once a minute. Traffic merges
   again only where the receiver's airplanes changed (`Receiver.due`,
   `trafficChanged`).
+- **The watch.** The phone hands the watch its fix only for the nearest
+  fields, where the watch's own location does not come. The context is
+  sent again only when the checklist or the airplane changes, or the fix
+  has moved about a mile or is five minutes old (`WatchLink.fixToSend`),
+  not every 5 s; the checklist is read into the watch's shape once per
+  text.
 
 ---
 

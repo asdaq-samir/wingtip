@@ -28,4 +28,26 @@ struct RepeatedWorkTests {
         rested.forget()
         #expect(rested.wants(moved, zoom: 8.2, now: start.addingTimeInterval(2)))
     }
+
+    // MARK: The watch's context (item 4)
+
+    @Test func theWatchIsSentTheFixOnlyAfterAMileOrFiveMinutes() {
+        let start = Date(timeIntervalSince1970: 1_000_000)
+        func fix(_ lat: Double, _ at: Date) -> WatchFix {
+            WatchFix(lat: lat, lon: -88.07, altitudeFt: 2500, trackDeg: 0, groundspeedKt: 100, at: at)
+        }
+        let sent = fix(42.0, start)
+        // A second on, a few hundred feet north: the fix sent stands, so the
+        // context is the same and nothing is sent.
+        let near = fix(42.0005, start.addingTimeInterval(1))
+        #expect(WatchLink.fixToSend(near, sent: sent, sentAt: start, now: start.addingTimeInterval(1)) == sent)
+        // Two miles north (a minute of latitude is a nautical mile): sent.
+        let far = fix(42.0 + 2.0 / 60, start.addingTimeInterval(60))
+        #expect(WatchLink.fixToSend(far, sent: sent, sentAt: start, now: start.addingTimeInterval(60)) == far)
+        // Five minutes on, parked: sent again; none at first, and none once own ship has none.
+        let later = start.addingTimeInterval(WatchLink.fixEveryS)
+        #expect(WatchLink.fixToSend(fix(42.0, later), sent: sent, sentAt: start, now: later) == fix(42.0, later))
+        #expect(WatchLink.fixToSend(near, sent: nil, sentAt: .distantPast, now: start) == near)
+        #expect(WatchLink.fixToSend(nil, sent: sent, sentAt: start, now: start) == nil)
+    }
 }
