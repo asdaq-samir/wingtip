@@ -1,6 +1,6 @@
 import type { AirspaceClass } from "../../preferences";
 import { BLUE, MAGENTA } from "../../useAirspace";
-import { CHART } from "../../tokens";
+import { CHART, TYPE_CLASS } from "../../tokens";
 
 // Apart from the map's mark pictures (markPictures): Nearest's rows draw
 // this one too, and so would have kept all of them in the page's first
@@ -27,7 +27,11 @@ export const MARK_FONT = "-apple-system, system-ui, sans-serif";
 
 /** The mark itself, as an SVG's markup (the map's field marks, without the
  *  ident beside it): the same symbol off the map, as Nearest's rows lead
- *  with it. */
+ *  with it. Off the map, drawn in the page, its letter is set as the page's
+ *  words are, in the app's face at the caption's size and leading (its
+ *  class, which outranks the attributes; the iOS audit's P3 and P16 on
+ *  "R" 11 on 16.5 in -apple-system, Nearest's strip): on the map, an
+ *  <img>, no class reaches it and the attributes draw it. */
 export function airportMarkSvg(
   space: AirspaceClass | null,
   weather: string,
@@ -39,7 +43,7 @@ export function airportMarkSvg(
   const casing = `stroke="${CHART.casing}" stroke-linecap="round"`;
   const symbol = use
     ? `<circle r="10" fill="${use === "military" ? BLUE : MAGENTA}" ${casing} stroke-width="2"/>` +
-      `<text y="4" text-anchor="middle" font-family="${MARK_FONT}" font-size="11" font-weight="800" fill="${CHART.casing}">${{ military: "M", private: "R", heliport: "H" }[use]}</text>` +
+      `<text y="4" text-anchor="middle" class="font-sans ${TYPE_CLASS.caption}" font-family="${MARK_FONT}" font-size="11" font-weight="800" fill="${CHART.casing}">${{ military: "M", private: "R", heliport: "H" }[use]}</text>` +
       `<circle data-weather="" cx="7.5" cy="7.5" r="4.6" fill="${text(weather)}" ${casing} stroke-width="1.4"/>`
     : (() => {
         // The four ticks, and the white casing round ticks and ring, each one

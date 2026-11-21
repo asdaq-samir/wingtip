@@ -7,7 +7,7 @@ import {
   openPanel,
   openTab,
   settle,
-  showSearch,
+  showPlan,
   showTabs,
   sideDrawer,
   slow,
@@ -34,7 +34,10 @@ export const FPL_SCREENS: Screen[] = [
       });
       await page.goto("/app/plan");
       await settle(page);
-      await showSearch(page);
+      // FPL's own page (the Search ⇄ FPL toggle), where its strip is
+      // (PlanPage): on the search's page the strip's menu was out of
+      // sight, and its click waited for it till the test's six minutes.
+      await showPlan(page);
       await grabberTo(page, "full");
       await stripShows(page, "fpl-strip-shows", "fpl-shows-recents");
       await expect(sideDrawer(page).getByTestId("route-recent").first()).toBeVisible();
@@ -222,6 +225,11 @@ export const FPL_SCREENS: Screen[] = [
       await page.goto(`/app/plan?${ROUTE}&view=full`);
       await controlsInSight(page);
       await page.getByTestId("depart-date").click({ timeout: slow(30000) });
+      // Pulled all the way up for the month's last day: at half the card
+      // has the time over the calendar, which runs on under the fold
+      // (DepartPicker, the UI audit's B7), and a day there is out of
+      // sight, where the click waited on it till the test's six minutes.
+      await grabberTo(page, "full");
       await page.locator('[data-slot="calendar"] td [role="button"]:not([aria-disabled="true"]):not([data-outside-month])').last().click();
       await expect(page.getByTestId("depart-time")).toBeVisible();
       // The plan made again for that day, its arrival in behind the sheet:
