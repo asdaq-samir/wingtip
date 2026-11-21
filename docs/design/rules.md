@@ -907,16 +907,17 @@ At each airport the chart already shows, from the map's own
   ForeFlight over California: "how come we don't see big airports and
   airspaces at our zoom levels?"): from zoom 5, a few states on a phone,
   the towered fields (`field_mark_rank`'s first tier) and the Class B and
-  C rings, the rings at half their width and with no band, and only the
-  Class B fields named; from 6 every field drawn named (the towered
-  ones); from 7 the public fields with 3,000 ft of hard runway, named
-  from 8, the Class D rings, the restricted
-  areas and MOAs, and the rings at their full width with their band; the
-  other public fields from 8, every field named from there, private ones
-  from 10, heliports from 11, and the altitude tabs from 9. The names
-  are capped so on the web (glOverlays' `AIRPORT_IDENT_FAR`, the tiles'
-  `towered`), the long hard runways' some 2,400 idents at 7 having been
-  about a second of a phone's main thread a wheel notch out (the speed
+  C rings, the rings at half their width and with no band, the towered
+  fields named wherever they are drawn (the owner, 2026-11-21);
+  from 7 the public fields with 3,000 ft of hard runway, named from 8,
+  the Class D rings, the restricted areas and MOAs, and the rings at their
+  full width with their band; the other public fields from 8, every field
+  named from there, private ones from 10, heliports from 11, and the
+  altitude tabs from 9. The names are capped so on the web (glOverlays'
+  `AIRPORT_IDENT_FAR`, the tiles' `towered`): the cap thins only the
+  untowered fields' names below 8, the long hard runways' some 2,400
+  idents at 7 having been about a second of a phone's main thread a wheel
+  notch out (the speed
   audit of 2026-11-21); the phones follow on the owner's word. Each number is a token, design/tokens.json's
   `map.zoom`, which the web, the iPhone and Android read and the charts
   job's overlay tiles hold each kind from (`map_zoom`, a zoom less in the

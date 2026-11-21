@@ -1513,10 +1513,10 @@ in its surface airspace's chart code, its flight category the disc in the
 middle, sized by the engine's `field_mark_rank` step (O'Hare 1.5
 times an ordinary towered field), one GL picture per variant
 (`lib/map/gl/airportIcons`). Its ident beside it is capped by zoom
-(`glOverlays`' `AIRPORT_IDENT_FAR`): a Class B field's alone below 6, the
-towered fields' from 6, and the long hard runways' fields, whose marks
-come in at 7, named from 8 with every field (rules.md, "What is drawn
-from which zoom"; the speed audit of 2026-11-21, finding 8). From
+(`glOverlays`' `AIRPORT_IDENT_FAR`): a towered field's wherever it is
+drawn, from 5, and the long hard runways' fields, whose marks come in at
+7, named from 8 with every field (rules.md, "What is drawn from which
+zoom"; the speed audit of 2026-11-21, finding 8). From
 zoom 10 in, a station model adds the wind barb (the engine's `wind_barb`:
 flags, barbs and half-barbs to the nearest 5 kt, a circle for calm,
 FAA-H-8083-28A 25.2.3.4.5) and two lines, the visibility with its weather
