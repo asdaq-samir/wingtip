@@ -7,7 +7,7 @@ import { useMinuteClock } from "../lib/useMinuteClock";
 import { cycleWarning, dayWords } from "../lib/dataCycles";
 import { savedWords, useSaved } from "../lib/fromCache";
 import { useOnline } from "../lib/kept/useOnline";
-import { ageWords, mapAgesQuery, staleWords, useLayerAges } from "../lib/map/sources/layerAges";
+import { ageWords, mapAgesQuery, staleWords, useDataCycles, useLayerAges } from "../lib/map/sources/layerAges";
 import { useCredits } from "../lib/map/gl/creditStore";
 import { TEXT } from "../lib/text";
 
@@ -36,6 +36,9 @@ export default function StatusPanel() {
   // for both.
   const { data, isError } = useQuery(mapAgesQuery);
   const { traffic } = useLayerAges();
+  // Judged on this device's day, not only as the planner last answered
+  // (useDataCycles): a kept answer turns out of date in the air too.
+  const cycles = useDataCycles();
   // What each layer on the map says of its source and its currency -- the
   // overlay tiles' FAA cycle, the radar loop's source, the traffic's, old
   // field weather -- where the map's row of small print said it (the
@@ -69,7 +72,9 @@ export default function StatusPanel() {
             />
           ))
         ) : (
-          <ListRow muted title={isError ? "The planner could not be reached" : "Checking…"} />
+          // Offline, a lost connection's ask waits paused (lib/queryRetry),
+          // so "Checking…" would stand for the whole flight: said as it is.
+          <ListRow muted title={!online ? "No connection" : isError ? "The planner could not be reached" : "Checking…"} />
         )}
       </ListGroup>
 
@@ -77,9 +82,9 @@ export default function StatusPanel() {
           is past its cycle, said under it in the row's own words (the
           engine's data_cycle, lib/dataCycles): an old edition reads as if
           nothing were wrong, so this is where a pilot checks. */}
-      {!!data?.data_cycles?.length && (
+      {!!cycles.length && (
         <ListGroup title="FAA Data">
-          {data.data_cycles.map((c) => {
+          {cycles.map((c) => {
             const warning = cycleWarning(c);
             return (
               <ListRow

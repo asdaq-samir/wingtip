@@ -19,6 +19,7 @@ import { CardAction } from "../../components/CardAction";
 import { RowBadge } from "../../components/RowBadge";
 import { BADGE } from "../../lib/rowBadges";
 import { FINDING_TONE } from "../../lib/findings";
+import { NO_CONNECTION, noConnection } from "../../lib/problems";
 import { faaWords, suaAltitudes, tfrPage } from "../../lib/advisories";
 import { saaQuery, saaWords } from "../../lib/liveReports";
 import StatusBadge from "../../components/StatusBadge";
@@ -139,11 +140,15 @@ export default function AirspaceCard({
   // Its own drawer, sized from here: all the way up for the rest of its layers.
   const cardId = useId();
   const card = useCardSize(cardId);
-  const { data, isLoading, isError } = useQuery({
+  const asked = useQuery({
     queryKey: ["airspaceAt", point.lat, point.lon],
     queryFn: () => api.airspaceAt(point.lat, point.lon),
     staleTime: 10 * 60_000,
   });
+  const { data, isLoading, isError } = asked;
+  // With no connection and nothing kept for the point, its ask waits
+  // paused: said so in place, not a skeleton for good (lib/problems).
+  const offline = !data && noConnection(asked);
   // Whether each special-use area here is active or cold now, as SFDPS says.
   const { data: saa } = useQuery(saaQuery(data?.special_use.map((a) => a.name) ?? []));
   const ground = data?.ground_ft ?? null;
@@ -226,7 +231,11 @@ export default function AirspaceCard({
               ) : (
                 // The lowest two while they come, each a band's height: its
                 // class, its range and its minimums.
-                <SkeletonRows rows={2} lines={2} fetching="Fetching the airspace here…" />
+                offline ? (
+                  <ListRow muted title={NO_CONNECTION} />
+                ) : (
+                  <SkeletonRows rows={2} lines={2} fetching="Fetching the airspace here…" />
+                )
               )}
             </ListGroup>
           </PillSection>

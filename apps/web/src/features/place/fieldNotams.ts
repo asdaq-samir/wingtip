@@ -41,13 +41,17 @@ const FIRST = 3;
  * of its own (the owner, 2026-11-13: "I don't want search notams").
  */
 export function useFieldNotams(ident: string) {
-  const { data, isError } = useQuery(fieldNotamsQuery(ident));
+  const { data, isError, dataUpdatedAt, errorUpdatedAt } = useQuery(fieldNotamsQuery(ident));
   const [all, setAll] = useState(false);
   const notams = data?.notams ?? [];
   const long = notams.length > FIRST;
   return {
     data,
     isError,
+    // When the list came, and whether asking again since failed: its age
+    // where it is the one kept (PlaceNotamsSection's KeptAge).
+    atMs: dataUpdatedAt || null,
+    failed: errorUpdatedAt > dataUpdatedAt,
     total: notams.length,
     shown: all || !long ? notams : notams.slice(0, FIRST),
     long,
