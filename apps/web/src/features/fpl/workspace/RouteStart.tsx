@@ -37,7 +37,7 @@ export function TypeRow({ vm }: { vm: StartSlices }) {
         size="inline"
         onClick={routeUndo}
         data-testid="route-undo"
-        className={cn("relative px-1 text-tint after:absolute after:-inset-2 after:content-['']", TEXT.row)}
+        className={cn("relative px-1 text-tint hit-2", TEXT.row)}
       >
         Undo
       </Button>

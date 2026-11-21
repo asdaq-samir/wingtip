@@ -39,11 +39,7 @@ export function NotamBadge({ mark, kind, onOpen }: { mark: NotamMark; kind: stri
       </Badge>
     );
   return (
-    <Badge
-      {...props}
-      className={cn(look, "relative overflow-visible after:absolute after:-inset-3 after:content-['']")}
-      render={<BaseButton onClick={onOpen} />}
-    >
+    <Badge {...props} className={cn(look, "relative overflow-visible hit-3")} render={<BaseButton onClick={onOpen} />}>
       {words}
     </Badge>
   );

@@ -38,7 +38,7 @@ export default function InputGuide({ label }: { label: string | null | undefined
       {/* Its 44-point area a pseudo-element round the words. */}
       <CollapsibleTrigger
         data-testid="input-guide-how"
-        className="relative flex items-center gap-1 self-start rounded-sm text-tint outline-none after:absolute after:-inset-x-2 after:-inset-y-[11px] after:content-[''] focus-visible:ring-2 focus-visible:ring-ring"
+        className="relative flex items-center gap-1 self-start rounded-sm text-tint outline-none hit-x-2 hit-y-[11px] focus-visible:ring-2 focus-visible:ring-ring"
       >
         {guide.how}
         <ChevronDown className={cn("size-4 transition-transform motion-reduce:transition-none", open && "rotate-180")} aria-hidden="true" />

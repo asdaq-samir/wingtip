@@ -1,8 +1,8 @@
 import type { ExpressionSpecification, LineLayerSpecification, Map as MlMap, SymbolLayerSpecification } from "maplibre-gl";
 import { drawSvg } from "../../../lib/map/gl/drawSvg";
-import { GL_FONT_BOLD, LABEL_SIZE } from "../../../lib/map/gl/layers/common";
+import { labelText } from "../../../lib/map/gl/layers/common";
 import { TRAFFIC_COLOURS } from "../../../lib/map/marks/icons";
-import { CHART } from "../../../lib/tokens";
+import { CHART, MAP_LABEL } from "../../../lib/tokens";
 
 /*
  * The traffic's marks as MapLibre's own layers, the map's stock symbols
@@ -44,9 +44,9 @@ const MARK = 16;
 /** The picture's box, points: room for the tracked ring (7 out from the
  *  chevron's box, 2.5 wide) and its shadow round the 16. */
 const BOX = 34;
-/** The words' size and line, points (the map's smallest, map.label-small;
+/** The words' size and line, points (the map's smallest, map.label.kind.traffic;
  *  14 a line). */
-const TAG_SIZE = LABEL_SIZE.small;
+const TAG_SIZE = MAP_LABEL.kind.traffic.size;
 const TAG_LINE = 14;
 /** The tag's top under the airplane's middle, and how far its box is
  *  drawn inside MapLibre's line box, points. */
@@ -155,8 +155,7 @@ export function trafficLayers(ids: { marks: string; tags: string; trends: string
         ["get", "callsign"],
         { "text-color": `${CHART.casing}d9` },
       ],
-      "text-font": GL_FONT_BOLD,
-      "text-size": TAG_SIZE,
+      ...labelText("traffic"),
       "text-line-height": TAG_LINE / TAG_SIZE,
       "text-anchor": "top",
       "text-offset": [

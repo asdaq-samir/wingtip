@@ -113,7 +113,7 @@ export function FieldHead({
                   event.stopPropagation();
                   onInfo(a.ident);
                 }}
-                className="relative z-10 max-w-full self-start justify-start truncate font-semibold after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-['']"
+                className="relative z-10 max-w-full self-start justify-start truncate font-semibold hit-y-[11px]"
               >
                 {a.ident}
               </Button>

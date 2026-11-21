@@ -116,7 +116,7 @@ export function VorCheckGroup({ aircraft }: { aircraft: Aircraft }) {
             className="h-8 w-40"
             max={today}
             {...ariaInvalid(`${id}-on`, errors.checkedOn?.message)}
-            aria-label="VOR check date"
+            aria-label="Checked on, VOR check date"
           />
         </RowField>
       </ListRow>

@@ -8,9 +8,9 @@ import type {
 import type { ChartInfo } from "../../api/types";
 import type { AirspaceVolume } from "../sources/overlayTypes";
 import { chartPair, tileTemplate } from "../sources/tiles";
-import { CHART } from "../../tokens";
+import { CHART, MAP_ZOOM } from "../../tokens";
 import { chartBrightness, chartContrast, NIGHT_DIM } from "../chartLook";
-import { LABEL_SIZE } from "./layers/common";
+import { labelText } from "./layers/common";
 
 /**
  * The map's style (the owner, 2026-11-06: "Like ForeFlight, I want
@@ -149,17 +149,18 @@ export const AIRSPACE_INK: Record<AirspaceClass, { colour: string; dash?: number
   E: { colour: CHART.airspaceMagenta, dash: [10 / 3, 5 / 3], opacity: 0.45, width: 3, band: 0 },
 };
 
-/** From which zoom each class is drawn, in the app's levels: B and C
- *  from 5, a few states on a phone, with the towered fields they are
- *  named for, as ForeFlight draws them at that scale (the owner,
- *  2026-11-21: "how come we don't see big airports and airspaces at our
- *  zoom levels?"); D from 7, E from 8; and every label from 9 (the
- *  owner, 2026-11-20, the readability list's G: farther out the tabs were
- *  the largest marks on the map, over the fields' names). The overlay
- *  tiles hold B and C from their first zoom (the charts job's
- *  AIRSPACE_MIN_ZOOM). */
-const AIRSPACE_FROM: Record<AirspaceClass, number> = { B: 5, C: 5, D: 7, E: 8 };
-export const AIRSPACE_LABELS_FROM = 9;
+/** From which zoom each class is drawn, in the app's levels, and every
+ *  label: design/tokens.json's map.zoom, which every app and the charts
+ *  job's overlay tiles read (B and C from a few states on a phone, with
+ *  the towered fields they are named for, the owner's 2026-11-21 ask; the
+ *  tabs from 9, the readability list's G of 2026-11-20). */
+const AIRSPACE_FROM: Record<AirspaceClass, number> = {
+  B: MAP_ZOOM.airspaceB,
+  C: MAP_ZOOM.airspaceC,
+  D: MAP_ZOOM.airspaceD,
+  E: MAP_ZOOM.airspaceESurface,
+};
+export const AIRSPACE_LABELS_FROM = MAP_ZOOM.airspaceLabels;
 
 export const AIRSPACE_LINE_LAYERS = (["D", "C", "B"] as const).map((c) => `airspace-${c}`);
 
@@ -188,7 +189,7 @@ const byZoom = (stops: [appZoom: number, px: number][]) =>
  *  line, the owner's screenshot, 2026-11-08): a few pixels at a
  *  region's zoom, wider as the map comes in. */
 const BAND_STOPS: [number, number][] = [
-  [7, 3],
+  [MAP_ZOOM.airspaceFull, 3],
   [9, 6],
   [11, 10],
   [13, 16],
@@ -208,9 +209,19 @@ const BAND_OFFSET = byZoom(BAND_STOPS.map(([z, w]) => [z, w / 2 + 1.5]));
 const BAND_FROM = BAND_STOPS[0]![0];
 const lineWidth = (width: number) =>
   byZoom([
-    [5, width / 2],
+    [MAP_ZOOM.airspaceB, width / 2],
     [BAND_FROM, width],
   ]);
+
+/** An altitude tab's box, the Class B, C and D's and the special-use
+ *  areas' alike: the lines close as the chart sets them (the ceiling over
+ *  the floor), the tab hugging the words, two points kept round it. */
+export const TAB_BOX = {
+  "text-line-height": 1,
+  "icon-text-fit": "both" as const,
+  "icon-text-fit-padding": [1, 3, 1, 3] as [number, number, number, number],
+  "text-padding": 2,
+};
 
 /** Each class's band and line, a line layer each drawn from that class's
  *  zoom, and the labels: white bold type in a dark tab bordered in the
@@ -254,17 +265,14 @@ export function airspaceLayers(font: string[]): LayerSpecification[] {
     filter: ["all", ["in", ["get", "class"], ["literal", ["B", "C", "D"]]], ["has", "tab"]],
     layout: {
       "text-field": AIRSPACE_TAB as never,
-      "text-font": font,
       // The map's smallest words at every zoom, in a tab hugging them
       // (the readability list's G): they had grown to the large label's
-      // size in a roomy tab, the biggest marks on the chart.
-      "text-size": LABEL_SIZE.small,
-      // The ceiling over the floor, close as the chart sets them.
-      "text-line-height": 1,
+      // size in a roomy tab, the biggest marks on the chart. The special-use
+      // areas' tabs are the same (glSuaLabels' suaTabLayout).
+      "text-font": font,
+      "text-size": labelText("airspaceTab")["text-size"],
+      ...TAB_BOX,
       "icon-image": ["concat", "airspace|tab|", ["get", "class"]] as never,
-      "icon-text-fit": "both" as const,
-      "icon-text-fit-padding": [1, 3, 1, 3] as [number, number, number, number],
-      "text-padding": 2,
       // Never on another tab or an airport's mark (the marks' layers are
       // above and place first); where tabs compete the nearer class wins
       // (B, C, D).
@@ -300,7 +308,7 @@ export const suaHatch = (ink: keyof typeof SUA_INK) => `sua|hatch|${ink}`;
 /** From the app's zoom 7, a few states across, with Class D: tried at 6
  *  (2026-11-21), California's MOAs and restricted areas, some 160 hatched
  *  lines, hid the fields and the Class B and C under them. */
-const SUA_FROM = 7;
+const SUA_FROM = MAP_ZOOM.specialUse;
 export const SUA_LAYERS = ["sua-band", "sua-line", "sua-labels"];
 
 /** The special-use areas from the tiles' `special_use` layer: each

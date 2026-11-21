@@ -31,7 +31,9 @@ import org.springframework.web.client.RestClientResponseException;
  * cross-countries between them (V26), the approaches set as lessons
  * between them (V30), their avatar's photo (V45) -- and the sign-in links ever sent
  * to their address, and the connections to AI apps they made (the
- * connector's tokens and consents, ConnectorGrants); last
+ * connector's tokens and consents, ConnectorGrants), with the pilot's id
+ * noted in deleted_accounts (V47) for a restore to delete again
+ * (DeletionsReapplied); last
  * every session they hold, on any device, under any of the names they
  * sign in by. Only the planner being down leaves the account whole: the
  * notes cannot be given back, so a database failure after them leaves
@@ -94,6 +96,7 @@ public class AccountService {
             if (connections != null) {
                 connections.forget(pilot.getId());
             }
+            pilots.noteDeleted(pilot.getId());
             pilots.deleteNow(pilot.getId());
         });
         // A magic link signs in under the address, Google and Apple under

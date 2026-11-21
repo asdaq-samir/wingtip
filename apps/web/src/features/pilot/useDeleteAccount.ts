@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { api } from "../../lib/api/client";
+import { api, describeError } from "../../lib/api/client";
 import { forgetPilotCache } from "../../lib/pilotCache";
 import { showError } from "../../lib/problems";
 
@@ -32,6 +32,6 @@ export function useDeleteAccount() {
       forgetPilotCache();
       window.location.assign("/app/plan");
     },
-    onError: (err) => showError("Your account was not deleted", err instanceof Error ? err.message : null),
+    onError: (err) => showError("Your account was not deleted", describeError(err)),
   });
 }

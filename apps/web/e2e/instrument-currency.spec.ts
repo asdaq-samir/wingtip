@@ -179,8 +179,10 @@ test("the Logbook's reminders are turned on, and kept", async ({ page }) => {
   const console = page.getByTestId("console-sheet");
   await library(console, "Logbook");
   const toggle = console.getByTestId("reminders-toggle");
-  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  // The stock switch, its row's title its name (LogbookPanel).
+  await expect(toggle).toHaveAccessibleName("Reminders");
+  await expect(toggle).toHaveAttribute("aria-checked", "false");
   await toggle.click();
-  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+  await expect(toggle).toHaveAttribute("aria-checked", "true");
   expect(sent).toEqual([true]);
 });

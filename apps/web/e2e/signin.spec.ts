@@ -84,6 +84,14 @@ test("signed out, Personal says once what signing in keeps, its minimums need no
   const dialog = page.getByRole("dialog", { name: "Sign in to Wingtip Maps" });
   await expect(dialog.getByLabel("Email address")).toBeVisible();
   await expect(dialog.getByRole("link", { name: /Continue with/ })).toHaveCount(0);
+  // An address that can't be one is said under the field, not in the
+  // browser's bubble (the owner's Q3, 2026-11-21), and goes as it is typed.
+  await dialog.getByLabel("Email address").fill("pilot@");
+  await dialog.getByRole("button", { name: "Send Link" }).click();
+  await expect(dialog.getByTestId("sign-in-error")).toHaveText("Enter an email address like you@example.com");
+  await expect(dialog.getByLabel("Email address")).toHaveAttribute("aria-invalid", "true");
+  await dialog.getByLabel("Email address").fill("pilot@example.com");
+  await expect(dialog.getByTestId("sign-in-error")).toHaveCount(0);
   await page.keyboard.press("Escape");
 
   // Where Google is registered, Google alone.

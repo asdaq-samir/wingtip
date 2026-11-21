@@ -64,7 +64,10 @@ export function NearestStrip({
             key={field.ident}
             onClick={() => onOpen(field.ident)}
             testId="nearest-strip-field"
-            label={`${field.ident}, ${field.name}, ${nmAway(field.distance_nm)} ${compassPoint(field.bearing_deg)}`}
+            // Said after the tile's ident and distance (SmallTile): the name,
+            // the way, and the mark's colour in words, as Favorites' tiles
+            // say it, the category otherwise a colour alone (WCAG 1.1.1, 1.4.1).
+            label={[field.name, compassPoint(field.bearing_deg), field.flight_category].filter(Boolean).join(", ")}
             mark={
               <TileChartMark>
                 <ChartMark space={field.airspace_class ?? null} category={field.flight_category} use={use} size={44} />

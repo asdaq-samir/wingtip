@@ -1,5 +1,5 @@
 import { Button as BaseButton } from "@base-ui/react/button";
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Mail } from "lucide-react";
 import { cn } from "cn";
@@ -14,7 +14,8 @@ import { LEGAL_PAGES } from "../lib/legal";
 import { capabilitiesQuery } from "../lib/queryClient";
 import { TEXT } from "../lib/text";
 import { Separator } from "./ui/separator";
-import { FieldError } from "./ui/field";
+import { FieldError, FieldLabel } from "./ui/field";
+import { errorIdOf, invalidProps } from "../lib/fieldError";
 
 /**
  * Three ways in, the standard shape every "sign in" prompt (Auth.js,
@@ -28,6 +29,9 @@ import { FieldError } from "./ui/field";
  * one that was not opened a blank 401 -- on the local stack, which
  * registers neither, both did.
  */
+/** What is said under the field for an address that can't be one. */
+const BAD_ADDRESS = "Enter an email address like you@example.com";
+
 export default function SignInModal({
   hero = false,
   inline = false,
@@ -66,7 +70,20 @@ export default function SignInModal({
         : linkError instanceof ApiError && linkError.status < 500
           ? "Couldn't send that link. Reload the page and try again."
           : "Couldn't reach the sign-in service. Try again in a minute.";
+  // The address checked on Send by the field's own email grammar (the
+  // stock type="email"), its words said under the field where the
+  // server's refusals are, not in the browser's bubble (the owner's Q3,
+  // 2026-11-21); cleared as the pilot types again.
+  const [addressWrong, setAddressWrong] = useState(false);
+  const fieldProblem = addressWrong ? BAD_ADDRESS : linkFailure;
   const sent = magicLink.isSuccess ? magicLink.variables : null;
+  // The form goes as the link is sent, its button with it: focus taken to
+  // what is said in its place, not left on nothing (WCAG 2.4.3, 4.1.3).
+  const sentAt = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (sent) sentAt.current?.focus();
+  }, [sent]);
+  const emailId = useId();
   // On a phone a sheet from the navigation bar's edge, the bottom unless
   // the pilot moved it, as iOS asks to sign in, in the floating sheet's
   // look, at the owner's pick of the sheets audit (D3, 2026-10-17); wider,
@@ -85,7 +102,7 @@ export default function SignInModal({
       description="Save your airplanes and filed flights to your own account."
       trigger={
         inline ? (
-          <BaseButton className="relative font-semibold text-tint outline-none after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring">
+          <BaseButton className="relative font-semibold text-tint outline-none hit-x-1 hit-y-3 focus-visible:ring-2 focus-visible:ring-ring">
             Sign in
           </BaseButton>
         ) : hero ? (
@@ -133,26 +150,43 @@ export default function SignInModal({
           </>
         )}
         {sent ? (
-          <p className={`text-muted-foreground ${TEXT.prose}`} role="status">
+          <p ref={sentAt} tabIndex={-1} className={`text-muted-foreground outline-none ${TEXT.prose}`} role="status">
             Check <span className="font-semibold text-foreground">{sent}</span> for a sign-in link. It expires in 15 minutes.
           </p>
         ) : (
           <form
             className="flex flex-col gap-2"
+            noValidate
             onSubmit={(e) => {
               e.preventDefault();
+              const field = e.currentTarget.elements.namedItem("email");
+              if (field instanceof HTMLInputElement && !field.checkValidity()) {
+                setAddressWrong(true);
+                field.focus();
+                return;
+              }
               magicLink.mutate(trimmedEmail);
             }}
           >
+            {/* Its title in sight once typed in, where a placeholder goes
+                (WCAG 3.3.2), and the field's name the words seen (2.5.3). */}
+            <FieldLabel htmlFor={emailId} className={cn("font-normal text-muted-foreground", TEXT.note)}>
+              Email address
+            </FieldLabel>
             <div className="flex gap-2">
               <Input
                 type="email"
+                name="email"
                 required
                 placeholder="you@example.com"
-                aria-label="Email address"
+                id={emailId}
+                {...invalidProps(emailId, fieldProblem ?? undefined)}
                 autoComplete="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setAddressWrong(false);
+                }}
               />
               {/* Its word on it, where a grey envelope alone read as nothing
                 to tap (the UI audit, 2026-11-09); a spinner in place of
@@ -171,9 +205,9 @@ export default function SignInModal({
                 Send Link
               </Button>
             </div>
-            {linkFailure && (
-              <FieldError className={`text-destructive ${TEXT.prose}`} data-testid="sign-in-error">
-                {linkFailure}
+            {fieldProblem && (
+              <FieldError id={errorIdOf(emailId)} className={`text-destructive ${TEXT.prose}`} data-testid="sign-in-error">
+                {fieldProblem}
               </FieldError>
             )}
           </form>

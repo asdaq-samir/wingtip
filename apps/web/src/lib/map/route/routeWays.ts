@@ -1,7 +1,7 @@
 import type { Layout } from "../gl/markLayers";
 import type { GlPicture } from "../gl/useGlSymbols";
 import { framed } from "../marks/markPictures";
-import { CHART, MAP } from "../../tokens";
+import { CHART, MAP_LABEL } from "../../tokens";
 import { flatDeg } from "../../geo";
 
 /** A way FPL's route line offers beside the route (its chips), as the map
@@ -45,7 +45,7 @@ export function wayChip(): GlPicture {
 /** The words' ink on each chip. */
 export const wayInk = (shown: boolean) => (shown ? CHART.mapBlueInk : CHART.fixInk);
 /** The words' size, the map's usual 12 (map.label): a label on the line, not a sign over it. */
-export const WAY_TEXT_SIZE = MAP.label;
+const WAY_TEXT_SIZE = MAP_LABEL.kind.way.size;
 /** The words' bottom left 4 points left of the tip and 12 above it (the
  *  content's corner at 10, 20; the tip at 14, 32), in ems of their size. */
 export const WAY_CHIP_PLACE: Layout = { "text-anchor": "bottom-left", "text-offset": [-4 / WAY_TEXT_SIZE, -12 / WAY_TEXT_SIZE] };

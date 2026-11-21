@@ -14,7 +14,7 @@ import { api } from "../../lib/api/client";
 import type { Aircraft, InspectionsRequest } from "../../lib/api/types";
 import { localDay } from "../../lib/format";
 import { FINDING_TONE } from "../../lib/findings";
-import TogglePill from "../../components/TogglePill";
+import SwitchRow from "../../components/SwitchRow";
 import { daysBetween, daysWords, dueFinding, kebab } from "./paperwork";
 
 /** The inspections' dates, each with the rule that asks for it. */
@@ -187,20 +187,21 @@ export function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
       {/* Whether the 100-hour is owed at all: carrying anyone for hire, or
           flight instruction for hire in an airplane the instructor
           provides (91.409(b)). Only then is it listed and reminded of. */}
-      <ListRow title="Flown for hire" description="Hire or instruction for hire: the 100-hour, 91.409(b)">
-        <Controller
-          control={control}
-          name="forHire"
-          render={({ field }) => (
-            <TogglePill
-              pressed={field.value}
-              onPressedChange={field.onChange}
-              label={field.value ? "Yes" : "No"}
-              testId="inspection-for-hire"
-            />
-          )}
-        />
-      </ListRow>
+      {/* The stock switch, its row's title its name: a "Yes" or "No" pill
+          was read "Yes, pressed", the question not said (WCAG 1.3.1, 4.1.2). */}
+      <Controller
+        control={control}
+        name="forHire"
+        render={({ field }) => (
+          <SwitchRow
+            title="Flown for hire"
+            description="Hire or instruction for hire: the 100-hour, 91.409(b)"
+            on={field.value}
+            onChange={field.onChange}
+            testId="inspection-for-hire"
+          />
+        )}
+      />
       <ListRow
         id={`${id}-at`}
         title="Hours at last 100-hour"

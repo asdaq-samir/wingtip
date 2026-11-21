@@ -34,7 +34,7 @@ describe("the Go / No-Go", () => {
     });
     expect(items.find((i) => i.key === "weather")!.detail).toBe("VFR not recommended: KDLH currently reporting IFR");
     expect(items.find((i) => i.key === "fuel")!.detail).toBe("2.3 gal short of the fuel and its 30 min reserve (14 CFR 91.151)");
-    expect(line).toEqual({ finding: "stop", words: "No-go as planned: Weather, TFRs & special use, Altitude, Fuel" });
+    expect(line).toEqual({ finding: "stop", words: "No-go as planned: weather, TFRs & special use, altitude, fuel" });
   });
 
   it("under IFR cites the IFR reserve's rule", () => {
@@ -59,7 +59,7 @@ describe("the Go / No-Go", () => {
       runways: { ...quiet.runways, crosswind: ["C81"] },
     };
     expect(finding(input, "airspace").detail).toBe("VOLK EAST MOA scheduled in use when you pass");
-    expect(verdict(input).line.words).toBe("Look again at Weather, TFRs & special use, Altitude, Runways");
+    expect(verdict(input).line.words).toBe("Look again at weather, TFRs & special use, altitude, runways");
   });
 
   it("takes distances past the POH's tables as a caution and a runway not checked as unknown, never within", () => {
@@ -79,9 +79,9 @@ describe("the Go / No-Go", () => {
       runways: { ...quiet.runways, worked: false },
       balance: { pending: false, worked: false, problems: [], takeoff: null },
     });
-    expect(unknown.line.words).toBe("No problems found; not checked: Runways, Weight & balance");
+    expect(unknown.line.words).toBe("No problems found; not checked: runways, weight & balance");
     const coming = verdict({ ...quiet, weather: { ...quiet.weather, pending: true }, risk: null });
-    expect(coming.line).toEqual({ finding: "pending", words: "Still checking: Weather, Risk" });
+    expect(coming.line).toEqual({ finding: "pending", words: "Still checking: weather, risk" });
   });
 
   it("names a near TFR and an area not scheduled as nothing against it", () => {

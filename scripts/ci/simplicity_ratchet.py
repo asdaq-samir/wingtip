@@ -244,6 +244,13 @@ METRICS = {
         ),
         "apps/web/eslint-suppressions.json grew: use the stock component",
     ),
+    # A control's 44-point hit area is the `hit-*` utility (apps/web/src/index.css);
+    # what remains is a fragment kept by hand, because it sits where the
+    # base layer's `button::after` gives the area or a neighbour sets its size.
+    "web_hand_hit_areas": (
+        lambda: occurrences("apps/web/src", ".tsx", r"\bafter:-inset-") + occurrences("apps/web/src", ".ts", r"\bafter:-inset-"),
+        "a hand-written after:-inset-… hit area: use hit-y-3, hit-x-2 hit-y-3 or hit-3 (apps/web/src/index.css)",
+    ),
     "files_over_400_lines": (
         lambda: len([line for line in text("scripts/ci/file_sizes_allow.txt").splitlines() if line.strip() and not line.startswith("#")]),
         "scripts/ci/file_sizes_allow.txt grew: split the file",

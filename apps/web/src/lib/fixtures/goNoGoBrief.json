@@ -376,7 +376,7 @@
         ],
         "line": {
           "finding": "stop",
-          "words": "No-go as planned: Weather"
+          "words": "No-go as planned: weather"
         }
       }
     },
@@ -506,7 +506,7 @@
         ],
         "line": {
           "finding": "caution",
-          "words": "Look again at Weather"
+          "words": "Look again at weather"
         }
       }
     },
@@ -642,7 +642,7 @@
         ],
         "line": {
           "finding": "caution",
-          "words": "Look again at Weather"
+          "words": "Look again at weather"
         }
       }
     },
@@ -934,7 +934,7 @@
         ],
         "line": {
           "finding": "caution",
-          "words": "Look again at Fields"
+          "words": "Look again at fields"
         }
       }
     },
@@ -1200,7 +1200,7 @@
         ],
         "line": {
           "finding": "stop",
-          "words": "No-go as planned: TFRs & special use, Fuel"
+          "words": "No-go as planned: TFRs & special use, fuel"
         }
       }
     }

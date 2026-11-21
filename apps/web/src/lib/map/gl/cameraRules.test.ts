@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { followMs, pickHow, verdict } from "./cameraRules";
+import { followMs, followStep, pickHow, verdict, FOLLOW_JUMP_UNDER_PX } from "./cameraRules";
 
 describe("the camera owner's rules", () => {
   it("lets a follow's step go by while a pick, a fit or the pilot's hand has the camera, and never holds up a pick", () => {
@@ -34,5 +34,13 @@ describe("the camera owner's rules", () => {
     expect(pickHow(3 * 852, 852, 0)).toBe("ease");
     expect(pickHow(3 * 852 + 1, 852, 0)).toBe("fly");
     expect(pickHow(100, 852, 5)).toBe("fly");
+  });
+
+  it("jumps own ship's small steps once a fix and eases every other follow, the dry run's glide kept", () => {
+    expect(followStep("own-ship", FOLLOW_JUMP_UNDER_PX - 1)).toBe("jump");
+    expect(followStep("own-ship", FOLLOW_JUMP_UNDER_PX)).toBe("ease");
+    expect(followStep("dry-run", 1)).toBe("ease");
+    expect(followStep("track", 1)).toBe("ease");
+    expect(followStep("replay", 1)).toBe("ease");
   });
 });

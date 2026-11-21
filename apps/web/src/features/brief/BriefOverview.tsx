@@ -10,24 +10,20 @@ import FlightWatch from "./FlightWatch";
 const NOTAMS_SECTION = "NOTAMs";
 
 /**
- * The Brief as it opens (BriefCard's overview), at the owner's pick of
- * option A (2026-11-19): what the briefing could not check and when to go
- * hour by hour (features/departureWindow) over the one grouped list
- * (BriefGlance), the NOTAMs that matter its last row, opening them ranked
- * for the flight on Preflight (features/notamRanking), and the flight
- * watch under it.
+ * The Brief as it opens (BriefCard's overview), at the owner's pick of the
+ * Brief audit's option 2 (2026-11-21): the one grouped list (BriefGlance)
+ * with the findings first, what the briefing could not check said at their
+ * end rather than over them (PanelTabs' `notice` is left to the other
+ * pages), the Adverse Conditions, the parts of the flight, the NOTAMs
+ * that matter its last row, opening them ranked for the flight on
+ * Preflight (features/notamRanking); when to go hour by hour at its foot
+ * (features/departureWindow), and the flight watch under it.
  */
-export default function BriefOverview({ onOpen, notice }: { onOpen: (tab: PanelTab, section?: string) => void; notice?: ReactNode }) {
+export default function BriefOverview({ onOpen }: { onOpen: (tab: PanelTab, section?: string) => void; notice?: ReactNode }) {
   const openNotams = () => onOpen("preflight", NOTAMS_SECTION);
   return (
     <BriefGlance
       onOpen={onOpen}
-      before={
-        <>
-          {notice}
-          <DepartureWindowStrip />
-        </>
-      }
       notams={
         <NotamsRow
           onOpen={openNotams}
@@ -35,6 +31,7 @@ export default function BriefOverview({ onOpen, notice }: { onOpen: (tab: PanelT
           fallback={<ListRow title="NOTAMs" chevron onClick={openNotams} data-testid="brief-notams-row" />}
         />
       }
+      foot={<DepartureWindowStrip />}
       after={<FlightWatch />}
     />
   );

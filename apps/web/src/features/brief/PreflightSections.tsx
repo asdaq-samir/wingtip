@@ -43,10 +43,7 @@ function NumberField({
     // pseudo-element behind them (isolate keeps it over the row): a tap
     // just above or below the 32 pt field still lands in it, and the
     // field does not grow.
-    <label
-      htmlFor={id}
-      className="relative isolate flex items-center gap-1.5 after:absolute after:inset-x-0 after:-inset-y-1.5 after:-z-10 after:content-['']"
-    >
+    <label htmlFor={id} className="relative isolate flex items-center gap-1.5 hit-y-1.5 after:-z-10">
       <StockNumberField
         id={id}
         minValue={0}

@@ -8,7 +8,6 @@ import type {
 } from "maplibre-gl";
 import { callEngine } from "../../../lib/engine/engine";
 import { hazardTextInk } from "../../../lib/map/weatherColours";
-import { MAP } from "../../../lib/tokens";
 import { useEffect, useMemo } from "react";
 import { api } from "../../../lib/api/client";
 import { areaColour, areaLabel } from "../weatherMap";
@@ -18,7 +17,7 @@ import { useWeatherLayers } from "../../../lib/map/sources/weatherLayers";
 import { WINDS_MODELLED } from "../../../lib/windsAloft";
 import { useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
-import { GL_FONT_BOLD, LABEL_HALO, LABEL_SIZE, TAP } from "../../../lib/map/gl/layers/common";
+import { TAP, labelHalo, labelInk, labelText } from "../../../lib/map/gl/layers/common";
 import { chipLayer, pictureLayer } from "../../../lib/map/gl/markLayers";
 import { useGlSymbols, type GlSymbol } from "../../../lib/map/gl/useGlSymbols";
 import { useGlView } from "../../../lib/map/gl/useGlView";
@@ -57,11 +56,10 @@ const AREA_LAYERS: (FillLayerSpecification | LineLayerSpecification | SymbolLaye
       "symbol-placement": "line",
       "symbol-spacing": 320,
       "text-field": ["get", "label"],
-      "text-font": GL_FONT_BOLD,
-      "text-size": LABEL_SIZE.small,
+      ...labelText("hazard"),
       "text-max-angle": 30,
     },
-    paint: { "text-color": ["get", "ink"], ...LABEL_HALO },
+    paint: { "text-color": labelInk(["get", "ink"]), ...labelHalo("hazard") },
   },
 ];
 /** The area whose card is open, its edge again, wide, in the selection's
@@ -186,8 +184,9 @@ const MARK_LAYERS: SymbolLayerSpecification[] = [
       "wx-pireps",
       MARKS,
       {},
-      { "text-size": MAP.label, "text-offset": [PIREP_SHIFT, 0] },
+      { "text-offset": [PIREP_SHIFT, 0] },
       { "text-color": ["get", "colour"] as ExpressionSpecification },
+      "pirep",
     ),
     filter: KIND("pirep"),
   },

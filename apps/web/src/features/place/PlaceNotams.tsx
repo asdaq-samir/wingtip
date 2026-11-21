@@ -222,11 +222,11 @@ function kindsOf(notams: FieldNotam[], ident: string): [string, FieldNotam[]][] 
  * "None heard", where the field is outside the NOTAM system.
  */
 export function PlaceNotamsSection({ ident, none = null }: { ident: string; none?: string | null }) {
-  const { data, isError, total, shown, long, all, toggle } = useFieldNotams(ident);
+  const { data, isError, query, total, shown, long, all, toggle } = useFieldNotams(ident);
   if (!data && !isError) return null;
   // "3 of 9" at the right while closed, as FirstFew's sections.
   const count = long && !all ? <span className={cn("text-muted-foreground", TEXT.note)}>{`${shown.length} of ${total}`}</span> : undefined;
-  const state = <NotamsState data={data} isError={isError} none={none} />;
+  const state = <NotamsState data={data} query={query} none={none} />;
   return (
     <div className="scroll-mt-16 pt-5" data-testid={SECTION}>
       <PillSection

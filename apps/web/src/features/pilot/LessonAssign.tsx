@@ -203,8 +203,9 @@ function AssignForm({ studentId, onDone, onCancel }: { studentId: number; onDone
 
 function NoteRow({ fix, value, onChange }: { fix: string; value: string; onChange: (v: string) => void }) {
   const id = useId();
+  const place = /^RW\d/.test(fix) ? `Runway ${fix.slice(2)}` : fix;
   return (
-    <ListRow id={id} title={<span className="font-mono">{/^RW\d/.test(fix) ? `Runway ${fix.slice(2)}` : fix}</span>}>
+    <ListRow id={id} title={<span className="font-mono">{place}</span>}>
       <FieldHit htmlFor={id}>
         <Input
           id={id}
@@ -213,7 +214,8 @@ function NoteRow({ fix, value, onChange }: { fix: string; value: string; onChang
           placeholder="A note"
           className="h-8 w-44 sm:w-56"
           autoComplete="off"
-          aria-label={`Your note at ${fix}`}
+          // The row's own words first, "Runway 27" for RW27 (WCAG 2.5.3).
+          aria-label={`${place}, your note`}
           onChange={(e) => onChange(e.target.value)}
           data-testid={`lesson-note-${fix}`}
         />

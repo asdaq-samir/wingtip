@@ -144,14 +144,13 @@ export default function SquawksPage({ aircraft }: { aircraft: Aircraft }) {
       {fixing && (
         <ListGroup title={`Fix: ${fixing.text}`}>
           <div className="p-2">
-            <RowField id={fixId} error={fixForm.formState.errors.note?.message} wide>
+            <RowField id={fixId} error={fixForm.formState.errors.note?.message} wide label="The fix">
               <Textarea
                 id={fixId}
                 {...fixForm.register("note")}
                 rows={3}
                 {...invalidProps(fixId, fixForm.formState.errors.note?.message)}
                 placeholder="What was done, and by whom"
-                aria-label="The fix"
                 data-testid="squawk-fix-note"
               />
             </RowField>
@@ -172,15 +171,14 @@ export default function SquawksPage({ aircraft }: { aircraft: Aircraft }) {
           pilot or a mechanic who finds it no hazard (14 CFR 91.213(d)). */}
       <ListGroup title="Write a squawk">
         <div className="p-2">
-          <RowField id={textId} error={errors.text?.message} wide>
+          <RowField id={textId} error={errors.text?.message} wide label="What was found">
             <Textarea
               id={textId}
               {...register("text")}
               rows={2}
               maxLength={500}
               {...invalidProps(textId, errors.text?.message)}
-              placeholder="What was found"
-              aria-label="What was found"
+              placeholder="A flap actuator that sticks, say"
               data-testid="squawk-text"
             />
           </RowField>

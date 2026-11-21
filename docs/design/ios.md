@@ -76,8 +76,10 @@ Companion docs:
     chrome and the tab bar.
   - **The map buttons (owner decision 2026-11-10)** are one glass
     capsule, Map, My Position and Ask stacked in it with a hairline
-    between, each 48 points (`size.map-button`) as Maps' are, in place
-    of three separate 44-point circles (`MapButtons`).
+    between, each `size.map-button` as Maps' are, in place of three
+    separate circles (`MapButtons`). The token is 44 since 2026-11-21
+    (the scale audit; it was 48): Apple Maps' buttons are 44 and do not
+    grow with Dynamic Type, and the web pins its at 44 px.
   - **Where (owner, 2026-11-11):** the group rides the sheet's top at
     the right, 24 points over it, just above the search row, following
     the sheet between its detents and under a finger, and fades out as

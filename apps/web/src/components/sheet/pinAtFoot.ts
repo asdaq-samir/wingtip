@@ -61,7 +61,7 @@ export const PIN_AT_FOOT =
  * top over the bar instead (fc0b49a47), the figures were no longer at the
  * bottom. And FPL's foot floats over the end of its page, the page running
  * on to the foot's edge with the foot's height as room at its end
- * (--pin-foot-room on the sheet's page, SheetParts' scroller and foot), so
+ * (--pin-foot-room on the sheet's page, SheetScroller and SheetFoot), so
  * the figures are not cut off all the way up, where the page ended at the
  * foot's top, and the route's last row still scrolls up clear of the bar.
  */

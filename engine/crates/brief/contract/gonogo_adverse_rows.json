@@ -1,0 +1,180 @@
+{
+  "x-call": "wingtip_brief::gonogo::adverse::call",
+  "description": "The Brief's Adverse Conditions rows under its findings, the standard briefing's first element (AIM 7-1-5(b)(1)): what the flight meets on the route while it is there (OnRoute `when` \"during\", or none given) -- a TFR the route goes through (14 CFR 91.137-91.145) and a Convective SIGMET or SIGMET (AIM 7-1-6), stops; a Center Weather Advisory (AIM 7-1-6), an urgent pilot report (UUA, AIM 7-1-18) and an AIRMET or G-AIRMET (AIM 7-1-6), cautions -- in that order, of a kind the one met first along the route first, at most three, with how many more. A TFR only near the route, a routine PIREP and a hazard before or after the flight are left to their pages. Each row's time is for the host to write: `at` when the flight meets a TFR, `until` an advisory's end, `reported` a pilot report's time.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoAdverseRowsInput",
+      "type": "object",
+      "properties": {
+        "advisories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string",
+                "description": "OnRoute's source: TFR, Convective SIGMET, SIGMET, CWA, PIREP, AIRMET or G-AIRMET."
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Its name in words: the hazard (sigmet_hazard, gairmet_title), a TFR's NOTAM and title, a PIREP's conditions."
+              },
+              "when": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "during",
+                  "before",
+                  "after",
+                  null
+                ]
+              },
+              "enter": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "valid_to": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "issued": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "from_nm": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "legs": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "crosses": {
+                "type": "boolean"
+              },
+              "urgent": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "source",
+              "name",
+              "when",
+              "enter",
+              "valid_to",
+              "issued",
+              "from_nm",
+              "legs",
+              "crosses",
+              "urgent"
+            ]
+          }
+        }
+      },
+      "required": [
+        "advisories"
+      ]
+    },
+    "answer": {
+      "title": "GonogoAdverseRowsAnswer",
+      "type": "object",
+      "properties": {
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "finding": {
+                "type": "string",
+                "enum": [
+                  "stop",
+                  "caution"
+                ]
+              },
+              "tab": {
+                "type": "string",
+                "enum": [
+                  "enroute",
+                  "preflight"
+                ]
+              },
+              "section": {
+                "type": "string"
+              },
+              "time_kind": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "at",
+                  "until",
+                  "reported",
+                  null
+                ]
+              },
+              "time": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "legs": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "required": [
+              "source",
+              "title",
+              "finding",
+              "tab",
+              "section",
+              "time_kind",
+              "time",
+              "legs"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "more": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "rows",
+        "more"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

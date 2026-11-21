@@ -41,6 +41,8 @@ const glance: BriefGlance = {
   depart: field("C81", "27", 18),
   enroute: { ceilingFt: null, visibilitySm: null, wind: null, eteMin: null, line: null, finding: "ok" },
   arrive: null,
+  adverse: { rows: [], more: 0 },
+  unchecked: [],
   raw: { metars: [{ ident: "C81", raw: "METAR C81 ..." }], tafs: [], tfrs: [] },
 };
 
