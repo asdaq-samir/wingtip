@@ -137,9 +137,9 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   await expect(drawer.getByTestId("procedures").getByTestId("depart-date")).toBeVisible();
   await drawer.getByTestId("share-route").click();
   // And, signed in, Save this flight among them.
-  for (const id of ["save-flight-button", "file-flight-plan"]) {
-    await expect(page.getByRole("menu").getByTestId(id)).toBeVisible();
-  }
+  await expect(page.getByRole("menu").getByTestId("save-flight-button")).toBeVisible();
+  // File flight plan is not in the menu: it is the button beside the tab bar.
+  await expect(page.getByRole("menu").getByTestId("file-flight-plan")).toHaveCount(0);
   await expect(page.getByRole("menu").getByTestId("print-briefing")).toHaveCount(0);
   await page.keyboard.press("Escape");
 });

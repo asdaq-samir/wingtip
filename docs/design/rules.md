@@ -626,7 +626,11 @@ off by default (the owner, 2026-11-13).
    ⓘ that opens the airplane's card (the owner, 2026-11-20: "can N number
    show an info button and can FL show profile button rather than in the
    tab bar?"); in flight the drawer's tiles are Brief, Nav Log, Profile
-   and More. At the
+   and More. File flight plan is a button of its own,
+   "File" (its glyph over its word, as the bar's items), to the bar's right in its
+   glass and height, a gap-2 apart, the pair centred together (the owner,
+   2026-11-21: "File flight plan should be a separate button next to tabs");
+   no longer More's item, greyed where the plan cannot be filed. At the
    pill the figures alone, large: swiped down, they grow. Taken up from
    the pill, FPL rises as the airport card does, one shared way for every
    sheet (the owner, 2026-11-16: "can we make it a shared code for all

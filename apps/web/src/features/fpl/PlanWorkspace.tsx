@@ -230,8 +230,6 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       altitudeFt={s.nav?.altitude_ft ?? undefined}
       routed={routed}
       local={!!s.local}
-      fileable={fileable}
-      onFile={fileFlightPlan}
       saving={(askReview) => (
         <Suspense fallback={null}>
           <SaveFlightButton {...flightToSave} />
@@ -321,7 +319,9 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // under the route from half up (the owner, 2026-11-16); in flight the figures; under the Profile, its card's (PlanCards).
         foot:
           !place && !heldPoint && !flight && !briefShown && !profileShown
-            ? routed && <FlightFoot vm={vm} more={shareMenu("end", undefined, undefined, "bar")} />
+            ? routed && (
+                <FlightFoot vm={vm} fileable={fileable} onFile={fileFlightPlan} more={shareMenu("end", undefined, undefined, "bar")} />
+              )
             : undefined,
         // The route under FPL's bar (MapPanel keeps it under the others'
         // heads), in its one layout (the owner, 2026-11-17, decision 0047):

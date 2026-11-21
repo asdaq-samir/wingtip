@@ -38,7 +38,17 @@ import { cn } from "cn";
  * each button a Toolbar.Button rendering a FloatingBarButton, the ••• the
  * route's menu's trigger rendering one (ShareMenu's `look="bar"`).
  */
-export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan">; more: ReactNode }) {
+export function FplTabBar({
+  vm,
+  more,
+  fileable = false,
+  onFile,
+}: {
+  vm: PlanSlices<"brief" | "fpl" | "plan">;
+  more: ReactNode;
+  fileable?: boolean;
+  onFile?: () => void;
+}) {
   const { course } = vm.plan;
   const { openBrief, openNavLogCard } = vm.fpl;
   const { briefMark } = vm.brief;
@@ -61,7 +71,7 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
     // margin takes back the difference, 4 points with no home indicator.
     <div
       data-makes-way=""
-      className={cn("pointer-events-none -mx-4 flex justify-center px-4 pt-2", FLOATING_BAR_ROOM, RIDES_ON_PIN)}
+      className={cn("pointer-events-none -mx-4 flex justify-center gap-2 px-4 pt-2", FLOATING_BAR_ROOM, RIDES_ON_PIN)}
       style={{ marginBottom: `calc(${FLOATING_BAR_SHEET_ROOM} - ${EDGE_ROOM})` }}
       data-testid="fpl-actions"
     >
@@ -74,7 +84,7 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
           but the taps: a min-w-0 here overrode the bar's least width and
           drew FPL's items 62 to the card's 73 (the owner, 2026-11-21: "fpl
           and other tabs placement look different"). */}
-      <Toolbar.Root aria-label="Route" render={<FloatingBar className="pointer-events-auto" />}>
+      <Toolbar.Root aria-label="Route" render={<FloatingBar className="pointer-events-auto shrink-0" />}>
         <BarAction
           icon={<ICON.brief />}
           badge={briefMark && found > 0 && <TabCount count={found} mark={briefMark} testId="route-brief-count" />}
@@ -90,6 +100,24 @@ export function FplTabBar({ vm, more }: { vm: PlanSlices<"brief" | "fpl" | "plan
         <BarAction icon={<ICON.navLog />} label="Nav Log" onClick={openNavLogCard} disabled={!course} testId="route-navlog" />
         {more}
       </Toolbar.Root>
+      {/* File flight plan, a button of its own beside the bar (the owner,
+          2026-11-21: "File flight plan should be a separate button next to
+          tabs"), in the bar's glass and height, its glyph over its word as
+          the bar's items; the pair centred together. It was More's item;
+          greyed as it was where the plan cannot be filed (no airport to
+          leave from, no log). Out of the bar's own measure (data-single). */}
+      {onFile && (
+        <FloatingBar data-single="" className="pointer-events-auto shrink-0">
+          <FloatingBarButton
+            icon={<ICON.file />}
+            label="File"
+            spoken="File flight plan"
+            onClick={onFile}
+            disabled={!fileable}
+            testId="file-flight-plan"
+          />
+        </FloatingBar>
+      )}
     </div>
   );
 }

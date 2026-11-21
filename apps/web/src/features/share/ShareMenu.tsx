@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { done } from "../../lib/doneNote";
-import { FileArchive, FileText, Fuel, Keyboard, Link2, MapPinned, Printer, RotateCw, Send, Signpost, Trash2 } from "lucide-react";
+import { FileArchive, Fuel, Keyboard, Link2, MapPinned, Printer, RotateCw, Send, Signpost, Trash2 } from "lucide-react";
 import { Toolbar } from "@base-ui/react/toolbar";
 import { TriggerButton, TriggerFace } from "./ShareTrigger";
 import { ResponsivePopover, ResponsivePopoverAnchor } from "../../components/ResponsivePopover";
@@ -60,8 +60,6 @@ export default function ShareMenu({
   altitudeFt,
   routed,
   local,
-  fileable,
-  onFile,
   saving,
   reviewSheet,
   planAgain,
@@ -104,8 +102,6 @@ export default function ShareMenu({
   routed: boolean;
   /** A local flight, round one field: no kneeboard card. */
   local: boolean;
-  fileable: boolean;
-  onFile: () => void;
   /** Save and the review's item, given the way to open the review's sheet. */
   saving: (askReview: () => void) => ReactNode;
   /** The review's sheet, given the way to put it away. */
@@ -275,12 +271,6 @@ export default function ShareMenu({
           {card === "route" && (
             <>
               {routed && saving(afterMenu(() => setAskingReview(true)))}
-              {routed && (
-                <DropdownMenuItem disabled={!fileable} onClick={onFile} data-testid="file-flight-plan">
-                  <FileText />
-                  File flight plan
-                </DropdownMenuItem>
-              )}
               {planAgain && (
                 <DropdownMenuItem onClick={planAgain.onPlan} data-testid="plan-again" data-stale={planAgain.stale.length ? "" : undefined}>
                   <RotateCw />

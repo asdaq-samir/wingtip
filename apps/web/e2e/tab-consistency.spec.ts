@@ -109,14 +109,18 @@ test("every page of the sheet is laid out as one: its sections' sides, headings 
  *  points, its bottom from the window's foot. */
 async function floatingBar(page: Page) {
   return page.evaluate(() => {
-    const bar = [...document.querySelectorAll("[data-floating-bar]")].filter((b) => b.getBoundingClientRect().height > 0).pop();
+    const bar = [...document.querySelectorAll("[data-floating-bar]:not([data-single])")]
+      .filter((b) => b.getBoundingClientRect().height > 0)
+      .pop();
     if (!bar) return null;
     const items = [...bar.querySelectorAll("button, [role=tab]")].filter((e) => !e.parentElement?.closest("button, [role=tab]"));
     const box = bar.getBoundingClientRect();
     // FPL's figures held at the foot under its bar: their top from the window's foot.
     const strip = document.querySelector("[data-pin-foot]")?.getBoundingClientRect();
+    // FPL's File button stands beside the bar and the pair is centred.
+    const file = document.querySelector("[data-single]")?.getBoundingClientRect();
     return {
-      centre: box.left + box.width / 2,
+      centre: file ? (box.left + file.right) / 2 : box.left + box.width / 2,
       foot: innerHeight - box.bottom,
       strip: strip && strip.height > 0 ? innerHeight - strip.top : 0,
       height: box.height,
@@ -170,5 +174,30 @@ test("FPL's floating bar and the airport card's sit in one place and look alike:
       expect(item.glyph, `${where}: a glyph`).toBeCloseTo(card.items[0]!.glyph, 0);
       expect(item.word, `${where}: a word`).toBe(card.items[0]!.word);
     }
+  }
+});
+
+test("FPL's File button stands beside its bar, at its height, and the pair fits the phone", async ({ page }) => {
+  test.setTimeout(slow(240000));
+  for (const root of ["", "17.88px", "19.65px"]) {
+    await page.goto("/app/plan?dep=C81&dest=KDLH");
+    await settle(page);
+    await page.evaluate((size) => (document.documentElement.style.fontSize = size), root);
+    await expect(page.getByTestId("route-navlog")).toBeAttached({ timeout: slow(120000) });
+    await grabberTo(page, "half");
+    const file = page.getByTestId("file-flight-plan");
+    await expect(file).toBeVisible();
+    const m = await page.evaluate(() => {
+      const bar = document.querySelector("[data-floating-bar]:not([data-single])")!.getBoundingClientRect();
+      const one = document.querySelector("[data-single]")!.getBoundingClientRect();
+      return { barLeft: bar.left, barRight: bar.right, barH: bar.height, left: one.left, right: one.right, h: one.height, w: innerWidth };
+    });
+    const where = root || "the default size";
+    // eslint-disable-next-line no-console
+    console.log(where, JSON.stringify(m));
+    expect(m.h, `${where}: height`).toBeCloseTo(m.barH, 0);
+    expect(m.left - m.barRight, `${where}: gap`).toBeCloseTo(8, 0);
+    expect(m.barLeft, `${where}: left margin`).toBeGreaterThanOrEqual(0);
+    expect(m.right, `${where}: right margin`).toBeLessThanOrEqual(m.w);
   }
 });

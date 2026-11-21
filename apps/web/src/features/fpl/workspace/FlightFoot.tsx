@@ -64,11 +64,16 @@ export function FlightFigures({
 export default function FlightFoot({
   vm,
   more,
+  fileable = false,
+  onFile,
 }: {
   vm: PlanSlices<"brief" | "flight" | "fpl" | "plan" | "route" | "stops" | "view">;
   /** FPL's own foot, where the ground's floating bar sits (FplTabBar), and
    *  the route's ••• that ends it. */
   more?: ReactNode;
+  /** Filing the flight plan, FplTabBar's File button. */
+  fileable?: boolean;
+  onFile?: () => void;
 }) {
   const { doneFlying, dryRunning, flying } = vm.flight;
   const { panelOpen } = vm.view;
@@ -95,7 +100,7 @@ export default function FlightFoot({
   // lies over the foot out of sight, coming into sight as a finger takes
   // the sheet (RISEN_OVER).
   if (more && !dryRunning && !flying) {
-    const bar = <FplTabBar vm={vm} more={more} />;
+    const bar = <FplTabBar vm={vm} more={more} fileable={fileable} onFile={onFile} />;
     return (
       <div className="relative w-full">{panelOpen ? bar : <div className={cn("absolute inset-x-0 bottom-0", RISEN_OVER)}>{bar}</div>}</div>
     );
