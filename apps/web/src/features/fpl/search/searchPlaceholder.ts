@@ -6,10 +6,15 @@ import type { SearchPick } from "../../../lib/oneSearch";
  *  an airplane to keep -- or else all it finds. */
 export function placeholderOf(direct: boolean, pick: SearchPick | null, picking: string): string {
   if (direct) return "Direct to which airport?";
-  if (pick)
-    return pick.fixes
-      ? "Search airports and waypoints"
-      : `Search for ${/^[aeiou]/i.test(pick.label) ? "an" : "a"} ${pick.label.toLowerCase()}`;
+  if (pick) {
+    if (pick.fixes) return "Search airports and waypoints";
+    // A stop changed asks "In place of My Location": a phrase, not a noun,
+    // which read "Search for an in place of my location" (the flakes
+    // audit, route-fields). The airport it asks for named, the point's
+    // own name kept as written (an ident stays in capitals).
+    if (/^in place of /i.test(pick.label)) return `Search for an airport in${pick.label.slice(2)}`;
+    return `Search for ${/^[aeiou]/i.test(pick.label) ? "an" : "a"} ${pick.label.toLowerCase()}`;
+  }
   if (picking === "home") return "Search for your home airport";
   if (picking === "favorite") return "Search for an airport to keep";
   // The airplanes' Adds, which the traffic's own field said (2026-11-14).

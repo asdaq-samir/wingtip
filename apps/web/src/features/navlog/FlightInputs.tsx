@@ -13,6 +13,12 @@ import { PILL, PILL_END, PILL_END_ADDON, PILL_FIELD, PILL_PREFIX, PREFIXED_FIELD
 import { InputGroupAddon, InputGroupButton } from "../../components/ui/input-group";
 import { openAirplaneProfile } from "../../lib/airplane/profileStore";
 import { ICON } from "../../lib/icons";
+import { FPL_TIP, unseen, useTips } from "../../lib/firstRunTips";
+
+/** The words the empty field says on the first flight (the owner's Q1,
+ *  2026-11-21): the strip's time and fuel are a bare "—" with no airplane,
+ *  and a new pilot is told here why, in place, until one is picked. */
+export const FIRST_AIRPLANE_ASK = "Add your airplane for times and fuel";
 
 /**
  * The two inputs the nav log is computed from, in the planning panel's
@@ -57,6 +63,10 @@ export default function FlightInputs({
   // Typed so far and no registration: every start of a good one is one
   // itself ("N1", "N1A"), so this is never a number half typed.
   const wrong = engineReady && !!typed && !N_NUMBER.test(typed);
+  // The first flight (its FPL tip not yet put away) with no airplane at
+  // all: the field asks in words, wide enough to say them, in place of its
+  // five blanks; once one is picked, or after the first flight, the blanks.
+  const firstAsk = useTips((s) => unseen(s.seen, FPL_TIP)) && !current && typed === null;
   const queryClient = useQueryClient();
   const registered = (tail: string) => queryClient.fetchQuery(registeredQuery(tail));
   // An N-number typed: one of the pilot's own picked, any other added at
@@ -197,9 +207,14 @@ export default function FlightInputs({
           // Five places after "N-", whatever is in it (the owner, 2026-11-20:
           // "N number should be a fixed length for 5 letters"): five figures
           // and room for two letters wider than a figure, "888MM".
-          inputClassName={cn(PILL_FIELD, PREFIXED_FIELD, "w-[calc(5ch+0.5rem)]", wrong ? "text-destructive" : "text-foreground")}
+          inputClassName={cn(
+            PILL_FIELD,
+            PREFIXED_FIELD,
+            firstAsk ? "w-[calc(36ch+0.5rem)] max-w-full" : "w-[calc(5ch+0.5rem)]",
+            wrong ? "text-destructive" : "text-foreground",
+          )}
           ref={field}
-          placeholder="_____"
+          placeholder={firstAsk ? FIRST_AIRPLANE_ASK : "_____"}
           enterKeyHint="done"
           autoCapitalize="characters"
           autoCorrect="off"

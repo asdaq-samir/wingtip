@@ -15,6 +15,11 @@ describe("placeholderOf", () => {
     expect(placeholderOf(false, null, "airplane")).toBe("Search for an airplane to keep");
     expect(placeholderOf(false, null, "place")).toBe("Search");
   });
+
+  it("names the airport asked for in place of a point, the point's name as written (route-fields)", () => {
+    expect(placeholderOf(false, pick("In place of My Location"), "place")).toBe("Search for an airport in place of My Location");
+    expect(placeholderOf(false, pick("In place of KDLH"), "place")).toBe("Search for an airport in place of KDLH");
+  });
 });
 
 describe("searchWords", () => {
