@@ -107,6 +107,9 @@ class PlannerClientContractTest {
             new Call("instructorRecordsSince", c -> c.planner().instructorRecordsSince(DAY)),
             new Call("fill", c -> c.planner().fill("solo", "A. Pilot", Map.of("makeModel", "C172"))),
             new Call(
+                    "verifyInstructor",
+                    c -> c.planner().verifyInstructor("J. J. Jones", "A. Pilot", DAY, List.of("A1234567"))),
+            new Call(
                     "inspections",
                     c -> c.planner()
                             .inspections(List.of(

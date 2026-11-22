@@ -725,6 +725,67 @@ ID as before. Both are best effort: a sign-in or a deletion never fails
 because Apple did not answer. A pilot who signed in on the iPhone before
 this build has no token kept; their next sign-in keeps one.
 
+### Checking on a device: does revoking the web's grant end the iPhone's? (N6)
+
+One token is kept a pilot (`pilots.apple_refresh_token`, with
+`apple_token_client`), so an iPhone sign-in writes over the web's, and the
+web grant is then never revoked when the account is deleted (the deep
+security review of 2026-11-21, N6). Revoking the web token before keeping
+the iPhone's would fix that, unless Apple treats the two as one grant
+(the Services ID grouped under the app's primary App ID) and the revoke
+ends the new iPhone sign-in too. Apple's documentation does not say which,
+so it is measured on a device before any code changes. It needs:
+
+- an iPhone with a build of this branch signed for the real bundle id, and
+  the web app, both on one gateway with Sign in with Apple configured (the
+  rehearsal stack, `infra/rehearsal/run.sh`, or a dev stack with the
+  team's key);
+- a test Apple Account used for nothing else, and its settings open at
+  account.apple.com, Sign-In and Security, Sign in with Apple;
+- `psql` on that gateway's database, and the team's key to sign a client
+  secret (`AppleClientSecret`'s claims: iss the team id, sub the client,
+  aud `https://appleid.apple.com`, ES256 with the key id).
+
+Steps, writing down each answer:
+
+1. In the Apple Account's settings, stop using Sign in with Apple for
+   Wingtip Maps if it is listed, so each grant below is new.
+2. Sign in on the web with Apple. In the database:
+   `SELECT apple_token_client, left(apple_refresh_token, 12) FROM pilots
+   WHERE email = '<address>';` The client is the Services ID. Copy the
+   whole token aside as WEB. The account's list shows Wingtip Maps once.
+3. Sign in on the iPhone with the same Apple Account. The same query now
+   gives the bundle id; copy the token as APP. Note whether the account's
+   list shows one entry or two.
+4. Revoke WEB as the gateway would, with the Services ID:
+   `curl -s -o /dev/null -w '%{http_code}' https://appleid.apple.com/auth/revoke
+   -d client_id=<services id> -d client_secret=<secret signed for it>
+   -d token=<WEB> -d token_type_hint=refresh_token` (200 expected).
+5. Then, for the iPhone's grant:
+   - refresh APP: `curl -s https://appleid.apple.com/auth/token
+     -d client_id=<bundle id> -d client_secret=<secret signed for it>
+     -d grant_type=refresh_token -d refresh_token=<APP>`: an
+     `id_token` back means the grant stands, `invalid_grant` that it ended;
+   - on the iPhone, Settings, the Apple Account, Sign in with Apple: Wingtip
+     Maps still listed, or gone (the app itself never asks
+     `ASAuthorizationAppleIDProvider.getCredentialState`, so its own
+     session says nothing here);
+   - the Apple Account's list still shows Wingtip Maps, or not.
+6. The other way round, from step 1 with a fresh grant: sign in on the
+   iPhone first, then the web, revoke APP with the bundle id, and check
+   the web's (refresh WEB with the Services ID).
+7. Delete the account in the app and check that neither list shows
+   Wingtip Maps any longer.
+
+What the answers decide (record them under N6 in docs/SECURITY.md):
+
+- **Step 5's grant stands:** revoke the kept token with its own client
+  before writing over it (`PilotService.keepAppleRefreshToken`), so a
+  deletion revokes the one grant left.
+- **Step 5's grant ends:** keep a token each client (the web's and the
+  app's in their own columns, a migration after the highest on any
+  `claude/` branch), never revoke on replace, and revoke both at deletion.
+
 ## Building
 
 The Mac mini has Xcode (`.tool-versions`' `xcode`, 27.2 and the iOS 27.2

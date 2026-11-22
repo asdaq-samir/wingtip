@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_pilot::pilot::calls::endorsed",
-  "description": "The latest not voided of each code, as [code, index] into the record (newest first).",
+  "description": "The latest not voided of each code, as [code, index] into the record (newest first); one whose instructor the FAA airmen registry did not bear out (verified false, instructor_verification) is not signed and counts as voided.",
   "type": "object",
   "properties": {
     "input": {
@@ -20,6 +20,13 @@
                   "boolean",
                   "null"
                 ]
+              },
+              "verified": {
+                "type": [
+                  "boolean",
+                  "null"
+                ],
+                "description": "The instructor_verification verdict kept with the record; false is not signed, missing or null is not said."
               }
             },
             "required": [

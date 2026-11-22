@@ -17,6 +17,7 @@ from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Body, HTTPException
+from wingtip import airmen
 
 from ..gonogo import ask as engine
 from ..schemas.pilot import (
@@ -32,6 +33,8 @@ from ..schemas.pilot import (
     ExperienceItem,
     Inspections,
     InspectionsAsk,
+    InstructorVerification,
+    InstructorVerificationAsk,
     LogbookEntry,
     PaperworkDue,
     RecordsBatch,
@@ -112,6 +115,23 @@ def endorsement_fill(ask: EndorsementFillAsk) -> EndorsementFilled:
     if got is None:
         raise HTTPException(status_code=404, detail=f"No such endorsement: {ask.code}.")
     return EndorsementFilled(**got)
+
+
+@router.post("/api/pilot/instructor-verification")
+def instructor_verification(ask: InstructorVerificationAsk) -> InstructorVerification:
+    """Whether the instructor about to sign is a flight instructor the FAA
+    airmen registry bears out (the engine's instructor_verification, over
+    the flight instructors of that last name ingest keeps, wingtip.airmen):
+    an endorsement counts as signed only where it is (14 CFR 61.189(a))."""
+    got = _ask(
+        "instructor_verification",
+        instructor_name=ask.instructor_name,
+        student_name=ask.student_name,
+        signed_on=ask.signed_on.isoformat(),
+        registry=airmen.instructors_named(ask.instructor_name),
+        bound_elsewhere=ask.bound_elsewhere,
+    )
+    return InstructorVerification(**got)
 
 
 @router.post("/api/aircraft/inspections")

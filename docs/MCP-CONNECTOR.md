@@ -97,6 +97,18 @@ HTTPS address. A quick tunnel gives one; none is set up in this repository.
    server, the same URL, OAuth; it registers itself the same way.
 5. Take the tunnel down after; `APP_PUBLIC_BASE_URL` back to its default.
 
+## Disconnecting from Wingtip's side
+
+You's **Connected Apps** lists each connection (the app's name, when its
+token was last issued) with **Disconnect** at its end. Disconnecting asks
+first, then `DELETE /api/me/connections/{id}` (ConnectionsController,
+`ConnectorGrants.disconnect`) removes that connection's row with its
+access and refresh tokens and their spent hashes, so the app's next MCP
+call is refused (the planner's introspection, `ConnectorGrants.live`) and
+no refresh is granted; the consent goes with the last connection through
+that app, so connecting again asks again. `GET /api/me/connections` is the
+list; another pilot's id is a 404 and is never touched.
+
 ## When it does not connect
 
 - **"Couldn't reach the MCP server"**: the `401` lacks

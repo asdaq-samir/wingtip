@@ -11,7 +11,6 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.route.RouteLegModel
-import app.wingtipmaps.android.route.replaceRoute
 import app.wingtipmaps.android.search.SearchControl
 import app.wingtipmaps.android.share.SharedFlightModel
 import app.wingtipmaps.android.ui.OpenScreen.Where
@@ -63,13 +62,9 @@ internal fun RootRequests(
         when (val opened = link) {
             null -> return@LaunchedEffect
             is Links.Place -> pages.show(SheetPage.Airport(opened.ident))
-            is Links.Route -> {
-                plan.replaceRoute(opened.dep, opened.dest, opened.stops)
-                showPlan()
-                opened.then?.let(ScreenRequests::ask)
-            }
             is Links.Open -> ScreenRequests.ask(opened.screen)
-            // Previewed first: the receiver's plan stays until Use This Plan.
+            // A shared flight or any route link, previewed first: the
+            // receiver's plan stays until Use This Plan.
             is Links.Shared -> shared.open(opened)
             is Links.SignIn -> {}
         }

@@ -120,10 +120,16 @@ The plan's own keys go beside it, and alone they open what they name:
 <!-- END generated -->
 
 A link with a route and a screen (`?dep=C81&dest=KDLH&open=brief`) plans
-the route, then opens the screen: the web waits up to 30 s for the route
-(`lib/navigation/wanted`), the phones open it after the route command
-(the screen `CommandHost` runs after a link's command, `Links.Route.then`). The word `open` is taken off
+the route on the web, then opens the screen: the web waits up to 30 s for
+the route (`lib/navigation/wanted`). The word `open` is taken off
 the web's address once used, so a reload or Back does not open it again.
+On the phones any route link, with or without `open=shared`, opens the
+shared-flight preview below and replaces the pilot's plan only at Use This
+Plan: any page or app can open a link, and a plan swapped in the air
+unasked is a safety problem (the deep security review of 2026-11-21, N3).
+A screen named beside it is not opened over the preview, and a link with
+only a destination opens the field's card on the iPhone, whose Fly Here
+plans it.
 
 ## Sharing a flight
 
@@ -299,7 +305,7 @@ in the search is not counted.
 | A fix, VOR, airspace, traffic, What's Here | tap it on the map; an alert; a point's More Info | 1 | its actions |
 | Airplane card (the one airplane card) | the flight's card → Airplane; search → an airplane; Ready to Fly's Pick an Airplane; a logbook N-number | 2 → 2 | The flown airplane's picker, registration (suggesting as typed), passengers, Your Airplanes; every figure a tap to edit; Fly This Airplane. An N-number's: Fly This, Follow, Favorite, Share; Flights (▶ replays one), Info, Figures |
 | Checklists | Airplane → Checklists tab → a checklist (on the card's stack) | 3 → 3 | Ticks; Edit as text |
-| You | the avatar | 1 | Pilot Details, Airplanes, Flights, Logbook, Minimums, Training, Emergency; a swipe down closes it |
+| You | the avatar | 1 | Pilot Details, Airplanes, Flights, Logbook, Minimums, Training, Emergency, Connected Apps; a swipe down closes it |
 | Settings | the avatar → its gear; also the Map card's gear | 2 | Map, In Flight, Data, Help & About (Sunlight is the Map card's Look since 2026-11-14); a swipe down closes it |
 | Saved Flights | the avatar → Flights | 2 | A flight planned again with a tap |
 | Map card (no Map Settings page; the owner, 2026-11-13) | the map's Layers button; or search "map" / "layers" | 1 (+ typing 0) | Four sections of four tiles each, Chart, Base map, Layers and Look (Theme, Appearance, Sunlight, Own Ship; the owner, 2026-11-14), each a tap; the terminal charts always drawn, no switch; its gear opens Settings at its Map group (Airport Weather, glide ring) |

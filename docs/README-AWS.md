@@ -91,6 +91,15 @@ server cron, hourly ─▶ docker compose run --rm charts-overlays
   names its cycle and revision (`TilesCachePolicy`, keyed on `c` and `r`
   alone). In the development stack, which has no Caddy, the gateway
   still forwards them, without the page's headers (`TileSecurityConfig`).
+- **A rate limit on the tiles the server answers.** A tile's address
+  with a `?c=` or `?r=` of its own is a cache miss, which the planner
+  reads on the server. The `TileRateLimit` web ACL (AWS WAF, on the
+  distribution) answers 429 to an address past 3,000 requests to
+  `/api/planner/chart-tile/` and `/api/planner/terrain-tile/` in five
+  minutes, ten a second held; a pilot's session is some 200 tiles, and
+  the rest of the site is not limited by it. WAF's CloudFront scope
+  exists only in us-east-1, where the stack is deployed. Its cost is in
+  the table below; to raise or lower the limit, change its `Limit`.
 - **Only CloudFront reaches the server.** The security group admits
   port 443 from CloudFront's origin-facing addresses alone, and Caddy
   answers 404 to any request without the secret header CloudFront adds
@@ -99,6 +108,15 @@ server cron, hourly ─▶ docker compose run --rm charts-overlays
 - **No SSH.** A shell on the server is SSM Session Manager; deploys are
   SSM Run Command. The server's role can pull its own images, read its
   own secrets and write its own backups, and nothing else.
+- **The gateway changes rows, never the schema.** Flyway signs in as the
+  database's owner (`DbPasswordSecret`, `POSTGRES_PASSWORD`); the app
+  signs in as `wingtip_app` with a secret of its own
+  (`AppDbPasswordSecret`, `APP_DB_PASSWORD`), which may read and write
+  the rows of every table and nothing more: no CREATE, ALTER, DROP or
+  TRUNCATE. Flyway's `db/callback/afterMigrate.sql` makes the role and
+  sets its password at each start, so a fresh database, an old one and
+  a restored backup all end the same, and a rotated secret takes at the
+  next deploy (docs/SECURITY.md, N4).
 - **The planner no longer draws tiles** (`CHARTS_AUTO_REFRESH=0`,
   `CHART_TILES_URL`): it reads each one out of the published archive by
   a range request through CloudFront (`wingtip.tile_archive`, the
@@ -150,21 +168,22 @@ Prices in us-east-1, October 2026, at today's traffic:
 | Its public IPv4 address | $3.65 |
 | 20 GB system disk and 30 GB data disk, gp3 | $4.00 |
 | S3 tiles: a few dozen archives a cycle (cents; they were 2.2 million tile uploads, about $11), and up to three cycles stored (some 36 GB a cycle with the @2x tiles) | ~$2.50 |
-| Secrets Manager, three secrets | $1.20 |
+| Secrets Manager, four secrets | $1.60 |
 | Route 53 hosted zone | $0.50 |
 | Daily snapshots of the data disk, seven kept | ~$1 |
 | The health check (HTTPS, every 30 s), the server's logs in CloudWatch, and its eight alarms and seven figures (`health.sh`, the gateway's alerts; within CloudWatch's free ten of each) | ~$1.60 |
 | ECR, CloudWatch logs, backups, the Fargate Spot refresh (under $1 a cycle) | ~$1.50 |
 | CloudFront | $0 within the always-free 1 TB and 10 million requests |
+| AWS WAF, the tiles' rate rule (`TileRateLimit`): $5 the web ACL, $1 the rule, $0.60 a million requests it sees (every request to the distribution, about 0.3 million) | ~$6.20 |
 | SES | $0.10 per 1,000 sign-in emails |
-| **Total** | **about $35** |
+| **Total** | **about $41** |
 
 With `ServerPricing=on-demand`, for a server AWS never takes back, it
-is about $71, or about $45 with a one-year Savings Plan. The template's
+is about $77, or about $51 with a one-year Savings Plan. The template's
 default is a t3a.large (8 GB) since 2026-11-21 (the owner, on the
 prelaunch audit): the services take about 3.5 GB, which a t3a.medium's
 4 GB barely holds. `InstanceType=t3a.medium` (and `SpareInstanceType=t3.medium`)
-still deploys the smaller server, at about $27. The next
+still deploys the smaller server, at about $33. The next
 saving after Spot was the tiles' upload bill, and the archives (#535)
 took it to cents, the reader in the planner rather than the map.
 
@@ -196,8 +215,9 @@ the launch size, and the template's default.
 | S3, three cycles of archives (~90 GB) | ~$2.10 | ~$2.10 | ~$2.10 |
 | CloudFront (data, requests) | $0 (8 GB, 0.3 M) | $0 (80 GB, 3 M) | ~$20 (800 GB free, 30 M requests) |
 | SES, Secrets Manager, Route 53, logs, ECR, the cycle's Fargate task | ~$5 | ~$5 | ~$9 |
-| **Total, Spot (on demand)** | **~$35 ($71)** | **~$35 ($71)** | **~$83 ($153)** |
-| Per pilot | $0.35 | $0.035 | $0.008 |
+| AWS WAF, the tiles' rate rule ($6, and $0.60 a million requests) | ~$6.20 | ~$7.80 | ~$24 |
+| **Total, Spot (on demand)** | **~$41 ($77)** | **~$43 ($79)** | **~$107 ($177)** |
+| Per pilot | $0.41 | $0.043 | $0.011 |
 
 The server is the cost until some 10,000 pilots; the CDN's bill is its
 requests, not its bytes, and the always-free terabyte holds about 12,000
@@ -237,6 +257,18 @@ docker run --rm --network wingtip-prod_default -v "$PWD/apps/web:/w" -w /w \
   -e BASE_URL=https://cdn:9443 -e MAILPIT_URL=http://mailpit:8025 \
   mcr.microsoft.com/playwright:v1.65.0-noble \
   npx playwright test --config playwright.rehearsal.config.ts --workers=2
+```
+
+The gateway's two roles are checked here as on the server: the app's
+role reads rows and may not touch the schema.
+
+```bash
+docker compose -p wingtip-prod exec -T db psql -U wingtip -d wingtip -Atc \
+  "SELECT has_table_privilege('wingtip_app', 'pilots', 'DELETE'),
+          has_table_privilege('wingtip_app', 'pilots', 'TRUNCATE'),
+          has_schema_privilege('wingtip_app', 'public', 'CREATE'),
+          (SELECT count(*) FROM pg_tables WHERE schemaname = 'public' AND tableowner = 'wingtip_app')"
+# t|f|f|0
 ```
 
 Not rehearsed here, since they need AWS itself: `deploy.sh`,
@@ -332,7 +364,7 @@ its settings, but has no images to run until the first push to ECR.
    ```
 
 `deploy.sh` writes the server's `.env` from the stack's settings and the
-three secrets, pulls the images and starts what changed. It is safe to run
+four secrets, pulls the images and starts what changed. It is safe to run
 at any time.
 
 ### Mail

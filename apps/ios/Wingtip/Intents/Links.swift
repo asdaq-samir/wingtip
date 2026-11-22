@@ -3,7 +3,7 @@ import Foundation
 /// A link opened in the app, read into what it asks for: the site's own
 /// addresses (universal links, the associated domain in project.yml) as
 /// the web app's ShareMenu, AirportCard and AirplaneCard write them --
-/// `/app/plan?dep=C81&stops=KJVL&dest=KDLH` a route shared, `?place=KDLH`
+/// `/app/plan?dep=C81&stops=KJVL&dest=KDLH` a route shared (previewed first), `?place=KDLH`
 /// a field's card, `?airplane=N3429J` an airplane's profile,
 /// `?flight=a1b2c3` an airplane tracked, `?tfr=6/4116` a TFR's card,
 /// `?navaid=OBK@42.2214,-87.9517` a VOR's, `?open=logbook`
@@ -40,15 +40,15 @@ enum Links {
         // ident and place ("OBK@42.2214,-87.9517"), as the web's address.
         if let id = query[LinkKey.tfr.rawValue], id.wholeMatch(of: /\d{1,2}\/\d{3,5}/) != nil { return .card(.tfr(id)) }
         if let key = query[LinkKey.navaid.rawValue].flatMap(NavaidKey.init) { return .card(.navaid(key.text)) }
-        // The route as the web app's URL has it: idents, the stops
-        // comma-separated; a link with only a destination plans from the
-        // field nearest the airplane, as Siri's "plan a trip to" does.
-        let stops = (query["stops"] ?? "").split(separator: ",").compactMap { ident(String($0)) }
-        switch (ident(query["dep"]), ident(query["dest"])) {
-        case (let dep?, let dest?): return .planRoute(dep: dep, stops: stops, dest: dest)
-        case (nil, let dest?): return .planTo(ident: dest)
-        default: return screen(for: url).map { .open($0) }
-        }
+        // The route as the web app's URL has it (idents, the stops
+        // comma-separated): previewed as a shared flight is, so a link from
+        // any page or app never replaces the pilot's plan until they tap
+        // Use This Plan (the deep security review of 2026-11-21, N3). A
+        // link with only a destination opens the field's card, whose Fly
+        // Here plans it from the field nearest the airplane.
+        if let shared = SharedFlightLink.of(query) { return .sharedFlight(shared) }
+        if let dest = ident(query[LinkKey.dest.rawValue]) { return .weather(ident: dest) }
+        return screen(for: url).map { .open($0) }
     }
 
     /// The screen a link names (`open=`, design/screens.json): alone, the

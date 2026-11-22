@@ -568,8 +568,13 @@ services:
       start_period: 90s
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/wingtip
-      SPRING_DATASOURCE_USERNAME: wingtip
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-wingtip}
+      # Two roles, as on the server (docs/SECURITY.md, N4): Flyway as the
+      # database's owner, the app as wingtip_app, which may change rows
+      # and nothing else (db/callback/afterMigrate.sql makes it).
+      SPRING_FLYWAY_USER: wingtip
+      SPRING_FLYWAY_PASSWORD: ${POSTGRES_PASSWORD:-wingtip}
+      SPRING_DATASOURCE_USERNAME: wingtip_app
+      SPRING_DATASOURCE_PASSWORD: ${APP_DB_PASSWORD:-wingtipapp}
       PLANNER_SERVICE_URL: http://planner:8000
       # The monitor's minute check (UptimeWatch, docs/OPERATIONS.md): the
       # weather service watched beside the planner, and

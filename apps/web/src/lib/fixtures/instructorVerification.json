@@ -1,0 +1,50 @@
+{
+  "_source": "The engine's instructor_verification (engine/crates/pilot/src/pilot/instructor_check.rs) over the FAA Airmen Certification Releasable Database's flight instructors (certificate type F): 14 CFR 61.1, 61.19(d), 61.189(a).",
+  "cases": [
+    {
+      "name": "one flight instructor of the name",
+      "input": { "instructor_name": "John J. Jones", "student_name": "Avery Pilot", "signed_on": "2026-11-21", "registry": [{ "id": "A1234567", "first_middle": "JOHN JAMES", "last_suffix": "JONES JR", "expires": null }], "bound_elsewhere": [] },
+      "verified": true, "reason": "verified", "registry_id": "A1234567"
+    },
+    {
+      "name": "a second account under the student's own name",
+      "input": { "instructor_name": "Avery Pilot", "student_name": "AVERY PILOT", "signed_on": "2026-11-21", "registry": [{ "id": "A1234567", "first_middle": "JOHN JAMES", "last_suffix": "JONES JR", "expires": null }], "bound_elsewhere": [] },
+      "verified": false, "reason": "same_person", "registry_id": null
+    },
+    {
+      "name": "the student is the instructor the record names",
+      "input": { "instructor_name": "John Jones", "student_name": "John J Jones", "signed_on": "2026-11-21", "registry": [{ "id": "A1234567", "first_middle": "JOHN JAMES", "last_suffix": "JONES JR", "expires": null }], "bound_elsewhere": [] },
+      "verified": false, "reason": "same_person", "registry_id": "A1234567"
+    },
+    {
+      "name": "a name no flight instructor holds",
+      "input": { "instructor_name": "Made Up", "student_name": "Avery Pilot", "signed_on": "2026-11-21", "registry": [{ "id": "A1234567", "first_middle": "JOHN JAMES", "last_suffix": "JONES JR", "expires": null }], "bound_elsewhere": [] },
+      "verified": false, "reason": "no_match", "registry_id": null
+    },
+    {
+      "name": "two flight instructors of the name",
+      "input": { "instructor_name": "John Jones", "student_name": "Avery Pilot", "signed_on": "2026-11-21", "registry": [{ "id": "A1234567", "first_middle": "JOHN JAMES", "last_suffix": "JONES JR", "expires": null }, { "id": "C0000001", "first_middle": "JOHN", "last_suffix": "JONES", "expires": null }], "bound_elsewhere": [] },
+      "verified": false, "reason": "ambiguous", "registry_id": null
+    },
+    {
+      "name": "a record another account signs as",
+      "input": { "instructor_name": "John Jones", "student_name": "Avery Pilot", "signed_on": "2026-11-21", "registry": [{ "id": "A1234567", "first_middle": "JOHN JAMES", "last_suffix": "JONES JR", "expires": null }], "bound_elsewhere": ["A1234567"] },
+      "verified": false, "reason": "claimed", "registry_id": "A1234567"
+    },
+    {
+      "name": "an expired certificate on its last day",
+      "input": { "instructor_name": "Mary Oak", "student_name": "Avery Pilot", "signed_on": "2026-11-20", "registry": [{ "id": "A7654321", "first_middle": "MARY", "last_suffix": "OAK", "expires": "2026-11-20" }], "bound_elsewhere": [] },
+      "verified": true, "reason": "verified", "registry_id": "A7654321"
+    },
+    {
+      "name": "an expired certificate the day after (14 CFR 61.19(d)(2))",
+      "input": { "instructor_name": "Mary Oak", "student_name": "Avery Pilot", "signed_on": "2026-11-21", "registry": [{ "id": "A7654321", "first_middle": "MARY", "last_suffix": "OAK", "expires": "2026-11-20" }], "bound_elsewhere": [] },
+      "verified": false, "reason": "expired", "registry_id": "A7654321"
+    },
+    {
+      "name": "the registry not loaded",
+      "input": { "instructor_name": "John Jones", "student_name": "Avery Pilot", "signed_on": "2026-11-21", "registry": null, "bound_elsewhere": [] },
+      "verified": false, "reason": "registry_unavailable", "registry_id": null
+    }
+  ]
+}

@@ -12327,6 +12327,79 @@
         "title": "InspectionsAsk",
         "type": "object"
       },
+      "InstructorVerification": {
+        "description": "Whether the FAA airmen registry bears the instructor out (the\nengine's instructor_verification).",
+        "properties": {
+          "reason": {
+            "description": "verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.",
+            "title": "Reason",
+            "type": "string"
+          },
+          "registry_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The FAA's unique id of the record matched, where one was.",
+            "title": "Registry Id"
+          },
+          "verified": {
+            "title": "Verified",
+            "type": "boolean"
+          },
+          "words": {
+            "description": "The verdict as the pilot reads it.",
+            "title": "Words",
+            "type": "string"
+          }
+        },
+        "required": [
+          "verified",
+          "registry_id",
+          "reason",
+          "words"
+        ],
+        "title": "InstructorVerification",
+        "type": "object"
+      },
+      "InstructorVerificationAsk": {
+        "description": "An instructor about to sign for a student: both names as on their\ncertificates, the day, and the FAA records other accounts sign as.",
+        "properties": {
+          "bound_elsewhere": {
+            "default": [],
+            "description": "FAA unique ids another Wingtip account already signs as.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Bound Elsewhere",
+            "type": "array"
+          },
+          "instructor_name": {
+            "title": "Instructor Name",
+            "type": "string"
+          },
+          "signed_on": {
+            "format": "date",
+            "title": "Signed On",
+            "type": "string"
+          },
+          "student_name": {
+            "default": "",
+            "title": "Student Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instructor_name",
+          "signed_on"
+        ],
+        "title": "InstructorVerificationAsk",
+        "type": "object"
+      },
       "ItwsAlert": {
         "description": "One ITWS alert (wingtip.itws): what (`alert`: microburst, wind\nshear, gust front, tornado, storm cell) and its words as a pilot is\ntold them (\"Runway 27L arrival microburst alert 40 kt, runway to 3\nmile final\", AIM 4-3-7); a runway alert's runway, direction, code,\nvalue in knots and span.",
         "properties": {
@@ -32297,6 +32370,45 @@
           }
         },
         "summary": "Instructor Records Since"
+      }
+    },
+    "/api/pilot/instructor-verification": {
+      "post": {
+        "description": "Whether the instructor about to sign is a flight instructor the FAA\nairmen registry bears out (the engine's instructor_verification, over\nthe flight instructors of that last name ingest keeps, wingtip.airmen):\nan endorsement counts as signed only where it is (14 CFR 61.189(a)).",
+        "operationId": "instructor_verification_api_pilot_instructor_verification_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstructorVerificationAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstructorVerification"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Instructor Verification"
       }
     },
     "/api/pilot/records-batch": {

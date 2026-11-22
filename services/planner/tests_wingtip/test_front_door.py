@@ -125,3 +125,18 @@ def test_every_bucket_refuses_a_request_in_the_clear():
         policy = re.search(rf"Bucket: !Ref {bucket}\n(.*?)(?=\n  \w|\Z)", TEMPLATE, re.S)
         assert policy, f"{bucket} has no bucket policy"
         assert re.search(r"Effect: Deny.*?aws:SecureTransport: \"false\"", policy[1], re.S), bucket
+
+
+def test_the_edge_limits_each_address_on_the_tile_paths_the_server_answers():
+    # The deep security review of 2026-11-21, N5: a ?c= of its own made
+    # each tile a cache miss read on the server, with no limit anywhere.
+    acl = re.search(r"^  TileRateLimit:\n    Type: AWS::WAFv2::WebACL\n(.*?)(?=\n  \w)", TEMPLATE, re.S | re.M)
+    assert acl, "the tiles' web ACL"
+    body = acl[1]
+    assert "Scope: CLOUDFRONT" in body and "DefaultAction: { Allow: {} }" in body
+    assert re.search(r"RateBasedStatement:\s+Limit: \d+\s+EvaluationWindowSec: \d+\s+AggregateKeyType: IP", body)
+    assert "ResponseCode: 429" in body
+    # Every behaviour that sends a tile to the server is scoped by the rule.
+    for behaviour in re.findall(r"PathPattern: (api/planner/\w+-tile)/\*\n\s+TargetOriginId: server", TEMPLATE):
+        assert f"SearchString: /{behaviour}/" in body, behaviour
+    assert "WebACLId: !GetAtt TileRateLimit.Arn" in TEMPLATE

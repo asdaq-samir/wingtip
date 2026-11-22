@@ -268,7 +268,10 @@ To restore, on the server:
 5. Put the deletions back: `infra/server/restore-deletions.sh apply`.
 6. Start them again: `dc up -d gateway planner`. The gateway migrates the
    schema forward if the dump is older than the code, and deletes again
-   every account deleted since the dump (`DeletionsReapplied`).
+   every account deleted since the dump (`DeletionsReapplied`). Its
+   Flyway runs as the owner and gives the app's own role, `wingtip_app`,
+   the rows of every table the dump brought back, and no more
+   (`db/callback/afterMigrate.sql`), so the restore needs no grant by hand.
 7. Check: `dc exec -T db psql -U wingtip -d wingtip -c 'SELECT count(*) FROM pilots'`
    against the night's `manifest.txt`, and sign in.
 

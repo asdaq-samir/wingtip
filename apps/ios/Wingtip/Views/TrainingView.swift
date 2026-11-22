@@ -112,6 +112,16 @@ struct TrainingView: View {
                 }
             }
         }
+        // Signed by an instructor the FAA airmen registry did not bear out
+        // (the engine's instructor_verification): kept, but not signed.
+        let unverified = t.signed.filter { !$0.voided && !$0.instructorVerified }
+        if !unverified.isEmpty {
+            Section("Not Verified") {
+                ForEach(unverified) { e in
+                    SignedEndorsementRow(label: t.kinds.first { $0.code == e.code }?.label ?? e.code, rule: nil, e: e)
+                }
+            }
+        }
         let voided = t.signed.filter(\.voided)
         if !voided.isEmpty {
             Section("Voided") {
@@ -254,6 +264,7 @@ struct SignedEndorsementRow: View {
             VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                 Text(e.text).textSelection(.enabled)
                 if !e.signature.isEmpty { Text(e.signature).font(.footnote.monospaced()).foregroundStyle(.secondary) }
+                if let words = e.verification { Text(words).font(.footnote).foregroundStyle(.secondary) }
             }
             if let onVoid, !e.voided {
                 Button("Void It", role: .destructive, action: onVoid)
@@ -263,7 +274,11 @@ struct SignedEndorsementRow: View {
                 Text(label)
                 Text([who, rule, e.voided ? "Voided" : "Signed \(Day.said(e.signedOn))"].compactMap { $0 }.joined(separator: " · "))
                     .font(.footnote).foregroundStyle(.secondary)
-                if !e.voided, let until = e.until { GoodToText(until: until).font(.footnote) }
+                if !e.voided, !e.instructorVerified {
+                    Text("Not verified").font(.footnote).foregroundStyle(WingtipInk.caution)
+                } else if !e.voided, let until = e.until {
+                    GoodToText(until: until).font(.footnote)
+                }
             }
         }
     }
@@ -360,7 +375,7 @@ struct ReviewAskView: View {
 
 #Preview("SignedEndorsementRow") {
     List {
-        SignedEndorsementRow(label: "Solo Flight (First 90 Days)", rule: "61.87(n)", e: SignedEndorsement(code: "A.4", digest: "", fields: .init(), id: 1, signature: "/s/ Jordan Lee 4123456 CFI exp 2028-03-31", signedOn: "2026-10-14", studentName: "Avery B. Student", text: "I certify that Avery B. Student has received the required training of § 61.87 in a Cessna 172.", until: "2027-01-12", voided: false))
+        SignedEndorsementRow(label: "Solo Flight (First 90 Days)", rule: "61.87(n)", e: SignedEndorsement(code: "A.4", digest: "", fields: .init(), id: 1, instructorVerified: true, signature: "/s/ Jordan Lee 4123456 CFI exp 2028-03-31", signedOn: "2026-10-14", studentName: "Avery B. Student", text: "I certify that Avery B. Student has received the required training of § 61.87 in a Cessna 172.", until: "2027-01-12", verification: nil, voided: false))
     }
 }
 

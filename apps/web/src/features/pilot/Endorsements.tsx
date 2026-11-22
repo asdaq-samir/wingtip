@@ -63,7 +63,14 @@ export function SignedRow({
                 <span className="block">
                   {[who, kind?.rule, e.voided ? "Voided" : `Signed ${said(e.signedOn)}`].filter(Boolean).join(" · ")}
                 </span>
-                {!e.voided && <GoodTo until={e.until} />}
+                {/* The FAA airmen registry did not bear its instructor out
+                    (the engine's instructor_verification): kept, not signed. */}
+                {!e.voided && !e.instructorVerified && (
+                  <span className={cn("block", FINDING_TONE.caution)} data-testid="not-verified">
+                    Not verified
+                  </span>
+                )}
+                {!e.voided && e.instructorVerified && <GoodTo until={e.until} />}
               </>
             }
             value={open ? "Hide" : "Read"}
@@ -73,6 +80,7 @@ export function SignedRow({
       />
       <CollapsibleContent>
         <SignedWords text={e.text} signature={e.signature} />
+        {e.verification && <p className={cn("px-3 pb-2.5 text-muted-foreground", TEXT.note)}>{e.verification}</p>}
         {onVoid && !e.voided && <ListRow title={<span className="text-destructive">Void It</span>} disabled={voiding} onClick={onVoid} />}
       </CollapsibleContent>
     </Collapsible>

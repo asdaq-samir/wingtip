@@ -25,7 +25,11 @@ public interface PilotRepository extends JpaRepository<Pilot, Long> {
 
     Optional<Pilot> findByAppleSubject(String appleSubject);
 
-    Optional<Pilot> findByEmail(String email);
+    /** The pilot at an address, its case aside: Alice@x.com and
+     *  alice@x.com are one inbox and one account, which V50's unique index
+     *  on lower(email) keeps so (the deep security review, N8). */
+    @Query("SELECT p FROM Pilot p WHERE lower(p.email) = lower(:email)")
+    Optional<Pilot> findByEmail(@Param("email") String email);
 
     /** The pilot's row, deleted by the database itself, whose ON DELETE
      *  CASCADE takes their aircraft, their flights with each one's nav log

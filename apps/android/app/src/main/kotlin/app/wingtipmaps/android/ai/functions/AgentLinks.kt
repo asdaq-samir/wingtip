@@ -8,7 +8,8 @@ import java.net.URLEncoder
  * The app's own links for what an agent opens (wingtipmaps://plan?…,
  * design/screens.json): the same addresses Links reads for a link tapped
  * anywhere else, so an agent's "plan KPAO to KSQL" lands where a shared
- * route does. Pure, for a unit test.
+ * route does: its preview, planned only at the pilot's Use This Plan
+ * (the deep security review of 2026-11-21, N3). Pure, for a unit test.
  */
 object AgentLinks {
     private const val BASE = "${Screen.SCHEME}://${Screen.SCHEME_HOST}"

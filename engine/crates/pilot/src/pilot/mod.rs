@@ -24,6 +24,7 @@ pub mod currency;
 pub mod due_tone;
 pub mod endorsements;
 pub mod handbook;
+pub mod instructor_check;
 pub mod instructor_records;
 pub mod js;
 pub mod kinds;

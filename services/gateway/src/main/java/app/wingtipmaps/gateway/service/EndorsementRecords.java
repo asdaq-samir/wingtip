@@ -34,12 +34,15 @@ final class EndorsementRecords {
     private EndorsementRecords() {}
 
     /** The endorsements a student holds, recorded from paper and signed in
-     *  the app, a voided one not held, as the engine reads them. */
+     *  the app, a voided one or one whose instructor was not verified not
+     *  held, as the engine reads them. */
     static List<PlannerHeldEndorsement> held(List<Endorsement> recorded, List<SignedEndorsement> signed) {
         return Stream.concat(
                         recorded.stream().map(e -> PlannerAsks.held(e.getKey().code(), e.getEndorsedOn(), null)),
                         signed.stream()
-                                .filter(e -> !e.isVoided())
+                                // The engine's verdicts kept: voided, or its instructor
+                                // not borne out by the FAA registry, it is not held.
+                                .filter(e -> !e.isVoided() && e.isInstructorVerified())
                                 .map(e -> PlannerAsks.held(
                                         e.getCode(),
                                         e.getSignedOn(),
@@ -60,7 +63,9 @@ final class EndorsementRecords {
                 e.getSignedOn(),
                 until,
                 e.isVoided(),
-                e.getDigest());
+                e.getDigest(),
+                e.isInstructorVerified(),
+                e.getVerification());
     }
 
     /** The name an endorsement gives a pilot: theirs as their certificate
