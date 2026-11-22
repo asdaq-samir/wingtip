@@ -49,11 +49,15 @@ export default function AppToaster() {
             // From md up the panel stands at the left the screen's whole
             // height, so the toast comes up from the foot in the map's room
             // beside it, centred between the panel's edge and the map's
-            // buttons at the right (44 points of button, its margin and a
-            // little air): centred on the window it lay over the panel's
-            // foot (problems.spec, the nightly run of 2026-11-20).
+            // buttons at the right, a rem of air from each: centred on the
+            // window it lay over the panel's foot (problems.spec, the
+            // nightly run of 2026-11-20). The buttons' glass card is their
+            // margin, a 44-point button and the glass's 4 either side
+            // (MapControls' group); 4.25rem had left out the glass since it
+            // came in, the toast 8 nearer it than the panel.
             "--toast-left": edge === "top" ? "calc(max(1rem, env(safe-area-inset-left)) + var(--panel-room) + 1rem)" : "0px",
-            "--toast-right": edge === "top" ? "4.25rem" : "0px",
+            "--toast-right":
+              edge === "top" ? "calc(max(0.5rem, env(safe-area-inset-right)) + var(--size-map-button) + 0.5rem + 1rem)" : "0px",
             "--width":
               edge === "top" ? "min(34rem, calc(100vw - var(--toast-left) - var(--toast-right)))" : "min(34rem, calc(100vw - 2rem))",
             // Under the notch or the Dynamic Island, or over the home
