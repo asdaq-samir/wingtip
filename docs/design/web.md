@@ -83,8 +83,8 @@ These hold on every screen below and win over any reference app.
   `routePanelParts`' `panelChunk`, and the Brief's airport sections
   (`brief/AirportSectionsPart`), which drew an airport card's rows and so
   brought the whole card's chunk with every route. They are fetched six
-  seconds after the page is idle (`usePrefetchWhenIdle`'s
-  `prefetchTapCards`), and the airport sections as the Brief's card comes
+  seconds after the route opened has drawn (`usePrefetchWhenIdle`'s
+  `prefetchTapCards`, `lib/routeDrawn`), and the airport sections as the Brief's card comes
   up, so a tap still opens its card at once (the speed audit of
   2026-11-21: the route panel was 507 KB, every card in it). A card
   tapped before its chunk is in waits inside its own card (`CardLayer`'s
@@ -94,10 +94,14 @@ These hold on every screen below and win over any reference app.
   counting only its static graph (0.97 of 4.2 MB): `e2e/route-load.spec.ts`
   opens /app/plan?dep=KPWK&dest=KDLH on a cold page at a phone's size with
   the CPU four times slower and sums every script fetched, by its decoded
-  size, until the ETE has a digit, against 4,198,439 bytes, the speed
-  audit's own measurement of that open (204 files). The figure it reads
-  goes in the test's annotations; it is lowered to a new measurement,
-  never raised.
+  size, until the ETE has a digit, against 3,605,492 bytes (176 files),
+  the open's own reading once what is fetched ahead for a later tap waits
+  for the route to draw (`lib/routeDrawn`: the pilot console, the cards
+  drawn at a tap, the search's page, the airplanes' tiles and the boxes'
+  chunk, each its moment after the route's figures are in rather than
+  after the page's mount, which a slow route outran; 4,234,091 bytes were
+  read on CI before). The figure it reads goes in the test's annotations;
+  it is lowered to a new measurement, never raised.
 - **A return visit fetches nothing but the worker's own check.** The
   service worker precaches the app shell, every first-load chunk and the
   engine's `.wasm` (`globPatterns`), so a second load is served from it

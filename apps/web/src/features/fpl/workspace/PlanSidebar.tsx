@@ -12,6 +12,7 @@ import { loadRecentRoutesPage, loadSearchResultsPage, loadNearestCard } from "..
 import { AirspaceCard, FlightCard, PastFlightCard, PlaceCard } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
 import type { KeptAircraft } from "../../../lib/preferences";
+import { afterRouteDrawn } from "../../../lib/routeDrawn";
 import Waits from "./Waits";
 import SearchBox from "../search/SearchBox";
 import { useAirplaneHistory } from "../../../lib/airplane/ownAirplane";
@@ -96,12 +97,12 @@ export default function PlanSidebar({
   const { askFor, favorites, home, moveFavoriteAirport, pickAirplane, pickPlace, query, setHomeAirport, toggleFavoriteAirport } = vm.search;
   usePrefetchAircraftTiles();
   useEffect(() => {
-    const later = window.setTimeout(() => {
+    // Once the route opened has drawn (lib/routeDrawn), out of its first seconds.
+    return afterRouteDrawn(() => {
       searchHome.prefetch();
       recentsPage.prefetch();
       recentRoutesPage.prefetch();
     }, 1500);
-    return () => window.clearTimeout(later);
   }, []);
   // An airplane's card, over whichever place is up, as an airport's is; a past flight's only
   // where its history is offered (useAirplaneHistory: the pilot's own, or Other Airplanes on).

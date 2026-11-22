@@ -52,6 +52,12 @@ test("a pilot's browser reports its Web Vitals as the page is put away, and noth
   // A browser driven by tests reports nothing (lib/speed), so this one
   // says it is not.
   await page.addInitScript(() => Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false }));
+  // And that this load is one of the quarter that report (lib/helpImprove's
+  // SPEED_SAMPLE, drawn once a load): every draw still random, in [0, 0.25).
+  await page.addInitScript(() => {
+    const draw = Math.random.bind(Math);
+    Math.random = () => draw() * 0.25;
+  });
   await page.addInitScript(noTips);
   const sent: string[] = [];
   await page.route(
