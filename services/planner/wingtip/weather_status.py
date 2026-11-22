@@ -7,10 +7,17 @@ too, so its callers ask it as before."""
 from . import weather_store
 
 # Each source as a pilot knows it, for the line said when it cannot be had.
-_PRODUCT_WORDS = {"metars": "METARs", "tafs": "TAFs", "airsigmets": "AIRMETs and SIGMETs", "pireps": "PIREPs", "gairmets": "G-AIRMETs"}
+_PRODUCT_WORDS = {
+    "metars": "METARs",
+    "tafs": "TAFs",
+    "airsigmets": "SIGMETs",
+    "airmets": "Alaska AIRMETs",
+    "pireps": "PIREPs",
+    "gairmets": "G-AIRMETs",
+}
 
 #: The reports and advisories, each a cache file of aviationweather.gov's.
-_CACHE_SOURCES = ("metars", "tafs", "airsigmets", "pireps", "gairmets")
+_CACHE_SOURCES = ("metars", "tafs", "airsigmets", "airmets", "pireps", "gairmets")
 
 
 def preload() -> None:

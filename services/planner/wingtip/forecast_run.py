@@ -95,7 +95,9 @@ def play(track: list[dict], fields: list[dict], rules: str, minimums: dict | Non
     start, end = min(p["t"] for p in track), max(p["t"] for p in track)
     idents = {f["ident"].upper() for f in fields} | {f"K{f['ident'].upper()}" for f in fields}
     tafs = [s for s in _dataset("tafs", unavailable) if _in_box(s["lat"], s["lon"], box) or s["icaoId"] in idents]
-    sigmets = [a for a in _dataset("airsigmets", unavailable) if len(a["coords"]) >= 3 and _ring_in_box(a["coords"], box)]
+    # Alaska's AIRMETs beside the SIGMETs (wingtip.weather.advisories), each said where it cannot be had.
+    advisories = [*_dataset("airsigmets", unavailable), *_dataset("airmets", unavailable)]
+    sigmets = [a for a in advisories if len(a["coords"]) >= 3 and _ring_in_box(a["coords"], box)]
     gairmets: list = []
     try:
         gairmets = weather.gairmet_snapshots_along_route(points, (start, end))

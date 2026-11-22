@@ -320,15 +320,28 @@ def tafs_over(windows: dict) -> dict:
 # --- SIGMET hazards ---
 
 
+def advisories() -> list:
+    """The SIGMETs (the combined SIGMET file, "airsigmets") and Alaska's
+    AIRMETs ("airmets", the data API's: app.aviationweather), which the
+    store keeps apart, each fetched on its own. The AIRMETs left out where
+    none can be had, which the Status page says (weather_status); the
+    SIGMETs' WeatherServiceError raised as before."""
+    sigmets = _dataset("airsigmets")
+    try:
+        return [*sigmets, *_dataset("airmets")]
+    except WeatherServiceError:
+        return sigmets
+
+
 def hazards_along_route(route_start: tuple, route_end: tuple, corridor_buffer_nm: float = 25.0) -> list:
-    """The SIGMETs in force now whose area the route line crosses: the
-    engine's (sigmets_along_route). CONUS AIRMETs gave way to G-AIRMETs in
-    January 2025 (gairmet_snapshots_along_route). Each keeps its valid
+    """The SIGMETs and Alaska's AIRMETs in force now whose area the route
+    line crosses: the engine's (sigmets_along_route). CONUS AIRMETs gave
+    way to G-AIRMETs in January 2025 (gairmet_snapshots_along_route). Each keeps its valid
     times, issue and area ("coords", [[lat, lon]]), for the briefing to say
     where and when the flight meets it."""
     return _ask(
         "sigmets_along_route",
-        advisories=_dataset("airsigmets"),
+        advisories=advisories(),
         **{"from": list(route_start), "to": list(route_end)},
         corridor_nm=corridor_buffer_nm,
         now=time.time(),

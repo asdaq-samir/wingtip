@@ -196,6 +196,8 @@ pub(super) fn secs(v: &Value, key: &str) -> Option<i64> {
 /// - "airsigmets": the latest "valid until" of them (up to 4 hours for a
 ///   SIGMET, 6 for volcanic ash or a tropical cyclone, 2 for a convective
 ///   SIGMET, 6 for an AIRMET; FAA-H-8083-28B 26.2.4, 26.2.5, 26.3.3);
+/// - "airmets", Alaska's (airmets.rs): the same, an AIRMET to its own
+///   valid time;
 /// - "pireps": PIREP_MAX_AGE_S after the newest report, past which a held
 ///   set would read as "no reports along the route" where the truth is
 ///   "none could be had";
@@ -216,7 +218,7 @@ pub fn held_until(product: &str, data: &Value, fetched: i64) -> Result<Option<i6
                 .collect(),
             0,
         ),
-        "airsigmets" => latest(
+        "airsigmets" | "airmets" => latest(
             list().iter().filter_map(|a| validity::expires_at(validity::Product::Advisory, None, None, secs(a, "valid_to"))).collect(),
             0,
         ),

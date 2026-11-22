@@ -240,6 +240,11 @@ extension Engine {
         try Self.rule("aviation_grid_bands", EngineContract.AviationGridBandsInput())
     }
 
+    /// Alaska's AIRMETs from the Aviation Weather Center's data API (/api/data/airmet, GeoJSON) read into the shape the weather store keeps beside the SIGMETs: [{hazard, type (AIRMET), altitude_low_ft, altitude_high_ft (both null: the API's decoded altitudes misread the text, so each is told at every altitude), raw (hazard and zone), valid_from, valid_to, issued, zone, coords}].
+    static func awcAirmetsRead(text: String) throws -> [[String: OpenAPIValueContainer]] {
+        try Self.rule("awc_airmets_read", EngineContract.AwcAirmetsReadInput(text: text))
+    }
+
     /// The Aviation Weather Center's national airsigmets cache file (XML) read into the shape the weather store keeps: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].
     static func awcAirsigmetsRead(text: String) throws -> [[String: OpenAPIValueContainer]] {
         try Self.rule("awc_airsigmets_read", EngineContract.AwcAirsigmetsReadInput(text: text))
@@ -1945,7 +1950,7 @@ extension Engine {
         try Self.rule("weather_expires_at", EngineContract.WeatherExpiresAtInput(product: product, observed: observed, lastRoutine: lastRoutine, validTo: validTo))
     }
 
-    /// To when a stored copy may be served when later fetches fail, by its product's own validity (FAA-H-8083-28B 24.4.1, 26.2-26.3, 27.4.1): METARs no limit, TAFs and SIGMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.
+    /// To when a stored copy may be served when later fetches fail, by its product's own validity (FAA-H-8083-28B 24.4.1, 26.2-26.3, 27.4.1): METARs no limit, TAFs, SIGMETs and Alaska's AIRMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.
     static func weatherHeldUntil(product: String, data: OpenAPIValueContainer? = nil, fetched: Double) throws -> Double? {
         try Self.rule("weather_held_until", EngineContract.WeatherHeldUntilInput(product: product, data: data, fetched: fetched))
     }

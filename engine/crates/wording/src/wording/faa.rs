@@ -83,6 +83,9 @@ pub fn sigmet_hazard(hazard: Option<&str>, kind: Option<&str>) -> String {
         Some(h) if !h.is_empty() => match h.to_uppercase().as_str() {
             "CONVECTIVE" => "Convective".to_owned(),
             "TURB" => "Turbulence".to_owned(),
+            // Alaska's AIRMETs (the weather crate's awc::airmets).
+            "SFC WND" => "Strong surface winds".to_owned(),
+            "LLWS" => "Low-level wind shear".to_owned(),
             "ICE" => "Icing".to_owned(),
             "IFR" => "IFR".to_owned(),
             "MTN OBSCN" => "Mountain obscuration".to_owned(),

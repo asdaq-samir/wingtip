@@ -1677,6 +1677,10 @@ enum EngineContract {
     struct AviationGridBandsInput: Codable, Equatable, Sendable {
     }
 
+    struct AwcAirmetsReadInput: Codable, Equatable, Sendable {
+        var text: String
+    }
+
     struct AwcAirsigmetsReadInput: Codable, Equatable, Sendable {
         var text: String
     }

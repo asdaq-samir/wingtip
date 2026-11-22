@@ -70,6 +70,7 @@ export function zulu(t: number): string {
 const PRODUCT_WORDS: Record<string, string> = {
   tafs: "TAFs",
   airsigmets: "SIGMETs",
+  airmets: "Alaska AIRMETs",
   gairmets: "G-AIRMETs",
   "spc-outlook": "the SPC outlook",
   "glmp-forecast": "the modelled hours (Gridded LAMP)",

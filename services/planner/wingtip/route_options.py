@@ -127,7 +127,7 @@ def _metars(frame: dict) -> list[dict]:
     ]
 
 
-def _advisories(name: str) -> list[dict]:
+def _advisories(held: list[dict]) -> list[dict]:
     return [
         {
             "hazard": a.get("hazard") or "",
@@ -138,7 +138,7 @@ def _advisories(name: str) -> list[dict]:
             "valid": a.get("valid"),
             "raw": a.get("raw") or "",
         }
-        for a in weather._dataset(name)
+        for a in held
     ]
 
 
@@ -280,8 +280,8 @@ def options(
     for key, read in (
         ("tafs", lambda: _tafs(frame)),
         ("metars", lambda: _metars(frame)),
-        ("sigmets", lambda: _advisories("airsigmets")),
-        ("gairmets", lambda: _advisories("gairmets")),
+        ("sigmets", lambda: _advisories(weather.advisories())),
+        ("gairmets", lambda: _advisories(weather._dataset("gairmets"))),
     ):
         try:
             asked[key] = read()

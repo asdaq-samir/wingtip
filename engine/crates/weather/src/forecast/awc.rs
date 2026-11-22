@@ -240,6 +240,8 @@ pub fn tafs(text: &str) -> Result<String, String> {
 
 mod advisories;
 pub use advisories::*;
+mod airmets;
+pub use airmets::*;
 
 #[cfg(test)]
 mod tests;

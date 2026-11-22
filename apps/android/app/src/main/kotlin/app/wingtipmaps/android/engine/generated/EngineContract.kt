@@ -1691,6 +1691,11 @@ object EngineContract {
     }
 
     @Serializable
+    data class AwcAirmetsReadInput(
+        val text: String,
+    )
+
+    @Serializable
     data class AwcAirsigmetsReadInput(
         val text: String,
     )

@@ -72,8 +72,8 @@ def taf(ident, lat, lon, ceiling=None, visibility=10.0, wx=""):
 @pytest.fixture
 def sky(monkeypatch):
     """Flat ground, no wind, no airspace; the TAFs, METARs and SIGMETs
-    the test puts in `data`."""
-    data = {"tafs": [], "metars": {}, "airsigmets": [], "gairmets": []}
+    the test puts in `data` (Alaska's AIRMETs none)."""
+    data = {"tafs": [], "metars": {}, "airsigmets": [], "airmets": [], "gairmets": []}
     monkeypatch.setattr(weather, "_dataset", lambda name: data[name])
     monkeypatch.setattr(winds_aloft, "wind_points", lambda box, key, altitudes: [])
     monkeypatch.setattr(terrain_detour, "heights_ft", lambda lats, lons: np.zeros(lats.shape))

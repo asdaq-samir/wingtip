@@ -28,6 +28,16 @@ copy in place and says so beside it (weather_store.write_attempt); only a
 parsed product is ever stored, so a body that does not parse is a
 failed fetch.
 
+Alaska's AIRMETs are the one product here not in a cache file: the
+data API's /api/data/airmet ("Decoded domestic AIRMETs (Alaska only)",
+its OpenAPI document read 2026-11-21), every one in a single answer of
+about 28 KB, which the API's terms allow (aviationweather.gov/data/api,
+"Using the API": a custom User-Agent, at most 100 requests a minute,
+asked no more often than the product changes). The answer says it may
+be cached three minutes (Cache-Control max-age=180), which is its pace
+here (app.settings, airmets_every_s); an unchanged answer is not read
+again, as with the files (its weak ETag, then its digest).
+
 The reading of each file and how long its copy is held are the engine's
 (engine/crates/weather/src/forecast/awc.rs, #482 phase 2), the same rules
 the planner and the phones read: this module fetches, asks the engine
@@ -49,6 +59,9 @@ from . import fetch
 log = logging.getLogger(__name__)
 
 CACHE_BASE_URL = "https://aviationweather.gov/data/cache"
+#: Alaska's AIRMETs as GeoJSON, the one format with each zone's polygon
+#: (engine/crates/weather/src/forecast/awc/airmets.rs).
+AIRMET_URL = "https://aviationweather.gov/api/data/airmet?format=geojson"
 
 
 def _reader(product: str):
@@ -80,6 +93,11 @@ SOURCES = {
 }
 
 
+# Alaska's AIRMETs (above): kept apart from the SIGMETs, so either can
+# fail alone, and read beside them by the planner (wingtip.weather.advisories).
+SOURCES["airmets"] = (AIRMET_URL, _reader("airmets"), _held_until("airmets"))
+
+
 def fetch_source(name: str) -> None:
     """Source `name` fetched and stored, if it has changed since the copy
     stored (its validators; then its body's digest); an unchanged one is
@@ -96,7 +114,9 @@ def fetch_source(name: str) -> None:
     if held is not None and getattr(resp, "status_code", None) == 304:
         data, digest = held.data, held.meta.get("body")
     else:
-        body = gzip.decompress(resp.content)
+        # The cache files are gzipped files (their first two bytes gzip's
+        # magic number, RFC 1952); the API's answer is not.
+        body = gzip.decompress(resp.content) if resp.content[:2] == b"\x1f\x8b" else resp.content
         digest = weather_store.body_hash(body)
         same = held is not None and held.meta.get("body") == digest
         data = held.data if same else parse(body)

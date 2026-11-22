@@ -179,6 +179,7 @@ export type AtcItem =
       what: "land" | "takeoff" | "option" | "hold short" | "line up and wait" | null;
     };
 export type AverageGroundspeedKtAnswer = number | null;
+export type AwcAirmetsReadAnswer = {}[];
 export type AwcAirsigmetsReadAnswer = {}[];
 export type AwcGairmetsReadAnswer = {}[];
 export type AwcPirepsReadAnswer = {}[];
@@ -1460,6 +1461,13 @@ export interface EngineContract {
   aviation_grid_bands: {
     input: AviationGridBandsInput;
     answer: AviationGridBandsAnswer;
+  };
+  /**
+   * Alaska's AIRMETs from the Aviation Weather Center's data API (/api/data/airmet, GeoJSON) read into the shape the weather store keeps beside the SIGMETs: [{hazard, type (AIRMET), altitude_low_ft, altitude_high_ft (both null: the API's decoded altitudes misread the text, so each is told at every altitude), raw (hazard and zone), valid_from, valid_to, issued, zone, coords}].
+   */
+  awc_airmets_read: {
+    input: AwcAirmetsReadInput;
+    answer: AwcAirmetsReadAnswer;
   };
   /**
    * The Aviation Weather Center's national airsigmets cache file (XML) read into the shape the weather store keeps: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].
@@ -3849,7 +3857,7 @@ export interface EngineContract {
     answer: WeatherExpiresAtAnswer;
   };
   /**
-   * To when a stored copy may be served when later fetches fail, by its product's own validity (FAA-H-8083-28B 24.4.1, 26.2-26.3, 27.4.1): METARs no limit, TAFs and SIGMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.
+   * To when a stored copy may be served when later fetches fail, by its product's own validity (FAA-H-8083-28B 24.4.1, 26.2-26.3, 27.4.1): METARs no limit, TAFs, SIGMETs and Alaska's AIRMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.
    */
   weather_held_until: {
     input: WeatherHeldUntilInput;
@@ -5202,6 +5210,9 @@ export interface AviationGridBandsAnswer {
       from: number;
     }[];
   };
+}
+export interface AwcAirmetsReadInput {
+  text: string;
 }
 export interface AwcAirsigmetsReadInput {
   text: string;
@@ -13743,7 +13754,7 @@ export interface WeatherExpiresAtInput {
   valid_to?: number | null;
 }
 export interface WeatherHeldUntilInput {
-  product: "metars" | "tafs" | "airsigmets" | "pireps" | "gairmets";
+  product: "metars" | "tafs" | "airsigmets" | "airmets" | "pireps" | "gairmets";
   data?: unknown;
   fetched: number;
 }
