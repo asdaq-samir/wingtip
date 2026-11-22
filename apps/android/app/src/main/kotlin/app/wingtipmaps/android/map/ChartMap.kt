@@ -153,7 +153,7 @@ fun ChartMap(
         }
     }
 
-    LaunchedEffect(holder, template, minZoom, maxZoom, overlays, app.wingtipmaps.android.offline.OfflineLayers.rememberDownloadsKey(context)) { holder.style(template, minZoom, maxZoom, overlays, line) }
+    LaunchedEffect(holder, template, minZoom, maxZoom, overlays, app.wingtipmaps.android.offline.OfflineLayers.rememberDownloadsKey(context), night, layers.largerLabels) { holder.style(template, minZoom, maxZoom, overlays, line) }
     LaunchedEffect(holder, night) { holder.paint(night) }
     // Edge to edge: the credits clear a cutout or a navigation bar at the
     // left in landscape as well as the sheet below.
@@ -261,7 +261,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             // Past the chart's own detail the imagery (CloseMap), to its zoom.
             chartTileMax = maxZoom
             map.setMaxZoomPreference(maxOf(MapStyle.maxZoom(maxZoom), CloseMap.MAX_ZOOM))
-            val json = app.wingtipmaps.android.offline.OfflineLayers.styled(view.context, template, MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather), lastLayers.tac)
+            val json = app.wingtipmaps.android.offline.OfflineLayers.styled(view.context, template, MapLabels.adjust(MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather), MapLabels.scale(lastLayers.largerLabels, view.context), night), lastLayers.tac)
             val builder = Style.Builder().fromJson(json)
             OverlayPictures.addTo(builder, density)
             // At the latest this long after the style is set the map is
