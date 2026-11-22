@@ -1119,6 +1119,16 @@ Edit and Done.
    field under the card, focused in the tap so a phone's keyboard comes
    up (`routeBoxOpen`). On a whole route a keyboard button at Add a Stop's end opens it
    (`route-type-open`; it is no longer an item of More, e401f646d).
+   Under it on the empty route, "Open a Route File" (`OpenRouteFileRow`,
+   a filled tint circle with a file glyph): React Aria's FileTrigger for
+   a flight plan's .fpl (Garmin's FlightPlan v1, as Garmin Pilot and
+   ForeFlight export it) or a GPX route, and the empty route's card is a
+   drop target for one (`FileDrop`, an iPad's Files beside the app, a
+   desktop's Finder). The engine reads it (`route_file_read`) and it is
+   previewed in the shared flight's sheet, "Route File": its points, a
+   user waypoint named off the nearest fix as a dropped pin is, a closed
+   field left out and said so (a closed end offers no plan, decision
+   0043), and Use This Plan or Not Now.
 4. The altitude (`FL045` style, decision 0009) and the figure strip at
    the foot: Leg or Dest, Distance, ETE, Track, GPS alt (ETE only with
    an airplane; Track a dash with no course or below flying speed, the

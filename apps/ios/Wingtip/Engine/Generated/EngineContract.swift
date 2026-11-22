@@ -10857,6 +10857,11 @@ enum EngineContract {
         var lon: Double
     }
 
+    struct RouteFileReadInput: Codable, Equatable, Sendable {
+        /// The file's text.
+        var text: String
+    }
+
     struct RouteHeadwindAnswer: Codable, Equatable, Sendable {
         /// The headwind on that leg's course, kt; negative a tailwind.
         var headwindKt: Double

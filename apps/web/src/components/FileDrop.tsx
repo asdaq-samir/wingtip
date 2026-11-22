@@ -1,20 +1,28 @@
 import type { ReactNode } from "react";
 import { DropZone, isFileDropItem, type DropItem } from "react-aria-components";
 
+/** The type a browser gives a file it has no type for (a .fpl's, often a
+ *  .gpx's), as React Aria's drag reads it (its GENERIC_TYPE). */
+const ANY_FILE = "application/octet-stream";
+
 interface Props {
   /** What a screen reader hears the place is for: "Drop PDFs here". */
   label: string;
   /** The MIME types it takes; a file of none of them is refused as it is dragged over. */
   types: readonly string[];
+  /** And the files of these endings, whatever type the browser gives
+   *  them: ".fpl", which no registered type names. */
+  extensions?: readonly string[];
   /** The files let go over it, of those types alone. */
   onFiles: (files: File[]) => void;
   children: ReactNode;
 }
 
-/** The dragged items' files of `types`, read. */
-async function filesOf(items: DropItem[], types: readonly string[]): Promise<File[]> {
-  const files = items.filter(isFileDropItem).filter((item) => types.includes(item.type));
-  return Promise.all(files.map((item) => item.getFile()));
+/** The dragged items' files of `types`, or of `extensions` by name, read. */
+async function filesOf(items: DropItem[], types: readonly string[], extensions: readonly string[]): Promise<File[]> {
+  const named = (file: File) => extensions.some((end) => file.name.toLowerCase().endsWith(end));
+  const files = await Promise.all(items.filter(isFileDropItem).map((item) => item.getFile()));
+  return files.filter((file) => types.includes(file.type) || named(file));
 }
 
 /**
@@ -26,13 +34,16 @@ async function filesOf(items: DropItem[], types: readonly string[]): Promise<Fil
  * 2026-11-21: the documents library and the debrief took no drop). Ringed
  * in the tint while a file it takes is over it.
  */
-export default function FileDrop({ label, types, onFiles, children }: Props) {
+export default function FileDrop({ label, types, extensions = [], onFiles, children }: Props) {
+  // A file by its ending has no type to know it by while it is dragged:
+  // any file is taken then, and the ending read as it is let go.
+  const takes = extensions.length ? [...types, ANY_FILE] : types;
   return (
     <DropZone
       aria-label={label}
-      getDropOperation={(dragged) => (types.some((type) => dragged.has(type)) ? "copy" : "cancel")}
+      getDropOperation={(dragged) => (takes.some((type) => dragged.has(type)) ? "copy" : "cancel")}
       onDrop={(event) => {
-        void filesOf(event.items, types).then((files) => {
+        void filesOf(event.items, types, extensions).then((files) => {
           if (files.length) onFiles(files);
         });
       }}

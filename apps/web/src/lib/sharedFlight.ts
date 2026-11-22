@@ -1,4 +1,5 @@
 import { addressParams } from "./address";
+import type { EngineAnswer } from "./engine/engine";
 import { altitudesParam, tanksOf } from "./identSchema";
 import type { FlightRules } from "./preferences";
 import { LINK_KEYS, SCREEN_LINK, type LinkKey } from "./navigation/generated/screens";
@@ -37,7 +38,12 @@ export interface SharedPlan {
   tanks: Record<string, number>;
 }
 
-export type SharedLink = { kind: "plan"; plan: SharedPlan } | { kind: "saved"; token: string };
+export type SharedLink =
+  | { kind: "plan"; plan: SharedPlan }
+  | { kind: "saved"; token: string }
+  /** A route file opened (.fpl or .gpx; features/shared-flight's
+   *  routeFile): the engine's reading of it, previewed as a link is. */
+  | { kind: "file"; fileName: string; read: EngineAnswer<"route_file_read"> };
 
 /** The screen's word in `open=` (design/screens.json). */
 const SHARED = "shared";

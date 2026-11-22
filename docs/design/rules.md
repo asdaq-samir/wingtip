@@ -1334,7 +1334,9 @@ less cluttered". Decision [0045](../decisions/0045-fpl-for-every-pilot.md).
    the empty field says what it takes ("From, to, or a whole route").
    On the web, before the route is whole, the field is folded into the
    route's card's last row, "Type or Paste a Route", the ends still to
-   pick rows of the same card (the owner, 2026-11-18).
+   pick rows of the same card (the owner, 2026-11-18); and a route file
+   (.fpl, .gpx) opened from the row under it or dropped on the card,
+   previewed as a shared flight is before it is used.
 3. **Explain on tap.** An abbreviation (MH, MC, ETE, TOC, TOD, FL, the VFR
    and IFR levels ...) is a tap on the word itself, in the tint, which
    opens one plain sentence with its source in the stock Popover; nothing
