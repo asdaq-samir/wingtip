@@ -104,7 +104,9 @@ enum KeepPlates {
 
     /// A line as the planner reads `fixes`: "lat,lon;lat,lon", to four places.
     static func fixes(_ line: [CLLocationCoordinate2D]) -> String {
-        let step = max(1, (line.count + mostFixes - 1) / mostFixes)
+        // The step spans the line's gaps over mostFixes - 1, as the web's
+        // and Android's: from the points' count, the last kept besides made 61.
+        let step = max(1, (line.count - 1 + mostFixes - 2) / (mostFixes - 1))
         let kept = line.indices.filter { $0 % step == 0 || $0 == line.count - 1 }.map { line[$0] }
         return kept.map { String(format: "%.4f,%.4f", $0.latitude, $0.longitude) }.joined(separator: ";")
     }

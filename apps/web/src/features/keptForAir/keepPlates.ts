@@ -20,8 +20,12 @@ import { keepChart } from "../../lib/kept/keepChart";
  *  ends kept, so the address stays short. */
 const MOST_FIXES = 60;
 
-function fixesOf(line: [number, number][]): string {
-  const step = Math.max(1, Math.ceil(line.length / MOST_FIXES));
+/** Every step-th point and the last: the step spans the line's gaps, one
+ *  fewer than its points, over MOST_FIXES - 1, as Android's FlightPlates
+ *  has it, so the last point kept besides never makes it 61 (a step from
+ *  the points' count did, a 120-point line sending 61). */
+export function fixesOf(line: [number, number][]): string {
+  const step = Math.max(1, Math.ceil((line.length - 1) / (MOST_FIXES - 1)));
   const kept = line.filter((_, i) => i % step === 0 || i === line.length - 1);
   return kept.map(([lat, lon]) => `${lat.toFixed(4)},${lon.toFixed(4)}`).join(";");
 }
