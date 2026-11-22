@@ -67,6 +67,20 @@ public class SignedEndorsement {
 
     private Instant voidedAt;
 
+    /** Whether the FAA airmen registry bore the instructor out at signing
+     *  (V51, the engine's instructor_verification): only then does it
+     *  count as signed. */
+    @Column(nullable = false)
+    private boolean instructorVerified;
+
+    /** The registry's record matched, where one was. */
+    @Column(length = 8)
+    private String instructorRegistryId;
+
+    /** The verdict's words, as the pilot reads them. */
+    @Column(length = 300)
+    private String verification;
+
     protected SignedEndorsement() {
         // JPA
     }
@@ -92,6 +106,13 @@ public class SignedEndorsement {
         this.signedOn = signedOn;
         this.signedAt = signedAt;
         this.digest = digest;
+    }
+
+    /** The registry's verdict, kept as given at signing. */
+    public void verifiedAs(boolean verified, String registryId, String words) {
+        this.instructorVerified = verified;
+        this.instructorRegistryId = registryId;
+        this.verification = words;
     }
 
     public void voidAt(Instant at) {

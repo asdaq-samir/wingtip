@@ -102,12 +102,13 @@ enum Endorsing {
         try Engine.endorsementLapse(until: instructor.until, untilKind: instructor.untilKind, signedOn: signedOn)
     }
 
-    /// The latest of each kind signed in the app and not voided; the
+    /// The latest of each kind signed in the app, not voided and its
+    /// instructor borne out by the FAA airmen registry; the
     /// record comes newest first (the engine's `endorsements_in_force`,
     /// which answers each code with its index into the record, a pair the
     /// contract leaves untyped).
     static func inForce(_ signed: [SignedEndorsement]) throws -> [String: SignedEndorsement] {
-        let pairs = try Engine.endorsementsInForce(signed: signed.map { .init(code: $0.code, voided: $0.voided) })
+        let pairs = try Engine.endorsementsInForce(signed: signed.map { .init(code: $0.code, voided: $0.voided, verified: $0.instructorVerified) })
         var out: [String: SignedEndorsement] = [:]
         for pair in pairs {
             guard pair.count == 2, let code = pair[0].value as? String, let at = pair[1].number,

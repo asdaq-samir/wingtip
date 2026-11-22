@@ -3,7 +3,7 @@
 //! (GAMA Specification No. 1), the logbook's CSV, a POH page's figures,
 //! endorsements (AC 61-65K) and currency (14 CFR 61.56, 61.57).
 
-use super::{checklist, csv, currency, endorsements, handbook, logbook};
+use super::{checklist, csv, currency, endorsements, handbook, instructor_check, logbook};
 use crate::json::{self, Value};
 use wingtip_core::ask::{strings, Ask};
 
@@ -130,7 +130,12 @@ pub fn endorsed(name: &str, v: &Value) -> Result<String, String> {
                 .iter()
                 .map(|e| {
                     let code = e.get("code").and_then(Value::as_str).ok_or(format!("{name}: an endorsement's \"code\" is missing"))?;
-                    Ok((code.to_owned(), matches!(e.get("voided"), Some(Value::Bool(true)))))
+                    // One whose instructor the FAA airmen registry did not
+                    // bear out (instructor_check) is not signed: out of force
+                    // as a voided one is. Missing is a record from before
+                    // the check, or one the host does not say of.
+                    let unverified = matches!(e.get("verified"), Some(Value::Bool(false)));
+                    Ok((code.to_owned(), matches!(e.get("voided"), Some(Value::Bool(true))) || unverified))
                 })
                 .collect::<Result<Vec<_>, String>>()?;
             out.push('[');
@@ -143,6 +148,38 @@ pub fn endorsed(name: &str, v: &Value) -> Result<String, String> {
                 out.push_str(&format!(",{at}]"));
             }
             out.push(']');
+        }
+        "instructor_verification" => {
+            let registry = match v.get("registry") {
+                None | Some(Value::Null) => None,
+                Some(Value::Array(rows)) => Some(
+                    rows.iter()
+                        .map(|r| {
+                            let field = |k: &str| r.get(k).and_then(Value::as_str);
+                            Ok(instructor_check::Record {
+                                id: field("id").ok_or(format!("{name}: a record's \"id\" is missing"))?,
+                                first_middle: field("first_middle").unwrap_or(""),
+                                last_suffix: field("last_suffix").unwrap_or(""),
+                                expires: field("expires"),
+                            })
+                        })
+                        .collect::<Result<Vec<_>, String>>()?,
+                ),
+                Some(_) => return Err(format!("{name}: \"registry\" is not a list")),
+            };
+            let bound = match v.get("bound_elsewhere") {
+                None | Some(Value::Null) => Vec::new(),
+                Some(Value::Array(ids)) => ids.iter().filter_map(Value::as_str).collect(),
+                Some(_) => return Err(format!("{name}: \"bound_elsewhere\" is not a list")),
+            };
+            let verdict = instructor_check::verify(
+                ask.str("instructor_name")?,
+                ask.opt_str("student_name")?,
+                ask.str("signed_on")?,
+                registry.as_deref(),
+                &bound,
+            );
+            return Ok(instructor_check::to_json(&verdict));
         }
         "endorsement_render" => {
             let fields = match v.get("fields") {

@@ -90,6 +90,13 @@ pub(super) fn cases(c: &mut Checker) {
         c.ask("endorsement_fill", case["input"].clone());
     }
     c.ask("endorsement_kinds", json!({}));
+    // The FAA airmen registry's check of the instructor signing, each
+    // verdict of the shared fixture held to its answer too.
+    for case in fixture("instructorVerification.json")["cases"].as_array().unwrap() {
+        let got = c.ask("instructor_verification", case["input"].clone());
+        let want = (&case["verified"], &case["reason"], &case["registry_id"]);
+        assert_eq!((&got["verified"], &got["reason"], &got["registry_id"]), want, "{}", case["name"]);
+    }
     for case in fixture("routePosition.json")["cases"].as_array().unwrap() {
         c.ask("route_position", case["input"].clone());
     }

@@ -188,6 +188,26 @@ class EndorsementFilled(BaseModel):
     text: str = Field(description="Its words with the student and the fields in, as they are signed.")
 
 
+class InstructorVerificationAsk(BaseModel):
+    """An instructor about to sign for a student: both names as on their
+    certificates, the day, and the FAA records other accounts sign as."""
+
+    instructor_name: str
+    student_name: str = ""
+    signed_on: date
+    bound_elsewhere: list[str] = Field(default=[], description="FAA unique ids another Wingtip account already signs as.")
+
+
+class InstructorVerification(BaseModel):
+    """Whether the FAA airmen registry bears the instructor out (the
+    engine's instructor_verification)."""
+
+    verified: bool
+    registry_id: str | None = Field(description="The FAA's unique id of the record matched, where one was.")
+    reason: str = Field(description="verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.")
+    words: str = Field(description="The verdict as the pilot reads it.")
+
+
 class VorCheckAsk(BaseModel):
     """A VOR check recorded (14 CFR 91.171(d)): the day, its kind by the
     gateway's VorCheck names, and the bearing error found."""

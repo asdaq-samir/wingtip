@@ -65,6 +65,8 @@ test("experience item by item, a report's codes looked up, and an endorsement da
         until: null,
         voided: false,
         digest: "0".repeat(64),
+        instructorVerified: true,
+        verification: "Verified: a flight instructor certificate of this name is in the FAA airmen registry.",
       },
     ],
     // The engine's list (endorsement_kinds, through the gateway), the first three.

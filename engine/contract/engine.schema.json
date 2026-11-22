@@ -8987,7 +8987,7 @@
       "additionalProperties": false
     },
     "endorsements_in_force": {
-      "description": "The latest not voided of each code, as [code, index] into the record (newest first).",
+      "description": "The latest not voided of each code, as [code, index] into the record (newest first); one whose instructor the FAA airmen registry did not bear out (verified false, instructor_verification) is not signed and counts as voided.",
       "type": "object",
       "properties": {
         "input": {
@@ -9007,6 +9007,13 @@
                       "boolean",
                       "null"
                     ]
+                  },
+                  "verified": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ],
+                    "description": "The instructor_verification verdict kept with the record; false is not signed, missing or null is not said."
                   }
                 },
                 "required": [
@@ -16972,6 +16979,114 @@
           "title": "InstructorRecordsSinceAnswer",
           "type": "string",
           "description": "YYYY-MM-DD."
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "instructor_verification": {
+      "description": "Whether the instructor signing an endorsement is a flight instructor the FAA's releasable airmen file bears out, by name (the file has no certificate numbers), not the student themselves and not a record another account signs as (14 CFR 61.1, 61.189(a); AC 61-65K).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "InstructorVerificationInput",
+          "type": "object",
+          "properties": {
+            "instructor_name": {
+              "type": "string",
+              "description": "The instructor's name as on their certificate."
+            },
+            "student_name": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The student's name as on their certificate."
+            },
+            "signed_on": {
+              "type": "string",
+              "description": "YYYY-MM-DD."
+            },
+            "registry": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "description": "The releasable file's active flight instructor (type F) records of the instructor's last name; null where the file is not loaded.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "The FAA's unique id, A or C and seven digits."
+                  },
+                  "first_middle": {
+                    "type": "string"
+                  },
+                  "last_suffix": {
+                    "type": "string"
+                  },
+                  "expires": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "YYYY-MM-DD, only for a certificate issued before 1 Dec 2024 (14 CFR 61.19(d))."
+                  }
+                },
+                "required": [
+                  "id",
+                  "first_middle",
+                  "last_suffix"
+                ]
+              }
+            },
+            "bound_elsewhere": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              },
+              "description": "Registry ids another Wingtip account already signs as."
+            }
+          },
+          "required": [
+            "instructor_name",
+            "signed_on"
+          ]
+        },
+        "answer": {
+          "title": "InstructorVerificationAnswer",
+          "type": "object",
+          "properties": {
+            "verified": {
+              "type": "boolean"
+            },
+            "registry_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "reason": {
+              "type": "string",
+              "description": "verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired."
+            },
+            "words": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "verified",
+            "registry_id",
+            "reason",
+            "words"
+          ]
         }
       },
       "required": [
@@ -32830,6 +32945,7 @@
     "in_flight",
     "inspections_due",
     "instructor_records_since",
+    "instructor_verification",
     "is_eastbound",
     "isa_temp_c",
     "jurisdiction_of",

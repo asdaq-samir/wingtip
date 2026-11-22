@@ -69,7 +69,8 @@ internal fun RootRequests(
                 opened.then?.let(ScreenRequests::ask)
             }
             is Links.Open -> ScreenRequests.ask(opened.screen)
-            // Previewed first: the receiver's plan stays until Use This Plan.
+            // A shared flight or any route link, previewed first: the
+            // receiver's plan stays until Use This Plan.
             is Links.Shared -> shared.open(opened)
             is Links.SignIn -> {}
         }

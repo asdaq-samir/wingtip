@@ -352,7 +352,9 @@ whose every code and token ran out over a day ago is let go each night,
 with the spent refresh tokens' hashes past their 30 days, and a client
 nobody connected through goes with its consents
 (`ConnectorHousekeeping`, 03:45 UTC); a consent otherwise stays until
-the pilot deletes their account. Fault reports go after 30 days
+the pilot disconnects that app's last connection in You's Connected Apps
+(its row and tokens go at once, `DELETE /api/me/connections/{id}`) or
+deletes their account. Fault reports go after 30 days
 (`DiagnosticsService`, 03:15 UTC). Each night at 03:30 UTC
 (`Housekeeping`) speed figures go after 400 days, sign-in links a day
 after they expire, a reminder's record of being sent once its day has
@@ -381,6 +383,18 @@ accounts again as it starts and each night, the planner's notes included
 in the day since the last copy, on a server whose database is itself
 lost, is not caught. The privacy policy says so ("Your copy and deleting
 it").
+
+## The FAA's flight instructors
+
+To say whether an endorsement's instructor is a flight instructor the FAA
+knows (the engine's `instructor_verification`), ingest keeps from the FAA's
+public Airmen Certification Releasable Database each active flight
+instructor's FAA unique id, name and certificate expiry (`airmen.sqlite`,
+`wingtip.airmen`), replaced each month; no address, medical or rating,
+though the file has them. An airman who asked the FAA to withhold their
+address is not in the file at all. A signed endorsement keeps the
+verdict, the matched FAA id and its words with it (`signed_endorsements`,
+V51), and goes as the endorsement does.
 
 ## Kept on the device (the web)
 

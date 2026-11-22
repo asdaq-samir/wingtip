@@ -116,6 +116,20 @@ class InstructorFlowTest {
                         .fields(ask.getArgument(2))
                         .missing(List.of())
                         .text(words(ask.getArgument(0), ask.getArgument(1))));
+        // The FAA airmen registry's verdict is the engine's
+        // (instructor_verification, instructorVerification.json): here
+        // every instructor is borne out but one named "Not Listed".
+        org.mockito.BDDMockito.given(planner.verifyInstructor(any(), any(), any(), any()))
+                .willAnswer(ask -> "Not Listed".equals(ask.getArgument(0))
+                        ? new app.wingtipmaps.gateway.planner.model.PlannerInstructorVerification()
+                                .verified(false)
+                                .reason("no_match")
+                                .words("Not verified: no flight instructor of this name is in the FAA's releasable airmen file.")
+                        : new app.wingtipmaps.gateway.planner.model.PlannerInstructorVerification()
+                                .verified(true)
+                                .registryId("A1234567")
+                                .reason("verified")
+                                .words("Verified: a flight instructor certificate of this name is in the FAA airmen registry."));
     }
 
     /** The words the engine's stand-in gives an endorsement of `code`. */
@@ -221,6 +235,37 @@ class InstructorFlowTest {
                 .isInstanceOfSatisfying(
                         InstructorRefusedException.class,
                         r -> assertThat(r.getStatusCode()).isEqualTo(HttpStatus.CONFLICT));
+    }
+
+    /** The FAA airmen registry's verdict kept with what was signed (the deep
+     *  security review, N1): one whose instructor it does not bear out is
+     *  kept and labelled Not verified, and holds nothing; the record a
+     *  verified one matched is sent as taken when another account signs. */
+    @Test
+    void anEndorsementWhoseInstructorTheRegistryDoesNotBearOutHoldsNothing() {
+        Pilot[] p = pair();
+        SignedEndorsement verified = signing.sign(p[1], p[0], soloXc(p[0], null), NOW);
+        assertThat(verified.isInstructorVerified()).isTrue();
+        assertThat(verified.getInstructorRegistryId()).isEqualTo("A1234567");
+
+        Pilot[] q = pair();
+        instructors.setInstructor(
+                q[1], new InstructorRequest("Not Listed", "123456789CFI", LocalDate.of(2027, 12, 31), InstructorUntil.RE));
+        SignedEndorsement unverified = signing.sign(q[1], q[0], soloXc(q[0], null), NOW);
+        assertThat(unverified.isInstructorVerified()).isFalse();
+        assertThat(training.training(q[0], List.of(), TODAY).signed())
+                .singleElement()
+                .satisfies(s -> {
+                    assertThat(s.instructorVerified()).isFalse();
+                    assertThat(s.verification()).startsWith("Not verified");
+                });
+        // The other account is told the first one's record is taken.
+        org.mockito.Mockito.verify(planner)
+                .verifyInstructor(
+                        org.mockito.ArgumentMatchers.eq("Not Listed"),
+                        any(),
+                        any(),
+                        org.mockito.ArgumentMatchers.argThat(ids -> ids.contains("A1234567")));
     }
 
     /** 61.197(a) and (e): the privileges end with the date, but the app
