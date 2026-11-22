@@ -9545,6 +9545,102 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Instructor Verification
+    ///
+    /// Whether the instructor about to sign is a flight instructor the FAA
+    /// airmen registry bears out (the engine's instructor_verification, over
+    /// the flight instructors of that last name ingest keeps, wingtip.airmen):
+    /// an endorsement counts as signed only where it is (14 CFR 61.189(a)).
+    ///
+    /// - Remark: HTTP `POST /api/pilot/instructor-verification`.
+    /// - Remark: Generated from `#/paths//api/pilot/instructor-verification/post(instructor_verification)`.
+    public func instructorVerification(_ input: Operations.InstructorVerification.Input) async throws -> Operations.InstructorVerification.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.InstructorVerification.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/pilot/instructor-verification",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .post
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                let body: OpenAPIRuntime.HTTPBody?
+                switch input.body {
+                case let .json(value):
+                    body = try converter.setRequiredRequestBodyAsJSON(
+                        value,
+                        headerFields: &request.headerFields,
+                        contentType: "application/json; charset=utf-8"
+                    )
+                }
+                return (request, body)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.InstructorVerification.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.InstructorVerification.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 422:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.InstructorVerification.Output.UnprocessableContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.HTTPValidationError.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unprocessableContent(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
     /// Records Batch
     ///
     /// Many students' experience and endorsements in one call, each as

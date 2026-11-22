@@ -1058,6 +1058,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/pilot/instructor-records-since`.
     /// - Remark: Generated from `#/paths//api/pilot/instructor-records-since/get(instructor_records_since)`.
     func instructorRecordsSince(_ input: Operations.InstructorRecordsSince.Input) async throws -> Operations.InstructorRecordsSince.Output
+    /// Instructor Verification
+    ///
+    /// Whether the instructor about to sign is a flight instructor the FAA
+    /// airmen registry bears out (the engine's instructor_verification, over
+    /// the flight instructors of that last name ingest keeps, wingtip.airmen):
+    /// an endorsement counts as signed only where it is (14 CFR 61.189(a)).
+    ///
+    /// - Remark: HTTP `POST /api/pilot/instructor-verification`.
+    /// - Remark: Generated from `#/paths//api/pilot/instructor-verification/post(instructor_verification)`.
+    func instructorVerification(_ input: Operations.InstructorVerification.Input) async throws -> Operations.InstructorVerification.Output
     /// Records Batch
     ///
     /// Many students' experience and endorsements in one call, each as
@@ -3209,6 +3219,24 @@ extension APIProtocol {
         try await instructorRecordsSince(Operations.InstructorRecordsSince.Input(
             query: query,
             headers: headers
+        ))
+    }
+    /// Instructor Verification
+    ///
+    /// Whether the instructor about to sign is a flight instructor the FAA
+    /// airmen registry bears out (the engine's instructor_verification, over
+    /// the flight instructors of that last name ingest keeps, wingtip.airmen):
+    /// an endorsement counts as signed only where it is (14 CFR 61.189(a)).
+    ///
+    /// - Remark: HTTP `POST /api/pilot/instructor-verification`.
+    /// - Remark: Generated from `#/paths//api/pilot/instructor-verification/post(instructor_verification)`.
+    public func instructorVerification(
+        headers: Operations.InstructorVerification.Input.Headers = .init(),
+        body: Operations.InstructorVerification.Input.Body
+    ) async throws -> Operations.InstructorVerification.Output {
+        try await instructorVerification(Operations.InstructorVerification.Input(
+            headers: headers,
+            body: body
         ))
     }
     /// Records Batch

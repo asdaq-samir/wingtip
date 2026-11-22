@@ -1100,6 +1100,20 @@ interface PlannerApi {
     suspend fun instructorRecordsSince(@Query("today") today: kotlin.String): Response<Unit>
 
     /**
+     * POST pilot/instructor-verification
+     * Instructor Verification
+     * Whether the instructor about to sign is a flight instructor the FAA airmen registry bears out (the engine&#39;s instructor_verification, over the flight instructors of that last name ingest keeps, wingtip.airmen): an endorsement counts as signed only where it is (14 CFR 61.189(a)).
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param appWingtipmapsAndroidApiGeneratedInstructorVerificationAsk
+     * @return [app.wingtipmaps.android.api.generated.InstructorVerification]
+     */
+    @POST("pilot/instructor-verification")
+    suspend fun instructorVerification(@Body appWingtipmapsAndroidApiGeneratedInstructorVerificationAsk: app.wingtipmaps.android.api.generated.InstructorVerificationAsk): Response<app.wingtipmaps.android.api.generated.InstructorVerification>
+
+    /**
      * GET live/itws
      * Itws Alerts
      * The ITWS alerts in force at these airports (a route&#39;s departure, destination and alternates): microbursts, wind shear, gust fronts, tornadoes and storm cells near the field, as the tower&#39;s ITWS gives them its controllers (AIM 4-3-7).
@@ -2105,6 +2119,7 @@ interface PlannerApi {
      */
     @GET("weather/loop")
     suspend fun weatherLoopFrames(@Query("kind") kind: kotlin.String): Response<app.wingtipmaps.android.api.generated.WeatherLoop>
+
     /**
      * GET weather/map
      * Weather On The Map

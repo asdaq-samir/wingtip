@@ -4623,6 +4623,53 @@ data class VorCheckAsk (
 )
 
 /**
+ * Whether the FAA airmen registry bears the instructor out (the
+ * engine's instructor_verification).
+ */
+@Serializable
+data class InstructorVerification (
+    /**
+     * verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.
+     */
+    val reason: String,
+
+    /**
+     * The FAA's unique id of the record matched, where one was.
+     */
+    @SerialName("registry_id")
+    val registryId: String? = null,
+
+    val verified: Boolean,
+
+    /**
+     * The verdict as the pilot reads it.
+     */
+    val words: String
+)
+
+/**
+ * An instructor about to sign for a student: both names as on their
+ * certificates, the day, and the FAA records other accounts sign as.
+ */
+@Serializable
+data class InstructorVerificationAsk (
+    /**
+     * FAA unique ids another Wingtip account already signs as.
+     */
+    @SerialName("bound_elsewhere")
+    val boundElsewhere: List<String>? = null,
+
+    @SerialName("instructor_name")
+    val instructorName: String,
+
+    @SerialName("signed_on")
+    val signedOn: String,
+
+    @SerialName("student_name")
+    val studentName: String? = null
+)
+
+/**
  * The ITWS alerts in force at the airports asked for: none where no
  * ITWS site alerts for them (most airports have no ITWS).
  */

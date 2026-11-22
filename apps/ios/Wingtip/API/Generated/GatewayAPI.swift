@@ -17,6 +17,7 @@ typealias GWAssignLessonRequest = GatewayAPI.Components.Schemas.AssignLessonRequ
 typealias GWBriefingChangeDto = GatewayAPI.Components.Schemas.BriefingChangeDto
 typealias GWBriefingSourceDto = GatewayAPI.Components.Schemas.BriefingSourceDto
 typealias GWCapabilities = GatewayAPI.Components.Schemas.Capabilities
+typealias GWConnectionDto = GatewayAPI.Components.Schemas.ConnectionDto
 typealias GWConnectorGrantDto = GatewayAPI.Components.Schemas.ConnectorGrantDto
 typealias GWCorner = GatewayAPI.Components.Schemas.Corner
 typealias GWCrossCountryReviewDto = GatewayAPI.Components.Schemas.CrossCountryReviewDto
