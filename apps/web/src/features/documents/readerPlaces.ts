@@ -14,11 +14,16 @@ interface ReaderPlaces {
   bookmarks: Record<string, Bookmark[]>;
   /** White on black for the night; null follows the app's appearance. */
   inverted: boolean | null;
+  /** Palm rejection: a finger scrolls and only a pencil draws. Null
+   *  until a pencil has drawn here, which turns it on, as iPadOS's "Only
+   *  Draw with Apple Pencil" is on once a pencil is paired. */
+  pencilOnly: boolean | null;
   leftAt: (doc: string, page: number) => void;
   /** A bookmark on the page, or the one there taken off. */
   toggleBookmark: (doc: string, page: number, label: string) => void;
   renameBookmark: (doc: string, page: number, label: string) => void;
   setInverted: (inverted: boolean) => void;
+  setPencilOnly: (on: boolean) => void;
 }
 
 /** The most pages a document's bookmarks hold: a pilot's tabs, not an index. */
@@ -26,7 +31,7 @@ const MOST_BOOKMARKS = 50;
 
 /**
  * Where the pilot was in each document, their bookmarks and the night's
- * inverted pages, kept on this device as the reader's settings are
+ * inverted pages and whether a finger draws, kept on this device as the reader's settings are
  * (ForeFlight's last page, bookmarks with names and Invert Colors).
  */
 export const useReaderPlaces = create<ReaderPlaces>()(
@@ -35,6 +40,7 @@ export const useReaderPlaces = create<ReaderPlaces>()(
       pages: {},
       bookmarks: {},
       inverted: null,
+      pencilOnly: null,
       leftAt: (doc, page) => set((s) => (s.pages[doc] === page ? s : { pages: { ...s.pages, [doc]: page } })),
       toggleBookmark: (doc, page, label) =>
         set((s) => {
@@ -52,8 +58,13 @@ export const useReaderPlaces = create<ReaderPlaces>()(
           },
         })),
       setInverted: (inverted) => set({ inverted }),
+      setPencilOnly: (pencilOnly) => set({ pencilOnly }),
     }),
-    { name: "wingtip.readerPlaces", version: 1, partialize: (s) => ({ pages: s.pages, bookmarks: s.bookmarks, inverted: s.inverted }) },
+    {
+      name: "wingtip.readerPlaces",
+      version: 1,
+      partialize: (s) => ({ pages: s.pages, bookmarks: s.bookmarks, inverted: s.inverted, pencilOnly: s.pencilOnly }),
+    },
   ),
 );
 

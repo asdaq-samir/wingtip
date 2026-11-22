@@ -5,8 +5,12 @@ import "pdfjs-dist/web/pdf_viewer.css";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "cn";
 import { TEXT } from "../../lib/text";
+import { deviceStore, loadMarks, saveMarks } from "./deviceFiles";
+import { HIGHLIGHT_COLOURS, type SavedMark } from "./markup";
+import { restoreMarks, startMarkup } from "./pdfMarkup";
 import { headingWords, outlineRows, pinchStep, rowFor, spread, type OutlineItem } from "./pdfPlaces";
 import type { BodyProps } from "./readerBody";
+import { useReaderPlaces } from "./readerPlaces";
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -22,20 +26,24 @@ const DRAWING_DELAY_MS = 400;
  * from the planner (`url`) or whole from the device (`blob`, a book kept
  * for the air or the pilot's own). A pinch zooms where the fingers are,
  * as pdf.js's own viewer does it (updateScale), and so does a trackpad's.
- * Its chunk is loaded with the first document opened, never with the map.
+ * Its markup is pdf.js's own annotation editors (pdfMarkup), the marks
+ * kept on the device under `marksKey` and given back before the pages
+ * are drawn. Its chunk is loaded with the first document opened, never
+ * with the map.
  */
-export default function PdfBody({ source, startPage, startAt, find, goto, inverted, onOutline, onPage, onMatches, onFailed }: BodyProps) {
+export default function PdfBody(props: BodyProps) {
+  const { source, startPage, startAt, find, goto, inverted, marksKey } = props;
   const box = useRef<HTMLDivElement>(null);
   const inner = useRef<HTMLDivElement>(null);
   const parts = useRef<{ bus: EventBus; viewer: PDFViewer; links: PDFLinkService } | null>(null);
   const [loading, setLoading] = useState(true);
   // Where it opens, read once: a page turned after is the pilot's.
-  const start = useRef({ page: startPage, at: startAt });
+  const start = useRef({ page: startPage, at: startAt, marksKey });
   // What it tells, the latest, so a new function from the reader does not
   // open the document again.
-  const tell = useRef({ onOutline, onPage, onMatches, onFailed });
+  const tell = useRef(props);
   useEffect(() => {
-    tell.current = { onOutline, onPage, onMatches, onFailed };
+    tell.current = props;
   });
 
   useEffect(() => {
@@ -49,10 +57,15 @@ export default function PdfBody({ source, startPage, startAt, find, goto, invert
       eventBus: bus,
       linkService: links,
       findController: finder,
+      annotationEditorHighlightColors: HIGHLIGHT_COLOURS,
     });
+    const container = box.current;
     links.setViewer(viewer);
     parts.current = { bus, viewer, links };
     let gone = false;
+    let markup: ReturnType<typeof startMarkup> | null = null;
+    const key = start.current.marksKey;
+    const saved: Promise<SavedMark[]> = key ? loadMarks(deviceStore(), key).catch(() => []) : Promise.resolve([]);
     const task = (async () => {
       const params = source.blob ? { data: new Uint8Array(await source.blob.arrayBuffer()) } : { url: source.url!, disableAutoFetch: true };
       return pdfjs.getDocument(params);
@@ -60,6 +73,9 @@ export default function PdfBody({ source, startPage, startAt, find, goto, invert
     bus.on("pagesinit", () => {
       viewer.currentScaleValue = "page-width";
       if (start.current.page) viewer.currentPageNumber = start.current.page;
+      // The first page told too: pdf.js says nothing of the page it opens
+      // at, so Bookmark and Share had no page until one was turned.
+      tell.current.onPage(viewer.currentPageNumber, viewer.pagesCount);
     });
     bus.on("pagechanging", (e: { pageNumber: number }) => tell.current.onPage(e.pageNumber, viewer.pagesCount));
     const counted = (e: { matchesCount?: { current: number; total: number } }) => e.matchesCount && tell.current.onMatches(e.matchesCount);
@@ -68,9 +84,24 @@ export default function PdfBody({ source, startPage, startAt, find, goto, invert
     void task
       .then((t) => t.promise)
       .then(async (doc) => {
-        // Closed before it opened: the cleanup's task.destroy() frees it
-        // (pdf.js 6 has no destroy on the document itself).
+        const kept = await saved;
+        // Gone already: the loading task's destroy (below) takes the document.
         if (gone) return;
+        // The marks back before a page is drawn, the markup listening
+        // before pdf.js makes its editor (as setDocument does).
+        restoreMarks(doc, kept);
+        markup = startMarkup({
+          doc,
+          viewer,
+          bus,
+          box: container,
+          marks: kept,
+          pencilOnly: () => useReaderPlaces.getState().pencilOnly,
+          onPencil: () => useReaderPlaces.getState().setPencilOnly(true),
+          onKeep: (marks) => key && void saveMarks(deviceStore(), key, marks),
+          onState: (state) => tell.current.onMarkupState(state),
+        });
+        tell.current.onMarkup(markup);
         viewer.setDocument(doc);
         links.setDocument(doc, null);
         setLoading(false);
@@ -87,6 +118,8 @@ export default function PdfBody({ source, startPage, startAt, find, goto, invert
     return () => {
       gone = true;
       parts.current = null;
+      markup?.stop();
+      tell.current.onMarkup(null);
       void task.then((t) => t.destroy());
       viewer.cleanup();
     };
