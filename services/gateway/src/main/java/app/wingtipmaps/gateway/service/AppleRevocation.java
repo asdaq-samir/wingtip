@@ -31,7 +31,7 @@ import org.springframework.web.client.RestClientException;
  * deleted. Apple hands the server a refresh token at every web sign-in,
  * and the iOS app's authorization code is traded for one (tradeAppCode),
  * so the token is kept (Pilot.appleRefreshToken) for this, with the
- * client it was issued to (Pilot.appleTokenClient, V46): Apple revokes a
+ * client it was issued to (Pilot.appleTokenClient, V49): Apple revokes a
  * token only for that client, so the web's goes with the Services ID and
  * its secret and the app's with the bundle id and a secret signed for it.
  *
