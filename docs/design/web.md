@@ -1867,6 +1867,37 @@ page keeps the route's departure and destination as the address had them
 when it was started. The boxes are kept once the typing rests, and the
 ink at once.
 
+### 13c. The runway proximity advisor and own ship on the airport diagram
+
+**What it is.** The airport card's Airport diagram full screen
+(`features/runway-advisor`, `AdvisedDiagram`, DiagramRow's `viewer`) has
+the airplane on it, as the phones' DiagramOwnShipView does. The d-TPP's
+PDF is read with pdf.js for its words and where each is drawn
+(`diagramText`). The engine fits the page to its own latitude and
+longitude labels (`diagram_graticule`), places each fix
+(`diagram_point`) and finds the hot spots by their labels
+(`diagram_hot_spots`), which are ringed in the chart's caution colour as
+a layer of the page's map. Own ship follows AC 120-76D 11.17.2. It is a
+circle where there is no track, and it is gone once the fix is 3 s old or
+worse than 30 m (`diagram_fix_usable`), checked every second so that it
+never freezes.
+
+**What it says.** Over the page is the engine's `runway_proximity`
+answer, "On runway 27", "Approaching runway 9-27" and "Hold short line in
+about 150 ft", with a hot spot within 500 ft. Below the pattern it says
+"Approaching runway 27" when lined up. When the answer's `key` changes,
+it is said aloud where the Map menu's Speak Alerts is on. Under it is the
+note on why the airplane is not drawn, where it is not, and the FAA's
+credit with "Planning aid, not for navigation" (AC 120-74B; AC 120-76D
+11.17.1). The browser's height is above the ellipsoid, about 100 ft under
+MSL in the contiguous US, so the advisor reads the airplane lower, which
+keeps the surface's prompts on.
+
+**The PDF.** The browser may not read aeronav.faa.gov's PDF, which sends
+no CORS headers, so the page asks the planner for its copy
+(`faaChartPdfUrl`). The planner does not serve it yet (TODO(planner)).
+Until it does, the diagram shows without the airplane and says so.
+
 ### 14. The welcome
 
 A welcome sheet again, the owner's option A (2026-11-13: "highlight that

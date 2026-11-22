@@ -1,10 +1,16 @@
-import { lazy, Suspense, useState, type ReactNode } from "react";
+import { lazy, Suspense, useState, type ComponentType, type ReactNode } from "react";
 import { ListRow } from "./GroupedList";
 import { Spinner } from "./ui/spinner";
 import { diagramPicture, type PageMark } from "../lib/diagram";
+import type { Page } from "./ChartPages";
 
 const ChartViewer = lazy(() => import("./AirportDiagramViewer"));
 const FaaChartViewer = lazy(() => import("./AirportDiagramViewer").then((m) => ({ default: m.FaaChartViewer })));
+
+/** A viewer of the airport diagram's picture with more on it than the
+ *  page -- own ship and the runway advisor (features/runway-advisor) --
+ *  handed in by the card, so this row needs nothing of a feature's. */
+export type DiagramViewer = ComponentType<{ ident: string; title: string; url?: string | null; page: Page; onClose: () => void }>;
 
 /**
  * The airport diagram's row, as the Chart Supplement's (ChartRow), at the
@@ -13,6 +19,8 @@ const FaaChartViewer = lazy(() => import("./AirportDiagramViewer").then((m) => (
  * the planner draws it for the cycle -- the picture a route kept for the
  * air keeps too (keepRoute) -- its size read as it loads; where the
  * picture cannot be had, the FAA's PDF drawn in the app (FaaChartViewer).
+ * With a `viewer`, the picture is shown in it: own ship on it and the
+ * runway advisor's line over it (the card's, features/runway-advisor).
  */
 export function DiagramRow({
   ident,
@@ -20,6 +28,7 @@ export function DiagramRow({
   url,
   media,
   testId,
+  viewer: Viewer,
 }: {
   ident: string;
   cycle: string;
@@ -27,6 +36,7 @@ export function DiagramRow({
   url?: string | null;
   media?: ReactNode;
   testId: string;
+  viewer?: DiagramViewer;
 }) {
   const [shown, setShown] = useState<{ width: number; height: number } | "pdf" | "missing" | null>(null);
   const src = diagramPicture(ident, cycle);
@@ -65,6 +75,8 @@ export function DiagramRow({
         <Suspense fallback={null}>
           {shown === "pdf" ? (
             <FaaChartViewer title={title} url={url!} airport={ident} onClose={() => setShown(null)} />
+          ) : Viewer ? (
+            <Viewer ident={ident} title={title} url={url} page={{ src, ...shown }} onClose={() => setShown(null)} />
           ) : (
             <ChartViewer title={title} pages={[{ src, ...shown }]} onClose={() => setShown(null)} />
           )}

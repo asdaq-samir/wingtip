@@ -121,6 +121,20 @@ export const plannerAirports = {
   /** The pages of one of the FAA's charts, by its address, drawn by the
    *  planner -- of a booklet, the ones naming `airport`. */
   faaChart: (url: string, airport: string) => planner.GET("/api/faa-chart", { params: { query: { url, airport } } }).then(data<ChartPages>),
+  /** Where the PDF itself of one of the FAA's d-TPP charts is, by its
+   *  address on aeronav.faa.gov ("https://aeronav.faa.gov/d-tpp/2611/
+   *  00046AD.PDF"), for pdf.js to read its words and where each is drawn
+   *  (the airport diagram's latitude and longitude labels and hot spots):
+   *  the browser may not read aeronav's own (it sends no CORS headers), so
+   *  it is the planner's copy, under the gateway's prefix. Null for any
+   *  other address.
+   *  TODO(planner): GET /api/faa-chart/pdf/{source}/{edition}/{pdf} is not
+   *  served yet (publications._pdf_of's bytes, SHARED, DIAGRAM_CACHE);
+   *  until it is, the diagram has no own ship and says so. */
+  faaChartPdfUrl: (url: string): string | null => {
+    const m = /^https:\/\/aeronav\.faa\.gov\/d-tpp\/(\d{4})\/([\w-]+\.PDF)$/i.exec(url);
+    return m ? `/api/planner/faa-chart/pdf/dtpp/${m[1]}/${encodeURIComponent(m[2]!)}` : null;
+  },
 
   /** The landing fields inside a box, the biggest first, each with its
    *  METAR's flight category: what the map lays its chips and tap
