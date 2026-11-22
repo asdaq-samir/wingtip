@@ -136,4 +136,4 @@ if [ ${#stale[@]} -gt 0 ]; then
   echo "regen-all: stale, run scripts/build/regen-all.sh and commit what it writes: ${stale[*]}"
   exit 1
 fi
-echo "regen-all: ${check:+every file checked is current}${check:-done}"
+if [ -n "$check" ]; then echo "regen-all: every file checked is current"; else echo "regen-all: done"; fi

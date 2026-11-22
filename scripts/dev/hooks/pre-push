@@ -297,10 +297,16 @@ fi
 if command -v python3 >/dev/null; then
   pre=()
   [ "${PRE_PUSH_TESTS:-1}" != 0 ] || pre+=(--no-tests)
-  specs=1
-  grep -q ' refs/heads/claude/integration ' <<<"$refs" && specs=0
+  specs=1 against=$judged
+  # The wave's own branch is judged as its pull request is, against main:
+  # against itself it changed nothing, and PR #589's ratchet (RootView, 183
+  # of 175) came in by its merges, which no branch's push had added.
+  if grep -q ' refs/heads/claude/integration ' <<<"$refs"; then
+    specs=0
+    against=$(git merge-base origin/main "${pushed:-HEAD}" 2>/dev/null || echo "$judged")
+  fi
   (cd "$here" && PREFLIGHT_SPECS=$specs PREFLIGHT_STAMP="$(git -C "$repo" rev-parse --absolute-git-dir)/branch-specs-passed" \
-    scripts/dev/preflight.sh --base "$judged" "${pre[@]+"${pre[@]}"}") || fail "preflight (scripts/dev/preflight.sh)"
+    scripts/dev/preflight.sh --base "$against" "${pre[@]+"${pre[@]}"}") || fail "preflight (scripts/dev/preflight.sh)"
 else
   note "preflight: left to CI (no python3 here)"
 fi
