@@ -5,7 +5,7 @@ import QueryState from "../../components/QueryState";
 import { said } from "../../lib/endorsements";
 import { FINDING_TONE } from "../../lib/findings";
 import { dueTitle, dueFinding, whenWords } from "./paperwork";
-import { paperworkQuery } from "../../lib/queryClient";
+import { paperworkQuery } from "../../lib/queryClientRecords";
 import { WORDING } from "../../lib/wording/generated/wording";
 
 /**

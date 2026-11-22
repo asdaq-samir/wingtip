@@ -10,7 +10,7 @@ import { useTracking } from "../lib/map/position/tracking";
 import { usePreferences } from "../lib/preferences";
 import { useExtra } from "../lib/extras";
 import { isOwn, useOwnAirplanes } from "../lib/airplane/ownAirplane";
-import { flightStatusQuery } from "../lib/queryClient";
+import { flightStatusQuery } from "../lib/queryClientTraffic";
 import { say } from "../lib/speech";
 
 /** Each answer's state and when it came: the same answer is not read twice. */

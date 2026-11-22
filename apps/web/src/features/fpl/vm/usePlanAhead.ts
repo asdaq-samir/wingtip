@@ -6,7 +6,8 @@ import { aircraftKey } from "../../../lib/aircraftChoice";
 import { planHrefOf, recentHrefOf } from "../../../lib/flightLink";
 import { altitudesOf, altitudesParam, routeOf, stopsOf } from "../../../lib/identSchema";
 import { usePreferences } from "../../../lib/preferences";
-import { chartCycle, courseQuery, flightsQuery, queryClient } from "../../../lib/queryClient";
+import { chartCycle, courseQuery, queryClient } from "../../../lib/queryClient";
+import { flightsQuery } from "../../../lib/queryClientRecords";
 import { sameStops, type PlannedRoute, navlogQuery, type PlanParams } from "../../plan";
 import { loadAddress } from "../../../lib/address";
 

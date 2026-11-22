@@ -8,7 +8,7 @@ import { copilotVoice } from "../../lib/copilot/voice";
 import { useAhead } from "../../lib/map/position/ahead";
 import { useOwnShip } from "../../lib/map/position/ownShip";
 import { usePreferences } from "../../lib/preferences";
-import { currencyQuery } from "../../lib/queryClient";
+import { currencyQuery } from "../../lib/queryClientRecords";
 import { alongLine, copilotInput, nightCurrent, rememberCategories, restOfRoute, watch, type CopilotMessage } from "./copilotInput";
 
 /** How often the copilot looks again at where the airplane is: the

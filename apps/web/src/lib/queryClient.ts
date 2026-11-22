@@ -102,10 +102,6 @@ export const routeWeatherQuery = (dep: string, dest: string, stops: string[], de
     meta: { silent: true },
   });
 
-/** The Class B airports and their weather. The airspace never moves and
- *  the planner holds the weather for minutes, so refetching per pan
- *  would ask the same cache the same question; and quiet, because the
- *  layer and the chips show what they have in place. */
 /** The chart alone, for a map with no route on it yet. The map draws
  *  nothing until it has it -- the empty frame, blue in the dark, that the
  *  pilot saw on every load while it was asked for -- so the last answer
@@ -158,47 +154,6 @@ export const nearestQuery = (lat: number, lon: number) => {
   });
 };
 
-/** A tracked flight's airplane, where it took off and its path today
- *  (wingtip.traffic.flight): read again every minute while it is tracked, by
- *  its card and the map's path alike. Quiet: the card says what it has. */
-export const flightQuery = (hex: string) =>
-  queryOptions({
-    queryKey: ["flight", hex],
-    queryFn: () => api.trafficFlight(hex),
-    staleTime: 60_000,
-    refetchInterval: 60_000,
-    meta: { silent: true },
-  });
-
-/** An airplane's state now, for the alerts a pilot set on it
- *  (AircraftAlerts): asked every fifteen seconds while the app is open and
- *  an alert waits on it -- the planner reads adsb.lol's recent trace, a
- *  static file, no turn of its API -- and not while the page is hidden.
- *  Quiet: a missed answer is the next one's to make up. */
-export const flightStatusQuery = (hex: string) =>
-  queryOptions({
-    queryKey: ["flight-status", hex],
-    queryFn: () => api.trafficStatus(hex),
-    staleTime: 10_000,
-    refetchInterval: 15_000,
-    retry: false,
-    meta: { silent: true },
-  });
-
-/** The route a tracked flight's number is scheduled to fly, asked once a
- *  callsign (wingtip.traffic.route; the planner keeps it six hours): where the
- *  airplane is says whether it is on it, so the position, to a degree, is
- *  in the key and a diversion or a reused callsign is asked again. Quiet,
- *  as the flight's. */
-export const routeQuery = (callsign: string | null, at: { lat: number; lon: number } | null) =>
-  queryOptions({
-    queryKey: ["route", callsign, at ? Math.round(at.lat) : null, at ? Math.round(at.lon) : null],
-    queryFn: () => api.trafficRoute({ callsign: callsign!, ...at }),
-    enabled: !!callsign,
-    staleTime: 30 * 60_000,
-    meta: { silent: true },
-  });
-
 /** The deployment's key for Google's map tiles (routers/basemaps), asked
  *  once a visit; an error, quiet, where it has none and the map offers
  *  no Google overlay (OverlayTiles, MapSettings). */
@@ -222,6 +177,10 @@ export const overlayTilesQuery = queryOptions({
   meta: { silent: true },
 });
 
+/** The Class B airports and their weather. The airspace never moves and
+ *  the planner holds the weather for minutes, so refetching per pan
+ *  would ask the same cache the same question; and quiet, because the
+ *  layer and the chips show what they have in place. */
 export const classBQuery = queryOptions({
   queryKey: ["classB"],
   queryFn: () => api.classB(),
@@ -349,54 +308,3 @@ export const plateQuery = (airport: string, id: string) =>
     retry: false,
     meta: { silent: true },
   });
-
-/** How long the pilot's own records are fresh: a minute, as their
- *  airplanes, currency and what falls due are. Each change made here sets
- *  or invalidates its query (SaveFlight, refreshLogbook, the checkride's
- *  `keep`), and a sign-out drops them (useLogout); with none, each was
- *  stale at once, and every console, panel and tab that mounted it, and
- *  every return to the window, asked the gateway again for the same list
- *  (the logbook's four readers, the flights' three). */
-export const RECORDS_FRESH_MS = 60_000;
-
-/** The pilot's saved flights, for FPL's Saved and its list in full: quiet,
- *  each saying in place what it could not fetch (QueryState). */
-export const flightsQuery = queryOptions({
-  queryKey: ["flights"],
-  queryFn: () => api.flights.list(),
-  staleTime: RECORDS_FRESH_MS,
-  meta: { silent: true },
-});
-
-/** The pilot's training record: the logbook's, the checkride's, the
- *  Brief's solo review's, a flight's page's. */
-export const trainingQuery = queryOptions({ queryKey: ["training"], queryFn: () => api.training.get(), staleTime: RECORDS_FRESH_MS });
-
-/** The pilot's logbook, for the You page's hours, the Logbook, its flights'
- *  list and the coach: one set of options for its four readers. Quiet,
- *  each list saying in place what it could not fetch (QueryState). */
-export const logbookQuery = queryOptions({
-  queryKey: ["logbook"],
-  queryFn: () => api.logbook.list(),
-  staleTime: RECORDS_FRESH_MS,
-  meta: { silent: true },
-});
-
-/** The pilot's own airplanes, for the aircraft chips, the Brief and
- *  Setup's Aircraft: fresh for a minute. */
-export const aircraftListQuery = queryOptions({ queryKey: ["aircraft"], queryFn: () => api.aircraft.list(), staleTime: 60_000 });
-
-/** The airplanes' book figures the planner flies: the same while the page
- *  is open. */
-export const aircraftProfilesQuery = queryOptions({
-  queryKey: ["aircraftProfiles"],
-  queryFn: () => api.aircraftProfiles(),
-  staleTime: Infinity,
-});
-
-/** The pilot's currency from the logbook: fresh for a minute. */
-export const currencyQuery = queryOptions({ queryKey: ["currency"], queryFn: () => api.logbook.currency(), staleTime: 60_000 });
-
-/** What falls due for the pilot and their airplanes (the Logbook's Coming
- *  up): fresh for a minute. */
-export const paperworkQuery = queryOptions({ queryKey: ["paperwork"], queryFn: () => api.paperwork(), staleTime: 60_000 });

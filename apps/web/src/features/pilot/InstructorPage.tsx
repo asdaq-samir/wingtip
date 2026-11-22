@@ -5,7 +5,7 @@ import { ConsolePages, PageRow } from "../../components/ConsolePages";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Button } from "../../components/ui/button";
 import { api } from "../../lib/api/client";
-import { RECORDS_FRESH_MS } from "../../lib/queryClient";
+import { RECORDS_FRESH_MS } from "../../lib/queryClientRecords";
 import type { Instructor } from "../../lib/api/types";
 import { FINDING_TONE, type Finding } from "../../lib/findings";
 import { studentLines, type StudentLine } from "./students";

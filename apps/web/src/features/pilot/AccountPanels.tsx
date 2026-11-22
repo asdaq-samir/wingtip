@@ -20,7 +20,7 @@ import { aircraftKey, choiceOf } from "../../lib/aircraftChoice";
 import type { Aircraft, AircraftRequest } from "../../lib/api/types";
 import { usePreferences } from "../../lib/preferences";
 import { TEXT } from "../../lib/text";
-import { aircraftProfilesQuery } from "../../lib/queryClient";
+import { aircraftProfilesQuery } from "../../lib/queryClientRecords";
 import DueItemsGroup from "./DueItemsGroup";
 import { InspectionsGroup } from "./InspectionsGroup";
 import { VorCheckGroup } from "./VorCheckGroup";

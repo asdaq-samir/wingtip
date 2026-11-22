@@ -59,7 +59,7 @@ export function ChartGl({ course }: { course: Course | null }) {
   // change.
   const parts = useMemo(() => [...chartParts(spec, true), ...chartParts(kept, false)], [spec, kept]);
   const tileMax = (spec && chartSource(spec, "chart")?.maxzoom) ?? null;
-  const imagery = useCloseImagery(tileMax, publicOnly);
+  const imagery = useCloseImagery(tileMax);
   // Which charts are drawn and how, on the map's element, for the browser
   // tests: each part's kind (its tiles' path) and the paint's look.
   const { map } = useGlMap();

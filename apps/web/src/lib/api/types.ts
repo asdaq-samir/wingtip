@@ -122,6 +122,10 @@ export type FlightPlates = Schemas["FlightPlates"];
 export type PlateStates = Schemas["PlateStates"];
 export type PlateStateSet = Schemas["PlateStateSet"];
 export type PlateStateCharts = Schemas["PlateStateCharts"];
+/** The documents library (features/documents): the shelf, a document, a CFR part. */
+export type Library = Schemas["Library"];
+export type LibraryDocument = Schemas["LibraryDocument"];
+export type CfrText = Schemas["CfrText"];
 export type ClearanceAsk = Schemas["ClearanceAsk"];
 export type ClearancePlaces = Schemas["ClearancePlaces"];
 /** "When should I go?": the hours and the windows (app.window). */
@@ -163,6 +167,7 @@ export type PlaceFound = Schemas["PlaceFound"];
 export type PlacesFound = Schemas["PlacesFound"];
 /** The route from the side: the ground and the controlled airspace. */
 export type RouteProfile = Schemas["RouteProfile"];
+export type RouteWeather = Schemas["RouteWeather"];
 export type AirspaceAt = Schemas["AirspaceAt"];
 export type WeatherMap = Schemas["WeatherMap"];
 /** The radar and satellite loop (wingtip.weather_loop). */
@@ -281,6 +286,8 @@ export function isEndpoint(p: Point): p is Endpoint {
  *  granted with an UPDATE on the pilots table, never inherited -- see
  *  the V7 migration. */
 export type Pilot = Gateway["PilotDto"];
+/** An AI app connected through the connector (You's Connected Apps). */
+export type Connection = Gateway["ConnectionDto"];
 /** `PUT /api/me/contact`: their telephone number and home base, for a
  *  flight plan's item 19. */
 export type PilotContactRequest = Gateway["PilotContactRequest"];
@@ -317,6 +324,12 @@ export type FlightServiceStatus = Gateway["FlightServiceStatus"];
 export type FlightPlanFiled = Gateway["FlightPlanFiled"];
 /** One day of one speed metric from one source and kind of device (SpeedController). */
 export type SpeedDay = Gateway["SpeedDay"];
+/** The apps' faults and speed figures by build (AppHealthController). */
+export type AppVersions = Gateway["AppVersionsDto"];
+export type VersionFaults = Gateway["VersionFaultsDto"];
+export type VersionFigure = Gateway["VersionFigureDto"];
+/** One planner route's calls, failures and times since it started (app.route_metrics). */
+export type RouteStat = Schemas["RouteStat"];
 /** A page's Core Web Vitals from this browser (SpeedController, lib/speed). */
 export type SpeedFieldReport = Gateway["FieldReport"];
 

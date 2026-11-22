@@ -8,7 +8,7 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import { SkeletonLine, SkeletonRows } from "../../components/QueryState";
 import { api } from "../../lib/api/client";
 import type { AirspaceBand, SaaStatus } from "../../lib/api/types";
-import { degreesMinutes, minimumsLine, shortAirspaceName } from "../../lib/airspace";
+import { degreesMinutes, fromSurface, minimumsLine, shortAirspaceName } from "../../lib/airspace";
 import type { LatLon } from "../../lib/geo";
 import { altFt, feet } from "../../lib/format";
 import { TEXT } from "../../lib/text";
@@ -28,6 +28,7 @@ import { suaWhen } from "../plan/lazy";
 import { pointLink } from "../../lib/address";
 import { shareOrCopy } from "../../lib/share";
 import { WORDING } from "../../lib/wording/generated/wording";
+import { BandSpecialVfr } from "./BandSpecialVfr";
 
 /** One of a band's rules on a line of its own, its glyph before it: the
  *  weather minimums, what it takes to go in, what the airplane carries,
@@ -56,7 +57,7 @@ const CLASS_STYLE: Record<AirspaceBand["class"], string> = {
 };
 
 function range(band: AirspaceBand, ground: number | null): string {
-  const bottom = ground !== null && band.floor_ft <= ground ? "Surface" : feet(band.floor_ft);
+  const bottom = fromSurface(band, ground) ? "Surface" : feet(band.floor_ft);
   const top = band.ceiling_ft >= 60000 ? "FL600" : `${altFt(band.ceiling_ft)} ft MSL`;
   return `${bottom} to ${top}`;
 }
@@ -249,6 +250,8 @@ export default function AirspaceCard({
           {isError && <p className={cn("text-destructive", TEXT.prose)}>{WORDING.airspaceNotRead}</p>}
           {data && (
             <>
+              {/* Special VFR in the surface area here, as the volume's card says it. */}
+              <BandSpecialVfr bands={data.bands} ground={ground} />
               {data.mode_c_veil && (
                 <ListGroup>
                   <ListRow

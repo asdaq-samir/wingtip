@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { tailOf } from "../aircraftChoice";
 import { useExtra } from "../extras";
 import { usePreferences } from "../preferences";
-import { aircraftListQuery, pilotQuery } from "../queryClient";
+import { pilotQuery } from "../queryClient";
+import { aircraftListQuery } from "../queryClientRecords";
 import { useTailLookup } from "./lookup";
 
 /** The pilot's own airplanes as this device knows them: by ICAO address,

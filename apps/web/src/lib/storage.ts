@@ -1,4 +1,4 @@
-import { create, type StoreApi, type UseBoundStore } from "zustand";
+import { create, useStore, type StoreApi, type UseBoundStore } from "zustand";
 import { persist, type PersistStorage, type StateStorage } from "zustand/middleware";
 
 /**
@@ -95,6 +95,15 @@ export function keptStore<T>(name: string, fallback: T): KeptStore<T> {
     stores.set(name, store as KeptStore<unknown>);
   }
   return store;
+}
+
+/** A kept store's value, read as a component renders and drawn again as
+ *  it changes. A hook by its name, so the React Compiler calls it on every
+ *  render: `keptStore(...)((s) => s.value)` reads as a plain call, which the
+ *  compiler memoised, and a render that skipped it changed the hooks'
+ *  order (PlanWorkspace's "Should have a queue", firstDraw.test). */
+export function useKeptValue<T>(store: KeptStore<T>): T {
+  return useStore(store, (s) => s.value);
 }
 
 /** Whether the browser took the last write under `name`: false where it

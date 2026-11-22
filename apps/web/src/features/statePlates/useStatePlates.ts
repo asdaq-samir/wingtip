@@ -4,6 +4,7 @@ import { api } from "../../lib/api/client";
 import type { PlateStateSet } from "../../lib/api/types";
 import { keepingAvailable } from "../../lib/map/route/keepRoute";
 import { useMinuteClock } from "../../lib/useMinuteClock";
+import { useKeptValue } from "../../lib/storage";
 import { deleteState, keepState, keptStatesStore, replaced, unfinished, useStateDownloads, type KeptState } from "./statePlates";
 
 const statesQuery = { queryKey: ["plateStates"], queryFn: api.plateStates, staleTime: 10 * 60_000 };
@@ -14,7 +15,7 @@ const statesQuery = { queryKey: ["plateStates"], queryFn: api.plateStates, stale
 export function useStatePlates() {
   const client = useQueryClient();
   const states = useQuery({ ...statesQuery, meta: { silent: true } });
-  const kept = keptStatesStore()((s) => s.value);
+  const kept = useKeptValue(keptStatesStore());
   const { running, problems } = useStateDownloads();
   const [asking, setAsking] = useState<PlateStateSet | null>(null);
   const cycle = states.data?.cycle ?? null;
@@ -44,7 +45,7 @@ export function useStatePlates() {
 
 /** Settings' Plates row's value: how many states are kept. */
 export function useKeptStatesCount() {
-  return keptStatesStore()((s) => s.value.length);
+  return useKeptValue(keptStatesStore()).length;
 }
 
 /**
@@ -57,7 +58,7 @@ export function useKeptStatesCount() {
 export function useStatePlatesFresh() {
   const client = useQueryClient();
   const now = useMinuteClock();
-  const kept = keptStatesStore()((s) => s.value);
+  const kept = useKeptValue(keptStatesStore());
   useEffect(() => {
     if (!kept.length || !keepingAvailable() || !navigator.onLine) return;
     const running = useStateDownloads.getState().running;

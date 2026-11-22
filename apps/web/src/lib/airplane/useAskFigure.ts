@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { tailOf } from "../aircraftChoice";
 import { usePreferences } from "../preferences";
-import { aircraftProfilesQuery } from "../queryClient";
+import { aircraftProfilesQuery } from "../queryClientRecords";
 import { figuresOfChoice, isFigureKey, needsOf, type FigureKey, type NeedsFigure } from "./figures";
 import { readFigure } from "./figureWords";
 import { isPutOff, openAirplaneProfile, putOff, useProfileOpen } from "./profileStore";

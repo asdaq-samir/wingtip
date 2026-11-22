@@ -82,13 +82,22 @@ export const DATA_SOURCES: { name: string; licence: string; href?: string }[] = 
     licence: "Each photo's own licence",
     href: "https://commons.wikimedia.org",
   },
+  // The documents library's texts (features/documents), the FAA's and the
+  // Office of the Federal Register's, which carry no copyright.
+  {
+    name: "FAA publications and the eCFR: the documents library's regulations, AIM, handbooks and advisory circulars",
+    licence: PUBLIC_DOMAIN,
+  },
 ];
 
 /** The maps and software the web app draws with (credits.md's second
- *  table; Apple MapKit is the iPhone's). */
+ *  table; Apple MapKit is the iPhone's, PdfBox-Android Android's). */
 export const SOFTWARE: { name: string; licence: string; href?: string }[] = [
   { name: "MapLibre GL", licence: "BSD 3-Clause", href: "https://github.com/maplibre/maplibre-gl-js/blob/main/LICENSE.txt" },
-  { name: "Google Maps Platform map tiles", licence: "Google's terms; its attribution is drawn on the map" },
+  {
+    name: "Google Maps Platform map tiles",
+    licence: "Google's terms; its attribution, Google's own Google Maps logo and the data's copyright, is drawn on the map",
+  },
 ];
 
 /** The open-source licences of every package the page is made with, the

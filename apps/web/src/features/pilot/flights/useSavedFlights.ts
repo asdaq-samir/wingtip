@@ -9,7 +9,7 @@ import { done } from "../../../lib/doneNote";
 import { toast } from "../../../lib/toast";
 import { useOptimisticList } from "../../../lib/optimisticList";
 import { holdDelete, releaseDelete, usePendingDeletes } from "../../../lib/pendingDeletes";
-import { flightsQuery } from "../../../lib/queryClient";
+import { flightsQuery } from "../../../lib/queryClientRecords";
 import { flightEdit, flightEditProblem, flightTitle, type FlightEditRequest } from "./flightEdit";
 
 /** What the row's save asks: a change to send, a problem found before

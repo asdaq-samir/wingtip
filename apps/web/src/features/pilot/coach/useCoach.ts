@@ -9,7 +9,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import type { Currency, LogbookEntry, Training } from "../../../lib/api/types";
 import { localDay } from "../../../lib/format";
 import { keptStore } from "../../../lib/storage";
-import { currencyQuery, logbookQuery, pilotQuery, trainingQuery } from "../../../lib/queryClient";
+import { pilotQuery } from "../../../lib/queryClient";
+import { currencyQuery, logbookQuery, trainingQuery } from "../../../lib/queryClientRecords";
 import { coachApi, type CoachAsk, type ProficiencyPlan } from "./coachApi";
 import { recentDebriefs } from "./coachDebriefs";
 

@@ -7,7 +7,8 @@ import { useEngineReady } from "../../lib/engine/useEngineReady";
 import { useOwnShip } from "../../lib/map/position/ownShip";
 import { airplaneChosen, usePreferences } from "../../lib/preferences";
 import { typeOf } from "../../lib/aircraftChoice";
-import { flightsQuery, pilotQuery } from "../../lib/queryClient";
+import { pilotQuery } from "../../lib/queryClient";
+import { flightsQuery } from "../../lib/queryClientRecords";
 import { entryRequest, flightEnded, likelyFlight, type Edits } from "./draftEntry";
 import { asked, forget, record, recorded, useRecorded } from "./recorder";
 

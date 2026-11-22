@@ -6,7 +6,8 @@ import { PillStrip, SmallMark, SmallTile, StripNote, StripSection } from "../../
 import { planHrefOf } from "../../lib/flightLink";
 import { placeOfPoint } from "../../lib/identSchema";
 import { dayMonth } from "../../lib/format";
-import { flightsQuery, pilotQuery } from "../../lib/queryClient";
+import { pilotQuery } from "../../lib/queryClient";
+import { flightsQuery } from "../../lib/queryClientRecords";
 import QueryState from "../../components/QueryState";
 import { useStripShows } from "./useStripShows";
 import { RecentRouteTiles } from "./RecentRoutes";

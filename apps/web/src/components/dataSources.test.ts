@@ -28,8 +28,11 @@ describe("About's credits", () => {
         `${credit.name} is not in credits.md with ${credit.licence}`,
       ).toBe(true);
     }
-    // Every row but Apple MapKit, which is the iPhone's map.
-    expect(DATA_SOURCES.length + SOFTWARE.length).toBe(rows.length - 1);
+    // Every row but the phones' own: Apple MapKit, the iPhone's map, and
+    // PdfBox-Android, Android's documents reader.
+    const phones = rows.filter((cells) => cells[1] === "Apple MapKit" || cells[1] === "PdfBox-Android");
+    expect(phones).toHaveLength(2);
+    expect(DATA_SOURCES.length + SOFTWARE.length).toBe(rows.length - phones.length);
   });
 
   it("credit the terrain's sources and OpenStreetMap's, which their licences ask", () => {

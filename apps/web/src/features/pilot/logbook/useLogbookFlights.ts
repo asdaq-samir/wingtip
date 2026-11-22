@@ -1,7 +1,7 @@
 import { startTransition, useActionState, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, describeError } from "../../../lib/api/client";
-import { logbookQuery } from "../../../lib/queryClient";
+import { logbookQuery } from "../../../lib/queryClientRecords";
 import type { LogbookEntry, LogbookEntryRequest } from "../../../lib/api/types";
 import { done } from "../../../lib/doneNote";
 import { toast } from "../../../lib/toast";

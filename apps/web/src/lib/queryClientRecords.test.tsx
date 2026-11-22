@@ -9,7 +9,7 @@ vi.mock("./api/client", async (importOriginal) => ({
   api: { logbook: { list: vi.fn() }, flights: { list: vi.fn() }, training: { get: vi.fn() } },
 }));
 const { api } = await import("./api/client");
-const { RECORDS_FRESH_MS, flightsQuery, logbookQuery, trainingQuery } = await import("./queryClient");
+const { RECORDS_FRESH_MS, flightsQuery, logbookQuery, trainingQuery } = await import("./queryClientRecords");
 
 /** A client with the app's own default, no staleTime: what each query
  *  says of itself is what holds. */

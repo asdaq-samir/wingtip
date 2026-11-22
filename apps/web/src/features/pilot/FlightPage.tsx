@@ -20,7 +20,8 @@ import { dayMonthTime, dayMonthYear, feet, gal, grouped, hm, localDay, nm } from
 import { reviewState, said } from "../../lib/endorsements";
 import { ReviewAskForm, type ReviewAsk } from "../../components/ReviewAsk";
 import { FINDING_TONE } from "../../lib/findings";
-import { airportQuery, trainingQuery } from "../../lib/queryClient";
+import { airportQuery } from "../../lib/queryClient";
+import { trainingQuery } from "../../lib/queryClientRecords";
 import { proceduresOf, sameField } from "../../lib/procedures";
 import { FieldError } from "../../components/ui/field";
 import { WORDING } from "../../lib/wording/generated/wording";

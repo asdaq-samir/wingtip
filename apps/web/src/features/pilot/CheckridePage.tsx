@@ -5,7 +5,7 @@ import { cn } from "cn";
 import FieldHit from "../../components/FieldHit";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import QueryState from "../../components/QueryState";
-import { trainingQuery } from "../../lib/queryClient";
+import { trainingQuery } from "../../lib/queryClientRecords";
 import { Button } from "../../components/ui/button";
 import { DateField } from "../../components/ui/date-field";
 import { Input } from "../../components/ui/input";

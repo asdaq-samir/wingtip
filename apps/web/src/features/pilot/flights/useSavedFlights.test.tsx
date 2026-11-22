@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { FlightSummary } from "../../../lib/api/types";
-import { flightsQuery } from "../../../lib/queryClient";
+import { flightsQuery } from "../../../lib/queryClientRecords";
 import { useSavedFlights } from "./useSavedFlights";
 
 vi.mock("../../../lib/api/client", async (importOriginal) => ({

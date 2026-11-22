@@ -15,7 +15,8 @@ import LogbookFile from "./LogbookFile";
 import { localDay } from "../../lib/format";
 import { said } from "../../lib/endorsements";
 import { FINDING_TONE } from "../../lib/findings";
-import { RECORDS_FRESH_MS, currencyQuery, logbookQuery, pilotQuery, trainingQuery } from "../../lib/queryClient";
+import { pilotQuery } from "../../lib/queryClient";
+import { RECORDS_FRESH_MS, currencyQuery, logbookQuery, trainingQuery } from "../../lib/queryClientRecords";
 import LogbookFlights from "./logbook/LogbookFlights";
 import { refreshLogbook } from "./logbook/logbookEntry";
 

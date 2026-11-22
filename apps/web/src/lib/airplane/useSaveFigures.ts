@@ -4,7 +4,8 @@ import { choiceOf, tailOf } from "../aircraftChoice";
 import { api } from "../api/client";
 import type { Aircraft, AircraftChoice } from "../api/types";
 import { usePreferences } from "../preferences";
-import { aircraftListQuery, aircraftProfilesQuery, pilotQuery } from "../queryClient";
+import { pilotQuery } from "../queryClient";
+import { aircraftListQuery, aircraftProfilesQuery } from "../queryClientRecords";
 import { FIGURE_FIELDS, bookOf, type FigureKey } from "./figures";
 import { deviceWith, figuresOnly, newRecord, recordWith, type FigureChanges } from "./saveFigures";
 

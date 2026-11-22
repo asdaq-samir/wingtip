@@ -4,7 +4,7 @@ import IconButton from "../../../components/IconButton";
 import { AltitudeProfile, RouteProblem } from "../routePanelParts";
 import { useQuery } from "@tanstack/react-query";
 import type { PlanSlices } from "../vm/planSlices";
-import { aircraftProfilesQuery } from "../../../lib/queryClient";
+import { aircraftProfilesQuery } from "../../../lib/queryClientRecords";
 import { bookOf, ownOf } from "../../../lib/airplane/figures";
 // The route from the side, drawn only in the Profile's card: out of the
 // first load as the lists are (navlog's MiniProfile, its own chunk).
