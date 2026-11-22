@@ -6,7 +6,7 @@ import { loadFplStrip } from "../../search";
 import { fromChunk } from "../../../lib/fromChunk";
 import { FplActions } from "./FplActions";
 import { RouteEditor } from "../routePanelParts";
-import { routeBoxOpen, routeEditing } from "./routeEditing";
+import { routeBoxOpen, routeTyped, routeEditing } from "./routeEditing";
 import type { PlanSlices } from "../vm/planSlices";
 
 /** The strip under an empty route, off the first load (scripts/first-load.mjs):
@@ -57,7 +57,7 @@ export default function PlanPage({
         </div>
         {navLog}
       </div>
-      {routeBoxOpen(vm) && (
+      {routeBoxOpen(vm) && !routeTyped(vm) && (
         // Its room while its code comes: the field's own line.
         <Suspense fallback={<div className="mx-4 mt-2 h-10 rounded-(--radius-banner) bg-card" />}>
           <RouteEditor vm={vm} />

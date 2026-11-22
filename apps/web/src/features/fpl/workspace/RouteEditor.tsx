@@ -20,8 +20,11 @@ import { keptTimelineHeight } from "./routeEditing";
  */
 export default function RouteEditor({
   vm,
+  inPlace = false,
 }: {
   vm: PlanSlices<"brief" | "cards" | "flight" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
+  /** Drawn in the timeline's own place (RouteHead), the box where the grouped box was. */
+  inPlace?: boolean;
 }) {
   const { directParam, hasPoints, planned, routed, setPointAltitude, setRoute, wholeRoute } = vm.route;
   const { directToPoint, s } = vm.plan;
@@ -41,7 +44,8 @@ export default function RouteEditor({
   const routeUndo = usePlanUndo((u) => (u.undoName === "Route" ? u.undo : null));
   return (
     <div
-      className="flex flex-col px-4 pb-2"
+      // In the timeline's own place (RouteHead), none of its own room round it.
+      className={inPlace ? "flex flex-col" : "flex flex-col px-4 pb-2"}
       data-testid="route-editor"
       // Typed in, a route made whole stays open (usePlanRouteList).
       onFocus={() => setEditorFocused(true)}
@@ -51,7 +55,7 @@ export default function RouteEditor({
     >
       {/* The route's field: a whole route typed or pasted, its points as
           pills; its room while its code comes, the box's own line. */}
-      <div className="pt-2">
+      <div className={inPlace ? undefined : "pt-2"}>
         <Suspense fallback={<div className="h-10 rounded-(--radius-banner) bg-card" />}>
           <SearchNear.Provider value={searchNear}>
             <RouteBox
@@ -84,8 +88,8 @@ export default function RouteEditor({
               onClear={hasPoints && !routed ? clearRoute : undefined}
               onUndo={!hasPoints && routeUndo ? routeUndo : undefined}
               // Turned from the grouped box by its toggle: its size and shape, the route wrapped in it.
-              wrapped={wholeRoute && routeOpen}
-              height={wholeRoute && routeOpen ? keptTimelineHeight() : undefined}
+              wrapped={inPlace}
+              height={inPlace ? keptTimelineHeight() : undefined}
             />
           </SearchNear.Provider>
         </Suspense>

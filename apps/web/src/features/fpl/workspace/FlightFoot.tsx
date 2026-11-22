@@ -23,10 +23,13 @@ export function FlightFigures({
   vm,
   grow,
   foot = false,
+  thin = false,
 }: {
   vm: PlanSlices<"brief" | "flight" | "plan" | "route" | "stops">;
   grow: boolean;
   foot?: boolean;
+  /** One thin line (TripFigures' `thin`). */
+  thin?: boolean;
 }) {
   const { depart, directParam, planned } = vm.route;
   const { directToPoint, s } = vm.plan;
@@ -51,7 +54,7 @@ export function FlightFigures({
         </div>
       )}
       <div data-testid="flight-line">
-        <TripFigures {...line} grow={grow} unknown={s.unknownPlace} />
+        <TripFigures {...line} grow={grow} thin={thin} unknown={s.unknownPlace} />
       </div>
     </EngineGate>
   );

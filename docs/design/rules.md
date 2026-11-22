@@ -656,7 +656,10 @@ off by default (the owner, 2026-11-13).
    fuel stays on the timeline's tank gauges, the nav log and the Brief,
    no longer on the strip, so the strip no longer opens its breakdown. At the sheet's very foot from
    half up, the Apple way, the strip held just over it and sliding under
-   it to the pill as the sheet goes down (the owner, 2026-11-22), a floating glass bar, the one floating bar the airport card's
+   it to the pill as the sheet goes down (the owner, 2026-11-22), the strip one
+   thin line at half and full (each value a detail's 15 after its name in a
+   note's 13, the names dropping first where the line is short; "make the
+   figures strip very thin when fpl is half or full") and full size as the pill, a floating glass bar, the one floating bar the airport card's
    tabs are drawn in, the same height and width (`FloatingBar`, 2026-11-18),
    round Base UI's stock Toolbar (one tab stop, the arrows between them),
    of four buttons: Brief and Nav Log, each opening its card over FPL;

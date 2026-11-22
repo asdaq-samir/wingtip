@@ -126,6 +126,17 @@ export const FIXED_FIGURE = {
   unitScale: 0.65,
 };
 
+/** FPL's figures as one thin line at half and all the way up (the owner,
+ *  2026-11-22: "Maybe just make the figures strip very thin when fpl is
+ *  half or full?"): each value iOS's Subheadline, a detail's 15, after its
+ *  name in a note's 13, a row 28 tall; full size as the pill (FIXED_FIGURE). */
+export const THIN_FIGURE = {
+  value: `${TYPE_CLASS.detail} transition-[font-size] duration-(--motion-drawer) ease-(--motion-drawer-ease)`,
+  unit: "",
+  name: TYPE_CLASS.note,
+  unitScale: 1,
+};
+
 /** The strip's value at its own size (`--fig`), never shrunk to fit a
  *  column: the columns are as wide as their content (FigureStrip; the owner,
  *  2026-11-21: "make the text size ... match"). */

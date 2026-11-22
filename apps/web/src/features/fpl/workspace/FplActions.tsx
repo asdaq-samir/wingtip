@@ -112,7 +112,11 @@ export function FplRoute({
           12 (the iOS audit's margin, a local flight). */}
       <div className={cn("pt-2 pb-1", editing && "hidden")} data-pill-keeps="">
         <div ref={figures} data-pin-foot="" className={cn(PIN_AT_FOOT, "px-1", PINNED)}>
-          {!editing && <FlightFigures vm={vm} grow={false} />}
+          {/* One thin line at half and all the way up, full size as the
+              pill (the owner, 2026-11-22: "Maybe just make the figures
+              strip very thin when fpl is half or full?"): one strip that
+              changes size, eased, never two copies. */}
+          {!editing && <FlightFigures vm={vm} grow={false} thin={ground && panelOpen} />}
         </div>
       </div>
     </div>

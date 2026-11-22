@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { planFromSearch } from "./oneSearch";
-import { closeCard, grabberTo, openPanel, settled, sideDrawer, slow } from "./sheetHelpers";
+import { closeCard, grabberTo, inSheet, openPanel, settled, sideDrawer, slow } from "./sheetHelpers";
 
 /**
  * The route in the map's sheet: its field and FPL's timeline, its
@@ -45,7 +45,11 @@ export async function typeRoute(page: Page) {
  *  where it is the field (a route typed in), the timeline alone. */
 export async function foldRoute(page: Page) {
   const typing = sideDrawer(page).locator('[data-testid="route-type-open"][aria-pressed="true"]');
-  if (await typing.isVisible()) await typing.click();
+  if (await typing.isVisible()) {
+    // Under the floating bar at the page's foot (a route typed into the empty box): raised to it first, as a finger does.
+    await inSheet(page, typing);
+    await typing.click();
+  }
   await expect(sideDrawer(page).getByTestId("route-summary")).toBeVisible();
 }
 

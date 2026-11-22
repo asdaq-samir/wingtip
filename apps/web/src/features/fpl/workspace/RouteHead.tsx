@@ -3,9 +3,9 @@ import { cn } from "cn";
 import SectionTitle from "../../../components/SectionTitle";
 import { Button } from "../../../components/ui/button";
 import { TEXT } from "../../../lib/text";
-import { RouteTimeline } from "../routePanelParts";
+import { RouteEditor, RouteTimeline } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
-import { routeEditing } from "./routeEditing";
+import { keepTimelineHeight, routeEditing, routeTyped } from "./routeEditing";
 import { EmptyRoute } from "./RouteStart";
 import { useRouteListProps } from "./useRouteListProps";
 
@@ -26,12 +26,17 @@ export default function RouteHead({
   vm: PlanSlices<"brief" | "cards" | "flight" | "leg" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
 }) {
   const { hasPoints, wholeRoute } = vm.route;
-  const { foldRoute, routeOpen } = vm.routeList;
+  const { foldRoute } = vm.routeList;
   const editing = routeEditing(vm);
   // The whole route's field opened by the box's toggle (TypeRouteButton):
   // the same box turned into the field, the timeline not drawn over it and
   // no "Route" row or Done (the owner, 2026-11-22).
-  const typed = editing && wholeRoute && routeOpen;
+  const typed = routeTyped(vm);
+  // The kept height let go once the field is folded (routeEditing).
+  const { routeOpen } = vm.routeList;
+  useEffect(() => {
+    if (!routeOpen) keepTimelineHeight(0);
+  }, [routeOpen]);
   const props = useRouteListProps(vm);
   // Done keeps the focus on the timeline that is there after it and says
   // so to VoiceOver; a fold by anything else moves nothing.
@@ -73,6 +78,12 @@ export default function RouteHead({
         </div>
       )}
       {editing && !hasPoints && <EmptyRoute vm={vm} />}
+      {/* The box turned into the route's field, in the timeline's own place. */}
+      {typed && (
+        <Suspense fallback={<div className="h-24 rounded-(--radius-card) bg-card" />}>
+          <RouteEditor vm={vm} inPlace />
+        </Suspense>
+      )}
       {hasPoints && !typed && (
         // Its room while its code comes: two lines' height.
         <Suspense fallback={<div className="h-24 rounded-(--radius-banner) bg-card" />}>

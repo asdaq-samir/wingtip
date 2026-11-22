@@ -73,10 +73,18 @@ test("the tab bar is at the sheet's foot, the figures over it, and they slide un
   expect(b.y + b.height).toBeGreaterThan(page.viewportSize()!.height - 60);
   expect(s.y + s.height).toBeLessThanOrEqual(b.y + 1);
   expect(await strip.getByTestId("navlog-ete").evaluate((el) => getComputedStyle(el).opacity)).toBe("1");
-  // At the pill the figures are its face, on the screen's foot, the bar put away.
+  // One thin line at half (the owner, 2026-11-22: "make the figures strip very thin").
+  expect(s.height, "thin at half").toBeLessThanOrEqual(32);
+  // At the pill the figures are its face, full size, on the screen's foot, the bar put away.
   await grabberTo(page, "peek");
   await page.waitForTimeout(600);
   const pill = (await strip.boundingBox())!;
+  expect(pill.height, "full size as the pill").toBeGreaterThan(40);
+  await grabberTo(page, "full");
+  await page.waitForTimeout(600);
+  expect((await strip.boundingBox())!.height, "thin all the way up").toBeLessThanOrEqual(32);
+  await grabberTo(page, "peek");
+  await page.waitForTimeout(600);
   expect(pill.y + pill.height).toBeGreaterThan(page.viewportSize()!.height - 60);
   await expect(bar).toBeHidden();
 });

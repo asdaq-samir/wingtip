@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 import { cn } from "cn";
-import { FIGURE_SIZE, FIXED_FIGURE, FLYING_FIGURE, GROUP_HEADING, GROW_FIGURE } from "../lib/text";
+import { FIGURE_SIZE, FIXED_FIGURE, FLYING_FIGURE, GROUP_HEADING, GROW_FIGURE, THIN_FIGURE } from "../lib/text";
 import Explain from "./Explain";
 import FigureWait from "./FigureWait";
 import type { ExplainedTerm } from "../lib/explain";
@@ -32,12 +32,13 @@ export interface StripFigure {
  *  (GROW_FIGURE: MapPanel's --sheet-progress, small at half, full at the
  *  pill and all the way up; the owner, 2026-11-05), `flying` one large
  *  size whatever the sheet's (FLYING_FIGURE, useFlyingMode). */
-export type StripSize = "fixed" | "grow" | "flying";
+export type StripSize = "fixed" | "grow" | "flying" | "thin";
 
 const TYPE: Record<StripSize, { value: string; unit: string; name?: string; unitScale: number }> = {
   fixed: FIXED_FIGURE,
   grow: GROW_FIGURE,
   flying: FLYING_FIGURE,
+  thin: THIN_FIGURE,
 };
 
 /**
@@ -77,6 +78,8 @@ export default function FigureStrip({
   tap?: (figure: StripFigure, face: ReactNode) => ReactNode;
 }) {
   const type = TYPE[size];
+  // One line: each value after its name, in a row 28 tall (FPL at half and all the way up).
+  const thin = size === "thin";
   // As many columns as figures, so none ever wraps onto a row of its own
   // (in flight the GPS altitude, a fifth figure in four columns, went under
   // the rest, and the pill showed that row alone).
@@ -85,9 +88,13 @@ export default function FigureStrip({
     <div className="@container/figures relative" data-slot="section-summary">
       <dl
         className={cn(
-          "grid justify-between gap-x-2 gap-y-3",
-          "grid-cols-[repeat(var(--cols),minmax(0,max-content))]",
-          "@max-[16rem]/figures:grid-cols-2",
+          thin
+            ? "flex h-7 items-center justify-between gap-x-3 overflow-hidden"
+            : cn(
+                "grid justify-between gap-x-2 gap-y-3",
+                "grid-cols-[repeat(var(--cols),minmax(0,max-content))]",
+                "@max-[16rem]/figures:grid-cols-2",
+              ),
         )}
         style={cols}
         data-testid={testId}
@@ -129,7 +136,7 @@ export default function FigureStrip({
             <div
               key={f.name}
               className={cn(
-                "min-w-0 text-center",
+                thin ? "flex min-w-0 items-baseline gap-1" : "min-w-0 text-center",
                 edge === "start" && "@min-[16rem]/figures:text-left",
                 edge === "end" && "@min-[16rem]/figures:text-right",
               )}
@@ -140,7 +147,15 @@ export default function FigureStrip({
                   section's capitals (the owner's list, 2026-11-17).
                   To a screen reader the figure in full words, here or as its
                   button's name. */}
-              <dt className={cn(GROUP_HEADING, type.name, "truncate tracking-normal normal-case text-foreground/65")}>
+              <dt
+                className={cn(
+                  GROUP_HEADING,
+                  type.name,
+                  "truncate tracking-normal normal-case text-foreground/65",
+                  // Thin, the names go first where the line is short of room, never a value.
+                  thin && "shrink-0 font-normal @max-[30rem]/figures:sr-only",
+                )}
+              >
                 {f.explain ? (
                   <Explain term={f.explain} spoken={f.label ?? f.name} className="text-inherit">
                     {f.label ?? f.name}
@@ -153,7 +168,7 @@ export default function FigureStrip({
               <dd
                 className={cn(
                   type.value,
-                  FIGURE_SIZE,
+                  !thin && FIGURE_SIZE,
                   "truncate font-semibold tabular-nums",
                   button && "overflow-visible",
                   // A figure that is not a button said wrong in red, its
