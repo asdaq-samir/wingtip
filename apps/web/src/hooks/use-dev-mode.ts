@@ -48,11 +48,11 @@ export function routeSearch(search: string): string {
  * page -- signed out from the developer console, or a session that
  * ended -- whom DevGuard takes to the map.
  */
-export type AppMode = "pilot" | "developer" | "studio";
+export type AppMode = "pilot" | "developer";
 
 /** The page a mode is, by its address. */
 export function modeOf(pathname: string): AppMode {
-  return pathname.startsWith("/dev") ? "developer" : pathname.startsWith("/studio") ? "studio" : "pilot";
+  return pathname.startsWith("/dev") ? "developer" : "pilot";
 }
 
 export function useDevMode() {
@@ -62,10 +62,6 @@ export function useDevMode() {
   const navigate = useNavigate();
   const mode = modeOf(pathname);
   const on = mode === "developer";
-  // The Studio (features/studio) is offered and refused as Dev is: the
-  // developer's for now, at the owner's pick (2026-11-12, "You only for
-  // now"). Its address keeps its own track (`q`, `day`); the route comes
-  // and goes as it does to Dev.
   const go = (next: AppMode) => {
     if (next === mode) return;
     // The query as the browser has it: nuqs (lib/address) writes it
@@ -78,10 +74,9 @@ export function useDevMode() {
       void navigate(from ?? `/plan${routeSearch(search)}`);
       return;
     }
-    // Where Plan was is remembered on the way to either, and carried
-    // between them, for the way back.
+    // Where Plan was is remembered on the way to Dev, for the way back.
     const from = mode === "pilot" ? pathname + search : ((state as { from?: string } | null)?.from ?? undefined);
-    void navigate(`/${next === "developer" ? "dev" : "studio"}${routeSearch(search)}`, { state: { from } });
+    void navigate(`/dev${routeSearch(search)}`, { state: { from } });
   };
   // Undefined while either query is in flight: the switch appears when
   // the answer does, rather than flashing in and out.

@@ -1,8 +1,8 @@
 # Ingest's import contracts, held by import-linter (`lint-imports`, run from
 # this directory with services/planner on the path by scripts/ci/guards.sh's
-# "Python imports"). Ingest writes the live feeds to the shared store; the
-# crash pipeline is the jobs' (services/jobs/crash), not a loop here (the
-# simplicity audit of 2026-11-12, finding 8). Today's NTSB download is the
+# "Python imports"). Ingest writes the live feeds to the shared store, and
+# no job's pipeline is a loop here (the simplicity audit of 2026-11-12,
+# finding 8). Today's NTSB download is the
 # exception, for batch D to move; an ignore line that no longer matches
 # fails, so the list only shrinks.
 [importlinter]
@@ -11,13 +11,12 @@ root_packages =
     wingtip
 include_external_packages = False
 
-[importlinter:contract:crash-pipeline-is-the-jobs]
-name = ingest runs no crash pipeline
+[importlinter:contract:ntsb-store-by-its-download]
+name = only ingest's NTSB download writes the NTSB store
 type = forbidden
 source_modules =
     ingest
 forbidden_modules =
-    wingtip.crash_drafts
     wingtip.history.ntsb
 ignore_imports =
     ingest.ntsb -> wingtip.history.ntsb

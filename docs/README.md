@@ -14,7 +14,6 @@ Each fact lives in one doc; the others link to it.
 | [CI.md](CI.md) | What CI runs and when, every job and test suite, what gates a merge, flaky tests |
 | [README-AWS.md](README-AWS.md) | The AWS design (not deployed yet), its cost, the first deploy and running it |
 | [OPERATIONS.md](OPERATIONS.md) | What is monitored (services, live feeds, faults and speed from devices), the thresholds, and where alerts go |
-| [STUDIO-PIPELINE.md](STUDIO-PIPELINE.md) | The Studio's crash films: the stages from an FAA report to a film, what is automatic and what a person does, and the rules (identity by three sources, "preliminary", no cause, no names, the hold, publishing a person's) |
 | [decisions/](decisions/README.md) | The owner's standing decisions, one page each with the reason, so none is undone by accident |
 | [LEARNING-GUIDE.md](LEARNING-GUIDE.md) | Why it is built this way, concept by concept, to build something like it yourself |
 | [SECURITY.md](SECURITY.md) | The security audit's findings and what changed, the standing security decisions (public API documents, open Dependabot alerts), and the owner's console steps |
@@ -51,8 +50,6 @@ Each fact lives in one doc; the others link to it.
 | [store/listing.md](store/listing.md) | The App Store and Google Play listings and review notes; [store/privacy-labels.md](store/privacy-labels.md) the stores' privacy answers, [store/preview-video.md](store/preview-video.md) the App Preview's plan |
 | [store/beta.md](store/beta.md) | The pilot beta on TestFlight and Play internal testing: what the builds do, the owner's steps, the notes and the invitation ([store/beta/invitation.md](store/beta/invitation.md)) |
 | [store/feature-review.md](store/feature-review.md) | Keep, park or cut: each feature's pilots, cost and a recommendation, for the owner |
-| [SIM-EXPORT.md](SIM-EXPORT.md) | The Studio's "Export for simulator": each file, what is estimated, and how to replay it in MSFS (FlightControlReplay, Sky Dolly), X-Plane 12 and Google Earth |
-| [XPLANE-TRIAL.md](XPLANE-TRIAL.md) | The X-Plane 12 trial on the Mac: the demo, the replay plugin (tools/xplane-driver), the steps with times, what to judge, AutoOrtho |
 | [GOOGLE-MAPS.md](GOOGLE-MAPS.md) | The map's imagery under the chart: the USGS's, and Google's with the owner's key |
 | [TV.md](TV.md) | The TV apps (parked): the deleted remote-control mode, TV sign-in and Tizen and webOS shells |
 | [brand/](brand) | The mark and the brand's files |

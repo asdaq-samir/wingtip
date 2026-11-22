@@ -12,8 +12,6 @@ import app.wingtipmaps.gateway.service.AccountService;
 import app.wingtipmaps.gateway.service.AppleRevocation;
 import app.wingtipmaps.gateway.service.ChangeLines;
 import app.wingtipmaps.gateway.service.CheckpointNotesClient;
-import app.wingtipmaps.gateway.service.CrashDraftMail;
-import app.wingtipmaps.gateway.service.Mailer;
 import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.service.PlannerUnavailableException;
 import app.wingtipmaps.gateway.upstream.PlannerApi;
@@ -31,7 +29,6 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.JsonNode;
@@ -40,8 +37,8 @@ import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Every call the gateway makes to the planner by hand -- PlannerClient's
- * rules and the briefing, what ChangeLines, CheckpointNotesClient and
- * CrashDraftMail ask through it, and AccountService's forgetting of a
+ * rules and the briefing, what ChangeLines and CheckpointNotesClient ask
+ * through it, and AccountService's forgetting of a
  * pilot's notes -- held to services/planner/openapi.json, the planner's own
  * document as this jar was built with it. The asks and answers' fields
  * are the planner's own types, generated from that document as the jar
@@ -69,8 +66,7 @@ class PlannerClientContractTest {
             PlannerClient planner,
             AccountService accounts,
             ChangeLines lines,
-            CheckpointNotesClient notes,
-            CrashDraftMail drafts) {}
+            CheckpointNotesClient notes) {}
 
     private static final LocalDate DAY = LocalDate.of(2026, 11, 9);
 
@@ -113,9 +109,7 @@ class PlannerClientContractTest {
                     c -> c.lines().changes("KDLH", "KMSP", List.of("KHYR"), Stub.briefing, Stub.briefing)),
             new Call(
                     "CheckpointNotesClient.mine",
-                    c -> c.notes().mine(new Pilot("pilot@example.com", "A. Pilot", "sub-1"))),
-            // The drafts to notice, each mailed and then marked noticed.
-            new Call("CrashDraftMail.everyFewMinutes", c -> c.drafts().everyFewMinutes()));
+                    c -> c.notes().mine(new Pilot("pilot@example.com", "A. Pilot", "sub-1"))));
 
     /** PlannerClient's methods that ask nothing themselves. */
     private static final Set<String> NOT_CALLS = Set.of("endorsementKind"); // a filter over endorsementKinds()
@@ -213,8 +207,7 @@ class PlannerClientContractTest {
                     client,
                     accounts(plannerStub.url()),
                     new ChangeLines(client),
-                    new CheckpointNotesClient(client),
-                    new CrashDraftMail(client, new Mailer(mock(JavaMailSender.class), "x@y"), "dev@example.com", ""));
+                    new CheckpointNotesClient(client));
             for (Call call : CALLS) {
                 String who = call.method().contains(".") ? call.method() : "PlannerClient." + call.method();
                 List<Stub.Asked> asked = new ArrayList<>();

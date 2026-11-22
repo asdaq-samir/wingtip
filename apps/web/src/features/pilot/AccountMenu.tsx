@@ -18,7 +18,7 @@ import { useConfirm } from "../../components/useConfirm";
 import { useDevMode, type AppMode } from "../../hooks/use-dev-mode";
 
 /** Each page as the menu names it. */
-const MODE_NAMES: Record<AppMode, string> = { pilot: "Pilot", developer: "Developer", studio: "Studio" };
+const MODE_NAMES: Record<AppMode, string> = { pilot: "Pilot", developer: "Developer" };
 import { pilotQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
 import { useDeleteAccount } from "./useDeleteAccount";
@@ -45,7 +45,7 @@ export function AccountGroup() {
 }
 
 /**
- * The mode menu alone -- Pilot, Developer or Studio, a copy of the account's
+ * The mode menu alone -- Pilot or Developer, a copy of the account's
  * data, signing out, deleting the account -- where the address is set apart from it: at the right of
  * Setup's Account title, the address under that title, at the owner's
  * ask ("Email doesn't need to be in the table, it can be under account").
@@ -102,11 +102,6 @@ function AccountMenu() {
           <DropdownMenuRadioGroup value={devMode.mode} onValueChange={(v) => devMode.go(v as AppMode)}>
             <DropdownMenuRadioItem value="pilot">Pilot</DropdownMenuRadioItem>
             {devMode.allowed && <DropdownMenuRadioItem value="developer">Developer</DropdownMenuRadioItem>}
-            {devMode.allowed && (
-              <DropdownMenuRadioItem value="studio" data-testid="mode-studio">
-                Studio
-              </DropdownMenuRadioItem>
-            )}
           </DropdownMenuRadioGroup>
           {pilot && (
             <>

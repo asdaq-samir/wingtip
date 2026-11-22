@@ -143,7 +143,7 @@ METRICS = {
     "python_unit_constants": (
         lambda: sum(
             len(re.findall(rf"^_?[A-Z][A-Z0-9_]*\s*=.*{UNIT}", text(p), re.M))
-            for p in files("services", ".py") + files("tools", ".py")
+            for p in files("services", ".py")
             if not p.endswith("wingtip/units.py")
         ),
         "a unit factor set again: import it from wingtip.units",

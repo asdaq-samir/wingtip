@@ -10,7 +10,6 @@ import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.domain.MagicLink;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.domain.Squawk;
-import app.wingtipmaps.gateway.domain.Subscription;
 import app.wingtipmaps.gateway.repository.AircraftRepository;
 import app.wingtipmaps.gateway.repository.EndorsementRepository;
 import app.wingtipmaps.gateway.repository.FlightRepository;
@@ -19,7 +18,6 @@ import app.wingtipmaps.gateway.repository.LogbookRepository;
 import app.wingtipmaps.gateway.repository.MagicLinkRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.repository.SquawkRepository;
-import app.wingtipmaps.gateway.repository.SubscriptionRepository;
 import app.wingtipmaps.gateway.security.MagicLinkAuthenticationToken;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
@@ -108,9 +106,6 @@ abstract class AccountTestBase {
 
     @Autowired
     MagicLinkRepository magicLinks;
-
-    @Autowired
-    SubscriptionRepository subscriptions;
 
     @Autowired
     FindByIndexNameSessionRepository<? extends Session> sessions;
@@ -212,12 +207,6 @@ abstract class AccountTestBase {
                         + " updated_at) VALUES (?, ?, 'KDLH', 'I09', 'ILS RWY 09', now(), now())",
                 pilot.getId(),
                 pilot.getId());
-        // The free month started, and a written briefing counted against its cap.
-        subscriptions.save(new Subscription(pilot.getId(), Instant.now()));
-        jdbc.update(
-                "INSERT INTO paid_feature_uses (pilot_id, month, feature, uses) VALUES (?, ?, 'NARRATIVE', 1)",
-                pilot.getId(),
-                LocalDate.of(2026, 10, 1));
         // Shared by link, watched, a reminder sent, and an AI app connected
         // (V39, V31, V23, V40): what the export and both deletions must reach.
         jdbc.update(
@@ -309,8 +298,6 @@ abstract class AccountTestBase {
                 jdbc.queryForObject(
                         "SELECT count(*) FROM cross_country_reviews WHERE student_id = ?", Integer.class, id),
                 jdbc.queryForObject("SELECT count(*) FROM approach_lessons WHERE student_id = ?", Integer.class, id),
-                jdbc.queryForObject("SELECT count(*) FROM subscriptions WHERE pilot_id = ?", Integer.class, id),
-                jdbc.queryForObject("SELECT count(*) FROM paid_feature_uses WHERE pilot_id = ?", Integer.class, id),
                 jdbc.queryForObject(
                         "SELECT count(*) FROM magic_links WHERE email = ?", Integer.class, pilot.getEmail()),
                 jdbc.queryForObject(

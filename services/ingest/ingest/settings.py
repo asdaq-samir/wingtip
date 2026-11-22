@@ -1,7 +1,7 @@
 """ingest's own knobs from the environment, typed, each with its default,
 as wingtip.config's Settings holds the planner's: the FAA SWIM
 subscription and how often ingest says it is alive. What wingtip itself
-reads (the stores' paths, ADSBFI_OPEN_DATA) stays in wingtip.config, which
+reads (the stores' paths, ADSBLOL_API_KEY) stays in wingtip.config, which
 ingest reads through wingtip as the planner does."""
 
 import functools

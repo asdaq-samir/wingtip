@@ -109,10 +109,6 @@ services:
       # 1,000 requests a day, a feeder's 7,200): with none, the server's
       # address has 500 a day (adsb.lol's API page, read 2026-11-21).
       ADSBLOL_API_KEY: ${ADSBLOL_API_KEY:-}
-      # adsb.fi's open data is for personal, non-commercial use only
-      # (github.com/adsbfi/opendata): off for the public app until adsb.fi
-      # agrees to it (wingtip.traffic).
-      ADSBFI_OPEN_DATA: "0"
       CHARTS_AUTO_REFRESH: "0"
       # Nor the next cycle staged ahead of its date (wingtip.chart_next):
       # the scheduled Fargate task draws and publishes each cycle, and
@@ -144,10 +140,9 @@ services:
     # the planner, the gateway and Postgres: held small.
     mem_limit: 384m
     environment:
-      # adsb.fi's open data is for personal, non-commercial use only
-      # (github.com/adsbfi/opendata): the followed airplanes' rounds are
-      # off for the public app until adsb.fi agrees to it.
-      ADSBFI_OPEN_DATA: "0"
+      # The followed airplanes' rounds ask adsb.lol (wingtip.traffic.watched)
+      # with the planner's key, so they count against the same day's quota.
+      ADSBLOL_API_KEY: ${ADSBLOL_API_KEY:-}
       # The FAA's SWIM feeds (ingest.swim); each off without its own. The
       # owner's SCDS subscriptions' login and queues.
       SWIM_HOST: ${SWIM_HOST:-}
@@ -176,6 +171,10 @@ services:
       - /srv/wingtip/data:/workspace/data
     environment:
       TZ: America/Chicago
+      # The model weather layer is parked (the feature review, 2026-11-21):
+      # off in every app by default, so its GFS, HRRR and DAFS downloads
+      # are not fetched here at all (app.settings.flow_on).
+      WEATHER_FLOW_ON: "false"
     # Its working set is Python, the engine, a GLMP issue's two grids at
     # their largest while it reads them and the model weather's timeline
     # fetched afresh, up to 565 MB on x86 (docker-compose.yml says how it

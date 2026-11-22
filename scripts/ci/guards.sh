@@ -95,7 +95,7 @@ ruff_check() {
   export RUFF
   # Each suite from its own directory, as its job runs it, so each finds
   # the settings it always has (scripts/ci/python_suite.sh's table).
-  for leg in planner wingtip ingest weather jobs xplane; do
+  for leg in planner wingtip ingest weather jobs; do
     scripts/ci/python_suite.sh --lint "$leg" || return 1
   done
 }

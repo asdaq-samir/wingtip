@@ -1,7 +1,7 @@
 """The tracks recorded here and the airplanes followed: those whose card has been opened, whose
 flights are recorded from any source, card open or not. Both are kept in the live store
 (wingtip.traffic.store), which the planner and ingest share: the planner records an open card's
-airplane, ingest the followed ones the FAA's radar and adsb.fi hear, and a restart of either loses
+airplane, ingest the followed ones the FAA's radar and adsb.lol hear, and a restart of either loses
 none of it."""
 
 from __future__ import annotations

@@ -282,11 +282,6 @@ export type PilotContactRequest = Gateway["PilotContactRequest"];
 /** How this deployment is reached -- SIGN_IN, OPEN or CLOSED -- asked
  *  before anyone has signed in (`/api/auth/capabilities`). */
 export type SignInCapabilities = Gateway["Capabilities"];
-/** `GET /api/subscription`: the signed-in pilot's subscription to the
- *  paid features (SubscriptionService) -- FREE, TRIAL, SUBSCRIBED or
- *  COMPED, until when, and whether the free month is still theirs to start.
- *  For showing: the server checks it again on every paid call. */
-export type Subscription = Gateway["SubscriptionDto"];
 
 /** A pilot's own airplane, from `/api/aircraft`. `usableFuelGal` is
  *  null when the owner has not said, and then the nav log makes no

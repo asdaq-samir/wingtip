@@ -185,31 +185,6 @@ services:
       - .:/workspace
       - /tmp:/host-tmp
 
-  # The crash-leads job (services/jobs/crash, docs/STUDIO-PIPELINE.md):
-  # the FAA's statements and notices read into the Studio's crash leads,
-  # each checked against the FAA's registry and an ADS-B track, and a kit
-  # made for each confirmed one, into the live-store volume the planner
-  # reads (wingtip.crash_drafts). It keeps its own schedule (`every`, on
-  # wingtip.schedule): a run each CRASH_LEADS_EVERY_MIN, none with CRASH_LEADS_AUTO=0, which
-  # ends it and leaves it ended. One run by hand, `docker compose run
-  # --rm crash-leads poll` (or `parse-check`).
-  crash-leads:
-    restart: on-failure
-    build:
-      context: .
-      dockerfile: services/jobs/crash/Dockerfile
-      additional_contexts:
-        wingtip-base: service:base
-    command: ["every"]
-    environment:
-      LIVE_STORE: /live/live.sqlite
-      NOTAM_STORE: /live/notams.sqlite
-      CRASH_LEADS_AUTO: ${CRASH_LEADS_AUTO:-1}
-      CRASH_LEADS_EVERY_MIN: ${CRASH_LEADS_EVERY_MIN:-30}
-    volumes:
-      - .:/workspace
-      - live-store:/live
-
   db:
     restart: unless-stopped
     # Plain Postgres: the pgvector image was for the removed briefing
@@ -356,7 +331,7 @@ services:
 
   # The live feeds, read always (services/ingest): the FAA's SWIM feeds
   # (STDDS's terminal radar, FNS's NOTAMs, TFMS's flight plans) and the
-  # followed airplanes' adsb.fi rounds, written into the SQLite stores
+  # followed airplanes' adsb.lol rounds, written into the SQLite stores
   # under data/raw that the planner reads (the live store, wingtip.traffic.store;
   # the NOTAM and filed-route stores). No port: nothing calls it. The
   # project mounted as the planner's is, so both see one data folder and
@@ -389,6 +364,8 @@ services:
       PYTHONPATH: /workspace/services/ingest:/workspace/services/planner
       # The radar kept with no LADD list, as the planner above shows it.
       LADD_REQUIRED: ${LADD_REQUIRED:-0}
+      # The followed airplanes' rounds ask adsb.lol with the planner's key.
+      ADSBLOL_API_KEY: ${ADSBLOL_API_KEY:-}
       # The FAA's SWIM feeds (ingest.swim); each off without its own. The
       # owner's SCDS subscriptions' login and queues.
       SWIM_HOST: ${SWIM_HOST:-}
@@ -446,6 +423,10 @@ services:
       OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
       TRACING: ${TRACING:-}
       OTEL_SERVICE_NAME: weather
+      # The model weather layer (app.flow), parked behind each app's Extras
+      # switch (the feature review, 2026-11-21): fetched here so its specs
+      # keep running; production leaves it off (infra/docker-compose.prod.yml).
+      WEATHER_FLOW_ON: ${WEATHER_FLOW_ON:-1}
     # Python, the engine, a GLMP issue's two grids and the model
     # weather's timeline (app.flow) fetched afresh into an empty store:
     # CI's own x86 image (under emulation, no swap) held 374 MB after its

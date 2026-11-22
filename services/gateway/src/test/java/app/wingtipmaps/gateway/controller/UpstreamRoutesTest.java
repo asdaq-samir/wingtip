@@ -81,20 +81,6 @@ class UpstreamRoutesTest {
             Map.entry("GET /api/weather/flow/{frame}/{field}.png", "public csrf"),
             // An approach plate's page as a picture, public as the plates are.
             Map.entry("GET /api/approach-plate-page/{cycle}/{ident}/{procedure}.png", "public csrf"),
-            // The Studio's tracks, history and drafts: the developer's for
-            // now (the owner, 2026-11-12: "You only for now").
-            Map.entry("GET /api/studio/track", "developer csrf"),
-            Map.entry("GET /api/studio/watched", "developer csrf"),
-            Map.entry("POST /api/studio/ground", "developer csrf"),
-            Map.entry("POST /api/studio/weather", "developer csrf"),
-            Map.entry("GET /api/studio/notams", "developer csrf"),
-            Map.entry("GET /api/studio/ntsb", "developer csrf"),
-            Map.entry("GET /api/studio/drafts", "developer csrf"),
-            Map.entry("GET /api/studio/drafts/{draft_id}", "developer csrf"),
-            Map.entry("GET /api/studio/drafts/{draft_id}/track", "developer csrf"),
-            Map.entry("POST /api/studio/drafts/{draft_id}/identity", "developer csrf"),
-            Map.entry("POST /api/studio/drafts/{draft_id}/rendered", "developer csrf"),
-            Map.entry("POST /api/studio/drafts/{draft_id}/dismiss", "developer csrf"),
             // An airplane's FAA registration record and its photo, by its
             // N-number, for its card: public, as the traffic it is found in is.
             Map.entry("GET /api/airplanes/{n_number}", "public csrf"),

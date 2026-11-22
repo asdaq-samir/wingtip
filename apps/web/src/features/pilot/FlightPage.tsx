@@ -16,8 +16,6 @@ import { TEXT } from "../../lib/text";
 import { keepTrack, keptTrack, readTrack, thin, TrackError, type TrackPoint } from "../../lib/track";
 import { useFlownTrack } from "../../lib/map/position/flownTrack";
 import { routeName } from "../../lib/identSchema";
-import { mayUse, useEntitlement } from "../../lib/subscription";
-import PaidPrompt from "../../components/PaidPrompt";
 import { dayMonthTime, dayMonthYear, feet, gal, grouped, hm, localDay, nm } from "../../lib/format";
 import { reviewState, said } from "../../lib/endorsements";
 import { ReviewAskForm, type ReviewAsk } from "../../components/ReviewAsk";
@@ -237,8 +235,6 @@ function InstructorReview({ summary }: { summary: FlightSummary }) {
 export default function FlightPage({ summary, planHref }: { summary: FlightSummary; planHref: string }) {
   const asked = { queryKey: ["savedFlight", summary.id], queryFn: () => api.flights.get(summary.id) }; // not "flight", the traffic card's (WEB-30)
   const { data: flight, isPending, error } = useQuery(asked);
-  // The debrief comes with the subscription: without it, its place says so.
-  const entitlement = useEntitlement();
   return (
     <div className="space-y-4">
       <ListGroup>
@@ -267,12 +263,8 @@ export default function FlightPage({ summary, planHref }: { summary: FlightSumma
         </p>
       ) : error || !flight ? (
         <p className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>Its nav log could not be fetched ({error?.message ?? "not found"}).</p>
-      ) : mayUse(entitlement) ? (
-        <DebriefSection flight={flight} planHref={planHref} />
       ) : (
-        <PaidPrompt>
-          Your track from ForeFlight, Garmin Pilot or a GPS, measured against this flight's nav log as an examiner would.
-        </PaidPrompt>
+        <DebriefSection flight={flight} planHref={planHref} />
       )}
     </div>
   );

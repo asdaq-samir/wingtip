@@ -19,7 +19,7 @@ export function drawnStretch(chosen: HeightStretch, trueView: boolean): HeightSt
  *  camera's (the Map card's Heights says so under it). */
 export function useTrueHeightView(): "pilot" | "replay" | null {
   const { pilot } = useTerrainView();
-  const replay = useReplayCamera((s) => s.kind !== null || s.keyed);
+  const replay = useReplayCamera((s) => s.kind !== null);
   return pilot ? "pilot" : replay ? "replay" : null;
 }
 

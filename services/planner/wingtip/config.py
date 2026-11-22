@@ -126,8 +126,6 @@ class Settings(BaseSettings):
     adsbx_monthly_requests: int = 9000
     #: Where the month's ADS-B Exchange count is kept across restarts.
     adsbx_usage_file: Path = DATA_DIR / "raw" / "adsbx_usage.json"
-    #: Whether adsb.fi's open data is asked for watched airplanes (0 in production until adsb.fi agrees).
-    adsbfi_open_data: bool = True
     #: Whether the FAA's radar from SWIM is shown only while a current LADD
     #: list is kept (wingtip.traffic.ladd); 0 only where nothing is public.
     ladd_required: bool = True
@@ -157,10 +155,6 @@ class Settings(BaseSettings):
     chart_landmarks_dir: Path | None = None
     #: Whether the planner starts the charts job when a cycle or its overlay tiles are due (0 in production, which schedules it).
     charts_auto_refresh: bool = True
-    #: Whether the crash-leads job (services/jobs/crash, `python -m crash every`)
-    #: runs, and how often, minutes: the Studio's crash drafts.
-    crash_leads_auto: bool = True
-    crash_leads_every_min: int = 30
     #: Whether the planner fetches a new edition of the FAA's NASR files and
     #: obstacle file on its own (0 on a test stack): on in production, whatever the charts do.
     faa_data_auto_refresh: bool = True
@@ -219,13 +213,11 @@ class Settings(BaseSettings):
 
     read_switches = field_validator(
         "charts_fetch_for_tiles",
-        "adsbfi_open_data",
         "ladd_required",
         "registry_refresh",
         "cycle_pack",
         "landmarks_build",
         "charts_auto_refresh",
-        "crash_leads_auto",
         "faa_data_auto_refresh",
         "chart_reads_in_process",
         "charts_cycle_auto",

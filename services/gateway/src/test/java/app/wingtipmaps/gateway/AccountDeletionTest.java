@@ -92,8 +92,6 @@ class AccountDeletionTest extends AccountTestBase {
                 .andExpect(jsonPath("$.checkpointNotes[0].description").value("Water tower"))
                 .andExpect(jsonPath("$.reminders.on").value(false))
                 .andExpect(jsonPath("$.records.remindersSent[0].what").value("medical"))
-                .andExpect(jsonPath("$.records.subscription.updatedAt").exists())
-                .andExpect(jsonPath("$.records.featureUses[0].feature").value("NARRATIVE"))
                 .andExpect(jsonPath("$.connectedApps.length()").value(2))
                 .andExpect(jsonPath("$.connectedApps[0].app").value("Claude"))
                 .andExpect(jsonPath("$.connectedApps[0].scopes").value("wingtip:read"));

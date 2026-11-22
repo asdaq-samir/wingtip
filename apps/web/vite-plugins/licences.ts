@@ -19,8 +19,8 @@ import type { Plugin } from "vite";
  *  package's licence, so "(MIT OR CC0-1.0)" passes on its MIT and "BSD"
  *  takes in every BSD. CC-BY-4.0 is caniuse-lite's data; OFL-1.1 the fonts
  *  (@fontsource), whose licence these notices carry with them; MPL-2.0
- *  mediabunny's and weatherlayers-gl's (by its choice of MPL-2.0 or its
- *  own terms), used unmodified, its source at its package. */
+ *  weatherlayers-gl's (by its choice of MPL-2.0 or its own terms), used
+ *  unmodified, its source at its package. */
 export const ALLOWED_LICENCES = [
   "MIT",
   "ISC",
@@ -35,12 +35,6 @@ export const ALLOWED_LICENCES = [
   "OFL-1.1",
   "MPL-2.0",
 ];
-
-/** Production packages that never reach the page: sharp, its native
- *  libvips builds (LGPL-3.0) and ONNX Runtime's Node build, which
- *  @huggingface/transformers names for Node alone; in the browser it uses
- *  onnxruntime-web and the canvas. */
-export const NOT_SHIPPED = ["@img/sharp-", "sharp", "onnxruntime-node"];
 
 /** The notices as one plain text: each package with its licence, its
  *  licence file's words and its NOTICE file's (Apache-2.0 4(d)), then the
@@ -64,7 +58,6 @@ function collect(start: string): Promise<ModuleInfos> {
         start,
         production: true,
         excludePrivatePackages: true,
-        excludePackagesStartingWith: NOT_SHIPPED.join(";"),
         onlyAllow: ALLOWED_LICENCES.join(";"),
         color: false,
       },

@@ -88,7 +88,7 @@ BUILD = web("../../scripts/ci/web_suite.sh build")
 BUILD_NOTE = "It writes apps/web/dist, which the live tree serves: run it in a worktree."
 GENERATED_NOTE = "All four generators; with `$(git merge-base origin/main HEAD)` after it, only those the branch touched."
 # The folders guards.sh's ruff_check names, from services/: the root's .ruff.toml is every file's.
-RUFF = "planner/{app,tests,wingtip,tests_wingtip} ingest/{ingest,tests} weather/{app,tests} jobs/{charts,crash} ../tools/xplane-driver"
+RUFF = "planner/{app,tests,wingtip,tests_wingtip} ingest/{ingest,tests} weather/{app,tests} jobs/charts"
 # check.sh's `java`: Testcontainers reaches Docker through the socket.
 MVN = (
     'docker run --rm -v "$PWD:/repo" -v /repo/services/gateway/target -v fp-m2:/root/.m2 '
@@ -130,15 +130,12 @@ TABLE = [
     suite("jobs", "services/jobs", "jobs-requirements-dev-jobs", "jobs", "charts/tests"),
     suite("ingest", "services/ingest", "ingest-requirements-dev", "ingest"),
     suite("weather", "services/weather", "weather-requirements-dev", "weather"),
-    # The X-Plane driver's tests run in wingtip's image (check.sh's `xplane`).
-    suite("xplane", "tools/xplane-driver", "requirements-dev-wingtip", "xplane"),
     Row("test-engine", "wasm|WebAssembly", "scripts/build/build-engine-wasm.sh && git diff --exit-code --stat apps/web/src/lib/engine"),
     Row("test-engine", "--test contract", f"{CARGO} -p wingtip-engine --test contract"),
     Row("test-engine", "", f"{CARGO} -p {{}}", hint="<crate>", area="engine"),
     Row("test-gateway", "The Java's layout", "scripts/dev/format.sh --check java"),
     # The job titles each failing test `Class.method`; Surefire takes classes with commas.
     Row("test-gateway", "", MVN, r"^(\w+)[.$]\w", "<Class>", "java", sep=","),
-    Row("test-sim", "", "scripts/ci/sim_suite.sh"),
     Row("Engine wheel", "", "", area="py", note="check.sh builds the engine's wheel first, for any Python area."),
     # oasdiff's annotations are at the document, as its container saw it.
     Row("API compatibility", "", OASDIFF, r"/head/(services/\w+/openapi\.json)", "<services/.../openapi.json>", sep="\n"),

@@ -4,9 +4,9 @@
 - The FAA's SWIM feeds (ingest.swim): STDDS's terminal radar into the live
   store (wingtip.traffic.store), FNS's NOTAMs into wingtip.notams' store,
   TFMS's flight plans into wingtip.filed_routes'.
-- The followed airplanes asked of adsb.fi each half minute
+- The followed airplanes asked of adsb.lol each half minute
   (wingtip.traffic.follow_job, a job every FOLLOW_EVERY_S), their tracks recorded in the live store.
-- The Studio's history (ingest.history): each hour the day's NOTAMs and
+- The history (ingest.history): each hour the day's NOTAMs and
   TFRs archived, and each month the NTSB's database read.
 
 The planner's own traffic, the map's region asked of adsb.lol and an open
@@ -25,7 +25,6 @@ import threading
 import time
 
 from wingtip import schedule, traffic, tracing
-from wingtip.config import get_settings as wingtip_settings
 from wingtip.traffic import store
 
 from . import history, swim
@@ -50,8 +49,7 @@ def run(stop: threading.Event) -> None:
     on = schedule.scheduler()
     feeds = swim.start(stop, on)
     log.info("SWIM feeds: %s", ", ".join(feeds) or "none set up")
-    if wingtip_settings().adsbfi_open_data:
-        schedule.every(on, traffic.FOLLOW_EVERY_S, traffic.follow_job, name="adsb-follow")
+    schedule.every(on, traffic.FOLLOW_EVERY_S, traffic.follow_job, name="adsb-follow")
     if get_settings().history:
         history.jobs(on)
     # A beat that fails is logged by the scheduler; the health check sees the long gap.
@@ -64,7 +62,7 @@ def run(stop: threading.Event) -> None:
 def main() -> None:
     logging.basicConfig(level=get_settings().log_level, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     # Traces with TRACING=1 (docs/LOCAL-DEV.md, "Tracing"): each round of
-    # following a trace, its adsb.fi asks under it; nothing otherwise.
+    # following a trace, its adsb.lol asks under it; nothing otherwise.
     tracing.start("ingest")
     stop = threading.Event()
     for sig in (signal.SIGTERM, signal.SIGINT):

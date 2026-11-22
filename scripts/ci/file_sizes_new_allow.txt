@@ -16,4 +16,3 @@ engine/crates/weather/src/notam_read/mod.rs 347
 engine/crates/weather/src/notam_subject/mod.rs 346
 services/gateway/src/test/java/app/wingtipmaps/gateway/AccountTestBase.java 322
 services/weather/app/flow_grid.py 376
-tools/xplane-driver/wingtip_replay/player.py 305

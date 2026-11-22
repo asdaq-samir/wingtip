@@ -87,7 +87,6 @@ PLACES = [
     ),
     # The Maven CI and anyone without Docker run, through the wrapper.
     (["services/gateway/.mvn/wrapper/maven-wrapper.properties"], r"apache-maven/([^/]+)/", "maven", "exact", None),
-    (["tools/msfs-agent/global.json"], r'"version": "([^"]+)"', "dotnet", "exact", None),
     ([".devcontainer/devcontainer.json"], r'features/node:1": \{ "version": "([^"]+)"', "nodejs", "exact", None),
     ([".devcontainer/devcontainer.json"], r'features/python:1": \{ "version": "([^"]+)"', "python", "exact", None),
     ([".devcontainer/devcontainer.json"], r'features/rust:1": \{ "version": "([^"]+)"', "rust", "exact", None),

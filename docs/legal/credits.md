@@ -32,7 +32,6 @@ the terms it is used under.
 | Time zones: timezone-boundary-builder, from OpenStreetMap contributors | ODbL 1.0 | ODbL 4.3; a field's local time (tzfpy carries this data) |
 | adsb.lol ADS-B traffic | ODbL 1.0 | ODbL 4.3 asks for this credit; asked with the deployment's key (`ADSBLOL_API_KEY`) within its day's quota, and not again until a 429's Retry-After has passed |
 | ADS-B Exchange traffic | ADS-B Exchange's API terms | Credited as its terms ask; its RapidAPI plan is for personal use, so production leaves it off (no `ADSBX_RAPIDAPI_KEY`) until an enterprise agreement with JETNET allows the app's pilots to see it |
-| adsb.fi ADS-B traffic | Personal, non-commercial use, credited and linked | adsb.fi's terms; production leaves it off (`ADSBFI_OPEN_DATA=0`) until adsb.fi agrees |
 | Virtual Radar Server flight routes | CC0 | None owed; credited by choice |
 | Planespotters.net aircraft photos, each credited to its photographer beside it | Planespotters.net's photo API terms | Its terms ask for the photographer's name next to each photo and a link to the photo's page |
 | Wikimedia Commons photos of fields, each credited to its photographer with its licence and linked to its page | Each photo's own licence | Commons' licences (CC BY, CC BY-SA) ask for the author, the licence and where it is from |

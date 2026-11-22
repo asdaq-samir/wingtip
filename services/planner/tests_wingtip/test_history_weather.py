@@ -1,4 +1,4 @@
-"""The Studio's weather as it was (wingtip.history.iem, weather_then): IEM's
+"""The weather as it was (wingtip.history.iem, weather_then): IEM's
 METAR CSV and TAF bulletins read as sent, a past day asked once and kept,
 today's and a refusal not kept, the stations near a track, the TAFs in
 force over a span and the radar's frames. IEM's answers are recorded

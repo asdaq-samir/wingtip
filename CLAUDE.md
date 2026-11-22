@@ -218,8 +218,6 @@ without it).
 | `ios` (`apps/ios/`) | `xcodegen`, then `scripts/dev/xcodebuild.sh test` (xcodebuild with the shared caches) on the newest iPhone simulator (docs/NATIVE.md) | the build and unit tests on the iPhone / and `CardSmokeTests` / the full suites on the iPhone, iPad and iPhone Duo |
 | `android` (`apps/android/`) | `engine/bindings/ffi/build-android.sh`, then `./gradlew testDebugUnitTest lintDebug assembleDebug` (docs/NATIVE-ANDROID.md) | unit tests and lint / plus the instrumented tests on an emulator |
 | `site` (`apps/site/`) | `python3 apps/site/build.py && python3 apps/site/check.py` | all |
-| `sim` (`tools/msfs-agent/`, `infra/sim-trial/`) | the agent's `dotnet build`, `dotnet format --verify-no-changes` and `dotnet test` (Docker), `cfn-lint` on the template, `shellcheck` on its scripts | all: `test-sim` (`scripts/ci/sim_suite.sh`) where its files change |
-| `xplane` (`tools/xplane-driver/`) | `ruff check . && pytest tests`, in the planner's wingtip image | all: `ruff` in `guards`, its tests `test-python`'s `xplane` leg where its files change |
 | `arch` (any source file) | `scripts/ci/file_sizes.py --base origin/main` (no new file over 300 lines, no grown one over 400), `scripts/build/toolchain.sh --check`, `scripts/ci/brand_guard.py` (no raw style value outside `design/tokens.json`), `scripts/ci/dead_python.sh`; CI adds `scripts/ci/rules_boundary.py` (no aviation figure outside the engine), `semgrep_check.py` (one home per constant or helper), `jscpd_check.py` (no new copy-paste), `simplicity_ratchet.py` (no count above its baseline), and on a phone change `phone_lint.sh` (SwiftLint, detekt) | all |
 
 - **Python outside check.sh** wants `pip install -r requirements-dev.txt`
@@ -229,7 +227,7 @@ without it).
 - **Formatting:** `scripts/dev/format.sh`, one pinned formatter a language;
   `--check` to check.
 - **Edit-time hook** (`.claude/settings.json`, `scripts/dev/simplicity_hook.py`):
-  after each Edit or Write in apps/, services/, engine/ or tools/, the
+  after each Edit or Write in apps/, services/ or engine/, the
   simplicity rules on that file, a second or two; a break comes back to
   be fixed at once.
 - **Pre-push hook** (`scripts/dev/install-hooks.sh` once per clone): `tsc`,

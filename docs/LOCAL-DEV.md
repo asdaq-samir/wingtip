@@ -258,7 +258,7 @@ network:
 | gateway | each request (Micrometer Tracing), tagged `wingtip.request_id`; the `traceparent` and `X-Request-Id` on every call to the planner | `management.tracing` in application.yml, `gateway/tracing/` |
 | planner | each request (FastAPI) under the gateway's; each rule asked of the engine, `engine <rule>` with `wingtip.engine.rule` and no payload; each weather product read, `weather_store.read`; each source asked with requests; threads and pools kept in the trace | `app/tracing.py` over `wingtip/tracing.py` |
 | weather | each product's fetch, `fetch <product>`, a trace of its own, the sources under it | `wingtip/tracing.py` |
-| ingest | each round of following airplanes, `follow round`, with its adsb.fi asks | `wingtip/tracing.py` |
+| ingest | each round of following airplanes, `follow round`, with its adsb.lol asks | `wingtip/tracing.py` |
 
 Each call the web app makes carries an `X-Request-Id` (`lib/api/requestId.ts`);
 the gateway answers with it and writes it on the request's log lines. In

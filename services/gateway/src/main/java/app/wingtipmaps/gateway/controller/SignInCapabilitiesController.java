@@ -1,6 +1,5 @@
 package app.wingtipmaps.gateway.controller;
 
-import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.security.SignInOptions;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -44,28 +43,17 @@ public class SignInCapabilitiesController {
                     description = "The OIDC providers with real credentials, by registration id: the sign-in "
                             + "buttons to offer. Empty where only the emailed link signs in (the local stack).",
                     example = "[\"google\", \"apple\"]")
-            List<String> providers,
-
-            @Schema(
-                    description = "Whether this deployment sells the subscription; where not, the page says "
-                            + "nothing of one.",
-                    example = "false")
-            boolean subscriptions) {}
+            List<String> providers) {}
 
     private final SignInOptions signIn;
-    private final boolean sold;
 
-    /** Whether the subscription is sold, read as SubscriptionService reads
-     *  it, not through it: this answers before anyone signs in, from
-     *  settings alone. */
-    public SignInCapabilitiesController(SignInOptions signIn, AppProperties app) {
+    public SignInCapabilitiesController(SignInOptions signIn) {
         this.signIn = signIn;
-        this.sold = app.subscription().enabled();
     }
 
     @Operation(summary = "Whether anyone can sign in here")
     @GetMapping
     public Capabilities capabilities() {
-        return new Capabilities(signIn.access(), signIn.providers(), sold);
+        return new Capabilities(signIn.access(), signIn.providers());
     }
 }

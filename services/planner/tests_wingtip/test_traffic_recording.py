@@ -1,5 +1,5 @@
-"""wingtip.traffic: the airplanes a pilot follows -- recorded from adsb.fi
-and ADS-B Exchange where adsb.lol does not hear them, kept across a restart,
+"""wingtip.traffic: the airplanes a pilot follows -- recorded from adsb.lol
+in the background and from ADS-B Exchange where adsb.lol does not hear them, kept across a restart,
 and the FAA radar's -- and the pressure altitudes set on the nearest
 altimeter."""
 
@@ -8,10 +8,9 @@ from unittest.mock import Mock, patch
 import pytest
 
 from wingtip import airports, traffic, weather
-from wingtip.traffic import adsb_lol, adsbfi, common, flights, recorded, store, watched
-from wingtip.config import get_settings
+from wingtip.traffic import adsb_lol, common, flights, recorded, store, watched
 
-from .traffic_world import CESSNA, _answer, stand_in
+from .traffic_world import CESSNA, stand_in
 from .traffic_world import adsbx_fixture, clock_fixture  # noqa: F401 -- the fixtures, by the names the runner gives them
 
 
@@ -55,80 +54,46 @@ def test_an_airplane_whose_card_is_open_and_adsb_lol_does_not_hear_is_recorded_f
     assert state["airborne"] and state["aircraft"]["lat"] == 42.4
 
 
-def test_a_watched_airplane_adsb_lol_does_not_hear_is_asked_of_adsb_fi_before_ads_b_exchange(clock, monkeypatch):
-    """adsb.fi's feeders hear N3429J, and it costs nothing: asked before
-    ADS-B Exchange's paid month, no more than once a second, credited on
-    the map; turned away, left alone for ADSBFI_BACKOFF_S."""
-    monkeypatch.setenv("ADSBFI_OPEN_DATA", "1")
-    get_settings.cache_clear()
-    stand_in(monkeypatch, "_wall", lambda: 1791800000.0)
-    stand_in(monkeypatch, "_TRACES", {})
-    stand_in(monkeypatch, "_paced", lambda url: {"ac": []})
-    stand_in(monkeypatch, "_recent_trace", lambda hex_id: None)
-    paid = []
-    stand_in(monkeypatch, "_adsbx", lambda path, search=False: paid.append(path) or [])
-    urls = []
-
-    def get(url, **kwargs):
-        urls.append(url)
-        resp = _answer([CESSNA])
-        resp.status_code = 200
-        return resp
-
-    with patch("requests.get", side_effect=get):
-        watched._watch("a128b9")
-    assert urls == ["https://opendata.adsb.fi/api/v2/hex/a128b9"] and paid == []
-    assert recorded._recorded("a128b9")[-1]["lat"] == pytest.approx(42.30128, abs=1e-4)
-    with common._LOCK:
-        watched._WATCHED["a128b9"] = clock.now
-    stand_in(monkeypatch, "_region_answer", lambda region: (clock.now, []))
-    assert traffic.near(42.35, -88.15, 30)["source"] == "adsb.lol and adsb.fi"
-    # A second within the second is not asked; turned away, not for ten minutes.
-    assert adsbfi._adsbfi("a128b9") == [] and len(urls) == 1
-    clock.now += 2
-    with patch("requests.get", return_value=Mock(status_code=429)):
-        assert adsbfi._adsbfi("a128b9") == []
-    clock.now += 60
-    with patch("requests.get", side_effect=get):
-        assert adsbfi._adsbfi("a128b9") == [] and len(urls) == 1
-    # And off where the stack says so (production, until adsb.fi agrees).
-    clock.now += traffic.ADSBFI_BACKOFF_S
-    monkeypatch.setenv("ADSBFI_OPEN_DATA", "0")
-    get_settings.cache_clear()
-    with patch("requests.get", side_effect=get):
-        assert adsbfi._adsbfi("a128b9") == [] and len(urls) == 1
-
-
-def test_a_followed_airplane_is_asked_of_adsb_fi_in_the_background_and_stays_followed_across_a_restart(clock, monkeypatch, tmp_path):
+def test_a_followed_airplane_is_asked_of_adsb_lol_in_the_background_and_stays_followed_across_a_restart(clock, monkeypatch, tmp_path):
     """The owner's N3429J (2026-10-19): FlightAware listed its day's two
     flights, the planner nothing -- recorded only while its card was open,
-    and its following lost to a restart. Followed, it is asked of adsb.fi
-    each round (ingest's), card open or not, and stays followed in the store."""
-    monkeypatch.setenv("ADSBFI_OPEN_DATA", "1")
-    get_settings.cache_clear()
+    and its following lost to a restart. Followed, it is asked of adsb.lol
+    each round (ingest's), card open or not -- its recent trace first, its
+    API by the address where the globe turns the planner away -- and stays
+    followed in the store."""
     stand_in(monkeypatch, "_wall", lambda: 1791800000.0)
     traffic.follow("a128b9")
     # A restart: the store opened again, the airplane still followed.
     store.reset()
     assert traffic.followed() == {"a128b9"}
-    urls = []
-
-    def get(url, **kwargs):
-        urls.append(url)
-        resp = _answer([CESSNA])
-        resp.status_code = 200
-        return resp
-
-    with patch("requests.get", side_effect=get):
-        assert traffic.follow_round() == 1
-    assert urls == ["https://opendata.adsb.fi/api/v2/hex/a128b9"]
+    stand_in(monkeypatch, "_recent_trace", lambda hex_id: adsb_lol.UNREAD)
+    asked = []
+    stand_in(monkeypatch, "_paced", lambda url: asked.append(url) or {"ac": [CESSNA]})
+    assert traffic.follow_round() == 1
+    assert asked == ["https://api.adsb.lol/v2/hex/a128b9"]
     assert recorded._recorded("a128b9")[-1]["lat"] == pytest.approx(42.30128, abs=1e-4)
     # One the FAA's radar has just now is not asked for.
     traffic.heard_elsewhere(common._aircraft(CESSNA), 1791800000.0)
     clock.now += 30
-    with patch("requests.get", side_effect=get):
-        assert traffic.follow_round() == 0
-    assert len(urls) == 1
+    assert traffic.follow_round() == 0
+    assert len(asked) == 1
+
+
+def test_a_follow_round_ends_where_adsb_lol_turns_the_planner_away(clock, monkeypatch):
+    stand_in(monkeypatch, "_wall", lambda: 1791800000.0)
+    traffic.follow("a128b9")
+    traffic.follow("a3c858")
+    stand_in(monkeypatch, "_recent_trace", lambda hex_id: adsb_lol.UNREAD)
+    asked = []
+
+    def refused(url):
+        asked.append(url)
+        raise common.TrafficUnavailable("adsb.lol did not answer")
+
+    stand_in(monkeypatch, "_paced", refused)
+    assert traffic.follow_round() == 0
+    # The first refusal ends the round: the second airplane waits for the next.
+    assert len(asked) == 1
 
 
 def test_a_recorded_airplane_unheard_for_two_minutes_low_over_a_field_has_landed(clock, monkeypatch):

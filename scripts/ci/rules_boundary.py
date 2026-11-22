@@ -36,9 +36,9 @@ ALLOW = ROOT / "scripts/ci/rules_boundary_allow.txt"
 # the rule could hide in (generated types, tests, fixtures).
 # The planner's wingtip/ too: its 91.169 window was a figure the engine
 # also judged by (the simplicity measure of 2026-11-10).
-# Every service and tool since 2026-11-12: the crash pipeline's and Model
-# Weather's figures went unchecked in weather/, jobs/ and ingest/ (the
-# simplicity audit of that day, finding 7).
+# Every service since 2026-11-12: a job's and Model Weather's figures went
+# unchecked in weather/, jobs/ and ingest/ (the simplicity audit of that
+# day, finding 7).
 AREAS = [
     "apps/web/src",
     "apps/ios/Wingtip",
@@ -51,7 +51,6 @@ AREAS = [
     "services/weather/app",
     "services/ingest/ingest",
     "services/jobs",
-    "tools",
 ]
 SUFFIXES = {".ts", ".tsx", ".js", ".mjs", ".swift", ".kt", ".java", ".py", ".cs"}
 SKIP = re.compile(

@@ -1,5 +1,5 @@
-"""The NTSB's record of an airplane's accident or incident, for the
-Studio's replay (app.routers.studio_history): read from the NTSB's
+"""The NTSB's record of an airplane's accident or incident, for its
+card (wingtip.aircraft_details): read from the NTSB's
 aviation database (avall.mdb, data.ntsb.gov/avdata, every case since
 2008, remade each month) into ``ntsb.sqlite`` beside the live store, the
 weekly deltas after it written over it case by case (apply), by ingest

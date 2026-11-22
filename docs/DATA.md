@@ -26,7 +26,7 @@ The tables, by what they hold:
 
 | For | Tables |
 |---|---|
-| The pilot and sign-in | `pilots`, `magic_links`, `SPRING_SESSION`, `SPRING_SESSION_ATTRIBUTES`, `subscriptions`, `paid_feature_uses` |
+| The pilot and sign-in | `pilots`, `magic_links`, `SPRING_SESSION`, `SPRING_SESSION_ATTRIBUTES` |
 | Airplanes | `aircraft`, `aircraft_due_items`, `aircraft_squawks` |
 | Flights | `flights`, `flight_checkpoints`, `flight_tracks`, `flight_watch`, `reminders_sent` |
 | Logbook and training | `logbook_entries`, `pilot_endorsements`, `signed_endorsements`, `instructor_students`, `cross_country_reviews`, `approach_lessons` |

@@ -51,8 +51,7 @@ import org.springframework.web.bind.annotation.RestController;
  * answers it, since it is read through those endpoints, so the file and
  * the app can never disagree on a field -- and what no screen reads back
  * whole: the checkpoint notes they wrote (kept by the planner), the
- * reminders setting and the reminders already sent, the subscription and
- * the paid features' monthly counts, and the AI apps they connected
+ * reminders setting and the reminders already sent, and the AI apps they connected
  * (never a token). The right to a copy of one's data (GDPR article 20,
  * CCPA 1798.100) is the reason, and the privacy policy promises
  * "everything we keep for your account" (docs/legal/privacy.md); the
@@ -141,8 +140,8 @@ public class ExportController {
             summary = "Everything kept for the signed-in pilot, as one JSON file",
             description = "The account, airplanes and squawks, flights with nav logs, tracks, share links and "
                     + "watches, logbook, currency, training and instructing, each as its own endpoint answers it; "
-                    + "the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders, subscription, "
-                    + "paid-feature counts and connected AI apps (never a token); sent as a download.")
+                    + "the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders "
+                    + "and connected AI apps (never a token); sent as a download.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "The file"),
         @ApiResponse(responseCode = "401", description = "No session")

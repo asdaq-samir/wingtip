@@ -25,11 +25,11 @@ import { useCloseImagery } from "../useCloseImagery";
  * moves, with no style made again. Close in,
  * past the base chart's own last zoom, the chart fades into the aerial
  * imagery under it (closeZoom, useCloseImagery: the USGS's, or Google's
- * at the pilot's pick, never for export, `publicOnly`), and the map goes
+ * at the pilot's pick), and the map goes
  * in to CLOSE_MAX_ZOOM; where there is none, to two levels past the chart.
  * With the chart None, nothing of it is drawn.
  */
-export function ChartGl({ course, publicOnly = false }: { course: Course | null; publicOnly?: boolean }) {
+export function ChartGl({ course }: { course: Course | null }) {
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
   const chart = course ?? chartOnly ?? null;
   const base = usePreferences((s) => s.base);
@@ -54,7 +54,7 @@ export function ChartGl({ course, publicOnly = false }: { course: Course | null;
     [spec],
   );
   const tileMax = spec?.sources.chart?.maxzoom ?? null;
-  const imagery = useCloseImagery(tileMax, publicOnly);
+  const imagery = useCloseImagery(tileMax);
   // Which charts are drawn and how, on the map's element, for the browser
   // tests: each part's kind (its tiles' path) and the paint's look.
   const { map } = useGlMap();

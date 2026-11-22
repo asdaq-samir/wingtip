@@ -8,11 +8,10 @@ import type {
   PilotContactRequest,
   SignInCapabilities,
   SpeedDay,
-  Subscription,
 } from "./types";
 
 /** The gateway's calls for who the pilot is (./client's `api`): signing in and
- *  out, the account, the subscription, Flight Service and the speed page. */
+ *  out, the account, Flight Service and the speed page. */
 export const gatewayPilot = {
   /**
    * The signed-in pilot, or null when signed out -- a Spring Boot
@@ -106,13 +105,6 @@ export const gatewayPilot = {
     const landing = new URL(res.url);
     return landing.pathname + landing.search;
   },
-  /** The signed-in pilot's subscription to the paid features, and the
-   *  free month started: once an account, a 409 after. */
-  subscription: {
-    get: () => gateway.GET("/api/subscription").then(data<Subscription>),
-    startTrial: () => gateway.POST("/api/subscription/trial").then(data<Subscription>),
-  },
-
   /** Flight Service's filing through the app (FlightServiceController):
    *  whether it is connected, and a flight plan filed in the pilot's name. */
   flightService: {

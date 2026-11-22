@@ -1,6 +1,6 @@
 """The live feeds' store, shared by two processes (issue #535's first
 split). ingest (services/ingest) reads the FAA's terminal radar through
-SWIM and asks adsb.fi for the followed airplanes, and writes what it
+SWIM and asks adsb.lol for the followed airplanes, and writes what it
 hears here; the planner reads it for the map, a card and an alert, and
 writes where the map looks and which airplanes are followed, which
 ingest reads back to know what of the country's radar to keep.
@@ -182,7 +182,7 @@ def record(hex_id: str, point: dict, oldest: float) -> bool:
     """A point added to an airplane's track where it is later than the
     track's last, and the track's points before `oldest` dropped. Both
     processes record (the planner an open card's airplane, ingest the
-    radar's and adsb.fi's), so a point a row: neither writes over the
+    radar's and adsb.lol's), so a point a row: neither writes over the
     other's."""
     with _LOCK:
         db = _connection()

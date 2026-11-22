@@ -42,7 +42,7 @@ The long-running ones restart with Docker (`restart: unless-stopped`).
 |---|---|---|
 | `gateway` | Spring Boot: accounts, sign-in, records, the public API, mail; serves the web app and proxies `/api/planner/*` to the planner | 8080, 8443 (HTTPS) |
 | `planner` | FastAPI: the course, checkpoints, nav log, briefing, chart and overlay tiles, traffic, the live SWIM answers and feed health; the engine inside it | 8084 |
-| `ingest` | The live feeds, read always: FAA SWIM (STDDS, FNS, TFMS, ITWS, SFDPS) and the followed airplanes' adsb.fi rounds, written into the live store | none |
+| `ingest` | The live feeds, read always: FAA SWIM (STDDS, FNS, TFMS, ITWS, SFDPS) and the followed airplanes' adsb.lol rounds, written into the live store | none |
 | `weather` | Fetches the weather on a schedule (METAR, TAF, PIREP, SIGMET, G-AIRMET, GFS winds aloft, GLMP, TFRs, the radar's time) into the weather store | none |
 | `db` | PostgreSQL 18 (`postgres:18-trixie`): the gateway's records | not published |
 | `mailpit` | The local inbox the sign-in mail goes to (Amazon SES on AWS) | 8025 |
@@ -69,7 +69,7 @@ app (web, iOS, Android)   draws; asks the engine (WebAssembly, UniFFI) what it d
 ```
 
 The browser never reaches the planner directly: the gateway checks the
-session (and, for the debrief, the subscription), then forwards. Which
+session, then forwards. Which
 planner routes a browser may reach, and what each needs, the gateway
 learns from the planner's own OpenAPI document (`x-gateway`).
 
@@ -133,8 +133,7 @@ Each service fetches its own; the engine never fetches.
 | aviationweather.gov | METAR, TAF, PIREP, SIGMET, G-AIRMET | weather |
 | NOAA NOMADS | GFS winds and temperatures aloft, GLMP | weather |
 | tfr.faa.gov | TFRs | weather |
-| adsb.lol, ADS-B Exchange | The map's traffic, by region | planner |
-| adsb.fi | The followed airplanes | ingest |
+| adsb.lol, ADS-B Exchange | The map's traffic, by region; the followed airplanes (adsb.lol) | planner; ingest |
 
 ## Tech stack
 

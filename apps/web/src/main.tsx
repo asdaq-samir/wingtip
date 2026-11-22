@@ -123,7 +123,7 @@ startFresh();
 // Each page in its own boundary (components/PageError): a part that could
 // not be drawn, most often a chunk the phone could not fetch, says which it
 // was in the map's place.
-const page = (mode: "pilot" | "dev" | "studio") => (
+const page = (mode: "pilot" | "dev") => (
   <PageErrorBoundary>
     <MapPage mode={mode} />
   </PageErrorBoundary>
@@ -143,8 +143,6 @@ const routes = (
         CPU, cold). The training workspace inside it stays its own chunk. */}
       <Route path="plan" element={page("pilot")} />
       <Route path="dev" element={page("dev")} />
-      {/* The Studio (features/studio): replays of real flights, the developer's for now. */}
-      <Route path="studio" element={page("studio")} />
       {/* The old labeling address, kept working with its route: its query
         string carried to /dev (the address as the browser has it as the
         route is drawn). */}

@@ -1,5 +1,5 @@
 {
-  "source": "engine/crates/procedures/src/occurrence.rs: the Studio's crash drafts' identity check (docs/STUDIO-PIPELINE.md). A report at Mayfield, KY (the Census gazetteer's point), 2026-11-08 around 14:25 CST, 20:25Z; every N-number and address here is made up.",
+  "source": "engine/crates/procedures/src/occurrence.rs: the crash drafts' identity check (wingtip-studio's docs/STUDIO-PIPELINE.md). A report at Mayfield, KY (the Census gazetteer's point), 2026-11-08 around 14:25 CST, 20:25Z; every N-number and address here is made up.",
   "cases": [
     {
       "name": "all three agree: the registry's code, the track's address, a report 1 nm from the town 24 minutes before the time given",

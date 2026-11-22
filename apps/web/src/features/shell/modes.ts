@@ -1,18 +1,14 @@
 import { lazy } from "react";
 import { PlanWorkspace } from "../fpl";
 import { loadTrainWorkspace } from "../chart-labels";
-import { loadStudioWorkspace } from "../studio";
 
 /** The training workspace on its own chunk. It carries the developer's console -- charts, tables, the model
  *  registry -- and a pilot loading the planner has no use for any of it; eagerly imported here it was about half
  *  of the page's JavaScript, parsed on every visit. React's own `lazy`, resolved while MapPage's `Suspense`
  *  shows the empty shell. */
 const TrainWorkspace = lazy(loadTrainWorkspace);
-/** The Studio's, the same way: the replay's parts and its panel load only
- *  on its page. */
-const StudioWorkspace = lazy(loadStudioWorkspace);
 
-export type Mode = "pilot" | "dev" | "studio";
+export type Mode = "pilot" | "dev";
 
 /** What differs between the pages: the words, the workspace, and the
  *  route to start on when the address names none (the planner asks the
@@ -32,5 +28,4 @@ export const MODES = {
     Workspace: TrainWorkspace,
     route: ["C81", "KDLH"] as const,
   },
-  studio: { title: "Studio — Wingtip Maps", panel: "Studio", console: "Studio", Workspace: StudioWorkspace, route: ["", ""] as const },
 };

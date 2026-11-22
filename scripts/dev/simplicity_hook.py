@@ -5,7 +5,7 @@ meets them while writing rather than at the push (CLAUDE.md, "Simplicity
 rules"; the owner, 2026-11-12: "how do you make them hard rules so agents
 know to follow them").
 
-For a file under apps/, services/, engine/ or tools/ it runs, at once and
+For a file under apps/, services/ or engine/ it runs, at once and
 on that file only, the checks that take a second or two: the one-home rules
 (scripts/ci/semgrep_check.py), no aviation rule outside the engine
 (scripts/ci/rules_boundary.py), the file-size budget (scripts/ci/file_sizes.py),
@@ -29,7 +29,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-AREAS = ("apps/", "services/", "engine/", "tools/")
+AREAS = ("apps/", "services/", "engine/")
 TIMEOUT = 8  # seconds a check may take before it is let go
 
 

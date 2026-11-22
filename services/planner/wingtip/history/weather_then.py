@@ -1,5 +1,4 @@
-"""The weather as it was along a replayed flight, for the Studio
-(app.routers.studio_history): the METARs of the stations near its track,
+"""The weather as it was along a replayed flight: the METARs of the stations near its track,
 the TAFs in force over it, and the NEXRAD composite's frames for its
 span. The reports are IEM's archive's (wingtip.history.iem), kept once
 read; the radar is IEM's tile cache of the composite at each five-minute

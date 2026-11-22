@@ -1,5 +1,5 @@
 """Past METARs and TAFs from the Iowa Environmental Mesonet (Iowa State
-University), kept once read, for the Studio's weather as it was
+University), kept once read, for the weather as it was
 (wingtip.history.weather_then).
 
 IEM archives every station's METARs and the NWS's TAF bulletins, and

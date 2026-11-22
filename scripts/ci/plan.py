@@ -24,7 +24,7 @@ def due(name: str) -> bool:
 
 images = [{"service": s} for s in IMAGES if due(s)]
 outputs = {"images": json.dumps(images)}
-for name in ("test-web", "test-engine", "test-gateway", "docs", "infra", "api", "arch", "site", "deps", "sim"):
+for name in ("test-web", "test-engine", "test-gateway", "docs", "infra", "api", "arch", "site", "deps"):
     outputs[name] = "true" if due(name) else "false"
 # test-python's legs: the suites whose test-<leg> filter matched. And
 # flight-critical (the owner, 2026-11-09), on every change but words alone
@@ -32,7 +32,7 @@ for name in ("test-web", "test-engine", "test-gateway", "docs", "infra", "api", 
 # planner's own tests when that leg runs, and a leg of its own, `flight`,
 # when it does not. It was a guard, and every guard's leg waited about a
 # minute for the engine's wheel on its account (run 43783303925).
-legs = [s for s in ("planner", "wingtip", "jobs", "ingest", "weather", "xplane") if due(f"test-{s}")]
+legs = [s for s in ("planner", "wingtip", "jobs", "ingest", "weather") if due(f"test-{s}")]
 if os.environ.get("CODE") != "false" and "planner" not in legs:
     legs.append("flight")
 outputs["python"] = json.dumps(legs)

@@ -20,8 +20,8 @@ asked by the planner.
 | TFMS (flight plans, flow) | FAA SWIM | `wingtip.filed_routes`' store (the routes pilots file between two fields), and `wingtip.live_reports`' store: the Command Center's ground stops, ground delay programs and restrictions |
 | ITWS (terminal weather alerts) | FAA SWIM | `wingtip.live_reports`' store (`wingtip.itws`): each airport's microburst, wind shear, gust front, tornado and storm alerts while they last; the maps unread |
 | SFDPS (airspace) | FAA SWIM | `wingtip.live_reports`' store (`wingtip.saa`): each special activity airspace's status, active or cold |
-| The NTSB's aviation database | data.ntsb.gov/avdata: avall.mdb once a month, the weekly deltas over it (`ingest.ntsb`) | `wingtip.history.ntsb`'s store (`ntsb.sqlite`): each case, its kind, highest injury, place and narratives, each airplane's registration, phase and damage, for the Studio and an airplane's card; made again from avall.zip when its shape (`SCHEMA`) changes |
-| The followed airplanes | adsb.fi's open data, every 30 s (`ADSBFI_OPEN_DATA`, off in production until adsb.fi agrees) | the live store: their tracks |
+| The NTSB's aviation database | data.ntsb.gov/avdata: avall.mdb once a month, the weekly deltas over it (`ingest.ntsb`) | `wingtip.history.ntsb`'s store (`ntsb.sqlite`): each case, its kind, highest injury, place and narratives, each airplane's registration, phase and damage, for an airplane's card; made again from avall.zip when its shape (`SCHEMA`) changes |
+| The followed airplanes | adsb.lol (ODbL), every 30 s: its globe's recent trace, else its API by the address (`ADSBLOL_API_KEY`, the planner's quota) | the live store: their tracks |
 
 The map's own traffic -- adsb.lol by region, ADS-B Exchange where it
 refuses, an open card's airplane -- is asked by the planner as a pilot
@@ -64,7 +64,7 @@ Settings (`ingest/settings.py`, pydantic-settings): `SWIM_HOST`,
 `SWIM_HOST_<FEED>`. A feed is read only where all of its are set.
 `BEAT_EVERY_S` (10) and `HEALTHY_WITHIN_S` (60) set the beat. wingtip's
 own settings (`LIVE_STORE`, `NOTAM_STORE`, `FILED_STORE`,
-`ADSBFI_OPEN_DATA`) come from `wingtip.config`, as in the planner.
+`ADSBLOL_API_KEY`) come from `wingtip.config`, as in the planner.
 
 ## Layout and checks
 

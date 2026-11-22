@@ -11,7 +11,7 @@ On, `start` gives the process:
 - a tracer provider that batches its spans to the collector, named by
   OTEL_SERVICE_NAME;
 - a span under the current one for every call made with requests (each
-  source: aviationweather.gov, the FAA, the USGS, adsb.fi), with the
+  source: aviationweather.gov, the FAA, the USGS, adsb.lol), with the
   W3C traceparent on it;
 - the current context carried into threads and ThreadPoolExecutor
   workers, so a plan's legs worked out in a pool stay in its trace;

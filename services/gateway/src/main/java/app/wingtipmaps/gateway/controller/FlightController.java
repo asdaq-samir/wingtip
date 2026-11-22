@@ -1,7 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
 import app.wingtipmaps.gateway.domain.Flight;
-import app.wingtipmaps.gateway.domain.PaidFeature;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.FlightCheckpointDto;
 import app.wingtipmaps.gateway.dto.FlightDto;
@@ -13,11 +12,9 @@ import app.wingtipmaps.gateway.dto.TrackDto;
 import app.wingtipmaps.gateway.dto.UpdateFlightRequest;
 import app.wingtipmaps.gateway.service.FlightService;
 import app.wingtipmaps.gateway.service.FlightShareService;
-import app.wingtipmaps.gateway.service.SubscriptionService;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -36,12 +33,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class FlightController {
 
     private final FlightService flightService;
-    private final SubscriptionService subscriptions;
     private final FlightShareService shares;
 
-    public FlightController(FlightService flightService, SubscriptionService subscriptions, FlightShareService shares) {
+    public FlightController(FlightService flightService, FlightShareService shares) {
         this.flightService = flightService;
-        this.subscriptions = subscriptions;
         this.shares = shares;
     }
 
@@ -90,17 +85,10 @@ public class FlightController {
         return ResponseEntity.of(flightService.track(pilot, id));
     }
 
-    /** A track kept on the account for its debrief, a paid feature: the
-     *  debrief itself is measured on the device, so keeping its track is
-     *  what the server can hold back (SubscriptionService). Reading one
-     *  back, or deleting it, never is: what a pilot saved stays theirs. */
+    /** A track kept on the account for its debrief, which is measured on
+     *  the device: any signed-in pilot's, since nothing is sold. */
     @PutMapping("/{id}/track")
-    public ResponseEntity<Void> saveTrack(
-            Authentication authentication, Pilot pilot, @PathVariable Long id, @Valid @RequestBody TrackDto track) {
-        var refused = subscriptions.refusal(authentication, PaidFeature.DEBRIEF);
-        if (refused.isPresent()) {
-            return ResponseEntity.status(refused.get().status()).build();
-        }
+    public ResponseEntity<Void> saveTrack(Pilot pilot, @PathVariable Long id, @Valid @RequestBody TrackDto track) {
         return PilotResponses.done(flightService.saveTrack(pilot, id, track));
     }
 

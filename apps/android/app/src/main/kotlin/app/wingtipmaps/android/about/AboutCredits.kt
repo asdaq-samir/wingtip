@@ -45,7 +45,6 @@ object AboutCredits {
         Credit("Time zones: timezone-boundary-builder, from OpenStreetMap contributors", "ODbL 1.0"),
         Credit("adsb.lol ADS-B traffic", "ODbL 1.0"),
         Credit("ADS-B Exchange traffic", "ADS-B Exchange's API terms"),
-        Credit("adsb.fi ADS-B traffic", "Personal, non-commercial use, credited and linked"),
         Credit("Virtual Radar Server flight routes", "CC0"),
         Credit("Planespotters.net aircraft photos, each credited to its photographer beside it", "Planespotters.net's photo API terms"),
         // Each photo's author and licence beside it, its credit a link to its page.

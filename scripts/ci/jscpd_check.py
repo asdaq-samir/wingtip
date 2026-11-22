@@ -36,7 +36,7 @@ import changed
 ROOT = changed.ROOT
 CONFIG = ROOT / "scripts/ci/jscpd.json"
 BASELINE = ROOT / "scripts/ci/jscpd_baseline.json"
-AREAS = ["apps", "services", "engine", "tools"]
+AREAS = ["apps", "services", "engine"]
 SUFFIXES = (".ts", ".tsx", ".js", ".mjs", ".py", ".swift", ".kt", ".java", ".rs", ".cs")
 
 

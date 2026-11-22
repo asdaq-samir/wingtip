@@ -43,9 +43,9 @@ type Drape = { renderToTexture?: { rttSize?: number } };
  * The 3D ground made coarser where WebGL has no graphics chip under it,
  * once the map's terrain is set (TerrainGl). Each tile's mesh is MapLibre's
  * 128 squares a side, every vertex reading the heights, and on a software
- * renderer that was nearly the whole of a 3D frame: 0.8 to 1.4 s of the
- * Studio's chase view on two cores, 0.2 s at 32 (CI's SwiftShader, where
- * studio, terrain and airspace-3d.spec ran out their two minutes waiting
+ * renderer that was nearly the whole of a 3D frame: 0.8 to 1.4 s of a
+ * replay's chase view on two cores, 0.2 s at 32 (CI's SwiftShader, where
+ * the 3D specs ran out their two minutes waiting
  * on frames). A height every eight of the DEM's pixels still stands the
  * ground up.
  *

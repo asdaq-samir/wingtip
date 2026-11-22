@@ -13,14 +13,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import app.wingtipmaps.gateway.domain.Flight;
 import app.wingtipmaps.gateway.domain.FlightCheckpoint;
-import app.wingtipmaps.gateway.domain.PaidFeature;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.TrackDto;
 import app.wingtipmaps.gateway.dto.TrackPointDto;
 import app.wingtipmaps.gateway.service.FlightService;
 import app.wingtipmaps.gateway.service.FlightShareService;
 import app.wingtipmaps.gateway.service.PilotService;
-import app.wingtipmaps.gateway.service.SubscriptionService;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -50,11 +48,6 @@ class FlightControllerTest {
     /** No flight shared unless a test says so: a mock's map is empty. */
     @MockitoBean
     private FlightShareService shares;
-
-    /** Lets everything through unless a test says otherwise: a mock's
-     *  refusal is an empty Optional. */
-    @MockitoBean
-    private SubscriptionService subscriptions;
 
     private static Pilot samplePilot() {
         return new Pilot("pilot@example.com", "A. Pilot", "sub-1");
@@ -292,32 +285,6 @@ class FlightControllerTest {
         mockMvc.perform(get("/api/flights/7/track").with(oidcLogin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.points[1].altFt").isEmpty());
-    }
-
-    /** Keeping a track on the account is the debrief's, a paid feature:
-     *  without the subscription, a 402 and nothing kept; reading back one
-     *  kept before is never held back. */
-    @Test
-    void aTrackIsNotKeptWithoutTheSubscription_butOneKeptIsStillRead() throws Exception {
-        given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
-        given(subscriptions.refusal(any(), org.mockito.ArgumentMatchers.eq(PaidFeature.DEBRIEF)))
-                .willReturn(
-                        Optional.of(new SubscriptionService.Refusal(402, "The debrief comes with the subscription")));
-        given(flightService.track(any(), any()))
-                .willReturn(Optional.of(new TrackDto(
-                        "flight.gpx",
-                        List.of(new TrackPointDto(1L, 42.0, -88.0, 900.0), new TrackPointDto(2L, 42.1, -88.0, null)))));
-
-        mockMvc.perform(put("/api/flights/7/track")
-                        .with(oidcLogin())
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(
-                                "{\"source\":\"flight.gpx\",\"points\":[{\"t\":1,\"lat\":42,\"lon\":-88,\"altFt\":900},"
-                                        + "{\"t\":2,\"lat\":42.1,\"lon\":-88,\"altFt\":null}]}"))
-                .andExpect(status().isPaymentRequired());
-        org.mockito.Mockito.verify(flightService, org.mockito.Mockito.never()).saveTrack(any(), any(), any());
-        mockMvc.perform(get("/api/flights/7/track").with(oidcLogin())).andExpect(status().isOk());
     }
 
     @Test

@@ -271,16 +271,6 @@ app:
   # The emailed link's own throttle (MagicLinkController): requests an
   # hour per address and per caller. docker-compose.yml loosens both for
   # the local stack, where the e2e suite signs in.
-  # The subscription to the paid features (SubscriptionService): whether
-  # this deployment sells it at all (off for the proof of concept, at the
-  # owner's ask: the page then says nothing of it and the debrief is
-  # everyone's), the free month's length, once an account, and the
-  # addresses given it without paying, comma-separated (an instructor, a
-  # tester). A developer always has it.
-  subscription:
-    enabled: ${APP_SUBSCRIPTION_ENABLED:false}
-    trial-days: ${APP_SUBSCRIPTION_TRIAL_DAYS:30}
-    comped-emails: ${APP_SUBSCRIPTION_COMPED_EMAILS:}
   # The MCP connector a pilot adds to their own Claude or ChatGPT
   # (docs/design/mcp-connector.md, security/mcp): the MCP server's
   # address, the audience of every token issued (blank: the public
@@ -346,13 +336,6 @@ app:
     down-after: ${APP_MONITORING_DOWN_AFTER:PT5M}
     alert-emails: ${APP_ALERT_EMAILS:}
     weather-url: ${WEATHER_SERVICE_URL:}
-
-  # The Studio's crash drafts (CrashDraftMail, docs/STUDIO-PIPELINE.md):
-  # every five minutes (cron, UTC; "-" turns it off) the planner is asked
-  # which ready drafts nobody has been mailed about, and each is mailed to
-  # the developer-emails with its link under public-base-url.
-  studio:
-    drafts-cron: ${APP_STUDIO_DRAFTS_CRON:0 */5 * * * *}
 
 # The flight watch (FlightWatchService): how often the watched flights
 # departing within the window are re-briefed and the planner asked what
