@@ -12,6 +12,8 @@
 
 use serde_json::Value;
 
+pub mod cases;
+
 /// Whether two JSON values are the same: numbers by value, arrays item by
 /// item, objects member by member, anything else as it is.
 pub fn same(a: &Value, b: &Value) -> bool {

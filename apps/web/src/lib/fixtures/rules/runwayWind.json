@@ -1,0 +1,738 @@
+{
+  "_note": "Each runway-wind and runway-choice rule's figures and boundaries, written down from the source it cites (the FAA's handbook and chart, AC 90-66C, 14 CFR 91.126, the AIM), never from the code. Shape and checks as engine/facade/tests/common/cases.rs says; asked by engine/facade/tests/rule_cases.rs.",
+  "cases": [
+    {
+      "name": "Calm is 00000KT",
+      "rule": "wind_calm",
+      "input": {
+        "speed_kt": 0
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": true
+        }
+      ],
+      "source": "AIM 7-1-28, Key to Aerodrome Forecast (TAF) and Aviation Routine Weather Report (METAR): \"00000KT - wind calm\"."
+    },
+    {
+      "name": "3 kt is not calm",
+      "rule": "wind_calm",
+      "input": {
+        "speed_kt": 3
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": false
+        }
+      ],
+      "source": "AIM 7-1-28, Key to Aerodrome Forecast (TAF) and Aviation Routine Weather Report (METAR): \"00000KT - wind calm\"."
+    },
+    {
+      "name": "No wind reported is not calm",
+      "rule": "wind_calm",
+      "input": {
+        "speed_kt": null
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": false
+        }
+      ],
+      "source": "AIM 7-1-28, Key to Aerodrome Forecast (TAF) and Aviation Routine Weather Report (METAR): \"00000KT - wind calm\". A report with no wind group says nothing of calm; taking it for calm would choose runways on nothing (the safer side)."
+    },
+    {
+      "name": "A gust's crosswind over the steady one is the one judged",
+      "rule": "wind_steady_or_gust",
+      "input": {
+        "steady_kt": -6,
+        "gust_kt": 9
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": 9
+        }
+      ],
+      "source": "Cessna 172S POH (1998) section 4, maximum demonstrated crosswind velocity; 14 CFR 91.103(b): the most crosswind the wind brings, gusts included, is the one held to the airplane's figure, unsigned (the safer side)."
+    },
+    {
+      "name": "No gust: the steady crosswind, unsigned",
+      "rule": "wind_steady_or_gust",
+      "input": {
+        "steady_kt": -12,
+        "gust_kt": null
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": 12
+        }
+      ],
+      "source": "As the gust case: the steady crosswind where no gust is reported, from either side."
+    },
+    {
+      "name": "A runway's crosswind is its gust's where more",
+      "rule": "runway_crosswind",
+      "input": {
+        "wind": {
+          "crosswind_kt": -4,
+          "gust_crosswind_kt": -11
+        }
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": 11
+        }
+      ],
+      "source": "As wind_steady_or_gust, on a runway's own wind."
+    },
+    {
+      "name": "Nothing along or across: calm",
+      "rule": "runway_calm",
+      "input": {
+        "wind": {
+          "end": "18",
+          "headwind_kt": 0,
+          "crosswind_kt": 0,
+          "gust_crosswind_kt": null
+        }
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": true
+        }
+      ],
+      "source": "AIM 7-1-28, Key to Aerodrome Forecast (TAF) and Aviation Routine Weather Report (METAR): \"00000KT - wind calm\"."
+    },
+    {
+      "name": "1 kt across is not calm",
+      "rule": "runway_calm",
+      "input": {
+        "wind": {
+          "end": "18",
+          "headwind_kt": 0,
+          "crosswind_kt": 1,
+          "gust_crosswind_kt": null
+        }
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": false
+        }
+      ],
+      "source": "AIM 7-1-28, Key to Aerodrome Forecast (TAF) and Aviation Routine Weather Report (METAR): \"00000KT - wind calm\"."
+    },
+    {
+      "name": "Runway 18L at 3 degrees west is 177 true",
+      "rule": "runway_end_heading",
+      "input": {
+        "ident": "18L",
+        "heading_true_deg": null,
+        "variation_deg": -3.0
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 177,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "FAA-H-8083-25C ch. 16, magnetic variation: a true heading is the magnetic one with an east variation added and a west one taken off; a runway's number is its magnetic heading in tens of degrees (AIM 2-3-3)."
+    },
+    {
+      "name": "Runway 9 at 4 degrees east is 094 true",
+      "rule": "runway_end_heading",
+      "input": {
+        "ident": "09",
+        "heading_true_deg": null,
+        "variation_deg": 4.0
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 94,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "FAA-H-8083-25C ch. 16, magnetic variation: a true heading is the magnetic one with an east variation added and a west one taken off; a runway's number is its magnetic heading in tens of degrees (AIM 2-3-3)."
+    },
+    {
+      "name": "A helipad has no runway heading",
+      "rule": "runway_end_heading",
+      "input": {
+        "ident": "H1",
+        "variation_deg": 0.0
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": null
+        }
+      ],
+      "source": "NASR APT_RWY: a helipad's ident (H1) is no runway number; AIM 2-3-3's numbering is a runway's."
+    },
+    {
+      "name": "300 at 12 on runway 9/27 (088/268 true): 27, 10 kt along, 6 kt from the right",
+      "rule": "runway_with_winds",
+      "input": {
+        "runways": [
+          {
+            "end_headings": [["9", 88.0], ["27", 268.0]]
+          }
+        ],
+        "metar": {
+          "wind_dir_true_deg": 300.0,
+          "wind_speed_kt": 12.0
+        },
+        "variation_deg": 0.0
+      },
+      "expect": [
+        {
+          "path": "0.end",
+          "equals": "27"
+        },
+        {
+          "path": "0.headwind_kt",
+          "value": 10,
+          "tolerance": 0
+        },
+        {
+          "path": "0.crosswind_kt",
+          "value": 6,
+          "tolerance": 0
+        },
+        {
+          "path": "0.crosswind_exact_kt",
+          "value": 6.359031170798459,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge), ch. 11, the crosswind component chart: a wind's component along the runway is its speed times the cosine of its angle off the runway, across it the sine (the chart's arcs and lines drawn to those). AC 90-66C (2023) 11.5, Runway Preference: \"Landing and takeoff should be accomplished on the operating runway most nearly aligned into the wind.\"",
+      "method": "32 degrees off 268: 12 cos 32 = 10.2, 12 sin 32 = 6.4, the whole knots as the planner writes them; from the right is positive."
+    },
+    {
+      "name": "040 at 10 gusting 20 on runway 9 (088 true): from the left, 7 and 15 kt across",
+      "rule": "runway_with_winds",
+      "input": {
+        "runways": [
+          {
+            "end_headings": [["9", 88.0], ["27", 268.0]]
+          }
+        ],
+        "metar": {
+          "wind_dir_true_deg": 40.0,
+          "wind_speed_kt": 10.0,
+          "wind_gust_kt": 20.0
+        },
+        "variation_deg": 0.0
+      },
+      "expect": [
+        {
+          "path": "0.end",
+          "equals": "9"
+        },
+        {
+          "path": "0.crosswind_kt",
+          "value": -7,
+          "tolerance": 0
+        },
+        {
+          "path": "0.gust_crosswind_kt",
+          "value": -15,
+          "tolerance": 0
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge), ch. 11, the crosswind component chart: a wind's component along the runway is its speed times the cosine of its angle off the runway, across it the sine (the chart's arcs and lines drawn to those). AC 90-66C (2023) 11.5, Runway Preference: \"Landing and takeoff should be accomplished on the operating runway most nearly aligned into the wind.\"",
+      "method": "48 degrees off 088 from the left: 10 sin 48 = 7.4, 20 sin 48 = 14.9."
+    },
+    {
+      "name": "No report: no runway wind",
+      "rule": "runway_with_winds",
+      "input": {
+        "runways": [
+          {
+            "end_headings": [["9", 88.0], ["27", 268.0]]
+          }
+        ],
+        "metar": null,
+        "variation_deg": 0.0
+      },
+      "expect": [
+        {
+          "path": "0",
+          "equals": null
+        }
+      ],
+      "source": "14 CFR 91.103(b): with no wind reported, no runway is said to be favoured by it."
+    },
+    {
+      "name": "C81 by KUGN's 220 at 8 gusting 15: runway 24, 18 degrees off from the left",
+      "rule": "wind_pick",
+      "input": {
+        "runways": [
+          {
+            "closed": false,
+            "length_ft": 3573.0,
+            "surface": "ASP",
+            "runway_ends": [
+              {
+                "ident": "06",
+                "heading_true_deg": 58.0,
+                "traffic": "left"
+              },
+              {
+                "ident": "24",
+                "heading_true_deg": 238.0,
+                "traffic": "left"
+              }
+            ],
+            "wind": null
+          },
+          {
+            "closed": false,
+            "length_ft": 3270.0,
+            "surface": "ASP",
+            "runway_ends": [
+              {
+                "ident": "09",
+                "heading_true_deg": 88.0,
+                "traffic": "left"
+              },
+              {
+                "ident": "27",
+                "heading_true_deg": 268.0,
+                "traffic": "left"
+              }
+            ],
+            "wind": null
+          }
+        ],
+        "nearby": {
+          "station": "KUGN",
+          "distance_nm": 11.1,
+          "dir_true_deg": 220,
+          "speed_kt": 8,
+          "gust_kt": 15
+        },
+        "forecast_at": null
+      },
+      "expect": [
+        {
+          "path": "ident",
+          "equals": "24"
+        },
+        {
+          "path": "headwind_kt",
+          "value": 8,
+          "tolerance": 0
+        },
+        {
+          "path": "crosswind_kt",
+          "value": -2,
+          "tolerance": 0
+        },
+        {
+          "path": "gust_crosswind_kt",
+          "value": -5,
+          "tolerance": 0
+        },
+        {
+          "path": "calm",
+          "equals": false
+        },
+        {
+          "path": "from.ident",
+          "equals": "KUGN"
+        }
+      ],
+      "source": "FAA-H-8083-25C (Pilot's Handbook of Aeronautical Knowledge), ch. 11, the crosswind component chart: a wind's component along the runway is its speed times the cosine of its angle off the runway, across it the sine (the chart's arcs and lines drawn to those). AC 90-66C (2023) 11.5, Runway Preference: \"Landing and takeoff should be accomplished on the operating runway most nearly aligned into the wind.\"",
+      "method": "238 true is 18 degrees off 220, 058 is 162 (a tailwind), 088 and 268 are 48 and 132: 24 is the most nearly into the wind."
+    },
+    {
+      "name": "No wind to go by: no pick",
+      "rule": "wind_pick",
+      "input": {
+        "runways": [
+          {
+            "closed": false,
+            "length_ft": 3573.0,
+            "surface": "ASP",
+            "runway_ends": [
+              {
+                "ident": "06",
+                "heading_true_deg": 58.0,
+                "traffic": "left"
+              },
+              {
+                "ident": "24",
+                "heading_true_deg": 238.0,
+                "traffic": "left"
+              }
+            ],
+            "wind": null
+          },
+          {
+            "closed": false,
+            "length_ft": 3270.0,
+            "surface": "ASP",
+            "runway_ends": [
+              {
+                "ident": "09",
+                "heading_true_deg": 88.0,
+                "traffic": "left"
+              },
+              {
+                "ident": "27",
+                "heading_true_deg": 268.0,
+                "traffic": "left"
+              }
+            ],
+            "wind": null
+          }
+        ],
+        "nearby": null,
+        "forecast_at": null
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": null
+        }
+      ],
+      "source": "AC 90-66C 11.5 needs a wind; with none, none is picked by it."
+    },
+    {
+      "name": "The runway flown is the one most nearly into the wind where none is picked",
+      "rule": "gonogo_runway_flown",
+      "input": {
+        "runways": [
+          {
+            "closed": false,
+            "length_ft": 6000.0,
+            "surface": "ASP",
+            "runway_ends": [
+              {
+                "ident": "09",
+                "heading_true_deg": 90.0,
+                "traffic": "left"
+              },
+              {
+                "ident": "27",
+                "heading_true_deg": 270.0,
+                "traffic": "left"
+              }
+            ],
+            "wind": {
+              "end": "27",
+              "headwind_kt": 12,
+              "crosswind_kt": 1,
+              "gust_crosswind_kt": null
+            }
+          },
+          {
+            "closed": false,
+            "length_ft": 2400.0,
+            "surface": "ASP",
+            "runway_ends": [
+              {
+                "ident": "18",
+                "heading_true_deg": 180.0,
+                "traffic": "left"
+              },
+              {
+                "ident": "36",
+                "heading_true_deg": 360.0,
+                "traffic": "left"
+              }
+            ],
+            "wind": {
+              "end": "36",
+              "headwind_kt": 0,
+              "crosswind_kt": -12,
+              "gust_crosswind_kt": null
+            }
+          }
+        ],
+        "picked": null
+      },
+      "expect": [
+        {
+          "path": "runway",
+          "equals": 0
+        },
+        {
+          "path": "end",
+          "equals": 1
+        }
+      ],
+      "source": "AC 90-66C (2023) 11.5, Runway Preference: \"Landing and takeoff should be accomplished on the operating runway most nearly aligned into the wind.\"",
+      "method": "27 has 12 kt along it, 36 none and 12 across."
+    },
+    {
+      "name": "The pilot's pick stands",
+      "rule": "gonogo_runway_flown",
+      "input": {
+        "runways": [
+          {
+            "closed": false,
+            "length_ft": 6000.0,
+            "surface": "ASP",
+            "runway_ends": [
+              {
+                "ident": "09",
+                "heading_true_deg": 90.0,
+                "traffic": "left"
+              },
+              {
+                "ident": "27",
+                "heading_true_deg": 270.0,
+                "traffic": "left"
+              }
+            ],
+            "wind": {
+              "end": "27",
+              "headwind_kt": 12,
+              "crosswind_kt": 1,
+              "gust_crosswind_kt": null
+            }
+          },
+          {
+            "closed": false,
+            "length_ft": 2400.0,
+            "surface": "ASP",
+            "runway_ends": [
+              {
+                "ident": "18",
+                "heading_true_deg": 180.0,
+                "traffic": "left"
+              },
+              {
+                "ident": "36",
+                "heading_true_deg": 360.0,
+                "traffic": "left"
+              }
+            ],
+            "wind": {
+              "end": "36",
+              "headwind_kt": 0,
+              "crosswind_kt": -12,
+              "gust_crosswind_kt": null
+            }
+          }
+        ],
+        "picked": "36"
+      },
+      "expect": [
+        {
+          "path": "runway",
+          "equals": 1
+        },
+        {
+          "path": "end",
+          "equals": 1
+        }
+      ],
+      "source": "14 CFR 91.3(a): the pilot in command picks the runway; AC 90-66C 11.5 recommends, it does not oblige."
+    },
+    {
+      "name": "A closed runway is never the one flown, picked or not",
+      "rule": "gonogo_runway_flown",
+      "input": {
+        "runways": [
+          {
+            "closed": true,
+            "length_ft": 6000.0,
+            "surface": "ASP",
+            "runway_ends": [
+              {
+                "ident": "09",
+                "heading_true_deg": 90.0,
+                "traffic": "left"
+              },
+              {
+                "ident": "27",
+                "heading_true_deg": 270.0,
+                "traffic": "left"
+              }
+            ],
+            "wind": null
+          },
+          {
+            "closed": false,
+            "length_ft": 2400.0,
+            "surface": "ASP",
+            "runway_ends": [
+              {
+                "ident": "18",
+                "heading_true_deg": 180.0,
+                "traffic": "left"
+              },
+              {
+                "ident": "36",
+                "heading_true_deg": 360.0,
+                "traffic": "left"
+              }
+            ],
+            "wind": {
+              "end": "36",
+              "headwind_kt": 0,
+              "crosswind_kt": -12,
+              "gust_crosswind_kt": null
+            }
+          }
+        ],
+        "picked": "27"
+      },
+      "expect": [
+        {
+          "path": "runway",
+          "equals": 1
+        }
+      ],
+      "source": "AIM 2-3-6, closed runways (the X): no takeoff or landing on one; AC 90-66C 11.5's \"operating runway\"."
+    },
+    {
+      "name": "The runway in use is the one most nearly into the wind",
+      "rule": "gonogo_runway_in_use",
+      "input": {
+        "runways": [
+          {
+            "closed": false,
+            "length_ft": 6000.0,
+            "surface": "ASP",
+            "runway_ends": [
+              {
+                "ident": "09",
+                "heading_true_deg": 90.0,
+                "traffic": "left"
+              },
+              {
+                "ident": "27",
+                "heading_true_deg": 270.0,
+                "traffic": "left"
+              }
+            ],
+            "wind": {
+              "end": "27",
+              "headwind_kt": 12,
+              "crosswind_kt": 1,
+              "gust_crosswind_kt": null
+            }
+          },
+          {
+            "closed": false,
+            "length_ft": 2400.0,
+            "surface": "ASP",
+            "runway_ends": [
+              {
+                "ident": "18",
+                "heading_true_deg": 180.0,
+                "traffic": "left"
+              },
+              {
+                "ident": "36",
+                "heading_true_deg": 360.0,
+                "traffic": "left"
+              }
+            ],
+            "wind": {
+              "end": "36",
+              "headwind_kt": 0,
+              "crosswind_kt": -12,
+              "gust_crosswind_kt": null
+            }
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "runway",
+          "equals": 0
+        },
+        {
+          "path": "end",
+          "equals": 1
+        }
+      ],
+      "source": "AC 90-66C (2023) 11.5, Runway Preference: \"Landing and takeoff should be accomplished on the operating runway most nearly aligned into the wind.\""
+    },
+    {
+      "name": "Each end left traffic but where the FAA flags it right",
+      "rule": "runway_ends_traffic",
+      "input": {
+        "end_headings": [["05", 50.0], ["23", null]],
+        "variation_deg": -3.0,
+        "right": ["23"]
+      },
+      "expect": [
+        {
+          "path": "0.traffic",
+          "equals": "left"
+        },
+        {
+          "path": "1.traffic",
+          "equals": "right"
+        },
+        {
+          "path": "1.heading_true_deg",
+          "value": 227,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "14 CFR 91.126(b)(1): \"Each pilot of a powered fixed-wing aircraft must make all turns to the left unless the airport displays approved light signals or visual markings indicating that turns should be made to the right\"; AIM 4-3-3: right patterns are charted \"RP\". FAA-H-8083-25C ch. 16, magnetic variation: a true heading is the magnetic one with an east variation added and a west one taken off; a runway's number is its magnetic heading in tens of degrees (AIM 2-3-3)."
+    },
+    {
+      "name": "Left traffic on an east heading: the pattern is to the north",
+      "rule": "pattern_side",
+      "input": {
+        "heading_true_deg": 90,
+        "traffic": "left"
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 0,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "14 CFR 91.126(b)(1): \"Each pilot of a powered fixed-wing aircraft must make all turns to the left unless the airport displays approved light signals or visual markings indicating that turns should be made to the right\"; AIM 4-3-3: right patterns are charted \"RP\"."
+    },
+    {
+      "name": "Right traffic on an east heading: the pattern is to the south",
+      "rule": "pattern_side",
+      "input": {
+        "heading_true_deg": 90,
+        "traffic": "right"
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 180,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "14 CFR 91.126(b)(1): \"Each pilot of a powered fixed-wing aircraft must make all turns to the left unless the airport displays approved light signals or visual markings indicating that turns should be made to the right\"; AIM 4-3-3: right patterns are charted \"RP\"."
+    },
+    {
+      "name": "No traffic said: left",
+      "rule": "pattern_side",
+      "input": {
+        "heading_true_deg": 30
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 300,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "14 CFR 91.126(b)(1): \"Each pilot of a powered fixed-wing aircraft must make all turns to the left unless the airport displays approved light signals or visual markings indicating that turns should be made to the right\"; AIM 4-3-3: right patterns are charted \"RP\"."
+    }
+  ]
+}

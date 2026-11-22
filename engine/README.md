@@ -215,7 +215,12 @@ A rule goes in this way, each step in the same pull request:
    the FAA's handbooks, knowledge-test supplement or AIM work an example
    of the rule, it goes in `fixtures/reference` too: the inputs, the
    expected figure, the tolerance the source's rounding implies and its
-   page and figure, asked by name in `facade/tests/reference.rs`.
+   page and figure, asked by name in `facade/tests/reference.rs`. A rule
+   that states a figure or makes a decision and has no worked example
+   gets its cases in `fixtures/rules` in the same shape: the figures and
+   both sides of each boundary its source's text draws, each case citing
+   it, asked by `facade/tests/rule_cases.rs` (whose head lists the
+   plumbing rules left out).
 5. Where the web asks it, `python3 scripts/build/web_rules.py` (the web's
    module is built with only the rules the web asks, below), then
    `scripts/build/build-engine-wasm.sh`, and the `.wasm` committed; the

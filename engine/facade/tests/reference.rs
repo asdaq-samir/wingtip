@@ -11,108 +11,35 @@
 
 mod common;
 
-use common::{fixture, same};
+use common::cases::{check, holds};
 use serde_json::Value;
-use wingtip_engine::call::call;
-
-/// The answer at a dotted path, Null where there is none.
-fn at<'a>(answer: &'a Value, path: &str) -> &'a Value {
-    if path.is_empty() {
-        return answer;
-    }
-    path.split('.').fold(answer, |v, key| v.get(key).unwrap_or(&Value::Null))
-}
-
-/// What is wrong with one check of an answer, if anything.
-fn check(answer: &Value, expect: &Value) -> Option<String> {
-    let path = expect["path"].as_str().unwrap_or("");
-    let got = at(answer, path);
-    let fail = |want: String| Some(format!("at {path:?}: got {got}, want {want}"));
-    if let Some(want) = expect.get("value").and_then(Value::as_f64) {
-        let within = expect["tolerance"].as_f64().expect("a value check names its tolerance");
-        return match got.as_f64() {
-            Some(x) if (x - want).abs() <= within + 1e-9 => None,
-            _ => fail(format!("{want} \u{b1} {within}")),
-        };
-    }
-    if let Some(least) = expect.get("at_least").and_then(Value::as_f64) {
-        return match got.as_f64() {
-            Some(x) if x >= least => None,
-            _ => fail(format!("at least {least}")),
-        };
-    }
-    if let Some(want) = expect.get("equals") {
-        return if same(got, want) { None } else { fail(want.to_string()) };
-    }
-    if let Some(want) = expect.get("length").and_then(Value::as_u64) {
-        return match got.as_array() {
-            Some(list) if list.len() as u64 == want => None,
-            _ => fail(format!("a list of {want}")),
-        };
-    }
-    if let Some(phrase) = expect.get("contains").and_then(Value::as_str) {
-        let found = got.as_array().is_some_and(|list| list.iter().any(|s| s.as_str().is_some_and(|s| s.contains(phrase))));
-        return if found { None } else { fail(format!("a line containing {phrase:?}")) };
-    }
-    Some(format!("at {path:?}: a check with no known kind: {expect}"))
-}
-
-/// Every case of one reference set, each asked by name; all the failures
-/// together, each with its case's name and source.
-fn holds(set: &str) {
-    let cases = fixture(&format!("reference/{set}"));
-    let cases = cases["cases"].as_array().unwrap_or_else(|| panic!("{set}: no cases"));
-    assert!(!cases.is_empty(), "{set}: no cases");
-    let mut failures = Vec::new();
-    for case in cases {
-        let name = case["name"].as_str().unwrap_or("?");
-        let rule = case["rule"].as_str().unwrap_or_else(|| panic!("{set}: {name}: no rule"));
-        // Every case says where it comes from and holds at least one figure.
-        assert!(case["source"].as_str().is_some_and(|s| !s.is_empty()), "{set}: {name}: no source");
-        let expects = case["expect"].as_array().filter(|e| !e.is_empty());
-        let expects = expects.unwrap_or_else(|| panic!("{set}: {name}: nothing expected"));
-        let answer = match call(rule, &case["input"].to_string()) {
-            Ok(text) => serde_json::from_str::<Value>(&text).unwrap_or_else(|e| panic!("{rule} answered {text}: {e}")),
-            Err(e) => {
-                failures.push(format!("{name} ({rule}): {e}"));
-                continue;
-            }
-        };
-        for expect in expects {
-            if let Some(why) = check(&answer, expect) {
-                failures.push(format!("{name} ({rule}) {why}\n    source: {}", case["source"].as_str().unwrap_or("")));
-            }
-        }
-    }
-    assert!(failures.is_empty(), "{set}: {} of the source's figures not met:\n  {}", failures.len(), failures.join("\n  "));
-}
 
 #[test]
 fn the_standard_atmosphere_is_the_handbooks() {
     // Pressure altitude off FAA-H-8083-25C Figure 11-22's table and the
     // supplement's Figure 8, Figure 11-2's temperatures and pressures, and
     // Sample Problem 1's density altitude.
-    holds("atmosphere.json");
+    holds("reference/atmosphere.json");
 }
 
 #[test]
 fn the_wind_triangle_and_a_runways_wind_are_the_handbooks() {
-    holds("wind.json");
+    holds("reference/wind.json");
 }
 
 #[test]
 fn time_distance_fuel_and_endurance_are_the_handbooks() {
-    holds("timeFuel.json");
+    holds("reference/timeFuel.json");
 }
 
 #[test]
 fn weight_and_balance_is_the_handbooks() {
-    holds("weightBalance.json");
+    holds("reference/weightBalance.json");
 }
 
 #[test]
 fn a_holds_entry_and_leg_are_the_aims() {
-    holds("holding.json");
+    holds("reference/holding.json");
 }
 
 #[test]
