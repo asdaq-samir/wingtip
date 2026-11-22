@@ -231,7 +231,9 @@ def tiers() -> list[str]:
         if i not in jobs or i not in gate or jobs[i].tier != 1
     ]
     e2e = "\n".join(jobs["e2e"].body) if "e2e" in jobs else ""
-    if "PROJECTS: ${{ needs.specs.outputs.args }}" not in e2e or "needs.specs.outputs.shards" not in e2e:
+    # PROJECTS: a pull request's shard its own specs (groups, dealt by time), else the set (args) over --shard.
+    chose = "fromJSON(needs.specs.outputs.groups)[matrix.shard] || needs.specs.outputs.args" in e2e
+    if not chose or "needs.specs.outputs.shards" not in e2e:
         errors.append("ci.yml: e2e runs what the specs job chose (PROJECTS and the shards from needs.specs.outputs; decision 0048)")
     errors += [
         f"ci.yml: {i} runs after merge (the owner, 2026-11-10): `if: github.event_name != 'pull_request'`"

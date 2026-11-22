@@ -37,7 +37,10 @@ META = {"CI passed", "CI budget", "Stop on red"}
 # The runner's own words for a step that failed or was stopped: no error.
 GENERIC = re.compile(r"Process completed with exit code \d+|The operation was cancell?ed")
 UNKNOWN = "No narrow command known: add a row to scripts/ci/failure_summary.py."
-INTRO = "Each failure's first error, and the narrow command for it on the Mac (from the root; scripts/dev/check.sh builds a missing image)."
+INTRO = (
+    "Each failure's first error, and the narrow command for it on the Mac (from the root; scripts/dev/check.sh builds a missing image). "
+    "Before the next push, scripts/dev/preflight.sh runs what tier 1 will run for the change."
+)
 
 
 # One job's command, or one failure's within it: the first row whose `job` and `when` match a failure gives its command.
@@ -50,6 +53,7 @@ class Row(NamedTuple):
     area: str = ""  # scripts/dev/check.sh's area, the whole of it, where nothing narrower is named
     note: str = ""
     sep: str = " "  # between several targets in one command; a newline, a command each
+    shape: str = "{0}"  # the target from the regex's groups, where it has more than one
 
 
 # How scripts/dev/check.sh runs an area on the Mac, which has no node, pytest or Maven: in its Docker images. The web's is
@@ -114,6 +118,11 @@ WEB_LEG = "The web leg's checks start from it: `PART=web scripts/ci/guards.sh` i
 LEGS = "Its leg, where no guard is named: `PART=web|engine scripts/ci/guards.sh`. Not `repo` whole: its log ends `failed: <names>`."
 # On the Mac guards.sh skips a check whose tool is missing: these five fetch theirs with uv, uvx, pipx or npx.
 HOST = "Its tool comes by uv, uvx, pipx or npx on the host: a Mac without them is told so, and only CI can tell."
+PLAYWRIGHT = "npx playwright test {} --reporter=list"
+HOST_NODE = "It runs apps/web/scripts/reached-specs.mjs: on a Mac without node, scripts/dev/preflight.sh runs it in the web's image."
+IMAGE_NOTE = "The target the failed step names, in a turn of one-at-a-time.sh; the job's log has the Dockerfile step that failed."
+# A red browser test's title, `[mobile] › e2e/x.spec.ts:24:1 › ...`: its project and its line.
+RED_TEST = r"\[([\w-]+)\] › (e2e/\S+?\.spec\.ts:\d+)"
 E2E_NOTE = "In Playwright's image against the running stack, in a turn of one-at-a-time.sh: the checks skill (section 4) has the line."
 
 # Every job a run can fail in, by its name: a new job is one row. Of a job's several, the first that matches a failure is its row.
@@ -140,6 +149,11 @@ TABLE = [
     Row("test-gateway", "", MVN, r"^(\w+)[.$]\w", "<Class>", "java", sep=","),
     Row("test-sim", "", "scripts/ci/sim_suite.sh"),
     Row("Engine wheel", "", "", area="py", note="check.sh builds the engine's wheel first, for any Python area."),
+    # What the run decided to do, and the images it builds: each a script or a bake target.
+    Row("changes", "", "git diff --name-only origin/main HEAD | python3 scripts/areas.py filters", note="Then scripts/dev/preflight.sh."),
+    Row("Browser specs reached", "", "python3 scripts/ci/browser_specs.py --list origin/main", note=HOST_NODE),
+    Row("build (e2e)", "", "docker buildx bake -f .github/ci-images.hcl <gateway|planner|weather|playwright>", note=IMAGE_NOTE),
+    Row("build (images)", "", "docker buildx bake -f .github/images.hcl <service>", note=IMAGE_NOTE),
     # oasdiff's annotations are at the document, as its container saw it.
     Row("API compatibility", "", OASDIFF, r"/head/(services/\w+/openapi\.json)", "<services/.../openapi.json>", sep="\n"),
     Row("infra", "cfn-lint", CFN),
@@ -151,7 +165,9 @@ TABLE = [
     Row("Native Android / build", "The Kotlin's layout", "scripts/dev/format.sh --check kotlin"),
     Row("Native Android / build", "", GRADLE, hint="<package.Class>", area="android", note=GRADLE_NOTE),
     # Main's push and the night: the specs its failures' titles name.
-    Row("e2e (*)", "", "npx playwright test {} --reporter=list", r"(e2e/\S+?\.spec\.ts)", "<e2e/name.spec.ts>", note=E2E_NOTE),
+    # Each red test by its project and line (`[mobile] › e2e/x.spec.ts:24:1 › ...`), so the command runs it alone; else its file.
+    Row("e2e (*)", "", PLAYWRIGHT, RED_TEST, "<e2e/name.spec.ts>", note=E2E_NOTE, shape="--project={0} {1}"),
+    Row("e2e (*)", "", PLAYWRIGHT, r"(e2e/\S+?\.spec\.ts)", "<e2e/name.spec.ts>", note=E2E_NOTE),
     # guards.sh's checks, in its order: the `repo` leg's, the `web` leg's, the `engine` leg's.
     guard("One home (Semgrep)", "python3 scripts/ci/semgrep_check.py --base origin/main", HOST),
     guard("Areas filter", "python3 scripts/areas.py check"),
@@ -201,8 +217,9 @@ def reproduce(name: str, clues: list[tuple[str, str]]) -> tuple[list[str], list[
             named = (re.search(row.target, path) or re.search(row.target, title)) if row.target else None
             if named or (row.when and re.search(row.when, title)):
                 targets = found.setdefault(row, [])
-                if named and named.group(1) not in targets:
-                    targets.append(named.group(1))
+                target = row.shape.format(*named.groups()) if named else ""
+                if named and target not in targets:
+                    targets.append(target)
                 break
     commands = []
     for row, targets in found.items():
@@ -228,11 +245,31 @@ def words(message: str, count: int = 6, width: int = 400) -> list[str]:
     return [line[:width] for line in lines if line.strip()][:count]
 
 
+def hard_reds(annotations: list[dict]) -> tuple[list[str], list[str]]:
+    """The tests Playwright's run summary calls failed, and those it calls flaky (passed on the retry): `[project] › file:line`."""
+    found: dict[str, list[str]] = {"failed": [], "flaky": []}
+    for note in annotations:
+        if "Playwright Run Summary" not in (note.get("title") or ""):
+            continue
+        section = ""
+        for line in (note.get("message") or "").splitlines():
+            count = re.match(r"\s*\d+ (failed|flaky|skipped|passed|did not run|interrupted)", line)
+            if count:
+                section = count.group(1)
+            elif section in found and (test := re.search(r"\[[\w-]+\] › \S+?\.spec\.ts:\d+", line)):
+                found[section].append(test.group(0))
+    return found["failed"], found["flaky"]
+
+
 def block(job: dict, annotations: list[dict], base: str) -> tuple[list[str], list[str]]:
     """One failed job's Markdown, and what to say of it on the check: its commands and the words beside them."""
     # The API lists a check's annotations newest first (four jobs of runs 43777395271 and 43726455655,
     # where one step's log lines fall down the list), so the first error is the last failure listed.
     failures = [a for a in reversed(annotations) if a["annotation_level"] == "failure" and not GENERIC.match(a.get("message") or "")]
+    # A browser test that passed on its retry did not fail the job: the command is the hard reds', the flaky ones named apart.
+    red, flaky = hard_reds(annotations)
+    if red:
+        failures = [a for a in failures if any(t in (a.get("title") or "") for t in red)] or failures
     step = next((s["name"] for s in job.get("steps") or [] if s.get("conclusion") == "failure"), "")
     lines = [f"#### {job['name']}", ""]
     if failures:
@@ -251,6 +288,8 @@ def block(job: dict, annotations: list[dict], base: str) -> tuple[list[str], lis
     commands = [command.replace("origin/main", f"origin/{base}") for command in commands]
     if commands:
         lines += ["", "To reproduce it:", "", "```sh", *commands, "```"]
+    if flaky:
+        notes = [*notes, "Passed on its retry, so not what failed (the flaky-tests issue lists it): " + ", ".join(flaky)]
     return [*lines, "", *[line for note in notes for line in (note, "")]], commands + notes
 
 

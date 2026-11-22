@@ -8,7 +8,10 @@ name: Nightly issue
 # tiers"; decision 0034). Each such run of CI, Native iOS and Native
 # Android, once it completes, writes its section of its issue: at most one
 # GitHub write a run (scripts/ci/nightly_issue.py).
-# Here rather than in each workflow, since a job asking for issues: write
+# A CI run on main's push also lists the browser tests that passed only on
+# their retry in the standing "Flaky tests (nightly)" issue, that hour
+# (scripts/ci/flaky_tests.py --after-merge); the night's own are its
+# flake-report job's. Here rather than in each workflow, since a job asking for issues: write
 # inside a reusable workflow would need its caller, ci.yml on every pull
 # request, to grant it too.
 #
@@ -51,3 +54,18 @@ jobs:
           RUN_ID: ${{ github.event.workflow_run.id }}
           RUN_URL: ${{ github.event.workflow_run.html_url }}
         run: python3 scripts/ci/nightly_issue.py
+      # Its e2e-flaky artifacts, read with this run's token (actions: read).
+      - if: github.event.workflow_run.name == 'CI' && github.event.workflow_run.event == 'push'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        continue-on-error: true
+        with:
+          pattern: e2e-flaky-*
+          path: /tmp/flake/e2e/run
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - name: Its flaky tests, into their issue
+        if: github.event.workflow_run.name == 'CI' && github.event.workflow_run.event == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: python3 scripts/ci/flaky_tests.py report /tmp/flake --after-merge
