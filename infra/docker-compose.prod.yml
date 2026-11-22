@@ -13,7 +13,7 @@
 #   56-day cycle once as a scheduled Fargate Spot task and publishes it
 #   to S3 as one archive per kind and density, which the planner reads a
 #   tile at a time through CloudFront (CHART_TILES_URL) and CloudFront
-#   caches, so this 4 GB server never draws the whole country. The
+#   caches, so this 8 GB server never draws the whole country. The
 #   FAA's NASR and obstacle files are still fetched as each edition comes
 #   out (FAA_DATA_AUTO_REFRESH, on).
 # - The map's overlay tiles: built from the planner's cycle pack by the
@@ -24,6 +24,16 @@
 # file (infra/server/env.example lists every key):
 #   docker compose -f infra/docker-compose.prod.yml up -d
 
+# Memory: the server is a t3a.large, 8 GB (infra/cloudformation's
+# InstanceType). Each service is held to its share, so one that grows
+# cannot take the others' memory and the kernel kills the one at fault
+# rather than whichever it picks: the planner 3 GB, the gateway 1.5 GB,
+# Postgres 1 GB, weather 768 MB and ingest 384 MB, 6.7 GB in all, the
+# rest for the system, Docker and the page cache Postgres and the
+# planner's archives read through. The same shares as the after-merge
+# campaign's stress run (infra/load-tests/t3a-large.yml,
+# docs/TESTING-AFTER-MERGE.md), whose report says which service reached
+# its limit first; a limit moves here and there together.
 # Every service's log to CloudWatch (the stack's ServerLogGroup), a
 # stream per container, kept a month: the server's own disk keeps none, and
 # what went wrong is read in the console, with `aws logs tail`, or by field
@@ -81,6 +91,9 @@ services:
       - log_lock_waits=on
       - -c
       - log_parameter_max_length=0
+    # Postgres's own buffers are its default 128 MB; the rest of the
+    # share is its connections' work memory and the page cache.
+    mem_limit: 1g
     environment:
       POSTGRES_DB: wingtip
       POSTGRES_USER: wingtip
@@ -142,6 +155,10 @@ services:
       # One JSON object a log line, with the page's request id
       # (wingtip.log_lines), for CloudWatch Logs Insights.
       LOG_FORMAT: json
+    # The engine, the FAA's data in memory, the chart model and GDAL's
+    # 128 MB cache (GDAL_CACHEMAX, the image's), with room for a route's
+    # corridor read at its largest.
+    mem_limit: 3g
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
       interval: 10s
@@ -158,7 +175,7 @@ services:
     image: ${IMAGE_REGISTRY}/ingest:${IMAGE_TAG:-latest}
     volumes:
       - /srv/wingtip/data:/workspace/data
-    # A few threads and a SQLite connection on a 4 GB server shared with
+    # A few threads and a SQLite connection on the 8 GB server shared with
     # the planner, the gateway and Postgres: held small.
     mem_limit: 384m
     environment:
@@ -200,7 +217,7 @@ services:
     # their largest while it reads them and the model weather's timeline
     # fetched afresh, up to 565 MB on x86 (docker-compose.yml says how it
     # was measured; at 384 MB the kernel killed it before the timeline was
-    # in): a modest share of the 4 GB server, held to it so a bad day at
+    # in): a modest share of the 8 GB server, held to it so a bad day at
     # NOAA cannot take the planner's.
     mem_limit: 768m
     healthcheck:
@@ -230,6 +247,10 @@ services:
       timeout: 5s
       retries: 30
       start_period: 120s
+    # The JVM's heap is 40% of it (MaxRAMPercentage, below), about 600 MB;
+    # the rest is its metaspace, threads, the class-data archive and
+    # Tomcat's buffers.
+    mem_limit: 1536m
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/wingtip
       SPRING_DATASOURCE_USERNAME: wingtip
