@@ -252,7 +252,10 @@ pub fn sigmets(grid: &mut Grid, advisories: &[Advisory], window: (f64, f64)) {
         }
         let hazard = a.hazard.to_uppercase();
         let raw: String = a.raw.split('\n').next().unwrap_or("").chars().take(60).collect::<String>().trim().to_owned();
-        if hazard.starts_with("CONVECTIVE") {
+        // An international SIGMET's thunderstorms ("TS", over the oceanic
+        // FIRs a flight may cross) are kept as clear of as a convective
+        // SIGMET's: the same storms, in ICAO's form (ICAO Annex 3, App. 6).
+        if hazard.starts_with("CONVECTIVE") || hazard == "TS" {
             // AIM 7-1-27's 20 nm every way, in miles at each cell (in_area):
             // degrees alone gave 15 nm east and west at 40 N (2026-10-27).
             let at = grid.in_area(&a.area, STORM_NM);

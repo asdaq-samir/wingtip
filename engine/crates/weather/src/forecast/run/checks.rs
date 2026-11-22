@@ -93,7 +93,10 @@ fn sigmet_words(a: &Value) -> String {
         "ICE" => "icing",
         "IFR" => "IFR conditions",
         "MTN OBSCN" => "mountains obscured",
-        "ASH" => "volcanic ash",
+        "ASH" | "VA" => "volcanic ash",
+        "TS" => "thunderstorms",
+        "MTW" => "mountain waves",
+        "TC" => "a tropical cyclone",
         "" => "a hazard",
         other => other,
     };

@@ -48,3 +48,41 @@ fn a_bulletins_heading_dates_it() {
     assert_eq!(wmo_issued("WSUS32 KKCI 311655 SIGC", near), time::parse_iso("2026-10-31T16:55:00Z"));
     assert_eq!(wmo_issued("no heading", near), None);
 }
+
+/// The combined SIGMET file as aviationweather.gov served it on
+/// 2026-11-21 (sigmets.cache.xml, schema sigmet1_1.xsd), cut to five: a
+/// convective SIGMET, a domestic one for turbulence (from the data API,
+/// 2026-11-20, none being in force on the 21st), an oceanic one for
+/// thunderstorms, one of two areas and one for volcanic ash.
+const SIGMETS: &str = include_str!("samples/sigmets.cache.xml");
+
+#[test]
+fn the_combined_sigmet_file_in_the_stores_shape() {
+    let v = json::parse(&airsigmets(SIGMETS).unwrap()).unwrap();
+    let all = v.as_array().unwrap();
+    let pick = |k: usize, key: &str| all[k].get(key).cloned().unwrap_or(Value::Null);
+    let hazards: Vec<_> = all.iter().map(|a| a.get("hazard").and_then(Value::as_str).unwrap_or("")).collect();
+    // The multi-area SIGMET is one advisory an area: six from five.
+    assert_eq!(hazards, ["CONVECTIVE", "TURB", "TS", "ICE", "ICE", "VA"]);
+    assert!(all.iter().all(|a| a.get("type").and_then(Value::as_str) == Some("SIGMET")));
+    // WSUS32 KKCI 212355, CONVECTIVE SIGMET 24C, TOPS TO FL360.
+    assert_eq!(pick(0, "altitude_low_ft"), Value::Null);
+    assert_eq!(pick(0, "altitude_high_ft").as_f64(), Some(36000.0));
+    assert_eq!(pick(0, "valid_from").as_f64(), time::parse_iso("2026-11-21T23:55:00Z").map(|t| t as f64));
+    assert_eq!(pick(0, "valid_to").as_f64(), time::parse_iso("2026-11-22T01:55:00Z").map(|t| t as f64));
+    assert_eq!(pick(0, "issued").as_str(), Some("2026-11-21T23:55:00Z"));
+    let ring = |k: usize| pick(k, "coords").as_array().map_or(0, |a| a.len());
+    assert_eq!((ring(0), ring(1), ring(2), ring(3), ring(4), ring(5)), (5, 6, 6, 20, 4, 5));
+    // SIGMET WHISKEY 1, OCNL SEV TURB BLW 160.
+    assert_eq!(pick(1, "altitude_high_ft").as_f64(), Some(16000.0));
+    // SBAO SIGMET 17, FL140/240; the ash from the surface to FL220.
+    assert_eq!((pick(3, "altitude_low_ft").as_f64(), pick(3, "altitude_high_ft").as_f64()), (Some(14000.0), Some(24000.0)));
+    assert_eq!((pick(5, "altitude_low_ft").as_f64(), pick(5, "altitude_high_ft").as_f64()), (Some(0.0), Some(22000.0)));
+    // The first point is the file's, latitude then longitude.
+    let first = pick(0, "coords").as_array().unwrap()[0].clone();
+    assert_eq!(first.as_array().unwrap()[0].as_f64(), Some(34.363));
+    assert_eq!(first.as_array().unwrap()[1].as_f64(), Some(-97.249));
+    // Held to the last of them to end (FAA-H-8083-28B 26.2.4).
+    let until = held_until("airsigmets", &v, 0).unwrap().unwrap();
+    assert_eq!(Some(until), time::parse_iso("2026-11-22T03:30:00Z"));
+}

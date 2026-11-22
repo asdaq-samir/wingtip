@@ -25,7 +25,7 @@ until the idle pace has come round. One fetch of a product runs at a time,
 
 | Product (store name) | Source | Planning | Idle | Served to |
 |---|---|---|---|---|
-| `metars`, `tafs`, `airsigmets`, `pireps`, `gairmets` | aviationweather.gov's national cache files, each only if changed (ETag) | 4 min | 30 min | METARs: no limit, each report carries its time; TAFs: end of the latest period; SIGMETs/AIRMETs: latest valid-until; PIREPs: 90 min after the newest; G-AIRMETs: 90 min after the last snapshot |
+| `metars`, `tafs`, `airsigmets`, `pireps`, `gairmets` | aviationweather.gov's national cache files, each only if changed (ETag); `airsigmets` is the combined `sigmets` file (the US convective and non-convective SIGMETs and the international ones) since the data API deprecated the airsigmets file (v4.34, 2026-10-08) | 4 min | 30 min | METARs: no limit, each report carries its time; TAFs: end of the latest period; SIGMETs/AIRMETs: latest valid-until; PIREPs: 90 min after the newest; G-AIRMETs: 90 min after the last snapshot |
 | `recent-winds` | each station's last METAR with a direction and some speed, kept from the METARs as they come | with `metars` | | 3 hours per station |
 | `winds-06`, `winds-12`, `winds-24` | the GFS 0.25 degree from NOMADS' grib filter, at the old FB stations | 45 min | 2 h | the end of the period's window (FAA Order JO 7110.10 TBL 9-3-1) |
 | `glmp` | Gridded LAMP's hourly issue, ceiling and visibility grids (`.npy` beside the record) | 10 min | 1 h | while it is one of the last three issues |

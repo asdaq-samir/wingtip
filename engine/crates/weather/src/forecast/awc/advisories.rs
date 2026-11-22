@@ -60,35 +60,56 @@ pub(super) fn opt_int(out: &mut String, v: Option<i64>) {
     }
 }
 
-/// The SIGMETs and AIRMETs: `[{"hazard", "type", "altitude_low_ft",
-/// "altitude_high_ft", "raw", "valid_from", "valid_to", "issued", "coords"}]`,
-/// times in Unix seconds but `issued`, ISO UTC from the WMO heading.
+/// The SIGMETs of the combined cache file, sigmets.cache.xml: the United
+/// States' convective SIGMETs, its non-convective ones and the
+/// international ones, every FIR's, in one (the AWC's data API v4.34,
+/// 2026-10-08, which deprecated the airsigmets file; schema sigmet1_1.xsd):
+/// `[{"hazard", "type", "altitude_low_ft", "altitude_high_ft", "raw",
+/// "valid_from", "valid_to", "issued", "coords"}]`, times in Unix seconds
+/// but `issued`, ISO UTC from the WMO heading.
+///
+/// The file says no kind of its own. A convective SIGMET's hazard is
+/// "CONV" (the airsigmets file said "CONVECTIVE", which every reader of
+/// the store looks for, so it is kept); an international SIGMET's
+/// thunderstorms are "TS", kept as the file says. Every one is "type"
+/// "SIGMET": the AIRMETs over the CONUS are the G-AIRMETs (`gairmets`).
+/// One SIGMET of several areas (`multiarea`) is one advisory an area, so
+/// no ring joins two; one drawn as a line with a width ("WI 90NM WID LINE
+/// BTN ...") has no ring and keeps only its words.
 pub fn airsigmets(text: &str) -> Result<String, String> {
     let doc = root(text)?;
     let mut items = Vec::new();
-    for el in doc.iter_named("AIRSIGMET") {
+    for el in doc.iter_named("SIGMET") {
         let altitude = el.child("altitude");
         let raw = el.text_at(&["raw_text"]);
         let from = unix(el.text_at(&["valid_time_from"]));
-        let mut a = String::from("{\"hazard\":");
-        opt_text(&mut a, el.child("hazard").and_then(|h| h.attribute("type")));
-        a.push_str(",\"type\":");
-        opt_text(&mut a, el.text_at(&["airsigmet_type"]));
-        a.push_str(",\"altitude_low_ft\":");
-        json::opt_number(&mut a, num(altitude.and_then(|x| x.attribute("min_ft_msl"))));
-        a.push_str(",\"altitude_high_ft\":");
-        json::opt_number(&mut a, num(altitude.and_then(|x| x.attribute("max_ft_msl"))));
-        a.push_str(",\"raw\":");
-        opt_text(&mut a, raw);
-        a.push_str(",\"valid_from\":");
-        opt_int(&mut a, from);
-        a.push_str(",\"valid_to\":");
-        opt_int(&mut a, unix(el.text_at(&["valid_time_to"])));
-        a.push_str(",\"issued\":");
-        opt_text(&mut a, wmo_issued(raw.unwrap_or(""), from).map(time::iso).as_deref());
-        coords(&mut a, el);
-        a.push('}');
-        items.push(a);
+        let hazard = el.child("hazard").and_then(|h| h.attribute("type")).map(|h| if h == "CONV" { "CONVECTIVE" } else { h });
+        let areas: Vec<Option<&Element>> = match (el.child("multiarea"), el.child("area")) {
+            (Some(many), _) => many.all("area").map(Some).collect(),
+            (None, one) => vec![one],
+        };
+        for area in areas {
+            let mut a = String::from("{\"hazard\":");
+            opt_text(&mut a, hazard);
+            a.push_str(",\"type\":\"SIGMET\",\"altitude_low_ft\":");
+            json::opt_number(&mut a, num(altitude.and_then(|x| x.attribute("base_ft_msl"))));
+            a.push_str(",\"altitude_high_ft\":");
+            json::opt_number(&mut a, num(altitude.and_then(|x| x.attribute("top_ft_msl"))));
+            a.push_str(",\"raw\":");
+            opt_text(&mut a, raw);
+            a.push_str(",\"valid_from\":");
+            opt_int(&mut a, from);
+            a.push_str(",\"valid_to\":");
+            opt_int(&mut a, unix(el.text_at(&["valid_time_to"])));
+            a.push_str(",\"issued\":");
+            opt_text(&mut a, wmo_issued(raw.unwrap_or(""), from).map(time::iso).as_deref());
+            match area {
+                Some(ring) => coords(&mut a, ring),
+                None => a.push_str(",\"coords\":[]"),
+            }
+            a.push('}');
+            items.push(a);
+        }
     }
     Ok(format!("[{}]", items.join(",")))
 }
