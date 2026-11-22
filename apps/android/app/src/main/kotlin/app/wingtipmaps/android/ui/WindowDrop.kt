@@ -57,10 +57,10 @@ sealed interface Dropped {
  * system's own drag shadow and drop.
  *
  * @param onDrop what was dropped, read (Dropped.of).
- * @return the modifier that makes what it is put on the target.
+ * @return this modifier, and what it is put on the target.
  */
 @Composable
-fun rememberWindowDrop(onDrop: (Dropped) -> Unit): Modifier {
+fun Modifier.windowDrop(onDrop: (Dropped) -> Unit): Modifier {
     val context = LocalContext.current
     val latest by rememberUpdatedState(onDrop)
     val target = remember(context) {
@@ -87,7 +87,7 @@ fun rememberWindowDrop(onDrop: (Dropped) -> Unit): Modifier {
     }
     // Plain text, a link, a list of addresses: every text/ type; and the
     // files a window takes (FlightFiles: a flight plan, a GPX, a PDF).
-    return remember(target) { Modifier.dragAndDropTarget(shouldStartDragAndDrop = { event -> event.mimeTypes().any(::droppable) }, target = target) }
+    return then(remember(target) { Modifier.dragAndDropTarget(shouldStartDragAndDrop = { event -> event.mimeTypes().any(::droppable) }, target = target) })
 }
 
 /** A drag's type the window takes: text, or a file it can read. */
@@ -110,7 +110,7 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
 /** The root's drop: a link opened as one sent to the app is (`onLink`),
  *  words typed into the one search over every card closed. */
 @Composable
-internal fun rememberSheetDrop(pages: SheetNav, search: SearchControl, onLink: (Links.Link) -> Unit): Modifier = rememberWindowDrop { dropped ->
+internal fun Modifier.sheetDrop(pages: SheetNav, search: SearchControl, onLink: (Links.Link) -> Unit): Modifier = windowDrop { dropped ->
     when (dropped) {
         is Dropped.Link -> onLink(dropped.link)
         is Dropped.Words -> {

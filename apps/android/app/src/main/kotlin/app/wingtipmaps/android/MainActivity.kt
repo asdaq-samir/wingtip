@@ -23,6 +23,8 @@ import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.Shortcut
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.plan.KeptPlan
+import app.wingtipmaps.android.route.redoEdit
+import app.wingtipmaps.android.route.undoEdit
 import app.wingtipmaps.android.share.FileProblem
 import app.wingtipmaps.android.share.FlightFiles
 import app.wingtipmaps.android.ui.FileTaker

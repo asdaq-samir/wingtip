@@ -105,6 +105,5 @@ class DocumentsModel @Inject constructor(private val app: Application) : Android
 
     override fun onCleared() {
         _removed.value?.let { forget(it) }
-        super.onCleared()
     }
 }

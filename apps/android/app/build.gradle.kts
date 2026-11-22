@@ -126,6 +126,8 @@ android {
         // Timber's own check, which comes in with a library's lint rules:
         // the app logs through android.util.Log (Engine.rule), not Timber.
         disable += "LogNotTimber"
+        // A library jar's findings left out by path (app/lint.xml).
+        lintConfig = file("lint.xml")
     }
 
     // Java 25, the gateway's LTS and the JDK the build runs on
@@ -370,8 +372,14 @@ aboutLibraries {
         // Reactive Streams' interfaces (a library's dependency) are CC0, a
         // public-domain dedication the web's list allows as well
         // (vite-plugins/licences.ts); let through for that artifact alone.
-        allowedLicensesMap =
-            mapOf("LGPL-2.1-or-later" to listOf("net.java.dev.jna"), "CC0-1.0" to listOf("org.reactivestreams"))
+        // Bouncy Castle, PdfBox-Android's cryptography for an encrypted PDF,
+        // is under its own licence, the MIT licence's words with no SPDX id
+        // of its own (bouncycastle.org/licence.html); let through for it alone.
+        allowedLicensesMap = mapOf(
+            "LGPL-2.1-or-later" to listOf("net.java.dev.jna"),
+            "CC0-1.0" to listOf("org.reactivestreams"),
+            "Bouncy Castle Licence" to listOf("org.bouncycastle"),
+        )
     }
 }
 

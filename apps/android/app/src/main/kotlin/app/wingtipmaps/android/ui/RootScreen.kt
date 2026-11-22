@@ -202,7 +202,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit, onLink: (
         MapPane(plan, ownShip, covered = covered, onPick = onPick, actions = actions, buttonsOnSheet = buttonsOnSheet)
     }
     // A link or words dropped on the window (WindowDrop).
-    Box(Modifier.fillMaxSize().then(rememberSheetDrop(pages, search, onLink))) {
+    Box(Modifier.fillMaxSize().sheetDrop(pages, search, onLink)) {
         if (stripLayout) {
             StripLayout(
                 plan = plan, session = session, ownShip = ownShip.ownShip, flying = flying, raise = map.raised, searchRow = searchRow,

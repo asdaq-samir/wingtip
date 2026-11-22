@@ -7,6 +7,7 @@ import android.view.View
 import androidx.compose.foundation.draganddrop.dragAndDropSource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draganddrop.DragAndDropTransferData
+import androidx.core.net.toUri
 import app.wingtipmaps.android.ai.functions.AgentLinks
 
 /**
@@ -22,7 +23,7 @@ object DragOut {
     /** What the row carries: its words, and its link where it has one. */
     fun clip(words: String, link: String?): ClipData {
         val types = if (link == null) arrayOf(ClipDescription.MIMETYPE_TEXT_PLAIN) else arrayOf(ClipDescription.MIMETYPE_TEXT_PLAIN, ClipDescription.MIMETYPE_TEXT_URILIST)
-        val item = if (link == null) ClipData.Item(words) else ClipData.Item(words, null, Uri.parse(link))
+        val item = if (link == null) ClipData.Item(words) else ClipData.Item(words, null, link.toUri())
         return ClipData(ClipDescription(words, types), item)
     }
 

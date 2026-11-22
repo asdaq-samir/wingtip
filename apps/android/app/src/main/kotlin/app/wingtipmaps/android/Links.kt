@@ -1,8 +1,8 @@
 package app.wingtipmaps.android
 
+import app.wingtipmaps.android.library.DocPlace
 import app.wingtipmaps.android.navigation.generated.LinkKey
 import app.wingtipmaps.android.navigation.generated.Screen
-import app.wingtipmaps.android.library.DocPlace
 import app.wingtipmaps.android.share.SharedPlan
 import java.net.URI
 import java.net.URLDecoder
@@ -48,8 +48,12 @@ object Links {
      */
     fun parse(url: String?, host: String = Config.host): Link? {
         if (url.isNullOrBlank()) return null
-        val uri = runCatching { URI(url) }.getOrNull() ?: return null
-        val query = query(uri.rawQuery)
+        // The address read without its query, which is read part by part
+        // below: java.net.URI refuses a whole link for one bad escape in
+        // it ("%E0%A4%A"), where a bad part is only to be left out.
+        val (address, rawQuery) = url.substringBefore('#').let { it.substringBefore('?') to it.substringAfter('?', "") }
+        val uri = runCatching { URI(address) }.getOrNull() ?: return null
+        val query = query(rawQuery)
         val screen = Screen.of(query[Screen.LINK_KEY]?.lowercase())
         if (uri.scheme == Screen.SCHEME) return if (uri.host == Screen.SCHEME_HOST) planner(query, screen) else null
         val path = uri.path ?: return null

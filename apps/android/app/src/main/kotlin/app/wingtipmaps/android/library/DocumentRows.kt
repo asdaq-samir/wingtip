@@ -2,6 +2,8 @@ package app.wingtipmaps.android.library
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.CheckCircle
@@ -111,12 +113,14 @@ internal fun ShelfRow(doc: LibraryDocument, keptEdition: String?, keeping: Float
 /** A name asked for in Material's dialog: a document's or a bookmark's. */
 @Composable
 internal fun NameDialog(title: String, label: String, start: String, onDone: (String?) -> Unit) {
-    var text by remember { mutableStateOf(start) }
+    val field = rememberTextFieldState(start)
     AlertDialog(
         onDismissRequest = { onDone(null) },
         title = { Text(title) },
-        text = { OutlinedTextField(text, { text = it }, singleLine = true, label = { Text(label) }) },
-        confirmButton = { TextButton(onClick = { onDone(text) }, enabled = text.isNotBlank()) { Text(stringResource(R.string.save)) } },
+        text = { OutlinedTextField(field, lineLimits = TextFieldLineLimits.SingleLine, label = { Text(label) }) },
+        confirmButton = {
+            TextButton(onClick = { onDone(field.text.toString()) }, enabled = field.text.isNotBlank()) { Text(stringResource(R.string.save)) }
+        },
         dismissButton = { TextButton(onClick = { onDone(null) }) { Text(stringResource(R.string.cancel)) } },
     )
 }

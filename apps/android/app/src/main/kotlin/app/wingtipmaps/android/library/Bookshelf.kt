@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.library
 
+import android.annotation.SuppressLint
 import android.content.Context
 import app.wingtipmaps.android.KeptFile
 import app.wingtipmaps.android.api.Gateway
@@ -7,11 +8,11 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.LibraryDocument
 import app.wingtipmaps.android.api.libraryShelf
+import java.io.File
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.builtins.ListSerializer
-import java.io.File
 
 /**
  * The FAA's shelf as the planner keeps it (/api/library, wingtip.library:
@@ -92,6 +93,9 @@ class Bookshelf private constructor(private val context: Context) {
         fun grouped(shelf: List<LibraryDocument>): List<Pair<String, List<LibraryDocument>>> =
             shelf.groupBy { it.group }.toList().sortedBy { (g, _) -> GROUPS.indexOf(g).let { if (it < 0) GROUPS.size else it } }
 
+        // The application's context alone (of), which lives as long as
+        // the process, so the one shelf holds no screen's.
+        @SuppressLint("StaticFieldLeak")
         @Volatile
         private var shared: Bookshelf? = null
 

@@ -150,7 +150,6 @@ class ReaderModel(app: Application, val place: DocPlace) : AndroidViewModel(app)
 
     override fun onCleared() {
         _state.value.pages?.close()
-        super.onCleared()
     }
 
     companion object {
