@@ -157,6 +157,7 @@ export type PlaceFound = Schemas["PlaceFound"];
 export type PlacesFound = Schemas["PlacesFound"];
 /** The route from the side: the ground and the controlled airspace. */
 export type RouteProfile = Schemas["RouteProfile"];
+export type RouteWeather = Schemas["RouteWeather"];
 export type AirspaceAt = Schemas["AirspaceAt"];
 export type WeatherMap = Schemas["WeatherMap"];
 /** The radar and satellite loop (wingtip.weather_loop). */

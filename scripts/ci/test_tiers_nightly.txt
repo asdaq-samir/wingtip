@@ -53,6 +53,7 @@ fuel-gauge.spec.ts
 fuel-stops.spec.ts
 fullscreen.spec.ts
 hazard-legs.spec.ts
+hazard-profile.spec.ts
 ifr-icing.spec.ts
 inspections.spec.ts
 instructor-lesson.spec.ts

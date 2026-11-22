@@ -90,6 +90,18 @@ export const routeProfileQuery = (dep: string, dest: string, stops: string[] = [
     meta: { silent: true },
   });
 
+/** The weather on the side view for a flight (api.routeWeather): asked
+ *  again as the departure or the time flown changes, kept ten minutes,
+ *  as the store's products are fetched every few. Quiet: the side view
+ *  is drawn without it where it fails. */
+export const routeWeatherQuery = (dep: string, dest: string, stops: string[], depart: string | undefined, eteMin: number) =>
+  queryOptions({
+    queryKey: ["route-weather", dep, ...stops, dest, depart ?? "now", Math.round(eteMin)],
+    queryFn: () => api.routeWeather(dep, dest, stops, depart, eteMin),
+    staleTime: 10 * 60 * 1000,
+    meta: { silent: true },
+  });
+
 /** The Class B airports and their weather. The airspace never moves and
  *  the planner holds the weather for minutes, so refetching per pan
  *  would ask the same cache the same question; and quiet, because the

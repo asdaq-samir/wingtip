@@ -1120,6 +1120,29 @@ Edit and Done.
    Altitude Advisor list under it chooses the cruise, the plan's menu gone.
    Class B is always planned through, with its clearance (14 CFR 91.131;
    the owner, 2026-11-17): the Profile says so and offers no way round it.
+   The side view also draws the DOF's obstacles along the route, a post
+   from its ground to its top coloured as the ground is against the
+   altitude shown, the tallest three named "1,749 (1,049)", MSL over AGL as
+   the sectional prints them (the engine's `profile_obstacles`; the planner's
+   route profile now sends each obstacle's AGL), and the weather already in
+   the store along the same hops (`/api/route-profile/weather`,
+   `wingtip.profile_weather`): each TAF station's ceiling as a dashed bar at
+   it (the engine's `profile_clouds`, its base MSL), the GFS's freezing
+   level every 20 nm, and the G-AIRMET icing areas crossed as bands between
+   their altitudes; the Profile card's key under it says whose each is and
+   for when (the TAF's issue, the GFS run and its hour, the G-AIRMET's valid
+   and issue times), or that it could not be read (`ProfileHazards`).
+   Terrain Hazards (the Map card's, under Layers; off, On, or In Flight to
+   turn on by itself at flying speed) colour the chart's ground and the
+   DOF's obstacles against the altitude, ForeFlight's Hazard Advisor: red
+   within the pilot's clearance of it or above (Red Within 500, 1,000 by
+   default, or 2,000 ft: 14 CFR 91.119(c), 91.119(b) and 91.177(a)(2)(ii),
+   91.177(a)(2)(i)), amber 1,000 ft under that, from the GPS's height in
+   flight and the plan's cruise on the ground, all the engine's
+   `hazard_view`; MapLibre's color-relief layer on the terrain tiles the
+   relief is drawn from, with the engine's lines fed in
+   (`features/plan-map/hazard`, its own chunk, loaded only once it is on).
+   A picture against one altitude, not TAWS.
 5. A toast with Undo after a change that takes something away
    (`toast.undo`); and every edit -- the route, the altitude, the
    procedures and stops, the departure time, the airplane -- undone and

@@ -30,6 +30,8 @@ export const MAP_KEPT = [
   "threeD",
   "largerMapLabels",
   "heightStretch",
+  "hazard",
+  "hazardClearanceFt",
   "stopsRadiusNm",
   "stopKind",
 ] as const;
@@ -52,6 +54,8 @@ export const mapSlice: Slice<MapSlice> = (set) => ({
   threeD: false,
   largerMapLabels: false,
   heightStretch: 3,
+  hazard: "off",
+  hazardClearanceFt: null,
   stopsRadiusNm: 25,
   stopKind: "all",
   setBase: (base) => set({ base }),
@@ -71,6 +75,8 @@ export const mapSlice: Slice<MapSlice> = (set) => ({
   setThreeD: (threeD) => set({ threeD }),
   setLargerMapLabels: (largerMapLabels) => set({ largerMapLabels }),
   setHeightStretch: (heightStretch) => set({ heightStretch }),
+  setHazard: (hazard) => set({ hazard }),
+  setHazardClearanceFt: (hazardClearanceFt) => set({ hazardClearanceFt }),
   setStopsRadiusNm: (stopsRadiusNm) => set({ stopsRadiusNm }),
   setStopKind: (stopKind) => set({ stopKind }),
 });

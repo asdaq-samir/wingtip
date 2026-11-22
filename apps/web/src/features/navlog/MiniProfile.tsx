@@ -11,6 +11,8 @@ import { navLogRows, type RouteEnds } from "../plan";
 import { planProfile } from "./profile";
 import { CHART } from "../../lib/tokens";
 import { clearanceAt } from "./altitude/clearance";
+import { HazardMarks, ObstacleNames, WeatherKey } from "./ProfileHazards";
+import { profileObstacles, useRouteWeather } from "./sideViewHazards";
 const W = 340,
   H = 64;
 const miles = (nm: number) => grouped(nm);
@@ -104,6 +106,9 @@ export default memo(function MiniProfile({
     dest = ends.destination.ident;
   const stops = (ends.stops ?? []).map((s) => s.ident);
   const { data: profile } = useQuery(routeProfileQuery(dep, dest, stops));
+  // The cloud bases, the freezing level and the icing along it, for the
+  // flight the Brief is planned for (ProfileHazards).
+  const weather = useRouteWeather(ends);
   const plan = useMemo(() => planProfile(navLogRows(ends, selected, legs)), [ends, selected, legs]);
   const drawnTop = Math.max(0, ...plan.points.map((p) => p.plan_ft));
   const cruise = cruiseFt ?? drawnTop;
@@ -121,7 +126,9 @@ export default memo(function MiniProfile({
   // end is still the landing.
   const procedureNm = legs.reduce((nm, l) => nm + (l.procedure?.more_nm ?? 0), 0);
   const look = cn(
-    "grid h-24 w-full shrink-0 grid-rows-[1fr_auto] overflow-hidden rounded-xl bg-background/70 px-2 pt-1.5 pb-1",
+    "grid h-24 w-full shrink-0 overflow-hidden",
+    ruler ? "grid-rows-[1fr_auto_auto]" : "grid-rows-[1fr_auto]",
+    " rounded-xl bg-background/70 px-2 pt-1.5 pb-1",
     "text-muted-foreground tabular-nums",
     TEXT.caption,
   );
@@ -143,6 +150,10 @@ export default memo(function MiniProfile({
   const tintOffset = (ft: number | undefined) => (ft === undefined ? 0 : Math.max(0, Math.min(1, 1 - ft / top)));
   const x = (nm: number) => (profile.length_nm > 0 ? (nm / profile.length_nm) * W : 0);
   const y = (ft: number) => H - (Math.max(0, Math.min(ft, top)) / top) * H;
+  // The DOF's obstacles against the same altitude, the tallest named
+  // (ProfileHazards).
+  const obstacles = profileObstacles(profile, tintAt || null);
+  const axes = { x, y, top };
   const ground = `M0 ${H} ${profile.terrain.map((t) => `L${x(t.along_nm).toFixed(1)} ${y(t.ground_ft).toFixed(1)}`).join(" ")} L${W} ${H}Z`;
   // Each airspace's label once, over its widest piece: its airport's
   // ident, else its class.
@@ -197,6 +208,7 @@ export default memo(function MiniProfile({
               );
             })}
             <path d={ground} fill={`url(#${tintId})`} fillOpacity={0.55} />
+            <HazardMarks obstacles={obstacles} weather={weather} axes={axes} lengthNm={profile.length_nm} />
             <path
               d={level === null ? line : ""}
               fill="none"
@@ -298,6 +310,8 @@ export default memo(function MiniProfile({
             {flightLevel(preview ?? cruise)}
           </span>
         )}
+        {/* The tallest obstacles' heights, in the Profile card's, where there is room. */}
+        {ruler && <ObstacleNames obstacles={obstacles} axes={axes} width={W} height={H} />}
         {wheelSlot && <span ref={wheelSlot} className="absolute inset-y-0 left-0 w-11" />}
       </span>
       {/* The distance along, in nautical miles, under the chart's start,
@@ -307,6 +321,8 @@ export default memo(function MiniProfile({
         <span>{miles(profile.length_nm / 2)}</span>
         <span>{wholeNm(profile.length_nm + procedureNm)}</span>
       </span>
+      {/* Whose the weather drawn is and for when, in the Profile card's. */}
+      {ruler && <WeatherKey weather={weather} />}
     </>
   );
   // A picture, named; but a group where the Profile card's altitude slider
