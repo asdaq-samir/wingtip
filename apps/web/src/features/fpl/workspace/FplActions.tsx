@@ -1,6 +1,6 @@
 import { Suspense, useRef, type ReactNode } from "react";
 import { cn } from "cn";
-import { PIN_AT_FOOT, PIN_STICKS, usePinAtFoot } from "../../../components/sheet/pinAtFoot";
+import { PIN_AT_FOOT, usePinAtFoot } from "../../../components/sheet/pinAtFoot";
 import { CardAction as Action } from "../../../components/CardAction";
 import { ICON } from "../../../lib/icons";
 import { RouteLine } from "../routePanelParts";
@@ -110,7 +110,7 @@ export function FplRoute({
           from the sheet's side as the pinned pill's are (PINNED's px-4),
           where the first figure flush with the head's edge read "Dest" at
           12 (the iOS audit's margin, a local flight). */}
-      <div className={cn("pt-2 pb-1", PIN_STICKS, editing && "hidden")} data-pill-keeps="">
+      <div className={cn("pt-2 pb-1", editing && "hidden")} data-pill-keeps="">
         <div ref={figures} data-pin-foot="" className={cn(PIN_AT_FOOT, "px-1", PINNED)}>
           {!editing && <FlightFigures vm={vm} grow={false} />}
         </div>

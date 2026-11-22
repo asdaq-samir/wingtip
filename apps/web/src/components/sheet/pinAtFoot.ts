@@ -18,6 +18,17 @@ import { SETTLE_MS, shownPx } from "./insets";
  * data-pin-foot so that nothing stops its ease at the pill
  * (sheet/insets' PILL_BODY).
  *
+ * Of two places, the higher on the screen: where it rests on the sheet
+ * (its place under the route, no lower than the foot's top), which goes
+ * down with the sheet as a finger pulls it -- no --sheet-swipe in it --
+ * and the foot's edge, held still there (with it). So pulled toward the
+ * pill the figures go down with the plan, under the floating bar, and
+ * stay on the screen's foot once there, frame by frame on Base UI's own
+ * offsets, where held on the foot's top while the sheet went they waited
+ * for the sheet's top to reach them and then jumped (the owner,
+ * 2026-11-22: "doesn't slide down with the plan, waits until it touches
+ * the grabber on top").
+ *
  * Off the pill its lowest place is the foot's top, not its edge
  * (--pin-lift, the foot's height; usePinAtFoot), so the figures sit over
  * the floating bar, never under it: a route longer than the sheet held
@@ -30,19 +41,7 @@ import { SETTLE_MS, shownPx } from "./insets";
  * onto the foot's edge there as before.
  */
 export const PIN_AT_FOOT =
-  "[transform:translateY(min(0px,calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px)-min(var(--pin-lift,0px),max(0px,calc(var(--pin-pill,0px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px)))))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
-
-/**
- * The pinned row's own box (FplRoute's, round the row with PIN_AT_FOOT) on
- * a phone's bottom sheet (Base UI's data-swipe-direction): sticky at the
- * page's foot, so where a route runs on past the page's foot the browser
- * holds the row there as the page scrolls, with the finger, and the row's
- * room (usePinAtFoot) does not change under it. Over the head round it, as
- * the held row is (FplRoute's PINNED, z-30): a sticky box is a stacking
- * context of its own. Beside the side panel the row stays in its place.
- */
-export const PIN_STICKS =
-  "in-data-[swipe-direction=down]:sticky in-data-[swipe-direction=down]:bottom-0 in-data-[swipe-direction=down]:z-30";
+  "[transform:translateY(min(0px,calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-min(var(--pin-lift,0px),max(0px,calc(var(--pin-pill,0px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))),calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
 
 /**
  * A row of a sheet's head that is its pill (PIN_AT_FOOT on it): held on
@@ -131,14 +130,17 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
     // measured at the top alone, the translation kept as the page scrolled
     // on and carried the figures up through the route, to its middle (the
     // owner's iPhone, 2026-11-21: a long route at full, the strip over the
-    // approach's fixes with rows below it). On a phone's bottom sheet the
-    // row's box is sticky at the page's foot (PIN_STICKS, on its box), so
-    // the browser holds it there as the page scrolls, on the compositor,
-    // with the finger; measured again once a frame while the page scrolls,
-    // for the page's end, where the route's end comes up off the foot. Each
-    // value written only as it changes (setVar): measured and written at
-    // each scroll event, the figures were a frame behind the page under the
-    // finger (the speed audit of 2026-11-21, finding 9).
+    // approach's fixes with rows below it). Measured again once a frame
+    // while the page scrolls, each value written only as it changes
+    // (setVar): measured and written at each scroll event, the figures were
+    // a frame behind the page under the finger (the speed audit of
+    // 2026-11-21, finding 9). Not sticky (perf-fix's PIN_STICKS, undone
+    // 2026-11-22): a sticky box held the figures at the page's foot from
+    // the first move, over the route's last rows, where they are to sit
+    // under the route and go down with the sheet until they meet the foot
+    // (the owner: "Figures are overlapping the grouped box at the bottom
+    // and doesn't slide down with the plan, waits until it touches the
+    // grabber on top").
     let scrolled = 0;
     const onScroll = () => {
       if (!scrolled) scrolled = requestAnimationFrame(() => ((scrolled = 0), measure()));

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAKES_WAY, PIN_STICKS, barRoom, liftAt, pinnedNow } from "./pinAtFoot";
+import { MAKES_WAY, barRoom, liftAt, pinnedNow } from "./pinAtFoot";
 
 describe("pinAtFoot", () => {
   it("holds the row at the pill whatever the slide", () => {
@@ -25,14 +25,6 @@ describe("pinAtFoot", () => {
     // since the foot's top is 88 over that edge.
     expect(pinnedNow(false, 0, 17, liftAt(0, 88, 760))).toBe(true);
     expect(pinnedNow(false, 0, 120, liftAt(0, 88, 760))).toBe(false);
-  });
-
-  it("holds the row's box at the page's foot by the browser's own sticky, on a phone's bottom sheet alone", () => {
-    expect(PIN_STICKS.split(" ")).toEqual([
-      "in-data-[swipe-direction=down]:sticky",
-      "in-data-[swipe-direction=down]:bottom-0",
-      "in-data-[swipe-direction=down]:z-30",
-    ]);
   });
 
   it("measures the bar's room from its top, not the foot's edge", () => {
