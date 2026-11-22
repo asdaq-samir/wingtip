@@ -74,8 +74,14 @@ fun LazyListScope.notamsSection(notams: CardNotams, pad: Modifier) {
     item(key = "notams-title") { NotamsTitle(long, notams.all, said.size, notams.toggle, pad) }
     if (said.isEmpty()) {
         item(key = "notams-none") {
-            val since = notams.ranked?.coverageSince
-            val heard = if (since != null) stringResource(R.string.notams_none_since, since) else stringResource(R.string.notams_none_heard)
+            // Never "no NOTAMs": none heard since the feed's day, or none in
+            // force from the full set (NotamCoverage, decision 0059).
+            val since = NotamCoverage.short(notams.ranked?.coverageSince)
+            val heard = when {
+                notams.ranked?.fullSet == true -> stringResource(R.string.notams_none_in_force)
+                since != null -> stringResource(R.string.notams_none_since, since)
+                else -> stringResource(R.string.notams_none_heard)
+            }
             NoteRow(notams.none ?: heard, pad)
         }
     } else if (long && notams.all) {
@@ -96,6 +102,17 @@ fun LazyListScope.notamsSection(notams: CardNotams, pad: Modifier) {
     if (notams.ranked?.unchecked.orEmpty().isNotEmpty()) {
         item(key = "notams-unchecked") {
             Text(stringResource(R.string.notams_tfrs_unread), color = LocalInk.current.cautionInk, style = MaterialTheme.typography.bodyMedium, modifier = pad.padding(vertical = WingtipSpace.Sm))
+        }
+    }
+    // Only what the feed has sent since its day, not the full set (decision
+    // 0059), as the web's card says under its list; not for a field outside
+    // the NOTAM system, which has none to miss.
+    val ranked = notams.ranked
+    if (ranked != null && ranked.fullSet != true && notams.none == null) {
+        item(key = "notams-coverage") {
+            val since = NotamCoverage.withYear(ranked.coverageSince)
+            val line = if (since != null) stringResource(R.string.notams_not_full_since, since) else stringResource(R.string.notams_not_full)
+            Text(line, color = LocalInk.current.cautionInk, style = MaterialTheme.typography.bodyMedium, modifier = pad.padding(vertical = WingtipSpace.Sm))
         }
     }
 }

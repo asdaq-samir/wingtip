@@ -70,6 +70,9 @@ final class ReadyToFly {
             ? EngineContract.ReadyToFlyInputCharts(kept: store?.chartsKept ?? false, canKeep: true, edition: store?.chartEdition, downloadMb: nil)
             : nil
         let notamsAt = notamsFor == routeKey ? notamsAt : nil
+        // Whether they are the full set, and since when the feed was heard
+        // (decision 0059): a partial list is a caution, whatever its age.
+        let ranked = notamsAt == nil ? nil : notams
         // The saved plan read from disk once a refresh, for both the kept
         // items and the device's "plan saved".
         let saved = plan.routed && ReadyFacts.saved(dep: plan.dep, dest: plan.dest, stops: plan.stops, kept: Kept.load())
@@ -80,7 +83,9 @@ final class ReadyToFly {
             packs: EngineContract.ReadyToFlyInputPacks(edition: store?.packEdition, canUpdate: true),
             briefing: EngineContract.ReadyToFlyInputBriefing(fetchedAt: plan.briefedAt?.timeIntervalSince1970),
             fields: ReadyFacts.fields(dep: plan.dep, dest: plan.dest, briefing: plan.briefing),
-            notams: EngineContract.ReadyToFlyInputNotams(fetchedAt: notamsAt?.timeIntervalSince1970),
+            notams: EngineContract.ReadyToFlyInputNotams(fetchedAt: notamsAt?.timeIntervalSince1970,
+                                                         fullSet: ranked.map { $0.fullSet ?? false },
+                                                         heardSince: ranked?.coverageSince.map { String($0.prefix(10)) }),
             kept: plan.routed ? kept(plan, routeKey: routeKey, saved: saved) : nil,
             device: EngineContract.ReadyToFlyInputDevice(
                 batteryPct: battery.pct, charging: battery.charging,

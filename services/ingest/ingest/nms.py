@@ -113,10 +113,11 @@ _ROOT = re.compile(r"<(?![?!])([\w.:-]+)[^>]*>")
 _MEMBER = re.compile(r"<((?:[\w.-]+:)?hasMember)\b.*?</\1>", re.S)
 
 
-def chunks(text: str, size: int = CHUNK):
-    """A load's AIXM in messages the engine reads, each `size` of its
-    members at most under its root's own tag (its namespaces with it): one
-    document of the whole set, or several one after another."""
+def chunks(text: str, size: int | None = None):
+    """A load's AIXM in messages the engine reads, each `size` (CHUNK) of
+    its members at most under its root's own tag (its namespaces with it):
+    one document of the whole set, or several one after another."""
+    size = size or CHUNK
     for doc in (d for d in _DOCUMENT.split(text) if d.strip()):
         root = _ROOT.search(doc)
         members = [m.group(0) for m in _MEMBER.finditer(doc)]

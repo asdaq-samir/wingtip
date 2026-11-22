@@ -33,6 +33,11 @@ object ReadyFacts {
      *  observed time (Unix seconds) and whether a TAF came with it. */
     data class FieldWeather(val ident: String, val role: String, val metarObservedS: Double?, val taf: Boolean)
 
+    /** The route's NOTAMs as Ready to fly holds them: the top ones' text as
+     *  sent, whether they are the full set in force, and the day the feed
+     *  was first heard (the planner's full_set and coverage_since). */
+    data class RouteNotams(val top: List<String>, val fullSet: Boolean, val since: String?)
+
     /** The engine's input. The airplane is the plan's own or none, never
      *  one assumed (decision 0011); the altitude is the cruise the
      *  planner's nav log flies, none until it has one. */
@@ -43,6 +48,7 @@ object ReadyFacts {
         local: Local,
         fields: List<FieldWeather>,
         notamsAtMs: Long?,
+        notams: RouteNotams? = null,
     ): EngineContract.ReadyToFlyInput = EngineContract.ReadyToFlyInput(
         now = (nowMs / 1000).toDouble(),
         plan = EngineContract.ReadyToFlyInputPlan(
@@ -54,7 +60,13 @@ object ReadyFacts {
         packs = local.packs,
         briefing = EngineContract.ReadyToFlyInputBriefing(fetchedAt = local.briefAtMs?.let { (it / 1000).toDouble() }),
         fields = fields.map { EngineContract.ReadyToFlyInputFieldsItem(ident = it.ident, role = it.role, metarObserved = it.metarObservedS, taf = it.taf) },
-        notams = EngineContract.ReadyToFlyInputNotams(fetchedAt = notamsAtMs?.let { (it / 1000).toDouble() }),
+        // Whether they are the full set, and since when the feed was heard
+        // (decision 0059): a partial list is a caution, whatever its age.
+        notams = EngineContract.ReadyToFlyInputNotams(
+            fetchedAt = notamsAtMs?.let { (it / 1000).toDouble() },
+            fullSet = notams?.fullSet,
+            heardSince = notams?.since?.take(10),
+        ),
         kept = if (plan.routed) local.kept else null,
         device = local.device,
         receiver = local.receiver,

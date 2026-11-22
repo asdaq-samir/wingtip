@@ -37,7 +37,11 @@ class ReadyToFlyModelTest {
             return ReadyFacts.FieldWeather(ident, role, metarObservedS = 1_794_245_400.0, taf = ident == "KMSN")
         }
         override suspend fun notams(plan: Plan.State, cruiseFt: Double?) =
-            KeptForAir.Had(listOf("!OSH 11/001 OSH RWY 18/36 CLSD"), fetchedAtMs = 1_794_247_200_000L, kept = false)
+            KeptForAir.Had(
+                ReadyFacts.RouteNotams(listOf("!OSH 11/001 OSH RWY 18/36 CLSD"), fullSet = false, since = "2026-10-19"),
+                fetchedAtMs = 1_794_247_200_000L,
+                kept = false,
+            )
     }
 
     @Test
@@ -76,6 +80,9 @@ class ReadyToFlyModelTest {
         assertEquals(5500.0, sent.plan?.altitudeFt)
         assertEquals(1_794_246_000.0, sent.briefing?.fetchedAt)
         assertEquals(1_794_247_200.0, sent.notams?.fetchedAt)
+        // Not the full set, and since when (decision 0059): the engine's caution.
+        assertEquals(false, sent.notams?.fullSet)
+        assertEquals("2026-10-19", sent.notams?.heardSince)
         assertEquals(listOf("!OSH 11/001 OSH RWY 18/36 CLSD"), model.state.value.notams)
     }
 

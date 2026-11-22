@@ -18,6 +18,10 @@
     <string name="notams_shown">%1$d of %2$d</string>
     <string name="notams_none_heard">None heard</string>
     <string name="notams_none_since">None heard since %1$s</string>
+    <string name="notams_none_in_force">None in force</string>
+    <!-- Under the list until the planner holds every NOTAM in force (decision 0059). -->
+    <string name="notams_not_full_since">NOTAMs heard since %1$s, not a full set</string>
+    <string name="notams_not_full">Recent NOTAMs only, not a full set</string>
     <string name="notams_tfrs_unread">The TFR list could not be read: check the FAA\'s TFRs before flying.</string>
     <string name="notams_show_all">Show all NOTAMs</string>
     <string name="notams_show_fewer">Show fewer NOTAMs</string>

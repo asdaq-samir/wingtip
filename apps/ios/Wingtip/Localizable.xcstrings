@@ -1459,6 +1459,9 @@
     "FAA D-ATIS" : {
 
     },
+    "FAA NOTAM System, every NOTAM in force" : {
+
+    },
     "FAA RVR, through SWIM" : {
 
     },
@@ -2360,7 +2363,7 @@
     "NOTAMs" : {
 
     },
-    "NOTAMs issued before %@ and unchanged since aren't held." : {
+    "NOTAMs heard since %@, not a full set" : {
 
     },
     "Name" : {
@@ -2585,9 +2588,6 @@
     "None filed in the last month." : {
 
     },
-    "None for the route" : {
-
-    },
     "None found within 100 nm. File one you have checked yourself." : {
 
     },
@@ -2601,6 +2601,9 @@
 
     },
     "None here now or to come" : {
+
+    },
+    "None in force" : {
 
     },
     "None listed" : {
@@ -3081,6 +3084,9 @@
 
     },
     "Ready to Fly?" : {
+
+    },
+    "Recent NOTAMs only, not a full set" : {
 
     },
     "Recent experience" : {
