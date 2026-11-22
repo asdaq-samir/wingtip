@@ -5,8 +5,16 @@ use super::*;
 // 10 gal/h at 100 kt, a tenth of a gallon and 0.6 min a mile.
 const START: Point = (0.0, 0.0);
 const END: Point = (0.0, 10.0);
-const FIG: Figures =
-    Figures { fuel_per_nm: 0.1, min_per_nm: 0.6, usable_gal: 40.0, start_gal: 40.0, taxi_gal: 1.0, reserve_gal: 5.0, alternate_gal: 0.0, ground_min: 30.0 };
+const FIG: Figures = Figures {
+    fuel_per_nm: 0.1,
+    min_per_nm: 0.6,
+    usable_gal: 40.0,
+    start_gal: 40.0,
+    taxi_gal: 1.0,
+    reserve_gal: 5.0,
+    alternate_gal: 0.0,
+    ground_min: 30.0,
+};
 
 fn fields(rows: &[(&str, f64, f64)]) -> Vec<Field> {
     rows.iter()

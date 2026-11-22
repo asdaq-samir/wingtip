@@ -5,7 +5,7 @@
 //! it once.
 
 use crate::jurisdiction::{caution, country_name, jurisdiction_of, leg_codes};
-use wingtip_core::ask::{Ask, num_in, strings};
+use wingtip_core::ask::{num_in, strings, Ask};
 use wingtip_core::json::{self, Value};
 
 /// Why it matters, as the Brief's line says under its tap: 14 CFR 91.703(a).
@@ -37,11 +37,8 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         out.push('}');
         return Ok(out);
     }
-    let points = ask
-        .list("points")?
-        .iter()
-        .map(|p| Ok((num_in(name, p, "lat")?, num_in(name, p, "lon")?)))
-        .collect::<Result<Vec<_>, String>>()?;
+    let points =
+        ask.list("points")?.iter().map(|p| Ok((num_in(name, p, "lat")?, num_in(name, p, "lon")?))).collect::<Result<Vec<_>, String>>()?;
     let codes: Vec<&str> = points.iter().map(|&(lat, lon)| jurisdiction_of(lat, lon)).collect();
     // Every country met, each once in the order met, the legs' too.
     let mut met: Vec<&str> = Vec::new();

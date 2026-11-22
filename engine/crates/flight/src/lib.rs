@@ -12,6 +12,8 @@
 //!   phase 4).
 //! - field: whether a field is open, from NASR's ARPT_STATUS (the owner's
 //!   hard rule: a closed field is never shown or offered as open);
+//! - ident: a field's FAA ident and the ICAO names it may be filed under
+//!   (FAA JO 7350.9GG 4-1), re-exported from field;
 //! - limits: the altitudes a flight may be planned at (71.33, 91.119(c),
 //!   91.121, 91.159, 91.179);
 //! - typed: a cruise altitude as a pilot types it, read to feet (1.1's
@@ -46,6 +48,7 @@ pub mod field;
 pub mod filing;
 pub mod flight;
 pub mod fuel_weight;
+pub mod ident;
 pub mod jurisdiction;
 pub mod jurisdiction_call;
 #[cfg(test)]

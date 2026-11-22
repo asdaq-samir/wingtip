@@ -98,11 +98,8 @@ fn title(a: &Advisory) -> String {
 /// The adverse conditions on the route, in order, at most ADVERSE_MAX,
 /// and how many more there are.
 pub fn adverse_rows(all: &[Advisory]) -> (Vec<Row>, usize) {
-    let mut met: Vec<(usize, &'static str, &Advisory)> = all
-        .iter()
-        .filter(|a| matches!(a.when.as_deref(), None | Some("during")))
-        .filter_map(|a| rank(a).map(|(r, f)| (r, f, a)))
-        .collect();
+    let mut met: Vec<(usize, &'static str, &Advisory)> =
+        all.iter().filter(|a| matches!(a.when.as_deref(), None | Some("during"))).filter_map(|a| rank(a).map(|(r, f)| (r, f, a))).collect();
     let along = |a: &Advisory| a.from_nm.unwrap_or(f64::INFINITY);
     met.sort_by(|x, y| x.0.cmp(&y.0).then(along(x.2).total_cmp(&along(y.2))));
     let more = met.len().saturating_sub(ADVERSE_MAX);

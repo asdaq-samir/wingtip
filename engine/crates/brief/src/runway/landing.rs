@@ -33,13 +33,7 @@ pub struct Landing {
 /// taken as not, so no circle is offered before the plate says so);
 /// `picked`, `by_pilot`: the runway picked there and whether the pilot
 /// picked it (else it was picked into the wind).
-pub fn landing_runway(
-    approach: bool,
-    straight_in: Option<&str>,
-    circling: Option<bool>,
-    picked: Option<&str>,
-    by_pilot: bool,
-) -> Landing {
+pub fn landing_runway(approach: bool, straight_in: Option<&str>, circling: Option<bool>, picked: Option<&str>, by_pilot: bool) -> Landing {
     let number = |r: &str| runway_number(r.trim()).to_ascii_uppercase();
     let picked = picked.filter(|p| !p.trim().is_empty()).map(number);
     let Some(own) = straight_in.filter(|r| approach && !r.trim().is_empty()).map(number) else {

@@ -100,9 +100,11 @@ fn the_warning_names_the_country() {
 
 #[test]
 fn a_route_says_its_points_legs_and_the_brief_once() {
-    let ask = json::parse(r#"{"points":[{"lat":42.3246,"lon":-88.0741},{"lat":46.842,"lon":-92.1936},{"lat":48.3719,"lon":-89.3239}]}"#).unwrap();
+    let ask =
+        json::parse(r#"{"points":[{"lat":42.3246,"lon":-88.0741},{"lat":46.842,"lon":-92.1936},{"lat":48.3719,"lon":-89.3239}]}"#).unwrap();
     let answer = json::parse(&call("route_jurisdiction", &ask).unwrap()).unwrap();
-    let codes: Vec<&str> = answer.get("points").unwrap().as_array().unwrap().iter().map(|p| p.get("code").unwrap().as_str().unwrap()).collect();
+    let codes: Vec<&str> =
+        answer.get("points").unwrap().as_array().unwrap().iter().map(|p| p.get("code").unwrap().as_str().unwrap()).collect();
     assert_eq!(codes, vec!["US", "US", "CA"]);
     let legs = answer.get("legs").unwrap().as_array().unwrap();
     assert!(legs[0].get("caution").unwrap().as_str().is_none());
