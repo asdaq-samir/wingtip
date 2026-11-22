@@ -1,4 +1,4 @@
-import { CHART, SIGNAL } from "../../lib/tokens";
+import { MARKUP } from "../../lib/tokens";
 
 /**
  * The reader's markup apart from pdf.js, so it is tested on its own: what
@@ -150,20 +150,68 @@ export function draws(pointerType: string, pencilOnly: boolean): boolean {
   return pointerType !== "touch" || !pencilOnly;
 }
 
-/** The inks, from the app's own tokens: a highlighter's four, the pen's
- *  four. The first of each is where a tool starts. */
+/**
+ * Two fingers scroll the pages while the pen or the eraser is in hand, as
+ * a finger does in Notes and PencilKit: one finger or a pencil draws, a
+ * second finger down makes it a scroll until every finger is lifted (so
+ * the finger left behind draws nothing). pdf.js's drawing layer takes
+ * every touch (touch-action: none), so the scroll is the reader's own,
+ * by how far the fingers' middle moves. Fingers only: a pencil and a
+ * mouse are never a scroll.
+ */
+export function twoFingerScroll() {
+  const at = new Map<number, [number, number]>();
+  let scrolling = false;
+  const middle = () => {
+    const all = [...at.values()];
+    return [all.reduce((s, p) => s + p[0], 0) / all.length, all.reduce((s, p) => s + p[1], 0) / all.length] as const;
+  };
+  return {
+    /** A pointer down: whether it is (now) a scroll, not a stroke. */
+    down(id: number, type: string, x: number, y: number): boolean {
+      if (type !== "touch") return false;
+      at.set(id, [x, y]);
+      if (at.size >= 2) scrolling = true;
+      return scrolling;
+    },
+    /** A pointer moved: how far to scroll the pages by, or null where it
+     *  is no scroll's (a stroke's, a pencil's). */
+    move(id: number, x: number, y: number): [number, number] | null {
+      if (!at.has(id)) return null;
+      const [mx, my] = middle();
+      at.set(id, [x, y]);
+      if (!scrolling) return null;
+      const [nx, ny] = middle();
+      return [mx - nx, my - ny];
+    },
+    /** A pointer up or cancelled: whether it ended a scroll's finger. */
+    up(id: number): boolean {
+      if (!at.delete(id)) return false;
+      const was = scrolling;
+      if (at.size === 0) scrolling = false;
+      return was;
+    },
+    get scrolling() {
+      return scrolling;
+    },
+  };
+}
+
+/** The inks, from the markup's own tokens (design/tokens.json's
+ *  color.markup): a highlighter's four, the pen's four. The first of each
+ *  is where a tool starts. */
 export const INKS: Record<"highlight" | "pen", readonly { value: string; label: string }[]> = {
   highlight: [
-    { value: CHART.selected, label: "Yellow" },
-    { value: CHART.routeGreen, label: "Green" },
-    { value: CHART.airspaceBlue, label: "Blue" },
-    { value: CHART.airspaceMagenta, label: "Pink" },
+    { value: MARKUP.highlightYellow, label: "Yellow" },
+    { value: MARKUP.highlightGreen, label: "Green" },
+    { value: MARKUP.highlightBlue, label: "Blue" },
+    { value: MARKUP.highlightPink, label: "Pink" },
   ],
   pen: [
-    { value: CHART.fixInk, label: "Black" },
-    { value: CHART.mapBlueInk, label: "Blue" },
-    { value: SIGNAL.red, label: "Red" },
-    { value: CHART.vfrGreen, label: "Green" },
+    { value: MARKUP.penBlack, label: "Black" },
+    { value: MARKUP.penBlue, label: "Blue" },
+    { value: MARKUP.penRed, label: "Red" },
+    { value: MARKUP.penGreen, label: "Green" },
   ],
 };
 

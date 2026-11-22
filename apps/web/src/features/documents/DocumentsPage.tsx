@@ -166,7 +166,9 @@ function OwnRow({
           name="name"
           defaultValue={doc.name}
           aria-label="Document name"
-          autoFocus
+          // Into the field on Rename, the pilot's own ask (not autoFocus,
+          // which would take the focus on any render that drew it).
+          ref={(el) => el?.focus()}
           onBlur={(e) => e.currentTarget.form?.requestSubmit()}
         />
       </form>
