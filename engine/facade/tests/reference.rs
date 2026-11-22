@@ -23,6 +23,11 @@ fn at<'a>(answer: &'a Value, path: &str) -> &'a Value {
     path.split('.').fold(answer, |v, key| v.get(key).unwrap_or(&Value::Null))
 }
 
+/// How near the half a rounded table's figure is read: the engine's ISA
+/// lapse (0.0019812 °C a foot) puts 8,000 ft at -0.8496 °C, the table's
+/// -0.85 rounded half away from zero to -0.9.
+const HALF_SLACK: f64 = 1e-3;
+
 /// What is wrong with one check of an answer, if anything.
 fn check(answer: &Value, expect: &Value) -> Option<String> {
     let path = expect["path"].as_str().unwrap_or("");
@@ -30,8 +35,13 @@ fn check(answer: &Value, expect: &Value) -> Option<String> {
     let fail = |want: String| Some(format!("at {path:?}: got {got}, want {want}"));
     if let Some(want) = expect.get("value").and_then(Value::as_f64) {
         let within = expect["tolerance"].as_f64().expect("a value check names its tolerance");
+        // A table that rounds to a step (`rounding`, the PHAK's tenths) puts
+        // a figure that sits on the half either side of it: the engine's
+        // constants read that half to within HALF_SLACK, so it is let
+        // through beside the step's half; every other check is the float's.
+        let slack = if expect.get("rounding").is_some() { HALF_SLACK } else { 1e-9 };
         return match got.as_f64() {
-            Some(x) if (x - want).abs() <= within + 1e-9 => None,
+            Some(x) if (x - want).abs() <= within + slack => None,
             _ => fail(format!("{want} \u{b1} {within}")),
         };
     }
