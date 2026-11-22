@@ -108,4 +108,17 @@ the AWS template and CI. Nothing critical. The outside test's brief is
 | L: the iPhone logged notification titles, watched airplanes and route fields as public | Private. |
 | Info: no `form-action` in the page's CSP; the airport mark's class unescaped (L17); a `..` path parameter in the connector's calls; FAA index PDF names unchecked (L16) | `form-action 'self'`; escaped; sent as `%2E`; checked against `_PDF_NAME`. |
 
+What round 2 (claude/round2-security, 2026-11-21) did with what the deep
+review left (the owner: "I will take your recs"):
+
+| Left | Now |
+|---|---|
+| N1: anyone could sign endorsements under any certificate number, a student's second account for themselves | The engine's `instructor_verification` checks the signing instructor against the FAA's Airmen Certification Releasable Database, which ingest now keeps monthly (`ingest.airmen`, flight instructors only, no addresses): one record of the name, not the student, not a record another account here signs as, not expired (14 CFR 61.1, 61.19(d)(2), 61.189(a)). Otherwise the endorsement is kept, labelled Not verified and held for nothing. The file has no certificate numbers, so the match is by name; someone signing first as a real instructor not yet here is not caught (scope, section 7). |
+| N2: no Wingtip-side way to end a connector connection | You, Connected Apps: each connection listed and disconnected one at a time, its tokens and spent refresh hashes deleted, the consent with the last (`/api/me/connections`). |
+| N3: a phone route link replaced the plan without the preview | On the iPhone and Android a route link (and Android's AI and App Functions routes) opens the shared-flight preview; the plan changes at Use This Plan. |
+| N4: the gateway and Flyway used the Postgres superuser | Flyway signs in as the owner (`wingtip`); the app as `wingtip_app`, rows only, made and re-granted by `db/callback/afterMigrate.sql`, with its own secret (`AppDbPasswordSecret`, `APP_DB_PASSWORD`). |
+| N5: a busted tile cache key reached the planner unlimited | AWS WAF `TileRateLimit` on the distribution: 3,000 tile requests per address per 5 minutes, then 429; about $6.20 a month (README-AWS). |
+| N6: an iPhone sign-in's Apple token replaces the web's, whose grant is then never revoked | Needs a device: the check and what each answer decides are in NATIVE.md, "Checking on a device". |
+| N8: addresses compared case-sensitively | V50 merges pilots one address apart but for case (or keeps one apart, under a reserved `.invalid` address, where a merge would break a unique key), notes each in `email_case_merges`, and makes `lower(email)` unique; `findByEmail` folds case. |
+
 What stands, with why, is the scope's section 7.
