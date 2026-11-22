@@ -14,29 +14,7 @@ import {
   type Tool,
 } from "./markup";
 import type { MarkupHandle, MarkupState } from "./readerBody";
-
-/** What of pdf.js's annotation editors this reads; its own types keep
- *  them private to its viewer. */
-interface Editor {
-  mode: number;
-  pageIndex: number;
-  serialize(copying?: boolean): Record<string, unknown> | null;
-}
-interface UiManager {
-  undo(): void;
-  redo(): void;
-  delete(): void;
-  setSelected(editor: Editor): void;
-  getEditors(pageIndex: number): Iterable<Editor>;
-  readonly firstSelectedEditor: Editor | undefined;
-  updateParams(type: number, value: unknown): void;
-}
-interface PageView {
-  div: HTMLElement;
-  viewport: { scale: number; convertToPdfPoint(x: number, y: number): number[] };
-  annotationEditorLayer?: { annotationEditorLayer?: { endDrawingSession(aborted?: boolean): unknown } | null } | null;
-}
-type States = { hasSomethingToUndo?: boolean; hasSomethingToRedo?: boolean; hasSelectedEditor?: boolean };
+import type { Editor, PageView, States, UiManager } from "./pdfjsEditors";
 
 /** Each tool's mode of pdf.js's editor; the eraser is ours, over its
  *  marks with none of its own tools on. */
