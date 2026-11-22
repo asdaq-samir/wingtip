@@ -1,9 +1,13 @@
 """scripts/ci/flaky_tests.py: what it prints in a public issue is made safe."""
 
 import importlib.util
+import sys
 from pathlib import Path
 
-_SPEC = importlib.util.spec_from_file_location("flaky_tests", Path(__file__).resolve().parents[3] / "scripts" / "ci" / "flaky_tests.py")
+_CI = Path(__file__).resolve().parents[3] / "scripts" / "ci"
+# flaky_tests reads its sibling spec_seconds as the CI job runs it, from scripts/ci.
+sys.path.insert(0, str(_CI))
+_SPEC = importlib.util.spec_from_file_location("flaky_tests", _CI / "flaky_tests.py")
 flaky_tests = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(flaky_tests)
 
@@ -22,7 +26,7 @@ def test_the_browser_lists_of_other_runs_are_cleaned(tmp_path, monkeypatch):
     (tmp_path / "e2e" / "run.txt").write_text("[chromium] a.spec.ts:1 › evil` --> @org/team\n")
     monkeypatch.setattr(flaky_tests, "find_issue", lambda: None)
     printed = []
-    monkeypatch.setattr(flaky_tests, "render", lambda entries, today: printed.append(entries) or "")
+    monkeypatch.setattr(flaky_tests, "render", lambda entries, today, *fixed: printed.append(entries) or "")
     monkeypatch.setattr(flaky_tests.subprocess, "run", lambda *a, **k: None)
     flaky_tests.report(tmp_path, dry_run=False)
     (entries,) = printed

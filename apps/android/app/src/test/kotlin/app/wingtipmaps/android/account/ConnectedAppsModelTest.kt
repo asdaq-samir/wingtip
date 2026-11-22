@@ -18,7 +18,7 @@ import java.time.ZoneOffset
 class ConnectedAppsModelTest {
     @get:Rule val main = MainRule()
 
-    private val claude = ConnectionDto(app = "Claude", id = "c1", renewedAt = "2026-11-14T03:00:00Z")
+    private val claude = ConnectionDto(app = "Claude", can = emptyList(), id = "c1", renewedAt = "2026-11-14T03:00:00Z")
 
     private class Fake(var connections: List<ConnectionDto>, val refuse: Exception? = null) : Connections {
         val ended = mutableListOf<String>()

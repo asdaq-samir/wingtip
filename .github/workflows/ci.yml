@@ -1286,7 +1286,7 @@ jobs:
       - name: docker compose config (infra/docker-compose.prod.yml)
         run: |
           printf '%s\n' IMAGE_REGISTRY=registry.example/wingtip PUBLIC_HOST=app.example.com \
-            ORIGIN_HOST=origin.app.example.com ORIGIN_SECRET=x POSTGRES_PASSWORD=x \
+            ORIGIN_HOST=origin.app.example.com ORIGIN_SECRET=x POSTGRES_PASSWORD=x APP_DB_PASSWORD=x \
             MAIL_HOST=smtp.example.com MAIL_FROM=no-reply@example.com > "$RUNNER_TEMP"/prod.env
           docker compose --env-file "$RUNNER_TEMP"/prod.env -f infra/docker-compose.prod.yml config --quiet
       - name: caddy validate (infra/server/Caddyfile)

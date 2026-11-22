@@ -90,7 +90,18 @@ class UpstreamRoutesTest {
             // pdf.js's pages) and its text, public as the FAA's own are (decision 0057).
             Map.entry("GET /api/library", "public csrf"),
             Map.entry("GET /api/library/{doc}/{edition}.pdf", "public csrf"),
-            Map.entry("GET /api/library/{doc}/{edition}/text", "public csrf"));
+            Map.entry("GET /api/library/{doc}/{edition}/text", "public csrf"),
+            // The profile's weather along the route (TAF ceilings, the GFS
+            // freezing level, G-AIRMET icing), public as the map's is.
+            Map.entry("GET /api/route-profile/weather", "public csrf"),
+            // The plates kept for the air: a flight's and a state's, by cycle,
+            // public as the plates are.
+            Map.entry("GET /api/plates/flight", "public csrf"),
+            Map.entry("GET /api/plates/states", "public csrf"),
+            Map.entry("GET /api/plates/states/{cycle}/{state}", "public csrf"),
+            // One of the FAA's charts in force as its own PDF, public as the
+            // FAA's own is.
+            Map.entry("GET /api/faa-chart/pdf/{source}/{edition}/{pdf}", "public csrf"));
 
     /** Routes whose passed headers changed on purpose since the hand list
      *  was recorded: what each passes now. */

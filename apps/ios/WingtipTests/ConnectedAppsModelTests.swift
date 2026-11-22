@@ -23,7 +23,7 @@ struct ConnectedAppsModelTests {
     }
 
     nonisolated static func app(_ id: String, _ name: String, renewed: String? = "2026-11-20T15:04:05Z") -> ConnectedApp {
-        ConnectedApp(app: name, id: id, renewedAt: renewed, scopes: "flights", until: nil)
+        ConnectedApp(app: name, can: [], id: id, renewedAt: renewed, scopes: "flights", until: nil)
     }
 
     static func model(_ gateway: FakeGateway) async -> ConnectedAppsModel {

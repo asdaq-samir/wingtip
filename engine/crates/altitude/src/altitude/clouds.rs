@@ -121,7 +121,11 @@ pub fn along_route(path: &[Point], stations: &[Station]) -> Vec<(String, f64, f6
                 (cross.abs(), along)
             } else {
                 let (to_a, to_b) = (distance_nm(s.at.0, s.at.1, a.0, a.1), distance_nm(s.at.0, s.at.1, b.0, b.1));
-                if to_a <= to_b { (to_a, 0.0) } else { (to_b, length) }
+                if to_a <= to_b {
+                    (to_a, 0.0)
+                } else {
+                    (to_b, length)
+                }
             };
             if off <= CLOUD_STATION_RADIUS_NM && best.is_none_or(|(o, _)| off < o) {
                 best = Some((off, start + at));

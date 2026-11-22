@@ -129,10 +129,17 @@ struct Asked<'a> {
 
 fn read_field(v: &Value) -> Result<Asked<'_>, String> {
     let ident = v.get("ident").and_then(Value::as_str).ok_or("plates_kept: a field has no \"ident\"")?;
-    let role = v.get("role").and_then(Value::as_str).and_then(Role::read).ok_or_else(|| {
-        format!("plates_kept: {ident}'s \"role\" is departure, destination, stop, alternate or diversion")
-    })?;
-    Ok(Asked { ident, role, off_nm: opt_num(v, "off_nm", "plates_kept")?, charts: v.get("charts").and_then(Value::as_array).unwrap_or(&[]) })
+    let role = v
+        .get("role")
+        .and_then(Value::as_str)
+        .and_then(Role::read)
+        .ok_or_else(|| format!("plates_kept: {ident}'s \"role\" is departure, destination, stop, alternate or diversion"))?;
+    Ok(Asked {
+        ident,
+        role,
+        off_nm: opt_num(v, "off_nm", "plates_kept")?,
+        charts: v.get("charts").and_then(Value::as_array).unwrap_or(&[]),
+    })
 }
 
 /// The fields whose plates are kept, each once in its first role, the
@@ -189,7 +196,8 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
     match name {
         "diversion_range_nm" => {
             let rule = "diversion_range_nm";
-            let (range, basis) = diversion_range_nm(opt_num(v, "tas_kt", rule)?, opt_num(v, "usable_gal", rule)?, opt_num(v, "burn_gph", rule)?);
+            let (range, basis) =
+                diversion_range_nm(opt_num(v, "tas_kt", rule)?, opt_num(v, "usable_gal", rule)?, opt_num(v, "burn_gph", rule)?);
             let mut out = String::from("{");
             range_json(&mut out, range, basis);
             out.push('}');

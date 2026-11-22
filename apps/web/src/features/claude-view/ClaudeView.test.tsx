@@ -49,7 +49,7 @@ describe("the connector's live view", () => {
     render(<ClaudeView />);
     expect(text("view-waiting")).toContain("Planning the flight");
     pushed(fixture);
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("C81 → KMSN → KDLH");
+    expect(screen.getByRole("heading", { level: 2 }).textContent).toBe("C81 → KMSN → KDLH");
     expect(text("view-point-KMSN")).toContain("+");
     expect(text("view-approach-KDLH")).toContain("ILS OR LOC RWY 27");
     expect(text("view-figures")).toContain("12.3");

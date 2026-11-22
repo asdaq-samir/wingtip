@@ -188,10 +188,9 @@ public class PlannerClient {
      * For each of {@code idents}, in order, whether it names the field
      * {@code field} (POST /api/pilot/same-field: the engine's field_names
      * over NASR's record of each, so "BUR" is "KBUR" and "ANC" is "PANC");
-     * nothing is asked of no idents.
-     *
-     * @throws PlannerUnavailableException when the planner cannot be reached or refuses,
-     *     or answers a list of another length
+     * nothing is asked of no idents. A planner that cannot be reached,
+     * refuses, or answers a list of another length is a
+     * PlannerUnavailableException, as {@link #records} says.
      */
     public List<Boolean> sameField(String field, List<String> idents) {
         if (idents.isEmpty()) {

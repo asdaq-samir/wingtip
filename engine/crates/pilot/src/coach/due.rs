@@ -158,7 +158,7 @@ pub fn due(
 }
 
 /// The reminder a pilot sees for a currency that lapses within the
-/// reminder's days: "Passengers at night: current until 12 Nov 2026, in 3
+/// reminder's days: "Passengers at Night: current until 12 Nov 2026, in 3
 /// days (14 CFR 61.57(b))."
 pub fn reminder(d: &Due) -> Option<String> {
     if d.status != Status::DueSoon {
