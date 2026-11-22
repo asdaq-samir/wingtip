@@ -109,4 +109,47 @@ struct NavigatorTests {
         #expect(SheetPage.traffic("a1b2c3").stored == nil)
         #expect(SheetPage.hold("OSH").ownClose && !SheetPage.mapSettings.ownClose)
     }
+
+    /// An iPad window resized across the size classes (Stage Manager,
+    /// Split View): a page open in the iPhone's card goes to the sidebar's
+    /// stack with what it pushed, and back to the card again, never shut
+    /// (HIG Layout: "Keep functionality the same as size classes change").
+    @Test func aPageFollowsTheWindowAcrossTheSizeClasses() throws {
+        let nav = Navigator()
+        nav.open(.screen(.setup))
+        nav.push(.settings(atMap: false))
+        nav.split = true
+        #expect(nav.card == nil)
+        #expect(nav.planPath == [.screen(.setup), .settings(atMap: false)])
+        nav.split = false
+        #expect(nav.card?.page == .screen(.setup) && nav.cardDetent == .half)
+        #expect(nav.cardPath == [.settings(atMap: false)] && nav.planPath.isEmpty)
+    }
+
+    /// A thing's card stays the card in either layout: the iPad's
+    /// inspector holds it, the iPhone's sheet presents it; the sidebar's
+    /// pages under it are let go on the iPhone, whose plan has none.
+    @Test func aThingsCardStaysTheCardAcrossTheSizeClasses() throws {
+        let nav = Navigator()
+        nav.split = true
+        nav.open(.screen(.checklists))
+        nav.open(.airport("KOSH"))
+        #expect(nav.card?.page == .airport("KOSH") && nav.planPath == [.screen(.checklists)])
+        nav.split = false
+        #expect(nav.card?.page == .airport("KOSH") && nav.planPath.isEmpty)
+        nav.split = true
+        #expect(nav.card?.page == .airport("KOSH"))
+    }
+
+    /// Moved, not closed: the emergency assistant and a flight to log keep
+    /// their models open through the change (Navigator.left is not run).
+    @Test func aResizeClosesNothing() throws {
+        let screens = ScreenModels()
+        let nav = Navigator()
+        nav.screens = screens
+        nav.open(.emergency)
+        nav.split = true
+        nav.split = false
+        #expect(nav.card?.page == .emergency && nav.cardDetent == .large)
+    }
 }

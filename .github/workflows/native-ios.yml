@@ -14,7 +14,8 @@ on:
   workflow_call:
     inputs:
       # The whole suite on the iPhone, the iPad and iPhone Duo. Without it
-      # (main's push, a wave): the unit tests and CardSmokeTests, iPhone and iPad.
+      # (main's push, a wave): the unit tests, CardSmokeTests and
+      # IPadLayoutTests, iPhone and iPad.
       full:
         type: boolean
         default: false

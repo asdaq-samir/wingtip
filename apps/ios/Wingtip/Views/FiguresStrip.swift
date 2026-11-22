@@ -28,6 +28,9 @@ struct FiguresStrip: View {
         if plan.routed {
             Button { appCommand(.open(.navlog)) } label: { figures.contentShape(Rectangle()) }
                 .buttonStyle(.plain)
+                // The pointer's highlight over the figures on an iPad,
+                // where they float over the map (HIG Pointing devices).
+                .hoverEffect(.highlight)
                 .accessibilityHint("Opens the nav log")
         } else {
             figures
@@ -90,19 +93,26 @@ private struct StripFigure: View {
     let value: String
     let warn: Bool
     @Environment(\.dynamicTypeSize) private var size
+    @Environment(\.glanceFigures) private var glance
 
     var body: some View {
         let layout = size.isAccessibilitySize ? AnyLayout(HStackLayout(spacing: WingtipSpace.sm)) : AnyLayout(VStackLayout(spacing: WingtipSpace.xxs))
+        // At arm's length (the iPad's strip over the map, on a kneeboard or
+        // a yoke mount) a size up each, both still Dynamic Type's styles:
+        // HIG Designing for iPadOS, "Use viewing distance and input mode to
+        // help you determine the size and density of the onscreen content".
+        let nameFont: Font = glance ? .footnote : .caption2
+        let valueFont: Font = glance ? .title2 : .headline
         // Always on a solid ground (the iPhone's sheet, the iPad's card at
         // the map's foot, SplitLayout), so the system's own inks hold 4.5:1.
         layout {
-            Text(name).font(.caption2).foregroundStyle(.secondary)
+            Text(name).font(nameFont).foregroundStyle(.secondary)
             if size.isAccessibilitySize { Spacer(minLength: 0) }
             HStack(spacing: WingtipSpace.xs) {
                 // A mark with the red, for a pilot who does not see the
                 // colour (the owner's rule: warn, never limit).
-                if warn { Image(systemName: "exclamationmark.triangle.fill").font(.caption2) }
-                Text(value).font(.headline.monospacedDigit().weight(.semibold))
+                if warn { Image(systemName: "exclamationmark.triangle.fill").font(nameFont) }
+                Text(value).font(valueFont.monospacedDigit().weight(.semibold))
                     // ETE, fuel and distance roll as they count down.
                     .figureTransition(value)
             }
@@ -112,6 +122,13 @@ private struct StripFigure: View {
         }
         .frame(maxWidth: .infinity)
     }
+}
+
+extension EnvironmentValues {
+    /// Set on the iPad's strip over the map (SplitLayout), read at arm's
+    /// length: its figures a size up (StripFigure). The iPhone's strip and
+    /// FPL's totals keep theirs.
+    @Entry var glanceFigures = false
 }
 
 /// The strip's short headings in full for VoiceOver.
