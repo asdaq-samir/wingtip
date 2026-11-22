@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { DataCycle } from "./api/types";
 import { callEngine } from "./engine/engine";
-import { cycleWarning, dataWarning, dayWords, outOfDate } from "./dataCycles";
+import { cycleWarning, dataWarning, dayWords, onThisDay, outOfDate } from "./dataCycles";
 import fixture from "./fixtures/dataCycles.json";
 
 const cycle = (over: Partial<DataCycle>): DataCycle => ({
@@ -67,5 +67,18 @@ describe("FAA data past its cycle, in words", () => {
       const keys = Object.keys(c.expected) as (keyof typeof got)[];
       expect(Object.fromEntries(keys.map((k) => [k, got[k]])), c.why).toEqual(c.expected);
     }
+  });
+
+  it("a kept answer is judged again on this device's day: the chart of 29 Oct 2026 is out of date from 24 Dec", () => {
+    // The planner said in force (cycle({})); the phone flew on with no
+    // signal. The 56-day chart cycle: 29 Oct 2026 to 24 Dec 2026 (the FAA's
+    // 28 and 56 Day Product Schedule; the shared fixture's dates).
+    const kept = cycle({});
+    expect(onThisDay([kept], Date.UTC(2026, 11, 23, 12))[0]!.state).toBe("in_force");
+    const later = onThisDay([kept], Date.UTC(2026, 11, 24, 0, 1))[0]!;
+    expect(later).toMatchObject({ state: "expired", expires: "2026-12-24", behind: 1 });
+    expect(cycleWarning(later)).toBe("Out of date since 24 Dec 2026");
+    // No edition said: the planner's own judgement stands.
+    expect(onThisDay([cycle({ edition: null, state: "unknown" })], Date.UTC(2027, 0, 1))[0]!.state).toBe("unknown");
   });
 });

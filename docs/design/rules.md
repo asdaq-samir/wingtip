@@ -1279,6 +1279,14 @@ less cluttered". Decision [0045](../decisions/0045-fpl-for-every-pilot.md).
    read, greyed once the engine says it is stale, "offline" in its row.
    Web: `components/LiveAge` (`lib/kept/liveAge`): the Brief's METAR,
    the nav log's winds, an airplane heard (`traffic_fresh`, in seconds).
+   A field's TAF says when it was issued and to when it is valid under
+   the card's hours, amber "TAF expired … : no forecast in force" once
+   its period has ended (the engine's `taf_validity`, FAA-H-8083-28B
+   27.4.1), and the card's NOTAMs say "Fetched 42 min ago" where they are
+   the ones kept (`kept_age`). The FAA data's cycles are judged again on
+   the device's own day (`data_cycle`, `lib/dataCycles` `onThisDay`), so
+   an answer kept through a flight with no signal still turns out of date
+   on the day it does.
 5. **A dash only means "needs an airplane".** A figure still coming is a
    placeholder shape (`components/FigureWait`).
 6. **One Undo.** Every FPL edit offers Undo in its toast where the pilot

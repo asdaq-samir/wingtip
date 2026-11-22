@@ -76,6 +76,7 @@ navlog-fit.spec.ts
 navlog-winds.spec.ts
 night.spec.ts
 no-airplane.spec.ts
+offline-ages.spec.ts
 overlay.spec.ts
 pass-times.spec.ts
 passengers.spec.ts

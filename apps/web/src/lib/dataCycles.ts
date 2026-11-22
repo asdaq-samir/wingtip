@@ -1,6 +1,7 @@
 import { dayMonthYear } from "./format/days";
 import type { DataCycle } from "./api/types";
 import { andList } from "./listWords";
+import { callEngine } from "./engine/engine";
 
 /**
  * The FAA data the planner uses, in a pilot's words, where an edition is
@@ -53,4 +54,27 @@ export function dataWarning(cycles: readonly DataCycle[] | null | undefined): st
   if (!names.length) return null;
   const list = andList(names);
   return `FAA data out of date: ${list}`;
+}
+
+/**
+ * Each data set judged again on this device's day, by the engine's own
+ * `data_cycle` (the FAA's 28 and 56 Day Product Schedule) on the edition the
+ * planner said it holds. The planner's `state` is as of when it answered:
+ * a phone that kept that answer and flew on with no signal past the
+ * edition's last day still read "in force" (the offline audit of
+ * 2026-11-21), and an expired chart read as current is what 14 CFR 91.103
+ * asks a pilot to rule out. Where the engine cannot answer, the planner's
+ * own judgement stands.
+ */
+export function onThisDay(cycles: readonly DataCycle[], nowMs: number): DataCycle[] {
+  const on = new Date(nowMs).toISOString().slice(0, 10);
+  return cycles.map((c) => {
+    if (!c.edition) return c;
+    try {
+      const a = callEngine("data_cycle", { kind: c.kind, effective: c.edition, on });
+      return { ...c, state: a.state, expires: a.expires, current: a.current, behind: a.behind };
+    } catch {
+      return c;
+    }
+  });
 }

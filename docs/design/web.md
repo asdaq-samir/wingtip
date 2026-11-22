@@ -1751,6 +1751,10 @@ WebAssembly and what Keep for the Air fetched; the page asks it first.
   time" after 10 s.
 - Safari's captions offline say "Speech needs a connection in this
   browser".
+- Nothing kept and no connection: the airport card, the airspace card
+  and the model weather's bar say "No connection" in place
+  (`lib/problems` `noConnection`), as Status's sources do, never
+  "Fetching…" for the flight (the offline audit of 2026-11-21).
 
 **Sources.** [webdev-install], [webdev-richer-install], [safari-26],
 [webkit-push], [mdn-id], [mdn-wco], [mdn-launch-handler],

@@ -13,6 +13,7 @@ import { useCardTab } from "../../lib/cardTab";
 import { useTabScroll } from "../../lib/tabScroll";
 import PlaceActions from "./PlaceActions";
 import { ApiError } from "../../lib/api/client";
+import { NO_CONNECTION, noConnection } from "../../lib/problems";
 import type { AirportPlace } from "../../lib/api/types";
 import { useGeo, type LatLon } from "../../lib/geo";
 import { placeWeather } from "./placeWeather";
@@ -22,6 +23,7 @@ import { TEXT } from "../../lib/text";
 import { useMinuteClock } from "../../lib/useMinuteClock";
 import { prefersReducedMotion } from "../../lib/motion";
 import { arrivalHour, hoursOf, sentenceOf } from "./hourly";
+import { tafValidity } from "./tafValidity";
 import { airportQuery, photosQuery, servicesQuery } from "../../lib/queryClient";
 import { StopStrip, type SuggestedStop } from "./StopServices";
 import { PlaceChartsTab } from "./PlaceChartsTab";
@@ -96,7 +98,11 @@ export default function PlaceCard({
 }) {
   // Asked again every five minutes in sight (lib/shown): its METAR stayed the one it opened with (the audit's finding).
   const asked = { ...airportQuery(ident), refetchInterval: 5 * 60_000, subscribed: useShown() };
-  const { data: place, isLoading, error, refetch, isFetching } = useQuery(asked);
+  const answer = useQuery(asked);
+  const { data: place, isLoading, error, refetch, isFetching } = answer;
+  // With no connection and nothing kept of it, its ask waits paused
+  // (lib/queryRetry): said so, not "Fetching the airport…" for good.
+  const offline = !place && noConnection(answer);
   // What the map knows of it already -- its name and its weather's
   // colour, from the chip that was tapped (AirportsGl, ClassBGl) --
   // at once: the card read "Looking the airport up…" until its own
@@ -169,7 +175,15 @@ export default function PlaceCard({
   const where = place ? [place.municipality, place.region?.replace(/^US-/, "")].filter(Boolean).join(", ") : null;
   const name = place?.name ?? known?.name ?? kept?.name ?? null;
   const kind = kindOf(place);
-  const line = place ? null : error ? (error instanceof ApiError && error.status === 404 ? "Not found" : "Could not be looked up") : "…";
+  const line = place
+    ? null
+    : offline
+      ? NO_CONNECTION
+      : error
+        ? error instanceof ApiError && error.status === 404
+          ? "Not found"
+          : "Could not be looked up"
+        : "…";
   const { metar, weather, approximate, category, weatherLine, observedAt } = placeWeather(place, known);
   // The shared StatusBadge in the category's chip colour (AIM 7-1-7's categories, the FAA's colours).
   const chip = category && (
@@ -192,9 +206,13 @@ export default function PlaceCard({
   // again each minute, as the hours move on.
   const tafText = place?.taf ?? null;
   const now = useMinuteClock();
+  // The TAF's own valid period (the engine's taf_validity): one kept from
+  // before the signal was lost says it has run out, here and in the
+  // sentence, rather than reading as a field with no forecast.
   const hourly = useMemo(() => {
     const hours = hoursOf({ metar, taf: tafText, now });
-    return { hours, sentence: sentenceOf(hours, zonedClock) };
+    const taf = tafValidity(tafText, now);
+    return { hours, taf, sentence: sentenceOf(hours, zonedClock, taf?.state === "expired" ? "its TAF has expired" : undefined) };
   }, [metar, tafText, now]);
   // The hour the planned flight lands in, where this is its destination.
   const landsAt = arrival ? (arrival.depart ? Date.parse(arrival.depart) : now) + arrival.minutes * 60_000 : null;
@@ -310,7 +328,7 @@ export default function PlaceCard({
           </CardTabPanel>
         </CardTabPages>
       )}
-      {isLoading && !known && <p className={cn("pt-4 text-muted-foreground", TEXT.prose)}>Fetching the airport…</p>}
+      {isLoading && !known && !offline && <p className={cn("pt-4 text-muted-foreground", TEXT.prose)}>Fetching the airport…</p>}
       {/* Where the planner could not be reached, the way to ask again, in
           the card that could not be had (lib/problems: errors where they
           happen); an airport not found has nothing to ask again. */}
