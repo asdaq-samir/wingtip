@@ -600,6 +600,52 @@ The owner's steps, once:
    foreground-service declarations and the Data safety form are in
    docs/store (foreground-services.md, privacy-labels.md).
 
+## The cockpit on a tablet: the plate beside the map, the scratchpad, weight and balance, the runway advisor
+
+The market-gap report's items 4, 5, 8 and 9 (2026-11-21: "port over
+everything to phones and iPads and android tablets"), each made of stock
+parts and each asking the engine every figure:
+
+- **The plate beside the map** (`plates/PlateBeside.kt`): at Material's
+  expanded width (840 dp and up), a plate card's Beside the Map keeps the
+  FAA's page in Material's `SupportingPaneScaffold` beside the map (the
+  map the main pane, the plate the supporting one, `VerticalDragHandle`
+  between them to set their widths), own ship on it where the engine's
+  `plate_page_point` puts it (`PlatePosition`, the plan view only). The
+  map is wrapped once where `RootScreen` makes it (`MapWithPlate`);
+  narrower, it is the map alone and the plate stays full screen
+  (`PlateViewer`). Both read the page with `PlatePage`.
+- **The scratchpad** (`scratchpad/`, from the Brief): a flight's pages
+  as Material's scrollable tabs, New Page's templates -- Blank, CRAFT
+  Clearance (AIM 4-4-3's items), ATIS (AIM 4-1-13's), Takeoff and Landing
+  -- each field a stock text field (the keyboard, or a stylus's
+  handwriting into the field), over Jetpack Ink's writing area (`InkArea`:
+  `InProgressStrokes`, the stock pressure pen, `CanvasStrokeRenderer`),
+  each stroke kept as ink-storage encodes it. The pages stay on the phone
+  in `files/scratchpad/<route>.json` (`ScratchModel`, `KeptFile`), linked
+  to the flight by its route, as Ready to fly keys a flight.
+- **Weight and balance** (`balance/`, from the Brief): the airplane's
+  loading from its profile, each station's pounds and the fuel typed in,
+  the engine's `gonogo_balance` at takeoff and landing (14 CFR 91.9(a)),
+  and the CG envelope drawn with Compose's Canvas as the web's
+  `EnvelopeChart` draws it (`EnvelopeChart.kt`). The fuel is weighed by
+  its grade, picked on Material's segmented buttons from the engine's
+  `fuel_grades` (FAA-H-8083-1B), the profile's own density winning where
+  it gives one. The empty airplane is
+  the pilot's own record where given, its arm the engine's
+  (`gonogo_default_load`); a missing figure is asked for in place
+  (`AskFigures`, "weight_balance"); with no airplane picked, nothing is
+  loaded (decision 0011).
+- **The runway proximity advisor** (`ui/RunwayAdvisor.kt`, on the
+  own-ship airport diagram): each fix, the engine's `runway_proximity`
+  with the airport card's runways (NASR's thresholds and widths), its
+  elevation, its published pattern height and the diagram's hot spots
+  (`diagram_hot_spot_labels`, found on the page as the graticule's labels
+  are, then `diagram_hot_spots`), shown over the page
+  (`RunwayAdviceBanner`), its words said once each by TextToSpeech
+  (`RunwayVoice`, when the answer's key changes), and the hot spots
+  ringed on the page. A reminder, never a clearance.
+
 ## The flight pieces, and what is still to come
 
 The other session's batch the same evening brought the flight pieces

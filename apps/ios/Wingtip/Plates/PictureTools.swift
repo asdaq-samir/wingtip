@@ -48,6 +48,9 @@ struct PictureTools: ViewModifier {
                             }
                             .accessibilityIdentifier("picture-new-window")
                         }
+                        // The chart beside the map, the iPad's standing
+                        // layout for an approach (BesidePane).
+                        if !inWindow { BesideMapButton(request: request, then: close) }
                     }
                 }
             }
@@ -76,7 +79,7 @@ struct PictureWindow: View {
     }
 }
 
-/// Open in New Window on a chart's row, for a secondary click or a long
+/// Beside the Map and Open in New Window on a chart's row, for a secondary click or a long
 /// press (AirportChartsTab): straight to its window, the viewer skipped.
 struct OpenInWindowItem: View {
     let request: PictureRequest
@@ -84,6 +87,7 @@ struct OpenInWindowItem: View {
     @Environment(\.supportsMultipleWindows) private var windows
 
     var body: some View {
+        BesideMapButton(request: request)
         if windows {
             Button("Open in New Window", systemImage: "macwindow.badge.plus") {
                 openWindow(id: PictureRequest.window, value: request)

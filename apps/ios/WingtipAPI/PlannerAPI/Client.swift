@@ -5653,6 +5653,102 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Faa Chart Pdf
+    ///
+    /// One of the FAA's charts in force as its PDF, kept for its edition,
+    /// for the web's own-ship airport diagram, which reads the page's own
+    /// latitude and longitude labels and hot spots (the engine's
+    /// diagram_labels, diagram_hot_spot_labels) where the phones read the
+    /// same PDF themselves.
+    ///
+    /// - Remark: HTTP `GET /api/faa-chart/pdf/{source}/{edition}/{pdf}`.
+    /// - Remark: Generated from `#/paths//api/faa-chart/pdf/{source}/{edition}/{pdf}/get(faa_chart_pdf)`.
+    public func faaChartPdf(_ input: Operations.FaaChartPdf.Input) async throws -> Operations.FaaChartPdf.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.FaaChartPdf.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/faa-chart/pdf/{}/{}/{}",
+                    parameters: [
+                        input.path.source,
+                        input.path.edition,
+                        input.path.pdf
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.FaaChartPdf.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/pdf"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/pdf":
+                        body = try converter.getResponseBodyAsBinary(
+                            OpenAPIRuntime.HTTPBody.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .pdf(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 404:
+                    return .notFound(.init())
+                case 422:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.FaaChartPdf.Output.UnprocessableContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.HTTPValidationError.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unprocessableContent(.init(body: body))
+                case 502:
+                    return .badGateway(.init())
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
     /// Forecast Dry Run
     ///
     /// The dry run against the forecast for the hours it flies: a product

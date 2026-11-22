@@ -9,11 +9,12 @@ import SwiftUI
 /// (ShareMenu); Clear is the route card's ✕; the map's choices are Map
 /// Settings'. Under them, what the web has no home for and the iPhone
 /// keeps as a page's view options in its ••• (HIG, "Pull-down buttons"):
-/// the saved flights and how the route is shown. Undo is the undo bar's
+/// the saved flights, the scratchpad and how the route is shown. Undo is the undo bar's
 /// after each change (UndoBar), and shake's and ⌘Z's.
 struct RouteMoreMenu: View {
     @Environment(Plan.self) private var plan
     @Environment(\.openURL) private var openURL
+    @Environment(Navigator.self) private var nav
     let open: (Screen) -> Void
 
     var body: some View {
@@ -31,6 +32,10 @@ struct RouteMoreMenu: View {
             .disabled(plan.legs.isEmpty)
             Divider()
             Button { open(.flights) } label: { Label("Saved Flights", systemImage: "tray.full") }
+            // The flight's scratchpad: a clearance, the ATIS, the runway's
+            // figures, in ink or typed (ScratchpadView).
+            Button { nav.open(.scratchpad) } label: { Label("Scratchpad", systemImage: "pencil.and.scribble") }
+                .accessibilityIdentifier("route-scratchpad")
             ShowRouteAs()
         } label: {
             Image(systemName: WingtipIcon.more).imageScale(.large).hitArea()

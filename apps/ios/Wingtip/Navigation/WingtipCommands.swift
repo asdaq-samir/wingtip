@@ -12,6 +12,8 @@ struct WindowActions {
     let page: (PlanPage) -> Void
     /// A flight file or a track picked from Files (WindowHost).
     let openFile: () -> Void
+    /// The flight's scratchpad (ScratchpadView), in the inspector.
+    let scratchpad: () -> Void
 }
 
 extension FocusedValues {
@@ -74,6 +76,7 @@ struct WingtipCommands: Commands {
             screen(.profile, key: "p", modifiers: [.command, .option])
             screen(.nearest, key: "n", modifiers: [.command, .shift])
             screen(.checklists, key: "k", modifiers: [.command, .shift])
+            item("Scratchpad", key: "j", modifiers: [.command, .shift]) { $0.scratchpad() }
             Divider()
             screen(.flights)
             screen(.logbook)

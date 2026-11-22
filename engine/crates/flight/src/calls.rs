@@ -20,6 +20,23 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         "density_ratio" => flight::density_ratio(ask.num("altitude_ft")?, ask.num("oat_c")?),
         "density_altitude_ft" => flight::density_altitude_ft(ask.num("sigma")?),
         "pressure_altitude_ft" => flight::pressure_altitude_ft(ask.num("elevation_ft")?, ask.num("altimeter_inhg")?),
+        "fuel_grades" => {
+            out.push('[');
+            for (i, (grade, label, lb)) in flight::FUEL_GRADES.iter().enumerate() {
+                if i > 0 {
+                    out.push(',');
+                }
+                out.push_str("{\"grade\":");
+                json::string(&mut out, grade);
+                out.push_str(",\"name\":");
+                json::string(&mut out, label);
+                out.push_str(",\"lb_per_gal\":");
+                json::number(&mut out, *lb);
+                out.push('}');
+            }
+            out.push(']');
+            return Ok(out);
+        }
         "is_eastbound" => return Ok(flight::is_eastbound(ask.num("magnetic_course_deg")?).to_string()),
         "average_groundspeed_kt" => flight::average_groundspeed_kt(ask.num("distance_nm")?, ask.num("minutes")?),
         "nm_along" => {

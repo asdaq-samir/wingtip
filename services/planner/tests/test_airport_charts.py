@@ -59,6 +59,27 @@ def test_an_faa_charts_pages_are_listed_and_drawn_for_its_edition(monkeypatch, t
     assert client.get("/api/faa-chart/page/dtpp/2610/EC3TO.PDF/33.png").status_code == 502
 
 
+def test_an_faa_charts_pdf_is_served_for_its_edition_only(monkeypatch):
+    kept = {("dtpp", "2611", "00125AD.PDF"): b"%PDF-1.7"}
+    monkeypatch.setattr(publications, "_pdf_of", lambda source, edition, name: kept.get((source, edition, name)))
+    monkeypatch.setattr(publication_pages, "dtpp_cycle", lambda on=None: "2611")
+    answer = client.get("/api/faa-chart/pdf/dtpp/2611/00125AD.PDF")
+    assert answer.status_code == 200
+    assert answer.headers["content-type"] == "application/pdf"
+    assert answer.headers["cache-control"] == "public, max-age=2419200, immutable"
+    assert answer.content == b"%PDF-1.7"
+    # Another cycle, another name or a bad one is not served.
+    assert client.get("/api/faa-chart/pdf/dtpp/2610/00125AD.PDF").status_code == 404
+    assert client.get("/api/faa-chart/pdf/dtpp/2611/00999AD.PDF").status_code == 404
+    assert client.get("/api/faa-chart/pdf/dtpp/2611/x.exe").status_code == 404
+
+    def down(*args):
+        raise publications.FaaUnreachable("down")
+
+    monkeypatch.setattr(publications, "_pdf_of", down)
+    assert client.get("/api/faa-chart/pdf/dtpp/2611/00125AD.PDF").status_code == 502
+
+
 def test_the_diagrams_runways_are_its_crop_with_the_fields_ends(monkeypatch, tmp_path):
     stub_place(
         monkeypatch,

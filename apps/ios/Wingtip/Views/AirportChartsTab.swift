@@ -90,7 +90,7 @@ struct AirportChartsTab: View {
             // own latitude and longitude marks (#218), under the diagram.
             if let url = place.airportDiagramUrl {
                 row("Diagram with Your Position", "location.north.circle") { ownShipDiagram = true }
-                    .fullScreenCover(isPresented: $ownShipDiagram) { DiagramOwnShipView(ident: place.ident, url: url) }
+                    .fullScreenCover(isPresented: $ownShipDiagram) { DiagramOwnShipView(place: place, url: url) }
             }
             if let supplement = place.chartSupplementUrl {
                 row("Chart Supplement", "book") { shown = .faaChart("\(place.ident) Chart Supplement", url: supplement, airport: place.ident) }

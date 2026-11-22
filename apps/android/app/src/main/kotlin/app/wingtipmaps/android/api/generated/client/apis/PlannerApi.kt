@@ -897,6 +897,24 @@ interface PlannerApi {
     suspend fun faaChartPage(@Path("source") source: kotlin.String, @Path("edition") edition: kotlin.String, @Path("pdf") pdf: kotlin.String, @Path("page") page: kotlin.Int): Response<Unit>
 
     /**
+     * GET faa-chart/pdf/{source}/{edition}/{pdf}
+     * Faa Chart Pdf
+     * One of the FAA&#39;s charts in force as its PDF, kept for its edition, for the web&#39;s own-ship airport diagram, which reads the page&#39;s own latitude and longitude labels and hot spots (the engine&#39;s diagram_labels, diagram_hot_spot_labels) where the phones read the same PDF themselves.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 404: No such chart in force
+     *  - 422: Validation Error
+     *  - 502: The FAA could not be reached
+     *
+     * @param source
+     * @param edition
+     * @param pdf
+     * @return [Unit]
+     */
+    @GET("faa-chart/pdf/{source}/{edition}/{pdf}")
+    suspend fun faaChartPdf(@Path("source") source: kotlin.String, @Path("edition") edition: kotlin.String, @Path("pdf") pdf: kotlin.String): Response<Unit>
+
+    /**
      * GET status/feeds
      * Feeds
      * SWIM&#39;s STDDS, FNS, TFMS, ITWS and SFDPS from ingest&#39;s beats, each weather product from the weather service, and which have been stale for FEED_ALERT_AFTER_MIN, as checked each minute. On its own for anything that polls on the stack&#39;s network (the gateway&#39;s mail, one day), and in /api/status for the console.

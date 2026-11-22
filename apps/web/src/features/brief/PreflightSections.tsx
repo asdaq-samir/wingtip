@@ -5,7 +5,7 @@ import AccordionSection from "../../components/AccordionSection";
 import AfterPaint from "../../components/AfterPaint";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { NumberField as StockNumberField } from "../../components/ui/number-field";
-import type { AircraftProfile, Briefing, Course } from "../../lib/api/types";
+import type { AircraftProfile, Briefing, Course, Loading } from "../../lib/api/types";
 import { runwayChecks, type RunwayDistance } from "./runwayCheck";
 import { useRunwayPicks, phasesOf, type Phase } from "../plan/lazy";
 import { FINDING_TONE } from "../../lib/findings";
@@ -13,7 +13,8 @@ import FindingIcon from "../../components/FindingIcon";
 import { windOnRunway, useLoad } from "../plan";
 import { TEXT } from "../../lib/text";
 import { altFt, feet, pounds } from "../../lib/format";
-import { armText } from "../../lib/weightBalance";
+import { armText, fuelGrades, type FuelGrade } from "../../lib/weightBalance";
+import PullDown, { type PullDownOption } from "../../components/PullDown";
 import { AirplaneLink } from "../../components/airplane/AirplaneLink";
 import { AskFigure } from "../../components/airplane/AskFigure";
 import { useNotInProfileSummary } from "./notInProfileSummary";
@@ -58,6 +59,15 @@ function NumberField({
       <span className={cn("w-6 text-muted-foreground", TEXT.detail)}>{unit}</span>
     </label>
   );
+}
+
+/** The fuel grade's menu: the POH's own weight a gallon first, then the
+ *  engine's grades, each with its gallon's weight. */
+function fuelGradeOptions(loading: Loading): PullDownOption<FuelGrade | "poh">[] {
+  return [
+    { value: "poh", label: loading.fuel_lb_per_gal == null ? "As in the POH" : `As in the POH · ${loading.fuel_lb_per_gal} lb/gal` },
+    ...fuelGrades().map((g) => ({ value: g.grade, label: `${g.name} · ${g.lb_per_gal} lb/gal` })),
+  ];
 }
 
 /**
@@ -135,6 +145,17 @@ export function WeightBalanceSection({
                 label="Fuel"
                 onChange={(n) => setLoad({ ...load, fuelGal: n })}
                 testId="wb-fuel"
+              />
+            </ListRow>
+            {/* Its grade, a gallon's weight the engine's (fuel_grades); the
+                POH's own figure until the pilot picks one. */}
+            <ListRow title="Fuel grade">
+              <PullDown
+                label="Fuel grade"
+                value={load.fuelGrade ?? "poh"}
+                options={fuelGradeOptions(loading)}
+                onChange={(g) => setLoad({ ...load, fuelGrade: g === "poh" ? null : g })}
+                testId="wb-fuel-grade"
               />
             </ListRow>
           </ListGroup>

@@ -141,6 +141,18 @@ export const plannerAirports = {
   /** A state's fields and their charts, of `cycle`. */
   plateState: (cycle: string, state: string) =>
     planner.GET("/api/plates/states/{cycle}/{state}", { params: { path: { cycle, state } } }).then(data<PlateStateCharts>),
+  /** Where the PDF itself of one of the FAA's d-TPP charts is, by its
+   *  address on aeronav.faa.gov ("https://aeronav.faa.gov/d-tpp/2611/
+   *  00046AD.PDF"), for pdf.js to read its words and where each is drawn
+   *  (the airport diagram's latitude and longitude labels and hot spots):
+   *  the browser may not read aeronav's own (it sends no CORS headers), so
+   *  it is the planner's copy, under the gateway's prefix. Null for any
+   *  other address. The planner serves only the cycle in force
+   *  (app.routers.airport_charts faa_chart_pdf). */
+  faaChartPdfUrl: (url: string): string | null => {
+    const m = /^https:\/\/aeronav\.faa\.gov\/d-tpp\/(\d{4})\/([\w-]+\.PDF)$/i.exec(url);
+    return m ? `/api/planner/faa-chart/pdf/dtpp/${m[1]}/${encodeURIComponent(m[2]!)}` : null;
+  },
 
   /** The landing fields inside a box, the biggest first, each with its
    *  METAR's flight category: what the map lays its chips and tap

@@ -2,7 +2,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createElement, type ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AirportPlace, PlateOverlay, TerminalChart } from "../../lib/api/types";
 import fixture from "../../lib/fixtures/platePagePoint.json";
 import { CardCloseContext } from "../../lib/map/cards/cardClose";
@@ -27,6 +27,17 @@ function setUp(page: Partial<NonNullable<PlateOverlay["page"]>> | null = null) {
   const wrapper = ({ children }: { children: ReactNode }) =>
     createElement(QueryClientProvider, { client }, createElement(CardCloseContext.Provider, { value: close }, children));
   return { close, ...renderHook(() => usePlateCard("KOSH", "I36"), { wrapper }) };
+}
+
+const tablet = window.matchMedia;
+afterEach(() => {
+  window.matchMedia = tablet;
+});
+
+/** `run` in a phone's window, the compact width's query matching, till the test ends. */
+function onPhone<T>(run: () => T): T {
+  window.matchMedia = (query: string) => ({ ...tablet(query), matches: query.includes("max-width") }) as MediaQueryList;
+  return run();
 }
 
 beforeEach(() => {
@@ -69,8 +80,9 @@ describe("the plate's card", () => {
       enabled: true,
       fix: { lat: 42.2, lon: -89.1, accuracyM: 5, headingDeg: 90, speedKt: 90, altitudeFt: null, at: 0 },
     });
-    const { result } = setUp({ georeference: fixture.georeference });
-    // Not drawn while the card is on the map: only full screen.
+    // A phone's card draws no position: only full screen.
+    const { result } = onPhone(() => setUp({ georeference: fixture.georeference }));
+    expect(result.current.beside).toBe(false);
     expect(result.current.mark).toBeNull();
     act(() => result.current.openFullScreen());
     expect(result.current.mark).toMatchObject({ moving: true });
@@ -79,6 +91,19 @@ describe("the plate's card", () => {
     act(() => useOwnShip.setState({ enabled: false }));
     expect(result.current.mark).toBeNull();
     useOwnShip.setState({ fix: null });
+  });
+
+  it("draws the plate and own ship beside the map at a tablet's width", () => {
+    useOwnShip.setState({
+      enabled: true,
+      fix: { lat: 42.2, lon: -89.1, accuracyM: 5, headingDeg: 90, speedKt: 90, altitudeFt: null, at: 0 },
+    });
+    // The test's window matches no media query: a tablet's or a desktop's.
+    const { result } = setUp({ georeference: fixture.georeference });
+    expect(result.current.beside).toBe(true);
+    expect(result.current.fullScreen).toBe(false);
+    expect(result.current.mark!.x).toBeCloseTo(0.6416, 3);
+    useOwnShip.setState({ enabled: false, fix: null });
   });
 
   it("draws no position on a plate whose page is not placed", () => {

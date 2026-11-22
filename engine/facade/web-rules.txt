@@ -61,6 +61,10 @@ debrief_airborne
 departure_pattern
 departure_window
 destination
+diagram_fix_usable
+diagram_graticule
+diagram_hot_spots
+diagram_point
 direct_of
 distance_nm
 diversion
@@ -100,6 +104,7 @@ freezing_precip
 frequencies_in_order
 frequency_line
 fuel_estimate
+fuel_grades
 fuel_in_tanks
 fuel_names
 gairmet_hazards
@@ -205,6 +210,7 @@ runway_calm
 runway_closure_marks
 runway_crosswind
 runway_end_fit
+runway_proximity
 rvr_check
 same_field
 service_volume

@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderState
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,7 +49,9 @@ import kotlinx.coroutines.launch
  * switch rows; and the plate's transparency on Material's stock Slider, clear to
  * solid with an icon at each end -- continuous, so a slider rather than a
  * menu. Each setting is kept on this phone (PlateLookStore) and changes
- * the plate on the map as it is made.
+ * the plate on the map as it is made. On a tablet at expanded width, a
+ * third button, Beside the Map, keeps the page in a pane beside the map
+ * with own ship on it (PlateBeside), the layout an IFR pilot flies.
  */
 @Composable
 fun PlateCard(pick: PlatePick, exit: CardExit) {
@@ -63,6 +66,8 @@ fun PlateCard(pick: PlatePick, exit: CardExit) {
     var viewing by remember { mutableStateOf<String?>(null) }
     val hide = stringResource(R.string.plate_hide)
     val full = stringResource(R.string.plate_full_screen)
+    val beside = stringResource(R.string.plate_beside)
+    val fits = PlateBeside.fits(currentWindowAdaptiveInfoV2().windowSizeClass)
     CardPage(title = title, exit = exit) { padding ->
         Column(
             Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
@@ -83,6 +88,15 @@ fun PlateCard(pick: PlatePick, exit: CardExit) {
                             viewing = url
                         }
                     },
+                ) + listOfNotNull(
+                    // The page beside the map, own ship on it (PlateBeside).
+                    GroupAction(beside, null, enabled = name != null) {
+                        scope.launch {
+                            val url = model.fullScreen(pick)
+                            noPage = url == null
+                            url?.let { PlateBeside.show(PlateBeside.Shown(title, it, plates.placed[pick]?.georeference)) }
+                        }
+                    }.takeIf { fits },
                 ),
                 Modifier.fillMaxWidth(),
             )

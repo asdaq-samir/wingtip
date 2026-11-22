@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useContext, useState } from "react";
 import { faaWords } from "../../lib/advisories";
 import type { TerminalChart } from "../../lib/api/types";
+import { useIsMobile } from "../../hooks/use-mobile";
 import { CardCloseContext } from "../../lib/map/cards/cardClose";
 import { useOwnShip } from "../../lib/map/position/ownShip";
 import { airportQuery, plateQuery } from "../../lib/queryClient";
@@ -31,6 +32,14 @@ export function chartOf(name: string | null | undefined, charts: TerminalChart[]
  * lists it), with own ship on its page while the GPS is on (pageMarkOf),
  * and the plates' look -- annotations, inverted colours and how solid the
  * page is -- kept on this device (usePlateLook).
+ *
+ * At a tablet's regular width and up (`beside`) the card holds the plate
+ * itself, own ship on it, so the map and the plate are side by side: the
+ * layout an IFR pilot flies on an iPad (Garmin Pilot's and WingX's split
+ * screen; the market-gap report's item 4, the owner, 2026-11-21: "Primary
+ * app users are on iPad"). In the inspector at the map's right where the
+ * screen has one (useInspector), else over the side panel, the map beside
+ * it either way. A phone's card has no room for it: Full Screen there.
  */
 export function usePlateCard(airport: string, id: string) {
   const close = useContext(CardCloseContext);
@@ -40,16 +49,20 @@ export function usePlateCard(airport: string, id: string) {
   const look = usePlateLook();
   const hidePlate = useHiddenPlates((s) => s.hide);
   const [fullScreen, setFullScreen] = useState(false);
-  // Each fix only while the plate is full screen: the card itself draws
-  // no position, and a fix a second is a render a second.
-  const fix = useOwnShip((s) => (fullScreen && s.enabled ? s.fix : null));
+  const beside = !useIsMobile();
+  // Each fix only while the plate is drawn, full screen or beside the
+  // map: a phone's card draws no position, and a fix a second is a render
+  // a second.
+  const fix = useOwnShip((s) => ((fullScreen || beside) && s.enabled ? s.fix : null));
   return {
     title: plateTitle(airport, plate?.name ?? id),
     /** The FAA's PDF of the plate, for the viewer; null till the field's
      *  charts come, or where the d-TPP lists none of that name. */
     chartUrl: chart?.url ?? null,
     fullScreen,
-    /** Own ship on the plate's first page full screen, or null. */
+    /** The plate drawn in the card, beside the map (a tablet's width up). */
+    beside,
+    /** Own ship on the plate's first page as drawn, or null. */
     mark: pageMarkOf(fix, plate?.page?.georeference),
     openFullScreen: () => setFullScreen(true),
     closeFullScreen: () => setFullScreen(false),

@@ -1,0 +1,439 @@
+{
+  "why": "runway_proximity's cases, held by the engine (engine/facade/tests/runway_proximity.rs) and the apps' tests: a field 1,000 ft high at 40 N with runway 9-27 (100 ft wide) laid east and west and a closed 18-36 (75 ft wide) north of it, and one hot spot. The expected words come from AC 120-74B 7e(2)(d), AIM 2-3-8 b 1 and AIM 4-2-9; the distances from AC 150/5300-13B Appendix G.",
+  "cases": [
+    {
+      "why": "On runway 9-27's centerline rolling west: runway 27.",
+      "input": {
+        "fix": {
+          "lat": 40.0,
+          "lon": -89.995,
+          "age_s": 0.5,
+          "accuracy_m": 5,
+          "track_deg": 270,
+          "groundspeed_kt": 45,
+          "altitude_ft": 1005
+        },
+        "elevation_ft": 1000,
+        "pattern_agl_ft": null,
+        "runways": [
+          {
+            "width_ft": 100,
+            "closed": false,
+            "runway_ends": [
+              {
+                "ident": "09",
+                "lat": 40.0,
+                "lon": -90.01
+              },
+              {
+                "ident": "27",
+                "lat": 40.0,
+                "lon": -89.99
+              }
+            ]
+          },
+          {
+            "width_ft": 75,
+            "closed": true,
+            "runway_ends": [
+              {
+                "ident": "18",
+                "lat": 40.006,
+                "lon": -90.0
+              },
+              {
+                "ident": "36",
+                "lat": 40.003,
+                "lon": -90.0
+              }
+            ]
+          }
+        ],
+        "hot_spots": [
+          {
+            "name": "HS 1",
+            "lat": 39.9989,
+            "lon": -90.003
+          }
+        ]
+      },
+      "expected": {
+        "state": "on_runway",
+        "shown": "On runway 27",
+        "spoken": "On runway two seven"
+      }
+    },
+    {
+      "why": "400 ft south of 9-27 northbound at 10 kt: 140 ft to its line at 260 ft (AC 150/5300-13B G-5, footnote 8), the sign read left to right (AIM 2-3-8 b 1); the hot spot 260 ft west.",
+      "input": {
+        "fix": {
+          "lat": 39.998903,
+          "lon": -90.002,
+          "age_s": 0.5,
+          "accuracy_m": 5,
+          "track_deg": 0,
+          "groundspeed_kt": 10,
+          "altitude_ft": 1000
+        },
+        "elevation_ft": 1000,
+        "pattern_agl_ft": null,
+        "runways": [
+          {
+            "width_ft": 100,
+            "closed": false,
+            "runway_ends": [
+              {
+                "ident": "09",
+                "lat": 40.0,
+                "lon": -90.01
+              },
+              {
+                "ident": "27",
+                "lat": 40.0,
+                "lon": -89.99
+              }
+            ]
+          },
+          {
+            "width_ft": 75,
+            "closed": true,
+            "runway_ends": [
+              {
+                "ident": "18",
+                "lat": 40.006,
+                "lon": -90.0
+              },
+              {
+                "ident": "36",
+                "lat": 40.003,
+                "lon": -90.0
+              }
+            ]
+          }
+        ],
+        "hot_spots": [
+          {
+            "name": "HS 1",
+            "lat": 39.9989,
+            "lon": -90.003
+          }
+        ]
+      },
+      "expected": {
+        "state": "approaching",
+        "shown": "Approaching runway 9-27",
+        "spoken": "Approaching runway niner, two seven. Hot spot 1"
+      }
+    },
+    {
+      "why": "Taxiing west 300 ft south of 9-27, parallel to it: not closing, so nothing.",
+      "input": {
+        "fix": {
+          "lat": 39.999177,
+          "lon": -89.995,
+          "age_s": 0.5,
+          "accuracy_m": 5,
+          "track_deg": 270,
+          "groundspeed_kt": 12,
+          "altitude_ft": 1000
+        },
+        "elevation_ft": 1000,
+        "pattern_agl_ft": null,
+        "runways": [
+          {
+            "width_ft": 100,
+            "closed": false,
+            "runway_ends": [
+              {
+                "ident": "09",
+                "lat": 40.0,
+                "lon": -90.01
+              },
+              {
+                "ident": "27",
+                "lat": 40.0,
+                "lon": -89.99
+              }
+            ]
+          },
+          {
+            "width_ft": 75,
+            "closed": true,
+            "runway_ends": [
+              {
+                "ident": "18",
+                "lat": 40.006,
+                "lon": -90.0
+              },
+              {
+                "ident": "36",
+                "lat": 40.003,
+                "lon": -90.0
+              }
+            ]
+          }
+        ],
+        "hot_spots": [
+          {
+            "name": "HS 1",
+            "lat": 39.9989,
+            "lon": -90.003
+          }
+        ]
+      },
+      "expected": {
+        "state": "clear",
+        "shown": null,
+        "spoken": null
+      }
+    },
+    {
+      "why": "Closing on 18-36 from the east, westbound, which is closed: said so, runway 36's threshold (the south end) on the left, so 36-18.",
+      "input": {
+        "fix": {
+          "lat": 40.0045,
+          "lon": -89.9988,
+          "age_s": 0.5,
+          "accuracy_m": 5,
+          "track_deg": 270,
+          "groundspeed_kt": 10,
+          "altitude_ft": 1000
+        },
+        "elevation_ft": 1000,
+        "pattern_agl_ft": null,
+        "runways": [
+          {
+            "width_ft": 100,
+            "closed": false,
+            "runway_ends": [
+              {
+                "ident": "09",
+                "lat": 40.0,
+                "lon": -90.01
+              },
+              {
+                "ident": "27",
+                "lat": 40.0,
+                "lon": -89.99
+              }
+            ]
+          },
+          {
+            "width_ft": 75,
+            "closed": true,
+            "runway_ends": [
+              {
+                "ident": "18",
+                "lat": 40.006,
+                "lon": -90.0
+              },
+              {
+                "ident": "36",
+                "lat": 40.003,
+                "lon": -90.0
+              }
+            ]
+          }
+        ],
+        "hot_spots": [
+          {
+            "name": "HS 1",
+            "lat": 39.9989,
+            "lon": -90.003
+          }
+        ]
+      },
+      "expected": {
+        "state": "approaching",
+        "shown": "Approaching runway 36-18, closed",
+        "spoken": "Approaching runway three six, one eight, closed"
+      }
+    },
+    {
+      "why": "Two nm west of runway 9's threshold at 700 ft above the field, tracking 090: lined up (AIM 5-4-20's 30 degrees, within a 3 degree path of the pattern's 1,000 ft).",
+      "input": {
+        "fix": {
+          "lat": 40.0,
+          "lon": -90.05351360148155,
+          "age_s": 0.5,
+          "accuracy_m": 5,
+          "track_deg": 90,
+          "groundspeed_kt": 80,
+          "altitude_ft": 1700
+        },
+        "elevation_ft": 1000,
+        "pattern_agl_ft": null,
+        "runways": [
+          {
+            "width_ft": 100,
+            "closed": false,
+            "runway_ends": [
+              {
+                "ident": "09",
+                "lat": 40.0,
+                "lon": -90.01
+              },
+              {
+                "ident": "27",
+                "lat": 40.0,
+                "lon": -89.99
+              }
+            ]
+          },
+          {
+            "width_ft": 75,
+            "closed": true,
+            "runway_ends": [
+              {
+                "ident": "18",
+                "lat": 40.006,
+                "lon": -90.0
+              },
+              {
+                "ident": "36",
+                "lat": 40.003,
+                "lon": -90.0
+              }
+            ]
+          }
+        ],
+        "hot_spots": [
+          {
+            "name": "HS 1",
+            "lat": 39.9989,
+            "lon": -90.003
+          }
+        ]
+      },
+      "expected": {
+        "state": "lined_up",
+        "shown": "Approaching runway 9",
+        "spoken": "Approaching runway niner"
+      }
+    },
+    {
+      "why": "The same at 1,100 ft above the field: over AC 90-66C's 1,000 ft pattern, quiet.",
+      "input": {
+        "fix": {
+          "lat": 40.0,
+          "lon": -90.05351360148155,
+          "age_s": 0.5,
+          "accuracy_m": 5,
+          "track_deg": 90,
+          "groundspeed_kt": 80,
+          "altitude_ft": 2100
+        },
+        "elevation_ft": 1000,
+        "pattern_agl_ft": null,
+        "runways": [
+          {
+            "width_ft": 100,
+            "closed": false,
+            "runway_ends": [
+              {
+                "ident": "09",
+                "lat": 40.0,
+                "lon": -90.01
+              },
+              {
+                "ident": "27",
+                "lat": 40.0,
+                "lon": -89.99
+              }
+            ]
+          },
+          {
+            "width_ft": 75,
+            "closed": true,
+            "runway_ends": [
+              {
+                "ident": "18",
+                "lat": 40.006,
+                "lon": -90.0
+              },
+              {
+                "ident": "36",
+                "lat": 40.003,
+                "lon": -90.0
+              }
+            ]
+          }
+        ],
+        "hot_spots": [
+          {
+            "name": "HS 1",
+            "lat": 39.9989,
+            "lon": -90.003
+          }
+        ]
+      },
+      "expected": {
+        "state": "above",
+        "shown": null,
+        "spoken": null
+      }
+    },
+    {
+      "why": "A fix 4 s old: AC 120-76D 11.17.2.3's 3 s, so nothing.",
+      "input": {
+        "fix": {
+          "lat": 40.0,
+          "lon": -89.995,
+          "age_s": 4,
+          "accuracy_m": 5,
+          "track_deg": 270,
+          "groundspeed_kt": 45,
+          "altitude_ft": 1005
+        },
+        "elevation_ft": 1000,
+        "pattern_agl_ft": null,
+        "runways": [
+          {
+            "width_ft": 100,
+            "closed": false,
+            "runway_ends": [
+              {
+                "ident": "09",
+                "lat": 40.0,
+                "lon": -90.01
+              },
+              {
+                "ident": "27",
+                "lat": 40.0,
+                "lon": -89.99
+              }
+            ]
+          },
+          {
+            "width_ft": 75,
+            "closed": true,
+            "runway_ends": [
+              {
+                "ident": "18",
+                "lat": 40.006,
+                "lon": -90.0
+              },
+              {
+                "ident": "36",
+                "lat": 40.003,
+                "lon": -90.0
+              }
+            ]
+          }
+        ],
+        "hot_spots": [
+          {
+            "name": "HS 1",
+            "lat": 39.9989,
+            "lon": -90.003
+          }
+        ]
+      },
+      "expected": {
+        "state": "no_fix",
+        "shown": null,
+        "spoken": null
+      }
+    }
+  ]
+}

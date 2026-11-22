@@ -171,7 +171,7 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
             }
         }
     }
-    if (diagram) place?.airportDiagramUrl?.let { url -> DiagramOwnShipDialog(place.ident, url, onClose = { diagram = false }) }
+    if (diagram) place?.airportDiagramUrl?.let { url -> DiagramOwnShipDialog(place, url, onClose = { diagram = false }) }
 }
 
 /** A closed field's label in the error ink, and the field's use line

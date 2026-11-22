@@ -142,7 +142,8 @@ aboutlibraries = "15.3.0"
 # search: 2.0.27.0, the newest on Maven Central and GitHub
 # (TomRoush/PdfBox-Android, Apache-2.0), a port of Apache PDFBox 2.0.27.
 pdfboxAndroid = "2.0.27.0"
-# Jetpack's Ink API for the reader's markup, a stylus's or a finger's ink
+# Jetpack's Ink API for the reader's markup and the scratchpad's writing
+# (scratchpad/), a stylus's or a finger's ink
 # and the highlighter: its Compose authoring, brushes, Canvas renderer and
 # the strokes' storage. 1.1.0-alpha12 (2026-11-18), the newest on Google
 # Maven; 1.0.0 is the stable.

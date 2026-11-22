@@ -57,6 +57,9 @@ enum SheetPage: Hashable {
     /// consistent"), the one that opens at full height. Opened by its
     /// model (Emergency.open, CardTriggers), never kept by a scene.
     case emergency
+    /// The scratchpad: the flight's pages of ink and forms (ScratchpadView),
+    /// beside the map on the iPad.
+    case scratchpad
 
     /// The field or point whose card this is, for the map's ring.
     var airportRoute: String? {
@@ -72,7 +75,7 @@ enum SheetPage: Hashable {
         switch self {
         case .airport(let text): RootLayout.inspects(AirportRoute(text))
         case .screen(let screen): [.brief, .profile, .flights].contains(screen)
-        case .traffic, .tail, .hold, .flown, .leg, .ask, .mapSettings, .plate, .clearance, .sharedFlight, .flightLogged, .emergency, .tfr, .navaid: true
+        case .traffic, .tail, .hold, .flown, .leg, .ask, .mapSettings, .plate, .clearance, .sharedFlight, .flightLogged, .emergency, .tfr, .navaid, .scratchpad: true
         case .flight, .notams, .practice, .training, .instructing, .contact, .settings: false
         }
     }
@@ -151,6 +154,7 @@ enum SheetPage: Hashable {
         case .emergency: "card-emergency"
         case .tfr: "card-tfr"
         case .navaid: "card-navaid"
+        case .scratchpad: "card-scratchpad"
         }
     }
 
@@ -168,6 +172,7 @@ enum SheetPage: Hashable {
         case .mapSettings: "+map"
         case .settings: "+settings"
         case .plate(let key): "+plate:" + key
+        case .scratchpad: "+scratchpad"
         case .notams(.route): "+notams"
         case .notams(.field(let ident)): "+notams:" + ident
         case .leg, .flight, .traffic, .tail, .hold, .flown, .ask, .clearance, .sharedFlight, .flightLogged, .emergency, .tfr, .navaid: nil
@@ -188,6 +193,7 @@ enum SheetPage: Hashable {
         case "+contact": self = .contact
         case "+map": self = .mapSettings
         case "+settings": self = .settings(atMap: false)
+        case "+scratchpad": self = .scratchpad
         // Never kept (stored is nil), but opened by the UI tests' `-card`.
         case "+clearance": self = .clearance
         case "+notams": self = .notams(.route)
@@ -264,6 +270,7 @@ struct SheetPageView: View {
         case .emergency: EmergencyCard()
         case .tfr(let id): TfrCard(notamId: id).id(id)
         case .navaid(let key): NavaidCard(key: key).id(key)
+        case .scratchpad: ScratchpadView()
         }
     }
 }

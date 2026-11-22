@@ -166,7 +166,7 @@ final class Session {
 
     /// What this iPhone recorded or kept of the pilot outside the settings:
     /// the path flown (OwnTrail), the flight recorder's track and the
-    /// pilot's marks on charts (PlateMarkup), their files deleted, and the gateway's and planner's answers kept in the
+    /// pilot's marks on charts (PlateMarkup) and the scratchpad's pages, their files deleted, and the gateway's and planner's answers kept in the
     /// session's cache (the account, the logbook, saved flights). Signing
     /// out and deleting the account both (the store audit's P7). The trail
     /// and the recorder are the flight's (OwnShip); with none in hand their
@@ -177,6 +177,8 @@ final class Session {
         (recorder ?? FlightRecorder()).erase()
         // The pilot's own marks on the charts (PlateMarkup).
         PlateMarkup.forgetAll()
+        // The scratchpad's pages (ScratchStore).
+        ScratchStore.forgetAll()
         cache?.removeAllCachedResponses()
     }
 

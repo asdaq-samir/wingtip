@@ -28,6 +28,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -79,15 +80,21 @@ fun FullScreenPage(
  *  with no track to turn it by (drawn as a circle, not an arrow). */
 class PageMark(val x: Double, val y: Double, val turnDeg: Double?)
 
+/** A ring on a page round a place it marks, as a fraction of the page's
+ *  width and height from its top left: an airport diagram's hot spot,
+ *  its label (DiagramPage.hotSpots), said by TalkBack as `name`. */
+class PageRing(val x: Double, val y: Double, val name: String)
+
 /**
  * The page and the airplane on it, zoomed and panned together by
  * telephoto's Modifier.zoomable (pinch, double tap, fling, up to eight
  * times): the map's own ship, white-ringed, an arrow turned to `mark`'s
  * turn, or a circle without one. With `ink`, the pilot's marks over it
- * (MarkLayer), the page held still while they mark.
+ * (MarkLayer), the page held still while they mark; with `rings`, the
+ * diagram's hot spots ringed (HotSpotRings).
  */
 @Composable
-fun ZoomablePage(page: Bitmap, description: String?, mark: PageMark?, ink: PageInk? = null) {
+fun ZoomablePage(page: Bitmap, description: String?, mark: PageMark?, ink: PageInk? = null, rings: List<PageRing> = emptyList()) {
     val zoom = rememberZoomableState(zoomSpec = ZoomSpec(maxZoomFactor = 8f))
     val image = remember(page) { page.asImageBitmap() }
     val you = stringResource(R.string.plate_you_are_here)
@@ -101,6 +108,7 @@ fun ZoomablePage(page: Bitmap, description: String?, mark: PageMark?, ink: PageI
         Box(if (still) Modifier.size(w, h) else Modifier.size(w, h).zoomable(zoom)) {
             Image(image, contentDescription = description, modifier = Modifier.fillMaxSize())
             if (ink != null) MarkLayer(ink.marks, 1, page.width * k, page.height * k, ink.marking, ink.onMarked)
+            if (rings.isNotEmpty()) HotSpotRings(rings)
             if (mark != null) {
                 Canvas(Modifier.fillMaxSize().semantics { contentDescription = you }) {
                     val centre = Offset((mark.x * size.width).toFloat(), (mark.y * size.height).toFloat())
@@ -126,6 +134,22 @@ fun ZoomablePage(page: Bitmap, description: String?, mark: PageMark?, ink: PageI
         }
     }
 }
+
+/** The hot spots ringed in the caution ink over the FAA's own circle and
+ *  label, which stay as the FAA drew them under it. */
+@Composable
+private fun HotSpotRings(rings: List<PageRing>) {
+    val said = rings.joinToString { "Hot spot ${it.name.removePrefix("HS").trim()}" }
+    Canvas(Modifier.fillMaxSize().semantics { contentDescription = said }) {
+        rings.forEach { ring ->
+            val centre = Offset((ring.x * size.width).toFloat(), (ring.y * size.height).toFloat())
+            drawCircle(WingtipColors.Chart.Caution, radius = HOT_SPOT.toPx(), center = centre, style = Stroke(width = 3.dp.toPx()))
+        }
+    }
+}
+
+/** A hot spot's ring on a page: round the FAA's label beside its circle. */
+private val HOT_SPOT = 18.dp
 
 /** Own ship's size on a page. */
 private val OWN_SHIP = 11.dp

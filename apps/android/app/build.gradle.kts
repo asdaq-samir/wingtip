@@ -224,7 +224,8 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.telephoto.zoomable.image.coil3)
     implementation(libs.telephoto.zoomable)
-    // The documents library's reader: a PDF's outline and text, and its ink.
+    // The documents library's reader (a PDF's outline and text, and its
+    // ink) and the scratchpad's ink (scratchpad/): PdfBox-Android, Jetpack Ink.
     implementation(libs.pdfbox.android)
     implementation(libs.androidx.ink.authoring.compose)
     implementation(libs.androidx.ink.brush)

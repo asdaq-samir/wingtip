@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
@@ -22,6 +23,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,6 +47,7 @@ import app.wingtipmaps.android.ai.AiWordsRow
 import app.wingtipmaps.android.alternate.AlternateRows
 import app.wingtipmaps.android.brief.AdverseGroup
 import app.wingtipmaps.android.brief.CautionRows
+import app.wingtipmaps.android.balance.BalancePage
 import app.wingtipmaps.android.brief.DepartureWindowStrip
 import app.wingtipmaps.android.brief.FlightFigures
 import app.wingtipmaps.android.brief.IcingRows
@@ -57,6 +62,7 @@ import app.wingtipmaps.android.offline.KeptAgeLine
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.ready.ReadyToFlyRow
 import app.wingtipmaps.android.receiver.ReceiverBriefReports
+import app.wingtipmaps.android.scratchpad.ScratchpadPage
 import app.wingtipmaps.android.strip.Finding
 import app.wingtipmaps.android.strip.FindingIcon
 import app.wingtipmaps.android.strip.GlanceAction
@@ -89,6 +95,7 @@ fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () 
     val plan by planModel.state.collectAsStateWithLifecycle()
     val pilot by session.pilot.collectAsStateWithLifecycle()
     val signedIn = pilot != null
+    var tool by remember { mutableStateOf<Tool?>(null) }
     LaunchedEffect(plan.totals, plan.planning) { model.brief(plan) }
     val route = (listOf(plan.dep) + plan.stops + plan.dest).filter { it.isNotBlank() }.joinToString(" → ").ifEmpty { null }
     CardPage(title = stringResource(R.string.brief), exit = exit, subtitle = route) { padding ->
@@ -153,9 +160,34 @@ fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () 
                 // "When should I go?": the hours across, at the foot, the
                 // "when" after the "whether".
                 DepartureWindowStrip(plan, signedIn)
+                // The flight's own tools, each full screen: the loading
+                // against the airplane's limits, and the scratchpad.
+                ToolRow(R.string.balance, R.string.balance_line) { tool = Tool.BALANCE }
+                ToolRow(R.string.scratchpad, R.string.scratchpad_line) { tool = Tool.SCRATCHPAD }
             }
         }
     }
+    when (tool) {
+        Tool.BALANCE -> BalancePage(planModel, onClose = { tool = null })
+        Tool.SCRATCHPAD -> ScratchpadPage(planModel, onClose = { tool = null })
+        null -> {}
+    }
+}
+
+/** The Brief's tools, opened full screen over it. */
+private enum class Tool { BALANCE, SCRATCHPAD }
+
+/** A tool's row: its name in the tint, as a thing tapped is, and what it
+ *  holds under it (ScreenRow's look). */
+@Composable
+private fun ToolRow(@StringRes title: Int, @StringRes line: Int, onClick: () -> Unit) {
+    ListItem(
+        onClick = onClick,
+        supportingContent = { Text(stringResource(line), color = MaterialTheme.colorScheme.onSurfaceVariant) },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        modifier = Modifier.fillMaxWidth(),
+        content = { Text(stringResource(title), color = MaterialTheme.colorScheme.primary) },
+    )
 }
 
 /**

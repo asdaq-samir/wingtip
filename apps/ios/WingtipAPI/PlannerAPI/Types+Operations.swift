@@ -11194,6 +11194,279 @@ public enum Operations {
             }
         }
     }
+    /// Faa Chart Pdf
+    ///
+    /// One of the FAA's charts in force as its PDF, kept for its edition,
+    /// for the web's own-ship airport diagram, which reads the page's own
+    /// latitude and longitude labels and hot spots (the engine's
+    /// diagram_labels, diagram_hot_spot_labels) where the phones read the
+    /// same PDF themselves.
+    ///
+    /// - Remark: HTTP `GET /api/faa-chart/pdf/{source}/{edition}/{pdf}`.
+    /// - Remark: Generated from `#/paths//api/faa-chart/pdf/{source}/{edition}/{pdf}/get(faa_chart_pdf)`.
+    public enum FaaChartPdf {
+        public static let id: Swift.String = "faa_chart_pdf"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/api/faa-chart/pdf/{source}/{edition}/{pdf}/GET/path`.
+            public struct Path: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/faa-chart/pdf/{source}/{edition}/{pdf}/GET/path/source`.
+                public var source: Swift.String
+                /// - Remark: Generated from `#/paths/api/faa-chart/pdf/{source}/{edition}/{pdf}/GET/path/edition`.
+                public var edition: Swift.String
+                /// - Remark: Generated from `#/paths/api/faa-chart/pdf/{source}/{edition}/{pdf}/GET/path/pdf`.
+                public var pdf: Swift.String
+                /// Creates a new `Path`.
+                ///
+                /// - Parameters:
+                ///   - source:
+                ///   - edition:
+                ///   - pdf:
+                public init(
+                    source: Swift.String,
+                    edition: Swift.String,
+                    pdf: Swift.String
+                ) {
+                    self.source = source
+                    self.edition = edition
+                    self.pdf = pdf
+                }
+            }
+            public var path: Operations.FaaChartPdf.Input.Path
+            /// - Remark: Generated from `#/paths/api/faa-chart/pdf/{source}/{edition}/{pdf}/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.FaaChartPdf.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.FaaChartPdf.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.FaaChartPdf.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - path:
+            ///   - headers:
+            public init(
+                path: Operations.FaaChartPdf.Input.Path,
+                headers: Operations.FaaChartPdf.Input.Headers = .init()
+            ) {
+                self.path = path
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/faa-chart/pdf/{source}/{edition}/{pdf}/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/faa-chart/pdf/{source}/{edition}/{pdf}/GET/responses/200/content/application\/pdf`.
+                    case pdf(OpenAPIRuntime.HTTPBody)
+                    /// The associated value of the enum case if `self` is `.pdf`.
+                    ///
+                    /// - Throws: An error if `self` is not `.pdf`.
+                    /// - SeeAlso: `.pdf`.
+                    public var pdf: OpenAPIRuntime.HTTPBody {
+                        get throws {
+                            switch self {
+                            case let .pdf(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.FaaChartPdf.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.FaaChartPdf.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Successful Response
+            ///
+            /// - Remark: Generated from `#/paths//api/faa-chart/pdf/{source}/{edition}/{pdf}/get(faa_chart_pdf)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.FaaChartPdf.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.FaaChartPdf.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct NotFound: Sendable, Hashable {
+                /// Creates a new `NotFound`.
+                public init() {}
+            }
+            /// No such chart in force
+            ///
+            /// - Remark: Generated from `#/paths//api/faa-chart/pdf/{source}/{edition}/{pdf}/get(faa_chart_pdf)/responses/404`.
+            ///
+            /// HTTP response code: `404 notFound`.
+            case notFound(Operations.FaaChartPdf.Output.NotFound)
+            /// No such chart in force
+            ///
+            /// - Remark: Generated from `#/paths//api/faa-chart/pdf/{source}/{edition}/{pdf}/get(faa_chart_pdf)/responses/404`.
+            ///
+            /// HTTP response code: `404 notFound`.
+            public static var notFound: Self {
+                .notFound(.init())
+            }
+            /// The associated value of the enum case if `self` is `.notFound`.
+            ///
+            /// - Throws: An error if `self` is not `.notFound`.
+            /// - SeeAlso: `.notFound`.
+            public var notFound: Operations.FaaChartPdf.Output.NotFound {
+                get throws {
+                    switch self {
+                    case let .notFound(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "notFound",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct UnprocessableContent: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/faa-chart/pdf/{source}/{edition}/{pdf}/GET/responses/422/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/faa-chart/pdf/{source}/{edition}/{pdf}/GET/responses/422/content/application\/json`.
+                    case json(Components.Schemas.HTTPValidationError)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.HTTPValidationError {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.FaaChartPdf.Output.UnprocessableContent.Body
+                /// Creates a new `UnprocessableContent`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.FaaChartPdf.Output.UnprocessableContent.Body) {
+                    self.body = body
+                }
+            }
+            /// Validation Error
+            ///
+            /// - Remark: Generated from `#/paths//api/faa-chart/pdf/{source}/{edition}/{pdf}/get(faa_chart_pdf)/responses/422`.
+            ///
+            /// HTTP response code: `422 unprocessableContent`.
+            case unprocessableContent(Operations.FaaChartPdf.Output.UnprocessableContent)
+            /// The associated value of the enum case if `self` is `.unprocessableContent`.
+            ///
+            /// - Throws: An error if `self` is not `.unprocessableContent`.
+            /// - SeeAlso: `.unprocessableContent`.
+            public var unprocessableContent: Operations.FaaChartPdf.Output.UnprocessableContent {
+                get throws {
+                    switch self {
+                    case let .unprocessableContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "unprocessableContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct BadGateway: Sendable, Hashable {
+                /// Creates a new `BadGateway`.
+                public init() {}
+            }
+            /// The FAA could not be reached
+            ///
+            /// - Remark: Generated from `#/paths//api/faa-chart/pdf/{source}/{edition}/{pdf}/get(faa_chart_pdf)/responses/502`.
+            ///
+            /// HTTP response code: `502 badGateway`.
+            case badGateway(Operations.FaaChartPdf.Output.BadGateway)
+            /// The FAA could not be reached
+            ///
+            /// - Remark: Generated from `#/paths//api/faa-chart/pdf/{source}/{edition}/{pdf}/get(faa_chart_pdf)/responses/502`.
+            ///
+            /// HTTP response code: `502 badGateway`.
+            public static var badGateway: Self {
+                .badGateway(.init())
+            }
+            /// The associated value of the enum case if `self` is `.badGateway`.
+            ///
+            /// - Throws: An error if `self` is not `.badGateway`.
+            /// - SeeAlso: `.badGateway`.
+            public var badGateway: Operations.FaaChartPdf.Output.BadGateway {
+                get throws {
+                    switch self {
+                    case let .badGateway(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "badGateway",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case pdf
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/pdf":
+                    self = .pdf
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .pdf:
+                    return "application/pdf"
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .pdf,
+                    .json
+                ]
+            }
+        }
+    }
     /// Forecast Dry Run
     ///
     /// The dry run against the forecast for the hours it flies: a product

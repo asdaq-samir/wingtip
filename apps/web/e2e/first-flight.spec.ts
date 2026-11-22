@@ -172,7 +172,9 @@ test("the FPL tip stays off the sheet all the way up, and once the toggle has be
   await expect(tip).toHaveCount(0);
 });
 
-test("on the first flight a Nearest airport tapped is the destination, the ask held till the route is made, never its card", async ({ page }) => {
+test("on the first flight a Nearest airport tapped is the destination, the ask held till the route is made, never its card", async ({
+  page,
+}) => {
   // The owner, 2026-11-22: "When I select a nearest airport, it shows
   // destination search the first time but then selecting again shows the
   // airport card." The ask was let go at the first tap while the fix was

@@ -673,6 +673,17 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/faa-chart/page/{source}/{edition}/{pdf}/{page}.png`.
     /// - Remark: Generated from `#/paths//api/faa-chart/page/{source}/{edition}/{pdf}/{page}.png/get(faa_chart_page)`.
     func faaChartPage(_ input: Operations.FaaChartPage.Input) async throws -> Operations.FaaChartPage.Output
+    /// Faa Chart Pdf
+    ///
+    /// One of the FAA's charts in force as its PDF, kept for its edition,
+    /// for the web's own-ship airport diagram, which reads the page's own
+    /// latitude and longitude labels and hot spots (the engine's
+    /// diagram_labels, diagram_hot_spot_labels) where the phones read the
+    /// same PDF themselves.
+    ///
+    /// - Remark: HTTP `GET /api/faa-chart/pdf/{source}/{edition}/{pdf}`.
+    /// - Remark: Generated from `#/paths//api/faa-chart/pdf/{source}/{edition}/{pdf}/get(faa_chart_pdf)`.
+    func faaChartPdf(_ input: Operations.FaaChartPdf.Input) async throws -> Operations.FaaChartPdf.Output
     /// Forecast Dry Run
     ///
     /// The dry run against the forecast for the hours it flies: a product
@@ -2517,6 +2528,25 @@ extension APIProtocol {
         headers: Operations.FaaChartPage.Input.Headers = .init()
     ) async throws -> Operations.FaaChartPage.Output {
         try await faaChartPage(Operations.FaaChartPage.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Faa Chart Pdf
+    ///
+    /// One of the FAA's charts in force as its PDF, kept for its edition,
+    /// for the web's own-ship airport diagram, which reads the page's own
+    /// latitude and longitude labels and hot spots (the engine's
+    /// diagram_labels, diagram_hot_spot_labels) where the phones read the
+    /// same PDF themselves.
+    ///
+    /// - Remark: HTTP `GET /api/faa-chart/pdf/{source}/{edition}/{pdf}`.
+    /// - Remark: Generated from `#/paths//api/faa-chart/pdf/{source}/{edition}/{pdf}/get(faa_chart_pdf)`.
+    public func faaChartPdf(
+        path: Operations.FaaChartPdf.Input.Path,
+        headers: Operations.FaaChartPdf.Input.Headers = .init()
+    ) async throws -> Operations.FaaChartPdf.Output {
+        try await faaChartPdf(Operations.FaaChartPdf.Input(
             path: path,
             headers: headers
         ))

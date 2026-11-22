@@ -1,0 +1,45 @@
+{
+  "x-call": "wingtip_flight::calls::call",
+  "description": "The fuels an airplane is loaded with, by grade, and a US gallon's standard weight of each, for the weight and balance where the airplane's own figure is not given (the POH's rules): FAA-H-8083-1B, avgas 6 lb (chapter 7), Jet A and A-1 6.8 lb (chapter 9's nominal at +15 °C; Figure 3-4's 6.68, the heavier kept).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FuelGradesInput",
+      "type": "object",
+      "properties": {},
+      "additionalProperties": false
+    },
+    "answer": {
+      "title": "FuelGradesAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "grade": {
+            "type": "string",
+            "enum": [
+              "avgas",
+              "jet_a"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "lb_per_gal": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "grade",
+          "name",
+          "lb_per_gal"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

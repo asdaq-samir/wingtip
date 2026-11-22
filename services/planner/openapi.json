@@ -29132,6 +29132,70 @@
         }
       }
     },
+    "/api/faa-chart/pdf/{source}/{edition}/{pdf}": {
+      "get": {
+        "description": "One of the FAA's charts in force as its PDF, kept for its edition,\nfor the web's own-ship airport diagram, which reads the page's own\nlatitude and longitude labels and hot spots (the engine's\ndiagram_labels, diagram_hot_spot_labels) where the phones read the\nsame PDF themselves.",
+        "operationId": "faa_chart_pdf_api_faa_chart_pdf__source___edition___pdf__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source",
+            "required": true,
+            "schema": {
+              "title": "Source",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "edition",
+            "required": true,
+            "schema": {
+              "title": "Edition",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "pdf",
+            "required": true,
+            "schema": {
+              "title": "Pdf",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "No such chart in force"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "502": {
+            "description": "The FAA could not be reached"
+          }
+        },
+        "summary": "Faa Chart Pdf",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
+      }
+    },
     "/api/forecast/run": {
       "post": {
         "description": "The dry run against the forecast for the hours it flies: a product\nthat cannot be had is named in `unavailable`, the rest still read.",

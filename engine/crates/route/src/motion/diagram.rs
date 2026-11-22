@@ -288,20 +288,24 @@ pub(super) fn fix_usable_rule(v: &Value) -> Result<String, String> {
     Ok(fix_usable(num(n, v, "age_s")?, num(n, v, "accuracy_m")?).to_string())
 }
 
-/// `diagram_point`: `{"x", "y", "on_page"}`, from `{"graticule", "lat",
-/// "lon", "width", "height"}`, the page's size in points.
-pub(super) fn point_rule(v: &Value) -> Result<String, String> {
-    let n = "diagram_point";
-    let g = v.get("graticule").ok_or("diagram_point: \"graticule\" is missing")?;
-    let lat_on_x = matches!(g.get("lat_on_x"), Some(Value::Bool(true)));
-    let g = Graticule {
-        lat_on_x,
+/// `v`'s "graticule", as diagram_graticule answered it.
+pub(super) fn graticule_in(n: &str, v: &Value) -> Result<Graticule, String> {
+    let g = v.get("graticule").ok_or_else(|| format!("{n}: \"graticule\" is missing"))?;
+    Ok(Graticule {
+        lat_on_x: matches!(g.get("lat_on_x"), Some(Value::Bool(true))),
         a: num(n, g, "a")?,
         b: num(n, g, "b")?,
         c: num(n, g, "c")?,
         d: num(n, g, "d")?,
         north_deg: num(n, g, "north_deg")?,
-    };
+    })
+}
+
+/// `diagram_point`: `{"x", "y", "on_page"}`, from `{"graticule", "lat",
+/// "lon", "width", "height"}`, the page's size in points.
+pub(super) fn point_rule(v: &Value) -> Result<String, String> {
+    let n = "diagram_point";
+    let g = graticule_in(n, v)?;
     let (x, y) = place(&g, num(n, v, "lat")?, num(n, v, "lon")?);
     let (w, h) = (num(n, v, "width")?, num(n, v, "height")?);
     let mut out = String::from("{\"x\":");
