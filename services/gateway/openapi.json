@@ -514,6 +514,12 @@
           "app" : {
             "type" : "string"
           },
+          "can" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
           "id" : {
             "type" : "string"
           },
@@ -529,7 +535,7 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "app", "id", "renewedAt", "scopes", "until" ],
+        "required" : [ "app", "can", "id", "renewedAt", "scopes", "until" ],
         "type" : "object"
       },
       "ConnectorGrantDto" : {

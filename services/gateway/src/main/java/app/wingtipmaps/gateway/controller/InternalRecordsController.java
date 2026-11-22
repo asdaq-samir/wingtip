@@ -20,8 +20,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,8 +32,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * A pilot's records, for the connector's tools in the planner (app/mcp):
- * their airplanes, their saved flights, and a flight saved from their AI
- * app. The planner has checked the pilot's token and names them by its
+ * their airplanes, their saved flights, a flight saved from their AI app,
+ * and one of them planned again or deleted. The planner has checked the pilot's token and names them by its
  * subject (X-Pilot-Id); it shows it is the planner with the token the two
  * share (app.mcp.internal-token, X-Internal-Token).
  *
@@ -99,6 +102,35 @@ public class InternalRecordsController {
             @RequestHeader(value = PlannerProxyController.PILOT_HEADER, required = false) String pilotId,
             @Valid @RequestBody SaveFlightRequest request) {
         return asPilot(token, pilotId, pilot -> FlightSummaryDto.of(flights.save(pilot, request)));
+    }
+
+    /** One of the pilot's saved flights planned again (the connector's
+     *  update_saved_flight), validated as a new one is; a 404 where it is
+     *  not theirs. */
+    @PutMapping("/flights/{id}")
+    public ResponseEntity<FlightSummaryDto> replan(
+            @RequestHeader(value = TOKEN_HEADER, required = false) String token,
+            @RequestHeader(value = PlannerProxyController.PILOT_HEADER, required = false) String pilotId,
+            @PathVariable Long id,
+            @Valid @RequestBody SaveFlightRequest request) {
+        return pilot(token, pilotId)
+                .flatMap(pilot -> flights.replan(pilot, id, request))
+                .map(FlightSummaryDto::of)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /** One of the pilot's saved flights deleted (the connector's
+     *  delete_saved_flight, which the AI app confirms first): 204, or a
+     *  404 where it is not theirs. */
+    @DeleteMapping("/flights/{id}")
+    public ResponseEntity<Void> delete(
+            @RequestHeader(value = TOKEN_HEADER, required = false) String token,
+            @RequestHeader(value = PlannerProxyController.PILOT_HEADER, required = false) String pilotId,
+            @PathVariable Long id) {
+        return pilot(token, pilotId).filter(pilot -> flights.delete(pilot, id)).isPresent()
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 
     /**

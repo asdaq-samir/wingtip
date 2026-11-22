@@ -30,7 +30,8 @@ class EmailCaseMigrationTest {
     @BeforeAll
     static void start() {
         postgres.start();
-        jdbc = new JdbcTemplate(new DriverManagerDataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword()));
+        jdbc = new JdbcTemplate(
+                new DriverManagerDataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword()));
     }
 
     @AfterAll
@@ -49,14 +50,18 @@ class EmailCaseMigrationTest {
     private static long pilot(String email, String googleSubject) {
         return jdbc.queryForObject(
                 "INSERT INTO pilots (email, display_name, google_subject, created_at) VALUES (?, ?, ?, now()) RETURNING id",
-                Long.class, email, email, googleSubject);
+                Long.class,
+                email,
+                email,
+                googleSubject);
     }
 
     private static void aircraft(long pilot, String tail) {
         jdbc.update(
                 "INSERT INTO aircraft (pilot_id, tail_number, type_designator, cruise_tas_kt, fuel_burn_gph, created_at)"
                         + " VALUES (?, ?, 'C172', 110, 8, now())",
-                pilot, tail);
+                pilot,
+                tail);
     }
 
     @Test
@@ -73,7 +78,8 @@ class EmailCaseMigrationTest {
         flyway("latest").migrate();
 
         // Alice's second account is gone into her first, its airplane and subject with it.
-        assertThat(jdbc.queryForObject("SELECT count(*) FROM pilots WHERE id = ?", Long.class, aliceToo)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM pilots WHERE id = ?", Long.class, aliceToo))
+                .isZero();
         assertThat(jdbc.queryForObject("SELECT pilot_id FROM aircraft WHERE tail_number = 'N123AB'", Long.class))
                 .isEqualTo(alice);
         assertThat(jdbc.queryForObject("SELECT google_subject FROM pilots WHERE id = ?", String.class, alice))
@@ -91,7 +97,9 @@ class EmailCaseMigrationTest {
                 .extracting(r -> r.get("other_pilot_id") + ":" + r.get("outcome"))
                 .containsExactly(aliceToo + ":merged", bobToo + ":kept_apart");
 
-        assertThatThrownBy(() -> jdbc.update("INSERT INTO pilots (email, display_name, created_at) VALUES ('ALICE@example.com', 'x', now())"))
+        assertThatThrownBy(
+                        () -> jdbc.update(
+                                "INSERT INTO pilots (email, display_name, created_at) VALUES ('ALICE@example.com', 'x', now())"))
                 .isInstanceOf(DuplicateKeyException.class);
     }
 }

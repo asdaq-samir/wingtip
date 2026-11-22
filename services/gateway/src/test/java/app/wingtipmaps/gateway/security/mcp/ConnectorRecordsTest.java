@@ -2,8 +2,10 @@ package app.wingtipmaps.gateway.security.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
@@ -209,6 +211,36 @@ class ConnectorRecordsTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].stops[0]").value("KDSM"));
+
+        // Planned again in place (update_saved_flight), then deleted; a
+        // flight or a pilot not theirs is a 404 and nothing changes.
+        String flightId = mvc.perform(asPilot(get("/internal/mcp/flights"), id))
+                .andReturn()
+                .getResponse()
+                .getContentAsString()
+                .replaceAll("(?s)^\\[\\{\"id\":(\\d+).*", "$1");
+        String replanned = "{\"departureIdent\":\"C81\",\"destinationIdent\":\"KMSP\",\"stops\":[],"
+                + "\"picks\":\"procs=KMSP%3AI30L%3A%3A%3AL\"}";
+        mvc.perform(asPilot(put("/internal/mcp/flights/999999"), id).content(replanned))
+                .andExpect(status().isNotFound());
+        mvc.perform(asPilot(put("/internal/mcp/flights/" + flightId), id).content(replanned))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(Long.parseLong(flightId)))
+                .andExpect(jsonPath("$.destinationIdent").value("KMSP"))
+                .andExpect(jsonPath("$.picks").value("procs=KMSP%3AI30L%3A%3A%3AL"));
+        mvc.perform(asPilot(delete("/internal/mcp/flights/" + flightId), "999999"))
+                .andExpect(status().isNotFound());
+        mvc.perform(asPilot(delete("/internal/mcp/flights/" + flightId), id)).andExpect(status().isNoContent());
+        mvc.perform(asPilot(get("/internal/mcp/flights"), id))
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    /** As the planner asks for a pilot's records, with the shared token. */
+    static MockHttpServletRequestBuilder asPilot(MockHttpServletRequestBuilder request, String pilotId) {
+        return internal(request)
+                .header("X-Pilot-Id", pilotId)
+                .header("X-Internal-Token", TOKEN)
+                .contentType(MediaType.APPLICATION_JSON);
     }
 
     /** As the planner reaches the records: on the gateway's internal port. */

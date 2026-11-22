@@ -59,13 +59,32 @@ public class FlightService {
      *  attach, not offering a hint that can be dropped. */
     @Transactional
     public Flight save(Pilot pilot, SaveFlightRequest request) {
-        Aircraft flownIn = request.aircraftId() == null
+        Flight flight =
+                new Flight(pilot, flownIn(pilot, request), request.departureIdent(), request.destinationIdent());
+        return flights.save(filed(flight, request));
+    }
+
+    /** This pilot's saved flight planned again as `request` has it: its
+     *  route, airplane, altitudes, picks, time and nav log, its name, notes
+     *  and share kept (the connector's update_saved_flight); empty where
+     *  the flight is not theirs. */
+    @Transactional
+    public Optional<Flight> replan(Pilot pilot, Long id, SaveFlightRequest request) {
+        Aircraft flown = flownIn(pilot, request);
+        return get(pilot, id)
+                .map(f -> flights.save(
+                        filed(f.replanned(flown, request.departureIdent(), request.destinationIdent()), request)));
+    }
+
+    private Aircraft flownIn(Pilot pilot, SaveFlightRequest request) {
+        return request.aircraftId() == null
                 ? null
                 : aircraft.findByIdAndPilotId(request.aircraftId(), pilot.getId())
                         .orElseThrow(() -> new NoSuchAircraftException(request.aircraftId()));
+    }
 
-        Flight flight = new Flight(pilot, flownIn, request.departureIdent(), request.destinationIdent())
-                .withStops(
+    private static Flight filed(Flight flight, SaveFlightRequest request) {
+        flight.withStops(
                         request.stops() == null
                                 ? null
                                 : request.stops().stream()
@@ -103,7 +122,7 @@ public class FlightService {
                     request.risk().level(),
                     request.risk().factors());
         }
-        return flights.save(flight);
+        return flight;
     }
 
     /** Renames this pilot's flight or changes its notes; empty where the

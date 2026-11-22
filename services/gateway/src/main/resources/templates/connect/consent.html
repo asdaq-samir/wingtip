@@ -10,14 +10,17 @@
   you are using.</p>
 <p>It will be able to:</p>
 <ul>
-  <li th:each="scope : ${scopes}" th:text="${scopeWords.getOrDefault(scope, scope)}"></li>
+  <li th:each="scope : ${scopes}" th:unless="${scope == optionalScope}" th:text="${scopeWords.getOrDefault(scope, scope)}"></li>
 </ul>
 <p class="muted">Only what you ask it about leaves Wingtip, and only to this app. You can remove the connector in
   that app's settings at any time.</p>
 <form method="post" action="/oauth2/authorize">
   <input type="hidden" name="client_id" th:value="${clientId}">
   <input type="hidden" name="state" th:value="${state}">
-  <input th:each="scope : ${scopes}" type="hidden" name="scope" th:value="${scope}">
+  <input th:each="scope : ${scopes}" th:unless="${scope == optionalScope}" type="hidden" name="scope" th:value="${scope}">
+  <!--/* Writing is the pilot's to leave out (ConnectController). */-->
+  <p th:if="${#lists.contains(scopes, optionalScope)}"><label><input type="checkbox" name="scope" th:value="${optionalScope}"
+    checked> <span th:text="${scopeWords.get(optionalScope)}"></span></label></p>
   <button class="button" type="submit">Connect</button>
 </form>
 <form method="post" action="/oauth2/authorize">

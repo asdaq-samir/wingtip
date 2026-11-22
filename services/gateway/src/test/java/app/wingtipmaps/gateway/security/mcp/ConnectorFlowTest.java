@@ -149,7 +149,12 @@ class ConnectorFlowTest {
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
-        assertThat(page).contains("claude.ai").contains("Save flights to your Wingtip account");
+        assertThat(page)
+                .contains("claude.ai")
+                .contains("Save, change and delete your saved flights")
+                // Writing is a box the pilot may untick; reading is not.
+                .contains("type=\"checkbox\" name=\"scope\" value=\"" + ConnectorSettings.WRITE + "\"")
+                .contains("type=\"hidden\" name=\"scope\" value=\"" + ConnectorSettings.READ + "\"");
 
         String callback = mvc.perform(post("/oauth2/authorize")
                         .cookie(session)
