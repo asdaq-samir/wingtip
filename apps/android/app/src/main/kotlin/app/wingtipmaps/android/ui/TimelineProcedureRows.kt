@@ -126,7 +126,7 @@ private fun FixRow(pick: PlanProcedures.Pick, fix: ProcedureFix, drawing: Proced
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         Text(fix.ident, style = MaterialTheme.typography.labelLarge, color = muted, modifier = Modifier.padding(horizontal = WingtipSpace.Md, vertical = WingtipSpace.Sm))
                         DropdownMenuItem(
-                            text = { Text(if (isDirect) stringResource(R.string.fix_fly_charted, pick.name) else stringResource(R.string.point_direct_to)) },
+                            text = { Text(if (isDirect) stringResource(R.string.fix_fly_charted, pick.name) else stringResource(R.string.wording_direct_to)) },
                             leadingIcon = { Icon(CardAction.DIRECT_TO.icon, contentDescription = null, tint = tint) },
                             onClick = {
                                 menu = false
