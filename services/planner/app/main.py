@@ -48,7 +48,7 @@ from .routers import airports, airspace as airspace_router, basemaps, briefing, 
 from .routers import airport_card, airport_charts, airport_stops, navlog
 from .routers import copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, coach, words, plates
 from .routers import aircraft_form, airplanes, studio, studio_drafts, studio_history, weather_flow
-from .routers import forecast_run, logbook_draft, notam_rank, offline, traffic, weather_loop, weather_map, window
+from .routers import forecast_run, logbook_draft, notam_rank, offline, plate_sets, traffic, weather_loop, weather_map, window
 from .schemas.common import Index
 from .settings import get_settings
 from .warm_up import WARM, warm_reference_data
@@ -135,7 +135,7 @@ ROUTERS = (
     (plan, navlog, chart, briefing, notes, devml, system, classb, devservices, airports, airport_card, airport_charts, airport_stops),
     (airspace_router, traffic, basemaps),
     (route_options, gonogo, figures, clearance, packs, words, weather_map, weather_flow, weather_loop, forecast_run),
-    (pilot, live, feeds, terrain, window, emergency, copilot, logbook_draft, notam_rank, offline, coach),
+    (pilot, live, feeds, terrain, window, emergency, copilot, logbook_draft, notam_rank, offline, plate_sets, coach),
     (mcp, plates, studio_history, studio, studio_drafts, aircraft_form, airplanes),
 )
 for group in ROUTERS:

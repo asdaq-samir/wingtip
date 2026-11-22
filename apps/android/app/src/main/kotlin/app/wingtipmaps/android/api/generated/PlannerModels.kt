@@ -569,6 +569,7 @@ data class AirportPlace (
     @SerialName("private")
     val isPrivate: Boolean? = null,
     val procedures: List<TerminalChart>? = null,
+    val publications: FaaPublications? = null,
 
     @SerialName("radio_notes")
     val radioNotes: List<String>? = null,
@@ -773,6 +774,27 @@ data class TerminalChart (
     val kind: String,
     val name: String,
     val url: String
+)
+
+/**
+ * The card's plates (the d-TPP: diagram, procedures, minimums) and its
+ * Chart Supplement page, each by the edition its links are of.
+ */
+@Serializable
+data class FaaPublications (
+    val plates: PublicationEdition? = null,
+    val supplement: PublicationEdition? = null
+)
+
+/**
+ * Which edition of one of the FAA's publications a card's links are of
+ * (wingtip.publications.editions): an FAA outage is said, not read as a
+ * field with no plates.
+ */
+@Serializable
+data class PublicationEdition (
+    val edition: String? = null,
+    val state: String? = null
 )
 
 @Serializable
@@ -3729,6 +3751,57 @@ data class TrailPoint (
     val lat: Double,
     val lon: Double,
     val t: Double
+)
+
+/**
+ * The plates Keep for the Air keeps for a flight, with their size,
+ * about, before any is fetched. `range_nm` is the diversion range (the
+ * engine's `diversion_range_nm`: the reserve's `reserve_min` at the
+ * airplane's cruise, or its tanks' reach, `basis`), null with no
+ * airplane. `alternate` is the one filed, or the engine's pick
+ * (`alternate_picked`, 14 CFR 91.169(c)). `cycle` is the d-TPP cycle the
+ * charts are of (`state` "kept" where the FAA's could not be had), and
+ * `next_at` when the next takes over.
+ */
+@Serializable
+data class FlightPlates (
+    val alternate: String? = null,
+
+    @SerialName("alternate_picked")
+    val alternatePicked: Boolean,
+
+    val basis: String,
+    val bytes: Long,
+    val charts: Int,
+    val cycle: String? = null,
+    val fields: List<KeptPlateField>,
+
+    @SerialName("next_at")
+    val nextAt: String,
+
+    @SerialName("range_nm")
+    val rangeNm: Double? = null,
+
+    @SerialName("reserve_min")
+    val reserveMin: Double,
+
+    val state: String
+)
+
+/**
+ * A field whose plates are kept: its part in the flight, how far it is
+ * off the route (a diversion's), and the charts its part keeps (the
+ * engine's `plates_kept`).
+ */
+@Serializable
+data class KeptPlateField (
+    val charts: List<TerminalChart>,
+    val ident: String,
+
+    @SerialName("off_nm")
+    val offNm: Double? = null,
+
+    val role: String
 )
 
 /**
@@ -7008,6 +7081,58 @@ data class PlateBox (
     val left: Double,
     val right: Double,
     val top: Double
+)
+
+/**
+ * A state's set of `cycle`: every open field the d-TPP files under it
+ * and its charts, each fetched as the card's Charts tab fetches it.
+ */
+@Serializable
+data class PlateStateCharts (
+    val cycle: String,
+    val fields: List<PlateStateField>,
+    val id: String,
+    val name: String,
+
+    @SerialName("next_at")
+    val nextAt: String
+)
+
+/**
+ * One field of a state's set and its charts.
+ */
+@Serializable
+data class PlateStateField (
+    val charts: List<TerminalChart>,
+    val ident: String
+)
+
+/**
+ * The states whose plates can be kept, of the d-TPP `cycle` (null
+ * where no index could be had), and when the next takes over.
+ */
+@Serializable
+data class PlateStates (
+    val cycle: String? = null,
+
+    @SerialName("next_at")
+    val nextAt: String,
+
+    val state: String,
+    val states: List<PlateStateSet>
+)
+
+/**
+ * A state's plates as Downloads offers them: its fields and charts
+ * and their size, about.
+ */
+@Serializable
+data class PlateStateSet (
+    val bytes: Long,
+    val charts: Int,
+    val fields: Int,
+    val id: String,
+    val name: String
 )
 
 /**

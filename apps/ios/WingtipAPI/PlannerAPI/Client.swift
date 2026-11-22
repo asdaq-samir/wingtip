@@ -9602,6 +9602,299 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Flight Plates
+    ///
+    /// The plates Keep for the Air keeps for a flight, and their size,
+    /// about, said before they are fetched: the departure's, the
+    /// destination's, each stop's and the alternate's -- `alternate` filed,
+    /// or the engine's pick of those that will do at `eta` (UTC; now where
+    /// not given) at the airplane's cruise `tas_kt` (14 CFR 91.169(c)) --
+    /// and those of the fields within diversion range of the route (the
+    /// engine's `diversion_range_nm`, from `tas_kt`, `usable_gal` and
+    /// `burn_gph`, the picked airplane's own; none with no airplane).
+    ///
+    /// - Remark: HTTP `GET /api/plates/flight`.
+    /// - Remark: Generated from `#/paths//api/plates/flight/get(flight_plates)`.
+    public func flightPlates(_ input: Operations.FlightPlates.Input) async throws -> Operations.FlightPlates.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.FlightPlates.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/plates/flight",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "route",
+                    value: input.query.route
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "fixes",
+                    value: input.query.fixes
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "alternate",
+                    value: input.query.alternate
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "eta",
+                    value: input.query.eta
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "tas_kt",
+                    value: input.query.tasKt
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "usable_gal",
+                    value: input.query.usableGal
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "burn_gph",
+                    value: input.query.burnGph
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.FlightPlates.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.FlightPlates.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 422:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.FlightPlates.Output.UnprocessableContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.HTTPValidationError.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unprocessableContent(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Plate States
+    ///
+    /// The states whose plates Downloads offers, each with its size,
+    /// about, of the d-TPP cycle in force, and when the next takes over
+    /// (0901Z on its AIRAC date), when a kept state is fetched again.
+    ///
+    /// - Remark: HTTP `GET /api/plates/states`.
+    /// - Remark: Generated from `#/paths//api/plates/states/get(plate_states)`.
+    public func plateStates(_ input: Operations.PlateStates.Input) async throws -> Operations.PlateStates.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.PlateStates.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/plates/states",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.PlateStates.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.PlateStates.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Plate State
+    ///
+    /// A state's plates of `cycle`: each open field and its charts, which
+    /// the device fetches as the card's Charts tab does (/api/faa-chart).
+    /// 404 for a cycle not served or a state with no plates.
+    ///
+    /// - Remark: HTTP `GET /api/plates/states/{cycle}/{state}`.
+    /// - Remark: Generated from `#/paths//api/plates/states/{cycle}/{state}/get(plate_state)`.
+    public func plateState(_ input: Operations.PlateState.Input) async throws -> Operations.PlateState.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.PlateState.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/plates/states/{}/{}",
+                    parameters: [
+                        input.path.cycle,
+                        input.path.state
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.PlateState.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.PlateStateCharts.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 422:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.PlateState.Output.UnprocessableContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.HTTPValidationError.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unprocessableContent(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
     /// Retrain
     ///
     /// Starts one training run (`python -m wingtip.pipeline run`): the

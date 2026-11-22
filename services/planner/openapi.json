@@ -2005,7 +2005,14 @@
           },
           "publications": {
             "$ref": "#/components/schemas/FaaPublications",
-            "default": {}
+            "default": {
+              "plates": {
+                "state": "current"
+              },
+              "supplement": {
+                "state": "current"
+              }
+            }
           },
           "radio_notes": {
             "default": [],
@@ -9417,11 +9424,15 @@
         "properties": {
           "plates": {
             "$ref": "#/components/schemas/PublicationEdition",
-            "default": {}
+            "default": {
+              "state": "current"
+            }
           },
           "supplement": {
             "$ref": "#/components/schemas/PublicationEdition",
-            "default": {}
+            "default": {
+              "state": "current"
+            }
           }
         },
         "title": "FaaPublications",
@@ -9828,6 +9839,104 @@
           "hex"
         ],
         "title": "FlightDetail",
+        "type": "object"
+      },
+      "FlightPlates": {
+        "description": "The plates Keep for the Air keeps for a flight, with their size,\nabout, before any is fetched. `range_nm` is the diversion range (the\nengine's `diversion_range_nm`: the reserve's `reserve_min` at the\nairplane's cruise, or its tanks' reach, `basis`), null with no\nairplane. `alternate` is the one filed, or the engine's pick\n(`alternate_picked`, 14 CFR 91.169(c)). `cycle` is the d-TPP cycle the\ncharts are of (`state` \"kept\" where the FAA's could not be had), and\n`next_at` when the next takes over.",
+        "properties": {
+          "alternate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alternate"
+          },
+          "alternate_picked": {
+            "title": "Alternate Picked",
+            "type": "boolean"
+          },
+          "basis": {
+            "enum": [
+              "reserve",
+              "tanks",
+              "no_airplane"
+            ],
+            "title": "Basis",
+            "type": "string"
+          },
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "charts": {
+            "title": "Charts",
+            "type": "integer"
+          },
+          "cycle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cycle"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/KeptPlateField"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "next_at": {
+            "title": "Next At",
+            "type": "string"
+          },
+          "range_nm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Range Nm"
+          },
+          "reserve_min": {
+            "title": "Reserve Min",
+            "type": "number"
+          },
+          "state": {
+            "enum": [
+              "current",
+              "kept",
+              "unavailable"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "range_nm",
+          "reserve_min",
+          "basis",
+          "cycle",
+          "state",
+          "next_at",
+          "alternate",
+          "alternate_picked",
+          "fields",
+          "charts",
+          "bytes"
+        ],
+        "title": "FlightPlates",
         "type": "object"
       },
       "FlightRoute": {
@@ -12450,6 +12559,51 @@
           "title"
         ],
         "title": "KeptItem",
+        "type": "object"
+      },
+      "KeptPlateField": {
+        "description": "A field whose plates are kept: its part in the flight, how far it is\noff the route (a diversion's), and the charts its part keeps (the\nengine's `plates_kept`).",
+        "properties": {
+          "charts": {
+            "items": {
+              "$ref": "#/components/schemas/TerminalChart"
+            },
+            "title": "Charts",
+            "type": "array"
+          },
+          "ident": {
+            "title": "Ident",
+            "type": "string"
+          },
+          "off_nm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Off Nm"
+          },
+          "role": {
+            "enum": [
+              "departure",
+              "destination",
+              "stop",
+              "alternate",
+              "diversion"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ident",
+          "role",
+          "charts"
+        ],
+        "title": "KeptPlateField",
         "type": "object"
       },
       "Leg": {
@@ -18340,6 +18494,143 @@
           "georeference"
         ],
         "title": "PlatePage",
+        "type": "object"
+      },
+      "PlateStateCharts": {
+        "description": "A state's set of `cycle`: every open field the d-TPP files under it\nand its charts, each fetched as the card's Charts tab fetches it.",
+        "properties": {
+          "cycle": {
+            "title": "Cycle",
+            "type": "string"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/PlateStateField"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "next_at": {
+            "title": "Next At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cycle",
+          "next_at",
+          "id",
+          "name",
+          "fields"
+        ],
+        "title": "PlateStateCharts",
+        "type": "object"
+      },
+      "PlateStateField": {
+        "description": "One field of a state's set and its charts.",
+        "properties": {
+          "charts": {
+            "items": {
+              "$ref": "#/components/schemas/TerminalChart"
+            },
+            "title": "Charts",
+            "type": "array"
+          },
+          "ident": {
+            "title": "Ident",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ident",
+          "charts"
+        ],
+        "title": "PlateStateField",
+        "type": "object"
+      },
+      "PlateStateSet": {
+        "description": "A state's plates as Downloads offers them: its fields and charts\nand their size, about.",
+        "properties": {
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "charts": {
+            "title": "Charts",
+            "type": "integer"
+          },
+          "fields": {
+            "title": "Fields",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "fields",
+          "charts",
+          "bytes"
+        ],
+        "title": "PlateStateSet",
+        "type": "object"
+      },
+      "PlateStates": {
+        "description": "The states whose plates can be kept, of the d-TPP `cycle` (null\nwhere no index could be had), and when the next takes over.",
+        "properties": {
+          "cycle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cycle"
+          },
+          "next_at": {
+            "title": "Next At",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "current",
+              "kept",
+              "unavailable"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "states": {
+            "items": {
+              "$ref": "#/components/schemas/PlateStateSet"
+            },
+            "title": "States",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cycle",
+          "next_at",
+          "state",
+          "states"
+        ],
+        "title": "PlateStates",
         "type": "object"
       },
       "PointOffFix": {
@@ -32232,6 +32523,214 @@
           }
         },
         "summary": "Plan"
+      }
+    },
+    "/api/plates/flight": {
+      "get": {
+        "description": "The plates Keep for the Air keeps for a flight, and their size,\nabout, said before they are fetched: the departure's, the\ndestination's, each stop's and the alternate's -- `alternate` filed,\nor the engine's pick of those that will do at `eta` (UTC; now where\nnot given) at the airplane's cruise `tas_kt` (14 CFR 91.169(c)) --\nand those of the fields within diversion range of the route (the\nengine's `diversion_range_nm`, from `tas_kt`, `usable_gal` and\n`burn_gph`, the picked airplane's own; none with no airplane).",
+        "operationId": "flight_plates_api_plates_flight_get",
+        "parameters": [
+          {
+            "description": "The flight's fields in order, departure to destination: \"KSFO,KPRB,KSBA\".",
+            "in": "query",
+            "name": "route",
+            "required": true,
+            "schema": {
+              "description": "The flight's fields in order, departure to destination: \"KSFO,KPRB,KSBA\".",
+              "title": "Route",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The route flown, \"lat,lon;lat,lon\" (the nav log's); straight legs between the fields where none.",
+            "in": "query",
+            "name": "fixes",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "The route flown, \"lat,lon;lat,lon\" (the nav log's); straight legs between the fields where none.",
+              "title": "Fixes",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "alternate",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Alternate",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "eta",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Eta"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tas_kt",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tas Kt"
+            }
+          },
+          {
+            "in": "query",
+            "name": "usable_gal",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Usable Gal"
+            }
+          },
+          {
+            "in": "query",
+            "name": "burn_gph",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Burn Gph"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlightPlates"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Flight Plates",
+        "x-gateway": {
+          "access": "public"
+        }
+      }
+    },
+    "/api/plates/states": {
+      "get": {
+        "description": "The states whose plates Downloads offers, each with its size,\nabout, of the d-TPP cycle in force, and when the next takes over\n(0901Z on its AIRAC date), when a kept state is fetched again.",
+        "operationId": "plate_states_api_plates_states_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlateStates"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Plate States",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
+      }
+    },
+    "/api/plates/states/{cycle}/{state}": {
+      "get": {
+        "description": "A state's plates of `cycle`: each open field and its charts, which\nthe device fetches as the card's Charts tab does (/api/faa-chart).\n404 for a cycle not served or a state with no plates.",
+        "operationId": "plate_state_api_plates_states__cycle___state__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cycle",
+            "required": true,
+            "schema": {
+              "title": "Cycle",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "state",
+            "required": true,
+            "schema": {
+              "title": "State",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlateStateCharts"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Plate State",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
       }
     },
     "/api/retrain": {
