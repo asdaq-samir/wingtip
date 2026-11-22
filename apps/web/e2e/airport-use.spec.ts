@@ -66,12 +66,16 @@ test(
     await page.goto("/app/plan?place=00MO");
     await expect(card(page).getByTestId("place-kind")).toHaveText("Closed indefinitely", { timeout: slow(15000) });
     await expect(card(page).getByTestId("fly-here")).toBeDisabled();
-    // With a route, its Add Stop greyed, saying why (PlaceActions).
+    // With a route, no Add Stop at all: the row ends with Address in its
+    // place (PlaceActions; the owner, 2026-11-20: "If add stop is disabled,
+    // just show the address at the end instead"), Fly Here still greyed.
     await page.goto("/app/plan?dep=KMSN&dest=KOSH&place=00MO");
     await expect(card(page).getByTestId("place-kind")).toHaveText("Closed indefinitely", { timeout: slow(15000) });
-    const addStop = card(page).getByTestId("place-add-stop");
-    await expect(addStop).toBeDisabled();
-    await expect(addStop).toHaveAccessibleName(/Closed indefinitely/);
+    const row = card(page).getByTestId("place-actions");
+    await expect(row.getByTestId("place-address-action")).toBeVisible();
+    await expect(row.getByTestId("place-add-stop")).toHaveCount(0);
+    await expect(row.getByTestId("fly-here")).toBeDisabled();
+    await expect(row.getByTestId("fly-here")).toHaveAccessibleName(/Closed indefinitely/);
   },
 );
 

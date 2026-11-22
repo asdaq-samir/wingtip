@@ -86,7 +86,10 @@ These hold on every screen below and win over any reference app.
   seconds after the page is idle (`usePrefetchWhenIdle`'s
   `prefetchTapCards`), and the airport sections as the Brief's card comes
   up, so a tap still opens its card at once (the speed audit of
-  2026-11-21: the route panel was 507 KB, every card in it).
+  2026-11-21: the route panel was 507 KB, every card in it). A card
+  tapped before its chunk is in waits inside its own card (`CardLayer`'s
+  Suspense), never under the page's: Find Nearby's Stops opened in the
+  first six seconds hid the whole page and looped until React gave up.
 - **What a route link loads has its own budget**, the first load's
   counting only its static graph (0.97 of 4.2 MB): `e2e/route-load.spec.ts`
   opens /app/plan?dep=KPWK&dest=KDLH on a cold page at a phone's size with

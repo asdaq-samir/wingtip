@@ -115,8 +115,11 @@ async function floatingBar(page: Page) {
     if (!bar) return null;
     const items = [...bar.querySelectorAll("button, [role=tab]")].filter((e) => !e.parentElement?.closest("button, [role=tab]"));
     const box = bar.getBoundingClientRect();
-    // FPL's figures held at the foot under its bar: their top from the window's foot.
-    const strip = document.querySelector("[data-pin-foot]")?.getBoundingClientRect();
+    // FPL's figures held at the foot under its bar: their top from the
+    // window's foot. Held there only on a phone's bottom sheet (Base UI's
+    // data-swipe-direction, sheet/pinAtFoot); beside the side panel they
+    // sit under the route, and the bar stays where the card's is.
+    const strip = document.querySelector('[data-swipe-direction="down"] [data-pin-foot]')?.getBoundingClientRect();
     // FPL's File button stands beside the bar and the pair is centred.
     const file = document.querySelector("[data-single]")?.getBoundingClientRect();
     return {

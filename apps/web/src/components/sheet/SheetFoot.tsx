@@ -8,6 +8,14 @@ import { ROW_PAD, SHEET_BELOW, type SheetLayout } from "./sheetLayout";
  *  snap point's rest (sheet/insets), where the figures sit at the pill. */
 const PILL_BELOW_GRABBER = "3.25rem";
 
+/** Beside the side panel the room under its foot is the panel's own
+ *  padding (MapPanel's pb-4, a rem), not a bottom sheet's EDGE_ROOM, from
+ *  which a floating bar's margin is reckoned (FplTabBar): the foot gives
+ *  the difference back, so FPL's bar sits 4 points over the panel's foot
+ *  as the airport card's does at every text size (tab-consistency.spec),
+ *  where it stood 24 higher. */
+const SIDE_FLOAT_ROOM = `calc(${EDGE_ROOM} - 1rem)`;
+
 /**
  * The sheet's foot, the route's figures pinned at it -- in the pill its one
  * row; FPL's at its page's, put away with it under Search, over the page's
@@ -54,7 +62,9 @@ export function SheetFoot(p: {
           : cn(
               // A floating bar in it (FPL's actions) keeps its own room
               // under it (FplTabBar, floatingBarLook's FLOATING_BAR_SHEET_ROOM).
-              fromBottom && floats ? "pb-0" : fromBottom || size !== "half" ? "pb-1" : "pb-4",
+              // Beside the side panel too, off the pill, its room the
+              // panel's own (SIDE_FLOAT_ROOM).
+              floats && (fromBottom || !pillFoot) ? "pb-0" : fromBottom || size !== "half" ? "pb-1" : "pb-4",
               size === "half" ? "min-h-0" : "min-h-[3.875rem]",
               ROW_PAD,
             ),
@@ -84,6 +94,7 @@ export function SheetFoot(p: {
           marginTop: "calc(-1 * var(--pin-foot-room, 0px))",
           ...(p.layout.toEdge && fromBottom && !pillFoot ? { paddingBottom: "10px" } : {}),
           ...(figuresPill ? { height: `calc(${PILL_BELOW_GRABBER} - ${EDGE_ROOM})` } : {}),
+          ...(floats && !fromBottom && !pillFoot ? { marginBottom: SIDE_FLOAT_ROOM } : {}),
         } as CSSProperties
       }
       // In the pill a tap on it opens it half way.
