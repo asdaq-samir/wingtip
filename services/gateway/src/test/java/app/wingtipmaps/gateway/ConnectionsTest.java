@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import app.wingtipmaps.gateway.domain.Pilot;
+import app.wingtipmaps.gateway.dto.ConnectionDto;
 import app.wingtipmaps.gateway.security.MagicLinkAuthenticationToken;
 import app.wingtipmaps.gateway.security.mcp.ConnectorGrants;
 import java.util.List;
@@ -96,7 +97,7 @@ class ConnectionsTest extends AccountTestBase {
         // One ended: its tokens and spent ones go, the consent stays for the other.
         mockMvc.perform(delete("/api/me/connections/" + first).with(as(pilot)).with(csrf()))
                 .andExpect(status().isNoContent());
-        assertThat(grants.connections(pilot.getId())).extracting(c -> c.id()).containsExactly(second);
+        assertThat(grants.connections(pilot.getId())).extracting(ConnectionDto::id).containsExactly(second);
         assertThat(jdbc.queryForObject(
                         "SELECT count(*) FROM oauth2_spent_refresh_token WHERE authorization_id = ?", Long.class, first))
                 .isZero();

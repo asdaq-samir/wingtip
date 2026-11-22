@@ -72,7 +72,7 @@ fn words(name: &str) -> Vec<String> {
 /// record's middle name or its initial, in order.
 pub fn fits(name: &str, r: &Record) -> bool {
     let (given, first, last) = (words(name), words(r.first_middle), words(r.last_suffix));
-    if first.is_empty() || last.is_empty() || given.len() < 1 + last.len() || given[0] != first[0] {
+    if first.is_empty() || last.is_empty() || given.len() <= last.len() || given[0] != first[0] {
         return false;
     }
     if given[given.len() - last.len()..] != last[..] {
@@ -108,7 +108,10 @@ pub fn verify(instructor: &str, student: &str, signed_on: &str, registry: Option
     let id = Some(r.id.to_owned());
     let refused = |reason, words: String| Verdict { verified: false, registry_id: id.clone(), reason, words };
     if fits(student, r) {
-        return refused("same_person", "Not verified: the student's own name fits this flight instructor's record (14 CFR 61.189(a)).".into());
+        return refused(
+            "same_person",
+            "Not verified: the student's own name fits this flight instructor's record (14 CFR 61.189(a)).".into(),
+        );
     }
     if bound_elsewhere.contains(&r.id) {
         return refused("claimed", "Not verified: another Wingtip account already signs as this flight instructor.".into());
@@ -117,7 +120,10 @@ pub fn verify(instructor: &str, student: &str, signed_on: &str, registry: Option
     // once expired its privileges wait for reinstatement (61.197(e)).
     // Compared as YYYY-MM-DD text; the day itself is still within it.
     if let Some(expires) = r.expires.filter(|e| !e.is_empty() && *e < signed_on) {
-        return refused("expired", format!("Not verified: the FAA's file gives this flight instructor certificate as expired on {expires} (14 CFR 61.19(d)(2))."));
+        return refused(
+            "expired",
+            format!("Not verified: the FAA's file gives this flight instructor certificate as expired on {expires} (14 CFR 61.19(d)(2))."),
+        );
     }
     Verdict {
         verified: true,
@@ -160,7 +166,7 @@ mod tests {
 
     #[test]
     fn one_record_of_the_name_is_verified() {
-        let v = verify("John J. Jones", "Avery Pilot", "2026-11-21", Some(&[JONES]), &[]);
+        let v = verify("John J. Jones", "Avery Pilot", "2026-11-21", Some(&[JONES][..]), &[]);
         assert!(v.verified);
         assert_eq!(v.registry_id.as_deref(), Some("A1234567"));
     }
@@ -168,27 +174,27 @@ mod tests {
     #[test]
     fn the_student_signing_as_themselves_is_not_verified() {
         // A second account under the student's own name.
-        assert_eq!(verify("Avery Pilot", "avery pilot", "2026-11-21", Some(&[JONES]), &[]).reason, "same_person");
+        assert_eq!(verify("Avery Pilot", "avery pilot", "2026-11-21", Some(&[JONES][..]), &[]).reason, "same_person");
         // The student is the instructor the record names.
-        assert_eq!(verify("John Jones", "John J Jones", "2026-11-21", Some(&[JONES]), &[]).reason, "same_person");
+        assert_eq!(verify("John Jones", "John J Jones", "2026-11-21", Some(&[JONES][..]), &[]).reason, "same_person");
     }
 
     #[test]
     fn a_name_no_instructor_holds_or_two_hold_is_not_verified() {
-        assert_eq!(verify("Made Up", "Avery Pilot", "2026-11-21", Some(&[JONES]), &[]).reason, "no_match");
+        assert_eq!(verify("Made Up", "Avery Pilot", "2026-11-21", Some(&[JONES][..]), &[]).reason, "no_match");
         let twin = Record { id: "C0000001", ..JONES };
-        assert_eq!(verify("John Jones", "Avery Pilot", "2026-11-21", Some(&[JONES, twin]), &[]).reason, "ambiguous");
+        assert_eq!(verify("John Jones", "Avery Pilot", "2026-11-21", Some(&[JONES, twin][..]), &[]).reason, "ambiguous");
         assert_eq!(verify("John Jones", "Avery Pilot", "2026-11-21", None, &[]).reason, "registry_unavailable");
     }
 
     #[test]
     fn a_record_another_account_signs_as_is_not_verified() {
-        assert_eq!(verify("John Jones", "Avery Pilot", "2026-11-21", Some(&[JONES]), &["A1234567"]).reason, "claimed");
+        assert_eq!(verify("John Jones", "Avery Pilot", "2026-11-21", Some(&[JONES][..]), &["A1234567"]).reason, "claimed");
     }
 
     #[test]
     fn an_expired_certificate_is_verified_on_its_last_day_and_not_after() {
-        assert!(verify("Mary Oak", "Avery Pilot", "2026-11-20", Some(&[OLD]), &[]).verified);
-        assert_eq!(verify("Mary Oak", "Avery Pilot", "2026-11-21", Some(&[OLD]), &[]).reason, "expired");
+        assert!(verify("Mary Oak", "Avery Pilot", "2026-11-20", Some(&[OLD][..]), &[]).verified);
+        assert_eq!(verify("Mary Oak", "Avery Pilot", "2026-11-21", Some(&[OLD][..]), &[]).reason, "expired");
     }
 }

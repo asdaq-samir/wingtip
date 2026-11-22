@@ -86,14 +86,12 @@ def build(archive_path: Path) -> int:
             db = sqlite3.connect(part)
             try:
                 db.executescript(_SCHEMA)
-                db.executemany(
-                    "INSERT OR REPLACE INTO instructors VALUES (?, ?, ?, ?, ?)",
-                    (
-                        (r["UNIQUE ID"], r["FIRST & MIDDLE NAME"], r["LAST NAME & SUFFIX"], last_key(r["LAST NAME & SUFFIX"]), expires[r["UNIQUE ID"]])
-                        for r in _rows(archive, "PILOT_BASIC.CSV")
-                        if r.get("UNIQUE ID") in expires
-                    ),
+                rows = (
+                    (uid, r["FIRST & MIDDLE NAME"], r["LAST NAME & SUFFIX"], last_key(r["LAST NAME & SUFFIX"]), expires[uid])
+                    for r in _rows(archive, "PILOT_BASIC.CSV")
+                    if (uid := r.get("UNIQUE ID")) in expires
                 )
+                db.executemany("INSERT OR REPLACE INTO instructors VALUES (?, ?, ?, ?, ?)", rows)
                 db.commit()
                 kept = db.execute("SELECT count(*) FROM instructors").fetchone()[0]
             finally:
