@@ -7706,7 +7706,8 @@ public struct Client: APIProtocol {
     /// closing a field, its altitudes taking in the cruise altitude, on an
     /// airspace the route passes (14 CFR 91.103). `top` are said first; the
     /// rest are folded, never dropped. `coverage_since`, the day the feed
-    /// was first heard (UTC).
+    /// was first heard (UTC); `full_set`, whether every NOTAM in force is
+    /// held (NMS's load, decision 0059) or only those heard since.
     ///
     /// - Remark: HTTP `POST /api/notams/ranked`.
     /// - Remark: Generated from `#/paths//api/notams/ranked/post(notams_ranked)`.

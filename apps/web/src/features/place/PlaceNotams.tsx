@@ -6,6 +6,7 @@ import { SheetCard } from "../../components/SheetCard";
 import StatusBadge from "../../components/StatusBadge";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { NotamAsSent } from "../../components/NotamAsSent";
+import { notamCredit } from "../../lib/notamCoverage";
 import { TEXT } from "../../lib/text";
 import { useMinuteClock } from "../../lib/useMinuteClock";
 import {
@@ -191,11 +192,24 @@ function NotamState({ n }: { n: FieldNotam }) {
 }
 
 /** That the TFRs could not be read rather than that there are none, under
- *  the list. */
-function Unchecked({ data }: { data: FieldNotams | undefined }) {
-  return data && data.unchecked.length > 0 ? (
-    <p className={cn("pt-2 text-caution-ink", TEXT.note)}>The TFR list could not be read: check the FAA's TFRs before flying.</p>
-  ) : null;
+ *  the list; and, while the planner holds only the NOTAMs heard since a
+ *  day, that the list is not the full set (lib/notamCoverage, decision
+ *  0059), as the Brief's says it. Not for a field outside the NOTAM system
+ *  (`none`), which has no NOTAMs to miss. */
+function Unchecked({ data, none }: { data: FieldNotams | undefined; none: string | null }) {
+  if (!data) return null;
+  return (
+    <>
+      {data.unchecked.length > 0 && (
+        <p className={cn("pt-2 text-caution-ink", TEXT.note)}>The TFR list could not be read: check the FAA's TFRs before flying.</p>
+      )}
+      {!data.full_set && !none && (
+        <p className={cn("pt-2 text-caution-ink", TEXT.note)} data-testid="place-notams-coverage">
+          {notamCredit(data.coverage_since)}
+        </p>
+      )}
+    </>
+  );
 }
 
 /** The NOTAMs by what they are about, the engine's heading (notam_read:
@@ -252,7 +266,7 @@ export function PlaceNotamsSection({ ident, none = null }: { ident: string; none
             ))}
           </CollapsibleContent>
         )}
-        <Unchecked data={data} />
+        <Unchecked data={data} none={none} />
       </PillSection>
     </div>
   );

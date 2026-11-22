@@ -1251,7 +1251,7 @@ interface PlannerApi {
     /**
      * POST notams/ranked
      * Notams Ranked
-     * Every NOTAM the FAA&#39;s feed has sent for the fields the route lands at and every TFR near it, best first: in force while the flight is there, at its departure, stops or destination, on the runway in use, closing a field, its altitudes taking in the cruise altitude, on an airspace the route passes (14 CFR 91.103). &#x60;top&#x60; are said first; the rest are folded, never dropped. &#x60;coverage_since&#x60;, the day the feed was first heard (UTC).
+     * Every NOTAM the FAA&#39;s feed has sent for the fields the route lands at and every TFR near it, best first: in force while the flight is there, at its departure, stops or destination, on the runway in use, closing a field, its altitudes taking in the cruise altitude, on an airspace the route passes (14 CFR 91.103). &#x60;top&#x60; are said first; the rest are folded, never dropped. &#x60;coverage_since&#x60;, the day the feed was first heard (UTC); &#x60;full_set&#x60;, whether every NOTAM in force is held (NMS&#39;s load, decision 0059) or only those heard since.
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error

@@ -10,7 +10,7 @@ it, ranked the same way, for the field's card."""
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
-from wingtip import airports, notam_rank, time_zone
+from wingtip import airports, notam_rank, notams, time_zone
 
 from ..gateway import PUBLIC, PUBLIC_READ_BY_POST
 from ..router_basics import load_route
@@ -32,7 +32,8 @@ def notams_ranked(ask: NotamsRankedAsk) -> NotamsRanked:
     closing a field, its altitudes taking in the cruise altitude, on an
     airspace the route passes (14 CFR 91.103). `top` are said first; the
     rest are folded, never dropped. `coverage_since`, the day the feed
-    was first heard (UTC)."""
+    was first heard (UTC); `full_set`, whether every NOTAM in force is
+    held (NMS's load, decision 0059) or only those heard since."""
     r = load_route(ask.dep, ask.dest, ",".join(ask.stops))
     landed = [(i, a) for i, a in zip(r.idents, r.airports) if not a.get("fix")]
     fields = [(ident, "dep" if n == 0 else "dest" if n == len(landed) - 1 else "stop") for n, (ident, _) in enumerate(landed)]
@@ -40,7 +41,13 @@ def notams_ranked(ask: NotamsRankedAsk) -> NotamsRanked:
     depart = depart if depart.tzinfo else depart.replace(tzinfo=timezone.utc)
     runways = {k.upper(): [_end(v)] for k, v in ask.runways.items() if v.strip()}
     found = notam_rank.ranked(fields, [(a["lat"], a["lon"]) for a in r.airports], depart, ask.ete_min, ask.altitude_ft, runways)
-    return NotamsRanked(notams=found["ranked"], top=found["top"], coverage_since=notam_rank.coverage_since(), unchecked=found["unchecked"])
+    return NotamsRanked(
+        notams=found["ranked"],
+        top=found["top"],
+        coverage_since=notam_rank.coverage_since(),
+        full_set=notams.full_set(),
+        unchecked=found["unchecked"],
+    )
 
 
 @router.get(
@@ -62,6 +69,7 @@ def airport_notams(ident: str) -> NotamsRanked:
         notams=found["ranked"],
         top=found["top"],
         coverage_since=notam_rank.coverage_since(),
+        full_set=notams.full_set(),
         unchecked=found["unchecked"],
         time_zone=time_zone.at(place["lat"], place["lon"]),
     )

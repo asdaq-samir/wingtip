@@ -52,6 +52,11 @@ export interface ReadyParts {
   briefing: { data: Briefing; atMs: number } | null;
   alternate: string | null;
   notamsAtMs: number | null;
+  /** Whether the route's NOTAMs are the full set in force, and the day
+   *  the feed was first heard (the planner's full_set and coverage_since,
+   *  decision 0059); null before they are fetched. */
+  notamsFullSet: boolean | null;
+  notamsSince: string | null;
   /** What Keep for the Air holds of the route beside its charts
    *  (features/keptForAir); null where nothing can be kept here. */
   kept: ReadyInput["kept"];
@@ -99,7 +104,7 @@ export function readyInput(parts: ReadyParts): ReadyInput {
     packs: pack ? { edition: editionDay(pack.effective), can_update: false } : null,
     briefing: { fetched_at: parts.briefing ? seconds(parts.briefing.atMs) : null },
     fields: fields(parts),
-    notams: { fetched_at: seconds(parts.notamsAtMs) },
+    notams: { fetched_at: seconds(parts.notamsAtMs), full_set: parts.notamsFullSet, heard_since: parts.notamsSince },
     kept: parts.kept,
     device: { battery_pct: parts.device.batteryPct, charging: parts.device.charging, location: parts.device.location },
   };

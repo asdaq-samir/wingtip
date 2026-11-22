@@ -80,7 +80,7 @@ sectional,flight planner,pilot,METAR,TAF,airspace,TFR,ADS-B,logbook,EFB,student 
 Stores count keywords without the spaces after commas; there are none
 here, and the spaces inside a phrase ("flight planner") count.
 
-**Description** (2,481 / 4,000):
+**Description** (2,488 / 4,000):
 
 > Wingtip Maps is the FAA chart on a map that works like Maps on your
 > iPhone, and everything a VFR or IFR flight needs on top of it.
@@ -94,8 +94,8 @@ here, and the spaces inside a phrase ("flight planner") count.
 > - A nav log with headings, groundspeeds, times and fuel from the
 >   winds aloft, and a cruising altitude picked for terrain, airspace
 >   and the clouds.
-> - The Brief: a verdict first, then the weather, NOTAMs, TFRs, icing
->   and the hazards on each leg, and the best hours to leave.
+> - The Brief: a verdict first, then the weather, recent NOTAMs, TFRs,
+>   icing and the hazards on each leg, and the best hours to leave.
 >
 > AT THE AIRPORT
 > - Every airport's card: runways, frequencies, lighting, the airspace,
@@ -278,7 +278,7 @@ after:
 | Website | `https://wingtipmaps.app/` | |
 | Privacy policy | `https://wingtipmaps.app/privacy` | |
 
-**Full description** (2,129 / 4,000). The App Store's text with what the
+**Full description** (2,136 / 4,000). The App Store's text with what the
 Android app does not have taken out (Sign in with Apple, iCloud, the
 Lock Screen activity, the watch) and the emailed link as the one way
 in (`Session.kt`):
@@ -295,8 +295,8 @@ in (`Session.kt`):
 > - A nav log with headings, groundspeeds, times and fuel from the
 >   winds aloft, and a cruising altitude picked for terrain, airspace
 >   and the clouds.
-> - The Brief: a verdict first, then the weather, NOTAMs, TFRs, icing
->   and the hazards on each leg, and the best hours to leave.
+> - The Brief: a verdict first, then the weather, recent NOTAMs, TFRs,
+>   icing and the hazards on each leg, and the best hours to leave.
 >
 > AT THE AIRPORT
 > - Every airport's card: runways, frequencies, lighting, the airspace,

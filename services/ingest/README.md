@@ -17,6 +17,7 @@ asked by the planner.
 |---|---|---|
 | STDDS (TAIS terminal radar) | FAA SWIM, the owner's SCDS subscription | the live store: each airplane's latest report, kept round the places the map looks and for the followed airplanes, and the followed ones' tracks; and `wingtip.live_reports`' store: each runway's RVR, the D-ATIS broadcasts and the towers' departure events |
 | FNS (NOTAMs) | FAA SWIM | `wingtip.notams`' store |
+| NMS-API (the full NOTAM set) | The FAA's NOTAM Management Service API (`ingest.nms`, decision 0059): an initial load of every NOTAM in force, then its changes every 3 min; off until `NMS_API_CLIENT_ID` and `NMS_API_CLIENT_SECRET` are set | `wingtip.notams`' store, beside the feed's (one row a NOTAM heard from both); until a load is held and kept up to date the planner says the list is not the full set |
 | TFMS (flight plans, flow) | FAA SWIM | `wingtip.filed_routes`' store (the routes pilots file between two fields), and `wingtip.live_reports`' store: the Command Center's ground stops, ground delay programs and restrictions |
 | ITWS (terminal weather alerts) | FAA SWIM | `wingtip.live_reports`' store (`wingtip.itws`): each airport's microburst, wind shear, gust front, tornado and storm alerts while they last; the maps unread |
 | SFDPS (airspace) | FAA SWIM | `wingtip.live_reports`' store (`wingtip.saa`): each special activity airspace's status, active or cold |
@@ -62,6 +63,9 @@ Settings (`ingest/settings.py`, pydantic-settings): `SWIM_HOST`,
 `SWIM_USERNAME`, `SWIM_PASSWORD` and, per feed, `SWIM_VPN_<FEED>`,
 `SWIM_QUEUE_<FEED>` and, where SCDS put it on another broker,
 `SWIM_HOST_<FEED>`. A feed is read only where all of its are set.
+`NMS_API_CLIENT_ID` and `NMS_API_CLIENT_SECRET` (the FAA issues them on
+request: docs/partners/faa-nms-api.md) turn on the NOTAM Management
+Service API, at `NMS_API_HOST` (production's by default).
 `BEAT_EVERY_S` (10) and `HEALTHY_WITHIN_S` (60) set the beat. wingtip's
 own settings (`LIVE_STORE`, `NOTAM_STORE`, `FILED_STORE`,
 `ADSBFI_OPEN_DATA`) come from `wingtip.config`, as in the planner.
@@ -71,6 +75,7 @@ own settings (`LIVE_STORE`, `NOTAM_STORE`, `FILED_STORE`,
 ```
 ingest/main.py      the entry point: the feeds, the following, the beat
 ingest/swim.py      the SWIM feeds: the Solace connection per feed, the radar's tracks kept, the handlers
+ingest/nms.py       the NOTAM Management Service API: its initial load, then its changes
 ingest/radar_tracks.py  STDDS's tracks read, their course and speed the engine's
 ingest/health.py    the health check
 ingest/settings.py  its environment
@@ -85,7 +90,7 @@ install -r requirements-dev.txt` and the engine's wheel.
 
 ## The next SWIM feeds (#489)
 
-Each needs an SCDS subscription the owner has not taken out yet (or, for
-NOTAMs shown to pilots, the FAA NOTAM API key of #287); `kinds` in each
+Each needs an SCDS subscription the owner has not taken out yet (the
+full NOTAM set comes from the NMS-API instead, decision 0059); `kinds` in each
 feed's beat shows what the present queues carry before a reader is
 written for anything new on them.

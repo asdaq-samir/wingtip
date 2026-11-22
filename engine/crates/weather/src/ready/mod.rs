@@ -24,8 +24,9 @@
 //! - A field's METAR: in force for the hour after it was observed
 //!   (`validity`, AIM 7-1-28); its TAF present where one is issued.
 //! - NOTAMs: fetched for the route (91.103's "all available information";
-//!   AIM 5-1-3 says NOTAMs are part of a preflight briefing) and fresh for
-//!   an hour, the app's choice: a NOTAM may be issued at any time.
+//!   AIM 5-1-3 says NOTAMs are part of a preflight briefing), fresh for
+//!   an hour, the app's choice: a NOTAM may be issued at any time, and
+//!   the full set: a list of only those heard since a day is a caution.
 //! - What Keep for the Air holds for the route (`kept`): the briefing,
 //!   METARs and TAFs, NOTAMs, airport cards, plates, the plan and its nav
 //!   log, the Go / No-Go and the weather loop, on board or not; their ages

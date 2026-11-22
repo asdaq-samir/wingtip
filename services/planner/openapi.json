@@ -15409,7 +15409,7 @@
         "type": "object"
       },
       "NotamsRanked": {
-        "description": "The flight's NOTAMs best first, every one heard (`notams`), how many\nare said first (`top`), the day the NOTAM feed was first heard\n(`coverage_since`: earlier NOTAMs never changed since are not held) and\nwhat could not be checked (\"tfrs\").",
+        "description": "The flight's NOTAMs best first, every one heard (`notams`), how many\nare said first (`top`), the day the NOTAM feed was first heard\n(`coverage_since`), whether the planner holds every NOTAM in force\n(`full_set`) and what could not be checked (\"tfrs\").",
         "properties": {
           "coverage_since": {
             "anyOf": [
@@ -15421,6 +15421,11 @@
               }
             ],
             "title": "Coverage Since"
+          },
+          "full_set": {
+            "default": false,
+            "title": "Full Set",
+            "type": "boolean"
           },
           "notams": {
             "items": {
@@ -25686,7 +25691,7 @@
         "type": "object"
       },
       "WordsSources": {
-        "description": "A reading's sources, in the order they bear on the flight; for the\nNOTAMs, the day the NOTAM feed was first heard (`coverage_since`, ISO\ndate) and what could not be checked (\"tfrs\"). The feed (SWIM's FNS)\nsends what is issued or changed once it is heard, so NOTAMs issued\nbefore that day and never changed are not in the store: the list is\nwhat was heard since, not every NOTAM in force (the owner, 2026-11-09,\nchose the feed alone over the FAA NOTAM API's full load).",
+        "description": "A reading's sources, in the order they bear on the flight; for the\nNOTAMs, the day the NOTAM feed was first heard (`coverage_since`, ISO\ndate) and what could not be checked (\"tfrs\"). The feed (SWIM's FNS)\nsends what is issued or changed once it is heard, so NOTAMs issued\nbefore that day and never changed are not in the store: the list is\nwhat was heard since, not every NOTAM in force, until NMS's full set\nis held (decision 0059, amending 0023).",
         "properties": {
           "coverage_since": {
             "anyOf": [
@@ -30939,7 +30944,7 @@
     },
     "/api/notams/ranked": {
       "post": {
-        "description": "Every NOTAM the FAA's feed has sent for the fields the route lands\nat and every TFR near it, best first: in force while the flight is\nthere, at its departure, stops or destination, on the runway in use,\nclosing a field, its altitudes taking in the cruise altitude, on an\nairspace the route passes (14 CFR 91.103). `top` are said first; the\nrest are folded, never dropped. `coverage_since`, the day the feed\nwas first heard (UTC).",
+        "description": "Every NOTAM the FAA's feed has sent for the fields the route lands\nat and every TFR near it, best first: in force while the flight is\nthere, at its departure, stops or destination, on the runway in use,\nclosing a field, its altitudes taking in the cruise altitude, on an\nairspace the route passes (14 CFR 91.103). `top` are said first; the\nrest are folded, never dropped. `coverage_since`, the day the feed\nwas first heard (UTC); `full_set`, whether every NOTAM in force is\nheld (NMS's load, decision 0059) or only those heard since.",
         "operationId": "notams_ranked_api_notams_ranked_post",
         "requestBody": {
           "content": {

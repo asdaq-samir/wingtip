@@ -57,6 +57,8 @@ def register(server: MCPServer) -> None:
             "total": len(ranked["notams"]),
             "said_first": ranked["top"],
             "held_since": ranked.get("coverage_since"),
+            # False: only the NOTAMs heard since held_since, not every one in force.
+            "full_set": ranked.get("full_set", False),
             "unchecked": ranked.get("unchecked", []),
             "sources": [NOTAM_SOURCE],
         }

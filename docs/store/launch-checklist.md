@@ -25,6 +25,21 @@ S13). Tick each as it is done.
 - [ ] Put the same support address in App Store Connect's and Play
       Console's contact fields.
 
+## The FAA's full NOTAM set (NMS-API)
+
+- [ ] Ask the FAA for NOTAM Management Service API access now: it is
+      granted by mail, not at once (decision 0059). Write to the NOTAM
+      Service Center, **7-AWA-NAIMES@faa.gov**, copying
+      **NOTAMS@faa.gov**, from the support address. The text to send,
+      what it asks for (staging and production credentials, the API's
+      document and rate limits, the terms for showing NOTAMs in a public
+      app, FNS's retirement date) and what to do with the answer are in
+      [../partners/faa-nms-api.md](../partners/faa-nms-api.md).
+- [ ] When the credentials come, put `NMS_API_CLIENT_ID` and
+      `NMS_API_CLIENT_SECRET` in the server's secret. Until then the app
+      says "NOTAMs heard since <date>, not a full set", Ready to Fly
+      counts that as a caution, and the listing says "recent NOTAMs".
+
 ## Apple Developer
 
 - [ ] The App ID `app.wingtipmaps.ios` with its capabilities: Sign in with

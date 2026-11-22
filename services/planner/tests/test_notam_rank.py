@@ -22,6 +22,7 @@ def _feed(monkeypatch, found, tfrs=()):
 
     monkeypatch.setattr(notams, "at_fields", at_fields)
     monkeypatch.setattr(notams, "since", lambda: 1_762_000_000.0)
+    monkeypatch.setattr(notams, "full_set", lambda: False)
     monkeypatch.setattr(tfr, "along_route", lambda path, start, end: list(tfrs))
     monkeypatch.setattr(notam_rank, "airspaces_on", lambda path: ["CHICAGO CLASS B"])
     return asked
@@ -103,7 +104,8 @@ def test_the_tfrs_unread_are_said_and_nothing_heard_is_nothing_ranked(monkeypatc
     monkeypatch.setattr(tfr, "along_route", unavailable)
     body = client.post("/api/notams/ranked", json={"dep": "C81", "dest": "KMSN"}).json()
     # A route's list has no one field's time zone (NotamsRanked.time_zone).
-    assert body == {"notams": [], "top": 0, "coverage_since": "2025-11-01", "unchecked": ["tfrs"], "time_zone": None}
+    # Only the feed's, not the full set (decision 0059): the list says so.
+    assert body == {"notams": [], "top": 0, "coverage_since": "2025-11-01", "full_set": False, "unchecked": ["tfrs"], "time_zone": None}
 
 
 def test_each_field_is_timed_round_when_the_flight_is_there():

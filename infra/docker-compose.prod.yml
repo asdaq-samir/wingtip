@@ -156,6 +156,11 @@ services:
       SWIM_QUEUE_ITWS: ${SWIM_QUEUE_ITWS:-}
       SWIM_VPN_SFDPS: ${SWIM_VPN_SFDPS:-}
       SWIM_QUEUE_SFDPS: ${SWIM_QUEUE_SFDPS:-}
+      # The FAA's NOTAM Management Service API, the full NOTAM set
+      # (ingest.nms, decision 0059): off until the FAA's credentials are set.
+      NMS_API_HOST: ${NMS_API_HOST:-https://api-nms.aim.faa.gov}
+      NMS_API_CLIENT_ID: ${NMS_API_CLIENT_ID:-}
+      NMS_API_CLIENT_SECRET: ${NMS_API_CLIENT_SECRET:-}
 
   # The weather the planner reads, fetched on a schedule into the weather
   # store on the planner's data folder (services/weather, #535): no

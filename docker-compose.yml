@@ -398,6 +398,11 @@ services:
       SWIM_QUEUE_ITWS: ${SWIM_QUEUE_ITWS:-}
       SWIM_VPN_SFDPS: ${SWIM_VPN_SFDPS:-}
       SWIM_QUEUE_SFDPS: ${SWIM_QUEUE_SFDPS:-}
+      # The FAA's NOTAM Management Service API, the full NOTAM set
+      # (ingest.nms, decision 0059): off until the FAA's credentials are set.
+      NMS_API_HOST: ${NMS_API_HOST:-https://api-nms.aim.faa.gov}
+      NMS_API_CLIENT_ID: ${NMS_API_CLIENT_ID:-}
+      NMS_API_CLIENT_SECRET: ${NMS_API_CLIENT_SECRET:-}
       # Traces to Jaeger with TRACING=1 (the jaeger service below); unset,
       # it sends none and loads none of OpenTelemetry (wingtip.tracing).
       OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}

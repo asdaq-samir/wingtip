@@ -28,7 +28,7 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0020 | [The app says "airplane"](0020-airplane-not-aircraft.md) | 2026-11-06 | Accepted |
 | 0021 | [Labels are Title Case; the FAA's text is sentence case with codes kept](0021-title-case-labels.md) | 2026-10-23 | Accepted |
 | 0022 | [The app is free for now](0022-free-app-for-now.md) | 2026-11-02 | Accepted |
-| 0023 | [NOTAMs come from the SWIM feed; no FAA NOTAM API key](0023-notams-from-swim-only.md) | 2026-11-09 | Accepted |
+| 0023 | [NOTAMs come from the SWIM feed; no FAA NOTAM API key](0023-notams-from-swim-only.md) | 2026-11-09 | Amended by 0059 |
 | 0024 | [Dependabot opens no pull requests](0024-no-dependabot-prs.md) | 2026-11-09 | Accepted |
 | 0025 | [Chart tiles, retina included, are palette PNGs](0025-palette-png-tiles.md) | 2026-11-08 | Accepted |
 | 0026 | [The map has no OpenStreetMap layer](0026-no-openstreetmap.md) | 2026-09-21 | Accepted |
@@ -54,3 +54,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0046 | [A row is swiped away and held to move, by React Aria's own recipe and the browser's own drag](0046-row-gestures.md) | 2026-11-17 | Accepted |
 | 0047 | [FPL has one route layout: folded to read, opened to edit](0047-one-fpl-layout.md) | 2026-11-17 | Accepted |
 | 0048 | [The browser specs a change reaches gate its merge](0048-browser-specs-gate.md) | 2026-11-19 | Accepted |
+| 0059 | [The full NOTAM set comes from the FAA's NOTAM Management Service API](0059-notams-full-set-from-nms.md) | 2026-11-21 | Accepted |

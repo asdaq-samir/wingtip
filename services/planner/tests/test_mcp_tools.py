@@ -77,8 +77,10 @@ def test_airport_notams_are_the_engines_ranking_of_the_fields_notams(monkeypatch
     monkeypatch.setattr(airports, "find_place", lambda ident: {"ident": "KOSH", "source_ident": "KOSH", "lat": 43.98, "lon": -88.56})
     monkeypatch.setattr(notams, "at_fields", lambda fields, now=None: osh)
     monkeypatch.setattr(notams, "since", lambda: 1_762_000_000.0)
+    monkeypatch.setattr(notams, "full_set", lambda: False)
     monkeypatch.setattr(tfr, "near_point", lambda lat, lon, start, end: [])
     found = answer(call("airport_notams", {"ident": "KOSH", "limit": 2}))
+    assert found["full_set"] is False
     assert found["total"] == len(osh) and len(found["notams"]) == 2
     assert all(n["raw"].startswith("!OSH") for n in found["notams"])
     assert [n["rank"] for n in found["notams"]] == [1, 2]
