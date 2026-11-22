@@ -232,23 +232,43 @@ test("a pinch out fills the chart's edges with tiles before the fingers lift, un
     if (r.url().includes("/api/planner/chart-tile/")) asked += 1;
   });
   await expect.poll(() => page.getByTestId("gl-map").getAttribute("data-chart-zoom"), { timeout: slow(15_000) }).not.toBeNull();
+  // In close, where a tile is a few miles across: the map now opens on the
+  // last position at the region's zoom (MapLibre's 7), whose tiles, a
+  // state across, already reach past every edge a half-level pinch bares,
+  // so it asked for none and the test failed with nothing wrong. Just
+  // short of MapLibre's 11, so the pinch stays on the same tiles' level.
+  await page.evaluate(() =>
+    (window as unknown as { __wingtipMaps: { jumpTo(o: { zoom: number }): void }[] }).__wingtipMaps.at(-1)!.jumpTo({ zoom: 10.9 }),
+  );
   await mapStill(page);
+  // Its tiles in before the count starts.
+  await expect
+    .poll(
+      async () => {
+        const was = asked;
+        await page.waitForTimeout(500);
+        return asked === was;
+      },
+      { timeout: slow(10_000) },
+    )
+    .toBe(true);
   const before = asked;
-  // Two fingers near the top, from 180 to 130 points apart: 0.47 of a level
-  // out, its foot drawn out past where the tiles reached.
-  const map = (await page.locator(".maplibregl-map").boundingBox())!;
-  const at = { x: map.x + map.width / 2, y: map.y + 120 };
+  // Two fingers in the middle of the chart in sight, from 180 to 130
+  // points apart in five steps a tenth of a second apart, a finger's
+  // pace: 0.47 of a level out. Moved a point at a time every 30 ms the
+  // map took only the first step (0.02 of a level) and asked for no tile.
+  const at = await chartMiddle(page);
   const touch = await fingers(page);
   await touch("touchStart", [
     [at.x - 90, at.y],
     [at.x + 90, at.y],
   ]);
-  for (let i = 1; i <= 25; i++) {
+  for (let i = 1; i <= 5; i++) {
     await touch("touchMove", [
-      [at.x - 90 + i, at.y],
-      [at.x + 90 - i, at.y],
+      [at.x - 90 + i * 5, at.y],
+      [at.x + 90 - i * 5, at.y],
     ]);
-    await page.waitForTimeout(30);
+    await page.waitForTimeout(100);
   }
   // Still held: the edges it bared asked for already.
   await expect.poll(() => asked, { timeout: slow(5_000) }).toBeGreaterThan(before);
