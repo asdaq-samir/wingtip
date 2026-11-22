@@ -97,10 +97,83 @@ HTTPS address. A quick tunnel gives one; none is set up in this repository.
    server, the same URL, OAuth; it registers itself the same way.
 5. Take the tunnel down after; `APP_PUBLIC_BASE_URL` back to its default.
 
+## The live view, beside the chat in Claude
+
+The connector's flight tools (`show_flight`, the edits, the saved flights:
+design section 4) answer with an MCP App, Wingtip's live view
+(`ui://wingtip/flight`, decision 0061): Claude opens it beside the chat
+and draws each answer in it, and a tap in it changes the flight and tells
+Claude. Its page is the web's build, `/app/claude-view.html`, which the
+planner reads from the gateway; a stack whose web was built before this
+change shows "not built on this server" in its place. It renders in
+Claude Desktop and on claude.ai (inline, in the side panel where the
+account has it, full screen); Claude Code reads the same tools as text.
+
+### On the owner's live stack, from Claude Desktop (no tunnel)
+
+The live stack is https://10.0.0.193:8443, on the Wi-Fi, which Anthropic's
+servers cannot reach; Claude Desktop can, through a local bridge to the
+remote server (`mcp-remote`, which does the OAuth sign-in in the
+browser with a loopback callback the gateway accepts).
+
+1. In `~/Developer/wingtip-live/.env`, `MCP_ENABLED=true` (the issuer is
+   already `PHONE_BASE_URL`, https://10.0.0.193:8443), then
+   `scripts/dev/go-live.sh --up`.
+2. Trust the stack's certificate on the Mac once, so the bridge and the
+   view's chart tiles reach it: open
+   `~/Developer/wingtip-live/infra/local-https/certs/ca.pem` in Keychain
+   Access, then set it to Always Trust.
+3. Claude Desktop, Settings > Developer > Edit Config, add:
+
+   ```json
+   {
+     "mcpServers": {
+       "wingtip-live": {
+         "command": "npx",
+         "args": ["-y", "mcp-remote@0.16.7", "https://10.0.0.193:8443/mcp"],
+         "env": { "NODE_EXTRA_CA_CERTS": "/Users/asdaqsamir/Developer/wingtip-live/infra/local-https/certs/ca.pem" }
+       }
+     }
+   }
+   ```
+
+   and restart Claude Desktop. The browser opens Wingtip's Connect page:
+   sign in with the emailed link (the stack's Mailpit), leave or untick
+   "Save, change and delete your saved flights", Connect.
+4. In a chat: "Show my flight from C81 to KDLH in Wingtip", then "Add a
+   stop at KMSN", "Cruise at 6,500", "Load the ILS 27 at Duluth and
+   activate it", "Put in the fuel stops I need", "Save it". Allow the
+   view when Claude asks. Tap Remove on a stop or Activate on the
+   approach in the view, then ask Claude what changed. Open in Wingtip
+   opens the same flight on the phone's address.
+
+### On claude.ai, the web or the phone app (a tunnel)
+
+claude.ai calls the connector from Anthropic's servers, so the stack
+needs a public HTTPS address for the session:
+
+1. `cloudflared tunnel --url https://10.0.0.193:8443 --no-tls-verify`
+   (or `ngrok http https://10.0.0.193:8443`), and note its `https://`
+   address.
+2. In the live tree's `.env`, `MCP_ENABLED=true` and `PHONE_BASE_URL` set
+   to the tunnel's address (it is the issuer, the resource and the view's
+   allowed origin, and each must be what Claude sees), then
+   `scripts/dev/go-live.sh --up`.
+3. claude.ai, Customize > Connectors > Add custom connector, URL
+   `https://<tunnel>/mcp`, Connect, sign in and approve as above; in a chat,
+   + > Connectors, turn Wingtip on, and ask as above.
+4. Afterwards: the tunnel down, `PHONE_BASE_URL` back to
+   https://10.0.0.193:8443, `go-live.sh --up`.
+
+ChatGPT takes the same tools through developer mode (step 4 of the
+section above); whether it draws the view is ChatGPT's, through the same
+MCP Apps extension.
+
 ## Disconnecting from Wingtip's side
 
-You's **Connected Apps** lists each connection (the app's name, when its
-token was last issued) with **Disconnect** at its end. Disconnecting asks
+You's **Connected Apps** lists each connection (the app's name, what it
+may do in the consent page's words, when its token was last issued) with
+**Disconnect** at its end. Disconnecting asks
 first, then `DELETE /api/me/connections/{id}` (ConnectionsController,
 `ConnectorGrants.disconnect`) removes that connection's row with its
 access and refresh tokens and their spent hashes, so the app's next MCP

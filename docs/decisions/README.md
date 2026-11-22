@@ -66,3 +66,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0058 | [The iPad is the primary device](0058-ipad-primary.md) | 2026-11-21 | Accepted |
 | 0059 | [The full NOTAM set comes from the FAA's NOTAM Management Service API](0059-notams-full-set-from-nms.md) | 2026-11-21 | Accepted |
 | 0060 | [Feature review: keep, park, cut](0060-feature-review-keep-park-cut.md) | 2026-11-21 | Accepted |
+| 0061 | [Wingtip inside Claude: a live view beside the chat, and the flight edited by tools](0061-wingtip-inside-claude.md) | 2026-11-22 | Accepted |

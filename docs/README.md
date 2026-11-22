@@ -52,6 +52,7 @@ Each fact lives in one doc; the others link to it.
 | [design/icons.md](design/icons.md) | The icon concepts and each platform's symbol for them |
 | [legal/](legal/privacy.md) | The privacy policy, terms, credits and support pages |
 | [store/listing.md](store/listing.md) | The App Store and Google Play listings and review notes; [store/privacy-labels.md](store/privacy-labels.md) the stores' privacy answers, [store/preview-video.md](store/preview-video.md) the App Preview's plan |
+| [store/connector-listing.md](store/connector-listing.md) | The connector in Claude and ChatGPT: the pilot's help page and the directory submission, with its screenshots |
 | [store/beta.md](store/beta.md) | The pilot beta on TestFlight and Play internal testing: what the builds do, the owner's steps, the notes and the invitation ([store/beta/invitation.md](store/beta/invitation.md)) |
 | [store/feature-review.md](store/feature-review.md) | Keep, park or cut: each feature's pilots, cost and a recommendation, taken by the owner on 2026-11-21 (decision 0060), and where each park's switch is |
 | [XPLANE-TRIAL.md](XPLANE-TRIAL.md) | The X-Plane 12 trial on the Mac: the demo, the replay plugin (tools/xplane-driver), the steps with times, what to judge, AutoOrtho |
