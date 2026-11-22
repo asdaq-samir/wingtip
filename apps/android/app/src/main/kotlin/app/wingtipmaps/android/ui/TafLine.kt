@@ -3,12 +3,8 @@ package app.wingtipmaps.android.ui
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import app.wingtipmaps.android.AppClock
-import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
-import app.wingtipmaps.android.engine.generated.tafValidity
 import app.wingtipmaps.android.strip.Finding
 import app.wingtipmaps.android.strip.words
 import java.time.Instant
@@ -23,14 +19,12 @@ import java.util.Locale
  * "TAF expired 12 1200Z: no forecast in force" in the caution ink, so a
  * TAF kept from before the signal was lost is never read as today's
  * forecast (14 CFR 91.103). The rule is the engine's taf_validity
- * (FAA-H-8083-28B 27.4.1); only the words are here. Nothing for words
- * that are not a TAF.
+ * (FAA-H-8083-28B 27.4.1), asked with the card's words (AirportReads);
+ * only the writing is here.
  */
 @Composable
-fun TafLine(taf: String, modifier: Modifier = Modifier) {
-    val nowS = AppClock.nowMs() / 1000
-    val validity = remember(taf, nowS / 60) { Engine.tafValidity(taf, nowS.toDouble()).getOrNull() } ?: return
-    val (line, caution) = TafWords.line(validity)
+fun TafLine(taf: Pair<String, Boolean>, modifier: Modifier = Modifier) {
+    val (line, caution) = taf
     Text(
         line,
         modifier,

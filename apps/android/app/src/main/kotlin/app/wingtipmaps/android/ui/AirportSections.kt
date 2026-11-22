@@ -111,7 +111,7 @@ fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, s
                     Row(stringResource(R.string.metar), metar.raw, trailing = { metar.flightCategory?.let { CategoryChip(it) } })
                     place.taf?.let {
                         Row(stringResource(R.string.taf), it)
-                        TafLine(it)
+                        view.words.taf?.let { taf -> TafLine(taf) }
                     }
                     // The report and forecast in plain words, under them.
                     AiWordsRow(AiTask.AIRPORT_WEATHER, key = place.ident + metar.raw, sources = { AiSources.weather(place) })
