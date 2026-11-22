@@ -28,7 +28,11 @@ class CopilotModelTest {
 
     private class Rules : CopilotRules {
         var input: EngineContract.CopilotWatchInput? = null
-        override fun along(lat: Double, lon: Double, line: List<List<Double>>) = Along(leftNm = 70.0, leg = 0)
+        var alongs = 0
+        override fun along(lat: Double, lon: Double, line: List<List<Double>>): Along {
+            alongs++
+            return Along(leftNm = 70.0, leg = 0)
+        }
         override fun watch(input: EngineContract.CopilotWatchInput): EngineContract.CopilotWatchAnswer {
             this.input = input
             val msg = { id: String -> EngineContract.CopilotMessage(id = id, kind = "weather", level = "warning", title = "$id went IFR", say = "$id went IFR", detail = emptyList(), sources = emptyList(), elsewhere = false) }
@@ -66,6 +70,21 @@ class CopilotModelTest {
         model.look(CopilotMode.SPOKEN, true, fix.copy(atMs = 1_000_000L + 8_000), flight, emptyList(), voice, nowMs = 8_000L)
         assertEquals("KJVL", model.message.value!!.id)
         assertEquals(1, asks)
+    }
+
+    @Test
+    fun theRouteIsMeasuredOnlyWhenTheEngineOrThePlannerIsDue() {
+        val rules = Rules()
+        val model = CopilotModel({ _, _, _, _, _ -> around }, rules)
+        model.look(CopilotMode.ON, true, fix, flight, emptyList(), null, nowMs = 0)
+        assertEquals(1, rules.alongs)
+        // A second on, in the same tenth of a degree: nothing is due, and
+        // route_position is not asked over the whole line.
+        model.look(CopilotMode.ON, true, fix.copy(lat = 42.01, atMs = 1_001_000L), flight, emptyList(), null, nowMs = 1_000L)
+        assertEquals(1, rules.alongs)
+        // The engine's look due again: measured once more.
+        model.look(CopilotMode.ON, true, fix.copy(lat = 42.02, atMs = 1_000_000L + CopilotModel.LOOK_MS), flight, emptyList(), null, nowMs = CopilotModel.LOOK_MS)
+        assertEquals(2, rules.alongs)
     }
 
     @Test

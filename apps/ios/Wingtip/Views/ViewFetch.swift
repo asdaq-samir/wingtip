@@ -52,3 +52,37 @@ struct ViewFetch: Equatable, Sendable {
 
     mutating func forget() { box = nil; level = nil }
 }
+
+/// What the map at rest last asked for its fields (ChartMap's rested ask,
+/// the planner's /api/airports/in-view or the packs): again when the view
+/// leaves the widened box or its level, or the answer is ten minutes old,
+/// as FieldWeatherFeed asks. Following own ship, MapKit's camera comes to
+/// rest at every fix, once a second; without this each rest asked for the
+/// same fields again.
+struct RestedFetch: Equatable, Sendable {
+    /// Ten minutes, FieldWeatherFeed's: the fields' categories are a
+    /// METAR's, which change by the hour.
+    static let every: TimeInterval = 10 * 60
+    /// The planner's most (its in-view `limit`): the box asked is four
+    /// views, so its share for the view stays near the 300 asked for one.
+    static let most = 1000
+
+    private(set) var fetch = ViewFetch()
+    private(set) var askedAt = Date.distantPast
+
+    func wants(_ view: ViewBox, zoom: Double, now: Date = Date()) -> Bool {
+        fetch.wants(view, zoom: zoom) || now.timeIntervalSince(askedAt) >= Self.every
+    }
+
+    /// The box to ask for, kept as asked.
+    mutating func ask(_ view: ViewBox, zoom: Double, now: Date = Date()) -> ViewBox {
+        askedAt = now
+        return fetch.ask(view, zoom: zoom)
+    }
+
+    /// Nothing came back: the next rest asks again.
+    mutating func forget() {
+        fetch.forget()
+        askedAt = .distantPast
+    }
+}

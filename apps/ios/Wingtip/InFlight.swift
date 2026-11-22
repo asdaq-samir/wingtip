@@ -87,7 +87,11 @@ final class InFlight {
             }
         }
         underway = asked("flying speed") { try Flight.underway(fix.groundspeedKt) } ?? false
-        progress = asked("route") { try Self.progress(fix, plan: plan, now: now) }
+        // Where the airplane is on the route only once it moves: parked,
+        // the engine's answer is never on the route (ON_ROUTE_NM needs
+        // motion), the strip shows the planned totals, and the whole line
+        // went to the engine once a second for nothing.
+        progress = underway ? asked("route") { try Self.progress(fix, plan: plan, now: now) } : nil
         verticalFpm = asked("vertical speed") {
             try Engine.verticalSpeed(samples: altitudes.map { .init(tS: $0.t, altitudeFt: $0.ft) })
         }
@@ -121,10 +125,11 @@ final class InFlight {
     /// route, thrown where the engine refuses.
     static func progress(_ fix: OwnShip.Fix, plan: Plan, now: Date = Date()) throws -> Progress? {
         guard let course = plan.course, course.coordinates.count >= 2 else { return nil }
+        let points = RouteShare.points(plan)
         return try Engine.inFlight(
             fix: .init(lat: fix.coordinate.latitude, lon: fix.coordinate.longitude, trackDeg: fix.trackDeg, speedKt: fix.groundspeedKt),
             line: course.coordinates.map { [$0.latitude, $0.longitude] },
-            points: RouteShare.points(plan).map { .init(name: $0.name, lat: $0.lat, lon: $0.lon) },
+            points: points.map { .init(name: $0.name, lat: $0.lat, lon: $0.lon) },
             legs: plan.legs.map { .init(distanceNm: $0.distanceNm, fuelGal: $0.fuelGal) },
             fuelStartGal: plan.totals?.usableFuelGal,
             // The tanks filled again at each stop, less the profile's start
@@ -132,16 +137,15 @@ final class InFlight {
             // (AV-4); with no allowance given none is taken off.
             fuelFullGal: plan.totals?.usableFuelGal,
             taxiFuelGal: plan.totals?.taxiGal,
-            refuelAt: refuelAt(plan),
+            refuelAt: refuelAt(plan, points: points),
             nowS: now.timeIntervalSince1970)
     }
 
     /// The points (indices into RouteShare.points) the plan refuels at:
     /// each stop, where the planner's hops begin (the tanks filled at each,
     /// app.planning.route_totals); none on a route without stops.
-    static func refuelAt(_ plan: Plan) -> [Int]? {
+    static func refuelAt(_ plan: Plan, points: [(name: String, lat: Double, lon: Double, checkpoint: Checkpoint?)]) -> [Int]? {
         guard (plan.totals?.hops ?? []).count > 1 else { return nil }
-        let points = RouteShare.points(plan)
         let ends = points.indices.filter { points[$0].checkpoint == nil }
         return ends.count > 2 ? Array(ends.dropFirst().dropLast()) : nil
     }

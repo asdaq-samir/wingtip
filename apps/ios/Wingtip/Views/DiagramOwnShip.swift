@@ -20,6 +20,7 @@ import SwiftUI
 /// seconds or worse than 30 m (11.17.2.3, 11.17.2.4's 30 m), never frozen.
 struct DiagramOwnShipView: View {
     @Environment(InFlight.self) private var inFlight
+    @Environment(OwnShip.self) private var ownShip
     let ident: String
     let url: String
     @Environment(\.dismiss) private var dismiss
@@ -64,6 +65,9 @@ struct DiagramOwnShipView: View {
             }
         }
         .task { await load() }
+        // Every fix at its best while the diagram is up (OwnShip.diagramShown).
+        .onAppear { ownShip.diagramShown = true }
+        .onDisappear { ownShip.diagramShown = false }
     }
 
     /// The fix drawn: none where it is stale or coarse, or where the

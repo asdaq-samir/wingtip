@@ -88,7 +88,7 @@ final class ModelWeather {
     @ObservationIgnored private var painting: Task<Void, Never>?
     @ObservationIgnored private var clock: Task<Void, Never>?
     @ObservationIgnored private var airmetsAt: Double?
-    @ObservationIgnored private var resume = false
+    @ObservationIgnored private var sight = LoopSight()
 
     private init() {
         field = FlowFieldKind(rawValue: UserDefaults.standard.string(forKey: Self.fieldKey) ?? "") ?? .off
@@ -143,6 +143,7 @@ final class ModelWeather {
     }
 
     func toggle() {
+        sight.picked()
         if playing { pause(); return }
         guard steps.count > 1, !UIAccessibility.isReduceMotionEnabled else { return }
         if let first = steps.first, let last = steps.last, shown >= last || shown < first { index = first }
@@ -168,14 +169,26 @@ final class ModelWeather {
         }
     }
 
-    /// The app gone to the background or back: paused while away.
+    /// The app gone to the background or back: paused and not fetched
+    /// while away (LoopSight), the layer asked again on return.
     func away(_ away: Bool) {
+        see(.away, hidden: away)
         if away {
-            resume = playing
-            pause()
-        } else if resume {
-            resume = false
-            toggle()
+            fetching?.cancel()
+            fetching = nil
+        } else if fetching == nil, field != .off {
+            fetching = Task { await self.fetchForever() }
+        }
+    }
+
+    /// The iPhone's sheet at full height over the map, or down again.
+    func covered(_ covered: Bool) { see(.covered, hidden: covered) }
+
+    private func see(_ reason: LoopSight.Reason, hidden: Bool) {
+        switch sight.set(reason, hidden: hidden, playing: playing) {
+        case .pause: pause()
+        case .play: if !playing { toggle() }
+        case nil: break
         }
     }
 
@@ -186,7 +199,7 @@ final class ModelWeather {
         pause()
         (point, reading, readingProblem, painted, airmets, airmetsAt, index) = (nil, nil, nil, nil, [], nil, nil)
         airmetsProblem = nil
-        guard field != .off else { return }
+        guard field != .off, !sight.away else { return }
         fetching = Task { await self.fetchForever() }
     }
 

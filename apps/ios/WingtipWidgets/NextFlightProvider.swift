@@ -22,7 +22,15 @@ struct NextFlightProvider: AppIntentTimelineProvider {
     func timeline(for configuration: NextFlightIntent, in context: Context) async -> Timeline<FlightEntry> {
         let now = Date()
         let entry = FlightEntry(date: now, flight: await Self.flight(configuration.flight))
-        return Timeline(entries: [entry], policy: .after(now.addingTimeInterval(Self.refreshAfter)))
+        return Timeline(entries: [entry], policy: Self.policy(configuration.flight, now: now))
+    }
+
+    /// When the system asks again: for the plan on the page, never, as the
+    /// app reloads the timeline as the plan changes (WidgetFeed.update) and
+    /// a wake would only read the same file; for a saved flight, after
+    /// `refreshAfter`, for its departure's weather.
+    static func policy(_ choice: WidgetFlightChoice?, now: Date) -> TimelineReloadPolicy {
+        choice?.savedID == nil ? .never : .after(now.addingTimeInterval(refreshAfter))
     }
 
     /// The flight picked: the plan on the page where none is, or the
