@@ -454,6 +454,11 @@ async def records_batch(*, body: dict[str, Any]) -> Any:
     return await _send('POST', '/api/pilot/records-batch', query={}, body=body, headers={})
 
 
+async def same_field(*, body: dict[str, Any]) -> Any:
+    """POST /api/pilot/same-field: Same Field"""
+    return await _send('POST', '/api/pilot/same-field', query={}, body=body, headers={})
+
+
 async def places_search(*, q: str | None = None) -> Any:
     """GET /api/places/search: Places Search"""
     return await _send('GET', '/api/places/search', query={'q': q}, body=None, headers={})

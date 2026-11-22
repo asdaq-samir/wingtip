@@ -196,7 +196,7 @@ services:
     # (2026-11-09). A volume made under bookworm (glibc 2.36) needs its
     # collation version refreshed once for 2.41:
     # scripts/dev/pg-refresh-collation.sh, which go-live.sh runs.
-    image: postgres:18-trixie@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42
+    image: postgres:18-trixie@sha256:eb63372c1e05c755f55fa30cbd07aecc443676fc6c0fa90b9002d01537841e1a
     environment:
       POSTGRES_DB: wingtip
       POSTGRES_USER: wingtip
@@ -660,7 +660,7 @@ services:
   # COMPOSE_PROFILES=web-dev in .env, or `--profile web-dev`.
   web-build:
     profiles: ["web-dev"]
-    image: node:26-slim@sha256:5adad64f9a1fca2d51972caa65983634c8a774eb300d72b20f7f2a0f60368072
+    image: node:26-slim@sha256:e6bedef217677b276c591795e169840edd9096dbf13f29df8ef8d1856b8820bc
     working_dir: /w
     volumes:
       - ./apps/web:/w

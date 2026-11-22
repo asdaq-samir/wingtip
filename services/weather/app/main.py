@@ -72,7 +72,7 @@ def _winds(fcst_hr: str) -> Callable[[], None]:
 #: Every product, in the order a fresh start fetches them: what a plan
 #: reads first.
 PRODUCTS = (
-    *(Product(name, _source(name), "reports") for name in aviationweather.SOURCES),
+    *(Product(name, _source(name), "airmets" if name == "airmets" else "reports") for name in aviationweather.SOURCES),
     *(Product(f"winds-{hr}", _winds(hr), "winds") for hr in gfs.PERIODS),
     Product("glmp", glmp.fetch_latest, "glmp"),
     Product("glmp-forecast", glmp_forecast.fetch_latest, "glmp"),

@@ -20,6 +20,8 @@ import app.wingtipmaps.gateway.planner.model.PlannerPilotNotes;
 import app.wingtipmaps.gateway.planner.model.PlannerRecordsBatch;
 import app.wingtipmaps.gateway.planner.model.PlannerRecordsBatchAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerReviewCheck;
+import app.wingtipmaps.gateway.planner.model.PlannerSameField;
+import app.wingtipmaps.gateway.planner.model.PlannerSameFieldAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerVorCheckAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerWordsSources;
 import app.wingtipmaps.gateway.upstream.BriefingApi;
@@ -206,6 +208,30 @@ public class PlannerClient {
     public PlannerEndorsements endorsements(List<PlannerHeldEndorsement> held, LocalDate flightOn) {
         PlannerEndorsementsAsk ask = new PlannerEndorsementsAsk(held).flightOn(flightOn);
         return rule("the endorsements", () -> planner.endorsements(ask), e -> e);
+    }
+
+    /**
+     * For each of {@code idents}, in order, whether it names the field
+     * {@code field} (POST /api/pilot/same-field: the engine's field_names
+     * over NASR's record of each, so "BUR" is "KBUR" and "ANC" is "PANC");
+     * nothing is asked of no idents.
+     *
+     * @throws PlannerUnavailableException when the planner cannot be reached or refuses,
+     *     or answers a list of another length
+     */
+    public List<Boolean> sameField(String field, List<String> idents) {
+        if (idents.isEmpty()) {
+            return List.of();
+        }
+        String what = "which flights landed at the lesson's field";
+        return rule(
+                what, () -> planner.sameField(new PlannerSameFieldAsk(field).idents(idents)), (PlannerSameField s) -> {
+                    if (s.getSame().size() != idents.size()) {
+                        throw new PlannerUnavailableException(
+                                "the planner answered " + what + " with a list of another length");
+                    }
+                    return List.copyOf(s.getSame());
+                });
     }
 
     /** How long the endorsements' catalogue is kept: the catalogue as last

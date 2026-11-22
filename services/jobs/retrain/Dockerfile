@@ -21,7 +21,9 @@ WORKDIR /workspace
 # wingtip's own through its -r ../../planner/requirements-wingtip.txt.
 COPY services/planner/requirements-wingtip.txt services/planner/
 COPY services/jobs/retrain/requirements.txt services/jobs/retrain/
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r services/jobs/retrain/requirements.txt
+# pip goes once the packages are in (why: services/planner/Dockerfile).
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r services/jobs/retrain/requirements.txt \
+    && pip uninstall -y -q --root-user-action=ignore pip
 
 COPY services/planner/wingtip ./services/planner/wingtip
 

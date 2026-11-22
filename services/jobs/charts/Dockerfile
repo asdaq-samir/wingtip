@@ -46,7 +46,9 @@ COPY --from=tippecanoe /usr/local/bin/tippecanoe /usr/local/bin/tippecanoe-decod
 # (wingtip.config's PROJECT_ROOT) where the stacks mount it.
 COPY services/planner/requirements-wingtip.txt services/planner/requirements-wingtip-charts.txt /workspace/services/planner/
 COPY services/jobs/charts/requirements.txt charts/
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r charts/requirements.txt
+# pip goes once the packages are in (why: services/planner/Dockerfile).
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r charts/requirements.txt \
+    && pip uninstall -y -q --root-user-action=ignore pip
 
 COPY services/planner/wingtip /workspace/services/planner/wingtip
 COPY services/jobs/charts ./charts

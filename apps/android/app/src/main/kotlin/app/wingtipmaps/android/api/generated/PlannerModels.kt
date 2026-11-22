@@ -7972,6 +7972,24 @@ data class SaaStatus (
     val until: Double? = null
 )
 
+/**
+ * For each ident asked, in order, whether it names the field.
+ */
+@Serializable
+data class SameField (
+    val same: List<Boolean>
+)
+
+/**
+ * Which of `idents` name the field `field`: a lesson's field and the
+ * stops and ends of the flights put to its instructor.
+ */
+@Serializable
+data class SameFieldAsk (
+    val field: String,
+    val idents: List<String>? = null
+)
+
 @Serializable
 data class Status (
     val charts: ChartsStatus,

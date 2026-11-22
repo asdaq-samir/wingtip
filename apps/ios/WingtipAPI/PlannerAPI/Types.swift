@@ -1079,6 +1079,16 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /api/pilot/records-batch`.
     /// - Remark: Generated from `#/paths//api/pilot/records-batch/post(records_batch)`.
     func recordsBatch(_ input: Operations.RecordsBatch.Input) async throws -> Operations.RecordsBatch.Output
+    /// Same Field
+    ///
+    /// Which of the idents name the field, in the order asked: the
+    /// gateway's lessons put to an instructor a student's flights that
+    /// landed at the lesson's field, by whichever of its names each was
+    /// planned with (BUR, KBUR; ANC, PANC).
+    ///
+    /// - Remark: HTTP `POST /api/pilot/same-field`.
+    /// - Remark: Generated from `#/paths//api/pilot/same-field/post(same_field)`.
+    func sameField(_ input: Operations.SameField.Input) async throws -> Operations.SameField.Output
     /// Places Search
     ///
     /// Where a place typed is, for Nearest to find the fields near it
@@ -3183,6 +3193,24 @@ extension APIProtocol {
         body: Operations.RecordsBatch.Input.Body
     ) async throws -> Operations.RecordsBatch.Output {
         try await recordsBatch(Operations.RecordsBatch.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Same Field
+    ///
+    /// Which of the idents name the field, in the order asked: the
+    /// gateway's lessons put to an instructor a student's flights that
+    /// landed at the lesson's field, by whichever of its names each was
+    /// planned with (BUR, KBUR; ANC, PANC).
+    ///
+    /// - Remark: HTTP `POST /api/pilot/same-field`.
+    /// - Remark: Generated from `#/paths//api/pilot/same-field/post(same_field)`.
+    public func sameField(
+        headers: Operations.SameField.Input.Headers = .init(),
+        body: Operations.SameField.Input.Body
+    ) async throws -> Operations.SameField.Output {
+        try await sameField(Operations.SameField.Input(
             headers: headers,
             body: body
         ))

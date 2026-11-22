@@ -1722,6 +1722,20 @@ interface PlannerApi {
     suspend fun saaStatus(@Query("designators") designators: kotlin.String): Response<app.wingtipmaps.android.api.generated.SaaStatuses>
 
     /**
+     * POST pilot/same-field
+     * Same Field
+     * Which of the idents name the field, in the order asked: the gateway&#39;s lessons put to an instructor a student&#39;s flights that landed at the lesson&#39;s field, by whichever of its names each was planned with (BUR, KBUR; ANC, PANC).
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param appWingtipmapsAndroidApiGeneratedSameFieldAsk
+     * @return [app.wingtipmaps.android.api.generated.SameField]
+     */
+    @POST("pilot/same-field")
+    suspend fun sameField(@Body appWingtipmapsAndroidApiGeneratedSameFieldAsk: app.wingtipmaps.android.api.generated.SameFieldAsk): Response<app.wingtipmaps.android.api.generated.SameField>
+
+    /**
      * POST checkpoint-notes
      * Save Checkpoint Note
      * A pilot&#39;s own edit to a checkpoint&#39;s identification note: what they see at that place from now on. Other pilots keep the shared note; where nobody can sign in, this becomes the shared note.

@@ -22407,6 +22407,48 @@
         "title": "SaaStatuses",
         "type": "object"
       },
+      "SameField": {
+        "description": "For each ident asked, in order, whether it names the field.",
+        "properties": {
+          "same": {
+            "items": {
+              "type": "boolean"
+            },
+            "title": "Same",
+            "type": "array"
+          }
+        },
+        "required": [
+          "same"
+        ],
+        "title": "SameField",
+        "type": "object"
+      },
+      "SameFieldAsk": {
+        "description": "Which of `idents` name the field `field`: a lesson's field and the\nstops and ends of the flights put to its instructor.",
+        "properties": {
+          "field": {
+            "maxLength": 8,
+            "title": "Field",
+            "type": "string"
+          },
+          "idents": {
+            "default": [],
+            "items": {
+              "maxLength": 8,
+              "type": "string"
+            },
+            "maxItems": 500,
+            "title": "Idents",
+            "type": "array"
+          }
+        },
+        "required": [
+          "field"
+        ],
+        "title": "SameFieldAsk",
+        "type": "object"
+      },
       "ServiceStatus": {
         "properties": {
           "detail": {
@@ -31819,6 +31861,45 @@
           }
         },
         "summary": "Records Batch"
+      }
+    },
+    "/api/pilot/same-field": {
+      "post": {
+        "description": "Which of the idents name the field, in the order asked: the\ngateway's lessons put to an instructor a student's flights that\nlanded at the lesson's field, by whichever of its names each was\nplanned with (BUR, KBUR; ANC, PANC).",
+        "operationId": "same_field_api_pilot_same_field_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SameFieldAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SameField"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Same Field"
       }
     },
     "/api/places/search": {

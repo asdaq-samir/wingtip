@@ -47,12 +47,12 @@ The owner, 2026-11-09, standing:
 
 | Tool | Version | Read by |
 |---|---|---|
-| Java | Temurin 25 (`temurin-25`, the LTS) | the gateway (pom `java.version`, `maven:4.0.0-rc-7-eclipse-temurin-25`, `eclipse-temurin:25-jre`) and Android (Gradle's daemon JVM, Java 25 bytecode) |
+| Java | Temurin 25 (`temurin-25`, the LTS) | the gateway (pom `java.version`, `maven:4.0.0-rc-7-eclipse-temurin-25-resolute`, `eclipse-temurin:25-jre-resolute`, both on Ubuntu 26.04) and Android (Gradle's daemon JVM, Java 25 bytecode) |
 | Python | 3.15.2 | every service and job image (`python:3.15-slim`), CI's setup-python, the dev container |
 | Rust | 1.100.0, edition 2024 | `engine/rust-toolchain.toml`, every engine crate, the WebAssembly build |
 | Node | 26 | `apps/web/.nvmrc`, the web build (`node:26-slim`), CI |
 | Gradle | 9.9.2 | `apps/android/gradle/wrapper/gradle-wrapper.properties` |
-| Maven | 4.0.0-rc-7 | the gateway: its build image (`maven:4.0.0-rc-7-eclipse-temurin-25`) and `./mvnw`, the Maven Wrapper CI and a Mac without Docker run (`services/gateway/.mvn/wrapper`, checked by its sha256) |
+| Maven | 4.0.0-rc-7 | the gateway: its build image (`maven:4.0.0-rc-7-eclipse-temurin-25-resolute`) and `./mvnw`, the Maven Wrapper CI and a Mac without Docker run (`services/gateway/.mvn/wrapper`, checked by its sha256) |
 | Xcode | 27.2 (the iOS 27.2 SDK) | `scripts/ci/select-xcode.sh`, CI's `xcode-27` runner and the Mac mini |
 | Debian | trixie | every Debian-based image (`postgres:18-trixie`; a `-slim` tag is trixie) |
 | Formatters | ruff 0.17.5, SwiftFormat 0.64.6, ktlint 2.0.0-ALPHA-4, palantir-java-format 2.103.0, Prettier 3.10.1 | `scripts/dev/format.sh` (SwiftFormat and ktlint installed by mise) |

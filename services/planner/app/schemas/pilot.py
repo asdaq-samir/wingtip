@@ -5,7 +5,7 @@ them the gateway asks in one call (an instructor's page, an aircraft
 list)."""
 
 from datetime import date
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -292,3 +292,17 @@ class RecordsBatch(BaseModel):
 
     experience: list[list[ExperienceItem]]
     endorsements: list[Endorsements]
+
+
+class SameFieldAsk(BaseModel):
+    """Which of `idents` name the field `field`: a lesson's field and the
+    stops and ends of the flights put to its instructor."""
+
+    field: str = Field(max_length=8)
+    idents: list[Annotated[str, Field(max_length=8)]] = Field(default=[], max_length=MAX_BATCH)
+
+
+class SameField(BaseModel):
+    """For each ident asked, in order, whether it names the field."""
+
+    same: list[bool]

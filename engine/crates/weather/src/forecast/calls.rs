@@ -152,6 +152,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         "awc_airsigmets_read" => out = awc::airsigmets(text(name, v, "text")?).map_err(|e| format!("{name}: {e}"))?,
         "awc_pireps_read" => out = awc::pireps(text(name, v, "text")?).map_err(|e| format!("{name}: {e}"))?,
         "awc_gairmets_read" => out = awc::gairmets(text(name, v, "text")?).map_err(|e| format!("{name}: {e}"))?,
+        "awc_airmets_read" => out = awc::airmets(text(name, v, "text")?).map_err(|e| format!("{name}: {e}"))?,
         "weather_held_until" => {
             let until = awc::held_until(text(name, v, "product")?, v.get("data").unwrap_or(&Value::Null), num(name, v, "fetched")? as i64)?;
             json::opt_number(&mut out, until.map(|t| t as f64));

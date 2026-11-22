@@ -11,7 +11,9 @@ FROM wingtip-base
 WORKDIR /workspace/services/weather
 
 COPY services/weather/requirements.txt ./
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
+# pip goes once the packages are in (why: services/planner/Dockerfile).
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt \
+    && pip uninstall -y -q --root-user-action=ignore pip
 
 COPY services/weather/app ./app
 # wingtip, beside app: the store, the readers' helpers and the settings

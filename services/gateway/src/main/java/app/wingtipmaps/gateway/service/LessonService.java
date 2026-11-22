@@ -2,7 +2,6 @@ package app.wingtipmaps.gateway.service;
 
 import app.wingtipmaps.gateway.domain.ApproachLesson;
 import app.wingtipmaps.gateway.domain.CrossCountryReview;
-import app.wingtipmaps.gateway.domain.Flight;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.ApproachLessonDto;
 import app.wingtipmaps.gateway.dto.AssignLessonRequest;
@@ -15,6 +14,7 @@ import app.wingtipmaps.gateway.repository.CrossCountryReviewRepository;
 import app.wingtipmaps.gateway.repository.InstructorLinkRepository;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -54,18 +54,21 @@ public class LessonService {
     private final CrossCountryReviewRepository reviews;
     private final FlightService flights;
     private final InstructorMail mail;
+    private final PlannerClient planner;
 
     public LessonService(
             ApproachLessonRepository lessons,
             InstructorLinkRepository links,
             CrossCountryReviewRepository reviews,
             FlightService flights,
-            InstructorMail mail) {
+            InstructorMail mail,
+            PlannerClient planner) {
         this.lessons = lessons;
         this.links = links;
         this.reviews = reviews;
         this.flights = flights;
         this.mail = mail;
+        this.planner = planner;
     }
 
     // ---- The instructor's side
@@ -173,30 +176,72 @@ public class LessonService {
 
     // ---- Both
 
+    /** A student's lessons as read, each with no flights yet, and the
+     *  flights put to the instructor that have a track, each with the
+     *  idents it stopped or ended at: read in the caller's transaction,
+     *  the planner asked after it ({@link #lessonsOf(LessonsRead)}). */
+    public record LessonsRead(List<ApproachLessonDto> lessons, List<Reviewed> reviewed) {}
+
+    /** A flight put to the instructor, and where it stopped or ended. */
+    public record Reviewed(FlightSummaryDto flight, List<String> idents) {}
+
     /** A student's lessons, newest first: all of them for the student, or
      *  for an instructor only those they set, with the flights put to them
-     *  that landed at each lesson's field and have a track. */
+     *  that have a track, for {@link #lessonsOf(LessonsRead)}. */
     @Transactional(readOnly = true)
-    public List<ApproachLessonDto> lessonsOf(Pilot student, @Nullable Pilot instructor) {
+    public LessonsRead read(Pilot student, @Nullable Pilot instructor) {
         if (instructor == null) {
-            return lessons.findByStudentIdOrderByCreatedAtDesc(student.getId()).stream()
-                    .map(l -> dto(l, List.of()))
-                    .toList();
+            return new LessonsRead(
+                    lessons.findByStudentIdOrderByCreatedAtDesc(student.getId()).stream()
+                            .map(l -> dto(l, List.of()))
+                            .toList(),
+                    List.of());
         }
-        List<Flight> reviewed =
+        List<Reviewed> reviewed =
                 reviews.findByStudentIdAndInstructorIdOrderByAskedAtDesc(student.getId(), instructor.getId()).stream()
                         .map(CrossCountryReview::getFlight)
                         .distinct()
                         .filter(f -> flights.hasTrack(f.getId()))
+                        .map(f -> new Reviewed(
+                                FlightSummaryDto.of(f),
+                                Stream.concat(f.getStops().stream(), Stream.of(f.getDestinationIdent()))
+                                        .filter(at -> at != null && !at.isBlank())
+                                        .toList()))
                         .toList();
-        return lessons.findByStudentIdAndInstructorIdOrderByCreatedAtDesc(student.getId(), instructor.getId()).stream()
-                .map(l -> dto(
-                        l,
-                        reviewed.stream()
-                                .filter(f -> landsAt(f, l.getAirportIdent()))
-                                .map(FlightSummaryDto::of)
-                                .toList()))
+        return new LessonsRead(
+                lessons.findByStudentIdAndInstructorIdOrderByCreatedAtDesc(student.getId(), instructor.getId()).stream()
+                        .map(l -> dto(l, List.of()))
+                        .toList(),
+                reviewed);
+    }
+
+    /** Each lesson read with the flights that landed at its field, at a
+     *  stop or their end, in order. Which idents name the field is the
+     *  planner's (the procedures' "KBUR" and a flight's "BUR" one field,
+     *  Alaska's "PANC" and "ANC" by NASR's ICAO_ID), asked once a lesson,
+     *  outside any transaction, so no pooled connection waits on it. */
+    public List<ApproachLessonDto> lessonsOf(LessonsRead read) {
+        if (read.reviewed().isEmpty()) {
+            return read.lessons();
+        }
+        return read.lessons().stream()
+                .map(l -> l.withFlights(landedAt(read.reviewed(), l.airportIdent())))
                 .toList();
+    }
+
+    private List<FlightSummaryDto> landedAt(List<Reviewed> reviewed, String field) {
+        List<Boolean> same = planner.sameField(
+                field, reviewed.stream().flatMap(r -> r.idents().stream()).toList());
+        List<FlightSummaryDto> landed = new ArrayList<>();
+        int at = 0;
+        for (Reviewed r : reviewed) {
+            int n = r.idents().size();
+            if (same.subList(at, at + n).contains(true)) {
+                landed.add(r.flight());
+            }
+            at += n;
+        }
+        return landed;
     }
 
     /** How far along: the quiz taken past the flying past the brief. */
@@ -221,22 +266,6 @@ public class LessonService {
             }
         });
         return notes;
-    }
-
-    /** Whether a flight landed at the field, at a stop or its end: the
-     *  procedures' ICAO identifier ("KBUR") and a flight's FAA one ("BUR")
-     *  the same field. */
-    static boolean landsAt(Flight f, String ident) {
-        return Stream.concat(f.getStops().stream(), Stream.of(f.getDestinationIdent()))
-                .anyMatch(at -> sameField(at, ident));
-    }
-
-    static boolean sameField(String a, String b) {
-        if (a == null || b == null) {
-            return false;
-        }
-        String x = a.strip().toUpperCase(Locale.ROOT), y = b.strip().toUpperCase(Locale.ROOT);
-        return x.equals(y) || (x.length() == 3 && y.equals("K" + x)) || (y.length() == 3 && x.equals("K" + y));
     }
 
     private static boolean isBetween(ApproachLesson l, Long studentId, Long instructorId) {

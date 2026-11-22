@@ -183,7 +183,10 @@ is about $77, or about $51 with a one-year Savings Plan. The template's
 default is a t3a.large (8 GB) since 2026-11-21 (the owner, on the
 prelaunch audit): the services take about 3.5 GB, which a t3a.medium's
 4 GB barely holds. `InstanceType=t3a.medium` (and `SpareInstanceType=t3.medium`)
-still deploys the smaller server, at about $33. The next
+still deploys the smaller server, at about $33. On the large one each service is
+held to its share (infra/docker-compose.prod.yml): the planner 3 GB, the
+gateway 1.5 GB, Postgres 1 GB, weather 768 MB, ingest 384 MB, the shares
+the after-merge campaign's stress run is held to. The next
 saving after Spot was the tiles' upload bill, and the archives (#535)
 took it to cents, the reader in the planner rather than the map.
 

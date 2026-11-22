@@ -29,8 +29,10 @@ def _store(name: str, data, fetched_at: float = T0200Z, until: float | None = No
 def test_a_product_never_stored_is_unavailable_in_a_pilots_words():
     with pytest.raises(WeatherServiceError, match="METARs unavailable"):
         metar_for_idents(["KORD"])
-    with pytest.raises(WeatherServiceError, match="AIRMETs and SIGMETs unavailable"):
+    with pytest.raises(WeatherServiceError, match="SIGMETs unavailable"):
         weather._dataset("airsigmets")
+    with pytest.raises(WeatherServiceError, match="Alaska AIRMETs unavailable"):
+        weather._dataset("airmets")
 
 
 def test_the_stored_copy_is_served_while_its_product_is_valid_and_not_after(monkeypatch):
