@@ -13,6 +13,7 @@ struct AlertsBanner: View {
         if let first = sorted.first {
             Button { appCommand(AlertActions.command(AlertActions.target(first))) } label: { line(first) }
                 .buttonStyle(.plain)
+                .hoverEffect(.highlight)
                 .accessibilityHint("Opens the airspace where it is")
                 .contextMenu {
                     ForEach(sorted) { alert in

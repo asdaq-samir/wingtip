@@ -92,6 +92,9 @@ struct AirportChartsTab: View {
         let plate = row(AirportWords.faaWords(chart.name), symbol, colour: chart.kind == "IAP" || chart.kind == "DP" || chart.kind == "ODP" || chart.kind == "STR" ? Badge.approach : Badge.chart) {
             shown = .faaChart(chart.name, url: chart.url, airport: place.ident)
         }
+        // A secondary click or a long press: the plate in a window of its
+        // own beside the map, on an iPad with windows (OpenInWindowItem).
+        .contextMenu { OpenInWindowItem(request: PictureRequest(title: chart.name, source: .faaChart(url: chart.url, airport: place.ident))) }
         if let mark = notams.marks.approach[chart.url] {
             HStack(spacing: WingtipSpace.sm) {
                 plate.buttonStyle(.borderless)

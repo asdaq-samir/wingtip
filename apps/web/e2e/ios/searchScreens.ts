@@ -20,7 +20,13 @@ export const SEARCH_SCREENS: Screen[] = [
     ready: async (page) => {
       await page.goto("/app/plan");
       await settle(page);
-      await showTabs(page);
+      // The search's page up to type in, as "nothing typed" has it: on a
+      // small screen the sheet opens at its pill, and typing leaves it where
+      // the pilot put it (the owner, 2026-11-11: "Whenever I try to type on
+      // search bar it takes the card to full screen"), so the results were
+      // under the pill's edge, hidden (main's nightly 44926432837 on the
+      // iPhone SE, sideways and the Duo).
+      await showSearch(page);
       await page.getByTestId("search-airports").fill("osh");
       await expect(sideDrawer(page).getByTestId("search-do-nearby")).toBeVisible();
     },

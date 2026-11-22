@@ -18,6 +18,8 @@ import { PointMark } from "./PointMark";
 const RAIL = "left-[calc(0.375rem+1.0625rem)]";
 /** A mark's middle, down the row: the row's 8 and half a mark's 24. */
 const MARK_MIDDLE = "1.25rem";
+/** The selection's wash by night, the row's and its note's alike. */
+const SELECTED_NIGHT = "dark:bg-foreground/5 dark:hover:bg-foreground/5 dark:focus-visible:bg-foreground/5";
 
 /** The way a leg is flown, magnetic and named so, as a paper nav log's
  *  MC and MH columns are: its heading with an airplane picked ("MH 252°"),
@@ -265,6 +267,11 @@ export function NavLogList({
                       "hover:bg-foreground/5 focus-visible:bg-foreground/5 active:bg-foreground/8",
                       isFlying && "bg-tint/12 hover:bg-tint/12",
                       selected && "rounded-b-none bg-foreground/8 hover:bg-foreground/8 focus-visible:bg-foreground/8",
+                      // By night 5%, as a card's glass actions are (CardAction):
+                      // the light foreground's 8% put the tint's words in it
+                      // (MH, Show the Work) at 4.43 to 1 on a side panel (the
+                      // iOS audit's P15, a sideways iPhone's nav log).
+                      selected && SELECTED_NIGHT,
                     )}
                   >
                     <span className="relative row-span-2 flex justify-center pt-0.5">
@@ -370,7 +377,7 @@ export function NavLogList({
                     // put the row away, in the selection's tint with it.
                     // Twelve under it: the note's field reaches nine past its
                     // box for a finger (DescriptionCell's label).
-                    <div role="row" className="rounded-b-xl bg-foreground/8 pr-2 pb-3 pl-12.5">
+                    <div role="row" className={cn("rounded-b-xl bg-foreground/8 pr-2 pb-3 pl-12.5", SELECTED_NIGHT)}>
                       <div role="cell" aria-colspan={7} className={cn("text-foreground/70", TEXT.detail)}>
                         {note(row, selected)}
                       </div>

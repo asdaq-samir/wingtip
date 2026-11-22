@@ -14,7 +14,8 @@ on:
   workflow_call:
     inputs:
       # The whole suite on the iPhone, the iPad and iPhone Duo. Without it
-      # (main's push): the unit tests and CardSmokeTests on the iPhone alone.
+      # (main's push): the unit tests, CardSmokeTests and IPadLayoutTests on
+      # the iPhone and the iPad.
       full:
         type: boolean
         default: false
@@ -69,14 +70,18 @@ jobs:
     # GitHub's xcode-27 image, the one hosted image with .tool-versions'
     # Xcode 27.2 (actions/runner-images, images/macos/xcode-27-arm64-Readme.md).
     runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
-    # The iPhone by day; at night the iPad and iPhone Duo too, each its own
-    # runner: the three on one ran every UI suite over 80 minutes, cancelled
-    # at the limit twice (#572). The iPhone's leg keeps the job's name.
+    # A pull request's on the iPhone alone; main's push on the iPhone and
+    # the iPad, the app's primary users' (the owner, 2026-11-21: "Primary
+    # app users are on iPad"), whose layout the iPhone's leg never drew (the
+    # night's 21 iPad failures, run 44927130075); at night iPhone Duo too,
+    # each its own runner: the three on one ran every UI suite over 80
+    # minutes, cancelled at the limit twice (#572). The iPhone's leg keeps
+    # the job's name.
     name: ${{ matrix.device == 'iPhone' && 'test' || format('test ({0})', matrix.device) }}
     strategy:
       fail-fast: false
       matrix:
-        device: ${{ fromJSON((inputs.full || github.event_name == 'schedule') && '["iPhone", "iPad", "iPhone Duo"]' || '["iPhone"]') }}
+        device: ${{ fromJSON((inputs.full || github.event_name == 'schedule') && '["iPhone", "iPad", "iPhone Duo"]' || (inputs.unit_only && '["iPhone"]' || '["iPhone", "iPad"]')) }}
     # A pull request's set is a few minutes; a night's device and every UI suite about thirty.
     timeout-minutes: ${{ (inputs.full || github.event_name == 'schedule') && 100 || 25 }}
     steps:

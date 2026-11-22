@@ -109,44 +109,20 @@ struct RemotePicture: View {
     }
 }
 
-/// A picture to show full screen: what it is, how its pages are had,
-/// and the credit its licence asks for.
-struct ShownPicture: Identifiable {
-    let id = UUID()
-    let title: String
-    var credit: String?
-    /// The kept answer it is drawn from, for its age with no signal.
-    var kept: (kind: KeptForAir.Kind, key: String)?
-    /// An approach plate's page as the planner placed it, for own ship on
-    /// its first page (PlatePosition); nil for every other picture.
-    var georeference: APIPlateGeoreference?
-    let load: () async throws -> [UIImage]
-
-    /// The planner's pictures by their paths.
-    static func paths(_ title: String, _ paths: [String], credit: String? = nil) -> ShownPicture {
-        ShownPicture(title: title, credit: credit) { try await PictureCache.images(paths) }
-    }
-
-    /// One of the FAA's charts by its address, its pages drawn by the
-    /// planner (/api/faa-chart): a plate, the diagram, the Chart
-    /// Supplement's pages for the field.
-    static func faaChart(_ title: String, url: String, airport: String) -> ShownPicture {
-        ShownPicture(title: title, kept: (.plates, "\(airport)|\(url)")) {
-            let pages = try await KeptForAir.answer(.plates, key: "\(airport)|\(url)") { try await Planner.faaChart(url: url, airport: airport) }.value
-            guard !pages.isEmpty else { throw Planner.Failure(status: 404, detail: "The FAA's chart has no page for \(airport).") }
-            return try await PictureCache.images(pages.map(\.path))
-        }
-    }
-}
-
 /// A chart or a photo full screen to pinch in on, as Files shows a page:
 /// its title at the top and the close at the right, which goes back.
 struct PictureViewer: View {
     @Environment(KeptShown.self) private var keptShown
     let picture: ShownPicture
+    /// In a window of its own (PictureWindow), which its close shuts,
+    /// rather than over the app.
+    var inWindow = false
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismissWindow) private var dismissWindow
     @State private var images: [UIImage]?
     @State private var problem: String?
+    /// The pilot's own marks on, the tool picker up (PlateMarkup).
+    @State private var markup = MarkupState()
 
     var body: some View {
         NavigationStack {
@@ -154,9 +130,9 @@ struct PictureViewer: View {
                 if let images {
                     Group {
                         if let georeference = picture.georeference {
-                            PlatePictures(images: images, georeference: georeference)
+                            PlatePictures(images: images, georeference: georeference, markup: markup)
                         } else {
-                            ZoomablePictures(images: images)
+                            ZoomablePictures(images: images, markup: markup)
                         }
                     }
                     .ignoresSafeArea(edges: .bottom)
@@ -174,7 +150,9 @@ struct PictureViewer: View {
             }
             .navigationTitle(picture.title)
             .navigationBarTitleDisplayMode(.inline)
-            .closeButton { dismiss() }
+            .closeButton { if inWindow { dismissWindow() } else { dismiss() } }
+            // Markup and a window of its own, at the bar's left (PictureTools).
+            .modifier(PictureTools(picture: picture, inWindow: inWindow, shown: images != nil, markup: $markup) { dismiss() })
             .safeAreaInset(edge: .top) {
                 if let kept = picture.kept, images != nil, keptShown.at(kept.kind, key: kept.key) != nil {
                     KeptAgeLine(kind: kept.kind, key: kept.key)
@@ -206,10 +184,11 @@ private struct PlatePictures: View {
     @Environment(InFlight.self) private var inFlight
     let images: [UIImage]
     let georeference: APIPlateGeoreference
+    let markup: MarkupState
 
     var body: some View {
         let mark = PlatePosition.mark(inFlight.fix, georeference: georeference)
-        ZoomablePictures(images: images, mark: mark)
+        ZoomablePictures(images: images, mark: mark, markup: markup)
             .accessibilityValue(mark == nil ? "" : "You are here")
     }
 }
@@ -225,17 +204,26 @@ struct ZoomablePictures: UIViewRepresentable {
     let images: [UIImage]
     /// Own ship on the first page (a plate's), or nil.
     var mark: PageMark?
+    /// The pilot's marks over the pages (PlateMarkup).
+    var markup = MarkupState()
 
     func makeUIView(context: Context) -> PagesScrollView {
         let view = PagesScrollView()
         view.images = images
         view.mark = mark
+        updateUIView(view, context: context)
         return view
     }
 
     func updateUIView(_ view: PagesScrollView, context: Context) {
         if !view.images.elementsEqual(images, by: ===) { view.images = images }
         if view.mark != mark { view.mark = mark }
+        view.markup.key = markup.key
+        view.markup.on = markup.on
+        if view.cleared != markup.clears {
+            view.cleared = markup.clears
+            view.markup.clear()
+        }
     }
 }
 
@@ -246,6 +234,10 @@ final class PagesScrollView: UIScrollView, UIScrollViewDelegate {
     /// stays on its point through a pinch, a drag and a double tap, and
     /// scaled back each zoom so it keeps its size, as the map's mark does.
     private let ownShip = PageOwnShipView()
+    /// The pilot's marks over the pages, zoomed with them (MarkupLayer).
+    let markup = MarkupLayer()
+    /// The Clear Markups done (MarkupState.clears).
+    var cleared = 0
     static let gap: CGFloat = 8
 
     var images: [UIImage] = [] {
@@ -257,6 +249,7 @@ final class PagesScrollView: UIScrollView, UIScrollViewDelegate {
                 page.backgroundColor = .white
                 container.addSubview(page)
             }
+            container.addSubview(markup)
             laidWidth = 0
             setNeedsLayout()
         }
@@ -300,6 +293,7 @@ final class PagesScrollView: UIScrollView, UIScrollViewDelegate {
             }
             container.frame = CGRect(x: 0, y: 0, width: width, height: max(0, y - Self.gap))
             contentSize = container.frame.size
+            markup.place(width: width, height: container.frame.height)
             placeOwnShip()
         }
         centre()

@@ -32,16 +32,21 @@ final class PlateMapTests: XCTestCase {
         app.buttons["Plan"].tap()
         XCTAssertTrue(app.buttons["More"].waitForExistence(timeout: Self.planner), "the route did not come")
 
-        // The approach into KOSH from the plan's Procedures menus.
-        let approach = app.buttons["Approach"].firstMatch
+        // The approach into KOSH from its line on FPL's timeline: "+ APCH"
+        // once its card says it is open.
+        let approach = app.buttons["add-approach-KOSH"].firstMatch
+        XCTAssertTrue(approach.waitForExistence(timeout: Self.planner), "no + APCH on KOSH's line")
         for _ in 0..<8 where !(approach.exists && approach.isHittable) { app.swipeUp() }
-        XCTAssertTrue(approach.isHittable, "no Approach menu")
+        XCTAssertTrue(approach.isHittable, "no + APCH on KOSH's line")
         approach.tap()
         let ils = app.buttons["ILS RWY 36"].firstMatch
         XCTAssertTrue(ils.waitForExistence(timeout: 10), "no ILS RWY 36 in the menu")
         ils.tap()
         let published = app.buttons["As published"].firstMatch
         if published.waitForExistence(timeout: 5) { published.tap() }
+        // Picked, its fixes are rows on the route's line before KOSH.
+        XCTAssertTrue(app.descendants(matching: .any)["procedure-rows-approach"].waitForExistence(timeout: Self.planner),
+                      "the approach's fixes are not on the line")
 
         // The sheet down to its pill, the map and the plate in sight.
         let grabber = app.buttons.matching(identifier: "Sheet Grabber").firstMatch

@@ -25,19 +25,7 @@ struct ProceduresRow: View {
                     let mine = list.procedures.filter { $0.kind == kind }
                     if !mine.isEmpty {
                         Menu {
-                            Button("None") { plan.pick(nil, kind: kind, at: ident) }
-                            ForEach(mine) { procedure in
-                                if procedure.transitions.isEmpty {
-                                    Button(procedure.name) { plan.pick(ProcedurePick(ident: ident, id: procedure.id, kind: kind, name: procedure.name), kind: kind, at: ident) }
-                                } else {
-                                    Menu(procedure.name) {
-                                        Button("As published") { plan.pick(ProcedurePick(ident: ident, id: procedure.id, kind: kind, name: procedure.name), kind: kind, at: ident) }
-                                        ForEach(procedure.transitions, id: \.self) { transition in
-                                            Button("\(transition) transition") { plan.pick(ProcedurePick(ident: ident, id: procedure.id, kind: kind, name: procedure.name, transition: transition), kind: kind, at: ident) }
-                                        }
-                                    }
-                                }
-                            }
+                            ProcedureMenuItems(ident: ident, kind: kind, list: list)
                         } label: {
                             let picked = plan.procedures.first { $0.ident == ident && $0.kind == kind }
                             Label(picked?.name ?? kind.capitalized, systemImage: "chevron.down")

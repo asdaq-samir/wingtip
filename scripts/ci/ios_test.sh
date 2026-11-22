@@ -12,7 +12,9 @@
 # Both steps take the same tests, by the run's kind. A pull request's
 # (UNIT_ONLY): the unit tests, in WingtipUnit, which builds no UI test.
 # Main's push: those and CardSmokeTests, the one UI smoke (the airport card
-# opened, scrolled and closed). The night's (FULL): every test the Wingtip
+# opened, scrolled and closed), and IPadLayoutTests, the iPad's sidebar,
+# menu bar keys and narrow window, on the iPhone and on the iPad, the
+# primary users' (the owner, 2026-11-21); they skip on the iPhone. The night's (FULL): every test the Wingtip
 # scheme holds; the launch, flow and accessibility tests, the card suites
 # and the store shots are the night's alone. scripts/ci/test_tiers.py reads
 # the three lines below that choose, so every UI test class stays in a tier.
@@ -61,16 +63,25 @@ esac
 
 host=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$WINGTIP_URL').hostname)")
 only=(-only-testing:WingtipTests) scheme=WingtipUnit
-[ "$UNIT_ONLY" = true ] || only+=(-only-testing:WingtipUITests/CardSmokeTests) scheme=Wingtip
+[ "$UNIT_ONLY" = true ] || only+=(-only-testing:WingtipUITests/CardSmokeTests -only-testing:WingtipUITests/IPadLayoutTests) scheme=Wingtip
 [ "$FULL" = true ] && only=() scheme=Wingtip
 
 # This step's part of the log starts here: a verdict above it is another
 # step's, or an earlier run's.
 from=$(($(wc -l < "$log") + 1))
 said() { tail -n "+$from" "$log"; }
+# ENABLE_DEBUG_DYLIB=NO: one app binary, as CI needs no Xcode Previews.
+# With the debug dylib on, the app's Wingtip.debug.dylib and its
+# __preview.dylib both write Wingtip_dependency_info.dat, and Xcode links
+# them in either order. Where the preview stub was linked last (the night's
+# iPhone Duo leg, run 44927130075), the App Intents tool found no
+# AppIntents.framework in that file, skipped the Siri phrases
+# ("Metadata extraction skipped, no AppIntents.framework dependency
+# found"), and the string catalog's check read them as gone.
 # `only` is empty at night, which the Mac's bash 3.2 calls unset under -u.
 xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme "$scheme" -configuration Debug "${opts[@]}" ${only[@]+"${only[@]}"} \
   CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= COMPILER_INDEX_STORE_ENABLE=NO \
+  ENABLE_DEBUG_DYLIB=NO \
   WINGTIP_HOST="$host" WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID" "$action" >> "$log" 2>&1 || true
 
 # Each error with the lines after it (a cause), the tests, the verdict.

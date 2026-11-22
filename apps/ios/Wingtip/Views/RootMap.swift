@@ -21,6 +21,9 @@ struct RootMap: View {
     /// The flight (FlightSession), its parts read where they are drawn.
     @Environment(FlightSession.self) private var flight
     @Environment(\.undoManager) private var undoManager
+    /// This window runs the flight's loops (WindowLead): a second window
+    /// on the iPad draws the same flight without running them again.
+    @Environment(\.leadsLoops) private var leadsLoops
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("layout") private var layoutName = "plan"
     @State private var following = false
@@ -165,8 +168,9 @@ struct RootMap: View {
                 }
                 .padding(.leading, WingtipSpace.md).padding(.top, WingtipSpace.md)
             }
-            // The flight's own work while the map is up (FlightLoops).
-            .modifier(FlightLoops())
+            // The flight's own work while the map is up (FlightLoops), in
+            // the lead window alone (MainWindow), behind the map.
+            .background { if leadsLoops { Color.clear.modifier(FlightLoops()) } }
             // The window's UndoManager for the route's history: shake to undo
             // and the Edit menu (PlanHistory).
             .onAppear { plan.undoManager = undoManager }

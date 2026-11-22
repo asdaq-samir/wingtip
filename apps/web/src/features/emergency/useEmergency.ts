@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { api } from "../../lib/api/client";
 import { plannerAircraft } from "../../lib/api/airplaneQuery";
 import { aircraftKey, shortName } from "../../lib/aircraftChoice";
@@ -35,6 +35,25 @@ export const FIELDS = 12;
 const STEP_DEG = 0.01;
 const at = (deg: number) => Math.round(deg / STEP_DEG) * STEP_DEG;
 
+/** The newest answer the planner gave for this airplane (`airplaneKey`,
+ *  the key's last two parts), from any position asked: shown, ranked from
+ *  own ship now, while the ask for where it is now is under way. The
+ *  query's own previous answer is only one the list itself received, and
+ *  when own ship moved on before the first came (a dry run at 50 times
+ *  crosses STEP_DEG in under half a second, sooner than the planner
+ *  answered on CI's desktop, emergency.spec and flight-critical.spec on
+ *  the nightly of 2026-11-21), each ask was left for the next and the
+ *  list never showed. */
+function newestAnswer(client: QueryClient, airplaneKey: string): EmergencyFields | undefined {
+  let newest: { at: number; data: EmergencyFields } | undefined;
+  for (const query of client.getQueryCache().findAll({ queryKey: ["emergency"] })) {
+    const { data, dataUpdatedAt } = query.state;
+    if (data === undefined || JSON.stringify(query.queryKey.slice(4)) !== airplaneKey) continue;
+    if (!newest || dataUpdatedAt > newest.at) newest = { at: dataUpdatedAt, data: data as EmergencyFields };
+  }
+  return newest?.data;
+}
+
 /**
  * The emergency assistant's one view model (MVVM): the fields within a
  * glide ranked (features/emergency/emergency's bestFields, the engine's best_fields) from
@@ -62,18 +81,19 @@ export function useEmergency() {
   const lat = fix ? at(fix.lat) : 0;
   const lon = fix ? at(fix.lon) : 0;
   const altitude = fix?.altitudeFt != null ? Math.round(fix.altitudeFt / 500) * 500 : null;
+  const client = useQueryClient();
+  const airplaneKey = JSON.stringify([profile, glideRatio]);
   const asked = useQuery({
     queryKey: ["emergency", lat, lon, altitude, profile, glideRatio],
     queryFn: () => api.emergencyFields(lat, lon, altitude, profile, glideRatio),
     enabled: !!fix,
     staleTime: 60_000,
-    placeholderData: (previous) => previous,
+    placeholderData: (previous) => previous ?? newestAnswer(client, airplaneKey),
     meta: { silent: true },
   });
   const data = asked.data;
   // The airplane's figures as the planner last sent them, for the glide
   // worked out on the device: the same airplane's only.
-  const airplaneKey = JSON.stringify([profile, glideRatio]);
   const [lastAirplane, keepAirplane] = useState<{ key: string; airplane: EmergencyFields["airplane"] | null } | null>(null);
   if (data && (lastAirplane?.key !== airplaneKey || lastAirplane.airplane !== (data.airplane ?? null))) {
     keepAirplane({ key: airplaneKey, airplane: data.airplane ?? null });

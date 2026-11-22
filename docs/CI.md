@@ -263,7 +263,7 @@ under a minute.
 | `e2e-images`: the browser suite's images and page, each built once per key (on a pull request too, for its specs) | 1-3 min |
 | `e2e` (2 shards): the `@smoke` and `@flight-critical` browser tests on the phone project, and `sheet-webkit.spec.ts` on `webkit-phone`, against the whole stack, in a slim copy of the Playwright image (`.github/ci-images.hcl`: no full Chrome or Firefox; WebKit kept, keyed on the recipe too by `scripts/ci/playwright_slim_key.sh`) | 5-8 min |
 | `build-images`: every service image whose inputs changed, pushed as `:sha-<commit>` for Promote | 1-4 min |
-| Native iOS's own run: the unit tests and the `CardSmokeTests` UI smoke on the iPhone, then TestFlight | 6-8 min |
+| Native iOS's own run: the unit tests, the `CardSmokeTests` UI smoke and `IPadLayoutTests` on the iPhone and the iPad, each its own runner (`test`, `test (iPad)`: the iPad is the primary users', the owner 2026-11-21), then TestFlight | 6-8 min each |
 | Native Android's own run: the build, unit tests, lint and a debug APK | 4-6 min |
 | CodeQL (`codeql.yml`): the six languages on main's push and on Mondays, `build-mode: none`, no dependency cache; never on a pull request. It takes over once the repository's default setup is off (Settings, Code security, CodeQL analysis, "Disable CodeQL"): GitHub runs that one on every pull request too, and refuses an advanced workflow's results while it is on | 4-6 min |
 

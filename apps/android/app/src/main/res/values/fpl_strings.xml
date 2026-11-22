@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The plan's head, its pills and its foot's toolbar (PlanPage, PlanPills, PlanFoot, PlanMore, RouteOptionsCard). -->
+<resources>
+    <string name="flight_plan">Flight Plan</string>
+    <string name="airplane_info">Airplane info</string>
+    <string name="depart_now">Now</string>
+    <string name="depart_said">Departs %1$s</string>
+    <string name="depart_title">Departs</string>
+    <string name="depart_set">Set</string>
+    <string name="more">More</string>
+    <string name="route_options">Route Options</string>
+    <string name="route_options_none">No other way to fly this route was found.</string>
+    <string name="route_options_use">Use</string>
+    <string name="share_link">Share Link</string>
+    <string name="nav_log_text">Nav Log as Text</string>
+    <string name="nav_log_print">Print the Nav Log</string>
+    <string name="pick_closed">Closed</string>
+    <string name="pick_on_route">On the route already</string>
+    <string name="leaves_at">Leaves %1$s</string>
+    <string name="leaves_title">Leaves Again</string>
+    <!-- The plan's File, its short word in the foot's bar (PlanFoot). -->
+    <string name="file_short">File</string>
+    <!-- The Brief's button, said with its findings' count (PlanFoot). -->
+    <plurals name="brief_findings">
+        <item quantity="one">Brief, %d finding to look at</item>
+        <item quantity="other">Brief, %d findings to look at</item>
+    </plurals>
+</resources>

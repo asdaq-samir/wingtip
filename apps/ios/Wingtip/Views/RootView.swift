@@ -118,8 +118,9 @@ struct RootView: View {
         .lookTint()
         // The key actions' taps, none with Reduce Motion on (Feel).
         .modifier(FeelHost())
-        // ⌘F, ⌘B and ⌘L with a hardware keyboard (KeyboardShortcuts).
-        .modifier(KeyboardShortcuts(search: { search.presented = true }, open: { openScreen($0) }))
+        // The menu bar's commands and their keys for this window, Open
+        // Flight or Track, and a file or words dropped on it (WindowHost).
+        .modifier(WindowHost(search: search, open: { openScreen($0) }, page: { showPage($0) }, run: { await apply($0) }))
         // A link's, Siri's or a Shortcut's ask (the owner's, 2026-11-03:
         // Siri and Shortcuts through App Intents), and a card's own.
         .modifier(CommandHost { await apply($0, then: $1) })
@@ -139,6 +140,14 @@ struct RootView: View {
         } else {
             nav.open(.airport(route))
         }
+    }
+
+    /// A plan's page from the menu bar (View > Search, FPL): the card put
+    /// away so the page is in sight, as the toggle on the map turns it.
+    func showPage(_ page: PlanPage) {
+        nav.close()
+        nav.planPath = []
+        nav.sheetPage = page
     }
 
     /// Ask, with the question the search sent where there is one: its

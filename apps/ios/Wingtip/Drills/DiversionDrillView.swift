@@ -116,10 +116,7 @@ struct DiversionDrillView: View {
     }
 
     /// Minutes and seconds, as a stopwatch shows them: "2:07".
-    private func stopwatch(_ seconds: TimeInterval) -> String {
-        let s = max(0, Int(seconds))
-        return String(format: "%d:%02d", s / 60, s % 60)
-    }
+    private func stopwatch(_ seconds: TimeInterval) -> String { Format.stopwatch(seconds) }
 }
 
 #Preview("DiversionDrillView") {

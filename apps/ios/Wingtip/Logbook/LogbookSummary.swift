@@ -87,13 +87,11 @@ enum LogbookSummary {
         let kept = entries.filter { e in
             words.isEmpty || [e.route, e.aircraft, e.aircraftType, e.remarks].contains { $0?.localizedCaseInsensitiveContains(words) == true }
         }
-        let title = DateFormatter()
-        title.calendar = calendar
-        title.setLocalizedDateFormatFromTemplate("MMMM yyyy")
+        let title = Date.FormatStyle(calendar: calendar).month(.wide).year()
         var order: [String] = []
         var by: [String: [LogbookEntry]] = [:]
         for e in kept.sorted(by: { $0.flownOn > $1.flownOn }) {
-            let name = Day.date(e.flownOn).map(title.string(from:)) ?? e.flownOn
+            let name = Day.date(e.flownOn).map { $0.formatted(title) } ?? e.flownOn
             if by[name] == nil { order.append(name) }
             by[name, default: []].append(e)
         }

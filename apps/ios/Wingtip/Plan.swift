@@ -89,23 +89,15 @@ final class Plan {
     /// The window's, from SwiftUI's environment (RootView): shake to undo,
     /// the Edit menu's Undo and Redo and the bar's Undo (UndoToolbarItem).
     @ObservationIgnored weak var undoManager: UndoManager?
+    /// The step just made that the undo bar offers to take back (UndoBar),
+    /// nil once it has gone; a step that only added or changed a figure has
+    /// none, though shake and the Edit menu still undo it.
+    private(set) var undoOffer: UndoOffer?
     /// Off while a kept plan is put back at launch: that is not the
     /// pilot's change to undo.
     @ObservationIgnored private var remembering = true
 
     var routed: Bool { !dep.isEmpty && !dest.isEmpty }
-
-    /// What is on the page, kept for the air (Kept): after the nav log
-    /// is whole, and as the briefing, checkpoints and side view come. And
-    /// the route itself in the plan history the pilot's devices share
-    /// (PlannedRoute).
-    func keep() {
-        guard routed, course != nil, totals != nil else { return }
-        Kept(dep: dep, dest: dest, stops: stops, aircraft: aircraft, tail: tail, ownAltitudeFt: ownAltitudeFt, altitudeChoice: altitudeChoice,
-             course: course, checkpoints: checkpoints, profile: profile, altitude: altitude, legs: legs, totals: totals,
-             briefing: briefing, briefedAt: briefedAt, plannedAt: plannedAt ?? Date()).save()
-        PlanHistory.planned(routeState, at: plannedAt ?? Date())
-    }
 
     /// The last plan kept, back on the page at launch: planned again when
     /// the planner answers, kept as it was when it does not. The file
@@ -139,8 +131,8 @@ final class Plan {
     /// The route's idents in order, as the route box shows them.
     var idents: [String] { [dep] + stops + [dest] }
 
-    /// The route cleared at once, no question asked: the bar's Undo, shake
-    /// or the Edit menu brings it back (PlanHistory).
+    /// The route cleared, asked first by the route card's ✕: the undo bar,
+    /// shake or the Edit menu brings it back (PlanHistory).
     func clear() {
         dep = ""; dest = ""; stops = []
         ownAltitudeFt = nil; ownAltitudeLegal = false; altitudeChoice = nil; procedures = []
@@ -170,8 +162,11 @@ final class Plan {
         guard next != before else { return }
         lastState = next
         let note = PlanHistory.note(from: before, to: next)
-        if let note, undoManager?.isUndoing != true, undoManager?.isRedoing != true {
-            UIAccessibility.post(notification: .announcement, argument: note)
+        if undoManager?.isUndoing == true || undoManager?.isRedoing == true {
+            undoOffer = nil
+        } else if let note {
+            Announce.alert(note)
+            undoOffer = UndoOffer(note)
         }
         guard let undoManager else { return }
         undoManager.levelsOfUndo = PlanHistory.limit
@@ -190,7 +185,14 @@ final class Plan {
     /// No steps back: a signed-out pilot's routes are not the next one's.
     func forgetHistory() {
         lastState = routeState
+        undoOffer = nil
         undoManager?.forget(self)
+    }
+
+    /// The undo bar's offer put away: its time up, or Undo tapped. A later
+    /// offer in its place stays.
+    func dismissUndo(_ offer: UndoOffer) {
+        if undoOffer?.id == offer.id { undoOffer = nil }
     }
 
     /// The plan's own kept answers (Kept) shown, from `at`, or fresh again
@@ -221,14 +223,6 @@ final class Plan {
         directProblem = "Not changed: no connection. Direct to \(ident ?? "the point") needs the planner; the route is as it was."
         remember()
         noteKept(plannedAt, .plan)
-    }
-
-    /// A procedure picked for a field, in place of any of its kind there;
-    /// nil takes that kind off the field. Planned again.
-    func pick(_ procedure: ProcedurePick?, kind: String, at ident: String) {
-        procedures.removeAll { $0.ident == ident && $0.kind == kind }
-        if let procedure { procedures.append(procedure) }
-        plan()
     }
 
     /// The ways to fly the route as the pilot typed it, for the route
@@ -266,12 +260,13 @@ final class Plan {
     }
 
     /// The briefing, as the web app fetches it as soon as the route is known
-    /// and again as the nav log gives the flight's time.
+    /// and again as the nav log gives the flight's time: for when the
+    /// flight leaves (the departure line's time), not the moment asked.
     func brief(dep: String, dest: String, stops: [String], eteMin: Double?) async {
         // Its hazards placed on the nav log's legs once they are in.
         let legs = BriefLegs.query(course: course, checkpoints: checkpoints, legs: self.legs)
         do {
-            briefing = try await Planner.briefing(dep: dep, dest: dest, stops: stops, eteMin: eteMin, legs: legs)
+            briefing = try await Planner.briefing(dep: dep, dest: dest, stops: stops, depart: extras.depart, eteMin: eteMin, legs: legs)
             briefedAt = Date()
             briefingProblem = nil
             noteKept(nil, .briefing, .weather)

@@ -30,10 +30,7 @@ enum CoachDebriefs {
 
     /// The day a track flew, on the pilot's calendar (`t` in ms).
     static func day(ofMs t: Int, zone: TimeZone = .current) -> String {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = zone
-        let c = calendar.dateComponents([.year, .month, .day], from: Date(timeIntervalSince1970: Double(t) / 1000))
-        return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
+        Day.string(Date(timeIntervalSince1970: Double(t) / 1000), in: zone)
     }
 
     /// The flights the coach looks at: the last half year's, newest first.
@@ -62,9 +59,5 @@ enum CoachDebriefs {
         return out
     }
 
-    private static func date(_ iso: String) -> Date? {
-        let full = ISO8601DateFormatter()
-        full.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return full.date(from: iso) ?? ISO8601DateFormatter().date(from: iso)
-    }
+    private static func date(_ iso: String) -> Date? { AirportWords.date(iso) }
 }

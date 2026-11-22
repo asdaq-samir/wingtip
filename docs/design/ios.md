@@ -423,16 +423,112 @@ opened. Typing "traffic" offers Show Traffic in Do.
      `oneRow`), the microphone and the account beside it, as Maps' search
      row. Under it, at half and full, the route card (`RouteCard`): the
      route (KMSN → KOSH) with the engine's Ready to Fly line and the
-     route's ••• at its right; the figures in one line (distance, ETE,
-     fuel, altitude, airplane); Brief, Nav Log and Airplane; then the
-     route itself (From and To, Routes, the airplane and the altitude),
-     the stops and the rest of the plan. At the pill, the search row
-     alone. With no route, the same place holds Favorites, Recents, Find
-     Nearby and Nearest. Saved Flights, Share and Undo moved from the bar
-     into the route card's ••• with the Profile and Clear Route; Undo
-     stays on shake and the Edit menu (UndoManager); the stops' Edit is
-     at the Stops header's right. Cards still cover the search with
-     their ✕ (the card rule).
+     route's ••• and its ✕ at its right; the figures in one line
+     (distance, ETE, fuel, altitude, airplane); Brief, Nav Log and File,
+     the web's tab bar and its File button (2026-11-21); then Routes,
+     the airplane and the altitude, and the route itself as FPL's
+     timeline (`RouteTimelineSection`, the web's, 2026-11-21): a line a
+     point, the departure, each stop and the destination, their marks
+     joined by the course's magenta (`TimelineThread`). A mark is a
+     filled circle with a white glyph (`TimelineMark`): an airport's
+     "•••" in its flight category's colour, grey with no report, a fuel
+     stop's pump, a waypoint's grey triangle, the airplane's position the
+     tint's location arrow, a field that cannot be flown to the red ✕;
+     it is the point's menu (`RoutePointActions`: More Info, Change…,
+     Direct To, Set Altitude…, a fix, Hold Here…, Remove). The ident is a
+     tap that asks the one search to change the point (Change Stop,
+     Departure, Destination); then the fuel in the tanks there
+     (`TimelineGauge`: the system's capacity gauge and the gallons,
+     "−12 gal" past empty, red under the reserve, each field the airplane
+     leaves a tap to set its fuel in a sheet of a segmented Full / No
+     fuel / Gallons and a number field, Cancel and Done; the engine's
+     `fuel_in_tanks`, each point held to its own flight's reserve and
+     the destination to an IFR alternate's fuel too; the planner's
+     `tanks`); and its time at the right (`TimelineTime`): at the
+     departure when it leaves, the system's compact time picker, one
+     button with the hour and minute wheels, a time of day earlier than
+     now tomorrow's (the planner's `depart`, which the Brief's forecast is
+     read for too, and the weather watch's); at the others their arrival
+     on this iPhone's clock from the planner's minutes, a dash with no
+     airplane. Once any point keeps another zone than the departure's at
+     its arrival (its card's `time_zone`), every point says its own clock
+     with its zone after it, "13:00 MST", the departure's too
+     (`TimelineClock`). A stop says when it leaves again after its
+     takeoff's chips, the same picker from its landing to a day after,
+     kept as its minutes on the ground (the planner's `ground`). A field
+     NASR lists closed, or
+     whose card could not be had, says why in red under it (decision
+     0043; `RouteFieldCards` asks each field's card once). Stops swipe
+     off and drag into another order (Edit at the header's right); Add a
+     Stop is the last row, Type Route at its end (`TypeRouteButton`, the
+     web's keyboard chip: the keyboard glyph in a small bordered capsule
+     opening a sheet whose text field holds the route as it is, to edit
+     or paste a whole one, "KPWK DCT OBK V100 KLAS", read by the engine's
+     `route_read` as item 15 has it, a level group its cruise;
+     `TypedRoute`), then Add (or Remove) Fuel Stops (one tap puts
+     in every stop the planner's rounds found, already checked; a flight
+     short with none offered says why in their place, "No fuel stop in
+     reach on KMSN → KDLH"). Once a field's card says it is open, its
+     line has its runways and the kinds of procedure not picked under it
+     (`TimelineFieldParts`, the web's trays, 5228f10df): "Land RWY 24" and
+     "Takeoff RWY 06", each a menu of its runway ends with Into the Wind
+     first, the planner's own pick where none is (`AirportWords.windEnd`,
+     the planner's `wind_runways`; a pick is its `patterns` or `runways`),
+     a stop's landing then its takeoff; and "+ ARR", "+ APCH" and "+ DEP"
+     for each kind it publishes and the route has none of. A procedure
+     picked is no chip: its fixes are points on the route's line itself
+     (`TimelineProcedureRows`, the owner's option D), an arrival's and an
+     approach's before the field's line, a departure's after it; its head
+     row the kind and the field in the procedure's indigo over its name,
+     the whole row the kind's menu, an approach's with a section of
+     Approach Brief, Dry Run and Plate after the picks
+     (`ApproachMenuItems`): Brief and Dry Run open one sheet on their
+     page, a segmented control at its head (`ApproachLessonSheet`, the
+     web's Learn This Approach), "Training aid, fly the FAA plate" its
+     subtitle; the brief the engine's `approach_brief` items, the dry run
+     its `approach_coaching` steps one at a time with Back and Next at a
+     final's ground speed of 70, 90 or 120 kt; Plate opens the plate's
+     card (`PlateCard`). Each fix an indigo ring with "•••",
+     its menu Direct To and Cross at…, its roles under its name and its
+     altitude at the right, the ring filled in the tint where the airplane
+     is sent direct and the fixes before it dashed, skipped. The From and
+     To fields are the route typed:
+     before it is whole, while one is typed in, and until the planner's
+     course is this route's. Then the
+     rest of the plan. At the pill, the search row alone. With no route,
+     the same place holds Favorites, Recents, Find Nearby and Nearest.
+     The ••• is the web's More (2026-11-21): Route Options (the ways'
+     menu picker), Share Link and Open in ForeFlight; under a divider
+     what the iPhone keeps there as view options, Saved Flights and Show
+     Route As. Undo is the undo bar's (`UndoBar`, the web's per-edit
+     toast): after a stop or a procedure removed, the route cleared or
+     replaced, or a Direct To, the change's words and Undo in a glass
+     capsule over the figures strip for six seconds, the window's
+     UndoManager's step, so shake and ⌘Z take the same one back. The ✕ asks
+     "Clear Route?" in the system's alert. The Profile is the cruise
+     altitude's button, its caution marked on it; the rest of the
+     sharing, the checkpoints for ForeFlight and Print are the Nav Log's
+     Share; Route Checkpoints and Class B Weather are Map Settings'
+     switches. The stops' Edit is at the Stops header's right. Cards
+     still cover the search with their ✕ (the card rule). The figures
+     strip at the sheet's foot reads To, Dist, ETE, Trk and, whenever
+     the airplane's position is known, GPS Alt (no To in flight): Track
+     the magnetic track, the engine's on the route or the fix's true
+     course less the engine's WMM variation, "—" below flying speed.
+     The one search's prompt is "Search" whatever it is up for.
+   - **Picking a point (the web's Add Stop and Change Stop, 2026-11-21).**
+     Add a Stop, and a tap on a point's ident on FPL's timeline, ask the
+     one search to pick (`PointAsk`, `OneSearchModel.ask`): the Search
+     page with the ask's title over the rows in Maps' words, Add Stop,
+     Change Stop, Departure or Destination, and "In place of KMSN" under
+     a change. A tap on a field anywhere on the page -- Nearest, a
+     Favorite, a Recent, a result or a waypoint -- picks it (`Plan.pick`)
+     and the sheet is back on FPL; the field's own Cancel goes back with
+     nothing changed. A field that cannot be picked is greyed with why
+     (`Plan.refusal`, `RefusalLine`): closed, in the planner's label from
+     the engine's `field_status` (decision 0043), or already on the route
+     (the two ends may be one field). The flight's card, the airplanes,
+     Find Nearby, towns and Do are left out while it picks.
    - Still the owner's to decide (2026-11-10): the altitude picker, a
      wheel or a list like ForeFlight's Altitude Advisor.
    - Use `.searchable(text:placement:prompt:)` and
@@ -822,10 +918,11 @@ edged in the waypoint magenta outside the turn, turned with the map
    - Swipe to delete.
    - "Add a Stop After" in each row's menu.
    - After a delete or a change, the system's **Undo**: the window's
-     `UndoManager`, so shake, Command-Z, the Edit menu and an Undo button
-     in the sheet's bar (`arrow.uturn.backward`, shown while there is
-     something to undo) all take it back. Never a toast or an alert
-     ([HIG Alerts][hig-alerts]).
+     `UndoManager`, so shake, Command-Z, the Edit menu and the undo bar
+     at the plan's foot (`UndoBar`, the change's words and Undo for six
+     seconds, as Mail and Photos offer one after a delete) all take it
+     back; the iPad's sidebar keeps the bar's Undo button too
+     (`UndoToolbarItem`). Never an alert ([HIG Alerts][hig-alerts]).
 6. **Options:** flight rules, departure time and airplane, as menus
    (`Picker` with `.menu`), not sliders.
 
@@ -1774,26 +1871,84 @@ Next Flight, Airport Weather and Currency Status.
 **Structure** (`SplitLayout`, as built):
 
 1. **The sidebar** (`NavigationSplitView`, 320–420 pt): the tabs and
-   their content, with the title inline.
+   their content, with the title inline, on the look's solid sheet
+   colour (`WingtipInk.sheet`), as the iPhone's sheet is: on the
+   sidebar's glass over the chart the Search page's rows fell under
+   4.5:1 (the nightly of 2026-11-21).
    - The selected row stays highlighted.
    - Search is at the sidebar's top, the one search.
 2. **The map** as the detail, across the screen. The chart extends under
    the sidebar (`backgroundExtensionEffect()`).
 3. **The inspector** (`.inspector`, 320–440 pt): the second-level card,
    such as an airport, an airplane or a leg. It opens beside the map
-   instead of over it.
-4. **The figure strip** floats in glass along the map's foot, at most
-   520 pt wide.
+   instead of over it. It is put on the split view, a full-height column
+   with its own bar: put on the map, whose bar is hidden, its card had no
+   title, close or gear.
+4. **The figure strip** floats along the map's foot on a solid card in
+   the sheet's colour, at most 640 pt wide, its words in the system's
+   inks: on glass the names failed 4.5:1 even semibold in the tokens'
+   black. Read at arm's length on a kneeboard or a yoke mount, its
+   figures are a size up from the iPhone's (title 2 over footnote,
+   `glanceFigures`; HIG Designing for iPadOS: "Use viewing distance and
+   input mode to help you determine the size and density").
 5. **Brief, Nav Log and Logbook** open in the sidebar's stack. A large
    `Table` takes the detail column only when the pilot asks for it in
    full (the nav log).
 
+6. **The sidebar beside a card** needs the width (`SplitRoom`: 375 pt of
+   sidebar, 375 of inspector and an iPhone's 375 of map, 1,125 pt). In a
+   narrower regular window (any iPad held upright, Split View at a half
+   or two thirds of a 13-inch) the sidebar gives way while a card is up
+   and comes back with its close; ⌘F or Show Sidebar brings it at any
+   time. The iPad mini upright had no map between them.
+7. **Show Sidebar:** with the sidebar up the map has no bar (the
+   sidebar's own holds Hide Sidebar); with it put away the map's bar
+   is up, clear over the chart, for the system's Show Sidebar.
+
 **Compact width** (Slide Over, a narrow window, iPhone Duo's outer
 display, a resized iPhone window): the iPhone's sheet with detents,
-chosen by size class (`RootLayout.of`).
+chosen by size class (`RootLayout.of`). Crossing the size classes moves
+what is open rather than closing it (`Navigator.relayout`): a page in the
+iPhone's card goes to the sidebar's stack and back.
 
-**Pointer and keyboard:** hover effects on rows and map buttons, and
-`keyboardShortcut` for search (⌘F), Direct To and the tabs.
+**Popovers:** a small form or a raw report opened from a control (Type
+Route, a source's raw text) is a popover in a regular width and the
+sheet it was in a compact one (HIG Popovers: "Reserve popovers for wide
+views").
+
+**Windows** (`UIApplicationSupportsMultipleScenes`): each window its own
+map, sidebar and cards (`MainWindow`, its own `Navigator`) over the one
+flight; the app's loops run in one window, the lead (`WindowLead`,
+`AppLoops`, `FlightLoops`). A chart opens in a window of its own beside
+the map (`PictureWindow`, `openWindow(id: "picture", value:)`) from the
+viewer's Open in New Window or a chart row's context menu; links, files
+and Siri go to the app's window, never a chart's
+(`handlesExternalEvents(matching: [])`). An external display shows a
+window as Stage Manager puts it there, nothing of the app's own.
+
+**Menu bar and keyboard** (`WingtipCommands`, iPadOS 26's menu bar and
+the ⌘-held list): File > Open Flight or Track… (⌘O); View > Search (⌘1),
+FPL (⌘2), the system's sidebar and inspector items; Flight > Search (⌘F),
+Brief (⌘B), Nav Log (⌘L), Profile (⌥⌘P), Nearest (⇧⌘N), Checklists
+(⇧⌘K), Saved Flights, Logbook, Your Airplanes, Emergency Assistant (⇧⌘E);
+Wingtip Settings… under the app's Settings. Escape closes a card
+(`CloseButton`). Each window publishes its own (`WindowActions`).
+
+**Pointer:** the system's highlight on bars, lists and Liquid Glass
+buttons; `.hoverEffect(.highlight)` on the plain buttons over the map (the
+figure strip, the alerts, the copilot's and the radio's banners).
+Context menus by a secondary click: a field's row (its preview and the
+plan's three), a chart's row (Open in New Window).
+
+**Drag and drop** (`WindowHost`): a Wingtip flight, a GPX or a KML dropped
+on a window opens as from Files (previewed, never planned unasked);
+words dropped go into the one search; a field's row drags out as its
+identifier.
+
+**Apple Pencil:** Scribble in every field (all stock `TextField`s). The
+plate and chart viewer has Markup (`PlateMarkup`, PencilKit's canvas and
+tool picker): the pilot's notes, kept on the device by the chart's
+address (a new cycle starts clean), forgotten at sign-out.
 
 **Avoid:**
 
@@ -1847,6 +2002,15 @@ behaviour; only the content, its order and the brand tokens are ours.
 | The Watch's stopwatch redrawn each second (`TimelineView`) | `Text(timerInterval:pauseTime:countsDown:showsHours:)`, counted by the system |
 | The airport diagram's own pinch and pan over a picture of the page (`DiagramOwnShip`) | PDFKit's `PDFView` of the FAA's PDF, vector-sharp at any zoom, own ship a `PDFAnnotation` on the page (`DiagramPDFView`). The other charts stay in `UIScrollView` (`PagesScrollView`): the planner serves them as page pictures, not PDFs |
 
+**Replaced (2026-11-21, the stock audit of the whole project).**
+
+| Was hand-built | Now |
+|---|---|
+| Times written by calendar sums and `String(format:)` (`Format.duration`, `navLogTime`, `zulu`, the 24-hour clock in Passengers and BriefLegs, the instruments' and the diversion drill's stopwatch) | Foundation's styles: `Duration.UnitsFormatStyle` (narrow, the web's `Intl.DurationFormat` words), `Duration.TimeFormatStyle` (`.hourMinute`, `.minuteSecond`) and `Date.VerbatimFormatStyle` (`Format.clock`, `Format.stopwatch`) |
+| `DateFormatter` and `ISO8601DateFormatter` made per call (`Day`, the departure window's weekday, the logbook's month titles, the coach's days, the alternate's ETA, the emergency's variation day) | `Date.ISO8601FormatStyle`, `Date.VerbatimFormatStyle` and `Date.FormatStyle`: Sendable values kept in statics; ISO instants read by `AirportWords.date` alone |
+| VoiceOver announcements through `UIAccessibility.post` with an attributes dictionary (`Announce`) | `AccessibilityNotification.Announcement` of an `AttributedString` with its announcement priority (the queue flag iOS 17 deprecated is gone) |
+| The Watch's `CLLocationManager` delegate and a two-second wait for its fix (`WatchLocation`) | `CLLocationUpdate.liveUpdates()` under a `CLServiceSession` asking When In Use, the first fix waited for five seconds before the phone's stands in |
+
 The altitude is picked in the profile, ForeFlight's way (see
 [The profile](#the-profile-foreflights-way)): the system `Slider` turned
 upright beside the chart, the system `.popover` on a waypoint, and a
@@ -1863,6 +2027,9 @@ are gone.
 | Checklist ticks (checklists, emergency, passenger briefing) | iOS has no checkbox (`ToggleStyle.checkbox` is macOS only); the circle-and-tick row is what Reminders draws by hand too |
 | `FactsRow` | Maps' facts row (a caption over each value, four across) has no public SwiftUI view; it is a `Grid`/`HStack` of `Text` |
 | `MapChip` and the captions over pictures | Stock `Label`/`Text` on the system's glass (`glassEffect`), which a line over a busy chart needs to be read; no capsule is drawn |
+| `UndoBar` (the six-second undo offer at the plan's foot) | iOS has no undo toast; the step it takes back is the window's `UndoManager`'s, which shake, ⌘Z and the Edit menu also reach |
+| `PagesScrollView` (the planner's chart pages) | QuickLook zooms a picture but cannot carry own ship on a plate's page; the pages are pictures, not PDFs, so PDFKit does not fit |
+| Unit words in `Format` ("nm", "kt") | `Measurement`'s formatter writes "nmi" and "kn"; pilots and the FAA write "nm" and "kt" |
 | The Reduce Motion branch of `Symbols.swift` | Kept for now: neither the SDK's interfaces nor Apple's pages read on 2026-11-10 say that `symbolEffect` changes under Reduce Motion by itself; remove it once that is shown |
 
 ---

@@ -14,7 +14,7 @@ enum CardTests {
         ("accessibility XXL", ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXL"]),
     ]
 
-    static let searchPrompt = "Search airports and airplanes"
+    static let searchPrompt = "Search"
 
     /// A way into a card.
     enum Entry: CustomStringConvertible {
@@ -108,6 +108,33 @@ enum CardTests {
         app.navigationBars.buttons.matching(NSPredicate(format: "label == 'Close'")).firstMatch
     }
 
+    /// The iPad's layout (SplitLayout, RootLayout.of; docs/design/ios.md
+    /// §16), as the nightly's iPad Pro lays the app out at full screen: the
+    /// plan and the one search in the sidebar, a page pushed on the
+    /// sidebar's stack with Back, a thing's card in the inspector beside
+    /// the map, the map's buttons at its top right, and no sheet ("Avoid: a
+    /// sheet over the map on regular width"), so no grabber and no detents.
+    static var split: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+
+    /// The system's Back on the page on top. On the iPhone the card's bar
+    /// is the only one up and Back its first button; the iPad has more
+    /// than one bar up (the sidebar's, the split view's own with Hide
+    /// Sidebar, the inspector's), so there it is found by UIKit's own
+    /// identifier for it.
+    @MainActor
+    static func back(_ app: XCUIApplication) -> XCUIElement {
+        split ? app.navigationBars.buttons["BackButton"].firstMatch : app.navigationBars.buttons.element(boundBy: 0)
+    }
+
+    /// A page's way back to the plan's search: the card's close, or on the
+    /// iPad, for a page on the sidebar's stack (left of the screen's
+    /// middle), its Back (Navigator.open: a page that is not a thing goes
+    /// on the sidebar's stack there).
+    @MainActor
+    static func away(_ app: XCUIApplication, from shown: XCUIElement) -> XCUIElement {
+        split && shown.frame.midX < app.frame.midX ? back(app) : close(app)
+    }
+
     /// The sheet's grabber on top: the card's while one is up, its value
     /// "Expanded" at full height.
     @MainActor
@@ -145,6 +172,21 @@ enum CardTests {
     static func dragSideways(_ element: XCUIElement, in app: XCUIApplication, left: Bool) {
         let y = app.frame.height > 0 ? element.frame.midY / app.frame.height : 0.5
         drag(element, in: app, to: CGVector(dx: left ? 0.02 : 0.98, dy: y))
+    }
+
+    /// Whether FPL shows the route ending at `ident` within `timeout`: its
+    /// line on the timeline (a whole route, planned), or its word in the
+    /// To field (half a route, or one still being typed or planned).
+    @MainActor
+    static func routeEnds(_ app: XCUIApplication, at ident: String, timeout: TimeInterval) -> Bool {
+        let line = app.buttons["timeline-ident-\(ident)"], to = app.textFields["To"]
+        let until = Date().addingTimeInterval(timeout)
+        while Date() < until {
+            if line.exists { return true }
+            if to.exists, to.value as? String == ident { return true }
+            Thread.sleep(forTimeInterval: 0.5)
+        }
+        return false
     }
 
     /// Swiped up on the screen's middle until `element` is hittable, at
