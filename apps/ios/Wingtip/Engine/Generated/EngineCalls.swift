@@ -565,7 +565,7 @@ extension Engine {
         try Self.rule("endorsement_render", EngineContract.EndorsementRenderInput(template: template, student: student, fields: fields))
     }
 
-    /// The latest not voided of each code, as [code, index] into the record (newest first).
+    /// The latest not voided of each code, as [code, index] into the record (newest first); one whose instructor the FAA airmen registry did not bear out (verified false, instructor_verification) is not signed and counts as voided.
     static func endorsementsInForce(signed: [EngineContract.EndorsementsInForceInputSignedItem]) throws -> [[OpenAPIValueContainer]] {
         try Self.rule("endorsements_in_force", EngineContract.EndorsementsInForceInput(signed: signed))
     }
@@ -1073,6 +1073,11 @@ extension Engine {
     /// The first day an instructor's page lists what they signed: the same day 3 years before today, as 14 CFR 61.189(c) has an instructor keep their records "for at least 3 years" (a 29 February the 28th in a year without one).
     static func instructorRecordsSince(today: String) throws -> String {
         try Self.rule("instructor_records_since", EngineContract.InstructorRecordsSinceInput(today: today))
+    }
+
+    /// Whether the instructor signing an endorsement is a flight instructor the FAA's releasable airmen file bears out, by name (the file has no certificate numbers), not the student themselves and not a record another account signs as (14 CFR 61.1, 61.189(a); AC 61-65K).
+    static func instructorVerification(instructorName: String, studentName: String? = nil, signedOn: String, registry: [EngineContract.InstructorVerificationInputRegistryItem]? = nil, boundElsewhere: [String]? = nil) throws -> EngineContract.InstructorVerificationAnswer {
+        try Self.rule("instructor_verification", EngineContract.InstructorVerificationInput(instructorName: instructorName, studentName: studentName, signedOn: signedOn, registry: registry, boundElsewhere: boundElsewhere))
     }
 
     /// Whether a magnetic course is eastbound, 0 to 179 degrees (14 CFR 91.159(a)).

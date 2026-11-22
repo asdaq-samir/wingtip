@@ -634,11 +634,13 @@ data class SignedEndorsementDto (
     val digest: String,
     val fields: Map<String, String>,
     val id: Long,
+    val instructorVerified: Boolean,
     val signature: String,
     val signedOn: String,
     val studentName: String,
     val text: String,
     val until: String? = null,
+    val verification: String? = null,
     val voided: Boolean
 )
 
@@ -897,6 +899,16 @@ data class Capabilities (
      * Whether this deployment sells the subscription; where not, the page says nothing of one.
      */
     val subscriptions: Boolean
+)
+
+@Serializable
+data class ConnectionDto (
+    val app: String,
+    val can: List<String>,
+    val id: String,
+    val renewedAt: String? = null,
+    val scopes: String? = null,
+    val until: String? = null
 )
 
 @Serializable

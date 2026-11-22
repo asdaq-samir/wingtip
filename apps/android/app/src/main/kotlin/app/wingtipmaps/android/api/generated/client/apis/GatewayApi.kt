@@ -241,6 +241,19 @@ interface GatewayApi {
     suspend fun confirm(@Query("token") token: kotlin.String): Response<Unit>
 
     /**
+     * GET api/me/connections
+     * The signed-in pilot&#39;s connected AI apps
+     * Each connection made through the connector, newest first: its id, the app&#39;s name, the scopes granted, when its token was last issued and until when it may be renewed.
+     * Responses:
+     *  - 200: Their connections
+     *  - 401: No session
+     *
+     * @return [kotlin.collections.List<app.wingtipmaps.android.api.generated.gateway.ConnectionDto>]
+     */
+    @GET("api/me/connections")
+    suspend fun connections(): Response<kotlin.collections.List<app.wingtipmaps.android.api.generated.gateway.ConnectionDto>>
+
+    /**
      * GET api/logbook/currency
      *
      *
@@ -306,6 +319,21 @@ interface GatewayApi {
      */
     @DELETE("api/flights/{id}/track")
     suspend fun deleteTrack(@Path("id") id: kotlin.Long): Response<Unit>
+
+    /**
+     * DELETE api/me/connections/{id}
+     * Disconnect one connected AI app
+     * Its access and refresh tokens are revoked at once, so the app&#39;s next call is refused; the consent goes with the last connection through that app, so connecting again asks again.
+     * Responses:
+     *  - 204: Disconnected
+     *  - 401: No session
+     *  - 404: No such connection of theirs
+     *
+     * @param id The connection&#39;s id, as listed
+     * @return [Unit]
+     */
+    @DELETE("api/me/connections/{id}")
+    suspend fun disconnect(@Path("id") id: kotlin.String): Response<Unit>
 
     /**
      * DELETE api/training/instructors/{id}

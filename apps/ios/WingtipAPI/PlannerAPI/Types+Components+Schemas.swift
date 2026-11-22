@@ -11139,6 +11139,90 @@ extension Components {
                 case vorCheck
             }
         }
+        /// Whether the FAA airmen registry bears the instructor out (the
+        /// engine's instructor_verification).
+        ///
+        /// - Remark: Generated from `#/components/schemas/InstructorVerification`.
+        public struct InstructorVerification: Codable, Hashable, Sendable {
+            /// verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InstructorVerification/reason`.
+            public var reason: Swift.String
+            /// The FAA's unique id of the record matched, where one was.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InstructorVerification/registry_id`.
+            public var registryId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/InstructorVerification/verified`.
+            public var verified: Swift.Bool
+            /// The verdict as the pilot reads it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InstructorVerification/words`.
+            public var words: Swift.String
+            /// Creates a new `InstructorVerification`.
+            ///
+            /// - Parameters:
+            ///   - reason: verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.
+            ///   - registryId: The FAA's unique id of the record matched, where one was.
+            ///   - verified:
+            ///   - words: The verdict as the pilot reads it.
+            public init(
+                reason: Swift.String,
+                registryId: Swift.String? = nil,
+                verified: Swift.Bool,
+                words: Swift.String
+            ) {
+                self.reason = reason
+                self.registryId = registryId
+                self.verified = verified
+                self.words = words
+            }
+            public enum CodingKeys: String, CodingKey {
+                case reason
+                case registryId = "registry_id"
+                case verified
+                case words
+            }
+        }
+        /// An instructor about to sign for a student: both names as on their
+        /// certificates, the day, and the FAA records other accounts sign as.
+        ///
+        /// - Remark: Generated from `#/components/schemas/InstructorVerificationAsk`.
+        public struct InstructorVerificationAsk: Codable, Hashable, Sendable {
+            /// FAA unique ids another Wingtip account already signs as.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InstructorVerificationAsk/bound_elsewhere`.
+            public var boundElsewhere: [Swift.String]?
+            /// - Remark: Generated from `#/components/schemas/InstructorVerificationAsk/instructor_name`.
+            public var instructorName: Swift.String
+            /// - Remark: Generated from `#/components/schemas/InstructorVerificationAsk/signed_on`.
+            public var signedOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/InstructorVerificationAsk/student_name`.
+            public var studentName: Swift.String?
+            /// Creates a new `InstructorVerificationAsk`.
+            ///
+            /// - Parameters:
+            ///   - boundElsewhere: FAA unique ids another Wingtip account already signs as.
+            ///   - instructorName:
+            ///   - signedOn:
+            ///   - studentName:
+            public init(
+                boundElsewhere: [Swift.String]? = nil,
+                instructorName: Swift.String,
+                signedOn: Swift.String,
+                studentName: Swift.String? = nil
+            ) {
+                self.boundElsewhere = boundElsewhere
+                self.instructorName = instructorName
+                self.signedOn = signedOn
+                self.studentName = studentName
+            }
+            public enum CodingKeys: String, CodingKey {
+                case boundElsewhere = "bound_elsewhere"
+                case instructorName = "instructor_name"
+                case signedOn = "signed_on"
+                case studentName = "student_name"
+            }
+        }
         /// One ITWS alert (wingtip.itws): what (`alert`: microburst, wind
         /// shear, gust front, tornado, storm cell) and its words as a pilot is
         /// told them ("Runway 27L arrival microburst alert 40 kt, runway to 3

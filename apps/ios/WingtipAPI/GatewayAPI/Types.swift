@@ -275,6 +275,20 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /api/me/checkpoint-notes`.
     /// - Remark: Generated from `#/paths//api/me/checkpoint-notes/delete(forgetNotes)`.
     func forgetNotes(_ input: Operations.ForgetNotes.Input) async throws -> Operations.ForgetNotes.Output
+    /// The signed-in pilot's connected AI apps
+    ///
+    /// Each connection made through the connector, newest first: its id, the app's name, the scopes granted, when its token was last issued and until when it may be renewed.
+    ///
+    /// - Remark: HTTP `GET /api/me/connections`.
+    /// - Remark: Generated from `#/paths//api/me/connections/get(connections)`.
+    func connections(_ input: Operations.Connections.Input) async throws -> Operations.Connections.Output
+    /// Disconnect one connected AI app
+    ///
+    /// Its access and refresh tokens are revoked at once, so the app's next call is refused; the consent goes with the last connection through that app, so connecting again asks again.
+    ///
+    /// - Remark: HTTP `DELETE /api/me/connections/{id}`.
+    /// - Remark: Generated from `#/paths//api/me/connections/{id}/delete(disconnect)`.
+    func disconnect(_ input: Operations.Disconnect.Input) async throws -> Operations.Disconnect.Output
     /// The signed-in pilot's telephone number and home base
     ///
     /// What a flight plan's item 19 C/ asks with the pilot in command's name (AIM Appendix 4), both at once; blank is none. Their name is set with PUT /api/training/name.
@@ -1068,6 +1082,24 @@ extension APIProtocol {
     /// - Remark: Generated from `#/paths//api/me/checkpoint-notes/delete(forgetNotes)`.
     public func forgetNotes(headers: Operations.ForgetNotes.Input.Headers = .init()) async throws -> Operations.ForgetNotes.Output {
         try await forgetNotes(Operations.ForgetNotes.Input(headers: headers))
+    }
+    /// The signed-in pilot's connected AI apps
+    ///
+    /// Each connection made through the connector, newest first: its id, the app's name, the scopes granted, when its token was last issued and until when it may be renewed.
+    ///
+    /// - Remark: HTTP `GET /api/me/connections`.
+    /// - Remark: Generated from `#/paths//api/me/connections/get(connections)`.
+    public func connections(headers: Operations.Connections.Input.Headers = .init()) async throws -> Operations.Connections.Output {
+        try await connections(Operations.Connections.Input(headers: headers))
+    }
+    /// Disconnect one connected AI app
+    ///
+    /// Its access and refresh tokens are revoked at once, so the app's next call is refused; the consent goes with the last connection through that app, so connecting again asks again.
+    ///
+    /// - Remark: HTTP `DELETE /api/me/connections/{id}`.
+    /// - Remark: Generated from `#/paths//api/me/connections/{id}/delete(disconnect)`.
+    public func disconnect(path: Operations.Disconnect.Input.Path) async throws -> Operations.Disconnect.Output {
+        try await disconnect(Operations.Disconnect.Input(path: path))
     }
     /// The signed-in pilot's telephone number and home base
     ///

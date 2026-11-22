@@ -679,7 +679,7 @@ fun Engine.endorsementRender(template: String, student: String? = null, fields: 
     rule("endorsement_render", EngineContract.EndorsementRenderInput(template = template, student = student, fields = fields))
 
 /**
- * The latest not voided of each code, as [code, index] into the record (newest first).
+ * The latest not voided of each code, as [code, index] into the record (newest first); one whose instructor the FAA airmen registry did not bear out (verified false, instructor_verification) is not signed and counts as voided.
  */
 fun Engine.endorsementsInForce(signed: List<EngineContract.EndorsementsInForceInputSignedItem>): Result<List<List<JsonElement>>> =
     rule("endorsements_in_force", EngineContract.EndorsementsInForceInput(signed = signed))
@@ -1289,6 +1289,12 @@ fun Engine.inspectionsDue(annualOn: String? = null, eltOn: String? = null, stati
  */
 fun Engine.instructorRecordsSince(today: String): Result<String> =
     rule("instructor_records_since", EngineContract.InstructorRecordsSinceInput(today = today))
+
+/**
+ * Whether the instructor signing an endorsement is a flight instructor the FAA's releasable airmen file bears out, by name (the file has no certificate numbers), not the student themselves and not a record another account signs as (14 CFR 61.1, 61.189(a); AC 61-65K).
+ */
+fun Engine.instructorVerification(instructorName: String, studentName: String? = null, signedOn: String, registry: List<EngineContract.InstructorVerificationInputRegistryItem>? = null, boundElsewhere: List<String>? = null): Result<EngineContract.InstructorVerificationAnswer> =
+    rule("instructor_verification", EngineContract.InstructorVerificationInput(instructorName = instructorName, studentName = studentName, signedOn = signedOn, registry = registry, boundElsewhere = boundElsewhere))
 
 /**
  * Whether a magnetic course is eastbound, 0 to 179 degrees (14 CFR 91.159(a)).

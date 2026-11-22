@@ -798,6 +798,53 @@ extension Components {
                 case subscriptions
             }
         }
+        /// - Remark: Generated from `#/components/schemas/ConnectionDto`.
+        public struct ConnectionDto: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ConnectionDto/app`.
+            public var app: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ConnectionDto/can`.
+            public var can: [Swift.String]
+            /// - Remark: Generated from `#/components/schemas/ConnectionDto/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ConnectionDto/renewedAt`.
+            public var renewedAt: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ConnectionDto/scopes`.
+            public var scopes: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ConnectionDto/until`.
+            public var until: Swift.String?
+            /// Creates a new `ConnectionDto`.
+            ///
+            /// - Parameters:
+            ///   - app:
+            ///   - can:
+            ///   - id:
+            ///   - renewedAt:
+            ///   - scopes:
+            ///   - until:
+            public init(
+                app: Swift.String,
+                can: [Swift.String],
+                id: Swift.String,
+                renewedAt: Swift.String? = nil,
+                scopes: Swift.String? = nil,
+                until: Swift.String? = nil
+            ) {
+                self.app = app
+                self.can = can
+                self.id = id
+                self.renewedAt = renewedAt
+                self.scopes = scopes
+                self.until = until
+            }
+            public enum CodingKeys: String, CodingKey {
+                case app
+                case can
+                case id
+                case renewedAt
+                case scopes
+                case until
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/ConnectorGrantDto`.
         public struct ConnectorGrantDto: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/ConnectorGrantDto/app`.
@@ -4076,6 +4123,8 @@ extension Components {
             public var fields: Components.Schemas.SignedEndorsementDto.FieldsPayload
             /// - Remark: Generated from `#/components/schemas/SignedEndorsementDto/id`.
             public var id: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/SignedEndorsementDto/instructorVerified`.
+            public var instructorVerified: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/SignedEndorsementDto/signature`.
             public var signature: Swift.String
             /// - Remark: Generated from `#/components/schemas/SignedEndorsementDto/signedOn`.
@@ -4086,6 +4135,8 @@ extension Components {
             public var text: Swift.String
             /// - Remark: Generated from `#/components/schemas/SignedEndorsementDto/until`.
             public var until: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SignedEndorsementDto/verification`.
+            public var verification: Swift.String?
             /// - Remark: Generated from `#/components/schemas/SignedEndorsementDto/voided`.
             public var voided: Swift.Bool
             /// Creates a new `SignedEndorsementDto`.
@@ -4095,33 +4146,39 @@ extension Components {
             ///   - digest:
             ///   - fields:
             ///   - id:
+            ///   - instructorVerified:
             ///   - signature:
             ///   - signedOn:
             ///   - studentName:
             ///   - text:
             ///   - until:
+            ///   - verification:
             ///   - voided:
             public init(
                 code: Swift.String,
                 digest: Swift.String,
                 fields: Components.Schemas.SignedEndorsementDto.FieldsPayload,
                 id: Swift.Int,
+                instructorVerified: Swift.Bool,
                 signature: Swift.String,
                 signedOn: Swift.String,
                 studentName: Swift.String,
                 text: Swift.String,
                 until: Swift.String? = nil,
+                verification: Swift.String? = nil,
                 voided: Swift.Bool
             ) {
                 self.code = code
                 self.digest = digest
                 self.fields = fields
                 self.id = id
+                self.instructorVerified = instructorVerified
                 self.signature = signature
                 self.signedOn = signedOn
                 self.studentName = studentName
                 self.text = text
                 self.until = until
+                self.verification = verification
                 self.voided = voided
             }
             public enum CodingKeys: String, CodingKey {
@@ -4129,11 +4186,13 @@ extension Components {
                 case digest
                 case fields
                 case id
+                case instructorVerified
                 case signature
                 case signedOn
                 case studentName
                 case text
                 case until
+                case verification
                 case voided
             }
         }
