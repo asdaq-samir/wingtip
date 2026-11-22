@@ -43,6 +43,12 @@ enum AppCommand: Equatable, Sendable {
     /// A card a link names by its key (`tfr=`, `navaid=`): a TFR's or a
     /// VOR's, opened as a tap on it opens it.
     case card(SheetPage)
+    /// A document in the reader, at its place, as a link's `doc=` names
+    /// it (DocPlace): a cite, a bookmark or a page shared.
+    case document(DocPlace)
+    /// A PDF handed over from Files, the share sheet or a drop: added to
+    /// the pilot's own documents and opened (DocumentLibrary).
+    case addDocument(URL)
 }
 
 /// The root view's commands, handed down the views as SwiftUI hands down

@@ -49,6 +49,9 @@ final class Navigator {
     /// 2026-11-14: the airplanes' Adds go to the one search), which the
     /// root hands the search and clears.
     var airplaneAsked: OneSearchModel.Keeping?
+    /// The document open in the reader over this window, and where in it
+    /// (ReaderCover): a cite tapped, a library row, a link's `doc=`.
+    var reading: DocPlace?
 
     /// The cards put away and the one search up for an airplane to fly as
     /// the pilot's or to keep, its placeholder saying which.

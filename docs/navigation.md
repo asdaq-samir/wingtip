@@ -91,7 +91,7 @@ Android, the address on the web) or `wingtipmaps://plan?open=<id>` from another 
 | `logbook` | Logbook | yes | yes | yes | The pilot's logbook and currency. |
 | `coach` | Coach | yes | yes | yes | The training coach. |
 | `minimums` | Personal Minimums | yes | yes | yes | The weather the pilot will not take off or land in. |
-| `documents` | Documents | yes | -- | -- | The documents library: the FAA's regulations, AIM, handbooks and circulars in their current editions, and the pilot's own PDFs on the device; a cited rule anywhere opens it at its paragraph. |
+| `documents` | Documents | yes | yes | -- | The documents library: the FAA's regulations, AIM, handbooks and circulars in their current editions, and the pilot's own PDFs on the device; a cited rule anywhere opens it at its paragraph. |
 | `guide` | Guide | yes | yes | -- | How the app works, and the practice drills. |
 | `downloads` | Downloads | -- | yes | yes | Charts kept for flying with no signal. |
 | `passengers` | Passenger Briefing | -- | yes | yes | The passenger briefing. |
@@ -116,6 +116,7 @@ The plan's own keys go beside it, and alone they open what they name:
 - `tail`: A shared plan's N-number, only where its pilot chose to send it.
 - `tanks`: A shared plan's fuel as the airplane leaves a field, where its pilot set it on a gauge: idents and whole gallons, KOSH:30,KJVL:0 (the planner's tanks); none named, full.
 - `share`: A saved flight shared by its pilot, by its token (GET /api/shared-flights/{token}); read-only, until they stop sharing it.
+- `doc`: A document open in the reader and where in it: the library's by its name (aim, cfr-14-91, phak) or the pilot's own (own:<id>), after an @ a section, a paragraph or a page (aim@7-1-5, cfr-14-91@91.155, phak@p42).
 
 <!-- END generated -->
 
@@ -217,7 +218,7 @@ list is where it was.
 | Emergency assistant | Flying head; voice; search → Do → Emergency Assistant | 1 in flight, **2** on the ground | Its frequencies copy; the one full-height card, ✕ top right, nothing dimmed |
 | Settings (was Account and Settings, Setup) | account button (the page itself, no menu: the owner, 2026-11-10) | 1 → 2 → **1** | Layout tiles in place; covers the title row and the search, its ✕ back |
 | Airplanes, Flights, Logbook, Minimums, Documents, Checklists, Coach, Practice | account button → row on the page | 2 | Minimums inline; logbook entry edited in the row, delete with an Undo row; airplane in a popover form |
-| Documents (new, 2026-11-21) | account button → Documents; the search's Do ("documents"); a cite tapped anywhere (the Brief's why, an airspace card's entry rules) opens the reader at its paragraph | 2; a cite **1** | Own PDFs added, renamed in the row, deleted with an Undo; Keep for the Air at each row's end; the reader's bookmarks and its page left at kept on the device; `?doc=` (`aim@7-1-5`, `cfr-14-91@91.155`, `phak@p42`) opens the reader from a link, a web-only address key until the phones follow (decision 0038) |
+| Documents (new, 2026-11-21) | account button → Documents; the search's Do ("documents"); a cite tapped anywhere (the Brief's why, an airspace card's entry rules) opens the reader at its paragraph | 2; a cite **1** | Own PDFs added, renamed in the row, deleted with an Undo; Keep for the Air at each row's end; the reader's bookmarks and its page left at kept on the device; `?doc=` (`aim@7-1-5`, `cfr-14-91@91.155`, `phak@p42`) opens the reader from a link on the web and the iPhone and iPad (a `doc` key of design/screens.json), Android to follow (decision 0038). On the iPhone and iPad (2026-11-21): the same row on You, own PDFs also from the share sheet and by drag and drop, Keep in iCloud (off by default), the reader's Contents in the inspector beside the page on an iPad, Markup with Apple Pencil, a document in a window of its own (Open in New Window), ⌘F, ⌘[ and ⌘] |
 | Status, Guide, About | account button → row on the page; About also the map's or the search page's Legal | 3 → **2** | -- |
 | Checkride, Instructing | account button → Logbook → row | 3 | Checkride inline |
 | Squawks | account button → Airplanes → airplane → row | 4 | Squawks inline |
