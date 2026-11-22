@@ -11,7 +11,8 @@ enum AppCommand: Equatable, Sendable {
     /// The same route, then its Brief opened ("brief my flight to
     /// Oshkosh").
     case brief(ident: String)
-    /// A whole route, as a shared link carries one.
+    /// A whole route planned: a shared flight's Use This Plan, a saved
+    /// route from Siri, the demo flight; never a link straight from outside.
     case planRoute(dep: String, stops: [String], dest: String)
     /// Direct to the place said, from where the airplane is.
     case directTo(place: String)

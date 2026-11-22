@@ -22,6 +22,7 @@ card-scroll.spec.ts
 chart-dimmer.spec.ts
 checkride.spec.ts
 coach.spec.ts
+connected-apps.spec.ts
 copilot.spec.ts
 debrief.spec.ts
 delete-account.spec.ts

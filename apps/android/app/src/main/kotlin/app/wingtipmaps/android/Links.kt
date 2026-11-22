@@ -10,7 +10,7 @@ import java.net.URLDecoder
 /**
  * The site's links the app opens in place of Chrome (App Links, the
  * manifest): the sign-in link emailed to the pilot, and the web app's own
- * address for a route or a field (`/app/plan?dep=&dest=&stops=`,
+ * address for a route (previewed first) or a field (`/app/plan?dep=&dest=&stops=`,
  * `?place=`), and one of the app's screens by its name (`?open=logbook`,
  * design/screens.json; the same from the app's own
  * `wingtipmaps://plan?open=logbook`). Read with the JVM's own URI, not Android's, so a unit test
@@ -21,10 +21,6 @@ object Links {
 
     /** The sign-in link's one-time token (Session.open). */
     data class SignIn(val token: String) : Link
-
-    /** A route to plan, its idents as the planner reads them, and the
-     *  screen the link names beside it, opened once it is in. */
-    data class Route(val dep: String, val dest: String, val stops: List<String>, val then: Screen? = null) : Link
 
     /** One of the app's screens by its name. */
     data class Open(val screen: Screen) : Link
@@ -37,9 +33,10 @@ object Links {
      *  shared in, by its own name. */
     data class Doc(val place: String) : Link
 
-    /** A flight another pilot sent (`open=shared`): its plan in the link,
-     *  or a saved flight's share token to read it by. Previewed first,
-     *  never planned by itself over the receiver's own plan. */
+    /** A flight another pilot sent (`open=shared`), or any route link
+     *  (`dep=&dest=`): its plan in the link, or a saved flight's share
+     *  token to read it by. Previewed first, never planned by itself over
+     *  the receiver's own plan. */
     data class Shared(val plan: SharedPlan?, val token: String?) : Link
 
     /**
@@ -64,27 +61,23 @@ object Links {
         return planner(query, screen)
     }
 
-    /** The planner's address read: a route, a field, or a screen alone. */
+    /** The planner's address read: a shared route, a field, or a screen alone. */
     private fun planner(
         query: Map<String, String>,
         screen: Screen?,
     ): Link? {
-        // A shared flight before the route: its keys are a route's, but it
-        // is shown first and planned only at Use This Plan.
+        // A shared flight, and any route link with both ends: any page or
+        // app can open one, so it is previewed as a shared flight is and
+        // replaces the pilot's plan only at Use This Plan (the deep
+        // security review of 2026-11-21, N3). A screen named beside a
+        // route is not opened over the preview.
         if (screen == Screen.SHARED) {
             val token = query[LinkKey.SHARE.key]?.trim()?.takeIf { it.isNotEmpty() && it.length <= 32 }
             if (token != null) return Shared(null, token)
-            return SharedPlan.of(query)?.let { Shared(it, null) }
         }
         DocPlace.parse(query["doc"])?.let { return Doc(it.text) }
-        val dep = ident(query["dep"])
-        val dest = ident(query["dest"])
-        // A route is the address's main thing: with both ends it is
-        // planned; a field alone opens its card.
-        if (dep.isNotEmpty() && dest.isNotEmpty()) {
-            val stops = query["stops"].orEmpty().split(",").map { ident(it) }.filter { it.isNotEmpty() }
-            return Route(dep, dest, stops, screen)
-        }
+        SharedPlan.of(query)?.let { return Shared(it, null) }
+        if (screen == Screen.SHARED) return null
         val place = ident(query["place"])
         return if (place.isNotEmpty()) Place(place) else screen?.let { Open(it) }
     }

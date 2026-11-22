@@ -1,6 +1,7 @@
 package app.wingtipmaps.android
 
 import app.wingtipmaps.android.navigation.generated.Screen
+import app.wingtipmaps.android.share.SharedPlan
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -8,15 +9,18 @@ import org.junit.Test
 /** The site's links as the app reads them (Links): the web app's own
  *  address for a route or a field, and the sign-in link. */
 class LinksTest {
+    /** N3, 2026-11-21: any page or app can open a route link, so it is
+     *  previewed as a shared flight is, never planned over the pilot's own. */
     @Test
-    fun aRoutesLinkGivesItsEndsAndStopsAsThePlannerReadsThem() {
+    fun aRoutesLinkIsPreviewedWithItsEndsAndStopsAsThePlannerReadsThem() {
         val link = Links.parse("https://wingtipmaps.app/app/plan?dep=kugn&dest=KMSN&stops=kjvl,%20krfd&aircraft=c172")
-        assertEquals(Links.Route("KUGN", "KMSN", listOf("KJVL", "KRFD")), link)
+        assertEquals(Links.Shared(SharedPlan("KUGN", "KMSN", listOf("KJVL", "KRFD")), null), link)
+        assertEquals(Links.Shared(SharedPlan("C81", "KDLH"), null), Links.parse("wingtipmaps://plan?dep=C81&dest=KDLH"))
     }
 
     @Test
     fun aRouteWithNoStopsHasNone() {
-        assertEquals(Links.Route("KUGN", "KMSN", emptyList()), Links.parse("https://wingtipmaps.app/app/plan?dep=KUGN&dest=KMSN&stops="))
+        assertEquals(Links.Shared(SharedPlan("KUGN", "KMSN"), null), Links.parse("https://wingtipmaps.app/app/plan?dep=KUGN&dest=KMSN&stops="))
     }
 
     @Test
@@ -60,9 +64,9 @@ class LinksTest {
     }
 
     @Test
-    fun aScreenBesideARouteOpensOnceTheRouteIsIn() {
+    fun aScreenBesideARouteIsNotOpenedOverThePreview() {
         assertEquals(
-            Links.Route("C81", "KDLH", emptyList(), Screen.BRIEF),
+            Links.Shared(SharedPlan("C81", "KDLH"), null),
             Links.parse("https://wingtipmaps.app/app/plan?dep=C81&dest=KDLH&open=brief"),
         )
     }
@@ -85,7 +89,7 @@ class LinksTest {
         assertNull(Links.parse("wingtipmaps://plan?x=%"))
         assertNull(Links.parse("https://wingtipmaps.app/app/plan?dep=%zz&dest=KMSN"))
         assertEquals(
-            Links.Route("KUGN", "KMSN", emptyList()),
+            Links.Shared(SharedPlan("KUGN", "KMSN"), null),
             Links.parse("https://wingtipmaps.app/app/plan?dep=KUGN&dest=KMSN&junk=%E0%A4%A"),
         )
         assertNull(Links.parse("https://wingtipmaps.app/api/auth/magic-link/verify?token=%", host = "wingtipmaps.app"))

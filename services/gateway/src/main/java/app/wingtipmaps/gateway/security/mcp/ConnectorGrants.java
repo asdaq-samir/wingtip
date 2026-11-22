@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.security.mcp;
 
+import app.wingtipmaps.gateway.dto.ConnectionDto;
 import app.wingtipmaps.gateway.dto.ConnectorGrantDto;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -120,6 +121,60 @@ public class ConnectorGrants {
 
     private static Instant instant(Timestamp at) {
         return at == null ? null : at.toInstant();
+    }
+
+    /**
+     * The pilot's connections, for You's Connected Apps: each with a token
+     * issued (a code not yet traded for one is no connection yet), newest
+     * first. The pilot's own rows only: principal_name is their id.
+     */
+    public List<ConnectionDto> connections(long pilotId) {
+        return jdbc.query(
+                "SELECT a.id, c.client_name, a.authorized_scopes, a.access_token_issued_at, a.refresh_token_expires_at"
+                        + " FROM oauth2_authorization a JOIN oauth2_registered_client c ON c.id = a.registered_client_id"
+                        + " WHERE a.principal_name = ? AND a.access_token_value IS NOT NULL"
+                        + " ORDER BY a.access_token_issued_at DESC",
+                (r, n) -> new ConnectionDto(
+                        r.getString(1),
+                        r.getString(2),
+                        r.getString(3),
+                        instant(r.getTimestamp(4)),
+                        instant(r.getTimestamp(5))),
+                Long.toString(pilotId));
+    }
+
+    /**
+     * Ends one of the pilot's connections from Wingtip's side (the deep
+     * security review's N2): its row goes, with its access and refresh
+     * tokens and the spent ones kept against replay, so the next MCP call
+     * with either token is refused (live) and no refresh is granted. The
+     * consent behind it goes too once no other connection of theirs stands
+     * through that app, so connecting again asks again. False where the
+     * id is not one of this pilot's: another pilot's connection is never
+     * touched and reads as no such connection.
+     */
+    public boolean disconnect(long pilotId, String connectionId) {
+        String principal = Long.toString(pilotId);
+        List<String> client = jdbc.queryForList(
+                "SELECT registered_client_id FROM oauth2_authorization WHERE id = ? AND principal_name = ?",
+                String.class,
+                connectionId,
+                principal);
+        if (client.isEmpty()) {
+            return false;
+        }
+        kept.forget(principal);
+        jdbc.update("DELETE FROM oauth2_spent_refresh_token WHERE authorization_id = ?", connectionId);
+        jdbc.update("DELETE FROM oauth2_authorization WHERE id = ? AND principal_name = ?", connectionId, principal);
+        jdbc.update(
+                "DELETE FROM oauth2_authorization_consent n WHERE n.registered_client_id = ? AND n.principal_name = ?"
+                        + " AND NOT EXISTS (SELECT 1 FROM oauth2_authorization a"
+                        + " WHERE a.registered_client_id = n.registered_client_id AND a.principal_name = n.principal_name)",
+                client.get(0),
+                principal);
+        // Again after the row is gone, as forget does.
+        kept.forget(principal);
+        return true;
     }
 
     /** Ends every connection the pilot made: their tokens stop working at once. */

@@ -11,6 +11,8 @@ import app.wingtipmaps.gateway.planner.model.PlannerExperienceAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerExperienceItem;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
 import app.wingtipmaps.gateway.planner.model.PlannerInspectionsAsk;
+import app.wingtipmaps.gateway.planner.model.PlannerInstructorVerification;
+import app.wingtipmaps.gateway.planner.model.PlannerInstructorVerificationAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerPilotNotes;
 import app.wingtipmaps.gateway.planner.model.PlannerPilotNotesForgotten;
 import app.wingtipmaps.gateway.planner.model.PlannerRecordsBatch;
@@ -70,6 +72,11 @@ public interface PlannerApi {
 
     @PostExchange("/api/pilot/endorsement-fill")
     PlannerEndorsementFilled fill(@RequestBody PlannerEndorsementFillAsk ask);
+
+    /** Whether the FAA airmen registry bears out the instructor about to
+     *  sign (the engine's instructor_verification). */
+    @PostExchange("/api/pilot/instructor-verification")
+    PlannerInstructorVerification verifyInstructor(@RequestBody PlannerInstructorVerificationAsk ask);
 
     /** Each airplane's inspections_due, in the order asked: an aircraft
      *  list's and the reminders' one call (PlannerClient#inspections). */

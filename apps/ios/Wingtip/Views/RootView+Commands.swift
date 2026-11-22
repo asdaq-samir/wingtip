@@ -54,7 +54,9 @@ extension RootView {
         case .weather(let ident):
             open(ident)
         case .planRoute(let dep, let stops, let dest):
-            // A route shared from the site, planned here as it was there.
+            // A shared flight's Use This Plan, a saved route from Siri or the
+            // demo flight: planned as asked. A link never lands here
+            // directly; it is previewed first (Links, .sharedFlight).
             plan.dep = dep; plan.stops = stops; plan.dest = dest
             showPlan()
             plan.plan()
