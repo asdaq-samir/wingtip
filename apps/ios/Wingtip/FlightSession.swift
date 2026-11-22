@@ -31,5 +31,8 @@ final class FlightSession {
         let spoken = SpokenAlerts()
         self.spoken = spoken
         tracking = Tracking(spoken: spoken)
+        // The cockpit receiver's GPS weighed against the device's for own
+        // ship after each read (OwnShipSource).
+        Receiver.shared.onOwnship = { [weak ownShip] own, state in ownShip?.fromReceiver(own, state) }
     }
 }

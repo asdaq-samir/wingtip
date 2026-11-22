@@ -196,6 +196,9 @@ struct BriefView: View {
                         }
                     }
                 }
+                // The route's fields as the cockpit's receiver heard them
+                // over FIS-B, with their age: weather with no internet.
+                if plan.routed { ReceiverBriefSection(idents: plan.idents) }
                 // The route's NOTAMs, fetched for Ready to fly (91.103, AIM 5-1-3).
                 if plan.routed { NotamsSection() }
                 // The passengers' briefing (91.107, the SAFETY briefing) and

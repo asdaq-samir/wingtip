@@ -16,6 +16,7 @@ import SwiftUI
 /// avoiding it.
 struct AirplaneCard: View {
     @Environment(Tracking.self) private var tracking
+    @Environment(Receiver.self) private var receiver
     let hex: String
     @Environment(\.undoManager) private var undoManager
     @Environment(\.cardAtPill) private var atPill
@@ -130,6 +131,11 @@ struct AirplaneCard: View {
                 let what = [detail?.description.map(FlightWords.nameCase) ?? detail?.type ?? plane?.type,
                             detail?.operatorName.map(FlightWords.nameCase)].compactMap { $0 }.joined(separator: " · ")
                 if !what.isEmpty { Text(what).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center) }
+                // Heard by the cockpit's own receiver, not the internet's,
+                // and how long ago.
+                if let heard = ReceiverWords.heard(hex, picture: receiver.picture) {
+                    Text(heard).font(.subheadline).foregroundStyle(.secondary)
+                }
             }
             HStack(spacing: WingtipSpace.sm) {
                 // Follow filled, the card's first thing to do; nothing to

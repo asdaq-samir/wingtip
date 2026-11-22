@@ -1,9 +1,10 @@
 import Foundation
 import Observation
 
-/// A portable ADS-B receiver in the cockpit (Stratux, Sentry, Garmin's GDL
-/// 39 and 52, uAvionix's): its traffic and the FIS-B weather it is sent,
-/// with no internet. The listener gathers its GDL 90; once a second the
+/// A portable ADS-B receiver in the cockpit that sends GDL 90 over its
+/// Wi-Fi (Stratux, Sentry, uAvionix's SkyEcho, a Stratus in its open
+/// mode; docs/receivers.md): its GPS as own ship, its traffic and the
+/// FIS-B weather it is sent, with no internet. The listener gathers its GDL 90; once a second the
 /// engine reads the bytes into the picture (`receiver_read`), off the main
 /// actor and once a minute where it has gone quiet (`due`), which this
 /// model keeps and hands back; the map's traffic, the airport card's
@@ -14,6 +15,14 @@ import Observation
 @Observable
 final class Receiver {
     static let shared = Receiver()
+
+    /// The switch the receiver is parked behind: Info.plist's
+    /// WingtipReceiver, NO until Apple grants the app the multicast
+    /// networking entitlement (com.apple.developer.networking.multicast;
+    /// docs/store/launch-checklist.md), without which a receiver that
+    /// broadcasts is never heard. Off, nothing listens and no setting,
+    /// chip or Ready to Fly item shows it.
+    nonisolated static var enabled: Bool { Bundle.main.object(forInfoDictionaryKey: "WingtipReceiver") as? Bool ?? false }
 
     /// The setting: listen for a receiver on the Wi-Fi (Auto), or not.
     enum Mode: String, CaseIterable, Identifiable {
@@ -26,7 +35,7 @@ final class Receiver {
     var mode: Mode = Mode(rawValue: UserDefaults.standard.string(forKey: Receiver.modeKey) ?? "") ?? .auto {
         didSet {
             UserDefaults.standard.set(mode.rawValue, forKey: Self.modeKey)
-            if mode == .off { listener.stop(); picture = nil; nexrad = nil }
+            if mode == .off { listener.stop(); picture = nil; nexrad = nil; onOwnship?(nil, nil) }
         }
     }
 
@@ -50,10 +59,15 @@ final class Receiver {
     private let listener = ReceiverListener()
     /// Called after each read, for Traffic to merge the receiver's own.
     var onRead: (() -> Void)?
+    /// Called after each read with the picture's own ship and receiver,
+    /// for OwnShip to weigh its GPS against the device's; with nils when
+    /// the receiver is turned off.
+    var onOwnship: ((EngineContract.ReceiverOwnship?, EngineContract.ReceiverState?) -> Void)?
 
     /// Listen and read once a second while the app runs (Repeating,
     /// slower with the app put away).
     func run() async {
+        guard Self.enabled else { return }
         await Repeating.every(1) { [weak self] in await self?.read() }
     }
 
@@ -66,7 +80,7 @@ final class Receiver {
     /// each way. Traffic is told only where the picture's airplanes or
     /// whether a receiver was heard changed.
     func read(now: Date = Date()) async {
-        guard mode == .auto, !reading else { return }
+        guard Self.enabled, mode == .auto, !reading else { return }
         listener.start()
         let bytes = listener.drain()
         guard Self.due(picture, heard: !bytes.isEmpty, sinceS: now.timeIntervalSince(readAt)) else { return }
@@ -88,6 +102,7 @@ final class Receiver {
             if next.nexrad != before?.nexrad { nexrad = drawn }
             if live, !Self.used { UserDefaults.standard.set(true, forKey: Self.usedKey) }
             if Self.trafficChanged(before, next) { onRead?() }
+            if next.receiver.heartbeatAt != nil { onOwnship?(next.ownship, next.receiver) }
         case let .failure(error):
             problem = error.localizedDescription
         }
