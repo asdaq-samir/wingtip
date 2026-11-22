@@ -2,6 +2,8 @@
   "name": "KMSN to KOSH, RNAV (GPS) RWY 36 by WIGIH",
   "about": "The test flight: off Madison's runway 36, a climb to 5,500 ft, direct to WIGIH, then the RNAV (GPS) RWY 36 at Oshkosh from the WIGIH transition (WIGIH, DOCEN, the final approach fix WIVLI, the step-down JUMVO), a full-stop landing on 36 and a stop on the runway. The same route as the planner's flight-critical test (services/planner/tests/test_flight_critical.py): eastbound, so 5,500 ft, an odd thousand plus 500 (14 CFR 91.159(a)(1)). Fixes, runway ends and altitudes are the FAA's CIFP, cycle 2610 (FAACIFP18, data/raw/faa_cifp/261029): the approach's legs (SUSAP KOSH F R36), its waypoints (SUSAP KOSH C) and the runways (SUSAP KMSN/KOSH G). The speeds and rates are the test's own, a Cessna 172's in round figures, not the app's: nothing here is a figure the app states.",
   "plan": "/app/plan?dep=KMSN&dest=KOSH&procs=KOSH:R36:WIGIH",
+  "start": "KMSN on runway 36",
+  "minutes": 40,
   "airplane": { "profile": "c172", "label": "C172 · Cessna 172", "xplane": "Aircraft/Laminar Research/Cessna 172 SP/Cessna_172SP.acf" },
   "own": { "hex": "f0f0f0", "callsign": "N1SIM" },
   "places": {

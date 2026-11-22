@@ -123,7 +123,8 @@ question.
 
 1. **Download the demo** (30 to 60 minutes, about 25 GB of disk). Use the
    installer at x-plane.com/desktop/try-it, choose the demo, and install to
-   `~/X-Plane 12 Demo`.
+   `~/X-Plane 12 Demo` ("Installing the demo", below, has why it needs
+   the owner and the clicks).
 2. **First run** (5 minutes). Start it, fly a minute anywhere around
    Seattle, and quit.
 3. **XPPython3** (5 minutes). Run `scripts/dev/xplane-trial.sh check`,
@@ -228,6 +229,42 @@ For the plain run, stop AutoOrtho's streaming first. `xplane-trial.sh
 check` says whether AutoOrtho is in `scenery_packs.ini`. Whether the demo
 loads custom scenery at all is not documented, so the first AutoOrtho run
 answers it.
+
+## Installing the demo
+
+Tried unattended on 2026-11-21, with X-Plane 12 Installer for 12.4.4
+(lookup.x-plane.com's `X-Plane12InstallerMac.zip`); it needs the owner:
+
+- **No unattended install.** The installer's binary has `--silent`, but
+  only with `--path=` to a folder it already knows as an X-Plane ("Silent
+  start as: sim update"; "--path is not a recognised X-System"): it
+  updates an installed copy and cannot make one. A first install is its
+  window's "Install a Free Demo of X-Plane". The files come from
+  Laminar's CDN by a manifest of its own (`directory.txt.zip`), not as an
+  archive a script could unpack.
+- **Not on Steam as a demo.** Steam's X-Plane 12 (app 2014780) is the paid
+  product, with no demo.
+- **Not while the Mac is locked.** Started from a shell, `open` included,
+  with the session's screen locked, the installer stops at once: "Failed
+  to initialize display link. Can't run Metal without this!" X-Plane
+  itself draws through the same Metal display link, so a flight needs the
+  Mac unlocked with its display awake, too.
+
+The owner's steps, about 5 minutes at the Mac, then the download:
+
+1. Unlock the Mac. The installer and XPPython3 are already downloaded, in
+   `~/Downloads/wingtip-xplane` (`X-Plane12InstallerMac.zip` from
+   x-plane.com, `xp3-darwin.zip`, XPPython3 4.8.0, from
+   xppython3.readthedocs.io's link).
+2. Unzip `X-Plane12InstallerMac.zip` and open `X-Plane 12 Installer`.
+3. Choose **Install a Free Demo of X-Plane**, pick your home folder, name
+   the copy `X-Plane 12 Demo` (so `~/X-Plane 12 Demo`), and continue. Leave
+   it to download; at least 20 GB must stay free beside it.
+4. Then, in Terminal (no clicks):
+   `unzip -q ~/Downloads/wingtip-xplane/xp3-darwin.zip -d ~/"X-Plane 12 Demo/Resources/plugins" && xattr -dr com.apple.quarantine ~/"X-Plane 12 Demo/Resources/plugins/XPPython3"`
+5. Start X-Plane once, load the Cessna 172 SP at KBFI (XPPython3 sets
+   itself up only once an airplane has loaded and makes
+   `Resources/plugins/PythonPlugins`), and quit.
 
 ## The demo's limits
 

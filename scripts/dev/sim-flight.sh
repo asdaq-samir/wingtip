@@ -14,7 +14,9 @@
 #                                                    the feed, the browser test and the report, while X-Plane flies
 #   scripts/dev/sim-flight.sh report DIR             the report again from a run's folder
 #
-# SIM_FLIGHT the flight script (tools/sim-flight/flights/kmsn-kosh-r36.json),
+# SIM_FLIGHT the flight script (tools/sim-flight/flights/kbfi-kpae-rnav.json,
+# which the X-Plane 12 demo's Seattle scenery holds; kmsn-kosh-r36.json wants
+# the full X-Plane),
 # SIM_FLIGHT_OUT where runs go (~/wingtip-sim-flight), SIM_FEED_PORT the
 # feed's HTTP port (8765), SIM_GDL90 where GDL 90 goes (255.255.255.255:4000,
 # every phone on the Wi-Fi), BASE_URL the web app (the live stack's,
@@ -28,7 +30,7 @@ here=$(cd "$(dirname "$0")/../.." && pwd)
 PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin
 turn="$here/scripts/dev/one-at-a-time.sh"
 kit=$here/tools/sim-flight
-FLIGHT=${SIM_FLIGHT:-$kit/flights/kmsn-kosh-r36.json}
+FLIGHT=${SIM_FLIGHT:-$kit/flights/kbfi-kpae-rnav.json}
 OUT=${SIM_FLIGHT_OUT:-$HOME/wingtip-sim-flight}
 PORT=${SIM_FEED_PORT:-8765}
 GDL90=${SIM_GDL90:-255.255.255.255:4000}
@@ -62,9 +64,9 @@ install() {
   py prepare --scenario "$FLIGHT" --out "$xp/Output/wingtip" --fly "$fly"
   say "Installed into $xp (fly: $fly). Then:"
   say "  1. $0 run (it waits for the simulator), in one Terminal."
-  say "  2. X-Plane: New Flight, the Cessna 172 SP, at KMSN on runway 36, engine running, Start Flight."
+  say "  2. X-Plane: New Flight, the Cessna 172 SP, at the start the line above names, engine running, Start Flight."
   say "     The plugin starts the flight 8 s after it loads (or Plugins > Wingtip replay > Fly the test flight)."
-  say "  3. Hands off for about 40 minutes; the report is written when the airplane has stopped at KOSH."
+  say "  3. Hands off for the minutes it names; the report is written when the airplane has stopped."
   say "The plugin's log: $xp/Output/wingtip/flight-log.txt"
 }
 
@@ -100,7 +102,7 @@ run() {
     [ "$SECONDS" -lt "$deadline" ] || die "no state line from the simulator in 15 minutes: is the flight started (Plugins > Wingtip replay)?"
     sleep 2
   done
-  say "The simulator is flying. The browser test follows it to the end (about 40 minutes)."
+  say "The simulator is flying. The browser test follows it to the end."
   image=$(sed -nE 's/^ *PLAYWRIGHT_IMAGE: *([^ ]+).*/\1/p' "$here/.github/workflows/ci.yml" | head -1)
   vol=wingtip-npm-branch-specs-$({ cat "$here/apps/web/package-lock.json"; echo "$image"; } | shasum -a 256 | cut -c1-12)
   auth=$(sed -n 's/^MAILPIT_UI_AUTH=//p' "$HOME/Developer/wingtip/.env" 2>/dev/null || true)
@@ -126,5 +128,5 @@ case "${1:-}" in
   install) shift; install "$@" ;;
   run) shift; run "$@" ;;
   report) py report --run "${2:?the run folder}" ;;
-  *) sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'; exit 64 ;;
+  *) sed -n '2,26p' "$0" | sed 's/^# \{0,1\}//'; exit 64 ;;
 esac
