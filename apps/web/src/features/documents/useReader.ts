@@ -5,7 +5,7 @@ import type { CfrText } from "../../lib/api/types";
 import { useDarkTheme } from "../../lib/map/gl/useDarkTheme";
 import { shareOrCopy } from "../../lib/share";
 import { toast } from "../../lib/toast";
-import { deviceStore, keptBody, ownBlob } from "./deviceFiles";
+import { deviceStore, keptBody, marksKey, ownBlob } from "./deviceFiles";
 import { docLink, isOwn, type DocPlace } from "./docPlace";
 import { keptDocsQuery, libraryQuery, ownDocsQuery } from "./libraryQueries";
 import type { BodySource } from "./readerBody";
@@ -56,6 +56,9 @@ export function useReader(place: DocPlace) {
     return null;
   }, [kept, network, id, text.data]);
 
+  // The edition read: the one kept on the device, else the shelf's.
+  const edition = own ? "own" : kept ? onDevice.data?.edition : network?.edition;
+
   const trouble: ReaderTrouble = source
     ? null
     : own
@@ -85,6 +88,8 @@ export function useReader(place: DocPlace) {
     /** Where it opens: a shared or bookmarked page, a cite's paragraph, else where it was left. */
     startPage: place.page ?? (place.at ? null : left),
     startAt: place.at,
+    /** Where this edition's marks are kept: a PDF's, none for a CFR part's text. */
+    marksKey: source?.kind === "pdf" && edition ? marksKey(place.doc, edition) : null,
     bookmarks,
     /** White on black: the pilot's own choice, else the app's dark appearance. */
     inverted: chosen ?? dark,

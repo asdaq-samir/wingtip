@@ -7,7 +7,7 @@ Google Play's Data safety form and the iOS app's privacy manifest
 (`PrivacyInfo.xcprivacy`). Change it
 whenever the code changes what leaves a device or what the server keeps.
 Checked against the code on 2026-11-10 (the privacy and store audit: the phone number, the third parties the apps call directly, the traffic view's region, the export, deletion from the web).
-Last checked on 2026-11-21 (the prelaunch audit: the web's device storage and what sign-out clears, the backups' and snapshots' retention, the logs; then the vitals work: Help Improve Wingtip Maps, the web's sampled speed figures, the iPhone's energy and disk figures, the planner's route counters; and the documents library).
+Last checked on 2026-11-21 (the prelaunch audit: the web's device storage and what sign-out clears, the backups' and snapshots' retention, the logs; then the vitals work: Help Improve Wingtip Maps, the web's sampled speed figures, the iPhone's energy and disk figures, the planner's route counters; and the documents library, its markup and notes).
 
 "Collected" is App Store Connect's meaning: sent off the device and kept
 longer than it takes to answer the request.
@@ -190,8 +190,14 @@ longer than it takes to answer the request.
   pilot's own PDFs (a POH, checklists, insurance, club rules) are kept in
   the browser's IndexedDB on the device and never leave it: no upload, no
   sync, no copy in an account's export; they go with the browser's site
-  data. Their last pages, bookmarks and the reader's night setting stay
-  in the browser's storage too. The FAA's documents are fetched from the
+  data. Their last pages, bookmarks, the reader's night setting and its
+  palm rejection stay in the browser's storage too. The pilot's markup
+  and notes on any document, their own or the FAA's (highlights with the
+  words picked, drawings, notes), are kept in the same IndexedDB beside
+  the PDFs and never leave the device either: no request carries them,
+  and a marked-up page goes out only as a picture the pilot shares from
+  the device's own share sheet (checked 2026-11-21: documents-markup.spec
+  holds that no request carries a note). The FAA's documents are fetched from the
   planner like any of its answers (the shelf, a book's PDF or a CFR
   part's text by its edition), which tells the server which public
   document was opened; no account rides with it and nothing of it is

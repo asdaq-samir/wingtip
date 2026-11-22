@@ -12,6 +12,23 @@ export async function shareOrCopy(item: { title: string; text?: string; url?: st
   return "copied";
 }
 
+/** A file sent from the app -- a marked-up page of a document -- on the
+ *  share sheet where the browser shares files (Safari on an iPad or an
+ *  iPhone: Messages, Mail, Files, AirDrop), otherwise saved as a
+ *  download. Says which. */
+export async function shareOrSave(item: { file: File; title: string; text?: string }): Promise<"shared" | "saved"> {
+  const shared = { files: [item.file], title: item.title, ...(item.text ? { text: item.text } : {}) };
+  if (navigator.canShare?.(shared)) {
+    await navigator.share(shared);
+    return "shared";
+  }
+  const url = URL.createObjectURL(item.file);
+  const a = Object.assign(document.createElement("a"), { href: url, download: item.file.name });
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+  return "saved";
+}
+
 /** Text copied, where a control says Copy rather than Share (a flight
  *  plan's form for Flight Service's own site, a frequency, a point's
  *  place): the one place the app writes to the clipboard. A browser with
