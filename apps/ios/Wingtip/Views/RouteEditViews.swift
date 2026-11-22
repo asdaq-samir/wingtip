@@ -16,6 +16,9 @@ final class FlightUI {
     var fixFrom: String?
     /// A procedure's fix whose crossing altitude is asked for.
     var crossAt: String?
+    /// An approach on FPL's line opened on its brief or its dry run
+    /// (ApproachLessonSheet, from ApproachMenuItems).
+    var lesson: ApproachLessonAsk?
     /// What the engine refused of a figure typed into one of the alerts,
     /// said in an alert of its own rather than the figure dropped unsaid.
     var problem: String?

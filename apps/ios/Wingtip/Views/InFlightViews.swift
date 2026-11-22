@@ -270,7 +270,7 @@ enum RouteShare {
     /// on the other pilot's phone or browser; the N-number only when asked.
     static func link(_ plan: Plan, includeTail: Bool = false) -> URL {
         SharedPlan(dep: plan.dep, dest: plan.dest, stops: plan.stops, altitudeFt: (plan.ownAltitudeFt ?? plan.altitudeFt).map { Int($0) },
-                   type: plan.aircraft == Plan.noAirplane ? nil : plan.aircraft.uppercased(), rules: FlightRules.saved(), tail: plan.tail).link(includeTail: includeTail)
+                   type: plan.aircraft == Plan.noAirplane ? nil : plan.aircraft.uppercased(), rules: FlightRules.saved(), tail: plan.tail, tanks: plan.extras.tanks).link(includeTail: includeTail)
     }
 
     static func fileName(_ plan: Plan) -> String {

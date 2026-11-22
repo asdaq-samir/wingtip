@@ -42,7 +42,7 @@ extension Plan {
         guard routed, course != nil, totals != nil else { return }
         Kept(dep: dep, dest: dest, stops: stops, aircraft: aircraft, tail: tail, ownAltitudeFt: ownAltitudeFt, altitudeChoice: altitudeChoice,
              course: course, checkpoints: checkpoints, profile: profile, altitude: altitude, legs: legs, totals: totals,
-             briefing: briefing, briefedAt: briefedAt, plannedAt: plannedAt ?? Date()).save()
+             briefing: briefing, briefedAt: briefedAt, plannedAt: plannedAt ?? Date(), depart: extras.depart).save()
         PlanHistory.planned(routeState, at: plannedAt ?? Date())
     }
 

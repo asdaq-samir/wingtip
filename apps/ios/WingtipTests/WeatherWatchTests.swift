@@ -98,6 +98,19 @@ struct WeatherWatchTests {
         #expect(!WeatherWatch.watching(kept, now: now))
     }
 
+    /// The watch asks the briefing for when the flight leaves, as the page
+    /// does: the departure time picked is kept with the plan, and a plan
+    /// kept before it was reads as now (none).
+    @Test func theKeptPlanCarriesItsDepartureTime() throws {
+        let leaves = Date(timeIntervalSince1970: 1_800_003_600)
+        let file = FileManager.default.temporaryDirectory.appending(path: "kept-depart-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: file) }
+        Kept(dep: "KMSN", dest: "KDLH", stops: [], aircraft: Plan.noAirplane, plannedAt: leaves, depart: leaves).save(to: file)
+        #expect(Kept.load(from: file)?.depart == leaves)
+        Kept(dep: "KMSN", dest: "KDLH", stops: [], aircraft: Plan.noAirplane, plannedAt: leaves).save(to: file)
+        #expect(Kept.load(from: file)?.depart == nil)
+    }
+
     @Test func theLiveActivityCarriesTheWeatherLine() {
         var inputs = FlightActivityContent.Inputs(progress: nil, routeNm: 142, airplaneChosen: false, usableFuelGal: nil,
                                                   frequency: nil, copilot: nil, now: Date())

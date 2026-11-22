@@ -155,7 +155,8 @@ struct TimelineFieldParts: View {
 /// head row the kind and the field in the procedure's indigo, small
 /// capitals ("APPROACH · KOSH"), over its name, wrapping and never cut: the
 /// whole row the kind's menu to pick another ("just tapping it should
-/// show the approaches menu"). Then a row a fix: its mark an indigo ring
+/// show the approaches menu"), an approach's Brief, Dry Run and Plate
+/// after the picks (ApproachMenuItems). Then a row a fix: its mark an indigo ring
 /// with "•••", its menu (Direct To, Cross at…), its name, the parts it
 /// plays under it and its altitude at the right. Sent direct to one, its
 /// ring filled in the tint and those before it dashed, skipped.
@@ -216,6 +217,7 @@ struct TimelineProcedureRows: View {
             } else {
                 Button("None") { plan.pick(nil, kind: pick.kind, at: pick.ident) }
             }
+            ApproachMenuItems(pick: pick)
         } label: {
             HStack(spacing: WingtipSpace.sm) {
                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
@@ -237,6 +239,7 @@ struct TimelineProcedureRows: View {
         }
         .buttonStyle(.borderless)
         .accessibilityHint("Picks another \(ProcedureKindWords.word(pick.kind).lowercased())")
+        .accessibilityIdentifier("procedure-head-\(pick.kind)")
         .appEntityIdentifier(pick.kind == "approach" ? SiriSaw.approach(pick) : nil)
     }
 

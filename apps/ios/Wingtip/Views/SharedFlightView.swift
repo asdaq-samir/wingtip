@@ -52,6 +52,9 @@ struct SharedFlightView: View {
         if let type = plan.type { LabeledContent("Airplane Type", value: type) }
         if let rules = plan.rules { LabeledContent("Flight Rules", value: rules.label) }
         if let tail = plan.tail { LabeledContent("N-Number", value: tail) }
+        if !plan.tanks.isEmpty {
+            LabeledContent("Fuel Set", value: plan.tanks.sorted { $0.key < $1.key }.map { "\($0.key) \($0.value) gal" }.joined(separator: " · "))
+        }
         // The sender's airplane is said, never flown: the pilot's own is.
         LabeledContent("Planned With", value: route.tail ?? "Your airplane")
     }

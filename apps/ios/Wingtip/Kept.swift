@@ -26,6 +26,10 @@ struct Kept: Codable, Equatable, Sendable {
     /// When the briefing was fetched; none in a plan kept before it was.
     var briefedAt: Date?
     var plannedAt: Date
+    /// When the flight leaves, picked on FPL's departure line; none for
+    /// now, and none in a plan kept before it was. The weather watch asks
+    /// the briefing for it, as the page does.
+    var depart: Date?
 
     static let file = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appending(path: "last-plan.json")

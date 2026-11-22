@@ -16,4 +16,11 @@
     <string name="pick_on_route">Already on the route</string>
     <string name="leaves_at">Leaves %1$s</string>
     <string name="leaves_title">Leaves Again</string>
+    <!-- The plan's File, its short word in the foot's bar (PlanFoot). -->
+    <string name="file_short">File</string>
+    <!-- The Brief's button, said with its findings' count (PlanFoot). -->
+    <plurals name="brief_findings">
+        <item quantity="one">Brief, %d finding to look at</item>
+        <item quantity="other">Brief, %d findings to look at</item>
+    </plurals>
 </resources>

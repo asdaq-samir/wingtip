@@ -260,12 +260,13 @@ final class Plan {
     }
 
     /// The briefing, as the web app fetches it as soon as the route is known
-    /// and again as the nav log gives the flight's time.
+    /// and again as the nav log gives the flight's time: for when the
+    /// flight leaves (the departure line's time), not the moment asked.
     func brief(dep: String, dest: String, stops: [String], eteMin: Double?) async {
         // Its hazards placed on the nav log's legs once they are in.
         let legs = BriefLegs.query(course: course, checkpoints: checkpoints, legs: self.legs)
         do {
-            briefing = try await Planner.briefing(dep: dep, dest: dest, stops: stops, eteMin: eteMin, legs: legs)
+            briefing = try await Planner.briefing(dep: dep, dest: dest, stops: stops, depart: extras.depart, eteMin: eteMin, legs: legs)
             briefedAt = Date()
             briefingProblem = nil
             noteKept(nil, .briefing, .weather)
