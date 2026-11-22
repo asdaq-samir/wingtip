@@ -104,6 +104,11 @@ export default function PlaceCard({
   // With no connection and nothing kept of it, its ask waits paused
   // (lib/queryRetry): said so, not "Fetching the airport…" for good.
   const offline = !place && noConnection(answer);
+  // Not had: the planner said no, or the connection is gone and nothing is
+  // kept (TanStack asks a lost connection again for as long as the card
+  // is open, so that query is never in error): the head says why in its
+  // line, where the card's tabs would be.
+  const unhad = !place && (!!error || offline);
   // What the map knows of it already -- its name and its weather's
   // colour, from the chip that was tapped (AirportsGl, ClassBGl) --
   // at once: the card read "Looking the airport up…" until its own
@@ -227,7 +232,7 @@ export default function PlaceCard({
     // Half way as it opens, from the map, the search or a list alike (the
     // card rule's 2); its own drawer, sized from here (useCardSize).
     <SheetCard head={false} testId="place-card" cardId={cardId}>
-      {place || !error ? (
+      {!unhad ? (
         <>
           {/* The head and the actions from the first frame, live once the
               answer is in: the card one shape while its answer comes, at
@@ -288,7 +293,7 @@ export default function PlaceCard({
 
       {/* The tab's page, then the tabs in a bar floating at the card's foot (C1, the owner, 2026-11-14), greyed
           until the answer comes: a tap would raise the sheet over empty pages. */}
-      {!(error && !place) && (
+      {!unhad && (
         <CardTabPages
           tab={tab}
           onPick={setPicked}
