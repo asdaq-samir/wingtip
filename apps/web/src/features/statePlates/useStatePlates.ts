@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { useStore } from "zustand";
 import { api } from "../../lib/api/client";
 import type { PlateStateSet } from "../../lib/api/types";
 import { keepingAvailable } from "../../lib/map/route/keepRoute";
@@ -14,7 +15,12 @@ const statesQuery = { queryKey: ["plateStates"], queryFn: api.plateStates, stale
 export function useStatePlates() {
   const client = useQueryClient();
   const states = useQuery({ ...statesQuery, meta: { silent: true } });
-  const kept = keptStatesStore()((s) => s.value);
+  // Through zustand's useStore, a hook by its name: called as the
+  // factory's result, `keptStatesStore()(…)`, the React Compiler took it
+  // for a plain call and memoised it, so a later render skipped the
+  // store's hooks and React threw on the changed order ("Should have a
+  // queue"), taking the planner down on its first load.
+  const kept = useStore(keptStatesStore(), (s) => s.value);
   const { running, problems } = useStateDownloads();
   const [asking, setAsking] = useState<PlateStateSet | null>(null);
   const cycle = states.data?.cycle ?? null;
@@ -44,7 +50,7 @@ export function useStatePlates() {
 
 /** Settings' Plates row's value: how many states are kept. */
 export function useKeptStatesCount() {
-  return keptStatesStore()((s) => s.value.length);
+  return useStore(keptStatesStore(), (s) => s.value.length);
 }
 
 /**
@@ -57,7 +63,7 @@ export function useKeptStatesCount() {
 export function useStatePlatesFresh() {
   const client = useQueryClient();
   const now = useMinuteClock();
-  const kept = keptStatesStore()((s) => s.value);
+  const kept = useStore(keptStatesStore(), (s) => s.value);
   useEffect(() => {
     if (!kept.length || !keepingAvailable() || !navigator.onLine) return;
     const running = useStateDownloads.getState().running;
