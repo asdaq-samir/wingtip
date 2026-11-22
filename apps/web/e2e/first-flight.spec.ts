@@ -171,3 +171,25 @@ test("the FPL tip stays off the sheet all the way up, and once the toggle has be
   await page.waitForTimeout(1000);
   await expect(tip).toHaveCount(0);
 });
+
+test("on the first flight a Nearest airport tapped is the destination, and a second tap picks again, never its card", async ({ page }) => {
+  // The owner, 2026-11-22: "When I select a nearest airport, it shows
+  // destination search the first time but then selecting again shows the
+  // airport card." The ask was let go at the first tap while the fix was
+  // waited for, so the next tap opened the card.
+  test.setTimeout(slow(90_000));
+  await page.goto("/app/plan");
+  await settle(page);
+  await page.getByTestId("first-flight-later").click();
+  // Fields off where the airplane is (C81, the departure).
+  const fields = page.getByTestId("nearest-strip-field").filter({ hasNotText: /C81/ });
+  await expect(fields.nth(1)).toBeVisible({ timeout: slow(30_000) });
+  const second = await fields
+    .nth(1)
+    .evaluate((el) => (el.matches("[title]") ? el : el.querySelector("[title]"))?.getAttribute("title") ?? "");
+  expect(second).not.toBe("");
+  await fields.first().click();
+  await fields.nth(1).click();
+  await expect(page).toHaveURL(new RegExp(`dest=${second}`), { timeout: slow(30_000) });
+  await expect(page.getByTestId("place-card")).toHaveCount(0);
+});

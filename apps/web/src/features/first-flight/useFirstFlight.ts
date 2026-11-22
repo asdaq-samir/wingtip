@@ -52,9 +52,24 @@ export function useFirstFlight({
   const [finding, setFinding] = useState(false);
   useProgressToast(finding ? FINDING_YOU : null);
 
+  // The search's ask for the destination, while it is ours.
+  const asked = useRef<SearchPick | null>(null);
+  // The latest pick's turn: a pick made while an earlier one still waits
+  // for the fix takes its place, the earlier one let go.
+  const turn = useRef(0);
   const planTo = useCallback(
     (dest: string) => {
+      const mine = ++turn.current;
+      // The ask held while the fix is waited for, so a second tap on a
+      // Nearest, Recent or Favorite row picks again rather than opening
+      // its card: let go at the pick, the tap that came as the first
+      // waited (up to 4 s, no route yet, Search still up) opened the
+      // airport's card (the owner, 2026-11-22: "When I select a nearest
+      // airport, it shows destination search the first time but then
+      // selecting again shows the airport card").
+      if (asked.current) useSearchPick.setState({ pick: asked.current });
       void planFirstFlight(dest, null, {
+        stale: () => mine !== turn.current,
         lastDeparture,
         onFinding: setFinding,
         onPlan: (parts) => {
@@ -66,9 +81,8 @@ export function useFirstFlight({
     [lastDeparture, onPlan, pickView],
   );
 
-  // The search's ask for the destination, while it is ours: let go once a
-  // route is made some other way, so the next pick opens its card again.
-  const asked = useRef<SearchPick | null>(null);
+  // The ask let go once a route is made, by the pick or some other way,
+  // so the next tap opens its card again.
   useEffect(() => {
     if (!routed || !asked.current) return;
     if (useSearchPick.getState().pick === asked.current) useSearchPick.setState({ pick: null });
@@ -103,7 +117,13 @@ export const FINDING_YOU = "Finding where you are…";
 async function planFirstFlight(
   dest: string,
   from: string | null,
-  to: { lastDeparture: string | null; onFinding: (finding: boolean) => void; onPlan: (parts: RouteParts) => void },
+  to: {
+    lastDeparture: string | null;
+    onFinding: (finding: boolean) => void;
+    onPlan: (parts: RouteParts) => void;
+    /** A later pick has taken this one's place. */
+    stale?: () => boolean;
+  },
 ): Promise<void> {
   let dep = from;
   if (!dep) {
@@ -118,6 +138,7 @@ async function planFirstFlight(
     }
   }
   dep ??= to.lastDeparture;
+  if (to.stale?.()) return;
   if (!dep) {
     // No position and nothing planned before: the search asks where from.
     askSearchPick({ label: "Departure", fixes: false, onPick: (picked) => void planFirstFlight(dest, picked, to) });
