@@ -113,6 +113,7 @@ pub fn write(p: &Picture, at: f64) -> String {
             report(&mut x, &own.heard.report, own.heard.at);
             x.opt("geometric_ft", own.geometric_ft);
             x.opt("vfom_m", own.vfom_m);
+            x.bool("vertical_warning", own.vertical_warning);
             x.end();
         }
     }
@@ -204,9 +205,14 @@ pub fn read(v: Option<&Value>) -> Picture {
         station: num(r, "station_lat").zip(num(r, "station_lon")),
         station_at: num(r, "station_at"),
     };
-    let ownship = v
-        .get("ownship")
-        .and_then(|o| Some(Ownship { heard: read_report(o)?, geometric_ft: num(o, "geometric_ft"), vfom_m: num(o, "vfom_m") }));
+    let ownship = v.get("ownship").and_then(|o| {
+        Some(Ownship {
+            heard: read_report(o)?,
+            geometric_ft: num(o, "geometric_ft"),
+            vfom_m: num(o, "vfom_m"),
+            vertical_warning: flag(o, "vertical_warning"),
+        })
+    });
     let targets = items(v, "targets").iter().filter_map(read_report).collect();
     let texts = items(v, "texts")
         .iter()

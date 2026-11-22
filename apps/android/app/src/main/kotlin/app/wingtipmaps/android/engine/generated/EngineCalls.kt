@@ -1837,6 +1837,12 @@ fun Engine.receiverNexrad(picture: EngineContract.ReceiverPicture? = null): Resu
     rule("receiver_nexrad", EngineContract.ReceiverNexradInput(picture = picture))
 
 /**
+ * Own ship from the receiver's GPS or the device's (GDL 90 560-1058-00 Rev A 3.4, 3.5.1.6, 3.8). The receiver's Ownship Report is a fix only while the receiver is heard, its Heartbeat says GPS Pos Valid (3.1.1), the report is under 3 s old and not extrapolated (AC 120-76D 11.17.2.3's three seconds) and its NIC and NACp reach 14 CFR 91.227(c)(1)'s floor (NIC 7, under 0.2 nm; NACp 8, under 0.05 nm). It is used where the device has no fresh fix (a Wi-Fi iPad) or the receiver's is better by twice, the device's accuracy put on the EPU's 95%; the one in use is kept until the other is twice as good, and the device's is taken back the moment the receiver's goes. Height is the GPS's, MSL where the receiver says so (ForeFlight's ID message), else ellipsoid_ft alone for a geoid model; pressure altitude is a flight level only at and above 18,000 ft (14 CFR 91.121(a)(2), 1.1).
+ */
+fun Engine.receiverPosition(ownship: EngineContract.ReceiverOwnship? = null, receiver: EngineContract.ReceiverState? = null, device: EngineContract.ReceiverPositionInputDevice? = null, was: String? = null, at: Double): Result<EngineContract.ReceiverPositionAnswer> =
+    rule("receiver_position", EngineContract.ReceiverPositionInput(ownship = ownship, receiver = receiver, device = device, was = was, at = at))
+
+/**
  * A portable ADS-B receiver's GDL 90 bytes (Garmin 560-1058-00 Rev A; ForeFlight's ID message) read into what it has said: its state, own ship, the traffic it hears (AIM 4-5-7, 4-5-8) and the FIS-B products it is sent (AIM 4-5-9), each dropped once it is no longer heard. Traffic is for seeing, not avoiding (AIM 4-5-7).
  */
 fun Engine.receiverRead(data: String? = null, at: Double, picture: EngineContract.ReceiverPicture? = null): Result<EngineContract.ReceiverPicture> =

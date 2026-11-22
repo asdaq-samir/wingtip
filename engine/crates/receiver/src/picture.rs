@@ -81,6 +81,9 @@ pub struct Ownship {
     /// The GPS height (ID 11), ft, its datum `Receiver::msl`'s.
     pub geometric_ft: Option<f64>,
     pub vfom_m: Option<f64>,
+    /// The Ownship Geometric Altitude's Vertical Warning (3.8): the
+    /// height is not to be trusted.
+    pub vertical_warning: bool,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -146,12 +149,13 @@ impl Picture {
                     self.ownship = None;
                     return;
                 }
-                let (geometric_ft, vfom_m) = self.ownship.as_ref().map_or((None, None), |o| (o.geometric_ft, o.vfom_m));
-                self.ownship = Some(Ownship { heard: Heard { report, at }, geometric_ft, vfom_m });
+                let (geometric_ft, vfom_m, vertical_warning) =
+                    self.ownship.as_ref().map_or((None, None, false), |o| (o.geometric_ft, o.vfom_m, o.vertical_warning));
+                self.ownship = Some(Ownship { heard: Heard { report, at }, geometric_ft, vfom_m, vertical_warning });
             }
             Message::Geometric(g) => {
                 if let Some(o) = &mut self.ownship {
-                    (o.geometric_ft, o.vfom_m) = (Some(g.altitude_ft), g.vfom_m);
+                    (o.geometric_ft, o.vfom_m, o.vertical_warning) = (Some(g.altitude_ft), g.vfom_m, g.vertical_warning);
                 }
             }
             Message::Traffic(report) => self.traffic(report, at),

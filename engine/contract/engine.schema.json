@@ -24940,6 +24940,208 @@
       ],
       "additionalProperties": false
     },
+    "receiver_position": {
+      "description": "Own ship from the receiver's GPS or the device's (GDL 90 560-1058-00 Rev A 3.4, 3.5.1.6, 3.8). The receiver's Ownship Report is a fix only while the receiver is heard, its Heartbeat says GPS Pos Valid (3.1.1), the report is under 3 s old and not extrapolated (AC 120-76D 11.17.2.3's three seconds) and its NIC and NACp reach 14 CFR 91.227(c)(1)'s floor (NIC 7, under 0.2 nm; NACp 8, under 0.05 nm). It is used where the device has no fresh fix (a Wi-Fi iPad) or the receiver's is better by twice, the device's accuracy put on the EPU's 95%; the one in use is kept until the other is twice as good, and the device's is taken back the moment the receiver's goes. Height is the GPS's, MSL where the receiver says so (ForeFlight's ID message), else ellipsoid_ft alone for a geoid model; pressure altitude is a flight level only at and above 18,000 ft (14 CFR 91.121(a)(2), 1.1).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ReceiverPositionInput",
+          "type": "object",
+          "properties": {
+            "ownship": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ReceiverOwnship"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The picture's own ship."
+            },
+            "receiver": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ReceiverState"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The picture's receiver."
+            },
+            "device": {
+              "anyOf": [
+                {
+                  "title": "ReceiverPositionDevice",
+                  "type": "object",
+                  "properties": {
+                    "accuracy_m": {
+                      "type": "number",
+                      "description": "The device's horizontal accuracy, m (a 68% radius)."
+                    },
+                    "at": {
+                      "type": "number",
+                      "description": "When the device's fix was taken, Unix s."
+                    }
+                  },
+                  "required": [
+                    "accuracy_m",
+                    "at"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The device's last fix, or null where it has none."
+            },
+            "was": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The source the last answer gave (receiver, device or none)."
+            },
+            "at": {
+              "type": "number",
+              "description": "Now, Unix s."
+            }
+          },
+          "required": [
+            "at"
+          ]
+        },
+        "answer": {
+          "title": "ReceiverPositionAnswer",
+          "type": "object",
+          "properties": {
+            "source": {
+              "type": "string",
+              "enum": [
+                "receiver",
+                "device",
+                "none"
+              ],
+              "description": "Whose fix own ship is."
+            },
+            "receiver": {
+              "type": "string",
+              "enum": [
+                "good",
+                "none",
+                "no_gps",
+                "stale",
+                "weak"
+              ],
+              "description": "The receiver's fix: good, or why it is not used (none heard, no GPS, stale, under 91.227's NIC and NACp)."
+            },
+            "fix": {
+              "anyOf": [
+                {
+                  "title": "ReceiverFix",
+                  "type": "object",
+                  "properties": {
+                    "lat": {
+                      "type": "number"
+                    },
+                    "lon": {
+                      "type": "number"
+                    },
+                    "altitude_ft": {
+                      "type": [
+                        "number",
+                        "null"
+                      ],
+                      "description": "GPS height MSL, ft, where the receiver gives MSL."
+                    },
+                    "ellipsoid_ft": {
+                      "type": [
+                        "number",
+                        "null"
+                      ],
+                      "description": "GPS height above the WGS-84 ellipsoid, ft, where that is what the receiver gives."
+                    },
+                    "pressure_ft": {
+                      "type": [
+                        "number",
+                        "null"
+                      ],
+                      "description": "Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4)."
+                    },
+                    "flight_level": {
+                      "type": [
+                        "number",
+                        "null"
+                      ],
+                      "description": "The pressure altitude as a flight level, at and above 18,000 ft only."
+                    },
+                    "track_deg": {
+                      "type": [
+                        "number",
+                        "null"
+                      ],
+                      "description": "True track, degrees, where the report gives one."
+                    },
+                    "groundspeed_kt": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "vertical_fpm": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "accuracy_m": {
+                      "type": "number",
+                      "description": "The NACp's bound on the 95% horizontal error, m."
+                    },
+                    "airborne": {
+                      "type": "boolean"
+                    },
+                    "at": {
+                      "type": "number",
+                      "description": "When the report was heard, Unix s."
+                    }
+                  },
+                  "required": [
+                    "lat",
+                    "lon",
+                    "altitude_ft",
+                    "ellipsoid_ft",
+                    "pressure_ft",
+                    "flight_level",
+                    "track_deg",
+                    "groundspeed_kt",
+                    "vertical_fpm",
+                    "accuracy_m",
+                    "airborne",
+                    "at"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The receiver's fix, where it is the source."
+            }
+          },
+          "required": [
+            "source",
+            "receiver",
+            "fix"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "receiver_read": {
       "description": "A portable ADS-B receiver's GDL 90 bytes (Garmin 560-1058-00 Rev A; ForeFlight's ID message) read into what it has said: its state, own ship, the traffic it hears (AIM 4-5-7, 4-5-8) and the FIS-B products it is sent (AIM 4-5-9), each dropped once it is no longer heard. Traffic is for seeing, not avoiding (AIM 4-5-7).",
       "type": "object",
@@ -31610,6 +31812,7 @@
     "readback_check",
     "ready_to_fly",
     "receiver_nexrad",
+    "receiver_position",
     "receiver_read",
     "receiver_reports",
     "receiver_traffic",
@@ -37660,6 +37863,10 @@
             "null"
           ],
           "description": "Its Vertical Figure of Merit, m."
+        },
+        "vertical_warning": {
+          "type": "boolean",
+          "description": "The Ownship Geometric Altitude's Vertical Warning (GDL 90 3.8): its height is not to be trusted."
         }
       },
       "required": [
@@ -37685,7 +37892,8 @@
         "alert",
         "at",
         "geometric_ft",
-        "vfom_m"
+        "vfom_m",
+        "vertical_warning"
       ]
     },
     "ReceiverPicture": {
@@ -37694,99 +37902,7 @@
       "type": "object",
       "properties": {
         "receiver": {
-          "title": "ReceiverState",
-          "type": "object",
-          "properties": {
-            "name": {
-              "type": [
-                "string",
-                "null"
-              ],
-              "description": "The name its ID message gives (Stratux, Sentry, SkyEcho)."
-            },
-            "long_name": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
-            "stratux": {
-              "type": "boolean"
-            },
-            "heartbeat_at": {
-              "type": [
-                "number",
-                "null"
-              ]
-            },
-            "live": {
-              "type": "boolean",
-              "description": "A Heartbeat came in the last 5 s (one a second, GDL 90 3.1)."
-            },
-            "summary": {
-              "type": "string",
-              "description": "One line for the receiver's chip: \"Stratux \u00b7 12 targets \u00b7 GPS\"."
-            },
-            "gps": {
-              "type": "boolean"
-            },
-            "utc_ok": {
-              "type": "boolean"
-            },
-            "battery_low": {
-              "type": "boolean"
-            },
-            "maintenance": {
-              "type": "boolean"
-            },
-            "msl": {
-              "type": "boolean",
-              "description": "Its GPS heights are above MSL (ForeFlight's ID message), else the ellipsoid."
-            },
-            "frames": {
-              "type": "number"
-            },
-            "bad_frames": {
-              "type": "number",
-              "description": "Frames whose CRC did not match, dropped."
-            },
-            "station_lat": {
-              "type": [
-                "number",
-                "null"
-              ]
-            },
-            "station_lon": {
-              "type": [
-                "number",
-                "null"
-              ]
-            },
-            "station_at": {
-              "type": [
-                "number",
-                "null"
-              ]
-            }
-          },
-          "required": [
-            "name",
-            "long_name",
-            "stratux",
-            "heartbeat_at",
-            "live",
-            "summary",
-            "gps",
-            "utc_ok",
-            "battery_low",
-            "maintenance",
-            "msl",
-            "frames",
-            "bad_frames",
-            "station_lat",
-            "station_lon",
-            "station_at"
-          ]
+          "$ref": "#/definitions/ReceiverState"
         },
         "ownship": {
           "anyOf": [
@@ -37849,6 +37965,102 @@
         "time",
         "at"
       ]
+    },
+    "ReceiverState": {
+      "title": "ReceiverState",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The name its ID message gives (Stratux, Sentry, SkyEcho)."
+        },
+        "long_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stratux": {
+          "type": "boolean"
+        },
+        "heartbeat_at": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "live": {
+          "type": "boolean",
+          "description": "A Heartbeat came in the last 5 s (one a second, GDL 90 3.1)."
+        },
+        "summary": {
+          "type": "string",
+          "description": "One line for the receiver's chip: \"Stratux \u00b7 12 targets \u00b7 GPS\"."
+        },
+        "gps": {
+          "type": "boolean"
+        },
+        "utc_ok": {
+          "type": "boolean"
+        },
+        "battery_low": {
+          "type": "boolean"
+        },
+        "maintenance": {
+          "type": "boolean"
+        },
+        "msl": {
+          "type": "boolean",
+          "description": "Its GPS heights are above MSL (ForeFlight's ID message), else the ellipsoid."
+        },
+        "frames": {
+          "type": "number"
+        },
+        "bad_frames": {
+          "type": "number",
+          "description": "Frames whose CRC did not match, dropped."
+        },
+        "station_lat": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "station_lon": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "station_at": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "long_name",
+        "stratux",
+        "heartbeat_at",
+        "live",
+        "summary",
+        "gps",
+        "utc_ok",
+        "battery_low",
+        "maintenance",
+        "msl",
+        "frames",
+        "bad_frames",
+        "station_lat",
+        "station_lon",
+        "station_at"
+      ],
+      "description": "The receiver's own state, as its Heartbeat and ID message say."
     },
     "ReceiverTarget": {
       "title": "ReceiverTarget",

@@ -119,6 +119,10 @@
         "null"
       ],
       "description": "Its Vertical Figure of Merit, m."
+    },
+    "vertical_warning": {
+      "type": "boolean",
+      "description": "The Ownship Geometric Altitude's Vertical Warning (GDL 90 3.8): its height is not to be trusted."
     }
   },
   "required": [
@@ -144,6 +148,7 @@
     "alert",
     "at",
     "geometric_ft",
-    "vfom_m"
+    "vfom_m",
+    "vertical_warning"
   ]
 }
