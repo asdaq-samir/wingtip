@@ -4,7 +4,7 @@ import { useKeptAge, type KeptKind } from "../lib/kept/keptAge";
 import { TEXT } from "../lib/text";
 
 /**
- * "Fetched 42 min ago" over an answer the page is showing from what this
+ * "Fetched 42m ago" over an answer the page is showing from what this
  * device kept, no signal to ask again (lib/kept): in the caution colour
  * once the engine's `kept_age` says it is past its freshness, muted
  * before. Nothing while the answer is the network's own. A label, never

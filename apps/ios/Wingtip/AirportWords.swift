@@ -118,12 +118,15 @@ enum AirportWords {
         return (try? Self.iso.parse(iso)) ?? (try? isoFraction.parse(iso))
     }
 
-    /// When a report was made and how long ago: "1255Z · 14 min ago",
-    /// the age a pilot weighs a report by.
+    /// When a report was made and how long ago: "1255Z · 14m ago",
+    /// the age a pilot weighs a report by (Format.ago, the engine's).
     static func observed(_ iso: String, now: Date = Date()) -> String? {
-        guard let when = date(iso) else { return nil }
-        let minutes = max(0, Int((now.timeIntervalSince(when) / 60).rounded()))
-        let ago = minutes < 1 ? "just now" : minutes < 90 ? "\(minutes) min ago" : "\(Int((Double(minutes) / 60).rounded())) h ago"
+        date(iso).map { observed($0, now: now) }
+    }
+
+    /// The same of a time already read: a receiver's report heard at.
+    static func observed(_ when: Date, now: Date = Date()) -> String {
+        guard let ago = Format.ago(when, now: now) else { return Format.zulu(when) }
         return "\(Format.zulu(when)) · \(ago)"
     }
 
@@ -139,7 +142,7 @@ enum AirportWords {
                                           observed: when.timeIntervalSince1970.rounded(.down))
     }
 
-    /// "1255Z · 3 h ago — an old report" where the report no longer counts
+    /// "1255Z · 3h ago — an old report" where the report no longer counts
     /// (reportInForce), the web's words (IOS-2); as observed() otherwise.
     static func observedSaid(_ iso: String, now: Date = Date()) -> String? {
         guard let said = observed(iso, now: now) else { return nil }

@@ -1,0 +1,72 @@
+{
+  "why": "route_procedures' cases: the SIDs and STARs typed among a route's words, held by the engine (engine/facade/tests/time_ago.rs), the web's route box (features/route/routeEdit) and the iPhone's Type Route.",
+  "cases": [
+    {
+      "why": "A filed IFR route with a SID and a STAR",
+      "input": {
+        "words": [
+          "KMSP",
+          "BAEE1",
+          "BAE",
+          "V191",
+          "OSH",
+          "OSHH2",
+          "KATW"
+        ]
+      },
+      "expected": [
+        {
+          "name": "BAEE1",
+          "before": "KMSP",
+          "after": "BAE"
+        },
+        {
+          "name": "OSHH2",
+          "before": "OSH",
+          "after": "KATW"
+        }
+      ]
+    },
+    {
+      "why": "Airports, fixes and airways are none: four letters, five letters, a figure inside",
+      "input": {
+        "words": [
+          "C81",
+          "KATW",
+          "CORIR",
+          "V191",
+          "1C5"
+        ]
+      },
+      "expected": []
+    },
+    {
+      "why": "A STAR typed last, its field still to come",
+      "input": {
+        "words": [
+          "KMSP",
+          "OSH",
+          "OSHH2"
+        ]
+      },
+      "expected": [
+        {
+          "name": "OSHH2",
+          "before": "OSH",
+          "after": null
+        }
+      ]
+    },
+    {
+      "why": "Six letters and a figure is not one",
+      "input": {
+        "words": [
+          "KMSP",
+          "KAYYSS3",
+          "KATW"
+        ]
+      },
+      "expected": []
+    }
+  ]
+}

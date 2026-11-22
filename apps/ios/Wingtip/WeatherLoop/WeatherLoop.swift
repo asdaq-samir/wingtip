@@ -208,7 +208,7 @@ final class WeatherLoop {
         guard let at = try? Date(frame.valid, strategy: .iso8601) else { return nil }
         let minutes = now.timeIntervalSince(at) / 60
         let local = at.formatted(date: .omitted, time: .shortened) + " " + (TimeZone.current.abbreviation(for: at) ?? "")
-        let age = minutes < 1 ? "just now" : "\(Format.duration(floor(minutes))) ago"
+        let age = Format.ago(at, now: now) ?? ""
         return (Format.zulu(at), local, age, minutes * 60 > oldAfterS)
     }
 }

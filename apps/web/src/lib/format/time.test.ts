@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import fixture from "../fixtures/timeAgo.json";
 import { ago, duration, durationByHand, hm, stopwatch } from "./time";
 
 describe("a time en route as a paper nav log writes it", () => {
@@ -35,6 +36,10 @@ describe("how long ago", () => {
     expect(ago(-5_000)).toBe("just now");
     expect(ago(23 * 60_000 + 40_000)).toBe("23m ago");
     expect(ago(125 * 60_000)).toBe("2h 5m ago");
+  });
+
+  it.each(fixture.cases)("is the engine's time_ago, as both phones write it: $why", (c) => {
+    expect(ago(c.input.seconds * 1000)).toBe(c.expected);
   });
 
   it("writes a stopwatch's minutes and seconds, the one helper the timers and the approach brief share", () => {

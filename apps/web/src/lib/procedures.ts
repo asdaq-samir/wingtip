@@ -66,12 +66,6 @@ export function proceduresOf(param: string | null): PickedProcedure[] {
   });
 }
 
-/** A SID's or a STAR's name as a route is written with one -- a
- *  clearance's, a filed flight plan's, ForeFlight's: "KMSP BAEE1 BAE V191
- *  OSH OSHH2 KATW" -- four or five letters and its number. No airport's
- *  identifier is that long and no fix's has a number, so it is neither. */
-export const TYPED_PROCEDURE = /^[A-Z]{4,5}\d$/;
-
 /** A procedure typed among a route's points, with the points either side
  *  of it as typed: a departure's transition is the fix after it, an
  *  arrival's the fix before it. */

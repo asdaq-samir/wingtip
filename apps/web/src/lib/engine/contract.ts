@@ -913,6 +913,7 @@ export type RoutePositionAnswer = {
   burnt_gal: number;
   on_route: boolean;
 } | null;
+export type RouteProceduresAnswer = TypedProcedure[];
 export type RouteWayWarningAnswer = string | null;
 export type RunwayCalmAnswer = boolean;
 export type RunwayCrosswindAnswer = number;
@@ -1028,6 +1029,10 @@ export type TfrPoint = {
   lon: number;
 } | null;
 export type ThinTrackAnswer = unknown[];
+/**
+ * "23m ago", "just now".
+ */
+export type TimeAgoAnswer = string;
 export type TitleCaseAnswer = string | string[];
 export type TokensAnswer = HeardToken[];
 export type TrafficFreshAnswer = boolean[];
@@ -2233,6 +2238,13 @@ export interface EngineContract {
     answer: GlideRingAnswer;
   };
   /**
+   * The Brief's Adverse Conditions rows under its findings, the standard briefing's first element (AIM 7-1-5(b)(1)): what the flight meets on the route while it is there (OnRoute `when` "during", or none given) -- a TFR the route goes through (14 CFR 91.137-91.145) and a Convective SIGMET or SIGMET (AIM 7-1-6), stops; a Center Weather Advisory (AIM 7-1-6), an urgent pilot report (UUA, AIM 7-1-18) and an AIRMET or G-AIRMET (AIM 7-1-6), cautions -- in that order, of a kind the one met first along the route first, at most three, with how many more. A TFR only near the route, a routine PIREP and a hazard before or after the flight are left to their pages. Each row's time is for the host to write: `at` when the flight meets a TFR, `until` an advisory's end, `reported` a pilot report's time.
+   */
+  gonogo_adverse_rows: {
+    input: GonogoAdverseRowsInput;
+    answer: GonogoAdverseRowsAnswer;
+  };
+  /**
    * Weight and balance at takeoff and landing, against the profile's limits and envelope, with the problems found.
    */
   gonogo_balance: {
@@ -2604,7 +2616,7 @@ export interface EngineContract {
     answer: IsaTempCAnswer;
   };
   /**
-   * A kept answer's age, as the apps show it with no signal ("Fetched 42 min ago"), and whether it is past the freshness ready_to_fly holds it to: the briefing, the plan's nav log, the Go / No-Go and the weather loop for an hour (the app's choice, at AIM 7-1-28's hourly METAR), METARs and TAFs for the routine report's hour (AIM 7-1-28), the NOTAMs for an hour (14 CFR 91.103, AIM 5-1-3; the age the app's choice), and the airport cards and plates for the AIRAC cycle they came in (FAA 28 and 56 Day Product Schedule). A caution at worst: the answer is still shown.
+   * A kept answer's age, as the apps show it with no signal ("Fetched 42m ago"), and whether it is past the freshness ready_to_fly holds it to: the briefing, the plan's nav log, the Go / No-Go and the weather loop for an hour (the app's choice, at AIM 7-1-28's hourly METAR), METARs and TAFs for the routine report's hour (AIM 7-1-28), the NOTAMs for an hour (14 CFR 91.103, AIM 5-1-3; the age the app's choice), and the airport cards and plates for the AIRAC cycle they came in (FAA 28 and 56 Day Product Schedule). A caution at worst: the answer is still shown.
    */
   kept_age: {
     input: KeptAgeInput;
@@ -2616,6 +2628,13 @@ export interface EngineContract {
   kneeboard_radio: {
     input: KneeboardRadioInput;
     answer: KneeboardRadioAnswer;
+  };
+  /**
+   * The runway landed on at a field the route flies an instrument approach to: the approach's own runway, straight in (AIM 5-4-20, Approach and Landing Minimums; 14 CFR 91.175, the runway of intended landing), unless the pilot picked another and the plate publishes circling minimums, a circle to land (AIM 5-4-20). A runway picked into the wind gives way to the approach's own. With no approach, or one circling only (no runway in its name), the pick stands and any runway may be picked. `circling` null (the plate still coming) is taken as no circling. The runway is answered as painted ("9", "8L").
+   */
+  landing_runway: {
+    input: LandingRunwayInput;
+    answer: LandingRunwayAnswer;
   };
   /**
    * Of a field's runways, each on the end the wind favours, the least crosswind, steady or gust, whichever is more: the runway a pilot would pick to keep the wind most nearly down it. A variable wind is all crosswind (AIM 7-1-28); calm is none. null with no wind or no runway end with a heading.
@@ -3332,6 +3351,13 @@ export interface EngineContract {
     answer: RoutePositionAnswer;
   };
   /**
+   * The SIDs and STARs among a route's words as a pilot types or pastes one (a clearance's, a filed flight plan's, AIM Appendix 4 item 15: "KMSP BAEE1 BAE V191 OSH OSHH2 KATW"): a word of four or five letters and its number, which no airport's identifier (three or four characters, FAA JO 7350.9) and no fix's name (five letters) is. Each with the nearest point typed before it and after it that is not one: a departure's transition is the fix after it, an arrival's the fix before it (AIM 5-2-9, 5-4-1). Which field publishes it, and as which kind, is the caller's, from the field's procedures.
+   */
+  route_procedures: {
+    input: RouteProceduresInput;
+    answer: RouteProceduresAnswer;
+  };
+  /**
    * A route typed as a pilot writes one, read back as item 15 of FAA Form 7233-4 has it (AIM Appendix 4), for the route's one field: split on spaces and commas, DCT (direct) taken out; a cruising speed and level group or a level alone before the first point the cruise's ("N0110A065": 110 kt true, 6,500 ft; "A" and hundreds of feet in three figures, "F" a flight level, 14 CFR 1.1 and 91.121(a)(2); "VFR" a VFR level, no figure; metric speeds and levels give no figure); a point with a group after its stroke ("LEXOR/N0467F380") the point, its level a change from there. The rest are the route's points, airways and procedures in order, upper case, as typed: which is which is the caller's.
    */
   route_read: {
@@ -3610,6 +3636,13 @@ export interface EngineContract {
   thin_track: {
     input: ThinTrackInput;
     answer: ThinTrackAnswer;
+  };
+  /**
+   * How long ago something was, in the words every app writes it in (a report's "Observed 40m ago", a kept answer's "Fetched 3h ago", a track's "2d ago"): "just now" under a minute (and for a time to come), whole minutes under an hour ("23m ago"), hours and minutes under two days ("2h 5m ago", "2h ago" on the hour), then whole days ("3d ago"), each counted down. The app's own wording, no aviation rule: the narrow duration the web writes (Intl.DurationFormat's narrow style, the owner's pick of 2026-10-28).
+   */
+  time_ago: {
+    input: TimeAgoInput;
+    answer: TimeAgoAnswer;
   };
   /**
    * The FAA's capitals in title case, from text, or each of texts as a list (a null row answers "").
@@ -7680,6 +7713,39 @@ export interface GlideRingInput {
    */
   glide_ratio?: number | null;
 }
+export interface GonogoAdverseRowsInput {
+  advisories: {
+    /**
+     * OnRoute's source: TFR, Convective SIGMET, SIGMET, CWA, PIREP, AIRMET or G-AIRMET.
+     */
+    source: string;
+    /**
+     * Its name in words: the hazard (sigmet_hazard, gairmet_title), a TFR's NOTAM and title, a PIREP's conditions.
+     */
+    name: string | null;
+    when: "during" | "before" | "after" | null;
+    enter: string | null;
+    valid_to: string | null;
+    issued: string | null;
+    from_nm: number | null;
+    legs: number[];
+    crosses: boolean;
+    urgent: boolean;
+  }[];
+}
+export interface GonogoAdverseRowsAnswer {
+  rows: {
+    source: string;
+    title: string;
+    finding: "stop" | "caution";
+    tab: "enroute" | "preflight";
+    section: string;
+    time_kind: "at" | "until" | "reported" | null;
+    time: string | null;
+    legs: number[];
+  }[];
+  more: number;
+}
 export interface GonogoBalanceInput {
   loading: GonogoLoading;
   load: GonogoLoad;
@@ -8961,7 +9027,7 @@ export interface KeptAgeAnswer {
   kind: KeptKind;
   age_min: number;
   /**
-   * "Fetched 42 min ago".
+   * "Fetched 42m ago".
    */
   line: string;
   /**
@@ -8977,6 +9043,17 @@ export interface KeptAgeAnswer {
 }
 export interface KneeboardRadioInput {
   frequencies: FieldFrequency[];
+}
+export interface LandingRunwayInput {
+  approach: boolean;
+  straight_in: string | null;
+  circling: boolean | null;
+  picked: string | null;
+  by_pilot: boolean;
+}
+export interface LandingRunwayAnswer {
+  runway: string | null;
+  others_allowed: boolean;
 }
 export interface LeastCrosswindInput {
   runways?:
@@ -12189,6 +12266,17 @@ export interface RoutePositionInput {
       }[]
     | null;
 }
+export interface RouteProceduresInput {
+  /**
+   * The route's words in order, upper case, as route_read gives its points.
+   */
+  words: string[];
+}
+export interface TypedProcedure {
+  name: string;
+  before: string | null;
+  after: string | null;
+}
 export interface RouteReadInput {
   /**
    * The route as typed or pasted: "KPWK DCT OBK V100 KLAS".
@@ -13060,6 +13148,12 @@ export interface TfrReadAnswer {
 export interface ThinTrackInput {
   points: unknown[];
   most?: number | null;
+}
+export interface TimeAgoInput {
+  /**
+   * Seconds since it happened: now less then.
+   */
+  seconds: number;
 }
 export interface TitleCaseInput {
   text?: string | null;

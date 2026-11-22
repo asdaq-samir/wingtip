@@ -4864,6 +4864,52 @@ object EngineContract {
         val glideRatio: Double? = null,
     )
 
+    @Serializable
+    data class GonogoAdverseRowsAnswer(
+        val rows: List<EngineContract.GonogoAdverseRowsAnswerRowsItem>,
+        val more: Int,
+    )
+
+    @Serializable
+    data class GonogoAdverseRowsAnswerRowsItem(
+        val source: String,
+        val title: String,
+        val finding: String,
+        val tab: String,
+        val section: String,
+        @SerialName("time_kind")
+        val timeKind: String? = null,
+        val time: String? = null,
+        val legs: List<Double>,
+    )
+
+    @Serializable
+    data class GonogoAdverseRowsInput(
+        val advisories: List<EngineContract.GonogoAdverseRowsInputAdvisoriesItem>,
+    )
+
+    @Serializable
+    data class GonogoAdverseRowsInputAdvisoriesItem(
+        /**
+         * OnRoute's source: TFR, Convective SIGMET, SIGMET, CWA, PIREP, AIRMET or G-AIRMET.
+         */
+        val source: String,
+        /**
+         * Its name in words: the hazard (sigmet_hazard, gairmet_title), a TFR's NOTAM and title, a PIREP's conditions.
+         */
+        val name: String? = null,
+        val `when`: String? = null,
+        val enter: String? = null,
+        @SerialName("valid_to")
+        val validTo: String? = null,
+        val issued: String? = null,
+        @SerialName("from_nm")
+        val fromNm: Double? = null,
+        val legs: List<Double>,
+        val crosses: Boolean,
+        val urgent: Boolean,
+    )
+
     /**
      * The planner's /api/alternate answer, as much as the finding reads.
      */
@@ -6995,7 +7041,7 @@ object EngineContract {
         @SerialName("age_min")
         val ageMin: Double,
         /**
-         * "Fetched 42 min ago".
+         * "Fetched 42m ago".
          */
         val line: String,
         /**
@@ -7028,6 +7074,24 @@ object EngineContract {
     @Serializable
     data class KneeboardRadioInput(
         val frequencies: List<EngineContract.FieldFrequency>,
+    )
+
+    @Serializable
+    data class LandingRunwayAnswer(
+        val runway: String? = null,
+        @SerialName("others_allowed")
+        val othersAllowed: Boolean,
+    )
+
+    @Serializable
+    data class LandingRunwayInput(
+        val approach: Boolean,
+        @SerialName("straight_in")
+        val straightIn: String? = null,
+        val circling: Boolean? = null,
+        val picked: String? = null,
+        @SerialName("by_pilot")
+        val byPilot: Boolean,
     )
 
     @Serializable
@@ -11365,6 +11429,21 @@ object EngineContract {
     )
 
     @Serializable
+    data class RouteProceduresAnswerItem(
+        val name: String,
+        val before: String? = null,
+        val after: String? = null,
+    )
+
+    @Serializable
+    data class RouteProceduresInput(
+        /**
+         * The route's words in order, upper case, as route_read gives its points.
+         */
+        val words: List<String>,
+    )
+
+    @Serializable
     data class RouteReadAnswer(
         val points: List<String>,
         /**
@@ -12692,6 +12771,14 @@ object EngineContract {
     data class ThinTrackInput(
         val points: List<JsonElement>,
         val most: Int? = null,
+    )
+
+    @Serializable
+    data class TimeAgoInput(
+        /**
+         * Seconds since it happened: now less then.
+         */
+        val seconds: Double,
     )
 
     @Serializable

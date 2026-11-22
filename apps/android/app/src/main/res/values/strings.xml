@@ -583,15 +583,9 @@
     <string name="status_last_heard">Not in the air · last heard %1$s</string>
     <string name="status_none_heard">Not heard in the last 6 weeks</string>
     <string name="speed_kt">%1$d kt</string>
-    <string name="ago_minutes">%1$d min ago</string>
-    <string name="ago_hours">%1$d h ago</string>
     <string name="saved_on">saved %1$s</string>
     <plurals name="info_based_count">
         <item quantity="one">%1$d of %2$d takeoff or landing</item>
         <item quantity="other">%1$d of %2$d takeoffs and landings</item>
-    </plurals>
-    <plurals name="ago_days">
-        <item quantity="one">%1$d day ago</item>
-        <item quantity="other">%1$d days ago</item>
     </plurals>
 </resources>

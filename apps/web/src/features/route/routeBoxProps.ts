@@ -21,8 +21,8 @@ export interface RouteBoxProps extends RouteParts {
   /** A point's own altitude set, or (null) given back to the plan. */
   onAltitudeChange: (ident: string, feet: number | null) => void;
   onChange: (route: RouteParts) => void;
-  /** SIDs and STARs typed among the points ("BAEE1", lib/procedures'
-   *  TYPED_PROCEDURE), taken out of them, for the route's procedures to
+  /** SIDs and STARs typed among the points ("BAEE1", the engine's
+   *  route_procedures), taken out of them, for the route's procedures to
    *  pick, with the route they were typed into. */
   onTypedProcedures?: (typed: TypedProcedure[], route: { dep: string; dest: string }) => void;
   /** A stop asked for from elsewhere -- a problem's Add a stop or Fly

@@ -41,6 +41,7 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.lookShape
 import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.format.ago
 import app.wingtipmaps.android.offline.KeptAgeLine
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.ui.LocalWingtipPalette
@@ -61,11 +62,10 @@ data class FrameTime(val zulu: String, val local: String, val age: String, val o
 
         fun of(frame: app.wingtipmaps.android.api.generated.LoopFrame, now: Instant, oldAfterS: Double): FrameTime? {
             val at = runCatching { Instant.parse(frame.valid) }.getOrNull() ?: return null
-            val minutes = Duration.between(at, now).toMinutes()
             val zone = ZoneId.systemDefault()
             val local = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withZone(zone).format(at) + " " +
                 DateTimeFormatter.ofPattern("zzz").withZone(zone).format(at)
-            val age = if (minutes < 1) "just now" else "${Format.duration(minutes.toDouble())} ago"
+            val age = Format.ago(Duration.between(at, now).seconds.toDouble())
             return FrameTime(ZULU.format(at), local, age, Duration.between(at, now).seconds > oldAfterS)
         }
     }

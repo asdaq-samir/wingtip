@@ -97,12 +97,9 @@ struct SharedPlan: Equatable, Sendable {
         return out
     }
 
-    private static var iso: ISO8601DateFormatter { ISO8601DateFormatter() }
-
-    /// An ISO 8601 instant, with or without its fractions of a second.
+    /// An ISO 8601 instant, with or without its fractions of a second
+    /// (AirportWords.date, Foundation's ISO8601FormatStyle).
     static func instant(_ text: String) -> Date? {
-        let fractional = ISO8601DateFormatter()
-        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return iso.date(from: text) ?? fractional.date(from: text)
+        AirportWords.date(text)
     }
 }
