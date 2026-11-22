@@ -62,8 +62,6 @@ export function copilotInput({
 }): CopilotInput | null {
   if (!fix || !flight || !around) return null;
   const along = alongLine(fix, flight.line);
-  const hours = startedAtMs != null ? Math.max(0, fix.at - startedAtMs) / 3_600_000 : 0;
-  const fuelGal = flight.fuelGal != null && flight.burnGph != null ? Math.max(0, flight.fuelGal - flight.burnGph * hours) : null;
   return {
     now_s: fix.at / 1000,
     own: { lat: fix.lat, lon: fix.lon, track_deg: fix.headingDeg, gs_kt: fix.speedKt },
@@ -73,7 +71,10 @@ export function copilotInput({
     remaining_nm: along?.leftNm ?? null,
     planned_gs_kt: flight.plannedGsKt,
     tas_kt: flight.tasKt,
-    fuel_gal: fuelGal,
+    // The fuel at takeoff and when the flight began: the engine takes the
+    // burn over the time since (copilot_watch's started_s).
+    fuel_gal: flight.fuelGal,
+    started_s: startedAtMs != null ? startedAtMs / 1000 : null,
     burn_gph: flight.burnGph,
     minimums: {
       ceiling_ft: minimums.ceilingFt,

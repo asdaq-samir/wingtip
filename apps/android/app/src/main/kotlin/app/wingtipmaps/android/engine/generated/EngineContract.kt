@@ -2761,8 +2761,16 @@ object EngineContract {
         val fields: List<EngineContract.CopilotField>,
         val rules: String? = null,
         val minimums: EngineContract.CopilotWatchInputMinimums? = null,
+        /**
+         * The fuel aboard, gallons: at takeoff where `started_s` is given (the engine takes the burn over the time since), else now.
+         */
         @SerialName("fuel_gal")
         val fuelGal: Double? = null,
+        /**
+         * When the flight began, s since 1970: with it the fuel aboard now is `fuel_gal` less `burn_gph` over the time from then to `now_s`, never below none (FAA-H-8083-25C ch. 16). Left out, `fuel_gal` is taken as the fuel aboard now.
+         */
+        @SerialName("started_s")
+        val startedS: Double? = null,
         @SerialName("burn_gph")
         val burnGph: Double? = null,
         @SerialName("tas_kt")
@@ -3920,6 +3928,10 @@ object EngineContract {
          * The site's kind in words, or null for an airport.
          */
         val words: String? = null,
+        /**
+         * Whether an airplane on wheels lands at a field of this kind: A, G and U, or no code.
+         */
+        val airplane: Boolean,
     )
 
     @Serializable
@@ -4862,6 +4874,52 @@ object EngineContract {
          */
         @SerialName("glide_ratio")
         val glideRatio: Double? = null,
+    )
+
+    @Serializable
+    data class GonogoAdverseRowsAnswer(
+        val rows: List<EngineContract.GonogoAdverseRowsAnswerRowsItem>,
+        val more: Int,
+    )
+
+    @Serializable
+    data class GonogoAdverseRowsAnswerRowsItem(
+        val source: String,
+        val title: String,
+        val finding: String,
+        val tab: String,
+        val section: String,
+        @SerialName("time_kind")
+        val timeKind: String? = null,
+        val time: String? = null,
+        val legs: List<Double>,
+    )
+
+    @Serializable
+    data class GonogoAdverseRowsInput(
+        val advisories: List<EngineContract.GonogoAdverseRowsInputAdvisoriesItem>,
+    )
+
+    @Serializable
+    data class GonogoAdverseRowsInputAdvisoriesItem(
+        /**
+         * OnRoute's source: TFR, Convective SIGMET, SIGMET, CWA, PIREP, AIRMET or G-AIRMET.
+         */
+        val source: String,
+        /**
+         * Its name in words: the hazard (sigmet_hazard, gairmet_title), a TFR's NOTAM and title, a PIREP's conditions.
+         */
+        val name: String? = null,
+        val `when`: String? = null,
+        val enter: String? = null,
+        @SerialName("valid_to")
+        val validTo: String? = null,
+        val issued: String? = null,
+        @SerialName("from_nm")
+        val fromNm: Double? = null,
+        val legs: List<Double>,
+        val crosses: Boolean,
+        val urgent: Boolean,
     )
 
     /**
@@ -7055,6 +7113,24 @@ object EngineContract {
     @Serializable
     data class KneeboardRadioInput(
         val frequencies: List<EngineContract.FieldFrequency>,
+    )
+
+    @Serializable
+    data class LandingRunwayAnswer(
+        val runway: String? = null,
+        @SerialName("others_allowed")
+        val othersAllowed: Boolean,
+    )
+
+    @Serializable
+    data class LandingRunwayInput(
+        val approach: Boolean,
+        @SerialName("straight_in")
+        val straightIn: String? = null,
+        val circling: Boolean? = null,
+        val picked: String? = null,
+        @SerialName("by_pilot")
+        val byPilot: Boolean,
     )
 
     @Serializable
@@ -10988,6 +11064,58 @@ object EngineContract {
     data class ReserveMinInput(
         val ifr: Boolean? = null,
         val night: Boolean? = null,
+    )
+
+    @Serializable
+    data class RouteAdizAnswer(
+        /**
+         * Each point's zone, null outside every one.
+         */
+        val points: List<String?>,
+        /**
+         * From each point to the next.
+         */
+        val legs: List<List<String>>,
+        /**
+         * Every zone the route meets, once each in order.
+         */
+        val zones: List<String>,
+        /**
+         * The Brief's line for the route, once; null where it meets no ADIZ.
+         */
+        val brief: EngineContract.RouteAdizAnswerBrief? = null,
+    )
+
+    @Serializable
+    data class RouteAdizAnswerBrief(
+        /**
+         * The finding alone, "Through the Alaska ADIZ".
+         */
+        val lead: String,
+        /**
+         * The finding and what part 99 asks, in one line.
+         */
+        val line: String,
+        /**
+         * What part 99 asks in the first zone met, its exceptions (99.1(b)) said.
+         */
+        val action: String,
+        val why: String,
+        val cite: String,
+    )
+
+    @Serializable
+    data class RouteAdizInput(
+        /**
+         * The route's points in order, as the nav log's rows: a leg from each to the next.
+         */
+        val points: List<EngineContract.RouteAdizInputPointsItem>,
+    )
+
+    @Serializable
+    data class RouteAdizInputPointsItem(
+        val lat: Double,
+        val lon: Double,
     )
 
     /**

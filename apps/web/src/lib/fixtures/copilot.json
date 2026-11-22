@@ -79,6 +79,16 @@
       "expect": { "kind": "fuel", "level": "warning", "alternative": "KFLD", "title_has": "under the 30 min reserve" }
     },
     {
+      "name": "the same fuel from 20 gal at takeoff, 1 h 33 min 20 s ago at 9 gph: 14 gal burnt, 6 left (fuel used is the burn over the time, FAA-H-8083-25C ch. 16)",
+      "with": { "fuel_gal": 20, "started_s": 1794238000 },
+      "expect": { "kind": "fuel", "level": "warning", "alternative": "KFLD", "title_has": "under the 30 min reserve" }
+    },
+    {
+      "name": "20 gal at takeoff and the flight just begun: nothing burnt yet, a quiet flight",
+      "with": { "fuel_gal": 20, "started_s": 1794243600 },
+      "expect": null
+    },
+    {
       "name": "a microburst at Oshkosh outranks its weather",
       "metars": { "KOSH": { "raw": "SPECI KOSH 091712Z 34012KT 2SM BR OVC008 08/07 A2992", "flight_category": "IFR" } },
       "with": { "itws": [{ "airport": "KOSH", "alert": "microburst", "words": "Runway 36 arrival microburst alert 40 kt, 3 mile final to runway" }] },

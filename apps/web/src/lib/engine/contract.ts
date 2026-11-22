@@ -1932,7 +1932,7 @@ export interface EngineContract {
     answer: FieldMilitaryAnswer;
   };
   /**
-   * The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport.
+   * The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport. `airplane`: whether an airplane on wheels lands there, an airport (A), a gliderport (G) or an ultralight park (U), each a strip of ground; not a heliport, a balloonport or a seaplane base, whose runways are water. What every list of fields to land at is held to (nearest, a stop, a glide's); true with no code, the host's own list then deciding.
    */
   field_site_type: {
     input: FieldSiteTypeInput;
@@ -2231,6 +2231,13 @@ export interface EngineContract {
   glide_ring: {
     input: GlideRingInput;
     answer: GlideRingAnswer;
+  };
+  /**
+   * The Brief's Adverse Conditions rows under its findings, the standard briefing's first element (AIM 7-1-5(b)(1)): what the flight meets on the route while it is there (OnRoute `when` "during", or none given) -- a TFR the route goes through (14 CFR 91.137-91.145) and a Convective SIGMET or SIGMET (AIM 7-1-6), stops; a Center Weather Advisory (AIM 7-1-6), an urgent pilot report (UUA, AIM 7-1-18) and an AIRMET or G-AIRMET (AIM 7-1-6), cautions -- in that order, of a kind the one met first along the route first, at most three, with how many more. A TFR only near the route, a routine PIREP and a hazard before or after the flight are left to their pages. Each row's time is for the host to write: `at` when the flight meets a TFR, `until` an advisory's end, `reported` a pilot report's time.
+   */
+  gonogo_adverse_rows: {
+    input: GonogoAdverseRowsInput;
+    answer: GonogoAdverseRowsAnswer;
   };
   /**
    * Weight and balance at takeoff and landing, against the profile's limits and envelope, with the problems found.
@@ -2623,6 +2630,13 @@ export interface EngineContract {
   kneeboard_radio: {
     input: KneeboardRadioInput;
     answer: KneeboardRadioAnswer;
+  };
+  /**
+   * The runway landed on at a field the route flies an instrument approach to: the approach's own runway, straight in (AIM 5-4-20, Approach and Landing Minimums; 14 CFR 91.175, the runway of intended landing), unless the pilot picked another and the plate publishes circling minimums, a circle to land (AIM 5-4-20). A runway picked into the wind gives way to the approach's own. With no approach, or one circling only (no runway in its name), the pick stands and any runway may be picked. `circling` null (the plate still coming) is taken as no circling. The runway is answered as painted ("9", "8L").
+   */
+  landing_runway: {
+    input: LandingRunwayInput;
+    answer: LandingRunwayAnswer;
   };
   /**
    * Of a field's runways, each on the end the wind favours, the least crosswind, steady or gust, whichever is more: the runway a pilot would pick to keep the wind most nearly down it. A variable wind is all crosswind (AIM 7-1-28); calm is none. null with no wind or no runway end with a heading.
@@ -3316,6 +3330,13 @@ export interface EngineContract {
   reserve_min: {
     input: ReserveMinInput;
     answer: ReserveMinAnswer;
+  };
+  /**
+   * The Air Defense Identification Zones a route meets (14 CFR part 99, subpart B), each as the regulation draws it: the Contiguous U.S. ADIZ (99.43, its line along the U.S.-Mexico border taken as crossed by a leg from one country to the other), Alaska's (99.45), Guam's (99.47) and Hawaii's (99.49), great circles between their points and rhumb lines along a parallel (99.41). Each point, each leg checked every 2 nm along its geodesic, the zones met in order and the Brief's one line: a flight plan filed and open (99.11), a two-way radio and a listening watch (99.9), the transponder on (99.13) and a position report before crossing (99.15), with 99.1(b)'s exceptions said. Warn, never limit: any altitude or speed is taken as meeting the zone.
+   */
+  route_adiz: {
+    input: RouteAdizInput;
+    answer: RouteAdizAnswer;
   };
   /**
    * Which of a route's points and legs lie outside the United States, each leg checked every 2 nm along its geodesic, and the Brief's one line for them. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).
@@ -5837,7 +5858,14 @@ export interface CopilotWatchInput {
   fields: CopilotField[];
   rules?: "VFR" | "IFR" | null;
   minimums?: CopilotMinimums;
+  /**
+   * The fuel aboard, gallons: at takeoff where `started_s` is given (the engine takes the burn over the time since), else now.
+   */
   fuel_gal?: number | null;
+  /**
+   * When the flight began, s since 1970: with it the fuel aboard now is `fuel_gal` less `burn_gph` over the time from then to `now_s`, never below none (FAA-H-8083-25C ch. 16). Left out, `fuel_gal` is taken as the fuel aboard now.
+   */
+  started_s?: number | null;
   burn_gph?: number | null;
   tas_kt?: number | null;
   /**
@@ -7036,6 +7064,10 @@ export interface FieldSiteTypeAnswer {
    * The site's kind in words, or null for an airport.
    */
   words: "Balloonport" | "Seaplane base" | "Gliderport" | "Heliport" | "Ultralight" | null;
+  /**
+   * Whether an airplane on wheels lands at a field of this kind: A, G and U, or no code.
+   */
+  airplane: boolean;
 }
 export interface FieldStatusInput {
   /**
@@ -7704,6 +7736,39 @@ export interface GlideRingInput {
    * The airplane's still-air glide ratio, feet forward for each foot down (its profile's glide.ratio); null or missing for none.
    */
   glide_ratio?: number | null;
+}
+export interface GonogoAdverseRowsInput {
+  advisories: {
+    /**
+     * OnRoute's source: TFR, Convective SIGMET, SIGMET, CWA, PIREP, AIRMET or G-AIRMET.
+     */
+    source: string;
+    /**
+     * Its name in words: the hazard (sigmet_hazard, gairmet_title), a TFR's NOTAM and title, a PIREP's conditions.
+     */
+    name: string | null;
+    when: "during" | "before" | "after" | null;
+    enter: string | null;
+    valid_to: string | null;
+    issued: string | null;
+    from_nm: number | null;
+    legs: number[];
+    crosses: boolean;
+    urgent: boolean;
+  }[];
+}
+export interface GonogoAdverseRowsAnswer {
+  rows: {
+    source: string;
+    title: string;
+    finding: "stop" | "caution";
+    tab: "enroute" | "preflight";
+    section: string;
+    time_kind: "at" | "until" | "reported" | null;
+    time: string | null;
+    legs: number[];
+  }[];
+  more: number;
 }
 export interface GonogoBalanceInput {
   loading: GonogoLoading;
@@ -9021,6 +9086,17 @@ export interface KeptAgeAnswer {
 }
 export interface KneeboardRadioInput {
   frequencies: FieldFrequency[];
+}
+export interface LandingRunwayInput {
+  approach: boolean;
+  straight_in: string | null;
+  circling: boolean | null;
+  picked: string | null;
+  by_pilot: boolean;
+}
+export interface LandingRunwayAnswer {
+  runway: string | null;
+  others_allowed: boolean;
 }
 export interface LeastCrosswindInput {
   runways?:
@@ -11957,6 +12033,48 @@ export interface ReserveMinInput {
   ifr?: boolean | null;
   night?: boolean | null;
 }
+export interface RouteAdizInput {
+  /**
+   * The route's points in order, as the nav log's rows: a leg from each to the next.
+   */
+  points: {
+    lat: number;
+    lon: number;
+  }[];
+}
+export interface RouteAdizAnswer {
+  /**
+   * Each point's zone, null outside every one.
+   */
+  points: (("contiguous" | "alaska" | "hawaii" | "guam") | null)[];
+  /**
+   * From each point to the next.
+   */
+  legs: ("contiguous" | "alaska" | "hawaii" | "guam")[][];
+  /**
+   * Every zone the route meets, once each in order.
+   */
+  zones: ("contiguous" | "alaska" | "hawaii" | "guam")[];
+  /**
+   * The Brief's line for the route, once; null where it meets no ADIZ.
+   */
+  brief: {
+    /**
+     * The finding alone, "Through the Alaska ADIZ".
+     */
+    lead: string;
+    /**
+     * The finding and what part 99 asks, in one line.
+     */
+    line: string;
+    /**
+     * What part 99 asks in the first zone met, its exceptions (99.1(b)) said.
+     */
+    action: string;
+    why: string;
+    cite: string;
+  } | null;
+}
 export interface RouteJurisdictionInput {
   /**
    * The route's points in order, as the nav log's rows: a leg from each to the next.
@@ -11986,8 +12104,6 @@ export interface RouteJurisdictionAnswer {
   legs: {
     /**
      * The countries other than the United States met along the leg, its ends included, in the order met.
-     *
-     * Items: US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
      */
     codes: ("US" | "CA" | "MX" | "BS" | "other")[];
     /**
@@ -11997,8 +12113,6 @@ export interface RouteJurisdictionAnswer {
   }[];
   /**
    * Every country other than the United States the route meets, once each in order.
-   *
-   * Items: US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
    */
   outside: ("US" | "CA" | "MX" | "BS" | "other")[];
   /**

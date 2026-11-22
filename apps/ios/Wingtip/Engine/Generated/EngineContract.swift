@@ -2735,7 +2735,10 @@ enum EngineContract {
         var fields: [EngineContract.CopilotField]
         var rules: String?
         var minimums: EngineContract.CopilotWatchInputMinimums?
+        /// The fuel aboard, gallons: at takeoff where `started_s` is given (the engine takes the burn over the time since), else now.
         var fuelGal: Double?
+        /// When the flight began, s since 1970: with it the fuel aboard now is `fuel_gal` less `burn_gph` over the time from then to `now_s`, never below none (FAA-H-8083-25C ch. 16). Left out, `fuel_gal` is taken as the fuel aboard now.
+        var startedS: Double?
         var burnGph: Double?
         var tasKt: Double?
         /// The destination's ident. Sent among `fields` with its `status`, a closed one (NASR ARPT_STATUS not O) is said in a "closed" warning with the best alternative; not among them at all, it is still watched for, its weather and position unknown and `remaining_nm` the host's.
@@ -2756,6 +2759,7 @@ enum EngineContract {
             case rules
             case minimums
             case fuelGal = "fuel_gal"
+            case startedS = "started_s"
             case burnGph = "burn_gph"
             case tasKt = "tas_kt"
             case dest
@@ -3888,6 +3892,8 @@ enum EngineContract {
     struct FieldSiteTypeAnswer: Codable, Equatable, Sendable {
         /// The site's kind in words, or null for an airport.
         var words: String?
+        /// Whether an airplane on wheels lands at a field of this kind: A, G and U, or no code.
+        var airplane: Bool
     }
 
     struct FieldSiteTypeInput: Codable, Equatable, Sendable {
@@ -4839,6 +4845,65 @@ enum EngineContract {
             case terrainFt = "terrain_ft"
             case fieldFt = "field_ft"
             case glideRatio = "glide_ratio"
+        }
+    }
+
+    struct GonogoAdverseRowsAnswer: Codable, Equatable, Sendable {
+        var rows: [EngineContract.GonogoAdverseRowsAnswerRowsItem]
+        var more: Int
+    }
+
+    struct GonogoAdverseRowsAnswerRowsItem: Codable, Equatable, Sendable {
+        var source: String
+        var title: String
+        var finding: String
+        var tab: String
+        var section: String
+        var timeKind: String?
+        var time: String?
+        var legs: [Double]
+
+        enum CodingKeys: String, CodingKey {
+            case source
+            case title
+            case finding
+            case tab
+            case section
+            case timeKind = "time_kind"
+            case time
+            case legs
+        }
+    }
+
+    struct GonogoAdverseRowsInput: Codable, Equatable, Sendable {
+        var advisories: [EngineContract.GonogoAdverseRowsInputAdvisoriesItem]
+    }
+
+    struct GonogoAdverseRowsInputAdvisoriesItem: Codable, Equatable, Sendable {
+        /// OnRoute's source: TFR, Convective SIGMET, SIGMET, CWA, PIREP, AIRMET or G-AIRMET.
+        var source: String
+        /// Its name in words: the hazard (sigmet_hazard, gairmet_title), a TFR's NOTAM and title, a PIREP's conditions.
+        var name: String?
+        var when: String?
+        var enter: String?
+        var validTo: String?
+        var issued: String?
+        var fromNm: Double?
+        var legs: [Double]
+        var crosses: Bool
+        var urgent: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case source
+            case name
+            case when
+            case enter
+            case validTo = "valid_to"
+            case issued
+            case fromNm = "from_nm"
+            case legs
+            case crosses
+            case urgent
         }
     }
 
@@ -6919,6 +6984,32 @@ enum EngineContract {
 
     struct KneeboardRadioInput: Codable, Equatable, Sendable {
         var frequencies: [EngineContract.FieldFrequency]
+    }
+
+    struct LandingRunwayAnswer: Codable, Equatable, Sendable {
+        var runway: String?
+        var othersAllowed: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case runway
+            case othersAllowed = "others_allowed"
+        }
+    }
+
+    struct LandingRunwayInput: Codable, Equatable, Sendable {
+        var approach: Bool
+        var straightIn: String?
+        var circling: Bool?
+        var picked: String?
+        var byPilot: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case approach
+            case straightIn = "straight_in"
+            case circling
+            case picked
+            case byPilot = "by_pilot"
+        }
     }
 
     struct LeastCrosswindAnswer: Codable, Equatable, Sendable {
@@ -10684,6 +10775,38 @@ enum EngineContract {
     struct ReserveMinInput: Codable, Equatable, Sendable {
         var ifr: Bool?
         var night: Bool?
+    }
+
+    struct RouteAdizAnswer: Codable, Equatable, Sendable {
+        /// Each point's zone, null outside every one.
+        var points: [String?]
+        /// From each point to the next.
+        var legs: [[String]]
+        /// Every zone the route meets, once each in order.
+        var zones: [String]
+        /// The Brief's line for the route, once; null where it meets no ADIZ.
+        var brief: EngineContract.RouteAdizAnswerBrief?
+    }
+
+    struct RouteAdizAnswerBrief: Codable, Equatable, Sendable {
+        /// The finding alone, "Through the Alaska ADIZ".
+        var lead: String
+        /// The finding and what part 99 asks, in one line.
+        var line: String
+        /// What part 99 asks in the first zone met, its exceptions (99.1(b)) said.
+        var action: String
+        var why: String
+        var cite: String
+    }
+
+    struct RouteAdizInput: Codable, Equatable, Sendable {
+        /// The route's points in order, as the nav log's rows: a leg from each to the next.
+        var points: [EngineContract.RouteAdizInputPointsItem]
+    }
+
+    struct RouteAdizInputPointsItem: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
     }
 
     /// A pilot's hold as the route's address writes it ("VPBNG/090/30:270:R:1M:2T"): legs by minutes or by nm, length by turns or by minutes, the other of each pair null.

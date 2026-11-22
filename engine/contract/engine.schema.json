@@ -6076,6 +6076,14 @@
               }
             },
             "fuel_gal": {
+              "description": "The fuel aboard, gallons: at takeoff where `started_s` is given (the engine takes the burn over the time since), else now.",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "started_s": {
+              "description": "When the flight began, s since 1970: with it the fuel aboard now is `fuel_gal` less `burn_gph` over the time from then to `now_s`, never below none (FAA-H-8083-25C ch. 16). Left out, `fuel_gal` is taken as the fuel aboard now.",
               "type": [
                 "number",
                 "null"

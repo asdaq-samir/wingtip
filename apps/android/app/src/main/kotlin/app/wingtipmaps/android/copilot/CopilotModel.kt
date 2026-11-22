@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.math.max
 
 /** One message of the copilot's, the engine's. */
 typealias CopilotMessage = EngineContract.CopilotMessage
@@ -113,9 +112,6 @@ class CopilotModel @Inject constructor(
         fix: OwnShip.Fix, flight: CopilotFlight, got: CopilotAround, along: Along?, ahead: List<AheadAlert>,
         minimums: EngineContract.CopilotWatchInputMinimums?,
     ): EngineContract.CopilotWatchInput {
-        val hours = max(0L, fix.atMs - (startedAtMs ?: fix.atMs)) / 3_600_000.0
-        val fuel = flight.fuelGal
-        val burn = flight.burnGph
         return EngineContract.CopilotWatchInput(
             nowS = fix.atMs / 1000.0,
             own = EngineContract.CopilotWatchInputOwn(fix.lat, fix.lon, fix.trackDeg, fix.groundspeedKt),
@@ -124,8 +120,10 @@ class CopilotModel @Inject constructor(
             // The pilot's own minimums (Setup) and whether anyone is aboard
             // (the Airplane page), as the web's copilotInput passes them.
             minimums = minimums, passengers = flight.passengers,
-            fuelGal = if (fuel != null && burn != null) max(0.0, fuel - burn * hours) else null,
-            burnGph = burn, tasKt = flight.tasKt, dest = flight.dest, alternate = flight.alternate,
+            // The fuel at takeoff and when the flight began: the engine takes
+            // the burn over the time since (copilot_watch's started_s).
+            fuelGal = flight.fuelGal, startedS = startedAtMs?.let { it / 1000.0 },
+            burnGph = flight.burnGph, tasKt = flight.tasKt, dest = flight.dest, alternate = flight.alternate,
             remainingNm = along?.leftNm, plannedGsKt = flight.plannedGsKt,
             areas = CopilotShapes.areas(got), itws = CopilotShapes.itws(got),
             ahead = ahead.map { EngineContract.CopilotWatchInputAheadItem(it.id, it.kind, it.level, it.name) },
