@@ -94,7 +94,7 @@ export function useShortcuts(on: boolean): void {
     { ...HEARD, enabled: on },
   );
   useHotkeys(
-    [...Object.values(SCREEN_KEYS), DIRECT_KEY].map(altKey),
+    [...Object.values(SCREEN_KEYS).filter((key): key is string => !!key), DIRECT_KEY].map(altKey),
     (event, hotkey) => {
       const letter = letterOf(hotkey.keys);
       const screen = (Object.keys(SCREEN_KEYS) as ScreenId[]).find((id) => SCREEN_KEYS[id] === letter);
