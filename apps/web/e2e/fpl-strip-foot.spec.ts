@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { grabberTo, settle, slow } from "./helpers";
+import { grabberTo, settle, slow, typeRoute } from "./helpers";
 import { pickAirplane } from "./startState";
 
 test.use({ viewport: { width: 393, height: 852 }, hasTouch: true, isMobile: true });
@@ -126,7 +126,7 @@ test("pulled slowly down to the pill, the figures go down with the plan, frame b
     page.evaluate(() => {
       const sheet = document.querySelector<HTMLElement>('[data-swipe-direction="down"]')!.getBoundingClientRect();
       const fig = document.querySelector<HTMLElement>("[data-pin-foot]")!.getBoundingClientRect();
-      return { sheetTop: sheet.top, bottom: fig.bottom, top: fig.top };
+      return { sheetTop: sheet.top, bottom: fig.bottom, top: fig.top, height: fig.height };
     });
   await page.mouse.move(x, y);
   await page.mouse.down();
@@ -144,9 +144,36 @@ test("pulled slowly down to the pill, the figures go down with the plan, frame b
     const moved = now.bottom - was.bottom;
     expect(moved, `step ${i}: no jump`).toBeLessThanOrEqual(Math.max(0, sheetMoved) + 4);
     if (now.bottom < edge - 4) expect(moved, `step ${i}: down with the plan`).toBeGreaterThanOrEqual(sheetMoved - 4);
+    // Its size grows in step with the slide toward the pill, a frame at a
+    // time, never shrinking nor jumping (the owner, 2026-11-22: "It should
+    // follow finger to look natural").
+    expect(now.height, `step ${i}: never shrinking`).toBeGreaterThanOrEqual(was.height - 1);
+    expect(now.height - was.height, `step ${i}: no jump in size`).toBeLessThanOrEqual(6);
     // Never past the screen's foot.
     expect(now.bottom).toBeLessThanOrEqual(edge + 1);
     was = now;
   }
+  const pulled = (await sample()).height;
   await page.mouse.up();
+  // Let go short of the pill's room it settles there, full size, with no snap past it.
+  await page.waitForTimeout(800);
+  expect((await sample()).height).toBeGreaterThanOrEqual(pulled - 1);
+});
+
+test("with the box turned into the route's field, typed in, the figures stay pinned and thin at half and full", async ({ page }) => {
+  // The owner, 2026-11-22: "Route box still shows figures full size."
+  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await grabberTo(page, "half");
+  const strip = page.locator("[data-pin-foot]").first();
+  await expect(strip.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(90_000) });
+  await typeRoute(page);
+  await page.getByTestId("route-type").click();
+  for (const size of ["half", "full"] as const) {
+    await grabberTo(page, size);
+    await page.waitForTimeout(500);
+    await expect(strip.getByTestId("navlog-ete")).toBeVisible();
+    expect((await strip.boundingBox())!.height, `thin at ${size}`).toBeLessThanOrEqual(32);
+  }
 });

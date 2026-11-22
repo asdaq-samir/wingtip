@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAKES_WAY, barRoom, liftAt, pinnedNow } from "./pinAtFoot";
+import { MAKES_WAY, barRoom, growAt, liftAt, pinnedNow } from "./pinAtFoot";
 
 describe("pinAtFoot", () => {
   it("holds the row at the pill whatever the slide", () => {
@@ -38,5 +38,15 @@ describe("pinAtFoot", () => {
     expect(MAKES_WAY).toContain("max(0px,min(var(--sheet-swipe,0px),");
     expect(MAKES_WAY).toContain("var(--pin-bar-room,9999px)");
     expect(MAKES_WAY).toContain("group-data-swiping/sheet:transition-none");
+  });
+
+  it("grows the figures from thin at half to full as the pill, in step with the slide, the end size alone with Reduce Motion", () => {
+    expect(growAt(0, 400, 760, false, false)).toBe(0);
+    expect(growAt(400, 400, 760, false, false)).toBe(0);
+    expect(growAt(580, 400, 760, false, false)).toBe(0.5);
+    expect(growAt(760, 400, 760, true, false)).toBe(1);
+    expect(growAt(900, 400, 760, true, false)).toBe(1);
+    expect(growAt(580, 400, 760, false, true)).toBe(0);
+    expect(growAt(760, 400, 760, true, true)).toBe(1);
   });
 });

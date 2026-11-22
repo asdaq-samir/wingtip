@@ -91,7 +91,7 @@ export default function TripFigures({
   /** At the sheet's foot: small at half and their full size at the pill
    *  and all the way up (FigureStrip's `grow`). */
   grow?: boolean;
-  /** One thin line, FPL's at half and all the way up (FigureStrip's `thin`). */
+  /** FPL's pinned figures, thin above the pill and full size as it (FigureStrip's `pin`). */
   thin?: boolean;
   /** A dry run flying: the same figures from where the airplane is
    *  (tripFigures' `flown`), the same taps on them. */
@@ -227,5 +227,5 @@ export default function TripFigures({
   // the pilot's ask: the strip keeps the figures, as soon as there are
   // any, and with none yet their names over dashes -- it keeps its place,
   // as the panel's controls do.
-  return <FigureStrip figures={ours} size={flying ? "flying" : thin ? "thin" : grow ? "grow" : "fixed"} tap={tap} />;
+  return <FigureStrip figures={ours} size={flying ? "flying" : thin ? "pin" : grow ? "grow" : "fixed"} tap={tap} />;
 }

@@ -7,7 +7,7 @@ import { RouteLine } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
 import RouteHead from "./RouteHead";
 import { FlightFigures } from "./FlightFoot";
-import { routeEditing, routesOut } from "./routeEditing";
+import { routeEditing, routesOut, routeTyped } from "./routeEditing";
 
 /**
  * FPL's actions in flight, one row of four tiles at the top of the flying
@@ -80,7 +80,12 @@ export function FplRoute({
   const { panelOpen } = vm.view;
   const { dryRunning, flying } = vm.flight;
   const { routeLine } = vm.routeList;
-  const editing = routeEditing(vm);
+  // The route's field open under the page puts the pinned figures away (its
+  // own under it); the grouped box turned into the field by its toggle does
+  // not: the figures stay pinned and follow the sheet alone, thin above the
+  // pill whatever the box shows or the keyboard does (the owner,
+  // 2026-11-22: "Route box still shows figures full size").
+  const editing = routeEditing(vm) && !routeTyped(vm);
   const routesShown = routesOut(vm);
   // The figures are FPL's pill too, one copy at every size: held on the
   // foot's edge at the pill, and as the sheet goes down they stop there
@@ -116,7 +121,7 @@ export function FplRoute({
               pill (the owner, 2026-11-22: "Maybe just make the figures
               strip very thin when fpl is half or full?"): one strip that
               changes size, eased, never two copies. */}
-          {!editing && <FlightFigures vm={vm} grow={false} thin={ground && panelOpen} />}
+          {!editing && <FlightFigures vm={vm} grow={false} thin={ground} />}
         </div>
       </div>
     </div>

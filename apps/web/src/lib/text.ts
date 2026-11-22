@@ -126,15 +126,18 @@ export const FIXED_FIGURE = {
   unitScale: 0.65,
 };
 
-/** FPL's figures as one thin line at half and all the way up (the owner,
- *  2026-11-22: "Maybe just make the figures strip very thin when fpl is
- *  half or full?"): each value iOS's Subheadline, a detail's 15, after its
- *  name in a note's 13, a row 28 tall; full size as the pill (FIXED_FIGURE). */
-export const THIN_FIGURE = {
-  value: `${TYPE_CLASS.detail} transition-[font-size] duration-(--motion-drawer) ease-(--motion-drawer-ease)`,
-  unit: "",
-  name: TYPE_CLASS.note,
-  unitScale: 1,
+/** FPL's figures, pinned at the sheet's foot: one thin line at half and
+ *  all the way up, each value a detail's 15 on 20 with no name over it,
+ *  growing to the pill's own, a heading's 20 on 25 under its note-size
+ *  name, as the sheet goes to the pill (--pin-p, 0 to 1, usePinAtFoot's
+ *  growAt, a frame at a time under the finger; the owner, 2026-11-22:
+ *  "make the figures strip very thin when fpl is half or full"; "It should
+ *  follow finger to look natural"). One strip that changes size. */
+export const PIN_FIGURE = {
+  value: "[--fig:calc(0.9375rem+0.3125rem*var(--pin-p,1))] leading-[calc(1.25rem+0.3125rem*var(--pin-p,1))]",
+  unit: "text-[length:0.65em] leading-(--lead-note)",
+  name: "max-h-[calc(1.125rem*var(--pin-p,1))] overflow-hidden opacity-(--pin-p,1)",
+  unitScale: 0.65,
 };
 
 /** The strip's value at its own size (`--fig`), never shrunk to fit a

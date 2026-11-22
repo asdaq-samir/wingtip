@@ -95,7 +95,7 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
     if (!row) return;
     const barOf = () => document.querySelector<HTMLElement>(foot)?.querySelector<HTMLElement>("[data-makes-way]");
     if (!on) {
-      for (const name of ["--pin-room", "--pin-lift", "--pin-pill"]) row.style.removeProperty(name);
+      for (const name of ["--pin-room", "--pin-lift", "--pin-pill", "--pin-half", "--pin-p"]) row.style.removeProperty(name);
       barOf()?.style.removeProperty("--pin-bar-room");
       return;
     }
@@ -115,6 +115,8 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       setRoom(row, `${room}px`, sheet ? getComputedStyle(sheet).getPropertyValue("--sheet-offset") : "");
       setVar(row, "--pin-lift", `${lift.lift}px`);
       setVar(row, "--pin-pill", `${lift.pill}px`);
+      setVar(row, "--pin-half", `${lift.half}px`);
+      setVar(row, "--pin-p", `${growAt(moved(sheet), lift.half, lift.pill, heldNow.current)}`);
       const slid = moved(sheet);
       row.toggleAttribute("data-pinned", pinnedNow(heldNow.current, slid, room, liftAt(slid, lift.lift, lift.pill)));
       // At the pill, where its face is the figures alone (FplRoute's PINNED).
@@ -171,6 +173,8 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       const slid = moved(row.closest(SHEET));
       row.toggleAttribute("data-pinned", pinnedNow(held, slid, px("--pin-room"), liftAt(slid, px("--pin-lift"), px("--pin-pill"))));
       row.toggleAttribute("data-pill", held);
+      // The figures' size, followed a frame at a time as the sheet goes (FIXED by the pill, thin above it).
+      setVar(row, "--pin-p", `${growAt(slid, px("--pin-half"), px("--pin-pill"), held)}`);
     };
     let frame = 0;
     const until = dragging ? Infinity : performance.now() + SETTLE_MS;
@@ -260,12 +264,29 @@ export function liftAt(slid: number, lift: number, pill: number) {
   return Math.min(lift, Math.max(0, pill - slid));
 }
 
+/**
+ * How far the figures have grown from their thin line (0, at half and
+ * all the way up) to their full size (1, as the pill), by how far the
+ * sheet has slid between half (`half`, its offset there) and the pill
+ * (`pill`), measured from its rect a frame at a time while a finger has
+ * it or it settles, so the strip follows the finger (the owner,
+ * 2026-11-22: "It should follow finger to look natural"). With Reduce
+ * Motion, the end size only: thin until the sheet is at the pill (`held`).
+ */
+export function growAt(slid: number, half: number, pill: number, held: boolean, reduced = reducedMotion()) {
+  if (reduced || pill <= half) return held ? 1 : 0;
+  return Math.round(Math.min(1, Math.max(0, (slid - half) / (pill - half))) * 1000) / 1000;
+}
+
+const reducedMotion = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 /** The foot's height, the row's lift off its edge, and the sheet's offset
  *  at the pill: a phone's bottom sheet only (Base UI's data-swipe-direction
  *  on its popup), none beside the side panel, which slides nowhere. */
 function liftOf(foot: HTMLElement | null, sheet: Element | null) {
-  if (!foot || !(sheet instanceof HTMLElement) || sheet.dataset.swipeDirection !== "down") return { lift: 0, pill: 0 };
-  return { lift: foot.offsetHeight, pill: sheet.offsetHeight - shownPx("peek", true, sheet.offsetHeight) };
+  if (!foot || !(sheet instanceof HTMLElement) || sheet.dataset.swipeDirection !== "down") return { lift: 0, pill: 0, half: 0 };
+  const h = sheet.offsetHeight;
+  return { lift: foot.offsetHeight, pill: h - shownPx("peek", true, h), half: h - shownPx("half", true, h) };
 }
 
 /** How far the sheet may slide down before the row's foot reaches the
