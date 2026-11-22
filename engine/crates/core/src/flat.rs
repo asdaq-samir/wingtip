@@ -53,6 +53,12 @@ impl Flat {
         };
         (d * self.kx, (lat - self.lat0) * 60.0)
     }
+
+    /// And back: the (lat, lon) `east_nm` east and `north_nm` north of the
+    /// frame's point, in the same frame (a test's point laid off a field's).
+    pub fn at(&self, east_nm: f64, north_nm: f64) -> (f64, f64) {
+        (self.lat0 + north_nm / 60.0, self.lon0 + east_nm / self.kx)
+    }
 }
 
 #[cfg(test)]
@@ -74,5 +80,13 @@ mod tests {
         // not 359.8 deg west.
         let (x, _) = Flat::about(51.9, 179.9).nm(51.9, -179.9);
         assert!(x > 0.0 && (x - 0.2 * 60.0 * (51.9f64).to_radians().cos()).abs() < 1e-9, "{x}");
+    }
+
+    #[test]
+    fn a_point_laid_off_in_the_frame_reads_back_the_same() {
+        let f = Flat::about(40.0, -90.0);
+        let (lat, lon) = f.at(1.5, -0.25);
+        let (x, y) = f.nm(lat, lon);
+        assert!((x - 1.5).abs() < 1e-12 && (y + 0.25).abs() < 1e-12, "{x} {y}");
     }
 }

@@ -3,6 +3,7 @@
 //! sides.
 
 use super::*;
+use wingtip_core::flat::Flat;
 use wingtip_core::units::FT_PER_NM;
 
 const LAT: f64 = 40.0;
@@ -21,10 +22,15 @@ fn field() -> Field {
     Field { elevation_ft: Some(ELEVATION), pattern_agl_ft: None }
 }
 
+/// The point `east_ft` east and `south_ft` south of the runway's middle,
+/// in core's flat frame about it rather than by hand in degrees.
+fn off_middle(east_ft: f64, south_ft: f64) -> (f64, f64) {
+    Flat::about(LAT, (WEST + EAST) / 2.0).at(east_ft / FT_PER_NM, -south_ft / FT_PER_NM)
+}
+
 /// A fix `south_ft` south of the runway's middle, `east_ft` east of it.
 fn fix(east_ft: f64, south_ft: f64, track: Option<f64>, kt: f64, agl: f64) -> Fix {
-    let lat = LAT - south_ft / FT_PER_NM / 60.0;
-    let lon = (WEST + EAST) / 2.0 + east_ft / FT_PER_NM / (60.0 * LAT.to_radians().cos());
+    let (lat, lon) = off_middle(east_ft, south_ft);
     Fix { lat, lon, age_s: 0.5, accuracy_m: 5.0, track_deg: track, groundspeed_kt: Some(kt), altitude_ft: Some(ELEVATION + agl) }
 }
 
@@ -134,10 +140,9 @@ fn lined_up_within_30_degrees_and_a_3_degree_path_of_the_pattern() {
 
 #[test]
 fn a_hot_spot_is_named_within_500_ft_on_the_surface() {
-    let spot = |east_ft: f64| HotSpot {
-        name: "HS 1".into(),
-        lat: LAT - 400.0 / FT_PER_NM / 60.0,
-        lon: (WEST + EAST) / 2.0 + east_ft / FT_PER_NM / (60.0 * LAT.to_radians().cos()),
+    let spot = |east_ft: f64| {
+        let (lat, lon) = off_middle(east_ft, 400.0);
+        HotSpot { name: "HS 1".into(), lat, lon }
     };
     let f = fix(0.0, 400.0, Some(0.0), 10.0, 0.0);
     let near = proximity(&f, &field(), &[strip(Some(100.0), false)], &[spot(499.0), spot(100.0)]);
