@@ -200,7 +200,9 @@ test("my position is the location arrow among the map's buttons, on both pages, 
   await settle(page);
   const arrow = page.locator("[data-map-controls]").getByTestId("my-position-button");
   await expect(arrow).toHaveAccessibleName("Show my position");
-  await expect(arrow).toHaveAttribute("aria-pressed", "false");
+  // A plain button named by its tap, not a toggle whose name changes with
+  // its pressed state (WCAG 4.1.2, the accessibility audit of 2026-11-21).
+  await expect(arrow).not.toHaveAttribute("aria-pressed");
   if (!(await page.evaluate(() => window.isSecureContext))) {
     await arrow.click();
     // An alert, with OK: something the pilot just did.
@@ -209,7 +211,7 @@ test("my position is the location arrow among the map's buttons, on both pages, 
     // OK from md up; on a phone the sheet's close in its title row.
     await alert.getByRole("button", { name: /^(OK|Close)$/ }).click();
     await expect(alert).toHaveCount(0);
-    await expect(arrow).toHaveAttribute("aria-pressed", "false");
+    await expect(arrow).toHaveAccessibleName("Show my position");
   }
   // The training page's as well: its map is the same (GlMapShell).
   await page.goto("/app/dev?dep=C81&dest=KDLH");

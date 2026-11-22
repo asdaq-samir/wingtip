@@ -72,7 +72,7 @@ test("opened fresh, the map is on the pilot's position in the middle of what the
   await expect(arrow).toHaveAccessibleName("Hide my position");
   await expect(page.locator('[data-own-ship="on"]')).toBeVisible();
   await arrow.click();
-  await expect(arrow).toHaveAttribute("aria-pressed", "false");
+  await expect(arrow).toHaveAccessibleName("Show my position");
   await expect(page.locator('[data-own-ship="off"]')).toBeVisible();
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(0);
 });
