@@ -325,6 +325,7 @@ export type EndorsementsInForceAnswer = [string, number][];
 export type FaaIdsAnswer = string[];
 export type FaaWordsAnswer = string | string[];
 export type FieldHoursAnswer = FieldHour[];
+export type FieldNamesAnswer = string[];
 export type FiledDofAnswer = string | null;
 export type FiledDurationAnswer = string;
 export type FiledEnduranceAnswer = number | null;
@@ -826,6 +827,19 @@ export type ProceduresReadAnswer = {
   exact: boolean;
 }[];
 export type ProceduresWriteAnswer = string;
+export type ProfileCloudsAnswer = {
+  station: string;
+  along_nm: number;
+  base_ft: number;
+  issued: string | null;
+}[];
+export type ProfileObstaclesAnswer = {
+  along_nm: number;
+  amsl_ft: number;
+  agl_ft: number | null;
+  level: ("warning" | "caution" | "clear") | null;
+  named: boolean;
+}[];
 export type ProhibitedCautionAnswer = string[];
 export type PublicUseAnswer = boolean;
 export type RadialOfAnswer = {
@@ -925,6 +939,7 @@ export type RoutePositionAnswer = {
   burnt_gal: number;
   on_route: boolean;
 } | null;
+export type RouteProceduresAnswer = TypedProcedure[];
 export type RouteWayWarningAnswer = string | null;
 export type RunwayCalmAnswer = boolean;
 export type RunwayCrosswindAnswer = number;
@@ -1056,6 +1071,10 @@ export type TfrPoint = {
   lon: number;
 } | null;
 export type ThinTrackAnswer = unknown[];
+/**
+ * "23m ago", "just now".
+ */
+export type TimeAgoAnswer = string;
 export type TitleCaseAnswer = string | string[];
 export type TokensAnswer = HeardToken[];
 export type TrafficFreshAnswer = boolean[];
@@ -1148,7 +1167,7 @@ export interface EngineContract {
     answer: AcsCodesAnswer;
   };
   /**
-   * Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground.
+   * Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground. Near the antimeridian a box is read the short way round, so its west may be under -180 or its east over 180: the planner reads it as its two halves (wingtip.geo_boxes).
    */
   ahead_frame: {
     input: AheadFrameInput;
@@ -1470,7 +1489,7 @@ export interface EngineContract {
     answer: AwcAirmetsReadAnswer;
   };
   /**
-   * The Aviation Weather Center's national airsigmets cache file (XML) read into the shape the weather store keeps: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].
+   * The Aviation Weather Center's combined SIGMET cache file (sigmets.cache.xml, XML: the US convective and non-convective SIGMETs and the international ones, data API v4.34) read into the shape the weather store keeps, one advisory an area, a convective SIGMET's CONV hazard as CONVECTIVE: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].
    */
   awc_airsigmets_read: {
     input: AwcAirsigmetsReadInput;
@@ -1841,6 +1860,13 @@ export interface EngineContract {
     answer: DiversionAnswer;
   };
   /**
+   * How far off the route a field is still one the flight may divert to, for keeping its plates (Keep for the Air): the 45 minutes of reserve 14 CFR 91.167(a)(3) asks under IFR and 91.151(a)(2) at night under VFR (kept by day too, more than 91.151(a)(1)'s 30: more plates, never fewer) at the airplane's own cruise, or its whole tanks' reach where that is less. Null with no cruise speed: never a stock airplane's.
+   */
+  diversion_range_nm: {
+    input: DiversionRangeInput;
+    answer: DiversionRangeAnswer;
+  };
+  /**
    * Whether a student's estimate is within the diversion drill's allowance (ACS PA.VI.C.S2); an error for a key not estimated.
    */
   diversion_reasonable: {
@@ -1925,7 +1951,7 @@ export interface EngineContract {
     answer: EndorsementRenderAnswer;
   };
   /**
-   * The latest not voided of each code, as [code, index] into the record (newest first).
+   * The latest not voided of each code, as [code, index] into the record (newest first); one whose instructor the FAA airmen registry did not bear out (verified false, instructor_verification) is not signed and counts as voided.
    */
   endorsements_in_force: {
     input: EndorsementsInForceInput;
@@ -1972,6 +1998,13 @@ export interface EngineContract {
   field_military: {
     input: FieldMilitaryInput;
     answer: FieldMilitaryAnswer;
+  };
+  /**
+   * Every name a field may be filed under, in the order to try them: NASR's ICAO_ID where given, the K form of a three-letter ident (FAA JO 7350.9GG 4-1), the ident as asked and its FAA form.
+   */
+  field_names: {
+    input: FieldNamesInput;
+    answer: FieldNamesAnswer;
   };
   /**
    * The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport. `airplane`: whether an airplane on wheels lands there, an airport (A), a gliderport (G) or an ultralight park (U), each a strip of ground; not a heliport, a balloonport or a seaplane base, whose runways are water. What every list of fields to land at is held to (nearest, a stop, a glide's); true with no code, the host's own list then deciding.
@@ -2485,6 +2518,13 @@ export interface EngineContract {
     answer: HandbookReadCheck;
   };
   /**
+   * Hazard colouring (ForeFlight's Hazard Advisor): the ground and obstacles on the map against the altitude flown, the GPS's in flight (`underway`, flying speed), the plan's cruise on the ground. Red over `warning_from_ft`, the altitude less the pilot's clearance -- 500 ft (14 CFR 91.119(c)), 1,000 ft by default (91.119(b), 91.177(a)(2)(ii)) or 2,000 ft (91.177(a)(2)(i), a Part 95 mountainous area); exactly the clearance meets the rule and is yellow -- yellow from `caution_from_ft`, 1,000 ft under that, nothing below. `shown` where the setting (off, on, or by itself in flight) and an altitude allow; each of `tops_ft` (obstacle tops, ft MSL) as `levels` against the bands ("warning", "caution", "clear"; null with no altitude). A picture against one altitude, not terrain clearance: no TAWS (TSO-C151). A phone's GPS height is over the WGS84 ellipsoid, some 100 ft under sea level over the US (GEOID18), so it errs red.
+   */
+  hazard_view: {
+    input: HazardViewInput;
+    answer: HazardViewAnswer;
+  };
+  /**
    * The entry into a route's hold for an airplane arriving on a course (AIM 5-3-8 j.3's sectors, read by the course flown).
    */
   hold_entry: {
@@ -2639,6 +2679,13 @@ export interface EngineContract {
     answer: InstructorRecordsSinceAnswer;
   };
   /**
+   * Whether the instructor signing an endorsement is a flight instructor the FAA's releasable airmen file bears out, by name (the file has no certificate numbers), not the student themselves and not a record another account signs as (14 CFR 61.1, 61.189(a); AC 61-65K).
+   */
+  instructor_verification: {
+    input: InstructorVerificationInput;
+    answer: InstructorVerificationAnswer;
+  };
+  /**
    * Whether a magnetic course is eastbound, 0 to 179 degrees (14 CFR 91.159(a)).
    */
   is_eastbound: {
@@ -2660,7 +2707,7 @@ export interface EngineContract {
     answer: JurisdictionOfAnswer;
   };
   /**
-   * A kept answer's age, as the apps show it with no signal ("Fetched 42 min ago"), and whether it is past the freshness ready_to_fly holds it to: the briefing, the plan's nav log, the Go / No-Go and the weather loop for an hour (the app's choice, at AIM 7-1-28's hourly METAR), METARs and TAFs for the routine report's hour (AIM 7-1-28), the NOTAMs for an hour (14 CFR 91.103, AIM 5-1-3; the age the app's choice), and the airport cards and plates for the AIRAC cycle they came in (FAA 28 and 56 Day Product Schedule). A caution at worst: the answer is still shown.
+   * A kept answer's age, as the apps show it with no signal ("Fetched 42m ago"), and whether it is past the freshness ready_to_fly holds it to: the briefing, the plan's nav log, the Go / No-Go and the weather loop for an hour (the app's choice, at AIM 7-1-28's hourly METAR), METARs and TAFs for the routine report's hour (AIM 7-1-28), the NOTAMs for an hour (14 CFR 91.103, AIM 5-1-3; the age the app's choice), and the airport cards and plates for the AIRAC cycle they came in (FAA 28 and 56 Day Product Schedule). A caution at worst: the answer is still shown.
    */
   kept_age: {
     input: KeptAgeInput;
@@ -3115,6 +3162,13 @@ export interface EngineContract {
     answer: PlatePagePointAnswer;
   };
   /**
+   * The plates a flight keeps for the air, each field once in its first role (departure, destination, stop, alternate (14 CFR 91.169(a)(2)), then the fields within range_nm of the route, nearest first) with the charts its role keeps: every chart at the departure, the destination and each stop; the approaches, minimums, diagram, hot spots and land-and-hold-short at the alternate; the approaches, minimums and diagram at a diversion. No diversion is kept with no range.
+   */
+  plates_kept: {
+    input: PlatesKeptInput;
+    answer: PlatesKeptAnswerField[];
+  };
+  /**
    * What a route point typed is: a fix, the pilot's own point (fix-radial-distance), or null.
    */
   point_kind: {
@@ -3220,6 +3274,20 @@ export interface EngineContract {
     answer: ProfileClearanceAnswer;
   };
   /**
+   * The profile's cloud bases: each TAF station (tafs_along_route's, with its TAF's issue time) whose forecast ceiling is known and which is within 25 nm of a leg of the route through `path` (the stations a leg's altitudes are kept under, 14 CFR 91.155; TAF_REACH_NM), placed at its foot on the nearest leg, in order along the route: its base MSL, the ceiling above the field plus the field's elevation. A stated simplification, as the altitude plan's: the ceiling (the lowest broken or overcast layer, FAA-H-8083-28B 27.4.2.9), not a FEW or SCT layer under it.
+   */
+  profile_clouds: {
+    input: ProfileCloudsInput;
+    answer: ProfileCloudsAnswer;
+  };
+  /**
+   * The FAA Digital Obstacle File's obstacles along the route for the profile, in order along it: each coloured against `altitude_ft` as the profile's ground is (profile_clearance: "warning" under 14 CFR 91.119(c)'s 500 ft or above, "caution" within 91.119(b)'s 1,000 ft, else "clear"; null with no altitude), and the tallest three, at least an eighth of the route apart, `named`, for the profile to label with their heights above the ground and the sea (DOF's AGL and AMSL).
+   */
+  profile_obstacles: {
+    input: ProfileObstaclesInput;
+    answer: ProfileObstaclesAnswer;
+  };
+  /**
    * Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.
    */
   prohibited_caution: {
@@ -3297,7 +3365,7 @@ export interface EngineContract {
     answer: ReadbackCheckAnswer;
   };
   /**
-   * Ready to fly: whether the device holds what the flight needs before it loses the signal -- the route's charts kept and of the 56-day edition in force, the cycle packs of the AIRAC cycle in force (FAA 28 and 56 Day Product Schedule; 14 CFR 91.103), a weather briefing under an hour old (the app's choice, at AIM 7-1-28's hourly METAR), each field's METAR in force and its TAF, the route's NOTAMs under an hour old (91.103, AIM 5-1-3; the age the app's choice), the plan's route, airplane and altitude (none assumed), what Keep for the Air holds for the route (its ages are kept_age's), the plan saved, location allowed, the battery at half or charging (the app's choice) and an ADS-B receiver where the pilot uses one. A caution at worst, never a stop; one line and at most three actions, the most pressing first.
+   * Ready to fly: whether the device holds what the flight needs before it loses the signal -- the route's charts kept and of the 56-day edition in force, the cycle packs of the AIRAC cycle in force (FAA 28 and 56 Day Product Schedule; 14 CFR 91.103), a weather briefing under an hour old (the app's choice, at AIM 7-1-28's hourly METAR), each field's METAR in force and its TAF, the route's NOTAMs under an hour old (91.103, AIM 5-1-3; the age the app's choice) and the full set in force, not only those heard since a day, the plan's route, airplane and altitude (none assumed), what Keep for the Air holds for the route (its ages are kept_age's), the plan saved, location allowed, the battery at half or charging (the app's choice) and an ADS-B receiver where the pilot uses one. A caution at worst, never a stop; one line and at most three actions, the most pressing first.
    */
   ready_to_fly: {
     input: ReadyToFlyInput;
@@ -3309,6 +3377,13 @@ export interface EngineContract {
   receiver_nexrad: {
     input: ReceiverNexradInput;
     answer: ReceiverNexradAnswer;
+  };
+  /**
+   * Own ship from the receiver's GPS or the device's (GDL 90 560-1058-00 Rev A 3.4, 3.5.1.6, 3.8). The receiver's Ownship Report is a fix only while the receiver is heard, its Heartbeat says GPS Pos Valid (3.1.1), the report is under 3 s old and not extrapolated (AC 120-76D 11.17.2.3's three seconds) and its NIC and NACp reach 14 CFR 91.227(c)(1)'s floor (NIC 7, under 0.2 nm; NACp 8, under 0.05 nm). It is used where the device has no fresh fix (a Wi-Fi iPad) or the receiver's is better by twice, the device's accuracy put on the EPU's 95%; the one in use is kept until the other is twice as good, and the device's is taken back the moment the receiver's goes. Height is the GPS's, MSL where the receiver says so (ForeFlight's ID message), else ellipsoid_ft alone for a geoid model; pressure altitude is a flight level only at and above 18,000 ft (14 CFR 91.121(a)(2), 1.1).
+   */
+  receiver_position: {
+    input: ReceiverPositionInput;
+    answer: ReceiverPositionAnswer;
   };
   /**
    * A portable ADS-B receiver's GDL 90 bytes (Garmin 560-1058-00 Rev A; ForeFlight's ID message) read into what it has said: its state, own ship, the traffic it hears (AIM 4-5-7, 4-5-8) and the FIS-B products it is sent (AIM 4-5-9), each dropped once it is no longer heard. Traffic is for seeing, not avoiding (AIM 4-5-7).
@@ -3421,6 +3496,13 @@ export interface EngineContract {
   route_position: {
     input: RoutePositionInput;
     answer: RoutePositionAnswer;
+  };
+  /**
+   * The SIDs and STARs among a route's words as a pilot types or pastes one (a clearance's, a filed flight plan's, AIM Appendix 4 item 15: "KMSP BAEE1 BAE V191 OSH OSHH2 KATW"): a word of four or five letters and its number, which no airport's identifier (three or four characters, FAA JO 7350.9) and no fix's name (five letters) is. Each with the nearest point typed before it and after it that is not one: a departure's transition is the fix after it, an arrival's the fix before it (AIM 5-2-9, 5-4-1). Which field publishes it, and as which kind, is the caller's, from the field's procedures.
+   */
+  route_procedures: {
+    input: RouteProceduresInput;
+    answer: RouteProceduresAnswer;
   };
   /**
    * A route typed as a pilot writes one, read back as item 15 of FAA Form 7233-4 has it (AIM Appendix 4), for the route's one field: split on spaces and commas, DCT (direct) taken out; a cruising speed and level group or a level alone before the first point the cruise's ("N0110A065": 110 kt true, 6,500 ft; "A" and hundreds of feet in three figures, "F" a flight level, 14 CFR 1.1 and 91.121(a)(2); "VFR" a VFR level, no figure; metric speeds and levels give no figure); a point with a group after its stroke ("LEXOR/N0467F380") the point, its level a change from there. The rest are the route's points, airways and procedures in order, upper case, as typed: which is which is the caller's.
@@ -3682,7 +3764,7 @@ export interface EngineContract {
     answer: TerrainViewBandsAnswer;
   };
   /**
-   * The way round high ground's frame: the grid's corner, cells and samples a cell's side the planner reads the ground at, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159, under Class A, 71.33), and the box the fields with fuel are wanted in.
+   * The way round high ground's frame: the grid's corner, cells and samples a cell's side the planner reads the ground at, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159, under Class A, 71.33), and the box the fields with fuel are wanted in. Across the antimeridian the end is read within 180 degrees of the start, so lon0 and the box may pass -180 or 180 (wingtip.terrain_detour reads them at their own longitudes).
    */
   terrain_way_frame: {
     input: TerrainWayFrameInput;
@@ -3715,6 +3797,13 @@ export interface EngineContract {
   thin_track: {
     input: ThinTrackInput;
     answer: ThinTrackAnswer;
+  };
+  /**
+   * How long ago something was, in the words every app writes it in (a report's "Observed 40m ago", a kept answer's "Fetched 3h ago", a track's "2d ago"): "just now" under a minute (and for a time to come), whole minutes under an hour ("23m ago"), hours and minutes under two days ("2h 5m ago", "2h ago" on the hour), then whole days ("3d ago"), each counted down. The app's own wording, no aviation rule: the narrow duration the web writes (Intl.DurationFormat's narrow style, the owner's pick of 2026-10-28).
+   */
+  time_ago: {
+    input: TimeAgoInput;
+    answer: TimeAgoAnswer;
   };
   /**
    * The FAA's capitals in title case, from text, or each of texts as a list (a null row answers "").
@@ -4210,6 +4299,10 @@ export interface AirspaceColumnInput {
   volumes: {
     class: "B" | "C" | "D" | "E";
     name?: string | null;
+    /**
+     * The primary airport's identifier where NASR's Class Airspace file names one (IDENT), which special_vfr reads for part 91 Appendix D.
+     */
+    ident?: string | null;
     floor_ft: number;
     floor_ref: "SFC" | "AGL" | "MSL";
     /**
@@ -4219,7 +4312,7 @@ export interface AirspaceColumnInput {
   }[];
 }
 /**
- * A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.
+ * A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name and primary airport for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.
  *
  * This interface was referenced by `EngineContract`'s JSON-Schema
  * via the `definition` "AirspaceBand".
@@ -4229,6 +4322,10 @@ export interface AirspaceBand {
   ceiling_ft: number;
   class: "A" | "B" | "C" | "D" | "E" | "G";
   name: string | null;
+  /**
+   * A B, C or D band's primary airport (NASR's IDENT), for its special VFR (14 CFR 91.157(a), part 91 Appendix D section 3).
+   */
+  ident?: string | null;
   minimums: {
     day: {
       visibility_sm: number;
@@ -5951,7 +6048,14 @@ export interface CopilotWatchInput {
   fields: CopilotField[];
   rules?: "VFR" | "IFR" | null;
   minimums?: CopilotMinimums;
+  /**
+   * The fuel aboard, gallons: at takeoff where `started_s` is given (the engine takes the burn over the time since), else now.
+   */
   fuel_gal?: number | null;
+  /**
+   * When the flight began, s since 1970: with it the fuel aboard now is `fuel_gal` less `burn_gph` over the time from then to `now_s`, never below none (FAA-H-8083-25C ch. 16). Left out, `fuel_gal` is taken as the fuel aboard now.
+   */
+  started_s?: number | null;
   burn_gph?: number | null;
   tas_kt?: number | null;
   /**
@@ -6798,6 +6902,28 @@ export interface DiversionAnswer {
     reasonable: boolean | null;
   }[];
 }
+export interface DiversionRangeInput {
+  /**
+   * The airplane's cruise true airspeed, knots (its profile's); null or missing where none is picked.
+   */
+  tas_kt?: number | null;
+  /**
+   * Its usable fuel, gallons; null or missing for none.
+   */
+  usable_gal?: number | null;
+  /**
+   * Its cruise burn, gallons an hour; null or missing for none.
+   */
+  burn_gph?: number | null;
+}
+export interface DiversionRangeAnswer {
+  /**
+   * The range, nm; null with no cruise speed.
+   */
+  range_nm: number | null;
+  reserve_min: number;
+  basis: "reserve" | "tanks" | "no_airplane";
+}
 export interface DiversionReasonableInput {
   key: "mh" | "gs" | "ete" | "fuel";
   typed: number;
@@ -7017,6 +7143,10 @@ export interface EndorsementsInForceInput {
   signed: {
     code: string;
     voided?: boolean | null;
+    /**
+     * The instructor_verification verdict kept with the record; false is not signed, missing or null is not said.
+     */
+    verified?: boolean | null;
   }[];
 }
 export interface EnduranceInput {
@@ -7153,6 +7283,10 @@ export interface FieldMilitaryAnswer {
    * military, joint, or null for a field the services do not own.
    */
   military: "military" | "joint" | null;
+}
+export interface FieldNamesInput {
+  ident: string;
+  icao_id?: string | null;
 }
 export interface FieldSiteTypeInput {
   /**
@@ -7525,7 +7659,7 @@ export interface ForecastRunAnswer {
     ceiling_unknown: boolean;
     visibility_sm: number | null;
     /**
-     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
      */
     source: string | null;
     wind_dir_true_deg: number | null;
@@ -7560,7 +7694,7 @@ export interface ForecastRunAnswer {
     ceiling_unknown: boolean;
     visibility_sm: number | null;
     /**
-     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
      */
     source: string | null;
   }[];
@@ -8650,6 +8784,44 @@ export interface HandbookProfile {
   climb_fuel_burn_gph: number | null;
   usable_fuel_gal: number | null;
 }
+export interface HazardViewInput {
+  /**
+   * The Map card's Hazard Colouring: off, on, or on by itself in flight.
+   */
+  setting: "off" | "on" | "flight";
+  /**
+   * The GPS's ground speed, kt; null with no fix.
+   */
+  speed_kt?: number | null;
+  /**
+   * The GPS's height, ft, where it gives one.
+   */
+  gps_altitude_ft?: number | null;
+  /**
+   * The plan's cruise, ft MSL.
+   */
+  planned_altitude_ft?: number | null;
+  /**
+   * The pilot's clearance, one of clearances_ft; the default for null or another.
+   */
+  clearance_ft?: number | null;
+  /**
+   * Obstacle tops, ft MSL, to colour.
+   */
+  tops_ft?: number[] | null;
+}
+export interface HazardViewAnswer {
+  shown: boolean;
+  in_flight: boolean;
+  altitude_ft: number | null;
+  source: ("gps" | "plan") | null;
+  clearance_ft: number;
+  caution_band_ft: number;
+  clearances_ft: number[];
+  warning_from_ft: number | null;
+  caution_from_ft: number | null;
+  levels: (("warning" | "caution" | "clear") | null)[];
+}
 export interface HoldEntryInput {
   /**
    * The magnetic course flown to the fix.
@@ -9135,6 +9307,50 @@ export interface InstructorRecordsSinceInput {
    */
   today: string;
 }
+export interface InstructorVerificationInput {
+  /**
+   * The instructor's name as on their certificate.
+   */
+  instructor_name: string;
+  /**
+   * The student's name as on their certificate.
+   */
+  student_name?: string | null;
+  /**
+   * YYYY-MM-DD.
+   */
+  signed_on: string;
+  /**
+   * The releasable file's active flight instructor (type F) records of the instructor's last name; null where the file is not loaded.
+   */
+  registry?:
+    | {
+        /**
+         * The FAA's unique id, A or C and seven digits.
+         */
+        id: string;
+        first_middle: string;
+        last_suffix: string;
+        /**
+         * YYYY-MM-DD, only for a certificate issued before 1 Dec 2024 (14 CFR 61.19(d)).
+         */
+        expires?: string | null;
+      }[]
+    | null;
+  /**
+   * Registry ids another Wingtip account already signs as.
+   */
+  bound_elsewhere?: string[] | null;
+}
+export interface InstructorVerificationAnswer {
+  verified: boolean;
+  registry_id: string | null;
+  /**
+   * verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.
+   */
+  reason: string;
+  words: string;
+}
 export interface IsEastboundInput {
   magnetic_course_deg: number;
 }
@@ -9174,7 +9390,7 @@ export interface KeptAgeAnswer {
   kind: KeptKind;
   age_min: number;
   /**
-   * "Fetched 42 min ago".
+   * "Fetched 42m ago".
    */
   line: string;
   /**
@@ -11012,6 +11228,38 @@ export interface PlatePageBox {
   right: number;
   top: number;
 }
+export interface PlatesKeptInput {
+  /**
+   * diversion_range_nm's range; null for none.
+   */
+  range_nm?: number | null;
+  fields: PlatesKeptField[];
+}
+export interface PlatesKeptField {
+  ident: string;
+  role: "departure" | "destination" | "stop" | "alternate" | "diversion";
+  /**
+   * How far the field is off the route, nm (a diversion's).
+   */
+  off_nm?: number | null;
+  /**
+   * Items: A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.
+   */
+  charts: {
+    kind: string;
+  }[];
+}
+export interface PlatesKeptAnswerField {
+  ident: string;
+  role: "departure" | "destination" | "stop" | "alternate" | "diversion";
+  off_nm: number | null;
+  /**
+   * Items: A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.
+   */
+  charts: {
+    kind: string;
+  }[];
+}
 export interface PointKindInput {
   text: string;
 }
@@ -11408,6 +11656,33 @@ export interface ProfileClearanceAnswer {
   near: string | null;
   words: string;
 }
+export interface ProfileCloudsInput {
+  /**
+   * The route's points, [lat, lon], its airports in order.
+   */
+  path: [number, number][];
+  stations?:
+    | {
+        icaoId: string;
+        lat: number;
+        lon: number;
+        ceiling_ft?: number | null;
+        elevation_ft?: number | null;
+        issued?: string | null;
+      }[]
+    | null;
+}
+export interface ProfileObstaclesInput {
+  altitude_ft?: number | null;
+  length_nm: number;
+  obstacles?:
+    | {
+        along_nm: number;
+        amsl_ft: number;
+        agl_ft?: number | null;
+      }[]
+    | null;
+}
 export interface ProhibitedCautionInput {
   selection: {};
 }
@@ -11642,6 +11917,14 @@ export interface ReadyToFlyInput {
   }[];
   notams?: {
     fetched_at?: number | null;
+    /**
+     * Whether the NOTAMs are the full set in force (the planner's NotamsRanked.full_set); false, only those heard since heard_since, a caution (decision 0059).
+     */
+    full_set?: boolean | null;
+    /**
+     * The day the NOTAM feed was first heard, YYYY-MM-DD (NotamsRanked.coverage_since).
+     */
+    heard_since?: string | null;
   } | null;
   /**
    * What Keep for the Air holds for the route beside its charts. Null leaves the item out.
@@ -11750,6 +12033,12 @@ export interface ReceiverPicture {
   texts: ReceiverText[];
   nexrad: ReceiverBlock[];
 }
+/**
+ * The receiver's own state, as its Heartbeat and ID message say.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ReceiverState".
+ */
 export interface ReceiverState {
   /**
    * The name its ID message gives (Stratux, Sentry, SkyEcho).
@@ -11852,6 +12141,10 @@ export interface ReceiverOwnship {
    * Its Vertical Figure of Merit, m.
    */
   vfom_m: number | null;
+  /**
+   * The Ownship Geometric Altitude's Vertical Warning (GDL 90 3.8): its height is not to be trusted.
+   */
+  vertical_warning: boolean;
 }
 /**
  * An airplane a receiver reports (GDL 90's Traffic or Ownship Report, 560-1058-00 Rev A 3.5.1), as heard.
@@ -11988,6 +12281,87 @@ export interface ReceiverNexradLevel {
    */
   level: number;
   rects: [number, number, number, number][];
+}
+export interface ReceiverPositionInput {
+  /**
+   * The picture's own ship.
+   */
+  ownship?: ReceiverOwnship | null;
+  /**
+   * The picture's receiver.
+   */
+  receiver?: ReceiverState | null;
+  /**
+   * The device's last fix, or null where it has none.
+   */
+  device?: ReceiverPositionDevice | null;
+  /**
+   * The source the last answer gave (receiver, device or none).
+   */
+  was?: string | null;
+  /**
+   * Now, Unix s.
+   */
+  at: number;
+}
+export interface ReceiverPositionDevice {
+  /**
+   * The device's horizontal accuracy, m (a 68% radius).
+   */
+  accuracy_m: number;
+  /**
+   * When the device's fix was taken, Unix s.
+   */
+  at: number;
+}
+export interface ReceiverPositionAnswer {
+  /**
+   * Whose fix own ship is.
+   */
+  source: "receiver" | "device" | "none";
+  /**
+   * The receiver's fix: good, or why it is not used (none heard, no GPS, stale, under 91.227's NIC and NACp).
+   */
+  receiver: "good" | "none" | "no_gps" | "stale" | "weak";
+  /**
+   * The receiver's fix, where it is the source.
+   */
+  fix: ReceiverFix | null;
+}
+export interface ReceiverFix {
+  lat: number;
+  lon: number;
+  /**
+   * GPS height MSL, ft, where the receiver gives MSL.
+   */
+  altitude_ft: number | null;
+  /**
+   * GPS height above the WGS-84 ellipsoid, ft, where that is what the receiver gives.
+   */
+  ellipsoid_ft: number | null;
+  /**
+   * Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4).
+   */
+  pressure_ft: number | null;
+  /**
+   * The pressure altitude as a flight level, at and above 18,000 ft only.
+   */
+  flight_level: number | null;
+  /**
+   * True track, degrees, where the report gives one.
+   */
+  track_deg: number | null;
+  groundspeed_kt: number | null;
+  vertical_fpm: number | null;
+  /**
+   * The NACp's bound on the 95% horizontal error, m.
+   */
+  accuracy_m: number;
+  airborne: boolean;
+  /**
+   * When the report was heard, Unix s.
+   */
+  at: number;
 }
 export interface ReceiverReadInput {
   /**
@@ -12553,6 +12927,17 @@ export interface RoutePositionInput {
         fuel_gal?: number | null;
       }[]
     | null;
+}
+export interface RouteProceduresInput {
+  /**
+   * The route's words in order, upper case, as route_read gives its points.
+   */
+  words: string[];
+}
+export interface TypedProcedure {
+  name: string;
+  before: string | null;
+  after: string | null;
 }
 export interface RouteReadInput {
   /**
@@ -13517,6 +13902,12 @@ export interface TfrReadAnswer {
 export interface ThinTrackInput {
   points: unknown[];
   most?: number | null;
+}
+export interface TimeAgoInput {
+  /**
+   * Seconds since it happened: now less then.
+   */
+  seconds: number;
 }
 export interface TitleCaseInput {
   text?: string | null;
