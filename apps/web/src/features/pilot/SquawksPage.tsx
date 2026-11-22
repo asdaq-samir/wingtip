@@ -32,13 +32,13 @@ const REACHES: { value: NonNullable<SquawkRequest["deferredFor"]> | "none"; labe
 // at most 500 characters, on a day not ahead of today; the fix's note at
 // most 500 too.
 const squawkSchema = z.object({
-  text: z.string().trim().min(1, "Say what was found").max(500, "At most 500 characters"),
-  reportedOn: requiredPastDay("The day is required"),
+  text: z.string().trim().min(1, "Say what was found.").max(500, "At most 500 characters."),
+  reportedOn: requiredPastDay("The day is required."),
   inoperative: z.boolean(),
   deferredFor: z.enum(["none", "VFR_DAY", "VFR", "ALL"]),
 });
 type SquawkValues = z.infer<typeof squawkSchema>;
-const fixSchema = z.object({ note: z.string().trim().max(500, "At most 500 characters") });
+const fixSchema = z.object({ note: z.string().trim().max(500, "At most 500 characters.") });
 type FixValues = z.infer<typeof fixSchema>;
 
 const asRequest = (s: Squawk): SquawkRequest => ({

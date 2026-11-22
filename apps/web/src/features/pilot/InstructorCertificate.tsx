@@ -23,12 +23,12 @@ import { FieldError } from "../../components/ui/field";
 // may be gone by: a run-out instructor is warned, never stopped (the
 // owner's rule, 2026-10-26).
 const certificateSchema = z.object({
-  fullName: z.string().trim().min(1, "Your name is required").max(120, "At most 120 characters"),
+  fullName: z.string().trim().min(1, "Your name is required.").max(120, "At most 120 characters."),
   certificate: z
     .string()
     .trim()
     .regex(/^[A-Za-z0-9]{4,20}$/, "4 to 20 letters and figures, as 987654321CFI"),
-  until: z.string().min(1, "The date is required"),
+  until: z.string().min(1, "The date is required."),
   untilKind: z.enum(["RE", "EXP"]),
 });
 type CertificateValues = z.infer<typeof certificateSchema>;
