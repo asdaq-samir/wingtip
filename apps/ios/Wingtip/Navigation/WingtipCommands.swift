@@ -30,6 +30,8 @@ extension FocusedValues {
 /// The owner, 2026-11-21: "Yes do it all for iPad".
 struct WingtipCommands: Commands {
     @FocusedValue(\.windowActions) private var actions
+    /// The reader in front, where one is (ReaderView).
+    @FocusedValue(\.readerActions) private var reader
 
     var body: some Commands {
         // Show or Hide Sidebar (⌃⌘S) and the inspector's, the system's own.
@@ -49,8 +51,23 @@ struct WingtipCommands: Commands {
             item(Screen.fpl.title, key: "2") { $0.page(.fpl) }
             Divider()
         }
+        // ⌘F finds in the document while the reader is in front, else
+        // it is the one search; ⌘[ and ⌘] go back and forward in it, as
+        // Safari and Preview do (ReaderActions).
+        CommandGroup(after: .textEditing) {
+            Button("Find in Document") { reader?.find() }
+                .disabled(reader == nil)
+            Button("Back") { reader?.back() }
+                .keyboardShortcut("[", modifiers: .command)
+                .disabled(reader == nil)
+            Button("Forward") { reader?.forward() }
+                .keyboardShortcut("]", modifiers: .command)
+                .disabled(reader == nil)
+        }
         CommandMenu("Flight") {
-            item("Search", key: "f") { $0.search() }
+            Button("Search") { if let reader { reader.find() } else { actions?.search() } }
+                .keyboardShortcut("f", modifiers: .command)
+                .disabled(actions == nil && reader == nil)
             Divider()
             screen(.brief, key: "b")
             screen(.navlog, key: "l")

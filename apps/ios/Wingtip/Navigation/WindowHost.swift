@@ -67,11 +67,12 @@ struct WindowHost: ViewModifier {
 
 /// The files a window takes, and how.
 enum WindowFiles {
-    /// A Wingtip flight (FlightFile), and the tracks the app reads
+    /// A Wingtip flight (FlightFile), a PDF for the pilot's own documents
+    /// (DocumentLibrary), and the tracks the app reads
     /// (Links.trackExtensions), as project.yml declares them.
-    static let types: [UTType] = [.wingtipFlight] + Links.trackExtensions.sorted().compactMap { UTType(filenameExtension: $0) }
+    static let types: [UTType] = [.wingtipFlight, .pdf] + Links.trackExtensions.sorted().compactMap { UTType(filenameExtension: $0) }
 
-    static let unreadable = String(localized: "That file isn't a Wingtip flight or a GPX or KML track.")
+    static let unreadable = String(localized: "That file isn't a Wingtip flight, a PDF or a GPX or KML track.")
 
     /// A file handed over copied where the app may read it after the
     /// handing is done (a drop's file lasts only while its handler runs; a

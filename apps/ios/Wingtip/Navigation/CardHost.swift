@@ -47,8 +47,12 @@ private struct CardHost: ViewModifier {
                     .onGeometryChange(for: CGFloat.self) { $0.size.height + $0.safeAreaInsets.bottom } action: { sheetEdge.card = $0 }
                     .onDisappear { sheetEdge.card = nil }
                     .modifier(TopHosts(active: true))
+                    .modifier(ReaderCover(active: true))
             }
             .modifier(TopHosts(active: nav.card == nil))
+            // The reader over the window: from the card's sheet while one
+            // is presented (the iPhone's), else from here (ReaderCover).
+            .modifier(ReaderCover(active: nav.presented == nil))
     }
 }
 

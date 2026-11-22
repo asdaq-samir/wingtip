@@ -63,5 +63,15 @@ struct WingtipApp: App {
             }
         }
         .handlesExternalEvents(matching: [])
+        // A document of the library, or the pilot's own, in a window of its
+        // own beside the map (DocumentWindow), as a chart's is; its links
+        // go to the app's own window too.
+        WindowGroup("Document", id: DocPlace.window, for: DocPlace.self) { $place in
+            if let place {
+                DocumentWindow(place: place)
+                    .modifier(AppModels(session: session, charts: charts, nav: Navigator(), screens: screens))
+            }
+        }
+        .handlesExternalEvents(matching: [])
     }
 }

@@ -11,7 +11,8 @@ import SwiftUI
 /// and nothing more under it, and the rows that need an account are there
 /// but disabled. Then one inset list of round-badged rows with
 /// their values: Pilot Details, Airplanes (the checklists inside), Flights,
-/// Logbook, Minimums, Training (the coach and the drills) and Emergency.
+/// Logbook, Minimums, Documents (the library), Training (the coach and
+/// the drills) and Emergency.
 /// Settings is the gear at the card's top left, the close at its right
 /// (CardStack). No Subscription row: nothing is sold yet (the free app,
 /// the owner's word).
@@ -54,6 +55,12 @@ struct YouView: View {
                 NavigationLink { MinimumsView() } label: {
                     YouRowLabel(title: "Minimums", systemImage: "cloud.sun", colour: WingtipColor.Badge.ground)
                 }
+                // The documents library: the FAA's, kept current, and the
+                // pilot's own PDFs on this device (DocumentsPage).
+                NavigationLink { DocumentsPage() } label: {
+                    YouRowLabel(title: Screen.documents.title, systemImage: "books.vertical", colour: WingtipColor.Badge.chart)
+                }
+                .accessibilityIdentifier("documents-row")
                 NavigationLink { TrainingPage() } label: {
                     YouRowLabel(title: "Training", systemImage: "graduationcap", colour: WingtipColor.Badge.lodging)
                 }

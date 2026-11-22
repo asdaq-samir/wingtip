@@ -288,7 +288,8 @@ struct RiskView: View {
                                 Label {
                                     VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                         Text(factor.label)
-                                        if let why = factor.why { Text(why).font(.footnote).foregroundStyle(.secondary) }
+                                        // Each cited rule in it a tap to its paragraph (CitedText).
+                                        if let why = factor.why { CitedText(why).font(.footnote).foregroundStyle(.secondary) }
                                     }
                                 } icon: {
                                     Image(systemName: FindingStyle.symbol(factor.finding ?? "caution"))

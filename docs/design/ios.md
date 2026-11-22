@@ -1663,6 +1663,108 @@ people take an explicit action to save", [HIG File management][hig-files]).
 [HIG Settings][hig-settings]; [HIG Accounts][hig-accounts];
 [HIG Dark Mode][hig-darkmode].
 
+### 13a. The documents library and its reader
+
+**What it is.** The web's documents library (web.md §13a, decision 0056)
+built with Apple's own frameworks, the iPad first (the owner, 2026-11-21:
+"Primary app users are on iPad", "Yes do it all for iPad"). You's
+Documents row, between Minimums and Training as on the web, pushes
+`DocumentsPage` (`Library/`): on an iPad in the sidebar's stack, on an
+iPhone in You's card. Nothing else moved. `open=documents` and the one
+search's Do find it by name.
+
+**The page.** Your Documents first: the pilot's own PDFs, added with Add a
+PDF (`fileImporter`, PDFs only), from the share sheet or Files' Open In
+(the app declares PDF, `LSHandlerRank` Alternate, so it never becomes the
+system's PDF app), or by a drop on the page or on any window
+(`WindowHost`). Each is copied in (`DeviceDocuments`), renamed from its
+context menu, deleted from it or its swipe with the system's Undo (shake,
+⌘Z, the bar's Undo). Then Keep in iCloud, off by default. Then the FAA's
+shelf from the planner's `/api/library` through the generated client
+(`Planner.library`), by its groups, each row with its edition and date
+and Keep for the Air at its end (the download glyph, its size in its
+name; kept, a filled check that takes it off; fetching, a circular
+progress). The shelf last read is kept, so with no signal the page lists
+what is kept. A kept document whose edition the shelf has replaced is
+fetched and kept again in its place as the shelf is read
+(`DeviceDocuments.stale`), so what is on board is the edition in force.
+Pull to refresh asks the shelf at once; otherwise at most hourly.
+
+**Where the files live.** The pilot's own in Application Support, a folder
+each (in the device's backup, as the pilot's own files are). The library's
+kept for the air beside them, out of the backup since the planner has
+them again. One read without keeping goes to Caches, which iOS may clear.
+A PDF is fetched a chunk at a time and moved into place only whole and
+only if it starts `%PDF`.
+
+**The reader** (`ReaderView`), full screen over the window
+(`ReaderCover`, hung on the plan's sheet and on the card's, live on the
+top one), or in a window of its own beside the map (`DocumentWindow`,
+`openWindow(id: "document", value: DocPlace)`, from the reader's More
+menu or a row's context menu), as a chart's window is. A PDF is PDFKit's
+own `PDFView` (`PDFReaderView`): one column of pages scrolled, scaled to
+the width, pinched or zoomed with a trackpad, its links followed. A CFR
+part is text in the app's type (`CfrTextReader`), each section an anchor.
+Its bar:
+
+- **Back and Forward** through the places the pilot jumped (PDFKit's own
+  history: a contents row, a link, a match). ⌘[ and ⌘].
+- **Markup** (Apple Pencil, or a finger with Draw with Finger):
+  PencilKit's canvas over each page through PDFKit's
+  `PDFPageOverlayViewProvider`, one tool picker for every page
+  (`DocumentMarkup`). Kept as the plates' marks are (`PlateMarkup`: on
+  this device, never the server), one drawing a page by the document,
+  its edition and the page, so a new edition starts clean. Forgotten at
+  sign-out with the plates' marks.
+- **Bookmark This Page**, named for the outline's heading over the page.
+- **Contents**: the outline, the bookmarks (renamed from the context
+  menu, swiped away) and the pages as PDFKit's `PDFThumbnailView`, one
+  segmented control. The system's `.inspector`: a column beside the page
+  on an iPad, a sheet on an iPhone.
+- **More**: Invert Colors (white on black, following the dark appearance
+  until picked: each page drawn by PDFKit then turned over by a white
+  fill in the difference blend, `InvertiblePage`), Clear Page's Markup,
+  Share This Page (the web's `?doc=` link, a universal link on the
+  phones; none for the pilot's own) and Open in New Window.
+- **Search** (⌘F): the bar's `.searchable`, PDFKit's own
+  `beginFindString` lighting every match as it is found, the next and
+  the last at the foot (⌘G, ⇧⌘G). A CFR part's search lists every place
+  found, each a tap to its section.
+
+A document opens at a link's page, a cite's paragraph (its outline row,
+else its number set as a heading, "7-1-5.") or the page it was left at
+(`ReaderPlaces`, with the bookmarks and the Invert choice, on the device).
+
+**Every cited rule a tap.** `CitedText` draws the engine's `citations`
+(the web's `Cited`) as a `Text` with links, each the app's own
+`doc=` link taken by the view's `openURL` into the reader: the Go / No-Go's
+whys and an airspace band's entry rules. A cite links only where the shelf
+holds its document in an edition. A link's `doc=` from anywhere opens the
+reader too (`AppCommand.document`).
+
+**Keep in iCloud.** Off by default. On, each of the pilot's own
+documents is a record in the records store (`OwnDocumentRecord`, the
+PDF as SwiftData's external storage), carried by CloudKit to the
+pilot's own private iCloud database and to their other devices; those
+are written here as they arrive. Turned off (asked first), the copies
+in iCloud are deleted and the ones here stay. Markup, bookmarks and
+last pages stay on each device.
+
+**Keyboard** (`WingtipCommands`, `ReaderActions`): Flight > Search (⌘F)
+finds in the document while the reader is in front; Edit's Find in
+Document, Back (⌘[) and Forward (⌘]); Escape closes the reader.
+
+**Avoid:** a hand-built page renderer or find; a document in a sheet over
+the map on an iPad; sending a pilot's own document anywhere but their own
+iCloud, and that only when they turn it on.
+
+**Left out, for now:** the Chart Supplement row the web has (the airport
+card's charts open it), images and Office files, binders.
+
+**Sources:** [HIG Windows][hig-ipados]; Apple's PDFKit
+(`PDFPageOverlayViewProvider`, "What's new in PDFKit", WWDC22);
+PencilKit; decision 0056.
+
 ---
 
 ## 14. The first run
@@ -1931,14 +2033,17 @@ the ⌘-held list): File > Open Flight or Track… (⌘O); View > Search (⌘1),
 FPL (⌘2), the system's sidebar and inspector items; Flight > Search (⌘F),
 Brief (⌘B), Nav Log (⌘L), Profile (⌥⌘P), Nearest (⇧⌘N), Checklists
 (⇧⌘K), Saved Flights, Logbook, Your Airplanes, Emergency Assistant (⇧⌘E);
-Wingtip Settings… under the app's Settings. Escape closes a card
+Wingtip Settings… under the app's Settings; with the documents reader in
+front, ⌘F finds in the document and Edit's Back (⌘[) and Forward (⌘])
+go through it (§13a). Escape closes a card
 (`CloseButton`). Each window publishes its own (`WindowActions`).
 
 **Pointer:** the system's highlight on bars, lists and Liquid Glass
 buttons; `.hoverEffect(.highlight)` on the plain buttons over the map (the
 figure strip, the alerts, the copilot's and the radio's banners).
 Context menus by a secondary click: a field's row (its preview and the
-plan's three), a chart's row (Open in New Window).
+plan's three), a chart's row (Open in New Window), a document's row (Open
+in New Window, and for the pilot's own Rename and Delete).
 
 **Drag and drop** (`WindowHost`): a Wingtip flight, a GPX or a KML dropped
 on a window opens as from Files (previewed, never planned unasked);
@@ -1948,7 +2053,13 @@ identifier.
 **Apple Pencil:** Scribble in every field (all stock `TextField`s). The
 plate and chart viewer has Markup (`PlateMarkup`, PencilKit's canvas and
 tool picker): the pilot's notes, kept on the device by the chart's
-address (a new cycle starts clean), forgotten at sign-out.
+address (a new cycle starts clean), forgotten at sign-out. The documents
+reader has the same Markup on every page (§13a, `DocumentMarkup`), kept
+the same way by document, edition and page.
+
+**Documents** (§13a): a document opens in a window of its own beside the
+map (`DocumentWindow`); a PDF dropped on a window or on the library is
+added to the pilot's own; the reader's Contents is the inspector.
 
 **Avoid:**
 

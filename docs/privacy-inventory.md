@@ -6,7 +6,7 @@ to the site), App Store Connect's App Privacy answers,
 Google Play's Data safety form and the iOS app's privacy manifest
 (`PrivacyInfo.xcprivacy`). Change it
 whenever the code changes what leaves a device or what the server keeps.
-Last checked against the code on 2026-11-10 (the privacy and store audit: the phone number, the third parties the apps call directly, the traffic view's region, the export, deletion from the web); the documents library added 2026-11-21.
+Last checked against the code on 2026-11-10 (the privacy and store audit: the phone number, the third parties the apps call directly, the traffic view's region, the export, deletion from the web); the documents library added 2026-11-21, on the web and then the iPhone and iPad.
 
 "Collected" is App Store Connect's meaning: sent off the device and kept
 longer than it takes to answer the request.
@@ -131,7 +131,8 @@ longer than it takes to answer the request.
   (`res/xml/shortcuts.xml`) open screens and send nothing.
 - **iCloud (iPhone).** Kept and watched airplanes and planned routes are
   in the pilot's own iCloud through SwiftData's CloudKit sync
-  (`Records/Records.swift`); Apple's, not ours.
+  (`Records/Records.swift`); Apple's, not ours. So are the pilot's own
+  documents, only while Keep in iCloud is on (below).
 - **A route's airports and stops**, to plan it. Kept only as a pilot's
   saved flight (above).
 - **A plan shared as a plain link** (Share link on the route, a saved
@@ -174,6 +175,21 @@ longer than it takes to answer the request.
   part's text by its edition), which tells the server which public
   document was opened; no account rides with it and nothing of it is
   kept, as the planner writes no access log in production.
+- **The documents library on the iPhone and iPad** (`Library/`, the same
+  decision). The pilot's own PDFs, taken in from Files, the share sheet or
+  a drop, are copied into the app's Application Support and stay on the
+  device: never sent to Wingtip's servers, in no account's export. They
+  are in the device's own backup, as the pilot's files are; the library's
+  documents kept for the air are not, since the planner has them again.
+  Their markup (Apple Pencil), bookmarks, last pages and the Invert Colors
+  choice stay on the device; the markup goes at sign-out with the plates'
+  (`PlateMarkup`). **Keep in iCloud**, off by default and only when the
+  pilot turns it on, puts each of their own PDFs and its name in their own
+  private iCloud database through the records store's CloudKit sync
+  (`OwnDocumentRecord`), Apple's and not ours, as the airplanes and routes
+  are (above); turned off, those copies are deleted. Nothing of it is
+  collected in App Store Connect's meaning, and the privacy manifest is
+  unchanged.
 
 ## Who else receives what
 

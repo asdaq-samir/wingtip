@@ -297,6 +297,7 @@ struct ScreenPage: View {
         case .downloads: DownloadsView()
         case .passengers: PassengerBriefingView(flight: PassengerBriefingModel.flight(idents: plan.idents))
         case .about: AboutView()
+        case .documents: DocumentsPage()
         // Not pages (SheetPage.pages): the plan is the root, the search
         // is the field's, Ask is a card by its question, the emergency
         // assistant is its model's card and a shared flight is its own card.
