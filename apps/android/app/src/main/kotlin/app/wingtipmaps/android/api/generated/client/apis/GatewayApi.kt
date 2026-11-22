@@ -689,6 +689,7 @@ interface GatewayApi {
      */
     @GET("api/diagnostics")
     suspend fun recent(@Query("days") days: kotlin.Int? = 7): Response<kotlin.collections.List<app.wingtipmaps.android.api.generated.gateway.DiagnosticDto>>
+
     /**
      * GET api/logbook/reminders
      *
