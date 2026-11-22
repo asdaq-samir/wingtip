@@ -49,6 +49,7 @@ struct RadioOverlay: View {
                     .floatingGlass(in: floatingCard)
                 }
                 .buttonStyle(.plain)
+                .hoverEffect(.highlight)
                 .accessibilityLabel("What the radio is saying: open the log")
             }
         }
