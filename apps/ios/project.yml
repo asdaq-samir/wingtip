@@ -145,8 +145,11 @@ targets:
         # A clearance read on the radio, heard by Apple's recognizer on the
         # iPhone only (ClearanceListener's requiresOnDeviceRecognition); where
         # it cannot be, voice is not offered and neither is asked for.
-        NSMicrophoneUsageDescription: Wingtip Maps listens to the radio to show what ATC says, tell you when ATC calls you, and enter a clearance's route for you to check, and hears the questions you ask it by voice. The sound is never recorded or sent.
-        NSSpeechRecognitionUsageDescription: Wingtip Maps turns what ATC says on the radio, and the questions you ask it by voice, into words on your iPhone. Speech is recognised on the device and its sound never leaves it; a question you send goes where a typed one would.
+        # Voice first: the radio is parked behind Settings' Extras (ATC
+        # Copilot, the feature review of 2026-11-21), so the first ask a
+        # pilot or App Review sees comes from the search's microphone.
+        NSMicrophoneUsageDescription: Wingtip Maps hears the questions you ask it by voice and, with ATC Copilot turned on in Settings, listens to the radio to show what ATC says and enter a clearance's route for you to check. The sound is never recorded or sent.
+        NSSpeechRecognitionUsageDescription: Wingtip Maps turns the questions you ask it by voice, and with ATC Copilot on what ATC says on the radio, into words on your iPhone. Speech is recognised on the device and its sound never leaves it; a question you send goes where a typed one would.
         # A page photographed with the document camera (Documents/
         # DocumentScanner): a handbook's performance or weight and balance
         # page, a paper logbook page or a clearance copied down, read for
@@ -174,7 +177,7 @@ targets:
         # the Small Business Program, under 2 million first-time
         # downloads); then YES, with the entitlement in Wingtip.entitlements.
         WingtipPrivateCloudCompute: false
-        NSLocalNetworkUsageDescription: With Traffic on, Wingtip Maps listens on the cockpit's Wi-Fi for an ADS-B receiver (Stratux, SkyEcho, Sentry).
+        NSLocalNetworkUsageDescription: With ADS-B Receiver turned on in Settings, Wingtip Maps listens on the cockpit's Wi-Fi for an ADS-B receiver (Stratux, SkyEcho, Sentry).
         # A flight in progress on the Lock Screen and in the Dynamic Island
         # (FlightActivity, the WingtipWidgets extension): the next
         # checkpoint, the ETA and the fuel, as Apple has ongoing things shown.

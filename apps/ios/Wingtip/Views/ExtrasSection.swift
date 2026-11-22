@@ -16,6 +16,8 @@ struct ExtrasSection: View {
 private struct ExtraToggle: View {
     let extra: Extra
     @AppStorage private var on: Bool
+    @Environment(ClearanceListener.self) private var listener
+    @Environment(ModelWeather.self) private var modelWeather
 
     init(extra: Extra) {
         self.extra = extra
@@ -28,18 +30,18 @@ private struct ExtraToggle: View {
             Text(extra.detail)
         }
         .accessibilityIdentifier("extras-\(extra.rawValue)")
-        .onChange(of: on) { _, on in if !on { Self.letGo(extra) } }
+        .onChange(of: on) { _, on in if !on { letGo() } }
     }
 
     /// What a feature has running, let go as its switch goes off; the rest
     /// read the switch where they start (the copilot's listening as the
     /// flight's loop next looks, the receiver within its second).
-    private static func letGo(_ extra: Extra) {
+    private func letGo() {
         switch extra {
         case .atcCopilot:
-            if ClearanceListener.shared.listening { ClearanceListener.shared.stop() }
+            if listener.listening { listener.stop() }
         case .modelWeather:
-            ModelWeather.shared.field = .off
+            modelWeather.field = .off
         case .adsbReceiver, .otherAirplanes, .trainingTools:
             break
         }
@@ -48,4 +50,5 @@ private struct ExtraToggle: View {
 
 #Preview("ExtrasSection") {
     NavigationStack { List { ExtrasSection() }.listStyle(.insetGrouped) }
+        .modifier(AppModels(session: Session(), charts: Charts(), nav: Navigator(), screens: ScreenModels()))
 }

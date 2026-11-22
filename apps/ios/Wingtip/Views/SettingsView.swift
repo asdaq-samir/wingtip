@@ -167,8 +167,8 @@ struct SourcesPage: View {
 }
 
 #Preview("SettingsView") {
+    // The app's models, as the app gives them: Extras reads the radio's
+    // and the model weather's.
     NavigationStack { SettingsView(atMap: false) }
-        .environment(Session())
-        .environment(Charts())
-        .environment(FlightSession())
+        .modifier(AppModels(session: Session(), charts: Charts(), nav: Navigator(), screens: ScreenModels()))
 }

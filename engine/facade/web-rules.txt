@@ -189,7 +189,6 @@ read_track
 readback_check
 ready_to_fly
 registered_profile
-replay_track
 route_position
 route_read
 route_way_warning
@@ -202,7 +201,6 @@ same_field
 service_volume
 short_airspace_name
 sigmet_hazard
-sim_flight
 solo_standing
 solo_xc_determinations
 squawk_meaning

@@ -67,27 +67,14 @@
       },
       "AccountRecordsDto" : {
         "properties" : {
-          "featureUses" : {
-            "items" : {
-              "$ref" : "#/components/schemas/FeatureUse"
-            },
-            "type" : "array"
-          },
           "remindersSent" : {
             "items" : {
               "$ref" : "#/components/schemas/SentReminder"
             },
             "type" : "array"
-          },
-          "subscription" : {
-            "anyOf" : [ {
-              "$ref" : "#/components/schemas/SubscriptionRow"
-            }, {
-              "type" : "null"
-            } ]
           }
         },
-        "required" : [ "featureUses", "remindersSent", "subscription" ],
+        "required" : [ "remindersSent" ],
         "type" : "object"
       },
       "AircraftDto" : {
@@ -487,14 +474,9 @@
               "type" : "string"
             },
             "type" : "array"
-          },
-          "subscriptions" : {
-            "description" : "Whether this deployment sells the subscription; where not, the page says nothing of one.",
-            "example" : false,
-            "type" : "boolean"
           }
         },
-        "required" : [ "access", "providers", "subscriptions" ],
+        "required" : [ "access", "providers" ],
         "type" : "object"
       },
       "ConnectorGrantDto" : {
@@ -1110,23 +1092,6 @@
           }
         },
         "required" : [ "at", "detail", "kind", "signature" ],
-        "type" : "object"
-      },
-      "FeatureUse" : {
-        "properties" : {
-          "feature" : {
-            "type" : "string"
-          },
-          "month" : {
-            "format" : "date",
-            "type" : "string"
-          },
-          "uses" : {
-            "format" : "int32",
-            "type" : "integer"
-          }
-        },
-        "required" : [ "feature", "month", "uses" ],
         "type" : "object"
       },
       "FieldReport" : {
@@ -2814,81 +2779,6 @@
           }
         },
         "required" : [ "accepted", "askedAt", "email", "experienceMet", "experienceOf", "linkId", "name", "reviewsWaiting", "soloUntil", "studentId" ],
-        "type" : "object"
-      },
-      "SubscriptionDto" : {
-        "description" : "The signed-in pilot's subscription to the paid features",
-        "properties" : {
-          "entitled" : {
-            "description" : "Whether the paid features are theirs now",
-            "example" : true,
-            "type" : "boolean"
-          },
-          "plan" : {
-            "description" : "MONTHLY or YEARLY, when paid for",
-            "enum" : [ "MONTHLY", "YEARLY" ],
-            "type" : [ "string", "null" ]
-          },
-          "state" : {
-            "description" : "FREE (none), TRIAL (the free month), SUBSCRIBED (paid for), or COMPED (given: a developer's, an instructor's)",
-            "enum" : [ "FREE", "TRIAL", "SUBSCRIBED", "COMPED" ],
-            "example" : "TRIAL",
-            "type" : "string"
-          },
-          "store" : {
-            "description" : "Where it was bought, when paid for",
-            "enum" : [ "APP_STORE", "PLAY", "WEB", "GRANT" ],
-            "type" : [ "string", "null" ]
-          },
-          "trialAvailable" : {
-            "description" : "Whether the free month is still theirs to start: once an account",
-            "example" : false,
-            "type" : "boolean"
-          },
-          "trialDays" : {
-            "description" : "The free month's length, days",
-            "example" : 30,
-            "format" : "int32",
-            "type" : "integer"
-          },
-          "until" : {
-            "description" : "When the free month or the paid time runs out; null for FREE and COMPED",
-            "format" : "date-time",
-            "type" : [ "string", "null" ]
-          }
-        },
-        "required" : [ "entitled", "plan", "state", "store", "trialAvailable", "trialDays", "until" ],
-        "type" : "object"
-      },
-      "SubscriptionRow" : {
-        "properties" : {
-          "paidUntil" : {
-            "format" : "date-time",
-            "type" : [ "string", "null" ]
-          },
-          "plan" : {
-            "type" : [ "string", "null" ]
-          },
-          "store" : {
-            "type" : [ "string", "null" ]
-          },
-          "storeRef" : {
-            "type" : [ "string", "null" ]
-          },
-          "trialEndsAt" : {
-            "format" : "date-time",
-            "type" : [ "string", "null" ]
-          },
-          "trialStartedAt" : {
-            "format" : "date-time",
-            "type" : [ "string", "null" ]
-          },
-          "updatedAt" : {
-            "format" : "date-time",
-            "type" : "string"
-          }
-        },
-        "required" : [ "paidUntil", "plan", "store", "storeRef", "trialEndsAt", "trialStartedAt", "updatedAt" ],
         "type" : "object"
       },
       "TrackDto" : {
@@ -5136,7 +5026,7 @@
     },
     "/api/me/export" : {
       "get" : {
-        "description" : "The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.",
+        "description" : "The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders and connected AI apps (never a token); sent as a download.",
         "operationId" : "export",
         "responses" : {
           "200" : {
@@ -5367,45 +5257,6 @@
         },
         "summary" : "Report the nightly lab measurement",
         "tags" : [ "Speed" ]
-      }
-    },
-    "/api/subscription" : {
-      "get" : {
-        "operationId" : "get_5",
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/SubscriptionDto"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "summary" : "The pilot's subscription, with this month's uses against each cap",
-        "tags" : [ "Subscription" ]
-      }
-    },
-    "/api/subscription/trial" : {
-      "post" : {
-        "description" : "Once an account: 409 once it has been started, even after it ended. On the website; in the iOS and Android apps the free month is the store's introductory offer.",
-        "operationId" : "startTrial",
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/SubscriptionDto"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "summary" : "Start the free month",
-        "tags" : [ "Subscription" ]
       }
     },
     "/api/training" : {
@@ -5706,9 +5557,6 @@
   }, {
     "description" : "Chart vision, course and nav log, proxied from the planner service",
     "name" : "Planner"
-  }, {
-    "description" : "The paid features: the free month, and what is paid for",
-    "name" : "Subscription"
   }, {
     "description" : "The signed-in pilot",
     "name" : "Pilot"
