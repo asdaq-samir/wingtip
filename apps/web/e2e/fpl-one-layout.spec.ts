@@ -71,7 +71,7 @@ test.describe("/app/plan", () => {
     for (const line of await timeline.getByTestId("timeline-line").all()) expect((await line.boundingBox())!.height).toBeLessThan(46);
     await expect(timeline.getByTestId("timeline-add-stop")).toBeVisible();
     await expect(drawer.getByTestId("flight-line")).toBeVisible();
-    // The suggested routes behind More's Route Options, out above the stops.
+    // The suggested routes behind the bar's Routes, out above the stops.
     await expect(drawer.getByTestId("route-group")).toHaveCount(0);
     await (await suggestedRoutes(page)).first().waitFor();
     await expect(drawer.getByTestId("route-group")).toBeVisible();
@@ -294,8 +294,7 @@ test.describe("/app/plan", () => {
     await expect(async () => {
       const item = await routeOptionsItem(page);
       await expect(item).toBeVisible({ timeout: 2000 });
-      await expect(item).toHaveAttribute("aria-checked", "false");
-      await page.keyboard.press("Escape");
+      await expect(item).toHaveAttribute("aria-pressed", "false");
     }).toPass({ timeout: slow(30_000) });
     await expect(drawer.getByTestId("route-group")).toHaveCount(0);
   });

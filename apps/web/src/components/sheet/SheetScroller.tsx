@@ -72,8 +72,15 @@ export function SheetScroller(p: ScrollerProps) {
       // (a tab's lists); none over a card, which has the sheet to itself.
       // A row focused or brought into view stops under the search's row,
       // not behind it (WCAG 2.4.11).
-      style={{ "--sheet-head": p.head, scrollPaddingTop: p.head, paddingBottom: "var(--pin-foot-room, 0px)" } as CSSProperties}
-      className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto print:overflow-visible", onPhone && fromBottom && p.cut && CUT_BOTTOM)}
+      style={{ "--sheet-head": p.head, scrollPaddingTop: p.head } as CSSProperties}
+      // Its scroll stops at its own end, not chained on to the drawer or the
+      // page, so the head stays put as the rows stop (the owner,
+      // 2026-11-22: "When I scroll up on the plan, it keeps scrolling up
+      // and the title disappears"), as Apple Maps' card does.
+      className={cn(
+        "flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain print:overflow-visible",
+        onPhone && fromBottom && p.cut && CUT_BOTTOM,
+      )}
     >
       <PointerTapDiv
         data-head-band=""

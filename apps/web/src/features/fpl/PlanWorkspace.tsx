@@ -237,10 +237,6 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       // Plan again with the Brief's Refresh (the owner, 2026-11-21: More
       // keeps only Route Options, Share link and Open in ForeFlight).
       planAgain={card === "brief" && routed && !s.local ? { onPlan: () => setLoad((n) => n + 1) } : undefined}
-      // The suggested routes, More's first item while there are some.
-      routeOptions={
-        card === undefined && routesOffered(vm) ? { shown: vm.routeList.routesShown, onShown: vm.routeList.setRoutesShown } : undefined
-      }
     />
   );
 
@@ -303,7 +299,14 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         foot:
           !place && !heldPoint && !flight && !briefShown && !profileShown
             ? routed && (
-                <FlightFoot vm={vm} fileable={fileable} onFile={fileFlightPlan} more={shareMenu("end", undefined, undefined, "bar")} />
+                <FlightFoot
+                  vm={vm}
+                  fileable={fileable}
+                  onFile={fileFlightPlan}
+                  // The suggested routes, the tab bar's Routes while there are some.
+                  routes={routesOffered(vm) ? { shown: vm.routeList.routesShown, onShown: vm.routeList.setRoutesShown } : undefined}
+                  more={shareMenu("end", undefined, undefined, "bar")}
+                />
               )
             : undefined,
         // The route under FPL's bar (MapPanel keeps it under the others'

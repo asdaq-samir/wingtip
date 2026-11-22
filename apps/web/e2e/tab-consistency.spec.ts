@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { FILING_OFF, FILING_OFFERED } from "./filing";
 import { grabberTo, openConsole, settle, settled, showSearch, sideDrawer, slow } from "./helpers";
 
 /**
@@ -115,17 +116,11 @@ async function floatingBar(page: Page) {
     if (!bar) return null;
     const items = [...bar.querySelectorAll("button, [role=tab]")].filter((e) => !e.parentElement?.closest("button, [role=tab]"));
     const box = bar.getBoundingClientRect();
-    // FPL's figures held at the foot under its bar: their top from the
-    // window's foot. Held there only on a phone's bottom sheet (Base UI's
-    // data-swipe-direction, sheet/pinAtFoot); beside the side panel they
-    // sit under the route, and the bar stays where the card's is.
-    const strip = document.querySelector('[data-swipe-direction="down"] [data-pin-foot]')?.getBoundingClientRect();
     // FPL's File button stands beside the bar and the pair is centred.
     const file = document.querySelector("[data-single]")?.getBoundingClientRect();
     return {
       centre: file ? (box.left + file.right) / 2 : box.left + box.width / 2,
       foot: innerHeight - box.bottom,
-      strip: strip && strip.height > 0 ? innerHeight - strip.top : 0,
       height: box.height,
       items: items.map((i) => {
         const b = i.getBoundingClientRect();
@@ -164,11 +159,7 @@ test("FPL's floating bar and the airport card's sit in one place and look alike:
       NonNullable<Awaited<ReturnType<typeof floatingBar>>>,
     ];
     const where = root || "the default size";
-    // FPL's sits on its figures, held at the foot's edge under it (its foot
-    // 4 points over theirs, sheet/pinAtFoot's RIDES_ON_PIN; the owner,
-    // 2026-11-21); with no figures showing it is where the card's is.
-    if (fpl.strip) expect(fpl.foot, `${where}: FPL's foot on its figures`).toBeCloseTo(fpl.strip + 4, 0);
-    else expect(fpl.foot, `${where}: foot`).toBeCloseTo(card.foot, 0);
+    expect(fpl.foot, `${where}: foot`).toBeCloseTo(card.foot, 0);
     expect(fpl.height, `${where}: height`).toBeCloseTo(card.height, 0);
     expect(fpl.centre, `${where}: centre`).toBeCloseTo(card.centre, 0);
     for (const item of [...fpl.items, ...card.items]) {
@@ -181,6 +172,7 @@ test("FPL's floating bar and the airport card's sit in one place and look alike:
 });
 
 test("FPL's File button stands beside its bar, at its height, and the pair fits the phone", async ({ page }) => {
+  test.skip(!FILING_OFFERED, FILING_OFF);
   test.setTimeout(slow(240000));
   for (const root of ["", "17.88px", "19.65px"]) {
     await page.goto("/app/plan?dep=C81&dest=KDLH");

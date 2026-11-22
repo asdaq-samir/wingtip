@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { FILING_OFF, FILING_OFFERED } from "./filing";
 import { slow, settle, openTab, openSection, openConsole, openPanel } from "./helpers";
 import { NO_OWN_FIGURES } from "./airplaneMocks";
 import { pickAirplane } from "./startState";
@@ -10,6 +11,8 @@ import { pickAirplane } from "./startState";
  * airway between its fixes, the alternate) it is ifr.spec's, on the
  * routes it plans already.
  */
+
+test.skip(!FILING_OFFERED, FILING_OFF);
 
 test("under VFR the flight plan flies direct, with no alternate, and says where to file it", async ({ page, context }) => {
   test.slow();

@@ -124,8 +124,7 @@ const SHEET_FOOT = '[data-testid="panel-foot"]';
 
 /** The figures held at the foot (data-pinned) drawn as the pill: in sight
  *  where the rest of the head is not (sheet/insets' RISEN_FACE at the
- *  pill), a Direct to's strip over them kept out of sight there (data-pill;
- *  held at the foot off the pill too now, they keep it in sight) in its
+ *  pill), a Direct to's strip over them kept out of sight there in its
  *  room, so nothing moves; the foot's 16-point sides where the head's 12
  *  laid them 8 points wider (the owner, 2026-11-16: "is it changing size
  *  at the end? And do you see a small gap below/above the strip?"); over

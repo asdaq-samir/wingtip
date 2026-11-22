@@ -181,7 +181,7 @@ test("an ident only a field abroad goes by is no destination: no distance, no wa
     "isn't an airport or waypoint we know",
     { timeout: 20000 },
   );
-  // No ways to suggest, so no Route Options in More: the chips' count below
+  // No ways to suggest, so no Routes in the bar: the chips' count below
   // is then no vacuous zero (they render only while it is on).
   await page.getByTestId("share-route").click();
   await expect(page.getByRole("menuitem").first()).toBeVisible();

@@ -20,8 +20,8 @@ function ProfileShare({ route, ...look }: ShellLook & { route: SharedRoute }) {
  * drawer's tiles or of the first row, and each of the route's cards' Share,
  * each card's own at the owner's asks ("every share button needs to be
  * specific to that card. So printing briefing should only be in brief
- * card"; "printing navlog should be in navlog"): the route's More has Route
- * Options, its link and Open in ForeFlight (RouteMore); the Brief's, its
+ * card"; "printing navlog should be in navlog"): the route's More has its
+ * link and Open in ForeFlight (RouteMore), Route Options a tab of FPL's bar; the Brief's, its
  * link, Save and the solo cross-country review, Print the briefing and
  * Refresh (BriefShare); the nav log's, its link, the checkpoints for
  * ForeFlight and the nav log printed (NavLogShare); the profile's, its link.
@@ -39,7 +39,6 @@ export default function ShareMenu({
   testId = "share-route",
   ...rest
 }: Omit<ShellLook, "testId"> &
-  Pick<ComponentProps<typeof RouteMore>, "routeOptions"> &
   Pick<ComponentProps<typeof BriefShare>, "planAgain"> & {
     testId?: string;
     /** Whose menu it is: the route's ••• (its sharing too, since Share left
@@ -49,10 +48,10 @@ export default function ShareMenu({
     saving: (askReview: () => void) => ReactNode;
     reviewSheet: (done: () => void) => ReactNode;
   }) {
-  const { routeOptions, planAgain, saving, reviewSheet, ...menu } = rest;
+  const { planAgain, saving, reviewSheet, ...menu } = rest;
   const props = { ...menu, testId };
   if (card === "brief") return <BriefShare {...props} saving={saving} reviewSheet={reviewSheet} planAgain={planAgain} />;
   if (card === "navlog") return <NavLogShare {...props} />;
   if (card === "profile") return <ProfileShare {...props} />;
-  return <RouteMore {...props} routeOptions={routeOptions} />;
+  return <RouteMore {...props} />;
 }

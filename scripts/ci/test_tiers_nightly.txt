@@ -46,6 +46,7 @@ forecast-wind.spec.ts
 fpl-fields.spec.ts
 fpl-full-large-text.spec.ts
 fpl-head.spec.ts
+fpl-head-fields.spec.ts
 fpl-one-layout.spec.ts
 fpl-strip-foot.spec.ts
 frequency-copy.spec.ts

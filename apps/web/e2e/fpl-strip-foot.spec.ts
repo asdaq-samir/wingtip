@@ -34,9 +34,13 @@ test("a long route scrolled at full: the figures stay at the sheet's foot, no ro
     await scroller.evaluate((el, y) => el.scrollTo(0, y), Math.round(room * at));
     await page.waitForTimeout(400);
     const box = (await strip.boundingBox())!;
-    // On the foot's edge, over the bar's room at most: never half way up.
-    expect(box.y + box.height, `strip's bottom at scroll ${at}`).toBeGreaterThan(foot.y + foot.height - 140);
-    expect(box.y + box.height).toBeLessThanOrEqual(foot.y + foot.height + 1);
+    // Held on the foot's top, just over the tab bar at the sheet's very
+    // foot (the owner, 2026-11-22: "the Apple way at the bottom and figures
+    // should pin at the bottom of the plan"): never half way up, never
+    // under the bar.
+    expect(Math.abs(box.y + box.height - foot.y), `strip's bottom on the foot's top at scroll ${at}`).toBeLessThanOrEqual(2);
+    const bar = (await page.getByTestId("fpl-actions").boundingBox())!;
+    expect(bar.y, "the bar under the figures").toBeGreaterThanOrEqual(box.y + box.height - 1);
     // And no list row drawn below it.
     const below = await scroller.evaluate((el, edge) => {
       return [...el.querySelectorAll("[data-pin-foot] ~ *, [data-pill-row] > *")].filter(
@@ -49,4 +53,27 @@ test("a long route scrolled at full: the figures stay at the sheet's foot, no ro
     }, box.y + box.height);
     expect(below).toBe(0);
   }
+});
+
+test("the tab bar is at the sheet's foot, the figures over it, and they slide under it to be the pill", async ({ page }) => {
+  // The owner, 2026-11-22: "figures should pin at the bottom of the plan
+  // and the slide under the tabs to pin to the pill as the card becomes a pill".
+  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+  await page.goto("/app/plan?dep=C81&dest=KATW&stops=KUGN,KENW,BAE,OSH,KMKE,KRAC,KJVL,KMSN,KDLL");
+  await settle(page);
+  await grabberTo(page, "half");
+  const strip = page.locator("[data-pin-foot]").first();
+  await expect(strip.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(90_000) });
+  const bar = page.getByTestId("fpl-actions");
+  const [s, b] = [(await strip.boundingBox())!, (await bar.boundingBox())!];
+  // The bar at the very foot, the figures wholly over it, in sight.
+  expect(b.y + b.height).toBeGreaterThan(page.viewportSize()!.height - 60);
+  expect(s.y + s.height).toBeLessThanOrEqual(b.y + 1);
+  expect(await strip.getByTestId("navlog-ete").evaluate((el) => getComputedStyle(el).opacity)).toBe("1");
+  // At the pill the figures are its face, on the screen's foot, the bar put away.
+  await grabberTo(page, "peek");
+  await page.waitForTimeout(600);
+  const pill = (await strip.boundingBox())!;
+  expect(pill.y + pill.height).toBeGreaterThan(page.viewportSize()!.height - 60);
+  await expect(bar).toBeHidden();
 });
