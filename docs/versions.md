@@ -64,13 +64,14 @@ floor say the oldest Python the code reads on, not the one it runs on.
 
 ### Web (`apps/web/package.json`, its lockfile)
 
-React 19.3.1, Vite 8.3.7, TypeScript 6.0.3, React Router 8.5.1
+React 19.3.1, Vite 8.3.7, TypeScript 6.0.3, React Router 8.5.2
 (`react-router`; `react-router-dom` went with v8), Base UI 1.9.0
 (`@base-ui/react`) under shadcn 4.23.0 in its `base-vega` style
 (`components.json`, neutral base), React Aria 3.53.1 and React Aria
 Components 1.22.1 (date, time and number fields, drag and drop, long
-press), Tailwind CSS 4.3.5, MapLibre GL 6.17.0, TanStack Query 5.107.1
-and Table 9.3.1, zod 4.6.7, ESLint 10.14.0 with typescript-eslint
+press), Tailwind CSS 4.3.5, MapLibre GL 6.19.0, TanStack Query 5.108.2
+and Table 9.3.1, react-hook-form 7.92.0, recharts 3.11.0, lucide-react
+1.77.0, react-hotkeys-hook 5.4.0, zod 4.6.7, ESLint 10.14.0 with typescript-eslint
 8.72.2, vitest 5.1.0, knip 6.44.2, Playwright 1.65.0 (CI's image
 `mcr.microsoft.com/playwright:v1.65.0-noble`).
 
