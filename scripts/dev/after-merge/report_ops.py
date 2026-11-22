@@ -67,10 +67,7 @@ def chaos(dir: Path) -> list[str]:
     probe = rows(dir / "probe.jsonl")
     health = health_lines(dir / "health.log")
     alerts = alert_times(dir / "alerts.txt")
-    lines = [
-        "| Fault | Back in | By itself | What pilots saw | health.sh saw it | Alarms that would mail |",
-        "|---|---|---|---|---|---|",
-    ]
+    lines = ["| Fault | Back in | By itself | What pilots saw | health.sh saw it | Alarms that would mail |", "|---|---|---|---|---|---|"]
     starts = [e for e in events if e["what"] == "start"]
     for start in starts:
         fault = start["fault"]
@@ -136,14 +133,20 @@ def changeover(dir: Path) -> list[str]:
     lines.append(f"- No false warning before 0901Z: {'**no**, ' + ', '.join(false) if false else 'yes'} ({len(before)} polls).")
     switched = [c for p in after[-1:] for c in cycles(p) if c.get("kind") in ("airac", "chart")]
     late = sorted({c["name"] for c in switched if c.get("current") != day})
-    lines.append(f"- The switch at 0901Z: {'**no**, still on the old edition: ' + ', '.join(late) if late else 'yes' if switched else 'no polls after'}.")
+    lines.append(
+        f"- The switch at 0901Z: {'**no**, still on the old edition: ' + ', '.join(late) if late else 'yes' if switched else 'no polls after'}."
+    )
     served = [(p.get("chart") or {}).get("chart_cycle") for p in after]
     name = f"{day[5:7]}-{day[8:10]}-{day[:4]}"
-    lines.append(f"- The map's chart cycle after: {served[-1] if served else 'unknown'} ({'the new one' if served and served[-1] == name else '**not the new one**'}).")
+    lines.append(
+        f"- The map's chart cycle after: {served[-1] if served else 'unknown'} ({'the new one' if served and served[-1] == name else '**not the new one**'})."
+    )
     nxt = ((before[-1].get("status") or {}).get("charts") or {}).get("next") if before else None
     offline = (before[-1].get("offline") or {}) if before else {}
     staged = bool(nxt and nxt.get("state") in ("staged", "swapped")) or offline.get("next_cycle") == name
-    lines.append(f"- Staged before its date: {'yes' if staged else '**no**'} (charts.next {json.dumps(nxt)[:160]}; offline next_cycle {offline.get('next_cycle')}).")
+    lines.append(
+        f"- Staged before its date: {'yes' if staged else '**no**'} (charts.next {json.dumps(nxt)[:160]}; offline next_cycle {offline.get('next_cycle')})."
+    )
     try:
         kept = json.loads((dir / "kept.json").read_text())
     except (OSError, ValueError):
@@ -157,7 +160,9 @@ def changeover(dir: Path) -> list[str]:
     for phone in ("ios", "android"):
         path = dir / f"phones-{phone}.txt"
         if path.exists():
-            lines.append(f"- The {phone} test of it: {'passed' if path.read_text().rstrip().endswith('ok') else '**failed**, see ' + path.name}.")
+            lines.append(
+                f"- The {phone} test of it: {'passed' if path.read_text().rstrip().endswith('ok') else '**failed**, see ' + path.name}."
+            )
     log = (dir / "planner.log").read_text(errors="replace") if (dir / "planner.log").exists() else ""
     lines.append(f"- \"FAA data past its cycle\" in the faked planner's log: {log.count('past its cycle')} times.")
     return lines
@@ -172,10 +177,24 @@ def osv(dir: Path) -> list[str]:
             for pkg in result.get("packages", []):
                 groups = {i: g.get("max_severity", "") for g in pkg.get("groups", []) for i in g.get("ids", [])}
                 for vuln in pkg.get("vulnerabilities", []):
-                    fixed = [e["fixed"] for a in vuln.get("affected", []) for r in a.get("ranges", []) for e in r.get("events", []) if "fixed" in e]
-                    triage = "dev only: bump with the next upgrade" if DEV_ONLY.search(source) else f"bump to {fixed[-1]}" if fixed else "no fix yet: watch"
+                    fixed = [
+                        e["fixed"]
+                        for a in vuln.get("affected", [])
+                        for r in a.get("ranges", [])
+                        for e in r.get("events", [])
+                        if "fixed" in e
+                    ]
+                    triage = (
+                        "dev only: bump with the next upgrade"
+                        if DEV_ONLY.search(source)
+                        else f"bump to {fixed[-1]}"
+                        if fixed
+                        else "no fix yet: watch"
+                    )
                     p = pkg.get("package", {})
-                    lines.append(f"| {source} | {p.get('name')} | {p.get('version')} | {vuln['id']} | {groups.get(vuln['id'], '?')} | {triage} |")
+                    lines.append(
+                        f"| {source} | {p.get('name')} | {p.get('version')} | {vuln['id']} | {groups.get(vuln['id'], '?')} | {triage} |"
+                    )
     return lines if len(lines) > 2 else ["No known vulnerability in any lockfile."]
 
 
@@ -191,7 +210,9 @@ def trivy(dir: Path) -> list[str]:
                     triage = f"base image: rebuild on its newest digest ({v['FixedVersion']})"
                 else:
                     triage = f"bump {v['PkgName']} to {v['FixedVersion']}"
-                lines.append(f"| {path.stem} | {v['PkgName']} | {v['InstalledVersion']} | {v['VulnerabilityID']} | {v['Severity']} | {triage} |")
+                lines.append(
+                    f"| {path.stem} | {v['PkgName']} | {v['InstalledVersion']} | {v['VulnerabilityID']} | {v['Severity']} | {triage} |"
+                )
     return lines if len(lines) > 2 else ["No HIGH or CRITICAL vulnerability in any image."]
 
 

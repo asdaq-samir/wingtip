@@ -96,7 +96,9 @@ def pressure(rows: list[dict], baseline_threads: int) -> dict[str, float]:
         if d["mem_pct"] and not name.startswith("after-merge"):
             out[f"{name} memory"] = max(d["mem_pct"]) / 100
     out[f"Postgres connections busy (gateway pool {PG_POOL})"] = max((pg_active(r) for r in rows), default=0) / PG_POOL
-    out[f"planner workers (thread pool {PLANNER_POOL})"] = max((planner_threads(r) - baseline_threads for r in rows), default=0) / PLANNER_POOL
+    out[f"planner workers (thread pool {PLANNER_POOL})"] = (
+        max((planner_threads(r) - baseline_threads for r in rows), default=0) / PLANNER_POOL
+    )
     return out
 
 
@@ -125,7 +127,12 @@ def step_table(summary: dict, rows: list[dict]) -> tuple[list[str], dict | None,
             default=(0, ""),
         )
         ok = errors < summary["errors"] and worst[0] < 1 and reqs > 0
-        info = {**step, "rps": reqs / span, "other_rps": (reqs - tiles) / span, "rows": [r for r in rows if start <= r["t"] - t0 < start + span]}
+        info = {
+            **step,
+            "rps": reqs / span,
+            "other_rps": (reqs - tiles) / span,
+            "rows": [r for r in rows if start <= r["t"] - t0 < start + span],
+        }
         if reqs:
             lines.append(f"| {step['name']} | {reqs / span:.1f} | {errors:.2%} | {worst[1]} {worst[0]:.0%} | {'yes' if ok else '**no**'} |")
         if ok and broke is None:
@@ -149,7 +156,9 @@ def stress(out: Path) -> list[str]:
     else:
         lines.append(f"**Breaking point: {held['target'] if held else 'under 10'} pilots**; at {broke['target']} the limits broke.")
         near = sorted(pressure(broke["rows"], base).items(), key=lambda kv: -kv[1])
-        lines.append("What was nearest its end at the step that broke (1.0 = at it): " + ", ".join(f"{k} {v:.2f}" for k, v in near[:5]) + ".")
+        lines.append(
+            "What was nearest its end at the step that broke (1.0 = at it): " + ", ".join(f"{k} {v:.2f}" for k, v in near[:5]) + "."
+        )
         lines.append(f"First to hit it: **{near[0][0]}**.")
     lines += [""] + rate_limit(summary, held)
     containers = (out / "stress" / "containers.txt").read_text() if (out / "stress" / "containers.txt").exists() else ""
@@ -191,7 +200,9 @@ def journeys(out: Path, profile: str) -> list[str]:
             if p95 is not None:
                 lines.append(f"| {step or 'all'} | {metric} | {p95:.0f} ms | {limit} ms | {'yes' if p95 < limit else '**no**'} |")
         errors = values(summary, "http_req_failed" + tag).get("rate", 0)
-        lines.append(f"| {step or 'all'} | errors | {errors:.2%} | {summary['errors']:.0%} | {'yes' if errors < summary['errors'] else '**no**'} |")
+        lines.append(
+            f"| {step or 'all'} | errors | {errors:.2%} | {summary['errors']:.0%} | {'yes' if errors < summary['errors'] else '**no**'} |"
+        )
     return lines
 
 

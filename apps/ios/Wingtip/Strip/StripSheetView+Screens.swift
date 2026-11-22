@@ -16,7 +16,8 @@ extension StripSheetView {
         case .favorites: .favorites
         case .nearest: .nearest
         case .emergency: .emergency
-        case .fpl, .airport, .ask, .shared: nil
+        // Cards over the strip, as over the plan (StripSheetView.openScreen).
+        case .fpl, .airport, .ask, .shared, .scratchpad, .balance: nil
         }
     }
 

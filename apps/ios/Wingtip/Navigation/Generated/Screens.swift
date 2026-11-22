@@ -21,6 +21,8 @@ enum Screen: String, CaseIterable, Sendable {
     case coach
     case minimums
     case documents
+    case scratchpad
+    case balance
     case guide
     case downloads
     case passengers
@@ -48,6 +50,8 @@ enum Screen: String, CaseIterable, Sendable {
         case .coach: "Coach"
         case .minimums: "Personal Minimums"
         case .documents: "Documents"
+        case .scratchpad: "Scratchpad"
+        case .balance: "Weight & Balance"
         case .guide: "Guide"
         case .downloads: "Downloads"
         case .passengers: "Passenger Briefing"

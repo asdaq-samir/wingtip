@@ -189,6 +189,9 @@ struct StripSheetView: View {
         switch screen {
         case .airport, .ask: search.presented = true
         case .emergency: emergency.open = .link
+        // The scratchpad and the loading are cards over the strip.
+        case .scratchpad: nav.open(.scratchpad)
+        case .balance: nav.open(.screen(.balance))
         default: path = []
         }
     }

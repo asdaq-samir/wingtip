@@ -305,6 +305,10 @@ struct ScreenPage: View {
         case .passengers: PassengerBriefingView(flight: PassengerBriefingModel.flight(idents: plan.idents))
         case .about: AboutView()
         case .documents: DocumentsPage()
+        // Weight & Balance weighed on the device (LoadingView).
+        case .balance: LoadingView()
+        // Opened as its own card (SheetPage.scratchpad); by its name too.
+        case .scratchpad: ScratchpadView()
         // Not pages (SheetPage.pages): the plan is the root, the search
         // is the field's, Ask is a card by its question, the emergency
         // assistant is its model's card and a shared flight is its own card.

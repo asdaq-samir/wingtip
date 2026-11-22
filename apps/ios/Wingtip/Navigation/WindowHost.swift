@@ -18,15 +18,13 @@ struct WindowHost: ViewModifier {
     let page: (PlanPage) -> Void
     /// The root's run of a command (RootView.apply).
     let run: @MainActor (AppCommand) async -> Void
-    @Environment(Navigator.self) private var nav
     @State private var importing = false
     @State private var problem: String?
 
     func body(content: Content) -> some View {
         content
             .focusedSceneValue(\.windowActions, WindowActions(
-                search: { search.presented = true }, open: open, page: page, openFile: { importing = true },
-                scratchpad: { nav.open(.scratchpad) }))
+                search: { search.presented = true }, open: open, page: page, openFile: { importing = true }))
             .fileImporter(isPresented: $importing, allowedContentTypes: WindowFiles.types) { result in
                 if case .success(let url) = result { take(WindowFiles.copy(url)) }
             }

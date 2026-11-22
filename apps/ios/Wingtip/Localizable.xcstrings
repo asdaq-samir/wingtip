@@ -156,6 +156,9 @@
     "%@ hours" : {
 
     },
+    "%@ in" : {
+
+    },
     "%@ is outside the planner's legal altitudes; flown with its warnings." : {
 
     },
@@ -212,6 +215,16 @@
     "%@ planned" : {
 
     },
+    "%@ pounds at %@ inches" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ pounds at %2$@ inches"
+          }
+        }
+      }
+    },
     "%@ profile" : {
 
     },
@@ -246,6 +259,16 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %@ lb/gal" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@ lb/gal"
           }
         }
       }
@@ -862,6 +885,9 @@
     "Approach Plates" : {
 
     },
+    "Arm" : {
+
+    },
     "Arrives %@%@" : {
       "localizations" : {
         "en" : {
@@ -900,6 +926,9 @@
 
     },
     "As printed on the page, in %@." : {
+
+    },
+    "As the POH says" : {
 
     },
     "Ask" : {
@@ -960,6 +989,9 @@
 
     },
     "Before You Go" : {
+
+    },
+    "Beside the Map" : {
 
     },
     "Best Fields" : {
@@ -1377,10 +1409,16 @@
     "Delete Airplane" : {
 
     },
+    "Delete Page" : {
+
+    },
     "Delete from iCloud" : {
 
     },
     "Delete the Track" : {
+
+    },
+    "Delete this page?" : {
 
     },
     "Delete your account?" : {
@@ -2058,6 +2096,9 @@
 
     },
     "Fuel Set" : {
+
+    },
+    "Fuel grade" : {
 
     },
     "Fuel remarks" : {
@@ -2789,6 +2830,9 @@
     "New Airplane" : {
 
     },
+    "New Page" : {
+
+    },
     "Next" : {
 
     },
@@ -2945,6 +2989,9 @@
 
     },
     "No most-economical plan: the climb's fuel flow isn't known for this airplane." : {
+
+    },
+    "No pages yet" : {
 
     },
     "No past registrations." : {
@@ -3216,6 +3263,9 @@
 
     },
     "Ownership History" : {
+
+    },
+    "Page" : {
 
     },
     "Page %lld" : {
@@ -3717,6 +3767,9 @@
     "Scheduled Route" : {
 
     },
+    "Scratchpad" : {
+
+    },
     "Search" : {
 
     },
@@ -3949,6 +4002,9 @@
 
     },
     "Speak Alerts Ahead" : {
+
+    },
+    "Speak Runways" : {
 
     },
     "Speak your question" : {
@@ -4627,7 +4683,13 @@
     "Weather on the Map" : {
 
     },
+    "Weight" : {
+
+    },
     "Weight & Balance" : {
+
+    },
+    "Weight and balance envelope" : {
 
     },
     "Welcome to Wingtip Maps" : {
@@ -4702,6 +4764,9 @@
     "Why, and what to change" : {
 
     },
+    "Width" : {
+
+    },
     "Wind" : {
 
     },
@@ -4748,6 +4813,9 @@
 
     },
     "Write a Squawk" : {
+
+    },
+    "Write a clearance, the ATIS or the runway's figures with Apple Pencil, a finger or the keyboard." : {
 
     },
     "Write the %@" : {
@@ -4850,6 +4918,9 @@
 
     },
     "Your name" : {
+
+    },
+    "Your notes" : {
 
     },
     "Your plan is made from the logbook kept with your account." : {

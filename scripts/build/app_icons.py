@@ -67,6 +67,8 @@ def launch_name(w: int, h: int, orientation: str, dark: bool) -> str:
     """A launch image's file: the screen's size as drawn, landscape wide."""
     size = f"{h}x{w}" if orientation == "landscape" else f"{w}x{h}"
     return f"splash/launch-{size}{'-dark' if dark else ''}.png"
+
+
 # Apple rounds a Home Screen icon to about this fraction of its side; the
 # PWA's "any" icons are drawn rounded so, for the installers that show
 # them as they are.
