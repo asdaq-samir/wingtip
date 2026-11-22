@@ -34,6 +34,10 @@ export interface SharedPlan {
    *  field, whole gallons by ident (the link's `tanks`, the planner's own
    *  "KJVL:0,KMSN:20"); none named, full. */
   tanks: Record<string, number>;
+  /** The instrument procedures its pilot picked (the link's `procs`, the
+   *  address's own "KDLH:I27:::L"), each with whether an approach is only
+   *  loaded or flown on into its missed approach (lib/procedures). */
+  procs?: string | null;
 }
 
 export type SharedLink = { kind: "plan"; plan: SharedPlan } | { kind: "saved"; token: string };
@@ -42,6 +46,10 @@ export type SharedLink = { kind: "plan"; plan: SharedPlan } | { kind: "saved"; t
 const SHARED = "shared";
 
 const IDENT = /^[A-Z0-9]{2,8}$/;
+/** A link's `procs` as the address writes it: fields, procedures,
+ *  transitions, fixes and states in capitals and figures, "-", ":" and
+ *  ",". Anything else is no picks; the engine reads each as it loads. */
+const PROCS = /^[A-Z0-9:,-]{1,400}$/;
 const TOKEN = /^[A-Za-z0-9_-]{16,32}$/;
 
 const identOrNull = (raw: string | null | undefined) => {
@@ -82,6 +90,7 @@ export function sharedPlanLink(plan: SharedPlan, origin: string): string {
   if (plan.tail) params.set("tail", plan.tail.toUpperCase());
   const tanks = tanksWords(plan.tanks);
   if (tanks) params.set("tanks", tanks);
+  if (plan.procs) params.set("procs", plan.procs);
   return `${origin}${SCREEN_LINK.path}?${params}`;
 }
 
@@ -114,6 +123,7 @@ export function sharedLinkOf(params: URLSearchParams): SharedLink | null {
       rules: rules === "vfr" || rules === "ifr" ? rules : null,
       tail: identOrNull(params.get("tail")),
       tanks: tanksOfLink(params.get("tanks")),
+      procs: PROCS.test(params.get("procs")?.toUpperCase() ?? "") ? params.get("procs")!.toUpperCase() : null,
     },
   };
 }
@@ -138,6 +148,7 @@ export function paramsForSharedPlan(plan: SharedPlan, now = Date.now()): URLSear
     altitude_ft: plan.altitudeFt,
     depart: plan.depart && Date.parse(plan.depart) > now ? plan.depart : null,
     tanks: tanksWords(plan.tanks) || null,
+    procs: plan.procs ?? null,
   });
 }
 

@@ -14,6 +14,13 @@ export interface PickedProcedure {
    *  ability to go direct to a fix as told by ATC"): the procedure flown
    *  from there (wingtip.procedure_paths). */
   direct?: string | null;
+  /** An approach loaded and not activated, as a GPS navigator loads one
+   *  (the owner, 2026-11-22): shown as its own box, not in the route the
+   *  planner and the nav log fly until the pilot activates it. */
+  loaded?: boolean;
+  /** Activated, its missed approach unsuspended: flown on from the missed
+   *  approach point to its hold (AIM 5-4-21), not suspended there. */
+  missed?: boolean;
 }
 
 /** A procedure's fix as its branch in FPL's list (FixBranch) and its card
@@ -50,9 +57,10 @@ export function approachRunway(name: string): string | null {
 }
 
 /** The procedures picked, from the address: "KBUR:I08-Y:LAX,KBUR:JANNY5",
- *  each a field, a procedure and its transition, and after a fourth colon
- *  a fix flown direct to ("KELD:I22::BXCMB"), as the patterns are kept
- *  ("pattern=KDLH:27"). What is not one is left out. */
+ *  each a field, a procedure and its transition, after a fourth colon a
+ *  fix flown direct to ("KELD:I22::BXCMB"), and after a fifth "L" an
+ *  approach loaded or "M" its missed approach flown ("KDLH:I27:::L"), as
+ *  the patterns are kept ("pattern=KDLH:27"). What is not one is left out. */
 export function proceduresOf(param: string | null): PickedProcedure[] {
   if (!param) return [];
   // The shared engine's reading (crate::route::picks), the one the
@@ -61,8 +69,8 @@ export function proceduresOf(param: string | null): PickedProcedure[] {
   const read = callEngine("procedures_read", { text: param });
   return read.flatMap(({ pick }) => {
     if (!pick) return [];
-    const { direct, ...picked } = pick;
-    return [direct ? { ...picked, direct } : picked];
+    const { direct, loaded, missed, ...picked } = pick;
+    return [{ ...picked, ...(direct ? { direct } : {}), ...(loaded ? { loaded } : {}), ...(missed ? { missed } : {}) }];
   });
 }
 
@@ -118,6 +126,10 @@ export function sameField(a: string, b: string): boolean {
   if (!engineLoaded()) return a.trim().toUpperCase() === b.trim().toUpperCase();
   return callEngine("same_field", { a, b });
 }
+
+/** The picks the route flies: an approach only loaded left out (the
+ *  planner leaves it out as well, PlanQuery.procedure_picks). */
+export const flownPicks = (picks: PickedProcedure[]) => picks.filter((p) => !p.loaded);
 
 /** The procedures picked, for the address. */
 export function proceduresParam(picks: PickedProcedure[]): string {

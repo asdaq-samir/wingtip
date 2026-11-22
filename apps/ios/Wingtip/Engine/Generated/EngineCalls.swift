@@ -1455,6 +1455,11 @@ extension Engine {
         try Self.rule("procedure_leg_nm", EngineContract.ProcedureLegNmInput(path: path, distanceNm: distanceNm, altitudeFt: altitudeFt, knownFt: knownFt))
     }
 
+    /// An approach's coded legs, in the order the CIFP codes them, split at its missed approach point (the leg whose waypoint description's fourth character is M, ARINC 424-18 5.17): `suspend_at`, the MAP's leg, where the route's sequencing is suspended until the pilot goes on into the missed approach (AIM 5-4-21), null with no MAP; `missed`, the legs after it up to and including the first flown as a hold (HA, HF, HM, ARINC 424-18 5.21), the published missed approach to its clearance limit.
+    static func procedureMissed(legs: [EngineContract.ProcedureMissedInputLegsItem]) throws -> EngineContract.ProcedureMissedAnswer {
+        try Self.rule("procedure_missed", EngineContract.ProcedureMissedInput(legs: legs))
+    }
+
     /// The figures a flown procedure path is drawn with: a hold entry's standard-rate turn radius at the 120 kt holds are drawn at (AIM 5-3-8), nm; and the join from vectors to final, 3 nm outside the final's first fix (2 miles outside the approach gate, which is 1 mile outside the FAF: FAA Order JO 7110.65 5-9-1a1, the Pilot/Controller Glossary) at 30 degrees (JO 7110.65 TBL 5-9-1).
     static func procedurePathFigures() throws -> EngineContract.ProcedurePathFiguresAnswer {
         try Self.rule("procedure_path_figures", EngineContract.ProcedurePathFiguresInput())
@@ -1470,7 +1475,7 @@ extension Engine {
         try Self.rule("procedure_turn", EngineContract.ProcedureTurnInput(fix: fix, inboundDeg: inboundDeg, ptCourseDeg: ptCourseDeg))
     }
 
-    /// Each piece of the route's procedures text with its pick as the web app reads it, or null, and whether it is one exactly as the planner takes it.
+    /// Each piece of the route's procedures text with its pick as the web app reads it, or null, and whether it is one exactly as the planner takes it. A fifth piece "L" is an approach loaded and not flown, "M" one flown on into its missed approach ("KDLH:I27:::L").
     static func proceduresRead(text: String) throws -> [EngineContract.ProceduresReadAnswerItem] {
         try Self.rule("procedures_read", EngineContract.ProceduresReadInput(text: text))
     }

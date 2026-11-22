@@ -1,0 +1,63 @@
+{
+  "x-call": "wingtip_procedures::missed::call",
+  "description": "An approach's coded legs, in the order the CIFP codes them, split at its missed approach point (the leg whose waypoint description's fourth character is M, ARINC 424-18 5.17): `suspend_at`, the MAP's leg, where the route's sequencing is suspended until the pilot goes on into the missed approach (AIM 5-4-21), null with no MAP; `missed`, the legs after it up to and including the first flown as a hold (HA, HF, HM, ARINC 424-18 5.21), the published missed approach to its clearance limit.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ProcedureMissedInput",
+      "type": "object",
+      "properties": {
+        "legs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "map": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "path"
+            ]
+          }
+        }
+      },
+      "required": [
+        "legs"
+      ]
+    },
+    "answer": {
+      "title": "ProcedureMissedAnswer",
+      "type": "object",
+      "properties": {
+        "suspend_at": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "missed": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        }
+      },
+      "required": [
+        "suspend_at",
+        "missed"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

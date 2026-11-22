@@ -9641,6 +9641,25 @@ enum EngineContract {
         }
     }
 
+    struct ProcedureMissedAnswer: Codable, Equatable, Sendable {
+        var suspendAt: Int?
+        var missed: [Int]
+
+        enum CodingKeys: String, CodingKey {
+            case suspendAt = "suspend_at"
+            case missed
+        }
+    }
+
+    struct ProcedureMissedInput: Codable, Equatable, Sendable {
+        var legs: [EngineContract.ProcedureMissedInputLegsItem]
+    }
+
+    struct ProcedureMissedInputLegsItem: Codable, Equatable, Sendable {
+        var path: String
+        var map: Bool?
+    }
+
     struct ProcedurePathFiguresAnswer: Codable, Equatable, Sendable {
         var holdTurnNm: Double
         var vectorsJoinNm: Double
@@ -9681,6 +9700,10 @@ enum EngineContract {
         var id: String
         var transition: String?
         var direct: String?
+        /// An approach loaded, not yet activated: not in the route flown.
+        var loaded: Bool
+        /// Its missed approach unsuspended: flown on from the missed approach point (AIM 5-4-21).
+        var missed: Bool
     }
 
     struct ProceduresReadInput: Codable, Equatable, Sendable {
@@ -9696,6 +9719,8 @@ enum EngineContract {
         var id: String
         var transition: String?
         var direct: String?
+        var loaded: Bool?
+        var missed: Bool?
     }
 
     struct ProcedureTurnInput: Codable, Equatable, Sendable {

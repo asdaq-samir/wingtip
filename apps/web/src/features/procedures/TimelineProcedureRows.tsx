@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { Button as BaseButton } from "@base-ui/react/button";
 import { Ellipsis } from "lucide-react";
 import { cn } from "cn";
@@ -9,43 +8,12 @@ import { PointMenu } from "../route/lazy";
 import { kindMenu } from "./fieldParts";
 import { FixFigures } from "./FixList";
 import { fixSub, KIND_WORD } from "./procedureWords";
-import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
+import { ApproachButtons } from "./TimelineApproachParts";
+import { headName } from "./approachState";
+import { OnTheLine, ProcedureFace } from "./onTheLine";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
 type Kind = keyof typeof KIND_WORD;
-
-/** A row on the route's line: its mark (none for the procedure's head) in
- *  the marks' column, the route's magenta through it from top to bottom
- *  and on into the next row -- to the mark's middle on the route's last
- *  row (`stop`) -- and its words after the inset hairline. */
-function OnTheLine({ mark, stop, children }: { mark?: ReactNode; stop: boolean; children: ReactNode }) {
-  return (
-    <div className={cn("relative flex", TIMELINE_GAP)}>
-      <span className="relative flex w-8 shrink-0 items-center justify-center self-stretch">
-        <span aria-hidden="true" className={cn(TIMELINE_THREAD, "top-0", stop && "bottom-1/2")} />
-        {mark && <span className="relative z-10 flex">{mark}</span>}
-      </span>
-      {/* 44 points under its hairline, as a point's line is (TimelineLine's
-          row under its border): with the border inside the 44 a fix's
-          button was 43 tall (the HIG review's P1, 2026-11-21). */}
-      <div className={cn("box-content flex min-h-11 min-w-0 flex-1 items-center gap-2 border-t border-border", TIMELINE_END)}>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-/** The procedure's name as its head says it: an approach's without its
- *  runway, then the runway it lands on -- its own, or the one picked to
- *  circle to -- "RNAV (GPS)-B · RWY 24"; an arrival's and a departure's
- *  with their transition, as the route says them. */
-function headName(vm: ProceduresRouteModel, field: ProcedureAirport, placed: ProceduresRouteModel["inRoute"][number]) {
-  if (placed.kind !== "approach" || !placed.name) return placed.label;
-  const own = /\bRWY\s*(\S+)$/i.exec(placed.name)?.[1] ?? null;
-  const runway = own ?? vm.chosenAt(field.ident);
-  const short = placed.name.replace(/\s*RWY\s*\S+$/i, "");
-  return runway ? `${short} · RWY ${runway}` : short;
-}
 
 /**
  * A procedure picked at a field on FPL's timeline, its fixes points on
@@ -86,20 +54,13 @@ export function TimelineProcedureRows({
       procedures.map((p) => (p === chosen ? { ...p, direct: fix } : p)),
       null,
     );
-  const face = (
-    <>
-      <span className={cn("block font-semibold tracking-wide text-procedure uppercase", TEXT.note)}>
-        {KIND_WORD[kind]} · {field.ident}
-      </span>
-      {/* Wrapping, never cut: all of the name at any text size. */}
-      <span className={cn("block font-semibold break-words", TEXT.row)} data-testid="procedure-name">
-        {name}
-      </span>
-    </>
-  );
+  const face = <ProcedureFace word={KIND_WORD[kind]} ident={field.ident} name={name} />;
+  // An approach activated says so at its foot, with Deactivate and Remove
+  // (TimelineApproachParts).
+  const approach = kind === "approach";
   return (
     <section aria-label={placed.label} data-testid="procedure-rows" data-kind={kind}>
-      <OnTheLine stop={stop && fixes.length === 0}>{kindMenu(vm, field, kind, "row", face)}</OnTheLine>
+      <OnTheLine stop={stop && fixes.length === 0 && !approach}>{kindMenu(vm, field, kind, "row", face)}</OnTheLine>
       <ol aria-label={`${name}, its fixes`}>
         {fixes.map((fix, i) => {
           const skipped = directAt > 0 && i < directAt;
@@ -122,7 +83,7 @@ export function TimelineProcedureRows({
           return (
             <li key={`${fix.ident}-${i}`} data-testid="fix-branch-row" data-direct={isDirect ? "" : undefined}>
               <OnTheLine
-                stop={stop && i === fixes.length - 1}
+                stop={stop && i === fixes.length - 1 && !approach}
                 mark={
                   <PointMenu
                     bare
@@ -152,6 +113,11 @@ export function TimelineProcedureRows({
           );
         })}
       </ol>
+      {approach && (
+        <OnTheLine stop={stop}>
+          <ApproachButtons vm={vm} field={field} id={placed.id} loaded={false} />
+        </OnTheLine>
+      )}
     </section>
   );
 }

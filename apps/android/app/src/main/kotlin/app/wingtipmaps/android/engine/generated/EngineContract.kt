@@ -9857,6 +9857,24 @@ object EngineContract {
     )
 
     @Serializable
+    data class ProcedureMissedAnswer(
+        @SerialName("suspend_at")
+        val suspendAt: Int? = null,
+        val missed: List<Int>,
+    )
+
+    @Serializable
+    data class ProcedureMissedInput(
+        val legs: List<EngineContract.ProcedureMissedInputLegsItem>,
+    )
+
+    @Serializable
+    data class ProcedureMissedInputLegsItem(
+        val path: String,
+        val map: Boolean? = null,
+    )
+
+    @Serializable
     data class ProcedurePathFiguresAnswer(
         @SerialName("hold_turn_nm")
         val holdTurnNm: Double,
@@ -9900,6 +9918,14 @@ object EngineContract {
         val id: String,
         val transition: String? = null,
         val direct: String? = null,
+        /**
+         * An approach loaded, not yet activated: not in the route flown.
+         */
+        val loaded: Boolean,
+        /**
+         * Its missed approach unsuspended: flown on from the missed approach point (AIM 5-4-21).
+         */
+        val missed: Boolean,
     )
 
     @Serializable
@@ -9918,6 +9944,8 @@ object EngineContract {
         val id: String,
         val transition: String? = null,
         val direct: String? = null,
+        val loaded: Boolean? = null,
+        val missed: Boolean? = null,
     )
 
     @Serializable
