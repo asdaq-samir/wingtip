@@ -245,7 +245,7 @@
                   "string",
                   "null"
                 ],
-                "description": "Whose forecast it is: \"TAF KMSN\", \"TAF KMSN, 12 nm away\" or \"NWS Gridded LAMP, modelled for 1500Z\"."
+                "description": "Whose forecast it is: \"TAF KMSN\", \"TAF KMSN, 12 nm away\" or \"NWS Gridded LAMP, modeled for 1500Z\"."
               },
               "wind_dir_true_deg": {
                 "type": [
@@ -380,7 +380,7 @@
                   "string",
                   "null"
                 ],
-                "description": "Whose forecast it is: \"TAF KMSN\", \"TAF KMSN, 12 nm away\" or \"NWS Gridded LAMP, modelled for 1500Z\"."
+                "description": "Whose forecast it is: \"TAF KMSN\", \"TAF KMSN, 12 nm away\" or \"NWS Gridded LAMP, modeled for 1500Z\"."
               }
             },
             "required": [

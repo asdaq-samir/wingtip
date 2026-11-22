@@ -103,13 +103,13 @@ pub fn due(
         // (p)(4): it "remains current for solo flight privileges, provided an
         // authorized instructor updates the student's logbook every 90 days
         // thereafter". (p)'s other items are the instructor's own limits.
-        push("solo", "Solo endorsement", "14 CFR 61.87(n), (p)(4)", solo_until(held), None, &|s| match s {
+        push("solo", "Solo Endorsement", "14 CFR 61.87(n), (p)(4)", solo_until(held), None, &|s| match s {
             Status::Unknown => "No solo endorsement on record".to_owned(),
             Status::Lapsed => "Lapsed: solo again only after an instructor's new endorsement (61.87(p)(4))".to_owned(),
             _ => "Good for 90 days from the instructor's endorsement (61.87(n), (p)(4))".to_owned(),
         });
     } else {
-        push("flight_review", "Flight review", "14 CFR 61.56(c)", at("flightReviewUntil")?, None, &|s| {
+        push("flight_review", "Flight Review", "14 CFR 61.56(c)", at("flightReviewUntil")?, None, &|s| {
             match s {
             Status::Unknown => "No flight review on record: one is needed to act as pilot in command (61.56(c))".to_owned(),
             Status::Lapsed => "Lapsed: no acting as pilot in command until a flight review, at least an hour of ground and an hour of flight training (61.56(a))".to_owned(),
@@ -117,18 +117,18 @@ pub fn due(
         }
         });
     }
-    push("day_passengers", "Passengers by day", "14 CFR 61.57(a)", at("dayPassengersUntil")?, None, &|s| match s {
+    push("day_passengers", "Passengers by Day", "14 CFR 61.57(a)", at("dayPassengersUntil")?, None, &|s| match s {
         Status::Current | Status::DueSoon => "90 days from the third most recent landing (61.57(a))".to_owned(),
         _ => "Three takeoffs and three landings, as sole manipulator of the controls, before carrying passengers (61.57(a))".to_owned(),
     });
-    push("night_passengers", "Passengers at night", "14 CFR 61.57(b)", at("nightPassengersUntil")?, None, &|s| {
+    push("night_passengers", "Passengers at Night", "14 CFR 61.57(b)", at("nightPassengersUntil")?, None, &|s| {
         match s {
         Status::Current | Status::DueSoon => "90 days from the third most recent night full-stop landing (61.57(b))".to_owned(),
         _ => "Three takeoffs and three landings to a full stop, from 1 hour after sunset to 1 hour before sunrise, before carrying passengers then (61.57(b))".to_owned(),
     }
     });
     if let Some(medical) = at("medicalExpiresOn")? {
-        push("medical", "Medical certificate", "14 CFR 61.23", Some(medical), None, &|s| match s {
+        push("medical", "Medical Certificate", "14 CFR 61.23", Some(medical), None, &|s| match s {
             Status::Lapsed => "Expired, as you gave it (61.23)".to_owned(),
             _ => "As you gave it: its length depends on its class and your age (61.23(d))".to_owned(),
         });
@@ -139,7 +139,7 @@ pub fn due(
         let ipc_after = at("ipcNeededAfter")?;
         let past_grace = ipc_after.is_none_or(|a| today > a);
         let from = at("instrumentCurrentFrom")?;
-        push("instrument", "Instrument currency", "14 CFR 61.57(c)", at("instrumentCurrentUntil")?, from, &|s| {
+        push("instrument", "Instrument Currency", "14 CFR 61.57(c)", at("instrumentCurrentUntil")?, from, &|s| {
             match s {
             Status::Pending => format!("Current from {}: tasks flown this month count from the first of next (61.57(c)(1))", from.map(said).unwrap_or_default()),
             Status::Lapsed | Status::Unknown if past_grace => "Only an instrument proficiency check restores it now (61.57(d))".to_owned(),

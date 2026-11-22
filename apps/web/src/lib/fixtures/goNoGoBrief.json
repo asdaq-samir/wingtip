@@ -90,7 +90,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "tab": "preflight",
             "section": "TFRs & Special Use",
             "finding": "ok",
@@ -122,7 +122,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "tab": "preflight",
             "section": "Weight & Balance",
             "finding": "ok",
@@ -215,7 +215,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "tab": "preflight",
             "section": "TFRs & Special Use",
             "finding": "ok",
@@ -327,7 +327,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "tab": "preflight",
             "section": "TFRs & Special Use",
             "finding": "ok",
@@ -359,7 +359,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "tab": "preflight",
             "section": "Weight & Balance",
             "finding": "ok",
@@ -457,7 +457,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "tab": "preflight",
             "section": "TFRs & Special Use",
             "finding": "ok",
@@ -489,7 +489,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "tab": "preflight",
             "section": "Weight & Balance",
             "finding": "ok",
@@ -593,7 +593,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "tab": "preflight",
             "section": "TFRs & Special Use",
             "finding": "ok",
@@ -625,7 +625,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "tab": "preflight",
             "section": "Weight & Balance",
             "finding": "ok",
@@ -727,7 +727,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "tab": "preflight",
             "section": "TFRs & Special Use",
             "finding": "ok",
@@ -759,7 +759,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "tab": "preflight",
             "section": "Weight & Balance",
             "finding": "ok",
@@ -877,7 +877,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "tab": "preflight",
             "section": "TFRs & Special Use",
             "finding": "ok",
@@ -909,7 +909,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "tab": "preflight",
             "section": "Weight & Balance",
             "finding": "ok",
@@ -1007,7 +1007,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "tab": "preflight",
             "section": "TFRs & Special Use",
             "finding": "pending",
@@ -1039,7 +1039,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "tab": "preflight",
             "section": "Weight & Balance",
             "finding": "ok",
@@ -1143,7 +1143,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "tab": "preflight",
             "section": "TFRs & Special Use",
             "finding": "stop",
@@ -1175,7 +1175,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "tab": "preflight",
             "section": "Weight & Balance",
             "finding": "ok",
@@ -1220,7 +1220,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "finding": "ok",
             "detail": "None on the route",
             "tab": "preflight",
@@ -1252,7 +1252,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "finding": "ok",
             "detail": "2,407 lb at 41.2 in, within limits",
             "tab": "preflight",
@@ -1311,7 +1311,7 @@
             },
             {
               "key": "airspace",
-              "label": "TFRs & special use",
+              "label": "TFRs & Special Use",
               "finding": "ok",
               "detail": "None on the route",
               "tab": "preflight",
@@ -1343,7 +1343,7 @@
             },
             {
               "key": "balance",
-              "label": "Weight & balance",
+              "label": "Weight & Balance",
               "finding": "ok",
               "detail": "2,407 lb at 41.2 in, within limits",
               "tab": "preflight",
@@ -1375,7 +1375,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "finding": "ok",
             "detail": "None on the route",
             "tab": "preflight",
@@ -1407,7 +1407,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "finding": "ok",
             "detail": "2,407 lb at 41.2 in, within limits",
             "tab": "preflight",
@@ -1481,7 +1481,7 @@
             },
             {
               "key": "airspace",
-              "label": "TFRs & special use",
+              "label": "TFRs & Special Use",
               "finding": "ok",
               "detail": "None on the route",
               "tab": "preflight",
@@ -1505,7 +1505,7 @@
             },
             {
               "key": "balance",
-              "label": "Weight & balance",
+              "label": "Weight & Balance",
               "finding": "ok",
               "detail": "2,407 lb at 41.2 in, within limits",
               "tab": "preflight",
@@ -1537,7 +1537,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "finding": "ok",
             "detail": "None on the route",
             "tab": "preflight",
@@ -1569,7 +1569,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "finding": "ok",
             "detail": "2,407 lb at 41.2 in, within limits",
             "tab": "preflight",
@@ -1643,7 +1643,7 @@
             },
             {
               "key": "airspace",
-              "label": "TFRs & special use",
+              "label": "TFRs & Special Use",
               "finding": "ok",
               "detail": "None on the route",
               "tab": "preflight",
@@ -1667,7 +1667,7 @@
             },
             {
               "key": "balance",
-              "label": "Weight & balance",
+              "label": "Weight & Balance",
               "finding": "ok",
               "detail": "2,407 lb at 41.2 in, within limits",
               "tab": "preflight",
@@ -1699,7 +1699,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "finding": "stop",
             "detail": "TFR 6/1111 in force when you get there",
             "tab": "preflight",
@@ -1731,7 +1731,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "finding": "ok",
             "detail": "2,407 lb at 41.2 in, within limits",
             "tab": "preflight",
@@ -1840,7 +1840,7 @@
             },
             {
               "key": "balance",
-              "label": "Weight & balance",
+              "label": "Weight & Balance",
               "finding": "ok",
               "detail": "2,407 lb at 41.2 in, within limits",
               "tab": "preflight",
@@ -1872,7 +1872,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "finding": "ok",
             "detail": "None on the route",
             "tab": "preflight",
@@ -1904,7 +1904,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "finding": "stop",
             "detail": "120 lb over the maximum takeoff weight",
             "tab": "preflight",
@@ -1995,7 +1995,7 @@
           "items": [
             {
               "key": "airspace",
-              "label": "TFRs & special use",
+              "label": "TFRs & Special Use",
               "finding": "ok",
               "detail": "None on the route",
               "tab": "preflight",
@@ -2043,7 +2043,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "finding": "ok",
             "detail": "None on the route",
             "tab": "preflight",
@@ -2075,7 +2075,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "finding": "ok",
             "detail": "2,407 lb at 41.2 in, within limits",
             "tab": "preflight",
@@ -2109,7 +2109,7 @@
             },
             {
               "key": "airspace",
-              "label": "TFRs & special use",
+              "label": "TFRs & Special Use",
               "finding": "ok",
               "detail": "None on the route",
               "tab": "preflight",
@@ -2141,7 +2141,7 @@
             },
             {
               "key": "balance",
-              "label": "Weight & balance",
+              "label": "Weight & Balance",
               "finding": "ok",
               "detail": "2,407 lb at 41.2 in, within limits",
               "tab": "preflight",
@@ -2173,7 +2173,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "finding": "ok",
             "detail": "None on the route",
             "tab": "preflight",
@@ -2205,7 +2205,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "finding": "unknown",
             "detail": "Not worked out for this airplane",
             "tab": "preflight",
@@ -2239,7 +2239,7 @@
             },
             {
               "key": "airspace",
-              "label": "TFRs & special use",
+              "label": "TFRs & Special Use",
               "finding": "ok",
               "detail": "None on the route",
               "tab": "preflight",
@@ -2271,7 +2271,7 @@
             },
             {
               "key": "balance",
-              "label": "Weight & balance",
+              "label": "Weight & Balance",
               "finding": "unknown",
               "detail": "Not worked out for this airplane",
               "tab": "preflight",
@@ -2303,7 +2303,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "finding": "ok",
             "detail": "None on the route",
             "tab": "preflight",
@@ -2335,7 +2335,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "finding": "ok",
             "detail": "2,407 lb at 41.2 in, within limits",
             "tab": "preflight",
@@ -2382,7 +2382,7 @@
             },
             {
               "key": "airspace",
-              "label": "TFRs & special use",
+              "label": "TFRs & Special Use",
               "finding": "ok",
               "detail": "None on the route",
               "tab": "preflight",
@@ -2406,7 +2406,7 @@
             },
             {
               "key": "balance",
-              "label": "Weight & balance",
+              "label": "Weight & Balance",
               "finding": "ok",
               "detail": "2,407 lb at 41.2 in, within limits",
               "tab": "preflight",
@@ -2438,7 +2438,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "finding": "ok",
             "detail": "None on the route",
             "tab": "preflight",
@@ -2470,7 +2470,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "finding": "ok",
             "detail": "2,407 lb at 41.2 in, within limits",
             "tab": "preflight",
@@ -2517,7 +2517,7 @@
             },
             {
               "key": "airspace",
-              "label": "TFRs & special use",
+              "label": "TFRs & Special Use",
               "finding": "ok",
               "detail": "None on the route",
               "tab": "preflight",
@@ -2549,7 +2549,7 @@
             },
             {
               "key": "balance",
-              "label": "Weight & balance",
+              "label": "Weight & Balance",
               "finding": "ok",
               "detail": "2,407 lb at 41.2 in, within limits",
               "tab": "preflight",
@@ -2573,7 +2573,7 @@
           },
           {
             "key": "airspace",
-            "label": "TFRs & special use",
+            "label": "TFRs & Special Use",
             "finding": "caution",
             "detail": "R-4401 scheduled in use when you pass",
             "tab": "preflight",
@@ -2605,7 +2605,7 @@
           },
           {
             "key": "balance",
-            "label": "Weight & balance",
+            "label": "Weight & Balance",
             "finding": "ok",
             "detail": "2,407 lb at 41.2 in, within limits",
             "tab": "preflight",
@@ -2723,7 +2723,7 @@
             },
             {
               "key": "balance",
-              "label": "Weight & balance",
+              "label": "Weight & Balance",
               "finding": "ok",
               "detail": "2,407 lb at 41.2 in, within limits",
               "tab": "preflight",

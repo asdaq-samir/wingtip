@@ -219,9 +219,9 @@ pub fn decks_json() -> String {
     let vfr = vfr_cards();
     let vfr: Vec<_> = vfr.iter().map(|c| (c.id.to_owned(), c.prompt.to_owned(), c)).collect();
     let mut out = String::from("[");
-    write_deck(&mut out, "light-gun", "Light gun signals", "91.125", &gun);
+    write_deck(&mut out, "light-gun", "Light Gun Signals", "91.125", &gun);
     out.push(',');
-    write_deck(&mut out, "vfr-minimums", "VFR weather minimums", "91.155", &vfr);
+    write_deck(&mut out, "vfr-minimums", "VFR Weather Minimums", "91.155", &vfr);
     out.push(']');
     out
 }

@@ -133,7 +133,7 @@ fn cruise(v: &Value, u: &Units, items: &mut Vec<Item>) -> R<Vec<(usize, Cruise)>
             },
         };
         if let Some(a) = alt {
-            item.figures.push(fig(p("altitude_ft"), "Pressure altitude", a, "ft", a, "ft"));
+            item.figures.push(fig(p("altitude_ft"), "Pressure Altitude", a, "ft", a, "ft"));
         }
         if let Some(x) = power {
             item.figures.push(fig(p("power_pct"), "Power", x, "%", x, "%"));
@@ -142,10 +142,10 @@ fn cruise(v: &Value, u: &Units, items: &mut Vec<Item>) -> R<Vec<(usize, Cruise)>
             item.figures.push(fig(p("rpm"), "RPM", x, "rpm", x, "rpm"));
         }
         if let Some(x) = tas {
-            item.figures.push(fig(p("tas"), "True airspeed", x, u.speed, u.kt(x), "kt"));
+            item.figures.push(fig(p("tas"), "True Airspeed", x, u.speed, u.kt(x), "kt"));
         }
         if let Some(x) = burn {
-            item.figures.push(fig(p("burn"), "Fuel burn", x, u.burn, u.gph(x), "gph"));
+            item.figures.push(fig(p("burn"), "Fuel Burn", x, u.burn, u.gph(x), "gph"));
         }
         if u.burn == "pph" {
             item.flags.push(check_flag("The burn reads in pounds an hour, taken as avgas at 6 lb a gallon.".into()));
@@ -182,16 +182,16 @@ fn distances(v: &Value, key: &'static str, title: &str, u: &Units, items: &mut V
             },
         };
         if let Some(a) = alt {
-            item.figures.push(fig(p("pressure_altitude_ft"), "Pressure altitude", a, "ft", a, "ft"));
+            item.figures.push(fig(p("pressure_altitude_ft"), "Pressure Altitude", a, "ft", a, "ft"));
         }
         if let Some(t) = temp {
             item.figures.push(fig(p("temp_c"), "Temperature", t, "°C", t, "°C"));
         }
         if let Some(x) = roll {
-            item.figures.push(fig(p("ground_roll"), "Ground roll", x, u.distance, u.ft(x), "ft"));
+            item.figures.push(fig(p("ground_roll"), "Ground Roll", x, u.distance, u.ft(x), "ft"));
         }
         if let Some(x) = over {
-            item.figures.push(fig(p("over_obstacle"), "Over a 50 ft obstacle", x, u.distance, u.ft(x), "ft"));
+            item.figures.push(fig(p("over_obstacle"), "Over a 50 ft Obstacle", x, u.distance, u.ft(x), "ft"));
         }
         match (alt, temp, roll, over) {
             (Some(a), Some(t), Some(g), Some(o)) => {
@@ -241,13 +241,13 @@ pub fn check(v: &Value) -> R<String> {
     if vy.is_some() || rate.is_some() || cburn.is_some() {
         let mut figures = Vec::new();
         if let Some(x) = num(c, "speed")? {
-            figures.push(fig("climb.speed".into(), "Climb speed (Vy)", x, u.speed, u.kt(x), "KIAS"));
+            figures.push(fig("climb.speed".into(), "Climb Speed (Vy)", x, u.speed, u.kt(x), "KIAS"));
         }
         if let Some(x) = rate {
-            figures.push(fig("climb.rate_fpm".into(), "Rate of climb", x, "fpm", x, "fpm"));
+            figures.push(fig("climb.rate_fpm".into(), "Rate of Climb", x, "fpm", x, "fpm"));
         }
         if let Some(x) = num(c, "burn")? {
-            figures.push(fig("climb.burn".into(), "Climb fuel burn", x, u.burn, u.gph(x), "gph"));
+            figures.push(fig("climb.burn".into(), "Climb Fuel Burn", x, u.burn, u.gph(x), "gph"));
         }
         items.push(Item { key: "climb".into(), group: "climb", title: "Climb".into(), figures, flags: checks::climb(vy, rate, cburn) });
     }
@@ -257,10 +257,10 @@ pub fn check(v: &Value) -> R<String> {
     if glide_kias.is_some() || ratio.is_some() {
         let mut figures = Vec::new();
         if let Some(x) = num(g, "speed")? {
-            figures.push(fig("glide.speed".into(), "Best glide speed", x, u.speed, u.kt(x), "KIAS"));
+            figures.push(fig("glide.speed".into(), "Best Glide Speed", x, u.speed, u.kt(x), "KIAS"));
         }
         if let Some(x) = ratio {
-            figures.push(fig("glide.ratio".into(), "Glide ratio", x, "to 1", x, "to 1"));
+            figures.push(fig("glide.ratio".into(), "Glide Ratio", x, "to 1", x, "to 1"));
         }
         items.push(Item { key: "glide".into(), group: "glide", title: "Glide".into(), figures, flags: checks::glide(glide_kias, ratio) });
     }
@@ -274,7 +274,7 @@ pub fn check(v: &Value) -> R<String> {
     if ew.is_some() || ea.is_some() {
         let mut figures = Vec::new();
         if let Some(x) = num(e, "weight")? {
-            figures.push(fig("empty.weight".into(), "Empty weight", x, u.weight, u.lb(x), "lb"));
+            figures.push(fig("empty.weight".into(), "Empty Weight", x, u.weight, u.lb(x), "lb"));
         }
         if let Some(x) = num(e, "arm")? {
             figures.push(fig("empty.arm".into(), "Arm", x, u.arm, u.inch(x), "in"));
@@ -291,15 +291,15 @@ pub fn check(v: &Value) -> R<String> {
             _ => None,
         };
         let flags = checks::empty(ew, ea, as_read);
-        items.push(Item { key: "empty".into(), group: "empty", title: "Empty weight".into(), figures, flags });
+        items.push(Item { key: "empty".into(), group: "empty", title: "Empty Weight".into(), figures, flags });
     }
     if let Some(m) = mtow {
         let x = num(v, "max_takeoff_weight")?.unwrap_or(m);
         items.push(Item {
             key: "weight".into(),
             group: "weight",
-            title: "Maximum takeoff weight".into(),
-            figures: vec![fig("max_takeoff_weight".into(), "Maximum takeoff weight", x, u.weight, m, "lb")],
+            title: "Maximum Takeoff Weight".into(),
+            figures: vec![fig("max_takeoff_weight".into(), "Maximum Takeoff Weight", x, u.weight, m, "lb")],
             flags: checks::max_weight(m, ew),
         });
     }
@@ -319,7 +319,7 @@ pub fn check(v: &Value) -> R<String> {
         items.push(Item {
             key: "envelope".into(),
             group: "envelope",
-            title: "CG envelope".into(),
+            title: "CG Envelope".into(),
             figures,
             flags: checks::envelope(&corners, mtow),
         });
@@ -331,10 +331,10 @@ pub fn check(v: &Value) -> R<String> {
     if total.is_some() || usable.is_some() {
         let mut figures = Vec::new();
         if let Some(x) = num(f, "total")? {
-            figures.push(fig("fuel.total".into(), "Total fuel", x, u.fuel, u.gal(x), "gal"));
+            figures.push(fig("fuel.total".into(), "Total Fuel", x, u.fuel, u.gal(x), "gal"));
         }
         if let Some(x) = num(f, "usable")? {
-            figures.push(fig("fuel.usable".into(), "Usable fuel", x, u.fuel, u.gal(x), "gal"));
+            figures.push(fig("fuel.usable".into(), "Usable Fuel", x, u.fuel, u.gal(x), "gal"));
         }
         items.push(Item {
             key: "fuel".into(),

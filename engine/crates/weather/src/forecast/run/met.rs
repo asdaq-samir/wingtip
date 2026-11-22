@@ -27,7 +27,7 @@ impl Source {
         match self {
             Source::Taf { ident, nm } if *nm < 1.0 => format!("TAF {ident}"),
             Source::Taf { ident, nm } => format!("TAF {ident}, {} nm away", nm.round()),
-            Source::Modelled { valid } => format!("NWS Gridded LAMP, modelled for {}", super::zulu(*valid)),
+            Source::Modelled { valid } => format!("NWS Gridded LAMP, modeled for {}", super::zulu(*valid)),
         }
     }
 }

@@ -170,7 +170,7 @@ class DocumentsTest {
 
     @Test
     fun figuresReadAsThePagePrintsThem() {
-        assertEquals("4,000 ft", HandbookReview.figure(HandbookFigure(path = "cruise.0.altitude_ft", label = "Pressure altitude", value = 4000.0, unit = "ft", appValue = 4000.0, appUnit = "ft")))
+        assertEquals("4,000 ft", HandbookReview.figure(HandbookFigure(path = "cruise.0.altitude_ft", label = "Pressure Altitude", value = 4000.0, unit = "ft", appValue = 4000.0, appUnit = "ft")))
         assertEquals("65%", HandbookReview.figure(HandbookFigure(path = "cruise.0.power_pct", label = "Power", value = 65.0, unit = "%", appValue = 65.0, appUnit = "%")))
         assertEquals("30 L → 7.93 gal", HandbookReview.figure(HandbookFigure(path = "fuel.usable", label = "Usable", value = 30.0, unit = "L", appValue = 7.925, appUnit = "gal")))
     }

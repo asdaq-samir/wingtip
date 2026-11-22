@@ -48,7 +48,7 @@
      {
       "what": "day-passengers",
       "itemId": null,
-      "label": "Passengers by day",
+      "label": "Passengers by Day",
       "rule": "14 CFR 61.57(a)",
       "until": "2026-11-08",
       "dueAtHours": null,
@@ -118,7 +118,7 @@
      {
       "what": "flight-review",
       "itemId": null,
-      "label": "Flight review",
+      "label": "Flight Review",
       "rule": "14 CFR 61.56(c)",
       "until": "2027-06-30",
       "dueAtHours": null,
@@ -127,7 +127,7 @@
      {
       "what": "medical",
       "itemId": null,
-      "label": "Medical certificate",
+      "label": "Medical Certificate",
       "rule": "14 CFR 61.23",
       "until": "2027-06-30",
       "dueAtHours": null,

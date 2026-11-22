@@ -9,11 +9,11 @@ pub fn verdict_items(v: &Input) -> Vec<Item> {
     };
     vec![
         item("weather", "Weather", "enroute", "Adverse Conditions", weather(&v.weather)),
-        item("airspace", "TFRs & special use", "preflight", "TFRs & Special Use", airspace(&v.airspace)),
+        item("airspace", "TFRs & Special Use", "preflight", "TFRs & Special Use", airspace(&v.airspace)),
         item("altitude", "Altitude", "enroute", "Cruise Altitude", altitude(&v.altitude)),
         item("fuel", "Fuel", "preflight", "Fuel", fuel(&v.fuel)),
         item("runways", "Runways", "depart", "Takeoff", runways(&v.runways)),
-        item("balance", "Weight & balance", "preflight", "Weight & Balance", balance(&v.balance)),
+        item("balance", "Weight & Balance", "preflight", "Weight & Balance", balance(&v.balance)),
         item("risk", "Risk", "preflight", "Risk Assessment", risk),
     ]
 }

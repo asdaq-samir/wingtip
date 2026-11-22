@@ -1645,6 +1645,16 @@ on from [0020](../decisions/0020-airplane-not-aircraft.md) and
    capital, and the FAA's codes in capitals: TFR, NOTAM, METAR, TAF, ETE,
    ETA, SM and NM spelled as the units module writes them (nm, sm). The
    nav log is "Nav Log" as a name and "nav log" in a sentence.
+7. **The engine's and the gateway's words too.** A label the engine sends
+   for an app to show (a finding's, a due item's, a handbook figure's, an
+   endorsement's name: "Flight Review", "Passengers at Night", "Weight &
+   Balance", "Solo Flight at Night") is in Title Case, and its sentences,
+   errors and pages follow rules 3 to 6, as the gateway's pages and
+   problems do ("The planner did not answer. Try again in a moment.").
+   A label the engine also sets inside a sentence is lowered there with
+   its codes kept (`in_sentence`); the aircraft form's field names, which
+   begin its sentences ("Cruise speed must be a positive number"), stay in
+   sentence case.
 
 The words the three apps share, generated from `design/wording.json`:
 

@@ -55,7 +55,7 @@ class PaperworkListTest {
             due(
                     "annual",
                     null,
-                    "Annual inspection",
+                    "Annual Inspection",
                     "14 CFR 91.409(a)",
                     LocalDate.of(2026, 11, 30),
                     null,
@@ -63,7 +63,7 @@ class PaperworkListTest {
             due(
                     "hundred-hour",
                     null,
-                    "100-hour inspection",
+                    "100-Hour Inspection",
                     "14 CFR 91.409(b)",
                     null,
                     2350.0,
@@ -71,7 +71,7 @@ class PaperworkListTest {
             due(
                     "elt-battery",
                     null,
-                    "ELT battery",
+                    "ELT Battery",
                     "14 CFR 91.207(c)",
                     LocalDate.of(2026, 11, 15),
                     null,

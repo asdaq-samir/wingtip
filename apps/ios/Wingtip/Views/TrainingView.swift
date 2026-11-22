@@ -360,7 +360,7 @@ struct ReviewAskView: View {
 
 #Preview("SignedEndorsementRow") {
     List {
-        SignedEndorsementRow(label: "Solo flight (first 90 days)", rule: "61.87(n)", e: SignedEndorsement(code: "A.4", digest: "", fields: .init(), id: 1, signature: "/s/ Jordan Lee 4123456 CFI exp 2028-03-31", signedOn: "2026-10-14", studentName: "Avery B. Student", text: "I certify that Avery B. Student has received the required training of § 61.87 in a Cessna 172.", until: "2027-01-12", voided: false))
+        SignedEndorsementRow(label: "Solo Flight (First 90 Days)", rule: "61.87(n)", e: SignedEndorsement(code: "A.4", digest: "", fields: .init(), id: 1, signature: "/s/ Jordan Lee 4123456 CFI exp 2028-03-31", signedOn: "2026-10-14", studentName: "Avery B. Student", text: "I certify that Avery B. Student has received the required training of § 61.87 in a Cessna 172.", until: "2027-01-12", voided: false))
     }
 }
 

@@ -853,7 +853,7 @@
             "type" : [ "string", "null" ]
           },
           "title" : {
-            "example" : "Annual inspection",
+            "example" : "Annual Inspection",
             "type" : "string"
           },
           "what" : {
