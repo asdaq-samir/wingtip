@@ -91,7 +91,7 @@ fun FlightLoggedSheet(state: LogbookDraftModel.State, model: LogbookDraftModel) 
 private fun DraftRows(draft: LogbookDraft, state: LogbookDraftModel.State, model: LogbookDraftModel) {
     fun shown(f: DraftField) = DraftEntry.shown(draft, state.edits, f)
     SectionTitle(stringResource(R.string.flight_logged_flight))
-    Figure(stringResource(R.string.flight_logged_date), shown(DraftField.DATE), DraftEntry.why(draft, "flownOn"), text = true) { model.edit(DraftField.DATE, it) }
+    DateField(stringResource(R.string.flight_logged_date), shown(DraftField.DATE), { model.edit(DraftField.DATE, it) }, Modifier.fillMaxWidth(), DraftEntry.why(draft, "flownOn"))
     Figure(stringResource(R.string.airplane), shown(DraftField.AIRPLANE), null, text = true) { model.edit(DraftField.AIRPLANE, it) }
     Figure(stringResource(R.string.flight_logged_route), shown(DraftField.ROUTE), DraftEntry.why(draft, "distanceNm"), text = true) { model.edit(DraftField.ROUTE, it) }
     SectionTitle(stringResource(R.string.flight_logged_time))

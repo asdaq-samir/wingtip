@@ -2,6 +2,8 @@ package app.wingtipmaps.android.offline
 
 import android.content.Context
 import app.wingtipmaps.android.AppClock
+import app.wingtipmaps.android.readWhole
+import app.wingtipmaps.android.writeWhole
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -62,7 +64,7 @@ class OfflineStore(val root: File) {
     val kept: StateFlow<List<OfflineKept>> = _kept.asStateFlow()
 
     private fun read(): List<OfflineKept> =
-        runCatching { json.decodeFromString(serializer, manifest.readText()) }.getOrDefault(emptyList())
+        manifest.readWhole()?.let { runCatching { json.decodeFromString(serializer, it) }.getOrNull() }.orEmpty()
 
     fun path(cycle: String, region: String, archive: String): File = File(root, "$cycle/$region/$archive.pmtiles")
 
@@ -78,10 +80,7 @@ class OfflineStore(val root: File) {
         list.removeAll { it.id == id }
         if (after != null) list += after
         if (after == null && before != null) File(root, "${before.cycle}/${before.region}").deleteRecursively()
-        root.mkdirs()
-        val temp = File(root, "manifest.json.tmp")
-        temp.writeText(json.encodeToString(serializer, list))
-        temp.renameTo(manifest)
+        manifest.writeWhole(json.encodeToString(serializer, list))
         _kept.value = list
     }
 

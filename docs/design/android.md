@@ -1072,9 +1072,10 @@ a Material `Badge` at the top of the map, beside the receiver's, says
      to it (PUT /api/flights/{id}/track). Where that fails (no signal
      after landing), the track is kept on the phone (`UnsentTracks`,
      written before the recorder lets its copy go), Flight Logged says so
-     with Try Again, and it is sent again each time the app comes to the
-     front and as a network comes; signing out erases it with the
-     recording (`PhoneWipe`).
+     with Try Again, and WorkManager sends it once there is a network,
+     the app in front or not (`UnsentTracksWorker`, its network
+     constraint and backoff); signing out erases it with the recording
+     (`PhoneWipe`).
   6. A delete offers Undo in Material's `Snackbar`, in the screen's
      `Scaffold`; the delete is sent once it is let go.
 - **Primary action**: an `ExtendedFloatingActionButton` "Add Flight" at
@@ -1494,9 +1495,30 @@ Left hand-built, with no stock equivalent:
   timeline is a chart; Material has no component for it.
 - The photo carousel's tap (`ui/PhotoCarousel`): `Modifier.clickable` on a
   carousel item is how Material's own carousel samples open an item.
-- The platform's splash screen (Android 12 and up) draws the mark;
-  Android 8 to 11 show the window's background, as before. Adding
-  `core-splashscreen` for those versions is left for a decision.
+
+The stock audit of 2026-11-21 (the owner: "Can you audit for stock things
+for the whole project?") swapped these too:
+
+- The app's own files (the unsent tracks, the kept chart and overlays,
+  the airspace packs' index, the answers kept for the air, the offline
+  regions' manifest, `KeptFile`, a diagram's PDF): AndroidX's
+  `AtomicFile` (core) through `WholeFiles.kt`, which flushes to the disk
+  before the rename. The hand-built ".part then rename" did not, so a
+  power cut could leave an empty file.
+- A logbook line's date: Material's `DatePicker` in its
+  `DatePickerDialog` (`logbook/DateField`), in place of a typed
+  YYYY-MM-DD, in Add Flight, a row's edit and Flight Logged.
+- The unsent tracks' send: WorkManager (`UnsentTracksWorker`), in place
+  of a default-network callback held while the app was in front.
+- Lifecycle: the look, appearance and layout preferences collected with
+  `collectAsStateWithLifecycle`; the radar loop's and the model
+  weather's pause at the app's stop with `LifecycleEventEffect`, in
+  place of an observer added and removed by hand.
+- The sign-in's email field names itself an email address to Compose's
+  autofill (`ContentType.EmailAddress`).
+
+The splash screen is AndroidX's `core-splashscreen`
+(`installSplashScreen`), the same mark on Android 8 to 11 as on 12 and up.
 
 
 ## 7. One card rule and one scrolling rule (2026-11-10)

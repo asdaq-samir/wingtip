@@ -6,12 +6,12 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Kept
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -60,7 +60,7 @@ object AppearancePreference {
 }
 
 @Composable
-fun rememberAppearance(): State<Appearance?> = AppearancePreference.flow(LocalContext.current).collectAsState()
+fun rememberAppearance(): State<Appearance?> = AppearancePreference.flow(LocalContext.current).collectAsStateWithLifecycle()
 
 /** Whether the screen is dark and the chart dimmed, as the theme decided
  *  them (WingtipTheme), for what draws below it: the map's paint. */
