@@ -120,16 +120,19 @@ class InstructorFlowTest {
         // (instructor_verification, instructorVerification.json): here
         // every instructor is borne out but one named "Not Listed".
         org.mockito.BDDMockito.given(planner.verifyInstructor(any(), any(), any(), any()))
-                .willAnswer(ask -> "Not Listed".equals(ask.getArgument(0))
-                        ? new app.wingtipmaps.gateway.planner.model.PlannerInstructorVerification()
-                                .verified(false)
-                                .reason("no_match")
-                                .words("Not verified: no flight instructor of this name is in the FAA's releasable airmen file.")
-                        : new app.wingtipmaps.gateway.planner.model.PlannerInstructorVerification()
-                                .verified(true)
-                                .registryId("A1234567")
-                                .reason("verified")
-                                .words("Verified: a flight instructor certificate of this name is in the FAA airmen registry."));
+                .willAnswer(
+                        ask -> "Not Listed".equals(ask.getArgument(0))
+                                ? new app.wingtipmaps.gateway.planner.model.PlannerInstructorVerification()
+                                        .verified(false)
+                                        .reason("no_match")
+                                        .words(
+                                                "Not verified: no flight instructor of this name is in the FAA's releasable airmen file.")
+                                : new app.wingtipmaps.gateway.planner.model.PlannerInstructorVerification()
+                                        .verified(true)
+                                        .registryId("A1234567")
+                                        .reason("verified")
+                                        .words(
+                                                "Verified: a flight instructor certificate of this name is in the FAA airmen registry."));
     }
 
     /** The words the engine's stand-in gives an endorsement of `code`. */
@@ -250,7 +253,8 @@ class InstructorFlowTest {
 
         Pilot[] q = pair();
         instructors.setInstructor(
-                q[1], new InstructorRequest("Not Listed", "123456789CFI", LocalDate.of(2027, 12, 31), InstructorUntil.RE));
+                q[1],
+                new InstructorRequest("Not Listed", "123456789CFI", LocalDate.of(2027, 12, 31), InstructorUntil.RE));
         SignedEndorsement unverified = signing.sign(q[1], q[0], soloXc(q[0], null), NOW);
         assertThat(unverified.isInstructorVerified()).isFalse();
         assertThat(training.training(q[0], List.of(), TODAY).signed())

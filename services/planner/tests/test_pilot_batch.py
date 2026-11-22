@@ -69,7 +69,7 @@ def test_a_batch_longer_than_its_bound_is_refused_before_any_engine_call():
     """The deep security review of 2026-11-21: a batch of any length held a
     worker through one engine call an ask. MAX_BATCH (500) is well above an
     instructor's students or an owner's airplanes; one more is a 422."""
-    from app.schemas.pilot import MAX_BATCH
+    from app.schemas.pilot_batch import MAX_BATCH
 
     too_many = [{}] * (MAX_BATCH + 1)
     assert client.post("/api/aircraft/inspections-batch", json=too_many).status_code == 422

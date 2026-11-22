@@ -15,7 +15,6 @@ import app.wingtipmaps.gateway.service.AccountService;
 import app.wingtipmaps.gateway.service.AppleRevocation;
 import app.wingtipmaps.gateway.service.ChangeLines;
 import app.wingtipmaps.gateway.service.CheckpointNotesClient;
-import app.wingtipmaps.gateway.service.Mailer;
 import app.wingtipmaps.gateway.service.PlannerAsks;
 import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.service.PlannerUnavailableException;
@@ -68,11 +67,7 @@ class PlannerClientContractTest {
         }
     }
 
-    record Clients(
-            PlannerClient planner,
-            AccountService accounts,
-            ChangeLines lines,
-            CheckpointNotesClient notes) {}
+    record Clients(PlannerClient planner, AccountService accounts, ChangeLines lines, CheckpointNotesClient notes) {}
 
     private static final LocalDate DAY = LocalDate.of(2026, 11, 9);
 
@@ -235,10 +230,7 @@ class PlannerClientContractTest {
                     .toString();
             PlannerClient client = Upstreams.plannerClient(plannerStub.url());
             Clients clients = new Clients(
-                    client,
-                    accounts(plannerStub.url()),
-                    new ChangeLines(client),
-                    new CheckpointNotesClient(client));
+                    client, accounts(plannerStub.url()), new ChangeLines(client), new CheckpointNotesClient(client));
             for (Call call : CALLS) {
                 String who = call.method().contains(".") ? call.method() : "PlannerClient." + call.method();
                 List<Stub.Asked> asked = new ArrayList<>();

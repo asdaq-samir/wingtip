@@ -23,7 +23,6 @@ from wingtip import airmen, field_names
 
 from ..gonogo import ask as engine
 from ..schemas.pilot import (
-    MAX_BATCH,
     Currency,
     CurrencyAsk,
     EndorsementFillAsk,
@@ -39,13 +38,10 @@ from ..schemas.pilot import (
     InstructorVerificationAsk,
     LogbookEntry,
     PaperworkDue,
-    RecordsBatch,
-    RecordsBatchAsk,
     ReviewCheck,
-    SameField,
-    SameFieldAsk,
     VorCheck,
 )
+from ..schemas.pilot_batch import MAX_BATCH, RecordsBatch, RecordsBatchAsk, SameField, SameFieldAsk
 
 router = APIRouter()
 

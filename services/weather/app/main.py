@@ -84,7 +84,6 @@ PRODUCTS = (
 )
 
 
-
 def products() -> tuple[Product, ...]:
     """The products this service fetches: every one, but the flow layer
     only while WEATHER_FLOW_ON says so (settings.flow_on), so a parked

@@ -108,9 +108,7 @@ def instructors_named(name: str) -> list[dict] | None:
         return None
     db = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
     try:
-        rows = db.execute(
-            "SELECT id, first_middle, last_suffix, expires FROM instructors WHERE last_key = ?", (last_key(name),)
-        ).fetchall()
+        rows = db.execute("SELECT id, first_middle, last_suffix, expires FROM instructors WHERE last_key = ?", (last_key(name),)).fetchall()
     except sqlite3.Error:
         return None
     finally:

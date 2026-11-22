@@ -45,7 +45,7 @@ public class PaperworkClient {
                 .flightReviewOn(review)
                 .medicalExpiresOn(medical)
                 .ipcOn(ipc);
-        return PlannerClient.rule("the currency", () -> planner.currency(ask), c -> List.copyOf(c.getDue()));
+        return PlannerRules.rule("the currency", () -> planner.currency(ask), c -> List.copyOf(c.getDue()));
     }
 
     /**

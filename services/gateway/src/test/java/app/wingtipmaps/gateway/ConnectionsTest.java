@@ -44,7 +44,9 @@ class ConnectionsTest extends AccountTestBase {
                         + " client_authentication_methods, authorization_grant_types, scopes, client_settings, token_settings)"
                         + " VALUES (?, ?, now(), ?, 'none', 'authorization_code', 'wingtip:read', '{}', '{}')"
                         + " ON CONFLICT DO NOTHING",
-                id, id, name);
+                id,
+                id,
+                name);
     }
 
     private String connection(Pilot pilot, String client) {
@@ -53,10 +55,14 @@ class ConnectionsTest extends AccountTestBase {
                 "INSERT INTO oauth2_authorization (id, registered_client_id, principal_name, authorization_grant_type,"
                         + " authorized_scopes, access_token_value, access_token_issued_at, access_token_expires_at)"
                         + " VALUES (?, ?, ?, 'authorization_code', 'wingtip:read', ?, now(), now() + interval '15 minutes')",
-                id, client, String.valueOf(pilot.getId()), "a-" + id);
+                id,
+                client,
+                String.valueOf(pilot.getId()),
+                "a-" + id);
         jdbc.update(
                 "INSERT INTO oauth2_spent_refresh_token (token_hash, authorization_id) VALUES (?, ?)",
-                (id + id).replace("-", "").substring(0, 64), id);
+                (id + id).replace("-", "").substring(0, 64),
+                id);
         return id;
     }
 
@@ -64,13 +70,15 @@ class ConnectionsTest extends AccountTestBase {
         jdbc.update(
                 "INSERT INTO oauth2_authorization_consent (registered_client_id, principal_name, authorities)"
                         + " VALUES (?, ?, 'SCOPE_wingtip:read')",
-                client, String.valueOf(pilot.getId()));
+                client,
+                String.valueOf(pilot.getId()));
     }
 
     private List<String> consents(Pilot pilot) {
         return jdbc.queryForList(
                 "SELECT registered_client_id FROM oauth2_authorization_consent WHERE principal_name = ?",
-                String.class, String.valueOf(pilot.getId()));
+                String.class,
+                String.valueOf(pilot.getId()));
     }
 
     @Test
@@ -97,9 +105,13 @@ class ConnectionsTest extends AccountTestBase {
         // One ended: its tokens and spent ones go, the consent stays for the other.
         mockMvc.perform(delete("/api/me/connections/" + first).with(as(pilot)).with(csrf()))
                 .andExpect(status().isNoContent());
-        assertThat(grants.connections(pilot.getId())).extracting(ConnectionDto::id).containsExactly(second);
+        assertThat(grants.connections(pilot.getId()))
+                .extracting(ConnectionDto::id)
+                .containsExactly(second);
         assertThat(jdbc.queryForObject(
-                        "SELECT count(*) FROM oauth2_spent_refresh_token WHERE authorization_id = ?", Long.class, first))
+                        "SELECT count(*) FROM oauth2_spent_refresh_token WHERE authorization_id = ?",
+                        Long.class,
+                        first))
                 .isZero();
         assertThat(consents(pilot)).containsExactly("claude-test");
 

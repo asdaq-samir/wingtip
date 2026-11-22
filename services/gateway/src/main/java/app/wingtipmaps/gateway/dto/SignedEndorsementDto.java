@@ -30,6 +30,17 @@ public record SignedEndorsementDto(
      *  in once the planner is asked. */
     public SignedEndorsementDto withUntil(@Nullable LocalDate until) {
         return new SignedEndorsementDto(
-                id, code, studentName, fields, text, signature, signedOn, until, voided, digest, instructorVerified, verification);
+                id,
+                code,
+                studentName,
+                fields,
+                text,
+                signature,
+                signedOn,
+                until,
+                voided,
+                digest,
+                instructorVerified,
+                verification);
     }
 }

@@ -10,7 +10,7 @@ import pytest
 from wingtip import airports, traffic, weather
 from wingtip.traffic import adsb_lol, common, flights, recorded, store, watched
 
-from .traffic_world import CESSNA, stand_in
+from .traffic_world import CESSNA, _answer, stand_in
 from .traffic_world import adsbx_fixture, clock_fixture  # noqa: F401 -- the fixtures, by the names the runner gives them
 
 

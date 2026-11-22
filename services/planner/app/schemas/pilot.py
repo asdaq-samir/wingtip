@@ -5,7 +5,7 @@ them the gateway asks in one call (an instructor's page, an aircraft
 list)."""
 
 from datetime import date
-from typing import Annotated, Literal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -265,44 +265,3 @@ class Inspections(BaseModel):
     hundredHourDueAtHours: float | None = Field(description="100 hours of time in service after the last (91.409(b)).")
     vorCheck: VorCheck | None
     due: list[PaperworkDue] = Field(description="Each recorded one named and cited, then the owner's dated items (an AD by 14 CFR 39.7).")
-
-
-#: The most asks one batch call takes: well above an instructor's
-#: students and reviews, or one owner's airplanes.
-MAX_BATCH = 500
-
-
-class RecordsBatchAsk(BaseModel):
-    """Many students' records asked at once, for an instructor's page:
-    each student's experience (ExperienceAsk) and every endorsements ask
-    (EndorsementsAsk: a student's solo day, a review's 61.93(d) checks,
-    a signed list's last good days), answered in the same order. One
-    round trip for the page rather than two a student and two a review."""
-
-    # A bound on one call, which only the gateway makes, from one
-    # instructor's own students and reviews (the deep security review of
-    # 2026-11-21): without one, a body of any length held a worker through
-    # one engine call an ask.
-    experience: list[ExperienceAsk] = Field(default=[], max_length=MAX_BATCH)
-    endorsements: list[EndorsementsAsk] = Field(default=[], max_length=MAX_BATCH)
-
-
-class RecordsBatch(BaseModel):
-    """The answers to a RecordsBatchAsk, each list in the order asked."""
-
-    experience: list[list[ExperienceItem]]
-    endorsements: list[Endorsements]
-
-
-class SameFieldAsk(BaseModel):
-    """Which of `idents` name the field `field`: a lesson's field and the
-    stops and ends of the flights put to its instructor."""
-
-    field: str = Field(max_length=8)
-    idents: list[Annotated[str, Field(max_length=8)]] = Field(default=[], max_length=MAX_BATCH)
-
-
-class SameField(BaseModel):
-    """For each ident asked, in order, whether it names the field."""
-
-    same: list[bool]

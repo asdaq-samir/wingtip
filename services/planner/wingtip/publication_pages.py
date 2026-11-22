@@ -16,7 +16,7 @@ from .atomic import atomic_path
 from .single_flight import once, one_at_a_time
 from . import publications
 from .publication_drawing import DIAGRAM_SCALE, _PDFIUM, _drawn
-from .publications import _PDF_NAME, _faa_idents, _source_of, _supplement_pages, serves
+from .publications import _PDF_NAME, _faa_idents, _source_of, _supplement_pages, dcs_edition, dtpp_cycle, serves
 
 log = logging.getLogger(__name__)
 

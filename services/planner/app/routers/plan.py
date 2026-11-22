@@ -52,11 +52,7 @@ def route_profile(dep: str, dest: str, stops: str = "") -> RouteProfile:
 
 @router.get("/api/route-profile/weather", openapi_extra=PUBLIC)
 def route_profile_weather(
-    dep: str,
-    dest: str,
-    stops: str = "",
-    depart: datetime | None = None,
-    ete_min: Annotated[float, Query(ge=0, le=24 * 60)] = 0.0,
+    dep: str, dest: str, stops: str = "", depart: datetime | None = None, ete_min: Annotated[float, Query(ge=0, le=24 * 60)] = 0.0
 ) -> RouteWeather:
     """The weather on the route's side view, along the same hops as
     /api/route-profile's ground: the TAFs' cloud bases, the GFS's freezing

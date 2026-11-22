@@ -66,7 +66,7 @@ public class AircraftLimits {
     }
 
     private Map<String, String> ask(Map<String, Object> form) {
-        return PlannerClient.rule("the airplane's limits", () -> planner.aircraftProblems(form), p -> p);
+        return PlannerRules.rule("the airplane's limits", () -> planner.aircraftProblems(form), p -> p);
     }
 
     private static void refuse(Map<String, String> problems) {
