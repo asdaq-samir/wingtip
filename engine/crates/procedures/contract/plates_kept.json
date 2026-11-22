@@ -1,0 +1,126 @@
+{
+  "x-call": "wingtip_procedures::figures::plates_kept::call",
+  "description": "The plates a flight keeps for the air, each field once in its first role (departure, destination, stop, alternate (14 CFR 91.169(a)(2)), then the fields within range_nm of the route, nearest first) with the charts its role keeps: every chart at the departure, the destination and each stop; the approaches, minimums, diagram, hot spots and land-and-hold-short at the alternate; the approaches, minimums and diagram at a diversion. No diversion is kept with no range.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "PlatesKeptInput",
+      "type": "object",
+      "properties": {
+        "range_nm": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "diversion_range_nm's range; null for none."
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "title": "PlatesKeptField",
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "departure",
+                  "destination",
+                  "stop",
+                  "alternate",
+                  "diversion"
+                ]
+              },
+              "off_nm": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "How far the field is off the route, nm (a diversion's)."
+              },
+              "charts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "description": "A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.",
+                  "properties": {
+                    "kind": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "ident",
+              "role",
+              "charts"
+            ]
+          }
+        }
+      },
+      "required": [
+        "fields"
+      ]
+    },
+    "answer": {
+      "type": "array",
+      "items": {
+        "title": "PlatesKeptAnswerField",
+        "type": "object",
+        "properties": {
+          "ident": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "departure",
+              "destination",
+              "stop",
+              "alternate",
+              "diversion"
+            ]
+          },
+          "off_nm": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "charts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "description": "A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.",
+              "properties": {
+                "kind": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "kind"
+              ]
+            }
+          }
+        },
+        "required": [
+          "ident",
+          "role",
+          "off_nm",
+          "charts"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -410,7 +410,7 @@ extension Engine {
         try Self.rule("ctaf_of", EngineContract.CtafOfInput(frequencies: frequencies))
     }
 
-    /// Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page.
+    /// Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page. An AIRAC or charting edition takes over at 0901Z on its date ("Effective 0901 UTC", the Federal Register's airspace and procedure amendments), the DOF at 0000Z on its release day: asked with a UTC time the answer is exact to the minute.
     static func dataCycle(kind: String, effective: String? = nil, on: String) throws -> EngineContract.DataCycleAnswer {
         try Self.rule("data_cycle", EngineContract.DataCycleInput(kind: kind, effective: effective, on: on))
     }
@@ -498,6 +498,11 @@ extension Engine {
     /// The planner's /api/diversion solved, steps, problem and checks (ACS PA.VI.C): the diversion worked out in the leg's own air, and the student's estimates checked against it.
     static func diversion(trueCourseDeg: Double, distanceNm: Double, tasKt: Double, fuelBurnGph: Double, magneticVariationDeg: Double, wind: EngineContract.DiversionInputWind? = nil, to: String? = nil, mh: Double? = nil, gs: Double? = nil, ete: Double? = nil, fuel: Double? = nil) throws -> EngineContract.DiversionAnswer {
         try Self.rule("diversion", EngineContract.DiversionInput(trueCourseDeg: trueCourseDeg, distanceNm: distanceNm, tasKt: tasKt, fuelBurnGph: fuelBurnGph, magneticVariationDeg: magneticVariationDeg, wind: wind, to: to, mh: mh, gs: gs, ete: ete, fuel: fuel))
+    }
+
+    /// How far off the route a field is still one the flight may divert to, for keeping its plates (Keep for the Air): the 45 minutes of reserve 14 CFR 91.167(a)(3) asks under IFR and 91.151(a)(2) at night under VFR (kept by day too, more than 91.151(a)(1)'s 30: more plates, never fewer) at the airplane's own cruise, or its whole tanks' reach where that is less. Null with no cruise speed: never a stock airplane's.
+    static func diversionRangeNm(tasKt: Double? = nil, usableGal: Double? = nil, burnGph: Double? = nil) throws -> EngineContract.DiversionRangeNmAnswer {
+        try Self.rule("diversion_range_nm", EngineContract.DiversionRangeNmInput(tasKt: tasKt, usableGal: usableGal, burnGph: burnGph))
     }
 
     /// Whether a student's estimate is within the diversion drill's allowance (ACS PA.VI.C.S2); an error for a key not estimated.
@@ -1390,6 +1395,11 @@ extension Engine {
         try Self.rule("plate_page_point", EngineContract.PlatePagePointInput(lat: lat, lon: lon, trackDeg: trackDeg, georeference: georeference))
     }
 
+    /// The plates a flight keeps for the air, each field once in its first role (departure, destination, stop, alternate (14 CFR 91.169(a)(2)), then the fields within range_nm of the route, nearest first) with the charts its role keeps: every chart at the departure, the destination and each stop; the approaches, minimums, diagram, hot spots and land-and-hold-short at the alternate; the approaches, minimums and diagram at a diversion. No diversion is kept with no range.
+    static func platesKept(rangeNm: Double? = nil, fields: [EngineContract.PlatesKeptInputFieldsItem]) throws -> [EngineContract.PlatesKeptAnswerItem] {
+        try Self.rule("plates_kept", EngineContract.PlatesKeptInput(rangeNm: rangeNm, fields: fields))
+    }
+
     /// What a route point typed is: a fix, the pilot's own point (fix-radial-distance), or null.
     static func pointKind(text: String) throws -> String? {
         try Self.rule("point_kind", EngineContract.PointKindInput(text: text))
@@ -1748,6 +1758,11 @@ extension Engine {
     /// When a part-time surface area is in effect, day by day from the field's today for a week, read from NASR's CLS_ARSP AIRSPACE_HRS, the Chart Supplement's AIRSPACE line ("CLASS D SVC 0600-2200 MON-FRI, 0700-2200 SAT-SUN; OTHER TIMES CLASS E"): the class at other times the one the line names (AIM 3-2-5a1; 14 CFR 71.61, 71.71(b)), never a guess. A time with no Z is the field's local time; Z is UTC at the offset now; Z++ is the Chart Supplement's double dagger, one hour earlier in daylight saving time, so the figure at the field's standard offset all year. Reads CONTINUOUS, time ranges, days (MON-FRI, SAT & SUN, WKEND) and seasons (16 MAR-31 OCT, OCT-MAR); anything else (holidays, BY NOTAM, SR-SS) leaves the hours not known (`known` false). Spans are local minutes from midnight, [from, to), a span past midnight carried into the next day. `in_force` and `change` are now's: in effect until `change.at`, or not until `change.at`, `next_day` where that is tomorrow; null where today's hours are not known. The engine has no clock: the host gives the field's local date, minute, UTC offset and whether in daylight saving time.
     static func surfaceHours(hours: String? = nil, year: Int, month: Int, day: Int, weekday: Int, minute: Int, utcOffsetMin: Int, dst: Bool? = nil) throws -> EngineContract.SurfaceHoursAnswer {
         try Self.rule("surface_hours", EngineContract.SurfaceHoursInput(hours: hours, year: year, month: month, day: day, weekday: weekday, minute: minute, utcOffsetMin: utcOffsetMin, dst: dst))
+    }
+
+    /// A TAF's own times and whether it speaks for now: its station, when it was issued and its valid period, as its header gives them, and its state, not yet before the period, in force during it and expired at its end (FAA-H-8083-28B 27.4.1, a TAF is a forecast for its valid period; the same rule as weather_in_force's for a TAF). The airport card says it under the hours, so a TAF kept from before the signal was lost is never read as today's forecast (14 CFR 91.103). Null where the words are not a TAF.
+    static func tafValidity(taf: String, now: Double) throws -> EngineContract.TafValidityAnswer? {
+        try Self.rule("taf_validity", EngineContract.TafValidityInput(taf: taf, now: now))
     }
 
     /// What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).
