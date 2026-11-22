@@ -92,24 +92,26 @@ jobs:
       # The Mac mini's runner keeps rustup in ~/.cargo/bin, off its PATH.
       - name: rustup on the PATH
         run: '[ -d "$HOME/.cargo/bin" ] && echo "$HOME/.cargo/bin" >> "$GITHUB_PATH" || true'
-      # 148 s of a 284 s job built (run 42110145019); the engine changes
-      # far less often than the app, and is cached by its own files. Saved
-      # at once, whatever the tests say.
+      # The engine changes far less than the app, so cached by its own files:
+      # the simulator's slice alone, all a test links (testflight builds its
+      # own; three slices took 342 s, run 44932668280). Saved at once.
       - name: The engine, as last built
         id: engine
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: apps/ios/Frameworks/WingtipEngine
-          key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
+          key: engine-ios-sim-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The engine, for the app
         if: steps.engine.outputs.cache-hit != 'true'
+        env:
+          WINGTIP_ENGINE_SLICES: simulator
         run: echo "::notice title=Cache miss::engine-ios" && engine/bindings/ffi/build-xcframework.sh
       - name: The engine, kept
         if: steps.engine.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: apps/ios/Frameworks/WingtipEngine
-          key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
+          key: engine-ios-sim-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The Xcode project, from project.yml
         run: |
           # The Mac mini's runner has xcodegen already, and no Homebrew.

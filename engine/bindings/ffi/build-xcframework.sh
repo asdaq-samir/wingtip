@@ -9,6 +9,11 @@
 # Run on a Mac with Xcode and rustup (GitHub's macOS runner, native-ios.yml);
 # writes apps/ios/Frameworks/WingtipEngine/, which is not committed, with
 # engine.hash, the engine it was built from.
+#
+# WINGTIP_ENGINE_SLICES=simulator builds the simulator's slice alone, for
+# this Mac's architecture: all a simulator test links, a third of the
+# work (CI's test job, where the three took 342 s of an 18-minute job on
+# PR #589, run 44932668280). Archiving for a device needs the whole one.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 engine=$(cd "$here/../.." && pwd)
@@ -23,8 +28,13 @@ command -v cargo >/dev/null || PATH=$PATH:$HOME/.cargo/bin
 . "$engine/../scripts/build/shared-cache.sh"
 # The engine's hash written beside the framework (engine_stamp), which
 # scripts/dev/xcodebuild.sh holds to the checkout's engine before it builds.
-if engine_store_restore ios-engine "$out"; then engine_stamp "$out"; exit 0; fi
+kind=ios-engine
 targets=(aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios)
+if [ "${WINGTIP_ENGINE_SLICES:-}" = simulator ]; then
+  kind=ios-engine-simulator
+  case "$(uname -m)" in arm64) targets=(aarch64-apple-ios-sim) ;; *) targets=(x86_64-apple-ios) ;; esac
+fi
+if engine_store_restore "$kind" "$out"; then engine_stamp "$out"; exit 0; fi
 rustup target add "${targets[@]}"
 for target in "${targets[@]}"; do
   cargo rustc --release --manifest-path "$engine/Cargo.toml" -p wingtip-ffi --lib --crate-type staticlib --target "$target"
@@ -36,22 +46,27 @@ rm -rf "$gen"
 # no formatter run over them, so the same library always writes the same
 # Swift.
 (cd "$engine" && cargo run -p wingtip-ffi-bindgen -- generate --no-format \
-  --library "$engine/target/aarch64-apple-ios/release/$lib" --language swift --out-dir "$gen")
+  --library "$engine/target/${targets[0]}/release/$lib" --language swift --out-dir "$gen")
 mkdir -p "$gen/include"
 cp "$gen/WingtipEngineFFI.h" "$gen/include/"
 cp "$gen/WingtipEngineFFI.modulemap" "$gen/include/module.modulemap"
 sim="$engine/target/ios-simulator"
 mkdir -p "$sim"
-lipo -create "$engine/target/aarch64-apple-ios-sim/release/$lib" "$engine/target/x86_64-apple-ios/release/$lib" -output "$sim/$lib"
 rm -rf "$out"
 mkdir -p "$out"
-xcodebuild -create-xcframework \
-  -library "$engine/target/aarch64-apple-ios/release/$lib" -headers "$gen/include" \
-  -library "$sim/$lib" -headers "$gen/include" \
-  -output "$out/WingtipEngineFFI.xcframework"
+if [ "$kind" = ios-engine-simulator ]; then
+  xcodebuild -create-xcframework -library "$engine/target/${targets[0]}/release/$lib" -headers "$gen/include" \
+    -output "$out/WingtipEngineFFI.xcframework"
+else
+  lipo -create "$engine/target/aarch64-apple-ios-sim/release/$lib" "$engine/target/x86_64-apple-ios/release/$lib" -output "$sim/$lib"
+  xcodebuild -create-xcframework \
+    -library "$engine/target/aarch64-apple-ios/release/$lib" -headers "$gen/include" \
+    -library "$sim/$lib" -headers "$gen/include" \
+    -output "$out/WingtipEngineFFI.xcframework"
+fi
 # In a Generated folder, which the Swift formatter and linters pass over.
 mkdir -p "$out/Generated"
 cp "$gen/WingtipEngine.swift" "$out/Generated/WingtipEngine.swift"
 engine_stamp "$out"
-engine_store_publish ios-engine "$out"
+engine_store_publish "$kind" "$out"
 echo "built $out"

@@ -17,6 +17,11 @@
 # on 16 KB pages, as Google Play asks (scripts/ci/android_16k.py).
 # Writes apps/android/app/engine/, which is not committed, with engine.hash,
 # the engine it was built from.
+#
+# WINGTIP_ENGINE_ABIS names the ABI folders to build, a space between
+# (arm64-v8a alone for a pull request's unit tests and lint, which package
+# no APK and link no library: a third of the 248 s the three took on PR
+# #589, run 44932668280); unset, all three.
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 engine=$(cd "$here/../.." && pwd)
@@ -53,7 +58,8 @@ echo "build-android.sh: using the NDK at $ndk" >&2
 . "$engine/../scripts/build/shared-cache.sh"
 # The engine's hash written beside the libraries (engine_stamp), which
 # go-live.sh holds to the checkout's engine.
-if engine_store_restore android-engine "$out"; then engine_stamp "$out"; exit 0; fi
+kind=android-engine${WINGTIP_ENGINE_ABIS:+-${WINGTIP_ENGINE_ABIS// /-}}
+if engine_store_restore "$kind" "$out"; then engine_stamp "$out"; exit 0; fi
 # The NDK's prebuilt clang for the machine building, and the API level
 # the app's minSdk names (apps/android/app/build.gradle.kts): the engine is
 # linked against the same Android libc the app runs on.
@@ -75,6 +81,7 @@ lib=libwingtip_ffi.so
 rm -rf "$out"
 for entry in "${targets[@]}"; do
   read -r target abi triple <<< "$entry"
+  if [ -n "${WINGTIP_ENGINE_ABIS:-}" ] && ! grep -qw -- "$abi" <<< "$WINGTIP_ENGINE_ABIS"; then continue; fi
   clang="$bin/${triple}${api}-clang"
   # Cargo's and the cc crate's names for the target's tools, each with the
   # target's dashes made underscores.
@@ -92,5 +99,5 @@ done
 (cd "$engine" && cargo run -p wingtip-ffi-bindgen -- generate --no-format \
   --library "$out/jniLibs/arm64-v8a/$lib" --language kotlin --out-dir "$out/generated")
 engine_stamp "$out"
-engine_store_publish android-engine "$out"
+engine_store_publish "$kind" "$out"
 echo "built $out"
