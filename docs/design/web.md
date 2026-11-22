@@ -189,7 +189,12 @@ These hold on every screen below and win over any reference app.
   plan staying in the side panel, as the iPad app's SplitLayout holds a
   card in `.inspector`; the map's room, its buttons, the banners and the
   chart's credit end at it (`--map-inset-right`). A desktop's cards keep
-  covering the side panel. On a kneeboard (index.css `kneeboard`: a
+  covering the side panel. From the regular width up, an approach plate's
+  card holds the plate itself (`PlateBeside`, usePlateCard's `beside`)
+  with own ship on its plan view by its georeference: the map and the
+  plate side by side, in the inspector where there is one, else over the
+  side panel with the map beside it. A phone's card keeps View Full
+  Screen (`e2e/plates-map.spec.ts`, at 1194 by 834). On a kneeboard (index.css `kneeboard`: a
   touch screen at the regular width both ways) the figures at the
   panel's foot are the flying size, 26 on 31 with 15-point names. The
   keyboard's shortcuts are on wherever there is a keyboard (an iPad's
@@ -1411,6 +1416,17 @@ not give; "no NOTAMs" (decision 0023: "none heard since").
 **Sources.** [ff-web], [ff-brief-record], [vercel-guidelines],
 [bui-releases], [apg-alert].
 
+**Weight and balance.** The Brief's Weight & Balance (`WeightBalanceSection`)
+is the loading editor: the airplane's empty weight and arm, each station
+of its POH's loading, the fuel in gallons and its grade, then the takeoff
+and landing conditions and the envelope graph (`EnvelopeChart`), each
+the engine's (`gonogo_balance`). The grade is a menu (`PullDown`). Its
+first choice is the POH's own weight a gallon, which counts until the
+pilot picks a grade; then come the engine's grades, each with its
+gallon's standard weight (`fuel_grades`, FAA-H-8083-1B: avgas 6, Jet A
+6.8). An airplane with no loading asks for it in place (`AskFigure`),
+with no airplane assumed.
+
 ### 6. NOTAMs
 
 **Reference.** ForeFlight 18.6 (July 2026) filters NOTAMs by category,
@@ -1828,6 +1844,70 @@ Toast (Delete's Undo) and Menu (a row's •••, `RowMenu`).
 `citations`. A pilot's own document sent to the server: there is no sync
 yet, and any sync would go through the gateway's records and the privacy
 inventory first. A second home for a document control.
+
+### 13b. The scratchpad
+
+**What it is.** ForeFlight's Scratchpads for the web (the market-gap
+report's item 5, 2026-11-21; the owner: "Primary app users are on
+iPad"). You's Scratchpad row (`features/scratchpad`, `ScratchpadPage`)
+lists this flight's pages first, under "This flight · C81 → KOSH", then
+the rest under Earlier, each a row with its template and when it was
+last written that opens the page. New Page is a menu of the templates:
+Blank, Clearance (CRAFT: clearance limit, route, altitude, frequency,
+transponder, the items AIM 4-4-3 says a clearance holds), ATIS
+(information, wind, altimeter, runway, remarks) and Takeoff & Landing
+(runway, wind, altimeter, temperature, and the ground roll and the
+distance over 50 ft each way). The templates are words only: the pilot
+writes in what they were told or worked out, and no figure is filled in.
+
+**Ink and boxes.** A page is its template's boxes, the stock `Input`, and
+the ink under them. On an iPad Safari's Scribble turns an Apple Pencil's
+writing in a box to text. The ink takes an Apple Pencil, a finger or a
+mouse through Pointer Events, captured so that a stroke leaving the page
+still ends. Its stroke is perfect-freehand's (MIT, the one tldraw draws),
+with the pen's pressure, or pressure simulated for a finger. Palm
+rejection follows PencilKit's drawing policy: once a pen has written, a
+finger or a resting palm does not, and a second finger never inks.
+Undo takes back the last stroke, Clear Ink takes the ink, and Delete
+Page has its Undo in the toast. The strokes are kept in the page's own
+units, so they draw the same at any width.
+
+**Kept on the device, with the flight.** Every page is in IndexedDB
+(`idb-keyval`, its own store, `padStore`) and never sent anywhere. Each
+page keeps the route's departure and destination as the address had them
+when it was started. The boxes are kept once the typing rests, and the
+ink at once.
+
+### 13c. The runway proximity advisor and own ship on the airport diagram
+
+**What it is.** The airport card's Airport diagram full screen
+(`features/runway-advisor`, `AdvisedDiagram`, DiagramRow's `viewer`) has
+the airplane on it, as the phones' DiagramOwnShipView does. The d-TPP's
+PDF is read with pdf.js for its words and where each is drawn
+(`diagramText`). The engine fits the page to its own latitude and
+longitude labels (`diagram_graticule`), places each fix
+(`diagram_point`) and finds the hot spots by their labels
+(`diagram_hot_spots`), which are ringed in the chart's caution colour as
+a layer of the page's map. Own ship follows AC 120-76D 11.17.2. It is a
+circle where there is no track, and it is gone once the fix is 3 s old or
+worse than 30 m (`diagram_fix_usable`), checked every second so that it
+never freezes.
+
+**What it says.** Over the page is the engine's `runway_proximity`
+answer, "On runway 27", "Approaching runway 9-27" and "Hold short line in
+about 150 ft", with a hot spot within 500 ft. Below the pattern it says
+"Approaching runway 27" when lined up. When the answer's `key` changes,
+it is said aloud where the Map menu's Speak Alerts is on. Under it is the
+note on why the airplane is not drawn, where it is not, and the FAA's
+credit with "Planning aid, not for navigation" (AC 120-74B; AC 120-76D
+11.17.1). The browser's height is above the ellipsoid, about 100 ft under
+MSL in the contiguous US, so the advisor reads the airplane lower, which
+keeps the surface's prompts on.
+
+**The PDF.** The browser may not read aeronav.faa.gov's PDF, which sends
+no CORS headers, so the page asks the planner for its copy
+(`faaChartPdfUrl`). The planner does not serve it yet (TODO(planner)).
+Until it does, the diagram shows without the airplane and says so.
 
 ### 14. The welcome
 

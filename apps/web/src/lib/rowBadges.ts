@@ -17,6 +17,7 @@ export const SETTING_BADGE = {
   minimums: BADGE.hazard,
   checklists: BADGE.approach,
   documents: BADGE.chart,
+  scratchpad: BADGE.approach,
   coach: BADGE.weather,
   practice: BADGE.chart,
   emergency: BADGE.hazard,

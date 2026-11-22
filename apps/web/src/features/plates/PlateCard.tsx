@@ -1,4 +1,4 @@
-import type { ComponentType } from "react";
+import { lazy, Suspense, type ComponentType } from "react";
 import { EyeOff, Maximize2, Square, SquareDashed } from "lucide-react";
 import { CardAction } from "../../components/CardAction";
 import { ListGroup } from "../../components/GroupedList";
@@ -6,8 +6,11 @@ import SwitchRow from "../../components/SwitchRow";
 import { Slider } from "../../components/ui/slider";
 import type { PageMark } from "../../lib/diagram";
 import { MapCard } from "../../lib/map/cards/MapCard";
-import { LEAST_PLATE_OPACITY } from "./plateLook";
+import { LEAST_PLATE_OPACITY, PLATE_SHAPE } from "./plateLook";
 import { usePlateCard } from "./usePlateCard";
+
+// MapLibre's page map, loaded with the first plate drawn beside the map.
+const PlateBeside = lazy(() => import("./PlateBeside"));
 
 /** The app's viewer of one of the FAA's charts, full screen (the plan's
  *  FaaChart): handed in by the map that draws the plates, so this feature
@@ -20,7 +23,9 @@ export type ChartViewer = ComponentType<{ title: string; url: string; airport: s
  * Plate and View Full Screen side by side, the tags on the approach's
  * fixes and the night's inverted colours as the stock switches, and how
  * solid the page is on the stock slider from clear to solid, an icon at
- * each end. Full screen, the pilot's position is on the plate's plan view. The card rule's one card over the search, ✕ at its right
+ * each end. Full screen, the pilot's position is on the plate's plan view;
+ * at a tablet's width the plate itself heads the card, own ship on it,
+ * beside the map (usePlateCard's `beside`). The card rule's one card over the search, ✕ at its right
  * (docs/design/rules.md), as the iPhone's and Android's.
  */
 export function PlateCard({ airport, id, viewer: Viewer }: { airport: string; id: string; viewer: ChartViewer }) {
@@ -28,6 +33,11 @@ export function PlateCard({ airport, id, viewer: Viewer }: { airport: string; id
   return (
     <MapCard title={vm.title}>
       <div className="flex flex-col gap-3" data-testid="plate-card">
+        {vm.beside && vm.chartUrl && (
+          <Suspense fallback={<div className="rounded-xl bg-muted" style={{ aspectRatio: PLATE_SHAPE }} />}>
+            <PlateBeside title={vm.title} url={vm.chartUrl} airport={airport} mark={vm.mark} />
+          </Suspense>
+        )}
         <div className="grid grid-cols-2 gap-2">
           <CardAction icon={<EyeOff />} label="Hide Plate" onClick={vm.hide} testId="plate-hide" />
           <CardAction

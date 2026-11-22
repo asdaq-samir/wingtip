@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import c172Json from "../../../../data/aircraft/c172.json?raw";
 import type { Loading } from "./api/types";
-import { balance, defaultLoad } from "./weightBalance";
+import { balance, defaultLoad, fuelGrades, lbPerGal } from "./weightBalance";
 
 // The stock profile itself (data/aircraft), the 172S's POH figures in it.
 const c172 = JSON.parse(c172Json);
@@ -26,5 +26,24 @@ describe("weight and balance, the 172S's", () => {
 
   it("the default load is the sample airplane and a pilot", () => {
     expect(defaultLoad(loading, 40)).toEqual({ emptyWeightLb: 1642, emptyArmIn: 38.12, stationsLb: [170, 0, 0, 0], fuelGal: 40 });
+  });
+});
+
+describe("the fuel's grade", () => {
+  it("is the engine's grades, avgas and Jet A, each its gallon's standard weight (FAA-H-8083-1B)", () => {
+    expect(fuelGrades().map((g) => [g.grade, g.lb_per_gal])).toEqual([
+      ["avgas", 6],
+      ["jet_a", 6.8],
+    ]);
+  });
+
+  it("weighs the fuel by the grade picked, the POH's own figure until one is", () => {
+    expect(lbPerGal(loading, null)).toBe(loading.fuel_lb_per_gal);
+    expect(lbPerGal(loading, "jet_a")).toBe(6.8);
+    const load = { emptyWeightLb: 1642, emptyArmIn: 38.1, stationsLb: [170, 0, 0, 0], fuelGal: 50 };
+    const avgas = balance(loading, load, 0).takeoff.weightLb;
+    // 50 gal of Jet A is 40 lb more than of avgas (6.8 against 6 a
+    // gallon); the start and taxi's allowance is the loading's pounds.
+    expect(balance(loading, { ...load, fuelGrade: "jet_a" }, 0).takeoff.weightLb - avgas).toBeCloseTo(40, 6);
   });
 });
