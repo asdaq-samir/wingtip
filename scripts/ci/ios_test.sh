@@ -14,7 +14,8 @@
 # Main's push: those and CardSmokeTests, the one UI smoke (the airport card
 # opened, scrolled and closed), and IPadLayoutTests, the iPad's sidebar,
 # menu bar keys and narrow window, on the iPhone and on the iPad, the
-# primary users' (the owner, 2026-11-21); they skip on the iPhone. The night's (FULL): every test the Wingtip
+# primary users' (the owner, 2026-11-21); they skip on the iPhone. The
+# iPad's leg adds DocumentsIPadTests. The night's (FULL): every test the Wingtip
 # scheme holds; the launch, flow and accessibility tests, the card suites
 # and the store shots are the night's alone. scripts/ci/test_tiers.py reads
 # the three lines below that choose, so every UI test class stays in a tier.
@@ -76,6 +77,10 @@ esac
 host=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$WINGTIP_URL').hostname)")
 only=(-only-testing:WingtipTests) scheme=WingtipUnit
 [ "$UNIT_ONLY" = true ] || only+=(-only-testing:WingtipUITests/CardSmokeTests -only-testing:WingtipUITests/IPadLayoutTests) scheme=Wingtip
+# The iPad's leg of main's push opens the documents library too
+# (DocumentsIPadTests: the reader, its inspector, ⌘F, ⌘[ and ⌘]), the iPad
+# being the primary users' device (decision 0058); the iPhone's leg skips it.
+if [ "$UNIT_ONLY" != true ] && [ "$LEG" = iPad ]; then only+=(-only-testing:WingtipUITests/DocumentsIPadTests); fi
 [ "$FULL" = true ] && only=() scheme=Wingtip
 case "$LEG" in
   *" 1/2") only=() scheme=Wingtip && for c in $IPAD_FIRST; do only+=("-only-testing:WingtipUITests/$c"); done ;;

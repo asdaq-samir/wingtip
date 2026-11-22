@@ -15,7 +15,7 @@ on:
     inputs:
       # The whole suite on the iPhone, the iPad and iPhone Duo. Without it
       # (main's push, a wave): the unit tests, CardSmokeTests and
-      # IPadLayoutTests, iPhone and iPad.
+      # IPadLayoutTests, iPhone and iPad; DocumentsIPadTests on the iPad.
       full:
         type: boolean
         default: false
