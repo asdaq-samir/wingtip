@@ -35,6 +35,8 @@ struct MapSettingsView: View {
     @AppStorage(MapExtrasInput.Keys.military) private var militaryOn = false
     @AppStorage(MapExtrasInput.Keys.privateFields) private var privateOn = false
     @AppStorage(MapLabelLook.largerKey) private var largerLabels = false
+    /// Model Weather's switch in Settings' Extras: its menus only while on.
+    @AppStorage(Extra.modelWeather.key) private var modelWeather = false
 
     var body: some View {
         List {
@@ -68,8 +70,9 @@ struct MapSettingsView: View {
                 if weatherOn {
                     // The radar and satellite loop and its speed (WeatherLoop).
                     WeatherLoopRows()
-                    // The model weather's field and its level (ModelWeather).
-                    ModelWeatherRows()
+                    // The model weather's field and its level (ModelWeather),
+                    // parked until its switch in Extras is on (Extra).
+                    if modelWeather { ModelWeatherRows() }
                 }
                 // The ground and the obstacles against the altitude flown.
                 HazardRows()

@@ -11,7 +11,7 @@ import RadioButton from "./RadioButton";
 import ThreeDButton from "./ThreeDButton";
 import ClearanceKey from "./ClearanceKey";
 import { useAtcRadio } from "../lib/atcRadio";
-import { useCommsAssist } from "../lib/atc/commsAssist";
+import { useCommsAssistOn } from "../lib/atc/commsAssist";
 import { useIsMobile } from "../hooks/use-mobile";
 import { FLYING_BUTTON, FLYING_STACK, GLASS, MAP_BUTTON_GLYPH, MAP_BUTTON_SIZE, useFlying } from "../lib/mapChrome";
 import { EngineGate } from "../lib/engine/engineGate";
@@ -66,7 +66,8 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
   const flying = useFlying((s) => s.flying);
   const nearest = useFlying((s) => s.nearest);
   const direct = useFlying((s) => s.direct);
-  const comms = useCommsAssist((s) => s.value);
+  // Off while the ATC Copilot is parked (Settings' Extras), whatever was saved.
+  const comms = useCommsAssistOn();
   const pill = useAtcRadio((s) => s.pill !== null);
   // The pill heard and done (its words or why not, its ✕ there): the mic
   // beside its close put away, at the owner's ask ("No mic button needed

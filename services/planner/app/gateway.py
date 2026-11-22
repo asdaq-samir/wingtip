@@ -71,6 +71,5 @@ SHARED = gateway("public", cache=True)
 PUBLIC_READ_BY_POST = gateway("public", csrf=False)
 #: The developer's: the model's training and the stack's own state.
 DEVELOPER = gateway("developer")
-#: Asked by the gateway alone (its CrashDraftMail, the Studio's crash
-#: drafts' mail), on the stack's own network, never forwarded.
+#: Asked by the gateway alone, on the stack's own network, never forwarded.
 INTERNAL_GATEWAY = {"x-internal": "gateway"}

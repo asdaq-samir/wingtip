@@ -8,7 +8,7 @@ import { Timer } from "./RadioTimer";
 import { Button } from "./ui/button";
 import { CallActions } from "./RadioCallActions";
 import { load } from "../lib/radioListeningLoad";
-import { useAtcListen } from "../lib/atc/listenSetting";
+import { useAtcListenOn } from "../lib/atc/listenSetting";
 import { callToUs, chosenOutside, heardThrough, lostWords, useAtcRadio, type Transmission } from "../lib/atcRadio";
 import { heardAny, readClearance } from "../lib/clearance";
 import { readbackCheck } from "../lib/readback";
@@ -186,7 +186,7 @@ function RadioCaptions() {
 export default function RadioLayer() {
   const call = useAtcRadio(callToUs);
   // With the ATC copilot on, a call to us is its card (features/atc).
-  const atc = useAtcListen((s) => s.value !== "off");
+  const atc = useAtcListenOn() !== "off";
   const captions = useAtcRadio((s) => s.mode === "radio" || (!!s.error && s.mode !== "once" && s.pill === null));
   // Comms assist's pill is the radio button's own circle grown (RadioPill, in
   // MapControls), not a line here.

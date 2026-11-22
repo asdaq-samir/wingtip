@@ -7,8 +7,7 @@ describe("the map's traffic credit", () => {
     expect(trafficCredit(undefined)).toBe("Traffic adsb.lol, ODbL");
     expect(trafficCredit("adsb.lol")).toBe("Traffic adsb.lol, ODbL");
     expect(trafficCredit("ADS-B Exchange")).toBe("Traffic ADS-B Exchange");
-    expect(trafficCredit("adsb.lol and adsb.fi")).toBe("Traffic adsb.lol, ODbL · adsb.fi");
-    expect(trafficCredit("ADS-B Exchange and adsb.fi")).toBe("Traffic ADS-B Exchange · adsb.fi");
+    expect(trafficCredit("adsb.lol and ADS-B Exchange")).toBe("Traffic adsb.lol, ODbL · ADS-B Exchange");
     expect(trafficCredit("somewhere else")).toBe("Traffic adsb.lol, ODbL");
   });
 });

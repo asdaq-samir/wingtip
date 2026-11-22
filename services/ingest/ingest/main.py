@@ -7,9 +7,9 @@
 - The FAA's NOTAM Management Service API (ingest.nms), where its
   credentials are set: every NOTAM in force, then its changes, into
   wingtip.notams' store beside the feed's.
-- The followed airplanes asked of adsb.fi each half minute
+- The followed airplanes asked of adsb.lol each half minute
   (wingtip.traffic.follow_job, a job every FOLLOW_EVERY_S), their tracks recorded in the live store.
-- The Studio's history (ingest.history): each hour the day's NOTAMs and
+- The history (ingest.history): each hour the day's NOTAMs and
   TFRs archived, and each month the NTSB's database read.
 
 The planner's own traffic, the map's region asked of adsb.lol and an open
@@ -57,8 +57,7 @@ def run(stop: threading.Event) -> None:
     log.info("SWIM feeds: %s", ", ".join(feeds) or "none set up")
     # The full NOTAM set, where the FAA has given access (decision 0059).
     log.info("NMS-API: %s", "on" if nms.start(on) else "off (NMS_API_CLIENT_ID and NMS_API_CLIENT_SECRET unset)")
-    if wingtip_settings().adsbfi_open_data:
-        schedule.every(on, traffic.FOLLOW_EVERY_S, traffic.follow_job, name="adsb-follow")
+    schedule.every(on, traffic.FOLLOW_EVERY_S, traffic.follow_job, name="adsb-follow")
     if get_settings().history:
         history.jobs(on)
     # A beat that fails is logged by the scheduler; the health check sees the long gap.
@@ -72,7 +71,7 @@ def main() -> None:
     # One line a record, JSON in production (LOG_FORMAT, wingtip.log_lines).
     log_lines.configure(get_settings().log_level, wingtip_settings().log_format)
     # Traces with TRACING=1 (docs/LOCAL-DEV.md, "Tracing"): each round of
-    # following a trace, its adsb.fi asks under it; nothing otherwise.
+    # following a trace, its adsb.lol asks under it; nothing otherwise.
     tracing.start("ingest")
     stop = threading.Event()
     for sig in (signal.SIGTERM, signal.SIGINT):

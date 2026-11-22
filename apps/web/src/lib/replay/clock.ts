@@ -4,8 +4,8 @@ import { prefersReducedMotion } from "../motion";
 
 /**
  * The map's one replay clock, which every replay plays on -- a tracked
- * airplane's past flight, the planned flight's dry run, the Studio's
- * tracks (features/replay) -- and the map's airplane (ReplayGl), the
+ * airplane's past flight and the planned flight's dry run
+ * (features/replay) -- and the map's airplane (ReplayGl), the
  * pilot's view and the replay's cameras read. Ground every feature stands
  * on, so here in lib/; features/plan/pastFlight names it as it always
  * did.
@@ -16,10 +16,9 @@ import { prefersReducedMotion } from "../motion";
  * and its replay -- the airplane flown along it again at 10, 50 or 200
  * times, from where the pilot left it.
  */
-/** A report a replay plays: a past flight's, the dry run's, or a
- *  recorded flight made ready by the engine (features/replay's track),
- *  which marks the report after a gap -- nothing known between it and the
- *  last, so nothing is drawn there -- and works out the climb. */
+/** A report a replay plays: a past flight's or the dry run's; one after
+ *  a gap is marked -- nothing known between it and the last, so nothing is
+ *  drawn there -- and may carry the climb. */
 export type ReplayPoint = PastFlightPoint & { gap?: boolean; vs_fpm?: number | null };
 
 interface PastFlightState {

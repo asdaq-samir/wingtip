@@ -15,6 +15,9 @@ struct RouteEndsRow: View {
     /// Settings' Comms Assist (In Flight › ATC): the radio's button only
     /// while it is on, off by default (the owner, 2026-11-13).
     @AppStorage(CommsAssist.key) private var commsAssist = false
+    /// Comms Assist is the ATC Copilot's: off while its switch in
+    /// Settings' Extras is, whatever was saved (Extra).
+    @AppStorage(Extra.atcCopilot.key) private var atcCopilot = false
     @Environment(\.dynamicTypeSize) private var typeSize
     var focused: FocusState<PlanView.Field?>.Binding
     /// The fields' widths follow the type size, so an ident still fits at
@@ -29,7 +32,7 @@ struct RouteEndsRow: View {
                 routeField("To", text: $plan.dest, field: .dest)
                 fromPosition
                 HStack(spacing: WingtipSpace.md) {
-                    if commsAssist { radio }
+                    if commsAssist && atcCopilot { radio }
                     planButton
                 }
             }
@@ -39,7 +42,7 @@ struct RouteEndsRow: View {
                     routeField("From", text: $plan.dep, field: .dep)
                     Image(systemName: "arrow.right").foregroundStyle(.secondary).accessibilityHidden(true)
                     routeField("To", text: $plan.dest, field: .dest)
-                    if commsAssist { radio }
+                    if commsAssist && atcCopilot { radio }
                     planButton
                 }
                 fromPosition

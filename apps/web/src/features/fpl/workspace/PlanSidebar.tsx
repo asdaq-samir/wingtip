@@ -14,6 +14,7 @@ import type { PlanSlices } from "../vm/planSlices";
 import type { KeptAircraft } from "../../../lib/preferences";
 import Waits from "./Waits";
 import SearchBox from "../search/SearchBox";
+import { useAirplaneHistory } from "../../../lib/airplane/ownAirplane";
 
 /** The one search's parts on chunks of their own, out of the first load
  *  (its 1.10 MB budget, scripts/first-load.mjs): its own page, drawn once
@@ -102,9 +103,11 @@ export default function PlanSidebar({
     }, 1500);
     return () => window.clearTimeout(later);
   }, []);
-  // An airplane's card, over whichever place is up, as an airport's is.
+  // An airplane's card, over whichever place is up, as an airport's is; a past flight's only
+  // where its history is offered (useAirplaneHistory: the pilot's own, or Other Airplanes on).
+  const history = useAirplaneHistory(flight);
   const flightCard =
-    flight && past ? (
+    flight && past && history ? (
       <PastFlightCard key={`${flight}-${past}`} hex={flight} id={past} onClose={() => selectPast(null)} />
     ) : flight ? (
       <FlightCard key={flight} hex={flight} onOpenPast={selectPast} onClose={closeFlight} onOpenAirport={selectPlace} />

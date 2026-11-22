@@ -35,8 +35,8 @@ def test_healthy_while_the_beat_is_fresh():
 def test_run_beats_until_stopped_and_starts_no_feed_without_settings(monkeypatch):
     for name in ("SWIM_HOST", "SWIM_USERNAME", "SWIM_PASSWORD"):
         monkeypatch.delenv(name, raising=False)
-    # adsb.fi off: no request leaves the test.
-    monkeypatch.setenv("ADSBFI_OPEN_DATA", "0")
+    # The following stood in for: no request leaves the test.
+    monkeypatch.setattr(main.traffic, "follow_job", lambda: None)
     stop = threading.Event()
     beats = []
     monkeypatch.setattr(main, "beat", lambda feeds: (beats.append(feeds), stop.set()))
@@ -46,15 +46,14 @@ def test_run_beats_until_stopped_and_starts_no_feed_without_settings(monkeypatch
 
 def test_ingest_follows_the_airplanes_the_planner_follows():
     """A card opened in the planner (traffic.follow) is in the store, so
-    ingest's radar and adsb.fi rounds look for it."""
+    ingest's radar and adsb.lol rounds look for it."""
     traffic.follow("A3C858")
     assert traffic.radar_wanted()[1] == {"a3c858"}
 
 
-def test_the_followed_airplanes_are_a_job_where_adsbfi_is_on(monkeypatch):
+def test_the_followed_airplanes_are_a_job(monkeypatch):
     for name in ("SWIM_HOST", "SWIM_USERNAME", "SWIM_PASSWORD"):
         monkeypatch.delenv(name, raising=False)
-    monkeypatch.setenv("ADSBFI_OPEN_DATA", "1")
     stop = threading.Event()
     jobs = []
     monkeypatch.setattr(main.schedule, "every", lambda on, seconds, job, *, name, **kw: jobs.append((name, seconds, job)))

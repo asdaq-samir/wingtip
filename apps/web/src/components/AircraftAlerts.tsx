@@ -8,6 +8,8 @@ import type { FlightStatus } from "../lib/api/types";
 import { useOwnShip } from "../lib/map/position/ownShip";
 import { useTracking } from "../lib/map/position/tracking";
 import { usePreferences } from "../lib/preferences";
+import { useExtra } from "../lib/extras";
+import { isOwn, useOwnAirplanes } from "../lib/airplane/ownAirplane";
 import { flightStatusQuery } from "../lib/queryClient";
 import { say } from "../lib/speech";
 
@@ -21,7 +23,12 @@ const answers = (results: UseQueryResult<FlightStatus>[]) => results.map((r) => 
  * before, and one that goes off said on the map and aloud, then let go.
  */
 function useAircraftAlertWatch() {
-  const alerts = usePreferences((s) => s.aircraftAlerts);
+  // Another airplane's alerts wait, kept, while Other Airplanes is off in
+  // Settings' Extras (lib/airplane/ownAirplane); the pilot's own are watched.
+  const kept = usePreferences((s) => s.aircraftAlerts);
+  const others = useExtra("otherAirplanes");
+  const own = useOwnAirplanes();
+  const alerts = useMemo(() => (others ? kept : kept.filter((a) => isOwn(own, a.hex))), [others, kept, own]);
   const hexes = useMemo(() => [...new Set(alerts.map((a) => a.hex))], [alerts]);
   const results = useQueries({ queries: hexes.map((hex) => flightStatusQuery(hex)), combine: answers });
   const watched = useRef(new Map<string, Watched>());

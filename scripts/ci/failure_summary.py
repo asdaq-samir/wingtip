@@ -92,7 +92,7 @@ BUILD = web("../../scripts/ci/web_suite.sh build")
 BUILD_NOTE = "It writes apps/web/dist, which the live tree serves: run it in a worktree."
 GENERATED_NOTE = "All four generators; with `$(git merge-base origin/main HEAD)` after it, only those the branch touched."
 # The folders guards.sh's ruff_check names, from services/: the root's .ruff.toml is every file's.
-RUFF = "planner/{app,tests,wingtip,tests_wingtip} ingest/{ingest,tests} weather/{app,tests} jobs/{charts,crash} ../tools/xplane-driver"
+RUFF = "planner/{app,tests,wingtip,tests_wingtip} ingest/{ingest,tests} weather/{app,tests} jobs/charts ../tools/xplane-driver"
 # check.sh's `java`: Testcontainers reaches Docker through the socket.
 MVN = (
     'docker run --rm -v "$PWD:/repo" -v /repo/services/gateway/target -v fp-m2:/root/.m2 '

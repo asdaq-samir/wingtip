@@ -1,8 +1,4 @@
-import { pausePastFlight, playPastFlight, usePastFlight, type ReplayPoint } from "../../lib/replay/clock";
-
-/** The Studio's speeds, a quarter to sixteen times as flown: slow enough
- *  to watch a flare, quick enough to cross a cross-country. */
-export const STUDIO_SPEEDS = [0.25, 0.5, 1, 2, 4, 8, 16] as const;
+import { pausePastFlight, playPastFlight, usePastFlight } from "../../lib/replay/clock";
 
 /** A speed as the menu says it: "¼×", "16×". */
 export function speedName(x: number): string {
@@ -31,19 +27,13 @@ function setReplaySpeed(speed: number) {
   usePastFlight.setState({ speed });
 }
 
-/** A track handed to the clock, from its start, paused: the Studio's
- *  (`id` its own, so the dry run and a past flight know it is not theirs). */
-export function loadReplay(id: string, points: ReplayPoint[], speed = 1) {
-  usePastFlight.setState({ hex: id, id: null, points, at: points[0]?.t ?? null, playing: false, speed, stops: [] });
-}
-
 /**
  * The view model of a replay's timeline, one for every replay: the
  * moment (`at`, s; null before it has been played), whether it plays and
  * how fast, the flight's start and end, and the actions. Over the map's
  * one replay clock (usePastFlight), which the map's airplane (ReplayGl)
  * steps and the cameras (features/replay/camera) and the pilot's view
- * read; the dry run, a past flight and the Studio all play on it.
+ * read; the dry run and a past flight play on it.
  * `second` is the moment to the whole second, which is what a view
  * redraws on; the 3D cameras read the clock each frame themselves.
  */

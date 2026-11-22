@@ -26,7 +26,7 @@ import { useChartMissed } from "../useChartMissed";
  * moves, with no style made again. Close in,
  * past the base chart's own last zoom, the chart fades into the aerial
  * imagery under it (closeZoom, useCloseImagery: the USGS's, or Google's
- * at the pilot's pick, never for export, `publicOnly`), and the map goes
+ * at the pilot's pick), and the map goes
  * in to CLOSE_MAX_ZOOM; where there is none, to two levels past the chart.
  * With the chart None, nothing of it is drawn. The base picked before
  * stays on the map hidden (its layers' visibility none, each id its own,
@@ -34,7 +34,7 @@ import { useChartMissed } from "../useChartMissed";
  * switch back, and the new base is added beside it rather than after the
  * old one is taken down; a hidden source fetches nothing.
  */
-export function ChartGl({ course, publicOnly = false }: { course: Course | null; publicOnly?: boolean }) {
+export function ChartGl({ course }: { course: Course | null }) {
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
   const chart = course ?? chartOnly ?? null;
   const base = usePreferences((s) => s.base);

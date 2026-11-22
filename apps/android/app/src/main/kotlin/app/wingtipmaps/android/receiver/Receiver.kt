@@ -9,6 +9,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.BuildConfig
+import app.wingtipmaps.android.Extra
+import app.wingtipmaps.android.Extras
 import app.wingtipmaps.android.api.TrafficAircraft
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -82,13 +84,17 @@ class Receiver private constructor(private val context: Context, private val tic
         loaded.cancel()
         _mode.value = mode
         scope.launch { context.settings.edit { it[KEY] = mode.name } }
-        if (mode == ReceiverMode.OFF) {
-            socket.stop()
-            _picture.value = null
-            _nexrad.value = null
-            serve(false)
-            onOwnship?.invoke(null, null)
-        }
+        if (mode == ReceiverMode.OFF) quiet()
+    }
+
+    /** Nothing listened to and nothing kept: the socket closed, the
+     *  picture and its NEXRAD let go, the foreground service stopped. */
+    private fun quiet() {
+        socket.stop()
+        _picture.value = null
+        _nexrad.value = null
+        serve(false)
+        onOwnship?.invoke(null, null)
     }
 
     /** Listen and read once a second from now on (Ticker's clock). */
@@ -110,6 +116,13 @@ class Receiver private constructor(private val context: Context, private val tic
         // listens: Android keeps the process. One heard, or own ship's
         // service up, it goes on with the screen off.
         if (ticker.background && !serving && !OwnShipService.running) return
+        // Parked in Settings' Extras (ADS-B Receiver, off to start): its
+        // Auto acts as off, nothing opened and nothing drawn from it; a
+        // switch turned off while one was heard lets it go here.
+        if (!Extras.of(context).isOn(Extra.ADSB_RECEIVER)) {
+            quiet()
+            return
+        }
         socket.start()
         _problem.value = socket.problem
         val bytes = socket.drain()

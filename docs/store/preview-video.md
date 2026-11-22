@@ -19,7 +19,7 @@ screenshots are taken from, never the owner's live one.
 The poster frame (the still shown before it plays) is picked in App
 Store Connect: take the map with the route (second 2).
 
-## The film: C81 to KDLH, 27 s
+## The film: C81 to KDLH, 24 s
 
 C81 (Campbell, Round Lake Beach IL) to KDLH (Duluth) is the planner's own
 test route and the one FlowTests plans, so every screen below answers
@@ -34,10 +34,14 @@ most five words, and stay at least 2 s.
 | 3 | 0:07–0:11 | The Brief, verdict first | the Brief glyph beside the altitude (`Views/BriefView.swift`) | The verdict first |
 | 4 | 0:11–0:15 | The nav log, scrolled once | route box •••, Nav Log (`Views/NavLogPage.swift`) | A nav log from the winds |
 | 5 | 0:15–0:19 | KDLH's card: the weather now, D-ATIS and RVR | Airport tab, search KDLH (`Views/AirportCard.swift`, `Views/AirportLiveSections.swift`) | Live ATIS at the field |
-| 6 | 0:19–0:23 | A call to us as the ATC card | Setup, Alerts, ATC on; a recorded call played to the simulator's microphone (`Atc/AtcCopilot.swift`, `Views/AtcCardRows.swift`) | Hears ATC for you |
-| 7 | 0:23–0:27 | Downloads: a state picked, its size, the progress | Setup, Downloads (`Offline/DownloadsView.swift`) | Flies with no signal |
+| 6 | 0:19–0:24 | Downloads: a state picked, its size, the progress | Settings, Downloads (`Offline/DownloadsView.swift`) | Flies with no signal |
 
 Left out, and why:
+
+- **The ATC card** (a call to us read off the radio). The ATC copilot
+  is parked (the feature review, [feature-review.md](feature-review.md),
+  2026-11-21: Settings' Extras, off to start), so no store film or
+  screenshot shows it.
 
 - **Pilot's view / 3D terrain.** Not on iOS (the map's pitch is off,
   `Views/ChartMap.swift` `isPitchEnabled = false`; the 3D view is the
@@ -47,15 +51,8 @@ Left out, and why:
   It appears only when the flight recorder sees the airplane land and
   stop (`Logbook/AutoLogbook.swift`), which a simulator gets only from a
   GPX route played through Features, Location; worth a still in the
-  screenshots, too slow to wait for in a 30 s film. A 30 s cut can swap
-  shot 7 for it if the GPX is set up.
-
-Shot 6 needs the radio: play a short ATC call addressed to the
-simulated tail number (from the copilot's own test fixtures, not a real
-recording of a real pilot) through the Mac's output into the
-simulator's microphone input. If that cannot be made reliable, cut it
-and run shot 5 and 7 a second longer each; do not stage a card the
-copilot did not read.
+  screenshots, too slow to wait for in a 30 s film. A 30 s cut can add
+  it after shot 6 if the GPX is set up.
 
 ## Capturing it
 
@@ -70,9 +67,9 @@ cut. For a repeatable one, the UI tests drive the app:
   `testAnAirportsCardOpensFromTheSearch` (KDLH's card).
 - They assert and move on with no pauses, so a film from them is too
   quick to read. A dedicated `PreviewTests` (to be added in
-  `apps/ios/WingtipUITests`, not yet written) should run the seven
+  `apps/ios/WingtipUITests`, not yet written) should run the six
   shots in order with a `sleep` per shot from the table, and leave the
-  Setup steps (ATC on, a Downloads region) to it as well.
+  Settings step (a Downloads region) to it as well.
 
 `scripts/dev/record-preview.sh` does the recording around any one test:
 it boots the named simulator, starts `recordVideo`, runs
@@ -101,11 +98,12 @@ and the script.
 
 ## Google Play
 
-Upload the same 27 s film to YouTube (unlisted is fine), ads off, and
+Upload the same 24 s film to YouTube (unlisted is fine), ads off, and
 paste its URL in the Play Console's Promo video field. Play also asks,
-in the foreground-service declaration, for a short video of each
-foreground service in use: Start Flight and the flight's position with
-the screen off (location), the ATC copilot (microphone) and the ADS-B
-receiver (connected device) on the Android emulator, recorded with
-`adb shell screenrecord`; the shot for each and the text to paste are in
-[foreground-services.md](foreground-services.md).
+in the foreground-service declaration, for a short video of the one
+foreground service this build declares in use: Start Flight and the
+flight's position with the screen off (location), on the Android
+emulator, recorded with `adb shell screenrecord`; the shot and the text
+to paste are in [foreground-services.md](foreground-services.md). The
+microphone and connected-device services are not declared while the ATC
+copilot and the receiver are parked.

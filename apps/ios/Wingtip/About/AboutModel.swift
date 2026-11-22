@@ -87,7 +87,6 @@ enum AboutCredits {
         Credit(what: "Time zones: timezone-boundary-builder, from OpenStreetMap contributors", terms: "ODbL 1.0"),
         Credit(what: "adsb.lol ADS-B traffic", terms: "ODbL 1.0"),
         Credit(what: "ADS-B Exchange traffic", terms: "ADS-B Exchange's API terms"),
-        Credit(what: "adsb.fi ADS-B traffic", terms: "Personal, non-commercial use, credited and linked"),
         Credit(what: "Virtual Radar Server flight routes", terms: "CC0"),
         // Its terms ask for the photographer's name next to each photo.
         Credit(what: "Planespotters.net aircraft photos, each credited to its photographer beside it", terms: "Planespotters.net's photo API terms"),

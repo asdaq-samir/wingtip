@@ -1,7 +1,11 @@
 # Privacy answers for the stores
 
 App Store Connect's App Privacy ("nutrition label") and Google Play's
-Data safety form, answered from the code on 2026-11-10.
+Data safety form, answered from the code on 2026-11-10, and brought to
+the feature review's parks and cuts on 2026-11-21
+([feature-review.md](feature-review.md)): a parked feature is in the
+build but off to start (Settings' Extras), and these answers are for the
+build as it ships.
 [`docs/privacy-inventory.md`](../privacy-inventory.md) is the one source
 of what is collected; this page is that list put into each store's
 questions, with the file each answer rests on. When the inventory
@@ -20,7 +24,8 @@ descriptions, the mock oral, a photographed page read) were off from
 (docs/decisions/0041-claude-taken-out.md): Anthropic receives nothing
 from any app or the server, and no use is counted. The pilot's own Claude
 or ChatGPT, where the pilot connects Wingtip to it (the MCP connector),
-is that app's maker's collection, under its terms.
+is that app's maker's collection, under its terms; the connector is
+parked, off on production (`MCP_ENABLED=false`, no client registration).
 
 ## The policy these answers point to
 
@@ -71,25 +76,26 @@ who share analytics with developers, are Apple's collection, not the
 app's.
 
 Purchases: **not collected.** The app is free and has no in-app
-purchase (no StoreKit in `apps/ios`); the inventory's Purchases row is
-for a subscription that is off (docs/decisions/0022).
+purchase (no StoreKit in `apps/ios`; docs/decisions/0022); the
+subscription's leftovers were cut on 2026-11-21 (the gateway's V46 and V52 drop
+their tables).
 
 Not collected, though the app uses them on the device:
 
-- **Audio and speech.** The ATC copilot hears the radio with the
-  microphone and turns it into words with Apple's recognizer on the
-  iPhone only (`ClearanceListener.swift` always sets
-  `requiresOnDeviceRecognition`); the words are read by the engine on
-  the phone (`Atc/AtcCopilot.swift`). Asking by voice, the search's and
-  Ask's mic, is a separate recognizer (`VoiceInput`, since 2026-11-10),
-  also on the device only: its words are typed into the field and go
+- **Audio and speech.** Asking by voice, the search's and Ask's mic, is
+  the one use in this build (`VoiceInput`, since 2026-11-10), on the
+  device only: its words are typed into the field and go
   only where a typed question would. No audio and no transcript is sent
   to Wingtip's servers or to Apple. Where the phone cannot recognise on
   the device (`supportsOnDeviceRecognition` false), voice is not
   offered at all: the microphone controls are hidden and neither
-  permission is asked for.
-- **Cockpit receiver traffic and FIS-B weather** (`Receiver/`): heard on
-  the local Wi-Fi, read on the device, never sent.
+  permission is asked for. The ATC copilot, parked (Settings' Extras, off
+  to start), would hear the radio the same way, on the device only
+  (`ClearanceListener.swift` always sets `requiresOnDeviceRecognition`;
+  the words read by the engine on the phone, `Atc/AtcCopilot.swift`).
+- **Cockpit receiver traffic and FIS-B weather** (`Receiver/`, parked:
+  Settings' Extras, off to start): heard on the local Wi-Fi, read on the
+  device, never sent.
 - **Favourites, recents and routes in iCloud** (`Records/Records.swift`,
   SwiftData with CloudKit): in the pilot's own iCloud private database,
   which the developer cannot read; Apple does not count it as collected.
@@ -147,10 +153,22 @@ pilot without the app asks by email and confirms from the link
 | Location: Precise location | Yes, a logged flight's track | No | Yes | App functionality | `logbook/FlightRecorder.kt`, `logbook/AutoLogbookHost.kt` |
 | App activity: Other user-generated content | Yes (airplanes, flights, logbook, notes) | No | Yes | App functionality | `logbook/`, `records/` |
 | App info and performance: Crash logs | Yes: the exits Android kept (`ApplicationExitInfo`: crashes, ANRs with their traces, low-memory kills) and an uncaught exception's stack, with the app's version, the Android version and phone or tablet; sent as the phone has it and scrubbed on receipt (queries, emails, home folders and UUIDs, `DiagnosticText`), no account; kept 30 days | No | No | App functionality (finding faults) | `diagnostics/ExitReasons.kt`, `CrashCatcher.kt`, `DiagnosticsReporter.kt` |
-| App info and performance: Diagnostics | Yes: the start-up time and the share of slow frames (JankStats), the same way; kept 400 days; both rows only while Help Improve Wingtip Maps is on (`diagnostics/HelpImprove.kt`), and Play's Android vitals are Google's own, not the app's. And ML Kit's own diagnostics, sent to Google by the SDK when Add from a Photo or the on-phone AI is used: the device's maker, model and Android version, the app's version, the call's speed, settings, sizes and error codes | No | No | App functionality (keeping the app fast); Analytics (ML Kit's stated purpose, "diagnostics and usage analytics") | `diagnostics/FrameStats.kt`; `documents/`, `ai/read/OnPhoneReader.kt`, `ai/Nano.kt` |
-| Device or other IDs | Yes, by ML Kit only: an identifier for the install (and for the Prompt API a device or user identifier), sent to Google with its diagnostics when Add from a Photo or the on-phone AI is used; nothing of the pilot's account | No | Yes (only those features) | Analytics (ML Kit's stated purpose) | `play-services-mlkit-document-scanner`, `play-services-mlkit-text-recognition`, `mlkit-genai-prompt` (developers.google.com/ml-kit/android-data-disclosure, read 2026-11-21) |
-| Photos and videos: Photos | **No**: a page photographed for Add from a Photo is read on the phone with Gemini Nano (ML Kit text recognition, then Nano, `ai/read/OnPhoneReader.kt`) and sent nowhere; without Nano, Add from a Photo is not offered | | | | `documents/` |
-| Audio: Voice or sound recordings | **No**: the radio is heard by the phone's on-device `SpeechRecognizer` only (`createOnDeviceSpeechRecognizer`, `atc/RadioListener.kt`) and read on the phone, and a question asked by voice by its own on-device recognizer (`voice/VoiceInput.kt`, since 2026-11-10), its words typed into the field as a typed question; nothing is sent by the app or to Google; without an on-device recognizer voice is not offered | | | | |
+| App info and performance: Diagnostics | Yes: the start-up time and the share of slow frames (JankStats), the same way; kept 400 days; only while Help Improve Wingtip Maps is on (`diagnostics/HelpImprove.kt`), and Play's Android vitals are Google's own, not the app's | No | No | App functionality (keeping the app fast) | `diagnostics/FrameStats.kt` |
+| Photos and videos: Photos | **No**: Add from a Photo needs Gemini Nano and is not offered in this build (Ask parked, ML Kit GenAI left out; `documents/DocumentViews.kt` `AddFromPhotoRow`) | | | | `documents/` |
+| Audio: Voice or sound recordings | **No**: a question asked by voice is heard by the phone's own on-device recognizer (`voice/VoiceInput.kt`, since 2026-11-10), its words typed into the field as a typed question; nothing is sent by the app or to Google; without an on-device recognizer voice is not offered. The parked ATC copilot hears the radio the same way (`createOnDeviceSpeechRecognizer`, `atc/RadioListener.kt`) | | | | |
+
+**No "Device or other IDs" row, and no ML Kit diagnostics.** The store
+build leaves ML Kit GenAI out (`genai-prompt` only with
+`-Pwingtip.genai=true`, apps/android/app/build.gradle.kts), and the
+scanner and text recognition it still links run only for Add from a
+Photo, which is offered only with Nano (`AiOffered`): so no ML Kit call
+is made and nothing goes to Google. Google's ML Kit disclosure
+(developers.google.com/ml-kit/android-data-disclosure, read 2026-11-21)
+says every ML Kit feature sends diagnostics and a per-installation
+identifier, and the Play-services ones ("thin", as the scanner and text
+recognition here) a device identifier too. So if Add from a Photo or
+Ask is offered again, in any build, both rows come back as they were:
+"Device or other IDs" and ML Kit's part of Diagnostics, for Analytics.
 
 "Shared" is Google's meaning: the recipients in the inventory (AWS,
 and Amazon SES)
@@ -163,10 +181,10 @@ Before answering, check each
 Google SDK's own entry in Play's SDK Index (`play-services-location`,
 ML Kit's document scanner and text recognition) against these rows.
 
-AI on the phone (docs/android-ai.md) adds nothing to collect: where the
-phone has Gemini Nano, Ask, In Plain Words, a drafted remark and a page
-photographed are made on the phone (`ai/`), and without it they are
-not offered. Gemini and the system's agents read what
+AI on the phone (docs/android-ai.md) is parked: Ask, In Plain Words, a
+drafted remark and a page photographed need Gemini Nano, which this
+build does not link, and Settings' Extras' Ask is off to start; none is
+offered. Gemini and the system's agents read what
 the pilot asks them for through AppFunctions (`ai/functions/`), answered
 on the phone; that is the agent's maker's collection, under its terms.
 
@@ -178,17 +196,17 @@ chart, asked in the foreground only; never `ACCESS_BACKGROUND_LOCATION`),
 the pilot's Start Flight until the airplane slows, the position keeps
 being read with the app in the background, for the flight recorder, the
 alerts ahead and the live update, shown as a notification,
-`flight/OwnShip.kt`, `flight/StartFlightAsk.kt`), `RECORD_AUDIO` and
-`FOREGROUND_SERVICE_MICROPHONE` (the ATC copilot, only when turned on),
-`CHANGE_WIFI_MULTICAST_STATE` and `FOREGROUND_SERVICE_CONNECTED_DEVICE`
-(a cockpit ADS-B receiver), `POST_NOTIFICATIONS` and
+`flight/OwnShip.kt`, `flight/StartFlightAsk.kt`), `RECORD_AUDIO` (a
+question said to the search, asked when the microphone is tapped; and
+the parked ATC copilot), `CHANGE_WIFI_MULTICAST_STATE` (the parked
+cockpit ADS-B receiver), `POST_NOTIFICATIONS` and
 `POST_PROMOTED_NOTIFICATIONS` (the flight's notification, promoted as a
 live update while flying), `INTERNET` and `ACCESS_NETWORK_STATE`. Play's
 foreground-service declaration form wants a description, the impact if
-deferred, a use case and a short video for each of the three types
-(`location`, `microphone`, `connectedDevice`): foreground-services.md has
-the text for each, and preview-video.md the shots; the receiver's in-app
-setup is still to film (launch-checklist.md).
+deferred, a use case and a short video for each type declared; this
+build declares one, `location`: foreground-services.md has the text, and
+preview-video.md the shot. `microphone` and `connectedDevice` left the
+manifest with the parked copilot and receiver.
 
 ## Account deletion
 

@@ -44,7 +44,7 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0036 | [Wingtip reaches Claude and ChatGPT as the pilot's own connector](0036-mcp-connector.md) | 2026-11-10 | Accepted |
 | 0037 | [The order of a wave is enforced, not remembered](0037-order-enforced.md) | 2026-11-11 | Accepted |
 | 0038 | [Web first; the phones on the owner's word](0038-web-first.md) | 2026-11-11 | Accepted |
-| 0039 | [The crash pipeline's schedule and the MCP tools' source, weighed against their alternatives](0039-crash-and-mcp-boundaries.md) | 2026-11-12 | Accepted |
+| 0039 | [The crash pipeline's schedule and the MCP tools' source, weighed against their alternatives](0039-crash-and-mcp-boundaries.md) | 2026-11-12 | Accepted; its crash half left with Studio (0060) |
 | 0040 | [The iPhone app's oldest iOS is 27, and the Watch's watchOS 27](0040-ios-27-floor.md) | 2026-11-12 | Accepted |
 | 0041 | [The server's Claude features are taken out](0041-claude-taken-out.md) | 2026-11-12 | Accepted |
 | 0042 | [Each change runs its own tests; the wave is validated on GitHub](0042-fast-checks.md) | 2026-11-13 | Accepted |
@@ -65,3 +65,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0057 | [A documents library and reader, and every cited rule a tap to its paragraph](0057-documents-library.md) | 2026-11-21 | Proposed |
 | 0058 | [The iPad is the primary device](0058-ipad-primary.md) | 2026-11-21 | Accepted |
 | 0059 | [The full NOTAM set comes from the FAA's NOTAM Management Service API](0059-notams-full-set-from-nms.md) | 2026-11-21 | Accepted |
+| 0060 | [Feature review: keep, park, cut](0060-feature-review-keep-park-cut.md) | 2026-11-21 | Accepted |

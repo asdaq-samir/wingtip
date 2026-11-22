@@ -9,7 +9,7 @@ fails here."""
 import re
 from pathlib import Path
 
-from wingtip import elevation, ground_grid, nearby
+from wingtip import elevation, ground_grid, nearby, traffic
 
 ROOT = Path(__file__).resolve().parents[3]
 PROD = (ROOT / "infra/docker-compose.prod.yml").read_text()
@@ -24,10 +24,12 @@ def credit_rows() -> list[list[str]]:
 
 def test_personal_use_traffic_is_off_in_production():
     # adsb.fi's open data is "for personal, non-commercial use only"
-    # (github.com/adsbfi/opendata); ADS-B Exchange's RapidAPI plan is its
-    # personal-use one, and JETNET's terms (2(d)) let no API account show
-    # its data to anyone not their subscriber.
-    assert re.findall(r"ADSBFI_OPEN_DATA: (\S+)", PROD) and set(re.findall(r"ADSBFI_OPEN_DATA: (\S+)", PROD)) == {'"0"'}
+    # (github.com/adsbfi/opendata), so it was cut as a source
+    # (docs/store/feature-review.md) and is never asked; ADS-B Exchange's
+    # RapidAPI plan is its personal-use one, and JETNET's terms (2(d)) let
+    # no API account show its data to anyone not their subscriber.
+    sources = "".join(part.read_text() for part in Path(traffic.__file__).parent.glob("*.py"))
+    assert "opendata.adsb.fi" not in sources and "ADSBFI" not in PROD
     assert re.findall(r"ADSBX_RAPIDAPI_KEY: (\S+)", PROD) == ['""']
 
 
@@ -75,4 +77,5 @@ def test_adsb_lol_is_asked_with_its_key_and_left_alone_while_its_quota_is_spent(
     assert common.refused_for_s(SimpleNamespace(status_code=429, headers={"Retry-After": "5400"})) == 5400.0
     assert common.refused_for_s(SimpleNamespace(status_code=429, headers={})) == common.QUOTA_WAIT_S
     assert common.refused_for_s(SimpleNamespace(status_code=503, headers={"Retry-After": "60"})) == 0.0
-    assert re.findall(r"ADSBLOL_API_KEY: (\S+)", PROD) == ["${ADSBLOL_API_KEY:-}"]
+    # The planner's and ingest's (the followed airplanes' rounds) both.
+    assert re.findall(r"ADSBLOL_API_KEY: (\S+)", PROD) == ["${ADSBLOL_API_KEY:-}"] * 2

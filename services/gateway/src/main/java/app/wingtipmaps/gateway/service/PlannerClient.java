@@ -19,7 +19,8 @@ import app.wingtipmaps.gateway.planner.model.PlannerInstructorVerificationAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerPilotNotes;
 import app.wingtipmaps.gateway.planner.model.PlannerRecordsBatch;
 import app.wingtipmaps.gateway.planner.model.PlannerRecordsBatchAsk;
-import app.wingtipmaps.gateway.planner.model.PlannerStudioDraft;
+import app.wingtipmaps.gateway.planner.model.PlannerReviewCheck;
+import app.wingtipmaps.gateway.planner.model.PlannerVorCheckAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerWordsSources;
 import app.wingtipmaps.gateway.upstream.BriefingApi;
 import app.wingtipmaps.gateway.upstream.PlannerApi;
@@ -46,8 +47,8 @@ import org.springframework.web.client.RestClientResponseException;
  * (a browser's request is {@link app.wingtipmaps.gateway.controller.PlannerProxyController}'s):
  * the flight watch's briefings and their changes (FlightWatchService,
  * ChangeLines), the engine's rules over a pilot's logbook and airplane, as
- * this app holds no aviation rule of its own (CLAUDE.md), a pilot's notes
- * (CheckpointNotesClient) and the Studio's drafts (CrashDraftMail). The
+ * this app holds no aviation rule of its own (CLAUDE.md) and a pilot's notes
+ * (CheckpointNotesClient). The
  * asking is Spring's HTTP interfaces (PlannerApi and BriefingApi,
  * made by UpstreamClients); here each answer is made into this app's own,
  * and any failure into a PlannerUnavailableException that says who and what.
@@ -109,22 +110,6 @@ public class PlannerClient {
      *  (CheckpointNotesClient): how many went. */
     int forgetNotes(Long pilotId) {
         return rule("the notes forgotten", () -> planner.forgetNotes(String.valueOf(pilotId)), f -> f.getRemoved());
-    }
-
-    /** The Studio's ready drafts nobody has been mailed about (CrashDraftMail). */
-    List<PlannerStudioDraft> draftsToNotice() {
-        return rule("the crash drafts", planner::draftsToNotice, a -> a);
-    }
-
-    /** A draft marked as mailed about (CrashDraftMail). */
-    void noticed(String id) {
-        rule(
-                "the crash draft's notice",
-                () -> {
-                    planner.noticed(id);
-                    return id;
-                },
-                a -> a);
     }
 
     /**

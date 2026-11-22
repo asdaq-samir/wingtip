@@ -15,6 +15,9 @@ struct AirplanePlaceHead: View {
     @Environment(\.undoManager) private var undoManager
     let model: AirplaneProfileModel
     let lookup: AirplaneLookup
+    /// Whether Follow is offered (AirplaneProfileView.offersHistory): the
+    /// pilot's own always, another's while Other Airplanes is on.
+    let follow: Bool
     let fly: () -> Void
     @Environment(Plan.self) private var plan
     @Environment(\.cardExpanded) private var expanded
@@ -61,17 +64,19 @@ struct AirplanePlaceHead: View {
             .disabled(flying)
             .accessibilityLabel(flying ? String(localized: "Flying This Airplane") : Wording.flyThisAirplane)
             .accessibilityIdentifier("fly-this-airplane")
-            Menu {
-                if let hex {
-                    Toggle("Tell Me When It Takes Off", isOn: watch(hex, .takeoff))
-                    Toggle("Tell Me When It Lands", isOn: watch(hex, .land))
+            if follow {
+                Menu {
+                    if let hex {
+                        Toggle("Tell Me When It Takes Off", isOn: watch(hex, .takeoff))
+                        Toggle("Tell Me When It Lands", isOn: watch(hex, .land))
+                    }
+                } label: {
+                    ActionFace(systemImage: following ? "bell.fill" : "bell", title: "Follow")
                 }
-            } label: {
-                ActionFace(systemImage: following ? "bell.fill" : "bell", title: "Follow")
+                .glassButton()
+                .disabled(hex == nil)
+                .accessibilityIdentifier("airplane-follow")
             }
-            .glassButton()
-            .disabled(hex == nil)
-            .accessibilityIdentifier("airplane-follow")
             FavoriteToggle(starred: starred) { if let kept { tracking.toggleFavorite(kept, undo: undoManager) } }
                 .disabled(kept == nil)
                 .accessibilityIdentifier("airplane-favorite")

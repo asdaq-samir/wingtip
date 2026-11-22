@@ -1,5 +1,6 @@
-"""ingest's history jobs, for the Studio's replay of a real flight: what
-is kept of each day as it passes, and what is fetched once a month.
+"""ingest's history jobs, for an airplane's history (its card's NTSB
+cases): what is kept of each day as it passes, and what is fetched once a
+month.
 
 - Each hour, the NOTAM store and the TFR list merged into the day's
   archive (wingtip.history.notam_archive): no one keeps past NOTAMs, so

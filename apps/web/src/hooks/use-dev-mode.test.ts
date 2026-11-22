@@ -5,7 +5,6 @@ describe("the app's pages", () => {
   it("knows each by its address", () => {
     expect(modeOf("/plan")).toBe("pilot");
     expect(modeOf("/dev")).toBe("developer");
-    expect(modeOf("/studio")).toBe("studio");
   });
 
   it("carries the route between them and nothing of a page's own", () => {

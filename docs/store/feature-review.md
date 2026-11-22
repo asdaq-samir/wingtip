@@ -4,9 +4,8 @@ For the owner to decide, before the store submission and after the pilot
 beta ([beta.md](beta.md)). It lists every feature no pilot has asked for:
 built from the roadmap, an audit or a market-gap survey, not from a
 pilot's request. For each: who it is for, what it costs to keep, and a
-recommendation, with the reason. Nothing here changes code. Each
-decision becomes an `owner` issue, and a cut or a park is then its own
-branch.
+recommendation, with the reason. The tables below are the review as
+written; "Applied" says what the code now does.
 
 - **Keep**: as it is.
 - **Park**: the code stays, but the feature is off by default behind a
@@ -15,6 +14,62 @@ branch.
   of the beta's way, without losing it.
 - **Cut**: deleted, with its tests, feeds and docs. "Break freely until
   launch" makes that cheap now.
+
+## Applied (2026-11-21)
+
+The owner took every recommendation on 2026-11-21 (decision
+[0060](../decisions/0060-feature-review-keep-park-cut.md)), and the
+branch `claude/feature-review` applied them.
+
+**The parks.** Each parked feature is one stock switch, off to start, in
+a new Settings group, **Extras**, right after In Flight on each app
+([../navigation.md](../navigation.md), "Settings' Extras", lists what
+each hides):
+
+| Park | Its switch |
+|---|---|
+| ATC copilot and clearance listener | Extras › ATC Copilot (`atcCopilot`) on the web (`apps/web/src/lib/extras.ts`), the iPhone (`apps/ios/Wingtip/Extras.swift`) and Android (`apps/android/app/src/main/kotlin/app/wingtipmaps/android/Extras.kt`); the in-flight Copilot is not parked. Android also declares no microphone foreground service |
+| Cockpit ADS-B receiver | Extras › ADS-B Receiver (`adsbReceiver`), iPhone and Android; Android declares no connected-device foreground service |
+| Another airplane's flights, Follow and history | Extras › Other Airplanes (`otherAirplanes`), all three apps; the pilot's own airplane keeps all of it (web `lib/airplane/ownAirplane.ts`, iPhone `Extra.airplaneHistory`, Android `airplane/OtherAirplanes.kt`) |
+| Model weather (the flow layer) | Extras › Model Weather (`modelWeather`), all three apps; the weather service fetches the layer only with `WEATHER_FLOW_ON` (`services/weather/app/settings.py`: off by default and on production, `infra/docker-compose.prod.yml`; on locally and on CI so its specs run) |
+| 3D terrain and airspace | Extras › 3D (`threeD`), the web only |
+| The Apple Watch app | No switch: `apps/ios/project.yml` no longer embeds `WingtipWatch` (its target, tests and scheme stay) |
+| Ask on Android | Extras › Ask (`ask`), and ML Kit GenAI out of the build: `genai-prompt` only with `-Pwingtip.genai=true` (`apps/android/app/build.gradle.kts`, `src/genai` or `src/nogenai`'s `NanoClient`) |
+| The MCP connector | No app switch: `MCP_ENABLED=false` on production (`infra/docker-compose.prod.yml`), so no client registers |
+| Practice and drills | Extras › Training Tools (`trainingTools`), the web and the iPhone (Android has no Practice); the diversion drill stays Nearest's |
+
+A test of a parked feature turns its switch on first (the web's
+`e2e/extras.ts` `extrasOn`, the iPhone's launch argument
+`-extras.<key>`; Android's tests pass the switch in), and the listing,
+screenshots, review notes and privacy answers leave them out
+([listing.md](listing.md), [privacy-labels.md](privacy-labels.md)).
+
+**The cuts.** Studio and the crash videos (the web's `features/studio`
+and the replay's export parts, the planner's studio routers,
+`services/jobs/crash`, `tools/msfs-agent`, `tools/xplane-driver`,
+`infra/sim-trial`, the `crash-leads` service, the `sim` and `xplane`
+check areas) moved to a local repository of their own,
+`~/Developer/wingtip-studio`, with a history of the commits that made
+them. The subscription's leftovers are deleted (the gateway's V52 drops
+`subscriptions`, V46 having dropped `paid_feature_uses`). adsb.fi is gone as a source,
+its credits with it.
+
+**Where the code departs from this review:**
+
+- **The iPhone keeps the `audio` background mode.** The review took it
+  for the radio's alone; the alerts ahead said aloud with the phone
+  locked (`SpokenAlerts`, `CopilotVoice`) need it too, a safety
+  feature. The review notes now give the spoken alerts as its reason
+  (listing.md).
+- **Follow's background rounds go to adsb.lol**, not adsb.fi: its
+  globe's recent trace first, then its API by the address, with
+  `ADSBLOL_API_KEY` now given to ingest (`wingtip/traffic/watched.py`).
+  ADS-B Exchange's paid month is left to an open card. What adsb.fi
+  alone heard (some UAT rebroadcasts) is not followed in the background.
+- Two smaller ones: model weather is off on production by the server's
+  setting rather than fetched "only while someone has it on", and
+  another airplane's history is parked on the web too, not only in the
+  store apps, so the three apps agree.
 
 ## How the cost is counted
 

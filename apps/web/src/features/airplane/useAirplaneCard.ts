@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { airplaneDetailsQuery, airplanePhotoQuery } from "../../lib/airplane/details";
 import { useTailLookup } from "../../lib/airplane/lookup";
+import { useAirplaneHistory } from "../../lib/airplane/ownAirplane";
 import { pastFlightsQuery } from "../../lib/airplane/pastFlightsQuery";
 import { useAddress } from "../../lib/address";
 import { aircraftKind } from "../../lib/aircraftKind";
@@ -28,9 +29,12 @@ export function useAirplaneCard(tail: string) {
   // above, so the card never waits on them (lib/airplane/details).
   const details = useQuery({ ...airplaneDetailsQuery(tail), enabled: !!tail });
   const photo = useQuery({ ...airplanePhotoQuery(tail), enabled: !!tail });
+  // Its flights, Follow and history: the pilot's own always, another's while Other Airplanes is
+  // on in Settings' Extras (lib/airplane/ownAirplane), else neither offered nor fetched.
+  const history = useAirplaneHistory(hex, tail);
   // Its flights, newest first: the Flights tab's list (PastFlights, the same query) and the status
   // line's last landing. Undefined while still being looked for, back through the archive.
-  const past = useInfiniteQuery({ ...pastFlightsQuery(hex ?? "", null), enabled: !!hex });
+  const past = useInfiniteQuery({ ...pastFlightsQuery(hex ?? "", null), enabled: !!hex && history });
   const listed = past.data?.pages.flatMap((page) => page.flights ?? []);
   const flights = listed?.length || (past.data && !past.hasNextPage) ? listed : undefined;
   // Kept as the flight card keeps one (FlightCard's Favorite): by its address, its N-number its name.
@@ -49,6 +53,8 @@ export function useAirplaneCard(tail: string) {
     detailsFailed: details.isError,
     photo: photo.isError ? null : photo.data,
     hex,
+    /** Whether its Follow, flights and history are offered (useAirplaneHistory). */
+    history,
     /** Under its name: "Piper PA-28-140, 1971", the registry's; null where it has none. */
     line,
     status: statusLine(inAir, flights, now),
@@ -69,7 +75,7 @@ export function useAirplaneCard(tail: string) {
       }),
     /** One of its past flights' cards, its replay, over this one (PastFlightCard, `?flight=&past=`). */
     openPast: (id: number) => {
-      if (hex) void setAddress({ flight: hex, past: id, place: null, at: null, near: null, nearAt: null, nearName: null });
+      if (hex && history) void setAddress({ flight: hex, past: id, place: null, at: null, near: null, nearAt: null, nearName: null });
     },
   };
 }

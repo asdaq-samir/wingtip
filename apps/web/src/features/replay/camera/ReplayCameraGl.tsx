@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useGlMap } from "../../../lib/map/gl/glLayer";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { usePastFlight } from "../../../lib/replay/clock";
-import { useExporting } from "../export/exportStore";
 import { useReplayCamera } from "../../../lib/replay/camera/cameraStore";
 import { replayView, showView } from "./cameraView";
 
@@ -12,20 +11,16 @@ const CAMERA_MAX_ZOOM = 18;
 
 /**
  * The replay's camera on the 3D view (TerrainGl mounts it): the camera
- * picked (useReplayCamera), or the keyframes where they are followed,
- * moved each frame to where the replay's airplane is (the map's one
- * replay clock, usePastFlight; cameraView's replayView, which a video's
- * export takes each frame too), as the pilot's view moves its own; idle
- * with none picked; still while a video is rendered, which moves the
- * camera itself. Own ship's following is let go while it runs and given back
- * after. In a gap the camera holds where it was: the airplane is not
+ * picked (useReplayCamera), moved each frame to where the replay's
+ * airplane is (the map's one replay clock, usePastFlight; cameraView's
+ * replayView), as the pilot's view moves its own; idle with none picked.
+ * Own ship's following is let go while it runs and given back after. In a gap the camera holds where it was: the airplane is not
  * known to have been anywhere.
  */
 export default function ReplayCameraGl() {
   const { map } = useGlMap();
   const kind = useReplayCamera((s) => s.kind);
-  const keyed = useReplayCamera((s) => s.keyed);
-  const active = kind !== null || keyed;
+  const active = kind !== null;
   useEffect(() => {
     if (!active) return;
     const wasFollow = useOwnShip.getState().follow;
@@ -35,20 +30,20 @@ export default function ReplayCameraGl() {
     const el = map.getContainer();
     let frame = 0,
       shownAt: number | null = null;
-    // Drawn in the frame after the replay's clock, the camera or the
-    // export changes, and each frame only while an orbit turns by itself:
+    // Drawn in the frame after the replay's clock or the camera
+    // changes, and each frame only while an orbit turns by itself:
     // a paused replay ran a frame loop for nothing, writing the same
     // camera name on the map at every one (the waste audit of 2026-11-21,
     // item 14).
     const step = (now: number) => {
       frame = 0;
       const cam = useReplayCamera.getState();
-      const name = cam.keyed ? "keyframes" : (cam.kind ?? "");
+      const name = cam.kind ?? "";
       if (el.dataset.replayCamera !== name) el.dataset.replayCamera = name;
       const { at } = usePastFlight.getState();
-      if (useExporting.getState().running || at === null) return;
+      if (at === null) return;
       // The orbit goes round by itself; the rest move only with the replay.
-      const turning = cam.kind === "orbit" || (cam.keyed && cam.keys.some((k) => k.kind === "orbit"));
+      const turning = cam.kind === "orbit";
       if (turning) ask();
       if (at === shownAt && !turning) return;
       const view = replayView(map, at, now / 1000);
@@ -59,14 +54,13 @@ export default function ReplayCameraGl() {
     const ask = () => {
       if (!frame) frame = requestAnimationFrame(step);
     };
-    // A keyframe added or changed, or another camera picked: shown again.
+    // Another camera picked: shown again.
     const unsubscribe = [
       useReplayCamera.subscribe(() => {
         shownAt = null;
         ask();
       }),
       usePastFlight.subscribe(ask),
-      useExporting.subscribe(ask),
     ];
     ask();
     return () => {

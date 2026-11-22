@@ -16,7 +16,6 @@ Each fact lives in one doc; the others link to it.
 | [OPERATIONS.md](OPERATIONS.md) | What is monitored (services, live feeds, faults and speed from devices), the thresholds, and where alerts go |
 | [RUNBOOKS.md](RUNBOOKS.md) | What to do for each production alert: a service down, a feed outage, a bad or late FAA cycle, the disk filling, a rollback, a Spot interruption, certificate renewal, restoring a backup (and its drill), reading the logs, the load test |
 | [TESTING-AFTER-MERGE.md](TESTING-AFTER-MERGE.md) | The campaign run once a wave is merged: the restore drill, stress, soak, spike, chaos, the cycle changeover rehearsal and the security scans, each with its limit and time, the one command, and how to read its report |
-| [STUDIO-PIPELINE.md](STUDIO-PIPELINE.md) | The Studio's crash films: the stages from an FAA report to a film, what is automatic and what a person does, and the rules (identity by three sources, "preliminary", no cause, no names, the hold, publishing a person's) |
 | [decisions/](decisions/README.md) | The owner's standing decisions, one page each with the reason, so none is undone by accident |
 | [LEARNING-GUIDE.md](LEARNING-GUIDE.md) | Why it is built this way, concept by concept, to build something like it yourself |
 | [SECURITY.md](SECURITY.md) | The security audit's findings and what changed, the standing security decisions (public API documents, open Dependabot alerts), and the owner's console steps |
@@ -54,8 +53,7 @@ Each fact lives in one doc; the others link to it.
 | [legal/](legal/privacy.md) | The privacy policy, terms, credits and support pages |
 | [store/listing.md](store/listing.md) | The App Store and Google Play listings and review notes; [store/privacy-labels.md](store/privacy-labels.md) the stores' privacy answers, [store/preview-video.md](store/preview-video.md) the App Preview's plan |
 | [store/beta.md](store/beta.md) | The pilot beta on TestFlight and Play internal testing: what the builds do, the owner's steps, the notes and the invitation ([store/beta/invitation.md](store/beta/invitation.md)) |
-| [store/feature-review.md](store/feature-review.md) | Keep, park or cut: each feature's pilots, cost and a recommendation, for the owner |
-| [SIM-EXPORT.md](SIM-EXPORT.md) | The Studio's "Export for simulator": each file, what is estimated, and how to replay it in MSFS (FlightControlReplay, Sky Dolly), X-Plane 12 and Google Earth |
+| [store/feature-review.md](store/feature-review.md) | Keep, park or cut: each feature's pilots, cost and a recommendation, taken by the owner on 2026-11-21 (decision 0060), and where each park's switch is |
 | [XPLANE-TRIAL.md](XPLANE-TRIAL.md) | The X-Plane 12 trial on the Mac: the demo, the replay plugin (tools/xplane-driver), the steps with times, what to judge, AutoOrtho |
 | [SIM-FLIGHT.md](SIM-FLIGHT.md) | The scripted test flight: X-Plane (or MSFS) flies KMSN to KOSH's RNAV 36 while the web app follows it as its GPS and the phones hear it as GDL 90; what it checks, how and when to run it (weekly, before a release), the report |
 | [GOOGLE-MAPS.md](GOOGLE-MAPS.md) | The map's imagery under the chart: the USGS's, and Google's with the owner's key |

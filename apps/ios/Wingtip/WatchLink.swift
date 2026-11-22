@@ -32,12 +32,20 @@ final class WatchLink: NSObject, WCSessionDelegate {
 
     override init() { super.init() }
 
+    /// Whether this build carries the watch app, in the app's Watch folder.
+    /// It is parked and left out of the iPhone's build (project.yml; the
+    /// feature review, 2026-11-21), and without it no session is
+    /// activated, nothing is sent and nothing is answered.
+    nonisolated static var bundled: Bool {
+        FileManager.default.fileExists(atPath: Bundle.main.bundleURL.appending(path: "Watch").path(percentEncoded: false))
+    }
+
     /// Activated, then kept up: every few seconds the picked airplane's
     /// checklist (kept on this phone) and the fix are sent,
     /// where the phone has a paired watch with the app on it. Returns
     /// only when the task that runs it is cancelled.
     func run(plan: Plan, ownShip: OwnShip) async {
-        guard WCSession.isSupported() else { return }
+        guard WCSession.isSupported(), Self.bundled else { return }
         let session = WCSession.default
         session.delegate = self
         session.activate()

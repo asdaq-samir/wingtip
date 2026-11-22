@@ -268,8 +268,8 @@ jobs:
           SERVICE: ${{ matrix.service }}
         run: scripts/ci/python_suite.sh "$SERVICE"
 
-  # The MSFS replay agent's build, format and unit tests (scripts/ci/sim_suite.sh,
-  # dotnet in Docker), when tools/msfs-agent or the trial's files changed.
+  # The test flight's ruff and unit tests (scripts/ci/sim_suite.sh, in
+  # Docker), when tools/sim-flight or what its tests read changed.
   test-sim:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
@@ -562,9 +562,6 @@ jobs:
                 - apps/web/public/terms.html
                 - apps/web/public/support.html
               sim:
-                - tools/msfs-agent/**
-                - tools/xplane-driver/wingtip_replay/shots.schema.json
-                - infra/sim-trial/**
                 - scripts/ci/sim_suite.sh
                 - tools/sim-flight/**
                 - scripts/dev/sim-flight.sh

@@ -145,8 +145,9 @@ Each step needs the one before it:
       audit, 2026-11-21).
 - [ ] Optional: request the Private Cloud Compute entitlement
       (`apps/ios/project.yml`, `WingtipPrivateCloudCompute`).
-- [ ] A distribution certificate, and App Store profiles for the app,
-      the widgets and the watch app; check the archived app's
+- [ ] A distribution certificate, and App Store profiles for the app
+      and the widgets (no watch app: it is parked and not embedded,
+      `apps/ios/project.yml`); check the archived app's
       `aps-environment` is `production`
       (`codesign -d --entitlements - <app>`).
 - [ ] A Sign in with Apple key, for the gateway to revoke a deleted
@@ -179,25 +180,22 @@ Each step needs the one before it:
       and CryptoKit hashing only); nothing to upload.
 - [ ] App Review information: the notes in listing.md, the demo account
       (the review account's address and code, below), and the screen
-      recording of the copilot listening with the phone locked.
+      recording of an alert ahead said aloud with the phone locked, for
+      the `audio` background mode (listing.md).
 - [ ] Screenshots: iPhone 6.9" ×5 and iPad 13" ×2 from
-      `docs/store/screenshots/`, and at least one Apple Watch screenshot,
-      which App Store Connect asks of an app that has a Watch app (the
-      shot list is in `screenshots/README.md`, "Still to take"; not yet
-      captured).
+      `docs/store/screenshots/`. No Apple Watch screenshot: the build
+      embeds no Watch app.
 
 ## Data the apps show under someone else's terms
 
 App Review 5.2.2 asks that an app showing a third-party service's
 content be "specifically permitted to do so under the service's terms of
 use", with the authorization given on request; Play's Intellectual
-Property policy asks the same. Two of the traffic sources credited in
-About (docs/legal/credits.md) carry non-commercial terms:
+Property policy asks the same. adsb.fi, whose terms are personal and
+non-commercial, was cut as a source on 2026-11-21 (feature-review.md);
+one traffic source credited in About (docs/legal/credits.md) is left to
+check:
 
-- [ ] adsb.fi: "Personal, non-commercial use, credited and linked".
-      Ask adsb.fi in writing for use in an app distributed on the App
-      Store and Google Play, or turn the source off for the store builds
-      (the planner's traffic sources, docs/privacy-inventory.md).
 - [ ] ADS-B Exchange (RapidAPI): check that the plan the key is on allows
       a published app, or ask ADS-B Exchange for a licence.
 - [ ] Keep each answer where a reviewer's request can be met at once.
@@ -228,12 +226,13 @@ About (docs/legal/credits.md) carry non-commercial terms:
 - [ ] Data safety: the answers in privacy-labels.md, with the deletion
       URL `https://wingtipmaps.app/delete-account`; check each Google
       SDK's entry in Play's SDK Index (`play-services-location`, ML Kit's
-      document scanner and text recognition) first.
-- [ ] Foreground services: a declaration for each of `location`,
-      `microphone` and `connectedDevice` (the description, the impact if
-      deferred, the use case and a video). preview-video.md's shot list
-      covers the copilot and the flight recorder; film the ADS-B
-      receiver's setup too.
+      document scanner and text recognition) first. The store build has
+      no ML Kit GenAI (`-Pwingtip.genai=true` only).
+- [ ] Foreground services: the declaration for `location`, the one type
+      this build declares (the description, the impact if deferred, the
+      use case and a video; foreground-services.md, preview-video.md).
+      The microphone and connected-device types left with the parked
+      copilot and receiver.
 - [ ] App access: the review account's instructions from listing.md.
 - [ ] Phone screenshots, at least two (Play needs two to publish):
       `screenshots/android-phone/`, not yet captured (screenshots/README.md,
@@ -259,7 +258,7 @@ decision, not a console step:
 - [ ] The beta's outcome folded into the feature review
       ([feature-review.md](feature-review.md)) before the listing's
       words are final: a feature cut or parked leaves the listing and
-      the screenshots too.
+      the screenshots too. Its first round is applied (2026-11-21).
 
 ## Google Cloud
 

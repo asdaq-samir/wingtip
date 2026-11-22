@@ -43,8 +43,13 @@ class WingtipApplication : Application(), SingletonImageLoader.Factory {
         // The plates kept by state gone on with, and updated once their
         // cycle is replaced: WorkManager's check, queued where one is kept.
         StatePlatesWorker.atStart(this)
+        // The parked features' switches (Settings' Extras), for the code
+        // with no context that reads them (Nano, a word typed): one small
+        // file, read once.
+        Extras.of(this)
         // Ask on the phone (Gemini Nano with the app's own tools): only the
-        // application kept, nothing asked of AICore until Ask is used.
+        // application kept, nothing asked of AICore until Ask is used, and
+        // not then while Extras has it parked.
         OnPhoneAsk.attach(this)
         // The IFR alternate filed last: one preference read, for the plan.
         PlanAlternate.attach(this)

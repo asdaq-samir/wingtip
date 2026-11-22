@@ -1,6 +1,6 @@
 """The NTSB's aviation database, fetched when the NTSB remakes it and read
-into the store the planner asks (wingtip.history.ntsb), for the Studio's
-replay of a real flight.
+into the store the planner asks (wingtip.history.ntsb), for an
+airplane card's NTSB cases.
 
 data.ntsb.gov/avdata gives every case since 2008 as one Access database,
 avall.zip (97 MB, avall.mdb inside, 564 MB, on 2026-11-12), remade on the

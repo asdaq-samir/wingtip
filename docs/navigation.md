@@ -216,14 +216,14 @@ list is where it was.
 | Favorites, Recents (airports' and airplanes') | search → Favorites / Recents | 2 | Drag to reorder (Edit's grip), swipe left to remove (a full swipe removes), Undo in the toast; the airplanes after the airports in each, and in the search page's rows |
 | Nearest | search → Nearest; search → Do → Nearest | 2 | Change the place it is from in the one search's field, scoped to it (no second field) |
 | Airplane profile | an N-number tapped; a search result (yours, the FAA registry's) | 1, 2 | **Fly This Airplane (new)**; every figure edited in place; a card in the sheet over the search with ✕ (one card rule, 2026-11-10; was a dimmed sheet on a phone) |
-| Airplane card, past flight | Tap traffic; the airplane found in the one search (heard on the map by callsign or address, kept, or the FAA registry's in the air); a Favorite's or Recent's tile; its past row | 1, 2 | Replay; search → Do → Show Traffic turns the traffic on the map. The traffic's own page, with a second search field, went for the one search (the owner, 2026-11-14), and an old `?aircraft=1` link lands on the search |
+| Airplane card, past flight (another airplane's past flights with Extras' Other Airplanes on) | Tap traffic; the airplane found in the one search (heard on the map by callsign or address, kept, or the FAA registry's in the air); a Favorite's or Recent's tile; its past row | 1, 2 | Replay; search → Do → Show Traffic turns the traffic on the map. The traffic's own page, with a second search field, went for the one search (the owner, 2026-11-14), and an old `?aircraft=1` link lands on the search |
 | Your Airplane or an airplane kept, added | search → Favorites' Add → Airplane; the Airplane tile's Add | 1 → 2 | The one search asks for it ("Search for your airplane", "Search for an airplane to keep"); the one picked is kept, not opened |
 | A route point's airport picked | its pill or its menu's Change → the one search, scoped ("Search for a destination") | 1 → 2, as before | Enter takes what is typed until the rows answer it; picked, back where it was asked from |
 | Questions (Ready to Fly's prompt, a source's report as sent) | as they come; a source chip | 0 / 1 | SheetDialog: a sheet from the bottom on a phone with its ✕ (Fly Anyway the prompt's answer), a dialog from `md` up |
 | Map card (was the Map menu) | Map button | 1 | A card in the sheet over the search, as Apple Maps' Choose Map card (the owner, 2026-11-10): the charts as picture tiles (a tap applies), then the weather, the base map ("Overlay" until 2026-11-14), every switch and the alerts in place; its ✕ goes back to the sheet as it was; its Search row focuses the search |
 | Emergency assistant | Flying head; voice; search → Do → Emergency Assistant | 1 in flight, **2** on the ground | Its frequencies copy; the one full-height card, ✕ top right, nothing dimmed |
-| Settings (was Account and Settings, Setup) | account button (the page itself, no menu: the owner, 2026-11-10) | 1 → 2 → **1** | Layout tiles in place; covers the title row and the search, its ✕ back |
-| Airplanes, Flights, Logbook, Minimums, Documents, Checklists, Coach, Practice | account button → row on the page | 2 | Minimums inline; logbook entry edited in the row, delete with an Undo row; airplane in a popover form |
+| Settings (was Account and Settings, Setup) | account button (the page itself, no menu: the owner, 2026-11-10) | 1 → 2 → **1** | Map, In Flight, Extras, Data, Help & About; layout tiles in place; covers the title row and the search, its ✕ back |
+| Airplanes, Flights, Logbook, Minimums, Documents, Checklists, Coach, Practice (with Extras' Training Tools on) | account button → row on the page | 2 | Minimums inline; logbook entry edited in the row, delete with an Undo row; airplane in a popover form |
 | Documents (new, 2026-11-21) | account button → Documents; the search's Do ("documents"); a cite tapped anywhere (the Brief's why, an airspace card's entry rules) opens the reader at its paragraph | 2; a cite **1** | Own PDFs added, renamed in the row, deleted with an Undo; Keep for the Air at each row's end; the reader's bookmarks and its page left at kept on the device; `?doc=` (`aim@7-1-5`, `cfr-14-91@91.155`, `phak@p42`) opens the reader from a link on the web and the iPhone and iPad (a `doc` key of design/screens.json), and on Android (`Links.Doc`; there a PDF shared in from another app is kept and opened, and on a tablet the reader opens beside the library and the map, android.md 3.21). On the iPhone and iPad (2026-11-21): the same row on You, own PDFs also from the share sheet and by drag and drop, Keep in iCloud (off by default), the reader's Contents in the inspector beside the page on an iPad, Markup with Apple Pencil, a document in a window of its own (Open in New Window), ⌘F, ⌘[ and ⌘] |
 | Status, Guide, About | account button → row on the page; About also the map's or the search page's Legal | 3 → **2** | -- |
 | Checkride, Instructing | account button → Logbook → row | 3 | Checkride inline |
@@ -275,9 +275,9 @@ taps by shaking the iPhone or ⌘Z.
 | Undo | the undo bar at the plan's foot after a change (was the route card's ••• → Undo, 2); shake; ⌘Z | 2 → **1**, shake 0 | -- |
 | Nearest | the instruments bar; the search's All Nearest; the plan's Nearest for a Diversion; Siri | 1–2 | **One list** from every way in: Divert on a swipe or a hold, Diversion Drill |
 | Map card (new) | the map's own Map button; Settings' Map row | **1** (was 2, Settings) | The layers, airport weather, traffic, the weather loop and the alerts, each switch in place |
-| Settings (was Setup) | the account button, opening Settings with no menu between (the owner, 2026-11-10) | 1 → 1 | Every switch and picker in place; Sign In or the account's page with Sign Out |
-| Settings' pages (Logbook, Coach, Minimums, Guide, Downloads, About, Practice, Your Airplanes, Checklists, Map) | the account button → row (pushed in the Settings card) | 2 → 2 | Logbook entry edited in the row; swipe delete with an Undo row |
-| Hold, Clearance (forms) | a point's Hold Here…; the radio's button, shown only with Comms Assist on (Settings › In Flight › ATC, off by default; the owner, 2026-11-13) | 2 / 1 | Cancel and Add / Done; with an edit, a swipe down is held and Cancel asks first |
+| Settings (was Setup) | the account button, opening Settings with no menu between (the owner, 2026-11-10) | 1 → 1 | Map, In Flight, Extras, Data, Help & About; every switch and picker in place; Sign In or the account's page with Sign Out |
+| Settings' pages (Logbook, Coach, Minimums, Guide, Downloads, About, Practice with Extras' Training Tools on, Your Airplanes, Checklists, Map) | the account button → row (pushed in the Settings card) | 2 → 2 | Logbook entry edited in the row; swipe delete with an Undo row |
+| Hold, Clearance (forms) | a point's Hold Here…; the radio's button, shown only with Settings › Extras › ATC Copilot on and then Comms Assist on (Settings › In Flight › ATC, off by default; the owner, 2026-11-13) | 2 / 1 | Cancel and Add / Done; with an edit, a swipe down is held and Cancel asks first |
 | Emergency | the instruments bar; Settings' Emergency row; "mayday" in the search | 1 / 2 | Full screen, close at the top right; its frequencies copy |
 | An alert ahead, a copilot message | the banner | 0 | Tapped: the airspace card; the message's Direct To and More Info |
 
@@ -304,19 +304,44 @@ in the search is not counted.
 | Brief | the flight's card → Brief; or search "brief" | 2 → 2 | Departure hour; Ready to Fly at its head; under IFR the Alternate (14 CFR 91.169): an alternate filed from those that will do, or taken off, as the web's (2026-11-10) |
 | Airport card | search → the field; tap it on the map; a list row; the plan's field | 1 + typing (map 1) | Fly Here (with its time), Add as Stop, Call and Favorite under its head, in sight at half; Overview, Weather, Frequencies, Runways, Charts, NOTAMs pinned right under them, and the field's report in a line |
 | A fix, VOR, airspace, traffic, What's Here | tap it on the map; an alert; a point's More Info | 1 | its actions |
-| Airplane card (the one airplane card) | the flight's card → Airplane; search → an airplane; Ready to Fly's Pick an Airplane; a logbook N-number | 2 → 2 | The flown airplane's picker, registration (suggesting as typed), passengers, Your Airplanes; every figure a tap to edit; Fly This Airplane. An N-number's: Fly This, Follow, Favorite, Share; Flights (▶ replays one), Info, Figures |
+| Airplane card (the one airplane card) | the flight's card → Airplane; search → an airplane; Ready to Fly's Pick an Airplane; a logbook N-number | 2 → 2 | The flown airplane's picker, registration (suggesting as typed), passengers, Your Airplanes; every figure a tap to edit; Fly This Airplane. An N-number's: Fly This, Favorite, Share, Info, Figures; Follow and Flights (▶ replays one) on the pilot's own, or on any with Extras' Other Airplanes on |
 | Checklists | Airplane → Checklists tab → a checklist (on the card's stack) | 3 → 3 | Ticks; Edit as text |
 | You | the avatar | 1 | Pilot Details, Airplanes, Flights, Logbook, Minimums, Training, Emergency, Connected Apps; a swipe down closes it |
-| Settings | the avatar → its gear; also the Map card's gear | 2 | Map, In Flight, Data, Help & About (Sunlight is the Map card's Look since 2026-11-14); a swipe down closes it |
+| Settings | the avatar → its gear; also the Map card's gear | 2 | Look, Map, In Flight, Extras, Data, Help & About (Sunlight is the Map card's Look since 2026-11-14); a swipe down closes it |
 | Saved Flights | the avatar → Flights | 2 | A flight planned again with a tap |
 | Map card (no Map Settings page; the owner, 2026-11-13) | the map's Layers button; or search "map" / "layers" | 1 (+ typing 0) | Four sections of four tiles each, Chart, Base map, Layers and Look (Theme, Appearance, Sunlight, Own Ship; the owner, 2026-11-14), each a tap; the terminal charts always drawn, no switch; its gear opens Settings at its Map group (Airport Weather, glide ring) |
 | Logbook, Training (the Coach) | the avatar → its row | 2 | Logbook entries edited in the row; Delete with an Undo |
 | Downloads, Passenger Briefing, ATC, About | the avatar → its gear → Settings' row (Data, In Flight, Help & About) | 3 | Downloads delete with no confirm or Undo |
-| Clearance | search "clearance" or "radio"; the strip's chip | typing / 1 | Listen, Enter the Route |
+| Clearance (with Extras' ATC Copilot on) | search "clearance" or "radio"; the strip's chip | typing / 1 | Listen, Enter the Route |
 | Dry run | the plan's Dry Run; or search "dry run" (with a route) | 2 / typing | Play, speed, forecast; Back ends it |
 | Emergency (a card on the sheet's stack, opened at full height) | Instruments bar; search "emergency"; You → Emergency | 1 | Its frequencies copy; the card bar's ← and ✕; closed by ✕ alone, never a swipe |
 | Alerts ahead, a copilot message | the banner | 1 | Tapped: the Ahead sheet, More Info on a Class B, C or D; the message's Fly to and More Info |
-| Nearest, Ask | Instruments bar; the sparkle; Nearest also under the search | 1 | a field opens on Nearest's stack |
+| Nearest, Ask (Ask with Extras' Ask on, on a phone with Gemini Nano, in a build with `-Pwingtip.genai=true`) | Instruments bar; the sparkle; Nearest also under the search | 1 | a field opens on Nearest's stack |
+
+### Settings' Extras: the parked features
+
+The feature review (store/feature-review.md, the owner's word of
+2026-11-21) parks a feature by one stock switch, off to start, in a
+Settings group of its own, **Extras**, right after In Flight on each
+app. A feature parked stays in the code and its tests; while its switch
+is off it is not shown, started or fetched, and a setting inside it
+saved on before acts as off. Kept on the device: the web's
+`lib/extras.ts` (`wingtip.extras`), the iPhone's `Extras.swift`
+(UserDefaults `extras.<key>`), Android's `Extras.kt` (`extras.<key>`).
+
+| Row (key) | Web | iOS | Android | Not reachable while it is off |
+|---|---|---|---|---|
+| ATC Copilot (`atcCopilot`) | yes | yes | yes | The radio's button (the web's map mic circle and radio layer), the clearance card and its listener, the strip's Clearance chip (phones), and the ATC page's Comms Assist and ATC Alerts rows. The ATC page keeps the in-flight Copilot (field advice), which is not parked |
+| ADS-B Receiver (`adsbReceiver`) | -- | yes | yes | The cockpit receiver's socket, its chip on the map, its FIS-B reports and NEXRAD, its Ready to Fly item, and its Auto/Off picker (iOS in Data, Android in In Flight) |
+| Other Airplanes (`otherAirplanes`) | yes | yes | yes | For an airplane not the pilot's own (on their records, or the one the plan flies): Follow, the Flights tab, past flights and their replay, NTSB cases, ownership history, documents filed and "usually based at". Its saved alerts are kept but not watched. The pilot's own airplane keeps all of it |
+| Model Weather (`modelWeather`) | yes | yes | yes | The flow layer's choice on the Map card; nothing of it is fetched or drawn |
+| 3D (`threeD`) | yes | -- | -- | The map's 3D button, the clearance key's 3D and the dry run's pilot's view; the map stays flat |
+| Training Tools (`trainingTools`) | yes | yes | -- | Practice: the 91.125 light-signal and 91.155 flash cards, the holding-entry visualiser and the 91.185 lost-comms calculator (the web's Training page and Guide; the iPhone's You, Guide and Coach). The diversion drill on Nearest is not parked |
+| Ask (`ask`) | -- | -- | yes | Ask, the sparkle, AI words, Add from a Photo and Data's On-Phone AI row. The store build leaves ML Kit GenAI out besides (`-Pwingtip.genai=true` brings it back) |
+
+Parked without a switch in the apps: the MCP connector (the server's
+`MCP_ENABLED`, false on production) and the Apple Watch app (left out of
+the iPhone's build, `apps/ios/project.yml`).
 
 ## Contextual actions: where each lives
 

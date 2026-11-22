@@ -109,7 +109,7 @@ export const PANEL_LISTS = ["favorites", "recents", "routes"] as const;
 
 const ALTITUDE_CHOICES = ["fastest", "lowest", "highest", "economical"] as const satisfies readonly AltitudeChoice[];
 
-export const addressParsers = {
+const addressParsers = {
   // The route: its ends and its stops as typed (lib/identSchema reads them).
   dep: parseAsString,
   dest: parseAsString,

@@ -54,8 +54,8 @@ def status(hex_id: str) -> dict:
     if trace is UNREAD or (trace is None and _recorded(hex_id)):
         # No recent trace to read: the track recorded while its card was
         # open or it was followed, asked for now where nothing is (`_watch`:
-        # adsb.lol's API, adsb.fi, ADS-B Exchange), else unavailable -- the
-        # owner's N3429J said "adsb.lol did not answer" with adsb.fi hearing it.
+        # adsb.lol's API, ADS-B Exchange), else unavailable -- the owner's
+        # N3429J said "adsb.lol did not answer" while another network heard it.
         if not _recorded(hex_id):
             _watch(hex_id)
         recorded = _recorded(hex_id)

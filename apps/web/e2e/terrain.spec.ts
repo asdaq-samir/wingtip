@@ -2,7 +2,10 @@ import { test, expect, type Page } from "@playwright/test";
 import { closeProfile, openPanel, openProfile, pressDryRunStart, settle, sideDrawer, slow } from "./helpers";
 import { setMap3d } from "./mapCard";
 import { pickAirplane } from "./startState";
+import { extrasOn } from "./extras";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "threeD"));
 
 /**
  * The ground under the chart (features/plan-map/terrain): its relief

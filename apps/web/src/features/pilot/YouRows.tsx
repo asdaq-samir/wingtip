@@ -6,6 +6,7 @@ import { ConsolePages, PageRow } from "../../components/ConsolePages";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { RowBadge } from "../../components/RowBadge";
 import { aircraftKey, shortName } from "../../lib/aircraftChoice";
+import { useExtra } from "../../lib/extras";
 import { wantScreen } from "../../lib/navigation/wanted";
 import { usePreferences } from "../../lib/preferences";
 import { SETTING_BADGE } from "../../lib/rowBadges";
@@ -88,8 +89,10 @@ export function TrainingRow() {
 /** Training's page: the coach -- the pilot's logbook and flights read, so
  *  kept to an account as the Logbook is, greyed with no words signed out
  *  as the other account rows are ("Sign In" said once, on You's head) --
- *  and the drills: light gun, VFR minimums, holding entries, lost comms. */
+ *  and the drills: light gun, VFR minimums, holding entries, lost comms,
+ *  while Training Tools is on in Settings' Extras (lib/extras). */
 export function TrainingPage({ signedIn }: { signedIn: boolean }) {
+  const drills = useExtra("trainingTools");
   return (
     <ConsolePages
       back="Training"
@@ -117,16 +120,18 @@ export function TrainingPage({ signedIn }: { signedIn: boolean }) {
             </RowBadge>
           }
         />
-        <PageRow
-          page="practice"
-          title="Practice"
-          testId="practice-row"
-          media={
-            <RowBadge colour={SETTING_BADGE.practice}>
-              <Dumbbell />
-            </RowBadge>
-          }
-        />
+        {drills && (
+          <PageRow
+            page="practice"
+            title="Practice"
+            testId="practice-row"
+            media={
+              <RowBadge colour={SETTING_BADGE.practice}>
+                <Dumbbell />
+              </RowBadge>
+            }
+          />
+        )}
       </ListGroup>
     </ConsolePages>
   );

@@ -302,7 +302,7 @@ class Traffic(
         /** What the Open Database License asks of a map that draws
          *  adsb.lol's data: its source and the licence, named. */
         fun credit(source: String?): String {
-            val credits = mapOf("adsb.lol" to "Traffic adsb.lol, ODbL", "ADS-B Exchange" to "ADS-B Exchange", "adsb.fi" to "adsb.fi")
+            val credits = mapOf("adsb.lol" to "Traffic adsb.lol, ODbL", "ADS-B Exchange" to "ADS-B Exchange")
             val named = (source ?: "adsb.lol").split(" and ").mapNotNull { credits[it] }
             val first = named.firstOrNull() ?: return "Traffic adsb.lol, ODbL"
             return if (first == "Traffic adsb.lol, ODbL") named.joinToString(" · ") else "Traffic ${named.joinToString(" · ")}"

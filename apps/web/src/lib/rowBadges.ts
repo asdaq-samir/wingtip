@@ -20,7 +20,6 @@ export const SETTING_BADGE = {
   coach: BADGE.weather,
   practice: BADGE.chart,
   emergency: BADGE.hazard,
-  subscription: BADGE.food,
   connections: BADGE.approach,
   settings: BADGE.other,
   tips: BADGE.lights,

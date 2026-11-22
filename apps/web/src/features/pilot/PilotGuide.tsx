@@ -7,6 +7,7 @@ import { cn } from "cn";
 import { ConsolePages, StepRow } from "../../components/ConsolePages";
 import { PracticeGroup } from "./Practice";
 import { practicePages } from "./practicePages";
+import { useExtra } from "../../lib/extras";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { cruiseReferenceFt } from "../../lib/performance";
 import { TEXT } from "../../lib/text";
@@ -39,6 +40,8 @@ function Tip({ title, children }: { title: string; children: ReactNode }) {
  * open pages of their own.
  */
 export default function PilotGuide() {
+  // The drills' rows only while Training Tools is on in Settings' Extras (lib/extras).
+  const drills = useExtra("trainingTools");
   return (
     <ConsolePages back="Guide" pages={practicePages()}>
       <div className="space-y-6" data-testid="pilot-guide">
@@ -141,7 +144,7 @@ export default function PilotGuide() {
           </Tip>
         </ListGroup>
 
-        <PracticeGroup title="Practice" />
+        {drills && <PracticeGroup title="Practice" />}
       </div>
     </ConsolePages>
   );

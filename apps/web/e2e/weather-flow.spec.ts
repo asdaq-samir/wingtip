@@ -1,5 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
 import { grabberTo, openMapSettings, settle, slow, tapTheChart } from "./helpers";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "modelWeather"));
 
 /**
  * The model weather's flow layer (features/weather-flow, the owner's

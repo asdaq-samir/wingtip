@@ -1,6 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import { settle, slow } from "./helpers";
 import { setMap3d } from "./mapCard";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "threeD"));
 
 /**
  * The airspace stood up in 3D (features/plan-map/terrain/AirspaceVolumesGl):

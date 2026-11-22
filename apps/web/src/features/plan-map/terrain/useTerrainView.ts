@@ -1,4 +1,4 @@
-import { usePreferences } from "../../../lib/preferences";
+import { useExtra, useThreeD } from "../../../lib/extras";
 import { DRY_RUN, usePastFlight } from "../../plan";
 import { usePilotView } from "./pilotView";
 
@@ -15,8 +15,11 @@ export type TerrainMode = "shaded" | "3d";
  * script reads it to know whether to load the 3D code (TerrainGl) at all.
  */
 export function useTerrainView(): { mode: TerrainMode; pilot: boolean } {
-  const threeD = usePreferences((s) => s.threeD);
+  // Both flat while 3D is parked (Settings' Extras, lib/extras): the
+  // pilot's seat is the 3D ground's too.
+  const threeD = useThreeD();
+  const parked = !useExtra("threeD");
   const dryRunning = usePastFlight((s) => s.hex === DRY_RUN);
-  const pilot = usePilotView((s) => s.on) && dryRunning;
+  const pilot = usePilotView((s) => s.on) && dryRunning && !parked;
   return { mode: pilot || threeD ? "3d" : "shaded", pilot };
 }

@@ -1,7 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
 import { closeProfile, grabberTo, openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart, frontSheet } from "./helpers";
 import { pickAirplane } from "./startState";
+import { extrasOn } from "./extras";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "atcCopilot"));
 
 /**
  * Flying mode (useFlyingMode), the canvas's Flying screen: once own ship

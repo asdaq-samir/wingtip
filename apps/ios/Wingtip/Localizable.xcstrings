@@ -600,6 +600,9 @@
     "ATC Alerts" : {
 
     },
+    "ATC Copilot" : {
+
+    },
     "ATIS at ${airport}" : {
 
     },
@@ -1148,6 +1151,9 @@
     "Comms Assist" : {
 
     },
+    "Comms Assist, ATC alerts and the clearance readback check" : {
+
+    },
     "Compass Heading" : {
 
     },
@@ -1613,6 +1619,9 @@
     "Export as CSV" : {
 
     },
+    "Extras" : {
+
+    },
     "FAA ATCSCC" : {
 
     },
@@ -1766,6 +1775,9 @@
     "Fixed Today" : {
 
     },
+    "Flash cards, holding entries and lost comms practice" : {
+
+    },
     "Flashing" : {
 
     },
@@ -1892,6 +1904,9 @@
 
     },
     "Follow %@ on the map" : {
+
+    },
+    "Follow, past flights and history of airplanes not yours" : {
 
     },
     "Forecast" : {
@@ -3128,6 +3143,9 @@
 
     },
     "Other" : {
+
+    },
+    "Other Airplanes" : {
 
     },
     "Our flight" : {
@@ -4419,10 +4437,19 @@
     "Traffic Management" : {
 
     },
+    "Traffic and FIS-B weather from a receiver on the cockpit's Wi-Fi" : {
+
+    },
     "Traffic data" : {
 
     },
     "Training" : {
+
+    },
+    "Training Tools" : {
+
+    },
+    "Training Tools Are Off" : {
 
     },
     "Training and Endorsements" : {
@@ -4465,6 +4492,9 @@
 
     },
     "Turn off model weather" : {
+
+    },
+    "Turn them on in Settings, under Extras." : {
 
     },
     "Turns" : {
@@ -4669,6 +4699,9 @@
 
     },
     "Wind Level" : {
+
+    },
+    "Wind and weather fields on the map's Weather menu" : {
 
     },
     "Wind correction" : {

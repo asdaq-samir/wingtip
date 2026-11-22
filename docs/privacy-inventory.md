@@ -7,7 +7,7 @@ Google Play's Data safety form and the iOS app's privacy manifest
 (`PrivacyInfo.xcprivacy`). Change it
 whenever the code changes what leaves a device or what the server keeps.
 Checked against the code on 2026-11-10 (the privacy and store audit: the phone number, the third parties the apps call directly, the traffic view's region, the export, deletion from the web).
-Last checked on 2026-11-21 (the prelaunch audit: the web's device storage and what sign-out clears, the backups' and snapshots' retention, the logs; then the vitals work: Help Improve Wingtip Maps, the web's sampled speed figures, the iPhone's energy and disk figures, the planner's route counters; and the documents library on the web and then the iPhone and iPad, its markup and notes).
+Last checked on 2026-11-21 (the prelaunch audit: the web's device storage and what sign-out clears, the backups' and snapshots' retention, the logs; then the vitals work: Help Improve Wingtip Maps, the web's sampled speed figures, the iPhone's energy and disk figures, the planner's route counters; and the documents library on the web and then the iPhone and iPad, its markup and notes). Checked again the same day for the feature review (`docs/store/feature-review.md`): the subscription and adsb.fi cut, Studio and the crash pipeline moved out of this repository, and the parked features (off to start behind each app's Settings › Extras, or the server's switch) marked so below.
 
 "Collected" is App Store Connect's meaning: sent off the device and kept
 longer than it takes to answer the request.
@@ -25,9 +25,8 @@ longer than it takes to answer the request.
 | User Content, Other | Instructing: the address a student asks an instructor in by (`instructor_students.email`, V26), a solo cross-country put to an instructor (`cross_country_reviews`) and the approaches an instructor sets as lessons (`approach_lessons`, V30) | Yes | App Functionality | Postgres |
 | User Content, Other | Aircraft (tail number, type, performance, the last VOR check, the inspections' and tests' dates and its hours, whether it is flown for hire, its ADs and other due items, and its squawks; its checklists stay on the device, `lib/checklists`, and are forgotten there on sign-out), saved flights and their nav logs, the logbook (its instrument approaches, holding and tracking among it), endorsements and currency dates (the instrument proficiency check's too), checkpoint notes a pilot writes for themselves; a flight instructor's certificate number and its date, the instructors a student asks in by address, the saved flights a student puts to them, and the endorsements signed in the app | Yes | App Functionality | Postgres; notes in the planner's `data/labels` |
 | User Content, Other | A saved flight a pilot shares by link: the share's random token, whether its N-number goes with it (it does, where the flight has an airplane: the owner, 2026-11-11, on the web; the phones still ask), and when it was shared; whoever has the link reads the flight's route, stops, altitudes, departure time, airplane type, picks and nav log, never the pilot's name, address, notes, risk assessment or the flight's own name, and the airplane's N-number (`SharedFlightDto`). Read-only, until the pilot stops sharing it (Stop Sharing, which deletes the row) or deletes the flight | Yes | App Functionality (sending a plan to another pilot or an instructor) | `flight_shares` (Postgres) |
-| Identifiers, User ID | The AI apps a pilot connects Wingtip to (the MCP connector, `docs/design/mcp-connector.md`): the app's registration (its name and callback, no pilot's), and for the pilot the consent given and the connection's tokens, under the account's id; no record of what was asked | Yes | App Functionality (answering the pilot's own AI app) | `oauth2_registered_client`, `oauth2_authorization`, `oauth2_authorization_consent` (Postgres, V40); the tokens last 15 minutes and refresh for 30 days |
+| Identifiers, User ID | Parked, off by default (`MCP_ENABLED=false` on production, so no app can register): the AI apps a pilot connects Wingtip to (the MCP connector, `docs/design/mcp-connector.md`): the app's registration (its name and callback, no pilot's), and for the pilot the consent given and the connection's tokens, under the account's id; no record of what was asked | Yes | App Functionality (answering the pilot's own AI app) | `oauth2_registered_client`, `oauth2_authorization`, `oauth2_authorization_consent` (Postgres, V40); the tokens last 15 minutes and refresh for 30 days |
 | Location, Precise | A flight's track, when a pilot saves it to a flight (the phones' flight recorder, the logbook drafted from it): linked to the account, unlike the live position below | Yes | App Functionality | `flight_tracks` |
-| Purchases, Purchase History | The subscription: when the free month started and ends, and a paid plan's term, its store and the store's own id for it | Yes | App Functionality (the paid features) | `subscriptions` |
 | Diagnostics, Crash Data | A fault on the device: the web's uncaught errors (message, stack, page path, browser; `lib/errorReports`), the iPhone's MetricKit crash, hang, CPU and disk-write diagnostics (`Diagnostics/`), Android's exit reasons, ANR traces and uncaught exceptions (`diagnostics/`); each with the app's version, the OS version and phone/tablet/desktop, scrubbed of queries, emails, home folders and UUIDs (`DiagnosticText`); sent only while Help Improve Wingtip Maps is on (Help & About, on unless the pilot turns it off, kept on the device: `lib/helpImprove`, `Diagnostics/HelpImprove.swift`, `diagnostics/HelpImprove.kt`) | No | App Functionality (finding faults) | `diagnostics` (Postgres), 30 days; a line in the server's log (30 days) |
 | Diagnostics, Performance Data | How fast the app was on the device: the web's Core Web Vitals (LCP, INP, CLS, FCP, TTFB) and long tasks, from a quarter of page loads (`SPEED_SAMPLE`), the iPhone's launch, resume, hang and scroll-hitch figures, peak memory and memory exits, and the day's energy and disk use as MetricKit measures them (CPU and GPU time, time the GPS was held at its best accuracy, time in the foreground and background, megabytes written), Android's launch time and janky frames (JankStats); the page's name, phone, tablet or desktop, and the app's build; nothing of the pilot's; only while Help Improve Wingtip Maps is on, as above (`lib/speed`, `lib/longTasks`, SpeedController, DiagnosticsController) | No | App Functionality (keeping the app fast) | `speed_samples` (Postgres), 400 days |
 
@@ -46,15 +45,18 @@ longer than it takes to answer the request.
   text alone, never the values bound to it (`log_parameter_max_length=0`),
   so no address or position reaches the log that way. The position itself is read on the
   device, with the permission the browser, iOS or Android asks for.
-- **What a pilot's own AI app asks the connector.** A pilot who connects Wingtip to their own Claude or ChatGPT (the MCP connector, `services/planner/app/mcp`) has that app call Wingtip's tools: the airports, weather, NOTAMs, a route's nav log and briefing, and their own airplanes and saved flights. Each answer goes only to the app the pilot connected, only when the pilot's conversation asks for it, and is then under that app's own terms (Anthropic's or OpenAI's): Wingtip neither chooses nor pays for the model. Nothing of the call is kept beyond the rate limit's count of calls per pilot, in the planner's memory for a day (`app.mcp.calls`). The tools never return the pilot's name, address or logbook. Saving a flight from there (`save_flight`) is a saved flight as above, confirmed in the AI app first.
-- **The Apple Watch** (`apps/ios/WingtipWatch`): the paired iPhone sends
-  it the airplane, its checklist and the position the watch app shows,
-  over WatchConnectivity; it stays on the two devices.
+- **What a pilot's own AI app asks the connector** (parked: off on production, `MCP_ENABLED=false`). A pilot who connects Wingtip to their own Claude or ChatGPT (the MCP connector, `services/planner/app/mcp`) has that app call Wingtip's tools: the airports, weather, NOTAMs, a route's nav log and briefing, and their own airplanes and saved flights. Each answer goes only to the app the pilot connected, only when the pilot's conversation asks for it, and is then under that app's own terms (Anthropic's or OpenAI's): Wingtip neither chooses nor pays for the model. Nothing of the call is kept beyond the rate limit's count of calls per pilot, in the planner's memory for a day (`app.mcp.calls`). The tools never return the pilot's name, address or logbook. Saving a flight from there (`save_flight`) is a saved flight as above, confirmed in the AI app first.
+- **The Apple Watch** (`apps/ios/WingtipWatch`; parked: not embedded in
+  the iPhone's build, so none of this happens in it): the paired iPhone
+  sends it the airplane, its checklist and the position the watch app
+  shows, over WatchConnectivity; it stays on the two devices.
 - **A cockpit receiver's traffic and FIS-B weather** (the iOS and Android
-  apps, with ADS-B Receiver on Auto): heard on the cockpit's Wi-Fi, read
+  apps; parked, off unless Settings › Extras › ADS-B Receiver is on and
+  the receiver on Auto): heard on the cockpit's Wi-Fi, read
   by the engine on the device and shown there; nothing of it is sent
   anywhere or kept past a few hours.
-- **The radio, with the ATC copilot on, and anything said to the app.**
+- **The radio, with the ATC copilot on (parked: off unless Settings ›
+  Extras › ATC Copilot is on), and anything said to the app.**
   On the phones speech is recognised on the device and never leaves it
   (the owner, 2026-11-09); no audio is recorded or sent to us. Apple's recognizer on the iPhone with
   `requiresOnDeviceRecognition` always (`ClearanceListener.swift`), only
@@ -115,7 +117,12 @@ longer than it takes to answer the request.
   fetches it; it is compared on the phone by the engine and nothing new
   is sent or kept on a server. The keys of the changes told stay on the
   phone (UserDefaults).
-- **Gemini Nano on Android** (docs/android-ai.md). Where the phone has
+- **Gemini Nano on Android** (docs/android-ai.md; parked: the store
+  build leaves ML Kit GenAI out, `genai-prompt` only with
+  `-Pwingtip.genai=true`, and Settings › Extras › Ask is off to start, so
+  none of this happens in it, and Add from a Photo, which needs Nano, is
+  not offered, so the scanner and text recognition are not called
+  either). Where a build has it and the phone has
   it (ML Kit's Prompt API over AICore, `ai/Nano.kt`), Ask
   (`ai/OnPhoneAsk.kt`), In Plain Words (`ai/AiWords.kt`), a drafted
   logbook remark and a photographed page (ML Kit's on-device text
@@ -241,9 +248,8 @@ longer than it takes to answer the request.
 | Google, Apple | Their own sign-in, when a pilot uses it | Their own |
 | FAA, NOAA (aviationweather.gov) | Chart and data downloads, weather for airports | None: the server asks, not the device |
 | eCFR (ecfr.gov, the Office of the Federal Register) | The documents library's CFR parts, fetched once a day (`wingtip/library.py`) | None: the server asks, not the device |
-| adsb.lol | For the traffic on the map, the middle of a region: a 0.5 degree cell, 2 degrees zoomed out (`traffic/adsb_lol.py`); for an airplane a pilot opens, its transponder's address (its trace); for its route, its callsign (`traffic/routes.py`, `vrs-standing-data.adsb.lol`); and a registration, callsign or address a pilot types in Find (`/api/traffic/find`; the FAA record's `/api/traffic/registered` asks no one, the registry being on the planner's disk), which may be their own N-number | None of the pilot's beyond what they type: the server asks, not the device; the device's position itself is not sent |
-| ADS-B Exchange (adsbexchange.com, through RapidAPI) | The same asks where adsb.lol turns one away or is down: a region's middle (`traffic/view.py`), a searched registration, callsign or address (`traffic/lookup.py`), and a followed airplane's address (`traffic/watched.py`); the request carries the operator's RapidAPI key | As adsb.lol |
-| adsb.fi (opendata.adsb.fi) | The followed airplanes' transponder addresses, asked by ingest every half minute (`traffic/adsbfi.py`) | None of the pilot's: other airplanes' public addresses |
+| adsb.lol | For the traffic on the map, the middle of a region: a 0.5 degree cell, 2 degrees zoomed out (`traffic/adsb_lol.py`); for an airplane a pilot opens, its transponder's address (its trace); for its route, its callsign (`traffic/routes.py`, `vrs-standing-data.adsb.lol`); the followed airplanes' addresses, asked by ingest every half minute (`traffic/watched.py`: its globe's recent trace first, then its API by the address, with the operator's `ADSBLOL_API_KEY`, which ingest is given); and a registration, callsign or address a pilot types in Find (`/api/traffic/find`; the FAA record's `/api/traffic/registered` asks no one, the registry being on the planner's disk), which may be their own N-number | None of the pilot's beyond what they type: the server asks, not the device; the device's position itself is not sent |
+| ADS-B Exchange (adsbexchange.com, through RapidAPI) | The same asks where adsb.lol turns one away or is down: a region's middle (`traffic/view.py`), a searched registration, callsign or address (`traffic/lookup.py`), and the address of an airplane whose card is open (`traffic/watched.py`; the background rounds leave its paid month alone); the request carries the operator's RapidAPI key | As adsb.lol |
 | Iowa State University's IEM (mesonet.agron.iastate.edu) | The radar loop's map tiles in view, asked by the device (web, iPhone, Android) from the address templates the planner gives (`wingtip/weather_loop.py`) | The device's internet address and the part of the map in view, as any map tile; no account |
 | NOAA nowCOAST (nowcoast.noaa.gov) | The satellite loop's tiles in view, asked by the device the same way | As IEM |
 | Planespotters (api.planespotters.net, t.plnspttrs.net) | The web app, when a traffic card opens: that airplane's transponder address, to show its photo (`features/traffic/planePhoto.ts`), from the browser | The browser's internet address and the address of the airplane looked at; no account |
@@ -260,10 +266,10 @@ longer than it takes to answer the request.
   "Data Not Used to Track You".
 - **No analytics**: no count of what a pilot uses is kept. The month's
   count of each Claude-written feature went with those features
-  (2026-11-12, decision 0041), and its table (`paid_feature_uses`) was
-  dropped on 2026-11-21 (V46).
-- **Purchases** are the stores' own: the app keeps only the plan's term
-  and the store's id for it (above), never a card.
+  (2026-11-12, decision 0041).
+- **No purchases**: the app is free and sells nothing (decision 0022);
+  the subscription's leftovers were cut on 2026-11-21 (V46 dropped
+  `paid_feature_uses`, V52 drops `subscriptions`).
 - **The avatar's photo**, if the pilot chooses one in Pilot Details: a
   256-pixel square JPEG the app makes from the photo picked, kept in the
   gateway's Postgres (`pilot_avatars`, V45), served only to its own pilot
@@ -293,11 +299,12 @@ see above),
 logbook, notes), **App info and performance** (crash logs and
 diagnostics, not linked: not tied to the account; crash logs gone from
 the log after 30 days, speed measurements after 400; sent only while
-Help Improve Wingtip Maps is on; and ML Kit's
-diagnostics to Google, above) and **Device or other IDs** (ML Kit's
-install and device identifiers, sent to Google only when Add from a
-Photo or the on-phone AI is used, so optional, for analytics as ML Kit
-states its purpose). Google Play's Android vitals (crash and
+Help Improve Wingtip Maps is on). No **Device or
+other IDs**: the store build makes no ML Kit call (Gemini Nano above);
+should Ask or Add from a Photo be offered again, ML Kit's diagnostics
+and its install and device identifiers to Google come back as a row,
+optional, for analytics as ML Kit states its purpose
+(docs/store/privacy-labels.md). Google Play's Android vitals (crash and
 ANR rates, start-up, battery) come from the system for users who share
 usage and diagnostics with Google, under Android's own setting: Google's
 collection, not the app's, and nothing the app sends.
@@ -339,8 +346,9 @@ reads and `CA92.1` for its own standard defaults, which `Design/Ink.swift`
 (compiled into the extension) reads for the look (the store-review audit
 of 2026-11-21: the extension declared only the App Group's). The Watch
 app's, `apps/ios/WingtipWatch/PrivacyInfo.xcprivacy`, declares nothing,
-as it calls no required-reason API; it is there so a reason added later
-has its place. `WingtipTests/StorePrivacyTests` reads the app's bundled
+as it calls no required-reason API; the Watch app is parked and not
+embedded in the iPhone's build, so its manifest is not submitted with
+it until the Watch comes back. `WingtipTests/StorePrivacyTests` reads the app's bundled
 manifest and the widgets' from the source tree, and fails where one of
 these is missing. A source compiled into an extension
 (`project.yml`'s `WingtipWidgets` sources) brings its required-reason APIs
@@ -361,12 +369,14 @@ on `wingtip.schedule` started in `app.main`), whether or not ingest runs:
   minute after the last ask (`LOOKED_S`), so ingest reads the FAA's radar
   only where someone is looking.
 - **Followed airplanes** (`followed`): an airplane whose card any pilot
-  opens is followed, its ICAO address and when its card was last opened;
+  opens is followed (another airplane's Follow, past flights and history
+  are parked in the apps, off unless Settings › Extras › Other Airplanes
+  is on; the pilot's own keep them), its ICAO address and when its card was last opened;
   dropped 30 days after that (`FOLLOW_KEEP_S`). Opening its card again
   starts the 30 days again.
 - **Other airplanes' tracks** (`points`): a followed airplane's public
-  ADS-B and radar positions, recorded from adsb.lol, ADS-B Exchange,
-  adsb.fi and the FAA's radar card open or not, so its card can show its
+  ADS-B and radar positions, recorded from adsb.lol, ADS-B Exchange
+  (while a card is open) and the FAA's radar, card open or not, so its card can show its
   recent flights; each point kept 30 days (`RECORD_KEEP_S`), whether or
   not the airplane is heard again. No pilot or account is stored with
   them; a pilot who opens their own airplane's card has its public

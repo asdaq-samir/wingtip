@@ -29,7 +29,7 @@ struct CoachView: View {
                 nextLesson
                 trendsSection
                 if let plan = model.plan { planSections(plan) }
-                Section("Practice") { PracticeRows() }
+                PracticeSection()
                 Section("Instructor") {
                     NavigationLink(value: SheetPage.training) { Label("Training and Endorsements", systemImage: "graduationcap") }
                     NavigationLink(value: SheetPage.instructing) { Label("Instructing", systemImage: "person.2") }

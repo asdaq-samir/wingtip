@@ -6,7 +6,7 @@
 #
 #   scripts/dev/check.sh <area>...       an area of scripts/areas.yml (the table of areas, their
 #                                    paths and checks): web py planner ingest weather
-#                                    jobs engine java ios android site sim xplane arch
+#                                    jobs engine java ios android site arch
 #   scripts/dev/check.sh all-changed     the areas `git diff origin/main...` and
 #                                    the uncommitted files touch, in parallel
 #   scripts/dev/check.sh --areas         reads paths on stdin, prints their areas
@@ -52,8 +52,7 @@ worktree_hash() { echo "$here" | sha | cut -c1-8; }
 
 # A Python suite (a leg of scripts/ci/python_suite.sh, the table CI's
 # test-python reads too) in the image of its requirements: ruff, its import
-# contracts, then its tests, as CI runs them. The X-Plane driver needs the
-# standard library alone and runs in wingtip's image.
+# contracts, then its tests, as CI runs them.
 #
 # Each leg has a data/raw volume of its own (wingtip-check-raw-<leg>), since
 # all-changed runs the legs side by side and they share nothing else: the
@@ -194,17 +193,12 @@ run_area() {
       python3 "$here/apps/site/check.py"
       ;;
     sim)
-      # The MSFS replay agent: built (without the SDK's SimConnect, which
-      # only the trial's instance has), its format checked and its tests
-      # run, and the test flight's feed and report linted and tested
-      # (scripts/ci/sim_suite.sh, which CI runs too); then the trial's
-      # template (cfn-lint) and the scripts (shellcheck), the test
-      # flight's runner among them.
+      # The test flight's feed and report linted and tested
+      # (scripts/ci/sim_suite.sh, which CI runs too), then its runner
+      # (shellcheck). The MSFS agent and its trial left with the Studio
+      # (the feature review, 2026-11-21).
       "$here/scripts/ci/sim_suite.sh"
-      docker run --rm -v "$here/infra/sim-trial:/data" -w /data "python:$PYTHON-slim" \
-        sh -c 'pip install -q --root-user-action=ignore cfn-lint && cfn-lint template.yaml'
-      docker run --rm -v "$here:/mnt" -w /mnt koalaman/shellcheck:stable infra/sim-trial/trial.sh tools/msfs-agent/prepare-track.sh \
-        scripts/dev/sim-flight.sh
+      docker run --rm -v "$here:/mnt" -w /mnt koalaman/shellcheck:stable scripts/dev/sim-flight.sh
       ;;
     # The X-Plane trial's plugin (tools/xplane-driver): its plain parts,
     # and the player against a stub of XPPython3 (seconds).

@@ -44,6 +44,12 @@ val appId: String =
 // / keystore file and its password, from the workflow's secrets
 // / (scripts/ci/android_build.sh writes the file) or a developer's shell.
 // / Without both the release builds unsigned, as before.
+// / Gemini Nano through ML Kit GenAI (ai/NanoClient, Ask), parked: out of
+// / the build unless asked for with -Pwingtip.genai=true, since ML Kit sends
+// / Google device identifiers (the feature review, docs/store/feature-review.md).
+// / Without it src/nogenai's NanoClient builds, which has no model.
+val genai: Boolean = providers.gradleProperty("wingtip.genai").orNull?.toBoolean() == true
+
 val uploadKeystore: File? = System.getenv("WINGTIP_UPLOAD_KEYSTORE")?.ifEmpty { null }?.let(::file)?.takeIf { it.isFile }
 val uploadPassword: String? = System.getenv("WINGTIP_UPLOAD_PASSWORD")?.ifEmpty { null }
 
@@ -162,6 +168,8 @@ android {
         getByName("main") {
             jniLibs.directories.add("engine/jniLibs")
             kotlin.directories.add("engine/generated")
+            // Nano's client, ML Kit's or none (genai above).
+            kotlin.directories.add(if (genai) "src/genai/kotlin" else "src/nogenai/kotlin")
         }
     }
 }
@@ -241,11 +249,11 @@ dependencies {
     implementation(libs.play.services.mlkit.document.scanner)
     // The app's AI (docs/android-ai.md): its actions for Gemini and the
     // system's agents (AppFunctions, ai/functions/), Gemini Nano through
-    // ML Kit's Prompt API, and the text of a photographed page read on
-    // the phone.
+    // ML Kit's Prompt API only with -Pwingtip.genai=true (genai above),
+    // and the text of a photographed page read on the phone.
     implementation(libs.androidx.appfunctions)
     ksp(libs.androidx.appfunctions.compiler)
-    implementation(libs.mlkit.genai.prompt)
+    if (genai) implementation(libs.mlkit.genai.prompt)
     implementation(libs.play.services.mlkit.text.recognition)
     implementation(libs.kotlinx.coroutines.play.services)
     // The frames drawn and the janky ones, for the diagnostics (diagnostics/).

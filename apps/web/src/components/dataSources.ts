@@ -5,7 +5,6 @@
  *  government, which carry no copyright (17 U.S.C. 105); adsb.lol's is
  *  under the Open Database License, whose 4.3 asks for this credit, as do
  *  OpenStreetMap's airport outlines and the time zones;
- *  adsb.fi's for personal, non-commercial use, credited and linked;
  *  OurAirports puts its data in the public domain; Overture's places are
  *  CDLA Permissive 2.0, whose terms go with the data; Virtual Radar
  *  Server's routes are CC0; the NTSB's records are a
@@ -70,8 +69,6 @@ export const DATA_SOURCES: { name: string; licence: string; href?: string }[] = 
   },
   { name: "adsb.lol ADS-B traffic", licence: "ODbL 1.0", href: "https://opendatacommons.org/licenses/odbl/1-0/" },
   { name: "ADS-B Exchange traffic", licence: "ADS-B Exchange's API terms", href: "https://www.adsbexchange.com" },
-  // Its terms ask for its name and a link to its home page.
-  { name: "adsb.fi ADS-B traffic", licence: "Personal, non-commercial use, credited and linked", href: "https://adsb.fi" },
   { name: "Virtual Radar Server flight routes", licence: "CC0", href: "https://creativecommons.org/publicdomain/zero/1.0/" },
   // Its terms ask for the photographer's name next to each photo and a link to the photo's page.
   {
@@ -106,10 +103,9 @@ export const LICENCES_HREF = "/app/licences.txt";
  *  console's About links adsb.lol with its licence. */
 const ATTRIBUTION = "Traffic adsb.lol, ODbL";
 
-/** Each source the planner names (wingtip.traffic: "adsb.lol and adsb.fi"),
- *  credited as its terms ask: adsb.fi's by its name, linked in the
- *  console's About. */
-const CREDITS: Record<string, string> = { "adsb.lol": ATTRIBUTION, "ADS-B Exchange": "ADS-B Exchange", "adsb.fi": "adsb.fi" };
+/** Each source the planner names (wingtip.traffic: "adsb.lol and ADS-B
+ *  Exchange"), credited as its terms ask. */
+const CREDITS: Record<string, string> = { "adsb.lol": ATTRIBUTION, "ADS-B Exchange": "ADS-B Exchange" };
 
 /** The map's traffic credit for the planner's `source`: adsb.lol's
  *  where it names none it knows. */

@@ -1,6 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import { drawn, mapStill, settle, settled, sideDrawer, slow } from "./helpers";
 import { setMap3d } from "./mapCard";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "threeD"));
 
 // A route's handler still running as the test ends found the page closed
 // and failed the test (devconsole.spec): taken off, errors let go.

@@ -220,7 +220,7 @@ final class Traffic {
     /// data: its source and the licence, named (the web app's
     /// trafficCredit).
     static func credit(_ source: String?) -> String {
-        let credits = ["adsb.lol": "Traffic adsb.lol, ODbL", "ADS-B Exchange": "ADS-B Exchange", "adsb.fi": "adsb.fi"]
+        let credits = ["adsb.lol": "Traffic adsb.lol, ODbL", "ADS-B Exchange": "ADS-B Exchange"]
         let named = (source ?? "adsb.lol").components(separatedBy: " and ").compactMap { credits[$0] }
         guard let first = named.first else { return "Traffic adsb.lol, ODbL" }
         return first == "Traffic adsb.lol, ODbL" ? ([first] + named.dropFirst()).joined(separator: " · ") : "Traffic \(named.joined(separator: " · "))"

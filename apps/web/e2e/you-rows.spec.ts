@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { consoleSheet, noTips, openConsole, settle, showTabs } from "./helpers";
+import { extrasOn } from "./extras";
 
 /**
  * You, the avatar's card (the owner's option A, 2026-11-13): Airplanes
@@ -14,6 +15,8 @@ import { consoleSheet, noTips, openConsole, settle, showTabs } from "./helpers";
 test.use({ storageState: { cookies: [], origins: [] } });
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(noTips);
+  // The Practice row's Training Tools, parked, on (Settings' Extras, src/lib/extras).
+  await extrasOn(page, "trainingTools");
 });
 
 async function you(page: Page) {

@@ -45,6 +45,7 @@ import { coursePoints } from "../../lib/course";
 import { useRouteOnly } from "../../lib/map/routeOnly";
 import { useLineFocus } from "./useLineFocus";
 import RoutePointCard from "./RoutePointCard";
+import { useExtra } from "../../lib/extras";
 import { useStopsAlong } from "../stops";
 import { OwnShipCard } from "../../components/map/cards/OwnShipCard";
 
@@ -213,7 +214,9 @@ function EngineLayers(p: GlRouteMapProps) {
   useLineFocus(course);
   const weather = usePreferences((s) => s.weather) && !routeOnly;
   const loop = useWeatherLayers((s) => s.loop !== "off") && weather;
-  const flow = useWeatherLayers((s) => s.flow !== "off") && weather;
+  // Not drawn nor fetched while Model Weather is parked (Settings' Extras, lib/extras).
+  const modelWeather = useExtra("modelWeather");
+  const flow = useWeatherLayers((s) => s.flow !== "off") && weather && modelWeather;
   const hazard = usePreferences((s) => s.hazard) !== "off";
   return (
     <>

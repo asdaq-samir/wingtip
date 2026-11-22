@@ -34,8 +34,8 @@ level into aerial imagery under it, and the map goes in to MapLibre's 17
 (`closeZoom.ts`, `useCloseImagery.ts`, `CloseImageryGl`). By default that
 imagery is the USGS's (The National Map's `USGSImageryOnly` tile cache,
 NAIP over the lower 48, partners' imagery over Alaska, Hawaii, Puerto
-Rico and the territories): a public-domain work, so it costs nothing,
-needs no key and may go into Studio's exported videos. Its tiles end at
+Rico and the territories): a public-domain work, so it costs nothing
+and needs no key. Its tiles end at
 {z} 16 (about 2 m a pixel at 40 degrees north) and MapLibre enlarges
 them past it, so at 16 and 17 it is softer than Google's; its photographs
 are a few years old (the service says NAIP 2017 to 2021). Its credit,
@@ -49,9 +49,7 @@ close in only where the pilot has picked the Google overlay (and the
 deployment has a key): then its session and tiles are asked for only a
 level short of the fade, and its credit is the same "Google Maps" and
 copyright as the overlay's. Google's terms forbid exporting its content
-outside the service, so Studio's map never draws it (`ChartGl`'s
-`publicOnly`) and an export asks `imageryForExport()` (`closeZoom.ts`)
-whether what is drawn may go out.
+outside the service.
 
 ## What only the owner can do
 

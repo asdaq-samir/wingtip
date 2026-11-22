@@ -57,8 +57,8 @@ go or no-go. On the web, the iPhone and Android.
   an iPhone with Apple Intelligence (and Siri) or an Android phone with
   Gemini Nano; every figure in the answer is the engine's or the
   planner's. The server's Claude features (Ask on the web, the written
-  briefing, the words, the mock oral) are built but off until the
-  subscription is decided ([decision 0035](docs/decisions/0035-claude-off-until-subscription.md)).
+  briefing, the words, the mock oral) were taken out
+  ([decision 0041](docs/decisions/0041-claude-taken-out.md)).
 - **For students and instructors.** Logbook, currency, endorsements,
   approach lessons, a mock oral exam and a debrief.
 
@@ -125,10 +125,8 @@ apps/        web/ (React), ios/ (SwiftUI), android/ (Compose)
 engine/      the Rust engine: facade/, crates/ (thirteen domains), contract/, bindings/
 services/    planner/, ingest/, weather/, gateway/, jobs/, Dockerfile.base
 ml/          the notebooks and their image
-infra/       AWS CloudFormation, the server's compose file, CI's, local HTTPS, sim-trial/ (MSFS on EC2)
-tools/       msfs-agent/ (the MSFS 2024 replay agent for infra/sim-trial)
+infra/       AWS CloudFormation, the server's compose file, CI's, local HTTPS
 scripts/     build/ (WebAssembly, the phones' models), ci/, dev/ (checks, go-live, tidy)
-tools/       xplane-driver/ (the X-Plane 12 trial's replay plugin, docs/XPLANE-TRIAL.md)
 data/        fetched and made data (mostly gitignored); stock aircraft profiles
 docs/        the docs below, and the architecture diagrams
 ```
@@ -151,6 +149,6 @@ docs/        the docs below, and the architecture diagrams
 
 MIT ([LICENSE](LICENSE)) for the code; the name, the logo and the brand
 art are not under it ([NOTICE](NOTICE)). Charts, aeronautical data and live feeds from
-the FAA; weather from NOAA and aviationweather.gov; traffic from adsb.lol,
-ADS-B Exchange and adsb.fi; imagery from the USGS. Built with Rust,
+the FAA; weather from NOAA and aviationweather.gov; traffic from adsb.lol and
+ADS-B Exchange; imagery from the USGS. Built with Rust,
 TypeScript and React, Swift, Kotlin, Python and Java, and the Claude API.

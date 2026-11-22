@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { ALLOWED_LICENCES, NOT_SHIPPED, noticesText } from "./licences.ts";
+import { ALLOWED_LICENCES, noticesText } from "./licences.ts";
 
 describe("the web's open-source notices", () => {
   it("give each package's licence, its licence file and its NOTICE, then the engine's", () => {
@@ -20,12 +20,11 @@ describe("the web's open-source notices", () => {
     expect(text.trimEnd().endsWith("The engine's crates")).toBe(true);
   });
 
-  it("let no copyleft licence through, and leave out only what never reaches the page", () => {
+  it("let no copyleft licence through", () => {
     // The checker passes a package whose licence contains an allowed name.
     for (const copyleft of ["GPL-3.0-only", "LGPL-2.1-or-later", "AGPL-3.0-only", "SSPL-1.0"]) {
       expect(ALLOWED_LICENCES.some((allowed) => copyleft.includes(allowed))).toBe(false);
     }
-    expect(NOT_SHIPPED).toEqual(["@img/sharp-", "sharp", "onnxruntime-node"]);
   });
 
   it("take the engine's notices from the file cargo-about writes", () => {

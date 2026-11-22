@@ -262,3 +262,22 @@
 2026-11-18 POST /api/auth/device api path removed without deprecation -- the TV sign-in, deleted with the web's TV mode (f3a81945c); no phone calls it
 2026-11-18 POST /api/auth/device/approve api path removed without deprecation -- the same
 2026-11-18 POST /api/auth/device/token api path removed without deprecation -- the same
+2026-11-21 POST /api/studio/weather api path removed without deprecation -- the Studio moved to its own repository (wingtip-studio, the feature review); only the web's developer page and the gateway's CrashDraftMail, gone with it, asked it, and no phone calls it
+2026-11-21 GET /api/studio/ntsb api path removed without deprecation -- the same
+2026-11-21 GET /api/studio/notams api path removed without deprecation -- the same
+2026-11-21 GET /api/studio/track api path removed without deprecation -- the same
+2026-11-21 GET /api/studio/watched api path removed without deprecation -- the same
+2026-11-21 POST /api/studio/ground api path removed without deprecation -- the same
+2026-11-21 GET /api/studio/drafts api path removed without deprecation -- the same
+2026-11-21 GET /api/studio/drafts/{draft_id} api path removed without deprecation -- the same
+2026-11-21 GET /api/studio/drafts/{draft_id}/track api path removed without deprecation -- the same
+2026-11-21 POST /api/studio/drafts/{draft_id}/identity api path removed without deprecation -- the same
+2026-11-21 POST /api/studio/drafts/{draft_id}/dismiss api path removed without deprecation -- the same
+2026-11-21 POST /api/studio/drafts/{draft_id}/rendered api path removed without deprecation -- the same
+2026-11-21 GET /api/studio/drafts-to-notice api path removed without deprecation -- the same
+2026-11-21 POST /api/studio/drafts/{draft_id}/noticed api path removed without deprecation -- the same
+2026-11-21 GET /api/subscription api path removed without deprecation -- the subscription's leftovers, cut by the feature review; only the web's SubscriptionPanel, gone with it, asked it, and no phone calls it
+2026-11-21 POST /api/subscription/trial api path removed without deprecation -- the same
+2026-11-21 GET /api/auth/capabilities removed the required property `subscriptions` from the response with the `200` status -- the same; only the web read it
+2026-11-21 GET /api/me/export removed the required property `records/subscription` from the response with the `200` status -- the same; the export is a file for the pilot, read by no app
+2026-11-21 GET /api/me/export removed the required property `records/featureUses` from the response with the `200` status -- the same

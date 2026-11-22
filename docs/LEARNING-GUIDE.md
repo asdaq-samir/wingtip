@@ -57,7 +57,7 @@ flowchart LR
     apps --> engine
 
     aiapp(["§5 the pilot's own AI app<br/>(the MCP connector)"]) --> gateway
-    ingest["ingest<br/>(SWIM, adsb.fi)"] --> stores[("the stores<br/>live · weather")]
+    ingest["ingest<br/>(SWIM, adsb.lol)"] --> stores[("the stores<br/>live · weather")]
     weatherSvc["weather<br/>(METAR, TAF, GFS)"] --> stores
     stores --> planner
 

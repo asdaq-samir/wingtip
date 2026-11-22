@@ -670,8 +670,9 @@ A cockpit ADS-B receiver (`receiver/`), behind `RECEIVER_ENABLED`
 a Stratux, Sentry, SkyEcho or open-mode Stratus's GDL 90 on UDP port 4000, gathered by a
 `DatagramSocket` with the Wi-Fi's multicast lock (`ReceiverSocket`) and
 read by the engine once a second (`receiver_read`); a foreground service
-of the connected-device type (`ReceiverService`) keeps it going with the
-screen off while a receiver is heard. Its traffic is drawn ahead of the
+of the connected-device type (`ReceiverService`) kept it going with the
+screen off, and is left out of the manifest while the receiver is parked
+(below). Its traffic is drawn ahead of the
 internet's (`receiver_traffic`, through `Traffic`), a chip on the map
 names it, a field's FIS-B METAR and TAF show on its card with no report
 from the weather service (`receiver_reports`), and FIS-B NEXRAD is drawn
@@ -683,7 +684,23 @@ ellipsoid is put on the geoid by `AltitudeConverterCompat`. The chip
 says whose position is shown, an airplane's card "Heard by Stratux 3 s
 ago" (`ReceiverHeard`), and the Brief lists the route's FIS-B reports
 (`ReceiverBriefReports`). Settings › In Flight has ADS-B Receiver
-(`ReceiverSettingRows`): Auto or Off, and the position's source.
+(`ReceiverSettingRows`): Auto or Off, and the position's source, shown
+while Extras has it on.
+
+Settings › Extras (`Extras.kt`, `ui/ExtrasGroup.kt`; the feature review,
+docs/store/feature-review.md, 2026-11-21) parks five features, a stock
+switch each, all off to start and kept as `extras.<key>` (the web's
+lib/extras keys): ATC Copilot (Comms Assist, the ATC alerts, the
+clearance card; the in-flight copilot's field advice is not parked),
+ADS-B Receiver, Other Airplanes (Follow, past flights and the history on
+an airplane card not the pilot's own, and the watches of one), Model
+Weather (the Map card's field and the flow layer) and Ask (Gemini Nano:
+Ask, AI words and a photographed page's read). Off, a feature is not
+shown, started or fetched, and a setting inside it saved on acts as off.
+The first store build declares no microphone or connected-device
+foreground service, and leaves ML Kit GenAI out: `genai-prompt` and
+`src/genai`'s `NanoClient` are built only with `-Pwingtip.genai=true`,
+else `src/nogenai`'s stub, which has no model.
 
 Still to come: Sunlight in Settings › Look (the owner's choice (b) of
 AND-6, 2026-11-14), the saved flights' Edit, Debrief and Delete, the

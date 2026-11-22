@@ -1192,6 +1192,12 @@ a Material `Badge` at the top of the map, beside the receiver's, says
   under the account, the Logbook and Coach rows signed in, and
   Downloads, the passenger briefing and About near the foot
   (`ui/SettingsPages`), each closing back to Settings.
+- **Extras** (2026-11-21, the feature review): a group of Settings
+  right after In Flight (`ui/ExtrasGroup`, `Extras.kt`), a stock
+  `Switch` row each with its title and one line, all off to start: ATC
+  Copilot, ADS-B Receiver, Other Airplanes, Model Weather and Ask
+  (rules.md §8). In Flight's receiver rows and Data's On-Phone AI row
+  show only while their switch is on.
 - **Primary action**: none. Settings save as they change.
 - **Haptics**: `ToggleOn` and `ToggleOff` from the stock `Switch`.
 - **Avoid**:

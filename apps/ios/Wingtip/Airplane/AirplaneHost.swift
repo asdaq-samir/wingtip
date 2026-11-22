@@ -12,10 +12,16 @@ struct AirplaneHost: ViewModifier {
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
     @Environment(FigureOffer.self) private var figureOffer
+    @Environment(Tracking.self) private var tracking
 
     func body(content: Content) -> some View {
         content
             .task { await airplanes.loadBooks() }
+            // The pilot's own N-numbers, whose watches go on while Other
+            // Airplanes is off (Tracking.ownTails).
+            .onChange(of: airplanes.records.map(\.tailNumber) + [plan.tail].compactMap { $0 }, initial: true) { _, tails in
+                tracking.ownTails = tails
+            }
             .task(id: session.signedIn) {
                 await airplanes.loadRecords(signedIn: session.signedIn)
                 plan.took(records: airplanes.records)

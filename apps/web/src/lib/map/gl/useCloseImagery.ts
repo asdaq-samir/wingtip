@@ -8,7 +8,7 @@ import { useGlMap } from "./glLayer";
 import { useGlView } from "./useGlView";
 import { useGoogleAttribution } from "./googleCredit";
 import { useMapCredit } from "./creditStore";
-import { useCloseImageryDrawn, type CloseImagery } from "./closeZoom";
+import type { CloseImagery } from "./closeZoom";
 import { tileOf } from "../tileMath";
 
 /** The imagery close in, as its tiles' address, their last level and whose. */
@@ -25,24 +25,23 @@ const GOOGLE_MAX_ZOOM = 20;
  * The imagery close in, under the chart (closeZoom), or null: asked for
  * only once the map is a level short of the chart's own last zoom
  * (`tileMaxZoom`), so no tile is fetched further out. The USGS's
- * public-domain imagery (sources/imagery) by default, which costs nothing,
- * needs no key and may go into Studio's videos (the owner, 2026-11-12).
- * Google's satellite imagery only where the pilot picked Google's overlay
- * in the Map menu and the deployment has a key, and never where the map is
- * for export (`publicOnly`): its Map Tiles API, the satellite map type
+ * public-domain imagery (sources/imagery) by default, which costs nothing
+ * and needs no key. Google's satellite imagery only where the pilot picked
+ * Google's overlay in the Map menu and the deployment has a key: its Map
+ * Tiles API, the satellite map type
  * without the roads layer (docs/GOOGLE-MAPS.md), credited "Google Maps"
  * with the copyright for the view while in use, as its policies ask
  * (googleCredit). Null too where the USGS has no imagery under the middle
  * of the view (Canada, the Bahamas, the sea) or it cannot be reached, as
  * offline: the chart stays, enlarged, as before.
  */
-export function useCloseImagery(tileMaxZoom: number | null, publicOnly = false): CloseTiles | null {
+export function useCloseImagery(tileMaxZoom: number | null): CloseTiles | null {
   const { map } = useGlMap();
   const { level } = useGlView();
   const near = tileMaxZoom != null && level >= tileMaxZoom - 1;
   const overlay = useShownOverlay();
   const { data: google } = useQuery(googleMapsQuery);
-  const wantsGoogle = !publicOnly && overlay.startsWith("google") && !!google;
+  const wantsGoogle = overlay.startsWith("google") && !!google;
   const { data: session } = useGoogleSession("imagery", near && wantsGoogle);
   const live = near && wantsGoogle && google && session ? session.session : null;
   useEffect(() => {
@@ -57,11 +56,6 @@ export function useCloseImagery(tileMaxZoom: number | null, publicOnly = false):
         ? { url: USGS_URL, maxzoom: USGS_MAX_ZOOM, kind: "usgs" }
         : null;
   useMapCredit("close-imagery", tiles?.kind === "usgs" ? USGS_CREDIT : null);
-  const kind = tiles?.kind ?? null;
-  useEffect(() => {
-    useCloseImageryDrawn.setState({ drawn: kind });
-    return () => useCloseImageryDrawn.setState({ drawn: null });
-  }, [kind]);
   return tiles;
 }
 

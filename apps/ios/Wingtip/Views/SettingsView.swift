@@ -2,9 +2,9 @@ import SwiftUI
 
 /// The app's Settings, one page (the owner's pick of option A of the
 /// account canvas, 2026-11-13; docs/design/rules.md §8): how the app
-/// behaves, in groups as iOS's Settings has them -- Map, In Flight, Data,
-/// and Help & About. Theme and Appearance, the app's look, are the Map
-/// card's (the owner, 2026-11-14). Pushed from You's gear, and from the Map card's
+/// behaves, in groups as iOS's Settings has them -- Map, In Flight, Extras
+/// (the parked features' switches), Data, and Help & About. Theme and
+/// Appearance, the app's look, are the Map card's (the owner, 2026-11-14). Pushed from You's gear, and from the Map card's
 /// gear at its Map group, so the system's Back goes back to the card it
 /// was opened from. The one thing called Settings: every control in one
 /// home, where they were Setup's rows and the Map card's switches.
@@ -19,6 +19,7 @@ struct SettingsView: View {
     @Environment(Charts.self) private var charts
     @Environment(FlightSession.self) private var flight
     @State private var keptBytes: Int64 = 0
+    @AppStorage(Extra.adsbReceiver.key) private var adsbReceiver = false
 
     var body: some View {
         ScrollViewReader { reader in
@@ -41,6 +42,8 @@ struct SettingsView: View {
                     NavigationLink { AtcPage() } label: { Text("ATC") }
                         .accessibilityIdentifier("atc-row")
                 }
+                // The parked features' switches, after In Flight (Extra).
+                ExtrasSection()
                 Section("Data") {
                     // The charts along a route and its briefing kept for
                     // flying with no signal (KeepForAir, FPL's button), and
@@ -48,8 +51,9 @@ struct SettingsView: View {
                     LabeledContent("Kept for the Air", value: ByteCountFormatter.string(fromByteCount: keptBytes, countStyle: .file))
                     NavigationLink { DownloadsView() } label: { Text(Screen.downloads.title) }
                     // A Stratux, Sentry or the like on the cockpit's Wi-Fi:
-                    // its traffic and FIS-B weather with no internet.
-                    ReceiverModePicker()
+                    // its traffic and FIS-B weather with no internet; parked
+                    // until its switch in Extras is on (Extra).
+                    if adsbReceiver { ReceiverModePicker() }
                     ForgetNotesButton()
                 }
                 Section {
@@ -86,17 +90,22 @@ enum CommsAssist {
 /// The radio, one page (the owner, 2026-11-13: Comms Assist, the ATC
 /// alerts and the copilot together): Comms Assist's button, the ATC
 /// copilot listening while flying (not offered where speech cannot be
-/// recognised on the iPhone), and the in-flight copilot.
+/// recognised on the iPhone), and the in-flight copilot. Comms Assist and
+/// the ATC alerts are the ATC Copilot's, parked until its switch in Extras
+/// is on (Extra); the in-flight copilot is not parked.
 struct AtcPage: View {
     @Environment(ClearanceListener.self) private var listener
     @AppStorage(CommsAssist.key) private var commsAssist = false
+    @AppStorage(Extra.atcCopilot.key) private var atcCopilot = false
 
     var body: some View {
         List {
-            Toggle("Comms Assist", isOn: $commsAssist)
-                .accessibilityIdentifier("comms-assist-toggle")
-            if listener.canListen {
-                LabeledContent("ATC Alerts") { AtcModePicker().fixedSize() }
+            if atcCopilot {
+                Toggle("Comms Assist", isOn: $commsAssist)
+                    .accessibilityIdentifier("comms-assist-toggle")
+                if listener.canListen {
+                    LabeledContent("ATC Alerts") { AtcModePicker().fixedSize() }
+                }
             }
             LabeledContent("Copilot") { CopilotModePicker().fixedSize() }
         }
@@ -159,8 +168,8 @@ struct SourcesPage: View {
 }
 
 #Preview("SettingsView") {
+    // The app's models, as the app gives them: Extras reads the radio's
+    // and the model weather's.
     NavigationStack { SettingsView(atMap: false) }
-        .environment(Session())
-        .environment(Charts())
-        .environment(FlightSession())
+        .modifier(AppModels(session: Session(), charts: Charts(), nav: Navigator(), screens: ScreenModels()))
 }

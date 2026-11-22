@@ -209,7 +209,7 @@ struct TrafficTests {
 
     @Test func theLicencesCredit() throws {
         #expect(Traffic.credit(nil) == "Traffic adsb.lol, ODbL")
-        #expect(Traffic.credit("adsb.lol and adsb.fi") == "Traffic adsb.lol, ODbL · adsb.fi")
+        #expect(Traffic.credit("adsb.lol and ADS-B Exchange") == "Traffic adsb.lol, ODbL · ADS-B Exchange")
         #expect(Traffic.credit("ADS-B Exchange") == "Traffic ADS-B Exchange")
     }
 

@@ -10,7 +10,7 @@ struct ReceiverChip: View {
     @Environment(OwnShip.self) private var ownShip
 
     var body: some View {
-        if Receiver.enabled, receiver.mode == .auto, let summary = receiver.summary {
+        if receiver.listening, let summary = receiver.summary {
             let name = receiver.picture?.receiver.name ?? "the receiver"
             let position = OwnShipSource.words(ownShip.weighed, name: name)
             let radar = ReceiverWords.radarAge(receiver.nexrad)

@@ -10,7 +10,7 @@
  "ios_try_engine_default": 7,
  "planner_airplane_figure_literals": 0,
  "gateway_http_client_builders": 2,
- "python_unit_constants": 1,
+ "python_unit_constants": 0,
  "web_unit_constants": 0,
  "engine_unit_literals": 0,
  "web_unit_literals": 0,
@@ -21,7 +21,7 @@
  "haversine_formulas": 0,
  "degree_margin_formulas": 0,
  "copy_paste_clones": 21,
- "one_home_findings": 10,
+ "one_home_findings": 7,
  "rules_outside_engine": 3,
  "hand_built_web_controls": 1,
  "files_over_400_lines": 13

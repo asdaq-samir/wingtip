@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Plane, PlugZap, Route, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import { BookOpen, Plane, PlugZap, Route, ShieldCheck, UserRound } from "lucide-react";
 import { cn } from "cn";
 import type { ReactNode } from "react";
 import AboutPanel from "../../components/AboutPanel";
@@ -27,15 +27,13 @@ import { FlightsPanel } from "./AccountPanels";
 import { LargeFace } from "./AccountFace";
 import { LogbookPanel } from "./LogbookPanel";
 import MinimumsPanel from "./MinimumsPanel";
-import SubscriptionPanel from "./SubscriptionPanel";
-import { standing, subscriptionQuery, useSold } from "../../lib/subscription";
 import PilotGuide from "./PilotGuide";
 import PilotPage from "./PilotPage";
 import ConnectedAppsPage from "./ConnectedAppsPage";
 import { AirplanesPage, EmergencyRow, TrainingPage, TrainingRow } from "./YouRows";
 import TabPage, { TAB_PAGE_GAP } from "../../components/TabPage";
 
-// Loaded when it is drawn, as PaidPrompt does: imported here it put the
+// Loaded when it is drawn: imported here it put the
 // sign-in sheet in the first load for every pilot already signed in.
 const SignInModal = lazy(() => import("../../components/SignInModal"));
 
@@ -78,7 +76,6 @@ function Personal({
         Your sign-in status could not be checked.
       </EmptyState>
     ) : null;
-  const sold = useSold();
   // Each of the pilot's things with where it stands at its row's end, at
   // the owner's pick (T3): asked for only signed in, as the rows open to
   // nothing otherwise.
@@ -115,7 +112,6 @@ function Personal({
     documents: { title: "Documents", content: <DocumentsPage /> },
     training: { title: "Training", content: <TrainingPage signedIn={signedIn} /> },
     settings: { title: "Settings", content: <SettingsPage help={help} /> },
-    subscription: { title: "Subscription", content: <SubscriptionPanel /> },
     pilot: { title: "Pilot Details", content: <PilotPage /> },
     connections: { title: "Connected Apps", content: <ConnectedAppsPage /> },
   };
@@ -202,7 +198,6 @@ function Personal({
                   </RowBadge>
                 }
               />
-              {signedIn && sold && <SubscriptionRow />}
             </ListGroup>
           </div>
         </div>
@@ -289,28 +284,10 @@ function YouHead({ pilot, opens }: { pilot: Pilot | null; opens: boolean }) {
   );
 }
 
-/** The Subscription page's row, with what the pilot has in a few words. */
-function SubscriptionRow() {
-  const { data: subscription } = useQuery(subscriptionQuery);
-  return (
-    <PageRow
-      page="subscription"
-      title="Subscription"
-      value={subscription ? standing(subscription) : undefined}
-      media={
-        <RowBadge colour={SETTING_BADGE.subscription} round>
-          <Sparkles />
-        </RowBadge>
-      }
-    />
-  );
-}
-
 /**
  * You, the pilot's console, opened from the avatar on the planner
  * (AccountButton): who they are, their airplanes, flights, logbook,
- * minimums, training and the emergency assistant, then Settings and the
- * subscription. Shared with the developer's console. Not the nav log or
+ * minimums, training and the emergency assistant, then Settings. Shared with the developer's console. Not the nav log or
  * the briefing: those are the panel over the map.
  */
 export function PilotPanel({

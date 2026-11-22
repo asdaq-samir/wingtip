@@ -15,6 +15,7 @@ import { useMicPrimer } from "../../components/MicPrimer";
 import { setCommsAssist, useCommsAssist } from "../../lib/atc/commsAssist";
 import { ATC_LISTEN_MODES, setAtcListen, useAtcListen, type AtcListen } from "../../lib/atc/listenSetting";
 import { setHelpImprove, useHelpImprove } from "../../lib/helpImprove";
+import { useExtra } from "../../lib/extras";
 import { LEGAL_PAGES } from "../../lib/legal";
 import { useCanListen } from "../../lib/speechLocal";
 import { usePreferences } from "../../lib/preferences";
@@ -57,6 +58,9 @@ export function AtcPage() {
   const [copilotMode, setCopilotMode] = useCopilotMode();
   const atcListen = useAtcListen((s) => s.value);
   const voice = useCanListen();
+  // Comms Assist and the ATC alerts are the ATC Copilot's, parked until
+  // its switch in Extras is on (lib/extras); the copilot is not parked.
+  const atcCopilot = useExtra("atcCopilot");
   // Why the microphone, before the browser asks (MicPrimer).
   const [micPrimer, primeMic] = useMicPrimer();
   return (
@@ -65,12 +69,12 @@ export function AtcPage() {
       <ListGroup>
         {/* The radio's button on the map is off until turned on: comms
             assist is kept but not in the way (the owner, 2026-11-13). */}
-        <SwitchRow title="Comms Assist" on={commsAssist} onChange={setCommsAssist} testId="comms-assist-toggle" />
+        {atcCopilot && <SwitchRow title="Comms Assist" on={commsAssist} onChange={setCommsAssist} testId="comms-assist-toggle" />}
         {/* The ATC copilot (features/atc): the radio listened to while
             flying, calls to us read into cards. Off until the pilot
             turns it on. Not offered where speech cannot be recognised
             on the device (lib/speechLocal). */}
-        {voice && (
+        {voice && atcCopilot && (
           <ListRow title="ATC Alerts">
             <Segmented
               label="ATC alerts"
@@ -160,7 +164,7 @@ function SourcesPage() {
   // How old each weather layer's data is, beside where it comes from.
   const ages = useLayerAges();
   // Whose traffic the map draws, as the map credits it (TrafficGl's
-  // trafficCredit: adsb.lol's, adsb.fi's or ADS-B Exchange's), where it
+  // trafficCredit: adsb.lol's or ADS-B Exchange's), where it
   // always said adsb.lol (the commonality audit's MAP-6, CODE-31);
   // adsb.lol's, the planner's first, before the map has asked.
   // The row's own title says Traffic: the credit without it.

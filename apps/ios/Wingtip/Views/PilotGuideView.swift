@@ -44,7 +44,7 @@ struct PilotGuideView: View {
                     }
                 }
             }
-            Section("Practice") { PracticeRows() }
+            PracticeSection()
             Section("More") {
                 NavigationLink("Your Airplane in the Day's Air") { AirplaneInTheAirView() }
             }

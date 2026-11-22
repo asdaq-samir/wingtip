@@ -27,7 +27,6 @@ The package is that module split by source, a module each:
   an airplane read from a readsb answer (`_aircraft`).
 - adsb_lol: adsb.lol's API by region and by search, and its globe's traces.
 - adsbx: ADS-B Exchange, the fallback, within its month's requests.
-- adsbfi: adsb.fi, asked for a watched airplane.
 - radar: the FAA's terminal radar's tracks through SWIM (ingest writes them).
 - store: the live store the planner and ingest share (SQLite).
 - recorded: the tracks recorded and the airplanes followed, in the store.
@@ -70,7 +69,6 @@ from .adsb_lol import (
     WIDE_REGION_RADIUS_NM,
 )
 from .adsbx import ADSBX_HOST, ADSBX_MIN_GAP_S, ADSBX_MONTHLY, ADSBX_SOURCE, ADSBX_URL, ADSBX_USAGE_FILE
-from .adsbfi import ADSBFI_BACKOFF_S, ADSBFI_MIN_GAP_S, ADSBFI_SOURCE, ADSBFI_URL
 from .radar import (
     ELSEWHERE_RECORD_S,
     LOOKED_S,
@@ -117,10 +115,6 @@ from .alerts import LANDED_UNHEARD_S, status
 from .bases import BASED_TTL_S, BASED_WORKERS, based, based_judged
 
 __all__ = [
-    "ADSBFI_BACKOFF_S",
-    "ADSBFI_MIN_GAP_S",
-    "ADSBFI_SOURCE",
-    "ADSBFI_URL",
     "ADSBX_BY",
     "ADSBX_HOST",
     "ADSBX_MIN_GAP_S",

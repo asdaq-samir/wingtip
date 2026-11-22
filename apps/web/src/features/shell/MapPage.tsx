@@ -24,14 +24,13 @@ import ConsoleLayer from "./ConsoleLayer";
 import type { WorkspacePieces } from "../../lib/workspace";
 
 /** The plain route form, for a workspace with no route box of its own (the
- *  developer's and the Studio's; the planner's is its own, FplRoute): on a
+ *  developer's; the planner's is its own, FplRoute): on a
  *  chunk of its own, with its airport pickers, off the pilot's first load. */
 const RouteForm = lazy(() => import("../../components/RouteForm"));
 
 /**
- * The one page, in three modes: the pilot's planner, the developer's
- * training workspace and the Studio's replays are the same shell around a
- * different workspace --
+ * The one page, in two modes: the pilot's planner and the developer's
+ * training workspace are the same shell around a different workspace --
  * the chart filling the screen, the map's buttons floating over it, and
  * one panel over it the way Maps on an iPhone has one (MapPanel): the
  * route form and the console's button always in sight, and under them

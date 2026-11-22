@@ -10,12 +10,15 @@ import SwiftUI
 /// Review 5.1.1(viii)); the town, never the street. An owner who asked the
 /// FAA to withhold their name (49 U.S.C. 44114(b)) is not in the record,
 /// and its row says so. `record` is the registry's, at once; `details` the
-/// rest, nil while asked; `own` whether it is one of the pilot's.
+/// rest, nil while asked; `own` whether it is one of the pilot's;
+/// `history` whether its base and its safety and ownership history are
+/// offered (Extra.airplaneHistory: another's only with Other Airplanes on).
 struct AirplaneInfoSections: View {
     let record: AircraftRegistration?
     let details: APIAirplaneDetails?
     let detailsFailed: Bool
     let own: Bool
+    let history: Bool
 
     var body: some View {
         if let full = details?.registration ?? record {
@@ -26,7 +29,7 @@ struct AirplaneInfoSections: View {
         } else {
             Section { Text("The FAA's registry has no record of this N-number.").foregroundStyle(.secondary) }
         }
-        AirplaneHistorySections(details: details, failed: detailsFailed, own: own)
+        if history { AirplaneHistorySections(details: details, failed: detailsFailed, own: own) }
     }
 
     private func registration(_ full: AircraftRegistration) -> some View {

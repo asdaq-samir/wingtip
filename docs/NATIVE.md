@@ -274,7 +274,21 @@ owner, 2026-11-03):
   card's Weather tab when the weather service has none, and the route's
   in the Brief's From Your Receiver (`receiver_reports`); FIS-B NEXRAD is
   drawn over the chart (`receiver_nexrad`, `NexradMapLayer`). Settings ›
-  Data has ADS-B Receiver: Auto or Off, and the position's source.
+  Data has ADS-B Receiver: Auto or Off, and the position's source; off
+  in Settings › Extras (below) nothing listens.
+- **Settings › Extras** (`Wingtip/Extras.swift`, `Views/ExtrasSection.swift`;
+  the feature review, docs/store/feature-review.md, 2026-11-21): the parked
+  features, a stock switch each after In Flight, off by default, kept in
+  UserDefaults as `extras.<key>` -- ATC Copilot (`atcCopilot`: Comms
+  Assist, the ATC alerts, the clearance card and its Listen and Read back,
+  the radio's shortcuts; `ClearanceListener` listens only with it on),
+  ADS-B Receiver (`adsbReceiver`: `Receiver.listening`), Other Airplanes
+  (`otherAirplanes`: another airplane's Alert/Follow, Debrief, flights,
+  base and history, and its watches asked; `Extra.airplaneHistory`, the
+  pilot's own always), Model Weather (`modelWeather`: the Map card's menus,
+  nothing fetched) and Training Tools (`trainingTools`: Practice; the
+  diversion drill is Nearest's and stays). Off, a setting saved inside one
+  acts as off. A UI test turns one on with `-extras.<key> "<true/>"`.
 - **The privacy manifest** (`Wingtip/PrivacyInfo.xcprivacy`): what is
   collected and the required-reason APIs used; the session is cookies in
   `HTTPCookieStorage`, and `UserDefaults` holds no secret.
@@ -343,7 +357,7 @@ passengers waits for the server on AWS.
 
 `apps/ios/WingtipWatch/` (the owner's ask, 2026-11-03) is a companion of the
 iOS app, bundle id `app.wingtipmaps.ios.watchkitapp`, watchOS 26 and
-later (decision 0040's amendment), embedded in the phone's app and installed with it: three pages,
+later (decision 0040's amendment): three pages,
 Timers (a flight timer and a hold/approach timer, each a `Stopwatch`
 worked out from the clock at each draw under a `TimelineView`, so it is
 right when the display wakes), Checklist (the picked airplane's sections
@@ -360,11 +374,15 @@ out of reach). Every message is a small Codable struct in
 `Wingtip/Shared/WatchMessages.swift`, compiled into both apps and
 round-tripped in `WingtipWatchTests`. No complication yet.
 
-The workflow does not build the watch scheme yet: the `Wingtip` scheme
-builds the watch app as the embedded companion, and `WingtipWatch`'s
-tests need a watch simulator paired with the iPhone one, picked as a
-pair (`xcrun simctl list pairs`) and given as `-destination
-"platform=watchOS Simulator,id=…"`. In the developer account the watch
+It is parked (the feature review, 2026-11-21): the phone's app no longer
+embeds it (project.yml), so the App Store build has no watch app, its
+screenshots or its questions, and `WatchLink` activates no session
+without it in the bundle (`WatchLink.bundled`). The target and its sources
+stay, built by the `WingtipWatch` scheme alone; to bring it back, the
+`Wingtip` target depends on it again with `embed: true`. No workflow
+builds that scheme: `WingtipWatch`'s tests need a watch simulator paired
+with the iPhone one, picked as a pair (`xcrun simctl list pairs`) and
+given as `-destination "platform=watchOS Simulator,id=…"`. In the developer account the watch
 app needs its own app id (`app.wingtipmaps.ios.watchkitapp`) and a
 provisioning profile beside the phone's for TestFlight.
 

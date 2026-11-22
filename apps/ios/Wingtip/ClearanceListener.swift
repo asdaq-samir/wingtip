@@ -16,11 +16,15 @@ import UIKit
 /// `canListen` is false and every microphone control hides itself, and
 /// nothing falls back to a server.
 ///
-/// It goes on with the phone locked, as the owner asked (2026-11-02;
-/// project.yml's UIBackgroundModes audio keeps the microphone open), and a
-/// call to us (HeardCall) is said in a notification then (Notifications),
-/// with the haptics in the app. Asked for with the system's own sheets
-/// (project.yml's usage strings).
+/// It goes on while the app is in front: the `audio` background mode that
+/// kept the microphone open with the phone locked (the owner, 2026-11-02)
+/// is out of the first submission's build with the ATC Copilot parked (the
+/// feature review, 2026-11-21; project.yml). A call to us (HeardCall) put
+/// away is said in a notification (Notifications), with the haptics in
+/// the app. Asked for with the system's own sheets (project.yml's usage
+/// strings). The radio is listened to only while the ATC Copilot is on in
+/// Settings' Extras (Extra), whoever asks: the copilot, the clearance's
+/// Listen and Read back, or a shortcut.
 @MainActor
 @Observable
 final class ClearanceListener {
@@ -80,6 +84,16 @@ final class ClearanceListener {
     /// call, Siri) and gave it back, while listening.
     private var interruptions: Task<Void, Never>?
 
+    /// Whether the radio may be listened to: the ATC Copilot on in
+    /// Settings' Extras, else `problem` says where it is turned on.
+    private func offered() -> Bool {
+        guard Extra.atcCopilot.on() else {
+            problem = "The ATC Copilot is off: turn it on in Settings, under Extras."
+            return false
+        }
+        return true
+    }
+
     /// The microphone's audio session ready, with `problem` set where it
     /// cannot be: the permissions asked for with the system's sheets, the
     /// audio session for recording.
@@ -129,6 +143,7 @@ final class ClearanceListener {
     }
 
     func start(words: [String]) async {
+        guard offered() else { return }
         await Notifications.allow()
         guard await openMicrophone() else { return }
         self.words = words
@@ -192,6 +207,7 @@ final class ClearanceListener {
     /// the microphone cannot be had, or when the radio is being listened
     /// to, which it would have to be stopped for.
     func hearOnce(words: [String] = []) async -> String? {
+        guard offered() else { return nil }
         guard !listening else {
             problem = "The radio is being listened to; stop it to read back by voice."
             return nil

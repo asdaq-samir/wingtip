@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     #: When each GOES picture was taken (nowCOAST's capabilities).
     satellite_every_s: float = 300.0
     satellite_idle_every_s: float = 1800.0
+    #: Whether the map's flow layer (model weather, app.flow) is fetched at
+    #: all. Off unless WEATHER_FLOW_ON: the layer is parked (the feature
+    #: review, 2026-11-21), off by default in every app, and its GFS, HRRR
+    #: and DAFS downloads are the service's largest feed and memory.
+    flow_on: bool = False
     #: The map's flow layer (app.flow): the HRRR runs hourly, so looked for
     #: four times an hour while planning; a frame already held is not
     #: downloaded again. Every three hours otherwise.

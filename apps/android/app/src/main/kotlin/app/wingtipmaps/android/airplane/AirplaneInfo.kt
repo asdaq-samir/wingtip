@@ -82,10 +82,11 @@ private fun Group(@StringRes title: Int, rows: @Composable () -> Unit) {
  * (RegistryNames, App Review 5.1.1(viii)); the town, never the street. An
  * owner who asked the FAA to withhold their name (49 U.S.C. 44114(b)) is
  * not in the record, and its row says so. `state.record` is the
- * registry's, at once; `state.details` the rest, null while asked.
+ * registry's, at once; `state.details` the rest, null while asked. Its
+ * history only where it is offered (`history`, OtherAirplanes).
  */
 @Composable
-fun AirplaneInfo(state: AirplaneLookup.State, own: Boolean) {
+fun AirplaneInfo(state: AirplaneLookup.State, own: Boolean, history: Boolean) {
     val details = state.details
     val full = details?.registration ?: state.record
     if (full == null) {
@@ -140,7 +141,7 @@ fun AirplaneInfo(state: AirplaneLookup.State, own: Boolean) {
             Fact(R.string.info_holder, ref?.tcHolder)
         }
     }
-    AirplaneHistory(details, state.detailsProblem, own)
+    if (history) AirplaneHistory(details, state.detailsProblem, own)
 }
 
 /** Its history past the record: where it is usually based, its NTSB cases

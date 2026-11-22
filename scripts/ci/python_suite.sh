@@ -34,7 +34,7 @@ case "$leg" in
   planner) dir=services/planner req=requirements-dev.txt code="app tests" tests=tests ;;
   flight) dir=services/planner req=requirements-dev.txt code=tests/test_flight_critical.py tests=tests/test_flight_critical.py ;;
   wingtip) dir=services/planner req=requirements-dev-wingtip.txt code="wingtip tests_wingtip" tests=tests_wingtip ;;
-  jobs) dir=services/jobs req=requirements-dev-jobs.txt code="charts crash" tests="charts/tests crash/tests" ;;
+  jobs) dir=services/jobs req=requirements-dev-jobs.txt code=charts tests=charts/tests ;;
   ingest) dir=services/ingest req=requirements-dev.txt code="ingest tests" tests=tests ;;
   weather) dir=services/weather req=requirements-dev.txt code="app tests" tests=tests ;;
   # The X-Plane trial's plugin: the standard library and its tests' runner only.

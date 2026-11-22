@@ -1,5 +1,4 @@
 import type { ExpressionSpecification } from "maplibre-gl";
-import { create } from "zustand";
 import { glZoom } from "./glStyle";
 
 /**
@@ -39,12 +38,3 @@ export const imageryFrom = (tileMaxZoom: number) => glZoom(tileMaxZoom) - 0.5;
  *  by default; Google's only where the pilot picked Google's overlay in
  *  the Map menu (useCloseImagery). */
 export type CloseImagery = "usgs" | "google";
-
-/** The imagery drawn close in now, none (null) while there is none. */
-export const useCloseImageryDrawn = create<{ drawn: CloseImagery | null }>(() => ({ drawn: null }));
-
-/** Whether what is drawn close in now may go out of the app, as Studio's
- *  videos do: the USGS's imagery is a public-domain work (17 U.S.C. 105),
- *  or none is drawn; Google's Map Tiles API terms forbid exporting its
- *  content outside the service, so Google's may not. */
-export const imageryForExport = (): boolean => useCloseImageryDrawn.getState().drawn !== "google";

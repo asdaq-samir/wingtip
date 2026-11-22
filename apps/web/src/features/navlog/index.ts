@@ -25,8 +25,5 @@ export const { Part: MiniProfile, prefetch: prefetchMiniProfile } = fromChunk(
 /** PastFlightChart, on a chunk of its own, as its importer loads it. */
 export const loadPastFlightChart = () => import("./PastFlightChart");
 
-/** The nav log's profile chart, on a chunk of its own (the Studio draws with it too). */
-export const loadProfileChart = () => import("./ProfileChart");
-
 /** RouteLegCard, on a chunk of its own, as its importer loads it. */
 export const loadRouteLegCard = () => import("./RouteLegCard");

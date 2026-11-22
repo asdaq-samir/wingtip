@@ -94,7 +94,11 @@ final class ModelWeather {
     @ObservationIgnored private var sight = LoopSight()
 
     private init() {
-        field = FlowFieldKind(rawValue: UserDefaults.standard.string(forKey: Self.fieldKey) ?? "") ?? .off
+        // A field saved before acts as Off while Model Weather is parked in
+        // Settings' Extras (Extra): nothing of it fetched or drawn. Kept, not
+        // written over, for when the switch is on again.
+        let saved = FlowFieldKind(rawValue: UserDefaults.standard.string(forKey: Self.fieldKey) ?? "") ?? .off
+        field = Extra.modelWeather.on() ? saved : .off
         levelPick = UserDefaults.standard.string(forKey: Self.levelKey) ?? "sfc"
         picked()
     }

@@ -2,7 +2,8 @@
 
 Play Console › App content › Foreground service permissions asks, for
 each foreground-service type the manifest declares
-(`apps/android/app/src/main/AndroidManifest.xml`), what the user does
+(`apps/android/app/src/main/AndroidManifest.xml`; one, location, in
+this build), what the user does
 that starts it, what it does, what happens if it is deferred, and a short
 video of it in use (Play Console Help, "Understanding foreground service
 and full-screen intent requirements", answer 13392821). The text below is
@@ -40,29 +41,13 @@ flying speed raising "Start Flight?", the tap on Start Flight, the
 "Flying" notification, the screen locked with the Live Update counting
 down, and the notification gone after slowing down.
 
-## Microphone (`FOREGROUND_SERVICE_MICROPHONE`, `atc/AtcListenService`)
+## Not declared in this build
 
-**Use case:** The ATC copilot, which the pilot turns on (its setting in
-Settings, or the copilot's capsule on the map).
-
-**What it does:** Listens to the cockpit audio fed to the phone and
-writes the calls to the pilot's airplane as cards, recognised on the
-phone only (`createOnDeviceSpeechRecognizer`); nothing is recorded or
-sent. A notification, "Listening to the Radio", shows while it runs; it
-stops when the pilot turns the copilot off.
-
-**If it is deferred:** A clearance or a frequency change given while
-the screen is off is missed.
-
-## Connected device (`FOREGROUND_SERVICE_CONNECTED_DEVICE`, `receiver/ReceiverService`)
-
-**Use case:** A cockpit ADS-B receiver (Stratux, SkyEcho, Sentry) on the
-same Wi-Fi, with the pilot's ADS-B Receiver setting on Auto (Settings'
-Map section).
-
-**What it does:** Keeps reading the receiver's GDL 90 traffic and FIS-B
-weather with the screen off while a receiver is heard, shown by a
-notification, and stops when it is no longer heard.
-
-**If it is deferred:** Traffic near the airplane and the weather
-broadcast in flight stop updating whenever the screen is off.
+The microphone type (`atc/AtcListenService`, the ATC copilot) and the
+connected-device type (`receiver/ReceiverService`, the cockpit ADS-B
+receiver) are left out of the manifest while those features are parked
+(the feature review, [feature-review.md](feature-review.md), 2026-11-21;
+Settings' Extras, off to start). With a switch on, each works only while
+the app is in front, so Play asks no declaration or video for either.
+Their texts come back here, with the permission and the service, when
+the feature does.

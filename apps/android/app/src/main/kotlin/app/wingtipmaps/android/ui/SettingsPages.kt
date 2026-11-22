@@ -14,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Config
+import app.wingtipmaps.android.Extra
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.atc.AtcSettingRow
 import app.wingtipmaps.android.atc.CommsAssist
@@ -24,6 +25,7 @@ import app.wingtipmaps.android.design.ChoiceGroup
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.diagnostics.HelpImprove
 import app.wingtipmaps.android.firstflight.FirstFlightMemory
+import app.wingtipmaps.android.rememberExtra
 
 /** A page of Settings: a column that scrolls, the app's side room. */
 @Composable
@@ -45,12 +47,16 @@ private fun SettingsPageColumn(content: @Composable () -> Unit) {
 fun AtcPage() {
     val context = LocalContext.current
     SettingsPageColumn {
-        val comms = remember(context) { CommsAssist.of(context) }
-        val commsOn by comms.on.collectAsStateWithLifecycle()
-        SettingsGroup { SwitchSettingRow(stringResource(R.string.comms_assist), commsOn, index = 0, count = 1, onChange = comms::set) }
-        if (remember(context) { RadioListener.canListen(context) }) {
-            SectionTitle(stringResource(R.string.atc_alerts))
-            AtcSettingRow()
+        // Comms Assist and the ATC alerts only while Settings' Extras has
+        // the ATC Copilot on (Extras); the field advice below is not parked.
+        if (rememberExtra(Extra.ATC_COPILOT)) {
+            val comms = remember(context) { CommsAssist.of(context) }
+            val commsOn by comms.on.collectAsStateWithLifecycle()
+            SettingsGroup { SwitchSettingRow(stringResource(R.string.comms_assist), commsOn, index = 0, count = 1, onChange = comms::set) }
+            if (remember(context) { RadioListener.canListen(context) }) {
+                SectionTitle(stringResource(R.string.atc_alerts))
+                AtcSettingRow()
+            }
         }
         SectionTitle(stringResource(R.string.copilot))
         val copilot = remember(context) { CopilotSetting.of(context) }

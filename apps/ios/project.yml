@@ -107,10 +107,11 @@ targets:
       # The Live Activity's widget extension, embedded in the app.
       - target: WingtipWidgets
         embed: true
-      # The Apple Watch app (WingtipWatch), embedded in the app's Watch
-      # folder as a companion is; it is installed with the phone's app.
-      - target: WingtipWatch
-        embed: true
+      # No Apple Watch app in the iPhone's build: parked, left out of the
+      # first submission (the feature review, docs/store/feature-review.md,
+      # 2026-11-21: a screenshot set, a 2.5.16 question and a target on every
+      # build, for three screens). WingtipWatch stays below and builds on its
+      # own scheme; to bring it back, depend on it here with `embed: true`.
     info:
       path: Wingtip/Info.plist
       properties:
@@ -149,21 +150,29 @@ targets:
         # A clearance read on the radio, heard by Apple's recognizer on the
         # iPhone only (ClearanceListener's requiresOnDeviceRecognition); where
         # it cannot be, voice is not offered and neither is asked for.
-        NSMicrophoneUsageDescription: Wingtip Maps listens to the radio to show what ATC says, tell you when ATC calls you, and enter a clearance's route for you to check, and hears the questions you ask it by voice. The sound is never recorded or sent.
-        NSSpeechRecognitionUsageDescription: Wingtip Maps turns what ATC says on the radio, and the questions you ask it by voice, into words on your iPhone. Speech is recognised on the device and its sound never leaves it; a question you send goes where a typed one would.
+        # Voice first: the radio is parked behind Settings' Extras (ATC
+        # Copilot, the feature review of 2026-11-21), so the first ask a
+        # pilot or App Review sees comes from the search's microphone.
+        NSMicrophoneUsageDescription: Wingtip Maps hears the questions you ask it by voice and, with ATC Copilot turned on in Settings, listens to the radio to show what ATC says and enter a clearance's route for you to check. The sound is never recorded or sent.
+        NSSpeechRecognitionUsageDescription: Wingtip Maps turns the questions you ask it by voice, and with ATC Copilot on what ATC says on the radio, into words on your iPhone. Speech is recognised on the device and its sound never leaves it; a question you send goes where a typed one would.
         # A page photographed with the document camera (Documents/
         # DocumentScanner): a handbook's performance or weight and balance
         # page, a paper logbook page or a clearance copied down, read for
         # the pilot to confirm item by item. The photo library is reached
         # through the system's picker, which needs no permission.
         NSCameraUsageDescription: Wingtip Maps photographs a handbook page, a logbook page or a clearance you wrote down, to read its figures for you to check.
-        # The radio heard on with the phone locked, as the owner asked
-        # (2026-11-02): the microphone kept open (ClearanceListener); and
-        # the position read on while the airplane is flying (OwnShip),
-        # for the alerts ahead and the path flown (OwnTrail); and CloudKit's
-        # silent pushes, so another device's records (Records) sync before
-        # the app is opened; and iOS's background refresh, for the route's
-        # weather watched after the Brief (WeatherWatch, its one task).
+        # The alerts said aloud with the phone locked (SpokenAlerts,
+        # CopilotVoice: iOS starts sound in the background only for an app
+        # with `audio`), and the radio heard on with the phone locked, as
+        # the owner asked (2026-11-02), once the parked ATC Copilot is on
+        # (ClearanceListener, behind Settings' Extras); the position read on
+        # while the airplane is flying (OwnShip), for the alerts ahead and
+        # the path flown (OwnTrail); CloudKit's silent pushes, so another
+        # device's records (Records) sync before the app is opened; and
+        # iOS's background refresh, for the route's weather watched after
+        # the Brief (WeatherWatch, its one task). `audio` stays for the
+        # spoken alerts, a safety feature, though the review (2026-11-21)
+        # had thought it the radio's alone.
         UIBackgroundModes: [audio, location, remote-notification, fetch]
         BGTaskSchedulerPermittedIdentifiers: [app.wingtipmaps.weather-watch]
         # Apple's Private Cloud Compute as the AI's fallback after the
@@ -180,7 +189,7 @@ targets:
         # is granted: the entitlement in Wingtip.entitlements, this YES
         # (docs/store/launch-checklist.md, docs/receivers.md).
         WingtipReceiver: false
-        NSLocalNetworkUsageDescription: With Traffic on, Wingtip Maps listens on the cockpit's Wi-Fi for an ADS-B receiver (Stratux, SkyEcho, Sentry).
+        NSLocalNetworkUsageDescription: With ADS-B Receiver turned on in Settings, Wingtip Maps listens on the cockpit's Wi-Fi for an ADS-B receiver (Stratux, SkyEcho, Sentry).
         # A flight in progress on the Lock Screen and in the Dynamic Island
         # (FlightActivity, the WingtipWidgets extension): the next
         # checkpoint, the ETA and the fuel, as Apple has ongoing things shown.

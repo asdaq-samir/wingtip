@@ -1,5 +1,6 @@
 import { cn } from "cn";
 import { Button } from "./ui/button";
+import { useExtra } from "../lib/extras";
 import { usePreferences } from "../lib/preferences";
 import { GLASS } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
@@ -16,11 +17,14 @@ import { TEXT } from "../lib/text";
  * state was read "Show in 2D, pressed", which says the opposite of the map
  * (WAI-ARIA APG, Button: a toggle's label does not change with its state).
  * Its 44-point area a pseudo-element over the glass's edge round it,
- * never a bigger button.
+ * never a bigger button. Not there while 3D is parked (Settings' Extras,
+ * lib/extras).
  */
 export default function ThreeDButton() {
   const on = usePreferences((s) => s.threeD);
   const setThreeD = usePreferences((s) => s.setThreeD);
+  const offered = useExtra("threeD");
+  if (!offered) return null;
   return (
     <div data-map-food="" className={cn("flex rounded-full p-1", GLASS)}>
       <Button

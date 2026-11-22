@@ -1,5 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { grabberTo, inSheet, openPanel, openRoute, settle, sideDrawer, slow } from "./helpers";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "atcCopilot"));
 
 /**
  * A clearance into the route, from the map's microphone: the

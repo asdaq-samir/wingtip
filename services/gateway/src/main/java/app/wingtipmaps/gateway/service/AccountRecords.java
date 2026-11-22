@@ -3,18 +3,15 @@ package app.wingtipmaps.gateway.service;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.AccountRecordsDto;
 import app.wingtipmaps.gateway.dto.AccountRecordsDto.SentReminder;
-import app.wingtipmaps.gateway.dto.AccountRecordsDto.SubscriptionRow;
-import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.List;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 /**
  * The rows of a pilot's that no endpoint reads back whole, read for their
- * export (ExportController): reminders_sent (V23) and the subscriptions
- * row (V19). Read here, in one place, rather than given
- * endpoints of their own that no screen would call.
+ * export (ExportController): reminders_sent (V23). Read here, in one
+ * place, rather than given an endpoint of its own that no screen would
+ * call.
  */
 @Service
 public class AccountRecords {
@@ -25,9 +22,8 @@ public class AccountRecords {
         this.jdbc = jdbc;
     }
 
-    /** Everything of those two tables that is the pilot's. */
+    /** Everything of that table that is the pilot's. */
     public AccountRecordsDto of(Pilot pilot) {
-        Long id = pilot.getId();
         List<SentReminder> sent = jdbc.query(
                 "SELECT what, due_on, days_before, sent_at FROM reminders_sent WHERE pilot_id = ? ORDER BY sent_at",
                 (r, n) -> new SentReminder(
@@ -35,23 +31,7 @@ public class AccountRecords {
                         r.getDate(2).toLocalDate(),
                         r.getInt(3),
                         r.getTimestamp(4).toInstant()),
-                id);
-        List<SubscriptionRow> subscription = jdbc.query(
-                "SELECT trial_started_at, trial_ends_at, paid_until, plan, store, store_ref, updated_at"
-                        + " FROM subscriptions WHERE pilot_id = ?",
-                (r, n) -> new SubscriptionRow(
-                        instant(r.getTimestamp(1)),
-                        instant(r.getTimestamp(2)),
-                        instant(r.getTimestamp(3)),
-                        r.getString(4),
-                        r.getString(5),
-                        r.getString(6),
-                        r.getTimestamp(7).toInstant()),
-                id);
-        return new AccountRecordsDto(sent, subscription.isEmpty() ? null : subscription.get(0));
-    }
-
-    private static Instant instant(Timestamp at) {
-        return at == null ? null : at.toInstant();
+                pilot.getId());
+        return new AccountRecordsDto(sent);
     }
 }

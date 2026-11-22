@@ -1024,9 +1024,10 @@ place over the map: a glass circle the size of the 3D's in the left-hand
 column (`MapControls`' `AccountCircle`), so on a bottom sheet it rides
 the sheet's top through `OnSheetTop`, 8 under the 3D circle and level
 with the map's buttons' group at the right; only where the sheet has its
-pages (the developer's and the studio's pages keep theirs in their own
-bar). The radio's button, drawn only
-while Comms Assist is on (a switch of Settings' ATC page, `comms-assist-toggle`,
+pages (the developer's pages keep theirs in their own bar). The 3D
+circle is drawn only while Settings' Extras has 3D on (`ThreeDButton`,
+`lib/extras`). The radio's button, drawn only
+while Extras has ATC Copilot on and Comms Assist is on (a switch of Settings' ATC page, `comms-assist-toggle`,
 off by default; the owner, 2026-11-13), is then a
 circle of its own over that group, as from md up, its listening pill
 widening to the left across the screen less its margins (in flight its
@@ -1782,10 +1783,12 @@ headed by the avatar with Choose Photo and Remove Photo (`AvatarPhoto`,
 cropped and scaled on a canvas by `squarePhoto` before it is sent), with the account's menu
 (signing in and out, the mode, a copy of the data, deleting the
 account), then Airplanes (the checklists inside), Flights, Logbook,
-Minimums, Documents (§13a), Training (Coach, Practice), the Emergency
-Assistant, Settings and Subscription. Settings (`features/settings`) is one page pushed over
-You (`ConsolePages`): Map, In Flight
-(Alerts; ATC), Data and Help & About (Guide, Status, Log, About,
+Minimums, Documents (§13a), Training (Coach, and Practice while Extras has Training Tools
+on), the Emergency Assistant and Settings. Settings (`features/settings`)
+is one page pushed over You (`ConsolePages`): Map, In Flight
+(Alerts; ATC), Extras (`ExtrasGroup`: ATC Copilot, Other Airplanes,
+Model Weather, 3D and Training Tools, a Base UI Switch each with its
+one line, all off to start; `lib/extras`, rules.md §8), Data and Help & About (Guide, Status, Log, About,
 Sources, the legal links); `openSettings` is the one way in, and the Map
 card's gear opens it at its Map group with the card raised. The map's
 layers are the Map card's, which the map's own Map button opens over the

@@ -18,6 +18,9 @@ struct AirplaneCard: View {
     @Environment(Tracking.self) private var tracking
     @Environment(Airplanes.self) private var airplanes
     @Environment(Receiver.self) private var receiver
+    @Environment(Plan.self) private var plan
+    /// Other Airplanes' switch in Settings' Extras (Extra).
+    @AppStorage(Extra.otherAirplanes.key) private var others = false
     let hex: String
     @Environment(\.undoManager) private var undoManager
     @Environment(\.cardAtPill) private var atPill
@@ -54,6 +57,14 @@ struct AirplaneCard: View {
     private var own: Bool {
         RegistryNames.own(detail?.faa?.nNumber ?? detail?.registration ?? plane?.registration, among: airplanes.records.map(\.tailNumber))
     }
+    /// Whether its Alert, Debrief, flights and base are offered: the
+    /// pilot's own always, another's while Other Airplanes is on
+    /// (Extra.airplaneHistory); else neither shown nor fetched.
+    private func offers(_ detail: FlightDetail?) -> Bool {
+        Extra.airplaneHistory(detail?.faa?.nNumber ?? detail?.registration ?? plane?.registration,
+                              own: airplanes.records.map(\.tailNumber) + [plan.tail].compactMap { $0 }, others: others)
+    }
+    private var offersHistory: Bool { offers(detail) }
     /// Its flight now, else its last: what Debrief replays.
     private var debriefed: PastFlightSummary? { flights.first }
 
@@ -84,7 +95,8 @@ struct AirplaneCard: View {
                     FlownSketchTile(points: sketchPoints, name: name)
                 }
             }
-            switch tab {
+            // Info alone where its flights are not offered.
+            switch offersHistory ? tab : .info {
             case .info: info
             case .flights: earlier
             }
@@ -96,13 +108,15 @@ struct AirplaneCard: View {
             ToolbarItem(placement: .topBarLeading) {
                 ShareLink(item: link, subject: Text(name)) { Label("Share", systemImage: WingtipIcon.share) }
             }
-            CardTabBar(tab: $tab, items: Tab.allCases.map { .init(tab: $0, title: $0.rawValue) }, atPill: atPill, accent: accent)
+            if offersHistory {
+                CardTabBar(tab: $tab, items: Tab.allCases.map { .init(tab: $0, title: $0.rawValue) }, atPill: atPill, accent: accent)
+            }
         }
         // A flown flight's card, pushed in this one: from its row, or Debrief's.
         .navigationDestination(for: PastFlightSummary.self) { flight in PastFlightCard(hex: hex, flight: flight) }
         .navigationDestination(item: $debrief) { flight in PastFlightCard(hex: hex, flight: flight) }
         .task(id: hex) {
-            await model.load(hex)
+            await model.load(hex, offered: offers)
             if let trail = detail?.trail { tracking.seed(trail, for: hex) }
             if let kept { tracking.remember(kept) }
         }
@@ -153,16 +167,20 @@ struct AirplaneCard: View {
                 .glassProminentButton()
                 .disabled(plane == nil)
                 .accessibilityLabel(following ? "Stop following \(name)" : "Follow \(name) on the map")
-                Menu {
-                    Toggle("Tell Me When It Takes Off", isOn: watchBinding(.takeoff))
-                    Toggle("Tell Me When It Lands", isOn: watchBinding(.land))
-                } label: {
-                    ActionFace(systemImage: tracking.watching(hex, .takeoff) || tracking.watching(hex, .land) ? "bell.fill" : "bell", title: "Alert")
-                }
-                .glassButton()
-                Button { debrief = debriefed } label: { ActionFace(systemImage: "chart.xyaxis.line", title: "Debrief") }
+                // Its alerts and Debrief, another's only while Other
+                // Airplanes is on (offersHistory).
+                if offersHistory {
+                    Menu {
+                        Toggle("Tell Me When It Takes Off", isOn: watchBinding(.takeoff))
+                        Toggle("Tell Me When It Lands", isOn: watchBinding(.land))
+                    } label: {
+                        ActionFace(systemImage: tracking.watching(hex, .takeoff) || tracking.watching(hex, .land) ? "bell.fill" : "bell", title: "Alert")
+                    }
                     .glassButton()
-                    .disabled(debriefed == nil)
+                    Button { debrief = debriefed } label: { ActionFace(systemImage: "chart.xyaxis.line", title: "Debrief") }
+                        .glassButton()
+                        .disabled(debriefed == nil)
+                }
                 let starred = tracking.isFavorite(hex)
                 FavoriteToggle(starred: starred) { if let kept { tracking.toggleFavorite(kept, undo: undoManager) } }
                     .disabled(kept == nil)

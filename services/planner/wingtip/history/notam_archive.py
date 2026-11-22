@@ -1,5 +1,5 @@
-"""The NOTAMs and TFRs as they were on a day, for the Studio's replay
-(app.routers.studio_history). No public archive of past NOTAMs exists
+"""The NOTAMs and TFRs as they were on a day, kept for a replay of a
+real flight. No public archive of past NOTAMs exists
 (the FAA's NOTAM Search gives those in force now), so from now on ingest
 keeps one of its own: each hour (ingest.history) the NOTAM store
 (wingtip.notams, SWIM's FNS) and the TFR list (wingtip.tfr, tfr.faa.gov's)
