@@ -332,7 +332,7 @@
     <string name="when_to_go">When to Go</string>
     <string name="when_to_go_sign_in">Sign in to see the hours to go across the next day.</string>
     <string name="when_to_go_none">No TAF along the route reaches past the next hour.</string>
-    <string name="when_to_go_no_go">No hour with nothing against it before %1$s.</string>
+    <string name="when_to_go_no_go">None of the hours to %1$s is a Go.</string>
     <string name="when_to_go_leaving">%1$s leaving %2$s</string>
     <!-- The pilot's personal minimums (pilot/) and the flight's choices (plan/). -->
     <string name="minimum_off">Off</string>

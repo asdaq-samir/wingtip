@@ -9,6 +9,7 @@ import app.wingtipmaps.android.engine.generated.navaidHours
 import app.wingtipmaps.android.engine.generated.placeName
 import app.wingtipmaps.android.engine.generated.radialOf
 import app.wingtipmaps.android.engine.generated.serviceVolume
+import app.wingtipmaps.android.engine.generated.specialVfr
 import kotlinx.serialization.json.JsonPrimitive
 
 /** A VOR as the rules read it: where it is and the declination its
@@ -54,6 +55,16 @@ object MapRules {
      *  frequency types to call (`airspace_entry_rules`). */
     fun entryRules(airspaceClass: String): Result<EngineContract.AirspaceEntryRulesAnswer> =
         Engine.airspaceEntryRules(airspaceClass)
+
+    /** Special VFR in an airport's surface area (14 CFR 91.157) for a
+     *  volume's card: available, what it asks, each with its rule; not,
+     *  what rules it out there (part 91 appendix D, section 3, where an
+     *  airplane may not fly it). The engine's `special_vfr`, as the web's
+     *  airspace card asks it: the class and the airport alone. */
+    fun specialVfr(airspaceClass: String, airport: String?): Result<Pair<Boolean, List<Pair<String, String>>>> =
+        Engine.specialVfr(surfaceArea = airspaceClass, airport = airport).map { a ->
+            a.available to if (a.available) a.needs.map { it.words to it.source } else a.problems.map { it.words to it.source }
+        }
 
     /** The FAA's capitals in sentence case, its codes kept (`faa_words`).
      *  Wording only: where the engine fails (Engine.rule logs it) the

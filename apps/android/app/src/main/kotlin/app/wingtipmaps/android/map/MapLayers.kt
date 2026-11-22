@@ -34,6 +34,9 @@ data class MapLayers(
     val tac: Boolean = false,
     val privateFields: Boolean = false,
     val military: Boolean = false,
+    /** The map's words grown with the pilot's font scale, up to 1.2 times
+     *  (MapLabels; the Map card's Larger Map Labels, off at first). */
+    val largerLabels: Boolean = false,
 ) {
     /**
      * What the chart draws while the emergency assistant is open: every
@@ -60,6 +63,7 @@ class MapLayersStore(private val store: DataStore<Preferences>, private val scop
         TAC(booleanPreferencesKey("map_tac")),
         PRIVATE_FIELDS(booleanPreferencesKey("map_private_fields")),
         MILITARY(booleanPreferencesKey("map_military")),
+        LARGER_LABELS(booleanPreferencesKey("map_larger_labels")),
     }
 
     private val _layers = MutableStateFlow(MapLayers())
@@ -93,6 +97,7 @@ class MapLayersStore(private val store: DataStore<Preferences>, private val scop
             Switch.TAC -> layers.copy(tac = on)
             Switch.PRIVATE_FIELDS -> layers.copy(privateFields = on)
             Switch.MILITARY -> layers.copy(military = on)
+            Switch.LARGER_LABELS -> layers.copy(largerLabels = on)
         }
 
         @Volatile

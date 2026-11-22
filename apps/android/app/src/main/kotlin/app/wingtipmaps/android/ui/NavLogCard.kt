@@ -74,6 +74,18 @@ fun NavLogCard(plan: Plan, exit: CardExit, onLeg: (Int) -> Unit, onAddStopAfter:
     val share: @Composable RowScope.() -> Unit = { if (state.routed && !state.planning) NavLogShare(state) }
     CardPage(title = stringResource(R.string.nav_log), exit = exit, subtitle = route, actions = share) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+            // No route: where its legs come from, as the web's empty Nav
+            // Log says it (the errors-and-onboarding audit, 2026-11-21).
+            if (!state.routed && state.legs.isEmpty()) {
+                item(key = "empty") {
+                    Text(
+                        stringResource(R.string.wording_nav_log_empty),
+                        pad.padding(vertical = WingtipSpace.Md),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             itemsIndexed(state.legs, key = { i, _ -> "leg-$i" }) { i, leg ->
                 Column(pad) {
                     LegRow(leg, onOpen = { onLeg(i) }) { RoutePointMenu(leg.to, plan, onAddStopAfter) }

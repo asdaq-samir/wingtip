@@ -14,9 +14,14 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 class FplTip(private val prefs: Kept) {
     private val _shown = MutableStateFlow(false)
+    private val _closed = MutableStateFlow(prefs[KEY] == true)
 
     /** Whether the tip is up: due and not yet closed. */
     val shown: StateFlow<Boolean> = _shown.asStateFlow()
+
+    /** Whether it has been closed on this install: until then the plan is
+     *  the first flight's, and its airplane pill asks for one in words. */
+    val closed: StateFlow<Boolean> = _closed.asStateFlow()
 
     /** The first route planned: the tip comes up, unless it was closed before. */
     fun due() {
@@ -27,6 +32,7 @@ class FplTip(private val prefs: Kept) {
     fun close() {
         prefs.edit { it[KEY] = true }
         _shown.value = false
+        _closed.value = true
     }
 
     companion object {

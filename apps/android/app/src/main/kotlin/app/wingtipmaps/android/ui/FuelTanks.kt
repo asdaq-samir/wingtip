@@ -3,11 +3,11 @@ package app.wingtipmaps.android.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItemDefaults
@@ -41,6 +41,7 @@ import app.wingtipmaps.android.route.fuelStopsToAdd
 import app.wingtipmaps.android.route.noFuelStop
 import app.wingtipmaps.android.route.removeFuelStops
 import app.wingtipmaps.android.route.undoable
+import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
 /** The gauges for the plan as planned now (PlanTanks.walk); none without
  *  an airplane, or before the nav log is in. */
@@ -58,7 +59,7 @@ fun Plan.State.tanks(own: Map<String, Int>): Map<PlanTanks.At, PlanTanks.Tank> {
  * linear indicator the share left and the gallons; under the reserve in
  * the error colour, past empty "−12 gal". A field the airplane leaves is
  * a tap that sets its fuel (the owner, 2026-11-21: "can we set the fuel
- * tank by tapping on it?"), in Material's alert dialog.
+ * tank by tapping on it?"), in the app's modal sheet over the plan.
  */
 @Composable
 fun FuelTanks(plan: Plan, state: Plan.State) {
@@ -96,7 +97,7 @@ fun FuelTanks(plan: Plan, state: Plan.State) {
         }
     }
     asking?.let { (ident, stop, tank) ->
-        FuelSetDialog(ident, stop, tank, onDone = { gallons ->
+        FuelSetSheet(ident, stop, tank, onDone = { gallons ->
             plan.undoable(RouteUndo.Kind.FUEL, ident)
             PlanTanks.set(ident, gallons)
             asking = null
@@ -114,7 +115,7 @@ fun FuelTanks(plan: Plan, state: Plan.State) {
  * hold is kept with a warning (warn, never limit).
  */
 @Composable
-private fun FuelSetDialog(ident: String, stop: Boolean, tank: PlanTanks.Tank, onDone: (Int?) -> Unit, onCancel: () -> Unit) {
+private fun FuelSetSheet(ident: String, stop: Boolean, tank: PlanTanks.Tank, onDone: (Int?) -> Unit, onCancel: () -> Unit) {
     val usable = kotlin.math.floor(tank.usable).toInt()
     val left = maxOf(0, kotlin.math.floor(tank.gal).toInt())
     var pick by rememberSaveable { mutableStateOf(if (tank.own == null) "full" else if (stop && tank.own == 0) "none" else "own") }
@@ -130,32 +131,32 @@ private fun FuelSetDialog(ident: String, stop: Boolean, tank: PlanTanks.Tank, on
         if (stop) add("none" to stringResource(R.string.fuel_none))
         add("own" to stringResource(R.string.fuel_gallons))
     }
-    AlertDialog(
-        onDismissRequest = onCancel,
-        title = { Text(stringResource(if (stop) R.string.fuel_at else R.string.fuel_on_board_at, ident)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
-                ChoiceGroup(choices, selected = pick) { pick = it }
-                OutlinedTextField(
-                    state = field,
-                    label = { Text(stringResource(R.string.fuel_gallons)) },
-                    lineLimits = TextFieldLineLimits.SingleLine,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                val over = (typed ?: 0) > usable
-                Text(
-                    if (over) stringResource(R.string.fuel_over, "$usable gal") else if (stop) stringResource(R.string.fuel_lands, PlanTanks.words(tank.gal)) else stringResource(R.string.fuel_start_help),
-                    color = if (over) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onDone(if (pick == "full") null else if (pick == "none") 0 else typed) }, enabled = valid) { Text(stringResource(R.string.done)) }
-        },
-        dismissButton = { TextButton(onClick = onCancel) { Text(stringResource(R.string.cancel)) } },
-    )
+    // The app's one modal sheet over the plan (WingtipSheet), at half, so
+    // the gauge tapped stays in sight above it (the HIG review's 13, the
+    // web's FuelSet as a nested sheet over FPL); Done before its ✕, which
+    // cancels, as Back and a swipe down do.
+    WingtipSheet(
+        title = stringResource(if (stop) R.string.fuel_at else R.string.fuel_on_board_at, ident),
+        onClose = onCancel,
+        actions = { TextButton(onClick = { onDone(if (pick == "full") null else if (pick == "none") 0 else typed) }, enabled = valid) { Text(stringResource(R.string.done)) } },
+    ) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
+            ChoiceGroup(choices, selected = pick) { pick = it }
+            OutlinedTextField(
+                state = field,
+                label = { Text(stringResource(R.string.fuel_gallons)) },
+                lineLimits = TextFieldLineLimits.SingleLine,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            val over = (typed ?: 0) > usable
+            Text(
+                if (over) stringResource(R.string.fuel_over, "$usable gal") else if (stop) stringResource(R.string.fuel_lands, PlanTanks.words(tank.gal)) else stringResource(R.string.fuel_start_help),
+                color = if (over) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
 }
 
 /** Add a Stop's neighbour, the web's fuel stops pill: "Add Fuel Stops"

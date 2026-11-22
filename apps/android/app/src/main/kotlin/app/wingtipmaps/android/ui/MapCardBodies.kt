@@ -95,7 +95,26 @@ internal fun AirspaceCard(volume: MapPick.Airspace) {
             )
         }
     }
+    // Special VFR in the surface area, the part of a volume from the
+    // surface (14 CFR 91.157(a)): what it asks, or why an airplane may not
+    // fly it at this airport, as the web's card says it under To Enter.
+    if (volume.floorSfc && volume.airspaceClass in SURFACE_CLASSES) {
+        val svfr = remember(volume.airspaceClass, volume.ident) { MapRules.specialVfr(volume.airspaceClass, volume.ident).getOrNull() }
+        svfr?.let { (available, lines) ->
+            SectionTitle(stringResource(if (available) R.string.special_vfr else R.string.no_special_vfr))
+            for ((words, source) in lines) {
+                ListItem(
+                    supportingContent = { Text(source) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    content = { Text(words, style = MaterialTheme.typography.bodyMedium) },
+                )
+            }
+        }
+    }
 }
+
+/** The classes whose volumes from the surface are an airport's surface area on the card. */
+private val SURFACE_CLASSES = setOf("B", "C", "D")
 
 private fun MapPick.Vor.station() = app.wingtipmaps.android.engine.Station(ident, lat, lon, magVar)
 

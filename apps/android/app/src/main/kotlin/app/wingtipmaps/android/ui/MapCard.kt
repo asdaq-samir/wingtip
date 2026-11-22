@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Hexagon
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.TextIncrease
 import androidx.compose.material3.FilledIconToggleButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -101,8 +102,8 @@ private class Layer(val key: String, val name: String, val icon: ImageVector, va
 /**
  * What the map draws over the chart (MapLayersStore, kept across
  * launches), in the web's words and order: Airspace, VORs and Fixes,
- * Terminal Area Charts, Private Fields, Military Fields, then Traffic
- * and Approach Plates.
+ * Terminal Area Charts, Private Fields, Military Fields, then Traffic,
+ * Approach Plates and Larger Map Labels.
  */
 @Composable
 private fun LayerTiles(flight: FlightModel = hiltViewModel()) {
@@ -123,6 +124,9 @@ private fun LayerTiles(flight: FlightModel = hiltViewModel()) {
         Layer("military", stringResource(R.string.layer_military), Icons.Filled.Shield, layers.military) { store.set(MapLayersStore.Switch.MILITARY, it) },
         Layer("traffic", stringResource(R.string.traffic), Icons.Filled.Flight, trafficOn) { traffic.setOn(it) },
         Layer("plates", stringResource(R.string.layer_plates), Icons.Filled.Description, look.shown) { plates.setShown(it) },
+        // The map's words with the pilot's font scale, up to 1.2 times
+        // (MapLabels; the web's Larger Map Labels, the owner, 2026-11-21).
+        Layer("labels", stringResource(R.string.wording_larger_map_labels), Icons.Filled.TextIncrease, layers.largerLabels) { store.set(MapLayersStore.Switch.LARGER_LABELS, it) },
     )
     Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
         tiles.chunked(TILES_A_ROW).forEach { row ->

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -23,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -55,6 +58,7 @@ import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.format.Spoken
+import kotlinx.coroutines.delay
 import java.time.Instant
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -70,6 +74,28 @@ import kotlin.math.roundToInt
 @Composable
 fun InFlightTop(ahead: List<AheadAlert>, onNearest: () -> Unit, modifier: Modifier = Modifier, model: FlightModel = hiltViewModel(), copilot: @Composable (InFlight.State) -> Unit = {}) {
     val state by model.state.collectAsStateWithLifecycle()
+    // Done Flying puts the instruments away for this flight; they come
+    // back by themselves the next time the airplane is underway after a
+    // minute under flying speed, so a slow turn or a bad fix does not
+    // forget the tap (the web's useFlyingMode and its GROUND_MS).
+    var done by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(state.underway) {
+        if (!state.underway) {
+            delay(GROUND_MS)
+            done = false
+        }
+    }
+    val flying = state.underway && state.fix != null && !done
+    // The screen kept on while flying, as EFBs keep it in flight (the
+    // in-flight audit, the owner's Q2, 2026-11-21: a phone that dimmed and
+    // locked took the map and the copilot's voice with it); let go on the
+    // ground and at Done Flying. The view's keepScreenOn is the window's
+    // FLAG_KEEP_SCREEN_ON while it is attached.
+    val view = LocalView.current
+    DisposableEffect(view, flying) {
+        view.keepScreenOn = flying
+        onDispose { view.keepScreenOn = false }
+    }
     // Under the status bar and clear of a cutout or a side navigation
     // bar in landscape (edge to edge).
     Column(
@@ -81,7 +107,7 @@ fun InFlightTop(ahead: List<AheadAlert>, onNearest: () -> Unit, modifier: Modifi
         AlertsBanner(ahead)
         // The copilot's one message, under what is ahead (CopilotBanner).
         copilot(state)
-        InstrumentsBar(state, onNearest)
+        if (!done) InstrumentsBar(state, onNearest, onDone = { done = true })
         // A rule of the engine that failed for this fix, in its words.
         state.problem?.let { ProblemLine(it) }
     }
@@ -142,7 +168,7 @@ fun AlertsBanner(alerts: List<AheadAlert>) {
  * figure is the engine's (InFlight), only the writing is here.
  */
 @Composable
-fun InstrumentsBar(state: InFlight.State, onNearest: () -> Unit) {
+fun InstrumentsBar(state: InFlight.State, onNearest: () -> Unit, onDone: () -> Unit) {
     val fix = state.fix ?: return
     if (!state.underway) return
     val progress = state.progress
@@ -198,9 +224,21 @@ fun InstrumentsBar(state: InFlight.State, onNearest: () -> Unit) {
                     modifier = Modifier.weight(1f),
                 )
             }
+            // The one way out of flying mode: its words stay the button's,
+            // its target the whole row, 60 dp tall, as every control in
+            // flight is (the web's Done Flying, the owner's Q3, 2026-11-21).
+            TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth().heightIn(min = FLYING_TARGET)) {
+                Text(stringResource(R.string.wording_done_flying), fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }
+
+/** How long under flying speed before the airplane is on the ground. */
+private const val GROUND_MS = 60_000L
+
+/** A control's height in flight, found by a hand in turbulence. */
+private val FLYING_TARGET = 60.dp
 
 /** One instrument, read as its name and its figure in words (`said`,
  *  Spoken's), the written figure where there is no spoken form. */

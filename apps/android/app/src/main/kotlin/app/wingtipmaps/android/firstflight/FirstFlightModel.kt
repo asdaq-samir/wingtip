@@ -18,6 +18,8 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -54,6 +56,9 @@ class FirstFlightModel @Inject constructor(app: Application, private val flight:
         val problem: String? = null,
         /** The destination was where the pilot is: asked again. */
         val same: Boolean = false,
+        /** The phone's position has been waited on past FINDING_AFTER_MS:
+         *  "Finding where you are…" (the web's FINDING_YOU). */
+        val finding: Boolean = false,
     ) {
         val ready: Boolean get() = dest != null && (!needsFrom || from != null) && !planning
     }
@@ -100,9 +105,21 @@ class FirstFlightModel @Inject constructor(app: Application, private val flight:
 
     /** The field nearest the pilot, by the planner, or null where the phone
      *  has no position for it. */
-    private suspend fun nearestToPilot(): String? {
-        val (lat, lon) = located() ?: return null
-        return Planner.nearest(lat, lon, limit = 1).firstOrNull()?.ident
+    private suspend fun nearestToPilot(): String? = coroutineScope {
+        // Said only past a moment's wait, so a fix in hand flashes nothing
+        // (the errors-and-onboarding audit, 2026-11-21: a first route's
+        // wait for a position said nothing for up to four seconds).
+        val saying = launch {
+            delay(FINDING_AFTER_MS)
+            _state.update { it.copy(finding = true) }
+        }
+        try {
+            val (lat, lon) = located() ?: return@coroutineScope null
+            Planner.nearest(lat, lon, limit = 1).firstOrNull()?.ident
+        } finally {
+            saying.cancel()
+            _state.update { it.copy(finding = false) }
+        }
     }
 
     /** Own ship's fix where it is on, else the phone's position read once
@@ -132,5 +149,8 @@ class FirstFlightModel @Inject constructor(app: Application, private val flight:
     private companion object {
         /** How long Plan It waits on the phone's position: the web's four seconds. */
         const val LOCATE_MS = 4_000L
+
+        /** How long a wait for the position goes unsaid: the web's 400 ms. */
+        const val FINDING_AFTER_MS = 400L
     }
 }
