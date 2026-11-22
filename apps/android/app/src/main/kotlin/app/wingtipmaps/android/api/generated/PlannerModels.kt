@@ -1468,6 +1468,34 @@ data class DestinationCheck (
 )
 
 /**
+ * A CFR part's text in one edition (the eCFR's issue date).
+ */
+@Serializable
+data class CfrText (
+    val groups: List<CfrGroup>,
+    val head: String
+)
+
+/**
+ * A subpart, or the sections before the first.
+ */
+@Serializable
+data class CfrGroup (
+    val head: String,
+    val sections: List<CfrSection>
+)
+
+/**
+ * A section, or an appendix or SFAR read as one.
+ */
+@Serializable
+data class CfrSection (
+    val head: String,
+    val id: String,
+    val paragraphs: List<String>
+)
+
+/**
  * A briefing read twice, as GET /api/briefing answered it then and
  * now.
  */
@@ -4694,6 +4722,30 @@ data class ItwsAlert (
     val valueKt: Double? = null,
 
     val words: String
+)
+
+/**
+ * The shelf in its order.
+ */
+@Serializable
+data class Library (
+    val documents: List<LibraryDocument>
+)
+
+/**
+ * One document of the shelf, by the name the engine's citations give
+ * it (cfr-14-91, aim, ac-61-65, phak).
+ */
+@Serializable
+data class LibraryDocument (
+    val bytes: Long? = null,
+    val date: String? = null,
+    val edition: String? = null,
+    val group: String,
+    val id: String,
+    val kind: String,
+    val label: String? = null,
+    val title: String
 )
 
 /**

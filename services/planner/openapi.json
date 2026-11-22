@@ -3920,6 +3920,77 @@
         "title": "Candidate",
         "type": "object"
       },
+      "CfrGroup": {
+        "description": "A subpart, or the sections before the first.",
+        "properties": {
+          "head": {
+            "title": "Head",
+            "type": "string"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/CfrSection"
+            },
+            "title": "Sections",
+            "type": "array"
+          }
+        },
+        "required": [
+          "head",
+          "sections"
+        ],
+        "title": "CfrGroup",
+        "type": "object"
+      },
+      "CfrSection": {
+        "description": "A section, or an appendix or SFAR read as one.",
+        "properties": {
+          "head": {
+            "title": "Head",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "paragraphs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Paragraphs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "head",
+          "paragraphs"
+        ],
+        "title": "CfrSection",
+        "type": "object"
+      },
+      "CfrText": {
+        "description": "A CFR part's text in one edition (the eCFR's issue date).",
+        "properties": {
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/CfrGroup"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "head": {
+            "title": "Head",
+            "type": "string"
+          }
+        },
+        "required": [
+          "head",
+          "groups"
+        ],
+        "title": "CfrText",
+        "type": "object"
+      },
       "ChangesAsk": {
         "description": "A briefing read twice, as GET /api/briefing answered it then and\nnow.",
         "properties": {
@@ -13031,6 +13102,104 @@
           "more_gal"
         ],
         "title": "LegProcedure",
+        "type": "object"
+      },
+      "Library": {
+        "description": "The shelf in its order.",
+        "properties": {
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/LibraryDocument"
+            },
+            "title": "Documents",
+            "type": "array"
+          }
+        },
+        "required": [
+          "documents"
+        ],
+        "title": "Library",
+        "type": "object"
+      },
+      "LibraryDocument": {
+        "description": "One document of the shelf, by the name the engine's citations give\nit (cfr-14-91, aim, ac-61-65, phak).",
+        "properties": {
+          "bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bytes"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "edition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edition"
+          },
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "pdf",
+              "text"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "group",
+          "kind",
+          "edition",
+          "label",
+          "date",
+          "bytes"
+        ],
+        "title": "LibraryDocument",
         "type": "object"
       },
       "LightingNote": {
@@ -29217,6 +29386,70 @@
         }
       }
     },
+    "/api/faa-chart/pdf/{source}/{edition}/{pdf}": {
+      "get": {
+        "description": "One of the FAA's charts in force as its PDF, kept for its edition,\nfor the web's own-ship airport diagram, which reads the page's own\nlatitude and longitude labels and hot spots (the engine's\ndiagram_labels, diagram_hot_spot_labels) where the phones read the\nsame PDF themselves.",
+        "operationId": "faa_chart_pdf_api_faa_chart_pdf__source___edition___pdf__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source",
+            "required": true,
+            "schema": {
+              "title": "Source",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "edition",
+            "required": true,
+            "schema": {
+              "title": "Edition",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "pdf",
+            "required": true,
+            "schema": {
+              "title": "Pdf",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "No such chart in force"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "502": {
+            "description": "The FAA could not be reached"
+          }
+        },
+        "summary": "Faa Chart Pdf",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
+      }
+    },
     "/api/forecast/run": {
       "post": {
         "description": "The dry run against the forecast for the hours it flies: a product\nthat cannot be had is named in `unavailable`, the rest still read.",
@@ -29585,6 +29818,150 @@
         "summary": "Icing On The Route",
         "x-gateway": {
           "access": "public"
+        }
+      }
+    },
+    "/api/library": {
+      "get": {
+        "description": "Every document on the shelf, in its order: the FAA's books, the AIM,\nthe circulars and the CFR parts, each with the edition kept and its\ndate, or none yet where it has never been had.",
+        "operationId": "library_shelf_api_library_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Library"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Library Shelf",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
+      }
+    },
+    "/api/library/{doc}/{edition}.pdf": {
+      "get": {
+        "description": "A document's PDF in the edition kept.",
+        "operationId": "library_pdf_api_library__doc___edition__pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc",
+            "required": true,
+            "schema": {
+              "title": "Doc",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "edition",
+            "required": true,
+            "schema": {
+              "title": "Edition",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Successful Response"
+          },
+          "206": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "The byte range asked for (Range: bytes=a-b)"
+          },
+          "404": {
+            "description": "Not on the shelf, or not the edition kept"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Library Pdf",
+        "x-gateway": {
+          "access": "public",
+          "cache": true,
+          "headers": [
+            "Content-Length",
+            "Content-Range",
+            "Accept-Ranges",
+            "ETag"
+          ],
+          "range": true
+        }
+      }
+    },
+    "/api/library/{doc}/{edition}/text": {
+      "get": {
+        "description": "A CFR part's text in the edition kept (the eCFR's issue date): its\nsubparts and sections, each section's paragraphs.",
+        "operationId": "library_text_api_library__doc___edition__text_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc",
+            "required": true,
+            "schema": {
+              "title": "Doc",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "edition",
+            "required": true,
+            "schema": {
+              "title": "Edition",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CfrText"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "Not a CFR part on the shelf, or not the edition kept"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Library Text",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
         }
       }
     },

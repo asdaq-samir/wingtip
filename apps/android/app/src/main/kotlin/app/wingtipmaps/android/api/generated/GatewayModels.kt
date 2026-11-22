@@ -693,16 +693,8 @@ data class LogbookEntryDto (
 
 @Serializable
 data class AccountRecordsDto (
-    val featureUses: List<FeatureUse>,
     val remindersSent: List<SentReminder>,
     val subscription: SubscriptionRow? = null
-)
-
-@Serializable
-data class FeatureUse (
-    val feature: String,
-    val month: String,
-    val uses: Int
 )
 
 @Serializable

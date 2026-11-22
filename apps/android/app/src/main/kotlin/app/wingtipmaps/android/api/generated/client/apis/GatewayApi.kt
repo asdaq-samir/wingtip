@@ -336,7 +336,7 @@ interface GatewayApi {
     /**
      * GET api/me/export
      * Everything kept for the signed-in pilot, as one JSON file
-     * The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar&#39;s photo as a data: URL; the pilot&#39;s own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.
+     * The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar&#39;s photo as a data: URL; the pilot&#39;s own checkpoint notes, reminders, subscription and connected AI apps (never a token); sent as a download.
      * Responses:
      *  - 200: The file
      *  - 401: No session

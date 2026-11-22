@@ -106,6 +106,19 @@ def _page_count(source: str, edition: str, name: str) -> int:
             document.close()
 
 
+def chart_pdf(source: str, edition: str, name: str, on: date | None = None) -> bytes | None:
+    """One of the FAA's charts in force as the FAA's own PDF, for an app
+    that reads the page's text itself (the web's own-ship airport diagram:
+    its latitude and longitude labels and hot spots, as the phones read
+    them with PDFKit and PdfRenderer); the browser cannot fetch it from
+    aeronav.faa.gov, which sends no CORS headers. None for a chart not in
+    force or not the FAA's; FaaUnreachable while the FAA cannot be reached."""
+    current = {"dtpp": dtpp_cycle(on), "dcs": dcs_edition(on)}
+    if current.get(source) != edition or not _PDF_NAME.match(name):
+        return None
+    return publications._pdf_of(source, edition, name)
+
+
 def chart_page_png(source: str, edition: str, name: str, page: int, on: date | None = None) -> Path | None:
     """One page of one of the FAA's charts in force as a picture on disk,
     drawn the first time it is asked for and kept for its edition, as the
