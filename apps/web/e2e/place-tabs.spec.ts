@@ -248,7 +248,9 @@ test("each picture opens full screen, where a pinch zooms it and the zoom stays,
   // The owner, 2026-11-14: "When I tap on an image, why doesn't it let me
   // zoom in/out?" -- the viewer's map was laid out again at each draw of the
   // card (a new list of pages each time), the pinch lost within the minute.
-  test.slow(); // a minute's wait, for the card's minute clock to draw it again
+  // Playwright's clock, so the card's minute clock draws it again in a
+  // moment, not a minute's wait (test-quality audit, round 2).
+  await page.clock.install();
   // The FAA's own diagram, as the planner has it: not the stub's address.
   await kdlh(page, { metar: MVFR.metar });
   await page.route(
@@ -270,8 +272,10 @@ test("each picture opens full screen, where a pinch zooms it and the zoom stays,
     await pinchOut(canvas);
     const zoomed = await drawnStill(canvas);
     expect(zoomed.equals(whole), `${tile} zoomed`).toBe(false);
-    // A minute on, the card drawn again under it (its minute clock): still zoomed.
-    await page.waitForTimeout(61_000);
+    // A minute on, the card drawn again under it (its minute clock): still
+    // zoomed. The clock jumps the minute, each timer due in it fired once.
+    await page.clock.fastForward(61_000);
+    await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
     expect((await canvas.screenshot()).equals(zoomed), `${tile} kept`).toBe(true);
     await page.getByTestId("airport-diagram-close").click();
     await expect(viewer).toHaveCount(0);
