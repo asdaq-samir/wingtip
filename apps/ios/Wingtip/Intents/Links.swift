@@ -25,6 +25,8 @@ enum Links {
             // A Wingtip flight file (FlightFile): previewed as a shared
             // flight is, never planned until Use This Plan.
             if url.pathExtension.lowercased() == flightExtension { return FlightFile.read(at: url).map { .sharedFlight(.file($0)) } }
+            // A PDF: the pilot's own document, kept on this device.
+            if url.pathExtension.lowercased() == "pdf" { return .addDocument(url) }
             return trackExtensions.contains(url.pathExtension.lowercased()) ? .track(url) : nil
         }
         guard let query = query(of: url) else { return nil }
@@ -33,6 +35,8 @@ enum Links {
         if query[Screen.linkKey]?.lowercased() == Screen.shared.rawValue {
             return SharedFlightLink.of(query).map { .sharedFlight($0) }
         }
+        // A document of the library at its place (`doc=aim@7-1-5`).
+        if let place = query[LinkKey.doc.rawValue].flatMap(DocPlace.init) { return .document(place) }
         if let place = ident(query["place"]) { return .weather(ident: place) }
         if let tail = ident(query[LinkKey.airplane.rawValue]) { return .airplane(tail: tail) }
         if let hex = query["flight"]?.trimmingCharacters(in: .whitespaces).lowercased(), !hex.isEmpty { return .aircraft(hex: hex) }

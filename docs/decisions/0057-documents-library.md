@@ -99,3 +99,13 @@ into Documents, were not confirmed. Nothing found said they do.
 - The phones follow on the owner's word: each gets the same `citations`
   rule from the engine, and its platform's own reader (PDFKit, Android's
   PdfRenderer).
+- **The iPhone and iPad followed on 2026-11-21** (the owner: "Yes do it all
+  for iPad", the iPad first; docs/design/ios.md §13a): PDFKit's `PDFView`
+  with its find, outline, thumbnails and history; PencilKit markup on any
+  page, kept as the plates' markup is; a document in a window of its own;
+  ⌘F, ⌘[ and ⌘]; the pilot's own PDFs also from the share sheet and by a
+  drop; and, beyond point 3's "no sync", Keep in iCloud, off by default,
+  the pilot's own iCloud through the records store's CloudKit sync, which
+  the privacy inventory already lists as Apple's and not ours (the
+  owner's brief: "iCloud only if the pilot turns it on, and only if it
+  fits the privacy inventory"). Android follows on his word.

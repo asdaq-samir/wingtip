@@ -209,8 +209,11 @@ struct BandRow: View {
             VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                 Text("\(Text("Class \(band.airspaceClass)").fontWeight(.semibold))\(Text(band.name.map { " · " + AirportWords.shortAirspaceName($0) } ?? "").foregroundStyle(.secondary))")
                 Text(AirportWords.bandRange(band, ground: ground)).fontWeight(.semibold).monospacedDigit()
+                // Each cited rule in its lines a tap to its paragraph in the
+                // library (CitedText), as the web's entry rules are.
                 ForEach(Array(Self.rules(band).enumerated()), id: \.offset) { _, rule in
-                    Label(rule.text, systemImage: rule.symbol).font(.subheadline).foregroundStyle(.secondary)
+                    Label { CitedText(rule.text) } icon: { Image(systemName: rule.symbol) }
+                        .font(.subheadline).foregroundStyle(.secondary)
                 }
             }
         }

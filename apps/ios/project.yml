@@ -208,6 +208,13 @@ targets:
             CFBundleTypeRole: Viewer
             LSHandlerRank: Alternate
             LSItemContentTypes: [com.google.earth.kml]
+          # A PDF from Files, Mail or Safari's share sheet: a copy taken
+          # in as the pilot's own document (DocumentLibrary), on this
+          # device; never the system's owner of PDFs.
+          - CFBundleTypeName: PDF Document
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            LSItemContentTypes: [com.adobe.pdf]
           # The app's own flight file (FlightFile, Save as File): opened
           # from Files, AirDrop or Mail into the Shared Flight preview,
           # never planned without the pilot's Use This Plan.

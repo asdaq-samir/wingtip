@@ -3282,6 +3282,87 @@ extension Components {
                 case waypoint
             }
         }
+        /// A subpart, or the sections before the first.
+        ///
+        /// - Remark: Generated from `#/components/schemas/CfrGroup`.
+        public struct CfrGroup: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/CfrGroup/head`.
+            public var head: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CfrGroup/sections`.
+            public var sections: [Components.Schemas.CfrSection]
+            /// Creates a new `CfrGroup`.
+            ///
+            /// - Parameters:
+            ///   - head:
+            ///   - sections:
+            public init(
+                head: Swift.String,
+                sections: [Components.Schemas.CfrSection]
+            ) {
+                self.head = head
+                self.sections = sections
+            }
+            public enum CodingKeys: String, CodingKey {
+                case head
+                case sections
+            }
+        }
+        /// A section, or an appendix or SFAR read as one.
+        ///
+        /// - Remark: Generated from `#/components/schemas/CfrSection`.
+        public struct CfrSection: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/CfrSection/head`.
+            public var head: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CfrSection/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CfrSection/paragraphs`.
+            public var paragraphs: [Swift.String]
+            /// Creates a new `CfrSection`.
+            ///
+            /// - Parameters:
+            ///   - head:
+            ///   - id:
+            ///   - paragraphs:
+            public init(
+                head: Swift.String,
+                id: Swift.String,
+                paragraphs: [Swift.String]
+            ) {
+                self.head = head
+                self.id = id
+                self.paragraphs = paragraphs
+            }
+            public enum CodingKeys: String, CodingKey {
+                case head
+                case id
+                case paragraphs
+            }
+        }
+        /// A CFR part's text in one edition (the eCFR's issue date).
+        ///
+        /// - Remark: Generated from `#/components/schemas/CfrText`.
+        public struct CfrText: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/CfrText/groups`.
+            public var groups: [Components.Schemas.CfrGroup]
+            /// - Remark: Generated from `#/components/schemas/CfrText/head`.
+            public var head: Swift.String
+            /// Creates a new `CfrText`.
+            ///
+            /// - Parameters:
+            ///   - groups:
+            ///   - head:
+            public init(
+                groups: [Components.Schemas.CfrGroup],
+                head: Swift.String
+            ) {
+                self.groups = groups
+                self.head = head
+            }
+            public enum CodingKeys: String, CodingKey {
+                case groups
+                case head
+            }
+        }
         /// A briefing read twice, as GET /api/briefing answered it then and
         /// now.
         ///
@@ -11651,6 +11732,85 @@ extension Components {
                 case moreNm = "more_nm"
                 case nm
                 case path
+            }
+        }
+        /// The shelf in its order.
+        ///
+        /// - Remark: Generated from `#/components/schemas/Library`.
+        public struct Library: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Library/documents`.
+            public var documents: [Components.Schemas.LibraryDocument]
+            /// Creates a new `Library`.
+            ///
+            /// - Parameters:
+            ///   - documents:
+            public init(documents: [Components.Schemas.LibraryDocument]) {
+                self.documents = documents
+            }
+            public enum CodingKeys: String, CodingKey {
+                case documents
+            }
+        }
+        /// One document of the shelf, by the name the engine's citations give
+        /// it (cfr-14-91, aim, ac-61-65, phak).
+        ///
+        /// - Remark: Generated from `#/components/schemas/LibraryDocument`.
+        public struct LibraryDocument: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/LibraryDocument/bytes`.
+            public var bytes: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/LibraryDocument/date`.
+            public var date: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/LibraryDocument/edition`.
+            public var edition: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/LibraryDocument/group`.
+            public var group: Swift.String
+            /// - Remark: Generated from `#/components/schemas/LibraryDocument/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/LibraryDocument/kind`.
+            public var kind: Swift.String
+            /// - Remark: Generated from `#/components/schemas/LibraryDocument/label`.
+            public var label: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/LibraryDocument/title`.
+            public var title: Swift.String
+            /// Creates a new `LibraryDocument`.
+            ///
+            /// - Parameters:
+            ///   - bytes:
+            ///   - date:
+            ///   - edition:
+            ///   - group:
+            ///   - id:
+            ///   - kind:
+            ///   - label:
+            ///   - title:
+            public init(
+                bytes: Swift.Int? = nil,
+                date: Swift.String? = nil,
+                edition: Swift.String? = nil,
+                group: Swift.String,
+                id: Swift.String,
+                kind: Swift.String,
+                label: Swift.String? = nil,
+                title: Swift.String
+            ) {
+                self.bytes = bytes
+                self.date = date
+                self.edition = edition
+                self.group = group
+                self.id = id
+                self.kind = kind
+                self.label = label
+                self.title = title
+            }
+            public enum CodingKeys: String, CodingKey {
+                case bytes
+                case date
+                case edition
+                case group
+                case id
+                case kind
+                case label
+                case title
             }
         }
         /// A sentence of the remarks the engine could not read as systems: its

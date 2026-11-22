@@ -8,7 +8,7 @@ extension StripSheetView {
         switch screen {
         case .airplane, .checklists, .airplanes: .airplane
         case .logbook, .coach: .logbook
-        case .setup, .minimums, .guide, .downloads, .about, .passengers: .setup
+        case .setup, .minimums, .documents, .guide, .downloads, .about, .passengers: .setup
         case .brief: .brief
         case .navlog: .navlog
         case .profile: .profile

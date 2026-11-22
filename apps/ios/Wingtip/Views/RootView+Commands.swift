@@ -76,6 +76,12 @@ extension RootView {
             keepForAir()
         case .card(let page):
             nav.open(page)
+        case .document(let place):
+            nav.reading = place
+        case .addDocument(let url):
+            // Copied in as the pilot's own, then read; a file that is not
+            // a PDF is said on the library's page.
+            if let doc = DocumentLibrary.shared.add([url]).first { nav.reading = .own(doc.id) }
         case .sharedFlight(let link):
             // Shown, not planned: the pilot's own plan stays until they
             // tap Use This Plan.
