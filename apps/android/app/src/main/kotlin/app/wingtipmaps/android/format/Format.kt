@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.format
 
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -190,4 +191,17 @@ object Format {
         }
         return "${part(lat, "N", "S")} ${part(lon, "E", "W")}"
     }
+
+    /** A day as the web's dayMonthYear writes it: "3 Nov 2026"; an ISO
+     *  day it cannot read, as it came. */
+    fun day(iso: String): String = runCatching { DAY.format(LocalDate.parse(iso.take(10))) }.getOrDefault(iso)
+
+    /** A download's size as the web's megabytes writes it: "3 MB",
+     *  "0.4 MB" (the documents library's rows). */
+    fun megabytes(bytes: Long): String {
+        val mb = bytes / 1e6
+        return if (mb >= 1) "${mb.roundToLong()} MB" else String.format(Locale.US, "%.1f MB", maxOf(0.1, (mb * 10).roundToLong() / 10.0))
+    }
+
+    private val DAY = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.US)
 }

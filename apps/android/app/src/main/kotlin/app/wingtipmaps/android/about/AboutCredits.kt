@@ -50,6 +50,7 @@ object AboutCredits {
         Credit("Planespotters.net aircraft photos, each credited to its photographer beside it", "Planespotters.net's photo API terms"),
         // Each photo's author and licence beside it, its credit a link to its page.
         Credit("Wikimedia Commons photos of fields, each credited to its photographer with its licence and linked to its page", "Each photo's own licence"),
+        Credit("FAA publications and the eCFR: the documents library's regulations, AIM, handbooks and advisory circulars", PUBLIC_DOMAIN),
     )
 
     val software: List<Credit> = listOf(

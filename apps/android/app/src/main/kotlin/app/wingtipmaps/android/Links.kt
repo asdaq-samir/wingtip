@@ -1,5 +1,6 @@
 package app.wingtipmaps.android
 
+import app.wingtipmaps.android.library.DocPlace
 import app.wingtipmaps.android.navigation.generated.LinkKey
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.share.SharedPlan
@@ -26,6 +27,11 @@ object Links {
 
     /** A field's card to open. */
     data class Place(val ident: String) : Link
+
+    /** A document of the library at its place (`?doc=aim@7-1-5`, the
+     *  web's address key; library/DocPlace), or a PDF the pilot just
+     *  shared in, by its own name. */
+    data class Doc(val place: String) : Link
 
     /** A flight another pilot sent (`open=shared`), or any route link
      *  (`dep=&dest=`): its plan in the link, or a saved flight's share
@@ -69,6 +75,7 @@ object Links {
             val token = query[LinkKey.SHARE.key]?.trim()?.takeIf { it.isNotEmpty() && it.length <= 32 }
             if (token != null) return Shared(null, token)
         }
+        DocPlace.parse(query["doc"])?.let { return Doc(it.text) }
         SharedPlan.of(query)?.let { return Shared(it, null) }
         if (screen == Screen.SHARED) return null
         val place = ident(query["place"])

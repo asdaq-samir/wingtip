@@ -62,6 +62,7 @@ internal fun RootRequests(
         when (val opened = link) {
             null -> return@LaunchedEffect
             is Links.Place -> pages.show(SheetPage.Airport(opened.ident))
+            is Links.Doc -> pages.show(SheetPage.Reader(opened.place))
             is Links.Open -> ScreenRequests.ask(opened.screen)
             // A shared flight or any route link, previewed first: the
             // receiver's plan stays until Use This Plan.

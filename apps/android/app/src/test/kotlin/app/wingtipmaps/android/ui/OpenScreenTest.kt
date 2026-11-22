@@ -29,6 +29,7 @@ class OpenScreenTest {
         assertEquals(Where.Page(SheetPage.Settings), OpenScreen.whereOf(Screen.SETUP))
         // Minimums is You's own page now, the three homes of 2026-11-13.
         assertEquals(Where.Page(SheetPage.Minimums), OpenScreen.whereOf(Screen.MINIMUMS))
+        assertEquals(Where.Page(SheetPage.Documents), OpenScreen.whereOf(Screen.DOCUMENTS))
     }
 
     @Test

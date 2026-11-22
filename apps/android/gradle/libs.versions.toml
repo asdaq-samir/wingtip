@@ -126,6 +126,21 @@ retrofit = "3.0.0"
 # Material 3 list shows them. 15.3.0, the newest on Maven Central and the
 # Gradle Plugin Portal (2026-10-13; read 2026-11-21).
 aboutlibraries = "15.3.0"
+# The documents library's reader (library/, docs/design/android.md 3.21):
+# the pages are the platform's own PdfRenderer, as the plates and the
+# airport diagram are; Jetpack's PDF viewer (androidx.pdf 1.0.0-beta01,
+# 2026-08-26, the newest) was weighed and left: its release notes give it
+# search and zoom but no outline, no way to open at a page and no inverted
+# page, and its floor is minSdk 28 against the app's 26. PdfBox-Android
+# reads what PdfRenderer cannot, a PDF's outline and its text for the
+# search: 2.0.27.0, the newest on Maven Central and GitHub
+# (TomRoush/PdfBox-Android, Apache-2.0), a port of Apache PDFBox 2.0.27.
+pdfboxAndroid = "2.0.27.0"
+# Jetpack's Ink API for the reader's markup, a stylus's or a finger's ink
+# and the highlighter: its Compose authoring, brushes, Canvas renderer and
+# the strokes' storage. 1.1.0-alpha12 (2026-11-18), the newest on Google
+# Maven; 1.0.0 is the stable.
+ink = "1.1.0-alpha12"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -222,6 +237,15 @@ coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp"
 # any content (the diagram with the airplane drawn on it).
 telephoto-zoomable-image-coil3 = { group = "me.saket.telephoto", name = "zoomable-image-coil3", version.ref = "telephoto" }
 telephoto-zoomable = { group = "me.saket.telephoto", name = "zoomable", version.ref = "telephoto" }
+# The reader's outline and text search (PdfBox-Android), and Jetpack's Ink
+# API for its markup.
+pdfbox-android = { group = "com.tom-roush", name = "pdfbox-android", version.ref = "pdfboxAndroid" }
+androidx-ink-authoring-compose = { group = "androidx.ink", name = "ink-authoring-compose", version.ref = "ink" }
+androidx-ink-brush = { group = "androidx.ink", name = "ink-brush", version.ref = "ink" }
+androidx-ink-geometry = { group = "androidx.ink", name = "ink-geometry", version.ref = "ink" }
+androidx-ink-rendering = { group = "androidx.ink", name = "ink-rendering", version.ref = "ink" }
+androidx-ink-storage = { group = "androidx.ink", name = "ink-storage", version.ref = "ink" }
+androidx-ink-strokes = { group = "androidx.ink", name = "ink-strokes", version.ref = "ink" }
 # Retrofit and its kotlinx.serialization converter.
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converter-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }

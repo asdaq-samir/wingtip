@@ -23,6 +23,7 @@ enum class Screen(
     LOGBOOK("logbook", "Logbook"),
     COACH("coach", "Coach"),
     MINIMUMS("minimums", "Personal Minimums"),
+    DOCUMENTS("documents", "Documents"),
     DOWNLOADS("downloads", "Downloads"),
     PASSENGERS("passengers", "Passenger Briefing"),
     SHARED("shared", "Shared Flight"),

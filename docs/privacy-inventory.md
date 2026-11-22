@@ -219,6 +219,18 @@ longer than it takes to answer the request.
   collected in App Store Connect's meaning, and the privacy manifest is
   unchanged.
 
+  On Android (`library/`, android.md 3.21) the same holds on the phone:
+  the pilot's own PDFs, picked from the system's picker or shared in from
+  another app, are copied into the app's own files and never leave the
+  phone (no upload, no sync, not in the export, and not in Android's
+  backup, which is off for the app); their last pages,
+  bookmarks, Invert Colors and the markup (Jetpack Ink's strokes and the
+  highlights' notes) are files of the app's too. They stay through
+  sign-out, as on the web, being no account's, and go when the app's
+  storage is cleared or the app is removed. A book kept for the air is
+  the FAA's public document in the app's files; one only read is in the
+  cache.
+
 ## Who else receives what
 
 | Recipient | What | Personal |
