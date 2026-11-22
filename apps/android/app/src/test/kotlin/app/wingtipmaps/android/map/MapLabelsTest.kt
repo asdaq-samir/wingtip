@@ -37,4 +37,21 @@ class MapLabelsTest {
         val matched = MapLabels.nightInk(Json.parseToJsonElement("""["case",true,"#2465b8","#c0309f"]"""))
         assertEquals("match", matched.jsonArray[0].jsonPrimitive.content)
     }
+
+    /** The switch's scale is the font scale capped at 1.2, and the layers
+     *  added after the style (the station model, AIRMET names, 3D tabs,
+     *  plate tags) take the style's own. */
+    @Test
+    fun theLateLayersTakeTheStylesScale() {
+        assertEquals(1f, MapLabels.capped(on = false, fontScale = 1.5f), 0f)
+        assertEquals(1.2f, MapLabels.capped(on = true, fontScale = 1.5f), 1e-6f)
+        assertEquals(1f, MapLabels.capped(on = true, fontScale = 0.85f), 0f)
+        val was = MapLabels.late
+        try {
+            MapLabels.late = 1.2f
+            assertEquals(13.2f, MapLabels.lateSize(11f), 1e-4f)
+        } finally {
+            MapLabels.late = was
+        }
+    }
 }

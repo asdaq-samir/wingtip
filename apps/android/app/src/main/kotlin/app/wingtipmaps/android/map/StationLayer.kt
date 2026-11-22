@@ -132,7 +132,7 @@ object StationLayer {
             PropertyFactory.iconIgnorePlacement(true),
             PropertyFactory.textField(Expression.coalesce(Expression.get("variable"), Expression.literal(""))),
             PropertyFactory.textFont(arrayOf(MapStyle.FONT)),
-            PropertyFactory.textSize(11f),
+            PropertyFactory.textSize(MapLabels.lateSize(11f)),
             PropertyFactory.textAnchor(Property.TEXT_ANCHOR_TOP),
             PropertyFactory.textOffset(arrayOf(0f, 1.3f)),
             PropertyFactory.textPadding(1f),
@@ -153,7 +153,7 @@ object StationLayer {
             SymbolLayer(LINES, SOURCE).withFilter(Expression.has("lines")).withProperties(
                 PropertyFactory.textField(Expression.get("lines")),
                 PropertyFactory.textFont(arrayOf(MapStyle.FONT)),
-                PropertyFactory.textSize(11f),
+                PropertyFactory.textSize(MapLabels.lateSize(11f)),
                 PropertyFactory.textAnchor(Property.TEXT_ANCHOR_RIGHT),
                 PropertyFactory.textJustify(Property.TEXT_JUSTIFY_RIGHT),
                 PropertyFactory.textOffset(arrayOf(-1.6f, 0f)),

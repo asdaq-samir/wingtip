@@ -12,6 +12,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -23,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.ProcedureList
 import app.wingtipmaps.android.api.generated.ProcedureSummary
@@ -30,6 +32,7 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.plan.LandingRunway
 import app.wingtipmaps.android.plan.PlanProcedures
+import app.wingtipmaps.android.plan.PlateCircling
 import app.wingtipmaps.android.plan.RouteFieldFacts
 
 /**
@@ -53,8 +56,13 @@ fun TimelineFieldParts(ident: String, lands: Boolean, leaves: Boolean, facts: Ro
     FlowRow(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm), itemVerticalAlignment = Alignment.CenterVertically) {
         if (lands) {
             // With an approach picked, the runway it lands on, the
-            // engine's (LandingRunway); another only where the rule allows.
-            val landing = LandingRunway.at(picks, ident, list)
+            // engine's (LandingRunway); another only where the rule allows,
+            // which its plate's circling minimums decide (PlateCircling,
+            // asked as the approach is picked, the web's plate query).
+            val approachId = PlanProcedures.at(picks, ident, listOf("approach")).firstOrNull()?.id
+            LaunchedEffect(ident, approachId) { approachId?.let { PlateCircling.shared.ask(ident, it) } }
+            val circling by PlateCircling.shared.known.collectAsStateWithLifecycle()
+            val landing = LandingRunway.at(picks, ident, list, circling)
             RunwayChip(ident, facts, landing?.runway ?: picks.landings[ident.uppercase()], takeoff = false, onChanged, onlyEnd = landing?.takeIf { !it.othersAllowed }?.runway)
             KindChips(ident, PlanProcedures.ARRIVING, list, picks, onChanged)
         }

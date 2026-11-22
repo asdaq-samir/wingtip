@@ -899,8 +899,7 @@ placement wins, and the difference is noted.
      dataWarning): the planner's map ages' `data_cycles`, each judged
      again on the phone's day by the engine's `data_cycle`, said in one
      caution line ("FAA data out of date: charts and procedures"; 14 CFR
-     91.103). It joins the caution row once claude/parity3-android's
-     BriefGlance is merged.
+     91.103), in BriefGlance's caution row (§3.21).
 - **Ready to Fly** (`ready/`): a checklist of what is still missing,
   each a `ListItem` with a leading state glyph and a trailing "Fix"
   `TextButton` (`ReadyFixer`), at the top of the Brief when the plan is
@@ -1645,12 +1644,25 @@ Android has it, each in the platform's own parts:
   then Before You Go's Beyond Reserve and En Route's Lowest Ceiling,
   Visibility and Most Headwind (`route_headwind`); When to Go at the foot.
   The briefing is the route's `/api/briefing`, asked after the Go / No-Go.
+  Round 3: the one caution row holds what could not be checked with the
+  FAA data out of its cycle under it, or either alone (`brief/DataCycles`,
+  the engine's `data_cycle` on the phone's day; 14 CFR 91.103), as the
+  web's CautionRow; and Depart and Arrive sit either side of En Route, as
+  the web's FieldRow (`brief/BriefFields`): the field, its METAR's flight
+  category and the time there, the field's finding first, the runway
+  flown, the takeoff or landing over 50 ft and the runway's length, all
+  from the engine's `gonogo_runway_checks` with the briefing's METARs and
+  runways, the airplane's POH tables the planner sent with the nav log's
+  altitude line, and the runways picked (14 CFR 91.103(b)). Only the
+  figures it has are shown: none without an airplane's tables.
 - **FPL**: on the first flight the airplane pill reads "Add Your Airplane
   for Times and Fuel" until the FPL tip is closed; a first route's wait for
   a position past 400 ms says "Finding where you are…" in a Snackbar; an
   approach picked lands on its own runway (`plan/LandingRunway`, the
-  engine's `landing_runway`; circling minimums not yet read, so taken as
-  none); the fuel is set in `WingtipSheet` at half height over the plan,
+  engine's `landing_runway`), or, where its plate publishes circling
+  minimums (the planner's placed plate's `circling`, `plan/PlateCircling`,
+  asked as the approach is picked), the runway the pilot picks: a circle
+  to land (AIM 5-4-20). Until the plate is in, none is taken; the fuel is set in `WingtipSheet` at half height over the plan,
   the gauge in sight; the Undo Snackbar is Material's short one; the empty
   Nav Log says where its legs come from.
 - **Flying**: the view's `keepScreenOn` while the instruments are up; Done
@@ -1658,7 +1670,12 @@ Android has it, each in the platform's own parts:
   themselves after a minute on the ground.
 - **The map**: Larger Map Labels, a tile in the Map card's layers, and the
   night inks on the dark halo (`map/MapLabels`, from design/tokens.json's
-  map.label), applied to the style MapStyle writes.
+  map.label), applied to the style MapStyle writes. Round 3: the layers
+  added after the style is in (the station model's winds and lines, the
+  AIRMETs' names, the 3D shelves' tabs, the plates' fix tags, drawn that
+  much larger rather than stretched) take the same scale, at most 1.2×
+  (`MapLabels.late`); a new style is written as the switch changes, and
+  each is added again over it. Android's map draws no route pills.
 - **The airport card**: the TAF's issued and valid times under it, its
   expiry in the caution ink (`taf_validity`); the NOTAMs' age under their
   title (`kept_age`) and Try Again on their problem line.

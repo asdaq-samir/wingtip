@@ -90,7 +90,7 @@ class PlateLayer(private val density: Float) {
     /** The finals over the pages and the tags over the route. */
     private fun tags(style: Style) {
         for ((id, label) in drawing.labels) {
-            if (style.getImage(id) == null) style.addImage(id, PlateTagPictures.picture(label, density))
+            if (style.getImage(id) == null) style.addImage(id, PlateTagPictures.picture(label, density, MapLabels.late))
         }
         val finals = style.getSourceAs<GeoJsonSource>(FINALS)
         if (finals != null) {

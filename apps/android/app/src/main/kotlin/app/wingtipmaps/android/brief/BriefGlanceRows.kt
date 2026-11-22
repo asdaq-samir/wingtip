@@ -103,6 +103,7 @@ fun FlightFigures(glance: BriefGlance) {
             Figure(stringResource(R.string.wording_beyond_reserve), Format.fuel(gal), stop = gal < 0)
         }
     }
+    glance.depart?.let { FieldRow(stringResource(R.string.brief_depart), it, landing = false) }
     val ceiling = when {
         glance.ceilingFt != null -> Format.altitude(glance.ceilingFt)
         glance.visibilitySm != null -> stringResource(R.string.brief_none)
@@ -114,6 +115,40 @@ fun FlightFigures(glance: BriefGlance) {
         Figure(stringResource(R.string.wording_visibility), glance.visibilitySm?.let(Format::visibility) ?: Format.NONE)
         Figure(stringResource(R.string.wording_most_headwind), headwind)
     }
+    glance.arrive?.let { FieldRow(stringResource(R.string.brief_arrive), it, landing = true) }
+}
+
+/**
+ * Depart or Arrive, as the web's FieldRow: its name, the field, its
+ * flight category and the time there, the field's finding first; under
+ * it the runway flown, the takeoff or landing over 50 ft (in the error
+ * ink where it is past the runway) and the runway's length, only the
+ * figures it has, never a dash for one not worked out.
+ */
+@Composable
+private fun FieldRow(label: String, field: FieldGlance, landing: Boolean) {
+    val at = field.atMs?.let { "${Format.clock(it)} ${ZONE.withZone(ZoneId.systemDefault()).format(Instant.ofEpochMilli(it))}" }
+    val title = listOfNotNull(label, field.ident, field.category).joinToString(" · ")
+    val long = field.runwayFt?.let { stringResource(R.string.brief_runway_long, Format.altitude(it.toDouble())) }
+    ListItem(
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        leadingContent = { FindingIcon(field.finding) },
+        trailingContent = at?.let { { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
+        supportingContent = if (field.runway == null && field.overFiftyFt == null && long == null) null else {
+            {
+                Column {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Lg)) {
+                        field.runway?.let { Figure(stringResource(R.string.brief_runway), it) }
+                        field.overFiftyFt?.let {
+                            Figure(stringResource(if (landing) R.string.brief_landing_50 else R.string.brief_takeoff_50), Format.altitude(it.toDouble()), stop = field.finding == Finding.STOP)
+                        }
+                    }
+                    long?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                }
+            }
+        },
+        content = { Text(title, style = MaterialTheme.typography.titleMedium) },
+    )
 }
 
 /** A part of the flight: its name, a time at its end, its figures across. */
@@ -139,20 +174,28 @@ private fun Figure(label: String, value: String, stop: Boolean = false) {
 /**
  * What a pilot should know before going, at the findings' end as one
  * caution each (the web's CautionRow and the glance's border lines): what
- * the briefing could not check (aviationweather.gov not answering), and
+ * the briefing could not check (aviationweather.gov not answering) with
+ * the FAA data past its cycle (DataCycles, 14 CFR 91.103) in its row, and
  * the route through an ADIZ (14 CFR part 99) or out of the United States
  * (decision 0053), in the engine's words. The plan is still made: warn,
  * never limit.
  */
 @Composable
 fun CautionRows(glance: BriefGlance) {
-    val lines = listOfNotNull(
-        glance.unchecked.takeIf { it.isNotEmpty() }?.let { stringResource(R.string.brief_unchecked, it.joinToString(", ")) },
-        glance.adiz,
-        glance.outside,
-    )
+    val unchecked = glance.unchecked.takeIf { it.isNotEmpty() }?.let { stringResource(R.string.brief_unchecked, it.joinToString(", ")) }
     val ink = LocalInk.current.words(Finding.CAUTION, MaterialTheme.colorScheme.onSurfaceVariant)
-    lines.forEach { line ->
+    // What is missing, one row (the web's CautionRow): what could not be
+    // checked first, the FAA data out of its cycle under it; either alone
+    // where the other is not.
+    (unchecked ?: glance.outOfCycle)?.let { lead ->
+        ListItem(
+            leadingContent = { FindingIcon(Finding.CAUTION) },
+            supportingContent = glance.outOfCycle?.takeIf { unchecked != null }?.let { { Text(it) } },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            content = { Text(lead, color = ink) },
+        )
+    }
+    listOfNotNull(glance.adiz, glance.outside).forEach { line ->
         ListItem(
             leadingContent = { FindingIcon(Finding.CAUTION) },
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),

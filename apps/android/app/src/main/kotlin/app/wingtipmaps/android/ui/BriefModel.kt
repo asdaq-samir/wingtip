@@ -7,15 +7,18 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.airplane.FigureKey
 import app.wingtipmaps.android.alternate.PlanAlternate
-import app.wingtipmaps.android.brief.BriefGlance
+import app.wingtipmaps.android.altitude.PlanAltitudes
 import app.wingtipmaps.android.api.Planner
-import app.wingtipmaps.android.brief.DataCycles
 import app.wingtipmaps.android.api.Problems
-import app.wingtipmaps.android.api.routeBriefing
 import app.wingtipmaps.android.api.generated.GoNoGo
 import app.wingtipmaps.android.api.generated.GoNoGoAsk
 import app.wingtipmaps.android.api.generated.VerdictItem
+import app.wingtipmaps.android.api.routeBriefing
+import app.wingtipmaps.android.brief.BriefFields
+import app.wingtipmaps.android.brief.BriefGlance
+import app.wingtipmaps.android.brief.DataCycles
 import app.wingtipmaps.android.offline.KeptForAir
+import app.wingtipmaps.android.plan.PlanProcedures
 import app.wingtipmaps.android.ready.ReadyFacts
 import app.wingtipmaps.android.strip.Finding
 import app.wingtipmaps.android.strip.GlanceAction
@@ -30,6 +33,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.Instant
 import javax.inject.Inject
 
 /**
@@ -57,10 +61,6 @@ class BriefModel @Inject constructor() : ViewModel() {
          *  the air because the network failed; null when it is the
          *  network's own (KeptAgeLine). */
         val keptAtMs: Long? = null,
-        /** The FAA data the plan rests on past its cycle, in one line
-         *  ("FAA data out of date: charts"), for the caution row; null
-         *  while all is in force or the planner did not say. */
-        val outOfCycle: String? = null,
         /** The figures, Adverse Conditions and cautions under the findings
          *  (BriefGlance), from the route's briefing; null until it is in. */
         val glance: BriefGlance? = null,
@@ -104,18 +104,6 @@ class BriefModel @Inject constructor() : ViewModel() {
                 _state.update { it.copy(loading = false, problem = Problems.say("The brief could not be fetched", e)) }
             }
         }
-        viewModelScope.launch {
-            // The data sets' cycles, judged on this day (DataCycles); with
-            // no answer nothing is said rather than a guess.
-            val line = try {
-                DataCycles.warning(DataCycles.onThisDay(DataCycles.fetched()))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: Exception) {
-                null
-            }
-            _state.update { if (it.route == route) it.copy(outOfCycle = line) else it }
-        }
     }
 
     /** The glance under the findings: the route's briefing (/api/briefing,
@@ -130,7 +118,23 @@ class BriefModel @Inject constructor() : ViewModel() {
         } catch (e: Exception) {
             null
         }
-        val glance = withContext(Dispatchers.Default) { BriefGlance.of(briefing, plan.course, plan.legs, plan.totals, plan.airplane) }
+        // The data sets' cycles, judged on this day (DataCycles); with no
+        // answer nothing is said rather than a guess.
+        val outOfCycle = try {
+            DataCycles.warning(DataCycles.onThisDay(DataCycles.fetched()))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
+        }
+        val glance = withContext(Dispatchers.Default) {
+            // The Depart and Arrive rows: the airplane's tables as the planner
+            // sent them with the nav log, the runways the pilot picked.
+            val picks = PlanProcedures.state.value
+            val leaving = plan.depart?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() } ?: AppClock.nowMs()
+            val fields = BriefFields.of(briefing, plan.course, PlanAltitudes.state.value.line?.aircraft, picks.landings to picks.takeoffs, leaving, plan.totals?.eteMin)
+            BriefGlance.of(briefing, plan.course, plan.legs, plan.totals, plan.airplane, fields, outOfCycle)
+        }
         _state.update { it.copy(glance = glance) }
     }
 

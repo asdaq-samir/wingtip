@@ -26,7 +26,9 @@ import app.wingtipmaps.android.engine.generated.sigmetHazard
  * Go's fuel beyond the reserve (14 CFR 91.151(a), 91.167(a)); what the
  * briefing could not check; and where the route meets an Air Defense
  * Identification Zone (14 CFR part 99) or leaves the United States
- * (14 CFR 91.1, 91.703; decision 0053). Every rule is the engine's; this
+ * (14 CFR 91.1, 91.703; decision 0053); the departure's and the
+ * destination's runway checks (BriefFields) and FAA data out of its cycle
+ * (DataCycles). Every rule is the engine's; this
  * only gathers what it is asked from the planner's briefing and the plan.
  */
 data class BriefGlance(
@@ -43,6 +45,11 @@ data class BriefGlance(
     /** The engine's lines for an ADIZ met and for leaving the United States. */
     val adiz: String? = null,
     val outside: String? = null,
+    /** The departure's and the destination's runway, distance and category (BriefFields). */
+    val depart: FieldGlance? = null,
+    val arrive: FieldGlance? = null,
+    /** The FAA data out of its cycle, in a line (DataCycles), for the caution row. */
+    val outOfCycle: String? = null,
 ) {
     companion object {
         val NONE = EngineContract.GonogoAdverseRowsAnswer(rows = emptyList(), more = 0)
@@ -60,9 +67,20 @@ data class BriefGlance(
 
         /** The glance for a planned route: the briefing's parts (none
          *  where it could not be had) and the plan's legs, course and totals. */
-        fun of(briefing: Briefing?, course: Course?, legs: List<Leg>, totals: NavLogTotals?, airplane: Boolean): BriefGlance {
+        fun of(
+            briefing: Briefing?,
+            course: Course?,
+            legs: List<Leg>,
+            totals: NavLogTotals?,
+            airplane: Boolean,
+            fields: Pair<FieldGlance?, FieldGlance?> = null to null,
+            outOfCycle: String? = null,
+        ): BriefGlance {
             val line = course?.courseLine.orEmpty().filter { it.size == 2 }
             return BriefGlance(
+                depart = fields.first,
+                arrive = fields.second,
+                outOfCycle = outOfCycle,
                 adverse = briefing?.let(::adverse) ?: NONE,
                 ceilingFt = briefing?.forecast?.minCeilingFt,
                 visibilitySm = briefing?.forecast?.minVisibilitySm,

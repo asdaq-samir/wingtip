@@ -11,6 +11,7 @@ import app.wingtipmaps.android.plan.PlanProcedures
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -28,12 +29,22 @@ class BriefAndLandingEngineTest {
     @Test
     fun anApproachLandsOnItsOwnRunwayWhateverWasPicked() {
         val picked = PlanProcedures.State(picks = listOf(PlanProcedures.Pick("KDLH", "I09", "approach", "ILS OR LOC RWY 09")))
-        val own = LandingRunway.at(picked, "KDLH", ils09)!!
+        val own = LandingRunway.at(picked, "KDLH", ils09, emptyMap())!!
         assertEquals("9", own.runway)
         assertFalse(own.othersAllowed)
-        assertEquals("9", LandingRunway.at(picked.copy(landings = mapOf("KDLH" to "27")), "KDLH", ils09)!!.runway)
+        assertEquals("9", LandingRunway.at(picked.copy(landings = mapOf("KDLH" to "27")), "KDLH", ils09, emptyMap())!!.runway)
         // No approach at the field: the menu stands as it was.
-        assertNull(LandingRunway.at(PlanProcedures.State(), "KDLH", ils09))
+        assertNull(LandingRunway.at(PlanProcedures.State(), "KDLH", ils09, emptyMap()))
+    }
+
+    @Test
+    fun aPlateWithCirclingMinimumsLetsThePilotCircleToAnother() {
+        val picked = PlanProcedures.State(picks = listOf(PlanProcedures.Pick("KDLH", "I09", "approach", "ILS OR LOC RWY 09")), landings = mapOf("KDLH" to "27"))
+        val circle = LandingRunway.at(picked, "KDLH", ils09, mapOf("KDLH:I09" to true))!!
+        assertEquals("27", circle.runway)
+        assertTrue(circle.othersAllowed)
+        // Straight-in minimums only: the approach's own runway.
+        assertEquals("9", LandingRunway.at(picked, "KDLH", ils09, mapOf("KDLH:I09" to false))!!.runway)
     }
 
     private fun leg(from: String, to: String, course: Double, wind: Wind?) =

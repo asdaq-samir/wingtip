@@ -27,7 +27,9 @@ object PlateTagPictures {
     private const val BAR_DP = 1.5f
     private const val CORNER_DP = 4f
 
-    fun picture(label: PlateTagsModel.Label, density: Float): Bitmap {
+    /** The tag at `scale`, Larger Map Labels' (MapLabels.late): drawn
+     *  that much larger, sharp, rather than the picture stretched. */
+    fun picture(label: PlateTagsModel.Label, density: Float, scale: Float = 1f): Bitmap {
         val text = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = WingtipColors.Chart.CASING_HEX.toColorInt()
             textSize = TEXT_DP
@@ -38,10 +40,11 @@ object PlateTagPictures {
         val width = label.lines.maxOfOrNull { text.measureText(it.text) } ?: 0f
         val w = width + PAD_DP * 2
         val h = lineHeight * label.lines.size + PAD_DP * 2
-        val bitmap = createBitmap(ceil(w * density).toInt().coerceAtLeast(1), ceil(h * density).toInt().coerceAtLeast(1))
+        val px = density * scale
+        val bitmap = createBitmap(ceil(w * px).toInt().coerceAtLeast(1), ceil(h * px).toInt().coerceAtLeast(1))
         bitmap.density = Math.round(density * 160)
         val canvas = Canvas(bitmap)
-        canvas.scale(density, density)
+        canvas.scale(px, px)
         val ground = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = (if (label.runway) WingtipColors.Chart.COURSE_CHIP_HEX else WingtipColors.Chart.TAG_HEX).toColorInt()
             alpha = GROUND_ALPHA
