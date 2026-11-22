@@ -3,12 +3,18 @@ package app.wingtipmaps.android
 import android.app.assist.AssistContent
 import android.content.Intent
 import android.os.Bundle
+import android.view.KeyEvent
+import android.view.KeyboardShortcutGroup
+import android.view.KeyboardShortcutInfo
+import android.view.Menu
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import app.wingtipmaps.android.ai.ScreenContext
+import app.wingtipmaps.android.navigation.ScreenRequests
+import app.wingtipmaps.android.navigation.Shortcut
 import app.wingtipmaps.android.plan.KeptPlan
 import app.wingtipmaps.android.ui.RootScreen
 import app.wingtipmaps.android.ui.WingtipTheme
@@ -27,6 +33,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 class MainActivity : ComponentActivity() {
     private val session: Session by viewModels()
 
+    /** The one plan the screens share (RootScreen's hiltViewModel is this
+     *  activity's), for the keyboard's Undo and Redo. */
+    private val plan: Plan by viewModels()
+
     /** A link for the screens, until RootScreen has taken it. */
     private val pending = MutableStateFlow<Links.Link?>(null)
 
@@ -40,7 +50,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             WingtipTheme {
-                RootScreen(pending = pending, onHandled = { pending.value = null })
+                RootScreen(pending = pending, onHandled = { pending.value = null }, onLink = { pending.value = it })
             }
         }
         // The launch's own link once: a rotation recreates the activity
@@ -53,6 +63,37 @@ class MainActivity : ComponentActivity() {
     override fun onProvideAssistContent(outContent: AssistContent) {
         super.onProvideAssistContent(outContent)
         ScreenContext.fill(outContent, KeptPlan(application).read())
+    }
+
+    /** A key pressed with Ctrl that no view took (a text field keeps its
+     *  own Ctrl+Z): the app's shortcut, if it is one (Shortcut). */
+    override fun onKeyShortcut(keyCode: Int, event: KeyEvent): Boolean {
+        val shortcut = Shortcut.of(keyCode, event.isCtrlPressed, event.isShiftPressed, event.isAltPressed || event.isMetaPressed)
+            ?: return super.onKeyShortcut(keyCode, event)
+        when (shortcut) {
+            Shortcut.UNDO -> plan.undoEdit()
+            Shortcut.REDO -> plan.redoEdit()
+            else -> shortcut.screen?.let(ScreenRequests::ask)
+        }
+        return true
+    }
+
+    /** Esc no view took: the system turns it into Back (its fallback key),
+     *  which closes a card, a sheet or a page; with nothing to close it is
+     *  kept here, so Esc never sends the app away (Android's Tier 2
+     *  Keyboard_Exit: Esc closes or cancels). */
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_ESCAPE && !onBackPressedDispatcher.hasEnabledCallbacks()) return true
+        return super.onKeyDown(keyCode, event)
+    }
+
+    /** The shortcuts, listed in the system's Keyboard Shortcuts Helper
+     *  (Meta+/), Esc's Close last. */
+    override fun onProvideKeyboardShortcuts(data: MutableList<KeyboardShortcutGroup>?, menu: Menu?, deviceId: Int) {
+        super.onProvideKeyboardShortcuts(data, menu, deviceId)
+        val items = Shortcut.entries.map { KeyboardShortcutInfo(getString(it.label), it.key, it.meta) } +
+            KeyboardShortcutInfo(getString(R.string.close), KeyEvent.KEYCODE_ESCAPE, 0)
+        data?.add(KeyboardShortcutGroup(getString(R.string.app_name), items))
     }
 
     override fun onNewIntent(intent: Intent) {

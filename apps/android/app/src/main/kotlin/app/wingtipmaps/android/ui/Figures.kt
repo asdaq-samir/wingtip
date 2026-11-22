@@ -115,15 +115,17 @@ private data class StripFigure(val name: String, val value: String, val said: St
  *  its digits. */
 @Composable
 fun RowScope.Figure(name: String, value: String, warn: Boolean = false, said: String? = null) {
+    // A size up where it is read at arm's length (MapFigures).
+    val glance = LocalGlanceFigures.current
     Column(
         Modifier.weight(1f).clearAndSetSemantics { contentDescription = said ?: "$name, $value" },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(name, style = if (glance) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         // The figure in the expressive figure role.
         Text(
             value,
-            style = MaterialTheme.typography.titleMediumEmphasized,
+            style = if (glance) MaterialTheme.typography.titleLargeEmphasized else MaterialTheme.typography.titleMediumEmphasized,
             color = if (warn) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
             maxLines = if (largeType()) 2 else 1,
             overflow = TextOverflow.Ellipsis,

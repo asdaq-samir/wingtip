@@ -66,12 +66,19 @@
 
         <!-- One task, one instance: a link tapped in Gmail while the app is
              open comes to the running activity as a new intent
-             (MainActivity.onNewIntent) rather than opening a second one. -->
+             (MainActivity.onNewIntent) rather than opening a second one.
+             A resize, a rotation, a fold or a desktop window dragged wider
+             is Compose's to lay out again (configChanges), not a new
+             activity: the map keeps its tiles, camera and layers rather
+             than loading again at each step of a drag, and the screen's
+             state is kept as it is (Android's Tier 3 Config_Changes; the
+             app has no size-qualified resources to reload). -->
         <activity
             android:name=".MainActivity"
             android:theme="@style/Theme.WingtipMaps.Starting"
             android:exported="true"
             android:launchMode="singleTask"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

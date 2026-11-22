@@ -11,6 +11,7 @@ capture.
 | `iphone-6.5/` | App Store, iPhone 6.5" | 1284 x 2778 |
 | `ipad-13/` | App Store, iPad 13" | 2064 x 2752 |
 | `android-phone/` | Google Play, phone | 1080 x 1920 |
+| `android-tablet/` | Google Play, 7- and 10-inch tablet (3:4, the "wide" inner display Play's adaptive quality page asks for) | 1800 x 2400 |
 | `raw/<device>/` | the captures they are framed from | as taken |
 
 The headline over each is in `captions.json`, set in Barlow (the
@@ -85,5 +86,8 @@ emulator against the throwaway stack.
   local authority (`apps/android/app/src/debug`, build.gradle.kts's "The
   local authority"), framed by `store-frames.sh` from `raw/android/`.
   Tablet screenshots are optional on Play; leave them out unless the
-  listing is to be promoted on tablets.
+  listing is to be promoted on tablets. `store-frames.sh` frames
+  `raw/android-tablet/` (a Pixel Tablet emulator upright, the panel, the
+  map and a field's card in its pane) at 1800 x 2400 once the PNGs are
+  there.
 

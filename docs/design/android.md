@@ -1309,18 +1309,39 @@ Ask is not on the screen list, but it sits under every brief.
 
 ### 3.17 Tablets and foldables
 
-- **Follow**: Material's adaptive scaffolds (§1.9).
-- **The map and its panel** (compact → medium and wider):
-  - On a compact window: the docked sheet.
-  - From medium width: the panel sits beside the map, 384 dp wide
-    (`size.panel`), at the **left**, as on the web and the iPad. That
-    placement is decision 0013's, not a new one.
-  - Build it with `SupportingPaneScaffold`: the map is the main pane
-    and the panel the supporting one. The scaffold's own placement of
-    the supporting pane could not be confirmed from the page fetched.
-    If it puts the panel at the right, place it at the left with the
-    scaffold's directive. If the stock scaffold cannot do that, raise
-    an `owner` issue rather than moving the panel.
+Mirrors the iPad's split layout (ios.md §16, `SplitLayout`) on Android's
+terms; checked against Android's adaptive app quality guidelines
+(Tier 3, Tier 2 and Tier 1's desktop and foldable experiences, fetched
+2026-11-21) and Material 3's canonical layouts.
+
+- **Follow**: Material's adaptive scaffolds (§1.9), the window size
+  classes, never the device type.
+- **The map and its panel** (`ui/WidePanes`, `ui/PaneRoom`):
+  - Compact width: the docked sheet.
+  - Medium (600 to 840 dp: an upright small tablet, a foldable open in
+    portrait, split screen at half): the panel at the **start**, 384 dp
+    (`size.panel`, decision 0013's place), Material's list-detail scene
+    for Navigation 3 in it, held to one pane, a card in the panel's place.
+  - Expanded and wider (840 dp up): the panel at the start, the map
+    across the middle, and **a thing's card in a supporting pane at the
+    end**, as Material's supporting-pane layout and the iPad's inspector
+    hold it (the owner, 2026-11-21: "Yes do it all for iPad", "port over
+    everything to … android tablets"). A thing is a field, an airplane, a
+    fix, a VOR, an airspace, traffic, What's Here, a leg or a plate
+    (`SheetPage.inspects`); a page opened by name (the Brief, the Nav Log,
+    Nearest, You, Settings, Emergency) takes the panel's place, as the
+    iPad's sidebar keeps them.
+  - Where the panel, a card and the least map (a panel's width) do not
+    fit side by side, under 1,152 dp (an 8-inch tablet on its side, a
+    4:3 foldable open), the panel gives way while a card is up and comes
+    back with its close or a page opened by name.
+  - The one back stack (`MapViewModel`) is drawn by a NavDisplay per pane
+    (`SheetPagesHost`'s `stack`), so a card stays open across a resize,
+    a rotation or a fold, and Back closes the stack's top in its pane.
+  - The flight's figures float at the map's foot on the strip's solid
+    card, a size up (title large over label medium, `ui/MapFigures`,
+    `LocalGlanceFigures`), read at arm's length on a kneeboard or a yoke
+    mount, and leave the plan's foot (`LocalFiguresOnMap`).
 - **Lists with a detail**: `NavigableListDetailPaneScaffold`, which
   gives predictive back between panes:
   - Logbook
@@ -1330,16 +1351,63 @@ Ask is not on the screen list, but it sits under every brief.
   - the nav log, with the leg list and the leg
 - **Navigation**: the four tabs stay the panel's first row (0013). Do
   not swap them for a `NavigationRail` or `NavigationSuiteScaffold`
-  without the owner.
+  without the owner. The app has no top-level destinations beside the
+  map (the one search, decision 0013), so Material's navigation suite
+  would hold one item; that is why it is not used.
 - **Foldables**: in the half-open (tabletop) posture the map is on the
   top half and the panel on the bottom, split at the fold
-  (`ui/TabletopPanes`; the owner, 2026-11-09).
-- **Every window shape works**: no orientation lock, because the
-  system ignores it on large screens at 36 and 37 (§1.9).
+  (`ui/TabletopPanes`; the owner, 2026-11-09). The fold is asked before
+  the width: a half-open foldable's inner screen is medium or expanded,
+  and was laid out as a flat tablet until 2026-11-21. In book posture
+  the layout is the tablet's by its width, the map running across the
+  hinge; panes split at a vertical hinge are not built yet.
+- **Every window shape works**: no orientation lock, because the system
+  ignores it on large screens at 36 and 37 (§1.9). A resize, rotation,
+  fold or desktop window drag is laid out again by Compose, not a new
+  activity (the manifest's `configChanges` for size and orientation), so
+  the map keeps its tiles and camera through a drag (Tier 3
+  Config_Changes); the app has no size-qualified resources.
+- **Keyboard** (`navigation/Shortcut`, `MainActivity`): the iPad's menu
+  bar on Ctrl, listed in the system's Keyboard Shortcuts Helper
+  (Meta+/): Ctrl+F Search, Ctrl+2 FPL, Ctrl+B Brief, Ctrl+L Nav Log,
+  Ctrl+Shift+N Nearest, Ctrl+Shift+K Checklists, Ctrl+Shift+E Emergency,
+  Ctrl+O Saved Flights, Ctrl+Shift+G Logbook, Ctrl+, Settings, and
+  Ctrl+Z and Ctrl+Shift+Z the route's Undo and Redo (a text field keeps
+  its own). Esc becomes Back, the system's fallback, and with nothing to
+  close does nothing rather than send the app away (Tier 2
+  Keyboard_Exit). Tab and the arrows move focus through Material's
+  components as they come.
+- **Mouse, trackpad and stylus**: Material's components carry their own
+  hover and focus states. A right click, a trackpad's two-finger click or
+  a stylus's button on the map asks What's Here of the point under the
+  pointer, as a held finger does (`map/MapHold`, the system's context
+  click; Tier 2 Context_Menus). MapLibre zooms with the wheel and the
+  trackpad's pinch. Handwriting in every field is Compose's stock
+  stylus handwriting on Android 14 and later (Tier 3 Stylus_Text_Input).
+- **Drag and drop** (`ui/WindowDrop`): a Wingtip link dropped from
+  another app opens as a tap on it does (a shared flight still
+  previewed first); words dropped are typed into the one search; a
+  sign-in link or another address is refused (Tier 1
+  Drag_Drop_Support).
+- **Not yet** (each its own piece): ink markup on a plate (the iPad's
+  PencilKit `PlateMarkup`; Android's `androidx.ink`), a second window of
+  the app (multi-instance; the iPad's `MainWindow`, here held back by the
+  single task the sign-in link needs), a plate in a window of its own,
+  dragging a field's row out, files (a flight, a GPX) dropped or opened
+  (the app opens none yet), resizable pane dividers (Tier 1 UI_Config),
+  and the tablet's store captures (docs/store/screenshots).
+- **Tests**: `WidePanesTest` (the panes at 1280, 1024 and 700 dp on any
+  emulator) and `TabletLayoutTest` (the whole app in an expanded
+  window, skipped on a narrower one), both `@LargeScreen`, run on CI's
+  Pixel Tablet emulator at night and in a wave's validation
+  (docs/CI.md); `PaneRoomTest`, `ShortcutTest` and `DroppedTest` on the
+  JVM.
 - **Sources**:
   - https://developer.android.com/develop/ui/compose/layouts/adaptive/use-window-size-classes
   - https://developer.android.com/develop/ui/compose/layouts/adaptive/build-a-supporting-pane-layout
   - https://developer.android.com/develop/ui/compose/layouts/adaptive/list-detail
+  - https://developer.android.com/docs/quality-guidelines/adaptive-app-quality
+  - https://developer.android.com/develop/ui/compose/touch-input/keyboard-input/keyboard-shortcuts-helper
   - https://developer.android.com/about/versions/16/behavior-changes-16
 
 ---

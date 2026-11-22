@@ -91,7 +91,12 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     over the map: Material's modal sheet with a start-aligned title and
     a Close at the end, decision 0015) and `FlexibleSheet` (a page over
     the map under Material 3 Expressive's flexible top app bar, which
-    collapses as it scrolls); `ui/TabletopPanes` puts the map above a
+    collapses as it scrolls); `ui/WidePanes` lays a tablet's or a
+    foldable's window out (the panel at the start, and from expanded
+    width a thing's card in a supporting pane at the end, as the iPad's
+    inspector; `ui/PaneRoom`, docs/design/android.md §3.17), with the
+    keyboard's shortcuts (`navigation/Shortcut`) and drops on the window
+    (`ui/WindowDrop`); `ui/TabletopPanes` puts the map above a
     half-folded phone's fold and the panel below it, and
     `route/RouteToolbar` floats Undo, Redo and Add Point over the map on
     a wide window while the plan is open;
