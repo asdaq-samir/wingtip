@@ -1,7 +1,7 @@
-import { Suspense, useEffect, type CSSProperties } from "react";
+import { Suspense, useEffect, useState, type CSSProperties } from "react";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { fromChunk } from "../lib/fromChunk";
-import { loadToasts, useToastsWanted } from "../lib/toast";
+import { backOnline, loadToasts, useToastsWanted } from "../lib/toast";
 
 // Base UI's Toast on a chunk of its own, with the Toaster round it:
 // mounted once a toast is asked for or the page is idle, not in the first
@@ -10,6 +10,36 @@ const { Part: Toaster } = fromChunk(
   () => import("./ui/toast"),
   (m) => m.Toaster,
 );
+
+/**
+ * Whether the Toaster's chunk is in hand, so it is drawn only then: asked
+ * for once toasts are wanted, and again as the connection comes back where
+ * it could not be had. Drawn before, lazy() threw a chunk that would not
+ * load, and this Toaster stands outside every error boundary, so a page
+ * gone offline before it was idle lost the whole app, the open console
+ * with it (airplane-mode.spec on CI's runner, validate-wave2 run
+ * 44968065738: "Failed to fetch dynamically imported module" and the
+ * console's rows detached from the page).
+ */
+function useToasterLoaded(wanted: boolean): boolean {
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    if (!wanted || loaded) return;
+    let live = true;
+    const ask = (): Promise<void> =>
+      import("./ui/toast").then(
+        () => {
+          if (live) setLoaded(true);
+        },
+        () => (live ? backOnline().then(ask) : undefined),
+      );
+    void ask();
+    return () => {
+      live = false;
+    };
+  }, [wanted, loaded]);
+  return loaded;
+}
 
 /**
  * The app's one Toaster -- PageStatus's progress line (across every page
@@ -32,6 +62,7 @@ const { Part: Toaster } = fromChunk(
 export default function AppToaster() {
   const edge = useNavEdge();
   const wanted = useToastsWanted();
+  const loaded = useToasterLoaded(wanted);
   // Fetched once the page is idle, so the first toast does not wait on it.
   useEffect(() => {
     const idle = window.requestIdleCallback ?? ((go: () => void) => window.setTimeout(go, 2000));
@@ -39,7 +70,7 @@ export default function AppToaster() {
     const handle = idle(() => void loadToasts());
     return () => cancel(handle);
   }, []);
-  if (!wanted) return null;
+  if (!loaded) return null;
   return (
     <Suspense fallback={null}>
       <Toaster
