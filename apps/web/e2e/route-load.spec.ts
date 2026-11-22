@@ -18,12 +18,18 @@ import { pickAirplane } from "./startState";
  * C172 picked, a page with nothing in its cache, every resource ending
  * ".js" by its decoded size (the bytes parsed) once the ETE has a digit.
  * The audit's cold open read 4,198,439 bytes in 204 files (PR #589's head,
- * 8a5e7222c; scratchpad audit/p/out/results.jsonl, run 0). The figure is
- * written to the test's annotations each run; a change that brings it
+ * 8a5e7222c; scratchpad audit/p/out/results.jsonl, run 0), and the wave's
+ * 4,234,091 in 221 (validate run 2, bf0cb28e4): both counted what was
+ * fetched ahead for a later tap -- the pilot console, the cards drawn at a
+ * tap, the search's page -- on timers from the page's mount, which a slow
+ * route outran. Those wait for the route to draw now (lib/routeDrawn), and
+ * the open reads 3,605,492 bytes in 176 files, at four times slower and at
+ * sixteen alike (claude/w2-route's build, the mobile project). The figure
+ * is written to the test's annotations each run; a change that brings it
  * down lowers the budget to the new figure, never the other way (the
  * measure-speed skill; CLAUDE.md, "The ratchet only goes down").
  */
-const ROUTE_LOAD_BUDGET = 4_198_439;
+const ROUTE_LOAD_BUDGET = 3_605_492;
 
 test.use({ serviceWorkers: "block" });
 

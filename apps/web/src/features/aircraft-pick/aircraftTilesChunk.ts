@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { fromChunk } from "../../lib/fromChunk";
+import { afterRouteDrawn } from "../../lib/routeDrawn";
 
 // The airplanes' tiles and rows on a chunk of their own (aircraftTiles), not
 // the first load's: the search's own page has the airplanes' Favorites and
@@ -14,16 +15,15 @@ const recentRows = fromChunk(load, (m) => m.AircraftRecentRows);
 export const AircraftFavoriteStrip = favorites.Part;
 export const AircraftRecentTiles = recentTiles.Part;
 export const AircraftRecentRows = recentRows.Part;
-/** How long after the page draws the chunk is asked for. */
+/** How long after the route opened has drawn (lib/routeDrawn) the chunk is asked for. */
 const AFTER_MS = 2000;
 /** One chunk, asked for once the sheet has drawn; each part told it is in hand. */
 export function usePrefetchAircraftTiles() {
   useEffect(() => {
-    const later = window.setTimeout(() => {
+    return afterRouteDrawn(() => {
       favorites.prefetch();
       recentTiles.prefetch();
       recentRows.prefetch();
     }, AFTER_MS);
-    return () => window.clearTimeout(later);
   }, []);
 }
