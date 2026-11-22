@@ -26,4 +26,13 @@ object Citations {
             CitedPiece(p.text, if (held) DocPlace(cite.doc, at = cite.at) else null)
         }
     }
+
+    /**
+     * The cites among `pieces`, each as TalkBack offers it in a row read
+     * as one ("Open 14 CFR 91.155"), with the place it opens: a row whose
+     * words are one spoken description (the Brief's finding) hides the
+     * links inside it, so each is one of the row's accessibility actions.
+     */
+    fun actions(pieces: List<CitedPiece>): List<Pair<String, DocPlace>> =
+        pieces.mapNotNull { p -> p.place?.let { "Open ${p.text.trim()}" to it } }.distinctBy { it.second }
 }

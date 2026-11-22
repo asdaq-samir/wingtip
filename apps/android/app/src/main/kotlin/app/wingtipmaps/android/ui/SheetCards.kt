@@ -17,6 +17,7 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.about.AboutScreen
+import app.wingtipmaps.android.account.ConnectedAppsCard
 import app.wingtipmaps.android.aircraft.YourAirplanesPage
 import app.wingtipmaps.android.airplane.AirplaneCard
 import app.wingtipmaps.android.altitude.ProfileCard
@@ -107,6 +108,7 @@ private fun Card(
         SheetPage.Help -> Page(stringResource(R.string.help_and_about), exit) { HelpPage(open = sheet::push) }
         SheetPage.Logbook -> LogbookScreen(exit, onCoach = { sheet.push(SheetPage.Coach) })
         SheetPage.Flights -> FlightsCard(plan, exit, onUsed = showPlan)
+        SheetPage.ConnectedApps -> ConnectedAppsCard(exit)
         SheetPage.Coach -> CoachScreen(exit)
         SheetPage.Downloads -> Page(stringResource(R.string.offline_downloads), exit) { DownloadsScreen() }
         SheetPage.Passengers -> Page(stringResource(R.string.passenger_briefing), exit) { PassengerScreen(plan) }

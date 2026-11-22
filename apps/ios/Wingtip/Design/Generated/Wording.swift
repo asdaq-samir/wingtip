@@ -15,6 +15,8 @@ enum Wording {
     static let planningAidKneeboard = String(localized: "Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight.")
     /// The button that asks again after an error.
     static let tryAgain = String(localized: "Try Again")
+    /// Where an answer could not be had for want of a network, in place of a fetching line that would never end (the web's NO_CONNECTION, lib/problems).
+    static let noConnection = String(localized: "No connection.")
     /// The button that starts signing in.
     static let signIn = String(localized: "Sign In")
     /// Adds the place shown as a stop on the route (decision 0021's own example).

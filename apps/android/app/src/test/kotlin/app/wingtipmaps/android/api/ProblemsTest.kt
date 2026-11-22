@@ -11,12 +11,12 @@ class ProblemsTest {
     @Test
     fun noConnectionSaysSoWithoutTheAddress() {
         val e = ConnectException("failed to connect to /10.0.2.2 (port 28443) from /10.0.2.16 (port 40822) after 10000ms")
-        assertEquals("The chart could not be fetched: there is no connection to Wingtip.", Problems.words("The chart could not be fetched", e))
+        assertEquals("No connection. The chart could not be fetched.", Problems.words("The chart could not be fetched", e))
     }
 
     @Test
     fun aTimeoutIsNoConnectionToo() {
-        assertEquals("KOSH could not be fetched: there is no connection to Wingtip.", Problems.words("KOSH could not be fetched", SocketTimeoutException("timeout")))
+        assertEquals("No connection. KOSH could not be fetched.", Problems.words("KOSH could not be fetched", SocketTimeoutException("timeout")))
     }
 
     @Test

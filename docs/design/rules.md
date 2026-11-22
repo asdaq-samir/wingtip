@@ -1742,6 +1742,7 @@ The words the three apps share, generated from `design/wording.json`:
 | `planning_aid` | sentence | Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1‑800‑WX‑BRIEF), current FAA charts and publications, or the pilot in command’s judgment and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103). | What the app is and is not, in About and at the briefing's foot (14 CFR 91.3, 91.103; docs/legal/credits.md, "A planning aid"). |
 | `planning_aid_kneeboard` | sentence | Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight. | The printed kneeboard's foot. |
 | `try_again` | label | Try Again | The button that asks again after an error. |
+| `no_connection` | sentence | No connection. | Where an answer could not be had for want of a network, in place of a fetching line that would never end (the web's NO_CONNECTION, lib/problems). |
 | `sign_in` | label | Sign In | The button that starts signing in. |
 | `add_stop` | label | Add Stop | Adds the place shown as a stop on the route (decision 0021's own example). |
 | `add_to_route` | label | Add to Route | Adds the place shown to the route. |

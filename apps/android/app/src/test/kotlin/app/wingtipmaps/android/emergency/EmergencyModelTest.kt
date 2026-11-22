@@ -140,7 +140,7 @@ class EmergencyModelTest {
         )
         model.start(aircraft = "c172", airplaneName = "C172", callsign = null, checklist = "")
         model.took(fix, trackMagDeg = null)
-        assertEquals("The fields could not be fetched: there is no connection to Wingtip.", model.state.value.problem)
+        assertEquals("No connection. The fields could not be fetched.", model.state.value.problem)
         assertFalse(model.state.value.onPhone)
     }
 

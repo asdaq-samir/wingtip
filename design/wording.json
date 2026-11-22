@@ -27,6 +27,11 @@
       "text": "Try Again",
       "about": "The button that asks again after an error."
     },
+    "no_connection": {
+      "kind": "sentence",
+      "text": "No connection.",
+      "about": "Where an answer could not be had for want of a network, in place of a fetching line that would never end (the web's NO_CONNECTION, lib/problems)."
+    },
     "sign_in": {
       "kind": "label",
       "text": "Sign In",

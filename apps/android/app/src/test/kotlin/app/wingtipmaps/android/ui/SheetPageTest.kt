@@ -46,6 +46,7 @@ class SheetPageTest {
         SheetPage.Filing,
         SheetPage.YourAirplanes,
         SheetPage.Documents,
+        SheetPage.ConnectedApps,
         SheetPage.Reader("cfr-14-91@91.155"),
         SheetPage.Checklist("C172", "NORMAL"),
     )

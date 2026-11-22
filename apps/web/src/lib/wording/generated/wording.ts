@@ -12,6 +12,8 @@ export const WORDING = {
   planningAidKneeboard: "Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight.",
   /** The button that asks again after an error. */
   tryAgain: "Try Again",
+  /** Where an answer could not be had for want of a network, in place of a fetching line that would never end (the web's NO_CONNECTION, lib/problems). */
+  noConnection: "No connection.",
   /** The button that starts signing in. */
   signIn: "Sign In",
   /** Adds the place shown as a stop on the route (decision 0021's own example). */

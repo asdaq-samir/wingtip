@@ -12,6 +12,8 @@
     <string name="wording_planning_aid_kneeboard">Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight.</string>
     <!-- The button that asks again after an error. -->
     <string name="wording_try_again">Try Again</string>
+    <!-- Where an answer could not be had for want of a network, in place of a fetching line that would never end (the web's NO_CONNECTION, lib/problems). -->
+    <string name="wording_no_connection">No connection.</string>
     <!-- The button that starts signing in. -->
     <string name="wording_sign_in">Sign In</string>
     <!-- Adds the place shown as a stop on the route (decision 0021's own example). -->

@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 /** The precipitation's span, as Apple Weather's precipitation map has it:
  *  the hour past, the radar's (1h), or the forecast hours (12h). */
@@ -42,6 +43,9 @@ data class FlowState(
     val playing: Boolean = false,
     val span: FlowSpan = FlowSpan.TWELVE_HOURS,
     val failed: Boolean = false,
+    /** The last ask failed for want of a network: the bar says no
+     *  connection rather than fetching for ever. */
+    val offline: Boolean = false,
     val point: Pair<Double, Double>? = null,
     val grid: FlowGrid? = null,
 ) {
@@ -174,12 +178,14 @@ class ModelWeather private constructor(private val context: Context, private val
             Ticker.shared.inFront.first { it }
             try {
                 val layer = Planner.api.flowLayer().planned()
-                _state.update { it.copy(layer = layer, failed = false) }
+                _state.update { it.copy(layer = layer, failed = false, offline = false) }
             } catch (e: CancellationException) {
                 throw e
-            } catch (_: Exception) {
-                // No signal, or none held yet: what was heard stands.
-                _state.update { it.copy(failed = it.layer == null) }
+            } catch (e: Exception) {
+                // No signal, or none held yet: what was heard stands, and
+                // with nothing heard the bar says why (no connection, or
+                // not available), never "Fetching…" for ever.
+                _state.update { it.copy(failed = it.layer == null, offline = e is IOException) }
             }
             delay(REFRESH_MS)
         }

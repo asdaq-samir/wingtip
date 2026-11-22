@@ -281,10 +281,20 @@ class Traffic(
          *  bearing from it and whether it is told. */
         fun marks(planes: List<TrafficAircraft>, fix: OwnShip.Fix?): Result<List<Mark>> =
             Engine.trafficMarks(
-                fix?.altitudeFt,
+                markedFt(fix?.altitudeFt),
                 planes.map { EngineContract.TrafficMarksInputPlanesItem(it.altitudeFt, it.verticalFpm, it.lat, it.lon, it.pressureAltitude) },
                 fix?.let { EngineContract.TrafficMarksInputOwn(it.lat, it.lon) },
             )
+
+        /** Own ship's height as the traffic is marked against it: to the
+         *  nearest 10 ft, as the web's TrafficGl and the iPhone's
+         *  Traffic.markedFt read it, so the three apps give one airplane
+         *  the same mark. A 5 ft change of own height moves the engine's
+         *  1,000 ft near band (2,000 ft for a pressure altitude,
+         *  traffic_marks after 14 CFR 91.159's spacing) and its hundreds
+         *  only for an airplane within 5 ft of a boundary: far inside the
+         *  error of a phone's GNSS height and of the airplane's own report. */
+        fun markedFt(ft: Double?): Double? = ft?.let { (it / 10).roundToInt() * 10.0 }
 
         /** A height against own ship's in words for a notification: "500
          *  ft above", "1,200 ft below", "at your height". */
