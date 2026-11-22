@@ -64,6 +64,9 @@ final class ModelWeather {
 
     private(set) var layer: APIFlowLayer?
     private(set) var failed = false
+    /// The last ask failed for want of a network (ErrorWords.offline):
+    /// said as "no connection", not as the model weather missing.
+    private(set) var offline = false
     private(set) var playing = false
     /// The hour shown; nil follows now.
     private(set) var index: Int?
@@ -209,11 +212,13 @@ final class ModelWeather {
                 let answer = try await Planner.call { try await $0.flowLayer().ok.body.json }
                 layer = answer
                 failed = false
+                offline = false
                 paint()
             } catch is CancellationError {
                 return
             } catch {
                 if layer == nil { failed = true }
+                offline = (error as? URLError).map(ErrorWords.offline) ?? false
             }
             try? await Task.sleep(for: Self.refresh)
         }

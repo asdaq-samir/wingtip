@@ -1338,6 +1338,7 @@ object WingtipFlow {
 
 object WingtipSize {
     val TapTarget = 48.dp
+    val FlyingTarget = 60.dp
     val Chip = 32.dp
     val MapButton = 44.dp
     val RoundButton = 44.dp

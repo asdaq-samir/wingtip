@@ -58,6 +58,9 @@ struct StartFlightBar: View {
                     Label("End Flight", systemImage: "stop.fill").frame(maxWidth: .infinity, minHeight: WingtipSize.tapTarget)
                 }
                 .glassButton()
+                // Used in flight, so a flying control's 60-point area, as
+                // the web's Done flying (owner rec 17); the bar its own size.
+                .hitArea(WingtipSize.flyingTarget)
             } else {
                 Button {
                     Task {

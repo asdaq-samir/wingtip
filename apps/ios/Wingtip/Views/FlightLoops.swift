@@ -49,5 +49,13 @@ struct FlightLoops: ViewModifier {
             // The route's line for the packs read ahead (regions_ahead).
             .onChange(of: plan.course, initial: true) { _, course in ownShip.routeLine = course?.coordinates.map { [$0.latitude, $0.longitude] } }
             .onChange(of: ownShip.groundFt) { _, ft in inFlight.terrainFt = ft }
+            // The screen kept on while flying, as EFBs keep it in flight
+            // (the web's Screen Wake Lock, the in-flight audit's Q2, owner
+            // rec 16): a phone that dimmed and locked on its own timer took
+            // the map and the copilot's voice with it. Let go on the ground,
+            // where iOS's own timer dims it again.
+            .onChange(of: inFlight.underway && dryRun.fix == nil, initial: true) { _, flying in
+                UIApplication.shared.isIdleTimerDisabled = flying
+            }
     }
 }

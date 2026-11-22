@@ -179,7 +179,10 @@ final class AirportMarkView: MKAnnotationView {
         symbol.image = FieldMark.image(space: field.airspaceClass, category: choice.style == .off || stale != nil ? nil : field.category,
                                        use: field.use, step: step)
         label.text = stale.map { "\(field.ident) · \($0)" } ?? field.ident
-        label.textColor = ink
+        // A lighter ink of its colour after dark, and the pilot's text
+        // size with Larger Map Labels on (MapLabelLook).
+        label.textColor = MapLabelLook.ink(ink)
+        label.font = MapLabelLook.font(WingtipMapLabel.sizeNormal, weight: .bold, traits: traitCollection)
         label.sizeToFit()
         let width = box + Self.gap + label.bounds.width
         let mark = CGRect(x: 0, y: 0, width: width, height: height)

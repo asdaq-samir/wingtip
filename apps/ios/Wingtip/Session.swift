@@ -26,7 +26,7 @@ final class Session {
         } catch {
             // Offline, or the gateway down: the last answer stands, and
             // the chart is still the pilot's from its cache.
-            problem = error.localizedDescription
+            problem = error.said
             Log.app.notice("who is signed in could not be asked: \(error.localizedDescription, privacy: .public)")
         }
         loaded = true
@@ -56,7 +56,7 @@ final class Session {
             try await Gateway.signInWithApple(identityToken: identityToken, nonce: nonce)
             await refresh()
         } catch {
-            problem = "Apple's sign-in was not accepted: \(error.localizedDescription)"
+            problem = "Apple's sign-in was not accepted: \(error.said)"
             Log.app.error("Sign in with Apple refused: \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -67,7 +67,7 @@ final class Session {
             problem = nil
             return true
         } catch {
-            problem = "The link could not be sent: \(error.localizedDescription)"
+            problem = "The link could not be sent: \(error.said)"
             return false
         }
     }
@@ -134,7 +134,7 @@ final class Session {
             // Said only where who is signed in could be asked again.
             signedInByLink = problem == nil ? pilot?.email : nil
         } catch {
-            problem = "The sign-in link did not work: \(error.localizedDescription)"
+            problem = "The sign-in link did not work: \(error.said)"
             Log.app.error("the sign-in link was refused: \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -150,11 +150,18 @@ final class Session {
         pilot = nil
         Session.forgetPilot()
         (flight?.tracking ?? Tracking()).forgetFavorites()
-        WidgetFeed.shared.forgetPilot()
         // The session's cookies too: with no signal the gateway's logout
         // never ran, and the next person would still be signed in.
+        forgetThisDevice()
+    }
+
+    /// Signing out and deleting the account alike: the cookies, the path
+    /// flown, the recorder's track, the cached answers and the widgets'
+    /// copy of the pilot's, gone from this iPhone.
+    private func forgetThisDevice() {
         Session.forgetCookies()
         Session.forgetDevice(trail: flight?.ownShip.trail, recorder: flight?.ownShip.recorder)
+        WidgetFeed.shared.forgetPilot()
     }
 
     /// What this iPhone recorded or kept of the pilot outside the settings:
@@ -203,9 +210,7 @@ final class Session {
         Kept.forget()
         KeptForAir.forgetPilotOwn()
         (flight?.tracking ?? Tracking()).erase()
-        Session.forgetCookies()
-        Session.forgetDevice(trail: flight?.ownShip.trail, recorder: flight?.ownShip.recorder)
-        WidgetFeed.shared.forgetPilot()
+        forgetThisDevice()
         pilot = nil
     }
 

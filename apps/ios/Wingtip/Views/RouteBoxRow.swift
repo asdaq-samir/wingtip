@@ -5,6 +5,7 @@ import SwiftUI
 /// ••• took the row's buttons (the owner's one-row header, 2026-11-10).
 struct RouteBoxRow: View {
     @Environment(Plan.self) private var plan
+    @Environment(Airplanes.self) private var airplanes
     /// A page of the plan's: pushed on the iPhone, the inspector on the iPad.
     let open: (Screen) -> Void
 
@@ -26,9 +27,14 @@ struct RouteBoxRow: View {
             } else {
                 // No airplane picked: the chip asks for one, tinted as a
                 // tap is, rather than flying a type unasked (docs/decisions/0011).
+                // On a first flight, with no airplane of the pilot's yet,
+                // it says why the times and fuel are blank (the web's
+                // FIRST_AIRPLANE_ASK, owner rec 1); after, the one word.
                 Button { open(.airplane) } label: {
-                    Label("Airplane", systemImage: WingtipIcon.airplane)
+                    Label(airplanes.records.isEmpty ? String(localized: "Add your airplane for times and fuel") : String(localized: "Airplane"),
+                          systemImage: WingtipIcon.airplane)
                 }
+                .accessibilityIdentifier("route-airplane-ask")
                 .font(WingtipType.row)
                 // Its own tap in the row, the tint's blue, and a 44-point
                 // area round the words without the chip growing (HIG).

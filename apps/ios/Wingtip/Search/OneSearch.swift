@@ -56,7 +56,8 @@ struct OneSearch: ViewModifier {
 
     private var runner: FieldRunner {
         FieldRunner(plan: plan, ownShip: ownShip, session: session, open: host.field,
-                    card: { host.card($0) }, ask: { host.ask($0) }, showPlan: { host.showPlan() })
+                    card: { host.card($0) }, ask: { host.ask($0) }, showPlan: { host.showPlan() },
+                    finding: { [model] in model.finding = $0 })
     }
 
     func body(content: Content) -> some View {
@@ -67,6 +68,10 @@ struct OneSearch: ViewModifier {
             .searchSuggestions {
                 if let problem = model.problem {
                     Section { ProblemLine(problem) }
+                }
+                // The first route's wait for a position, said (owner rec 2).
+                if model.finding {
+                    Section { Label { Text(FieldRunner.findingWords) } icon: { ProgressView() } }
                 }
                 SearchSuggestions(model: model, pick: pick)
             }

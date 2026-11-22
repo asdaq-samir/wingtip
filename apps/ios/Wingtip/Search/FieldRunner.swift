@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 
 /// A line typed into the one search and sent, or said into its
@@ -21,6 +22,16 @@ struct FieldRunner {
     let ask: (String) -> Void
     /// The plan in sight once the route is set.
     let showPlan: () -> Void
+    /// Whether the route waits on the position, past 400 ms, for the host
+    /// to say so (OneSearchModel.finding).
+    var finding: (Bool) -> Void = { _ in }
+
+    /// The progress line while a route waits for the position.
+    static let findingWords = String(localized: "Finding where you are…")
+    /// How long a route waits for a first fix, s (the web's positionNow(4000)),
+    /// and how long before the wait is said, as every progress line is.
+    static let fixWaitS: Double = 4
+    static let sayWaitS: Double = 0.4
 
     /// Done; nil, or why not, said where it was asked.
     func run(_ line: String) async -> String? {
@@ -61,7 +72,7 @@ struct FieldRunner {
     func route(dep typedDep: String?, stops: [String], dest: String) async -> String? {
         var dep = typedDep ?? plan.dep
         if dep.isEmpty {
-            if let at = ownShip.fix?.coordinate, let near = try? await Planner.nearestOrPacks(lat: at.latitude, lon: at.longitude, limit: 1).fields.first {
+            if let at = await waitForFix()?.coordinate, let near = try? await Planner.nearestOrPacks(lat: at.latitude, lon: at.longitude, limit: 1).fields.first {
                 dep = near.ident
             }
             if dep.isEmpty, let home = session.pilot?.homeBase ?? FirstFlightModel.savedHome(), !home.isEmpty { dep = home.uppercased() }
@@ -74,6 +85,24 @@ struct FieldRunner {
         plan.plan()
         showPlan()
         return nil
+    }
+
+    /// The airplane's position for a route's departure: the fix in hand,
+    /// else, with the position allowed, the first to come within
+    /// `fixWaitS` (the web's first flight waits so for its nearest field),
+    /// the wait said once it passes `sayWaitS`; nil with none.
+    func waitForFix() async -> OwnShip.Fix? {
+        if let fix = ownShip.fix { return fix }
+        let allowed: [CLAuthorizationStatus] = [.authorizedWhenInUse, .authorizedAlways]
+        guard allowed.contains(ownShip.authorization) else { return nil }
+        let start = Date()
+        defer { finding(false) }
+        while Date().timeIntervalSince(start) < Self.fixWaitS, !Task.isCancelled {
+            if let fix = ownShip.fix { return fix }
+            if Date().timeIntervalSince(start) >= Self.sayWaitS { finding(true) }
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        return ownShip.fix
     }
 
     /// Direct To a field or a point: on the route, from the airplane to it

@@ -168,7 +168,7 @@ struct AirportCard: View {
             notFound = true
             problem = "The planner knows no field by that identifier."
         } catch {
-            if place == nil { problem = error.localizedDescription }
+            if place == nil { problem = error.said }
         }
     }
 

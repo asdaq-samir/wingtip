@@ -262,12 +262,11 @@ final class FixMarkView: MKAnnotationView {
 
     override init(annotation: (any MKAnnotation)?, reuseIdentifier: String?) {
         super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
-        identLabel.font = UIFont.systemFont(ofSize: 11, weight: .semibold)
-        identLabel.textColor = WingtipColor.Chart.fixInk
-        identLabel.layer.shadowColor = UIColor.white.cgColor
-        identLabel.layer.shadowRadius = 2
-        identLabel.layer.shadowOpacity = 1
-        identLabel.layer.shadowOffset = .zero
+        identLabel.font = UIFont.systemFont(ofSize: WingtipMapLabel.sizeSmall, weight: .semibold)
+        // The chart's ink by day; after dark a light ink on the night's
+        // halo, never dark words on a white glow (MapLabelLook, rules.md §13.6).
+        identLabel.textColor = MapLabelLook.ink(WingtipColor.Chart.fixInk)
+        identLabel.haloFollowing(self)
         addSubview(mark)
         addSubview(identLabel)
         isEnabled = false
@@ -287,6 +286,7 @@ final class FixMarkView: MKAnnotationView {
     private func show() {
         guard let fix = annotation as? FixAnnotation else { return }
         identLabel.text = fix.fix.ident
+        identLabel.font = MapLabelLook.font(WingtipMapLabel.sizeSmall, weight: .semibold, traits: traitCollection)
         identLabel.sizeToFit()
         let height = max(12, identLabel.bounds.height)
         mark.frame = CGRect(x: 0, y: (height - 12) / 2, width: 12, height: 12)

@@ -166,6 +166,16 @@
     <string name="wording_coming_up_not_fetched">What falls due could not be fetched.</string>
     <!-- What needs a route, where there is none. -->
     <string name="wording_plan_a_route_first">Plan a route first.</string>
+    <!-- What a list, a card or a figure says in place where its answer could not be had for want of a network (the web's lib/problems NO_CONNECTION). -->
+    <string name="wording_no_connection">No connection</string>
+    <!-- A request that timed out (the web's describeError). -->
+    <string name="wording_no_answer_in_time">No answer in time. Try again in a moment.</string>
+    <!-- An answer that was not the JSON asked for (the web's describeError). -->
+    <string name="wording_answer_garbled">The planner\'s answer came back garbled. Try again in a moment.</string>
+    <!-- The planner refused with a server error and no words of its own (the web's describeError). -->
+    <string name="wording_planner_not_answering">The planner is not answering. Try again in a moment.</string>
+    <!-- The Nav Log with no route (owner rec 4). -->
+    <string name="wording_nav_log_empty">Plan a route on FPL; its legs are listed here.</string>
     <!-- A report with no broken or overcast layer, a figure's value (14 CFR 1.1, "ceiling"). -->
     <string name="wording_no_ceiling">No ceiling</string>
     <!-- Takes the airport or airplane shown out of the favorites. -->

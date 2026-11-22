@@ -34,6 +34,7 @@ struct MapSettingsView: View {
     @AppStorage(MapExtrasInput.Keys.weather) private var weatherOn = true
     @AppStorage(MapExtrasInput.Keys.military) private var militaryOn = false
     @AppStorage(MapExtrasInput.Keys.privateFields) private var privateOn = false
+    @AppStorage(MapLabelLook.largerKey) private var largerLabels = false
 
     var body: some View {
         List {
@@ -75,6 +76,10 @@ struct MapSettingsView: View {
             Section("Look") {
                 ThemeRow()
                 AppearanceRow()
+                // The map's words follow the text size, up to 1.2 times
+                // (owner rec 26; MapLabelLook), as the web's switch.
+                Toggle("Larger Map Labels", isOn: $largerLabels)
+                    .accessibilityIdentifier("larger-map-labels")
             }
         }
         .listStyle(.insetGrouped)

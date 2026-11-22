@@ -148,7 +148,8 @@ struct AirspaceCard: View {
             if let kept = CyclePacks.shared.airspaceAt(lat: lat, lon: lon) {
                 here = kept
             } else {
-                problem = Wording.airspaceNotRead
+                // Nothing kept and no network: said as that (the offline audit).
+                problem = (error as? URLError).map(ErrorWords.offline) == true ? Wording.noConnection + "." : Wording.airspaceNotRead
             }
         }
     }
