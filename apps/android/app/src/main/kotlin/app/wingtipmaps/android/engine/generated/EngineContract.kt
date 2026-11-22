@@ -4341,7 +4341,7 @@ object EngineContract {
         @SerialName("visibility_sm")
         val visibilitySm: Double? = null,
         /**
-         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
          */
         val source: String? = null,
     )
@@ -4380,7 +4380,7 @@ object EngineContract {
         @SerialName("visibility_sm")
         val visibilitySm: Double? = null,
         /**
-         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
          */
         val source: String? = null,
         @SerialName("wind_dir_true_deg")

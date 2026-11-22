@@ -324,6 +324,7 @@ export type EndorsementsInForceAnswer = [string, number][];
 export type FaaIdsAnswer = string[];
 export type FaaWordsAnswer = string | string[];
 export type FieldHoursAnswer = FieldHour[];
+export type FieldNamesAnswer = string[];
 export type FiledDofAnswer = string | null;
 export type FiledDurationAnswer = string;
 export type FiledEnduranceAnswer = number | null;
@@ -1120,7 +1121,7 @@ export interface EngineContract {
     answer: AcsCodesAnswer;
   };
   /**
-   * Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground.
+   * Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground. Near the antimeridian a box is read the short way round, so its west may be under -180 or its east over 180: the planner reads it as its two halves (wingtip.geo_boxes).
    */
   ahead_frame: {
     input: AheadFrameInput;
@@ -1930,6 +1931,13 @@ export interface EngineContract {
   field_military: {
     input: FieldMilitaryInput;
     answer: FieldMilitaryAnswer;
+  };
+  /**
+   * Every name a field may be filed under, in the order to try them: NASR's ICAO_ID where given, the K form of a three-letter ident (FAA JO 7350.9GG 4-1), the ident as asked and its FAA form.
+   */
+  field_names: {
+    input: FieldNamesInput;
+    answer: FieldNamesAnswer;
   };
   /**
    * The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport. `airplane`: whether an airplane on wheels lands there, an airport (A), a gliderport (G) or an ultralight park (U), each a strip of ground; not a heliport, a balloonport or a seaplane base, whose runways are water. What every list of fields to land at is held to (nearest, a stop, a glide's); true with no code, the host's own list then deciding.
@@ -3619,7 +3627,7 @@ export interface EngineContract {
     answer: TerrainViewBandsAnswer;
   };
   /**
-   * The way round high ground's frame: the grid's corner, cells and samples a cell's side the planner reads the ground at, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159, under Class A, 71.33), and the box the fields with fuel are wanted in.
+   * The way round high ground's frame: the grid's corner, cells and samples a cell's side the planner reads the ground at, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159, under Class A, 71.33), and the box the fields with fuel are wanted in. Across the antimeridian the end is read within 180 degrees of the start, so lon0 and the box may pass -180 or 180 (wingtip.terrain_detour reads them at their own longitudes).
    */
   terrain_way_frame: {
     input: TerrainWayFrameInput;
@@ -6893,6 +6901,9 @@ export interface EndorsementRecordsInput {
   flight_on?: string | null;
 }
 export interface EndorsementRecordsAnswer {
+  /**
+   * Items: YYYY-MM-DD
+   */
   until: (string | null)[];
   /**
    * YYYY-MM-DD
@@ -7052,6 +7063,10 @@ export interface FieldMilitaryAnswer {
    * military, joint, or null for a field the services do not own.
    */
   military: "military" | "joint" | null;
+}
+export interface FieldNamesInput {
+  ident: string;
+  icao_id?: string | null;
 }
 export interface FieldSiteTypeInput {
   /**
@@ -7424,7 +7439,7 @@ export interface ForecastRunAnswer {
     ceiling_unknown: boolean;
     visibility_sm: number | null;
     /**
-     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
      */
     source: string | null;
     wind_dir_true_deg: number | null;
@@ -7459,7 +7474,7 @@ export interface ForecastRunAnswer {
     ceiling_unknown: boolean;
     visibility_sm: number | null;
     /**
-     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
      */
     source: string | null;
   }[];
@@ -8851,6 +8866,9 @@ export interface IfrAlternateWindowAnswer {
   end: number;
 }
 export interface IfrAlternatesRankedInput {
+  /**
+   * Items: An ifr_alternate_check answer with its distance_nm.
+   */
   checks: {}[];
   limit?: number;
 }
@@ -9264,6 +9282,9 @@ export interface LogbookCsvReadAnswer {
   }[];
 }
 export interface LogbookCsvWriteInput {
+  /**
+   * Items: The gateway's LogbookEntry, camelCase.
+   */
   entries: {}[];
 }
 export interface LogbookFromTrackInput {
@@ -12053,6 +12074,8 @@ export interface RouteAdizAnswer {
   legs: ("contiguous" | "alaska" | "hawaii" | "guam")[][];
   /**
    * Every zone the route meets, once each in order.
+   *
+   * Items: 14 CFR part 99's zones: contiguous the Contiguous U.S. ADIZ (99.43), alaska (99.45), guam (99.47), hawaii (99.49).
    */
   zones: ("contiguous" | "alaska" | "hawaii" | "guam")[];
   /**
@@ -12104,6 +12127,8 @@ export interface RouteJurisdictionAnswer {
   legs: {
     /**
      * The countries other than the United States met along the leg, its ends included, in the order met.
+     *
+     * Items: US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
      */
     codes: ("US" | "CA" | "MX" | "BS" | "other")[];
     /**
@@ -12113,6 +12138,8 @@ export interface RouteJurisdictionAnswer {
   }[];
   /**
    * Every country other than the United States the route meets, once each in order.
+   *
+   * Items: US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
    */
   outside: ("US" | "CA" | "MX" | "BS" | "other")[];
   /**

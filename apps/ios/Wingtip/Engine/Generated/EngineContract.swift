@@ -4287,7 +4287,7 @@ enum EngineContract {
         var ceilingFt: Double?
         var ceilingUnknown: Bool
         var visibilitySm: Double?
-        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
         var source: String?
 
         enum CodingKeys: String, CodingKey {
@@ -4329,7 +4329,7 @@ enum EngineContract {
         var ceilingFt: Double?
         var ceilingUnknown: Bool
         var visibilitySm: Double?
-        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
         var source: String?
         var windDirTrueDeg: Double?
         var windSpeedKt: Double?
