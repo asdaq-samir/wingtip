@@ -76,7 +76,9 @@ function Title({
 }) {
   return (
     <span className="flex w-full flex-wrap items-center gap-x-1.5 gap-y-0.5">
-      {label}
+      {/* The name its own element, apart from the count or time at the
+          line's end: it is read, styled and found as the row's name alone. */}
+      <span>{label}</span>
       {ident && <strong>{ident}</strong>}
       <CategoryBadge category={category} />
       {(finding === "stop" || finding === "caution") && <FindingIcon finding={finding} className="size-4" />}
