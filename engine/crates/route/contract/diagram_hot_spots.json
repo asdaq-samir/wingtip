@@ -1,0 +1,108 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "The diagram's hot spots placed on the ground by its graticule (diagram_graticule), each label at the middle of where it is drawn, points from the page's top left; named as the Chart Supplement writes them, 'HS 1'. A label sits beside its circle, so the place is good to a label's width: for the runway proximity advisor's reminder, never for taxiing by.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DiagramHotSpotsInput",
+      "type": "object",
+      "properties": {
+        "graticule": {
+          "type": "object",
+          "properties": {
+            "lat_on_x": {
+              "type": "boolean"
+            },
+            "a": {
+              "type": "number"
+            },
+            "b": {
+              "type": "number"
+            },
+            "c": {
+              "type": "number"
+            },
+            "d": {
+              "type": "number"
+            },
+            "north_deg": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat_on_x",
+            "a",
+            "b",
+            "c",
+            "d",
+            "north_deg"
+          ],
+          "description": "diagram_graticule's answer."
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string"
+              },
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "text",
+              "x",
+              "y"
+            ]
+          }
+        }
+      },
+      "required": [
+        "graticule",
+        "labels"
+      ],
+      "additionalProperties": false
+    },
+    "answer": {
+      "title": "DiagramHotSpotsAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lon": {
+            "type": "number"
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "lat",
+          "lon",
+          "x",
+          "y"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

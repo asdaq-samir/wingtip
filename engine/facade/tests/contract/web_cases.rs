@@ -26,6 +26,15 @@ pub(super) fn cases(c: &mut Checker) {
     for case in web["terrainViewBands"].as_array().unwrap() {
         c.ask("terrain_view_bands", json!({ "altitude_ft": case["altitude_ft"] }));
     }
+    // The runway proximity advisor (runwayProximity.json), the diagram's
+    // hot spots and the fuels by grade the weight and balance loads.
+    for case in fixture("runwayProximity.json")["cases"].as_array().unwrap() {
+        c.ask("runway_proximity", case["input"].clone());
+    }
+    c.ask("diagram_hot_spot_labels", json!({ "text": "HS 1 RWY 9-27 HS 2" }));
+    let graticule = json!({ "lat_on_x": false, "a": -10000.0, "b": 420000.0, "c": 7660.0, "d": 689600.0, "north_deg": 0.0 });
+    c.ask("diagram_hot_spots", json!({ "graticule": graticule, "labels": [{ "text": "HS 1", "x": 200.0, "y": 300.0 }] }));
+    c.ask("fuel_grades", json!({}));
     c.ask("checklist_phases", json!({ "kind": "normal" }));
     c.ask("checklist_phases", json!({ "kind": "emergency" }));
     // A procedure's legs drawn (paths.rs), as the planner asks them.

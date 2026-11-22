@@ -13,6 +13,8 @@ import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.diagramFixUsable
 import app.wingtipmaps.android.engine.generated.diagramGraticule
+import app.wingtipmaps.android.engine.generated.diagramHotSpotLabels
+import app.wingtipmaps.android.engine.generated.diagramHotSpots
 import app.wingtipmaps.android.engine.generated.diagramLabels
 import app.wingtipmaps.android.engine.generated.diagramPoint
 import app.wingtipmaps.android.flight.OwnShip
@@ -22,14 +24,17 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /** A diagram's first page as a picture, with its graticule from its
- *  labels (null where it has none the engine can fit), and the engine's
- *  words where reading the labels failed. */
+ *  labels (null where it has none the engine can fit), its hot spots
+ *  placed on the ground by it (the engine's diagram_hot_spots: "HS 1"
+ *  where the FAA draws it), and the engine's words where reading the
+ *  labels failed. */
 class DiagramPage(
     val image: Bitmap,
     val width: Float,
     val height: Float,
     val graticule: EngineContract.DiagramGraticuleAnswer?,
     val problem: String? = null,
+    val hotSpots: List<EngineContract.DiagramHotSpotsAnswerItem> = emptyList(),
 ) {
     /** Where the fix is on the page, in points from its top left; null
      *  where the page has no graticule, a failure where the engine's
@@ -83,8 +88,9 @@ class DiagramPage(
                         val bitmap = createBitmap(page.width * 3, page.height * 3)
                         bitmap.eraseColor(android.graphics.Color.WHITE)
                         page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                        val graticule = if (readsText()) graticuleOf(page) else Result.success(null)
-                        return DiagramPage(bitmap, w, h, graticule.getOrNull(), graticule.exceptionOrNull()?.message)
+                        val read = if (readsText()) labelsOf(page) else Result.success(Labels(null, emptyList()))
+                        val labels = read.getOrNull()
+                        return DiagramPage(bitmap, w, h, labels?.graticule, read.exceptionOrNull()?.message, labels?.hotSpots.orEmpty())
                     }
                 }
             }
@@ -99,25 +105,40 @@ class DiagramPage(
         private fun readsText(): Boolean =
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13
 
+        /** What the page's labels give: its graticule and its hot spots. */
+        private class Labels(val graticule: EngineContract.DiagramGraticuleAnswer?, val hotSpots: List<EngineContract.DiagramHotSpotsAnswerItem>)
+
         @SuppressLint("NewApi")
         @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
-        private fun graticuleOf(page: PdfRenderer.Page): Result<EngineContract.DiagramGraticuleAnswer?> = runCatching {
+        private fun labelsOf(page: PdfRenderer.Page): Result<Labels> = runCatching {
             val text = page.textContents.joinToString("\n") { it.text }
-            val words = Engine.diagramLabels(text).getOrThrow()
-            // Each label where it is drawn, by the page's own search: its
-            // bounds in the page's points from its top left.
-            val placed = words.flatMap { word ->
-                page.searchText(word).mapNotNull { match ->
-                    val boxes = match.bounds
-                    if (boxes.isEmpty()) return@mapNotNull null
-                    val left = boxes.minOf { it.left }
-                    val right = boxes.maxOf { it.right }
-                    val top = boxes.minOf { it.top }
-                    val bottom = boxes.maxOf { it.bottom }
-                    EngineContract.DiagramGraticuleInputLabelsItem(word, ((left + right) / 2).toDouble(), ((top + bottom) / 2).toDouble())
-                }
+            val placed = placedOn(page, Engine.diagramLabels(text).getOrThrow()).map { (word, x, y) -> EngineContract.DiagramGraticuleInputLabelsItem(word, x, y) }
+            val graticule = Engine.diagramGraticule(placed).getOrThrow() ?: return@runCatching Labels(null, emptyList())
+            // The hot spots the FAA draws ("HS 1"), where each label is,
+            // taken to the ground by the same graticule; none placed is no
+            // reason to leave the airplane off.
+            val spots = Engine.diagramHotSpotLabels(text).mapCatching { words ->
+                val labels = placedOn(page, words).map { (word, x, y) -> EngineContract.DiagramHotSpotsInputLabelsItem(word, x, y) }
+                if (labels.isEmpty()) emptyList() else Engine.diagramHotSpots(graticuleAsked(graticule), labels).getOrThrow()
             }
-            Engine.diagramGraticule(placed).getOrThrow()
+            Labels(graticule, spots.getOrDefault(emptyList()))
         }
+
+        /** Each word where it is drawn, by the page's own search: the
+         *  middle of its bounds in the page's points from its top left. */
+        @SuppressLint("NewApi")
+        @RequiresExtension(extension = Build.VERSION_CODES.S, version = 13)
+        private fun placedOn(page: PdfRenderer.Page, words: List<String>): List<Triple<String, Double, Double>> = words.flatMap { word ->
+            page.searchText(word).mapNotNull { match ->
+                val boxes = match.bounds
+                if (boxes.isEmpty()) return@mapNotNull null
+                val x = (boxes.minOf { it.left } + boxes.maxOf { it.right }) / 2
+                val y = (boxes.minOf { it.top } + boxes.maxOf { it.bottom }) / 2
+                Triple(word, x.toDouble(), y.toDouble())
+            }
+        }
+
+        private fun graticuleAsked(g: EngineContract.DiagramGraticuleAnswer) =
+            EngineContract.DiagramHotSpotsInputGraticule(g.latOnX, g.a, g.b, g.c, g.d, g.northDeg)
     }
 }

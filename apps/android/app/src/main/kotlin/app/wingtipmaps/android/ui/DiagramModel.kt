@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.Problems
+import app.wingtipmaps.android.api.generated.AirportPlace
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.FlightSession
 import app.wingtipmaps.android.flight.InFlight
@@ -22,8 +23,9 @@ import javax.inject.Inject
  * The airport diagram's model (DiagramOwnShipDialog): the FAA's page read
  * for the field asked, or why it could not be, and the airplane on it --
  * the fix the flight holds (FlightSession), whether it is fit to draw and
- * where it falls on the page, each the engine's (DiagramPage) -- asked
- * here rather than in the dialog.
+ * where it falls on the page, each the engine's (DiagramPage) -- and the
+ * runway proximity advisor's words for it (RunwayAdvisor), shown and said,
+ * asked here rather than in the dialog.
  */
 @HiltViewModel
 class DiagramModel @Inject constructor(
@@ -39,6 +41,7 @@ class DiagramModel @Inject constructor(
     val flight: StateFlow<InFlight.State> = session.inFlight.state
 
     private var reading: Job? = null
+    private val voice by lazy { RunwayVoice(context) }
 
     /** The diagram at `url` read for `ident`; the last one's page let go of
      *  first, as a fresh dialog had none. */
@@ -61,6 +64,7 @@ class DiagramModel @Inject constructor(
     fun close() {
         reading?.cancel()
         _state.value = State()
+        _advice.value = null
     }
 
     /** The fix to draw now, by the engine's `diagram_fix_usable`. */
@@ -68,6 +72,24 @@ class DiagramModel @Inject constructor(
 
     /** Where the fix is on the page, by the engine's `diagram_point`. */
     fun place(page: DiagramPage, fix: OwnShip.Fix): EngineContract.DiagramPointAnswer? = page.place(fix).getOrNull()
+
+    private val _advice = MutableStateFlow<EngineContract.RunwayProximityAnswer?>(null)
+
+    /** The runway proximity advisor's answer for the fix drawn; null with
+     *  none, or where the engine could not say. */
+    val advice: StateFlow<EngineContract.RunwayProximityAnswer?> = _advice.asStateFlow()
+
+    /** The advisor asked again at `place` for the fix drawn (each fix and
+     *  each second), its words said once each (RunwayVoice). */
+    fun advise(place: AirportPlace, page: DiagramPage?, fix: OwnShip.Fix?, nowMs: Long) {
+        val answer = RunwayAdvisor.ask(place, page, fix, nowMs).getOrNull()
+        _advice.value = answer
+        voice.hear(answer)
+    }
+
+    override fun onCleared() {
+        voice.close()
+    }
 
     /** The line under the page. */
     fun note(page: DiagramPage, fix: Result<OwnShip.Fix?>): String = DiagramPage.note(page, fix)

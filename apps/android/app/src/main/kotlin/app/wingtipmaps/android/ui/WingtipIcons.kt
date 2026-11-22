@@ -12,8 +12,11 @@ import androidx.compose.material.icons.filled.AddLocation
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CellTower
+import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.FormatListNumbered
@@ -26,6 +29,7 @@ import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Print
 import androidx.compose.material.icons.filled.Route
+import androidx.compose.material.icons.filled.Scale
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -110,6 +114,14 @@ object WingtipIcons {
     val radio = Icons.Filled.CellTower
     val airplane = Icons.Filled.Flight
     val setup = Icons.Filled.Settings
+
+    /** The scratchpad and its tools: a page written on, the ink cleared
+     *  (Material's brush sweeping, as an eraser of everything), the page
+     *  deleted; and the weight and balance, a scale. */
+    val scratchpad = Icons.Filled.EditNote
+    val clear = Icons.Filled.CleaningServices
+    val delete = Icons.Filled.Delete
+    val balance = Icons.Filled.Scale
 
     /** An approach plate laid on the map (an airport card's approach's
      *  Show on Map), and the plate card's transparency slider's ends: an

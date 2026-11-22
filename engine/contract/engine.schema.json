@@ -4975,6 +4975,99 @@
       ],
       "additionalProperties": false
     },
+    "citations": {
+      "description": "A text cut into pieces, each cited rule among them named by the document that holds it and the place in it, for the documents library to open (docs/decisions/0056-documents-library.md): 14 CFR and 49 CFR sections with their paragraphs (\"14 CFR 91.211(a)(1)\", \"49 CFR 830.5\", a list after one, a bare section after a title or with its paragraph, never a bare figure such as 121.5), 14 CFR's parts (\"Part 135\"), AIM paragraphs (\"AIM 7-1-5\") and advisory circulars (\"AC 61-65K\", named without the edition's letter). A document is cfr-<title>-<part>, aim or ac-<number>; the pieces' texts joined are the text.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "CitationsInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The words as the app shows them: a finding's why, a rule's cite."
+            }
+          }
+        },
+        "answer": {
+          "title": "CitationsAnswer",
+          "type": "object",
+          "properties": {
+            "pieces": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "cite": {
+                    "anyOf": [
+                      {
+                        "type": "null"
+                      },
+                      {
+                        "title": "Citation",
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "cfr",
+                              "aim",
+                              "ac"
+                            ]
+                          },
+                          "doc": {
+                            "type": "string",
+                            "description": "The library's document: \"cfr-14-91\", \"aim\", \"ac-61-65\"."
+                          },
+                          "at": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "The place in it: a CFR section (\"91.155\"), an AIM paragraph (\"7-1-5\"); null for a whole part or circular."
+                          },
+                          "paragraph": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "A CFR section's paragraph as written, \"(a)(1)\"."
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "doc",
+                          "at",
+                          "paragraph"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "text",
+                  "cite"
+                ]
+              }
+            }
+          },
+          "required": [
+            "pieces"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "class_b_at_altitude": {
       "description": "Which Class B band along a route's profile holds an altitude (14 CFR 91.131(a)(1): an ATC clearance before entering Class B): the index of the first band of class B whose floor is at or under altitude_ft and whose ceiling is at or over it, both ft MSL as the FAA's Class Airspace shapefile publishes them; null where none does. A band with no ceiling given holds every altitude from its floor up, so a clearance is said to be needed rather than not (Class B tops run from 7,000 ft at KMSY to 12,500 ft at KDEN, so no one figure stands in for it).",
       "type": "object",
@@ -7652,6 +7745,145 @@
               "type": "null"
             }
           ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "diagram_hot_spot_labels": {
+      "description": "The hot spot labels in an airport diagram's text ('HS 1', 'HS12'), each as written, once, in order, for the app to find where each is drawn. A hot spot is a location with a history of potential risk of a collision or runway incursion (AC 150/5300-13B Appendix A, 49), drawn on the d-TPP's diagram as a circle and its label.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "DiagramHotSpotLabelsInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The page's text."
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        "answer": {
+          "title": "DiagramHotSpotLabelsAnswer",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "diagram_hot_spots": {
+      "description": "The diagram's hot spots placed on the ground by its graticule (diagram_graticule), each label at the middle of where it is drawn, points from the page's top left; named as the Chart Supplement writes them, 'HS 1'. A label sits beside its circle, so the place is good to a label's width: for the runway proximity advisor's reminder, never for taxiing by.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "DiagramHotSpotsInput",
+          "type": "object",
+          "properties": {
+            "graticule": {
+              "type": "object",
+              "properties": {
+                "lat_on_x": {
+                  "type": "boolean"
+                },
+                "a": {
+                  "type": "number"
+                },
+                "b": {
+                  "type": "number"
+                },
+                "c": {
+                  "type": "number"
+                },
+                "d": {
+                  "type": "number"
+                },
+                "north_deg": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "lat_on_x",
+                "a",
+                "b",
+                "c",
+                "d",
+                "north_deg"
+              ],
+              "description": "diagram_graticule's answer."
+            },
+            "labels": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "text",
+                  "x",
+                  "y"
+                ]
+              }
+            }
+          },
+          "required": [
+            "graticule",
+            "labels"
+          ],
+          "additionalProperties": false
+        },
+        "answer": {
+          "title": "DiagramHotSpotsAnswer",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "name",
+              "lat",
+              "lon",
+              "x",
+              "y"
+            ]
+          }
         }
       },
       "required": [
@@ -11573,6 +11805,50 @@
             "trip_gal",
             "required_gal"
           ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "fuel_grades": {
+      "description": "The fuels an airplane is loaded with, by grade, and a US gallon's standard weight of each, for the weight and balance where the airplane's own figure is not given (the POH's rules): FAA-H-8083-1B, avgas 6 lb (chapter 7), Jet A and A-1 6.8 lb (chapter 9's nominal at +15 \u00b0C; Figure 3-4's 6.68, the heavier kept).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FuelGradesInput",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "answer": {
+          "title": "FuelGradesAnswer",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "grade": {
+                "type": "string",
+                "enum": [
+                  "avgas",
+                  "jet_a"
+                ]
+              },
+              "name": {
+                "type": "string"
+              },
+              "lb_per_gal": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "grade",
+              "name",
+              "lb_per_gal"
+            ]
+          }
         }
       },
       "required": [
@@ -26985,6 +27261,267 @@
       ],
       "additionalProperties": false
     },
+    "runway_proximity": {
+      "description": "The runway proximity advisor: own ship against a field's runways and hot spots, on the ground and below the traffic pattern (AC 90-66C's 1,000 ft where none is published). On the surface (under 100 ft above the field, or with no height): on a runway (within its half width, NASR RWY_WIDTH), or approaching one's holding position when closing on it (AC 120-74B 7e(2)(d)'s 'approaching (specific runway number) hold short line'; AIM 2-3-5 a), the holding position assumed at the farthest standard from the centerline for the runway's width (AC 150/5300-13B Appendix G: 200 ft under 100 ft wide, 250 ft to 149, 280 ft at 150 or not known, plus footnote 8's foot per 100 ft of elevation); a hot spot (AC 150/5300-13B Appendix A 49) within 500 ft. In the air below the pattern, or faster than a taxi's 40 kt on the surface (a short final): lined up with a runway, the track within 30 degrees of it (AIM 5-4-20) and own ship within 30 degrees of its centerline seen from the threshold, out to where a 3 degree path (AIM 2-1-2 a) stands at the pattern's height. Nothing from a fix older than 3 s or worse than 30 m (AC 120-76D 11.17.2.3, 11.17.2.4). A runway is named as its holding position sign has it, the left threshold first (AIM 2-3-8 b 1), and spoken digit by digit (AIM 4-2-9). A reminder for the pilot's awareness, never a clearance: the signs, markings and ATC rule.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RunwayProximityInput",
+          "type": "object",
+          "properties": {
+            "fix": {
+              "type": "object",
+              "description": "Own ship.",
+              "properties": {
+                "lat": {
+                  "type": "number"
+                },
+                "lon": {
+                  "type": "number"
+                },
+                "age_s": {
+                  "type": "number",
+                  "description": "The fix's age, s."
+                },
+                "accuracy_m": {
+                  "type": "number",
+                  "description": "Its horizontal accuracy, m; negative where not known."
+                },
+                "track_deg": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "description": "Track over the ground, degrees true."
+                },
+                "groundspeed_kt": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "altitude_ft": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "description": "Altitude, ft MSL where the device gives it. An ellipsoid height (a browser's, Android's before API 34) is about 100 ft under MSL in the contiguous US, which errs toward the surface's prompts."
+                }
+              },
+              "required": [
+                "lat",
+                "lon",
+                "age_s",
+                "accuracy_m"
+              ],
+              "additionalProperties": false
+            },
+            "elevation_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The field's elevation, ft MSL."
+            },
+            "pattern_agl_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Its traffic pattern's height above it, published; null for AC 90-66C's 1,000 ft."
+            },
+            "runways": {
+              "type": "array",
+              "description": "The field's runways as the airport card has them; one without both ends placed is left out.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "width_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "closed": {
+                    "type": [
+                      "boolean",
+                      "null"
+                    ]
+                  },
+                  "runway_ends": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "ident": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "lat": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "lon": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "hot_spots": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "description": "The diagram's hot spots placed on the ground (diagram_hot_spots).",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "lat",
+                  "lon"
+                ]
+              }
+            }
+          },
+          "required": [
+            "fix",
+            "runways"
+          ]
+        },
+        "answer": {
+          "title": "RunwayProximityAnswer",
+          "type": "object",
+          "properties": {
+            "state": {
+              "type": "string",
+              "enum": [
+                "no_fix",
+                "above",
+                "on_runway",
+                "approaching",
+                "lined_up",
+                "clear"
+              ]
+            },
+            "runway": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The runway as its sign reads, '9-27'."
+            },
+            "end": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The end whose runway it is, as painted ('27'): rolled along on it, or landed on when lined up."
+            },
+            "closed": {
+              "type": "boolean"
+            },
+            "hold_short_ft": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "To the assumed holding position, ft; 0 at or past it."
+            },
+            "threshold_ft": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "To the threshold ahead when lined up, ft."
+            },
+            "hot_spot": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "distance_ft": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "name",
+                "distance_ft"
+              ]
+            },
+            "shown": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The line shown: 'Approaching runway 9-27'."
+            },
+            "detail": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The line under it: 'Hold short line in about 150 ft'."
+            },
+            "spoken": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "What is said: 'Approaching runway niner, two seven'."
+            },
+            "key": {
+              "type": "string",
+              "description": "Changes when what is said changes, never with a distance: speak when it changes."
+            }
+          },
+          "required": [
+            "state",
+            "runway",
+            "end",
+            "closed",
+            "hold_short_ft",
+            "threshold_ft",
+            "hot_spot",
+            "shown",
+            "detail",
+            "spoken",
+            "key"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "runway_with_winds": {
       "description": "Each runway's favoured end, the planner's RunwayWind or null.",
       "type": "object",
@@ -31786,6 +32323,7 @@
     "checklist_section",
     "checklist_write",
     "checkpoints_select",
+    "citations",
     "class_b_at_altitude",
     "class_b_detours",
     "class_b_entered",
@@ -31815,6 +32353,8 @@
     "destination",
     "diagram_fix_usable",
     "diagram_graticule",
+    "diagram_hot_spot_labels",
+    "diagram_hot_spots",
     "diagram_labels",
     "diagram_point",
     "direct_of",
@@ -31871,6 +32411,7 @@
     "frequency_line",
     "frequency_of",
     "fuel_estimate",
+    "fuel_grades",
     "fuel_in_tanks",
     "fuel_names",
     "fuel_stops",
@@ -32052,6 +32593,7 @@
     "runway_end_key",
     "runway_ends_traffic",
     "runway_hard_surface",
+    "runway_proximity",
     "runway_with_winds",
     "runways_read",
     "rvr_check",

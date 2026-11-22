@@ -299,6 +299,14 @@ export type DiagramGraticuleAnswer = {
   d: number;
   north_deg: number;
 } | null;
+export type DiagramHotSpotLabelsAnswer = string[];
+export type DiagramHotSpotsAnswer = {
+  name: string;
+  lat: number;
+  lon: number;
+  x: number;
+  y: number;
+}[];
 export type DiagramLabelsAnswer = string[];
 export type DirectOfAnswer = string | null;
 export type DistanceNmAnswer = number;
@@ -379,6 +387,11 @@ export type FreezingLevelAnswer = {
 } | null;
 export type FrequenciesInOrderAnswer = number[];
 export type FrequencyOfAnswer = number | null;
+export type FuelGradesAnswer = {
+  grade: "avgas" | "jet_a";
+  name: string;
+  lb_per_gal: number;
+}[];
 export type FuelInTanksAnswer = ({
   gal: number;
   low: boolean;
@@ -1587,6 +1600,13 @@ export interface EngineContract {
     answer: CheckpointsSelectAnswer;
   };
   /**
+   * A text cut into pieces, each cited rule among them named by the document that holds it and the place in it, for the documents library to open (docs/decisions/0056-documents-library.md): 14 CFR and 49 CFR sections with their paragraphs ("14 CFR 91.211(a)(1)", "49 CFR 830.5", a list after one, a bare section after a title or with its paragraph, never a bare figure such as 121.5), 14 CFR's parts ("Part 135"), AIM paragraphs ("AIM 7-1-5") and advisory circulars ("AC 61-65K", named without the edition's letter). A document is cfr-<title>-<part>, aim or ac-<number>; the pieces' texts joined are the text.
+   */
+  citations: {
+    input: CitationsInput;
+    answer: CitationsAnswer;
+  };
+  /**
    * Which Class B band along a route's profile holds an altitude (14 CFR 91.131(a)(1): an ATC clearance before entering Class B): the index of the first band of class B whose floor is at or under altitude_ft and whose ceiling is at or over it, both ft MSL as the FAA's Class Airspace shapefile publishes them; null where none does. A band with no ceiling given holds every altitude from its floor up, so a clearance is said to be needed rather than not (Class B tops run from 7,000 ft at KMSY to 12,500 ft at KDEN, so no one figure stands in for it).
    */
   class_b_at_altitude: {
@@ -1788,6 +1808,20 @@ export interface EngineContract {
   diagram_graticule: {
     input: DiagramGraticuleInput;
     answer: DiagramGraticuleAnswer;
+  };
+  /**
+   * The hot spot labels in an airport diagram's text ('HS 1', 'HS12'), each as written, once, in order, for the app to find where each is drawn. A hot spot is a location with a history of potential risk of a collision or runway incursion (AC 150/5300-13B Appendix A, 49), drawn on the d-TPP's diagram as a circle and its label.
+   */
+  diagram_hot_spot_labels: {
+    input: DiagramHotSpotLabelsInput;
+    answer: DiagramHotSpotLabelsAnswer;
+  };
+  /**
+   * The diagram's hot spots placed on the ground by its graticule (diagram_graticule), each label at the middle of where it is drawn, points from the page's top left; named as the Chart Supplement writes them, 'HS 1'. A label sits beside its circle, so the place is good to a label's width: for the runway proximity advisor's reminder, never for taxiing by.
+   */
+  diagram_hot_spots: {
+    input: DiagramHotSpotsInput;
+    answer: DiagramHotSpotsAnswer;
   };
   /**
    * The latitude and longitude labels in an FAA airport diagram's page text ("46°51'N", "92°13'W"), each once, as written, for the app to find where each is drawn.
@@ -2180,6 +2214,13 @@ export interface EngineContract {
   fuel_estimate: {
     input: FuelEstimateInput;
     answer: FuelEstimateAnswer;
+  };
+  /**
+   * The fuels an airplane is loaded with, by grade, and a US gallon's standard weight of each, for the weight and balance where the airplane's own figure is not given (the POH's rules): FAA-H-8083-1B, avgas 6 lb (chapter 7), Jet A and A-1 6.8 lb (chapter 9's nominal at +15 °C; Figure 3-4's 6.68, the heavier kept).
+   */
+  fuel_grades: {
+    input: FuelGradesInput;
+    answer: FuelGradesAnswer;
   };
   /**
    * The fuel in the tanks at each point of the route and whether it is under the reserve of the flight it is on (each flight's own: 30 minutes by day, 14 CFR 91.151(a)(1); 45 at night, 91.151(a)(2), or under IFR, 91.167(a)(3); by that flight's own times and rules): at the departure the fuel on board at engine start (full, the usable fuel, unless the pilot set their own; more than usable kept as set), the start, taxi and takeoff allowance and each leg's burn taken from them after; at each field landed at the fuel on landing, the tanks then fuelled for the next flight (full unless the pilot set what to; a figure under what is left keeps it, 0 no fuel bought) and its start and taxi taken again, as the planner checks each flight; the departure low where what is on board, less the start and taxi, is under its flight's reserve, and the destination held to the IFR alternate's fuel too (91.167(a)(2)); negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill.
@@ -3447,6 +3488,13 @@ export interface EngineContract {
   runway_hard_surface: {
     input: RunwayHardSurfaceInput;
     answer: RunwayHardSurfaceAnswer;
+  };
+  /**
+   * The runway proximity advisor: own ship against a field's runways and hot spots, on the ground and below the traffic pattern (AC 90-66C's 1,000 ft where none is published). On the surface (under 100 ft above the field, or with no height): on a runway (within its half width, NASR RWY_WIDTH), or approaching one's holding position when closing on it (AC 120-74B 7e(2)(d)'s 'approaching (specific runway number) hold short line'; AIM 2-3-5 a), the holding position assumed at the farthest standard from the centerline for the runway's width (AC 150/5300-13B Appendix G: 200 ft under 100 ft wide, 250 ft to 149, 280 ft at 150 or not known, plus footnote 8's foot per 100 ft of elevation); a hot spot (AC 150/5300-13B Appendix A 49) within 500 ft. In the air below the pattern, or faster than a taxi's 40 kt on the surface (a short final): lined up with a runway, the track within 30 degrees of it (AIM 5-4-20) and own ship within 30 degrees of its centerline seen from the threshold, out to where a 3 degree path (AIM 2-1-2 a) stands at the pattern's height. Nothing from a fix older than 3 s or worse than 30 m (AC 120-76D 11.17.2.3, 11.17.2.4). A runway is named as its holding position sign has it, the left threshold first (AIM 2-3-8 b 1), and spoken digit by digit (AIM 4-2-9). A reminder for the pilot's awareness, never a clearance: the signs, markings and ATC rule.
+   */
+  runway_proximity: {
+    input: RunwayProximityInput;
+    answer: RunwayProximityAnswer;
   };
   /**
    * Each runway's favoured end, the planner's RunwayWind or null.
@@ -5552,6 +5600,33 @@ export interface CheckpointsSelectInput {
   min_score?: number | null;
   length_nm?: number | null;
 }
+export interface CitationsInput {
+  /**
+   * The words as the app shows them: a finding's why, a rule's cite.
+   */
+  text?: string | null;
+}
+export interface CitationsAnswer {
+  pieces: {
+    text: string;
+    cite: null | Citation;
+  }[];
+}
+export interface Citation {
+  kind: "cfr" | "aim" | "ac";
+  /**
+   * The library's document: "cfr-14-91", "aim", "ac-61-65".
+   */
+  doc: string;
+  /**
+   * The place in it: a CFR section ("91.155"), an AIM paragraph ("7-1-5"); null for a whole part or circular.
+   */
+  at: string | null;
+  /**
+   * A CFR section's paragraph as written, "(a)(1)".
+   */
+  paragraph: string | null;
+}
 export interface ClassBAtAltitudeInput {
   bands: {
     class: string;
@@ -6618,6 +6693,30 @@ export interface DiagramGraticuleInput {
     y: number;
   }[];
 }
+export interface DiagramHotSpotLabelsInput {
+  /**
+   * The page's text.
+   */
+  text: string;
+}
+export interface DiagramHotSpotsInput {
+  /**
+   * diagram_graticule's answer.
+   */
+  graticule: {
+    lat_on_x: boolean;
+    a: number;
+    b: number;
+    c: number;
+    d: number;
+    north_deg: number;
+  };
+  labels: {
+    text: string;
+    x: number;
+    y: number;
+  }[];
+}
 export interface DiagramLabelsInput {
   text: string;
 }
@@ -7580,6 +7679,7 @@ export interface FuelEstimateAnswer {
   trip_gal: number | null;
   required_gal: number | null;
 }
+export interface FuelGradesInput {}
 export interface FuelInTanksInput {
   points: {
     departure?: boolean | null;
@@ -12497,6 +12597,102 @@ export interface RunwayHardSurfaceInput {
 }
 export interface RunwayHardSurfaceAnswer {
   hard: boolean;
+}
+export interface RunwayProximityInput {
+  /**
+   * Own ship.
+   */
+  fix: {
+    lat: number;
+    lon: number;
+    /**
+     * The fix's age, s.
+     */
+    age_s: number;
+    /**
+     * Its horizontal accuracy, m; negative where not known.
+     */
+    accuracy_m: number;
+    /**
+     * Track over the ground, degrees true.
+     */
+    track_deg?: number | null;
+    groundspeed_kt?: number | null;
+    /**
+     * Altitude, ft MSL where the device gives it. An ellipsoid height (a browser's, Android's before API 34) is about 100 ft under MSL in the contiguous US, which errs toward the surface's prompts.
+     */
+    altitude_ft?: number | null;
+  };
+  /**
+   * The field's elevation, ft MSL.
+   */
+  elevation_ft?: number | null;
+  /**
+   * Its traffic pattern's height above it, published; null for AC 90-66C's 1,000 ft.
+   */
+  pattern_agl_ft?: number | null;
+  /**
+   * The field's runways as the airport card has them; one without both ends placed is left out.
+   */
+  runways: {
+    width_ft?: number | null;
+    closed?: boolean | null;
+    runway_ends?: {
+      ident?: string | null;
+      lat?: number | null;
+      lon?: number | null;
+    }[];
+  }[];
+  /**
+   * The diagram's hot spots placed on the ground (diagram_hot_spots).
+   */
+  hot_spots?:
+    | {
+        name?: string | null;
+        lat: number;
+        lon: number;
+      }[]
+    | null;
+}
+export interface RunwayProximityAnswer {
+  state: "no_fix" | "above" | "on_runway" | "approaching" | "lined_up" | "clear";
+  /**
+   * The runway as its sign reads, '9-27'.
+   */
+  runway: string | null;
+  /**
+   * The end whose runway it is, as painted ('27'): rolled along on it, or landed on when lined up.
+   */
+  end: string | null;
+  closed: boolean;
+  /**
+   * To the assumed holding position, ft; 0 at or past it.
+   */
+  hold_short_ft: number | null;
+  /**
+   * To the threshold ahead when lined up, ft.
+   */
+  threshold_ft: number | null;
+  hot_spot: {
+    name: string;
+    distance_ft: number;
+  } | null;
+  /**
+   * The line shown: 'Approaching runway 9-27'.
+   */
+  shown: string | null;
+  /**
+   * The line under it: 'Hold short line in about 150 ft'.
+   */
+  detail: string | null;
+  /**
+   * What is said: 'Approaching runway niner, two seven'.
+   */
+  spoken: string | null;
+  /**
+   * Changes when what is said changes, never with a distance: speak when it changes.
+   */
+  key: string;
 }
 export interface RunwayWithWindsInput {
   runways?:

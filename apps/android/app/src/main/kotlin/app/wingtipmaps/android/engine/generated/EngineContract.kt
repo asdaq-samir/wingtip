@@ -2190,6 +2190,42 @@ object EngineContract {
     )
 
     @Serializable
+    data class CitationsAnswer(
+        val pieces: List<EngineContract.CitationsAnswerPiecesItem>,
+    )
+
+    @Serializable
+    data class CitationsAnswerPiecesItem(
+        val text: String,
+        val cite: EngineContract.CitationsAnswerPiecesItemCite? = null,
+    )
+
+    @Serializable
+    data class CitationsAnswerPiecesItemCite(
+        val kind: String,
+        /**
+         * The library's document: "cfr-14-91", "aim", "ac-61-65".
+         */
+        val doc: String,
+        /**
+         * The place in it: a CFR section ("91.155"), an AIM paragraph ("7-1-5"); null for a whole part or circular.
+         */
+        val at: String? = null,
+        /**
+         * A CFR section's paragraph as written, "(a)(1)".
+         */
+        val paragraph: String? = null,
+    )
+
+    @Serializable
+    data class CitationsInput(
+        /**
+         * The words as the app shows them: a finding's why, a rule's cite.
+         */
+        val text: String? = null,
+    )
+
+    @Serializable
     data class ClassBAtAltitudeInput(
         val bands: List<EngineContract.ClassBAtAltitudeInputBandsItem>,
         @SerialName("altitude_ft")
@@ -3292,6 +3328,54 @@ object EngineContract {
 
     @Serializable
     data class DiagramGraticuleInputLabelsItem(
+        val text: String,
+        val x: Double,
+        val y: Double,
+    )
+
+    @Serializable
+    data class DiagramHotSpotLabelsInput(
+        /**
+         * The page's text.
+         */
+        val text: String,
+    )
+
+    @Serializable
+    data class DiagramHotSpotsAnswerItem(
+        val name: String,
+        val lat: Double,
+        val lon: Double,
+        val x: Double,
+        val y: Double,
+    )
+
+    @Serializable
+    data class DiagramHotSpotsInput(
+        /**
+         * diagram_graticule's answer.
+         */
+        val graticule: EngineContract.DiagramHotSpotsInputGraticule,
+        val labels: List<EngineContract.DiagramHotSpotsInputLabelsItem>,
+    )
+
+    /**
+     * diagram_graticule's answer.
+     */
+    @Serializable
+    data class DiagramHotSpotsInputGraticule(
+        @SerialName("lat_on_x")
+        val latOnX: Boolean,
+        val a: Double,
+        val b: Double,
+        val c: Double,
+        val d: Double,
+        @SerialName("north_deg")
+        val northDeg: Double,
+    )
+
+    @Serializable
+    data class DiagramHotSpotsInputLabelsItem(
         val text: String,
         val x: Double,
         val y: Double,
@@ -4630,6 +4714,20 @@ object EngineContract {
     )
 
     @Serializable
+    data class FuelGradesAnswerItem(
+        val grade: String,
+        val name: String,
+        @SerialName("lb_per_gal")
+        val lbPerGal: Double,
+    )
+
+    @Serializable
+    class FuelGradesInput {
+        override fun equals(other: Any?): Boolean = other is FuelGradesInput
+        override fun hashCode(): Int = 0
+    }
+
+    @Serializable
     data class FuelInTanksAnswerItem(
         val gal: Double,
         val low: Boolean,
@@ -4862,6 +4960,52 @@ object EngineContract {
          */
         @SerialName("glide_ratio")
         val glideRatio: Double? = null,
+    )
+
+    @Serializable
+    data class GonogoAdverseRowsAnswer(
+        val rows: List<EngineContract.GonogoAdverseRowsAnswerRowsItem>,
+        val more: Int,
+    )
+
+    @Serializable
+    data class GonogoAdverseRowsAnswerRowsItem(
+        val source: String,
+        val title: String,
+        val finding: String,
+        val tab: String,
+        val section: String,
+        @SerialName("time_kind")
+        val timeKind: String? = null,
+        val time: String? = null,
+        val legs: List<Double>,
+    )
+
+    @Serializable
+    data class GonogoAdverseRowsInput(
+        val advisories: List<EngineContract.GonogoAdverseRowsInputAdvisoriesItem>,
+    )
+
+    @Serializable
+    data class GonogoAdverseRowsInputAdvisoriesItem(
+        /**
+         * OnRoute's source: TFR, Convective SIGMET, SIGMET, CWA, PIREP, AIRMET or G-AIRMET.
+         */
+        val source: String,
+        /**
+         * Its name in words: the hazard (sigmet_hazard, gairmet_title), a TFR's NOTAM and title, a PIREP's conditions.
+         */
+        val name: String? = null,
+        val `when`: String? = null,
+        val enter: String? = null,
+        @SerialName("valid_to")
+        val validTo: String? = null,
+        val issued: String? = null,
+        @SerialName("from_nm")
+        val fromNm: Double? = null,
+        val legs: List<Double>,
+        val crosses: Boolean,
+        val urgent: Boolean,
     )
 
     /**
@@ -7028,6 +7172,24 @@ object EngineContract {
     @Serializable
     data class KneeboardRadioInput(
         val frequencies: List<EngineContract.FieldFrequency>,
+    )
+
+    @Serializable
+    data class LandingRunwayAnswer(
+        val runway: String? = null,
+        @SerialName("others_allowed")
+        val othersAllowed: Boolean,
+    )
+
+    @Serializable
+    data class LandingRunwayInput(
+        val approach: Boolean,
+        @SerialName("straight_in")
+        val straightIn: String? = null,
+        val circling: Boolean? = null,
+        val picked: String? = null,
+        @SerialName("by_pilot")
+        val byPilot: Boolean,
     )
 
     @Serializable
@@ -10963,6 +11125,46 @@ object EngineContract {
         val night: Boolean? = null,
     )
 
+    @Serializable
+    data class RouteHeadwindAnswer(
+        /**
+         * The headwind on that leg's course, kt; negative a tailwind.
+         */
+        @SerialName("headwind_kt")
+        val headwindKt: Double,
+        val from: String,
+        val to: String,
+        @SerialName("wind_dir_true_deg")
+        val windDirTrueDeg: Double,
+        @SerialName("wind_speed_kt")
+        val windSpeedKt: Double,
+    )
+
+    @Serializable
+    data class RouteHeadwindInput(
+        /**
+         * The nav log's legs in order, as the planner gives them.
+         */
+        val legs: List<EngineContract.RouteHeadwindInputLegsItem>,
+    )
+
+    @Serializable
+    data class RouteHeadwindInputLegsItem(
+        val from: String? = null,
+        val to: String? = null,
+        @SerialName("true_course_deg")
+        val trueCourseDeg: Double? = null,
+        val wind: EngineContract.RouteHeadwindInputLegsItemWind? = null,
+    )
+
+    @Serializable
+    data class RouteHeadwindInputLegsItemWind(
+        @SerialName("wind_dir_true_deg")
+        val windDirTrueDeg: Double,
+        @SerialName("wind_speed_kt")
+        val windSpeedKt: Double,
+    )
+
     /**
      * A pilot's hold as the route's address writes it ("VPBNG/090/30:270:R:1M:2T"): legs by minutes or by nm, length by turns or by minutes, the other of each pair null.
      */
@@ -11659,6 +11861,136 @@ object EngineContract {
          * NASR APT_RWY's SURFACE_TYPE_CODE (ASPH, CONC, TURF, ASPH-TURF ...); null or "" for none.
          */
         val surface: String? = null,
+    )
+
+    @Serializable
+    data class RunwayProximityAnswer(
+        val state: String,
+        /**
+         * The runway as its sign reads, '9-27'.
+         */
+        val runway: String? = null,
+        /**
+         * The end whose runway it is, as painted ('27'): rolled along on it, or landed on when lined up.
+         */
+        val end: String? = null,
+        val closed: Boolean,
+        /**
+         * To the assumed holding position, ft; 0 at or past it.
+         */
+        @SerialName("hold_short_ft")
+        val holdShortFt: Int? = null,
+        /**
+         * To the threshold ahead when lined up, ft.
+         */
+        @SerialName("threshold_ft")
+        val thresholdFt: Int? = null,
+        @SerialName("hot_spot")
+        val hotSpot: EngineContract.RunwayProximityAnswerHotSpot? = null,
+        /**
+         * The line shown: 'Approaching runway 9-27'.
+         */
+        val shown: String? = null,
+        /**
+         * The line under it: 'Hold short line in about 150 ft'.
+         */
+        val detail: String? = null,
+        /**
+         * What is said: 'Approaching runway niner, two seven'.
+         */
+        val spoken: String? = null,
+        /**
+         * Changes when what is said changes, never with a distance: speak when it changes.
+         */
+        val key: String,
+    )
+
+    @Serializable
+    data class RunwayProximityAnswerHotSpot(
+        val name: String,
+        @SerialName("distance_ft")
+        val distanceFt: Int,
+    )
+
+    @Serializable
+    data class RunwayProximityInput(
+        /**
+         * Own ship.
+         */
+        val fix: EngineContract.RunwayProximityInputFix,
+        /**
+         * The field's elevation, ft MSL.
+         */
+        @SerialName("elevation_ft")
+        val elevationFt: Double? = null,
+        /**
+         * Its traffic pattern's height above it, published; null for AC 90-66C's 1,000 ft.
+         */
+        @SerialName("pattern_agl_ft")
+        val patternAglFt: Double? = null,
+        /**
+         * The field's runways as the airport card has them; one without both ends placed is left out.
+         */
+        val runways: List<EngineContract.RunwayProximityInputRunwaysItem>,
+        /**
+         * The diagram's hot spots placed on the ground (diagram_hot_spots).
+         */
+        @SerialName("hot_spots")
+        val hotSpots: List<EngineContract.RunwayProximityInputHotSpotsItem>? = null,
+    )
+
+    /**
+     * Own ship.
+     */
+    @Serializable
+    data class RunwayProximityInputFix(
+        val lat: Double,
+        val lon: Double,
+        /**
+         * The fix's age, s.
+         */
+        @SerialName("age_s")
+        val ageS: Double,
+        /**
+         * Its horizontal accuracy, m; negative where not known.
+         */
+        @SerialName("accuracy_m")
+        val accuracyM: Double,
+        /**
+         * Track over the ground, degrees true.
+         */
+        @SerialName("track_deg")
+        val trackDeg: Double? = null,
+        @SerialName("groundspeed_kt")
+        val groundspeedKt: Double? = null,
+        /**
+         * Altitude, ft MSL where the device gives it. An ellipsoid height (a browser's, Android's before API 34) is about 100 ft under MSL in the contiguous US, which errs toward the surface's prompts.
+         */
+        @SerialName("altitude_ft")
+        val altitudeFt: Double? = null,
+    )
+
+    @Serializable
+    data class RunwayProximityInputHotSpotsItem(
+        val name: String? = null,
+        val lat: Double,
+        val lon: Double,
+    )
+
+    @Serializable
+    data class RunwayProximityInputRunwaysItem(
+        @SerialName("width_ft")
+        val widthFt: Double? = null,
+        val closed: Boolean? = null,
+        @SerialName("runway_ends")
+        val runwayEnds: List<EngineContract.RunwayProximityInputRunwaysItemRunwayEndsItem>? = null,
+    )
+
+    @Serializable
+    data class RunwayProximityInputRunwaysItemRunwayEndsItem(
+        val ident: String? = null,
+        val lat: Double? = null,
+        val lon: Double? = null,
     )
 
     @Serializable
@@ -12466,6 +12798,38 @@ object EngineContract {
         val corridorNm: Double? = null,
         val start: Double,
         val end: Double? = null,
+    )
+
+    @Serializable
+    data class TafValidityAnswer(
+        val station: String,
+        /**
+         * When it was issued, Unix seconds; the time it was read where its header gives none.
+         */
+        val issued: Double,
+        /**
+         * The start of its valid period, Unix seconds.
+         */
+        @SerialName("valid_from")
+        val validFrom: Double,
+        /**
+         * The end of its valid period, Unix seconds.
+         */
+        @SerialName("valid_to")
+        val validTo: Double,
+        val state: String,
+    )
+
+    @Serializable
+    data class TafValidityInput(
+        /**
+         * The TAF as sent.
+         */
+        val taf: String,
+        /**
+         * Unix seconds, UTC: the engine has no clock.
+         */
+        val now: Double,
     )
 
     @Serializable

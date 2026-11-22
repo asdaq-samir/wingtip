@@ -20,6 +20,10 @@
 //!   straight in, another only by circling (AIM 5-4-20);
 //! - `marks`: the wind as the map marks a field: its least crosswind, its
 //!   arrow and its station model's barb;
+//! - `proximity`: own ship against the field's runways and hot spots on
+//!   the ground and below the pattern, the runway proximity advisor (AC
+//!   120-74B, AIM 2-3-5, AC 150/5300-13B's holding positions), which
+//!   wingtip-wording words as `runway_proximity`;
 //! - `calls`: the rules by name, as crate::call lists them.
 //!
 //! Where the web's TypeScript and the planner's Python had drifted apart,
@@ -36,4 +40,5 @@ pub mod landing;
 pub mod marks;
 pub mod performance;
 pub mod pick;
+pub mod proximity;
 pub mod wind;
