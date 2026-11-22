@@ -1,13 +1,7 @@
 import { describe, expect, it } from "vitest";
 import c172Json from "../../../../../data/aircraft/c172.json?raw";
 import type { AircraftProfile, Airport, Briefing, Course } from "../../lib/api/types";
-import { callEngine } from "../../lib/engine/engine";
 import { runwayChecks } from "./runwayCheck";
-
-// One of the engine's names its runway check asks inside the engine,
-// asked by name through the .wasm.
-const softSurface = (runway: { surface?: string | null } | undefined) =>
-  callEngine("gonogo_soft_surface", { surface: runway?.surface ?? null });
 
 const c172 = { name: "c172", ...JSON.parse(c172Json) } as AircraftProfile;
 
@@ -31,20 +25,12 @@ const runway = (length: number, headwind: number, crosswind: number, extra: obje
   ...extra,
 });
 
-describe("a field's surface", () => {
-  it("takes turf, grass, dirt and gravel as soft, and asphalt not", () => {
-    expect(["TURF", "GRS", "grass", "DIRT", "GRAVEL-G"].map((surface) => softSurface({ surface } as never))).toEqual([
-      true,
-      true,
-      true,
-      true,
-      true,
-    ]);
-    expect(softSurface({ surface: "ASPH-G" } as never)).toBe(false);
-    expect(softSurface(undefined)).toBe(false);
-  });
-});
-
+// The distances, the soft surfaces, the crosswind and the runway the wind
+// favours are the engine's, each tested there on these same fields
+// (engine/facade/tests/gonogo/runways_cases.rs and runways_more_cases.rs):
+// here, that the airplane, the course's fields, the briefing and the
+// picks reach "gonogo_runway_checks", and that its answer is read back,
+// each runway by its index into the field's own.
 describe("the runway check", () => {
   const course = {
     departure: field("C81", 900),
@@ -70,13 +56,11 @@ describe("the runway check", () => {
   });
 
   it("says a runway too short and a crosswind past the 172S's demonstrated 15 kt", () => {
-    const [from, to] = runwayChecks(c172, briefing, course, 2550, 2400);
+    const [from] = runwayChecks(c172, briefing, course, 2550, 2400);
     expect(from!.distances[0]!.over).toBe(true);
     expect(from!.crosswindKt).toBe(18);
     expect(from!.crosswindOver).toBe(true);
     expect(from!.densityAltFt!).toBeGreaterThan(from!.pressureAltFt!);
-    expect(to!.distances[0]!.over).toBe(false);
-    expect(to!.crosswindOver).toBe(false);
   });
 
   it("checks the runway the pilot picked in FPL, whatever the wind, with the wind on the end picked", () => {
@@ -97,8 +81,6 @@ describe("the runway check", () => {
         },
       },
     } as unknown as Briefing;
-    const into = runwayChecks(c172, picked, course, 2550, 2400)[1]!;
-    expect([into.end, into.picked, into.distances[0]!.over]).toEqual(["27", false, false]);
     const pick = { pattern: new Map([["KDLH", "18"]]), takeoff: new Map<string, string>() };
     const flown = runwayChecks(c172, picked, course, 2550, 2400, pick)[1]!;
     // 18 is the far end of the wind's 36: its headwind is a tailwind.
