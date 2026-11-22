@@ -49,9 +49,14 @@ function focusSearch(doc: Document): boolean {
 }
 
 /** Back one level: the close of the card on top in the panel (CardClose,
- *  SheetCard: `data-back`), where there is one in sight. */
+ *  SheetCard: `data-back`), or in the inspector beside the map (MapPanel,
+ *  after the panel on the page, so its card's close is found first), where
+ *  there is one in sight. */
 export function backOne(doc: Document): boolean {
-  const close = [...doc.querySelectorAll<HTMLElement>('[data-slot="map-panel"] [data-back]')].reverse().find(visible) ?? null;
+  const close =
+    [...doc.querySelectorAll<HTMLElement>(':is([data-slot="map-panel"], [data-slot="map-inspector"]) [data-back]')]
+      .reverse()
+      .find(visible) ?? null;
   if (!visible(close)) return false;
   close.click();
   return true;
@@ -88,11 +93,15 @@ export function onShortcut(event: KeyboardEvent): void {
 export const isSearchKey = (event: KeyboardEvent): boolean =>
   (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.code === "KeyK";
 
-/** The shortcuts on the page while `on` (a desktop's: useIsDesktop). */
-export function useShortcuts(on: boolean): void {
+/** The shortcuts on the page, wherever there is a keyboard: a desktop's,
+ *  and an iPad's Magic Keyboard or any hardware one, whose pointer is
+ *  still touch -- read off the desktop's fine pointer, Escape and Alt+B
+ *  did nothing on an iPad with its keyboard (the iPad audit, 2026-11-21).
+ *  A touch screen with none sends no keys outside a field, which typing
+ *  leaves alone; the keys are shown (Kbd) on a desktop only. */
+export function useShortcuts(): void {
   useEffect(() => {
-    if (!on) return;
     document.addEventListener("keydown", onShortcut);
     return () => document.removeEventListener("keydown", onShortcut);
-  }, [on]);
+  }, []);
 }
