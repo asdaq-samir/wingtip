@@ -61,7 +61,7 @@ struct SharedPlan: Equatable, Sendable {
                      URLQueryItem(name: LinkKey.dest.rawValue, value: dest)]
         if !stops.isEmpty { items.append(URLQueryItem(name: LinkKey.stops.rawValue, value: stops.joined(separator: ","))) }
         if let altitudeFt { items.append(URLQueryItem(name: LinkKey.altitudeFt.rawValue, value: String(altitudeFt))) }
-        if let depart { items.append(URLQueryItem(name: LinkKey.depart.rawValue, value: Self.iso.string(from: depart))) }
+        if let depart { items.append(URLQueryItem(name: LinkKey.depart.rawValue, value: depart.formatted(.iso8601))) }
         if let type { items.append(URLQueryItem(name: LinkKey.type.rawValue, value: type)) }
         if let rules { items.append(URLQueryItem(name: LinkKey.rules.rawValue, value: rules.rawValue)) }
         if includeTail, let tail { items.append(URLQueryItem(name: LinkKey.tail.rawValue, value: tail)) }

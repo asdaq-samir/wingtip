@@ -54,7 +54,8 @@ enum TypedRoute {
     /// before it. `missed` names those neither field publishes; `list` is
     /// a field's procedures (Planner.procedures), nil where it could not
     /// be had.
-    static func picks(_ read: Read, list: (String) async -> ProcedureList?) async -> (picks: [ProcedurePick], missed: [String]) {
+    @MainActor
+    static func picks(_ read: Read, list: @MainActor (String) async -> ProcedureList?) async -> (picks: [ProcedurePick], missed: [String]) {
         var picks: [ProcedurePick] = []
         var missed: [String] = []
         var lists: [String: ProcedureList?] = [:]
