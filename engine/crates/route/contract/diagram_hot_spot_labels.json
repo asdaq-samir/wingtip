@@ -1,0 +1,33 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "The hot spot labels in an airport diagram's text ('HS 1', 'HS12'), each as written, once, in order, for the app to find where each is drawn. A hot spot is a location with a history of potential risk of a collision or runway incursion (AC 150/5300-13B Appendix A, 49), drawn on the d-TPP's diagram as a circle and its label.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DiagramHotSpotLabelsInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "The page's text."
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false
+    },
+    "answer": {
+      "title": "DiagramHotSpotLabelsAnswer",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

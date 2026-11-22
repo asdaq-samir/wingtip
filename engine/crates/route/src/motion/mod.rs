@@ -27,7 +27,8 @@
 //!   waypoint and the destination, the desired track, the fuel left --
 //!   with the vertical speed and the glide ring (#218);
 //! - diagram: own ship on the FAA's airport diagram, by its own latitude
-//!   and longitude labels (#218);
+//!   and longitude labels (#218), and its hot spots placed on the ground
+//!   (hot_spots), for the runway proximity advisor;
 //! - terrain_view: the pilot's-eye view's amber and red bands of the
 //!   ground under the airplane (lib/map/gl/terrain).
 //!
@@ -46,6 +47,7 @@ pub mod diagram;
 pub mod dry_run;
 pub mod fuel_left;
 pub mod glide;
+pub mod hot_spots;
 pub mod instruments;
 pub mod profile;
 pub mod replay;
@@ -122,6 +124,8 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         "diagram_graticule" => diagram::graticule_rule(v),
         "diagram_point" => diagram::point_rule(v),
         "diagram_fix_usable" => diagram::fix_usable_rule(v),
+        "diagram_hot_spot_labels" => hot_spots::labels_rule(v),
+        "diagram_hot_spots" => hot_spots::spots_rule(v),
         "terrain_view_bands" => terrain_view::bands_rule(v),
         _ => Err(format!("the engine has no rule called {name:?}")),
     }

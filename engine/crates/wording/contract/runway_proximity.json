@@ -1,0 +1,262 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "The runway proximity advisor: own ship against a field's runways and hot spots, on the ground and below the traffic pattern (AC 90-66C's 1,000 ft where none is published). On the surface (under 100 ft above the field, or with no height): on a runway (within its half width, NASR RWY_WIDTH), or approaching one's holding position when closing on it (AC 120-74B 7e(2)(d)'s 'approaching (specific runway number) hold short line'; AIM 2-3-5 a), the holding position assumed at the farthest standard from the centerline for the runway's width (AC 150/5300-13B Appendix G: 200 ft under 100 ft wide, 250 ft to 149, 280 ft at 150 or not known, plus footnote 8's foot per 100 ft of elevation); a hot spot (AC 150/5300-13B Appendix A 49) within 500 ft. In the air below the pattern, or faster than a taxi's 40 kt on the surface (a short final): lined up with a runway, the track within 30 degrees of it (AIM 5-4-20) and own ship within 30 degrees of its centerline seen from the threshold, out to where a 3 degree path (AIM 2-1-2 a) stands at the pattern's height. Nothing from a fix older than 3 s or worse than 30 m (AC 120-76D 11.17.2.3, 11.17.2.4). A runway is named as its holding position sign has it, the left threshold first (AIM 2-3-8 b 1), and spoken digit by digit (AIM 4-2-9). A reminder for the pilot's awareness, never a clearance: the signs, markings and ATC rule.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RunwayProximityInput",
+      "type": "object",
+      "properties": {
+        "fix": {
+          "type": "object",
+          "description": "Own ship.",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "age_s": {
+              "type": "number",
+              "description": "The fix's age, s."
+            },
+            "accuracy_m": {
+              "type": "number",
+              "description": "Its horizontal accuracy, m; negative where not known."
+            },
+            "track_deg": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Track over the ground, degrees true."
+            },
+            "groundspeed_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Altitude, ft MSL where the device gives it. An ellipsoid height (a browser's, Android's before API 34) is about 100 ft under MSL in the contiguous US, which errs toward the surface's prompts."
+            }
+          },
+          "required": [
+            "lat",
+            "lon",
+            "age_s",
+            "accuracy_m"
+          ],
+          "additionalProperties": false
+        },
+        "elevation_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The field's elevation, ft MSL."
+        },
+        "pattern_agl_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Its traffic pattern's height above it, published; null for AC 90-66C's 1,000 ft."
+        },
+        "runways": {
+          "type": "array",
+          "description": "The field's runways as the airport card has them; one without both ends placed is left out.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "width_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "closed": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "runway_ends": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "ident": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "lat": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "lon": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "hot_spots": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "The diagram's hot spots placed on the ground (diagram_hot_spots).",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "lat",
+              "lon"
+            ]
+          }
+        }
+      },
+      "required": [
+        "fix",
+        "runways"
+      ]
+    },
+    "answer": {
+      "title": "RunwayProximityAnswer",
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "no_fix",
+            "above",
+            "on_runway",
+            "approaching",
+            "lined_up",
+            "clear"
+          ]
+        },
+        "runway": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The runway as its sign reads, '9-27'."
+        },
+        "end": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The end whose runway it is, as painted ('27'): rolled along on it, or landed on when lined up."
+        },
+        "closed": {
+          "type": "boolean"
+        },
+        "hold_short_ft": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "To the assumed holding position, ft; 0 at or past it."
+        },
+        "threshold_ft": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "To the threshold ahead when lined up, ft."
+        },
+        "hot_spot": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "distance_ft": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "name",
+            "distance_ft"
+          ]
+        },
+        "shown": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The line shown: 'Approaching runway 9-27'."
+        },
+        "detail": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The line under it: 'Hold short line in about 150 ft'."
+        },
+        "spoken": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "What is said: 'Approaching runway niner, two seven'."
+        },
+        "key": {
+          "type": "string",
+          "description": "Changes when what is said changes, never with a distance: speak when it changes."
+        }
+      },
+      "required": [
+        "state",
+        "runway",
+        "end",
+        "closed",
+        "hold_short_ft",
+        "threshold_ft",
+        "hot_spot",
+        "shown",
+        "detail",
+        "spoken",
+        "key"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

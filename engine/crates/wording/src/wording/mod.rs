@@ -11,6 +11,7 @@
 pub mod cite;
 pub mod faa;
 pub mod navaid;
+pub mod proximity;
 pub mod radio;
 pub mod script;
 
@@ -245,6 +246,7 @@ pub fn answer(name: &str, v: &Value) -> Result<String, String> {
         "service_volume" => Ok(opt_quoted(navaid::service_volume(opt_text(name, v, "code")?.unwrap_or("")))),
         "navaid_hours" => Ok(opt_quoted(navaid::hours(opt_text(name, v, "hours")?.unwrap_or("")).as_deref())),
         // The radio calls for a route (script, AIM 4-2, AC 90-66C).
+        "runway_proximity" => proximity::rule(name, v),
         "radio_script" => script::script_json(name, v, |a| frequencies(name, a)),
         "radio_call_sign" => Ok(quoted(&script::call_sign(opt_text(name, v, "make")?.unwrap_or(""), opt_text(name, v, "tail")?))),
         "radio_place_name" => Ok(quoted(&script::place_name(opt_text(name, v, "name")?, opt_text(name, v, "ident")?.unwrap_or("")))),
