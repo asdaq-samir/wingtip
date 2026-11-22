@@ -35,6 +35,7 @@
     "@internationalized/date": "^3.12.4",
     "@luma.gl/core": "9.4.2",
     "@luma.gl/engine": "9.4.2",
+    "@modelcontextprotocol/ext-apps": "2.0.4",
     "@react-aria/live-announcer": "^3.5.1",
     "@tanstack/react-query": "^5.107.1",
     "@tanstack/react-table": "^9.3.1",
@@ -106,6 +107,7 @@
     "vite": "^8.3.7",
     "vite-plugin-compression2": "^2.5.4",
     "vite-plugin-pwa": "^2.0.0",
+    "vite-plugin-singlefile": "2.3.4",
     "vitest": "^5.1.0"
   },
   "overrides": {

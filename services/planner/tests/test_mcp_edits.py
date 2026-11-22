@@ -3,10 +3,14 @@ client, a test each: the flight handed in, changed, planned again by
 /api/plan in test_plan's stubbed world, and handed back with what the
 live view draws (app.mcp.flight_view) and the line the model reads."""
 
+import json
+import os
+from pathlib import Path
+
 import pytest
 from mcp.types import TextContent
 
-from app.mcp import calls, flight_view, records
+from app.mcp import calls, flight_view, procedure_picks, records
 from app.settings import get_settings
 
 from .mcp_harness import call
@@ -43,6 +47,8 @@ def test_show_flight_draws_the_route_and_hands_the_flight_back():
     view = got["view"]
     assert [p["ident"] for p in view["points"]] == ["C81", "KDLH"]
     assert view["line"] and view["totals"]["distance_nm"] > 0
+    # The strip's fuel is the engine's, asked here for a view that runs none.
+    assert view["strip_fuel"] == {"required_gal": None, "short": []}
     assert view["chart"]["chart_cycle"] and view["open_in_wingtip"].startswith("https://wingtip.test/app/plan?dep=C81&dest=KDLH")
     assert got["flight"]["departure"] == "C81" and view["seq"] >= 1 and view["created_at"] > 0
 
@@ -142,3 +148,25 @@ def test_no_fuel_stop_is_put_in_where_none_is_needed():
 
 def test_an_edit_needs_only_the_read_scope():
     assert not call("show_flight", {"flight": ROUTE}, token="read-7").is_error
+
+
+FIXTURE = Path(__file__).resolve().parents[3] / "apps/web/src/lib/fixtures/flightView.json"
+
+
+def test_the_view_s_answer_is_the_shape_the_web_s_view_reads(monkeypatch):
+    """The shared fixture the web's live view is tested on (features/claude-view)
+    is this tool's answer; WRITE_FLIGHT_VIEW_FIXTURE=1 writes it again."""
+
+    async def approaches_at(ident):
+        ils = {"id": "I27", "name": "ILS OR LOC RWY 27", "kind": "approach", "transitions": [], "runway_transitions": []}
+        return {"I27": ils} if ident == "KDLH" else {}
+
+    monkeypatch.setattr(procedure_picks, "_approaches_at", approaches_at)
+    flight = {**ROUTE, "stops": ["KMSN"], "fuel_stops": ["KMSN"], "airplane_tail": "N123AB", "procedures": "KDLH:I27:::L"}
+    got = edited("show_flight", flight)
+    got["view"]["seq"], got["view"]["created_at"] = 1, 1767225600000
+    if os.environ.get("WRITE_FLIGHT_VIEW_FIXTURE"):
+        FIXTURE.write_text(json.dumps(got, indent=2, sort_keys=True) + "\n")
+    kept = json.loads(FIXTURE.read_text())
+    assert set(got) == set(kept) and set(got["view"]) == set(kept["view"]) and set(got["flight"]) == set(kept["flight"])
+    assert got["view"]["approaches"][0]["state"] == "loaded" and got["view"]["points"][1]["fuel_stop"] is True

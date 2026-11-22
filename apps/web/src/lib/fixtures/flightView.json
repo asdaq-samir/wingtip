@@ -1,0 +1,607 @@
+{
+  "flight": {
+    "airplane_tail": "N123AB",
+    "cruise_altitude_ft": null,
+    "depart_at": null,
+    "departure": "C81",
+    "destination": "KDLH",
+    "fuel_on_board": {},
+    "fuel_stops": [
+      "KMSN"
+    ],
+    "procedures": "KDLH:I27:::L",
+    "rules": "vfr",
+    "saved_flight_id": null,
+    "stops": [
+      "KMSN"
+    ]
+  },
+  "sources": [
+    {
+      "source": "Wingtip engine: dead reckoning, altitudes and fuel, each rule citing its 14 CFR or AIM paragraph"
+    },
+    {
+      "source": "NWS winds and temperatures aloft forecast (FB)"
+    },
+    {
+      "current": "2026-10-29",
+      "edition": "2026-10-29",
+      "source": "FAA airports, frequencies and navaids"
+    },
+    {
+      "current": "2026-10-29",
+      "edition": "2026-10-29",
+      "source": "FAA procedures"
+    },
+    {
+      "current": "2026-09-29",
+      "edition": null,
+      "source": "FAA obstacles"
+    }
+  ],
+  "view": {
+    "airplane": "N123AB (C172)",
+    "altitude_cautions": [],
+    "altitude_choice": "fastest",
+    "altitude_ft": 4500.0,
+    "approaches": [
+      {
+        "airport": "KDLH",
+        "id": "I27",
+        "loaded": true,
+        "missed": false,
+        "name": "ILS OR LOC RWY 27",
+        "state": "loaded",
+        "transition": null
+      }
+    ],
+    "chart": {
+      "chart_cycle": "10-29-2026",
+      "chart_layers": [
+        {
+          "base": true,
+          "cycle": "10-29-2026",
+          "kind": "sec",
+          "label": "Sectional",
+          "max_zoom": 12,
+          "min_zoom": 3,
+          "over": [],
+          "revision": 0,
+          "scales": [
+            1,
+            2
+          ],
+          "sheets": []
+        }
+      ],
+      "chart_revision": 0,
+      "chart_tiles_base": null,
+      "max_zoom": 12,
+      "min_zoom": 3
+    },
+    "created_at": 1767225600000,
+    "legs": [
+      {
+        "airway": null,
+        "altitude_ft": 4500.0,
+        "climb_fuel_unknown": null,
+        "climb_min": 5.9,
+        "density_altitude_ft": 4252.0,
+        "distance_nm": 73.99919012957967,
+        "ete_min": 44.93121690617486,
+        "from": "C81",
+        "fuel_burn_gph": 8.5,
+        "fuel_gal": 6.723597605505427,
+        "ground_min": 30.0,
+        "groundspeed_kt": 104.38908024817653,
+        "hold": null,
+        "magnetic_course_deg": 315.2462235484602,
+        "magnetic_heading_deg": 310.25585336713124,
+        "magnetic_variation_deg": -3.0,
+        "oat_c": 4.0,
+        "phase": null,
+        "power_pct": 65.0,
+        "procedure": null,
+        "tas_kt": 115.93247836907514,
+        "to": "KMSN",
+        "toc": {
+          "along_nm": 6.2,
+          "altitude_ft": 4500.0,
+          "ete_min": 5.9,
+          "fuel_burn_gph": 12.12239780671586,
+          "fuel_gal": 1.2,
+          "groundspeed_kt": 62.20566306592553,
+          "lat": 42.38665137711802,
+          "lon": -88.19372120969331,
+          "magnetic_heading_deg": 307.4135416747396,
+          "tas_kt": 74.0,
+          "true_heading_deg": 304.4135416747396,
+          "wca_deg": -7.8326818737206185
+        },
+        "tod": {
+          "along_nm": 64.5,
+          "altitude_ft": 4500.0,
+          "descent_at_cruise": true,
+          "ete_min": 39.5,
+          "fix": null,
+          "fpm": 600.0,
+          "fuel_burn_gph": null,
+          "fuel_gal": 5.95,
+          "groundspeed_kt": null,
+          "lat": 43.03479265169717,
+          "lon": -89.17515592680695,
+          "magnetic_heading_deg": null,
+          "pattern": true,
+          "tas_kt": null,
+          "to_ft": 1900.0,
+          "true_heading_deg": null,
+          "wca_deg": null
+        },
+        "true_course_deg": 312.2462235484602,
+        "true_heading_deg": 307.25585336713124,
+        "wca_deg": -4.990370181328971,
+        "wind": {
+          "wind_dir_true_deg": 270.0,
+          "wind_speed_kt": 15.0
+        }
+      },
+      {
+        "airway": null,
+        "altitude_ft": 4500.0,
+        "climb_fuel_unknown": null,
+        "climb_min": 5.9,
+        "density_altitude_ft": 4252.0,
+        "distance_nm": 253.22090688834,
+        "ete_min": 142.74596913413302,
+        "from": "KMSN",
+        "fuel_burn_gph": 8.5,
+        "fuel_gal": 20.580687504466166,
+        "ground_min": null,
+        "groundspeed_kt": 108.1974067079508,
+        "hold": null,
+        "magnetic_course_deg": 335.30359635558796,
+        "magnetic_heading_deg": 328.7252908191728,
+        "magnetic_variation_deg": -3.0,
+        "oat_c": 4.0,
+        "phase": null,
+        "power_pct": 65.0,
+        "procedure": null,
+        "tas_kt": 115.93247836907514,
+        "to": "KDLH",
+        "toc": {
+          "along_nm": 6.5,
+          "altitude_ft": 4500.0,
+          "ete_min": 5.9,
+          "fuel_burn_gph": 12.12239780671586,
+          "fuel_gal": 1.2,
+          "groundspeed_kt": 65.82659547142582,
+          "lat": 43.2358204697017,
+          "lon": -89.40638101966931,
+          "magnetic_heading_deg": 324.96426368498857,
+          "tas_kt": 74.0,
+          "true_heading_deg": 321.96426368498857,
+          "wca_deg": -10.339332670599411
+        },
+        "tod": {
+          "along_nm": 243.7,
+          "altitude_ft": 4500.0,
+          "descent_at_cruise": true,
+          "ete_min": 137.5,
+          "fix": null,
+          "fpm": 600.0,
+          "fuel_burn_gph": null,
+          "fuel_gal": 19.83,
+          "groundspeed_kt": null,
+          "lat": 46.70424867197091,
+          "lon": -92.07927102503032,
+          "magnetic_heading_deg": null,
+          "pattern": true,
+          "tas_kt": null,
+          "to_ft": 1900.0,
+          "true_heading_deg": null,
+          "wca_deg": null
+        },
+        "true_course_deg": 332.30359635558796,
+        "true_heading_deg": 325.7252908191728,
+        "wca_deg": -6.578305536415146,
+        "wind": {
+          "wind_dir_true_deg": 270.0,
+          "wind_speed_kt": 15.0
+        }
+      }
+    ],
+    "line": [
+      [
+        42.3172,
+        -88.0905
+      ],
+      [
+        42.37321649644387,
+        -88.17372516733656
+      ],
+      [
+        42.42917192479251,
+        -88.25709829840002
+      ],
+      [
+        42.48506606027103,
+        -88.34061978603654
+      ],
+      [
+        42.540898677324094,
+        -88.4242900232162
+      ],
+      [
+        42.59666954961414,
+        -88.50810940302239
+      ],
+      [
+        42.65237845001959,
+        -88.59207831864086
+      ],
+      [
+        42.708025150633,
+        -88.67619716334883
+      ],
+      [
+        42.76360942275935,
+        -88.76046633050362
+      ],
+      [
+        42.819131036914214,
+        -88.8448862135316
+      ],
+      [
+        42.87458976282202,
+        -88.9294572059166
+      ],
+      [
+        42.929985369414354,
+        -89.01417970118837
+      ],
+      [
+        42.9853176248282,
+        -89.09905409291082
+      ],
+      [
+        43.040586296404236,
+        -89.18408077467029
+      ],
+      [
+        43.09579115068515,
+        -89.26926014006347
+      ],
+      [
+        43.1399,
+        -89.3375
+      ],
+      [
+        43.213688802841375,
+        -89.39046624326897
+      ],
+      [
+        43.28745206960723,
+        -89.44356033526083
+      ],
+      [
+        43.36118967818291,
+        -89.49678287247565
+      ],
+      [
+        43.43490150574938,
+        -89.55013445449782
+      ],
+      [
+        43.508587428778085,
+        -89.60361568401402
+      ],
+      [
+        43.58224732302594,
+        -89.65722716683126
+      ],
+      [
+        43.65588106353023,
+        -89.71096951189543
+      ],
+      [
+        43.729488524603376,
+        -89.76484333130924
+      ],
+      [
+        43.803069579827834,
+        -89.81884924035091
+      ],
+      [
+        43.87662410205082,
+        -89.8729878574926
+      ],
+      [
+        43.95015196337898,
+        -89.92725980441901
+      ],
+      [
+        44.02365303517317,
+        -89.9816657060461
+      ],
+      [
+        44.097127188043046,
+        -90.03620619053981
+      ],
+      [
+        44.1705742918417,
+        -90.09088188933521
+      ],
+      [
+        44.243994215660166,
+        -90.14569343715516
+      ],
+      [
+        44.317386827821984,
+        -90.20064147202959
+      ],
+      [
+        44.390751995877665,
+        -90.25572663531466
+      ],
+      [
+        44.464089586599144,
+        -90.31094957171206
+      ],
+      [
+        44.53739946597414,
+        -90.3663109292882
+      ],
+      [
+        44.610681499200524,
+        -90.42181135949397
+      ],
+      [
+        44.68393555068062,
+        -90.47745151718402
+      ],
+      [
+        44.75716148401548,
+        -90.53323206063664
+      ],
+      [
+        44.83035916199905,
+        -90.58915365157333
+      ],
+      [
+        44.90352844661242,
+        -90.64521695517874
+      ],
+      [
+        44.976669199017905,
+        -90.70142264012065
+      ],
+      [
+        45.049781279553144,
+        -90.75777137856994
+      ],
+      [
+        45.12286454772513,
+        -90.81426384622068
+      ],
+      [
+        45.195918862204174,
+        -90.87090072231041
+      ],
+      [
+        45.26894408081791,
+        -90.9276826896405
+      ],
+      [
+        45.34194006054515,
+        -90.98461043459645
+      ],
+      [
+        45.41490665750975,
+        -91.04168464716861
+      ],
+      [
+        45.48784372697442,
+        -91.09890602097244
+      ],
+      [
+        45.560751123334484,
+        -91.15627525326954
+      ],
+      [
+        45.633628700111544,
+        -91.21379304498828
+      ],
+      [
+        45.70647630994721,
+        -91.27146010074466
+      ],
+      [
+        45.77929380459667,
+        -91.32927712886328
+      ],
+      [
+        45.85208103492222,
+        -91.38724484139863
+      ],
+      [
+        45.924837850886874,
+        -91.44536395415588
+      ],
+      [
+        45.99756410154774,
+        -91.50363518671247
+      ],
+      [
+        46.07025963504948,
+        -91.56205926243922
+      ],
+      [
+        46.14292429861764,
+        -91.62063690852193
+      ],
+      [
+        46.21555793855199,
+        -91.67936885598272
+      ],
+      [
+        46.28816040021975,
+        -91.73825583970188
+      ],
+      [
+        46.360731528048866,
+        -91.7972985984394
+      ],
+      [
+        46.43327116552106,
+        -91.85649787485681
+      ],
+      [
+        46.50577915516503,
+        -91.91585441553912
+      ],
+      [
+        46.57825533854947,
+        -91.97536897101668
+      ],
+      [
+        46.65069955627603,
+        -92.03504229578743
+      ],
+      [
+        46.72311164797233,
+        -92.09487514833887
+      ],
+      [
+        46.79549145228477,
+        -92.15486829117043
+      ],
+      [
+        46.8421,
+        -92.1936
+      ]
+    ],
+    "open_in_wingtip": "https://wingtip.test/app/plan?dep=C81&dest=KDLH&stops=KMSN&fuel=KMSN&procs=KDLH%3AI27%3A%3A%3AL",
+    "origin": "https://wingtip.test",
+    "points": [
+      {
+        "field": true,
+        "fuel_stop": false,
+        "ident": "C81",
+        "lat": 42.3172,
+        "lon": -88.0905,
+        "name": "C81",
+        "role": "departure"
+      },
+      {
+        "field": true,
+        "fuel_stop": true,
+        "ident": "KMSN",
+        "lat": 43.1399,
+        "lon": -89.3375,
+        "name": "KMSN",
+        "role": "stop"
+      },
+      {
+        "field": true,
+        "fuel_stop": false,
+        "ident": "KDLH",
+        "lat": 46.8421,
+        "lon": -92.1936,
+        "name": "KDLH",
+        "role": "destination"
+      }
+    ],
+    "seq": 1,
+    "strip_fuel": {
+      "required_gal": 12.3,
+      "short": []
+    },
+    "totals": {
+      "alternate": null,
+      "distance_nm": 327.2,
+      "ete_min": 187.6,
+      "fuel_gal": 27.3,
+      "fuel_margin_gal": null,
+      "fuel_required_gal": null,
+      "fuel_stops": [],
+      "ground_min": 30.0,
+      "hops": [
+        {
+          "departure": "C81",
+          "destination": "KMSN",
+          "totals": {
+            "alternate": null,
+            "distance_nm": 74.0,
+            "ete_min": 44.9,
+            "fuel_gal": 6.7,
+            "fuel_margin_gal": 40.7,
+            "fuel_required_gal": 12.3,
+            "fuel_stops": [],
+            "ground_min": 0.0,
+            "hops": [],
+            "legs_without_wind": 0,
+            "lights": false,
+            "night": false,
+            "night_passengers": false,
+            "no_fuel_stop": [],
+            "on_board_gal": 53.0,
+            "planned_at": "2026-09-22T17:00:00Z",
+            "procedure_nm": 0.0,
+            "reserve_gal": 4.25,
+            "reserve_min": 30.0,
+            "rules": "vfr",
+            "taxi_gal": 1.4,
+            "unflyable_legs": 0,
+            "usable_fuel_gal": 53.0,
+            "winds": null
+          }
+        },
+        {
+          "departure": "KMSN",
+          "destination": "KDLH",
+          "totals": {
+            "alternate": null,
+            "distance_nm": 253.2,
+            "ete_min": 142.7,
+            "fuel_gal": 20.6,
+            "fuel_margin_gal": 24.6,
+            "fuel_required_gal": 28.4,
+            "fuel_stops": [],
+            "ground_min": 0.0,
+            "hops": [],
+            "legs_without_wind": 0,
+            "lights": true,
+            "night": true,
+            "night_passengers": true,
+            "no_fuel_stop": [],
+            "on_board_gal": 53.0,
+            "planned_at": "2026-09-22T17:00:00Z",
+            "procedure_nm": 0.0,
+            "reserve_gal": 6.38,
+            "reserve_min": 45.0,
+            "rules": "vfr",
+            "taxi_gal": 1.4,
+            "unflyable_legs": 0,
+            "usable_fuel_gal": 53.0,
+            "winds": null
+          }
+        }
+      ],
+      "legs_without_wind": 0,
+      "lights": true,
+      "night": true,
+      "night_passengers": true,
+      "no_fuel_stop": [],
+      "on_board_gal": 53.0,
+      "planned_at": "2026-09-22T17:00:00Z",
+      "procedure_nm": 0.0,
+      "reserve_gal": null,
+      "reserve_min": null,
+      "rules": "vfr",
+      "taxi_gal": null,
+      "unflyable_legs": 0,
+      "usable_fuel_gal": null,
+      "winds": null
+    }
+  }
+}

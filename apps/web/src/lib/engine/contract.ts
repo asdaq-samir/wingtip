@@ -1925,7 +1925,7 @@ export interface EngineContract {
     answer: EndorsementRenderAnswer;
   };
   /**
-   * The latest not voided of each code, as [code, index] into the record (newest first).
+   * The latest not voided of each code, as [code, index] into the record (newest first); one whose instructor the FAA airmen registry did not bear out (verified false, instructor_verification) is not signed and counts as voided.
    */
   endorsements_in_force: {
     input: EndorsementsInForceInput;
@@ -2637,6 +2637,13 @@ export interface EngineContract {
   instructor_records_since: {
     input: InstructorRecordsSinceInput;
     answer: InstructorRecordsSinceAnswer;
+  };
+  /**
+   * Whether the instructor signing an endorsement is a flight instructor the FAA's releasable airmen file bears out, by name (the file has no certificate numbers), not the student themselves and not a record another account signs as (14 CFR 61.1, 61.189(a); AC 61-65K).
+   */
+  instructor_verification: {
+    input: InstructorVerificationInput;
+    answer: InstructorVerificationAnswer;
   };
   /**
    * Whether a magnetic course is eastbound, 0 to 179 degrees (14 CFR 91.159(a)).
@@ -7021,6 +7028,10 @@ export interface EndorsementsInForceInput {
   signed: {
     code: string;
     voided?: boolean | null;
+    /**
+     * The instructor_verification verdict kept with the record; false is not signed, missing or null is not said.
+     */
+    verified?: boolean | null;
   }[];
 }
 export interface EnduranceInput {
@@ -9138,6 +9149,50 @@ export interface InstructorRecordsSinceInput {
    * YYYY-MM-DD, UTC: the engine has no clock.
    */
   today: string;
+}
+export interface InstructorVerificationInput {
+  /**
+   * The instructor's name as on their certificate.
+   */
+  instructor_name: string;
+  /**
+   * The student's name as on their certificate.
+   */
+  student_name?: string | null;
+  /**
+   * YYYY-MM-DD.
+   */
+  signed_on: string;
+  /**
+   * The releasable file's active flight instructor (type F) records of the instructor's last name; null where the file is not loaded.
+   */
+  registry?:
+    | {
+        /**
+         * The FAA's unique id, A or C and seven digits.
+         */
+        id: string;
+        first_middle: string;
+        last_suffix: string;
+        /**
+         * YYYY-MM-DD, only for a certificate issued before 1 Dec 2024 (14 CFR 61.19(d)).
+         */
+        expires?: string | null;
+      }[]
+    | null;
+  /**
+   * Registry ids another Wingtip account already signs as.
+   */
+  bound_elsewhere?: string[] | null;
+}
+export interface InstructorVerificationAnswer {
+  verified: boolean;
+  registry_id: string | null;
+  /**
+   * verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.
+   */
+  reason: string;
+  words: string;
 }
 export interface IsEastboundInput {
   magnetic_course_deg: number;

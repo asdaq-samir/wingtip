@@ -18,6 +18,7 @@ import itertools
 import json
 import time
 from mcp_types import CallToolResult, TextContent
+from wingtip.engine import ask as engine
 
 from ..generated.planner_calls import plan
 from ..settings import get_settings
@@ -73,6 +74,29 @@ def points_of(flight: Flight, p: dict) -> list[dict]:
     ]
 
 
+def strip_fuel(totals: dict) -> dict:
+    """The fuel figure of the view's strip, the engine's (strip_fuel), as
+    the web's tripFigures asks it: the view runs no engine of its own (the
+    host's sandbox runs no WebAssembly), so it is asked here."""
+    hops = [
+        {
+            "departure": h["departure"],
+            "destination": h["destination"],
+            "fuel_required_gal": h["totals"].get("fuel_required_gal"),
+            "fuel_margin_gal": h["totals"].get("fuel_margin_gal"),
+        }
+        for h in totals.get("hops", [])
+    ]
+    return engine(
+        "strip_fuel",
+        fuel_required_gal=totals.get("fuel_required_gal"),
+        fuel_margin_gal=totals.get("fuel_margin_gal"),
+        hops=hops,
+        hop=0,
+        burnt_gal=None,
+    )
+
+
 def chart_of(p: dict) -> dict:
     """The chart the view's tiles come from: the sectional's layer, its sheets left out."""
     layers = [{**layer, "sheets": []} for layer in p.get("chart_layers", []) if layer.get("kind") == "sec"]
@@ -89,6 +113,7 @@ async def view_of(flight: Flight, p: dict, flown: dict | None) -> dict:
         "line": _thinned(p.get("course_line", [])),
         "legs": p["legs"],
         "totals": p["totals"],
+        "strip_fuel": strip_fuel(p["totals"]),
         "altitude_ft": p["altitude_ft"],
         "altitude_choice": p.get("altitude_choice"),
         "altitude_cautions": p.get("altitude_cautions", []),

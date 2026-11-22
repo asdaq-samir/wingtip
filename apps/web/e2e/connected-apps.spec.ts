@@ -10,8 +10,22 @@ import { openConsole, settle } from "./helpers";
  */
 test("a connected app is listed and disconnected after asking", async ({ page }) => {
   let connections = [
-    { id: "a1", app: "Claude", scopes: "wingtip:read wingtip:write", renewedAt: "2026-11-20T15:00:00Z", until: null },
-    { id: "b2", app: "ChatGPT", scopes: "wingtip:read", renewedAt: null, until: null },
+    {
+      id: "a1",
+      app: "Claude",
+      scopes: "wingtip:read wingtip:write",
+      can: ["Read your airplanes and saved flights, and plan with them", "Save, change and delete your saved flights"],
+      renewedAt: "2026-11-20T15:00:00Z",
+      until: null,
+    },
+    {
+      id: "b2",
+      app: "ChatGPT",
+      scopes: "wingtip:read",
+      can: ["Read your airplanes and saved flights, and plan with them"],
+      renewedAt: null,
+      until: null,
+    },
   ];
   const ended: string[] = [];
   await page.route(
@@ -32,6 +46,9 @@ test("a connected app is listed and disconnected after asking", async ({ page })
   const list = page.getByTestId("connected-apps");
   await expect(list.getByText("Claude")).toBeVisible();
   await expect(list.getByText("ChatGPT")).toBeVisible();
+  // What each may do, in the consent page's words: only Claude may write.
+  await expect(list.getByTestId("connected-app").first()).toContainText("Save, change and delete your saved flights");
+  await expect(list.getByTestId("connected-app").nth(1)).not.toContainText("Save, change");
 
   await list.getByTestId("disconnect-app").first().click();
   const ask = page.getByRole("alertdialog");
