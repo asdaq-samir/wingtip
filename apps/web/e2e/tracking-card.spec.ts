@@ -1,6 +1,9 @@
 import { test, expect } from "@playwright/test";
 import { closeCard, frontSheet, grabberTo, inSheet, settle, settled, showSearch, sideDrawer, slow } from "./helpers";
 import { DETAIL, sky } from "./trackingSky";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "otherAirplanes"));
 
 test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });

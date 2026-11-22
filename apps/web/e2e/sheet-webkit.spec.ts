@@ -1,6 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import { consolePage, grabberTo, openConsole, settled, sideDrawer, slow } from "./helpers";
 import { go, pick } from "./cardEntries";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "atcCopilot", "threeD"));
 
 /**
  * The phone's sheet in Safari's engine (the webkit-phone project, an

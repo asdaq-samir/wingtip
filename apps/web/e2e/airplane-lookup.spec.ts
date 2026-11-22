@@ -3,6 +3,9 @@ import { controlsInSight, grabberTo, settle, sideDrawer, slow } from "./helpers"
 import { NO_OWN_FIGURES } from "./airplaneMocks";
 import { showSearch } from "./oneSearch";
 import { FAA } from "./faaRecord";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "otherAirplanes"));
 
 /**
  * An airplane looked up by its N-number in the one search (the owner,

@@ -1,3 +1,4 @@
+import { useExtra } from "../extras";
 import { keptStore } from "../storage";
 
 /**
@@ -18,4 +19,13 @@ export const useAtcListen = keptStore<AtcListen>("wingtip.atcListen", "off");
 
 export function setAtcListen(value: AtcListen) {
   useAtcListen.setState({ value });
+}
+
+/** The ATC alerts' setting as the app reads it: off while the ATC
+ *  Copilot's switch in Settings' Extras is off (lib/extras), whatever was
+ *  saved before. */
+export function useAtcListenOn(): AtcListen {
+  const parked = !useExtra("atcCopilot");
+  const listen = useAtcListen((s) => s.value);
+  return parked ? "off" : listen;
 }

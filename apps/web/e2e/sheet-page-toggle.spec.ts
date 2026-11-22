@@ -1,6 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import { consoleSheet, grabberTo, settle, settled, sideDrawer, frontSheet } from "./helpers";
 import { expectPage, expectSearchInUse, expectShown, openAirport, showPage, toggle } from "./sheetPages";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "threeD"));
 
 /**
  * The sheet's two pages, Search and FPL, turned by one round button in

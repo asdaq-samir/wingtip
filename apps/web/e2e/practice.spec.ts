@@ -1,5 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
 import { consoleSheet, openConsole, showTabs, consolePage } from "./helpers";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "trainingTools"));
 
 /**
  * The pilot console's Practice pages (the Guide tab): the flash-card

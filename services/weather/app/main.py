@@ -82,6 +82,16 @@ PRODUCTS = (
     Product("flow", flow.fetch, "flow"),
 )
 
+
+
+def products() -> tuple[Product, ...]:
+    """The products this service fetches: every one, but the flow layer
+    only while WEATHER_FLOW_ON says so (settings.flow_on), so a parked
+    layer costs no download and no memory."""
+    on = get_settings().flow_on
+    return tuple(p for p in PRODUCTS if on or p.name != "flow")
+
+
 #: What a fetch may fail with: its source, in its own words.
 FAILURES = (
     fetch.FetchFailed,
@@ -105,8 +115,8 @@ def in_use(now: float | None = None) -> bool:
 class Schedule:
     """When each product was last tried, and its turns on the scheduler."""
 
-    def __init__(self, products=PRODUCTS):
-        self.products = {p.name: p for p in products}
+    def __init__(self, chosen: tuple[Product, ...] | None = None):
+        self.products = {p.name: p for p in (products() if chosen is None else chosen)}
         self.tried: dict[str, float] = {}
         self.lock = threading.Lock()
 
@@ -156,14 +166,14 @@ def health(now: float | None = None) -> dict:
     """Each product's freshness, as GET / answers it."""
     now = time.time() if now is None else now
     busy = in_use(now)
-    products = {}
-    for product in PRODUCTS:
+    fresh = {}
+    for product in products():
         record = weather_store.read(product.name)
         tried = weather_store.attempt(product.name)
         age = None if record is None else round(now - record.fetched_at, 1)
         servable = weather_store.servable(record, now)
         failing = bool(tried and tried.get("error") and (record is None or tried["attempted"] >= record.fetched_at))
-        products[product.name] = {
+        fresh[product.name] = {
             "fetched_at": record.fetched_at if record else None,
             "age_s": age,
             "until": record.until if record else None,
@@ -173,8 +183,8 @@ def health(now: float | None = None) -> dict:
             "every_s": product.every_s(busy),
             "stale": not servable or age is None or age > 3 * product.every_s(False),
         }
-    stale = any(p["stale"] for p in products.values())
-    return {"status": "stale" if stale else "ok", "in_use": busy, "products": products}
+    stale = any(p["stale"] for p in fresh.values())
+    return {"status": "stale" if stale else "ok", "in_use": busy, "products": fresh}
 
 
 class _Health(BaseHTTPRequestHandler):

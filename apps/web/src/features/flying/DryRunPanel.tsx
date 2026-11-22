@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Mountain } from "lucide-react";
 import { callEngine } from "../../lib/engine/engine";
 import { setPilotView, usePilotView } from "../plan-map";
+import { useExtra } from "../../lib/extras";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
 import IconButton from "../../components/IconButton";
@@ -72,8 +73,10 @@ export function DryRunControls({
   const toggle = toggleReplay;
   // The run seen from the pilot's seat over the 3D ground, or the chart
   // from above (features/plan-map/terrain's PilotCamera): a toggle among the
-  // run's own controls, put back to the chart as the run is put away.
-  const pilotView = usePilotView((s) => s.on);
+  // run's own controls, put back to the chart as the run is put away. Not
+  // offered while 3D is parked (Settings' Extras, lib/extras).
+  const threeD = useExtra("threeD");
+  const pilotView = usePilotView((s) => s.on) && threeD;
   useEffect(() => () => setPilotView(false), []);
   // The chart dragged along, at the owner's ask ("can the trace be
   // drag-able in the dry run?"): a finger or a pointer on it puts the
@@ -141,9 +144,11 @@ export function DryRunControls({
             Go missed
           </PlaybackButton>
         )}
-        <PlaybackToggle pressed={pilotView} onPressedChange={setPilotView} label="Pilot's view" testId="dry-run-pilot-view">
-          <Mountain className="size-5" aria-hidden />
-        </PlaybackToggle>
+        {threeD && (
+          <PlaybackToggle pressed={pilotView} onPressedChange={setPilotView} label="Pilot's view" testId="dry-run-pilot-view">
+            <Mountain className="size-5" aria-hidden />
+          </PlaybackToggle>
+        )}
         <ForecastToggle />
         <PlayToggle playing={playing} onToggle={toggle} testId="dry-run-play" />
         <SpeedMenu

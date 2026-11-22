@@ -1,6 +1,9 @@
 import { test, expect } from "@playwright/test";
 import { settle, sideDrawer, slow } from "./helpers";
 import { closeMapSettings, openSettingsPage } from "./mapCard";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "atcCopilot", "threeD"));
 
 /**
  * The map's microphone on a phone: a circle of its own over the map's

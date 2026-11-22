@@ -10,6 +10,7 @@ import { keepingAvailable } from "../../lib/map/route/keepRoute";
 import { useSettingsGroup } from "../../lib/openSettings";
 import { usePreferences } from "../../lib/preferences";
 import { CardId, setCard, useSheetCards } from "../../lib/sheetCards";
+import ExtrasGroup from "./ExtrasGroup";
 import GlideRingRow from "./GlideRingRow";
 import { AlertsPage, AtcPage, HelpPage, type HelpPages } from "./SettingsPages";
 
@@ -18,7 +19,7 @@ import { AlertsPage, AtcPage, HelpPage, type HelpPages } from "./SettingsPages";
  * account canvas (2026-11-13): a row of You (the avatar's card), and what
  * the Map card's gear opens at its Map group (lib/openSettings, the one
  * way in). How the app behaves, in groups as iOS's Settings has them --
- * Map, In Flight, Data, and Help & About (Display, Sunlight's, went to
+ * Map, In Flight, Extras (the parked features, 2026-11-21), Data, and Help & About (Display, Sunlight's, went to
  * the Map card's Look with Theme and Appearance, 2026-11-14) -- where it
  * was the avatar's card's tiles and footer links and the Map card's Map
  * Settings page: one thing called Settings, every control in one home.
@@ -38,6 +39,8 @@ export default function SettingsPage({ help }: { help: HelpPages }) {
       <div className="flex flex-col gap-5" data-testid="settings-page">
         <MapGroup />
         <InFlightGroup />
+        {/* The parked features' switches, after In Flight (lib/extras). */}
+        <ExtrasGroup />
         <ListGroup title="Data">
           {/* The base chart along each route loaded, held for the air
               (useKeepOffline); how a keep goes is its toast. Over plain

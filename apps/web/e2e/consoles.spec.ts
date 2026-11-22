@@ -104,6 +104,9 @@ test(
     // (the owner's option A, 2026-11-13).
     await consolePage(pilot, "Account");
     await pilot.getByTestId("settings-row").click();
+    // The parked features' switches, Settings' Extras, each off until turned on (src/lib/extras).
+    for (const key of ["atcCopilot", "otherAirplanes", "modelWeather", "threeD", "trainingTools"])
+      await expect(pilot.getByTestId(`extras-${key}`)).not.toBeChecked();
     await pilot.getByTestId("help-row").click();
     for (const link of ["guide-link", "about-link"]) await expect(pilot.getByTestId(link)).toBeVisible();
     // The personal minimums are Personal's, with no sign-in needed.

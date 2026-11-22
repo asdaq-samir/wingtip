@@ -1,5 +1,6 @@
 import { cn } from "cn";
 import { Toggle } from "./ui/toggle";
+import { useExtra } from "../lib/extras";
 import { usePreferences } from "../lib/preferences";
 import { GLASS } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
@@ -13,11 +14,14 @@ import { TEXT } from "../lib/text";
  * to the 2D chart, its relief shaded; the preference is the one `threeD` (lib/preferences). The stock
  * Toggle (Base UI's, ui/toggle), so it is a pressed or unpressed button to
  * a screen reader; its 44-point area a pseudo-element over the glass's
- * edge round it, never a bigger button.
+ * edge round it, never a bigger button. Not there while 3D is parked
+ * (Settings' Extras, lib/extras).
  */
 export default function ThreeDButton() {
   const on = usePreferences((s) => s.threeD);
   const setThreeD = usePreferences((s) => s.setThreeD);
+  const offered = useExtra("threeD");
+  if (!offered) return null;
   return (
     <div data-map-food="" className={cn("flex rounded-full p-1", GLASS)}>
       <Toggle

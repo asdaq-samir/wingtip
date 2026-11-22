@@ -147,7 +147,9 @@ export default function AirplaneProfileSheet() {
   const vm = useAirplaneProfile();
   const { card } = vm;
   // Opened for a figure: on Figures; else on Flights. Each tab opening at its own top (useTabScroll).
-  const [tab, setTab] = useState<ProfileTab>(vm.focus ? "figures" : "flights");
+  const [picked, setTab] = useState<ProfileTab>(vm.focus ? "figures" : "flights");
+  // Flights only where its history is offered (useAirplaneHistory): Info in its place.
+  const tab = picked === "flights" && !card.history ? "info" : picked;
   const [, setTop] = useTabScroll(tab);
   const photo = card.photo;
   const src = photo ? (photo.thumbnail_large ?? photo.thumbnail) : null;
@@ -165,10 +167,11 @@ export default function AirplaneProfileSheet() {
         return field ?? true;
       }}
     >
-      {/* One row of four, the first filled, as the airport card's (CardAction). Follow is the
+      {/* One row of four (three where Follow is not offered, useAirplaneHistory), the first filled, as
+          the airport card's (CardAction). Follow is the
           flight card's alerts -- takes off, lands, comes near -- and Favorite its star, both by
           the ICAO address the registry gives: greyed where it gives none. */}
-      <div className="grid grid-cols-4 gap-2" data-testid="airplane-actions">
+      <div className={cn("grid gap-2", card.history ? "grid-cols-4" : "grid-cols-3")} data-testid="airplane-actions">
         <CardAction
           icon={<ACTION.flyHere.icon />}
           label={vm.flying ? "Flying This" : "Fly This"}
@@ -178,7 +181,7 @@ export default function AirplaneProfileSheet() {
           onClick={vm.fly}
           testId="fly-this-airplane"
         />
-        {card.hex ? (
+        {!card.history ? null : card.hex ? (
           <AircraftAlertMenu
             hex={card.hex}
             name={vm.tail}
@@ -219,24 +222,28 @@ export default function AirplaneProfileSheet() {
             tabTestId="airplane-tab-"
             onPick={setTab}
             tabs={[
-              { value: "flights", label: "Flights", icon: History, hint: card.flightCount ? String(card.flightCount) : null },
+              ...(card.history
+                ? [{ value: "flights" as const, label: "Flights", icon: History, hint: card.flightCount ? String(card.flightCount) : null }]
+                : []),
               { value: "info", label: "Info", icon: Info },
               { value: "figures", label: "Figures", icon: Gauge },
             ]}
           />
         }
       >
-        <CardTabPanel value="flights">
-          {/* Its flights (the owner, 2026-11-14: "How do I see the flights of airplane and play
-              them?"): the flight card's own list, each ▶ its replay over this card. */}
-          {card.hex ? (
-            <PastFlights hex={card.hex} onOpen={card.openPast} untitled play />
-          ) : (
-            <ListGroup>
-              <ListRow muted title="No flights to show: the FAA's registry gives no address for this N-number." />
-            </ListGroup>
-          )}
-        </CardTabPanel>
+        {card.history && (
+          <CardTabPanel value="flights">
+            {/* Its flights (the owner, 2026-11-14: "How do I see the flights of airplane and play
+                them?"): the flight card's own list, each ▶ its replay over this card. */}
+            {card.hex ? (
+              <PastFlights hex={card.hex} onOpen={card.openPast} untitled play />
+            ) : (
+              <ListGroup>
+                <ListRow muted title="No flights to show: the FAA's registry gives no address for this N-number." />
+              </ListGroup>
+            )}
+          </CardTabPanel>
+        )}
         {/* Info's page alone starts with its facts and photo, as the airport card's (the owner, 2026-11-14). */}
         <CardTabPanel value="info" className="pt-0">
           <AirplaneFacts record={card.details?.registration ?? card.record} model={card.details?.model} testId="airplane-facts" />
@@ -268,7 +275,7 @@ export default function AirplaneProfileSheet() {
               />
             </div>
           )}
-          <AirplaneInfo record={card.record} details={card.details} detailsFailed={card.detailsFailed} />
+          <AirplaneInfo record={card.record} details={card.details} detailsFailed={card.detailsFailed} history={card.history} />
         </CardTabPanel>
         <CardTabPanel value="figures">
           <ListGroup title="Figures">

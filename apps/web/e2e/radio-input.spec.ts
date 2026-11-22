@@ -1,5 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
 import { frontSheet, settle, settled, slow } from "./helpers";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "atcCopilot"));
 
 /**
  * The input the radio is heard through, chosen in the Radio card's Hear

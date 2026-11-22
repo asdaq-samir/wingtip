@@ -18,6 +18,7 @@ import {
 } from "./helpers";
 import { drawnMarks, markWith, tapMark } from "./marks";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
+import { extrasOn } from "./extras";
 
 /**
  * On a phone, what a control opens (ResponsivePopover) and what a tap on
@@ -32,6 +33,8 @@ import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
  * no drawer drawn anew, the map's buttons never off the screen.
  */
 test.beforeEach(({ page }) => installFrameRecorder(page));
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "atcCopilot"));
 
 test("the Map settings open as a card in the map's sheet, and its close goes back to what was under it", async ({ page }) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's sheet and its heights; the side panel's card is in layout.spec");

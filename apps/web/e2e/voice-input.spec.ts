@@ -1,5 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { settle, slow } from "./helpers";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "atcCopilot"));
 
 /**
  * Ask by voice (features/voice), apart from the radio (the owner,

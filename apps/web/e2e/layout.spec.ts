@@ -17,6 +17,9 @@ import {
   frontSheet,
 } from "./helpers";
 import { fromRest } from "./startState";
+import { extrasOn } from "./extras";
+// The parked features it exercises, on (Settings' Extras, src/lib/extras).
+test.beforeEach(({ page }) => extrasOn(page, "atcCopilot"));
 
 /**
  * The regressions this file exists to catch (see playwright.config.ts

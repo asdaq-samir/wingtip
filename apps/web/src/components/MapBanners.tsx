@@ -7,7 +7,7 @@ import SunlightBanner from "./SunlightBanner";
 import ZoomBanner from "./ZoomBanner";
 import WeatherAgeBanner from "./WeatherAgeBanner";
 import { useAtcRadio } from "../lib/atcRadio";
-import { useAtcListen } from "../lib/atc/listenSetting";
+import { useAtcListenOn } from "../lib/atc/listenSetting";
 import { cn } from "cn";
 import { useFlying } from "../lib/mapChrome";
 import { useWeatherLayers } from "../lib/map/sources/weatherLayers";
@@ -69,7 +69,7 @@ function MapBannersDrawn({ map }: { map: GlMap | null }) {
   // column stands between them, as the canvas's Flying screen has the
   // alert clear of the stack.
   const flying = useFlying((s) => s.flying);
-  const atc = useAtcListen((s) => s.value !== "off");
+  const atc = useAtcListenOn() !== "off";
   // The loop's bar only while the Map card's Weather is on too.
   const weather = usePreferences((s) => s.weather);
   const loop = useWeatherLayers((s) => s.loop !== "off") && weather;

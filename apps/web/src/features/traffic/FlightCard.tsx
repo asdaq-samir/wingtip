@@ -23,6 +23,7 @@ import { squawkMeaning } from "./squawks";
 import PastFlights from "../../components/airplane/PastFlights";
 import { shortWhen, when } from "../../components/airplane/pastFlightFormat";
 import { pastFlightQuery, pastFlightsQuery } from "../../lib/airplane/pastFlightsQuery";
+import { useAirplaneHistory } from "../../lib/airplane/ownAirplane";
 import { CardAction } from "../../components/CardAction";
 import { shareOrCopy } from "../../lib/share";
 import { aircraftKind } from "../../lib/aircraftKind";
@@ -155,7 +156,10 @@ export default function FlightCard({
   // Its flights found (Earlier flights' list, the same question): the
   // newest is the one it is on, or, not heard now, its last -- sketched,
   // and what Debrief opens.
-  const { data: past, isError: pastFailed, isLoading: pastLoading } = useInfiniteQuery(pastFlightsQuery(hex, null));
+  // Its flights, alerts and Debrief: another's only while Other Airplanes is on (lib/airplane/ownAirplane).
+  const history = useAirplaneHistory(hex, detail?.registration ?? plane?.registration);
+  const flights = { ...pastFlightsQuery(hex, null), enabled: history };
+  const { data: past, isError: pastFailed, isLoading: pastLoading } = useInfiniteQuery(flights);
   const newest = past?.pages[0]?.flights?.[0] ?? null;
   const current = plane && newest?.in_air ? newest : null;
   const last = plane ? null : newest;
@@ -173,7 +177,13 @@ export default function FlightCard({
   // which N654FL's card claimed while its history was unread (the
   // owner's iPhone, 2026-11-13).
   const notHad = pastFailed || lastFailed || (!newest && (past?.pages[0]?.unread_days ?? 0) > 0);
-  const sketchNote = notHad ? "Its flights could not be fetched" : past ? "No flights heard" : "Fetching its flights…";
+  const sketchNote = !history
+    ? "Not heard today"
+    : notHad
+      ? "Its flights could not be fetched"
+      : past
+        ? "No flights heard"
+        : "Fetching its flights…";
   // Its ends: where its trace says it took off, else its flight number's
   // route's first, and the route's last where it is flying the route; not
   // heard, its last flight's ends.
@@ -270,7 +280,8 @@ export default function FlightCard({
     },
   ];
   // Its tab kept while the page is open (useCardTab), on Flights back from a past flight; each its own scroll.
-  const [tab, setTab] = useCardTab<"info" | "flights">(`flight:${hex}`, "info");
+  const [picked, setTab] = useCardTab<"info" | "flights">(`flight:${hex}`, "info");
+  const tab = history ? picked : "info";
   const [, setTop] = useTabScroll(tab);
   return (
     <SheetCard head={false} testId="flight-card">
@@ -286,7 +297,7 @@ export default function FlightCard({
       />
       {/* Every tile 56 tall (min-h-14), as the airport card's are (PlaceActions):
           the two cards' actions at the same places (the owner, 2026-11-14). */}
-      <div className="grid grid-cols-4 gap-2 pt-3 *:min-h-14">
+      <div className={cn("grid gap-2 pt-3 *:min-h-14", history ? "grid-cols-4" : "grid-cols-2")}>
         {/* Follow filled, the card's first thing to do; nothing to follow
             where it is not heard now: greyed, not pressed. */}
         <TogglePrimitive
@@ -304,16 +315,20 @@ export default function FlightCard({
             />
           }
         />
-        <AircraftAlertMenu hex={hex} name={name} airborne={!!plane} from={fromField ?? null} to={toField ?? null} />
-        <CardAction
-          icon={<ChartLine />}
-          label="Debrief"
-          testId="flight-debrief"
-          disabled={!debriefed}
-          onClick={() => {
-            if (debriefed) onOpenPast(debriefed.id);
-          }}
-        />
+        {history && (
+          <>
+            <AircraftAlertMenu hex={hex} name={name} airborne={!!plane} from={fromField ?? null} to={toField ?? null} />
+            <CardAction
+              icon={<ChartLine />}
+              label="Debrief"
+              testId="flight-debrief"
+              disabled={!debriefed}
+              onClick={() => {
+                if (debriefed) onOpenPast(debriefed.id);
+              }}
+            />
+          </>
+        )}
         {/* Its star the row's last tile, as the airport card's, the head
             holding its Share and its close alone (the owner, 2026-11-11). */}
         <FavoriteButton kept={kept} />
@@ -344,24 +359,31 @@ export default function FlightCard({
       {/* Its pages under the glass bar at the card's foot, Info's starting with its facts in a strip and its
           pictures, as the airport card has them (C1; the owner, 2026-11-14: "make sure the airplane card
           looks similar to airport card"; "Switching tabs should not show those"). */}
-      <CardTabPages tab={tab} onPick={setTab} top={setTop} bar={<CardTabBar tabTestId="flight-tab-" onPick={setTab} tabs={TABS} />}>
+      <CardTabPages
+        tab={tab}
+        onPick={setTab}
+        top={setTop}
+        bar={history ? <CardTabBar tabTestId="flight-tab-" onPick={setTab} tabs={TABS} /> : null}
+      >
         <CardTabPanel value="info" className="pt-0">
           <AirplaneFacts record={detail?.faa} type={detail?.type ?? plane?.type ?? null} year={detail?.year} testId="flight-facts" />
           <CardPictures slides={slides} label={`${name}: ${photo ? "its photo, and " : ""}where it has flown`} />
           <FlightInfoTab hex={hex} plane={plane} detail={detail} detailLoading={detailLoading} registered={registered} route={route} />
         </CardTabPanel>
         {/* The ones before the flight it is on, each replayed (PastFlights), and a day to look back from. */}
-        <CardTabPanel value="flights">
-          <PillSection title="Earlier flights" testId="flight-earlier">
-            <PastFlights
-              hex={hex}
-              onOpen={onOpenPast}
-              nowShown={!!plane}
-              untitled
-              type={detail?.type ?? plane?.type ?? past?.pages[0]?.type ?? null}
-            />
-          </PillSection>
-        </CardTabPanel>
+        {history && (
+          <CardTabPanel value="flights">
+            <PillSection title="Earlier flights" testId="flight-earlier">
+              <PastFlights
+                hex={hex}
+                onOpen={onOpenPast}
+                nowShown={!!plane}
+                untitled
+                type={detail?.type ?? plane?.type ?? past?.pages[0]?.type ?? null}
+              />
+            </PillSection>
+          </CardTabPanel>
+        )}
       </CardTabPages>
     </SheetCard>
   );
