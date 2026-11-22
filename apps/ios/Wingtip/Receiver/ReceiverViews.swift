@@ -6,7 +6,7 @@ struct ReceiverChip: View {
     @Environment(Receiver.self) private var receiver
 
     var body: some View {
-        if receiver.mode == .auto, let summary = receiver.summary {
+        if receiver.listening, let summary = receiver.summary {
             MapChip(summary, systemImage: "dot.radiowaves.left.and.right", colour: receiver.live ? nil : WingtipInk.caution)
                 .accessibilityLabel("ADS-B receiver: \(summary)")
         }

@@ -39,6 +39,8 @@ extension PlanSheet {
             guard routed, plan.totals != nil else { return "A flight plan needs a route from an airport, its nav log in." }
             nav.open(.flight("file"))
         case .clearance, .radio:
+            // The clearance listener's card is the ATC Copilot's, parked (Extra).
+            guard Extra.atcCopilot.on() else { return "The ATC Copilot is off: turn it on in Settings, under Extras." }
             showPlan()
             listener.sheetText = nil
             listener.sheetShown = true

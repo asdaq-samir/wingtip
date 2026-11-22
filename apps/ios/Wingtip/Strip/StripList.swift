@@ -14,6 +14,9 @@ struct StripList: View {
     let onLeg: (Leg) -> Void
     let onDebrief: () -> Void
     @Environment(\.chartInk) private var ink
+    /// The departure's Clearance chip, the clearance listener's card, only
+    /// while the ATC Copilot is on in Settings' Extras (Extra).
+    @AppStorage(Extra.atcCopilot.key) private var atcCopilot = false
     @State private var unfolded = false
     /// A checkpoint dot's paper casing, in points: its line's width, drawn outside the dot.
     private static let casing: CGFloat = 3
@@ -28,7 +31,7 @@ struct StripList: View {
                 // each entry's dot on it.
                 RoundedRectangle(cornerRadius: 2).fill(ink.magenta).frame(width: 4).padding(.leading, WingtipSpace.sm).padding(.vertical, WingtipSpace.md)
                 VStack(alignment: .leading, spacing: WingtipSpace.sm) {
-                    StripFieldCard(point: first, atLabel: "leaving", clearance: true, plates: false,
+                    StripFieldCard(point: first, atLabel: "leaving", clearance: atcCopilot, plates: false,
                                    onOpen: onField, onPlates: onPlates, onClearance: onClearance)
                     ForEach(Array(fold.rows.enumerated()), id: \.offset) { _, row in
                         if let row {

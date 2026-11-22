@@ -31,12 +31,14 @@ final class AirplaneLookup {
     private(set) var flightsProblem: String?
 
     /// Everything but the record, asked together for the N-number and, for
-    /// its flights, the ICAO address the registry gives.
-    func load(tail: String, hex: String?) async {
+    /// its flights, the ICAO address the registry gives; its flights only
+    /// where they are offered (`flights`, Extra.airplaneHistory), else left
+    /// unasked and nil.
+    func load(tail: String, hex: String?, flights offered: Bool) async {
         async let found: Void = find(tail)
         async let record: Void = loadDetails(tail)
         async let picture: Void = loadPhoto(tail)
-        async let flown: Void = loadFlights(hex)
+        async let flown: Void = loadFlights(hex, offered: offered)
         _ = await (found, record, picture, flown)
     }
 
@@ -72,7 +74,8 @@ final class AirplaneLookup {
         photo = try? await Planner.airplanePhoto(tail)
     }
 
-    private func loadFlights(_ hex: String?) async {
+    private func loadFlights(_ hex: String?, offered: Bool) async {
+        guard offered else { return }
         guard let hex else {
             flights = []
             return

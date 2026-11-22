@@ -23,6 +23,8 @@ struct AirplaneProfileView: View {
     @Environment(\.cardAtPill) private var atPill
     /// Back to the plan once flown, where the profile was opened over it.
     @Environment(\.showPlan) private var showPlan
+    /// Other Airplanes' switch in Settings' Extras (Extra).
+    @AppStorage(Extra.otherAirplanes.key) private var others = false
     @State private var model: AirplaneProfileModel
     @State private var lookup = AirplaneLookup()
     @State private var tab: ProfileTab
@@ -41,6 +43,13 @@ struct AirplaneProfileView: View {
 
     /// One of the pilot's airplanes: its registrant is named (RegistryNames).
     private var own: Bool { RegistryNames.own(model.tail, among: airplanes.records.map(\.tailNumber)) }
+    /// Whether its Follow, flights and history are offered: the pilot's
+    /// own -- on their records or the one flown -- always, another's while
+    /// Other Airplanes is on (Extra.airplaneHistory); else neither shown
+    /// nor its flights fetched.
+    private var offersHistory: Bool {
+        Extra.airplaneHistory(model.tail, own: airplanes.records.map(\.tailNumber) + [plan.tail].compactMap { $0 }, others: others)
+    }
 
     /// The card's pages, in the web's order.
     enum ProfileTab: String, CaseIterable, Identifiable {
@@ -51,7 +60,7 @@ struct AirplaneProfileView: View {
     var body: some View {
         Form {
             Section {
-                AirplanePlaceHead(model: model, lookup: lookup, fly: fly)
+                AirplanePlaceHead(model: model, lookup: lookup, follow: offersHistory, fly: fly)
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
             }
@@ -66,9 +75,11 @@ struct AirplaneProfileView: View {
             if let photo = lookup.photo {
                 Section { PictureStrip { AirplanePhotoTile(photo: photo, name: model.tail) } }
             }
-            switch tab {
+            // Info in Flights' place where its flights are not offered.
+            switch tab == .flights && !offersHistory ? .info : tab {
             case .flights: flights
-            case .info: AirplaneInfoSections(record: model.registration, details: lookup.details, detailsFailed: lookup.detailsFailed, own: own)
+            case .info: AirplaneInfoSections(record: model.registration, details: lookup.details, detailsFailed: lookup.detailsFailed,
+                                             own: own, history: offersHistory)
             case .figures: figures
             }
         }
@@ -84,12 +95,15 @@ struct AirplaneProfileView: View {
         .navigationDestination(for: PastFlightSummary.self) { flight in
             if let hex = model.registration?.modeSHex { PastFlightCard(hex: hex.lowercased(), flight: flight) }
         }
+        // Opened on Flights where its flights are not offered: on Info,
+        // so the bar's picker has its tab.
+        .onAppear { if tab == .flights, !offersHistory { tab = .info } }
         .task {
             // The record at once; whether it is in the air, its whole
             // record, its photo and its flights after, each on its own.
             await model.load(signedIn: session.signedIn)
             focused = focus
-            await lookup.load(tail: model.tail, hex: model.registration?.modeSHex)
+            await lookup.load(tail: model.tail, hex: model.registration?.modeSHex, flights: offersHistory)
         }
         // A figure is saved as the pilot leaves its field.
         .onChange(of: focused) { old, _ in
@@ -111,7 +125,7 @@ struct AirplaneProfileView: View {
 
     /// The tabs in the bar, Flights with its count.
     private var tabs: [CardTabBar<ProfileTab>.Item] {
-        ProfileTab.allCases.map { tab in
+        ProfileTab.allCases.filter { $0 != .flights || offersHistory }.map { tab in
             let count = tab == .flights ? lookup.flights.map(\.count).flatMap { $0 > 0 ? String($0) : nil } : nil
             return .init(tab: tab, title: tab.rawValue, hint: count, shown: true)
         }

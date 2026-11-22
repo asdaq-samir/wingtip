@@ -69,6 +69,11 @@ final class Tracking {
     private(set) var watchProblem: String?
     /// Whether each watched airplane was in the air, where known.
     private var airborne: [String: Bool] = [:]
+    /// The pilot's own N-numbers, their records' and the one flown
+    /// (AirplaneHost): another airplane's watches wait, kept, while Other
+    /// Airplanes is off in Settings' Extras (Extra.airplaneHistory); the
+    /// pilot's own are asked.
+    @ObservationIgnored var ownTails: [String] = []
 
     /// At most this many points of a tracked flight's path, as the web
     /// app's PATH_POINTS.
@@ -302,7 +307,9 @@ final class Tracking {
 
     /// Each watched airplane's state, and any watch that goes off on it.
     private func askWatched() async {
-        for hex in Set(watches.map(\.hex)) {
+        let others = Extra.otherAirplanes.on()
+        let asked = watches.filter { Extra.airplaneHistory($0.name, own: ownTails, others: others) }
+        for hex in Set(asked.map(\.hex)) {
             let status: FlightStatus
             do {
                 status = try await Planner.flightStatus(hex)
@@ -321,7 +328,7 @@ final class Tracking {
                 watchProblem = "Couldn't tell whether \(hex) is flying: \(error.localizedDescription)"
                 continue
             }
-            for watch in watches where watch.hex == hex {
+            for watch in asked where watch.hex == hex {
                 let words: String?
                 do { words = try Self.fired(watch, before: before, now: now, status: status) } catch {
                     watchProblem = "Couldn't check the watch on \(watch.name): \(error.localizedDescription)"

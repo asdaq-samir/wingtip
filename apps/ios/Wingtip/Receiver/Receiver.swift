@@ -29,6 +29,12 @@ final class Receiver {
         }
     }
 
+    /// Whether the phone listens for a receiver: Auto, and the ADS-B
+    /// Receiver on in Settings' Extras (Extra), parked until Apple grants
+    /// the multicast entitlement (the feature review, 2026-11-21). Off, a
+    /// saved Auto acts as Off: nothing is listened to or read.
+    var listening: Bool { mode == .auto && Extra.adsbReceiver.on() }
+
     /// What the receiver has said so far, the engine's own answer.
     private(set) var picture: EngineContract.ReceiverPicture?
     /// The NEXRAD to draw, worked out again as blocks come and go.
@@ -57,7 +63,13 @@ final class Receiver {
     }
 
     func read(now: Date = Date()) {
-        guard mode == .auto else { return }
+        guard listening else {
+            // Off, or turned off in Extras while it listened: let go as
+            // Off does (stopping a listener not started is nothing).
+            listener.stop()
+            if picture != nil || problem != nil { (picture, nexrad, problem) = (nil, nil, nil) }
+            return
+        }
         listener.start()
         let bytes = listener.drain()
         // Nothing heard, ever: no picture to age.

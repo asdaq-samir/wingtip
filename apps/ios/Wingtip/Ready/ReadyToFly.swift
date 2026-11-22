@@ -86,7 +86,7 @@ final class ReadyToFly {
                 batteryPct: battery.pct, charging: battery.charging,
                 location: ReadyFacts.location(CLLocationManager().authorizationStatus),
                 planSaved: plan.routed ? saved : nil),
-            receiver: ReadyFacts.receiver(used: Receiver.used, listening: Receiver.shared.mode == .auto, live: Receiver.shared.live))
+            receiver: ReadyFacts.receiver(used: Receiver.used, listening: Receiver.shared.listening, live: Receiver.shared.live))
     }
 
     /// What Keep for the Air holds for this route, looked for on disk.

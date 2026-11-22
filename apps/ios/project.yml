@@ -107,10 +107,11 @@ targets:
       # The Live Activity's widget extension, embedded in the app.
       - target: WingtipWidgets
         embed: true
-      # The Apple Watch app (WingtipWatch), embedded in the app's Watch
-      # folder as a companion is; it is installed with the phone's app.
-      - target: WingtipWatch
-        embed: true
+      # No Apple Watch app in the iPhone's build: parked, left out of the
+      # first submission (the feature review, docs/store/feature-review.md,
+      # 2026-11-21: a screenshot set, a 2.5.16 question and a target on every
+      # build, for three screens). WingtipWatch stays below and builds on its
+      # own scheme; to bring it back, depend on it here with `embed: true`.
     info:
       path: Wingtip/Info.plist
       properties:
@@ -152,13 +153,18 @@ targets:
         # the pilot to confirm item by item. The photo library is reached
         # through the system's picker, which needs no permission.
         NSCameraUsageDescription: Wingtip Maps photographs a handbook page, a logbook page or a clearance you wrote down, to read its figures for you to check.
-        # The radio heard on with the phone locked, as the owner asked
-        # (2026-11-02): the microphone kept open (ClearanceListener); and
-        # the position read on while the airplane is flying (OwnShip),
-        # for the alerts ahead and the path flown (OwnTrail); and CloudKit's
-        # silent pushes, so another device's records (Records) sync before
-        # the app is opened; and iOS's background refresh, for the route's
-        # weather watched after the Brief (WeatherWatch, its one task).
+        # The alerts said aloud with the phone locked (SpokenAlerts,
+        # CopilotVoice: iOS starts sound in the background only for an app
+        # with `audio`), and the radio heard on with the phone locked, as
+        # the owner asked (2026-11-02), once the parked ATC Copilot is on
+        # (ClearanceListener, behind Settings' Extras); the position read on
+        # while the airplane is flying (OwnShip), for the alerts ahead and
+        # the path flown (OwnTrail); CloudKit's silent pushes, so another
+        # device's records (Records) sync before the app is opened; and
+        # iOS's background refresh, for the route's weather watched after
+        # the Brief (WeatherWatch, its one task). `audio` stays for the
+        # spoken alerts, a safety feature, though the review (2026-11-21)
+        # had thought it the radio's alone.
         UIBackgroundModes: [audio, location, remote-notification, fetch]
         BGTaskSchedulerPermittedIdentifiers: [app.wingtipmaps.weather-watch]
         # Apple's Private Cloud Compute as the AI's fallback after the

@@ -329,6 +329,8 @@ struct StripSheetView: View {
             guard routed, plan.totals != nil else { return "A flight plan needs a route from an airport, its nav log in." }
             path.append(.file); up()
         case .clearance, .radio:
+            // The clearance listener's card is the ATC Copilot's, parked (Extra).
+            guard Extra.atcCopilot.on() else { return "The ATC Copilot is off: turn it on in Settings, under Extras." }
             path.append(.clearance); up()
         case .dryrun:
             guard routed, plan.profile != nil else { return "Plan a route first." }

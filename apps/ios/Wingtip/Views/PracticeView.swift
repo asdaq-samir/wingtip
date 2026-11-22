@@ -19,11 +19,34 @@ struct PracticeRows: View {
     }
 }
 
-/// Setup's Practice: the drills alone, on their own page.
-struct PracticeView: View {
+/// The drills as a section of the Guide's and the Coach's, only while
+/// Training Tools is on in Settings' Extras (Extra): parked, the flash
+/// cards and calculators are what every study app has, and each cited
+/// figure is one more to keep right (the feature review, 2026-11-21). The
+/// diversion drill is Nearest's, not one of these, and not parked.
+struct PracticeSection: View {
+    @AppStorage(Extra.trainingTools.key) private var trainingTools = false
+
     var body: some View {
-        List { PracticeRows() }
-            .navigationTitle("Practice")
+        if trainingTools { Section("Practice") { PracticeRows() } }
+    }
+}
+
+/// Setup's Practice: the drills alone, on their own page; reached by its
+/// link while Training Tools is off, where to turn them on.
+struct PracticeView: View {
+    @AppStorage(Extra.trainingTools.key) private var trainingTools = false
+
+    var body: some View {
+        List {
+            if trainingTools {
+                PracticeRows()
+            } else {
+                ContentUnavailableView("Training Tools Are Off", systemImage: "figure.walk.motion",
+                                       description: Text("Turn them on in Settings, under Extras."))
+            }
+        }
+        .navigationTitle("Practice")
     }
 }
 

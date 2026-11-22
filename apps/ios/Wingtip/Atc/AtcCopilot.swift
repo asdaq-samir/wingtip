@@ -54,8 +54,10 @@ final class AtcCopilot {
     /// copilot started it; the radio's own listening is the pilot's.
     func follow(flying: Bool, tail: String?) async {
         let listener = ClearanceListener.shared
-        // Only where speech stays on the iPhone (ClearanceListener.canListen).
-        let auto = mode == .flying && flying && tail != nil && listener.canListen
+        // Only where speech stays on the iPhone (ClearanceListener.canListen),
+        // and while the ATC Copilot is on in Settings' Extras, whatever mode
+        // was saved (Extra).
+        let auto = mode == .flying && Extra.atcCopilot.on() && flying && tail != nil && listener.canListen
         if auto, !started, !listener.listening {
             started = true
             await listener.start(words: [])
@@ -67,7 +69,7 @@ final class AtcCopilot {
 
     /// Each settled transmission into the cards, once.
     func observe(_ heard: [ClearanceListener.Transmission], tail: String?) {
-        guard mode != .off else { return }
+        guard mode != .off, Extra.atcCopilot.on() else { return }
         for t in heard where t.final && read[t.id] != t.text {
             read[t.id] = t.text
             do { cards = try Self.heardInto(cards, id: t.id, text: t.text, at: t.at, tail: tail) } catch {

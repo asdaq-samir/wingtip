@@ -13,8 +13,7 @@ import SwiftUI
 /// their values: Pilot Details, Airplanes (the checklists inside), Flights,
 /// Logbook, Minimums, Training (the coach and the drills) and Emergency.
 /// Settings is the gear at the card's top left, the close at its right
-/// (CardStack). No Subscription row: nothing is sold yet (the free app,
-/// the owner's word).
+/// (CardStack).
 struct YouView: View {
     @Environment(Session.self) private var session
     @Environment(Plan.self) private var plan
@@ -142,6 +141,8 @@ private struct YouHead: View {
 /// students they teach.
 struct TrainingPage: View {
     @Environment(Session.self) private var session
+    /// Practice, the drills, only while Training Tools is on in Settings' Extras (Extra).
+    @AppStorage(Extra.trainingTools.key) private var trainingTools = false
 
     var body: some View {
         List {
@@ -151,10 +152,12 @@ struct TrainingPage: View {
                 SettingsLabel(Screen.coach.title, systemImage: "target", colour: WingtipColor.Badge.food)
             }
             .disabled(!session.signedIn)
-            NavigationLink { PracticeView() } label: {
-                SettingsLabel("Practice", systemImage: "figure.walk.motion", colour: WingtipColor.Badge.traffic)
+            if trainingTools {
+                NavigationLink { PracticeView() } label: {
+                    SettingsLabel("Practice", systemImage: "figure.walk.motion", colour: WingtipColor.Badge.traffic)
+                }
+                .accessibilityIdentifier("practice-row")
             }
-            .accessibilityIdentifier("practice-row")
             Group {
                 NavigationLink { TrainingView() } label: {
                     SettingsLabel("Lessons and Endorsements", systemImage: "graduationcap", colour: WingtipColor.Badge.lodging)

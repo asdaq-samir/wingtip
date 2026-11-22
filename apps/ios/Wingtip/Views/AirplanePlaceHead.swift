@@ -15,6 +15,9 @@ struct AirplanePlaceHead: View {
     @Environment(\.undoManager) private var undoManager
     let model: AirplaneProfileModel
     let lookup: AirplaneLookup
+    /// Whether Follow is offered (AirplaneProfileView.offersHistory): the
+    /// pilot's own always, another's while Other Airplanes is on.
+    let follow: Bool
     let fly: () -> Void
     @Environment(Plan.self) private var plan
     @Environment(\.cardExpanded) private var expanded
@@ -61,17 +64,19 @@ struct AirplanePlaceHead: View {
             .disabled(flying)
             .accessibilityLabel(flying ? "Flying this airplane" : "Fly this airplane")
             .accessibilityIdentifier("fly-this-airplane")
-            Menu {
-                if let hex {
-                    Toggle("Tell me when it takes off", isOn: watch(hex, .takeoff))
-                    Toggle("Tell me when it lands", isOn: watch(hex, .land))
+            if follow {
+                Menu {
+                    if let hex {
+                        Toggle("Tell me when it takes off", isOn: watch(hex, .takeoff))
+                        Toggle("Tell me when it lands", isOn: watch(hex, .land))
+                    }
+                } label: {
+                    ActionFace(systemImage: following ? "bell.fill" : "bell", title: "Follow")
                 }
-            } label: {
-                ActionFace(systemImage: following ? "bell.fill" : "bell", title: "Follow")
+                .glassButton()
+                .disabled(hex == nil)
+                .accessibilityIdentifier("airplane-follow")
             }
-            .glassButton()
-            .disabled(hex == nil)
-            .accessibilityIdentifier("airplane-follow")
             Toggle(isOn: Binding(get: { starred }, set: { _ in if let kept { tracking.toggleFavorite(kept, undo: undoManager) } })) {
                 ActionFace(systemImage: starred ? "\(WingtipIcon.favorite).fill" : WingtipIcon.favorite, title: "Favorite",
                            symbolColour: starred ? Color(uiColor: WingtipColor.Brand.taxiwayYellow) : nil)
