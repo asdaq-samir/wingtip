@@ -48,12 +48,15 @@ verdict wait for one. The airport is O'Hare's card as it opens.
 
 ## What is not here, and why
 
-- **The pilot's view (3D terrain):** only the web app has it; neither
-  phone app does (`ChartMap.swift` turns pitch off), so it is not shown
-  on either store.
-- **The in-flight ATC card:** it appears only once the radio has been
-  heard calling the airplane; a simulator has no radio, and a staged
-  call would show something the app did not hear.
+- **The features the feature review parked** ([../feature-review.md](../feature-review.md),
+  2026-11-21): the ATC card and the clearance listener, the cockpit
+  ADS-B receiver, another airplane's Follow and history, model weather,
+  the web's 3D, the Apple Watch app, Ask on Android and the training
+  tools. They are off to start behind Settings' Extras, so no capture
+  turns one on.
+- **The pilot's view (3D terrain):** only the web app has it, parked;
+  neither phone app does (`ChartMap.swift` turns pitch off), so it is
+  not shown on either store.
 - **D-ATIS and RVR on the airport card:** they come from the FAA's SWIM
   feeds through the ingest service, which needs the owner's SWIM
   account; the throwaway stack has none, so the card is shown as it
@@ -68,17 +71,12 @@ verdict wait for one. The airport is O'Hare's card as it opens.
 
 ## Still to take
 
-Found missing by the store-review audit of 2026-11-21; both block a
-submission, and both are captured as above, from a simulator or an
-emulator against the throwaway stack.
+Found missing by the store-review audit of 2026-11-21; it blocks a
+submission, and is captured as above, from an emulator against the
+throwaway stack. (No Apple Watch set: the Watch app is parked and left
+out of the iPhone's build, `apps/ios/project.yml`, so App Store Connect
+asks for none.)
 
-- **Apple Watch** (`watch/`, App Store Connect's Apple Watch slot, at the
-  size it lists for the largest watch; at least one): App Store Connect
-  asks for a Watch screenshot whenever the build carries a Watch app
-  (`apps/ios/WingtipWatch`). Three, each the watch app's own screen with
-  nothing drawn in: the nearest airports (`NearestView`), a timer
-  running, and the airplane's checklist. Captions as the iPhone's, short
-  enough for the watch's frame, in `captions.json` under `watch-*`.
 - **Google Play phone** (`android-phone/`, 1080 x 1920; Play needs two
   to publish, up to eight): the same five screens as the iPhone, C81 to
   KDLH flown by N3429J, from an emulator whose debug build trusts the

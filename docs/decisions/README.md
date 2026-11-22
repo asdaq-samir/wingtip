@@ -44,7 +44,7 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0036 | [Wingtip reaches Claude and ChatGPT as the pilot's own connector](0036-mcp-connector.md) | 2026-11-10 | Accepted |
 | 0037 | [The order of a wave is enforced, not remembered](0037-order-enforced.md) | 2026-11-11 | Accepted |
 | 0038 | [Web first; the phones on the owner's word](0038-web-first.md) | 2026-11-11 | Accepted |
-| 0039 | [The crash pipeline's schedule and the MCP tools' source, weighed against their alternatives](0039-crash-and-mcp-boundaries.md) | 2026-11-12 | Accepted |
+| 0039 | [The crash pipeline's schedule and the MCP tools' source, weighed against their alternatives](0039-crash-and-mcp-boundaries.md) | 2026-11-12 | Accepted; its crash half left with Studio (0059) |
 | 0040 | [The iPhone app's oldest iOS is 27, and the Watch's watchOS 27](0040-ios-27-floor.md) | 2026-11-12 | Accepted |
 | 0041 | [The server's Claude features are taken out](0041-claude-taken-out.md) | 2026-11-12 | Accepted |
 | 0042 | [Each change runs its own tests; the wave is validated on GitHub](0042-fast-checks.md) | 2026-11-13 | Accepted |
@@ -55,3 +55,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0047 | [FPL has one route layout: folded to read, opened to edit](0047-one-fpl-layout.md) | 2026-11-17 | Accepted |
 | 0048 | [The browser specs a change reaches gate its merge](0048-browser-specs-gate.md) | 2026-11-19 | Accepted |
 | 0054 | [The store apps name an airplane's registrant only where it is the pilot's own or an organisation](0054-registry-names-in-store-apps.md) | 2026-11-21 | Accepted |
+| 0059 | [Feature review: keep, park, cut](0059-feature-review-keep-park-cut.md) | 2026-11-21 | Accepted |

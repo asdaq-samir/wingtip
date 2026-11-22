@@ -1033,7 +1033,8 @@ and under it the page toggle ride the same top at the left
 (`MapSideButtons`), beside the iPad's sidebar under the map's buttons at
 the top right. With no ground-clearance colours in MapKit's 3D there is no
 key to them. The radio's button (the route's ends row) shows only with
-Comms Assist on (Settings › ATC, off by default).
+Settings › Extras › ATC Copilot on and then Comms Assist on (Settings ›
+ATC, off by default).
 
 ## 8. One home per control: You, Settings and the Map card (the owner, 2026-11-13)
 
@@ -1045,8 +1046,9 @@ way: three homes, and every control in one of them.
    name, a tap on them Pilot Details with the account's menu, not a row
    of the list, the owner, 2026-11-20) and what is theirs --
    Airplanes (each airplane's checklists inside it, and the picked one's
-   Checklists row), Flights, Logbook, Minimums, Training (the Coach and
-   Practice), the Emergency Assistant -- then Subscription; Settings is
+   Checklists row), Flights, Logbook, Minimums, Training (the Coach, and
+   Practice while Settings' Extras has Training Tools on), the Emergency
+   Assistant; Settings is
    the gear at its top left, the ✕ at its right. The avatar is the
    pilot's own photo where they chose one, their initials where not, on
    every avatar (the account button, You's head, Pilot Details'): Pilot
@@ -1060,7 +1062,8 @@ way: three homes, and every control in one of them.
    the buttons.
 2. **Settings**, one page, You's gear: Map (Airport Weather, Glide Ring, Clear Your Path), In
    Flight (Alerts; ATC, one page of Comms Assist, ATC Alerts and the
-   Copilot), Data (Keep for the Air), and Help & About (Guide, Status,
+   Copilot; Comms Assist and ATC Alerts only while Extras has ATC Copilot
+   on), Extras, Data (Keep for the Air), and Help & About (Guide, Status,
    Log, About, Sources, and the Privacy, Terms and Legal links). The Map
    card's gear opens the same page at its Map group; it is the one
    thing called Settings.
@@ -1130,13 +1133,28 @@ look, back on 2026-11-14 as the Map card's Own Ship). A new control goes into on
 second home; the web first (`features/pilot`, `features/settings`,
 `features/map-settings`), the phones on the owner's word.
 
+**Extras (the feature review, the owner's word of 2026-11-21).** The
+parked features' switches are one Settings group, Extras, right after In
+Flight on every app: a stock switch each, its title and a one-line
+description, all off to start (the web's `lib/extras`, the iPhone's
+`Extra`, Android's `Extras`, the same keys). Web: ATC Copilot, Other
+Airplanes, Model Weather, 3D, Training Tools. iPhone: ATC Copilot, ADS-B
+Receiver, Other Airplanes, Model Weather, Training Tools. Android: ATC
+Copilot, ADS-B Receiver, Other Airplanes, Model Weather, Ask. Off, a
+feature's controls are not drawn, nothing of it starts or is fetched,
+and a setting inside it saved on acts as off; the pilot's own airplane
+keeps its history, Follow and flights whatever Other Airplanes says.
+What each hides is in [../navigation.md](../navigation.md), "Settings'
+Extras"; why, in [../store/feature-review.md](../store/feature-review.md).
+A parked feature gets its switch here, never a second home.
+
 **iPhone (2026-11-13):** You is `Views/YouView` (Pilot Details holds the
 name, the contact, Export, Sign Out and Delete Account; Airplanes holds
-the Checklists; Training the Coach, Practice, Lessons and Instructing; no
-Subscription, nothing being sold), Settings `Views/SettingsView` (no
-Display: no Sunlight, which needs a light sensor iOS gives no app; Data
-holds what is kept for the air, Downloads, the ADS-B receiver and the
-checkpoint notes), and the Map card the base charts as their pictures,
+the Checklists; Training the Coach, Practice (while Extras has Training
+Tools on), Lessons and Instructing), Settings `Views/SettingsView` (no
+Display: no Sunlight, which needs a light sensor iOS gives no app; Extras
+after In Flight; Data holds what is kept for the air, Downloads, the
+ADS-B receiver while Extras has it on, and the checkpoint notes), and the Map card the base charts as their pictures,
 None first, the Approach Plates switch under them while a chart is
 drawn, the four layers (Aeronautical, Weather, Traffic, Private/Military;
 the web's words are Private & Military since 2026-11-14)

@@ -1515,6 +1515,16 @@ reader could not parse plays a warning notification once.
     go and no-go colours stay as they are in every look.
   - Night follows the system.
 
+**Extras** (2026-11-21, the feature review): a section of Settings
+after In Flight (`Views/ExtrasSection`, `Extras.swift`), a stock
+`Toggle` each with its title and one line, all off to start: ATC
+Copilot, ADS-B Receiver, Other Airplanes, Model Weather and Training
+Tools (rules.md §8). Settings' groups are Map, In Flight, Extras, Data
+and Help & About; Data's ADS-B receiver picker shows only while Extras
+has it on. The Apple Watch app is parked by leaving it out of the
+iPhone's build (`apps/ios/project.yml`; its target and tests stay), so
+it has no switch here.
+
 **Theme and Appearance moved to the Map card** (its Look section, the
 owner, 2026-11-14); Settings keeps no Display group, as the iPhone has no
 Sunlight. The Map card (`MapSettingsView`) is the charts as pictures with

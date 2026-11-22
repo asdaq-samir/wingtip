@@ -49,7 +49,7 @@ Each fact lives in one doc; the others link to it.
 | [legal/](legal/privacy.md) | The privacy policy, terms, credits and support pages |
 | [store/listing.md](store/listing.md) | The App Store and Google Play listings and review notes; [store/privacy-labels.md](store/privacy-labels.md) the stores' privacy answers, [store/preview-video.md](store/preview-video.md) the App Preview's plan |
 | [store/beta.md](store/beta.md) | The pilot beta on TestFlight and Play internal testing: what the builds do, the owner's steps, the notes and the invitation ([store/beta/invitation.md](store/beta/invitation.md)) |
-| [store/feature-review.md](store/feature-review.md) | Keep, park or cut: each feature's pilots, cost and a recommendation, for the owner |
+| [store/feature-review.md](store/feature-review.md) | Keep, park or cut: each feature's pilots, cost and a recommendation, taken by the owner on 2026-11-21 (decision 0059), and where each park's switch is |
 | [GOOGLE-MAPS.md](GOOGLE-MAPS.md) | The map's imagery under the chart: the USGS's, and Google's with the owner's key |
 | [TV.md](TV.md) | The TV apps (parked): the deleted remote-control mode, TV sign-in and Tizen and webOS shells |
 | [brand/](brand) | The mark and the brand's files |
