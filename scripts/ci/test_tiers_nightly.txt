@@ -14,6 +14,7 @@ airspace-3d.spec.ts
 airspace-lines.spec.ts
 approach-debrief.spec.ts
 approach-lesson.spec.ts
+auto-logbook.spec.ts
 avatar-photo.spec.ts
 brief-glance.spec.ts
 card-once.spec.ts
