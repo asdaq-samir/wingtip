@@ -1405,6 +1405,44 @@ for, by the phones' wasted-work audit:
   it the fix, so a traffic answer draws the map's traffic, not the
   whole pane with its bars and field actions.
 
+### 3.20 The web's 2026-11-21 changes on Android (claude/parity3-android)
+
+What the web changed in the wave of 2026-11-21 that a pilot sees, as
+Android has it, each in the platform's own parts:
+
+- **The Brief** (`brief/BriefGlance`, `brief/BriefGlanceRows`): under the
+  verdict and its findings, one caution each for what the briefing could
+  not check, an ADIZ on the route (`route_adiz`, 14 CFR part 99) and a
+  route out of the United States (`route_jurisdiction`, decision 0053);
+  then Adverse Conditions (`gonogo_adverse_rows`, AIM 7-1-5(b)(1)) as
+  `ListItem`s with the legs and the time on the phone's clock and zone;
+  then Before You Go's Beyond Reserve and En Route's Lowest Ceiling,
+  Visibility and Most Headwind (`route_headwind`); When to Go at the foot.
+  The briefing is the route's `/api/briefing`, asked after the Go / No-Go.
+- **FPL**: on the first flight the airplane pill reads "Add Your Airplane
+  for Times and Fuel" until the FPL tip is closed; a first route's wait for
+  a position past 400 ms says "Finding where you are…" in a Snackbar; an
+  approach picked lands on its own runway (`plan/LandingRunway`, the
+  engine's `landing_runway`; circling minimums not yet read, so taken as
+  none); the fuel is set in `WingtipSheet` at half height over the plan,
+  the gauge in sight; the Undo Snackbar is Material's short one; the empty
+  Nav Log says where its legs come from.
+- **Flying**: the view's `keepScreenOn` while the instruments are up; Done
+  Flying across their foot, 60 dp tall, the instruments back by
+  themselves after a minute on the ground.
+- **The map**: Larger Map Labels, a tile in the Map card's layers, and the
+  night inks on the dark halo (`map/MapLabels`, from design/tokens.json's
+  map.label), applied to the style MapStyle writes.
+- **The airport card**: the TAF's issued and valid times under it, its
+  expiry in the caution ink (`taf_validity`); the NOTAMs' age under their
+  title (`kept_age`) and Try Again on their problem line.
+- **The airspace card**: Special VFR, or No Special VFR at part 91
+  appendix D's airports, for a Class B, C or D volume from the surface
+  (`special_vfr`).
+
+The inventory, each web change with its Android status, is the wave's
+audit page (audit/parity3-android.md).
+
 ## 4. Not verified
 
 These could not be confirmed from a primary source on 2026-11-09. Check
