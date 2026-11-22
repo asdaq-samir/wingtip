@@ -8,6 +8,7 @@ import { wantScreen } from "../../lib/navigation/wanted";
 import { usePreferences } from "../../lib/preferences";
 import { paramsForSharedPlan, type SharedLink, type SharedPlan } from "../../lib/sharedFlight";
 import { closeSharedLink } from "./store";
+import { useRouteFilePlan } from "./useRouteFilePlan";
 
 /** A saved flight's share read as the preview shows a plan. */
 function planOfShared(f: SharedFlight): SharedPlan {
@@ -28,8 +29,9 @@ function planOfShared(f: SharedFlight): SharedPlan {
 
 /**
  * The shared flight's preview, its one hook (MVVM): the plan a link
- * carries, or the saved flight its token names (GET
- * /api/shared-flights/{token}, read signed out as in), and the two
+ * carries, the saved flight its token names (GET
+ * /api/shared-flights/{token}, read signed out as in), or the route a
+ * file opened holds (.fpl or .gpx, useRouteFilePlan), and the two
  * answers. Use This Plan makes it the planner's plan -- its route,
  * altitude, departure time still ahead, rules, and a saved flight's own
  * altitudes and picks -- and opens its nav log; Not Now leaves the
@@ -51,7 +53,9 @@ export function useSharedFlightPreview(link: SharedLink) {
     meta: { silent: true },
   });
   const saved = asked.data ?? null;
-  const plan = link.kind === "plan" ? link.plan : saved ? planOfShared(saved) : null;
+  // A route file's, once its own points are named (useRouteFilePlan).
+  const file = useRouteFilePlan(link);
+  const plan = link.kind === "plan" ? link.plan : file ? file.plan : saved ? planOfShared(saved) : null;
   const gone = asked.error instanceof ApiError && asked.error.status === 404;
 
   const use = () => {
@@ -72,6 +76,8 @@ export function useSharedFlightPreview(link: SharedLink) {
     navLog: saved?.checkpoints ?? null,
     totals: saved ? { nm: saved.totalDistanceNm, minutes: saved.totalEteMin, gal: saved.totalFuelGal } : null,
     asked: token !== null ? asked : null,
+    /** A route file's own parts: its points, what was named or left out. */
+    file,
     gone,
     ownAirplane,
     use,
