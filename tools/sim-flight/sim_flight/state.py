@@ -124,7 +124,9 @@ def parse(datagram: bytes) -> State:
         seq, t, utc = int(line.get("seq", 0)), float(line.get("t", 0.0)), float(line["utc"])
     except (KeyError, TypeError, ValueError) as err:
         raise StateError(f"no seq, t or utc in {line!r}") from err
-    traffic = line.get("traffic") or []
+    # None or missing is none; an empty object is not a list ({} is falsy too).
+    traffic = line.get("traffic")
+    traffic = [] if traffic is None else traffic
     if not isinstance(traffic, list):
         raise StateError("traffic is a list")
     pressure = line.get("pressure_ft")

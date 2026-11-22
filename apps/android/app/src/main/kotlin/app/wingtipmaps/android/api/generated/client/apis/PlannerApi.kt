@@ -2105,7 +2105,6 @@ interface PlannerApi {
      */
     @GET("weather/loop")
     suspend fun weatherLoopFrames(@Query("kind") kind: kotlin.String): Response<app.wingtipmaps.android.api.generated.WeatherLoop>
-
     /**
      * GET weather/map
      * Weather On The Map

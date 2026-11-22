@@ -66,25 +66,27 @@ object PlanFiling {
 
         /** The form as text, an item to a line ("Item 15  Route: BAE V191
          *  OSH"), to paste into a filing service or read out. */
-        fun text(persons: Int?): String = listOf(
-            "$departure to $destination",
-            "Item 8  Flight Rules: $rules",
-            "Item 7  Aircraft Identification: ${aircraftId ?: NONE}",
-            "Item 9  Type of Aircraft: ${aircraftType ?: NONE}",
-            "Item 13  Departure: $departure",
-            "Item 13  Departure Time (UTC): ${departTime?.let(::utcFigures) ?: NONE}",
-            "Item 15  Cruising Speed: ${speed ?: NONE}",
-            "Item 15  Cruising Level: ${level ?: NONE}",
-            "Item 15  Route: $route",
-            "Item 16  Destination: $destination",
-            "Item 16  Total EET: ${eet ?: NONE}",
-        ) + listOfNotNull(
-            alternate?.let { "Item 16  Alternate: $it" },
-            other?.let { "Item 18  Other Information: $it" },
-        ) + listOf(
-            "Item 19  Endurance: ${endurance ?: NONE}",
-            "Item 19  Persons on Board: ${persons ?: NONE}",
-        ).joinToString("\n")
+        fun text(persons: Int?): String = (
+            listOf(
+                "$departure to $destination",
+                "Item 8  Flight Rules: $rules",
+                "Item 7  Aircraft Identification: ${aircraftId ?: NONE}",
+                "Item 9  Type of Aircraft: ${aircraftType ?: NONE}",
+                "Item 13  Departure: $departure",
+                "Item 13  Departure Time (UTC): ${departTime?.let(::utcFigures) ?: NONE}",
+                "Item 15  Cruising Speed: ${speed ?: NONE}",
+                "Item 15  Cruising Level: ${level ?: NONE}",
+                "Item 15  Route: $route",
+                "Item 16  Destination: $destination",
+                "Item 16  Total EET: ${eet ?: NONE}",
+            ) + listOfNotNull(
+                alternate?.let { "Item 16  Alternate: $it" },
+                other?.let { "Item 18  Other Information: $it" },
+            ) + listOf(
+                "Item 19  Endurance: ${endurance ?: NONE}",
+                "Item 19  Persons on Board: ${persons ?: NONE}",
+            )
+            ).joinToString("\n")
     }
 
     /** The engine's filing rules, a parameter so a test can give them. */
