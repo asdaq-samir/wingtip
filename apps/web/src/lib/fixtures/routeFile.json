@@ -1,0 +1,42 @@
+{
+  "why": "read_route_file's cases: a route from a Garmin .fpl or a GPX file, read by the engine (engine/facade/tests/time_ago.rs) and previewed by the apps.",
+  "cases": [
+    {
+      "why": "A Garmin flight plan with a VOR between and a user waypoint left out",
+      "input": {
+        "text": "<?xml version=\"1.0\" encoding=\"utf-8\"?><flight-plan xmlns=\"http://www8.garmin.com/xmlschemas/FlightPlan/v1\"><route><route-name>KMSN TO KOSH</route-name><route-point><waypoint-identifier>KMSN</waypoint-identifier><waypoint-type>AIRPORT</waypoint-type></route-point><route-point><waypoint-identifier>DLL</waypoint-identifier><waypoint-type>VOR</waypoint-type></route-point><route-point><waypoint-identifier>USR001</waypoint-identifier><waypoint-type>USER WAYPOINT</waypoint-type></route-point><route-point><waypoint-identifier>KOSH</waypoint-identifier><waypoint-type>AIRPORT</waypoint-type></route-point></route></flight-plan>"
+      },
+      "expected": {
+        "dep": "KMSN",
+        "dest": "KOSH",
+        "stops": [
+          "DLL"
+        ],
+        "name": "KMSN TO KOSH",
+        "dropped": 1
+      }
+    },
+    {
+      "why": "A GPX route, a lower-case ident read upper case",
+      "input": {
+        "text": "<gpx version=\"1.1\"><rte><rtept lat=\"46.8\" lon=\"-92.2\"><name>c81</name></rtept><rtept lat=\"46.8\" lon=\"-92.2\"><name>KDLH</name></rtept></rte></gpx>"
+      },
+      "expected": {
+        "dep": "C81",
+        "dest": "KDLH",
+        "stops": [],
+        "name": null,
+        "dropped": 0
+      }
+    },
+    {
+      "why": "A KML file is a track, not a route",
+      "input": {
+        "text": "<kml></kml>"
+      },
+      "expected": {
+        "error": "This file is not a Garmin flight plan (.fpl) or a GPX route."
+      }
+    }
+  ]
+}

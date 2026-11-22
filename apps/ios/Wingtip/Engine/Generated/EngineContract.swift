@@ -3724,6 +3724,8 @@ enum EngineContract {
     struct EndorsementsInForceInputSignedItem: Codable, Equatable, Sendable {
         var code: String
         var voided: Bool?
+        /// The instructor_verification verdict kept with the record; false is not signed, missing or null is not said.
+        var verified: Bool?
     }
 
     struct EnduranceAnswer: Codable, Equatable, Sendable {
@@ -6942,6 +6944,58 @@ enum EngineContract {
     struct InstructorRecordsSinceInput: Codable, Equatable, Sendable {
         /// YYYY-MM-DD, UTC: the engine has no clock.
         var today: String
+    }
+
+    struct InstructorVerificationAnswer: Codable, Equatable, Sendable {
+        var verified: Bool
+        var registryId: String?
+        /// verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.
+        var reason: String
+        var words: String
+
+        enum CodingKeys: String, CodingKey {
+            case verified
+            case registryId = "registry_id"
+            case reason
+            case words
+        }
+    }
+
+    struct InstructorVerificationInput: Codable, Equatable, Sendable {
+        /// The instructor's name as on their certificate.
+        var instructorName: String
+        /// The student's name as on their certificate.
+        var studentName: String?
+        /// YYYY-MM-DD.
+        var signedOn: String
+        /// The releasable file's active flight instructor (type F) records of the instructor's last name; null where the file is not loaded.
+        var registry: [EngineContract.InstructorVerificationInputRegistryItem]?
+        /// Registry ids another Wingtip account already signs as.
+        var boundElsewhere: [String]?
+
+        enum CodingKeys: String, CodingKey {
+            case instructorName = "instructor_name"
+            case studentName = "student_name"
+            case signedOn = "signed_on"
+            case registry
+            case boundElsewhere = "bound_elsewhere"
+        }
+    }
+
+    struct InstructorVerificationInputRegistryItem: Codable, Equatable, Sendable {
+        /// The FAA's unique id, A or C and seven digits.
+        var id: String
+        var firstMiddle: String
+        var lastSuffix: String
+        /// YYYY-MM-DD, only for a certificate issued before 1 Dec 2024 (14 CFR 61.19(d)).
+        var expires: String?
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case firstMiddle = "first_middle"
+            case lastSuffix = "last_suffix"
+            case expires
+        }
     }
 
     struct IsaTempCInput: Codable, Equatable, Sendable {
@@ -10227,6 +10281,11 @@ enum EngineContract {
     }
 
     struct ReadDatisInput: Codable, Equatable, Sendable {
+        var text: String
+    }
+
+    struct ReadRouteFileInput: Codable, Equatable, Sendable {
+        /// The file's text.
         var text: String
     }
 

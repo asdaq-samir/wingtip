@@ -397,6 +397,12 @@ fun Engine.checkpointsSelect(candidates: List<EngineContract.CheckpointsSelectIn
     rule("checkpoints_select", EngineContract.CheckpointsSelectInput(candidates = candidates, minSpacingNm = minSpacingNm, maxCount = maxCount, minScore = minScore, lengthNm = lengthNm))
 
 /**
+ * A text cut into pieces, each cited rule among them named by the document that holds it and the place in it, for the documents library to open (docs/decisions/0057-documents-library.md): 14 CFR and 49 CFR sections with their paragraphs ("14 CFR 91.211(a)(1)", "49 CFR 830.5", a list after one, a bare section after a title or with its paragraph, never a bare figure such as 121.5), 14 CFR's parts ("Part 135"), AIM paragraphs ("AIM 7-1-5") and advisory circulars ("AC 61-65K", named without the edition's letter). A document is cfr-<title>-<part>, aim or ac-<number>; the pieces' texts joined are the text.
+ */
+fun Engine.citations(text: String? = null): Result<EngineContract.CitationsAnswer> =
+    rule("citations", EngineContract.CitationsInput(text = text))
+
+/**
  * Which Class B band along a route's profile holds an altitude (14 CFR 91.131(a)(1): an ATC clearance before entering Class B): the index of the first band of class B whose floor is at or under altitude_ft and whose ceiling is at or over it, both ft MSL as the FAA's Class Airspace shapefile publishes them; null where none does. A band with no ceiling given holds every altitude from its floor up, so a clearance is said to be needed rather than not (Class B tops run from 7,000 ft at KMSY to 12,500 ft at KDEN, so no one figure stands in for it).
  */
 fun Engine.classBAtAltitude(bands: List<EngineContract.ClassBAtAltitudeInputBandsItem>, altitudeFt: Double): Result<Int?> =
@@ -493,7 +499,7 @@ fun Engine.ctafOf(frequencies: List<EngineContract.FieldFrequency>): Result<Json
     rule("ctaf_of", EngineContract.CtafOfInput(frequencies = frequencies))
 
 /**
- * Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page.
+ * Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page. An AIRAC or charting edition takes over at 0901Z on its date ("Effective 0901 UTC", the Federal Register's airspace and procedure amendments), the DOF at 0000Z on its release day: asked with a UTC time the answer is exact to the minute.
  */
 fun Engine.dataCycle(kind: String, effective: String? = null, on: String): Result<EngineContract.DataCycleAnswer> =
     rule("data_cycle", EngineContract.DataCycleInput(kind = kind, effective = effective, on = on))
@@ -673,7 +679,7 @@ fun Engine.endorsementRender(template: String, student: String? = null, fields: 
     rule("endorsement_render", EngineContract.EndorsementRenderInput(template = template, student = student, fields = fields))
 
 /**
- * The latest not voided of each code, as [code, index] into the record (newest first).
+ * The latest not voided of each code, as [code, index] into the record (newest first); one whose instructor the FAA airmen registry did not bear out (verified false, instructor_verification) is not signed and counts as voided.
  */
 fun Engine.endorsementsInForce(signed: List<EngineContract.EndorsementsInForceInputSignedItem>): Result<List<List<JsonElement>>> =
     rule("endorsements_in_force", EngineContract.EndorsementsInForceInput(signed = signed))
@@ -715,7 +721,7 @@ fun Engine.fieldMilitary(ownership: String? = null, use: String? = null): Result
     rule("field_military", EngineContract.FieldMilitaryInput(ownership = ownership, use = use))
 
 /**
- * The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport.
+ * The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport. `airplane`: whether an airplane on wheels lands there, an airport (A), a gliderport (G) or an ultralight park (U), each a strip of ground; not a heliport, a balloonport or a seaplane base, whose runways are water. What every list of fields to land at is held to (nearest, a stop, a glide's); true with no code, the host's own list then deciding.
  */
 fun Engine.fieldSiteType(siteType: String? = null): Result<EngineContract.FieldSiteTypeAnswer> =
     rule("field_site_type", EngineContract.FieldSiteTypeInput(siteType = siteType))
@@ -1053,8 +1059,8 @@ fun Engine.gonogoPickedEnd(picks: EngineContract.GonogoPicks? = null, ident: Str
 /**
  * The risk assessment (PAVE, IMSAFE): its points, level, line, what to do, and every factor marked.
  */
-fun Engine.gonogoRisk(vfrNotRecommended: Boolean? = null, underMinimums: List<String>? = null, tfrOnRoute: Boolean? = null, hazards: Double? = null, night: Boolean? = null, nightPassengers: Boolean? = null, fuelMarginGal: Double? = null, ifr: Boolean? = null, vorCheck: EngineContract.GonogoRiskInputVorCheck? = null, inspections: EngineContract.GonogoInspections? = null, squawks: List<EngineContract.GonogoRiskInputSquawksItem>? = null, currency: EngineContract.GonogoRiskInputCurrency? = null, day: String, ticked: Map<String, JsonElement>? = null): Result<EngineContract.GonogoRiskAnswer> =
-    rule("gonogo_risk", EngineContract.GonogoRiskInput(vfrNotRecommended = vfrNotRecommended, underMinimums = underMinimums, tfrOnRoute = tfrOnRoute, hazards = hazards, night = night, nightPassengers = nightPassengers, fuelMarginGal = fuelMarginGal, ifr = ifr, vorCheck = vorCheck, inspections = inspections, squawks = squawks, currency = currency, day = day, ticked = ticked))
+fun Engine.gonogoRisk(vfrNotRecommended: Boolean? = null, underMinimums: List<String>? = null, tfrOnRoute: Boolean? = null, hazards: Double? = null, night: Boolean? = null, nightPassengers: Boolean? = null, lights: Boolean? = null, fuelMarginGal: Double? = null, ifr: Boolean? = null, vorCheck: EngineContract.GonogoRiskInputVorCheck? = null, inspections: EngineContract.GonogoInspections? = null, squawks: List<EngineContract.GonogoRiskInputSquawksItem>? = null, currency: EngineContract.GonogoRiskInputCurrency? = null, day: String, ticked: Map<String, JsonElement>? = null): Result<EngineContract.GonogoRiskAnswer> =
+    rule("gonogo_risk", EngineContract.GonogoRiskInput(vfrNotRecommended = vfrNotRecommended, underMinimums = underMinimums, tfrOnRoute = tfrOnRoute, hazards = hazards, night = night, nightPassengers = nightPassengers, lights = lights, fuelMarginGal = fuelMarginGal, ifr = ifr, vorCheck = vorCheck, inspections = inspections, squawks = squawks, currency = currency, day = day, ticked = ticked))
 
 /**
  * An assessment in a few words: "Raised · 8 points".
@@ -1285,6 +1291,12 @@ fun Engine.instructorRecordsSince(today: String): Result<String> =
     rule("instructor_records_since", EngineContract.InstructorRecordsSinceInput(today = today))
 
 /**
+ * Whether the instructor signing an endorsement is a flight instructor the FAA's releasable airmen file bears out, by name (the file has no certificate numbers), not the student themselves and not a record another account signs as (14 CFR 61.1, 61.189(a); AC 61-65K).
+ */
+fun Engine.instructorVerification(instructorName: String, studentName: String? = null, signedOn: String, registry: List<EngineContract.InstructorVerificationInputRegistryItem>? = null, boundElsewhere: List<String>? = null): Result<EngineContract.InstructorVerificationAnswer> =
+    rule("instructor_verification", EngineContract.InstructorVerificationInput(instructorName = instructorName, studentName = studentName, signedOn = signedOn, registry = registry, boundElsewhere = boundElsewhere))
+
+/**
  * Whether a magnetic course is eastbound, 0 to 179 degrees (14 CFR 91.159(a)).
  */
 fun Engine.isEastbound(magneticCourseDeg: Double): Result<Boolean> =
@@ -1295,6 +1307,12 @@ fun Engine.isEastbound(magneticCourseDeg: Double): Result<Boolean> =
  */
 fun Engine.isaTempC(altitudeFt: Double): Result<Double> =
     rule("isa_temp_c", EngineContract.IsaTempCInput(altitudeFt = altitudeFt))
+
+/**
+ * Whose rules a point is under. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).
+ */
+fun Engine.jurisdictionOf(lat: Double, lon: Double): Result<EngineContract.JurisdictionOfAnswer> =
+    rule("jurisdiction_of", EngineContract.JurisdictionOfInput(lat = lat, lon = lon))
 
 /**
  * A kept answer's age, as the apps show it with no signal ("Fetched 42m ago"), and whether it is past the freshness ready_to_fly holds it to: the briefing, the plan's nav log, the Go / No-Go and the weather loop for an hour (the app's choice, at AIM 7-1-28's hourly METAR), METARs and TAFs for the routine report's hour (AIM 7-1-28), the NOTAMs for an hour (14 CFR 91.103, AIM 5-1-3; the age the app's choice), and the airport cards and plates for the AIRAC cycle they came in (FAA 28 and 56 Day Product Schedule). A caution at worst: the answer is still shown.
@@ -1331,6 +1349,12 @@ fun Engine.legalCruisingAltitudes(floorFt: Double, ceilingFt: Double? = null, ma
  */
 fun Engine.lightingRead(lighting: List<String>, beacon: List<String>? = null): Result<EngineContract.LightingReadAnswer> =
     rule("lighting_read", EngineContract.LightingReadInput(lighting = lighting, beacon = beacon))
+
+/**
+ * Whether any of a flight from `start` to `end` of `minutes`, leaving at `depart_s`, falls in 14 CFR 91.209(a)'s period for lighted position lights, "from sunset to sunrise" (the sun's upper limb on the horizon, as sun_down), judged every half hour along the straight line as night_on_the_way judges the night. Not 1.1's night: twenty minutes after sunset the lights are needed though it is not yet night for 91.151 or 91.205(c). In Alaska the rule's period is the sun more than six degrees down or a prominent unlighted object not seen from 3 statute miles: sunset to sunrise is read there too, erring toward the lights, and `alaska_visibility_sm`, the reported visibility below 3 statute miles, puts the lights on all the way.
+ */
+fun Engine.lightsOnTheWay(start: List<Double>, end: List<Double>, departS: Double, minutes: Double, alaskaVisibilitySm: Double? = null): Result<Boolean> =
+    rule("lights_on_the_way", EngineContract.LightsOnTheWayInput(start = start, end = end, departS = departS, minutes = minutes, alaskaVisibilitySm = alaskaVisibilitySm))
 
 /**
  * How long an answer from one of the FAA's SWIM feeds (the planner's /api/live/&#42;) is fresh and how often a screen showing it asks again: a runway's RVR each minute, as it is updated (AIM 7-1-13), the ITWS alerts and special activity airspace's SFDPS status as often (the app's choice), the Command Center's programs every five minutes, and the D-ATIS and a flight's tower departures fresh for five minutes and not polled (the app's choice).
@@ -1825,6 +1849,12 @@ fun Engine.readDatis(text: String): Result<EngineContract.ReadDatisAnswer> =
     rule("read_datis", EngineContract.ReadDatisInput(text = text))
 
 /**
+ * A route from another app's flight-plan file read: Garmin's FlightPlan XML (.fpl) or a GPX route, its ends and the points between that have an identifier, for the apps to preview; or the words for the pilot where it is not one.
+ */
+fun Engine.readRouteFile(text: String): Result<JsonElement> =
+    rule("read_route_file", EngineContract.ReadRouteFileInput(text = text))
+
+/**
  * A GPX or KML track read: its points in time order, or the words for the pilot where it has none to use.
  */
 fun Engine.readTrack(text: String): Result<JsonElement> =
@@ -1907,6 +1937,24 @@ fun Engine.reportNear(distanceNm: Double): Result<EngineContract.ReportNearAnswe
  */
 fun Engine.reserveMin(ifr: Boolean? = null, night: Boolean? = null): Result<Double> =
     rule("reserve_min", EngineContract.ReserveMinInput(ifr = ifr, night = night))
+
+/**
+ * The Air Defense Identification Zones a route meets (14 CFR part 99, subpart B), each as the regulation draws it: the Contiguous U.S. ADIZ (99.43, its line along the U.S.-Mexico border taken as crossed by a leg from one country to the other), Alaska's (99.45), Guam's (99.47) and Hawaii's (99.49), great circles between their points and rhumb lines along a parallel (99.41). Each point, each leg checked every 2 nm along its geodesic, the zones met in order and the Brief's one line: a flight plan filed and open (99.11), a two-way radio and a listening watch (99.9), the transponder on (99.13) and a position report before crossing (99.15), with 99.1(b)'s exceptions said. Warn, never limit: any altitude or speed is taken as meeting the zone.
+ */
+fun Engine.routeAdiz(points: List<EngineContract.RouteAdizInputPointsItem>): Result<EngineContract.RouteAdizAnswer> =
+    rule("route_adiz", EngineContract.RouteAdizInput(points = points))
+
+/**
+ * The route's strongest headwind: of the nav log's legs, the one whose wind aloft blows most against its true course, its headwind the wind's component along that course (the wind triangle, FAA-H-8083-25C ch. 16; the winds aloft forecast's direction is true, FAA-H-8083-28B 27.6), to a tenth of a knot, a tailwind negative, so with tailwinds all the way it is the least of them. The first such leg where two tie; a leg with no wind or no course is passed over; null where no leg has both. The Brief's glance shows it as the route's wind aloft.
+ */
+fun Engine.routeHeadwind(legs: List<EngineContract.RouteHeadwindInputLegsItem>): Result<EngineContract.RouteHeadwindAnswer?> =
+    rule("route_headwind", EngineContract.RouteHeadwindInput(legs = legs))
+
+/**
+ * Which of a route's points and legs lie outside the United States, each leg checked every 2 nm along its geodesic, and the Brief's one line for them. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).
+ */
+fun Engine.routeJurisdiction(points: List<EngineContract.RouteJurisdictionInputPointsItem>): Result<EngineContract.RouteJurisdictionAnswer> =
+    rule("route_jurisdiction", EngineContract.RouteJurisdictionInput(points = points))
 
 /**
  * The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route, the most filed one and the one round the Class B it enters (14 CFR 91.131(a)(1)) with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.
@@ -2083,6 +2131,12 @@ fun Engine.specialUseTab(name: String, type: String? = null, floor: EngineContra
     rule("special_use_tab", EngineContract.SpecialUseTabInput(name = name, type = type, floor = floor, ceiling = ceiling, excluded = excluded))
 
 /**
+ * 14 CFR 91.157's special VFR for an airplane (eCFR, current on 2026-11-21): within the surface area of an airport's Class B, C, D or E airspace and below 10,000 ft MSL (91.157(a)), never at the airports of part 91 appendix D, section 3 (fixed-wing special VFR prohibited: O'Hare, LaGuardia and 31 more, by FAA or ICAO ident); with an ATC clearance, clear of clouds and at least 1 statute mile flight visibility (91.157(b)(1)-(3)); between sunset and sunrise (in Alaska, the sun more than 6 degrees below the horizon) only for a pilot meeting part 61's requirements for instrument flight in an airplane equipped as 91.205(d) asks (91.157(b)(4)); and to take off or land, at least 1 sm ground visibility, or flight visibility where none is reported (91.157(c)). `available` is false where anything known rules it out (each in `problems`); what is not given rules nothing out and stays in `needs`, never said to be met.
+ */
+fun Engine.specialVfr(surfaceArea: String? = null, airport: String? = null, altitudeFt: Double? = null, night: Boolean? = null, alaska: Boolean? = null, sunElevationDeg: Double? = null, instrumentCurrent: Boolean? = null, ifrEquipped: Boolean? = null, flightVisibilitySm: Double? = null, groundVisibilitySm: Double? = null, clearOfClouds: Boolean? = null, takeoffOrLanding: Boolean? = null): Result<EngineContract.SpecialVfrAnswer> =
+    rule("special_vfr", EngineContract.SpecialVfrInput(surfaceArea = surfaceArea, airport = airport, altitudeFt = altitudeFt, night = night, alaska = alaska, sunElevationDeg = sunElevationDeg, instrumentCurrent = instrumentCurrent, ifrEquipped = ifrEquipped, flightVisibilitySm = flightVisibilitySm, groundVisibilitySm = groundVisibilitySm, clearOfClouds = clearOfClouds, takeoffOrLanding = takeoffOrLanding))
+
+/**
  * What a squawk says, where it says more than a code: 7500 unlawful interference (AIM 6-3-4), 7600 two-way radio failure (AIM 6-4-2), 7700 an emergency (AIM 6-2-2); null for any other.
  */
 fun Engine.squawkMeaning(squawk: String? = null): Result<String?> =
@@ -2117,6 +2171,12 @@ fun Engine.surfaceAirspace(elevationFt: Double? = null, volumes: List<EngineCont
  */
 fun Engine.surfaceHours(hours: String? = null, year: Int, month: Int, day: Int, weekday: Int, minute: Int, utcOffsetMin: Int, dst: Boolean? = null): Result<EngineContract.SurfaceHoursAnswer> =
     rule("surface_hours", EngineContract.SurfaceHoursInput(hours = hours, year = year, month = month, day = day, weekday = weekday, minute = minute, utcOffsetMin = utcOffsetMin, dst = dst))
+
+/**
+ * A TAF's own times and whether it speaks for now: its station, when it was issued and its valid period, as its header gives them, and its state, not yet before the period, in force during it and expired at its end (FAA-H-8083-28B 27.4.1, a TAF is a forecast for its valid period; the same rule as weather_in_force's for a TAF). The airport card says it under the hours, so a TAF kept from before the signal was lost is never read as today's forecast (14 CFR 91.103). Null where the words are not a TAF.
+ */
+fun Engine.tafValidity(taf: String, now: Double): Result<EngineContract.TafValidityAnswer?> =
+    rule("taf_validity", EngineContract.TafValidityInput(taf = taf, now = now))
 
 /**
  * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).
@@ -2261,6 +2321,12 @@ fun Engine.vfrAtHours(): Result<List<Double>> =
  */
 fun Engine.vfrBasicMinimums(): Result<EngineContract.VfrBasicMinimumsAnswer> =
     rule("vfr_basic_minimums", EngineContract.VfrBasicMinimumsInput())
+
+/**
+ * 14 CFR 91.155(b)(2), Class G's one exception to 91.155(a) for an airplane (eCFR, current on 2026-11-21): below 1,200 ft above the surface (not at it: the table's low row is "1,200 feet or less"), at night, in an airport traffic pattern within 1/2 mile of the runway, with the visibility under 3 statute miles but not under 1, the airplane may fly clear of clouds. By day the table's low row already asks 1 sm and clear of clouds (91.155(a)); 91.155(b)(1) is the helicopter's. A visibility not given leaves the other conditions to decide.
+ */
+fun Engine.vfrClassGNightPattern(`class`: String, aglFt: Double, night: Boolean? = null, inPattern: Boolean? = null, visibilitySm: Double? = null): Result<EngineContract.VfrClassGNightPatternAnswer> =
+    rule("vfr_class_g_night_pattern", EngineContract.VfrClassGNightPatternInput(`class` = `class`, aglFt = aglFt, night = night, inPattern = inPattern, visibilitySm = visibilitySm))
 
 /**
  * The VFR floor of each piece of the route between consecutive breaks: the ground plus 1,000 ft, or a DOF obstacle's top plus 14 CFR 91.119's clearance where it stands (1,000 ft over a congested area, (b); 500 elsewhere, (c); 1,000 where the towns are not known), rounded up to the next 100 ft; with 91.119's own minimum under it.

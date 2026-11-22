@@ -3739,6 +3739,10 @@ object EngineContract {
     data class EndorsementsInForceInputSignedItem(
         val code: String,
         val voided: Boolean? = null,
+        /**
+         * The instructor_verification verdict kept with the record; false is not signed, missing or null is not said.
+         */
+        val verified: Boolean? = null,
     )
 
     @Serializable
@@ -7080,6 +7084,62 @@ object EngineContract {
          * YYYY-MM-DD, UTC: the engine has no clock.
          */
         val today: String,
+    )
+
+    @Serializable
+    data class InstructorVerificationAnswer(
+        val verified: Boolean,
+        @SerialName("registry_id")
+        val registryId: String? = null,
+        /**
+         * verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.
+         */
+        val reason: String,
+        val words: String,
+    )
+
+    @Serializable
+    data class InstructorVerificationInput(
+        /**
+         * The instructor's name as on their certificate.
+         */
+        @SerialName("instructor_name")
+        val instructorName: String,
+        /**
+         * The student's name as on their certificate.
+         */
+        @SerialName("student_name")
+        val studentName: String? = null,
+        /**
+         * YYYY-MM-DD.
+         */
+        @SerialName("signed_on")
+        val signedOn: String,
+        /**
+         * The releasable file's active flight instructor (type F) records of the instructor's last name; null where the file is not loaded.
+         */
+        val registry: List<EngineContract.InstructorVerificationInputRegistryItem>? = null,
+        /**
+         * Registry ids another Wingtip account already signs as.
+         */
+        @SerialName("bound_elsewhere")
+        val boundElsewhere: List<String>? = null,
+    )
+
+    @Serializable
+    data class InstructorVerificationInputRegistryItem(
+        /**
+         * The FAA's unique id, A or C and seven digits.
+         */
+        val id: String,
+        @SerialName("first_middle")
+        val firstMiddle: String,
+        @SerialName("last_suffix")
+        val lastSuffix: String,
+        /**
+         * YYYY-MM-DD, only for a certificate issued before 1 Dec 2024 (14 CFR 61.19(d)).
+         */
+        val expires: String? = null,
     )
 
     @Serializable
@@ -10451,6 +10511,14 @@ object EngineContract {
 
     @Serializable
     data class ReadDatisInput(
+        val text: String,
+    )
+
+    @Serializable
+    data class ReadRouteFileInput(
+        /**
+         * The file's text.
+         */
         val text: String,
     )
 
