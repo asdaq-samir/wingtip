@@ -44,3 +44,13 @@ fn the_traffic_pattern_and_the_runway_landed_on_are_ac_90_66cs() {
 fn the_runway_checks_are_the_pohs_tables_and_notes() {
     holds("rules/runwayFit.json");
 }
+
+#[test]
+fn the_weather_rules_are_14_cfr_1_1s_91_175s_and_the_handbooks() {
+    holds("rules/weather.json");
+}
+
+#[test]
+fn the_go_no_go_rules_hold_to_their_sources() {
+    holds("rules/gonogo.json");
+}
