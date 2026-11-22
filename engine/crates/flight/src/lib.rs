@@ -44,6 +44,7 @@ pub mod adiz_call;
 mod adiz_tests;
 pub mod based;
 pub mod calls;
+pub mod field_calls;
 pub mod field;
 pub mod filing;
 pub mod flight;

@@ -238,6 +238,27 @@ pub fn lon_near(lon: f64, reference: f64) -> f64 {
     reference + (lon - reference + 180.0).rem_euclid(360.0) - 180.0
 }
 
+/// A padded (min_lat, min_lon, max_lat, max_lon) box round the route a ->
+/// b (wingtip.geo.corridor_bbox): `buffer_nm` at WGS-84's shortest degree
+/// of latitude, the equator's 59.7 nm (110,574 m), and of longitude
+/// cos(latitude) of that at the box's poleward edge, where a degree is
+/// shortest. A prefilter: a cross-track or a crossing test holds after it.
+pub fn corridor_bbox(a: (f64, f64), b: (f64, f64), buffer_nm: f64) -> (f64, f64, f64, f64) {
+    let pad_lat = buffer_nm / 59.7;
+    let widest = (a.0.abs().max(b.0.abs()) + pad_lat).min(89.0);
+    let pad_lon = pad_lat / widest.to_radians().cos().max(0.05);
+    (a.0.min(b.0) - pad_lat, a.1.min(b.1) - pad_lon, a.0.max(b.0) + pad_lat, a.1.max(b.1) + pad_lon)
+}
+
+/// A (min_lat, min_lon, max_lat, max_lon) box holding what lies within
+/// `radius_nm` of a point (wingtip.geo.box_around): corridor_bbox's box
+/// round a route of one point, so its pad is the same 59.7 nm a degree
+/// of latitude and cos(latitude) of that at the poleward edge. A search's
+/// first cut, the distance measured within it after.
+pub fn box_around(lat: f64, lon: f64, radius_nm: f64) -> (f64, f64, f64, f64) {
+    corridor_bbox((lat, lon), (lat, lon), radius_nm)
+}
+
 /// A (south, west, north, east) box as the one or two boxes it is between
 /// -180 and 180: one past the antimeridian (a box from lon_near's
 /// longitudes) is cut there into its two halves, and one a whole turn
@@ -350,60 +371,9 @@ pub fn velocity_track(east: f64, north: f64) -> (Option<f64>, f64) {
     (if speed > 0.0 { Some(py_mod(east.atan2(north).to_degrees(), 360.0)) } else { None }, speed)
 }
 
-// --- By name (the facade's dispatcher, contract/*.json) -----------------
-
-fn num(name: &str, v: &Value, key: &str) -> Result<f64, String> {
-    v.get(key).and_then(Value::as_f64).ok_or_else(|| format!("{name}: \"{key}\" is missing or not a number"))
-}
-
-/// The geodesic figures by name, for the apps that draw between fixes (the
-/// phones' traffic notice, own trail and replay) and the planner, so no app
-/// keeps its own great-circle arithmetic: `distance_nm` and `bearing_deg`
-/// from `{"lat1", "lon1", "lat2", "lon2"}`, and `destination` from
-/// `{"points": [{"lat", "lon", "bearing_deg", "nm"}]}` to `[{"lat",
-/// "lon"}]`, a list so a map's airplanes carried on a step a second cross
-/// into the engine once, not once each; `velocity_track` from
-/// `{"velocities": [{"east", "north"}]}` to `[{"track_deg", "speed"}]`,
-/// a list for the same reason.
-#[cfg_attr(target_arch = "wasm32", inline(always))]
-pub fn call(name: &str, v: &Value) -> Result<String, String> {
-    let mut out = String::new();
-    match name {
-        "distance_nm" | "bearing_deg" => {
-            let (lat1, lon1, lat2, lon2) = (num(name, v, "lat1")?, num(name, v, "lon1")?, num(name, v, "lat2")?, num(name, v, "lon2")?);
-            let figure = if name == "distance_nm" { distance_nm(lat1, lon1, lat2, lon2) } else { bearing_deg(lat1, lon1, lat2, lon2) };
-            json::number(&mut out, figure);
-        }
-        "destination" => {
-            let points = v.get("points").and_then(Value::as_array).ok_or("destination: \"points\" is missing or not a list")?;
-            out.push('[');
-            for (i, p) in points.iter().enumerate() {
-                let (lat, lon) = destination(num(name, p, "lat")?, num(name, p, "lon")?, num(name, p, "bearing_deg")?, num(name, p, "nm")?);
-                out.push_str(if i > 0 { ",{\"lat\":" } else { "{\"lat\":" });
-                json::number(&mut out, lat);
-                out.push_str(",\"lon\":");
-                json::number(&mut out, lon);
-                out.push('}');
-            }
-            out.push(']');
-        }
-        "velocity_track" => {
-            let parts = v.get("velocities").and_then(Value::as_array).ok_or("velocity_track: \"velocities\" is missing or not a list")?;
-            out.push('[');
-            for (i, p) in parts.iter().enumerate() {
-                let (track, speed) = velocity_track(num(name, p, "east")?, num(name, p, "north")?);
-                out.push_str(if i > 0 { ",{\"track_deg\":" } else { "{\"track_deg\":" });
-                json::opt_number(&mut out, track);
-                out.push_str(",\"speed\":");
-                json::number(&mut out, speed);
-                out.push('}');
-            }
-            out.push(']');
-        }
-        _ => return Err(format!("the engine has no rule called {name:?}")),
-    }
-    Ok(out)
-}
+// By name (the facade's dispatcher, contract/*.json): geo/call.rs.
+mod call;
+pub use call::call;
 
 #[cfg(test)]
 #[path = "geo_tests.rs"]

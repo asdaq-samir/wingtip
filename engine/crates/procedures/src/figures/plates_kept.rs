@@ -18,6 +18,7 @@
 
 use crate::flight::reserve_min;
 use crate::json::{self, Value};
+use crate::sort::StableSort;
 
 /// A field's part in the flight, in the order one counts over another
 /// where a field is two (a stop that is also the alternate is kept as a
@@ -140,12 +141,12 @@ fn read_field(v: &Value) -> Result<Asked<'_>, String> {
 /// keeps. None of a field with no chart kept.
 fn kept<'a>(fields: &'a [Asked<'a>], range_nm: Option<f64>) -> Vec<(&'a Asked<'a>, Role, Vec<&'a Value>)> {
     let mut order: Vec<&Asked> = fields.iter().filter(|f| f.role != Role::Diversion).collect();
-    order.sort_by_key(|f| f.role);
+    order.stable_sort_by_key(|f| f.role);
     let mut diversions: Vec<&Asked> = fields
         .iter()
         .filter(|f| f.role == Role::Diversion && matches!((f.off_nm, range_nm), (Some(off), Some(range)) if off <= range))
         .collect();
-    diversions.sort_by(|a, b| a.off_nm.partial_cmp(&b.off_nm).unwrap_or(std::cmp::Ordering::Equal));
+    diversions.stable_sort_by(|a, b| a.off_nm.partial_cmp(&b.off_nm).unwrap_or(std::cmp::Ordering::Equal));
     order.extend(diversions);
     let mut seen: Vec<&str> = Vec::new();
     let mut out = Vec::new();

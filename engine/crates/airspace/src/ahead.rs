@@ -251,6 +251,6 @@ mod tests {
         assert!(flying.contains("\"id\":\"tfr:6/1\"") && !flying.contains("tfr:6/2"), "{flying}");
         let track = Track::new(45.0, -92.95, 0.0, 120.0, Some(2000.0), 0.0, 300.0, 5.0);
         let far_box = shape_box(&tfrs_of(&lines)[1].shape).unwrap();
-        assert!(!meets(far_box, track.bbox(1.0)));
+        assert!(!meets(far_box, &track.boxes(1.0)));
     }
 }

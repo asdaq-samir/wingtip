@@ -81,13 +81,13 @@ pub(super) fn tfr_alerts(track: &Track, ground: Option<f64>, now: i64, list: &[T
     // (areas.rs): a TFR whose box misses it holds none of the track's
     // samples, and testing each of them against every ring was some 60
     // point-in-polygon tests a TFR on every GPS tick.
-    let window = track.bbox(1.0);
+    let window = track.boxes(1.0);
     let mut found = Vec::new();
     for t in list {
         if t.to.is_some_and(|e| e < now) || t.from.is_some_and(|s| s > until) {
             continue;
         }
-        if !shape_box(&t.shape).is_some_and(|b| meets(b, window)) {
+        if !shape_box(&t.shape).is_some_and(|b| meets(b, &window)) {
             continue;
         }
         let under = t.under.or(ground);

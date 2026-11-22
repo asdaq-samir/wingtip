@@ -79,7 +79,7 @@ pub fn fits(name: &str, r: &Record) -> bool {
         return false;
     }
     let middle = &given[1..given.len() - last.len()];
-    middle.len() <= first.len() - 1 && middle.iter().zip(&first[1..]).all(|(m, f)| f.starts_with(m.as_str()))
+    middle.len() < first.len() && middle.iter().zip(&first[1..]).all(|(m, f)| f.starts_with(m.as_str()))
 }
 
 /// The verdict on `instructor` signing for `student` on `signed_on`
