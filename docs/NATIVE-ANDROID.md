@@ -369,6 +369,29 @@ region updated ahead drawn over the old chart from 0901Z on its date
 while the phone is offline (`OfflineStore.keptInForce`; the style built
 again when it turns, asked each minute).
 
+The FAA's plates are kept two ways, each chart's PDF whole as this phone
+opens it (`offline/ChartKeeper`, under the plates' kind of `KeptForAir`;
+`PlateViewer` and the diagram read a kept one first, and a kept procedure
+on the Charts tab opens in the app's viewer rather than the browser). Keep
+for the Air keeps the flight's: the charts `/api/plates/flight` names (the
+departure's, the destination's and each stop's, the alternate's, filed or
+the engine's 91.169 pick, and the fields within the picked airplane's
+diversion range, the engine's `diversion_range_nm` from its own cruise and
+fuel, none with no airplane picked), asked from the plan's fields, its
+course line thinned to 60 points and its ETA (`FlightPlatesAsk`); `plates`
+counts on board only when every chart named is. Its size is said under
+the row before the tap, and under Ready to Fly's fix ("This flight's
+plates: about 52 MB, 9 fields, within 118 nm of the route."). Downloads'
+Plates section keeps a state's (`/api/plates/states`, `StatePlates`):
+each sized, asked in a stock alert, fetched by WorkManager
+(`StatePlatesWorker`, four charts at a time, going on from a stop), its
+record and chart lists in the app's files (`plate-states/`). Deleting one
+leaves a chart another kept state or flight holds (a region's
+takeoff-minimums booklet). Once a kept state's `next_at` (the cycle's
+0901Z, the planner's) has passed, the hourly check and the one at app
+start fetch the cycle the planner then serves and delete the old cycle's
+charts when it is done.
+
 With no signal in the air (the offline audit of 2026-11-10): Emergency
 and Nearest rank the packs' fields on the phone (`emergency/PhoneFields`,
 "From this phone, without weather"); a re-plan that fails puts the last

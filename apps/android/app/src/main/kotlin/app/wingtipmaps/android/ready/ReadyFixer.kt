@@ -18,6 +18,7 @@ import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.offline.DownloadsModel
 import app.wingtipmaps.android.offline.KeepForAirModel
+import app.wingtipmaps.android.offline.flightPlatesWords
 import app.wingtipmaps.android.receiver.Receiver
 import app.wingtipmaps.android.receiver.ReceiverMode
 import app.wingtipmaps.android.ui.BriefModel
@@ -56,6 +57,11 @@ class ReadyFixer internal constructor(
      *  (or the system has answered for location), so the facts are
      *  gathered again. */
     val done: Int get() = doneState.intValue
+
+    /** The flight's plates' size, said under Keep for the Air's fix as on
+     *  the flight plan's row (flightPlatesWords). */
+    @Composable
+    fun platesWords(): String? = flightPlatesWords(plan, keeper)
 
     fun can(fix: String?): Boolean = when (fix) {
         null, "set_altitude" -> false

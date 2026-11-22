@@ -8,6 +8,7 @@ import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.diagnostics.Diagnostics
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.offline.KeptForAir
+import app.wingtipmaps.android.offline.StatePlatesWorker
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
@@ -39,6 +40,9 @@ class WingtipApplication : Application(), SingletonImageLoader.Factory {
         // The cycle packs' store, for the models that read them with no
         // planner (PhoneFields): a folder's name, nothing read yet.
         CyclePacks.of(this)
+        // The plates kept by state gone on with, and updated once their
+        // cycle is replaced: WorkManager's check, queued where one is kept.
+        StatePlatesWorker.atStart(this)
         // Ask on the phone (Gemini Nano with the app's own tools): only the
         // application kept, nothing asked of AICore until Ask is used.
         OnPhoneAsk.attach(this)
