@@ -71,23 +71,25 @@ jobs:
       # the image has (AGP's default download failed run 42876898472).
       - name: The SDK's licences
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
-      # 90 s for three ABIs (run 42110144706), so cached by the engine's own
-      # files and saved at once, for the device job whatever the tests say.
+      # Cached by the engine's own files, saved at once for the device job;
+      # a pull request's (no APK) is arm64-v8a alone, for the bindings.
       - name: The engine, as last built
         id: engine
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: apps/android/app/engine
-          key: engine-android-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
+          key: engine-android-${{ env.OWN_RUN != 'true' && 'arm64-' || '' }}${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The engine, for the app
         if: steps.engine.outputs.cache-hit != 'true'
+        env:
+          WINGTIP_ENGINE_ABIS: ${{ env.OWN_RUN != 'true' && 'arm64-v8a' || '' }}
         run: echo "::notice title=Cache miss::engine-android" && engine/bindings/ffi/build-android.sh
       - name: The engine, kept
         if: steps.engine.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: apps/android/app/engine
-          key: engine-android-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
+          key: engine-android-${{ env.OWN_RUN != 'true' && 'arm64-' || '' }}${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The site's host
         id: site
         run: echo "host=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$WINGTIP_URL').hostname)")" >> "$GITHUB_OUTPUT"

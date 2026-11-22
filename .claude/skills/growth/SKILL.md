@@ -21,7 +21,7 @@ Fix the step with the biggest drop first.
 1. **Instructors and flight schools:** a free instructor account, a code for their students, the mock oral's instructor sign-off, the school dashboard.
 2. **Clubs and FBOs:** shared airplane records and booking bring a whole club; FBO listings bring pilots looking for fuel.
 3. **What pilots share:** a route link, a live track for family, the kneeboard card, the ForeFlight hand-off. Every shared thing opens the app's own page, not a store wall.
-4. **The App Store:** a listing written for searches pilots make ("VFR checkpoints", "student pilot cross-country", "Part 107 airspace"), screenshots of the map and the nav log at iPhone size (the `iphone-review` skill), Apple offer codes for schools and events.
+4. **The App Store:** a listing written for searches pilots make ("VFR checkpoints", "student pilot cross-country", "Part 107 airspace"), screenshots of the map and the nav log at iPad and iPhone sizes (the `ipad-iphone-review` skill), Apple offer codes for schools and events.
 5. **Where pilots talk:** r/flying, Pilots of America, YouTube cross-country walkthroughs, EAA AirVenture and local fly-ins. Show the work; never post as someone else.
 
 ## 3. Measure it without overreaching

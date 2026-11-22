@@ -63,3 +63,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0055 | [The store apps name an airplane's registrant only where it is the pilot's own or an organisation](0055-registry-names-in-store-apps.md) | 2026-11-21 | Accepted |
 | 0056 | [One set of words on all three apps, generated from one table](0056-one-set-of-words.md) | 2026-11-21 | Accepted |
 | 0057 | [A documents library and reader, and every cited rule a tap to its paragraph](0057-documents-library.md) | 2026-11-21 | Proposed |
+| 0058 | [The iPad is the primary device](0058-ipad-primary.md) | 2026-11-21 | Accepted |

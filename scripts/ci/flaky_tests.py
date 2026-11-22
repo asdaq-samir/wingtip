@@ -1,8 +1,15 @@
-"""The nightly flake hunt's list (ci.yml, flake-report; docs/CI.md, "Flaky tests").
+"""The flaky tests' list, in every tier (ci.yml, flake-report, and
+nightly-issue.yml after a merge; docs/CI.md, "Flaky tests").
 
 python3 scripts/ci/flaky_tests.py e2e RESULTS.json OUT.txt
     The browser tests Playwright's JSON report calls flaky (failed, then
-    passed on the retry), one a line, into OUT.txt.
+    passed on the retry), one a line, into OUT.txt; and each spec's
+    seconds beside it (scripts/ci/spec_seconds.py), which the same
+    artifact carries to the night.
+
+python3 scripts/ci/flaky_tests.py fetch DIR
+    The e2e-flaky artifacts of every CI run of the last day but this one
+    (THIS_RUN), pull requests' and waves' included, into DIR/<run>: reads only.
 
 python3 scripts/ci/flaky_tests.py report RUNS_DIR [--dry-run]
     RUNS_DIR holds the unit suites' runs in random order -- pytest's
@@ -15,6 +22,13 @@ python3 scripts/ci/flaky_tests.py report RUNS_DIR [--dry-run]
     left alone otherwise. At most one GitHub write a night, never a
     comment: a burst of writes got the owner's account suspended once
     (CLAUDE.md, "Write to GitHub gently").
+
+python3 scripts/ci/flaky_tests.py report RUNS_DIR --after-merge
+    The same for one run of main's push (tier 2: the browser smoke), from
+    nightly-issue.yml once that run completes, so a test that passed only
+    on its retry after a merge is listed that hour, not the next night.
+    Ten seconds before its one write, which may follow that workflow's own.
+    No test is ever skipped or quarantined for being listed: each is fixed.
 """
 
 import datetime
@@ -23,9 +37,12 @@ import os
 import re
 import subprocess
 import sys
+import time
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from pathlib import Path
+
+from spec_seconds import collect
 
 TITLE = "Flaky tests (nightly)"
 KEEP_DAYS = 14
@@ -68,8 +85,25 @@ def e2e(results: Path, out: Path) -> None:
     for suite in report.get("suites", []):
         walk(suite, [])
     if flaky:
+        out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text("\n".join(sorted(set(flaky))) + "\n")
     print(f"{len(flaky)} flaky browser test(s)")
+    collect(results, out.parent)
+
+
+def fetch(into: Path) -> None:
+    """The last day's other CI runs' e2e-flaky artifacts, each into its own folder; reads only."""
+    since = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
+    listed = subprocess.run(
+        ["gh", "run", "list", "--workflow", "ci.yml", "--created", f">={since}", "--json", "databaseId", "--limit", "200"],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    for run in json.loads(listed):
+        run_id = str(run["databaseId"])
+        if run_id != os.environ.get("THIS_RUN"):
+            subprocess.run(["gh", "run", "download", run_id, "--pattern", "e2e-flaky-*", "--dir", str(into / run_id)], capture_output=True)
 
 
 def outcomes(runs: Path) -> dict:
@@ -99,7 +133,7 @@ def outcomes(runs: Path) -> dict:
     return seen
 
 
-def report(runs: Path, dry_run: bool) -> None:
+def report(runs: Path, dry_run: bool, after_merge: bool = False) -> None:
     today = datetime.date.today().isoformat()
     tonight = {}
     for (suite, test), counts in outcomes(runs).items():
@@ -128,11 +162,13 @@ def report(runs: Path, dry_run: bool) -> None:
     if kept == old or (not issue and not kept):
         print("nothing to change on GitHub")
         return
-    body = render(kept, today)
+    body = render(kept, today, ticked(issue.get("body", "") if issue else ""))
     if dry_run:
         print(body)
         return
-    # The one write of the night.
+    # The one write of the run; after a merge, ten seconds after the run's own issue's.
+    if after_merge:
+        time.sleep(10)
     if issue:
         subprocess.run(["gh", "issue", "edit", str(issue["number"]), "--body", body], check=True)
     else:
@@ -149,25 +185,32 @@ def find_issue():
     return next((issue for issue in json.loads(answer) if issue["title"] == TITLE), None)
 
 
-def render(entries: dict, today: str) -> str:
+def ticked(body: str) -> set[str]:
+    """The tests a reader ticked as fixed in the issue's checklist."""
+    return set(re.findall(r"^- \[x\] `([^`]*)`", body or "", re.M | re.I))
+
+
+def render(entries: dict, today: str, fixed: set[str] = frozenset()) -> str:
     env = os.environ.get
     run = f"{env('GITHUB_SERVER_URL', 'https://github.com')}/{env('GITHUB_REPOSITORY', '')}/actions/runs/{env('GITHUB_RUN_ID', '')}"
     rows = []
     for key, entry in sorted(entries.items(), key=lambda kv: (kv[1]["last"], kv[0]), reverse=True):
         suite, test = key.split("|", 1)
-        rows.append(
-            f"| `{test.replace('|', '/')}` | {SUITES.get(suite, suite)} | {entry['tonight'] or '-'} | {entry['nights']} | {entry['last']} |"
-        )
+        name = test.replace("|", "/")
+        # A tick stays until the test flakes again (seen in this run).
+        box = "x" if name in fixed and not entry["tonight"] else " "
+        what = entry["tonight"] or "not this run"
+        rows.append(f"- [{box}] `{name}` · {SUITES.get(suite, suite)} · {what} · seen {entry['nights']} day(s), last {entry['last']}")
     lines = [
-        "Tests that both failed and passed in the same night: the Python and web unit suites, five runs each in random order, "
-        "and the browser tests that passed only on their retry. Kept here 14 days after a test was last seen. "
-        "This body is rewritten by the nightly run (ci.yml, flake-report); a comment here is not read.",
+        "Tests that both failed and passed in one run, in any tier: the Python and web unit suites at night, five runs each "
+        "in random order, and the browser tests that passed only on their retry, on a pull request, on main after a merge "
+        "or at night. Kept here 14 days after a test was last seen; none is skipped or quarantined for being here. "
+        "Tick one once its cause is fixed: it is unticked if it flakes again. "
+        "This body is rewritten by CI (ci.yml's flake-report, nightly-issue.yml after a merge); a comment here is not read.",
         "",
         f"Last changed {today}, by {run}.",
         "",
-        "| Test | Suite | Tonight | Nights seen | Last seen |",
-        "|---|---|---|---|---|",
-        *(rows or ["| none | | | | |"]),
+        *(rows or ["- none"]),
         "",
         "How to find the cause and fix one: docs/CI.md, \"Flaky tests\". A unit run's order comes back with its seed "
         "(`pytest -p randomly --randomly-seed=N`, `npx vitest run --sequence.seed=N`), printed at the top of that run's log.",
@@ -180,7 +223,9 @@ def render(entries: dict, today: str) -> str:
 if __name__ == "__main__":
     if sys.argv[1:2] == ["e2e"] and len(sys.argv) == 4:
         e2e(Path(sys.argv[2]), Path(sys.argv[3]))
+    elif sys.argv[1:2] == ["fetch"] and len(sys.argv) == 3:
+        fetch(Path(sys.argv[2]))
     elif sys.argv[1:2] == ["report"] and len(sys.argv) in (3, 4):
-        report(Path(sys.argv[2]), "--dry-run" in sys.argv)
+        report(Path(sys.argv[2]), "--dry-run" in sys.argv, "--after-merge" in sys.argv)
     else:
         sys.exit(__doc__)

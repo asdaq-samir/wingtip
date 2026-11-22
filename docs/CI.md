@@ -89,7 +89,8 @@ script can check, and the rest are for whoever writes a test or a job.
    so each has said what it found and nothing runs on to a verdict
    already known. And the pre-push hook holds a push against the branch
    it builds on (main, or the wave's), so it refuses only what that push
-   added and is not skipped. *Guard:* `test_tiers.py` (`halt`).
+   added and is not skipped. Its default is `scripts/dev/preflight.sh`
+   ("Pass first time", below). *Guard:* `test_tiers.py` (`halt`).
 7. **Never raise a timeout to get green.** A job that runs long is made
    faster (a cache, a smaller set, a split) or moved to the night; its
    budget moves only with the reason in the commit.
@@ -187,7 +188,13 @@ script can check, and the rest are for whoever writes a test or a job.
     within the features those are in, by dependency-cruiser's graph); a
     change to the page's HTML, the styles, the build's config, the
     packages, the tokens or an API document runs the `@smoke` set. `e2e`
-    runs them on the phone project, three a shard and ten shards at most.
+    runs them on the phone project, three a shard and ten shards at most,
+    each shard given its own specs by their time (`scripts/ci/spec_seconds.py`:
+    longest first, each to the shard with least; the times are the night's
+    median of the last day's runs, in the Actions cache `e2e-spec-seconds-`),
+    not Playwright's `--shard`, which deals an equal count of tests: PR
+    #589's ten shards took 240 to 730 s of tests (run 44951296175), the
+    run waiting on the slowest.
     It replaced 0044's rule that a pull request ran only the specs it
     added or changed, beside the gate: a three-day redesign changed few
     spec files, so almost none ran, and #585 merged with three red. A
@@ -254,7 +261,7 @@ they are what the budgets allow, to be lowered once runs show them:
 | `api-compat`, `dependency-review`, `infra` | An API document's breaking changes; a manifest's or lock's new advisories; the production files | under 1 min |
 | `android` | `native-android.yml`: the engine (cached), compiled, `testDebugUnitTest lintDebug` with Gradle's caches | 4-5 min |
 | `ios` | `native-ios.yml` with `unit_only`: XcodeGen, the build, the string catalog held to what the Swift says, then the unit tests (`WingtipTests`) on the newest iPhone simulator (`scripts/ci/ios_test.sh`), DerivedData restored from main | 4-6 min |
-| `specs`, `e2e-images`, `e2e` | On a change to the web app or an API document: the browser specs it reaches (rule 18), against the stack built from the commit, on the phone project, three a shard | 6-15 min |
+| `specs`, `e2e-images`, `e2e` | On a change to the web app or an API document: the browser specs it reaches (rule 18), against the stack built from the commit, on the phone project, three a shard, dealt to the shards by their time | 6-15 min |
 
 A pull request that leaves the web app alone is about 3 minutes in all: `changes`, then the wheel from
 its cache, then `guards` beside the tests. One that changes the engine
@@ -269,9 +276,9 @@ under a minute.
 | What | Expected |
 |---|---|
 | `e2e-images`: the browser suite's images and page, each built once per key (on a pull request too, for its specs) | 1-3 min |
-| `e2e` (2 shards): the `@smoke` and `@flight-critical` browser tests on the phone project, and `sheet-webkit.spec.ts` on `webkit-phone`, against the whole stack, in a slim copy of the Playwright image (`.github/ci-images.hcl`: no full Chrome or Firefox; WebKit kept, keyed on the recipe too by `scripts/ci/playwright_slim_key.sh`) | 5-8 min |
+| `e2e` (3 shards): the `@smoke` and `@flight-critical` browser tests on the phone project and on `webkit-ipad` (Safari's engine on an 11-inch iPad Pro upright, touch: the iPad is the primary device, decision 0058; its project runs only that set, at night too), and `sheet-webkit.spec.ts` on `webkit-phone`, against the whole stack, in a slim copy of the Playwright image (`.github/ci-images.hcl`: no full Chrome or Firefox; WebKit kept, keyed on the recipe too by `scripts/ci/playwright_slim_key.sh`) | 5-8 min |
 | `build-images`: every service image whose inputs changed, pushed as `:sha-<commit>` for Promote | 1-4 min |
-| Native iOS's own run: the unit tests and the `CardSmokeTests` UI smoke on the iPhone, then TestFlight and, once Apple has processed the build, the beta group (`testflight_beta.py`, up to 20 min more; docs/store/beta.md) | 6-8 min, then up to 20 |
+| Native iOS's own run: the unit tests and the `CardSmokeTests` UI smoke on the iPhone and the iPad, each its own runner (`test`, `test (iPad)`), then TestFlight and, once Apple has processed the build, the beta group (`testflight_beta.py`, up to 20 min more; docs/store/beta.md) | 6-8 min, then up to 20 |
 | Native Android's own run: the build, unit tests, lint and a debug APK; the signed release bundle to Play's internal testing where `PLAY_SERVICE_ACCOUNT` is set (`play_internal.py`) | 4-6 min |
 | CodeQL (`codeql.yml`): the six languages on main's push and on Mondays, `build-mode: none`, no dependency cache; never on a pull request. It takes over once the repository's default setup is off (Settings, Code security, CodeQL analysis, "Disable CodeQL"): GitHub runs that one on every pull request too, and refuses an advanced workflow's results while it is on | 4-6 min |
 
@@ -319,11 +326,11 @@ run is the night's, but for the audits, the flake hunt and the issue:
 |---|---|---|
 | `guards` (three legs), `test-web` (three), `test-engine` (every crate), `test-python` (every suite), `test-gateway`, `test-sim`, `infra` | one runner each | 1-5 min |
 | `build-images`: every service image, built, not pushed | 1 | 2-6 min |
-| `e2e`: every spec on `mobile`, `desktop` and `webkit-phone` (`browser_specs.py`'s `WAVE_SHARDS`), after `e2e-images` | 16 | ~15-20 min |
-| `ios`: `native-ios.yml` with `unit_only`, the build and `WingtipTests` on the newest iPhone, on macOS | 1 | 5-8 min |
+| `e2e`: every spec on `mobile`, `desktop` and `webkit-phone`, and the smoke set on `webkit-ipad` (`browser_specs.py`'s `WAVE_SHARDS`), after `e2e-images` | 16 | ~15-20 min |
+| `ios`: `native-ios.yml` without `unit_only`: on the newest iPhone the build, `WingtipTests` and `CardSmokeTests`, as main's push runs them; on the newest iPad its whole suite, as the night runs it, in two legs (`test (iPad 1/2)`, the UI classes `ios_test.sh`'s `IPAD_FIRST` names, and `test (iPad 2/2)`, every other test; decision 0058), on macOS | 3 | 6-10 min (iPhone), ~20-25 min (each iPad leg) |
 | `android`: `native-android.yml`, `testDebugUnitTest lintDebug assembleDebug` (the APK kept with the run) | 1 | 4-6 min |
 
-About 20 minutes from the push, the browser shards being the longest;
+About 20 to 25 minutes from the push, the iPad's legs and the browser shards being the longest;
 the night's ten shards take half an hour. GitHub runs 20 jobs at once on
 a free account, so the sixteen shards and the short jobs share them.
 `CI passed` is the verdict; `budget` holds the run to the night's budgets
@@ -384,7 +391,10 @@ workflows, so they are not built twice there.
 
 ### Caches
 
-- **iOS:** the engine's framework, keyed by the engine's files; and
+- **iOS:** the engine's framework, keyed by the engine's files: the test
+  job's is the simulator's slice alone (`WINGTIP_ENGINE_SLICES=simulator`,
+  `engine-ios-sim-`), a third of the three slices' 342 s on an engine
+  change (run 44932668280), and `testflight` builds the whole one; and
   DerivedData, keyed by `.tool-versions` and `project.yml` and written
   only by main's push and the night (a pull request's would crowd the
   repository's 10 GB). xcodebuild compares file times, which a checkout
@@ -398,7 +408,10 @@ workflows, so they are not built twice there.
   one-file change 3 compiles (9 s). On run 42867578624 the hosted runner
   spent about nine minutes building and running the unit tests before the
   first UI test, which is what the cache cuts.
-- **Android:** the engine's libraries, keyed by the engine's files, and
+- **Android:** the engine's libraries, keyed by the engine's files (a
+  pull request's call, which packages no APK, builds arm64-v8a alone for
+  the bindings, `WINGTIP_ENGINE_ABIS`, `engine-android-arm64-`: a third of
+  the three ABIs' 248 s, run 44932668280), and
   Gradle's home and build cache through `gradle/actions/setup-gradle`
   (`cache-provider: basic`, the Actions cache; written from main only).
   Its configuration cache is not on: setup-gradle saves it only with a
@@ -534,7 +547,7 @@ change needs; a job it skips counts as passing.
 | `engine-wheel` | wingtip's Rust extension (`engine/bindings/py`), built once a run by `.github/actions/engine-wheel` (`mode: build`) and uploaded as the `engine-wheel` artifact, which `guards`, `test-python`, `docs` and the flake hunt install (`mode: install`). The wheel's cache is keyed on everything under `engine/` and the toolchains, so a run that leaves the engine alone restores it in seconds; an engine change builds from main's last Cargo build. Main and the night save both. It was built in six jobs before (2026-11-10). Tier 1 |
 | `android`, `ios` | The phone builds (`native-android.yml`, `native-ios.yml` with `unit_only`), when a pull request touches them (above). Tier 1 |
 | `specs` | "Browser specs reached": what `e2e` runs and on how many shards (`scripts/ci/browser_specs.py`): on a pull request, the specs its change reaches (rule 18); the smoke set on main's push; everything at night |
-| `e2e`, `e2e-images` | The browser suite (Playwright, `apps/web/e2e`) against the stack built from the commit (`infra/docker-compose.ci.yml`): on a pull request the specs `specs` chose, which "CI passed" waits for (rule 18); the `@smoke` and `@flight-critical` sets over two shards on main's push; everything over ten at night, and on the phone, desktop and WebKit phone projects over sixteen in a wave's validation |
+| `e2e`, `e2e-images` | The browser suite (Playwright, `apps/web/e2e`) against the stack built from the commit (`infra/docker-compose.ci.yml`): on a pull request the specs `specs` chose, which "CI passed" waits for (rule 18); the `@smoke` and `@flight-critical` sets on the phone and WebKit iPad projects over three shards on main's push; everything over ten at night, and on the phone, desktop and WebKit phone projects (and the WebKit iPad's smoke set) over sixteen in a wave's validation |
 | `build-images` | Every service image whose inputs changed; each Python image imports its own code as its last step, so a missing dependency fails the build. Tier 2 |
 | `api-compat` | No breaking change to an OpenAPI document (below). Tier 1 |
 | `infra` | cfn-lint, `docker compose config` and `caddy validate` over the production files, and `health.sh` on stand-ins (`scripts/ci/health_sh_test.sh`; their shell scripts are `guards`' shellcheck). Tier 1 |
@@ -754,6 +767,40 @@ its code on the Mac. Since 2026-11-07 the repository is public again, the
 variables are unset and every job runs on GitHub's runners; the VM is
 kept for when it goes private.
 
+## Pass first time
+
+The owner, 2026-11-21: "a smarter CI so it passes on first push". PR #589
+was red three times that day: on the simplicity ratchet (RootView 183
+lines against a baseline of 175), which the pre-push hook ran only when a
+source file it named changed; then on nine browser specs, and on two hard
+reds (`fuel-gauge.spec.ts:24`, `plan-cards-heads.spec.ts:49`).
+
+`scripts/dev/preflight.sh`, the pre-push hook's default, runs what tier 1
+will run for the change, narrowly, by asking CI's own scripts rather than
+keeping a list of its own: `scripts/areas.py filters` gives the paths
+filter's matches, `plan.py` the jobs (`EVENT=pull_request`), and then
+`guards.sh`'s `repo` leg itself (with `BASE`, no shallow fetch), the
+generated files (`scripts/build/regen-all.sh --check --base`), the
+WebAssembly's budget and the engine's layering, the change's own unit tests
+(Vitest `--changed`, pytest on the test files it changed) and the specs
+`browser_specs.py --list` says the pull request will run, which
+`branch-specs.sh` must have passed (`--specs` runs them). What it leaves to
+GitHub it names: tsc and ESLint whole, clippy and the engine's tests
+(`--heavy`), the gateway, the phones. A minute or two; every Docker run in
+a turn of `one-at-a-time.sh`. `PRE_PUSH_TESTS=0` leaves the unit tests to
+CI.
+
+`scripts/build/regen-all.sh` runs every generator in order (the contract,
+the web's types, the phones' engine calls, the planner's document and MCP
+calls, the gateway's document, the phones' API models, the tokens, the
+screens, the shared words, the web's engine rules, the WebAssembly);
+`--check` names each one whose committed files are stale, and `--light`
+leaves out the ones that need cargo, Maven or the planner's Python.
+
+Each failed job ends with a notice naming the narrow command that
+reproduces it (`failure_summary.py`, in `budget`), now including
+`changes`, `specs` and the image builds.
+
 ## Flaky tests
 
 A flaky test passes and fails on the same code. Each one costs a rerun and
@@ -803,11 +850,23 @@ below. A real regression fails both goes.
 suites and the web unit suite run five times each in random order; a test
 that failed at least once and passed at least once is flaky. With the
 browser tests that passed only on their retry (that night's run and the
-last day's pull requests), the list goes into one standing issue, "Flaky
-tests (nightly)", kept 14 days after a test was last seen
-(`scripts/ci/flaky_tests.py`). The script makes one GitHub write a night at
-most -- the issue created, or its body edited, never a comment -- and none
-when the list has not changed.
+last day's pull requests and waves), the list goes into one standing issue,
+"Flaky tests (nightly)", a checklist kept 14 days after a test was last
+seen (`scripts/ci/flaky_tests.py`). Tier 2 writes to it too: when a CI run
+on main's push completes, `nightly-issue.yml` lists its browser tests that
+passed only on their retry that hour (`--after-merge`), ten seconds after
+its own issue's write. A reader ticks a test once its cause is fixed; it is
+unticked if it flakes again. No test is skipped or quarantined for being on
+the list. The script makes one GitHub write a run at most -- the issue
+created, or its body edited, never a comment -- and none when the list has
+not changed.
+
+**A red run's summary names the red tests alone.** `failure_summary.py`
+reads Playwright's run summary on each shard: the command it gives runs
+each hard red by its project and line (`npx playwright test
+--project=mobile e2e/fuel-gauge.spec.ts:24`), and the tests that passed on
+their retry are named apart, not as what failed. On PR #589's second run
+the shard's command had named three specs, two of them only flaky.
 
 To fix one: take the seed from the run that failed, repeat the order, and
 look at what the test before it left behind (a module global, a mock, fake

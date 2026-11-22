@@ -4,6 +4,9 @@
   areas.py names            the area names, in order, one per line
   areas.py areas            reads paths on stdin, prints the areas they touch
   areas.py check-line AREA  the area's check, as the file words it
+  areas.py filters          reads paths on stdin, prints ci.yml's matched
+                            filters as the paths filter's JSON list
+                            (scripts/dev/preflight.sh hands it to plan.py)
   areas.py write            regenerates ci.yml's paths-filter block
   areas.py check            fails when ci.yml's block is not what `write` makes
 
@@ -12,6 +15,7 @@ is read by a small parser for its own layout: two-space indents, `key: value`,
 `key:` then a nested block or `- item` lines, full-line comments.
 """
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -136,6 +140,10 @@ def main(argv):
         found = areas_for(paths, data["areas"])
         if found:
             print("\n".join(found))
+    elif cmd == "filters":
+        paths = [p for p in (line.strip() for line in sys.stdin) if p]
+        named = filters(data)
+        print(json.dumps([name for name in named if areas_for(paths, {name: {"paths": named[name]}})]))
     elif cmd == "check-line":
         print(data["areas"][argv[2]]["check"])
     elif cmd in ("write", "check"):

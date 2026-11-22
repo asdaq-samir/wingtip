@@ -226,7 +226,7 @@ without it).
 | `ingest`, `weather`, `jobs` | each service's ruff and pytest | all |
 | `engine` | `scripts/ci/engine_layers.py`, `cargo machete`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --profile ci` over `scripts/ci/engine_affected.py --all` | lint in `guards`, the touched crates, those that use them and the contract test / every crate |
 | `java` (`services/gateway/`) | `mvn -B test` (Docker, for Testcontainers) | all |
-| `ios` (`apps/ios/`) | `xcodegen`, then `scripts/dev/xcodebuild.sh test` (xcodebuild with the shared caches) on the newest iPhone simulator (docs/NATIVE.md) | the build and unit tests on the iPhone / and `CardSmokeTests` / the full suites on the iPhone, iPad and iPhone Duo |
+| `ios` (`apps/ios/`) | `xcodegen`, then `scripts/dev/xcodebuild.sh test` (xcodebuild with the shared caches) on the newest iPhone simulator (docs/NATIVE.md) | the build and unit tests on the iPhone / and `CardSmokeTests` on the iPhone and iPad / the full suites on the iPhone, iPad and iPhone Duo |
 | `android` (`apps/android/`) | `engine/bindings/ffi/build-android.sh`, then `./gradlew testDebugUnitTest lintDebug assembleDebug` (docs/NATIVE-ANDROID.md) | unit tests and lint / plus the instrumented tests on an emulator |
 | `site` (`apps/site/`) | `python3 apps/site/build.py && python3 apps/site/check.py` | all |
 | `sim` (`tools/msfs-agent/`, `infra/sim-trial/`) | the agent's `dotnet build`, `dotnet format --verify-no-changes` and `dotnet test` (Docker), `cfn-lint` on the template, `shellcheck` on its scripts | all: `test-sim` (`scripts/ci/sim_suite.sh`) where its files change |
@@ -262,12 +262,12 @@ without it).
   write or update the spec for a change a pilot sees, with the code, and
   leave its run to the wave's validation on CI (the owner, 2026-11-14).
   Main's push runs only `@smoke` (and `@flight-critical`) after the merge,
-  one test per journey that proves it end to end; the rest run at night. A new spec tags its one `@smoke` or is
+  on the phone project and the iPhone's and iPad's WebKit, one test per journey that proves it end to end; the rest run at night. A new spec tags its one `@smoke` or is
   listed in `scripts/ci/test_tiers_nightly.txt`.
 - **CI stays lean** (docs/CI.md, "Rules" and "The tiers"; decision 0034):
   a pull request in about 3 minutes (tier 1: one `guards` job, the unit
   tests a change reaches, the phones' builds when touched); the browser
-  smoke, the images and the iPhone's UI smoke after merge on main's push
+  smoke, the images and the iPhone's and iPad's UI smoke after merge on main's push
   (tier 2, a failure one `ready` issue, no merge held); everything at
   night (tier 3). Each check in one tier and run once, only what a
   change touches, everything cached, newest versions, warnings fatal,
@@ -291,9 +291,12 @@ without it).
 
 ## The app on the phone
 
-Judge every screen at an iPhone's width against Apple's Human Interface
-Guidelines first. How cards open, close and scroll, the one search and
-the airport weather marks: docs/design/rules.md, on all three apps.
+Most pilots fly with an iPad, the primary device (decision 0058). Judge
+every screen on the iPad, in portrait, landscape and split views, as well
+as at an iPhone's width, against Apple's Human Interface Guidelines first
+(the `ipad-iphone-review` skill). How cards open, close and scroll, the
+one search and the airport weather marks: docs/design/rules.md, on all
+three apps.
 
 - Hit areas are 44 points, but controls never grow to get there: a
   pseudo-element (`after:absolute after:-inset-…`) makes the area, and

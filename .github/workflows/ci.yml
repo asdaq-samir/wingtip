@@ -187,19 +187,7 @@ jobs:
       - name: Failing tests, as annotations
         if: failure()
         working-directory: services/gateway
-        run: |
-          python3 - <<'EOF'
-          import glob, xml.etree.ElementTree as ET
-          for path in sorted(glob.glob("target/surefire-reports/TEST-*.xml")):
-              for case in ET.parse(path).getroot().iter("testcase"):
-                  for problem in [*case.iter("failure"), *case.iter("error")]:
-                      lines = (problem.text or problem.get("message") or "").strip().splitlines()
-                      kept = lines[:6] + [line for line in lines[6:] if line.startswith("Caused by")]
-                      text = "\n".join(kept).replace("%", "%25").replace("\r", "").replace("\n", "%0A")
-                      test = case.get("classname").rsplit(".", 1)[-1] + "." + case.get("name")
-                      test = test.replace("%", "%25").replace(":", "%3A").replace(",", "%2C")
-                      print(f"::error title={test}::{text}")
-          EOF
+        run: python3 ../../scripts/ci/junit_annotations.py
 
   # wingtip's Rust extension (engine/bindings/py), built once a run and
   # handed to every job that imports it as the artifact engine-wheel
@@ -651,6 +639,7 @@ jobs:
       run: ${{ steps.plan.outputs.run }}
       args: ${{ steps.plan.outputs.args }}
       shards: ${{ steps.plan.outputs.shards }}
+      groups: ${{ steps.plan.outputs.groups }}
     steps:
       # Two deep: a pull request's checkout is its merge with main, whose
       # first parent is the main it lands on.
@@ -667,9 +656,17 @@ jobs:
       - if: github.event_name == 'pull_request'
         working-directory: apps/web
         run: npm ci --no-audit --no-fund
+      # Each spec's seconds, the night's merge of the last day's runs (flake-report), to deal them to the shards by time.
+      - if: github.event_name == 'pull_request'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: /tmp/spec-seconds
+          key: e2e-spec-seconds-${{ github.run_id }}
+          restore-keys: e2e-spec-seconds-
       - id: plan
         env:
           EVENT: ${{ inputs.wave && 'wave' || github.event_name }}
+          SPEC_SECONDS: /tmp/spec-seconds/seconds.json
         run: python3 scripts/ci/browser_specs.py
 
   # The browser suite (apps/web/e2e, Playwright) against the stack a pilot
@@ -678,8 +675,8 @@ jobs:
   # catches what no unit test can: a lost tap, a drawer that opens empty.
   #
   # After merge (docs/CI.md, "The tiers"; the owner, 2026-11-10): main's push runs the @smoke and
-  # @flight-critical tests on the phone project over two shards; the night runs everything over ten. A pull
-  # request runs every spec its change reaches, and "CI passed" waits for them (decision 0048, after #585
+  # @flight-critical tests on the phone project and the iPad's WebKit, over three; the night everything over ten. A
+  # pull request runs every spec its change reaches, and "CI passed" waits for them (decision 0048, after #585
   # merged with three red); a failure on main is one issue (nightly-issue.yml). Each shard pulls its images
   # and restores its caches in the background and starts each service the moment it can (setup is about a
   # minute and a half); not after e2e-images, which it would wait on: it pulls the image once it is pushed.
@@ -701,8 +698,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The smoke set over two shards on main's push (5-9 min of tests on
-        # one, 2026-11-10); everything over ten at night or by hand; on a
+        # The smoke set over three shards on main's push (5-9 min a shard of two
+        # on 2026-11-10, before webkit-ipad); everything over ten at night; on a
         # pull request, the specs it reaches, three a shard (browser_specs.py).
         shard: ${{ fromJSON(needs.specs.outputs.shards) }}
     steps:
@@ -719,8 +716,8 @@ jobs:
       # done to /tmp/e2e-out/timeline (the shard's annotation lists it). Postgres
       # and Mailpit first, being small; Mailpit's start makes the network the
       # others need. The Playwright image is the slim copy e2e-images makes (no
-      # full Chrome, no Firefox; WebKit kept for the webkit-phone smoke on
-      # main's push), except at night, whose iOS audit and Lighthouse need
+      # full Chrome, no Firefox; WebKit kept for the webkit-phone and webkit-ipad
+      # smoke on main's push), except at night, whose iOS audit and Lighthouse need
       # the image itself.
       - name: The public images, in the background
         env:
@@ -808,28 +805,7 @@ jobs:
       # Every piece started, then healthy, then the page served and the
       # planner's own word that it is warm (healthy is not ready).
       - name: Wait for the stack, the page and a warm planner
-        run: |
-          for job in net db stack; do
-            while [ ! -f /tmp/e2e-out/$job.exit ]; do sleep 1; done
-            if [ "$(cat /tmp/e2e-out/$job.exit)" != 0 ]; then
-              tail -40 /tmp/e2e-out/$job.log
-              tail -25 /tmp/e2e-out/$job.log | python3 -c 'import sys; t=sys.stdin.read().replace("%","%25").replace("\n","%0A"); print(f"::error title='"$job"' failed::{t[:4000]}")'
-              exit 1
-            fi
-          done
-          docker compose -f docker-compose.yml -f infra/docker-compose.ci.yml up -d --no-build --wait gateway planner weather
-          echo "$(($(date +%s) - T0)) healthy" >> /tmp/e2e-out/timeline
-          for _ in $(seq 1 240); do
-            curl -sf -o /dev/null http://localhost:8080/app/plan && break
-            sleep 1
-          done
-          echo "$(($(date +%s) - T0)) the page" >> /tmp/e2e-out/timeline
-          for _ in $(seq 1 900); do
-            curl -sf http://localhost:8084/ | grep -q '"warm":true' && break
-            sleep 1
-          done
-          curl -sf http://localhost:8084/ | grep -q '"warm":true' || { echo "the planner never reported itself warm"; exit 1; }
-          echo "$(($(date +%s) - T0)) the planner warm" >> /tmp/e2e-out/timeline
+        run: scripts/ci/e2e_wait.sh
       # The cycle the planner is serving, the corridor reader's code, and
       # the files that say which tiles Keep for the Air asks for: what the
       # charts cache is keyed by, at the end of the job. The tiles the suite
@@ -878,8 +854,8 @@ jobs:
           SCREENSHOTS: /out/screens
           # Every project at night or by hand, the smoke set on main's push, and on a pull request the
           # specs it reaches on the phone project (scripts/ci/browser_specs.py).
-          PROJECTS: ${{ needs.specs.outputs.args }}
-          SHARD: ${{ matrix.shard }}/${{ strategy.job-total }}
+          PROJECTS: ${{ needs.specs.outputs.groups != '' && fromJSON(needs.specs.outputs.groups)[matrix.shard] || needs.specs.outputs.args }}
+          SHARD: ${{ needs.specs.outputs.groups == '' && format('--shard={0}/{1}', matrix.shard, strategy.job-total) || '' }}
           # The JSON report, for the flaky tests below (those that passed
           # on their retry): listed in the nightly issue, not failing the run.
           PLAYWRIGHT_JSON_OUTPUT_NAME: /out/results.json
@@ -889,20 +865,20 @@ jobs:
           docker run --rm --network host -e CI=1 -e IOS_AUDIT -e SCREENSHOTS -e PLAYWRIGHT_JSON_OUTPUT_NAME \
             -v "$PWD/apps/web:/w" -v /tmp/e2e-out:/out -w /w \
             "$PLAYWRIGHT_IMAGE" \
-            bash -o pipefail -c "timeout 1800 npx playwright test $PROJECTS --shard=$SHARD --reporter=list,github,json 2>&1 | tee /out/playwright.log"
+            bash -o pipefail -c "timeout 1800 npx playwright test $PROJECTS $SHARD --reporter=list,github,json 2>&1 | tee /out/playwright.log"
       # A test that failed and then passed on its retry (playwright.config.ts
       # retries) passes the run. Kept three days, for the nightly
       # flake-report job to list in the "Flaky tests (nightly)" issue, a
       # pull request's runs included.
       - name: The flaky browser tests, for the nightly issue
         if: always()
-        run: python3 scripts/ci/flaky_tests.py e2e /tmp/e2e-out/results.json /tmp/e2e-out/flaky.txt
+        run: python3 scripts/ci/flaky_tests.py e2e /tmp/e2e-out/results.json /tmp/e2e-out/kept/flaky.txt
       - name: Keep the flaky browser tests
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: e2e-flaky-${{ matrix.shard }}
-          path: /tmp/e2e-out/flaky.txt
+          path: /tmp/e2e-out/kept
           if-no-files-found: ignore
           retention-days: 3
       - name: How the tests went, as an annotation
@@ -1329,9 +1305,9 @@ jobs:
   # CI), where `changes` finds the pull request touches what they build
   # from; skipped, and so passing, otherwise. A pull request's set: Android
   # compiled, unit-tested and linted; iOS built and its unit tests
-  # (WingtipTests) on the iPhone. CardSmokeTests is main's push's, in
-  # native-ios.yml's own run, and the rest each workflow's night
-  # (docs/CI.md, "The tiers").
+  # (WingtipTests) on the iPhone. CardSmokeTests on the iPhone and iPad is
+  # main's push's, in native-ios.yml's own run, and a wave's here; the rest
+  # each workflow's night (docs/CI.md, "The tiers").
   android:
     name: Native Android
     needs: [changes]
@@ -1344,7 +1320,7 @@ jobs:
     if: needs.changes.outputs.ios == 'true'
     uses: ./.github/workflows/native-ios.yml
     with:
-      unit_only: true
+      unit_only: ${{ !inputs.wave }}
 
   # Nothing a phone already calls may break: a released app calls these
   # servers for months. oasdiff compares each OpenAPI document with main's
@@ -1577,23 +1553,25 @@ jobs:
         with:
           pattern: e2e-flaky-*
           path: /tmp/flake/e2e/tonight
-      # Reads only: each run of the last day, its flaky lists if it kept any.
+      # Reads only: each run of the last day, its flaky lists and spec seconds if it kept any.
       - name: The last day's other runs' flaky browser tests
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           THIS_RUN: ${{ github.run_id }}
-        run: |
-          since=$(date -u -d yesterday +%Y-%m-%d)
-          for id in $(gh run list --workflow ci.yml --created ">=$since" --json databaseId --jq '.[].databaseId' --limit 200); do
-            [ "$id" = "$THIS_RUN" ] && continue
-            gh run download "$id" --pattern 'e2e-flaky-*' --dir "/tmp/flake/e2e/$id" 2>/dev/null || true
-          done
+        run: python3 scripts/ci/flaky_tests.py fetch /tmp/flake/e2e
       - name: Into the issue
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: python3 scripts/ci/flaky_tests.py report /tmp/flake
+      - id: seconds
+        run: python3 scripts/ci/spec_seconds.py merge /tmp/flake/e2e /tmp/spec-seconds/seconds.json
+      - if: steps.seconds.outputs.timed == 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: /tmp/spec-seconds
+          key: e2e-spec-seconds-${{ github.run_id }}
 
   # The live sources the stack reads (NOAA, AWC, FAA, USGS, adsb.lol),
   # asked once a night whether they still answer: a pull request's tests
