@@ -31,8 +31,8 @@ test("an airport's frequency is copied as pilots write it, and says so where it 
   await inSheet(page, copy);
   await expect(copy).toHaveAccessibleName(/^Copy .*Tower 118\.3$/);
   await copy.click();
-  await expect(copy).toHaveText("Copied");
+  // "Copied" by it, the app's one confirmation (lib/doneNote), the figure kept.
+  await expect(page.locator('[data-slot="toast"]').filter({ hasText: "Copied" })).toBeVisible();
+  await expect(copy).toHaveText("118.3");
   expect(await page.evaluate(() => (window as unknown as { copied: string[] }).copied)).toEqual(["118.3"]);
-  // Back to the figure after a moment.
-  await expect(copy).toHaveText("118.3", { timeout: 5000 });
 });

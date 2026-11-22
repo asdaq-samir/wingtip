@@ -166,7 +166,7 @@ test("under IFR an airway in the route is flown fix by fix, its published MEA th
   // C81 has no four-letter indicator.
   await expect(form.getByTestId("flight-plan-departure")).toContainText("DEP/C81");
   await form.getByTestId("flight-plan-copy-route").click();
-  await expect(form.getByTestId("flight-plan-copy-route")).toHaveText("Copied");
+  await expect(page.locator('[data-slot="toast"]').filter({ hasText: "Copied" })).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("BAEE1 BAE V191 OSH OSHH2");
 });
 

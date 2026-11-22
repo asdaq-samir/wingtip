@@ -1,9 +1,9 @@
-import { useContext, useState } from "react";
-import { Check } from "lucide-react";
+import { useContext } from "react";
 import { ACTION } from "../../../lib/cardActions";
 import { CardCloseContext } from "../../../lib/map/cards/cardClose";
 import { cn } from "cn";
 import { CardAction } from "../../CardAction";
+import { done as confirm } from "../../../lib/doneNote";
 import { copyText } from "../../../lib/share";
 import { usePointActions, type ChartPoint } from "../../../lib/map/cards/pointActions";
 
@@ -15,7 +15,7 @@ import { usePointActions, type ChartPoint } from "../../../lib/map/cards/pointAc
  * do it to (usePointActions), and there but greyed while not, so the row
  * is the same full row on every point's card (the owner's iPhone,
  * 2026-11-14: one half-width tile on OBK's) -- and Copy, the VOR's
- * frequency for the radio, its word "Copied" in place once it is.
+ * frequency for the radio, "Copied" by it once it is (lib/doneNote).
  */
 export function PointActions({
   point,
@@ -29,7 +29,6 @@ export function PointActions({
 }) {
   const close = useContext(CardCloseContext);
   const { addToRoute, directTo } = usePointActions();
-  const [copied, setCopied] = useState(false);
   const done = (act: (p: ChartPoint) => void) => () => {
     close();
     act({ ident: point.ident, lat: point.lat, lon: point.lon });
@@ -57,13 +56,14 @@ export function PointActions({
       />
       {copy && (
         <CardAction
-          icon={copied ? <Check /> : <ACTION.copy.icon />}
-          label={copied ? "Copied" : copy.label}
+          icon={<ACTION.copy.icon />}
+          label={copy.label}
           spoken={`Copy ${copy.label}`}
           onClick={() => {
-            // Called in the tap, as the clipboard asks; refused, nothing said.
+            // Called in the tap, as the clipboard asks; refused, nothing
+            // said. "Copied" by the tile tapped, which has the focus.
             void copyText(copy.text).then(
-              () => setCopied(true),
+              () => confirm("Copied"),
               () => {},
             );
           }}
