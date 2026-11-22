@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
 import { usePanelDragging } from "../../lib/mapChrome";
+import { prefersReducedMotion } from "../../lib/motion";
 import { SETTLE_MS, shownPx } from "./insets";
 
 /**
@@ -112,7 +113,12 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       const natural = row.getBoundingClientRect().bottom - moved(row) - moved(sheet);
       const room = restingEdge(edge) - natural;
       const lift = liftOf(edge, sheet);
-      setRoom(row, `${room}px`, sheet ? getComputedStyle(sheet).getPropertyValue("--sheet-offset") : "");
+      setRoom(
+        row,
+        `${room}px`,
+        sheet ? getComputedStyle(sheet).getPropertyValue("--sheet-offset") : "",
+        !!sheet?.hasAttribute("data-swiping"),
+      );
       setVar(row, "--pin-lift", `${lift.lift}px`);
       setVar(row, "--pin-pill", `${lift.pill}px`);
       setVar(row, "--pin-half", `${lift.half}px`);
@@ -214,13 +220,20 @@ const offsetAtMeasure = new WeakMap<HTMLElement, string>();
  * (brief-glance.spec: 193 points down at the pill as the route came in, a
  * layout shift of 0.017 under the opening Brief). So that change is set
  * with no ease, committed at once (the computed transform read), and the
- * ease put back for the sheet's next move.
+ * ease put back for the sheet's next move. Not under a finger (`swiping`),
+ * where nothing eases (PIN_AT_FOOT's transition-none) and Base UI holds the
+ * offset still while the finger's own variable moves: every frame of a pull
+ * read as "still", and the strip growing toward the pill changed its room
+ * at each, so each frame wrote the transition twice and forced a style and
+ * layout between, a share of the 250 layouts and 503 style recalcs of a
+ * 24-step pull from half to the pill at CPU 4x, where half to full took 4
+ * and 43 (the motion review of 2026-11-22).
  */
-function setRoom(row: HTMLElement, room: string, offset: string) {
+function setRoom(row: HTMLElement, room: string, offset: string, swiping: boolean) {
   const was = row.style.getPropertyValue("--pin-room");
   const still = offsetAtMeasure.get(row) === offset;
   offsetAtMeasure.set(row, offset);
-  if (!was || was === room || !still) {
+  if (!was || was === room || !still || swiping) {
     row.style.setProperty("--pin-room", room);
     return;
   }
@@ -277,14 +290,14 @@ export function liftAt(slid: number, lift: number, pill: number) {
  * (`pill`), measured from its rect a frame at a time while a finger has
  * it or it settles, so the strip follows the finger (the owner,
  * 2026-11-22: "It should follow finger to look natural"). With Reduce
- * Motion, the end size only: thin until the sheet is at the pill (`held`).
+ * Motion, the end size only: thin until the sheet is at the pill (`held`),
+ * asked of lib/motion's one kept query, as it is asked every frame (a
+ * matchMedia made afresh at each was the cost lib/motion measured).
  */
-export function growAt(slid: number, half: number, pill: number, held: boolean, reduced = reducedMotion()) {
+export function growAt(slid: number, half: number, pill: number, held: boolean, reduced = prefersReducedMotion()) {
   if (reduced || pill <= half) return held ? 1 : 0;
   return Math.round(Math.min(1, Math.max(0, (slid - half) / (pill - half))) * 1000) / 1000;
 }
-
-const reducedMotion = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /** The foot's height, the row's lift off its edge, and the sheet's offset
  *  at the pill: a phone's bottom sheet only (Base UI's data-swipe-direction

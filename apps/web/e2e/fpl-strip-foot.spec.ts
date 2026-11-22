@@ -164,6 +164,46 @@ test("pulled slowly down to the pill, the figures go down with the plan, frame b
   expect((await sample()).height).toBeGreaterThanOrEqual(pulled - 1);
 });
 
+test("stepped from the pill to half, the strip lands thin as the sheet lands, and the tab bar is the same one", async ({ page }) => {
+  // The motion review of 2026-11-22: the figures that are buttons (Dist,
+  // ETE) eased their own type for 150 ms behind the sheet, still shrinking
+  // 37 to 32 points after it had come to rest; and the tab bar was built
+  // afresh at each trip to the pill.
+  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await grabberTo(page, "half");
+  await expect(page.locator("[data-pin-foot]").first().getByTestId("navlog-ete")).toBeVisible({ timeout: slow(90_000) });
+  await page.evaluate(() => document.querySelector('[data-testid="fpl-actions"]')!.setAttribute("data-probe", ""));
+  await grabberTo(page, "peek");
+  await page.waitForTimeout(800);
+  // Each frame after it is drawn: the sheet's top and the strip's height.
+  const frames = page.evaluate(
+    () =>
+      new Promise<{ top: number; h: number }[]>((done) => {
+        const out: { top: number; h: number }[] = [];
+        const until = performance.now() + 1200;
+        const step = () =>
+          setTimeout(() => {
+            const top = document.querySelector('[data-swipe-direction="down"]')!.getBoundingClientRect().top;
+            out.push({ top, h: document.querySelector("[data-pin-foot]")!.getBoundingClientRect().height });
+            if (performance.now() < until) requestAnimationFrame(step);
+            else done(out);
+          }, 0);
+        requestAnimationFrame(step);
+      }),
+  );
+  await grabberTo(page, "half");
+  const s = await frames;
+  const last = s.at(-1)!;
+  // From the first frame the sheet is at rest, the strip is at its rest size too.
+  const rested = s.findIndex((f) => Math.abs(f.top - last.top) < 0.5);
+  expect(rested, "the sheet came to rest in the frames sampled").toBeGreaterThan(0);
+  for (const f of s.slice(rested)) expect(Math.abs(f.h - last.h), `landed with the sheet: ${f.h} of ${last.h}`).toBeLessThanOrEqual(0.5);
+  expect(last.h).toBeLessThanOrEqual(32);
+  await expect(page.locator('[data-testid="fpl-actions"][data-probe]')).toHaveCount(1);
+});
+
 test("with the box turned into the route's field, typed in, the figures stay pinned and thin at half and full", async ({ page }) => {
   // The owner, 2026-11-22: "Route box still shows figures full size."
   test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
