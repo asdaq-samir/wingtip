@@ -63,6 +63,7 @@ internal fun RootRequests(
         when (val opened = link) {
             null -> return@LaunchedEffect
             is Links.Place -> pages.show(SheetPage.Airport(opened.ident))
+            is Links.Doc -> pages.show(SheetPage.Reader(opened.place))
             is Links.Route -> {
                 plan.replaceRoute(opened.dep, opened.dest, opened.stops)
                 showPlan()

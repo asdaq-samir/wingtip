@@ -35,6 +35,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.library.Cited
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.ai.AiSources
 import app.wingtipmaps.android.ai.AiTask
@@ -113,7 +114,8 @@ fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () 
                     // The finding said first, as its glyph shows it.
                     val said = "${findingSaid(BriefModel.finding(item.finding))}: ${item.label}. ${item.detail}"
                     ListItem(
-                        supportingContent = { Text(item.detail) },
+                        // Its why with each cited rule a tap to its paragraph.
+                        supportingContent = { Cited(item.detail) },
                         leadingContent = { FindingIcon(BriefModel.finding(item.finding)) },
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         modifier = Modifier.clearAndSetSemantics { contentDescription = said },

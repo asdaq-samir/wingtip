@@ -2,6 +2,7 @@ package app.wingtipmaps.android
 
 import android.app.assist.AssistContent
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.KeyboardShortcutGroup
@@ -10,16 +11,26 @@ import android.view.Menu
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.core.content.IntentCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.lifecycleScope
 import app.wingtipmaps.android.ai.ScreenContext
+import app.wingtipmaps.android.library.DocPlace
+import app.wingtipmaps.android.library.OwnShelf
+import app.wingtipmaps.android.library.OwnShelf.Companion.addFrom
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.Shortcut
+import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.plan.KeptPlan
 import app.wingtipmaps.android.ui.RootScreen
 import app.wingtipmaps.android.ui.WingtipTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+
+/** What another app shares or opens for the documents library. */
+private const val PDF = "application/pdf"
 
 /**
  * The one activity: the map under the sheet (RootScreen), drawn edge to
@@ -102,11 +113,33 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun open(intent: Intent?) {
+        shared(intent)?.let { pdf ->
+            keep(pdf)
+            return
+        }
         val data = intent?.data ?: return
         when (val link = Links.parse(data.toString())) {
             is Links.SignIn -> session.open(data)
-            is Links.Route, is Links.Place, is Links.Open, is Links.Shared -> pending.value = link
+            is Links.Route, is Links.Place, is Links.Open, is Links.Shared, is Links.Doc -> pending.value = link
             null -> {}
+        }
+    }
+
+    /** A PDF another app shared (Send) or opened with Wingtip (View): the
+     *  manifest's application/pdf filters. */
+    private fun shared(intent: Intent?): Uri? = when (intent?.action) {
+        Intent.ACTION_SEND -> IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+        Intent.ACTION_VIEW -> intent.data?.takeIf { intent.type == PDF || it.scheme == "content" && contentResolver.getType(it) == PDF }
+        else -> null
+    }?.takeIf { it.scheme == "content" }
+
+    /** The PDF kept among the pilot's own documents, on this phone only,
+     *  and opened in the reader; one that is not a PDF is said there. */
+    private fun keep(pdf: Uri) {
+        lifecycleScope.launch {
+            runCatching { OwnShelf.of(this@MainActivity).addFrom(this@MainActivity, pdf) }
+                .onSuccess { pending.value = Links.Doc(DocPlace.own(it.id).text) }
+                .onFailure { pending.value = Links.Open(Screen.DOCUMENTS) }
         }
     }
 }

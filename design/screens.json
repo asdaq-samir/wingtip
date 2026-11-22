@@ -42,7 +42,7 @@
     { "id": "logbook", "title": "Logbook", "about": "The pilot's logbook and currency.", "platforms": ["web", "ios", "android"], "shortcut": 9 },
     { "id": "coach", "title": "Coach", "about": "The training coach.", "platforms": ["web", "ios", "android"], "shortcut": 11 },
     { "id": "minimums", "title": "Personal Minimums", "about": "The weather the pilot will not take off or land in.", "platforms": ["web", "ios", "android"], "shortcut": 12, "shortLabel": "Minimums" },
-    { "id": "documents", "title": "Documents", "about": "The documents library: the FAA's regulations, AIM, handbooks and circulars in their current editions, and the pilot's own PDFs on the device; a cited rule anywhere opens it at its paragraph.", "platforms": ["web", "ios"] },
+    { "id": "documents", "title": "Documents", "about": "The documents library: the FAA's regulations, AIM, handbooks and circulars in their current editions, and the pilot's own PDFs on the device; a cited rule anywhere opens it at its paragraph.", "platforms": ["web", "ios", "android"] },
     { "id": "guide", "title": "Guide", "about": "How the app works, and the practice drills.", "platforms": ["web", "ios"] },
     { "id": "downloads", "title": "Downloads", "about": "Charts kept for flying with no signal.", "platforms": ["ios", "android"], "shortcut": 13 },
     { "id": "passengers", "title": "Passenger Briefing", "about": "The passenger briefing.", "platforms": ["ios", "android"], "shortcut": 14, "shortLabel": "Passengers" },

@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Emergency
 import androidx.compose.material.icons.filled.Flight
@@ -50,6 +51,7 @@ object YouTags {
     const val NAME = "you-name"
     const val ADDRESS = "you-address"
     const val SETTINGS = "settings-row"
+    const val DOCUMENTS = "you-documents"
 }
 
 /**
@@ -61,7 +63,8 @@ object YouTags {
  * (no name: Add Your Name, opening Pilot Details, whose ← comes back
  * here). Then one segmented list of what is the pilot's, each row a round
  * badge, its name, where it stands and a chevron: Pilot Details,
- * Airplanes, Logbook, Minimums, Training and Emergency. Signed out it
+ * Airplanes, Flights, Logbook, Minimums, Documents, Training and
+ * Emergency. Signed out it
  * says so once (the owner, 2026-11-13): its large line is Sign In, opening
  * Pilot Details' sign-in, with no "You" over it, and the account's rows
  * are greyed with nothing more said on each.
@@ -90,8 +93,8 @@ fun YouCard(session: Session, exit: CardExit, open: (SheetPage) -> Unit) {
         ) {
             YouHead(pilot, loaded, onDetails = { open(SheetPage.PilotDetails) })
             // rules.md's You (section 8.1): Airplanes, Flights, Logbook, Minimums,
-            // Training and Emergency, under the pilot's own details.
-            val rows = 7
+            // Documents, Training and Emergency, under the pilot's own details.
+            val rows = 8
             SettingsGroup {
                 YouRow(Icons.Filled.Person, stringResource(R.string.pilot_details), pilot?.homeBase, 0, rows) { open(SheetPage.PilotDetails) }
                 YouRow(Icons.Filled.Flight, stringResource(R.string.airplanes), tail, 1, rows) { open(SheetPage.YourAirplanes) }
@@ -101,10 +104,13 @@ fun YouCard(session: Session, exit: CardExit, open: (SheetPage) -> Unit) {
                 }
                 val kept = if (minimums.ceilingFt != null || minimums.visibilitySm != null) Format.ceilingAndVisibility(minimums.ceilingFt, minimums.visibilitySm) else null
                 YouRow(Icons.Filled.VerifiedUser, stringResource(R.string.minimums), kept, 4, rows) { open(SheetPage.Minimums) }
-                YouRow(Icons.Filled.School, stringResource(R.string.training), null, 5, rows, enabled = signedIn) {
+                // Signed out too: the FAA's shelf and the pilot's own PDFs
+                // need no account (decision 0056).
+                YouRow(Icons.AutoMirrored.Filled.LibraryBooks, stringResource(R.string.documents), null, 5, rows, modifier = Modifier.testTag(YouTags.DOCUMENTS)) { open(SheetPage.Documents) }
+                YouRow(Icons.Filled.School, stringResource(R.string.training), null, 6, rows, enabled = signedIn) {
                     open(SheetPage.Coach)
                 }
-                YouRow(Icons.Filled.Emergency, stringResource(R.string.emergency), null, 6, rows) { EmergencyOpen.open(EmergencyOpen.From.LINK) }
+                YouRow(Icons.Filled.Emergency, stringResource(R.string.emergency), null, 7, rows) { EmergencyOpen.open(EmergencyOpen.From.LINK) }
             }
         }
     }
@@ -112,9 +118,9 @@ fun YouCard(session: Session, exit: CardExit, open: (SheetPage) -> Unit) {
 
 /** One of You's rows: a round badge, the name, where it stands, a chevron. */
 @Composable
-private fun YouRow(icon: ImageVector, title: String, value: String?, index: Int, count: Int, enabled: Boolean = true, onClick: () -> Unit) {
+private fun YouRow(icon: ImageVector, title: String, value: String?, index: Int, count: Int, enabled: Boolean = true, modifier: Modifier = Modifier, onClick: () -> Unit) {
     ActionSettingRow(
-        title, index = index, count = count, enabled = enabled,
+        title, index = index, count = count, enabled = enabled, modifier = modifier,
         leading = {
             Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(Badge)) {
                 Box(contentAlignment = Alignment.Center) {

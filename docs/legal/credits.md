@@ -36,6 +36,7 @@ the terms it is used under.
 | Virtual Radar Server flight routes | CC0 | None owed; credited by choice |
 | Planespotters.net aircraft photos, each credited to its photographer beside it | Planespotters.net's photo API terms | Its terms ask for the photographer's name next to each photo and a link to the photo's page |
 | Wikimedia Commons photos of fields, each credited to its photographer with its licence and linked to its page | Each photo's own licence | Commons' licences (CC BY, CC BY-SA) ask for the author, the licence and where it is from |
+| FAA publications and the eCFR: the documents library's regulations, AIM, handbooks and advisory circulars | Public domain | As above; the eCFR is the Office of the Federal Register's |
 
 ## Maps and software
 
@@ -44,6 +45,7 @@ the terms it is used under.
 | MapLibre GL | BSD 3-Clause | The web map and the Android map |
 | Apple MapKit | Apple's terms | The iPhone's map under the chart |
 | Google Maps Platform map tiles | Google's terms; its attribution is drawn on the map | The web's Google overlay where it is turned on |
+| PdfBox-Android | Apache 2.0 | The Android documents reader's outline and search |
 
 ## Open-source licences
 

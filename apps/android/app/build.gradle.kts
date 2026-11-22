@@ -210,6 +210,14 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.telephoto.zoomable.image.coil3)
     implementation(libs.telephoto.zoomable)
+    // The documents library's reader: a PDF's outline and text, and its ink.
+    implementation(libs.pdfbox.android)
+    implementation(libs.androidx.ink.authoring.compose)
+    implementation(libs.androidx.ink.brush)
+    implementation(libs.androidx.ink.geometry)
+    implementation(libs.androidx.ink.rendering)
+    implementation(libs.androidx.ink.storage)
+    implementation(libs.androidx.ink.strokes)
     // The generated calls to our servers (Retrofit, api/generated/client).
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.kotlinx.serialization)
