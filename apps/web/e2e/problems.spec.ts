@@ -292,8 +292,17 @@ test("the progress line spans the screen and is centred on it", async ({ page })
   const box = (await first.boundingBox())!;
   const viewport = page.viewportSize()!;
 
-  const leftGap = box.x;
-  const rightGap = viewport.width - (box.x + box.width);
+  // Its room: the screen on a phone; from md up the map's beside the side
+  // panel, between the panel's edge and the map's buttons' glass card
+  // (AppToaster).
+  let [from, to] = [0, viewport.width];
+  if (viewport.width >= 768) {
+    const panel = (await page.locator('[data-slot="map-panel"]').boundingBox())!;
+    const buttons = (await page.locator("[data-map-controls] [data-map-group]").boundingBox())!;
+    [from, to] = [panel.x + panel.width, buttons.x];
+  }
+  const leftGap = box.x - from;
+  const rightGap = to - (box.x + box.width);
   expect(leftGap).toBeGreaterThanOrEqual(8); // a gutter, not edge to edge
   expect(Math.abs(leftGap - rightGap)).toBeLessThanOrEqual(2); // centred
   if (viewport.width < 768) {
