@@ -86,7 +86,9 @@ export async function keepFlightPlates(client: QueryClient, wanted: FlightPlates
     while (next < jobs.length && !signal?.aborted) {
       const job = jobs[next++]!;
       try {
-        bytes += await keepChart(client, job.chart, job.ident, signal);
+        // Awaited first: `+= await` would read the total before the wait.
+        const got = await keepChart(client, job.chart, job.ident, signal);
+        bytes += got;
       } catch {
         failed = true;
       }

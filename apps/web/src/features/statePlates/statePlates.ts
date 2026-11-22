@@ -118,7 +118,10 @@ export async function keepState(client: QueryClient, id: string, cycle: string):
       while (next < jobs.length && !controller.signal.aborted) {
         const job = jobs[next++]!;
         try {
-          record.bytes += await keepChart(client, job.chart, job.ident, controller.signal);
+          // Awaited first: `+= await` reads the total before the wait, and
+          // the other fetches' bytes added meanwhile are lost.
+          const got = await keepChart(client, job.chart, job.ident, controller.signal);
+          record.bytes += got;
         } catch {
           if (!controller.signal.aborted) record.failed++;
         }
