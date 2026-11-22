@@ -108,6 +108,12 @@ coil = "3.6.3"
 # GitHub (2026-04-02); Maven Central's "1.0.0-alpha02" is an older 2023
 # preview on Coil 2, not a newer one.
 telephoto = "0.19.0"
+# Jetpack Ink, the scratchpad's stylus and finger writing (scratchpad/):
+# Compose's InProgressStrokes for the low-latency stroke under the pen,
+# the stock pressure pen, the Canvas renderer for the strokes kept, and
+# ink-storage's encoding to keep them on the phone. 1.1.0-alpha12, the
+# newest on Google Maven on 2026-11-21.
+ink = "1.1.0-alpha12"
 # Retrofit 3, the calls to our servers: the interfaces openapi-generator
 # writes from their OpenAPI documents (api/generated/client,
 # scripts/build/api-models-apps.sh), read with kotlinx.serialization, on
@@ -209,6 +215,11 @@ coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp"
 # any content (the diagram with the airplane drawn on it).
 telephoto-zoomable-image-coil3 = { group = "me.saket.telephoto", name = "zoomable-image-coil3", version.ref = "telephoto" }
 telephoto-zoomable = { group = "me.saket.telephoto", name = "zoomable", version.ref = "telephoto" }
+androidx-ink-authoring-compose = { group = "androidx.ink", name = "ink-authoring-compose", version.ref = "ink" }
+androidx-ink-brush = { group = "androidx.ink", name = "ink-brush", version.ref = "ink" }
+androidx-ink-rendering = { group = "androidx.ink", name = "ink-rendering", version.ref = "ink" }
+androidx-ink-storage = { group = "androidx.ink", name = "ink-storage", version.ref = "ink" }
+androidx-ink-strokes = { group = "androidx.ink", name = "ink-strokes", version.ref = "ink" }
 # Retrofit and its kotlinx.serialization converter.
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-converter-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
