@@ -11,6 +11,51 @@ for the builds. From the privacy and store audit of 2026-11-10 (its
 owner steps O1 to O6, and the owner's half of B4 to B6, S4 to S6, S12 and
 S13). Tick each as it is done.
 
+## Urgent: the multicast networking entitlement
+
+- [ ] **Request it now: Apple takes days to weeks.** On a Wi-Fi-only iPad,
+      which has no GPS, the cockpit ADS-B receiver is the only position
+      in flight. The receiver is built and parked behind `WingtipReceiver`
+      in `apps/ios/project.yml` until the entitlement arrives
+      ([../receivers.md](../receivers.md), "The switch", says what to do
+      that day). Until then, qualify the listing's receiver line
+      (listing.md).
+
+      Sign in as the Account Holder at
+      developer.apple.com/contact/request/networking-multicast and
+      choose the App ID `app.wingtipmaps.ios`. The form's fields could
+      not be read without signing in (2026-11-21), so fit the text below
+      to them:
+
+      > **App:** Wingtip Maps, `app.wingtipmaps.ios`, a flight planner
+      > and in-flight moving map for general aviation pilots on iPhone
+      > and iPad.
+      >
+      > **Why it needs multicast and broadcast:** Pilots carry a portable
+      > ADS-B receiver in the cockpit (Stratux, uAvionix SkyEcho,
+      > ForeFlight Sentry). The receiver makes its own Wi-Fi network and
+      > sends the aviation industry's GDL 90 protocol (Garmin
+      > 560-1058-00) as UDP datagrams to port 4000: the airplane's own
+      > GPS position, the traffic around it, and FAA FIS-B weather.
+      > Several of these receivers send the datagrams to the network's
+      > broadcast address (for example 192.168.10.255), not to each
+      > device, so an app without this entitlement never hears them. On
+      > a Wi-Fi-only iPad, which has no GPS of its own, the receiver's
+      > position is the pilot's only position in flight.
+      >
+      > **What the app does:** It only listens, on UDP port 4000, on the
+      > Wi-Fi network the pilot joined. It never sends multicast or
+      > broadcast traffic, opens no other port, and browses no Bonjour
+      > services. The bytes are read on the device into the airplane's
+      > position, traffic and weather. Nothing heard is sent off the
+      > device. Listening starts only when the pilot leaves the setting
+      > on, and the Local Network prompt
+      > (`NSLocalNetworkUsageDescription`) says why.
+      >
+      > **Who uses it:** Pilots flying with a receiver in the cockpit
+      > with no internet, on every flight. Every major EFB on the App
+      > Store works with these receivers.
+
 ## The domain and the contact
 
 - [ ] Register `wingtipmaps.app` (and `wingtipmaps.com`), point it at the
@@ -32,11 +77,8 @@ S13). Tick each as it is done.
       Push Notifications; the App Group `group.app.wingtipmaps` (on the
       app and on `app.wingtipmaps.ios.widgets`); Associated Domains;
       Time-Sensitive Notifications.
-- [ ] Request the multicast networking entitlement
-      (`com.apple.developer.networking.multicast`) for the cockpit ADS-B
-      receiver: Stratux and SkyEcho broadcast GDL 90, which the app hears
-      only with it (`Receiver/ReceiverListener.swift`). Until Apple grants
-      it, qualify the listing's receiver line (listing.md).
+- [ ] The multicast networking entitlement: **urgent**, see
+      [the first section](#urgent-the-multicast-networking-entitlement).
 - [ ] Optional: request the Private Cloud Compute entitlement
       (`apps/ios/project.yml`, `WingtipPrivateCloudCompute`).
 - [ ] A distribution certificate, and App Store profiles for the app,
