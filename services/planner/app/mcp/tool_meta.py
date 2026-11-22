@@ -4,6 +4,8 @@ tool (claude.com/docs/connectors/building/review-criteria: a title and
 readOnlyHint or destructiveHint; developers.openai.com/apps-sdk/reference:
 readOnlyHint, destructiveHint and openWorldHint, each true or false). Read
 tools run without asking each time; a write is confirmed by the pilot.
+The edit tools are read-only too: they change the flight handed to them
+and keep nothing (app.mcp.edit_tools).
 
 openWorldHint is false throughout: every tool reads Wingtip's own data
 sets and the pilot's own account, a bounded set, not the open web.
@@ -24,6 +26,13 @@ def additive(title: str) -> ToolAnnotations:
     (OpenAI's word is for deletions, overwrites and irreversible sends),
     and not read-only, so both hosts ask the pilot before each call."""
     return ToolAnnotations(title=title, read_only_hint=False, destructive_hint=False, idempotent_hint=False, open_world_hint=False)
+
+
+def destructive(title: str) -> ToolAnnotations:
+    """A write that overwrites or deletes what the pilot saved: the host
+    always asks first (Claude's review criteria: destructive tools always
+    prompt; OpenAI's word for deletions and overwrites)."""
+    return ToolAnnotations(title=title, read_only_hint=False, destructive_hint=True, idempotent_hint=True, open_world_hint=False)
 
 
 READS = {"securitySchemes": [{"type": "oauth2", "scopes": [READ]}]}

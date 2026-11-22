@@ -8,6 +8,369 @@
           ],
           "type": "oauth2"
         }
+      ],
+      "ui": {
+        "resourceUri": "ui://wingtip/flight"
+      }
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Add fuel stops"
+    },
+    "description": "Puts in the fuel stops the flight needs where it is short of fuel, each landing with the reserve (14 CFR 91.151, 91.167), as FPL's Add Fuel Stops does. Needs an airplane.",
+    "inputSchema": {
+      "$defs": {
+        "Flight": {
+          "description": "The flight being planned, as every edit tool takes it and answers it.",
+          "properties": {
+            "airplane_tail": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The pilot's own airplane, by tail number.",
+              "title": "Airplane Tail"
+            },
+            "cruise_altitude_ft": {
+              "anyOf": [
+                {
+                  "maximum": 45000,
+                  "minimum": 500,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Feet MSL; none flies the legal fastest.",
+              "title": "Cruise Altitude Ft"
+            },
+            "depart_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "ISO 8601; none is now.",
+              "title": "Depart At"
+            },
+            "departure": {
+              "description": "The departure airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Departure",
+              "type": "string"
+            },
+            "destination": {
+              "description": "The destination airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Destination",
+              "type": "string"
+            },
+            "fuel_on_board": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "default": {},
+              "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "title": "Fuel On Board",
+              "type": "object"
+            },
+            "fuel_stops": {
+              "default": [],
+              "description": "The stops among them where fuel is bought.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Fuel Stops",
+              "type": "array"
+            },
+            "procedures": {
+              "default": "",
+              "description": "Procedures picked, as Wingtip writes them (KDLH:I27:::L); change them with change_approach.",
+              "maxLength": 400,
+              "title": "Procedures",
+              "type": "string"
+            },
+            "rules": {
+              "default": "vfr",
+              "enum": [
+                "vfr",
+                "ifr"
+              ],
+              "title": "Rules",
+              "type": "string"
+            },
+            "saved_flight_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The saved flight this came from, if any.",
+              "title": "Saved Flight Id"
+            },
+            "stops": {
+              "default": [],
+              "description": "Airports or waypoints on the way, in order.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Stops",
+              "type": "array"
+            }
+          },
+          "required": [
+            "departure",
+            "destination"
+          ],
+          "title": "Flight",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "flight": {
+          "$ref": "#/$defs/Flight",
+          "description": "The flight as the last Wingtip answer gave it."
+        }
+      },
+      "required": [
+        "flight"
+      ],
+      "title": "add_fuel_stopsArguments",
+      "type": "object"
+    },
+    "name": "add_fuel_stops",
+    "title": "Add fuel stops"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ],
+      "ui": {
+        "resourceUri": "ui://wingtip/flight"
+      }
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Add a stop"
+    },
+    "description": "Adds an airport or waypoint to the flight's route, at a place among its stops.",
+    "inputSchema": {
+      "$defs": {
+        "Flight": {
+          "description": "The flight being planned, as every edit tool takes it and answers it.",
+          "properties": {
+            "airplane_tail": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The pilot's own airplane, by tail number.",
+              "title": "Airplane Tail"
+            },
+            "cruise_altitude_ft": {
+              "anyOf": [
+                {
+                  "maximum": 45000,
+                  "minimum": 500,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Feet MSL; none flies the legal fastest.",
+              "title": "Cruise Altitude Ft"
+            },
+            "depart_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "ISO 8601; none is now.",
+              "title": "Depart At"
+            },
+            "departure": {
+              "description": "The departure airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Departure",
+              "type": "string"
+            },
+            "destination": {
+              "description": "The destination airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Destination",
+              "type": "string"
+            },
+            "fuel_on_board": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "default": {},
+              "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "title": "Fuel On Board",
+              "type": "object"
+            },
+            "fuel_stops": {
+              "default": [],
+              "description": "The stops among them where fuel is bought.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Fuel Stops",
+              "type": "array"
+            },
+            "procedures": {
+              "default": "",
+              "description": "Procedures picked, as Wingtip writes them (KDLH:I27:::L); change them with change_approach.",
+              "maxLength": 400,
+              "title": "Procedures",
+              "type": "string"
+            },
+            "rules": {
+              "default": "vfr",
+              "enum": [
+                "vfr",
+                "ifr"
+              ],
+              "title": "Rules",
+              "type": "string"
+            },
+            "saved_flight_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The saved flight this came from, if any.",
+              "title": "Saved Flight Id"
+            },
+            "stops": {
+              "default": [],
+              "description": "Airports or waypoints on the way, in order.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Stops",
+              "type": "array"
+            }
+          },
+          "required": [
+            "departure",
+            "destination"
+          ],
+          "title": "Flight",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "flight": {
+          "$ref": "#/$defs/Flight",
+          "description": "The flight as the last Wingtip answer gave it."
+        },
+        "ident": {
+          "description": "An airport or waypoint identifier.",
+          "maxLength": 16,
+          "minLength": 2,
+          "title": "Ident",
+          "type": "string"
+        },
+        "place": {
+          "anyOf": [
+            {
+              "maximum": 16,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Its place among the stops, 1 the first; none is last.",
+          "title": "Place"
+        }
+      },
+      "required": [
+        "flight",
+        "ident"
+      ],
+      "title": "add_stopArguments",
+      "type": "object"
+    },
+    "name": "add_stop",
+    "title": "Add a stop"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
       ]
     },
     "annotations": {
@@ -145,6 +508,268 @@
           ],
           "type": "oauth2"
         }
+      ],
+      "ui": {
+        "resourceUri": "ui://wingtip/flight"
+      }
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Change an approach"
+    },
+    "description": "Loads an approach at one of the route's airports (load, with its id from airport_info's procedures or the error's list), activates it onto the route, deactivates it back to loaded, removes it, or unsuspends or suspends its missed approach at the MAP, as a GPS navigator does.",
+    "inputSchema": {
+      "$defs": {
+        "Flight": {
+          "description": "The flight being planned, as every edit tool takes it and answers it.",
+          "properties": {
+            "airplane_tail": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The pilot's own airplane, by tail number.",
+              "title": "Airplane Tail"
+            },
+            "cruise_altitude_ft": {
+              "anyOf": [
+                {
+                  "maximum": 45000,
+                  "minimum": 500,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Feet MSL; none flies the legal fastest.",
+              "title": "Cruise Altitude Ft"
+            },
+            "depart_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "ISO 8601; none is now.",
+              "title": "Depart At"
+            },
+            "departure": {
+              "description": "The departure airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Departure",
+              "type": "string"
+            },
+            "destination": {
+              "description": "The destination airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Destination",
+              "type": "string"
+            },
+            "fuel_on_board": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "default": {},
+              "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "title": "Fuel On Board",
+              "type": "object"
+            },
+            "fuel_stops": {
+              "default": [],
+              "description": "The stops among them where fuel is bought.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Fuel Stops",
+              "type": "array"
+            },
+            "procedures": {
+              "default": "",
+              "description": "Procedures picked, as Wingtip writes them (KDLH:I27:::L); change them with change_approach.",
+              "maxLength": 400,
+              "title": "Procedures",
+              "type": "string"
+            },
+            "rules": {
+              "default": "vfr",
+              "enum": [
+                "vfr",
+                "ifr"
+              ],
+              "title": "Rules",
+              "type": "string"
+            },
+            "saved_flight_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The saved flight this came from, if any.",
+              "title": "Saved Flight Id"
+            },
+            "stops": {
+              "default": [],
+              "description": "Airports or waypoints on the way, in order.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Stops",
+              "type": "array"
+            }
+          },
+          "required": [
+            "departure",
+            "destination"
+          ],
+          "title": "Flight",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "action": {
+          "enum": [
+            "load",
+            "activate",
+            "deactivate",
+            "remove",
+            "unsuspend_missed",
+            "suspend_missed"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "airport": {
+          "description": "An airport or waypoint identifier.",
+          "maxLength": 16,
+          "minLength": 2,
+          "title": "Airport",
+          "type": "string"
+        },
+        "approach": {
+          "anyOf": [
+            {
+              "maxLength": 12,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The approach's id, for load: I27, R09-Y.",
+          "title": "Approach"
+        },
+        "flight": {
+          "$ref": "#/$defs/Flight",
+          "description": "The flight as the last Wingtip answer gave it."
+        },
+        "transition": {
+          "anyOf": [
+            {
+              "maxLength": 12,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Its transition, for load; none is vectors.",
+          "title": "Transition"
+        }
+      },
+      "required": [
+        "flight",
+        "airport",
+        "action"
+      ],
+      "title": "change_approachArguments",
+      "type": "object"
+    },
+    "name": "change_approach",
+    "title": "Change an approach"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read",
+            "wingtip:write"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Delete a saved flight"
+    },
+    "description": "Deletes one of the pilot's saved flights from their Wingtip account, with its nav log and any track. It cannot be undone from here.",
+    "inputSchema": {
+      "properties": {
+        "flight_id": {
+          "description": "The saved flight's id, as my_flights lists it.",
+          "minimum": 1,
+          "title": "Flight Id",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "flight_id"
+      ],
+      "title": "delete_saved_flightArguments",
+      "type": "object"
+    },
+    "name": "delete_saved_flight",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "delete_saved_flightDictOutput",
+      "type": "object"
+    },
+    "title": "Delete a saved flight"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
       ]
     },
     "annotations": {
@@ -248,6 +873,191 @@
       "type": "object"
     },
     "title": "Flight briefing"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ],
+      "ui": {
+        "resourceUri": "ui://wingtip/flight"
+      }
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Move a stop"
+    },
+    "description": "Moves one of the flight's stops to another place among its stops.",
+    "inputSchema": {
+      "$defs": {
+        "Flight": {
+          "description": "The flight being planned, as every edit tool takes it and answers it.",
+          "properties": {
+            "airplane_tail": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The pilot's own airplane, by tail number.",
+              "title": "Airplane Tail"
+            },
+            "cruise_altitude_ft": {
+              "anyOf": [
+                {
+                  "maximum": 45000,
+                  "minimum": 500,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Feet MSL; none flies the legal fastest.",
+              "title": "Cruise Altitude Ft"
+            },
+            "depart_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "ISO 8601; none is now.",
+              "title": "Depart At"
+            },
+            "departure": {
+              "description": "The departure airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Departure",
+              "type": "string"
+            },
+            "destination": {
+              "description": "The destination airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Destination",
+              "type": "string"
+            },
+            "fuel_on_board": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "default": {},
+              "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "title": "Fuel On Board",
+              "type": "object"
+            },
+            "fuel_stops": {
+              "default": [],
+              "description": "The stops among them where fuel is bought.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Fuel Stops",
+              "type": "array"
+            },
+            "procedures": {
+              "default": "",
+              "description": "Procedures picked, as Wingtip writes them (KDLH:I27:::L); change them with change_approach.",
+              "maxLength": 400,
+              "title": "Procedures",
+              "type": "string"
+            },
+            "rules": {
+              "default": "vfr",
+              "enum": [
+                "vfr",
+                "ifr"
+              ],
+              "title": "Rules",
+              "type": "string"
+            },
+            "saved_flight_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The saved flight this came from, if any.",
+              "title": "Saved Flight Id"
+            },
+            "stops": {
+              "default": [],
+              "description": "Airports or waypoints on the way, in order.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Stops",
+              "type": "array"
+            }
+          },
+          "required": [
+            "departure",
+            "destination"
+          ],
+          "title": "Flight",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "flight": {
+          "$ref": "#/$defs/Flight",
+          "description": "The flight as the last Wingtip answer gave it."
+        },
+        "ident": {
+          "description": "An airport or waypoint identifier.",
+          "maxLength": 16,
+          "minLength": 2,
+          "title": "Ident",
+          "type": "string"
+        },
+        "place": {
+          "maximum": 16,
+          "minimum": 1,
+          "title": "Place",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "flight",
+        "ident",
+        "place"
+      ],
+      "title": "move_stopArguments",
+      "type": "object"
+    },
+    "name": "move_stop",
+    "title": "Move a stop"
   },
   {
     "_meta": {
@@ -442,6 +1252,230 @@
           ],
           "type": "oauth2"
         }
+      ],
+      "ui": {
+        "resourceUri": "ui://wingtip/flight"
+      }
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Open a saved flight"
+    },
+    "description": "Opens one of the pilot's saved flights in Wingtip's live view, to read or change it: its route, altitude, procedures, airplane and time, as the flight the edit tools take.",
+    "inputSchema": {
+      "properties": {
+        "flight_id": {
+          "description": "The saved flight's id, as my_flights lists it.",
+          "minimum": 1,
+          "title": "Flight Id",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "flight_id"
+      ],
+      "title": "open_saved_flightArguments",
+      "type": "object"
+    },
+    "name": "open_saved_flight",
+    "title": "Open a saved flight"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ],
+      "ui": {
+        "resourceUri": "ui://wingtip/flight"
+      }
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Pick airplane"
+    },
+    "description": "Flies the flight on one of the pilot's own airplanes by tail number (my_airplanes lists them), or on none, which plans only the miles, courses and altitudes, never a stock airplane's times or fuel.",
+    "inputSchema": {
+      "$defs": {
+        "Flight": {
+          "description": "The flight being planned, as every edit tool takes it and answers it.",
+          "properties": {
+            "airplane_tail": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The pilot's own airplane, by tail number.",
+              "title": "Airplane Tail"
+            },
+            "cruise_altitude_ft": {
+              "anyOf": [
+                {
+                  "maximum": 45000,
+                  "minimum": 500,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Feet MSL; none flies the legal fastest.",
+              "title": "Cruise Altitude Ft"
+            },
+            "depart_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "ISO 8601; none is now.",
+              "title": "Depart At"
+            },
+            "departure": {
+              "description": "The departure airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Departure",
+              "type": "string"
+            },
+            "destination": {
+              "description": "The destination airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Destination",
+              "type": "string"
+            },
+            "fuel_on_board": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "default": {},
+              "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "title": "Fuel On Board",
+              "type": "object"
+            },
+            "fuel_stops": {
+              "default": [],
+              "description": "The stops among them where fuel is bought.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Fuel Stops",
+              "type": "array"
+            },
+            "procedures": {
+              "default": "",
+              "description": "Procedures picked, as Wingtip writes them (KDLH:I27:::L); change them with change_approach.",
+              "maxLength": 400,
+              "title": "Procedures",
+              "type": "string"
+            },
+            "rules": {
+              "default": "vfr",
+              "enum": [
+                "vfr",
+                "ifr"
+              ],
+              "title": "Rules",
+              "type": "string"
+            },
+            "saved_flight_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The saved flight this came from, if any.",
+              "title": "Saved Flight Id"
+            },
+            "stops": {
+              "default": [],
+              "description": "Airports or waypoints on the way, in order.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Stops",
+              "type": "array"
+            }
+          },
+          "required": [
+            "departure",
+            "destination"
+          ],
+          "title": "Flight",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "flight": {
+          "$ref": "#/$defs/Flight",
+          "description": "The flight as the last Wingtip answer gave it."
+        },
+        "tail": {
+          "anyOf": [
+            {
+              "maxLength": 8,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "A tail number, or none.",
+          "title": "Tail"
+        }
+      },
+      "required": [
+        "flight",
+        "tail"
+      ],
+      "title": "pick_airplaneArguments",
+      "type": "object"
+    },
+    "name": "pick_airplane",
+    "title": "Pick airplane"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
       ]
     },
     "annotations": {
@@ -545,6 +1579,354 @@
       "type": "object"
     },
     "title": "Plan a route"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ],
+      "ui": {
+        "resourceUri": "ui://wingtip/flight"
+      }
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Remove fuel stops"
+    },
+    "description": "Takes the fuel stops out of the route, leaving the pilot's other stops.",
+    "inputSchema": {
+      "$defs": {
+        "Flight": {
+          "description": "The flight being planned, as every edit tool takes it and answers it.",
+          "properties": {
+            "airplane_tail": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The pilot's own airplane, by tail number.",
+              "title": "Airplane Tail"
+            },
+            "cruise_altitude_ft": {
+              "anyOf": [
+                {
+                  "maximum": 45000,
+                  "minimum": 500,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Feet MSL; none flies the legal fastest.",
+              "title": "Cruise Altitude Ft"
+            },
+            "depart_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "ISO 8601; none is now.",
+              "title": "Depart At"
+            },
+            "departure": {
+              "description": "The departure airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Departure",
+              "type": "string"
+            },
+            "destination": {
+              "description": "The destination airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Destination",
+              "type": "string"
+            },
+            "fuel_on_board": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "default": {},
+              "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "title": "Fuel On Board",
+              "type": "object"
+            },
+            "fuel_stops": {
+              "default": [],
+              "description": "The stops among them where fuel is bought.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Fuel Stops",
+              "type": "array"
+            },
+            "procedures": {
+              "default": "",
+              "description": "Procedures picked, as Wingtip writes them (KDLH:I27:::L); change them with change_approach.",
+              "maxLength": 400,
+              "title": "Procedures",
+              "type": "string"
+            },
+            "rules": {
+              "default": "vfr",
+              "enum": [
+                "vfr",
+                "ifr"
+              ],
+              "title": "Rules",
+              "type": "string"
+            },
+            "saved_flight_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The saved flight this came from, if any.",
+              "title": "Saved Flight Id"
+            },
+            "stops": {
+              "default": [],
+              "description": "Airports or waypoints on the way, in order.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Stops",
+              "type": "array"
+            }
+          },
+          "required": [
+            "departure",
+            "destination"
+          ],
+          "title": "Flight",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "flight": {
+          "$ref": "#/$defs/Flight",
+          "description": "The flight as the last Wingtip answer gave it."
+        }
+      },
+      "required": [
+        "flight"
+      ],
+      "title": "remove_fuel_stopsArguments",
+      "type": "object"
+    },
+    "name": "remove_fuel_stops",
+    "title": "Remove fuel stops"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ],
+      "ui": {
+        "resourceUri": "ui://wingtip/flight"
+      }
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Remove a stop"
+    },
+    "description": "Takes a stop out of the flight's route.",
+    "inputSchema": {
+      "$defs": {
+        "Flight": {
+          "description": "The flight being planned, as every edit tool takes it and answers it.",
+          "properties": {
+            "airplane_tail": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The pilot's own airplane, by tail number.",
+              "title": "Airplane Tail"
+            },
+            "cruise_altitude_ft": {
+              "anyOf": [
+                {
+                  "maximum": 45000,
+                  "minimum": 500,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Feet MSL; none flies the legal fastest.",
+              "title": "Cruise Altitude Ft"
+            },
+            "depart_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "ISO 8601; none is now.",
+              "title": "Depart At"
+            },
+            "departure": {
+              "description": "The departure airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Departure",
+              "type": "string"
+            },
+            "destination": {
+              "description": "The destination airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Destination",
+              "type": "string"
+            },
+            "fuel_on_board": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "default": {},
+              "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "title": "Fuel On Board",
+              "type": "object"
+            },
+            "fuel_stops": {
+              "default": [],
+              "description": "The stops among them where fuel is bought.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Fuel Stops",
+              "type": "array"
+            },
+            "procedures": {
+              "default": "",
+              "description": "Procedures picked, as Wingtip writes them (KDLH:I27:::L); change them with change_approach.",
+              "maxLength": 400,
+              "title": "Procedures",
+              "type": "string"
+            },
+            "rules": {
+              "default": "vfr",
+              "enum": [
+                "vfr",
+                "ifr"
+              ],
+              "title": "Rules",
+              "type": "string"
+            },
+            "saved_flight_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The saved flight this came from, if any.",
+              "title": "Saved Flight Id"
+            },
+            "stops": {
+              "default": [],
+              "description": "Airports or waypoints on the way, in order.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Stops",
+              "type": "array"
+            }
+          },
+          "required": [
+            "departure",
+            "destination"
+          ],
+          "title": "Flight",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "flight": {
+          "$ref": "#/$defs/Flight",
+          "description": "The flight as the last Wingtip answer gave it."
+        },
+        "ident": {
+          "description": "An airport or waypoint identifier.",
+          "maxLength": 16,
+          "minLength": 2,
+          "title": "Ident",
+          "type": "string"
+        }
+      },
+      "required": [
+        "flight",
+        "ident"
+      ],
+      "title": "remove_stopArguments",
+      "type": "object"
+    },
+    "name": "remove_stop",
+    "title": "Remove a stop"
   },
   {
     "_meta": {
@@ -665,6 +2047,177 @@
       "securitySchemes": [
         {
           "scopes": [
+            "wingtip:read",
+            "wingtip:write"
+          ],
+          "type": "oauth2"
+        }
+      ],
+      "ui": {
+        "resourceUri": "ui://wingtip/flight"
+      }
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Save flight plan to Wingtip"
+    },
+    "description": "Saves the flight being planned to the pilot's Wingtip account as a new saved flight, planned as the live view shows it. Adds a flight; changes nothing already saved.",
+    "inputSchema": {
+      "$defs": {
+        "Flight": {
+          "description": "The flight being planned, as every edit tool takes it and answers it.",
+          "properties": {
+            "airplane_tail": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The pilot's own airplane, by tail number.",
+              "title": "Airplane Tail"
+            },
+            "cruise_altitude_ft": {
+              "anyOf": [
+                {
+                  "maximum": 45000,
+                  "minimum": 500,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Feet MSL; none flies the legal fastest.",
+              "title": "Cruise Altitude Ft"
+            },
+            "depart_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "ISO 8601; none is now.",
+              "title": "Depart At"
+            },
+            "departure": {
+              "description": "The departure airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Departure",
+              "type": "string"
+            },
+            "destination": {
+              "description": "The destination airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Destination",
+              "type": "string"
+            },
+            "fuel_on_board": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "default": {},
+              "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "title": "Fuel On Board",
+              "type": "object"
+            },
+            "fuel_stops": {
+              "default": [],
+              "description": "The stops among them where fuel is bought.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Fuel Stops",
+              "type": "array"
+            },
+            "procedures": {
+              "default": "",
+              "description": "Procedures picked, as Wingtip writes them (KDLH:I27:::L); change them with change_approach.",
+              "maxLength": 400,
+              "title": "Procedures",
+              "type": "string"
+            },
+            "rules": {
+              "default": "vfr",
+              "enum": [
+                "vfr",
+                "ifr"
+              ],
+              "title": "Rules",
+              "type": "string"
+            },
+            "saved_flight_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The saved flight this came from, if any.",
+              "title": "Saved Flight Id"
+            },
+            "stops": {
+              "default": [],
+              "description": "Airports or waypoints on the way, in order.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Stops",
+              "type": "array"
+            }
+          },
+          "required": [
+            "departure",
+            "destination"
+          ],
+          "title": "Flight",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "flight": {
+          "$ref": "#/$defs/Flight",
+          "description": "The flight as the last Wingtip answer gave it."
+        }
+      },
+      "required": [
+        "flight"
+      ],
+      "title": "save_flight_planArguments",
+      "type": "object"
+    },
+    "name": "save_flight_plan",
+    "title": "Save flight plan to Wingtip"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
             "wingtip:read"
           ],
           "type": "oauth2"
@@ -710,5 +2263,905 @@
       "type": "object"
     },
     "title": "Search airports"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ],
+      "ui": {
+        "resourceUri": "ui://wingtip/flight"
+      }
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Set cruise altitude"
+    },
+    "description": "Sets the flight's cruise altitude in feet MSL, or none for the legal fastest for the winds. An altitude that is not legal on a leg is flown anyway and said in the altitude cautions.",
+    "inputSchema": {
+      "$defs": {
+        "Flight": {
+          "description": "The flight being planned, as every edit tool takes it and answers it.",
+          "properties": {
+            "airplane_tail": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The pilot's own airplane, by tail number.",
+              "title": "Airplane Tail"
+            },
+            "cruise_altitude_ft": {
+              "anyOf": [
+                {
+                  "maximum": 45000,
+                  "minimum": 500,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Feet MSL; none flies the legal fastest.",
+              "title": "Cruise Altitude Ft"
+            },
+            "depart_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "ISO 8601; none is now.",
+              "title": "Depart At"
+            },
+            "departure": {
+              "description": "The departure airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Departure",
+              "type": "string"
+            },
+            "destination": {
+              "description": "The destination airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Destination",
+              "type": "string"
+            },
+            "fuel_on_board": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "default": {},
+              "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "title": "Fuel On Board",
+              "type": "object"
+            },
+            "fuel_stops": {
+              "default": [],
+              "description": "The stops among them where fuel is bought.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Fuel Stops",
+              "type": "array"
+            },
+            "procedures": {
+              "default": "",
+              "description": "Procedures picked, as Wingtip writes them (KDLH:I27:::L); change them with change_approach.",
+              "maxLength": 400,
+              "title": "Procedures",
+              "type": "string"
+            },
+            "rules": {
+              "default": "vfr",
+              "enum": [
+                "vfr",
+                "ifr"
+              ],
+              "title": "Rules",
+              "type": "string"
+            },
+            "saved_flight_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The saved flight this came from, if any.",
+              "title": "Saved Flight Id"
+            },
+            "stops": {
+              "default": [],
+              "description": "Airports or waypoints on the way, in order.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Stops",
+              "type": "array"
+            }
+          },
+          "required": [
+            "departure",
+            "destination"
+          ],
+          "title": "Flight",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "altitude_ft": {
+          "anyOf": [
+            {
+              "maximum": 45000,
+              "minimum": 500,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Feet MSL, or none.",
+          "title": "Altitude Ft"
+        },
+        "flight": {
+          "$ref": "#/$defs/Flight",
+          "description": "The flight as the last Wingtip answer gave it."
+        }
+      },
+      "required": [
+        "flight",
+        "altitude_ft"
+      ],
+      "title": "set_cruise_altitudeArguments",
+      "type": "object"
+    },
+    "name": "set_cruise_altitude",
+    "title": "Set cruise altitude"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ],
+      "ui": {
+        "resourceUri": "ui://wingtip/flight"
+      }
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Set departure time"
+    },
+    "description": "Sets when the flight leaves (ISO 8601, UTC without an offset), or none for now.",
+    "inputSchema": {
+      "$defs": {
+        "Flight": {
+          "description": "The flight being planned, as every edit tool takes it and answers it.",
+          "properties": {
+            "airplane_tail": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The pilot's own airplane, by tail number.",
+              "title": "Airplane Tail"
+            },
+            "cruise_altitude_ft": {
+              "anyOf": [
+                {
+                  "maximum": 45000,
+                  "minimum": 500,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Feet MSL; none flies the legal fastest.",
+              "title": "Cruise Altitude Ft"
+            },
+            "depart_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "ISO 8601; none is now.",
+              "title": "Depart At"
+            },
+            "departure": {
+              "description": "The departure airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Departure",
+              "type": "string"
+            },
+            "destination": {
+              "description": "The destination airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Destination",
+              "type": "string"
+            },
+            "fuel_on_board": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "default": {},
+              "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "title": "Fuel On Board",
+              "type": "object"
+            },
+            "fuel_stops": {
+              "default": [],
+              "description": "The stops among them where fuel is bought.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Fuel Stops",
+              "type": "array"
+            },
+            "procedures": {
+              "default": "",
+              "description": "Procedures picked, as Wingtip writes them (KDLH:I27:::L); change them with change_approach.",
+              "maxLength": 400,
+              "title": "Procedures",
+              "type": "string"
+            },
+            "rules": {
+              "default": "vfr",
+              "enum": [
+                "vfr",
+                "ifr"
+              ],
+              "title": "Rules",
+              "type": "string"
+            },
+            "saved_flight_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The saved flight this came from, if any.",
+              "title": "Saved Flight Id"
+            },
+            "stops": {
+              "default": [],
+              "description": "Airports or waypoints on the way, in order.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Stops",
+              "type": "array"
+            }
+          },
+          "required": [
+            "departure",
+            "destination"
+          ],
+          "title": "Flight",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "depart_at": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "ISO 8601, or none.",
+          "title": "Depart At"
+        },
+        "flight": {
+          "$ref": "#/$defs/Flight",
+          "description": "The flight as the last Wingtip answer gave it."
+        }
+      },
+      "required": [
+        "flight",
+        "depart_at"
+      ],
+      "title": "set_departure_timeArguments",
+      "type": "object"
+    },
+    "name": "set_departure_time",
+    "title": "Set departure time"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ],
+      "ui": {
+        "resourceUri": "ui://wingtip/flight"
+      }
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Set fuel on board"
+    },
+    "description": "Sets the gallons in the tanks leaving one of the route's airports (the departure when none is named): at a stop, what it is fuelled to, 0 for none bought.",
+    "inputSchema": {
+      "$defs": {
+        "Flight": {
+          "description": "The flight being planned, as every edit tool takes it and answers it.",
+          "properties": {
+            "airplane_tail": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The pilot's own airplane, by tail number.",
+              "title": "Airplane Tail"
+            },
+            "cruise_altitude_ft": {
+              "anyOf": [
+                {
+                  "maximum": 45000,
+                  "minimum": 500,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Feet MSL; none flies the legal fastest.",
+              "title": "Cruise Altitude Ft"
+            },
+            "depart_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "ISO 8601; none is now.",
+              "title": "Depart At"
+            },
+            "departure": {
+              "description": "The departure airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Departure",
+              "type": "string"
+            },
+            "destination": {
+              "description": "The destination airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Destination",
+              "type": "string"
+            },
+            "fuel_on_board": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "default": {},
+              "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "title": "Fuel On Board",
+              "type": "object"
+            },
+            "fuel_stops": {
+              "default": [],
+              "description": "The stops among them where fuel is bought.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Fuel Stops",
+              "type": "array"
+            },
+            "procedures": {
+              "default": "",
+              "description": "Procedures picked, as Wingtip writes them (KDLH:I27:::L); change them with change_approach.",
+              "maxLength": 400,
+              "title": "Procedures",
+              "type": "string"
+            },
+            "rules": {
+              "default": "vfr",
+              "enum": [
+                "vfr",
+                "ifr"
+              ],
+              "title": "Rules",
+              "type": "string"
+            },
+            "saved_flight_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The saved flight this came from, if any.",
+              "title": "Saved Flight Id"
+            },
+            "stops": {
+              "default": [],
+              "description": "Airports or waypoints on the way, in order.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Stops",
+              "type": "array"
+            }
+          },
+          "required": [
+            "departure",
+            "destination"
+          ],
+          "title": "Flight",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "airport": {
+          "anyOf": [
+            {
+              "maxLength": 16,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Where; the departure when none.",
+          "title": "Airport"
+        },
+        "flight": {
+          "$ref": "#/$defs/Flight",
+          "description": "The flight as the last Wingtip answer gave it."
+        },
+        "gallons": {
+          "maximum": 2000,
+          "minimum": 0,
+          "title": "Gallons",
+          "type": "number"
+        }
+      },
+      "required": [
+        "flight",
+        "gallons"
+      ],
+      "title": "set_fuel_on_boardArguments",
+      "type": "object"
+    },
+    "name": "set_fuel_on_board",
+    "title": "Set fuel on board"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ],
+      "ui": {
+        "resourceUri": "ui://wingtip/flight"
+      }
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Show flight in Wingtip"
+    },
+    "description": "Opens the flight in Wingtip's live view beside the chat -- the chart with the route, the route's points with their times and fuel, and the figures -- planned by Wingtip's nav log. Give at least the departure and destination. Every edit tool answers the flight changed, to pass to the next one.",
+    "inputSchema": {
+      "$defs": {
+        "Flight": {
+          "description": "The flight being planned, as every edit tool takes it and answers it.",
+          "properties": {
+            "airplane_tail": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The pilot's own airplane, by tail number.",
+              "title": "Airplane Tail"
+            },
+            "cruise_altitude_ft": {
+              "anyOf": [
+                {
+                  "maximum": 45000,
+                  "minimum": 500,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Feet MSL; none flies the legal fastest.",
+              "title": "Cruise Altitude Ft"
+            },
+            "depart_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "ISO 8601; none is now.",
+              "title": "Depart At"
+            },
+            "departure": {
+              "description": "The departure airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Departure",
+              "type": "string"
+            },
+            "destination": {
+              "description": "The destination airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Destination",
+              "type": "string"
+            },
+            "fuel_on_board": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "default": {},
+              "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "title": "Fuel On Board",
+              "type": "object"
+            },
+            "fuel_stops": {
+              "default": [],
+              "description": "The stops among them where fuel is bought.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Fuel Stops",
+              "type": "array"
+            },
+            "procedures": {
+              "default": "",
+              "description": "Procedures picked, as Wingtip writes them (KDLH:I27:::L); change them with change_approach.",
+              "maxLength": 400,
+              "title": "Procedures",
+              "type": "string"
+            },
+            "rules": {
+              "default": "vfr",
+              "enum": [
+                "vfr",
+                "ifr"
+              ],
+              "title": "Rules",
+              "type": "string"
+            },
+            "saved_flight_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The saved flight this came from, if any.",
+              "title": "Saved Flight Id"
+            },
+            "stops": {
+              "default": [],
+              "description": "Airports or waypoints on the way, in order.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Stops",
+              "type": "array"
+            }
+          },
+          "required": [
+            "departure",
+            "destination"
+          ],
+          "title": "Flight",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "flight": {
+          "$ref": "#/$defs/Flight",
+          "description": "The flight as the last Wingtip answer gave it."
+        }
+      },
+      "required": [
+        "flight"
+      ],
+      "title": "show_flightArguments",
+      "type": "object"
+    },
+    "name": "show_flight",
+    "title": "Show flight in Wingtip"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read",
+            "wingtip:write"
+          ],
+          "type": "oauth2"
+        }
+      ],
+      "ui": {
+        "resourceUri": "ui://wingtip/flight"
+      }
+    },
+    "annotations": {
+      "destructiveHint": true,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false,
+      "title": "Replace a saved flight"
+    },
+    "description": "Replaces the saved flight this flight came from (its saved_flight_id) with the flight as now planned: its route, altitude, procedures, airplane, time and nav log. Its name and notes are kept.",
+    "inputSchema": {
+      "$defs": {
+        "Flight": {
+          "description": "The flight being planned, as every edit tool takes it and answers it.",
+          "properties": {
+            "airplane_tail": {
+              "anyOf": [
+                {
+                  "maxLength": 8,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The pilot's own airplane, by tail number.",
+              "title": "Airplane Tail"
+            },
+            "cruise_altitude_ft": {
+              "anyOf": [
+                {
+                  "maximum": 45000,
+                  "minimum": 500,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "Feet MSL; none flies the legal fastest.",
+              "title": "Cruise Altitude Ft"
+            },
+            "depart_at": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "ISO 8601; none is now.",
+              "title": "Depart At"
+            },
+            "departure": {
+              "description": "The departure airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Departure",
+              "type": "string"
+            },
+            "destination": {
+              "description": "The destination airport's identifier.",
+              "maxLength": 16,
+              "minLength": 2,
+              "title": "Destination",
+              "type": "string"
+            },
+            "fuel_on_board": {
+              "additionalProperties": {
+                "type": "number"
+              },
+              "default": {},
+              "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "title": "Fuel On Board",
+              "type": "object"
+            },
+            "fuel_stops": {
+              "default": [],
+              "description": "The stops among them where fuel is bought.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Fuel Stops",
+              "type": "array"
+            },
+            "procedures": {
+              "default": "",
+              "description": "Procedures picked, as Wingtip writes them (KDLH:I27:::L); change them with change_approach.",
+              "maxLength": 400,
+              "title": "Procedures",
+              "type": "string"
+            },
+            "rules": {
+              "default": "vfr",
+              "enum": [
+                "vfr",
+                "ifr"
+              ],
+              "title": "Rules",
+              "type": "string"
+            },
+            "saved_flight_id": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "description": "The saved flight this came from, if any.",
+              "title": "Saved Flight Id"
+            },
+            "stops": {
+              "default": [],
+              "description": "Airports or waypoints on the way, in order.",
+              "items": {
+                "maxLength": 16,
+                "minLength": 2,
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Stops",
+              "type": "array"
+            }
+          },
+          "required": [
+            "departure",
+            "destination"
+          ],
+          "title": "Flight",
+          "type": "object"
+        }
+      },
+      "properties": {
+        "flight": {
+          "$ref": "#/$defs/Flight",
+          "description": "The flight as the last Wingtip answer gave it."
+        }
+      },
+      "required": [
+        "flight"
+      ],
+      "title": "update_saved_flightArguments",
+      "type": "object"
+    },
+    "name": "update_saved_flight",
+    "title": "Replace a saved flight"
   }
 ]

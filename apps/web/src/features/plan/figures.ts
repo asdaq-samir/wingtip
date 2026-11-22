@@ -45,6 +45,10 @@ interface TripInput {
    *  calculations as in the profile") -- the hop it is on, the distance and
    *  time left, the arrival, and the fuel required less what it has burnt. */
   flown?: Flown | null;
+  /** The engine's strip_fuel answer, where it was asked elsewhere: the
+   *  connector's live view, whose host runs no WebAssembly, is sent the
+   *  planner's (app.mcp.flight_view). */
+  strip?: ReturnType<typeof stripFuel>;
 }
 
 /** The flight to the next landing: the route's first hop where it has
@@ -104,6 +108,7 @@ export function tripFigures({
   toDestination = false,
   flown = null,
   statute = false,
+  strip: given,
 }: TripInput): Figure[] {
   const guessed = !totals && !local && estimate ? guess(estimate) : null;
   const from = depart || new Date().toISOString();
@@ -141,7 +146,7 @@ export function tripFigures({
   const distance = left ? left.nm : (leg?.distance_nm ?? null);
   const minutes = left ? left.min : (leg?.ete_min ?? null);
   const time = minutes === null ? "—" : duration(minutes);
-  const strip = stripFuel(totals, flown?.hop ?? 0, flown ? flown.burntGal : null);
+  const strip = given ?? stripFuel(totals, flown?.hop ?? 0, flown ? flown.burntGal : null);
   const required = strip.required_gal;
   const start = flown ? new Date(flown.now * 1000).toISOString() : from;
   const fuel = required == null ? null : one(required);

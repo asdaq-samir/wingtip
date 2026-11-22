@@ -95,7 +95,10 @@ class ConnectionsTest extends AccountTestBase {
         mockMvc.perform(get("/api/me/connections").with(as(pilot)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].app").value("Claude"));
+                .andExpect(jsonPath("$[0].app").value("Claude"))
+                // What it may do, in the consent page's words: this one only reads.
+                .andExpect(jsonPath("$[0].can.length()").value(1))
+                .andExpect(jsonPath("$[0].can[0]").value("Read your airplanes and saved flights, and plan with them"));
 
         // Another pilot's connection reads as none and stays.
         mockMvc.perform(delete("/api/me/connections/" + theirs).with(as(pilot)).with(csrf()))

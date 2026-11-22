@@ -2,6 +2,7 @@ package app.wingtipmaps.gateway.security.mcp;
 
 import app.wingtipmaps.gateway.config.AppProperties;
 import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -15,11 +16,28 @@ import org.springframework.stereotype.Component;
 public class ConnectorSettings {
 
     /** What a pilot may grant: their records read and planned with, and
-     *  a flight saved to their account. Nothing else is ever issued. */
+     *  their saved flights saved, changed and deleted. Nothing else is
+     *  ever issued. */
     public static final String READ = "wingtip:read";
 
     public static final String WRITE = "wingtip:write";
     public static final List<String> SCOPES = List.of(READ, WRITE);
+
+    /** What each scope lets the AI app do, in the pilot's words: the
+     *  consent page asks with them and Connected Apps says them. */
+    public static final Map<String, String> SCOPE_WORDS = Map.of(
+            READ, "Read your airplanes and saved flights, and plan with them",
+            WRITE, "Save, change and delete your saved flights");
+
+    /** A connection's granted scopes ("wingtip:read wingtip:write") in those words. */
+    public static List<String> wordsOf(String scopes) {
+        return scopes == null
+                ? List.of()
+                : SCOPES.stream()
+                        .filter(List.of(scopes.split("[ ,]"))::contains)
+                        .map(SCOPE_WORDS::get)
+                        .toList();
+    }
 
     private final boolean enabled;
     private final String issuer;

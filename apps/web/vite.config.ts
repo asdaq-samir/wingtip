@@ -14,6 +14,7 @@ import { MANIFEST, themeColor } from "./vite-plugins/manifest.ts";
 import { CHUNK_SIZE_LIMIT, strictRolldown, warningsFail } from "./vite-plugins/strictBuild.ts";
 import { STAGING, publish, publishDir } from "./vite-plugins/publishBuild.ts";
 import { licences } from "./vite-plugins/licences.ts";
+import { claudeView } from "./vite-plugins/claudeView.ts";
 
 // The page reader's files (features/airplane/lib/readPage), from node_modules into the
 // build's tesseract/ under their own names, where tesseract.js asks for
@@ -48,6 +49,8 @@ export default defineConfig({
     // The open-source licences, /app/licences.txt (About's Open-Source Licences).
     licences,
     tesseractFiles,
+    // The connector's live view, one self-contained page (claude-view.html).
+    claudeView,
     preloadEngine,
     themeColor,
     react(),
@@ -105,7 +108,7 @@ export default defineConfig({
         // The legal pages are files, not routes of the app: a miss in
         // the precache (the first load after a deploy) must reach the
         // server, not fall back to the app shell.
-        navigateFallbackDenylist: [/\/(privacy|terms|support)\.html$/],
+        navigateFallbackDenylist: [/\/(privacy|terms|support|claude-view)\.html$/],
         // wasm: the shared engine (lib/engine), which the page waits for
         // before it draws, so it must be there with no network.
         // mjs: MapLibre's worker (lib/map/gl/worker), without which the map
@@ -120,6 +123,8 @@ export default defineConfig({
           "**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2",
           "**/{DevPanel,TrainWorkspace}-*.js",
           "tesseract/**",
+          // The connector's live view, which Claude shows, not this app.
+          "claude-view.html",
         ],
         runtimeCaching: [
           {

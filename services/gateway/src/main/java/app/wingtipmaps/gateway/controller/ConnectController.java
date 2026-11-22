@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Optional;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
@@ -30,11 +29,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Controller
 @Hidden
 public class ConnectController {
-
-    /** What each scope lets the AI app do, in the pilot's words. */
-    static final Map<String, String> SCOPE_WORDS = Map.of(
-            ConnectorSettings.READ, "Read your airplanes and saved flights, and plan with them",
-            ConnectorSettings.WRITE, "Save flights to your Wingtip account");
 
     private static final OAuth2TokenType STATE = new OAuth2TokenType(OAuth2ParameterNames.STATE);
 
@@ -110,7 +104,11 @@ public class ConnectController {
         model.addAttribute(
                 "scopes",
                 Arrays.stream(scope.split(" ")).filter(s -> !s.isBlank()).toList());
-        model.addAttribute("scopeWords", SCOPE_WORDS);
+        model.addAttribute("scopeWords", ConnectorSettings.SCOPE_WORDS);
+        // Writing to the pilot's account is theirs to leave out: a box,
+        // ticked, where reading is what connecting is for (the connector's
+        // tools then plan and show flights but save none).
+        model.addAttribute("optionalScope", ConnectorSettings.WRITE);
         return "connect/consent";
     }
 }

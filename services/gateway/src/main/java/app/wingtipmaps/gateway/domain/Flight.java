@@ -143,6 +143,20 @@ public class Flight {
         return this;
     }
 
+    /** The same flight planned again with another route or airplane (the
+     *  connector's update_saved_flight): its name, notes, share link and
+     *  track are kept; the nav log is filed again after. */
+    public Flight replanned(Aircraft flownIn, String newDeparture, String newDestination) {
+        this.aircraft = flownIn;
+        this.departureIdent = newDeparture;
+        this.destinationIdent = newDestination;
+        this.plannedFor = null;
+        this.riskScore = null;
+        this.riskLevel = null;
+        this.riskFactors = null;
+        return this;
+    }
+
     public Flight plannedFor(Instant when) {
         this.plannedFor = when;
         return this;

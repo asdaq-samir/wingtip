@@ -29,6 +29,10 @@ import { prefetchRouteBox } from "./features/route/routeBoxChunk";
 import { prefetchShareMenu } from "./features/share/shareMenuChunk";
 import { loadPopups } from "./components/popupsChunk";
 import "./index.css";
+// Inter, the text face, here rather than in index.css, which the
+// connector's live view shares (claude-view.html): its host's sandbox
+// loads no font of its own, and the view's one file would carry them all.
+import "@fontsource-variable/inter";
 // Barlow, the face of both looks (lib/brand), in the first stylesheet
 // rather than fetched once the app has drawn: drawn first in the system's
 // face and swapped, the tabs' and every other word shrank as the page

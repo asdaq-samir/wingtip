@@ -5,7 +5,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/inter";
 /* The design tokens: every colour, the corners, the motion, by theme and
    look, generated from design/tokens.json (scripts/build/design-tokens.sh). */
 @import "./styles/tokens.css";

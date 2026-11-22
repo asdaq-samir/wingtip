@@ -138,6 +138,7 @@ public class ConnectorGrants {
                         r.getString(1),
                         r.getString(2),
                         r.getString(3),
+                        ConnectorSettings.wordsOf(r.getString(3)),
                         instant(r.getTimestamp(4)),
                         instant(r.getTimestamp(5))),
                 Long.toString(pilotId));

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { latOf, mercX, mercY, tileFraction, tileOf } from "./tileMath";
+import { fitZoom, latOf, mercX, mercY, tileFraction, tileOf } from "./tileMath";
 
 describe("the slippy-map tile a point is in", () => {
   it("is the OSM wiki's own example: Duluth at zoom 10", () => {
@@ -25,5 +25,34 @@ describe("the Web Mercator world, 0 to 1 each way", () => {
 
   it("gives a latitude back from where it falls", () => {
     for (const lat of [-60, -12.5, 0, 33.9425, 71]) expect(latOf(mercY(lat))).toBeCloseTo(lat, 9);
+  });
+});
+
+describe("the zoom that frames a set of points", () => {
+  const route = [
+    { lat: 42.3172, lon: -88.0905 },
+    { lat: 46.8421, lon: -92.1936 },
+  ];
+  it("is the highest whole zoom that fits them in the box", () => {
+    const z = fitZoom(route, 360, 224, 28, 5, 11);
+    expect(z).toBe(5);
+    expect(fitZoom(route, 2000, 2000, 28, 5, 11)).toBeGreaterThan(z);
+  });
+  it("keeps to the bounds, a lone point at the highest", () => {
+    expect(fitZoom([route[0]!], 360, 224, 28, 5, 11)).toBe(11);
+    expect(fitZoom([], 360, 224, 28, 5, 11)).toBe(5);
+    expect(
+      fitZoom(
+        [
+          { lat: 20, lon: -160 },
+          { lat: 60, lon: -60 },
+        ],
+        100,
+        100,
+        0,
+        5,
+        11,
+      ),
+    ).toBe(5);
   });
 });
