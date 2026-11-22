@@ -1,0 +1,91 @@
+# The local stack held to the launch server's size, a t3a.large's 2 vCPU
+# and 8 GB (docs/README-AWS.md, "Sizing"), so the after-merge campaign's
+# figures mean something for production (docs/TESTING-AFTER-MERGE.md).
+# Laid over the live tree's own files by scripts/dev/after-merge/lib.sh:
+#
+#   docker compose -p wingtip -f docker-compose.yml [-f docker-compose.override.yml] \
+#     -f infra/load-tests/t3a-large.yml up -d
+#
+# CPU: the server's services share two cores, none has its own, so every
+# service is pinned to the same two of the Docker VM's (T3A_CPUSET, "0,1")
+# and k6 runs on others (lib.sh). An Apple core does more a second than a
+# t3a's EPYC thread, so a pass here is a ceiling, not a promise.
+#
+# Memory: each service's limit is production's where it has one (ingest
+# 384m, weather 768m, infra/docker-compose.prod.yml); the rest are shares
+# of what the server leaves after its system, Docker and page cache (about
+# 1.3 GB): the planner 3 GB, the gateway 1.5 GB, Postgres 1 GB. Together
+# 6.7 GB of the 8. Production gives the planner, the gateway and Postgres
+# no limit of their own, so on the server one of them can take the others'
+# memory; here each is held to its share, and the report says which hit it.
+#
+# Settings as production's where they change the work: the planner without
+# its access log, JSON log lines, no chart refresh or cycle staged in the
+# background, its health check's ten minutes; Postgres's slow-statement
+# log. The one setting that is not production's: the gateway's sign-in
+# links per caller an hour (20), which every k6 pilot shares from one
+# address; per address (5 an hour) stays.
+x-t3a: &t3a
+  cpuset: ${T3A_CPUSET:-0,1}
+
+services:
+  db:
+    <<: *t3a
+    mem_limit: 1g
+    command:
+      - postgres
+      - -c
+      - log_min_duration_statement=500
+      - -c
+      - log_lock_waits=on
+      - -c
+      - log_parameter_max_length=0
+
+  planner:
+    <<: *t3a
+    mem_limit: 3g
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
+    environment:
+      LOG_FORMAT: json
+      CHARTS_AUTO_REFRESH: "0"
+      CHARTS_CYCLE_AUTO: "0"
+    healthcheck:
+      interval: 10s
+      timeout: 5s
+      retries: 60
+
+  ingest:
+    <<: *t3a
+    mem_limit: 384m
+    environment:
+      LOG_FORMAT: json
+
+  weather:
+    <<: *t3a
+    mem_limit: 768m
+    environment:
+      LOG_FORMAT: json
+    healthcheck:
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  gateway:
+    <<: *t3a
+    mem_limit: 1536m
+    environment:
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=40 -XX:TieredStopAtLevel=1
+      APP_MAGIC_LINK_PER_CLIENT_PER_HOUR: "100000"
+    healthcheck:
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+
+  mailpit:
+    <<: *t3a
+    mem_limit: 128m
+
+  dev-services:
+    <<: *t3a
+    mem_limit: 64m

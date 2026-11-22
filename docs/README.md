@@ -15,6 +15,7 @@ Each fact lives in one doc; the others link to it.
 | [README-AWS.md](README-AWS.md) | The AWS design (not deployed yet), its cost, the first deploy and running it |
 | [OPERATIONS.md](OPERATIONS.md) | What is monitored (services, live feeds, faults and speed from devices), the thresholds, and where alerts go |
 | [RUNBOOKS.md](RUNBOOKS.md) | What to do for each production alert: a service down, a feed outage, a bad or late FAA cycle, the disk filling, a rollback, a Spot interruption, certificate renewal, restoring a backup (and its drill), reading the logs, the load test |
+| [TESTING-AFTER-MERGE.md](TESTING-AFTER-MERGE.md) | The campaign run once a wave is merged: the restore drill, stress, soak, spike, chaos, the cycle changeover rehearsal and the security scans, each with its limit and time, the one command, and how to read its report |
 | [STUDIO-PIPELINE.md](STUDIO-PIPELINE.md) | The Studio's crash films: the stages from an FAA report to a film, what is automatic and what a person does, and the rules (identity by three sources, "preliminary", no cause, no names, the hold, publishing a person's) |
 | [decisions/](decisions/README.md) | The owner's standing decisions, one page each with the reason, so none is undone by accident |
 | [LEARNING-GUIDE.md](LEARNING-GUIDE.md) | Why it is built this way, concept by concept, to build something like it yourself |
