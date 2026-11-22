@@ -30,12 +30,32 @@
         }
       }
     },
+    "%@ %@ runway" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ runway"
+          }
+        }
+      }
+    },
     "%@ %@ → %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ %2$@ → %3$@"
+          }
+        }
+      }
+    },
+    "%@ %@%@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@%3$@%4$@"
           }
         }
       }
@@ -55,6 +75,16 @@
     },
     "%@ Fuel Flow" : {
 
+    },
+    "%@ RWY %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ RWY %2$@"
+          }
+        }
+      }
     },
     "%@ Squawks" : {
 
@@ -322,6 +352,26 @@
         }
       }
     },
+    "%@%@: change it" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$@: change it"
+          }
+        }
+      }
+    },
+    "%@%@: more" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$@: more"
+          }
+        }
+      }
+    },
     "%@'s ATIS could not be fetched; check the connection." : {
 
     },
@@ -406,6 +456,9 @@
         }
       }
     },
+    "%@: more" : {
+
+    },
     "%@T" : {
 
     },
@@ -461,6 +514,9 @@
     "%lld ft wide" : {
 
     },
+    "%lld kt" : {
+
+    },
     "%lld more" : {
 
     },
@@ -514,6 +570,9 @@
       }
     },
     "%lld×" : {
+
+    },
+    "+ %@" : {
 
     },
     "+%lld" : {
@@ -629,6 +688,16 @@
     },
     "Add ${approach} to the route" : {
 
+    },
+    "Add %@ at %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add %1$@ at %2$@"
+          }
+        }
+      }
     },
     "Add Airplane" : {
 
@@ -805,8 +874,21 @@
     "Approach" : {
 
     },
+    "Approach Brief" : {
+
+    },
     "Approach Plates" : {
 
+    },
+    "Arrives %@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Arrives %1$@%2$@"
+          }
+        }
+      }
     },
     "As Charted" : {
 
@@ -884,6 +966,9 @@
 
     },
     "Avery B. Student" : {
+
+    },
+    "Back" : {
 
     },
     "Balance" : {
@@ -973,6 +1058,9 @@
     "Cancel Direct" : {
 
     },
+    "Cannot be picked: %@" : {
+
+    },
     "Caution ahead" : {
 
     },
@@ -998,6 +1086,12 @@
 
     },
     "Change Hold…" : {
+
+    },
+    "Change Stop…" : {
+
+    },
+    "Change…" : {
 
     },
     "Chart" : {
@@ -1352,6 +1446,12 @@
     "Departure %@" : {
 
     },
+    "Departure Time" : {
+
+    },
+    "Departure from %@" : {
+
+    },
     "Departure hours" : {
 
     },
@@ -1665,6 +1765,9 @@
 
     },
     "Fetching the airspace here…" : {
+
+    },
+    "Fetching the approach…" : {
 
     },
     "Fetching the destination's forecast…" : {
@@ -1990,6 +2093,9 @@
     "Fuel Required" : {
 
     },
+    "Fuel Set" : {
+
+    },
     "Fuel in the Tanks" : {
 
     },
@@ -2035,6 +2141,12 @@
     "Ground Speed" : {
 
     },
+    "Ground speed" : {
+
+    },
+    "Ground speed on the final" : {
+
+    },
     "Groundspeed" : {
 
     },
@@ -2060,6 +2172,9 @@
 
     },
     "Help & About" : {
+
+    },
+    "Help Improve Wingtip Maps" : {
 
     },
     "Here's the entry from your flight; check it and log it." : {
@@ -2180,6 +2295,9 @@
     "In Words" : {
 
     },
+    "In place of %@" : {
+
+    },
     "In still air: the winds there could not be read." : {
 
     },
@@ -2246,6 +2364,12 @@
     "Into the Pattern · Within %@ ft" : {
 
     },
+    "Into the Wind" : {
+
+    },
+    "Into the Wind (%@)" : {
+
+    },
     "Invert Plate Colors" : {
 
     },
@@ -2289,6 +2413,9 @@
 
     },
     "KDLH VOT" : {
+
+    },
+    "KPWK DCT OBK V100 KLAS" : {
 
     },
     "KXXX" : {
@@ -2379,6 +2506,9 @@
     "Layers" : {
 
     },
+    "Leaves" : {
+
+    },
     "Leaving" : {
 
     },
@@ -2426,6 +2556,9 @@
 
     },
     "Legs · %@" : {
+
+    },
+    "Lesson step" : {
 
     },
     "Let's Go Flying" : {
@@ -3238,6 +3371,9 @@
     "Pick one for the time, fuel and groundspeed" : {
 
     },
+    "Picks another %@" : {
+
+    },
     "Pilot Details" : {
 
     },
@@ -3320,6 +3456,9 @@
     "Plans your route with an airplane, by its N-number." : {
 
     },
+    "Plate" : {
+
+    },
     "Plates" : {
 
     },
@@ -3390,6 +3529,9 @@
 
     },
     "Put in the flight's track from a GPX file." : {
+
+    },
+    "Puts %@ in the route" : {
 
     },
     "Puts an approach on your route at its airport and opens the Brief." : {
@@ -3592,6 +3734,16 @@
     "Runway %@" : {
 
     },
+    "Runway %@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Runway %1$@%2$@"
+          }
+        }
+      }
+    },
     "Runway Visual Range, ft" : {
 
     },
@@ -3725,6 +3877,9 @@
 
     },
     "Send to Your Passengers" : {
+
+    },
+    "Sends crashes and speed figures, with nothing of yours." : {
 
     },
     "Server" : {
@@ -4000,6 +4155,16 @@
     },
     "Steady" : {
 
+    },
+    "Step %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Step %1$lld of %2$lld"
+          }
+        }
+      }
     },
     "Stop" : {
 
@@ -4332,6 +4497,9 @@
     "The route, its stops and what was set on it go. Shake to undo." : {
 
     },
+    "The route, its stops and what was set on it go. Undo brings them back." : {
+
+    },
     "The route, nav log, profile and brief, one tap away on the FPL button." : {
 
     },
@@ -4452,6 +4620,9 @@
     "Training Tools Are Off" : {
 
     },
+    "Training aid, fly the FAA plate" : {
+
+    },
     "Training and Endorsements" : {
 
     },
@@ -4503,7 +4674,13 @@
     "Type" : {
 
     },
+    "Type Route" : {
+
+    },
     "Type of aircraft, as C172" : {
+
+    },
+    "Type or paste the whole route" : {
 
     },
     "Type or say a field, a town or a route in the search above. Wingtip plans from where you are: the route, the checkpoints you'll see from the air, the nav log and a weather brief, all on one strip." : {
@@ -4906,6 +5083,9 @@
 
     },
     "nm" : {
+
+    },
+    "none picked" : {
 
     },
     "not known" : {

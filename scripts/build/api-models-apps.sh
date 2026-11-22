@@ -134,7 +134,14 @@ for server in planner gateway; do
       # A number's default as Kotlin writes a Double (kotlin.Double("0") is
       # the generator's BigDecimal form, which does not compile).
       sed -E -e "s/[[:space:]]*$//" -e 's/kotlin\.Double\("(-?[0-9]+)"\)/\1.0/g' \
-        -e 's/kotlin\.Double\("(-?[0-9]+\.[0-9]+)"\)/\1/g' "$f"; } | cat -s >"$dest"
+        -e 's/kotlin\.Double\("(-?[0-9]+\.[0-9]+)"\)/\1/g' "$f"
+    } | awk '!(/^$/ && blank) { print } { blank = /^$/ }' >"$dest"
+    # Runs of blank lines squeezed to one by awk, a line at a time, not
+    # by `cat -s`: Ubuntu 26.04's cat (uutils 0.10.0, CI's runner) drops
+    # the one blank line where a read of the pipe starts on a line's end
+    # followed by it, so CI wrote a blank line fewer than the Mac wherever
+    # sed's output fell that way (after GatewayApi's recent and
+    # PlannerApi's weatherLoopFrames, validate-wave2 run 44968065738).
   done
 done
 

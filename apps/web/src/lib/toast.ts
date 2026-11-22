@@ -43,10 +43,22 @@ const mounted = new Promise<void>((resolve) => {
 });
 const listeners = new Set<() => void>();
 
-/** The managers, asked for once; AppToaster mounts its Toaster from then on. */
+/** Settles as the browser next says it is online. */
+export const backOnline = () => new Promise<void>((resolve) => window.addEventListener("online", () => resolve(), { once: true }));
+
+/** The managers, asked for once; AppToaster mounts its Toaster from then
+ *  on. A chunk that could not be had (the page went offline before it
+ *  was idle) is asked for again as the connection comes back, so the
+ *  queue below waits rather than failing every toast after it. */
 export function loadToasts(): Promise<Managers> {
   if (!manager) {
-    manager = import("./toastManager");
+    const asked: Promise<Managers> = import("./toastManager").catch(() =>
+      backOnline().then(() => {
+        if (manager === asked) manager = null;
+        return loadToasts();
+      }),
+    );
+    manager = asked;
     listeners.forEach((listener) => listener());
   }
   return manager;
