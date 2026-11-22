@@ -3270,6 +3270,13 @@ export interface EngineContract {
     answer: ReceiverNexradAnswer;
   };
   /**
+   * Own ship from the receiver's GPS or the device's (GDL 90 560-1058-00 Rev A 3.4, 3.5.1.6, 3.8). The receiver's Ownship Report is a fix only while the receiver is heard, its Heartbeat says GPS Pos Valid (3.1.1), the report is under 3 s old and not extrapolated (AC 120-76D 11.17.2.3's three seconds) and its NIC and NACp reach 14 CFR 91.227(c)(1)'s floor (NIC 7, under 0.2 nm; NACp 8, under 0.05 nm). It is used where the device has no fresh fix (a Wi-Fi iPad) or the receiver's is better by twice, the device's accuracy put on the EPU's 95%; the one in use is kept until the other is twice as good, and the device's is taken back the moment the receiver's goes. Height is the GPS's, MSL where the receiver says so (ForeFlight's ID message), else ellipsoid_ft alone for a geoid model; pressure altitude is a flight level only at and above 18,000 ft (14 CFR 91.121(a)(2), 1.1).
+   */
+  receiver_position: {
+    input: ReceiverPositionInput;
+    answer: ReceiverPositionAnswer;
+  };
+  /**
    * A portable ADS-B receiver's GDL 90 bytes (Garmin 560-1058-00 Rev A; ForeFlight's ID message) read into what it has said: its state, own ship, the traffic it hears (AIM 4-5-7, 4-5-8) and the FIS-B products it is sent (AIM 4-5-9), each dropped once it is no longer heard. Traffic is for seeing, not avoiding (AIM 4-5-7).
    */
   receiver_read: {
@@ -11650,6 +11657,12 @@ export interface ReceiverPicture {
   texts: ReceiverText[];
   nexrad: ReceiverBlock[];
 }
+/**
+ * The receiver's own state, as its Heartbeat and ID message say.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ReceiverState".
+ */
 export interface ReceiverState {
   /**
    * The name its ID message gives (Stratux, Sentry, SkyEcho).
@@ -11752,6 +11765,10 @@ export interface ReceiverOwnship {
    * Its Vertical Figure of Merit, m.
    */
   vfom_m: number | null;
+  /**
+   * The Ownship Geometric Altitude's Vertical Warning (GDL 90 3.8): its height is not to be trusted.
+   */
+  vertical_warning: boolean;
 }
 /**
  * An airplane a receiver reports (GDL 90's Traffic or Ownship Report, 560-1058-00 Rev A 3.5.1), as heard.
@@ -11888,6 +11905,87 @@ export interface ReceiverNexradLevel {
    */
   level: number;
   rects: [number, number, number, number][];
+}
+export interface ReceiverPositionInput {
+  /**
+   * The picture's own ship.
+   */
+  ownship?: ReceiverOwnship | null;
+  /**
+   * The picture's receiver.
+   */
+  receiver?: ReceiverState | null;
+  /**
+   * The device's last fix, or null where it has none.
+   */
+  device?: ReceiverPositionDevice | null;
+  /**
+   * The source the last answer gave (receiver, device or none).
+   */
+  was?: string | null;
+  /**
+   * Now, Unix s.
+   */
+  at: number;
+}
+export interface ReceiverPositionDevice {
+  /**
+   * The device's horizontal accuracy, m (a 68% radius).
+   */
+  accuracy_m: number;
+  /**
+   * When the device's fix was taken, Unix s.
+   */
+  at: number;
+}
+export interface ReceiverPositionAnswer {
+  /**
+   * Whose fix own ship is.
+   */
+  source: "receiver" | "device" | "none";
+  /**
+   * The receiver's fix: good, or why it is not used (none heard, no GPS, stale, under 91.227's NIC and NACp).
+   */
+  receiver: "good" | "none" | "no_gps" | "stale" | "weak";
+  /**
+   * The receiver's fix, where it is the source.
+   */
+  fix: ReceiverFix | null;
+}
+export interface ReceiverFix {
+  lat: number;
+  lon: number;
+  /**
+   * GPS height MSL, ft, where the receiver gives MSL.
+   */
+  altitude_ft: number | null;
+  /**
+   * GPS height above the WGS-84 ellipsoid, ft, where that is what the receiver gives.
+   */
+  ellipsoid_ft: number | null;
+  /**
+   * Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4).
+   */
+  pressure_ft: number | null;
+  /**
+   * The pressure altitude as a flight level, at and above 18,000 ft only.
+   */
+  flight_level: number | null;
+  /**
+   * True track, degrees, where the report gives one.
+   */
+  track_deg: number | null;
+  groundspeed_kt: number | null;
+  vertical_fpm: number | null;
+  /**
+   * The NACp's bound on the 95% horizontal error, m.
+   */
+  accuracy_m: number;
+  airborne: boolean;
+  /**
+   * When the report was heard, Unix s.
+   */
+  at: number;
 }
 export interface ReceiverReadInput {
   /**

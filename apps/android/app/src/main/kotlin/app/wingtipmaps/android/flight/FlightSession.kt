@@ -3,6 +3,7 @@ package app.wingtipmaps.android.flight
 import android.content.Context
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.notify.LiveFlight
+import app.wingtipmaps.android.receiver.Receiver
 import app.wingtipmaps.android.records.Records
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
@@ -34,7 +35,11 @@ class FlightSession @Inject constructor(@param:ApplicationContext private val co
 
     /** The app's one path, in filesDir/own-trail.json. */
     val trail: OwnTrail by lazy { OwnTrail(File(context.filesDir, "own-trail.json")) }
-    val ownShip: OwnShip by lazy { OwnShip(context, trail) }
+    val ownShip: OwnShip by lazy {
+        // The cockpit receiver's GPS weighed against the device's for own
+        // ship after each read (OwnShipSource).
+        OwnShip(context, trail).also { own -> Receiver.of(context).onOwnship = { o, state -> own.fromReceiver(o, state) } }
+    }
     val tracking: Tracking by lazy { Tracking(context, Records.database(context).dao(), Ticker.shared, scope) }
     val traffic: Traffic by lazy { Traffic(context, Ticker.shared, scope, ownShip, tracking) }
     val spoken: SpokenAlerts by lazy { SpokenAlerts(context) }

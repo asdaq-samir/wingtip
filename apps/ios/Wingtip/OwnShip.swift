@@ -26,6 +26,15 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     }
 
     private(set) var fix: Fix?
+    /// Whose fix `fix` is, and what the engine said of the receiver's
+    /// (OwnShipSource): nil until a receiver has been heard, when own
+    /// ship is the device's alone, as it always was.
+    private(set) var weighed: OwnShipSource.Weighed?
+    /// The device's own last fix, kept while the receiver's is shown, so
+    /// it can be taken back the moment the receiver's goes.
+    @ObservationIgnored private var deviceFix: Fix?
+    /// The receiver's own ship and state as last read (Receiver.onOwnship).
+    @ObservationIgnored private var heard: (own: EngineContract.ReceiverOwnship?, state: EngineContract.ReceiverState)?
     /// The fix's height as the traffic is marked against it (to 10 ft,
     /// Traffic.markedFt), changed only when it changes: what the map reads,
     /// so it is not drawn again at every fix's wander of a few feet.
@@ -145,7 +154,46 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
             trackDeg: last.course >= 0 ? last.course : nil,
             groundspeedKt: last.speed >= 0 ? last.speed * Units.ktPerMS : nil,
             accuracyM: last.horizontalAccuracy, at: last.timestamp)
-        Task { @MainActor in self.took(fix) }
+        Task { @MainActor in self.fromDevice(fix) }
+    }
+
+    /// The device's fix: own ship as before while no receiver is heard,
+    /// else weighed against the receiver's.
+    private func fromDevice(_ fix: Fix) {
+        deviceFix = fix
+        if heard == nil { took(fix) } else { weigh() }
+    }
+
+    /// The receiver's own ship after each read; nils with the receiver
+    /// turned off, when the device's fix is own ship again.
+    func fromReceiver(_ own: EngineContract.ReceiverOwnship?, _ state: EngineContract.ReceiverState?) {
+        guard let state else {
+            heard = nil
+            let was = weighed?.source
+            weighed = nil
+            if was == .receiver || was == OwnShipSource.none { handBack() }
+            return
+        }
+        heard = (own, state)
+        weigh()
+    }
+
+    /// The engine's choice applied: the receiver's fix when it is the
+    /// source, the device's when that is, and none where neither has one
+    /// (AC 120-76D 11.17.2.3: no airplane drawn from a stale fix).
+    private func weigh(now: Date = Date()) {
+        guard let heard, let next = OwnShipSource.weigh(own: heard.own, receiver: heard.state, device: deviceFix,
+                                                        was: weighed?.source ?? .device, now: now) else { return }
+        if next != weighed { weighed = next }
+        switch next.source {
+        case .receiver: if let receiverFix = next.fix, receiverFix.at != fix?.at { took(receiverFix) }
+        case .device: if let deviceFix, deviceFix.at != fix?.at { took(deviceFix) }
+        case .none: if fix != nil { fix = nil; markedFt = nil }
+        }
+    }
+
+    private func handBack() {
+        if let deviceFix { took(deviceFix) } else { fix = nil; markedFt = nil }
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {

@@ -10436,6 +10436,8 @@ enum EngineContract {
         var geometricFt: Double?
         /// Its Vertical Figure of Merit, m.
         var vfomM: Double?
+        /// The Ownship Geometric Altitude's Vertical Warning (GDL 90 3.8): its height is not to be trusted.
+        var verticalWarning: Bool
 
         enum CodingKeys: String, CodingKey {
             case hex
@@ -10461,19 +10463,120 @@ enum EngineContract {
             case at
             case geometricFt = "geometric_ft"
             case vfomM = "vfom_m"
+            case verticalWarning = "vertical_warning"
         }
     }
 
     /// What a receiver has said so far: hand it back with the next bytes.
     struct ReceiverPicture: Codable, Equatable, Sendable {
-        var receiver: EngineContract.ReceiverPictureReceiver
+        var receiver: EngineContract.ReceiverState
         var ownship: EngineContract.ReceiverOwnship?
         var targets: [EngineContract.ReceiverTarget]
         var texts: [EngineContract.ReceiverText]
         var nexrad: [EngineContract.ReceiverBlock]
     }
 
-    struct ReceiverPictureReceiver: Codable, Equatable, Sendable {
+    struct ReceiverPositionAnswer: Codable, Equatable, Sendable {
+        /// Whose fix own ship is.
+        var source: String
+        /// The receiver's fix: good, or why it is not used (none heard, no GPS, stale, under 91.227's NIC and NACp).
+        var receiver: String
+        /// The receiver's fix, where it is the source.
+        var fix: EngineContract.ReceiverPositionAnswerFix?
+    }
+
+    struct ReceiverPositionAnswerFix: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
+        /// GPS height MSL, ft, where the receiver gives MSL.
+        var altitudeFt: Double?
+        /// GPS height above the WGS-84 ellipsoid, ft, where that is what the receiver gives.
+        var ellipsoidFt: Double?
+        /// Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4).
+        var pressureFt: Double?
+        /// The pressure altitude as a flight level, at and above 18,000 ft only.
+        var flightLevel: Double?
+        /// True track, degrees, where the report gives one.
+        var trackDeg: Double?
+        var groundspeedKt: Double?
+        var verticalFpm: Double?
+        /// The NACp's bound on the 95% horizontal error, m.
+        var accuracyM: Double
+        var airborne: Bool
+        /// When the report was heard, Unix s.
+        var at: Double
+
+        enum CodingKeys: String, CodingKey {
+            case lat
+            case lon
+            case altitudeFt = "altitude_ft"
+            case ellipsoidFt = "ellipsoid_ft"
+            case pressureFt = "pressure_ft"
+            case flightLevel = "flight_level"
+            case trackDeg = "track_deg"
+            case groundspeedKt = "groundspeed_kt"
+            case verticalFpm = "vertical_fpm"
+            case accuracyM = "accuracy_m"
+            case airborne
+            case at
+        }
+    }
+
+    struct ReceiverPositionInput: Codable, Equatable, Sendable {
+        /// The picture's own ship.
+        var ownship: EngineContract.ReceiverOwnship?
+        /// The picture's receiver.
+        var receiver: EngineContract.ReceiverState?
+        /// The device's last fix, or null where it has none.
+        var device: EngineContract.ReceiverPositionInputDevice?
+        /// The source the last answer gave (receiver, device or none).
+        var was: String?
+        /// Now, Unix s.
+        var at: Double
+    }
+
+    struct ReceiverPositionInputDevice: Codable, Equatable, Sendable {
+        /// The device's horizontal accuracy, m (a 68% radius).
+        var accuracyM: Double
+        /// When the device's fix was taken, Unix s.
+        var at: Double
+
+        enum CodingKeys: String, CodingKey {
+            case accuracyM = "accuracy_m"
+            case at
+        }
+    }
+
+    struct ReceiverReadInput: Codable, Equatable, Sendable {
+        /// The bytes received since the last read (whole UDP datagrams), Base64 (RFC 4648).
+        var data: String?
+        /// Now, Unix s: when the bytes came.
+        var at: Double
+        /// The last answer, or null at first.
+        var picture: EngineContract.ReceiverPicture?
+    }
+
+    /// A field's report as FIS-B sent it: its kind (METAR, SPECI, TAF), its words as sent, the product's time HHMMZ and when it was last heard, Unix s.
+    struct ReceiverReport: Codable, Equatable, Sendable {
+        var kind: String
+        var text: String
+        var time: String
+        var at: Double
+    }
+
+    struct ReceiverReportsAnswer: Codable, Equatable, Sendable {
+        var metar: EngineContract.ReceiverReport?
+        var taf: EngineContract.ReceiverReport?
+    }
+
+    struct ReceiverReportsInput: Codable, Equatable, Sendable {
+        /// The last answer, or null at first.
+        var picture: EngineContract.ReceiverPicture?
+        var ident: String
+    }
+
+    /// The receiver's own state, as its Heartbeat and ID message say.
+    struct ReceiverState: Codable, Equatable, Sendable {
         /// The name its ID message gives (Stratux, Sentry, SkyEcho).
         var name: String?
         var longName: String?
@@ -10514,34 +10617,6 @@ enum EngineContract {
             case stationLon = "station_lon"
             case stationAt = "station_at"
         }
-    }
-
-    struct ReceiverReadInput: Codable, Equatable, Sendable {
-        /// The bytes received since the last read (whole UDP datagrams), Base64 (RFC 4648).
-        var data: String?
-        /// Now, Unix s: when the bytes came.
-        var at: Double
-        /// The last answer, or null at first.
-        var picture: EngineContract.ReceiverPicture?
-    }
-
-    /// A field's report as FIS-B sent it: its kind (METAR, SPECI, TAF), its words as sent, the product's time HHMMZ and when it was last heard, Unix s.
-    struct ReceiverReport: Codable, Equatable, Sendable {
-        var kind: String
-        var text: String
-        var time: String
-        var at: Double
-    }
-
-    struct ReceiverReportsAnswer: Codable, Equatable, Sendable {
-        var metar: EngineContract.ReceiverReport?
-        var taf: EngineContract.ReceiverReport?
-    }
-
-    struct ReceiverReportsInput: Codable, Equatable, Sendable {
-        /// The last answer, or null at first.
-        var picture: EngineContract.ReceiverPicture?
-        var ident: String
     }
 
     /// An airplane a receiver reports (GDL 90's Traffic or Ownship Report, 560-1058-00 Rev A 3.5.1), as heard.

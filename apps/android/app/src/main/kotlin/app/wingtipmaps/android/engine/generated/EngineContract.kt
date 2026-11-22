@@ -10714,6 +10714,11 @@ object EngineContract {
          */
         @SerialName("vfom_m")
         val vfomM: Double? = null,
+        /**
+         * The Ownship Geometric Altitude's Vertical Warning (GDL 90 3.8): its height is not to be trusted.
+         */
+        @SerialName("vertical_warning")
+        val verticalWarning: Boolean,
     )
 
     /**
@@ -10721,7 +10726,7 @@ object EngineContract {
      */
     @Serializable
     data class ReceiverPicture(
-        val receiver: EngineContract.ReceiverPictureReceiver,
+        val receiver: EngineContract.ReceiverState,
         val ownship: EngineContract.ReceiverOwnship? = null,
         val targets: List<EngineContract.ReceiverTarget>,
         val texts: List<EngineContract.ReceiverText>,
@@ -10729,46 +10734,101 @@ object EngineContract {
     )
 
     @Serializable
-    data class ReceiverPictureReceiver(
+    data class ReceiverPositionAnswer(
         /**
-         * The name its ID message gives (Stratux, Sentry, SkyEcho).
+         * Whose fix own ship is.
          */
-        val name: String? = null,
-        @SerialName("long_name")
-        val longName: String? = null,
-        val stratux: Boolean,
-        @SerialName("heartbeat_at")
-        val heartbeatAt: Double? = null,
+        val source: String,
         /**
-         * A Heartbeat came in the last 5 s (one a second, GDL 90 3.1).
+         * The receiver's fix: good, or why it is not used (none heard, no GPS, stale, under 91.227's NIC and NACp).
          */
-        val live: Boolean,
+        val receiver: String,
         /**
-         * One line for the receiver's chip: "Stratux · 12 targets · GPS".
+         * The receiver's fix, where it is the source.
          */
-        val summary: String,
-        val gps: Boolean,
-        @SerialName("utc_ok")
-        val utcOk: Boolean,
-        @SerialName("battery_low")
-        val batteryLow: Boolean,
-        val maintenance: Boolean,
+        val fix: EngineContract.ReceiverPositionAnswerFix? = null,
+    )
+
+    @Serializable
+    data class ReceiverPositionAnswerFix(
+        val lat: Double,
+        val lon: Double,
         /**
-         * Its GPS heights are above MSL (ForeFlight's ID message), else the ellipsoid.
+         * GPS height MSL, ft, where the receiver gives MSL.
          */
-        val msl: Boolean,
-        val frames: Double,
+        @SerialName("altitude_ft")
+        val altitudeFt: Double? = null,
         /**
-         * Frames whose CRC did not match, dropped.
+         * GPS height above the WGS-84 ellipsoid, ft, where that is what the receiver gives.
          */
-        @SerialName("bad_frames")
-        val badFrames: Double,
-        @SerialName("station_lat")
-        val stationLat: Double? = null,
-        @SerialName("station_lon")
-        val stationLon: Double? = null,
-        @SerialName("station_at")
-        val stationAt: Double? = null,
+        @SerialName("ellipsoid_ft")
+        val ellipsoidFt: Double? = null,
+        /**
+         * Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4).
+         */
+        @SerialName("pressure_ft")
+        val pressureFt: Double? = null,
+        /**
+         * The pressure altitude as a flight level, at and above 18,000 ft only.
+         */
+        @SerialName("flight_level")
+        val flightLevel: Double? = null,
+        /**
+         * True track, degrees, where the report gives one.
+         */
+        @SerialName("track_deg")
+        val trackDeg: Double? = null,
+        @SerialName("groundspeed_kt")
+        val groundspeedKt: Double? = null,
+        @SerialName("vertical_fpm")
+        val verticalFpm: Double? = null,
+        /**
+         * The NACp's bound on the 95% horizontal error, m.
+         */
+        @SerialName("accuracy_m")
+        val accuracyM: Double,
+        val airborne: Boolean,
+        /**
+         * When the report was heard, Unix s.
+         */
+        val at: Double,
+    )
+
+    @Serializable
+    data class ReceiverPositionInput(
+        /**
+         * The picture's own ship.
+         */
+        val ownship: EngineContract.ReceiverOwnship? = null,
+        /**
+         * The picture's receiver.
+         */
+        val receiver: EngineContract.ReceiverState? = null,
+        /**
+         * The device's last fix, or null where it has none.
+         */
+        val device: EngineContract.ReceiverPositionInputDevice? = null,
+        /**
+         * The source the last answer gave (receiver, device or none).
+         */
+        val was: String? = null,
+        /**
+         * Now, Unix s.
+         */
+        val at: Double,
+    )
+
+    @Serializable
+    data class ReceiverPositionInputDevice(
+        /**
+         * The device's horizontal accuracy, m (a 68% radius).
+         */
+        @SerialName("accuracy_m")
+        val accuracyM: Double,
+        /**
+         * When the device's fix was taken, Unix s.
+         */
+        val at: Double,
     )
 
     @Serializable
@@ -10811,6 +10871,52 @@ object EngineContract {
          */
         val picture: EngineContract.ReceiverPicture? = null,
         val ident: String,
+    )
+
+    /**
+     * The receiver's own state, as its Heartbeat and ID message say.
+     */
+    @Serializable
+    data class ReceiverState(
+        /**
+         * The name its ID message gives (Stratux, Sentry, SkyEcho).
+         */
+        val name: String? = null,
+        @SerialName("long_name")
+        val longName: String? = null,
+        val stratux: Boolean,
+        @SerialName("heartbeat_at")
+        val heartbeatAt: Double? = null,
+        /**
+         * A Heartbeat came in the last 5 s (one a second, GDL 90 3.1).
+         */
+        val live: Boolean,
+        /**
+         * One line for the receiver's chip: "Stratux · 12 targets · GPS".
+         */
+        val summary: String,
+        val gps: Boolean,
+        @SerialName("utc_ok")
+        val utcOk: Boolean,
+        @SerialName("battery_low")
+        val batteryLow: Boolean,
+        val maintenance: Boolean,
+        /**
+         * Its GPS heights are above MSL (ForeFlight's ID message), else the ellipsoid.
+         */
+        val msl: Boolean,
+        val frames: Double,
+        /**
+         * Frames whose CRC did not match, dropped.
+         */
+        @SerialName("bad_frames")
+        val badFrames: Double,
+        @SerialName("station_lat")
+        val stationLat: Double? = null,
+        @SerialName("station_lon")
+        val stationLon: Double? = null,
+        @SerialName("station_at")
+        val stationAt: Double? = null,
     )
 
     /**

@@ -41,6 +41,7 @@ import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.plan.FlightChoices
+import app.wingtipmaps.android.receiver.ReceiverHeard
 import app.wingtipmaps.android.records.WatchKind
 import app.wingtipmaps.android.search.SearchGroups
 import app.wingtipmaps.android.ui.CardButtonGroup
@@ -151,6 +152,11 @@ fun AirplaneCard(at: ProfileOpen.At, plan: Plan, exit: CardExit, onFlown: () -> 
                     color = if (status.problem) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs),
                 )
+                // Heard by the cockpit's own receiver, not the internet's,
+                // and how long ago.
+                (looked.hex ?: looked.record?.modeSHex)?.let { hex ->
+                    ReceiverHeard(hex, Modifier.padding(horizontal = WingtipSpace.Lg))
+                }
             }
             val page = tabs.getOrNull(section) ?: tabs.first()
             when (page) {

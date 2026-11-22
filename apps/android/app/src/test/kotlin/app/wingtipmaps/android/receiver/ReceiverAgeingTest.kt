@@ -11,7 +11,7 @@ import org.junit.Test
  *  Traffic is told to merge again. */
 class ReceiverAgeingTest {
     private fun picture(live: Boolean, heartbeatAt: Double? = 100.0, targets: Int = 0) = EngineContract.ReceiverPicture(
-        receiver = EngineContract.ReceiverPictureReceiver(
+        receiver = EngineContract.ReceiverState(
             stratux = true, heartbeatAt = heartbeatAt, live = live, summary = "Stratux", gps = true, utcOk = true,
             batteryLow = false, maintenance = false, msl = true, frames = 10.0, badFrames = 0.0,
         ),

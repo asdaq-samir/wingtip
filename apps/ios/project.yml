@@ -168,6 +168,13 @@ targets:
         # the Small Business Program, under 2 million first-time
         # downloads); then YES, with the entitlement in Wingtip.entitlements.
         WingtipPrivateCloudCompute: false
+        # The cockpit ADS-B receiver (Receiver.enabled), parked: NO until
+        # Apple grants the multicast networking entitlement
+        # (com.apple.developer.networking.multicast), without which a
+        # receiver that broadcasts its GDL 90 is never heard. The day it
+        # is granted: the entitlement in Wingtip.entitlements, this YES
+        # (docs/store/launch-checklist.md, docs/receivers.md).
+        WingtipReceiver: false
         NSLocalNetworkUsageDescription: With Traffic on, Wingtip Maps listens on the cockpit's Wi-Fi for an ADS-B receiver (Stratux, SkyEcho, Sentry).
         # A flight in progress on the Lock Screen and in the Dynamic Island
         # (FlightActivity, the WingtipWidgets extension): the next

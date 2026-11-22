@@ -619,8 +619,9 @@ latitude and longitude marks, read with Android 15's PDF text (SDK
 extension 13); an older Android shows the diagram without the airplane
 and says why.
 
-A cockpit ADS-B receiver (`receiver/`): a Stratux, Sentry, Garmin GDL
-39/52 or uAvionix receiver's GDL 90 on UDP port 4000, gathered by a
+A cockpit ADS-B receiver (`receiver/`), behind `RECEIVER_ENABLED`
+(build.gradle.kts, on: Android needs no entitlement; [receivers.md](receivers.md)):
+a Stratux, Sentry, SkyEcho or open-mode Stratus's GDL 90 on UDP port 4000, gathered by a
 `DatagramSocket` with the Wi-Fi's multicast lock (`ReceiverSocket`) and
 read by the engine once a second (`receiver_read`); a foreground service
 of the connected-device type (`ReceiverService`) keeps it going with the
@@ -628,8 +629,15 @@ screen off while a receiver is heard. Its traffic is drawn ahead of the
 internet's (`receiver_traffic`, through `Traffic`), a chip on the map
 names it, a field's FIS-B METAR and TAF show on its card with no report
 from the weather service (`receiver_reports`), and FIS-B NEXRAD is drawn
-over the chart (`receiver_nexrad`, `map/NexradLayer.kt`). Settings › In
-Flight has ADS-B Receiver (`ReceiverSettingRows`): Auto or Off.
+over the chart (`receiver_nexrad`, `map/NexradLayer.kt`), its age on the
+chip. Its GPS becomes own ship where the device has none or where it is
+twice as good, the device's taken back once it is 3 s old
+(`receiver_position`, `flight/OwnShipSource.kt`); a height above the
+ellipsoid is put on the geoid by `AltitudeConverterCompat`. The chip
+says whose position is shown, an airplane's card "Heard by Stratux 3 s
+ago" (`ReceiverHeard`), and the Brief lists the route's FIS-B reports
+(`ReceiverBriefReports`). Settings › In Flight has ADS-B Receiver
+(`ReceiverSettingRows`): Auto or Off, and the position's source.
 
 Still to come: Sunlight in Settings › Look (the owner's choice (b) of
 AND-6, 2026-11-14), the saved flights' Edit, Debrief and Delete, the

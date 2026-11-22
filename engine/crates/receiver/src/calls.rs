@@ -1,7 +1,7 @@
 //! The receiver's rules as the engine's dispatcher asks them, JSON in and
 //! out; each is named by its contract file in ../contract.
 
-use crate::{picture_json, views};
+use crate::{picture_json, position, views};
 use base64::alphabet::STANDARD;
 use base64::engine::general_purpose::{GeneralPurpose, GeneralPurposeConfig};
 use base64::engine::DecodePaddingMode;
@@ -46,6 +46,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
             let ident = v.get("ident").and_then(Value::as_str).ok_or_else(|| format!("{name}: \"ident\" is missing"))?;
             Ok(views::reports(&picture_json::read(v.get("picture")), ident))
         }
+        "receiver_position" => position::position(v),
         "receiver_nexrad" => Ok(views::nexrad(&picture_json::read(v.get("picture")))),
         _ => Err(format!("the engine has no rule called {name:?}")),
     }

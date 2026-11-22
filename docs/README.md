@@ -40,6 +40,7 @@ Each fact lives in one doc; the others link to it.
 | [NATIVE-ANDROID.md](NATIVE-ANDROID.md) | The Android app: Compose and MapLibre over the engine, its build and tests |
 | [ios-27.md](ios-27.md), [ios-27-ai.md](ios-27-ai.md) | What iOS 27 offers the iPhone app, and its on-device AI |
 | [android-ai.md](android-ai.md) | What Android offers for on-device AI, and what the app uses |
+| [receivers.md](receivers.md) | The cockpit ADS-B receivers the phones read, the switch they are parked behind, and their samples |
 
 ## The product
 

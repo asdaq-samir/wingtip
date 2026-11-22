@@ -50,6 +50,7 @@ import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.offline.KeptAgeLine
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.ready.ReadyToFlyRow
+import app.wingtipmaps.android.receiver.ReceiverBriefReports
 import app.wingtipmaps.android.strip.Finding
 import app.wingtipmaps.android.strip.FindingIcon
 import app.wingtipmaps.android.strip.GlanceAction
@@ -124,6 +125,9 @@ fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () 
                 AlternateRows(planModel)
                 // In the weather's adverse conditions: the forecast icing a leg.
                 IcingRows(plan)
+                // The route's fields as the cockpit's receiver heard them
+                // over FIS-B, with their age: weather with no internet.
+                ReceiverBriefReports((listOf(plan.dep) + plan.stops + plan.dest).filter { it.isNotBlank() })
             }
         }
     }
