@@ -45,7 +45,6 @@ enum MapLabelLook {
     }
 
     private static func rgb(_ hex: String) -> UIColor? {
-        guard hex.hasPrefix("#"), let value = UInt32(hex.dropFirst(), radix: 16) else { return nil }
-        return UIColor(hex: value)
+        UIColor(token: hex)
     }
 }

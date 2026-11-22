@@ -125,6 +125,13 @@ extension UIColor {
                   blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
     }
 
+    /// A colour from a token's "#rrggbb" (design/tokens.json's form); nil
+    /// for a value that is not one.
+    convenience init?(token hex: String) {
+        guard hex.hasPrefix("#"), hex.count == 7, let value = UInt32(hex.dropFirst(), radix: 16) else { return nil }
+        self.init(hex: value)
+    }
+
     /// One colour by day and another in dark appearance, resolved by the
     /// view it is drawn in.
     convenience init(light: UIColor, dark: UIColor) {
