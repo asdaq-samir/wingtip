@@ -17,13 +17,24 @@
 # and the store shots are the night's alone. scripts/ci/test_tiers.py reads
 # the three lines below that choose, so every UI test class stays in a tier.
 #
+# A wave's validation (decision 0058) runs the iPad's whole suite in two
+# legs, each its own runner (LEG "iPad 1/2" and "iPad 2/2", which
+# native-ios.yml's simulator step sets): the first the UI classes in
+# IPAD_FIRST, the second every other test, unit tests included, by
+# skipping those. One list and its complement, so no class is in neither.
+# On the night of 2026-11-21 the iPad's UI classes took 1,309 s: the
+# accessibility audit 614, the card scroll and rule suites 210 and 196,
+# the sheet's page toggle 175, the rest under a minute each; the split is
+# about half each, so a leg is some 20 minutes with its build.
+#
 # xcodebuild's output goes to $RUNNER_TEMP/xcodebuild.log, the build's and
 # then the tests' (the job uploads it on failure). Each step prints its
 # errors and its tests from its own part of that log and reads its verdict
 # there, as the one step did.
 #
 # Env: SIM (the simulator's id), RUNNER_TEMP, WINGTIP_URL and
-# WINGTIP_BUNDLE_ID (native-ios.yml's); UNIT_ONLY and FULL, "true" or not.
+# WINGTIP_BUNDLE_ID (native-ios.yml's); UNIT_ONLY and FULL, "true" or not;
+# LEG, the matrix's device ("iPad 1/2" for a wave's first iPad leg).
 # On the Mac, once build-xcframework.sh and xcodegen have run (as
 # scripts/dev/check.sh's ios area runs them), in a turn of
 # scripts/dev/one-at-a-time.sh:
@@ -36,7 +47,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 step=${1:?a step: build or test}
-UNIT_ONLY=${UNIT_ONLY:-false} FULL=${FULL:-false}
+UNIT_ONLY=${UNIT_ONLY:-false} FULL=${FULL:-false} LEG=${LEG:-}
+IPAD_FIRST="AccessibilityAuditTests LaunchTests MapButtonsTests PlateMapTests StoreShotsTests"
 log=$RUNNER_TEMP/xcodebuild.log
 opts=(-destination "platform=iOS Simulator,id=$SIM" -derivedDataPath "$RUNNER_TEMP/derived")
 
@@ -63,6 +75,10 @@ host=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$WINGTIP_U
 only=(-only-testing:WingtipTests) scheme=WingtipUnit
 [ "$UNIT_ONLY" = true ] || only+=(-only-testing:WingtipUITests/CardSmokeTests) scheme=Wingtip
 [ "$FULL" = true ] && only=() scheme=Wingtip
+case "$LEG" in
+  *" 1/2") only=() scheme=Wingtip && for c in $IPAD_FIRST; do only+=("-only-testing:WingtipUITests/$c"); done ;;
+  *" 2/2") only=() scheme=Wingtip && for c in $IPAD_FIRST; do only+=("-skip-testing:WingtipUITests/$c"); done ;;
+esac
 
 # This step's part of the log starts here: a verdict above it is another
 # step's, or an earlier run's.

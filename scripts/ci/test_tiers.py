@@ -155,6 +155,12 @@ def ios() -> list[str]:
     for cls in sorted(pr):
         if not (ROOT / f"apps/ios/WingtipUITests/{cls}.swift").exists():
             errors.append(f"{IOS_TEST}: -only-testing names {cls}, which no file holds")
+    # A wave's first iPad leg runs IPAD_FIRST and the second skips it: a
+    # name no file holds would run nowhere in the first and change nothing.
+    first = re.search(r'^IPAD_FIRST="([^"]*)"', script, re.M)
+    for cls in first.group(1).split() if first else []:
+        if not (ROOT / f"apps/ios/WingtipUITests/{cls}.swift").exists():
+            errors.append(f"{IOS_TEST}: IPAD_FIRST names {cls}, which no file holds")
     # A pull request's run (unit_only) adds no UI test class.
     if not re.search(r'\[ "\$UNIT_ONLY" = true \] \|\| only\+=\(-only-testing:WingtipUITests/', script):
         errors.append(f"{IOS_TEST}: unit_only must leave out every UI test (`[ \"$UNIT_ONLY\" = true ] || only+=(...)`)")
