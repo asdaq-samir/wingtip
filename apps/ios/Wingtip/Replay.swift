@@ -142,28 +142,17 @@ final class Replay {
     }
 
     /// The pilot's own track, which keeps no speed or track (a GPX file's
-    /// points have only where and when): each point's from the way to the
-    /// next, the distance over the time between them, as a GPS works its
-    /// own out from its fixes. A measurement of the flight, not a rule.
+    /// points have only where and when): made ready by the engine's
+    /// `replay_track`, as the web's replay makes a track ready (features/
+    /// replay/track), each point's speed and track worked out from the
+    /// positions about it, as a GPS works its own out from its fixes, and
+    /// the same time sent twice kept once. Where the engine cannot say,
+    /// the points as saved, with no speed or track.
     nonisolated static func points(_ saved: [SavedTrackPoint]) -> [Point] {
         let plain = saved.map { Point(t: Double($0.t) / 1000, lat: $0.lat, lon: $0.lon, altFt: $0.altFt) }
-        guard plain.count >= 2 else { return plain }
-        var out = plain
-        for i in plain.indices {
-            let (a, b) = i + 1 < plain.count ? (plain[i], plain[i + 1]) : (plain[i - 1], plain[i])
-            let hours = (b.t - a.t) / 3600
-            guard hours > 0 else { continue }
-            // The engine's great circle (`distance_nm`, `bearing_deg`);
-            // where it cannot say, the point keeps none and the strip
-            // shows no speed or track for it.
-            out[i].gsKt = (try? Engine.distanceNm(lat1: a.lat, lon1: a.lon, lat2: b.lat, lon2: b.lon)).map { $0 / hours }
-            out[i].trackDeg = try? Engine.bearingDeg(lat1: a.lat, lon1: a.lon, lat2: b.lat, lon2: b.lon)
-        }
-        // A point at the same second as the next takes the one before's.
-        for i in out.indices.dropFirst() where out[i].gsKt == nil {
-            out[i].gsKt = out[i - 1].gsKt
-            out[i].trackDeg = out[i - 1].trackDeg
-        }
-        return out
+        guard plain.count >= 2,
+              let ready = try? Engine.replayTrack(points: plain.map { .init(t: $0.t, lat: $0.lat, lon: $0.lon, altFt: $0.altFt) })
+        else { return plain }
+        return ready.points.map { Point(t: $0.t, lat: $0.lat, lon: $0.lon, altFt: $0.altFt, gsKt: $0.gsKt, trackDeg: $0.trackDeg) }
     }
 }
