@@ -275,6 +275,8 @@ export function isEndpoint(p: Point): p is Endpoint {
  *  granted with an UPDATE on the pilots table, never inherited -- see
  *  the V7 migration. */
 export type Pilot = Gateway["PilotDto"];
+/** An AI app connected through the connector (You's Connected Apps). */
+export type Connection = Gateway["ConnectionDto"];
 /** `PUT /api/me/contact`: their telephone number and home base, for a
  *  flight plan's item 19. */
 export type PilotContactRequest = Gateway["PilotContactRequest"];

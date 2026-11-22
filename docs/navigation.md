@@ -292,7 +292,7 @@ in the search is not counted.
 | A fix, VOR, airspace, traffic, What's Here | tap it on the map; an alert; a point's More Info | 1 | its actions |
 | Airplane card (the one airplane card) | the flight's card → Airplane; search → an airplane; Ready to Fly's Pick an Airplane; a logbook N-number | 2 → 2 | The flown airplane's picker, registration (suggesting as typed), passengers, Your Airplanes; every figure a tap to edit; Fly This Airplane. An N-number's: Fly This, Follow, Favorite, Share; Flights (▶ replays one), Info, Figures |
 | Checklists | Airplane → Checklists tab → a checklist (on the card's stack) | 3 → 3 | Ticks; Edit as text |
-| You | the avatar | 1 | Pilot Details, Airplanes, Flights, Logbook, Minimums, Training, Emergency; a swipe down closes it |
+| You | the avatar | 1 | Pilot Details, Airplanes, Flights, Logbook, Minimums, Training, Emergency, Connected Apps; a swipe down closes it |
 | Settings | the avatar → its gear; also the Map card's gear | 2 | Map, In Flight, Data, Help & About (Sunlight is the Map card's Look since 2026-11-14); a swipe down closes it |
 | Saved Flights | the avatar → Flights | 2 | A flight planned again with a tap |
 | Map card (no Map Settings page; the owner, 2026-11-13) | the map's Layers button; or search "map" / "layers" | 1 (+ typing 0) | Four sections of four tiles each, Chart, Base map, Layers and Look (Theme, Appearance, Sunlight, Own Ship; the owner, 2026-11-14), each a tap; the terminal charts always drawn, no switch; its gear opens Settings at its Map group (Airport Weather, glide ring) |

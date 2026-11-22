@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Plane, Route, ShieldCheck, Sparkles, UserRound } from "lucide-react";
+import { BookOpen, Plane, PlugZap, Route, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { cn } from "cn";
 import type { ReactNode } from "react";
 import AboutPanel from "../../components/AboutPanel";
@@ -31,6 +31,7 @@ import SubscriptionPanel from "./SubscriptionPanel";
 import { standing, subscriptionQuery, useSold } from "../../lib/subscription";
 import PilotGuide from "./PilotGuide";
 import PilotPage from "./PilotPage";
+import ConnectedAppsPage from "./ConnectedAppsPage";
 import { AirplanesPage, EmergencyRow, TrainingPage, TrainingRow } from "./YouRows";
 import TabPage, { TAB_PAGE_GAP } from "../../components/TabPage";
 
@@ -115,6 +116,7 @@ function Personal({
     settings: { title: "Settings", content: <SettingsPage help={help} /> },
     subscription: { title: "Subscription", content: <SubscriptionPanel /> },
     pilot: { title: "Pilot Details", content: <PilotPage /> },
+    connections: { title: "Connected Apps", content: <ConnectedAppsPage /> },
   };
   return (
     <>
@@ -183,6 +185,20 @@ function Personal({
               />
               <TrainingRow />
               <EmergencyRow />
+              {/* The AI apps connected through the connector, each ended
+                  from here (the deep security review, N2): the account's,
+                  greyed signed out as the others are. */}
+              <PageRow
+                page="connections"
+                title="Connected Apps"
+                disabled={!signedIn}
+                testId="connected-apps-row"
+                media={
+                  <RowBadge colour={SETTING_BADGE.connections} round>
+                    <PlugZap />
+                  </RowBadge>
+                }
+              />
               {signedIn && sold && <SubscriptionRow />}
             </ListGroup>
           </div>

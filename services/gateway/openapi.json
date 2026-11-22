@@ -491,6 +491,29 @@
         "required" : [ "access", "providers", "subscriptions" ],
         "type" : "object"
       },
+      "ConnectionDto" : {
+        "properties" : {
+          "app" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "renewedAt" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "scopes" : {
+            "type" : [ "string", "null" ]
+          },
+          "until" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "app", "id", "renewedAt", "scopes", "until" ],
+        "type" : "object"
+      },
       "ConnectorGrantDto" : {
         "properties" : {
           "app" : {
@@ -5059,6 +5082,70 @@
         },
         "summary" : "Forget the signed-in pilot's own checkpoint notes",
         "tags" : [ "pilot-controller" ]
+      }
+    },
+    "/api/me/connections" : {
+      "get" : {
+        "description" : "Each connection made through the connector, newest first: its id, the app's name, the scopes granted, when its token was last issued and until when it may be renewed.",
+        "operationId" : "connections",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ConnectionDto"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "Their connections"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ConnectionDto"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "No session"
+          }
+        },
+        "summary" : "The signed-in pilot's connected AI apps",
+        "tags" : [ "Pilot" ]
+      }
+    },
+    "/api/me/connections/{id}" : {
+      "delete" : {
+        "description" : "Its access and refresh tokens are revoked at once, so the app's next call is refused; the consent goes with the last connection through that app, so connecting again asks again.",
+        "operationId" : "disconnect",
+        "parameters" : [ {
+          "description" : "The connection's id, as listed",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Disconnected"
+          },
+          "401" : {
+            "description" : "No session"
+          },
+          "404" : {
+            "description" : "No such connection of theirs"
+          }
+        },
+        "summary" : "Disconnect one connected AI app",
+        "tags" : [ "Pilot" ]
       }
     },
     "/api/me/contact" : {

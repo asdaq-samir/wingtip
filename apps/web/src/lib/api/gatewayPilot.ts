@@ -1,6 +1,7 @@
 import { gateway, data, csrfHeaders } from "./http";
 import { ApiError, failIfNotOk } from "./errors";
 import type {
+  Connection,
   FlightPlanFiled,
   FlightPlanFilingRequest,
   FlightServiceStatus,
@@ -52,6 +53,16 @@ export const gatewayPilot = {
   /** Takes the pilot's photo out: their initials show again. */
   async removeAvatar(): Promise<void> {
     await gateway.DELETE("/api/me/avatar");
+  },
+
+  /** The AI apps the pilot connected through the connector, newest first,
+   *  and one of them ended from Wingtip's side: its tokens revoked at once
+   *  (ConnectionsController). A 404 is a connection already gone. */
+  connections: {
+    list: () => gateway.GET("/api/me/connections").then(data<Connection[]>),
+    async disconnect(id: string): Promise<void> {
+      await gateway.DELETE("/api/me/connections/{id}", { params: { path: { id } } });
+    },
   },
 
   /** Deletes the signed-in pilot's account and everything that was

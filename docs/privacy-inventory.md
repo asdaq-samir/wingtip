@@ -319,7 +319,9 @@ whose every code and token ran out over a day ago is let go each night,
 with the spent refresh tokens' hashes past their 30 days, and a client
 nobody connected through goes with its consents
 (`ConnectorHousekeeping`, 03:45 UTC); a consent otherwise stays until
-the pilot deletes their account. Fault reports go after 30 days
+the pilot disconnects that app's last connection in You's Connected Apps
+(its row and tokens go at once, `DELETE /api/me/connections/{id}`) or
+deletes their account. Fault reports go after 30 days
 (`DiagnosticsService`, 03:15 UTC). Each night at 03:30 UTC
 (`Housekeeping`) speed figures go after 400 days, sign-in links a day
 after they expire, a reminder's record of being sent once its day has
