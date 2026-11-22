@@ -121,7 +121,7 @@ function TimelineAction({
             "flex h-full min-w-0 flex-1 items-center",
             !first && !trailing && "border-t border-border",
             placeholder ? "text-muted-foreground" : "text-tint",
-            trailing ? "pr-1" : TIMELINE_END,
+            trailing ? "pr-0" : TIMELINE_END,
           )}
         >
           {children}
@@ -131,7 +131,7 @@ function TimelineAction({
           areas (hit-1.5, 6 out each side) meeting over it; 8 in from the
           card's edge, the toggle last, at the box's bottom right (the owner,
           2026-11-22: "the route box toggle should be pinned to the bottom right"). */}
-      {trailing && <span className="ml-auto flex h-11 items-center gap-2 pr-2">{trailing}</span>}
+      {trailing && <span className="ml-auto flex h-11 items-center gap-0.5">{trailing}</span>}
     </div>
   );
 }
@@ -197,13 +197,19 @@ export function FuelStopsChip({ added, onClick }: { added: boolean; onClick: () 
       variant={added ? "destructive" : "ghost"}
       type="button"
       onClick={onClick}
+      // The fuel glyph says "fuel", so the words are "Add Stops" and "Remove
+      // Stops" and the row stays one line at the owner's 19.65-px text on a
+      // 375- or 393-point iPhone (the owner, 2026-11-22: "Remove fuel stops
+      // goes to the next line"; "So icon with add/remove stops"); said in
+      // full to a screen reader.
+      aria-label={added ? "Remove fuel stops" : "Add fuel stops"}
       data-testid="timeline-fuel-stops"
       style={CHIP_44}
       data-look={added ? "remove" : "add"}
-      className={cn(chipLook(true), "px-2.5", !added && "bg-tint/12 hover:bg-tint/20! dark:hover:bg-tint/20!")}
+      className={cn(chipLook(true), ROW_CHIP, !added && "bg-tint/12 hover:bg-tint/20! dark:hover:bg-tint/20!")}
     >
-      <Fuel className="mr-0.5 size-4" aria-hidden="true" />
-      {added ? "Remove Fuel Stops" : "Add Fuel Stops"}
+      <Fuel className="size-4" aria-hidden="true" />
+      {added ? "Remove Stops" : "Add Stops"}
     </Button>
   );
 }
@@ -227,6 +233,13 @@ export function NoFuelStopNote({ flight }: { flight: { name: string; onBoard: bo
  *  and under the chip, as a pseudo-element, so nothing that is seen grows. */
 const CHIP_44 = { "--hit-y": "calc((100% - 44px) / 2)" } as CSSProperties;
 
+/** The last row's two chips, closer and in a note's size, so Add a Stop, the
+ *  fuel stops' pill and the route's toggle are one line at the owner's
+ *  19.65-px text on a 375- or 393-point iPhone (measured: "Remove Stops"
+ *  wrapped by 27 points at 393, 15 at 375): their areas stay 44 (CHIP_44,
+ *  hit-1.5), overlapping where the chips are closer than 12. */
+const ROW_CHIP = cn("gap-0.5 px-1 font-medium", TEXT.note);
+
 /** Type the Route on a whole route, at the grouped box's bottom right, after Add
  *  a Stop and the fuel stops' pill: a toggle between the two faces of the same box, the
  *  timeline and the route's field (RouteEditor) to type or paste the route
@@ -244,10 +257,13 @@ export function TypeRouteButton({ pressed, onToggle }: { pressed: boolean; onTog
       aria-label="Type the route"
       aria-pressed={pressed}
       data-testid="route-type-open"
-      style={CHIP_44}
+      // 44 across as well, the glyph's chip 27 wide at its tightest.
+      style={{ ...CHIP_44, "--hit-x": "calc((100% - 44px) / 2)" } as CSSProperties}
       className={cn(
         chipLook(true),
-        "px-2.5",
+        ROW_CHIP,
+        // The glyph alone, its room round it the least of the row's.
+        "px-0.5",
         pressed ? "bg-tint text-primary-foreground hover:bg-tint/90!" : "bg-tint/12 hover:bg-tint/20! dark:hover:bg-tint/20!",
       )}
     >
