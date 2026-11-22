@@ -58,6 +58,8 @@ class CardNotams(
     /** When the list was fetched, for its age ("Fetched 42 min ago",
      *  amber past the engine's hour); null before it is in. */
     val fetchedAtMs: Long? = null,
+    /** The list asked again from its problem line. */
+    val retry: (() -> Unit)? = null,
 )
 
 /**
@@ -69,7 +71,7 @@ class CardNotams(
  * shown is not read as none.
  */
 fun LazyListScope.notamsSection(notams: CardNotams, pad: Modifier) {
-    notams.problem?.let { item(key = "notams-problem") { ProblemLine(it, pad) } }
+    notams.problem?.let { item(key = "notams-problem") { ProblemLine(it, pad, onRetry = notams.retry) } }
     val said = notams.said
     if (said == null) {
         if (notams.problem == null) item(key = "notams-loading") { LoadingRow(pad) }
