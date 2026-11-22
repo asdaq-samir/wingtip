@@ -124,6 +124,24 @@ button,
 .maplibregl-map .maplibregl-ctrl-attrib a {
   color: var(--foreground);
 }
+/* Google's logo in its credit (lib/map/gl/googleCredit): 16 px high, the
+   least the Map Tiles API's policies allow, aspect kept, with the clear
+   space they set round it (10 left, right and top, 5 under, less the
+   credit's own padding); the dark grey by day, the white in a dark look. */
+.maplibregl-map .google-maps-logo {
+  display: inline-block;
+  height: 1rem;
+  width: auto;
+  margin: 0.5rem 0.125rem 0.1875rem 0.125rem;
+  vertical-align: middle;
+}
+.maplibregl-map .google-maps-logo-night,
+.dark .maplibregl-map .google-maps-logo-day {
+  display: none;
+}
+.dark .maplibregl-map .google-maps-logo-night {
+  display: inline-block;
+}
 
 /* Clear of the map panel (MapPanel): its edge's corner controls sit
    past what the panel covers at rest (MapPage sets the insets), and past
