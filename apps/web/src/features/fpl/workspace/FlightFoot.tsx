@@ -54,7 +54,7 @@ export function FlightFigures({
         </div>
       )}
       <div data-testid="flight-line">
-        <TripFigures {...line} grow={grow} thin={thin} unknown={s.unknownPlace} />
+        <TripFigures {...line} grow={grow} thin={thin} unknown={s.unknownPlace} legCourseDeg={s.legs[0]?.magnetic_course_deg ?? null} />
       </div>
     </EngineGate>
   );

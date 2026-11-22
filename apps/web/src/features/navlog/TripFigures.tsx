@@ -47,6 +47,9 @@ const seen = (f: { value: string; unit?: string }) => (f.unit ? `${f.value} ${f.
 // "Arrival"; a tap on either still explains it (EXPLAIN).
 const LABEL: Record<string, string> = { Dist: "Distance", ETE: "ETE" };
 
+/** The pinned strip's names in short (FPL's, `thin`): the FAA's shorthand. */
+const SHORT: Record<string, string> = { Dist: "Dist", Track: "Trk", Course: "Crs", GPS: "GPS" };
+
 /** The names a tap explains (components/Explain; decision 0045): the time
  *  en route, the arrival, the fuel required. */
 const EXPLAIN: Record<string, ExplainedTerm> = { ETE: "ETE", ETA: "ETA" };
@@ -68,6 +71,7 @@ export default function TripFigures({
   local,
   grow = false,
   thin = false,
+  legCourseDeg = null,
   flown = null,
   flying = false,
   unknown = null,
@@ -93,6 +97,8 @@ export default function TripFigures({
   grow?: boolean;
   /** FPL's pinned figures, thin above the pill and full size as it (FigureStrip's `pin`). */
   thin?: boolean;
+  /** The magnetic course of the leg the strip shows (the nav log's), the Course while not at flying speed. */
+  legCourseDeg?: number | null;
   /** A dry run flying: the same figures from where the airplane is
    *  (tripFigures' `flown`), the same taps on them. */
   flown?: Flown | null;
@@ -126,7 +132,7 @@ export default function TripFigures({
   // The track in the fuel's place (trackFigure): always a column, a dash
   // while there is no course to give. Both read from the fix as they are
   // written (useFixFigures), not at every fix.
-  const { gps, track } = useFixFigures();
+  const { gps, track } = useFixFigures(legCourseDeg);
   const ours: StripFigure[] = [
     ...tripFigures(input)
       // The fuel is the timeline's tank gauges' and the nav log's, not the
@@ -227,5 +233,9 @@ export default function TripFigures({
   // the pilot's ask: the strip keeps the figures, as soon as there are
   // any, and with none yet their names over dashes -- it keeps its place,
   // as the panel's controls do.
-  return <FigureStrip figures={ours} size={flying ? "flying" : thin ? "pin" : grow ? "grow" : "fixed"} tap={tap} />;
+  // FPL's pinned strip, its names in their short forms so the five fit one
+  // row at a phone's width as the thin line (the owner, 2026-11-22: "Show
+  // the labels even for thin strip"); "Leg" and "Dest" are short already.
+  const shown = thin ? ours.map((f) => (SHORT[f.name] ? { ...f, label: SHORT[f.name] } : f)) : ours;
+  return <FigureStrip figures={shown} size={flying ? "flying" : thin ? "pin" : grow ? "grow" : "fixed"} tap={tap} />;
 }

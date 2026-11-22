@@ -41,7 +41,7 @@ import { SETTLE_MS, shownPx } from "./insets";
  * onto the foot's edge there as before.
  */
 export const PIN_AT_FOOT =
-  "[transform:translateY(min(0px,calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-min(var(--pin-lift,0px),max(0px,calc(var(--pin-pill,0px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))),calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
+  "[transform:translateY(min(var(--pin-cap,0px),calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-min(var(--pin-lift,0px),max(0px,calc(var(--pin-pill,0px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))),calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
 
 /**
  * A row of a sheet's head that is its pill (PIN_AT_FOOT on it): held on
@@ -95,7 +95,7 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
     if (!row) return;
     const barOf = () => document.querySelector<HTMLElement>(foot)?.querySelector<HTMLElement>("[data-makes-way]");
     if (!on) {
-      for (const name of ["--pin-room", "--pin-lift", "--pin-pill", "--pin-half", "--pin-p"]) row.style.removeProperty(name);
+      for (const name of ["--pin-room", "--pin-lift", "--pin-pill", "--pin-half", "--pin-p", "--pin-cap"]) row.style.removeProperty(name);
       barOf()?.style.removeProperty("--pin-bar-room");
       return;
     }
@@ -116,6 +116,12 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       setVar(row, "--pin-lift", `${lift.lift}px`);
       setVar(row, "--pin-pill", `${lift.pill}px`);
       setVar(row, "--pin-half", `${lift.half}px`);
+      // On a phone's bottom sheet held on the foot's top at every size, down
+      // to it too where the plan is short (the route's field by its toggle,
+      // a short route all the way up): the figures at the plan's bottom over
+      // the bar (the owner, 2026-11-22: "Route box figures strip is not
+      // pinning to the bottom"); beside the side panel in their place.
+      setVar(row, "--pin-cap", lift.lift > 0 ? "9999px" : "0px");
       setVar(row, "--pin-p", `${growAt(moved(sheet), lift.half, lift.pill, heldNow.current)}`);
       const slid = moved(sheet);
       row.toggleAttribute("data-pinned", pinnedNow(heldNow.current, slid, room, liftAt(slid, lift.lift, lift.pill)));

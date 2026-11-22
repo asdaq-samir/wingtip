@@ -14,6 +14,9 @@ import type { StripFigure } from "../../components/FigureStrip";
  * engine's WMM (`magnetic_variation`), is taken off it ("east is least",
  * FAA-H-8083-25C ch. 16) through lib/magnetic's magneticOf.
  *
+ * Not at flying speed it is the leg's planned magnetic course instead,
+ * named Course, the nav log's figure for the leg the strip shows.
+ *
  * A dash where there is no figure to give: no fix (a plan with no
  * position), no course in it (a GPS gives none while stationary), or the
  * airplane not at flying speed, `moving` the engine's `underway` -- a
@@ -23,10 +26,22 @@ export function trackFigure(
   fix: { lat: number; lon: number; headingDeg: number | null } | null,
   moving: boolean,
   variationEastDeg: (lat: number, lon: number) => number,
+  plannedCourseDeg: number | null = null,
 ): StripFigure {
   const base = { name: "Track", testId: "strip-track" };
-  if (!fix || !moving || fix.headingDeg == null || !Number.isFinite(fix.headingDeg))
+  if (!fix || !moving || fix.headingDeg == null || !Number.isFinite(fix.headingDeg)) {
+    // Not moving at flying speed: the leg's planned magnetic course, the
+    // nav log's own (the engine's magnetic_course_deg for the leg the strip
+    // shows), "Course" (the owner, 2026-11-22); a dash with no route as well.
+    if (plannedCourseDeg != null && Number.isFinite(plannedCourseDeg))
+      return {
+        name: "Course",
+        testId: base.testId,
+        value: bearing(plannedCourseDeg),
+        said: `Course, magnetic, ${threeFigures(plannedCourseDeg).split("").join(" ")} degrees`,
+      };
     return { ...base, value: "—", said: "Track: none from this position" };
+  }
   const magnetic = magneticOf(fix.headingDeg, variationEastDeg(fix.lat, fix.lon));
   return { ...base, value: bearing(magnetic), said: `Track, magnetic, ${threeFigures(magnetic).split("").join(" ")} degrees` };
 }

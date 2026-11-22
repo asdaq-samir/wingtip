@@ -126,17 +126,18 @@ export const FIXED_FIGURE = {
   unitScale: 0.65,
 };
 
-/** FPL's figures, pinned at the sheet's foot: one thin line at half and
- *  all the way up, each value a detail's 15 on 20 with no name over it,
- *  growing to the pill's own, a heading's 20 on 25 under its note-size
- *  name, as the sheet goes to the pill (--pin-p, 0 to 1, usePinAtFoot's
+/** FPL's figures, pinned at the sheet's foot: thin at half and all the
+ *  way up, each value iOS's Footnote's 13, tight on 16, under its
+ *  name in a Caption 2's 11 on 12, in under 32 points (the owner, 2026-11-22: "Show the
+ *  labels even for thin strip"), growing to the pill's own, a heading's
+ *  20 on 25 under a note's 13 on 18, as the sheet goes to the pill (--pin-p, 0 to 1, usePinAtFoot's
  *  growAt, a frame at a time under the finger; the owner, 2026-11-22:
  *  "make the figures strip very thin when fpl is half or full"; "It should
  *  follow finger to look natural"). One strip that changes size. */
 export const PIN_FIGURE = {
-  value: "[--fig:calc(0.9375rem+0.3125rem*var(--pin-p,1))] leading-[calc(1.25rem+0.3125rem*var(--pin-p,1))]",
+  value: "[--fig:calc(0.8125rem+0.4375rem*var(--pin-p,1))] leading-[calc(1rem+0.5625rem*var(--pin-p,1))]",
   unit: "text-[length:0.65em] leading-(--lead-note)",
-  name: "max-h-[calc(1.125rem*var(--pin-p,1))] overflow-hidden opacity-(--pin-p,1)",
+  name: "text-[length:calc(0.6875rem+0.125rem*var(--pin-p,1))] leading-[calc(0.75rem+0.375rem*var(--pin-p,1))]",
   unitScale: 0.65,
 };
 

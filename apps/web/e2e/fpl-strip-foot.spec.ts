@@ -75,6 +75,10 @@ test("the tab bar is at the sheet's foot, the figures over it, and they slide un
   expect(await strip.getByTestId("navlog-ete").evaluate((el) => getComputedStyle(el).opacity)).toBe("1");
   // One thin line at half (the owner, 2026-11-22: "make the figures strip very thin").
   expect(s.height, "thin at half").toBeLessThanOrEqual(32);
+  // Each name in sight on the thin strip, short (the owner, 2026-11-22: "Show the labels even for thin strip").
+  for (const name of await strip.locator("dt").all()) await expect(name).toBeVisible();
+  const names = (await strip.locator("dt").allInnerTexts()).join(" ");
+  for (const short of ["Dist", "ETE"]) expect(names).toContain(short);
   // At the pill the figures are its face, full size, on the screen's foot, the bar put away.
   await grabberTo(page, "peek");
   await page.waitForTimeout(600);
@@ -174,6 +178,28 @@ test("with the box turned into the route's field, typed in, the figures stay pin
     await grabberTo(page, size);
     await page.waitForTimeout(500);
     await expect(strip.getByTestId("navlog-ete")).toBeVisible();
-    expect((await strip.boundingBox())!.height, `thin at ${size}`).toBeLessThanOrEqual(32);
+    const box = (await strip.boundingBox())!;
+    expect(box.height, `thin at ${size}`).toBeLessThanOrEqual(32);
+    // Pinned at the plan's bottom, on the tab bar (the owner, 2026-11-22:
+    // "Route box figures strip is not pinning to the bottom").
+    const bar = (await page.getByTestId("fpl-actions").boundingBox())!;
+    expect(Math.abs(box.y + box.height - bar.y), `on the bar at ${size}`).toBeLessThanOrEqual(12);
   }
+});
+
+test.describe("at 375 points and the owner's 19.65-px text", () => {
+  test.use({ viewport: { width: 375, height: 812 } });
+  test("the thin strip keeps every name in sight, wrapping to a second thin row before any is put away", async ({ page }) => {
+    test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+    await page.goto("/app/plan?dep=C81&dest=KDLH");
+    await settle(page);
+    await page.evaluate(() => (document.documentElement.style.fontSize = "19.65px"));
+    await grabberTo(page, "half");
+    const strip = page.locator("[data-pin-foot]").first();
+    await expect(strip.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(90_000) });
+    for (const name of await strip.locator("dt").all()) await expect(name).toBeVisible();
+    // Nothing past the screen's side.
+    const box = (await strip.boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(375 + 1);
+  });
 });
