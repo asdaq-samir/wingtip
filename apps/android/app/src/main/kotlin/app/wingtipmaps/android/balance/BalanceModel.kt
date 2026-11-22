@@ -6,6 +6,7 @@ import app.wingtipmaps.android.airplane.FigureKey
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.gonogoBalance
+import app.wingtipmaps.android.engine.generated.fuelGrades
 import app.wingtipmaps.android.engine.generated.gonogoDefaultLoad
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,6 +41,11 @@ class BalanceModel @Inject constructor() : ViewModel() {
          *  fuel at the start, gallons. */
         val stations: List<String> = emptyList(),
         val fuel: String = "",
+        /** The fuel's grades and their weights (the engine's fuel_grades,
+         *  FAA-H-8083-1B), and the one picked; none to pick where the
+         *  profile gives its own density, which wins. */
+        val grades: List<EngineContract.FuelGradesAnswerItem> = emptyList(),
+        val grade: String? = null,
         val balance: EngineContract.GonogoBalanceAnswer? = null,
         val problem: String? = null,
     )
@@ -65,6 +71,11 @@ class BalanceModel @Inject constructor() : ViewModel() {
         work()
     }
 
+    fun setGrade(grade: String) {
+        _state.update { it.copy(grade = grade) }
+        work()
+    }
+
     fun setFuel(text: String) {
         _state.update { it.copy(fuel = text) }
         work()
@@ -73,7 +84,7 @@ class BalanceModel @Inject constructor() : ViewModel() {
     /** The engine's balance of the load as it stands. */
     private fun work() {
         val s = _state.value
-        val loading = s.loading ?: return
+        val loading = weighed(s) ?: return
         val load = EngineContract.GonogoLoad(
             emptyWeightLb = s.emptyWeightLb, emptyArmIn = s.emptyArmIn,
             stationsLb = s.stations.map(::pounds), fuelGal = pounds(s.fuel) ?: 0.0,
@@ -83,6 +94,15 @@ class BalanceModel @Inject constructor() : ViewModel() {
     }
 
     companion object {
+        /** The loading with the fuel's weight a gallon: the profile's own
+         *  where it gives one, else the grade picked's (fuel_grades). */
+        fun weighed(s: State): EngineContract.GonogoLoading? {
+            val loading = s.loading ?: return null
+            if (loading.fuelLbPerGal != null) return loading
+            val picked = s.grades.firstOrNull { it.grade == s.grade } ?: return loading
+            return loading.copy(fuelLbPerGal = picked.lbPerGal)
+        }
+
         /** The screen as an airplane opens it: its loading, its empty
          *  weight and arm, every station empty and the tanks full -- the
          *  pilot types what is aboard. */
@@ -94,9 +114,12 @@ class BalanceModel @Inject constructor() : ViewModel() {
             val asked = if (own) loading.copy(sampleEmptyWeightLb = weight, sampleEmptyMomentLbIn = moment) else loading
             val empty = Engine.gonogoDefaultLoad(asked, loading.fuelMaxGal)
             val d = empty.getOrNull() ?: return State(loading = loading, problem = empty.exceptionOrNull()?.message)
+            // The grades offered only where the profile has no density of its own.
+            val grades = if (loading.fuelLbPerGal == null) Engine.fuelGrades().getOrDefault(emptyList()) else emptyList()
             return State(
                 loading = loading, emptyWeightLb = d.emptyWeightLb, emptyArmIn = d.emptyArmIn, emptyOwn = own,
                 stations = loading.stations.orEmpty().map { "" }, fuel = number(d.fuelGal),
+                grades = grades, grade = grades.firstOrNull()?.grade,
             )
         }
 

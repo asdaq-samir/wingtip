@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -23,6 +24,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -38,6 +40,7 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ready.ReadyFacts
 import app.wingtipmaps.android.ui.FullScreenPage
 import app.wingtipmaps.android.ui.WingtipIcons
+import app.wingtipmaps.android.ui.rememberFieldText
 
 /**
  * The scratchpad (the market-gap report's item 5): the flight's pages
@@ -109,13 +112,16 @@ private fun PageBody(page: ScratchPage, model: ScratchModel) {
             // Two or three a row on a tablet, one under the other on a phone.
             FlowRow(Modifier.fillMaxWidth().padding(top = WingtipSpace.Sm), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                 page.template.fields.forEach { f ->
-                    OutlinedTextField(
-                        value = page.fields[f.key].orEmpty(),
-                        onValueChange = { model.field(page.id, f.key, it) },
-                        label = { Text(stringResource(f.label)) },
-                        singleLine = f.key != "remarks" && f.key != "route",
-                        modifier = Modifier.weight(1f).widthIn(min = WingtipSize.Panel / 2),
-                    )
+                    // Each page's field its own state, so a tab changed
+                    // shows that page's words.
+                    key(page.id, f.key) {
+                        OutlinedTextField(
+                            state = rememberFieldText(page.fields[f.key].orEmpty()) { model.field(page.id, f.key, it) },
+                            label = { Text(stringResource(f.label)) },
+                            lineLimits = if (f.key == "remarks" || f.key == "route") TextFieldLineLimits.Default else TextFieldLineLimits.SingleLine,
+                            modifier = Modifier.weight(1f).widthIn(min = WingtipSize.Panel / 2),
+                        )
+                    }
                 }
             }
         }

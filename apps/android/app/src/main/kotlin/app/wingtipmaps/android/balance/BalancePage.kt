@@ -7,13 +7,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -30,6 +35,7 @@ import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.ui.FullScreenPage
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
+import app.wingtipmaps.android.ui.rememberFieldText
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import java.util.Locale
@@ -81,26 +87,44 @@ private fun Loads(state: BalanceModel.State, loading: EngineContract.GonogoLoadi
     SectionTitle(stringResource(R.string.balance_empty))
     Text(weighs(state.emptyWeightLb, state.emptyArmIn), style = MaterialTheme.typography.bodyLarge)
     loading.stations.orEmpty().forEachIndexed { i, station ->
-        Figure(
+        key(i) {
+            Figure(
             label = station.name, value = state.stations.getOrElse(i) { "" }, suffix = "lb",
             most = station.maxLb?.let { String.format(Locale.US, "Most %,.0f lb", it) },
-        ) { model.setStation(i, it) }
+            ) { model.setStation(i, it) }
+        }
     }
+    if (state.grades.size > 1) GradePicker(state, model)
     Figure(
         label = stringResource(R.string.balance_fuel), value = state.fuel, suffix = "gal",
         most = String.format(Locale.US, "Most %,.0f gal", loading.fuelMaxGal), last = true,
     ) { model.setFuel(it) }
 }
 
+/** The fuel's grade, as Material's segmented buttons (a discrete
+ *  setting): its weight a gallon is the engine's (fuel_grades). */
+@Composable
+private fun GradePicker(state: BalanceModel.State, model: BalanceModel) {
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        state.grades.forEachIndexed { i, g ->
+            SegmentedButton(
+                selected = g.grade == state.grade,
+                onClick = { model.setGrade(g.grade) },
+                shape = SegmentedButtonDefaults.itemShape(i, state.grades.size),
+                label = { Text(g.name) },
+            )
+        }
+    }
+}
+
 @Composable
 private fun Figure(label: String, value: String, suffix: String, most: String?, last: Boolean = false, onChange: (String) -> Unit) {
     OutlinedTextField(
-        value = value,
-        onValueChange = onChange,
+        state = rememberFieldText(value, onChange),
         label = { Text(label) },
         suffix = { Text(suffix) },
         supportingText = most?.let { { Text(it) } },
-        singleLine = true,
+        lineLimits = TextFieldLineLimits.SingleLine,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = if (last) ImeAction.Done else ImeAction.Next),
         modifier = Modifier.fillMaxWidth(),
     )

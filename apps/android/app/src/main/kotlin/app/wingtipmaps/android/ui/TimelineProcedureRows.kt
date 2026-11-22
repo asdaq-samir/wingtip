@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material3.AlertDialog
@@ -187,13 +188,12 @@ private fun CrossAtDialog(fix: String, own: Int?, onDone: () -> Unit, onChanged:
             Column {
                 Text(stringResource(R.string.fix_cross_hint))
                 OutlinedTextField(
-                    value = typed,
-                    onValueChange = {
+                    state = rememberFieldText(typed) {
                         typed = it
                         why = null
                     },
                     label = { Text(stringResource(R.string.fix_cross_feet)) },
-                    singleLine = true,
+                    lineLimits = TextFieldLineLimits.SingleLine,
                     isError = why != null,
                     supportingText = if (reason == null) null else ({ Text(reason) }),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),

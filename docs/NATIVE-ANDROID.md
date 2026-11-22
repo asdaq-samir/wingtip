@@ -565,7 +565,10 @@ parts and each asking the engine every figure:
   loading from its profile, each station's pounds and the fuel typed in,
   the engine's `gonogo_balance` at takeoff and landing (14 CFR 91.9(a)),
   and the CG envelope drawn with Compose's Canvas as the web's
-  `EnvelopeChart` draws it (`EnvelopeChart.kt`). The empty airplane is
+  `EnvelopeChart` draws it (`EnvelopeChart.kt`). The fuel is weighed by
+  its grade, picked on Material's segmented buttons from the engine's
+  `fuel_grades` (FAA-H-8083-1B), the profile's own density winning where
+  it gives one. The empty airplane is
   the pilot's own record where given, its arm the engine's
   (`gonogo_default_load`); a missing figure is asked for in place
   (`AskFigures`, "weight_balance"); with no airplane picked, nothing is
