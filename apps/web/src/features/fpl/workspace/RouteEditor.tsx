@@ -8,6 +8,7 @@ import { RouteBox } from "../../route";
 import type { PlanSlices } from "../vm/planSlices";
 import { FlightFigures } from "./FlightFoot";
 import { TypeRouteButton } from "../../procedures/lazy";
+import { keptTimelineHeight } from "./routeEditing";
 
 /**
  * FPL's route's field, open under its timeline (RouteHead) once asked for
@@ -82,17 +83,22 @@ export default function RouteEditor({
               // a route planned, by FPL's ✕.
               onClear={hasPoints && !routed ? clearRoute : undefined}
               onUndo={!hasPoints && routeUndo ? routeUndo : undefined}
+              // Turned from the grouped box by its toggle: its size and shape, the route wrapped in it.
+              wrapped={wholeRoute && routeOpen}
+              height={wholeRoute && routeOpen ? keptTimelineHeight() : undefined}
             />
           </SearchNear.Provider>
         </Suspense>
       </div>
-      {/* The toggle back to the timeline, in the box's lower left where it
+      {/* The toggle back to the timeline, in the box's bottom right where it
           was on the timeline's face (TypeRouteButton): what is typed is
           read as the field is left, the tap's own blur, so the route
           folds with it in (the plan's Undo as ever); the focus kept on the
           toggle there. Only on a whole route opened by it. */}
       {wholeRoute && routeOpen && (
-        <div className="flex pt-2">
+        // At the box's bottom right, where it is on the timeline's face, over
+        // the box's last line (z-10), its 44-point area whole.
+        <div className="relative z-10 -mt-11 flex h-11 items-center justify-end pr-2">
           <TypeRouteButton
             pressed
             onToggle={() => {

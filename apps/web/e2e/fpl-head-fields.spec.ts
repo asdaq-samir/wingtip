@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { grabberTo, settle, slow } from "./helpers";
+import { controlsInSight, grabberTo, openProfile, settle, slow } from "./helpers";
+import { pickAirplane } from "./startState";
 
 /**
  * FPL's head stays put and its two pills behave as fields (the owner,
@@ -74,4 +75,51 @@ test("the N-number is one width with five places after N-, whatever is typed", a
   }
   await field.fill("123456");
   await expect(field).toHaveValue("12345");
+});
+
+test("the Profile's FL field at a waypoint empties with Backspace, and is written in three figures once left", async ({ page }) => {
+  // Padded as it was typed, "025" Backspaced read "99", then "9" (the
+  // owner, 2026-11-22: "FL input is not letting me clear it").
+  await pickAirplane(page);
+  await page.goto("/app/plan?dep=C81&stops=VPBNG&dest=KDLH");
+  await settle(page);
+  await controlsInSight(page);
+  await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/\d,\d{3} feet|FL\d{3}/, { timeout: slow(60000) });
+  await openProfile(page);
+  await page.getByTestId("profile-card").getByRole("button", { name: "VPBNG: set the altitude at it" }).click();
+  const field = page.getByTestId("leg-altitude-input");
+  await field.click();
+  await page.keyboard.press("End");
+  for (let i = 0; i < 4; i++) await page.keyboard.press("Backspace");
+  await expect(field).toHaveValue("");
+  await page.keyboard.type("45");
+  await expect(field).toHaveValue("45");
+  await field.blur();
+  await expect(field).toHaveValue("045");
+});
+
+test.describe("at 375 points", () => {
+  test.use({ viewport: { width: 375, height: 812 } });
+  test("the grouped box's last row holds Add a Stop, the fuel stops' pill and the route's toggle, the toggle at its right", async ({
+    page,
+  }) => {
+    // The owner, 2026-11-22: "Toggle and remove fuel stops pills go to next
+    // line"; "the route box toggle should be pinned to the bottom right".
+    test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+    await page.goto("/app/plan?dep=KPWK&dest=KLAS");
+    await settle(page);
+    await grabberTo(page, "full");
+    const add = page.getByTestId("timeline-add-stop");
+    const toggle = page.getByTestId("route-type-open");
+    await expect(toggle).toBeVisible({ timeout: slow(90_000) });
+    const fuel = page.getByTestId("timeline-fuel-stops");
+    const rows = [await add.boundingBox(), await toggle.boundingBox(), (await fuel.count()) ? await fuel.boundingBox() : null].filter(
+      (b): b is NonNullable<typeof b> => !!b,
+    );
+    const mid = (b: { y: number; height: number }) => b.y + b.height / 2;
+    for (const b of rows) expect(Math.abs(mid(b) - mid(rows[0]!)), "one line").toBeLessThan(4);
+    const card = (await page.getByTestId("route-summary").boundingBox())!;
+    const t = rows[1]!;
+    expect(card.x + card.width - (t.x + t.width), "at the box's right").toBeLessThan(16);
+  });
 });

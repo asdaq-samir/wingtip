@@ -51,7 +51,7 @@ export function FplTabBar({
   fileable?: boolean;
   onFile?: () => void;
   /** The suggested routes out above the route and on the map, or put
-   *  away: given only while there are ways to offer (routesOffered). */
+   *  away; greyed while there are no ways to offer (routesOffered). */
   routes?: RouteOptions;
 }) {
   const { course } = vm.plan;
@@ -110,12 +110,16 @@ export function FplTabBar({
             2026-11-22: "route option can show in the tab bar instead with
             the previous fpl icon we used"), where it was More's first item;
             pressed while the suggested routes are out. */}
+        {/* Always there, so the bar never shifts; greyed, and named why,
+            with no ways to suggest (the owner, 2026-11-22: "Routes should
+            always show in the tab bar, just disabled if no routes"). */}
         {routes && (
           <BarAction
             icon={<ICON.flightPlan />}
             label="Routes"
-            spoken="Route Options"
-            aria-pressed={routes.shown}
+            spoken={routes.offered ? "Route Options" : "No route options"}
+            aria-pressed={routes.offered && routes.shown}
+            disabled={!routes.offered}
             onClick={() => routes.onShown(!routes.shown)}
             testId="routes-toggle"
           />
@@ -154,6 +158,8 @@ function BarAction({ disabled, ...action }: ComponentProps<typeof FloatingBarBut
 
 /** The suggested routes' switch (useRouteList's routesShown). */
 export interface RouteOptions {
+  /** Whether there are ways to suggest (routesOffered): greyed without. */
+  offered: boolean;
   shown: boolean;
   onShown: (shown: boolean) => void;
 }

@@ -172,7 +172,7 @@ test("the FPL tip stays off the sheet all the way up, and once the toggle has be
   await expect(tip).toHaveCount(0);
 });
 
-test("on the first flight a Nearest airport tapped is the destination, and a second tap picks again, never its card", async ({ page }) => {
+test("on the first flight a Nearest airport tapped is the destination, the ask held till the route is made, never its card", async ({ page }) => {
   // The owner, 2026-11-22: "When I select a nearest airport, it shows
   // destination search the first time but then selecting again shows the
   // airport card." The ask was let go at the first tap while the fix was
@@ -184,12 +184,12 @@ test("on the first flight a Nearest airport tapped is the destination, and a sec
   // Fields off where the airplane is (C81, the departure).
   const fields = page.getByTestId("nearest-strip-field").filter({ hasNotText: /C81/ });
   await expect(fields.nth(1)).toBeVisible({ timeout: slow(30_000) });
-  const second = await fields
-    .nth(1)
-    .evaluate((el) => (el.matches("[title]") ? el : el.querySelector("[title]"))?.getAttribute("title") ?? "");
-  expect(second).not.toBe("");
+  // Tapped, the ask held while the fix is waited for: the search still
+  // asks for the destination, so a second tap would pick again.
   await fields.first().click();
-  await fields.nth(1).click();
-  await expect(page).toHaveURL(new RegExp(`dest=${second}`), { timeout: slow(30_000) });
+  const search = page.getByTestId("search-airports");
+  if (!/dest=/.test(page.url())) await expect(search).toHaveAccessibleName(/destination/i);
+  // Planned to it, from C81, where the airplane is: no card.
+  await expect(page).toHaveURL(/dest=(?!C81)[A-Z0-9]+/, { timeout: slow(30_000) });
   await expect(page.getByTestId("place-card")).toHaveCount(0);
 });

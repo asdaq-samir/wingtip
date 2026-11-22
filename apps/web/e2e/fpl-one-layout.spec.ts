@@ -7,7 +7,7 @@ import {
   grabberTo,
   inSheet,
   openPanel,
-  openRoute,
+  typeRoute,
   routeOptionsItem,
   settle,
   sideDrawer,
@@ -82,16 +82,24 @@ test.describe("/app/plan", () => {
 
     // The box's lower-left toggle turns the same box into the route's
     // field, no "Route" row or Done, and back (the owner, 2026-11-22).
-    await openRoute(page);
+    const tall = (await timeline.boundingBox())!.height;
+    await typeRoute(page);
     await expect(drawer.getByTestId("route-box")).toBeVisible();
+    // The same box's size and shape, the route wrapped in it (the owner, 2026-11-22).
+    expect(Math.abs((await drawer.getByTestId("route-box").boundingBox())!.height - tall), "as tall as the grouped box").toBeLessThan(2);
+    await expect(drawer.getByTestId("route-box")).toHaveAttribute("data-wrapped", "true");
     await expect(timeline).toHaveCount(0);
     await expect(drawer.getByTestId("route-done")).toHaveCount(0);
     await expect(drawer.getByTestId("route-head")).toHaveCount(0);
     const toggle = drawer.getByTestId("route-type-open");
     await expect(toggle).toHaveAttribute("aria-pressed", "true");
+    // Its 44-point area, by what a tap there lands on (elementFromPoint).
     const hit = await toggle.evaluate((el) => {
-      const after = getComputedStyle(el, "::after");
-      return Math.max(el.getBoundingClientRect().height, parseFloat(after.height) || 0);
+      const box = el.getBoundingClientRect();
+      const x = box.left + box.width / 2;
+      const mid = box.top + box.height / 2;
+      const lands = (y: number) => el.contains(document.elementFromPoint(x, y));
+      return lands(mid - 21.5) && lands(mid + 21.5) ? 44 : box.height;
     });
     expect(hit, "a 44-point area").toBeGreaterThanOrEqual(44);
     await foldRoute(page);

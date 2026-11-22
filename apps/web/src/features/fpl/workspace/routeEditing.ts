@@ -20,6 +20,15 @@ export function routeBoxOpen(vm: PlanSlices<"flight" | "routeList">): boolean {
   return routeEditing(vm) && vm.routeList.boxOpen;
 }
 
+/** The timeline's grouped box's height as its toggle turned it into the
+ *  route's field (TypeRouteButton), so the field keeps its size and shape
+ *  and nothing under it jumps (the owner, 2026-11-22). */
+let timelineHeight = 0;
+export const keepTimelineHeight = (px: number) => {
+  timelineHeight = px;
+};
+export const keptTimelineHeight = () => timelineHeight;
+
 /** Whether FPL offers its suggested routes (ShareMenu's Route Options): there are ways
  *  to suggest, on the ground, not in a dry run, and the route's field not
  *  open -- the ways change the route rather than edit it, so the toggle

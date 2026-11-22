@@ -619,8 +619,10 @@ off by default (the owner, 2026-11-13).
    line, no chips. The route's field to type or paste a whole route opens
    under the timeline ("Route" over it, Done after) with no route, half a
    route or an unknown point; on a whole route the keyboard button at the
-   grouped box's lower left, Add a Stop's end, is a toggle that turns the
-   same box into the route's field and back, pressed while it is the field,
+   grouped box's bottom right, after Add a Stop and the fuel stops' pill on
+   one line (2026-11-22: "pinned to the bottom right"), is a toggle that
+   turns the same box into the route's field and back, its size and shape
+   kept and the route wrapped in it, pressed while it is the field,
    with no "Route" row and no Done (the owner, 2026-11-22: "It should make
    the same grouped box into route box and the other way"), what is typed
    read as the field is left, the plan's Undo as ever; the
@@ -661,8 +663,9 @@ off by default (the owner, 2026-11-13).
    Routes, the route glyph FPL's button had before it read "FPL", pressed
    while the suggested routes are out (Route Options, More's first item
    until the owner's 2026-11-22: "route option can show in the tab bar
-   instead with the previous fpl icon we used"), there only while there
-   are ways to suggest; and the route's •••, "More", its one menu, two
+   instead with the previous fpl icon we used"), always in the bar and
+   greyed, named "No route options", while there are no ways to suggest
+   (2026-11-22: "Routes should always show in the tab bar, just disabled if no routes"); and the route's •••, "More", its one menu, two
    items: Share link and Open in ForeFlight. Undo and Redo, Clear route, the map's choices,
    Show Fuel Stops, Refresh, Save and Type the Route are no longer its items:
    Undo is the toast's, "Route Cleared · Undo" or "Altitude Changed · Undo",

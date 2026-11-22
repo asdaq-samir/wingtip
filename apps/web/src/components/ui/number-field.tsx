@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, type InputHTMLAttributes, type ReactNode } from "react";
+import { useContext, useEffect, useRef, useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { cn } from "cn";
 import { Group, Input, NumberField as AriaNumberField, NumberFieldStateContext, type NumberFieldProps } from "react-aria-components";
 
@@ -81,13 +81,26 @@ function NumberField({
   inputClassName?: string;
   "data-testid"?: string;
 }) {
+  // Figures padded to three (THREE_FIGURES' minimumIntegerDigits, a flight
+  // level's 045 or a course's 090) are written so only once the field is
+  // left: padded as it was typed in, React Aria read each Backspace of
+  // "025" as a new figure padded again, "99" and then "9", and the field
+  // could not be emptied (the owner, 2026-11-22: "FL input is not letting
+  // me clear it").
+  const [typing, setTyping] = useState(false);
+  const shown = formatOptions ?? { useGrouping: false, maximumFractionDigits: 3 };
+  const { minimumIntegerDigits: _padded, ...unpadded } = shown;
   return (
     <AriaNumberField
       {...props}
+      onFocusChange={(focused) => {
+        setTyping(focused);
+        props.onFocusChange?.(focused);
+      }}
       value={value === undefined ? undefined : (value ?? Number.NaN)}
       defaultValue={defaultValue === undefined ? undefined : (defaultValue ?? Number.NaN)}
       onChange={(n) => onChange?.(Number.isNaN(n) ? null : n)}
-      formatOptions={formatOptions ?? { useGrouping: false, maximumFractionDigits: 3 }}
+      formatOptions={typing ? unpadded : shown}
       data-slot="number-field"
       className="min-w-0"
     >

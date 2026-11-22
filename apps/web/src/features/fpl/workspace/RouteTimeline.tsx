@@ -18,6 +18,7 @@ import {
   visitRow,
   type TimelinePoint,
 } from "../../procedures/lazy";
+import { keepTimelineHeight } from "./routeEditing";
 import { etaAt, rowCautions } from "../../plan";
 import type { PlanSlices } from "../vm/planSlices";
 import type { ProceduresRouteProps } from "../../procedures/lazy";
@@ -218,8 +219,15 @@ export default function RouteTimeline({
   const typeFuel =
     wholeRoute && vm.routeList.routeFolded ? (
       <>
-        <TypeRouteButton pressed={false} onToggle={() => vm.routeList.setRouteOpen(true)} />
         {fuelPill}
+        <TypeRouteButton
+          pressed={false}
+          onToggle={() => {
+            // The grouped box's height, kept for the field it turns into.
+            keepTimelineHeight(document.querySelector('[data-testid="route-summary"]')?.getBoundingClientRect().height ?? 0);
+            vm.routeList.setRouteOpen(true);
+          }}
+        />
       </>
     ) : (
       fuelPill

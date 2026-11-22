@@ -8,24 +8,37 @@ import { closeCard, grabberTo, openPanel, settled, sideDrawer, slow } from "./sh
  * routes' chips. The sheet's own moves are sheetHelpers'.
  */
 
-/** FPL's route's field open over its timeline (the one layout, decision
- *  0047): the timeline is where the route is edited -- a tap on a field's
- *  line opens its runways and procedures, the mark is its menu, a hold or
- *  the grip moves it -- and the route's field, to type or paste it in,
- *  opens from Add a Stop's keyboard button (Type the route), Done folding it away. A
- *  new plan or half a route has it open already. */
+/** FPL's route as its timeline, in sight (the one layout, decision 0047):
+ *  the timeline is where the route is edited -- a tap on a field's line
+ *  opens its runways and procedures, the mark is its menu, a hold or the
+ *  grip moves it. Where the box is the route's field (a route typed in) it
+ *  is turned back by its toggle first. */
 export async function openRoute(page: Page) {
   const panel = sideDrawer(page);
   const timeline = panel.getByTestId("route-summary");
-  // The box's lower-left toggle, timeline or field (TypeRouteButton; the
-  // owner, 2026-11-22), pressed while the box is the route's field.
-  const toggle = panel.getByTestId("route-type-open");
   const typing = panel.locator('[data-testid="route-type-open"][aria-pressed="true"]');
-  await expect(timeline.or(typing).first()).toBeVisible({ timeout: slow(30_000) });
-  if (await typing.isVisible()) return;
+  const field = panel.getByTestId("route-editor");
+  await expect(timeline.or(typing).or(field).first()).toBeVisible({ timeout: slow(30_000) });
+  if (await typing.isVisible()) await typing.click();
+  // Half a route or none: its field is the box's face already, with no toggle.
+  if (await field.isVisible()) return;
+  await expect(timeline).toBeVisible();
   await controlsInSight(page);
-  await toggle.click();
-  await expect(typing).toBeVisible();
+}
+
+/** FPL's route's field, to type or paste the route in: on a whole route
+ *  the same box turned into it by the toggle at its lower left (Type the
+ *  route, TypeRouteButton; the owner, 2026-11-22), pressed while it is the
+ *  field; a new plan or half a route has it open already. */
+export async function typeRoute(page: Page) {
+  const panel = sideDrawer(page);
+  const timeline = panel.getByTestId("route-summary");
+  const field = panel.getByTestId("route-editor");
+  await expect(timeline.or(field).first()).toBeVisible({ timeout: slow(30_000) });
+  if (await field.isVisible()) return;
+  await controlsInSight(page);
+  await panel.getByTestId("route-type-open").click();
+  await expect(panel.locator('[data-testid="route-type-open"][aria-pressed="true"]')).toBeVisible();
 }
 
 /** The route's field turned back into the timeline by the box's toggle,

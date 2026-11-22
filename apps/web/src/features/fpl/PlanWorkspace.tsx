@@ -303,8 +303,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
                   vm={vm}
                   fileable={fileable}
                   onFile={fileFlightPlan}
-                  // The suggested routes, the tab bar's Routes while there are some.
-                  routes={routesOffered(vm) ? { shown: vm.routeList.routesShown, onShown: vm.routeList.setRoutesShown } : undefined}
+                  // The suggested routes, the tab bar's Routes, greyed while there are none.
+                  routes={{ offered: routesOffered(vm), shown: vm.routeList.routesShown, onShown: vm.routeList.setRoutesShown }}
                   more={shareMenu("end", undefined, undefined, "bar")}
                 />
               )

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, openPanel, settle, sideDrawer, slow, openRoute, openBriefMenu } from "./helpers";
+import { controlsInSight, openPanel, settle, sideDrawer, slow, openRoute, typeRoute, openBriefMenu } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { pickAirplane } from "./startState";
 import { recordedStops } from "./recordedStops";
@@ -48,7 +48,7 @@ test("the route's box is round, one line tall for a short route and the panel's 
   await settle(page);
   // All the way up, the route's box over its chips.
   await controlsInSight(page);
-  await openRoute(page);
+  await typeRoute(page);
   const box = sideDrawer(page).getByTestId("route-box");
   await expect(box).toBeVisible();
   // Round as the search bar's field is, one line tall for a route that
@@ -56,8 +56,9 @@ test("the route's box is round, one line tall for a short route and the panel's 
   // itself, at the pilot's ask; the ••• in FPL's bar over it and the actions' bar below,
   // the airplane's strip, the sheet's first row (the owner, 2026-11-14:
   // "The route box just become a single row under it").
+  // Turned from the grouped box (its toggle), the grouped box's corners.
   const shape = await box.evaluate((el) => ({ radius: parseFloat(getComputedStyle(el).borderTopLeftRadius) }));
-  expect(shape.radius).toBeGreaterThanOrEqual(20);
+  expect(shape.radius).toBeGreaterThanOrEqual(12);
   const lines = (await sideDrawer(page).getByTestId("route-slide").boundingBox())!;
   expect(lines.height).toBeGreaterThanOrEqual(36);
   expect(lines.height).toBeLessThanOrEqual(48);
@@ -121,7 +122,7 @@ test("a town's name typed with the airports shown takes the first of them at Ent
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   // Typed in the box after its last point: the new destination, Duluth a
   // stop on the way.
   const field = sideDrawer(page).getByTestId("route-type");
@@ -143,7 +144,7 @@ test("a short town's name (four letters) takes the first airport shown at Enter,
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   const field = sideDrawer(page).getByTestId("route-type");
   await field.fill("reno");
   const first = page.getByTestId("route-suggestions").getByRole("option").first();
@@ -153,7 +154,7 @@ test("a short town's name (four letters) takes the first airport shown at Enter,
   await expect(page).toHaveURL(new RegExp(`[?&]dest=${ident}(&|$)`));
 });
 
-test("a long route's box is one row that slides sideways to the rest, faded where it runs on", async ({ page }) => {
+test("a long route turned from the grouped box wraps over its lines, nothing past its side", async ({ page }) => {
   // The owner (2026-11-04): "FPL can be fixed as one row, in which ids can
   // slide etc. even when routes have more fixes than the space in the row".
   // Nothing past the course asked of the planner: the box is the claim.
@@ -165,7 +166,7 @@ test("a long route's box is one row that slides sideways to the rest, faded wher
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KRYV,KMSN,KEAU,KOSH,KCWA,KSTE,KATW,KGRB");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   const lines = sideDrawer(page).getByTestId("route-slide");
   await expect(lines.locator("[role=group]")).toHaveCount(10);
   const box = await lines.evaluate((el) => ({
@@ -176,19 +177,17 @@ test("a long route's box is one row that slides sideways to the rest, faded wher
     tops: [...new Set([...el.querySelectorAll("[role=group]")].map((g) => Math.round(g.getBoundingClientRect().top)))].length,
     mask: getComputedStyle(el).maskImage || getComputedStyle(el).webkitMaskImage,
   }));
-  // One line, its height a line's, the rest past its end.
-  expect(box.tops).toBe(1);
-  expect(box.clientHeight).toBeLessThanOrEqual(48);
-  expect(box.scrollHeight).toBeLessThanOrEqual(box.clientHeight + 1);
-  expect(box.scrollWidth).toBeGreaterThan(box.clientWidth + 40);
-  expect(box.mask).toContain("gradient");
-  // Slid to its end: the destination whole in sight. All the way up the
-  // timeline lists each of the ten points as its own row, the route's
-  // field under them past the screen's foot: the sheet scrolled to it
-  // first, as a finger does.
+  // Turned from the grouped box by its toggle, the route wraps over as
+  // many lines as it takes, nothing past the box's side (the owner,
+  // 2026-11-22: "Route box should be as tall as the grouped box, same
+  // shape. So it can show everything including the approach pills etc.");
+  // the one row that slides is the box's for half a route.
+  expect(box.tops).toBeGreaterThan(1);
+  expect(box.scrollWidth).toBeLessThanOrEqual(box.clientWidth + 1);
+  // Its destination reached inside it, as a finger scrolls it.
   const destination = sideDrawer(page).getByTestId("route-dest");
-  await lines.scrollIntoViewIfNeeded();
-  await lines.evaluate((el) => el.scrollTo(el.scrollWidth, 0));
+  await lines.evaluate((el) => el.scrollTo(0, el.scrollHeight));
+  await destination.scrollIntoViewIfNeeded();
   await expect(destination).toBeInViewport({ ratio: 1 });
 });
 
@@ -237,7 +236,7 @@ test("the route's airports are marked by their airspace's ring and their weather
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   await expect(mark()).toHaveAttribute("data-airspace", "D", { timeout: slow(15000) });
   // Its METAR's colour in the middle, or the grey of none, as the chart's
   // marks have it: no setting since the owner's split (2026-10-27).

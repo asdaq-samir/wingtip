@@ -70,4 +70,12 @@ export interface RouteBoxProps extends RouteParts {
    *  a new one is started (the owner, 2026-11-18): the plan's own Undo
    *  (lib/planUndo), none where there is nothing of the route to undo. */
   onUndo?: () => void;
+  /** The route's whole line wrapped over as many lines as it takes, in a
+   *  box `height` tall at the least, scrolling inside past it: the grouped
+   *  box turned into the route's field by its toggle (TypeRouteButton), its
+   *  size and shape kept (the owner, 2026-11-22: "Route box should be as
+   *  tall as the grouped box, same shape. So it can show everything
+   *  including the approach pills etc."). Else the one row that slides. */
+  wrapped?: boolean;
+  height?: number;
 }

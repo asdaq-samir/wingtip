@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { cardClose, grabberTo, openTab, settle, settled, sideDrawer, slow, openRoute } from "./helpers";
+import { cardClose, grabberTo, openTab, settle, settled, sideDrawer, slow, openRoute, typeRoute } from "./helpers";
 import { tapMarkApart } from "./marks";
 import { pickAirplane } from "./startState";
 import { LIST, DRAWN } from "./procedureStubs";
@@ -62,7 +62,7 @@ test.describe("on the owner's phone's width, to a finger", () => {
     // Half way, then opened to edit, which raises the sheet all the way up
     // (the one layout: at half the route is folded, its box not drawn).
     await grabberTo(page, "half");
-    await openRoute(page);
+    await typeRoute(page);
     const box = sideDrawer(page).getByTestId("route-box");
     await expect(box.getByTestId("route-procedure")).toBeVisible({ timeout: slow(10000) });
     // Its lines', the buttons over them in FPL's bar (the owner, 2026-11-14).
