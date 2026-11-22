@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material3.AlertDialog
@@ -25,10 +27,12 @@ import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -44,6 +48,7 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.plan.PlanProcedures
 import app.wingtipmaps.android.plan.RouteProcedures
+import kotlinx.coroutines.flow.drop
 
 /** How many rows a pick takes on the line: its head and a row a fix. */
 fun procedureRows(drawing: ProcedureDrawing?): Int = 1 + RouteProcedures.fixes(drawing).size
@@ -124,7 +129,7 @@ private fun FixRow(pick: PlanProcedures.Pick, fix: ProcedureFix, drawing: Proced
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         Text(fix.ident, style = MaterialTheme.typography.labelLarge, color = muted, modifier = Modifier.padding(horizontal = WingtipSpace.Md, vertical = WingtipSpace.Sm))
                         DropdownMenuItem(
-                            text = { Text(if (isDirect) stringResource(R.string.fix_fly_charted, pick.name) else stringResource(R.string.point_direct_to)) },
+                            text = { Text(if (isDirect) stringResource(R.string.fix_fly_charted, pick.name) else stringResource(R.string.wording_direct_to)) },
                             leadingIcon = { Icon(CardAction.DIRECT_TO.icon, contentDescription = null, tint = tint) },
                             onClick = {
                                 menu = false
@@ -175,8 +180,11 @@ private fun FixRing(direct: Boolean, skipped: Boolean) {
  */
 @Composable
 private fun CrossAtDialog(fix: String, own: Int?, onDone: () -> Unit, onChanged: () -> Unit) {
-    var typed by rememberSaveable(fix) { mutableStateOf(own?.toString().orEmpty()) }
+    // The text field's own state (Material 3 1.6's TextFieldState field).
+    val typed = rememberTextFieldState(own?.toString().orEmpty())
     var why by rememberSaveable(fix) { mutableStateOf<String?>(null) }
+    // A word typed takes the last reason away.
+    LaunchedEffect(typed) { snapshotFlow { typed.text.toString() }.drop(1).collect { why = null } }
     val set = { ft: Int? ->
         PlanProcedures.setCrossing(fix, ft)
         onDone()
@@ -190,13 +198,9 @@ private fun CrossAtDialog(fix: String, own: Int?, onDone: () -> Unit, onChanged:
             Column {
                 Text(stringResource(R.string.fix_cross_hint))
                 OutlinedTextField(
-                    value = typed,
-                    onValueChange = {
-                        typed = it
-                        why = null
-                    },
+                    state = typed,
                     label = { Text(stringResource(R.string.fix_cross_feet)) },
-                    singleLine = true,
+                    lineLimits = TextFieldLineLimits.SingleLine,
                     isError = why != null,
                     supportingText = if (reason == null) null else ({ Text(reason) }),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -205,7 +209,7 @@ private fun CrossAtDialog(fix: String, own: Int?, onDone: () -> Unit, onChanged:
         },
         confirmButton = {
             TextButton(onClick = {
-                RouteProcedures.crossingTyped(typed).fold({ set(it) }, { why = it.message ?: Format.NONE })
+                RouteProcedures.crossingTyped(typed.text.toString()).fold({ set(it) }, { why = it.message ?: Format.NONE })
             }) { Text(stringResource(R.string.depart_set)) }
         },
         dismissButton = {

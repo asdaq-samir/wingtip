@@ -87,8 +87,10 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
     // changes: the whole card was drawn again, and its facts asked of the
     // engine again, at every fix.
     val ship = flight.ownShip
+    // The first value read once, outside the composition's own reads.
+    val nearNow = remember(ship) { ship.fix.value?.let(AirportFacts.From::near) }
     val near by remember(ship) { ship.fix.map { it?.let(AirportFacts.From::near) }.distinctUntilChanged() }
-        .collectAsStateWithLifecycle(ship.fix.value?.let(AirportFacts.From::near))
+        .collectAsStateWithLifecycle(nearNow)
     val airplane = rememberAirplaneNow(plan)
     val actions = rememberRouteActions(plan)
     LaunchedEffect(ident) { if (ident.isNotEmpty()) model.open(ident) }

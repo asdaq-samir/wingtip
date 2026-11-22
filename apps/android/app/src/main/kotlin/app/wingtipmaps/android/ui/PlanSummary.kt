@@ -166,7 +166,7 @@ private fun StopRow(
             PointEnd(
                 times = {
                     PointTimes(point.times, point.zone, point.zonesSaid, onLeave = if (stop) ({ h, m ->
-                        point.times?.arriveMs?.let { landed -> PlanGround.set(ident, StopTimes.groundFor(landed, h, m)) }
+                        point.times.arriveMs?.let { landed -> PlanGround.set(ident, StopTimes.groundFor(landed, h, m)) }
                         plan.plan()
                     }) else null)
                 },
