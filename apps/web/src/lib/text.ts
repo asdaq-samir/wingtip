@@ -96,13 +96,16 @@ export const TEXT_POINTS = { caption: TYPE_POINTS.caption, row: TYPE_POINTS.row 
  *  two; the owner, 2026-11-05), each with its iOS leading at either end (the audit's P3: 15
  *  on 20 to 20 on 25, 11 on 13 to 13 on 18), eased between as the size
  *  is. The value's size is `--fig`; the unit is a share of it, so the two grow
- *  together, 11 of 15 at half to 13 of 20 at the pill. */
-const GROW_SMALL =
-  "text-[length:calc(0.6875rem+0.0625rem*var(--sheet-progress,1))] leading-[calc(0.8125rem+0.1875rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(0.6875rem+0.125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(0.8125rem+0.3125rem*var(--sheet-progress,1))]";
+ *  together, 11 of 15 at half to 13 of 20 at the pill. On a kneeboard
+ *  (index.css: an iPad, read at arm's length, where the side panel has no
+ *  half) the flying figures' size, 26 on 31 with 15-point names and units,
+ *  where the phone's 20 read as 10 at twice the distance. */
+const KNEEBOARD_SMALL = "kneeboard:text-(length:--type-detail) kneeboard:leading-5";
+const GROW_SMALL = `text-[length:calc(0.6875rem+0.0625rem*var(--sheet-progress,1))] leading-[calc(0.8125rem+0.1875rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(0.6875rem+0.125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(0.8125rem+0.3125rem*var(--sheet-progress,1))] ${KNEEBOARD_SMALL}`;
 export const GROW_FIGURE = {
   value:
-    "[--fig:calc(0.75rem+0.375rem*var(--sheet-progress,1))] leading-[calc(1rem+0.75rem*var(--sheet-progress,1))] pointer-coarse:[--fig:calc(0.9375rem+0.3125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(1.25rem+0.3125rem*var(--sheet-progress,1))]",
-  unit: "text-[length:calc(1em*(0.6875+0.0625*var(--sheet-progress,1))/(0.75+0.375*var(--sheet-progress,1)))] leading-[calc(0.8125rem+0.1875rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(1em*(0.6875+0.125*var(--sheet-progress,1))/(0.9375+0.3125*var(--sheet-progress,1)))] pointer-coarse:leading-[calc(0.8125rem+0.3125rem*var(--sheet-progress,1))]",
+    "[--fig:calc(0.75rem+0.375rem*var(--sheet-progress,1))] leading-[calc(1rem+0.75rem*var(--sheet-progress,1))] pointer-coarse:[--fig:calc(0.9375rem+0.3125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(1.25rem+0.3125rem*var(--sheet-progress,1))] kneeboard:[--fig:var(--type-figure)] kneeboard:leading-[1.9375rem]",
+  unit: `text-[length:calc(1em*(0.6875+0.0625*var(--sheet-progress,1))/(0.75+0.375*var(--sheet-progress,1)))] leading-[calc(0.8125rem+0.1875rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(1em*(0.6875+0.125*var(--sheet-progress,1))/(0.9375+0.3125*var(--sheet-progress,1)))] pointer-coarse:leading-[calc(0.8125rem+0.3125rem*var(--sheet-progress,1))] ${KNEEBOARD_SMALL}`,
   name: GROW_SMALL,
   /** The unit's share of the value at the pill, for the room it takes. */
   unitScale: 0.65,
