@@ -81,13 +81,19 @@ export default function FigureStrip({
   size = "grow",
   testId,
   tap,
+  still = false,
 }: {
   figures: StripFigure[];
   size?: StripSize;
   testId?: string;
   tap?: (figure: StripFigure, face: ReactNode) => ReactNode;
+  /** No roll as a figure changes: in flight the GPS's figures change every
+   *  second, and a roll on each blurred them all the time (the motion
+   *  review of 2026-11-22). */
+  still?: boolean;
 }) {
   const type = TYPE[size];
+  const roll = still ? undefined : "figure-roll";
   // As many columns as figures, so none ever wraps onto a row of its own
   // (in flight the GPS altitude, a fifth figure in four columns, went under
   // the rest, and the pill showed that row alone).
@@ -120,7 +126,7 @@ export default function FigureStrip({
                   a label ("114.2 g…"), the figure kept whole the longest,
                   where the value alone was cut before its unit ("11… gal"). */}
               <span className="min-w-0 truncate">
-                <span key={f.value} className="figure-roll" data-fitted="">
+                <span key={f.value} className={roll} data-figure="" data-fitted="">
                   {f.waiting ? <FigureWait /> : f.value}
                 </span>
                 {/* Its space a no-break one: a flex item drops a leading
@@ -182,7 +188,7 @@ export default function FigureStrip({
                       <TriangleAlert className="mr-0.5 size-[0.8em] shrink-0 self-center" aria-hidden data-testid="figure-alert-mark" />
                     )}
                     <span className={cn(f.alert && "min-w-0 truncate")}>
-                      <span key={f.value} aria-hidden={f.said ? true : undefined} className="figure-roll" data-fitted="">
+                      <span key={f.value} aria-hidden={f.said ? true : undefined} className={roll} data-figure="" data-fitted="">
                         {f.waiting ? <FigureWait /> : f.value}
                       </span>
                       {f.unit && (

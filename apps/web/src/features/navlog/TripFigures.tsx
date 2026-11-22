@@ -237,5 +237,7 @@ export default function TripFigures({
   // row at a phone's width as the thin line (the owner, 2026-11-22: "Show
   // the labels even for thin strip"); "Leg" and "Dest" are short already.
   const shown = thin ? ours.map((f) => (SHORT[f.name] ? { ...f, label: SHORT[f.name] } : f)) : ours;
-  return <FigureStrip figures={shown} size={flying ? "flying" : thin ? "pin" : grow ? "grow" : "fixed"} tap={tap} />;
+  return (
+    <FigureStrip figures={shown} size={flying ? "flying" : thin ? "pin" : grow ? "grow" : "fixed"} tap={tap} still={flying || !!flown} />
+  );
 }

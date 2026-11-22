@@ -141,7 +141,7 @@ test("a long trip's figures keep their full size on one line in the strip, exact
     // no eye tells apart ("18.2684px" and "18.2719px" at 17.88).
     const sizes = () =>
       figures.evaluateAll((dds) =>
-        dds.map((dd) => Math.round(parseFloat(getComputedStyle(dd.querySelector(".figure-roll") ?? dd).fontSize) * 10) / 10),
+        dds.map((dd) => Math.round(parseFloat(getComputedStyle(dd.querySelector("[data-figure]") ?? dd).fontSize) * 10) / 10),
       );
     await expect.poll(async () => new Set(await sizes()).size, { message: `one size at a root of ${root || "16px"}` }).toBe(1);
     const [size] = await sizes();

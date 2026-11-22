@@ -84,7 +84,7 @@ test("on a kneeboard the figures at the panel's foot are the flying size, 26 poi
     await page.setViewportSize({ width: size.width, height: size.height });
     await page.goto(ROUTE);
     await settle(page);
-    const value = page.getByTestId("flight-line").locator(".figure-roll").first();
+    const value = page.getByTestId("flight-line").locator("[data-figure]").first();
     await expect(value).toBeVisible();
     expect(await value.evaluate((el) => parseFloat(getComputedStyle(el).fontSize)), size.name).toBeGreaterThanOrEqual(26);
   }
