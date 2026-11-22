@@ -45,9 +45,9 @@ import app.wingtipmaps.android.ai.AiSources
 import app.wingtipmaps.android.ai.AiTask
 import app.wingtipmaps.android.ai.AiWordsRow
 import app.wingtipmaps.android.alternate.AlternateRows
+import app.wingtipmaps.android.balance.BalancePage
 import app.wingtipmaps.android.brief.AdverseGroup
 import app.wingtipmaps.android.brief.CautionRows
-import app.wingtipmaps.android.balance.BalancePage
 import app.wingtipmaps.android.brief.DepartureWindowStrip
 import app.wingtipmaps.android.brief.FlightFigures
 import app.wingtipmaps.android.brief.IcingRows
@@ -58,6 +58,8 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.library.Cited
 import app.wingtipmaps.android.library.rememberCiteActions
+import app.wingtipmaps.android.navigation.ScreenRequests
+import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.offline.KeptAgeLine
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.ready.ReadyToFlyRow
@@ -96,6 +98,16 @@ fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () 
     val pilot by session.pilot.collectAsStateWithLifecycle()
     val signedIn = pilot != null
     var tool by remember { mutableStateOf<Tool?>(null) }
+    // A tool asked for by its name (a link, the search: OpenScreen), once
+    // the Brief is open.
+    val wanted by ScreenRequests.wanted.collectAsStateWithLifecycle()
+    LaunchedEffect(wanted) {
+        when (ScreenRequests.take(setOf(Screen.SCRATCHPAD, Screen.BALANCE))) {
+            Screen.SCRATCHPAD -> tool = Tool.SCRATCHPAD
+            Screen.BALANCE -> tool = Tool.BALANCE
+            else -> Unit
+        }
+    }
     LaunchedEffect(plan.totals, plan.planning) { model.brief(plan) }
     val route = (listOf(plan.dep) + plan.stops + plan.dest).filter { it.isNotBlank() }.joinToString(" → ").ifEmpty { null }
     CardPage(title = stringResource(R.string.brief), exit = exit, subtitle = route) { padding ->

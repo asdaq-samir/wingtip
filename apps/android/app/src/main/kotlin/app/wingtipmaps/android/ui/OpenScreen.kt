@@ -35,7 +35,9 @@ internal object OpenScreen {
             Screen.NAVLOG -> Where.Page(SheetPage.NavLog)
             // The carousel's Search page, by its own name or the old Airport tab's.
             Screen.SEARCH, Screen.AIRPORT -> Where.Search
-            Screen.BRIEF -> Where.Page(SheetPage.Brief)
+            // The Brief, and its own tools full screen over it, which the
+            // Brief opens as it takes them (BriefPage).
+            Screen.BRIEF, Screen.SCRATCHPAD, Screen.BALANCE -> Where.Page(SheetPage.Brief)
             Screen.NEAREST -> Where.Page(SheetPage.Nearest)
             Screen.ASK -> Where.Page(SheetPage.Ask)
             Screen.EMERGENCY -> Where.Page(SheetPage.Emergency)
@@ -53,8 +55,8 @@ internal object OpenScreen {
         }
 
     /** The screens the page opened takes from ScreenRequests itself: the
-     *  airplane card's checklist, the Logbook's Coach. */
-    val takenInside: Set<Screen> = setOf(Screen.CHECKLISTS, Screen.COACH)
+     *  airplane card's checklist, the Logbook's Coach, the Brief's tools. */
+    val takenInside: Set<Screen> = setOf(Screen.CHECKLISTS, Screen.COACH, Screen.SCRATCHPAD, Screen.BALANCE)
 
     /** The app's screen a word typed or said in the search names
      *  (FieldCommands), where this phone has it; "profile" is a card (pageOf). */
