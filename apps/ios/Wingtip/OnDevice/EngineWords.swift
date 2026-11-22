@@ -79,7 +79,7 @@ enum EngineWords {
             do {
                 figures += try Self.figures(topic, question: question, facts: facts, pins: pins).filter { f in !figures.contains { $0.id == f.id } }
             } catch {
-                why = why ?? ((error as? AskRefused)?.why ?? error.localizedDescription)
+                why = why ?? Problems.refusal(error, otherwise: "The figures could not be worked out")
             }
         }
         guard !figures.isEmpty else { return .none("engine", why ?? "This iPhone holds nothing to answer that with.") }

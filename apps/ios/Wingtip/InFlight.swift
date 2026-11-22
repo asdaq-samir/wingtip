@@ -113,7 +113,9 @@ final class InFlight {
         var refused: [String] = []
         func asked<T>(_ what: String, _ body: () throws -> T?) -> T? {
             do { return try body() } catch {
-                refused.append("\(what): \(error.localizedDescription)")
+                // The engine's reason to the log; the line names the figure.
+                _ = Problems.say("The \(what) could not be worked out", error)
+                refused.append(what)
                 return nil
             }
         }
@@ -133,7 +135,7 @@ final class InFlight {
             try Engine.glideRing(lat: at.latitude, lon: at.longitude, altitudeFt: fix.altitudeFt, speedKt: fix.groundspeedKt,
                                  terrainFt: terrainFt, fieldFt: fieldFt, glideRatio: ratio)
         }
-        problem = refused.isEmpty ? nil : "Not worked out: " + refused.joined(separator: "; ")
+        problem = refused.isEmpty ? nil : "Not worked out: " + refused.joined(separator: ", ") + "."
         if underway { askField(at, now: now) }
     }
 

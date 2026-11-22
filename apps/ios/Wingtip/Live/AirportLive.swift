@@ -63,7 +63,7 @@ final class AirportLive {
         do {
             rvr = try LiveWords.rvrRows(answer.runways, minimumSm: minimumSm)
         } catch {
-            problem = "The runway visual range could not be judged: \(error.localizedDescription)"
+            problem = Problems.say("The runway visual range could not be judged", error)
         }
     }
 

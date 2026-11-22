@@ -24,6 +24,6 @@ enum Altitudes {
     /// place, as FlightWords' squawk does: feet written plainly above
     /// 18,000 ft would be an altitude ATC never says.
     static func said(_ ft: Double) -> String {
-        do { return try Engine.altitudeSaid(ft: ft) } catch { return "altitude could not be worked out: \(error.localizedDescription)" }
+        do { return try Engine.altitudeSaid(ft: ft) } catch { return Problems.words("The altitude could not be worked out", error) }
     }
 }

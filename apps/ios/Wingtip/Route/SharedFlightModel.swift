@@ -72,7 +72,7 @@ final class SharedFlightModel {
             navLog = shared.checkpoints.sorted { $0.sequenceNo < $1.sequenceNo }
             totals = Totals(distanceNm: shared.totalDistanceNm, eteMin: shared.totalEteMin, fuelGal: shared.totalFuelGal)
         } catch {
-            problem = "The shared flight could not be fetched: \(error.localizedDescription)"
+            problem = Problems.say("The shared flight could not be fetched", error)
         }
     }
 

@@ -53,7 +53,7 @@ final class DepartureWindow {
         case .success(let ask): await refresh(ask)
         case .failure(let error):
             answer = nil
-            problem = "Hours unavailable: the question could not be put together (\(error.localizedDescription))."
+            problem = Problems.say("The hours could not be asked for", error)
         }
     }
 
@@ -66,7 +66,7 @@ final class DepartureWindow {
             problem = nil
         } catch {
             guard !Task.isCancelled else { return }
-            problem = "Hours unavailable: \(error.localizedDescription)"
+            problem = Problems.say("The hours could not be fetched", error)
         }
     }
 

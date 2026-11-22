@@ -87,7 +87,7 @@ final class AutoLogbook {
             draftProblem = nil
             flights = (try? await Gateway.flights()) ?? []
         } catch {
-            draftProblem = error.localizedDescription
+            draftProblem = Problems.say("The logbook entry could not be drafted", error)
         }
     }
 
@@ -108,7 +108,7 @@ final class AutoLogbook {
         do {
             try await addEntry(request)
         } catch {
-            logProblem = error.localizedDescription
+            logProblem = Problems.say("The flight could not be logged", error)
             return
         }
         if let flight = request.flightId {
@@ -117,7 +117,7 @@ final class AutoLogbook {
             do {
                 try await saveTrack(flight, track)
             } catch {
-                await recorder.unsent.keep(flight, track, problem: error.localizedDescription)
+                await recorder.unsent.keep(flight, track, problem: Problems.say("The track could not be sent", error))
             }
         }
         logged = request

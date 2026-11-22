@@ -115,7 +115,7 @@ final class Verdict {
             problem = nil
         } catch {
             guard !Task.isCancelled else { return }
-            problem = error.localizedDescription
+            problem = Problems.say("The Go / No-Go could not be worked out", error)
         }
     }
 

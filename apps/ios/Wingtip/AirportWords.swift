@@ -324,7 +324,7 @@ enum AirportWords {
     /// Where the engine refuses, its problem in their place, so a code is
     /// never passed off as the fuel's name.
     static func fuelNames(_ types: [String]) -> String {
-        do { return try Engine.fuelNames(types: types) } catch { return "the fuels could not be worked out: \(error.localizedDescription)" }
+        do { return try Engine.fuelNames(types: types) } catch { return Problems.words("The fuels could not be worked out", error) }
     }
 
     /// How far a place is from the field: the minutes' walk where it is a

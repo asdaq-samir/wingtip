@@ -105,7 +105,7 @@ final class OfflineDownloads: NSObject, URLSessionDownloadDelegate, @unchecked S
             try store.finish(cycle: cycle, region: region, archive: archive, file: location)
             Log.map.info("offline \(key, privacy: .public) kept")
         } catch {
-            store.update("\(cycle)/\(region)") { $0?.failed = error.localizedDescription }
+            store.update("\(cycle)/\(region)") { $0?.failed = Problems.say("The region could not be kept", error) }
         }
         Task { @MainActor in OfflineProgress.shared.done(key) }
     }
@@ -113,7 +113,7 @@ final class OfflineDownloads: NSObject, URLSessionDownloadDelegate, @unchecked S
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         guard let error, let key = task.taskDescription, let (cycle, region, _) = Self.parts(key) else { return }
         if (error as? URLError)?.code != .cancelled {
-            store.update("\(cycle)/\(region)") { $0?.failed = error.localizedDescription }
+            store.update("\(cycle)/\(region)") { $0?.failed = Problems.say("The region could not be fetched", error) }
         }
         Task { @MainActor in OfflineProgress.shared.done(key) }
     }

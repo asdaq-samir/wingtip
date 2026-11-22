@@ -44,7 +44,7 @@ final class FieldNotams {
             await take(fresh, for: ident)
         } catch {
             if ranked == nil || force {
-                problem = "Its NOTAMs could not be had, so closures and TFRs aren't shown: \(error.localizedDescription)"
+                problem = Problems.say("Its NOTAMs could not be had, so closures and TFRs aren't shown", error)
             }
         }
     }

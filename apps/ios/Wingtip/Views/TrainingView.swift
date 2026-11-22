@@ -47,7 +47,7 @@ struct TrainingView: View {
                 if name.isEmpty { name = next.fullName ?? "" }
             }
             problem = nil
-        } catch { problem = error.localizedDescription }
+        } catch { problem = Problems.say("Your training record could not be changed", error) }
     }
 
     // The codes on the Airman Knowledge Test Report: the examiner goes over
@@ -343,7 +343,7 @@ struct ReviewAskView: View {
         .navigationTitle("Ask for a Review")
         .task {
             do { flights = try await Gateway.flights(); flightsProblem = nil } catch {
-                flightsProblem = "Your saved flights could not be fetched: \(error.localizedDescription)"
+                flightsProblem = Problems.say("Your saved flights could not be fetched", error)
             }
         }
     }

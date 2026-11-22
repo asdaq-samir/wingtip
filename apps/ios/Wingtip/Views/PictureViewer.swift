@@ -176,7 +176,7 @@ struct PictureViewer: View {
 
     private func load() async {
         problem = nil
-        do { images = try await picture.load() } catch { problem = error.localizedDescription }
+        do { images = try await picture.load() } catch { problem = Problems.say("The picture could not be fetched", error) }
     }
 }
 

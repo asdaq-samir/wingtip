@@ -108,7 +108,7 @@ final class Traffic {
             freshProblem = nil
             return zip(answer.aircraft, keep).filter(\.1).map(\.0)
         } catch {
-            freshProblem = "Traffic unavailable: \(error.localizedDescription)"
+            freshProblem = Problems.say("The traffic could not be fetched", error)
             return []
         }
     }
@@ -203,7 +203,7 @@ final class Traffic {
             heightsProblem = nil
             return marks
         } catch {
-            heightsProblem = "Traffic heights unavailable: \(error.localizedDescription)"
+            heightsProblem = Problems.say("The traffic's heights could not be fetched", error)
             return []
         }
     }

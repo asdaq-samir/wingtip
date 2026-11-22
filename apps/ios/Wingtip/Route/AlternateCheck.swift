@@ -100,7 +100,7 @@ final class AlternateCheck {
             // Said where the alternate is shown; the last answer is not
             // kept for a question it was not the answer to.
             answer = nil
-            problem = "The alternate could not be checked: \(error.localizedDescription)"
+            problem = Problems.words("The alternate could not be checked", error)
             Log.planner.notice("the alternate check failed: \(error.localizedDescription, privacy: .public)")
         }
     }

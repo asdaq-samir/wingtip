@@ -100,7 +100,7 @@ struct LogbookEntryForm: View {
                 Button("Save") {
                     saving = true
                     Task {
-                        do { try await save(entry); dismiss() } catch { problem = error.localizedDescription }
+                        do { try await save(entry); dismiss() } catch { problem = Problems.say("The entry could not be saved", error) }
                         saving = false
                     }
                 }

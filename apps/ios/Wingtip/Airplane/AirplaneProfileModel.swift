@@ -144,7 +144,7 @@ final class AirplaneProfileModel {
             problem = nil
             plan.took(saved, for: tail)
         } catch {
-            problem = "The figures could not be saved: \(error.localizedDescription)"
+            problem = Problems.say("The figures could not be saved", error)
         }
     }
 

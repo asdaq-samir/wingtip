@@ -152,7 +152,7 @@ struct BriefApproachIntent: AppIntent {
                 .map { EngineContract.FieldFrequency(type: $0.type, description: $0.description, frequencyMhz: $0.frequencyMhz) }
             items = try Engine.approachBrief(drawing: drawing, frequencies: frequencies)
         } catch {
-            return .result(dialog: "The \(a.name) at \(a.field) could not be briefed: \(error.localizedDescription)", view: SiriLines(title: a.name, lines: []))
+            return .result(dialog: "\(Problems.say("The \(a.name) at \(a.field) could not be briefed", error))", view: SiriLines(title: a.name, lines: []))
         }
         let lines = items.map { "\($0.title): \($0.lines.joined(separator: " "))" }
         let spoken = lines.prefix(4).joined(separator: " ")

@@ -318,13 +318,13 @@ final class Tracking {
             } catch {
                 // The engine could not say: shown over the map, and no
                 // watch goes off on a guess.
-                watchProblem = "Could not tell whether \(hex) is flying: \(error.localizedDescription)"
+                watchProblem = Problems.say("Whether \(hex) is flying could not be checked", error)
                 continue
             }
             for watch in watches where watch.hex == hex {
                 let words: String?
                 do { words = try Self.fired(watch, before: before, now: now, status: status) } catch {
-                    watchProblem = "Could not check the watch on \(watch.name): \(error.localizedDescription)"
+                    watchProblem = Problems.say("The watch on \(watch.name) could not be checked", error)
                     continue
                 }
                 if let words {

@@ -52,7 +52,7 @@ final class AirplaneCardModel {
             history = page
             flights += page.flights.filter { f in !flights.contains { $0.id == f.id } }
         } catch {
-            problem = "Earlier flights could not be fetched: \(error.localizedDescription)"
+            problem = Problems.say("Earlier flights could not be fetched", error)
         }
     }
 

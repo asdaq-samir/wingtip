@@ -87,7 +87,7 @@ struct TypeRouteSheet: View {
             }
             read = typed
         } catch {
-            problem = "The route couldn't be read: \(error.localizedDescription)"
+            problem = Problems.say("The route couldn't be read", error)
             return
         }
         guard !read.procedures.isEmpty else {

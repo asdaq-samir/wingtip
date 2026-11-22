@@ -58,7 +58,7 @@ final class DownloadsModel {
             catalog = try await Planner.call { try await $0.offlineCatalog().ok.body.json }
             problem = nil
         } catch {
-            problem = "The regions could not be listed: \(error.localizedDescription)"
+            problem = Problems.say("The regions could not be listed", error)
         }
     }
 
@@ -117,7 +117,7 @@ final class DownloadsModel {
             Task.detached { await CyclePacks.shared.keep(regions: packs) }
             problem = nil
         } catch {
-            problem = "The region could not be fetched: \(error.localizedDescription)"
+            problem = Problems.say("The region could not be fetched", error)
         }
         refresh()
     }

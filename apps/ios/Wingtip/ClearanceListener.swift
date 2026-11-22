@@ -122,7 +122,7 @@ final class ClearanceListener {
         } catch {
             await session.cancel()
             self.session = nil
-            problem = error.localizedDescription
+            problem = Problems.words("The microphone would not start", error)
             Log.radio.error("the microphone would not start: \(error.localizedDescription, privacy: .public)")
             return nil
         }
@@ -164,7 +164,7 @@ final class ClearanceListener {
         // shown as not ours and the reason said (problem).
         var forUs = false
         if let tail {
-            do { forUs = try HeardCall.ourCall(text, tail: tail) } catch { problem = "Could not tell whether that was your call sign: \(error.localizedDescription)" }
+            do { forUs = try HeardCall.ourCall(text, tail: tail) } catch { problem = Problems.say("Whether that was your call sign could not be told", error) }
         }
         let was = heard.firstIndex { $0.id == id }
         let wasFinal = was.map { heard[$0].final } ?? false

@@ -69,7 +69,7 @@ struct NotamListView: View {
                 ranked = try await KeptForAir.answer(.notams, key: "field:\(ident)") { try await Planner.notams(ident) }.value
                 problem = nil
             } catch {
-                problem = "\(ident)'s NOTAMs could not be fetched: \(error.localizedDescription)"
+                problem = Problems.say("\(ident)'s NOTAMs could not be fetched", error)
             }
         }
     }

@@ -14,7 +14,6 @@ struct LogbookEntriesModelTests {
         func delete(_ id: Int) { deletes.append(id) }
     }
 
-    struct Refused: Error, LocalizedError { var errorDescription: String? { "Invalid request: totalHours must be at least 0" } }
 
     static func entry(_ id: Int, route: String? = "KDLH KHIB") -> LogbookEntry {
         LogbookEntry(aircraft: "N3429J", aircraftType: "P28A", airHours: 1.1, approaches: 0, crossCountryHours: 1.2, dayLandings: 2,
@@ -27,7 +26,7 @@ struct LogbookEntriesModelTests {
         let model = LogbookEntriesModel(calls: .init(
             update: { id, r in
                 await asked.update(id, r)
-                if refuse { throw Refused() }
+                if refuse { throw GatewayRefusal(status: 400, words: "Invalid request: totalHours must be at least 0") }
             },
             delete: { await asked.delete($0) }),
         pending: PendingDeletes(defaults: UserDefaults(suiteName: "test-\(UUID().uuidString)")!))
@@ -60,7 +59,7 @@ struct LogbookEntriesModelTests {
         model.edit(Self.entry(1))
         #expect(await model.commitEdit() == false)
         #expect(model.editingID == 1)
-        #expect(model.rowProblem == "Not kept: Invalid request: totalHours must be at least 0")
+        #expect(model.rowProblem == "The change could not be kept: Invalid request: totalHours must be at least 0.")
     }
 
     @Test func aDeleteWaitsForTheLogbookToBeLeft() async {

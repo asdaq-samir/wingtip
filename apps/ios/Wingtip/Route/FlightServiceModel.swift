@@ -22,19 +22,19 @@ final class FlightServiceModel {
             status = try await Gateway.flightService()
             statusProblem = nil
         } catch {
-            statusProblem = "Whether filing is connected here could not be checked: \(error.localizedDescription)"
+            statusProblem = Problems.say("Whether filing is connected here could not be checked", error)
         }
     }
 
     func file(_ request: FlightPlanFilingRequest) async {
         sending = true
         defer { sending = false }
-        do { reference = try await Gateway.file(request); problem = nil } catch { problem = "Not filed: \(error.localizedDescription)" }
+        do { reference = try await Gateway.file(request); problem = nil } catch { problem = Problems.say("The flight plan could not be filed", error) }
     }
 
     func brief(_ request: FlightPlanFilingRequest) async {
         sending = true
         defer { sending = false }
-        do { briefing = try await Gateway.standardBriefing(request); problem = nil } catch { problem = "No briefing: \(error.localizedDescription)" }
+        do { briefing = try await Gateway.standardBriefing(request); problem = nil } catch { problem = Problems.say("The briefing could not be fetched", error) }
     }
 }

@@ -124,7 +124,8 @@ struct NearestView: View {
             airports = reply.airports
             problem = reply.problem
         } catch {
-            problem = error.localizedDescription
+            // The watch's own words; WatchConnectivity's are not a pilot's.
+            problem = ((error as? WatchProblem) ?? .noAnswer).errorDescription
         }
     }
 }

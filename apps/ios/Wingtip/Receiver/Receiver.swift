@@ -89,7 +89,7 @@ final class Receiver {
             if live, !Self.used { UserDefaults.standard.set(true, forKey: Self.usedKey) }
             if Self.trafficChanged(before, next) { onRead?() }
         case let .failure(error):
-            problem = error.localizedDescription
+            problem = Problems.say("The receiver could not be read", error)
         }
     }
 

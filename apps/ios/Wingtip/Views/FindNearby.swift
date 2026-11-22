@@ -102,6 +102,6 @@ struct FindNearbyView: View {
     private func load() async {
         guard let at = ownShip.fix?.coordinate else { return }
         problem = nil
-        do { fields = try await Planner.stopsNear(lat: at.latitude, lon: at.longitude).fields } catch { problem = error.localizedDescription }
+        do { fields = try await Planner.stopsNear(lat: at.latitude, lon: at.longitude).fields } catch { problem = Problems.say("The fields near here could not be found", error) }
     }
 }

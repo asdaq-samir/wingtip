@@ -98,7 +98,7 @@ struct InstructorView: View {
     }
 
     private func act(_ change: () async throws -> Instructor?) async {
-        do { if let next = try await change() { instructor = next }; problem = nil } catch { problem = error.localizedDescription }
+        do { if let next = try await change() { instructor = next }; problem = nil } catch { problem = Problems.say("Your instructor could not be changed", error) }
     }
 }
 
@@ -233,7 +233,7 @@ struct StudentView: View {
     }
 
     private func load() async {
-        do { training = try await Gateway.studentTraining(row.studentId); problem = nil } catch { problem = "Their record could not be fetched (\(error.localizedDescription))." }
+        do { training = try await Gateway.studentTraining(row.studentId); problem = nil } catch { problem = Problems.say("Their record could not be fetched", error) }
     }
 }
 
@@ -281,7 +281,7 @@ struct ReviewSection: View {
                 Button("Send") {
                     Task {
                         do { _ = try await Gateway.declineReview(review.id, note: note.trimmingCharacters(in: .whitespacesAndNewlines)); declining = false; await onDone(nil) }
-                        catch { problem = error.localizedDescription }
+                        catch { problem = Problems.say("The review could not be sent back", error) }
                     }
                 }
                 .disabled(note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -360,7 +360,7 @@ struct SignView: View {
                     let request = SignRequest(code: kind.code, fields: .init(additionalProperties: fields), reviewId: reviewId, signedOn: signedOn, text: text)
                     Task {
                         do { let next = try await Gateway.sign(studentId, request); await onSigned(next); dismiss() }
-                        catch { problem = error.localizedDescription }
+                        catch { problem = Problems.say("The endorsement could not be signed", error) }
                         signing = false
                     }
                 }

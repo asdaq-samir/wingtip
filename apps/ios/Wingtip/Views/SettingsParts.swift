@@ -127,7 +127,7 @@ struct PilotDetailsView: View {
                 await session.refresh()
                 problem = nil
             } catch {
-                problem = "Your name was not saved: \(error.localizedDescription)"
+                problem = Problems.say("Your name could not be saved", error)
             }
         }
     }
