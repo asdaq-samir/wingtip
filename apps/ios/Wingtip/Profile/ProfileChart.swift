@@ -9,7 +9,8 @@ import SwiftUI
 /// the chart's caution amber and within 500 ft (or above it) in its
 /// warning red, 14 CFR 91.119(c)'s least height (`profile_clearance`). Each
 /// waypoint is a mark a tap opens (`onWaypoint`), the nearest within
-/// 22 pt either side, a 44 pt target (HIG Buttons). Swift Charts gives
+/// 22 pt either side, a 44 pt target (HIG Buttons). The obstacles and the
+/// weather along the route are ProfileHazardMarks'. Swift Charts gives
 /// VoiceOver its Audio Graph; every figure is also in the rows (HIG
 /// Charts: never only in a chart). Nothing is worked out here.
 struct ProfileChart: View {
@@ -18,6 +19,10 @@ struct ProfileChart: View {
     /// The altitude previewed, feet MSL.
     let previewFt: Double?
     let clearance: ProfileRules.Clearance?
+    /// The DOF's obstacles levelled against the preview, and the weather
+    /// along the route (ProfileHazardMarks).
+    var obstacles: [ProfileRules.Obstacle] = []
+    var weather: ProfileWeather?
     var onWaypoint: ((String) -> Void)?
 
     private var waypoints: [(ident: String, alongNm: Double)] { ProfileRules.waypoints(legs: legs) }
@@ -36,7 +41,8 @@ struct ProfileChart: View {
 
     var body: some View {
         if let profile, profile.lengthNm > 0, !profile.terrain.isEmpty {
-            let highest = max(profile.terrain.map(\.groundFt).max() ?? 0, previewFt ?? 0, legs.map(\.altitudeFt).max() ?? 0, 3000)
+            let highest = max(profile.terrain.map(\.groundFt).max() ?? 0, obstacles.map(\.amslFt).max() ?? 0, previewFt ?? 0,
+                              legs.map(\.altitudeFt).max() ?? 0, 3000)
             let top = (highest * 1.25 / 1000).rounded(.up) * 1000
             Chart {
                 ForEach(Array(profile.airspace.enumerated()), id: \.offset) { _, area in
@@ -50,6 +56,7 @@ struct ProfileChart: View {
                         .foregroundStyle(Color(uiColor: WingtipColor.Chart.terrain).opacity(0.75))
                         .accessibilityHidden(true)
                 }
+                ProfileHazardMarks(obstacles: obstacles, weather: weather, lengthNm: profile.lengthNm, top: top)
                 if let clearance {
                     band(profile, from: clearance.yellowFromFt, colour: WingtipColor.Chart.caution, name: "Within 1,000 ft")
                     band(profile, from: clearance.redFromFt, colour: WingtipColor.Chart.warning, name: "Within 500 ft")

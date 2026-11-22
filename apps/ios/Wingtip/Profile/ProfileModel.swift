@@ -15,6 +15,16 @@ final class ProfileModel {
     var auto = false
     /// The waypoint tapped in the profile, its popover up.
     var waypoint: String?
+    /// The weather along the route the side view draws (ProfileHazardMarks),
+    /// nil till it comes or where it could not be read.
+    private(set) var weather: ProfileWeather?
+
+    /// The weather for the plan's route and time en route, leaving now (the
+    /// iPhone's Brief has no later departure), asked again as either changes.
+    func loadWeather(plan: Plan) async {
+        guard plan.routed else { weather = nil; return }
+        weather = try? await Planner.routeWeather(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: plan.totals?.eteMin)
+    }
 
     /// The altitude the profile colours the ground against: the
     /// airplane's under Auto, else the preview, else the plan's.

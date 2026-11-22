@@ -68,6 +68,8 @@ struct MapSettingsView: View {
                     // The model weather's field and its level (ModelWeather).
                     ModelWeatherRows()
                 }
+                // The ground and the obstacles against the altitude flown.
+                HazardRows()
             }
             Section("Look") {
                 ThemeRow()
