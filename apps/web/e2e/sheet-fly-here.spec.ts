@@ -77,7 +77,7 @@ test("Fly Here from the map over a route, from Search at the pill", async ({ pag
   // A phone's pill fits the route at zoom 6.2, where Quad City is the one
   // field of the box still drawn; a desktop's wider window fits it a level
   // closer in, its foot north of Quad City, with Rockford beside the panel.
-  const field = (page.viewportSize()?.width ?? 0) >= 768 ? "KRFD" : "KMLI";
+  const field = (page.viewportSize()?.width ?? 0) >= 660 ? "KRFD" : "KMLI";
   await tapAirportOnMap(page, field);
   await flyHere(page, field);
   await grabberTo(page, "half");

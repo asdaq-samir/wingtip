@@ -143,13 +143,13 @@ export default defineConfig({
     {
       name: "mobile",
       dependencies: ["setup"],
-      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts"],
+      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts", "**/ipad-*.spec.ts"],
       use: { viewport: { width: 390, height: 844 }, storageState: DEVELOPER_STATE },
     },
     {
       name: "desktop",
       dependencies: ["setup"],
-      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts"],
+      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts", "**/ipad-*.spec.ts"],
       use: { viewport: { width: 1280, height: 800 }, storageState: DEVELOPER_STATE },
     },
     // The phone's sheet in Safari's engine at an iPhone's size and touch
@@ -161,16 +161,21 @@ export default defineConfig({
       testMatch: /sheet-webkit\.spec\.ts/,
       use: { ...devices["iPhone 15 Pro"], storageState: DEVELOPER_STATE },
     },
-    // The iPad, the device most pilots fly with (decision 0058): the smoke
-    // and flight-critical journeys in Safari's engine on an 11-inch iPad
-    // Pro upright (834 x 1194, touch), after merge with mobile's and in a
-    // wave's validation (scripts/ci/browser_specs.py). Its own grep keeps
-    // the night from running the whole suite a fourth time in WebKit.
+    // The iPad, the device most pilots fly with (decision 0058; the owner,
+    // 2026-11-21: "Primary app users are on iPad"), in Safari's engine, its
+    // touch and its user agent, on an 11-inch iPad Pro upright (834 x 1194):
+    // the smoke and flight-critical journeys, and the ipad-* specs, each
+    // setting the window to every iPad size, held either way, and every
+    // Split View and Stage Manager width it is measured at. After merge
+    // with mobile's, in a wave's validation and at night
+    // (scripts/ci/browser_specs.py). Its own grep keeps the night from
+    // running the whole suite a fourth time in WebKit; a grep reads a
+    // test's file path too, so the ipad-* specs are named by it.
     {
       name: "webkit-ipad",
       dependencies: ["setup"],
       testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts"],
-      grep: /@smoke|@flight-critical/,
+      grep: /@smoke|@flight-critical|ipad-[a-z-]+\.spec\.ts/,
       use: { ...devices["iPad Pro 11"], storageState: DEVELOPER_STATE },
     },
     ...iosAudit,

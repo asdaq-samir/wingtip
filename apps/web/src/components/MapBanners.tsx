@@ -96,8 +96,8 @@ function MapBannersDrawn({ map }: { map: GlMap | null }) {
       className={cn(
         "pointer-events-none absolute bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] z-[1000] flex flex-col items-center gap-2 nav-bottom:top-[max(0.5rem,env(safe-area-inset-top))] nav-bottom:left-[calc(max(1rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] nav-bottom:bottom-auto",
         flying
-          ? "nav-bottom:top-[calc(max(0.75rem,env(safe-area-inset-top))+var(--map-inset-top,0px)+var(--flying-head-h,0px)+0.5rem)] right-[calc(max(0.5rem,env(safe-area-inset-right))+4.75rem)] nav-bottom:right-[calc(max(0.5rem,env(safe-area-inset-right))+4.75rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+4.75rem)]"
-          : "right-[calc(max(0.5rem,env(safe-area-inset-right))+3.25rem)] nav-bottom:right-[calc(max(0.5rem,env(safe-area-inset-right))+3.25rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+3.25rem)]",
+          ? "nav-bottom:top-[calc(max(0.75rem,env(safe-area-inset-top))+var(--map-inset-top,0px)+var(--flying-head-h,0px)+0.5rem)] right-[calc(max(0.5rem,env(safe-area-inset-right))+var(--map-inset-right,0px)+4.75rem)] nav-bottom:right-[calc(max(0.5rem,env(safe-area-inset-right))+var(--map-inset-right,0px)+4.75rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+4.75rem)]"
+          : "right-[calc(max(0.5rem,env(safe-area-inset-right))+var(--map-inset-right,0px)+3.25rem)] nav-bottom:right-[calc(max(0.5rem,env(safe-area-inset-right))+var(--map-inset-right,0px)+3.25rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+3.25rem)]",
       )}
     >
       {/* The zoom level while it changes (ZoomBanner), first. */}

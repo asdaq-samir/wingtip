@@ -1130,8 +1130,10 @@ enum WingtipSize {
     static let glyphMap: CGFloat = 20
     static let glyphCardAction: CGFloat = 20
     static let tabBar: CGFloat = 64
+    static let regular: CGFloat = 660
     static let panel: CGFloat = 384
     static let panelWide: CGFloat = 448
+    static let inspector: CGFloat = 1180
     static let desktop: CGFloat = 1024
     static let glassBlur: CGFloat = 15
 }

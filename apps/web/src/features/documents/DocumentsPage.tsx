@@ -4,6 +4,7 @@ import { FileTrigger } from "react-aria-components";
 import { Pressable } from "react-aria/Pressable";
 import { cn } from "cn";
 import EmptyState from "../../components/EmptyState";
+import FileDrop from "../../components/FileDrop";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import IconButton from "../../components/IconButton";
 import RowMenu from "../../components/RowMenu";
@@ -27,38 +28,44 @@ import { useDocuments } from "./useDocuments";
  * row opens the document in the reader; a cited rule anywhere in the app
  * opens it at its paragraph (Cited).
  */
+/** What the library takes: a PDF. */
+const PDF_TYPES = ["application/pdf"] as const;
+
 export default function DocumentsPage() {
   const vm = useDocuments();
   return (
     <div className="flex flex-col gap-5" data-testid="documents-page">
-      <ListGroup title="Your Documents">
-        {vm.own.map((doc) => (
-          <OwnRow
-            key={doc.id}
-            doc={doc}
-            onOpen={() => vm.open({ doc: ownDocName(doc.id), at: null, page: null })}
-            onRename={vm.rename}
-            onDelete={vm.remove}
-          />
-        ))}
-        {/* React Aria's FileTrigger: the device's own file picker, PDFs only. */}
-        <FileTrigger
-          acceptedFileTypes={["application/pdf", ".pdf"]}
-          allowsMultiple
-          onSelect={(files) => files && void vm.add(Array.from(files))}
-        >
-          <Pressable>
-            <Button
-              variant="plain"
-              className={cn("min-h-11 w-full justify-start gap-3 px-4 text-tint", TEXT.row)}
-              data-testid="documents-add"
-            >
-              <FileUp aria-hidden className="size-5" />
-              Add a PDF
-            </Button>
-          </Pressable>
-        </FileTrigger>
-      </ListGroup>
+      {/* A PDF dragged in from Files, beside the app on an iPad, as well as picked. */}
+      <FileDrop label="Drop PDFs to add them to your documents" types={PDF_TYPES} onFiles={(files) => void vm.add(files)}>
+        <ListGroup title="Your Documents">
+          {vm.own.map((doc) => (
+            <OwnRow
+              key={doc.id}
+              doc={doc}
+              onOpen={() => vm.open({ doc: ownDocName(doc.id), at: null, page: null })}
+              onRename={vm.rename}
+              onDelete={vm.remove}
+            />
+          ))}
+          {/* React Aria's FileTrigger: the device's own file picker, PDFs only. */}
+          <FileTrigger
+            acceptedFileTypes={[...PDF_TYPES, ".pdf"]}
+            allowsMultiple
+            onSelect={(files) => files && void vm.add(Array.from(files))}
+          >
+            <Pressable>
+              <Button
+                variant="plain"
+                className={cn("min-h-11 w-full justify-start gap-3 px-4 text-tint", TEXT.row)}
+                data-testid="documents-add"
+              >
+                <FileUp aria-hidden className="size-5" />
+                Add a PDF
+              </Button>
+            </Pressable>
+          </FileTrigger>
+        </ListGroup>
+      </FileDrop>
       {vm.shelfFailed && !vm.groups.length && (
         <EmptyState icon={<Download />} title="Library Not Reached">
           The FAA's documents cannot be listed now. Those you keep for the air are listed here with no signal.

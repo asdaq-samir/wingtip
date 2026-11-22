@@ -27,7 +27,7 @@ export const middleOfFront = (page: Page) => middleBeside(page, frontSheet(page)
 async function middleBeside(page: Page, panel: Locator) {
   const viewport = page.viewportSize()!;
   const sheet = (await panel.boundingBox())!;
-  if (viewport.width < 768) return { x: viewport.width / 2, y: sheet.y / 2 };
+  if (viewport.width < 660) return { x: viewport.width / 2, y: sheet.y / 2 };
   return (await panel.getAttribute("data-panel")) !== "peek"
     ? { x: (sheet.x + sheet.width + viewport.width) / 2, y: viewport.height / 2 }
     : { x: viewport.width / 2, y: (sheet.y + sheet.height + viewport.height) / 2 };

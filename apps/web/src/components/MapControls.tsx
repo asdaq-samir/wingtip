@@ -222,7 +222,7 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
               "pointer-events-none z-[1000] flex flex-col items-end gap-2 [&>*]:pointer-events-auto",
               riding
                 ? "absolute right-[max(0.5rem,env(safe-area-inset-right))] bottom-6"
-                : "absolute right-[max(0.5rem,env(safe-area-inset-right))] bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] nav-bottom:top-[max(0.5rem,env(safe-area-inset-top))] nav-bottom:bottom-auto",
+                : "absolute right-[calc(max(0.5rem,env(safe-area-inset-right))+var(--map-inset-right,0px))] bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] nav-bottom:top-[max(0.5rem,env(safe-area-inset-top))] nav-bottom:bottom-auto",
             )}
           >
             {/* In flight the mic's grown circle (FLYING_BUTTON's 60) over

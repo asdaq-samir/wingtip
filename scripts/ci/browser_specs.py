@@ -4,7 +4,7 @@
 At night or by hand, every spec on every project, over ten shards. In
 a wave's validation (EVENT "wave", validate-wave.yml; decision 0054),
 every spec on the phone, desktop and WebKit phone projects, and the
-smoke set on the iPad's WebKit, over WAVE_SHARDS: minutes, where the
+smoke set and the ipad-* specs on the iPad's WebKit, over WAVE_SHARDS: minutes, where the
 night's ten take half an hour. On main's push, the @smoke and
 @flight-critical tests on the phone project, the iPhone's WebKit and the
 iPad's (webkit-ipad, which runs only that set; the iPad is the primary

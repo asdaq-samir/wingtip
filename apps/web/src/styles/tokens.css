@@ -242,8 +242,10 @@
   --size-glyph-map: 20px;
   --size-glyph-card-action: 20px;
   --size-tab-bar: 64px;
+  --size-regular: 660px;
   --size-panel: 384px;
   --size-panel-wide: 448px;
+  --size-inspector: 1180px;
   --size-desktop: 1024px;
   --airspace-blue-text: #2465b8;
   --airspace-magenta-text: #c0309f;

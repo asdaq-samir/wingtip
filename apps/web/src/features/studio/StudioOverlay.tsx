@@ -22,7 +22,7 @@ export function StudioOverlay({ track, profile }: { track: ReplayTrack; profile:
       <div className="pointer-events-none absolute top-[calc(max(0.5rem,env(safe-area-inset-top))+var(--map-inset-top,0px))] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] z-[1000]">
         <DataBlock track={track} />
       </div>
-      <div className="pointer-events-none absolute right-[calc(max(0.5rem,env(safe-area-inset-right))+3.25rem)] bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+0.75rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+3.25rem)] z-[1000] flex justify-center">
+      <div className="pointer-events-none absolute right-[calc(max(0.5rem,env(safe-area-inset-right))+var(--map-inset-right,0px)+3.25rem)] bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+0.75rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+3.25rem)] z-[1000] flex justify-center">
         <div
           className={cn(GLASS, "pointer-events-auto flex w-[min(100%,40rem)] flex-col gap-1.5 rounded-(--radius-card) px-3 pt-2 pb-2")}
           data-testid="studio-replay"

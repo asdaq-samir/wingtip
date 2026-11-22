@@ -237,7 +237,7 @@ test("the chart's airports keep coming in under a finger's pan, before it lets g
   const map = (await page.locator(".maplibregl-map").boundingBox())!;
   const panel = await sideDrawer(page).boundingBox();
   const left = panel && panel.width < map.width * 0.8 ? panel.x + panel.width + 20 : map.x + 20;
-  const y = viewport.width < 768 ? 160 : viewport.height / 3;
+  const y = viewport.width < 660 ? 160 : viewport.height / 3;
   const run = (map.x + map.width - 90 - left) * 0.9;
   await page.mouse.move(left, y);
   await page.mouse.down();

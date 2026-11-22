@@ -50,9 +50,14 @@ function focusSearch(doc: Document): boolean {
 }
 
 /** Back one level: the close of the card on top in the panel (CardClose,
- *  SheetCard: `data-back`), where there is one in sight. */
+ *  SheetCard: `data-back`), or in the inspector beside the map (MapPanel,
+ *  after the panel on the page, so its card's close is found first), where
+ *  there is one in sight. */
 export function backOne(doc: Document): boolean {
-  const close = [...doc.querySelectorAll<HTMLElement>('[data-slot="map-panel"] [data-back]')].reverse().find(visible) ?? null;
+  const close =
+    [...doc.querySelectorAll<HTMLElement>(':is([data-slot="map-panel"], [data-slot="map-inspector"]) [data-back]')]
+      .reverse()
+      .find(visible) ?? null;
   if (!visible(close)) return false;
   close.click();
   return true;
@@ -76,8 +81,14 @@ export const altKey = (letter: string) => `alt+${letter.toLowerCase()}`;
 /** The letter a hotkey was heard as, upper case, as SCREEN_KEYS has it. */
 const letterOf = (keys: readonly string[] | undefined) => keys?.[0]?.toUpperCase();
 
-/** The shortcuts on the page while `on` (a desktop's: useIsDesktop). */
-export function useShortcuts(on: boolean): void {
+/** The shortcuts on the page, wherever there is a keyboard: a desktop's,
+ *  and an iPad's Magic Keyboard or any hardware one, whose pointer is
+ *  still touch -- read off the desktop's fine pointer, Escape and Alt+B
+ *  did nothing on an iPad with its keyboard (the iPad audit, 2026-11-21).
+ *  A touch screen with none sends no keys outside a field, which typing
+ *  leaves alone; the keys are shown (Kbd) on a desktop only. `on` false
+ *  holds them, for a test. */
+export function useShortcuts(on = true): void {
   // Escape is not a character key: it goes back one level alone, no Alt.
   useHotkeys(
     "escape",

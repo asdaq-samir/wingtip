@@ -82,8 +82,8 @@ export const overlaysOf = new WeakMap<maplibregl.Map, OverlayTiles>();
 export const loaded = new WeakSet<maplibregl.Map>();
 
 /** What the panel covers, as MapLibre's padding: its middle is the map's. */
-export function padOf({ top, bottom, left }: MapInsets): Required<PaddingOptions> {
-  return { top, bottom, left, right: 0 };
+export function padOf({ top, bottom, left, right = 0 }: MapInsets): Required<PaddingOptions> {
+  return { top, bottom, left, right };
 }
 
 /**

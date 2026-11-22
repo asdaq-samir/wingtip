@@ -42,7 +42,7 @@ for (const size of ["full", "half"] as const) {
   test(`a long route at ${size} at 19.65 px: the figures at the bottom, the bar over them, the head in sight at every scroll`, async ({
     page,
   }) => {
-    test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+    test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's sheet");
     await page.goto("/app/plan?dep=KPWK&dest=C81&stops=KUGN");
     await settle(page);
     await grabberTo(page, size);
