@@ -21,6 +21,8 @@ function planOfShared(f: SharedFlight): SharedPlan {
     // A saved flight keeps no rules of its own: the receiver's stay.
     rules: null,
     tail: f.aircraftTailNumber ?? null,
+    // A saved flight's fuel is in its own address (planHrefOf), not here.
+    tanks: {},
   };
 }
 

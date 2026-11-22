@@ -5,12 +5,12 @@ import { describeError } from "../../lib/api/client";
 import { showError } from "../../lib/problems";
 import { cancelled, shareOrCopy } from "../../lib/share";
 import { airplaneOfChoice, sharedPlanLink } from "../../lib/sharedFlight";
-import { routeName } from "../../lib/identSchema";
+import { routeName, tanksOf } from "../../lib/identSchema";
 import { useAddressKey } from "../../lib/address";
 
 /**
  * The route's Share link (ShareMenu): the plan sent in the link itself --
- * route, altitude, departure time, airplane type and rules -- which opens
+ * route, altitude, departure time, airplane type, rules and fuel set -- which opens
  * as a preview on the receiver's phone or browser (features/shared-flight)
  * and stores nothing anywhere. The airplane's N-number goes with it
  * whenever there is one: the owner, 2026-11-11, "keep it default and no
@@ -19,13 +19,16 @@ import { useAddressKey } from "../../lib/address";
  */
 export function useShareLink(planned: { dep: string; dest: string; stops: string[] }, altitudeFt: number | undefined) {
   const [depart] = useAddressKey("depart");
+  // The fuel set on FPL's gauges goes with it, so the receiver's nav log
+  // and fuel checks fly the sender's figures (the phones send it too).
+  const [tanks] = useAddressKey("tanks");
   const rules = usePreferences((p) => p.flightRules);
   const aircraft = usePreferences((p) => p.aircraft);
   const { type, tail } = airplaneOfChoice(aircraft);
 
   const share = useCallback(async () => {
     const url = sharedPlanLink(
-      { ...planned, altitudeFt: altitudeFt ?? null, depart: depart || null, type, rules, tail },
+      { ...planned, altitudeFt: altitudeFt ?? null, depart: depart || null, type, rules, tail, tanks: tanksOf(tanks) },
       window.location.origin,
     );
     try {
@@ -33,7 +36,7 @@ export function useShareLink(planned: { dep: string; dest: string; stops: string
     } catch (err) {
       if (!cancelled(err)) showError("Could Not Share the Route", describeError(err));
     }
-  }, [planned, altitudeFt, depart, type, rules, tail]);
+  }, [planned, altitudeFt, depart, type, rules, tail, tanks]);
 
   return { share };
 }
