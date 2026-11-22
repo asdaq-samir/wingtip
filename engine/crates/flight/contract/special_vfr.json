@@ -1,0 +1,181 @@
+{
+  "x-call": "wingtip_flight::special_vfr::call",
+  "description": "14 CFR 91.157's special VFR for an airplane (eCFR, current on 2026-11-21): within the surface area of an airport's Class B, C, D or E airspace and below 10,000 ft MSL (91.157(a)), never at the airports of part 91 appendix D, section 3 (fixed-wing special VFR prohibited: O'Hare, LaGuardia and 31 more, by FAA or ICAO ident); with an ATC clearance, clear of clouds and at least 1 statute mile flight visibility (91.157(b)(1)-(3)); between sunset and sunrise (in Alaska, the sun more than 6 degrees below the horizon) only for a pilot meeting part 61's requirements for instrument flight in an airplane equipped as 91.205(d) asks (91.157(b)(4)); and to take off or land, at least 1 sm ground visibility, or flight visibility where none is reported (91.157(c)). `available` is false where anything known rules it out (each in `problems`); what is not given rules nothing out and stays in `needs`, never said to be met.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "SpecialVfrInput",
+      "type": "object",
+      "properties": {
+        "surface_area": {
+          "enum": [
+            "A",
+            "B",
+            "C",
+            "D",
+            "E",
+            "G",
+            null
+          ],
+          "description": "The class of the surface area the airplane is in (controlled airspace designated to the surface for an airport); null or G where it is in none."
+        },
+        "airport": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The surface area's primary airport, FAA or ICAO ident, for appendix D, section 3."
+        },
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Feet MSL; null where not known."
+        },
+        "night": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Between sunset and sunrise; null where not known."
+        },
+        "alaska": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "In Alaska, where 91.157(b)(4) reads the sun's elevation."
+        },
+        "sun_elevation_deg": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The sun's elevation, degrees (negative below the horizon); read in Alaska alone."
+        },
+        "instrument_current": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "The pilot meets part 61's requirements for instrument flight (rated, and current under 61.57(c))."
+        },
+        "ifr_equipped": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "The airplane is equipped as 91.205(d) asks for IFR."
+        },
+        "flight_visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Statute miles."
+        },
+        "ground_visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Statute miles, as reported at the airport; null where none is."
+        },
+        "clear_of_clouds": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Whether the flight can keep clear of clouds."
+        },
+        "takeoff_or_landing": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Taking off or landing under special VFR (91.157(c))."
+        }
+      }
+    },
+    "answer": {
+      "title": "SpecialVfrAnswer",
+      "type": "object",
+      "properties": {
+        "available": {
+          "type": "boolean",
+          "description": "Nothing known rules special VFR out."
+        },
+        "problems": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "words": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string",
+                "description": "The rule, \"14 CFR 91.157(b)(3)\"."
+              }
+            },
+            "required": [
+              "words",
+              "source"
+            ],
+            "additionalProperties": false
+          },
+          "description": "What rules it out, each with its rule."
+        },
+        "needs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "words": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string",
+                "description": "The rule, \"14 CFR 91.157(b)(3)\"."
+              }
+            },
+            "required": [
+              "words",
+              "source"
+            ],
+            "additionalProperties": false
+          },
+          "description": "What it asks, each with its rule."
+        },
+        "listed": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The airport's entry in part 91 appendix D, section 3, \"Chicago, IL (Chicago-O'Hare International Airport)\"; null where it is not listed."
+        },
+        "visibility_sm": {
+          "type": "number"
+        },
+        "below_msl_ft": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "available",
+        "problems",
+        "needs",
+        "listed",
+        "visibility_sm",
+        "below_msl_ft"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

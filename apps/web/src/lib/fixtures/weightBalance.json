@@ -1,0 +1,620 @@
+{
+  "about": "Weight and balance (the POH's section 6; 14 CFR 91.9(a)) against a made-up POH-style loading, not any real airplane's: engine/facade/tests/weight_balance.rs and lib/weightBalance.test.ts hold gonogo_balance and gonogo_default_load to these. Each figure is the weight-and-balance arithmetic of FAA-H-8083-25 chapter 10: each weight times its arm, the moments summed, over the weight.",
+  "gonogo_balance": [
+    {
+      "about": "Within every limit: 2,584 lb at takeoff (the ramp's 2,590 less 6 lb of start and taxi fuel), the centre of gravity the moments' sum over the weight",
+      "input": {
+        "loading": {
+          "source": "Made up for the tests: no real airplane's figures (the owner: no assumed airplane). A POH-style loading -- weights, three stations, a fuel arm and a centre-of-gravity envelope whose forward limit slopes aft above 2,400 lb -- as a POH's section 6 gives one.",
+          "max_ramp_lb": 3010,
+          "max_takeoff_lb": 3000,
+          "max_landing_lb": 2900,
+          "sample_empty_weight_lb": 1900,
+          "sample_empty_moment_lb_in": 161500,
+          "stations": [
+            {
+              "name": "Front seats",
+              "arm_in": 85
+            },
+            {
+              "name": "Rear seats",
+              "arm_in": 118
+            },
+            {
+              "name": "Baggage",
+              "arm_in": 140,
+              "max_lb": 100
+            }
+          ],
+          "baggage_combined_max_lb": 100,
+          "fuel_arm_in": 90,
+          "fuel_max_gal": 60,
+          "fuel_grade": "avgas",
+          "start_taxi_fuel_lb": 6,
+          "envelope": [
+            [
+              80,
+              1800
+            ],
+            [
+              80,
+              2400
+            ],
+            [
+              84,
+              3000
+            ],
+            [
+              92,
+              3000
+            ],
+            [
+              92,
+              1800
+            ]
+          ]
+        },
+        "load": {
+          "empty_weight_lb": 1900,
+          "empty_arm_in": 85,
+          "stations_lb": [
+            340,
+            0,
+            50
+          ],
+          "fuel_gal": 50
+        },
+        "trip_fuel_gal": 20
+      },
+      "answer": {
+        "takeoff": {
+          "weight_lb": 2584,
+          "arm_in": 86.63312693498452
+        },
+        "landing": {
+          "weight_lb": 2464,
+          "arm_in": 86.46915584415585
+        },
+        "problems": [],
+        "takeoff_words": "2,584 lb at 86.6 in"
+      }
+    },
+    {
+      "about": "Forward of the sloping forward limit at takeoff and at landing, where the forward limit is read at each one's own weight",
+      "input": {
+        "loading": {
+          "source": "Made up for the tests: no real airplane's figures (the owner: no assumed airplane). A POH-style loading -- weights, three stations, a fuel arm and a centre-of-gravity envelope whose forward limit slopes aft above 2,400 lb -- as a POH's section 6 gives one.",
+          "max_ramp_lb": 3010,
+          "max_takeoff_lb": 3000,
+          "max_landing_lb": 2900,
+          "sample_empty_weight_lb": 1900,
+          "sample_empty_moment_lb_in": 161500,
+          "stations": [
+            {
+              "name": "Front seats",
+              "arm_in": 85
+            },
+            {
+              "name": "Rear seats",
+              "arm_in": 118
+            },
+            {
+              "name": "Baggage",
+              "arm_in": 140,
+              "max_lb": 100
+            }
+          ],
+          "baggage_combined_max_lb": 100,
+          "fuel_arm_in": 90,
+          "fuel_max_gal": 60,
+          "fuel_grade": "avgas",
+          "start_taxi_fuel_lb": 6,
+          "envelope": [
+            [
+              80,
+              1800
+            ],
+            [
+              80,
+              2400
+            ],
+            [
+              84,
+              3000
+            ],
+            [
+              92,
+              3000
+            ],
+            [
+              92,
+              1800
+            ]
+          ]
+        },
+        "load": {
+          "empty_weight_lb": 1900,
+          "empty_arm_in": 78,
+          "stations_lb": [
+            400,
+            0,
+            0
+          ],
+          "fuel_gal": 60
+        },
+        "trip_fuel_gal": 30
+      },
+      "answer": {
+        "takeoff": {
+          "weight_lb": 2654,
+          "arm_in": 80.65561416729464
+        },
+        "landing": {
+          "weight_lb": 2474,
+          "arm_in": 79.97574777687954
+        },
+        "problems": [
+          "At takeoff the centre of gravity, 80.7 in, is forward of its limit, 81.7 in",
+          "At landing the centre of gravity, 80.0 in, is forward of its limit, 80.5 in"
+        ],
+        "takeoff_words": "2,654 lb at 80.7 in"
+      }
+    },
+    {
+      "about": "Over the ramp, takeoff and landing weights, and the baggage over its station's most and the combined most; the envelope not judged where the weight is already over",
+      "input": {
+        "loading": {
+          "source": "Made up for the tests: no real airplane's figures (the owner: no assumed airplane). A POH-style loading -- weights, three stations, a fuel arm and a centre-of-gravity envelope whose forward limit slopes aft above 2,400 lb -- as a POH's section 6 gives one.",
+          "max_ramp_lb": 3010,
+          "max_takeoff_lb": 3000,
+          "max_landing_lb": 2900,
+          "sample_empty_weight_lb": 1900,
+          "sample_empty_moment_lb_in": 161500,
+          "stations": [
+            {
+              "name": "Front seats",
+              "arm_in": 85
+            },
+            {
+              "name": "Rear seats",
+              "arm_in": 118
+            },
+            {
+              "name": "Baggage",
+              "arm_in": 140,
+              "max_lb": 100
+            }
+          ],
+          "baggage_combined_max_lb": 100,
+          "fuel_arm_in": 90,
+          "fuel_max_gal": 60,
+          "fuel_grade": "avgas",
+          "start_taxi_fuel_lb": 6,
+          "envelope": [
+            [
+              80,
+              1800
+            ],
+            [
+              80,
+              2400
+            ],
+            [
+              84,
+              3000
+            ],
+            [
+              92,
+              3000
+            ],
+            [
+              92,
+              1800
+            ]
+          ]
+        },
+        "load": {
+          "empty_weight_lb": 1900,
+          "empty_arm_in": 85,
+          "stations_lb": [
+            400,
+            340,
+            120
+          ],
+          "fuel_gal": 60
+        },
+        "trip_fuel_gal": 10
+      },
+      "answer": {
+        "takeoff": {
+          "weight_lb": 3114,
+          "arm_in": 91.29094412331406
+        },
+        "landing": {
+          "weight_lb": 3054,
+          "arm_in": 91.3163064833006
+        },
+        "problems": [
+          "The ramp weight, 3,120 lb, is over its most, 3,010 lb",
+          "The takeoff weight, 3,114 lb, is 114 lb over its most",
+          "The landing weight, 3,054 lb, is 154 lb over its most",
+          "Baggage holds 120 lb, over its 100 lb",
+          "The baggage, 120 lb in all, is over its 100 lb"
+        ],
+        "takeoff_words": "3,114 lb at 91.3 in"
+      }
+    },
+    {
+      "about": "Aft of the aft limit, at takeoff and still at landing as the fuel forward of the load burns",
+      "input": {
+        "loading": {
+          "source": "Made up for the tests: no real airplane's figures (the owner: no assumed airplane). A POH-style loading -- weights, three stations, a fuel arm and a centre-of-gravity envelope whose forward limit slopes aft above 2,400 lb -- as a POH's section 6 gives one.",
+          "max_ramp_lb": 3010,
+          "max_takeoff_lb": 3000,
+          "max_landing_lb": 2900,
+          "sample_empty_weight_lb": 1900,
+          "sample_empty_moment_lb_in": 161500,
+          "stations": [
+            {
+              "name": "Front seats",
+              "arm_in": 85
+            },
+            {
+              "name": "Rear seats",
+              "arm_in": 118
+            },
+            {
+              "name": "Baggage",
+              "arm_in": 140,
+              "max_lb": 100
+            }
+          ],
+          "baggage_combined_max_lb": 100,
+          "fuel_arm_in": 90,
+          "fuel_max_gal": 60,
+          "fuel_grade": "avgas",
+          "start_taxi_fuel_lb": 6,
+          "envelope": [
+            [
+              80,
+              1800
+            ],
+            [
+              80,
+              2400
+            ],
+            [
+              84,
+              3000
+            ],
+            [
+              92,
+              3000
+            ],
+            [
+              92,
+              1800
+            ]
+          ]
+        },
+        "load": {
+          "empty_weight_lb": 1900,
+          "empty_arm_in": 87,
+          "stations_lb": [
+            170,
+            340,
+            100
+          ],
+          "fuel_gal": 20
+        },
+        "trip_fuel_gal": 15
+      },
+      "answer": {
+        "takeoff": {
+          "weight_lb": 2624,
+          "arm_in": 93.0373475609756
+        },
+        "landing": {
+          "weight_lb": 2534,
+          "arm_in": 93.14522494080505
+        },
+        "problems": [
+          "At takeoff the centre of gravity, 93.0 in, is aft of its limit, 92.0 in",
+          "At landing the centre of gravity, 93.1 in, is aft of its limit, 92.0 in"
+        ],
+        "takeoff_words": "2,624 lb at 93.0 in"
+      }
+    },
+    {
+      "about": "Jet A with no handbook figure: its standard 6.8 lb a gallon (FAA-H-8083-25, chapter 10), 50 gal 340 lb",
+      "input": {
+        "loading": {
+          "source": "Made up for the tests: no real airplane's figures (the owner: no assumed airplane). A POH-style loading -- weights, three stations, a fuel arm and a centre-of-gravity envelope whose forward limit slopes aft above 2,400 lb -- as a POH's section 6 gives one.",
+          "max_ramp_lb": 3010,
+          "max_takeoff_lb": 3000,
+          "max_landing_lb": 2900,
+          "sample_empty_weight_lb": 1900,
+          "sample_empty_moment_lb_in": 161500,
+          "stations": [
+            {
+              "name": "Front seats",
+              "arm_in": 85
+            },
+            {
+              "name": "Rear seats",
+              "arm_in": 118
+            },
+            {
+              "name": "Baggage",
+              "arm_in": 140,
+              "max_lb": 100
+            }
+          ],
+          "baggage_combined_max_lb": 100,
+          "fuel_arm_in": 90,
+          "fuel_max_gal": 60,
+          "fuel_grade": "jet_a",
+          "start_taxi_fuel_lb": 6,
+          "envelope": [
+            [
+              80,
+              1800
+            ],
+            [
+              80,
+              2400
+            ],
+            [
+              84,
+              3000
+            ],
+            [
+              92,
+              3000
+            ],
+            [
+              92,
+              1800
+            ]
+          ]
+        },
+        "load": {
+          "empty_weight_lb": 1900,
+          "empty_arm_in": 85,
+          "stations_lb": [
+            340,
+            0,
+            50
+          ],
+          "fuel_gal": 50
+        },
+        "trip_fuel_gal": 20
+      },
+      "answer": {
+        "takeoff": {
+          "weight_lb": 2624,
+          "arm_in": 86.6844512195122
+        },
+        "landing": {
+          "weight_lb": 2488,
+          "arm_in": 86.5032154340836
+        },
+        "problems": [],
+        "takeoff_words": "2,624 lb at 86.7 in"
+      }
+    },
+    {
+      "about": "The handbook's own 6.7 lb a gallon before the grade's standard weight",
+      "input": {
+        "loading": {
+          "source": "Made up for the tests: no real airplane's figures (the owner: no assumed airplane). A POH-style loading -- weights, three stations, a fuel arm and a centre-of-gravity envelope whose forward limit slopes aft above 2,400 lb -- as a POH's section 6 gives one.",
+          "max_ramp_lb": 3010,
+          "max_takeoff_lb": 3000,
+          "max_landing_lb": 2900,
+          "sample_empty_weight_lb": 1900,
+          "sample_empty_moment_lb_in": 161500,
+          "stations": [
+            {
+              "name": "Front seats",
+              "arm_in": 85
+            },
+            {
+              "name": "Rear seats",
+              "arm_in": 118
+            },
+            {
+              "name": "Baggage",
+              "arm_in": 140,
+              "max_lb": 100
+            }
+          ],
+          "baggage_combined_max_lb": 100,
+          "fuel_arm_in": 90,
+          "fuel_max_gal": 60,
+          "fuel_grade": "jet_a",
+          "start_taxi_fuel_lb": 6,
+          "envelope": [
+            [
+              80,
+              1800
+            ],
+            [
+              80,
+              2400
+            ],
+            [
+              84,
+              3000
+            ],
+            [
+              92,
+              3000
+            ],
+            [
+              92,
+              1800
+            ]
+          ],
+          "fuel_lb_per_gal": 6.7
+        },
+        "load": {
+          "empty_weight_lb": 1900,
+          "empty_arm_in": 85,
+          "stations_lb": [
+            340,
+            0,
+            50
+          ],
+          "fuel_gal": 50
+        },
+        "trip_fuel_gal": 20
+      },
+      "answer": {
+        "takeoff": {
+          "weight_lb": 2619,
+          "arm_in": 86.67812142038946
+        },
+        "landing": {
+          "weight_lb": 2485,
+          "arm_in": 86.4989939637827
+        },
+        "problems": [],
+        "takeoff_words": "2,619 lb at 86.7 in"
+      }
+    }
+  ],
+  "gonogo_default_load": [
+    {
+      "about": "The loading's sample airplane, a 170 lb pilot, the fuel asked within the tanks' usable",
+      "input": {
+        "loading": {
+          "source": "Made up for the tests: no real airplane's figures (the owner: no assumed airplane). A POH-style loading -- weights, three stations, a fuel arm and a centre-of-gravity envelope whose forward limit slopes aft above 2,400 lb -- as a POH's section 6 gives one.",
+          "max_ramp_lb": 3010,
+          "max_takeoff_lb": 3000,
+          "max_landing_lb": 2900,
+          "sample_empty_weight_lb": 1900,
+          "sample_empty_moment_lb_in": 161500,
+          "stations": [
+            {
+              "name": "Front seats",
+              "arm_in": 85
+            },
+            {
+              "name": "Rear seats",
+              "arm_in": 118
+            },
+            {
+              "name": "Baggage",
+              "arm_in": 140,
+              "max_lb": 100
+            }
+          ],
+          "baggage_combined_max_lb": 100,
+          "fuel_arm_in": 90,
+          "fuel_max_gal": 60,
+          "fuel_grade": "avgas",
+          "start_taxi_fuel_lb": 6,
+          "envelope": [
+            [
+              80,
+              1800
+            ],
+            [
+              80,
+              2400
+            ],
+            [
+              84,
+              3000
+            ],
+            [
+              92,
+              3000
+            ],
+            [
+              92,
+              1800
+            ]
+          ]
+        },
+        "fuel_gal": 40
+      },
+      "answer": {
+        "empty_weight_lb": 1900,
+        "empty_arm_in": 85,
+        "stations_lb": [
+          170,
+          0,
+          0
+        ],
+        "fuel_gal": 40
+      }
+    },
+    {
+      "about": "More fuel than the tanks hold is the tanks' usable",
+      "input": {
+        "loading": {
+          "source": "Made up for the tests: no real airplane's figures (the owner: no assumed airplane). A POH-style loading -- weights, three stations, a fuel arm and a centre-of-gravity envelope whose forward limit slopes aft above 2,400 lb -- as a POH's section 6 gives one.",
+          "max_ramp_lb": 3010,
+          "max_takeoff_lb": 3000,
+          "max_landing_lb": 2900,
+          "sample_empty_weight_lb": 1900,
+          "sample_empty_moment_lb_in": 161500,
+          "stations": [
+            {
+              "name": "Front seats",
+              "arm_in": 85
+            },
+            {
+              "name": "Rear seats",
+              "arm_in": 118
+            },
+            {
+              "name": "Baggage",
+              "arm_in": 140,
+              "max_lb": 100
+            }
+          ],
+          "baggage_combined_max_lb": 100,
+          "fuel_arm_in": 90,
+          "fuel_max_gal": 60,
+          "fuel_grade": "avgas",
+          "start_taxi_fuel_lb": 6,
+          "envelope": [
+            [
+              80,
+              1800
+            ],
+            [
+              80,
+              2400
+            ],
+            [
+              84,
+              3000
+            ],
+            [
+              92,
+              3000
+            ],
+            [
+              92,
+              1800
+            ]
+          ]
+        },
+        "fuel_gal": 75
+      },
+      "answer": {
+        "empty_weight_lb": 1900,
+        "empty_arm_in": 85,
+        "stations_lb": [
+          170,
+          0,
+          0
+        ],
+        "fuel_gal": 60
+      }
+    }
+  ]
+}

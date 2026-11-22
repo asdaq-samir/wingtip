@@ -1,0 +1,571 @@
+{
+  "about": "14 CFR 91.157 special VFR and 91.155(b)(2)'s Class G night pattern exception (eCFR, current on 2026-11-21), each boundary from both sides; engine/facade/tests/special_vfr.rs and lib/airspaceRules.test.ts hold the engine to them.",
+  "special_vfr": [
+    {
+      "about": "A Class D by day with 1 sm and clear of clouds: special VFR (91.157(b)(2), (3))",
+      "input": {
+        "surface_area": "D",
+        "airport": "KDPA",
+        "altitude_ft": 1500,
+        "night": false,
+        "flight_visibility_sm": 1,
+        "clear_of_clouds": true
+      },
+      "answer": {
+        "available": true,
+        "problems": [],
+        "needs": [
+          {
+            "words": "An ATC clearance",
+            "source": "14 CFR 91.157(b)(1)"
+          },
+          {
+            "words": "Clear of clouds",
+            "source": "14 CFR 91.157(b)(2)"
+          },
+          {
+            "words": "At least 1 sm flight visibility",
+            "source": "14 CFR 91.157(b)(3)"
+          },
+          {
+            "words": "Below 10,000 ft MSL, in the surface area",
+            "source": "14 CFR 91.157(a)"
+          }
+        ],
+        "listed": null,
+        "visibility_sm": 1,
+        "below_msl_ft": 10000
+      }
+    },
+    {
+      "about": "0.9 sm, just under 91.157(b)(3)'s 1 sm",
+      "input": {
+        "surface_area": "D",
+        "airport": "KDPA",
+        "altitude_ft": 1500,
+        "night": false,
+        "flight_visibility_sm": 0.9,
+        "clear_of_clouds": true
+      },
+      "answer": {
+        "available": false,
+        "problems": [
+          {
+            "words": "The flight visibility, 0.9 sm, is under special VFR's 1 sm",
+            "source": "14 CFR 91.157(b)(3)"
+          }
+        ],
+        "needs": [
+          {
+            "words": "An ATC clearance",
+            "source": "14 CFR 91.157(b)(1)"
+          },
+          {
+            "words": "Clear of clouds",
+            "source": "14 CFR 91.157(b)(2)"
+          },
+          {
+            "words": "At least 1 sm flight visibility",
+            "source": "14 CFR 91.157(b)(3)"
+          },
+          {
+            "words": "Below 10,000 ft MSL, in the surface area",
+            "source": "14 CFR 91.157(a)"
+          }
+        ],
+        "listed": null,
+        "visibility_sm": 1,
+        "below_msl_ft": 10000
+      }
+    },
+    {
+      "about": "O'Hare, part 91 appendix D section 3: no fixed-wing special VFR; the night not given, so its rule stays asked",
+      "input": {
+        "surface_area": "B",
+        "airport": "KORD"
+      },
+      "answer": {
+        "available": false,
+        "problems": [
+          {
+            "words": "No fixed-wing special VFR at Chicago-O'Hare International Airport",
+            "source": "14 CFR 91.157(a); part 91 appendix D, section 3"
+          }
+        ],
+        "needs": [
+          {
+            "words": "An ATC clearance",
+            "source": "14 CFR 91.157(b)(1)"
+          },
+          {
+            "words": "Clear of clouds",
+            "source": "14 CFR 91.157(b)(2)"
+          },
+          {
+            "words": "At least 1 sm flight visibility",
+            "source": "14 CFR 91.157(b)(3)"
+          },
+          {
+            "words": "Below 10,000 ft MSL, in the surface area",
+            "source": "14 CFR 91.157(a)"
+          },
+          {
+            "words": "Between sunset and sunrise, a pilot rated and current for instrument flight, in an airplane equipped for IFR (91.205(d))",
+            "source": "14 CFR 91.157(b)(4)"
+          }
+        ],
+        "listed": "Chicago, IL (Chicago-O'Hare International Airport)",
+        "visibility_sm": 1,
+        "below_msl_ft": 10000
+      }
+    },
+    {
+      "about": "Midway, under O'Hare's Class B but not in the appendix, its Class C surface area by day",
+      "input": {
+        "surface_area": "C",
+        "airport": "MDW",
+        "night": false
+      },
+      "answer": {
+        "available": true,
+        "problems": [],
+        "needs": [
+          {
+            "words": "An ATC clearance",
+            "source": "14 CFR 91.157(b)(1)"
+          },
+          {
+            "words": "Clear of clouds",
+            "source": "14 CFR 91.157(b)(2)"
+          },
+          {
+            "words": "At least 1 sm flight visibility",
+            "source": "14 CFR 91.157(b)(3)"
+          },
+          {
+            "words": "Below 10,000 ft MSL, in the surface area",
+            "source": "14 CFR 91.157(a)"
+          }
+        ],
+        "listed": null,
+        "visibility_sm": 1,
+        "below_msl_ft": 10000
+      }
+    },
+    {
+      "about": "9,999 ft MSL in a Class E surface area: below 91.157(a)'s 10,000 ft",
+      "input": {
+        "surface_area": "E",
+        "altitude_ft": 9999,
+        "night": false
+      },
+      "answer": {
+        "available": true,
+        "problems": [],
+        "needs": [
+          {
+            "words": "An ATC clearance",
+            "source": "14 CFR 91.157(b)(1)"
+          },
+          {
+            "words": "Clear of clouds",
+            "source": "14 CFR 91.157(b)(2)"
+          },
+          {
+            "words": "At least 1 sm flight visibility",
+            "source": "14 CFR 91.157(b)(3)"
+          },
+          {
+            "words": "Below 10,000 ft MSL, in the surface area",
+            "source": "14 CFR 91.157(a)"
+          }
+        ],
+        "listed": null,
+        "visibility_sm": 1,
+        "below_msl_ft": 10000
+      }
+    },
+    {
+      "about": "10,000 ft MSL: not below it (91.157(a))",
+      "input": {
+        "surface_area": "E",
+        "altitude_ft": 10000,
+        "night": false
+      },
+      "answer": {
+        "available": false,
+        "problems": [
+          {
+            "words": "Special VFR is flown only below 10,000 ft MSL",
+            "source": "14 CFR 91.157(a)"
+          }
+        ],
+        "needs": [
+          {
+            "words": "An ATC clearance",
+            "source": "14 CFR 91.157(b)(1)"
+          },
+          {
+            "words": "Clear of clouds",
+            "source": "14 CFR 91.157(b)(2)"
+          },
+          {
+            "words": "At least 1 sm flight visibility",
+            "source": "14 CFR 91.157(b)(3)"
+          },
+          {
+            "words": "Below 10,000 ft MSL, in the surface area",
+            "source": "14 CFR 91.157(a)"
+          }
+        ],
+        "listed": null,
+        "visibility_sm": 1,
+        "below_msl_ft": 10000
+      }
+    },
+    {
+      "about": "Class G is no surface area of controlled airspace (91.157(a))",
+      "input": {
+        "surface_area": "G",
+        "night": false
+      },
+      "answer": {
+        "available": false,
+        "problems": [
+          {
+            "words": "Special VFR is flown only within the surface area of an airport's Class B, C, D or E airspace",
+            "source": "14 CFR 91.157(a)"
+          }
+        ],
+        "needs": [
+          {
+            "words": "An ATC clearance",
+            "source": "14 CFR 91.157(b)(1)"
+          },
+          {
+            "words": "Clear of clouds",
+            "source": "14 CFR 91.157(b)(2)"
+          },
+          {
+            "words": "At least 1 sm flight visibility",
+            "source": "14 CFR 91.157(b)(3)"
+          },
+          {
+            "words": "Below 10,000 ft MSL, in the surface area",
+            "source": "14 CFR 91.157(a)"
+          }
+        ],
+        "listed": null,
+        "visibility_sm": 1,
+        "below_msl_ft": 10000
+      }
+    },
+    {
+      "about": "At night, a pilot not current for instrument flight (91.157(b)(4)(i))",
+      "input": {
+        "surface_area": "D",
+        "night": true,
+        "instrument_current": false,
+        "ifr_equipped": true
+      },
+      "answer": {
+        "available": false,
+        "problems": [
+          {
+            "words": "At night special VFR asks a pilot rated and current for instrument flight in an airplane equipped for it",
+            "source": "14 CFR 91.157(b)(4)"
+          }
+        ],
+        "needs": [
+          {
+            "words": "An ATC clearance",
+            "source": "14 CFR 91.157(b)(1)"
+          },
+          {
+            "words": "Clear of clouds",
+            "source": "14 CFR 91.157(b)(2)"
+          },
+          {
+            "words": "At least 1 sm flight visibility",
+            "source": "14 CFR 91.157(b)(3)"
+          },
+          {
+            "words": "Below 10,000 ft MSL, in the surface area",
+            "source": "14 CFR 91.157(a)"
+          },
+          {
+            "words": "Between sunset and sunrise, a pilot rated and current for instrument flight, in an airplane equipped for IFR (91.205(d))",
+            "source": "14 CFR 91.157(b)(4)"
+          }
+        ],
+        "listed": null,
+        "visibility_sm": 1,
+        "below_msl_ft": 10000
+      }
+    },
+    {
+      "about": "At night, rated, current and equipped for IFR (91.157(b)(4)(i), (ii))",
+      "input": {
+        "surface_area": "D",
+        "night": true,
+        "instrument_current": true,
+        "ifr_equipped": true
+      },
+      "answer": {
+        "available": true,
+        "problems": [],
+        "needs": [
+          {
+            "words": "An ATC clearance",
+            "source": "14 CFR 91.157(b)(1)"
+          },
+          {
+            "words": "Clear of clouds",
+            "source": "14 CFR 91.157(b)(2)"
+          },
+          {
+            "words": "At least 1 sm flight visibility",
+            "source": "14 CFR 91.157(b)(3)"
+          },
+          {
+            "words": "Below 10,000 ft MSL, in the surface area",
+            "source": "14 CFR 91.157(a)"
+          },
+          {
+            "words": "Between sunset and sunrise, a pilot rated and current for instrument flight, in an airplane equipped for IFR (91.205(d))",
+            "source": "14 CFR 91.157(b)(4)"
+          }
+        ],
+        "listed": null,
+        "visibility_sm": 1,
+        "below_msl_ft": 10000
+      }
+    },
+    {
+      "about": "In Alaska with the sun 6 degrees below the horizon: still day for 91.157(b)(4)",
+      "input": {
+        "surface_area": "D",
+        "airport": "PAJN",
+        "alaska": true,
+        "night": true,
+        "sun_elevation_deg": -6,
+        "instrument_current": false
+      },
+      "answer": {
+        "available": true,
+        "problems": [],
+        "needs": [
+          {
+            "words": "An ATC clearance",
+            "source": "14 CFR 91.157(b)(1)"
+          },
+          {
+            "words": "Clear of clouds",
+            "source": "14 CFR 91.157(b)(2)"
+          },
+          {
+            "words": "At least 1 sm flight visibility",
+            "source": "14 CFR 91.157(b)(3)"
+          },
+          {
+            "words": "Below 10,000 ft MSL, in the surface area",
+            "source": "14 CFR 91.157(a)"
+          }
+        ],
+        "listed": null,
+        "visibility_sm": 1,
+        "below_msl_ft": 10000
+      }
+    },
+    {
+      "about": "To land with 0.75 sm ground visibility reported: under 91.157(c)(1)'s 1 sm",
+      "input": {
+        "surface_area": "D",
+        "night": false,
+        "takeoff_or_landing": true,
+        "ground_visibility_sm": 0.75,
+        "flight_visibility_sm": 1
+      },
+      "answer": {
+        "available": false,
+        "problems": [
+          {
+            "words": "The ground visibility, 0.75 sm, is under the 1 sm to take off or land under special VFR",
+            "source": "14 CFR 91.157(c)(1)"
+          }
+        ],
+        "needs": [
+          {
+            "words": "An ATC clearance",
+            "source": "14 CFR 91.157(b)(1)"
+          },
+          {
+            "words": "Clear of clouds",
+            "source": "14 CFR 91.157(b)(2)"
+          },
+          {
+            "words": "At least 1 sm flight visibility",
+            "source": "14 CFR 91.157(b)(3)"
+          },
+          {
+            "words": "Below 10,000 ft MSL, in the surface area",
+            "source": "14 CFR 91.157(a)"
+          },
+          {
+            "words": "At least 1 sm ground visibility to take off or land, or flight visibility where none is reported",
+            "source": "14 CFR 91.157(c)"
+          }
+        ],
+        "listed": null,
+        "visibility_sm": 1,
+        "below_msl_ft": 10000
+      }
+    }
+  ],
+  "vfr_class_g_night_pattern": [
+    {
+      "about": "1,199 ft above the surface at night in the pattern with 2 sm: clear of clouds",
+      "input": {
+        "class": "G",
+        "agl_ft": 1199,
+        "night": true,
+        "in_pattern": true,
+        "visibility_sm": 2
+      },
+      "answer": {
+        "applies": true,
+        "visibility_sm": 1,
+        "under_visibility_sm": 3,
+        "below_agl_ft": 1200,
+        "words": "Under 3 sm but not under 1 sm at night, an airplane in the traffic pattern within 1/2 mile of the runway may fly clear of clouds (91.155(b)(2)).",
+        "source": "14 CFR 91.155(b)(2)"
+      }
+    },
+    {
+      "about": "1,200 ft: not below 1,200 ft",
+      "input": {
+        "class": "G",
+        "agl_ft": 1200,
+        "night": true,
+        "in_pattern": true,
+        "visibility_sm": 2
+      },
+      "answer": {
+        "applies": false,
+        "visibility_sm": 1,
+        "under_visibility_sm": 3,
+        "below_agl_ft": 1200,
+        "words": "Under 3 sm but not under 1 sm at night, an airplane in the traffic pattern within 1/2 mile of the runway may fly clear of clouds (91.155(b)(2)).",
+        "source": "14 CFR 91.155(b)(2)"
+      }
+    },
+    {
+      "about": "1 sm, the least it allows",
+      "input": {
+        "class": "G",
+        "agl_ft": 800,
+        "night": true,
+        "in_pattern": true,
+        "visibility_sm": 1
+      },
+      "answer": {
+        "applies": true,
+        "visibility_sm": 1,
+        "under_visibility_sm": 3,
+        "below_agl_ft": 1200,
+        "words": "Under 3 sm but not under 1 sm at night, an airplane in the traffic pattern within 1/2 mile of the runway may fly clear of clouds (91.155(b)(2)).",
+        "source": "14 CFR 91.155(b)(2)"
+      }
+    },
+    {
+      "about": "0.9 sm, under it",
+      "input": {
+        "class": "G",
+        "agl_ft": 800,
+        "night": true,
+        "in_pattern": true,
+        "visibility_sm": 0.9
+      },
+      "answer": {
+        "applies": false,
+        "visibility_sm": 1,
+        "under_visibility_sm": 3,
+        "below_agl_ft": 1200,
+        "words": "Under 3 sm but not under 1 sm at night, an airplane in the traffic pattern within 1/2 mile of the runway may fly clear of clouds (91.155(b)(2)).",
+        "source": "14 CFR 91.155(b)(2)"
+      }
+    },
+    {
+      "about": "3 sm: the table's night row again",
+      "input": {
+        "class": "G",
+        "agl_ft": 800,
+        "night": true,
+        "in_pattern": true,
+        "visibility_sm": 3
+      },
+      "answer": {
+        "applies": false,
+        "visibility_sm": 1,
+        "under_visibility_sm": 3,
+        "below_agl_ft": 1200,
+        "words": "Under 3 sm but not under 1 sm at night, an airplane in the traffic pattern within 1/2 mile of the runway may fly clear of clouds (91.155(b)(2)).",
+        "source": "14 CFR 91.155(b)(2)"
+      }
+    },
+    {
+      "about": "By day: the table's low row",
+      "input": {
+        "class": "G",
+        "agl_ft": 800,
+        "night": false,
+        "in_pattern": true,
+        "visibility_sm": 2
+      },
+      "answer": {
+        "applies": false,
+        "visibility_sm": 1,
+        "under_visibility_sm": 3,
+        "below_agl_ft": 1200,
+        "words": "Under 3 sm but not under 1 sm at night, an airplane in the traffic pattern within 1/2 mile of the runway may fly clear of clouds (91.155(b)(2)).",
+        "source": "14 CFR 91.155(b)(2)"
+      }
+    },
+    {
+      "about": "Out of the pattern",
+      "input": {
+        "class": "G",
+        "agl_ft": 800,
+        "night": true,
+        "in_pattern": false,
+        "visibility_sm": 2
+      },
+      "answer": {
+        "applies": false,
+        "visibility_sm": 1,
+        "under_visibility_sm": 3,
+        "below_agl_ft": 1200,
+        "words": "Under 3 sm but not under 1 sm at night, an airplane in the traffic pattern within 1/2 mile of the runway may fly clear of clouds (91.155(b)(2)).",
+        "source": "14 CFR 91.155(b)(2)"
+      }
+    },
+    {
+      "about": "Class E: no exception",
+      "input": {
+        "class": "E",
+        "agl_ft": 800,
+        "night": true,
+        "in_pattern": true,
+        "visibility_sm": 2
+      },
+      "answer": {
+        "applies": false,
+        "visibility_sm": 1,
+        "under_visibility_sm": 3,
+        "below_agl_ft": 1200,
+        "words": "Under 3 sm but not under 1 sm at night, an airplane in the traffic pattern within 1/2 mile of the runway may fly clear of clouds (91.155(b)(2)).",
+        "source": "14 CFR 91.155(b)(2)"
+      }
+    }
+  ]
+}

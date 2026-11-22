@@ -275,6 +275,19 @@ Then the callers switch to the name and the old copy is deleted.
   said only with at least 3 of their takeoffs and landings, 0.4 of them
   and no tie (the owner's figures), for the planner's airplane card and the
   Aircraft tab's "based at"; held to the web's fixture `usualBase.json`.
+- Special VFR is the engine's too (`crates/flight`, `special_vfr`, 14 CFR
+  91.157): only in an airport's Class B, C, D or E surface area below
+  10,000 ft MSL, with a clearance, clear of clouds and 1 sm, at night only
+  for a pilot current for instrument flight in an airplane equipped for
+  IFR (in Alaska by the sun's 6 degrees), 1 sm ground visibility to take
+  off or land, and never at the 33 airports of part 91 appendix D, section
+  3 (`special_vfr_airports.rs`, by FAA or ICAO ident). Class G's night
+  pattern exception is `vfr_class_g_night_pattern` (91.155(b)(2)). The web
+  says a surface area's special VFR on its airspace card; both are held to
+  the web's fixture `specialVfr.json`. A loading's fuel is weighed at its
+  handbook's figure, else its `fuel_grade`'s standard weight, avgas 6 or
+  Jet A 6.8 lb a gallon (`fuel_weight.rs`, FAA-H-8083-25 chapter 10), held
+  with the weight and balance to `weightBalance.json`, a made-up loading.
 - The few figures the shells kept for themselves are the engine's too,
   held to the web's fixture `shellFigures.json`: how often the live SWIM
   feeds are asked again (`live_feed_refresh`, `crates/weather`: RVR each

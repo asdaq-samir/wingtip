@@ -5282,8 +5282,10 @@ enum EngineContract {
         var baggageCombinedMaxLb: Double?
         var fuelArmIn: Double
         var fuelMaxGal: Double
-        /// 6 where not given, avgas's standard (FAA-H-8083-1B).
+        /// The airplane's handbook's figure; where null or not given, its fuel_grade's standard weight: avgas 6, Jet A 6.8 lb a US gallon (FAA-H-8083-25, chapter 10), avgas where no grade is given.
         var fuelLbPerGal: Double?
+        /// The fuel the airplane burns, for its standard weight where its handbook gives none.
+        var fuelGrade: String?
         var startTaxiFuelLb: Double?
         /// The CG envelope's points, [arm in, weight lb].
         var envelope: [[OpenAPIValueContainer]]?
@@ -5299,6 +5301,7 @@ enum EngineContract {
             case fuelArmIn = "fuel_arm_in"
             case fuelMaxGal = "fuel_max_gal"
             case fuelLbPerGal = "fuel_lb_per_gal"
+            case fuelGrade = "fuel_grade"
             case startTaxiFuelLb = "start_taxi_fuel_lb"
             case envelope
         }
@@ -11947,6 +11950,82 @@ enum EngineContract {
         var desc: String?
     }
 
+    struct SpecialVfrAnswer: Codable, Equatable, Sendable {
+        /// Nothing known rules special VFR out.
+        var available: Bool
+        /// What rules it out, each with its rule.
+        var problems: [EngineContract.SpecialVfrAnswerProblemsItem]
+        /// What it asks, each with its rule.
+        var needs: [EngineContract.SpecialVfrAnswerNeedsItem]
+        /// The airport's entry in part 91 appendix D, section 3, "Chicago, IL (Chicago-O'Hare International Airport)"; null where it is not listed.
+        var listed: String?
+        var visibilitySm: Double
+        var belowMslFt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case available
+            case problems
+            case needs
+            case listed
+            case visibilitySm = "visibility_sm"
+            case belowMslFt = "below_msl_ft"
+        }
+    }
+
+    struct SpecialVfrAnswerNeedsItem: Codable, Equatable, Sendable {
+        var words: String
+        /// The rule, "14 CFR 91.157(b)(3)".
+        var source: String
+    }
+
+    struct SpecialVfrAnswerProblemsItem: Codable, Equatable, Sendable {
+        var words: String
+        /// The rule, "14 CFR 91.157(b)(3)".
+        var source: String
+    }
+
+    struct SpecialVfrInput: Codable, Equatable, Sendable {
+        /// The class of the surface area the airplane is in (controlled airspace designated to the surface for an airport); null or G where it is in none.
+        var surfaceArea: String?
+        /// The surface area's primary airport, FAA or ICAO ident, for appendix D, section 3.
+        var airport: String?
+        /// Feet MSL; null where not known.
+        var altitudeFt: Double?
+        /// Between sunset and sunrise; null where not known.
+        var night: Bool?
+        /// In Alaska, where 91.157(b)(4) reads the sun's elevation.
+        var alaska: Bool?
+        /// The sun's elevation, degrees (negative below the horizon); read in Alaska alone.
+        var sunElevationDeg: Double?
+        /// The pilot meets part 61's requirements for instrument flight (rated, and current under 61.57(c)).
+        var instrumentCurrent: Bool?
+        /// The airplane is equipped as 91.205(d) asks for IFR.
+        var ifrEquipped: Bool?
+        /// Statute miles.
+        var flightVisibilitySm: Double?
+        /// Statute miles, as reported at the airport; null where none is.
+        var groundVisibilitySm: Double?
+        /// Whether the flight can keep clear of clouds.
+        var clearOfClouds: Bool?
+        /// Taking off or landing under special VFR (91.157(c)).
+        var takeoffOrLanding: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case surfaceArea = "surface_area"
+            case airport
+            case altitudeFt = "altitude_ft"
+            case night
+            case alaska
+            case sunElevationDeg = "sun_elevation_deg"
+            case instrumentCurrent = "instrument_current"
+            case ifrEquipped = "ifr_equipped"
+            case flightVisibilitySm = "flight_visibility_sm"
+            case groundVisibilitySm = "ground_visibility_sm"
+            case clearOfClouds = "clear_of_clouds"
+            case takeoffOrLanding = "takeoff_or_landing"
+        }
+    }
+
     /// A place a clearance may name, as the planner or a phone's pack holds it: an airport, a navaid (NASR NAV_BASE, by its NAME) or a fix (no name).
     struct SpokenCandidate: Codable, Equatable, Sendable {
         var ident: String
@@ -12872,6 +12951,46 @@ enum EngineContract {
     }
 
     struct VfrBasicMinimumsInput: Codable, Equatable, Sendable {
+    }
+
+    struct VfrClassGNightPatternAnswer: Codable, Equatable, Sendable {
+        var applies: Bool
+        /// The least visibility it asks, 1 sm.
+        var visibilitySm: Double
+        /// It is for a visibility under this, 3 sm.
+        var underVisibilitySm: Double
+        /// 1,200 ft above the surface.
+        var belowAglFt: Double
+        var words: String
+        var source: String
+
+        enum CodingKeys: String, CodingKey {
+            case applies
+            case visibilitySm = "visibility_sm"
+            case underVisibilitySm = "under_visibility_sm"
+            case belowAglFt = "below_agl_ft"
+            case words
+            case source
+        }
+    }
+
+    struct VfrClassGNightPatternInput: Codable, Equatable, Sendable {
+        var `class`: String
+        /// Feet above the surface.
+        var aglFt: Double
+        var night: Bool?
+        /// In an airport traffic pattern within 1/2 mile of the runway.
+        var inPattern: Bool?
+        /// Statute miles; null where not known.
+        var visibilitySm: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case `class`
+            case aglFt = "agl_ft"
+            case night
+            case inPattern = "in_pattern"
+            case visibilitySm = "visibility_sm"
+        }
     }
 
     struct VfrFloorsAnswerItem: Codable, Equatable, Sendable {

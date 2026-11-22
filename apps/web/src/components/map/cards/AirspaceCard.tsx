@@ -9,7 +9,7 @@ import { shareOrCopy } from "../../../lib/share";
 import { useAreaWhileUp } from "../../../lib/map/mapPick";
 import { MapCard } from "../../../lib/map/cards/MapCard";
 import { ListGroup, ListRow } from "../../GroupedList";
-import { callTypes, entryRules } from "../../../lib/airspaceRules";
+import { callTypes, entryRules, specialVfr } from "../../../lib/airspaceRules";
 import FrequencyButton from "../../FrequencyButton";
 import { airportQuery } from "../../../lib/queryClient";
 
@@ -62,7 +62,24 @@ export function AirspaceCardBody({ volume, at }: { volume: AirspaceVolume; at?: 
           ))}
         </ListGroup>
       </div>
+      {volume.floor_sfc && <SpecialVfr volume={volume} />}
     </MapCard>
+  );
+}
+
+/** Special VFR in the surface area, the part of a volume from the
+ *  surface (14 CFR 91.157(a)): what it asks, or why an airplane may not
+ *  fly it at this airport (part 91 appendix D, section 3). */
+function SpecialVfr({ volume }: { volume: AirspaceVolume }) {
+  const svfr = specialVfr(volume.airspace_class, volume.ident);
+  return (
+    <div data-testid="airspace-special-vfr">
+      <ListGroup title={svfr.available ? "Special VFR" : "No special VFR"}>
+        {svfr.lines.map((r) => (
+          <ListRow key={r.words} title={<span className={TEXT.detail}>{r.words}</span>} description={r.source} />
+        ))}
+      </ListGroup>
+    </div>
   );
 }
 

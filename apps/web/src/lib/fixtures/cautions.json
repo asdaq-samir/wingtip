@@ -1393,6 +1393,72 @@
           "The TAF gives no visibility at the ETA."
         ]
       }
+    },
+    {
+      "ident": "KALT",
+      "approaches": {
+        "names": [
+          "ILS OR LOC RWY 9"
+        ],
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 3000,
+        "ceiling_unknown": false,
+        "visibility_sm": 1.9,
+        "raw": "TAF KALT",
+        "covers": true
+      },
+      "answer": {
+        "ident": "KALT",
+        "approach": true,
+        "precision": true,
+        "minimums": {
+          "ceiling_ft": 600,
+          "visibility_sm": 2
+        },
+        "alternate_minimums_url": null,
+        "ceiling_ft": 3000,
+        "visibility_sm": 1.9,
+        "taf": "TAF KALT",
+        "good": false,
+        "meets_standard": false,
+        "reasons": [
+          "The TAF has 1.9 sm at the ETA: under 2 sm."
+        ]
+      }
+    },
+    {
+      "ident": "KALT",
+      "approaches": {
+        "names": [
+          "RNAV (GPS) RWY 9"
+        ],
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 3000,
+        "ceiling_unknown": false,
+        "visibility_sm": 2,
+        "raw": "TAF KALT",
+        "covers": true
+      },
+      "answer": {
+        "ident": "KALT",
+        "approach": true,
+        "precision": false,
+        "minimums": {
+          "ceiling_ft": 800,
+          "visibility_sm": 2
+        },
+        "alternate_minimums_url": null,
+        "ceiling_ft": 3000,
+        "visibility_sm": 2,
+        "taf": "TAF KALT",
+        "good": true,
+        "meets_standard": true,
+        "reasons": []
+      }
     }
   ],
   "alternates_ranked": [
