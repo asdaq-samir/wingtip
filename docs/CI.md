@@ -279,7 +279,7 @@ Android at 09:47), or by hand (Run workflow), unchanged:
 |---|---|
 | CI: every unit suite in full, every browser test on the phone, desktop, the iPhones and the iPad, the whole iOS audit (WebKit), WCAG 2.2 and Lighthouse, over ten shards; the API reference, Javadoc and wingtip's pdoc; the flake hunt | ~15 min |
 | Native iOS, `full`: the whole suite (launch, flow and accessibility tests, the store shots, `CardRuleTests`, `CardScrollTests`) and the device's first screen, on the iPhone, the iPad and iPhone Duo, each its own runner (`test`, `test (iPad)`, `test (iPhone Duo)`): the three on one runner took over 80 minutes and were cancelled at the limit twice (#572) | ~30 min each |
-| Native Android: the build, a debug APK, then the instrumented tests on an API 35 emulator | ~15 min |
+| Native Android: the build, a debug APK, then the instrumented tests on an API 35 emulator, `device (phone)` every test and `device (tablet)` (a Pixel Tablet, 1280 x 800 dp) the `@LargeScreen` ones, each its own runner; a wave's validation runs both too, a pull request neither | ~15 min |
 
 ## What gates a merge
 

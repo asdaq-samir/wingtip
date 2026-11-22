@@ -72,7 +72,7 @@ BUDGETS = [
     # Tier 2: after merge, on main's push.
     ("build (*)", 4, 6),
     # Tier 3: the night.
-    ("Native Android / device", 15, 15),
+    ("Native Android / device (*)", 15, 15),
     ("docs", 10, 10),
     ("Standards", 10, 10),
     ("Flake hunt (*)", 45, 45),

@@ -11,6 +11,7 @@ capture.
 | `iphone-6.5/` | App Store, iPhone 6.5" | 1284 x 2778 |
 | `ipad-13/` | App Store, iPad 13" | 2064 x 2752 |
 | `android-phone/` | Google Play, phone | 1080 x 1920 |
+| `android-tablet/` | Google Play, 7- and 10-inch tablet (3:4, the "wide" inner display Play's adaptive quality page asks for) | 1800 x 2400 |
 | `raw/<device>/` | the captures they are framed from | as taken |
 
 The headline over each is in `captions.json`, set in Barlow (the
@@ -66,4 +67,6 @@ verdict wait for one. The airport is O'Hare's card as it opens.
   trust the throwaway stack's certificate (the app allows only HTTPS
   and trusts no user CA), so its captures wait for a debug-only network
   security config or a deployed site; `store-frames.sh` frames
-  `raw/android/` at 1080 x 1920 once the PNGs are there.
+  `raw/android/` at 1080 x 1920 and `raw/android-tablet/` (a Pixel
+  Tablet emulator upright, the panel, the map and a field's card in its
+  pane) at 1800 x 2400 once the PNGs are there.

@@ -27,13 +27,16 @@ FONT = "/usr/share/fonts/truetype/barlow/Barlow-Bold.ttf"
 SUB = "/usr/share/fonts/truetype/barlow/Barlow-SemiBold.ttf"
 
 # The sizes each store takes (App Store Connect's screenshot
-# specifications; Google Play's phone screenshots, 9:16), with the
-# captures each is made from and how round the device's screen is.
+# specifications; Google Play's phone screenshots, 9:16, and its tablet
+# ones at 3:4 upright, the "wide" inner displays its adaptive quality page
+# asks for), with the captures each is made from, how round the device's
+# screen is, and whether it is a tablet (its words and device a size apart).
 SIZES = {
     "iphone-6.9": {"size": (1320, 2868), "from": "iphone", "corner": 0.14},
     "iphone-6.5": {"size": (1284, 2778), "from": "iphone", "corner": 0.14},
-    "ipad-13": {"size": (2064, 2752), "from": "ipad", "corner": 0.035},
+    "ipad-13": {"size": (2064, 2752), "from": "ipad", "corner": 0.035, "tablet": True},
     "android-phone": {"size": (1080, 1920), "from": "android", "corner": 0.08},
+    "android-tablet": {"size": (1800, 2400), "from": "android-tablet", "corner": 0.03, "tablet": True},
 }
 
 
@@ -70,7 +73,7 @@ def frame(capture: Image.Image, spec: dict, caption: dict, t: dict) -> Image.Ima
     W, H = spec["size"]
     canvas = Image.new("RGB", (W, H), t["chart-land"])
     draw = ImageDraw.Draw(canvas)
-    unit = W / 1320 if spec["from"] != "ipad" else W / 1800
+    unit = W / 1800 if spec.get("tablet") else W / 1320
     head = ImageFont.truetype(FONT, round(96 * unit))
     sub = ImageFont.truetype(SUB, round(50 * unit))
     y = round(150 * unit)
@@ -85,7 +88,7 @@ def frame(capture: Image.Image, spec: dict, caption: dict, t: dict) -> Image.Ima
     top = y + round(70 * unit)
     # The device: the capture at the width left, in a bezel a few percent
     # of its width, rounded as the screen is.
-    width = round(W * (0.78 if spec["from"] != "ipad" else 0.84))
+    width = round(W * (0.84 if spec.get("tablet") else 0.78))
     shot = capture.convert("RGB").resize((width, round(capture.height * width / capture.width)), Image.LANCZOS)
     bezel = max(8, round(width * 0.028))
     radius = round(width * spec["corner"])
