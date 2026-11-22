@@ -39,7 +39,7 @@ struct Kneeboard: View {
                     GridRow {
                         Text(leg.to).lineLimit(1)
                         Text(Int(leg.altitudeFt).formatted())
-                        Text((airplane ? leg.magneticHeadingDeg : Optional(leg.magneticCourseDeg)).map { Format.number($0, decimals: 0).leftPadded(to: 3) } ?? "")
+                        Text((airplane ? leg.magneticHeadingDeg : Optional(leg.magneticCourseDeg)).map { String(Format.heading($0).dropLast()) } ?? "")
                         Text(Format.number(leg.distanceNm, decimals: 1))
                         Text(airplane ? leg.groundspeedKt.map { Format.number($0, decimals: 0) } ?? "" : "")
                         Text(airplane ? leg.eteMin.map { Format.number($0, decimals: 1) } ?? "" : "")
