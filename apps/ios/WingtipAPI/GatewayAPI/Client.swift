@@ -956,7 +956,7 @@ public struct Client: APIProtocol {
     }
     /// Sign in with Apple from the iOS app
     ///
-    /// Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session. 404 where no iOS app is set up.
+    /// Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session; an authorization code sent with it is traded for the refresh token deleting the account revokes. 404 where no iOS app is set up.
     ///
     /// - Remark: HTTP `POST /api/auth/apple/native`.
     /// - Remark: Generated from `#/paths//api/auth/apple/native/post(signIn)`.
@@ -1579,6 +1579,75 @@ public struct Client: APIProtocol {
                     return .noContent(.init())
                 case 400:
                     return .badRequest(.init())
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// The apps' faults and speed figures by build
+    ///
+    /// Counted over the last few days (at most the 30 a fault is kept); the developer's.
+    ///
+    /// - Remark: HTTP `GET /api/diagnostics/versions`.
+    /// - Remark: Generated from `#/paths//api/diagnostics/versions/get(byVersion)`.
+    public func byVersion(_ input: Operations.ByVersion.Input) async throws -> Operations.ByVersion.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.ByVersion.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/diagnostics/versions",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "days",
+                    value: input.query.days
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.ByVersion.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.AppVersionsDto.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
                 default:
                     return .undocumented(
                         statusCode: response.status.code,
@@ -4304,6 +4373,134 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// The signed-in pilot's connected AI apps
+    ///
+    /// Each connection made through the connector, newest first: its id, the app's name, the scopes granted, when its token was last issued and until when it may be renewed.
+    ///
+    /// - Remark: HTTP `GET /api/me/connections`.
+    /// - Remark: Generated from `#/paths//api/me/connections/get(connections)`.
+    public func connections(_ input: Operations.Connections.Input) async throws -> Operations.Connections.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.Connections.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/me/connections",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.Connections.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            [Components.Schemas.ConnectionDto].self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 401:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.Connections.Output.Unauthorized.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            [Components.Schemas.ConnectionDto].self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unauthorized(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Disconnect one connected AI app
+    ///
+    /// Its access and refresh tokens are revoked at once, so the app's next call is refused; the consent goes with the last connection through that app, so connecting again asks again.
+    ///
+    /// - Remark: HTTP `DELETE /api/me/connections/{id}`.
+    /// - Remark: Generated from `#/paths//api/me/connections/{id}/delete(disconnect)`.
+    public func disconnect(_ input: Operations.Disconnect.Input) async throws -> Operations.Disconnect.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.Disconnect.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/me/connections/{}",
+                    parameters: [
+                        input.path.id
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .delete
+                )
+                suppressMutabilityWarning(&request)
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 204:
+                    return .noContent(.init())
+                case 401:
+                    return .unauthorized(.init())
+                case 404:
+                    return .notFound(.init())
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
     /// The signed-in pilot's telephone number and home base
     ///
     /// What a flight plan's item 19 C/ asks with the pilot in command's name (AIM Appendix 4), both at once; blank is none. Their name is set with PUT /api/training/name.
@@ -4421,7 +4618,7 @@ public struct Client: APIProtocol {
     }
     /// Everything kept for the signed-in pilot, as one JSON file
     ///
-    /// The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders, subscription and connected AI apps (never a token); sent as a download.
+    /// The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar's photo as a data: URL; the pilot's own checkpoint notes, reminders and connected AI apps (never a token); sent as a download.
     ///
     /// - Remark: HTTP `GET /api/me/export`.
     /// - Remark: Generated from `#/paths//api/me/export/get(export)`.
@@ -4980,128 +5177,6 @@ public struct Client: APIProtocol {
                     return .badRequest(.init())
                 case 403:
                     return .forbidden(.init())
-                default:
-                    return .undocumented(
-                        statusCode: response.status.code,
-                        .init(
-                            headerFields: response.headerFields,
-                            body: responseBody
-                        )
-                    )
-                }
-            }
-        )
-    }
-    /// The pilot's subscription, with this month's uses against each cap
-    ///
-    /// - Remark: HTTP `GET /api/subscription`.
-    /// - Remark: Generated from `#/paths//api/subscription/get(get_subscription)`.
-    public func getSubscription(_ input: Operations.GetSubscription.Input) async throws -> Operations.GetSubscription.Output {
-        try await client.send(
-            input: input,
-            forOperation: Operations.GetSubscription.id,
-            serializer: { input in
-                let path = try converter.renderedPath(
-                    template: "/api/subscription",
-                    parameters: []
-                )
-                var request: HTTPTypes.HTTPRequest = .init(
-                    soar_path: path,
-                    method: .get
-                )
-                suppressMutabilityWarning(&request)
-                converter.setAcceptHeader(
-                    in: &request.headerFields,
-                    contentTypes: input.headers.accept
-                )
-                return (request, nil)
-            },
-            deserializer: { response, responseBody in
-                switch response.status.code {
-                case 200:
-                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
-                    let body: Operations.GetSubscription.Output.Ok.Body
-                    let chosenContentType = try converter.bestContentType(
-                        received: contentType,
-                        options: [
-                            "application/json"
-                        ]
-                    )
-                    switch chosenContentType {
-                    case "application/json":
-                        body = try await converter.getResponseBodyAsJSON(
-                            Components.Schemas.SubscriptionDto.self,
-                            from: responseBody,
-                            transforming: { value in
-                                .json(value)
-                            }
-                        )
-                    default:
-                        preconditionFailure("bestContentType chose an invalid content type.")
-                    }
-                    return .ok(.init(body: body))
-                default:
-                    return .undocumented(
-                        statusCode: response.status.code,
-                        .init(
-                            headerFields: response.headerFields,
-                            body: responseBody
-                        )
-                    )
-                }
-            }
-        )
-    }
-    /// Start the free month
-    ///
-    /// Once an account: 409 once it has been started, even after it ended. On the website; in the iOS and Android apps the free month is the store's introductory offer.
-    ///
-    /// - Remark: HTTP `POST /api/subscription/trial`.
-    /// - Remark: Generated from `#/paths//api/subscription/trial/post(startTrial)`.
-    public func startTrial(_ input: Operations.StartTrial.Input) async throws -> Operations.StartTrial.Output {
-        try await client.send(
-            input: input,
-            forOperation: Operations.StartTrial.id,
-            serializer: { input in
-                let path = try converter.renderedPath(
-                    template: "/api/subscription/trial",
-                    parameters: []
-                )
-                var request: HTTPTypes.HTTPRequest = .init(
-                    soar_path: path,
-                    method: .post
-                )
-                suppressMutabilityWarning(&request)
-                converter.setAcceptHeader(
-                    in: &request.headerFields,
-                    contentTypes: input.headers.accept
-                )
-                return (request, nil)
-            },
-            deserializer: { response, responseBody in
-                switch response.status.code {
-                case 200:
-                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
-                    let body: Operations.StartTrial.Output.Ok.Body
-                    let chosenContentType = try converter.bestContentType(
-                        received: contentType,
-                        options: [
-                            "application/json"
-                        ]
-                    )
-                    switch chosenContentType {
-                    case "application/json":
-                        body = try await converter.getResponseBodyAsJSON(
-                            Components.Schemas.SubscriptionDto.self,
-                            from: responseBody,
-                            transforming: { value in
-                                .json(value)
-                            }
-                        )
-                    default:
-                        preconditionFailure("bestContentType chose an invalid content type.")
-                    }
-                    return .ok(.init(body: body))
                 default:
                     return .undocumented(
                         statusCode: response.status.code,

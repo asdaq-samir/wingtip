@@ -268,7 +268,7 @@ object EngineContract {
     )
 
     /**
-     * A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.
+     * A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name and primary airport for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.
      */
     @Serializable
     data class AirspaceBand(
@@ -278,6 +278,10 @@ object EngineContract {
         val ceilingFt: Double,
         val `class`: String,
         val name: String? = null,
+        /**
+         * A B, C or D band's primary airport (NASR's IDENT), for its special VFR (14 CFR 91.157(a), part 91 Appendix D section 3).
+         */
+        val ident: String? = null,
         val minimums: EngineContract.AirspaceBandMinimums? = null,
         val entry: String,
         val equipment: String? = null,
@@ -335,6 +339,10 @@ object EngineContract {
     data class AirspaceColumnInputVolumesItem(
         val `class`: String,
         val name: String? = null,
+        /**
+         * The primary airport's identifier where NASR's Class Airspace file names one (IDENT), which special_vfr reads for part 91 Appendix D.
+         */
+        val ident: String? = null,
         @SerialName("floor_ft")
         val floorFt: Double,
         @SerialName("floor_ref")
@@ -1691,6 +1699,11 @@ object EngineContract {
     }
 
     @Serializable
+    data class AwcAirmetsReadInput(
+        val text: String,
+    )
+
+    @Serializable
     data class AwcAirsigmetsReadInput(
         val text: String,
     )
@@ -2797,8 +2810,16 @@ object EngineContract {
         val fields: List<EngineContract.CopilotField>,
         val rules: String? = null,
         val minimums: EngineContract.CopilotWatchInputMinimums? = null,
+        /**
+         * The fuel aboard, gallons: at takeoff where `started_s` is given (the engine takes the burn over the time since), else now.
+         */
         @SerialName("fuel_gal")
         val fuelGal: Double? = null,
+        /**
+         * When the flight began, s since 1970: with it the fuel aboard now is `fuel_gal` less `burn_gph` over the time from then to `now_s`, never below none (FAA-H-8083-25C ch. 16). Left out, `fuel_gal` is taken as the fuel aboard now.
+         */
+        @SerialName("started_s")
+        val startedS: Double? = null,
         @SerialName("burn_gph")
         val burnGph: Double? = null,
         @SerialName("tas_kt")
@@ -3344,6 +3365,54 @@ object EngineContract {
     )
 
     @Serializable
+    data class DiagramHotSpotLabelsInput(
+        /**
+         * The page's text.
+         */
+        val text: String,
+    )
+
+    @Serializable
+    data class DiagramHotSpotsAnswerItem(
+        val name: String,
+        val lat: Double,
+        val lon: Double,
+        val x: Double,
+        val y: Double,
+    )
+
+    @Serializable
+    data class DiagramHotSpotsInput(
+        /**
+         * diagram_graticule's answer.
+         */
+        val graticule: EngineContract.DiagramHotSpotsInputGraticule,
+        val labels: List<EngineContract.DiagramHotSpotsInputLabelsItem>,
+    )
+
+    /**
+     * diagram_graticule's answer.
+     */
+    @Serializable
+    data class DiagramHotSpotsInputGraticule(
+        @SerialName("lat_on_x")
+        val latOnX: Boolean,
+        val a: Double,
+        val b: Double,
+        val c: Double,
+        val d: Double,
+        @SerialName("north_deg")
+        val northDeg: Double,
+    )
+
+    @Serializable
+    data class DiagramHotSpotsInputLabelsItem(
+        val text: String,
+        val x: Double,
+        val y: Double,
+    )
+
+    @Serializable
     data class DiagramLabelsInput(
         val text: String,
     )
@@ -3770,6 +3839,10 @@ object EngineContract {
     data class EndorsementsInForceInputSignedItem(
         val code: String,
         val voided: Boolean? = null,
+        /**
+         * The instructor_verification verdict kept with the record; false is not signed, missing or null is not said.
+         */
+        val verified: Boolean? = null,
     )
 
     @Serializable
@@ -3954,6 +4027,13 @@ object EngineContract {
          * NASR APT_BASE's FACILITY_USE_CODE (PU, PR).
          */
         val use: String? = null,
+    )
+
+    @Serializable
+    data class FieldNamesInput(
+        val ident: String,
+        @SerialName("icao_id")
+        val icaoId: String? = null,
     )
 
     @Serializable
@@ -4403,7 +4483,7 @@ object EngineContract {
         @SerialName("visibility_sm")
         val visibilitySm: Double? = null,
         /**
-         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
          */
         val source: String? = null,
     )
@@ -4442,7 +4522,7 @@ object EngineContract {
         @SerialName("visibility_sm")
         val visibilitySm: Double? = null,
         /**
-         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
          */
         val source: String? = null,
         @SerialName("wind_dir_true_deg")
@@ -4709,6 +4789,20 @@ object EngineContract {
         @SerialName("runway_ft")
         val runwayFt: Double? = null,
     )
+
+    @Serializable
+    data class FuelGradesAnswerItem(
+        val grade: String,
+        val name: String,
+        @SerialName("lb_per_gal")
+        val lbPerGal: Double,
+    )
+
+    @Serializable
+    class FuelGradesInput {
+        override fun equals(other: Any?): Boolean = other is FuelGradesInput
+        override fun hashCode(): Int = 0
+    }
 
     @Serializable
     data class FuelInTanksAnswerItem(
@@ -6416,6 +6510,60 @@ object EngineContract {
         val ratio: Double? = null,
     )
 
+    @Serializable
+    data class HazardViewAnswer(
+        val shown: Boolean,
+        @SerialName("in_flight")
+        val inFlight: Boolean,
+        @SerialName("altitude_ft")
+        val altitudeFt: Double? = null,
+        val source: String? = null,
+        @SerialName("clearance_ft")
+        val clearanceFt: Double,
+        @SerialName("caution_band_ft")
+        val cautionBandFt: Double,
+        @SerialName("clearances_ft")
+        val clearancesFt: List<Double>,
+        @SerialName("warning_from_ft")
+        val warningFromFt: Double? = null,
+        @SerialName("caution_from_ft")
+        val cautionFromFt: Double? = null,
+        val levels: List<String?>,
+    )
+
+    @Serializable
+    data class HazardViewInput(
+        /**
+         * The Map card's Hazard Colouring: off, on, or on by itself in flight.
+         */
+        val setting: String,
+        /**
+         * The GPS's ground speed, kt; null with no fix.
+         */
+        @SerialName("speed_kt")
+        val speedKt: Double? = null,
+        /**
+         * The GPS's height, ft, where it gives one.
+         */
+        @SerialName("gps_altitude_ft")
+        val gpsAltitudeFt: Double? = null,
+        /**
+         * The plan's cruise, ft MSL.
+         */
+        @SerialName("planned_altitude_ft")
+        val plannedAltitudeFt: Double? = null,
+        /**
+         * The pilot's clearance, one of clearances_ft; the default for null or another.
+         */
+        @SerialName("clearance_ft")
+        val clearanceFt: Double? = null,
+        /**
+         * Obstacle tops, ft MSL, to colour.
+         */
+        @SerialName("tops_ft")
+        val topsFt: List<Double>? = null,
+    )
+
     /**
      * An airplane as the map's traffic draws it, the planner's TrafficAircraft (wingtip.traffic): who, where, how high, its track, speed and climb, how old.
      */
@@ -7114,6 +7262,62 @@ object EngineContract {
     )
 
     @Serializable
+    data class InstructorVerificationAnswer(
+        val verified: Boolean,
+        @SerialName("registry_id")
+        val registryId: String? = null,
+        /**
+         * verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.
+         */
+        val reason: String,
+        val words: String,
+    )
+
+    @Serializable
+    data class InstructorVerificationInput(
+        /**
+         * The instructor's name as on their certificate.
+         */
+        @SerialName("instructor_name")
+        val instructorName: String,
+        /**
+         * The student's name as on their certificate.
+         */
+        @SerialName("student_name")
+        val studentName: String? = null,
+        /**
+         * YYYY-MM-DD.
+         */
+        @SerialName("signed_on")
+        val signedOn: String,
+        /**
+         * The releasable file's active flight instructor (type F) records of the instructor's last name; null where the file is not loaded.
+         */
+        val registry: List<EngineContract.InstructorVerificationInputRegistryItem>? = null,
+        /**
+         * Registry ids another Wingtip account already signs as.
+         */
+        @SerialName("bound_elsewhere")
+        val boundElsewhere: List<String>? = null,
+    )
+
+    @Serializable
+    data class InstructorVerificationInputRegistryItem(
+        /**
+         * The FAA's unique id, A or C and seven digits.
+         */
+        val id: String,
+        @SerialName("first_middle")
+        val firstMiddle: String,
+        @SerialName("last_suffix")
+        val lastSuffix: String,
+        /**
+         * YYYY-MM-DD, only for a certificate issued before 1 Dec 2024 (14 CFR 61.19(d)).
+         */
+        val expires: String? = null,
+    )
+
+    @Serializable
     data class IsaTempCInput(
         @SerialName("altitude_ft")
         val altitudeFt: Double,
@@ -7153,7 +7357,7 @@ object EngineContract {
         @SerialName("age_min")
         val ageMin: Double,
         /**
-         * "Fetched 42 min ago".
+         * "Fetched 42m ago".
          */
         val line: String,
         /**
@@ -9935,6 +10139,24 @@ object EngineContract {
     )
 
     @Serializable
+    data class ProcedureMissedAnswer(
+        @SerialName("suspend_at")
+        val suspendAt: Int? = null,
+        val missed: List<Int>,
+    )
+
+    @Serializable
+    data class ProcedureMissedInput(
+        val legs: List<EngineContract.ProcedureMissedInputLegsItem>,
+    )
+
+    @Serializable
+    data class ProcedureMissedInputLegsItem(
+        val path: String,
+        val map: Boolean? = null,
+    )
+
+    @Serializable
     data class ProcedurePathFiguresAnswer(
         @SerialName("hold_turn_nm")
         val holdTurnNm: Double,
@@ -9978,6 +10200,14 @@ object EngineContract {
         val id: String,
         val transition: String? = null,
         val direct: String? = null,
+        /**
+         * An approach loaded, not yet activated: not in the route flown.
+         */
+        val loaded: Boolean,
+        /**
+         * Its missed approach unsuspended: flown on from the missed approach point (AIM 5-4-21).
+         */
+        val missed: Boolean,
     )
 
     @Serializable
@@ -9996,6 +10226,8 @@ object EngineContract {
         val id: String,
         val transition: String? = null,
         val direct: String? = null,
+        val loaded: Boolean? = null,
+        val missed: Boolean? = null,
     )
 
     @Serializable
@@ -10256,6 +10488,68 @@ object EngineContract {
         val ident: String,
         @SerialName("along_nm")
         val alongNm: Double,
+    )
+
+    @Serializable
+    data class ProfileCloudsAnswerItem(
+        val station: String,
+        @SerialName("along_nm")
+        val alongNm: Double,
+        @SerialName("base_ft")
+        val baseFt: Double,
+        val issued: String? = null,
+    )
+
+    @Serializable
+    data class ProfileCloudsInput(
+        /**
+         * The route's points, [lat, lon], its airports in order.
+         */
+        val path: List<List<Double>>,
+        val stations: List<EngineContract.ProfileCloudsInputStationsItem>? = null,
+    )
+
+    @Serializable
+    data class ProfileCloudsInputStationsItem(
+        val icaoId: String,
+        val lat: Double,
+        val lon: Double,
+        @SerialName("ceiling_ft")
+        val ceilingFt: Double? = null,
+        @SerialName("elevation_ft")
+        val elevationFt: Double? = null,
+        val issued: String? = null,
+    )
+
+    @Serializable
+    data class ProfileObstaclesAnswerItem(
+        @SerialName("along_nm")
+        val alongNm: Double,
+        @SerialName("amsl_ft")
+        val amslFt: Double,
+        @SerialName("agl_ft")
+        val aglFt: Double? = null,
+        val level: String? = null,
+        val named: Boolean,
+    )
+
+    @Serializable
+    data class ProfileObstaclesInput(
+        @SerialName("altitude_ft")
+        val altitudeFt: Double? = null,
+        @SerialName("length_nm")
+        val lengthNm: Double,
+        val obstacles: List<EngineContract.ProfileObstaclesInputObstaclesItem>? = null,
+    )
+
+    @Serializable
+    data class ProfileObstaclesInputObstaclesItem(
+        @SerialName("along_nm")
+        val alongNm: Double,
+        @SerialName("amsl_ft")
+        val amslFt: Double,
+        @SerialName("agl_ft")
+        val aglFt: Double? = null,
     )
 
     @Serializable
@@ -10687,6 +10981,16 @@ object EngineContract {
     data class ReadyToFlyInputNotams(
         @SerialName("fetched_at")
         val fetchedAt: Double? = null,
+        /**
+         * Whether the NOTAMs are the full set in force (the planner's NotamsRanked.full_set); false, only those heard since heard_since, a caution (decision 0059).
+         */
+        @SerialName("full_set")
+        val fullSet: Boolean? = null,
+        /**
+         * The day the NOTAM feed was first heard, YYYY-MM-DD (NotamsRanked.coverage_since).
+         */
+        @SerialName("heard_since")
+        val heardSince: String? = null,
     )
 
     /**
@@ -10837,6 +11141,11 @@ object EngineContract {
          */
         @SerialName("vfom_m")
         val vfomM: Double? = null,
+        /**
+         * The Ownship Geometric Altitude's Vertical Warning (GDL 90 3.8): its height is not to be trusted.
+         */
+        @SerialName("vertical_warning")
+        val verticalWarning: Boolean,
     )
 
     /**
@@ -10844,7 +11153,7 @@ object EngineContract {
      */
     @Serializable
     data class ReceiverPicture(
-        val receiver: EngineContract.ReceiverPictureReceiver,
+        val receiver: EngineContract.ReceiverState,
         val ownship: EngineContract.ReceiverOwnship? = null,
         val targets: List<EngineContract.ReceiverTarget>,
         val texts: List<EngineContract.ReceiverText>,
@@ -10852,46 +11161,101 @@ object EngineContract {
     )
 
     @Serializable
-    data class ReceiverPictureReceiver(
+    data class ReceiverPositionAnswer(
         /**
-         * The name its ID message gives (Stratux, Sentry, SkyEcho).
+         * Whose fix own ship is.
          */
-        val name: String? = null,
-        @SerialName("long_name")
-        val longName: String? = null,
-        val stratux: Boolean,
-        @SerialName("heartbeat_at")
-        val heartbeatAt: Double? = null,
+        val source: String,
         /**
-         * A Heartbeat came in the last 5 s (one a second, GDL 90 3.1).
+         * The receiver's fix: good, or why it is not used (none heard, no GPS, stale, under 91.227's NIC and NACp).
          */
-        val live: Boolean,
+        val receiver: String,
         /**
-         * One line for the receiver's chip: "Stratux · 12 targets · GPS".
+         * The receiver's fix, where it is the source.
          */
-        val summary: String,
-        val gps: Boolean,
-        @SerialName("utc_ok")
-        val utcOk: Boolean,
-        @SerialName("battery_low")
-        val batteryLow: Boolean,
-        val maintenance: Boolean,
+        val fix: EngineContract.ReceiverPositionAnswerFix? = null,
+    )
+
+    @Serializable
+    data class ReceiverPositionAnswerFix(
+        val lat: Double,
+        val lon: Double,
         /**
-         * Its GPS heights are above MSL (ForeFlight's ID message), else the ellipsoid.
+         * GPS height MSL, ft, where the receiver gives MSL.
          */
-        val msl: Boolean,
-        val frames: Double,
+        @SerialName("altitude_ft")
+        val altitudeFt: Double? = null,
         /**
-         * Frames whose CRC did not match, dropped.
+         * GPS height above the WGS-84 ellipsoid, ft, where that is what the receiver gives.
          */
-        @SerialName("bad_frames")
-        val badFrames: Double,
-        @SerialName("station_lat")
-        val stationLat: Double? = null,
-        @SerialName("station_lon")
-        val stationLon: Double? = null,
-        @SerialName("station_at")
-        val stationAt: Double? = null,
+        @SerialName("ellipsoid_ft")
+        val ellipsoidFt: Double? = null,
+        /**
+         * Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4).
+         */
+        @SerialName("pressure_ft")
+        val pressureFt: Double? = null,
+        /**
+         * The pressure altitude as a flight level, at and above 18,000 ft only.
+         */
+        @SerialName("flight_level")
+        val flightLevel: Double? = null,
+        /**
+         * True track, degrees, where the report gives one.
+         */
+        @SerialName("track_deg")
+        val trackDeg: Double? = null,
+        @SerialName("groundspeed_kt")
+        val groundspeedKt: Double? = null,
+        @SerialName("vertical_fpm")
+        val verticalFpm: Double? = null,
+        /**
+         * The NACp's bound on the 95% horizontal error, m.
+         */
+        @SerialName("accuracy_m")
+        val accuracyM: Double,
+        val airborne: Boolean,
+        /**
+         * When the report was heard, Unix s.
+         */
+        val at: Double,
+    )
+
+    @Serializable
+    data class ReceiverPositionInput(
+        /**
+         * The picture's own ship.
+         */
+        val ownship: EngineContract.ReceiverOwnship? = null,
+        /**
+         * The picture's receiver.
+         */
+        val receiver: EngineContract.ReceiverState? = null,
+        /**
+         * The device's last fix, or null where it has none.
+         */
+        val device: EngineContract.ReceiverPositionInputDevice? = null,
+        /**
+         * The source the last answer gave (receiver, device or none).
+         */
+        val was: String? = null,
+        /**
+         * Now, Unix s.
+         */
+        val at: Double,
+    )
+
+    @Serializable
+    data class ReceiverPositionInputDevice(
+        /**
+         * The device's horizontal accuracy, m (a 68% radius).
+         */
+        @SerialName("accuracy_m")
+        val accuracyM: Double,
+        /**
+         * When the device's fix was taken, Unix s.
+         */
+        val at: Double,
     )
 
     @Serializable
@@ -10934,6 +11298,52 @@ object EngineContract {
          */
         val picture: EngineContract.ReceiverPicture? = null,
         val ident: String,
+    )
+
+    /**
+     * The receiver's own state, as its Heartbeat and ID message say.
+     */
+    @Serializable
+    data class ReceiverState(
+        /**
+         * The name its ID message gives (Stratux, Sentry, SkyEcho).
+         */
+        val name: String? = null,
+        @SerialName("long_name")
+        val longName: String? = null,
+        val stratux: Boolean,
+        @SerialName("heartbeat_at")
+        val heartbeatAt: Double? = null,
+        /**
+         * A Heartbeat came in the last 5 s (one a second, GDL 90 3.1).
+         */
+        val live: Boolean,
+        /**
+         * One line for the receiver's chip: "Stratux · 12 targets · GPS".
+         */
+        val summary: String,
+        val gps: Boolean,
+        @SerialName("utc_ok")
+        val utcOk: Boolean,
+        @SerialName("battery_low")
+        val batteryLow: Boolean,
+        val maintenance: Boolean,
+        /**
+         * Its GPS heights are above MSL (ForeFlight's ID message), else the ellipsoid.
+         */
+        val msl: Boolean,
+        val frames: Double,
+        /**
+         * Frames whose CRC did not match, dropped.
+         */
+        @SerialName("bad_frames")
+        val badFrames: Double,
+        @SerialName("station_lat")
+        val stationLat: Double? = null,
+        @SerialName("station_lon")
+        val stationLon: Double? = null,
+        @SerialName("station_at")
+        val stationAt: Double? = null,
     )
 
     /**
@@ -11781,6 +12191,21 @@ object EngineContract {
     )
 
     @Serializable
+    data class RouteProceduresAnswerItem(
+        val name: String,
+        val before: String? = null,
+        val after: String? = null,
+    )
+
+    @Serializable
+    data class RouteProceduresInput(
+        /**
+         * The route's words in order, upper case, as route_read gives its points.
+         */
+        val words: List<String>,
+    )
+
+    @Serializable
     data class RouteReadAnswer(
         val points: List<String>,
         /**
@@ -12075,6 +12500,136 @@ object EngineContract {
          * NASR APT_RWY's SURFACE_TYPE_CODE (ASPH, CONC, TURF, ASPH-TURF ...); null or "" for none.
          */
         val surface: String? = null,
+    )
+
+    @Serializable
+    data class RunwayProximityAnswer(
+        val state: String,
+        /**
+         * The runway as its sign reads, '9-27'.
+         */
+        val runway: String? = null,
+        /**
+         * The end whose runway it is, as painted ('27'): rolled along on it, or landed on when lined up.
+         */
+        val end: String? = null,
+        val closed: Boolean,
+        /**
+         * To the assumed holding position, ft; 0 at or past it.
+         */
+        @SerialName("hold_short_ft")
+        val holdShortFt: Int? = null,
+        /**
+         * To the threshold ahead when lined up, ft.
+         */
+        @SerialName("threshold_ft")
+        val thresholdFt: Int? = null,
+        @SerialName("hot_spot")
+        val hotSpot: EngineContract.RunwayProximityAnswerHotSpot? = null,
+        /**
+         * The line shown: 'Approaching runway 9-27'.
+         */
+        val shown: String? = null,
+        /**
+         * The line under it: 'Hold short line in about 150 ft'.
+         */
+        val detail: String? = null,
+        /**
+         * What is said: 'Approaching runway niner, two seven'.
+         */
+        val spoken: String? = null,
+        /**
+         * Changes when what is said changes, never with a distance: speak when it changes.
+         */
+        val key: String,
+    )
+
+    @Serializable
+    data class RunwayProximityAnswerHotSpot(
+        val name: String,
+        @SerialName("distance_ft")
+        val distanceFt: Int,
+    )
+
+    @Serializable
+    data class RunwayProximityInput(
+        /**
+         * Own ship.
+         */
+        val fix: EngineContract.RunwayProximityInputFix,
+        /**
+         * The field's elevation, ft MSL.
+         */
+        @SerialName("elevation_ft")
+        val elevationFt: Double? = null,
+        /**
+         * Its traffic pattern's height above it, published; null for AC 90-66C's 1,000 ft.
+         */
+        @SerialName("pattern_agl_ft")
+        val patternAglFt: Double? = null,
+        /**
+         * The field's runways as the airport card has them; one without both ends placed is left out.
+         */
+        val runways: List<EngineContract.RunwayProximityInputRunwaysItem>,
+        /**
+         * The diagram's hot spots placed on the ground (diagram_hot_spots).
+         */
+        @SerialName("hot_spots")
+        val hotSpots: List<EngineContract.RunwayProximityInputHotSpotsItem>? = null,
+    )
+
+    /**
+     * Own ship.
+     */
+    @Serializable
+    data class RunwayProximityInputFix(
+        val lat: Double,
+        val lon: Double,
+        /**
+         * The fix's age, s.
+         */
+        @SerialName("age_s")
+        val ageS: Double,
+        /**
+         * Its horizontal accuracy, m; negative where not known.
+         */
+        @SerialName("accuracy_m")
+        val accuracyM: Double,
+        /**
+         * Track over the ground, degrees true.
+         */
+        @SerialName("track_deg")
+        val trackDeg: Double? = null,
+        @SerialName("groundspeed_kt")
+        val groundspeedKt: Double? = null,
+        /**
+         * Altitude, ft MSL where the device gives it. An ellipsoid height (a browser's, Android's before API 34) is about 100 ft under MSL in the contiguous US, which errs toward the surface's prompts.
+         */
+        @SerialName("altitude_ft")
+        val altitudeFt: Double? = null,
+    )
+
+    @Serializable
+    data class RunwayProximityInputHotSpotsItem(
+        val name: String? = null,
+        val lat: Double,
+        val lon: Double,
+    )
+
+    @Serializable
+    data class RunwayProximityInputRunwaysItem(
+        @SerialName("width_ft")
+        val widthFt: Double? = null,
+        val closed: Boolean? = null,
+        @SerialName("runway_ends")
+        val runwayEnds: List<EngineContract.RunwayProximityInputRunwaysItemRunwayEndsItem>? = null,
+    )
+
+    @Serializable
+    data class RunwayProximityInputRunwaysItemRunwayEndsItem(
+        val ident: String? = null,
+        val lat: Double? = null,
+        val lon: Double? = null,
     )
 
     @Serializable
@@ -13243,6 +13798,14 @@ object EngineContract {
     data class ThinTrackInput(
         val points: List<JsonElement>,
         val most: Int? = null,
+    )
+
+    @Serializable
+    data class TimeAgoInput(
+        /**
+         * Seconds since it happened: now less then.
+         */
+        val seconds: Double,
     )
 
     @Serializable
