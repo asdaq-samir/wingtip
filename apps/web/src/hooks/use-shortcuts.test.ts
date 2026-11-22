@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
+import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { isSearchKey, onShortcut } from "./use-shortcuts";
+import { useSearchKey, useShortcuts } from "./use-shortcuts";
 import { useWanted } from "../lib/navigation/wanted";
 import { takeSearchAsk, useSearchAsk } from "../lib/oneSearch";
 
@@ -14,8 +15,10 @@ function page() {
     <input id="field" />`;
 }
 
+/** A key as a keyboard sends it: its character and its physical key. */
+const codeOf = (key: string) => (key.length > 1 ? key : /\d/.test(key) ? `Digit${key}` : `Key${key.toUpperCase()}`);
 const press = (key: string, target: Element = document.body) => {
-  const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
+  const event = new KeyboardEvent("keydown", { key, code: codeOf(key), bubbles: true, cancelable: true });
   target.dispatchEvent(event);
   return event;
 };
@@ -29,13 +32,14 @@ const alt = (key: string, target: Element = document.body) => {
 };
 
 describe("a desktop's shortcuts", () => {
+  let unmount: () => void;
   beforeEach(() => {
     page();
     // jsdom lays nothing out: everything here is in sight.
     HTMLElement.prototype.checkVisibility = () => true;
-    document.addEventListener("keydown", onShortcut);
+    unmount = renderHook(() => useShortcuts(true)).unmount;
   });
-  afterEach(() => document.removeEventListener("keydown", onShortcut));
+  afterEach(() => unmount());
 
   it("Alt+/ goes to the search field, and a bare / does not", () => {
     expect(press("/").defaultPrevented).toBe(false);
@@ -66,7 +70,7 @@ describe("a desktop's shortcuts", () => {
     field.focus();
     expect(alt("/", field).defaultPrevented).toBe(false);
     expect(press("2", field).defaultPrevented).toBe(false);
-    const used = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+    const used = new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true, cancelable: true });
     used.preventDefault();
     const back = vi.fn();
     document.querySelector("[data-back]")!.addEventListener("click", back);
@@ -87,11 +91,19 @@ describe("a desktop's shortcuts", () => {
     expect(alt("b", field).defaultPrevented).toBe(false);
   });
 
-  it("knows ⌘K and Ctrl K for the search, and not K alone", () => {
-    const key = (init: KeyboardEventInit) => new KeyboardEvent("keydown", { key: "k", code: "KeyK", ...init });
-    expect(isSearchKey(key({ metaKey: true }))).toBe(true);
-    expect(isSearchKey(key({ ctrlKey: true }))).toBe(true);
-    expect(isSearchKey(key({}))).toBe(false);
-    expect(isSearchKey(key({ metaKey: true, shiftKey: true }))).toBe(false);
+  it("knows ⌘K and Ctrl K for the search, from a field too, and not K alone", () => {
+    const run = vi.fn();
+    const keyed = renderHook(() => useSearchKey(run));
+    const k = (init: KeyboardEventInit, target: Element = document.body) => {
+      const event = new KeyboardEvent("keydown", { key: "k", code: "KeyK", bubbles: true, cancelable: true, ...init });
+      target.dispatchEvent(event);
+      return event;
+    };
+    expect(k({ metaKey: true }).defaultPrevented).toBe(true);
+    expect(k({ ctrlKey: true }, document.getElementById("field")!).defaultPrevented).toBe(true);
+    expect(k({}).defaultPrevented).toBe(false);
+    expect(k({ metaKey: true, shiftKey: true }).defaultPrevented).toBe(false);
+    expect(run).toHaveBeenCalledTimes(2);
+    keyed.unmount();
   });
 });
