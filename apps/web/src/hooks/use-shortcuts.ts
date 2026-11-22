@@ -29,7 +29,7 @@ const SEARCH = '[data-slot="map-panel"] input[type="search"]';
 
 /** Whether the key is a field's or a menu's: typed text, a list's own
  *  keys, a dialog over the page. */
-export function typing(target: EventTarget | null): boolean {
+function typing(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   return (
     target.isContentEditable ||

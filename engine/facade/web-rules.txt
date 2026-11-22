@@ -25,7 +25,6 @@ approach_category
 approach_coaching
 approach_find
 approach_fix_tags
-approach_guidance
 approach_lesson_path
 approach_minimums
 approach_path_between
@@ -126,7 +125,6 @@ gonogo_runway_flown
 gonogo_runway_in_use
 gonogo_runway_number
 gonogo_self_checks
-gonogo_soft_surface
 gonogo_sua_when
 gonogo_tfr_when
 gonogo_under_minimums
