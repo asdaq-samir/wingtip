@@ -69,13 +69,15 @@ fun procedureRows(drawing: ProcedureDrawing?): Int = 1 + RouteProcedures.fixes(d
  * head's place in the route's segmented list of `count` rows.
  */
 @Composable
-fun TimelineProcedureRows(pick: PlanProcedures.Pick, drawing: ProcedureDrawing?, list: ProcedureList?, picks: PlanProcedures.State, first: Int, count: Int, onChanged: () -> Unit) {
+fun TimelineProcedureRows(pick: PlanProcedures.Pick, drawing: ProcedureDrawing?, list: ProcedureList?, picks: PlanProcedures.State, first: Int, count: Int, onChanged: () -> Unit, onRemove: () -> Unit, onPlate: () -> Unit) {
     val gap = ListItemDefaults.SegmentedGap
     val fixes = RouteProcedures.fixes(drawing)
     val direct = picks.direct[pick.key]
     val directAt = fixes.indexOfFirst { it.ident == direct }
     val indigo = WingtipColors.Chart.Procedure
     var choosing by rememberSaveable(pick.key) { mutableStateOf(false) }
+    // The approach's lesson open, on its Brief (false) or its Dry Run.
+    var lesson by rememberSaveable(pick.key) { mutableStateOf<Boolean?>(null) }
     val headThread = rememberThread()
     val said = stringResource(R.string.proc_head_said, kindWord(pick.kind), pick.ident, pick.name)
     SegmentedListItem(
@@ -86,12 +88,13 @@ fun TimelineProcedureRows(pick: PlanProcedures.Pick, drawing: ProcedureDrawing?,
         trailingContent = {
             Box {
                 Icon(Icons.Filled.UnfoldMore, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                ProcedureMenu(choosing, { choosing = false }, pick.ident, pick.kind, list, onChanged)
+                ProcedureMenu(choosing, { choosing = false }, pick.ident, pick.kind, list, onChanged, onRemove, onLesson = { lesson = it }, onPlate = onPlate)
             }
         },
         modifier = Modifier.fillMaxWidth().semantics { contentDescription = said }.timelineThread(headThread, first = false, last = false, dot = null, gap = gap),
         content = { Text(pick.transition?.let { "${pick.name} · $it" } ?: pick.name) },
     )
+    lesson?.let { dryRun -> ApproachLessonSheet(pick, dryRun, onClose = { lesson = null }) }
     fixes.forEachIndexed { i, fix ->
         FixRow(pick, fix, drawing, picks, isDirect = i == directAt, skipped = directAt > i, index = first + 1 + i, count = count, onChanged = onChanged)
     }
@@ -126,7 +129,7 @@ private fun FixRow(pick: PlanProcedures.Pick, fix: ProcedureFix, drawing: Proced
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         Text(fix.ident, style = MaterialTheme.typography.labelLarge, color = muted, modifier = Modifier.padding(horizontal = WingtipSpace.Md, vertical = WingtipSpace.Sm))
                         DropdownMenuItem(
-                            text = { Text(if (isDirect) stringResource(R.string.fix_fly_charted, pick.name) else stringResource(R.string.point_direct_to)) },
+                            text = { Text(if (isDirect) stringResource(R.string.fix_fly_charted, pick.name) else stringResource(R.string.wording_direct_to)) },
                             leadingIcon = { Icon(CardAction.DIRECT_TO.icon, contentDescription = null, tint = tint) },
                             onClick = {
                                 menu = false

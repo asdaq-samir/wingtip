@@ -54,9 +54,9 @@ struct BriefLegsTests {
         let ages = try decode(MapLayerAges.self, #"{"metars_at":"2026-10-04T14:00:00Z","tfrs_at":null}"#)
         #expect(ages.metarsAt == "2026-10-04T14:00:00Z" && ages.tfrsAt == nil)
         let now = AirportWords.date("2026-10-04T14:04:30Z")!
-        #expect(BriefLegs.age(AirportWords.date(ages.metarsAt), now: now) == "4 min ago")
+        #expect(BriefLegs.age(AirportWords.date(ages.metarsAt), now: now) == "4m ago")
         #expect(BriefLegs.age(now.addingTimeInterval(-20), now: now) == "just now")
-        #expect(BriefLegs.age(now.addingTimeInterval(-125 * 60), now: now) == "2 h 5 min ago")
+        #expect(BriefLegs.age(now.addingTimeInterval(-125 * 60), now: now) == "2h 5m ago")
         #expect(BriefLegs.age(nil, now: now) == nil)
     }
 
@@ -65,7 +65,7 @@ struct BriefLegsTests {
         let stale = BriefLegs.staleSources(ages)
         #expect(stale.map(\.name) == ["NOTAMs"])
         let now = AirportWords.date("2026-10-04T14:00:00Z")!
-        #expect(BriefLegs.staleWords(AirportWords.date(stale[0].fetchedAt), now: now) == "Not updating: last updated 3 h 0 min ago")
+        #expect(BriefLegs.staleWords(AirportWords.date(stale[0].fetchedAt), now: now) == "Not updating: last updated 3h ago")
         #expect(BriefLegs.staleWords(nil, now: now) == "Not updating")
     }
 

@@ -127,6 +127,55 @@ pub fn write(r: &Read, out: &mut String) {
     out.push_str("]}");
 }
 
+/// A SID's or a STAR's name as a route is written with one -- a
+/// clearance's, a filed flight plan's (AIM Appendix 4, item 15: the
+/// procedure's computer code; "KMSP BAEE1 BAE V191 OSH OSHH2 KATW") --
+/// four or five letters and its number. No airport's identifier is that
+/// long (FAA JO 7350.9's location identifiers: three or four characters)
+/// and no fix's has a figure in it (five-letter names, JO 7350.9), so it is
+/// neither: the one test the web's route box and the iPhone's Type Route
+/// both read a typed route by.
+pub fn is_procedure(word: &str) -> bool {
+    let b = word.as_bytes();
+    matches!(b.len(), 5 | 6) && b[..b.len() - 1].iter().all(u8::is_ascii_uppercase) && b[b.len() - 1].is_ascii_digit()
+}
+
+/// The SIDs and STARs among a route's words (is_procedure), each with the
+/// points typed either side of it, the nearest that is not a procedure: a
+/// departure's transition is the fix after it, an arrival's the fix before
+/// it (AIM 5-2-9's departure and 5-4-1's arrival transitions).
+pub fn procedures(words: &[&str]) -> Vec<(String, Option<String>, Option<String>)> {
+    let point = |w: &&&str| !is_procedure(w);
+    words
+        .iter()
+        .enumerate()
+        .filter(|(_, w)| is_procedure(w))
+        .map(|(i, w)| {
+            let before = words[..i].iter().rev().find(point).map(|w| (*w).to_owned());
+            let after = words[i + 1..].iter().find(point).map(|w| (*w).to_owned());
+            ((*w).to_owned(), before, after)
+        })
+        .collect()
+}
+
+/// `route_procedures`'s answer: [{"name", "before", "after"}].
+pub fn write_procedures(list: &[(String, Option<String>, Option<String>)], out: &mut String) {
+    out.push('[');
+    for (i, (name, before, after)) in list.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str("{\"name\":");
+        json::string(out, name);
+        out.push_str(",\"before\":");
+        json::opt_string(out, before.as_deref());
+        out.push_str(",\"after\":");
+        json::opt_string(out, after.as_deref());
+        out.push('}');
+    }
+    out.push(']');
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -179,5 +228,21 @@ mod tests {
             out,
             "{\"points\":[\"KMSN\",\"LEXOR\",\"KDPA\"],\"cruise_ft\":5500.0,\"tas_kt\":null,\"changes\":[{\"at\":\"LEXOR\",\"ft\":7500.0}]}"
         );
+    }
+
+    #[test]
+    fn names_the_sids_and_stars_with_the_points_beside_them() {
+        assert!(["BAEE1", "OSHH2", "KAYYS3"].iter().all(|w| is_procedure(w)));
+        assert!(!["C81", "KATW", "CORIR", "V191", "1C5", "BAEE12", "baee1"].iter().any(|w| is_procedure(w)));
+        let words = ["KMSP", "BAEE1", "BAE", "V191", "OSH", "OSHH2", "KATW"];
+        let found = procedures(&words);
+        assert_eq!(
+            found,
+            vec![
+                ("BAEE1".to_owned(), Some("KMSP".to_owned()), Some("BAE".to_owned())),
+                ("OSHH2".to_owned(), Some("OSH".to_owned()), Some("KATW".to_owned())),
+            ]
+        );
+        assert_eq!(procedures(&["OSHH2"]), vec![("OSHH2".to_owned(), None, None)]);
     }
 }

@@ -6977,7 +6977,7 @@ enum EngineContract {
     struct KeptAgeAnswer: Codable, Equatable, Sendable {
         var kind: String
         var ageMin: Double
-        /// "Fetched 42 min ago".
+        /// "Fetched 42m ago".
         var line: String
         /// Caution once past its freshness: the line drawn in the caution colour.
         var finding: String
@@ -11390,6 +11390,17 @@ enum EngineContract {
         }
     }
 
+    struct RouteProceduresAnswerItem: Codable, Equatable, Sendable {
+        var name: String
+        var before: String?
+        var after: String?
+    }
+
+    struct RouteProceduresInput: Codable, Equatable, Sendable {
+        /// The route's words in order, upper case, as route_read gives its points.
+        var words: [String]
+    }
+
     struct RouteReadAnswer: Codable, Equatable, Sendable {
         var points: [String]
         /// The cruise's altitude, feet MSL; null where none was given or it is VFR's.
@@ -12812,6 +12823,11 @@ enum EngineContract {
     struct ThinTrackInput: Codable, Equatable, Sendable {
         var points: [OpenAPIValueContainer]
         var most: Int?
+    }
+
+    struct TimeAgoInput: Codable, Equatable, Sendable {
+        /// Seconds since it happened: now less then.
+        var seconds: Double
     }
 
     struct TitleCaseInput: Codable, Equatable, Sendable {

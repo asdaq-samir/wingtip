@@ -152,7 +152,7 @@ struct AirportExtrasTests {
         // 59.96 minutes is the next degree, never 60.0.
         #expect(AirportWords.degreesMinutes(lat: 42.99994, lon: 0) == "N43°00.0′ E000°00.0′")
         let at = AirportWords.date("2026-10-25T12:55:00Z")!
-        #expect(AirportWords.observed("2026-10-25T12:55:00Z", now: at.addingTimeInterval(14 * 60)) == "1255Z · 14 min ago")
+        #expect(AirportWords.observed("2026-10-25T12:55:00Z", now: at.addingTimeInterval(14 * 60)) == "1255Z · 14m ago")
         #expect(AirportWords.observed("2026-10-25T12:55:00.000Z", now: at) == "1255Z · just now")
         #expect(AirportWords.observed("not a time") == nil)
         #expect(AirportWords.faaWords("CHICAGO CLASS B. ACTIVE MON-FRI") == "Chicago Class B. Active Mon-Fri")

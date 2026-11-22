@@ -34,6 +34,7 @@ struct TypeRouteSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var text = ""
     @State private var problem: String?
+    @State private var looking = false
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -58,7 +59,7 @@ struct TypeRouteSheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Plan", action: use)
-                        .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .disabled(looking || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         .accessibilityIdentifier("route-type-plan")
                 }
             }
@@ -69,18 +70,36 @@ struct TypeRouteSheet: View {
         }
     }
 
-    /// The words read by the engine and planned; kept up with why where
-    /// they cannot be.
+    /// The words read by the engine and planned, a SID or a STAR typed
+    /// among them looked up in its field's procedures first; kept up with
+    /// why where they cannot be.
     private func use() {
+        let read: TypedRoute.Read
         do {
-            guard let read = try TypedRoute.read(text) else {
+            guard let typed = try TypedRoute.read(text) else {
                 problem = "A route needs two points at least: where it leaves from and where it lands."
                 return
             }
-            plan.useTypedRoute(read)
-            dismiss()
+            read = typed
         } catch {
             problem = "The route couldn't be read: \(error.localizedDescription)"
+            return
+        }
+        guard !read.procedures.isEmpty else {
+            plan.useTypedRoute(read)
+            dismiss()
+            return
+        }
+        looking = true
+        Task {
+            let found = await TypedRoute.picks(read) { try? await Planner.procedures($0) }
+            looking = false
+            guard found.missed.isEmpty else {
+                problem = TypedRoute.missedWords(found.missed, read: read)
+                return
+            }
+            plan.useTypedRoute(read, picks: found.picks)
+            dismiss()
         }
     }
 }

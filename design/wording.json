@@ -13,7 +13,7 @@
     },
     "planning_aid": {
       "kind": "sentence",
-      "text": "Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1‑800‑WX‑BRIEF), current FAA charts and publications, or the pilot in command’s judgement and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103).",
+      "text": "Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1‑800‑WX‑BRIEF), current FAA charts and publications, or the pilot in command’s judgment and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103).",
       "faa": "\"aircraft performance\" is 14 CFR 91.103's own subject, kept as the rule says it.",
       "about": "What the app is and is not, in About and at the briefing's foot (14 CFR 91.3, 91.103; docs/legal/credits.md, \"A planning aid\")."
     },

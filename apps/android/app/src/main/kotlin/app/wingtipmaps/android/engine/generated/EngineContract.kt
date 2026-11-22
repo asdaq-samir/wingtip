@@ -7122,7 +7122,7 @@ object EngineContract {
         @SerialName("age_min")
         val ageMin: Double,
         /**
-         * "Fetched 42 min ago".
+         * "Fetched 42m ago".
          */
         val line: String,
         /**
@@ -11695,6 +11695,21 @@ object EngineContract {
     )
 
     @Serializable
+    data class RouteProceduresAnswerItem(
+        val name: String,
+        val before: String? = null,
+        val after: String? = null,
+    )
+
+    @Serializable
+    data class RouteProceduresInput(
+        /**
+         * The route's words in order, upper case, as route_read gives its points.
+         */
+        val words: List<String>,
+    )
+
+    @Serializable
     data class RouteReadAnswer(
         val points: List<String>,
         /**
@@ -13157,6 +13172,14 @@ object EngineContract {
     data class ThinTrackInput(
         val points: List<JsonElement>,
         val most: Int? = null,
+    )
+
+    @Serializable
+    data class TimeAgoInput(
+        /**
+         * Seconds since it happened: now less then.
+         */
+        val seconds: Double,
     )
 
     @Serializable

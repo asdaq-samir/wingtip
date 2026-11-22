@@ -30,7 +30,7 @@ pub(super) fn weather_items(v: &Value, now: i64, out: &mut Vec<Item>) -> Option<
         Some(a) => item(
             "briefing",
             true,
-            format!("Weather briefed {} ago", age_words(a)),
+            format!("Weather briefed {}", crate::ago::words(a as f64)),
             "Fresh for an hour".into(),
             "App's choice, at AIM 7-1-28's hourly METAR",
             None,
@@ -86,7 +86,7 @@ pub(super) fn notam_item(notams: Option<&Value>, now: i64) -> Item {
             SOURCE,
             Some("fetch_notams"),
         ),
-        Some(a) => item("notams", true, format!("NOTAMs fetched {} ago", age_words(a)), "For the route".into(), SOURCE, None),
+        Some(a) => item("notams", true, format!("NOTAMs fetched {}", crate::ago::words(a as f64)), "For the route".into(), SOURCE, None),
     }
 }
 

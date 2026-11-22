@@ -320,6 +320,17 @@ class EngineFixturesTest {
         done()
     }
 
+    @Test
+    fun theOneAgoAndTheTypedProceduresReadThroughTheBridge() {
+        // Format.ago's words, and the SIDs and STARs a typed route names.
+        for ((rule, file) in listOf("time_ago" to "timeAgo.json", "route_procedures" to "routeProcedures.json")) {
+            val all = fixture(file).cases("cases")
+            assertTrue(all.isNotEmpty())
+            for (c in all) check(ask(rule, *c.input()), c.getValue("expected"), "$rule ${c["why"]}")
+        }
+        done()
+    }
+
     /** Each case's input as the rule's members. */
     private fun JsonObject.input() = getValue("input").jsonObject.entries.map { it.key to it.value }.toTypedArray()
 

@@ -35,4 +35,10 @@
     <string name="fix_skipped">skipped</string>
     <string name="fix_turn">↺ procedure turn</string>
     <string name="fix_said_menu">%1$s: more</string>
+    <string name="proc_approach_brief">Approach Brief</string>
+    <string name="proc_plate">Plate</string>
+    <string name="lesson_brief">Brief</string>
+    <string name="lesson_training_aid">Training aid, fly the FAA plate</string>
+    <string name="lesson_step">Step %1$d of %2$d</string>
+    <string name="lesson_next">Next</string>
 </resources>

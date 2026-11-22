@@ -9,7 +9,7 @@
 //!   Lambert projection and affine;
 //! - grid: route options' straight lines over the grid (sums: the
 //!   Python's float sums, kept exactly);
-//! - time: UTC dates;
+//! - time: UTC dates, and ago: how long ago, in words ("23m ago");
 //! - json: the little JSON every rule reads and writes;
 //! - sort: the one stable sort every crate's sorting goes through;
 //! - text: a whole number with its thousands grouped, "12,500", and
@@ -19,6 +19,7 @@
 //! - ask: a rule's input read by its name, for each crate's `call`;
 //! - xml: the small XML reader the weather products share.
 
+pub mod ago;
 pub mod ask;
 pub mod faa_case;
 pub mod flat;

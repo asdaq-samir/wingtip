@@ -63,6 +63,8 @@ struct WingtipApp: App {
                 .modifier(LinkSignInPrompt(session: session))
                 .modifier(AppModels(session: session, charts: charts, nav: nav, screens: screens))
                 .task { ownShip.start() }
+                // Whether this iPhone transcribes English on itself (SpeechSession).
+                .task { await SpeechSession.check() }
                 .task { await session.refresh() }
                 // The deletes an earlier launch held behind their Undo and
                 // never sent, sent once the pilot is signed in (PendingDeletes).

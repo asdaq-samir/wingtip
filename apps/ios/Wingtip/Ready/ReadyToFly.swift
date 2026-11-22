@@ -84,7 +84,7 @@ final class ReadyToFly {
             kept: plan.routed ? kept(plan, routeKey: routeKey, saved: saved) : nil,
             device: EngineContract.ReadyToFlyInputDevice(
                 batteryPct: battery.pct, charging: battery.charging,
-                location: ReadyFacts.location(CLLocationManager().authorizationStatus),
+                location: ReadyFacts.location(LocationPermission.shared.status),
                 planSaved: plan.routed ? saved : nil),
             receiver: ReadyFacts.receiver(used: Receiver.used, listening: Receiver.shared.mode == .auto, live: Receiver.shared.live))
     }
@@ -186,7 +186,7 @@ final class ReadyToFly {
             plan.keep()
         case "allow_location":
             // Asked once by iOS; once refused, only Settings can allow it.
-            if CLLocationManager().authorizationStatus == .notDetermined {
+            if LocationPermission.shared.undecided {
                 ownShip?.askLocation()
             } else if let settings = URL(string: UIApplication.openSettingsURLString) {
                 _ = await UIApplication.shared.open(settings)

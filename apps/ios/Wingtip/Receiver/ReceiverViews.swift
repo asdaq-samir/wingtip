@@ -53,7 +53,7 @@ struct ReceiverReportRows: View {
     }
 
     private func row(_ report: EngineContract.ReceiverReport) -> some View {
-        let heard = AirportWords.observed(ISO8601DateFormatter().string(from: Date(timeIntervalSince1970: report.at))) ?? ""
+        let heard = AirportWords.observed(Date(timeIntervalSince1970: report.at))
         return VStack(alignment: .leading, spacing: WingtipSpace.xs) {
             LabeledContent("\(report.kind) over FIS-B", value: heard)
             // The report as sent, never reworded.

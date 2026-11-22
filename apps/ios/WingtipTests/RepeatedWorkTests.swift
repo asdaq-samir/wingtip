@@ -67,24 +67,22 @@ struct RepeatedWorkTests {
 
     // MARK: The map's body (item 6)
 
-    @Test func ownShipsMarkedHeightChangesOnlyWithTheRoundedHeight() async {
+    @Test func ownShipsMarkedHeightChangesOnlyWithTheRoundedHeight() {
         let file = FileManager.default.temporaryDirectory.appending(path: "rec-\(UUID().uuidString).json")
         let ownShip = OwnShip(recorder: FlightRecorder(file: file))
-        func take(_ metres: Double, at s: TimeInterval) async {
+        func take(_ metres: Double, at s: TimeInterval) {
             let location = CLLocation(coordinate: CLLocationCoordinate2D(latitude: 42, longitude: -88), altitude: metres,
                                       horizontalAccuracy: 5, verticalAccuracy: 5, course: 0, speed: 0,
                                       timestamp: Date(timeIntervalSince1970: s))
-            ownShip.locationManager(CLLocationManager(), didUpdateLocations: [location])
-            // The fix is taken on the main actor, a hop after the callback.
-            for _ in 0..<20 where ownShip.fix?.at != location.timestamp { await Task.yield() }
+            ownShip.took(OwnShip.fix(location))
         }
         // 1,000 m is 3,280.8 ft: read as 3,280.
-        await take(1_000, at: 1)
+        take(1_000, at: 1)
         #expect(ownShip.markedFt == 3_280)
         // A foot of wander leaves it, and the map reading it, alone.
         let seen = withObservationTracking { ownShip.markedFt } onChange: { Issue.record("markedFt changed for a foot of wander") }
         #expect(seen == 3_280)
-        await take(1_000.3, at: 2)
+        take(1_000.3, at: 2)
         #expect(ownShip.markedFt == 3_280)
     }
 
@@ -101,18 +99,17 @@ struct RepeatedWorkTests {
 
     // MARK: The GPS on the ground (item 10)
 
-    @Test func theGpsIsAtItsBestOnlyFlyingFollowedOrOnADiagram() async {
+    @Test func theGpsIsAtItsBestOnlyFlyingFollowedOrOnADiagram() {
         let file = FileManager.default.temporaryDirectory.appending(path: "rec-\(UUID().uuidString).json")
         let ownShip = OwnShip(recorder: FlightRecorder(file: file))
-        func take(kt: Double, at s: TimeInterval) async {
+        func take(kt: Double, at s: TimeInterval) {
             let location = CLLocation(coordinate: CLLocationCoordinate2D(latitude: 42, longitude: -88), altitude: 250,
                                       horizontalAccuracy: 5, verticalAccuracy: 5, course: 0, speed: kt / Units.ktPerMS,
                                       timestamp: Date(timeIntervalSince1970: s))
-            ownShip.locationManager(CLLocationManager(), didUpdateLocations: [location])
-            for _ in 0..<20 where ownShip.fix?.at != location.timestamp { await Task.yield() }
+            ownShip.took(OwnShip.fix(location))
         }
-        // Parked: ten metres, and a ten-metre move.
-        await take(kt: 0, at: 1)
+        // Parked: the default configuration, still until it moves.
+        take(kt: 0, at: 1)
         #expect(!ownShip.isPrecise)
         // The map following the airplane, or a diagram up: the best.
         ownShip.mapFollows = true
@@ -124,9 +121,9 @@ struct RepeatedWorkTests {
         #expect(!ownShip.isPrecise)
         // At flying speed (the engine's underway): the best, and it stays
         // so after landing while the recorder waits for the airplane to rest.
-        await take(kt: 100, at: 10)
+        take(kt: 100, at: 10)
         #expect(ownShip.isPrecise)
-        await take(kt: 0, at: 20)
+        take(kt: 0, at: 20)
         #expect(ownShip.isPrecise)
     }
 

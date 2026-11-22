@@ -20,7 +20,7 @@ class AirplaneStatusTest {
 
     @Test
     fun onTheGroundSaysWhereItLandedOrThatNoneWasHeard() {
-        assertEquals(Status.Landed("KOSH", Ago(Ago.Unit.HOURS, 2)), statusLine(InAir.Ground, listOf(flight(now / 1000.0 - 7200)), now))
+        assertEquals(Status.Landed("KOSH", Ago(7200)), statusLine(InAir.Ground, listOf(flight(now / 1000.0 - 7200)), now))
         assertEquals(Status.NoneHeard, statusLine(InAir.Ground, emptyList(), now))
         assertEquals(Status.Ground, statusLine(InAir.Ground, null, now))
     }

@@ -47,13 +47,9 @@ fn kind(name: &str) -> Option<&'static (&'static str, &'static str, Fresh)> {
     KINDS.iter().find(|(k, _, _)| *k == name)
 }
 
-/// "Fetched 42 min ago", "Fetched just now".
+/// "Fetched 42m ago", "Fetched just now": the one "ago" (core's ago).
 fn fetched_words(age_s: i64) -> String {
-    if age_s < 60 {
-        "Fetched just now".to_owned()
-    } else {
-        format!("Fetched {} ago", age_words(age_s))
-    }
+    format!("Fetched {}", crate::ago::words(age_s as f64))
 }
 
 /// `kept_age` by name: a kept answer's age and whether it is past its
