@@ -64,3 +64,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0056 | [One set of words on all three apps, generated from one table](0056-one-set-of-words.md) | 2026-11-21 | Accepted |
 | 0057 | [A documents library and reader, and every cited rule a tap to its paragraph](0057-documents-library.md) | 2026-11-21 | Proposed |
 | 0058 | [The iPad is the primary device](0058-ipad-primary.md) | 2026-11-21 | Accepted |
+| 0061 | [Wingtip inside Claude: a live view beside the chat, and the flight edited by tools](0061-wingtip-inside-claude.md) | 2026-11-22 | Accepted |

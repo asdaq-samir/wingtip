@@ -10,7 +10,9 @@ account, so the tools know their airplanes and flights. Decision 0036 records
 it.
 
 This page says what was checked and where (section 1), how it is built
-(2 to 6), and what is left for the owner (7). The developer's how-to, which
+(2 to 6, the live view in 4b), and what is left for the owner (7).
+Decision 0061 adds the live view beside the chat and the flight edited
+by tools; what was read for it, on 2026-11-22, is in that decision. The developer's how-to, which
 connects a local stack to Claude or ChatGPT, is
 [docs/MCP-CONNECTOR.md](../MCP-CONNECTOR.md).
 
@@ -187,7 +189,7 @@ sequenceDiagram
 | Metadata | `/.well-known/oauth-authorization-server` (RFC 8414); `/.well-known/oauth-protected-resource/mcp` (RFC 9728, the planner's) |
 | Registration | RFC 7591 at `/oauth2/register`, open, public clients only (`none`), PKCE required, consent required; 10 an hour per address, a name of 100 characters, 4 callbacks of 200, a 16 KB body (`RegistrationLimit`, `ConnectorClients`); clients nobody connected through let go a day after, and connections whose tokens have all run out a day after the last, each night (`ConnectorHousekeeping`) |
 | Callbacks allowed | `https://claude.ai/api/mcp/auth_callback`, `https://chatgpt.com/connector_platform_oauth_redirect`, `https://chatgpt.com/connector/oauth/*`, loopback `localhost` and `127.0.0.1` on any port (`MCP_REDIRECT_URIS`) |
-| Scopes | `wingtip:read` (tools), `wingtip:write` (save a flight); both in `scopes_supported`, so the pilot approves both once; no `openid` |
+| Scopes | `wingtip:read` (every tool but the writes, the edits of the flight being planned among them), `wingtip:write` (save, replace and delete saved flights); both in `scopes_supported`, so both are asked when connecting, and the consent page has writing as a ticked box the pilot may untick; no `openid` |
 | Access token | JWT, RS256, 15 minutes: `iss`, `aud` = the resource, `sub` = the pilot's id, `scope`, `client_id`; on every call the planner also asks the gateway (`/internal/mcp/connection`, with the token itself, as an RFC 7662 introspection) whether that token still stands, so a revoked token, a disconnect or a deleted account cuts it off at once, though another connection through the same client stands |
 | Refresh token | 30 days, rotated on every use; a spent one presented again revokes the whole connection (`RotatedRefreshTokens`, V42) |
 | Signing key | `MCP_SIGNING_KEY` (PKCS#8 PEM); blank makes one at start, so tokens end with a restart (development only) |
@@ -207,7 +209,7 @@ clients are Spring's own pieces put together for it (`PublicRefresh`,
 
 ## 4. The tools
 
-All read-only but one. Each answer carries `sources`: the FAA data set and
+Read-only but the four writes. Each answer carries `sources`: the FAA data set and
 the edition held (`wingtip.data_cycles`, as the app's Status page shows), or
 the live product (METAR and TAF from aviationweather.gov, NOTAMs from the FAA
 NOTAM System), or the engine. Times and fuel need an airplane: with none
@@ -226,13 +228,27 @@ never a stock airplane's (decision 0011).
 | `my_airplanes` | the pilot's airplanes and their figures, inspections and open squawks | gateway `/internal/mcp/aircraft` |
 | `my_flights` | the pilot's saved flights as a route summary (name, route, airplane, altitude, distance, time, fuel, when); never the notes, the risk assessment or the share link | gateway `/internal/mcp/flights` |
 | `save_flight` | plans the route and saves it to the pilot's Flights | `GET /api/plan`, then gateway `POST /internal/mcp/flights` |
+| `show_flight` | opens the flight in the live view (4b) | `GET /api/plan` |
+| `add_stop`, `remove_stop`, `move_stop` | the flight with a stop put in, taken out or moved | `GET /api/plan` |
+| `set_cruise_altitude`, `set_departure_time` | the flight at another altitude (or the legal fastest), leaving at another time (or now) | `GET /api/plan` |
+| `change_approach` | an approach at one of the route's fields loaded, activated, deactivated, removed, its missed approach unsuspended or suspended | the engine's `procedures_read` and `procedures_write`, `GET /api/airport/{ident}/procedures`, `GET /api/plan` |
+| `add_fuel_stops`, `remove_fuel_stops` | the fuel stops the plan's fuel check says the flight needs put in (`wingtip.fuel_rounds`), or taken out | `GET /api/plan` |
+| `set_fuel_on_board`, `pick_airplane` | the tanks leaving a field; one of the pilot's airplanes, or none | `GET /api/plan`, gateway `/internal/mcp/aircraft` |
+| `open_saved_flight` | a saved flight as the flight to edit | gateway `/internal/mcp/flights` |
+| `save_flight_plan` | the flight being planned saved as a new flight (write, adds) | gateway `POST /internal/mcp/flights` |
+| `update_saved_flight` | the saved flight it came from replaced with it (write, destructive) | gateway `PUT /internal/mcp/flights/{id}` |
+| `delete_saved_flight` | a saved flight deleted (write, destructive) | gateway `DELETE /internal/mcp/flights/{id}` |
 
 Hints, on every tool: `title`, `readOnlyHint`, `destructiveHint`,
 `idempotentHint`, `openWorldHint: false` (Wingtip's own data and the pilot's
 own account), and `_meta.securitySchemes` with the scope it needs.
 
-**The one write.** `save_flight` adds a flight and never changes or deletes
-one, so it is `readOnlyHint: false, destructiveHint: false`. Claude prompts
+**The writes.** `save_flight` and `save_flight_plan` add a flight and
+never change or delete one, so they are `readOnlyHint: false,
+destructiveHint: false`; `update_saved_flight` and `delete_saved_flight`
+overwrite or delete what the pilot saved, `destructiveHint: true`, which
+Claude always asks about. The edits are read-only: they change the flight
+handed to them and keep nothing. Claude prompts
 for any tool that is not read-only unless the pilot has said "Always allow";
 ChatGPT asks before write actions. It was kept because the confirmation is
 the host's own and the action is additive and undone in the app by deleting
@@ -251,6 +267,39 @@ Unicode's format characters, the tag characters that spell ASCII
 invisibly) before it is handed on (`calls.as_data`). The one write is
 confirmed by the pilot in the host, and adds a flight only (the deep
 security review of 2026-11-21).
+
+### 4b. The live view (decision 0061)
+
+The tools that answer a flight (`show_flight`, the edits,
+`open_saved_flight`, `save_flight_plan`, `update_saved_flight`) carry
+`_meta.ui.resourceUri: ui://wingtip/flight`, an MCP App (the MCP Apps
+extension, spec 2026-01-26, the Python SDK's `mcp.server.apps`). Claude
+opens it beside the chat (the resource asks for the side panel,
+`preferredDisplayMode`) and draws each answer in it.
+
+- **The page** is the web's (`apps/web/claude-view.html`,
+  `features/claude-view`), one self-contained file built inside the app's
+  build and served by the gateway at `/app/claude-view.html`; the planner
+  reads it from the gateway, keeps it five minutes, and serves it
+  (`app.mcp.view_resource`). Its CSP names Wingtip's own origin alone, for
+  the chart's tiles.
+- **The answer** is the flight (`app.mcp.flight_state`, the web's own
+  address keys) and its view (`app.mcp.flight_view`): the points, the
+  course thinned to 400 points, the legs and totals, the engine's
+  `strip_fuel` for the figure strip, the approaches and their state, the
+  sectional's tile layer, the link, and a server-made time and count. The
+  model reads one line of figures, the flight to pass to the next tool and
+  the link (`content`); the view reads the rest (`structuredContent`).
+- **The view** draws the chart as a still picture (tiles and SVG; the
+  sandbox runs no worker and no WebAssembly), FPL's figure strip, the
+  route's points with a stop's Remove, each approach's Activate,
+  Deactivate, Unsuspend or Suspend Missed and Remove, Add or Remove Fuel
+  Stops, Save or Update Saved and Open in Wingtip. A tap calls the same
+  tool through Claude (`tools/call`) and tells Claude what the pilot did
+  and the flight now (`ui/update-model-context`). Claude mounts a view
+  for each answer: the newest keeps the say, the older ones read only
+  (a `BroadcastChannel` election on the server's time and count).
+- **Nothing is kept** between calls: the flight is handed in and back.
 
 The tool list is a contract: `services/planner/tests/mcp_tools.snapshot.json`
 holds every name, description, schema and hint, and
@@ -293,7 +342,10 @@ logbook, and send nothing to Anthropic or OpenAI unless the pilot asked.
   Anthropic's egress range allowed through any WAF in front of the gateway.
 - **Anthropic's directory:** submit at claude.ai's developer portal, with a
   test account holding airplanes and flights, the public documentation page,
-  and the privacy policy.
+  and the privacy policy; an MCP App adds 3 to 5 carousel screenshots
+  (PNG, 1000 px wide or more, each with its prompt). The listing's words,
+  the help page and the screenshots to take are
+  [store/connector-listing.md](../store/connector-listing.md).
 - **OpenAI's app directory:** verify the organization in the OpenAI Platform
   Dashboard, then submit with the demo account and the privacy policy.
 - **The privacy review:** the policy's new section is a draft, like the rest
