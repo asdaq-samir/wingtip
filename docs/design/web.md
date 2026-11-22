@@ -944,7 +944,15 @@ the ••• the route's
 airplane cards' bar stays the stock Tabs (`CardTabBar`), being tabs, not
 buttons; out of sight at the pill under the figures
 (sheet/insets' `RISEN_OVER`, in sight only while a finger has the
-sheet). The figures under the route are FPL's pill too, one copy at
+sheet), the same bar at every size, its wrapper's classes alone changed
+(`FlightFoot`): a wrapper there at the pill alone built the bar afresh at
+each trip to the pill (the motion review of 2026-11-22). The strip's size
+between its thin line and the pill follows the sheet a frame at a time
+(`--pin-p`), and nothing in it eases its own size: the figures that are
+stock Buttons (Dist, ETE) eased their type 150 ms behind the sheet and
+were still shrinking after it stopped, so in the strip they ease only
+their colours and their press (`FigureStrip`'s `SIZE_FOLLOWS`;
+`e2e/fpl-strip-foot.spec.ts`). The figures under the route are FPL's pill too, one copy at
 every size: components/sheet/pinAtFoot's `usePinAtFoot` holds them on
 the foot's edge at the pill, and as the sheet goes down they stop there
 while the route slides on under them, the other way waiting there until

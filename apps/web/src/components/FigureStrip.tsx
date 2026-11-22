@@ -41,6 +41,16 @@ const TYPE: Record<StripSize, { value: string; unit: string; name?: string; unit
   pin: PIN_FIGURE,
 };
 
+/** Where the strip's size follows the sheet a frame at a time (`pin`,
+ *  usePinAtFoot's --pin-p), nothing in it eases its size of its own: a
+ *  figure that is a button (Dist, ETE) is a stock Button, which eases every
+ *  property (transition-all), so its type trailed the sheet by 150 ms and
+ *  went on shrinking after the sheet had stopped, 37 to 32 points over the
+ *  last 100 ms of a tap down to half (the motion review of 2026-11-22,
+ *  sampled each frame), and ran a transition per figure every frame of a
+ *  pull. Its colours and its press's fade still ease as they come. */
+const SIZE_FOLLOWS = "[&_*]:transition-[color,background-color,border-color,opacity]";
+
 /**
  * The one strip of figures pinned at a sheet's foot, in every state:
  * FPL's flight figures on the ground, in a dry run and in flight
@@ -83,7 +93,7 @@ export default function FigureStrip({
   // the rest, and the pill showed that row alone).
   const cols = { "--cols": figures.length } as CSSProperties;
   return (
-    <div className="@container/figures relative" data-slot="section-summary">
+    <div className={cn("@container/figures relative", size === "pin" && SIZE_FOLLOWS)} data-slot="section-summary">
       <dl
         className={cn(
           "grid justify-between gap-x-2 gap-y-3",

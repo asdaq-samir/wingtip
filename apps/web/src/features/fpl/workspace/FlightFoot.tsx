@@ -108,11 +108,19 @@ export default function FlightFoot({
   // `more`), the actions' bar alone: the figures are the route row's, and
   // at the pill they are the pill itself (FplRoute). At the pill the bar
   // lies over the foot out of sight, coming into sight as a finger takes
-  // the sheet (RISEN_OVER).
+  // the sheet (RISEN_OVER). One wrapper at every size, only its classes
+  // changed, so the same bar stays: a wrapper there at the pill alone gave
+  // the tree another shape there, and React built the bar afresh (its
+  // toolbar, its menu, its two panes of glass) each time the sheet reached
+  // or left the pill, as the settle began (the motion review of 2026-11-22:
+  // the bar's element not the same after a trip to the pill).
   if (more && !dryRunning && !flying) {
-    const bar = <FplTabBar vm={vm} more={more} fileable={fileable} onFile={onFile} routes={routes} />;
     return (
-      <div className="relative w-full">{panelOpen ? bar : <div className={cn("absolute inset-x-0 bottom-0", RISEN_OVER)}>{bar}</div>}</div>
+      <div className="relative w-full">
+        <div className={panelOpen ? undefined : cn("absolute inset-x-0 bottom-0", RISEN_OVER)}>
+          <FplTabBar vm={vm} more={more} fileable={fileable} onFile={onFile} routes={routes} />
+        </div>
+      </div>
     );
   }
   return (
