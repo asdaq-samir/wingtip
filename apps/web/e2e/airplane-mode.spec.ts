@@ -19,6 +19,12 @@ test("a list asked for in airplane mode says No connection, and answers by itsel
   await page.route("**/api/logbook", (route) =>
     offline ? route.abort("internetdisconnected") : route.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
   );
+  // And what is coming up, the page's other list: the stack's gateway
+  // answered it for the setup's own pilot whenever it was asked before the
+  // page went offline (the console warming it), so its "No connection"
+  // never came on a first try (nightly, round 2). Never answered here
+  // while offline, whenever it is asked; the gateway's once back.
+  await page.route("**/api/paperwork", (route) => (offline ? route.abort("internetdisconnected") : route.fallback()));
   await page.goto("/app/plan");
   await showTabs(page);
   await openConsole(page);
