@@ -7712,10 +7712,14 @@ data class ProfileAirspace (
 
 /**
  * An obstacle of the FAA's DOF near the route's line: where along it,
- * and its top, feet MSL.
+ * its top, feet MSL, and its height above the ground there, feet AGL
+ * (the DOF's AMSL and AGL columns).
  */
 @Serializable
 data class ProfileObstacle (
+    @SerialName("agl_ft")
+    val aglFt: Double? = null,
+
     @SerialName("along_nm")
     val alongNm: Double,
 
@@ -7730,6 +7734,105 @@ data class ProfileGround (
 
     @SerialName("ground_ft")
     val groundFt: Double
+)
+
+/**
+ * The weather on the route's side view (wingtip.profile_weather),
+ * along the same hops as RouteProfile's ground: the cloud bases, the
+ * freezing level and its source, the icing, and which of the three
+ * could not be read (`unavailable`: "clouds", "freezing", "icing"),
+ * unknown rather than none.
+ */
+@Serializable
+data class RouteWeather (
+    val clouds: List<ProfileCloud>,
+
+    @SerialName("for_time")
+    val forTime: String,
+
+    val freezing: List<ProfileFreezing>,
+
+    @SerialName("freezing_source")
+    val freezingSource: ProfileWeatherSource? = null,
+
+    val icing: List<ProfileIcing>,
+    val unavailable: List<String>? = null
+)
+
+/**
+ * A TAF station's forecast cloud base on the side view
+ * (wingtip.profile_weather): where along the route, its base MSL (the
+ * ceiling over the flight above the field, plus its elevation), and when
+ * its TAF was issued.
+ */
+@Serializable
+data class ProfileCloud (
+    @SerialName("along_nm")
+    val alongNm: Double,
+
+    @SerialName("base_ft")
+    val baseFt: Double,
+
+    val issued: String? = null,
+    val station: String
+)
+
+/**
+ * The freezing level over a point of the route, ft MSL; at or below
+ * it where the forecast is freezing at its lowest level already.
+ */
+@Serializable
+data class ProfileFreezing (
+    @SerialName("along_nm")
+    val alongNm: Double,
+
+    @SerialName("at_or_below")
+    val atOrBelow: Boolean? = null,
+
+    val ft: Double
+)
+
+/**
+ * Whose forecast a figure is and for when: its name, its run, ISO
+ * UTC, and the time it is read at.
+ */
+@Serializable
+data class ProfileWeatherSource (
+    val label: String,
+    val run: String? = null,
+
+    @SerialName("valid_at")
+    val validAt: String? = null
+)
+
+/**
+ * A G-AIRMET icing area the route crosses: from where to where along
+ * it, between which altitudes (ft MSL; the floor the freezing level
+ * where `from_freezing_level`), and when it is valid and was issued.
+ */
+@Serializable
+data class ProfileIcing (
+    @SerialName("from_freezing_level")
+    val fromFreezingLevel: Boolean? = null,
+
+    @SerialName("from_nm")
+    val fromNm: Double,
+
+    @SerialName("high_ft")
+    val highFt: Double? = null,
+
+    val issued: String? = null,
+
+    @SerialName("low_ft")
+    val lowFt: Double? = null,
+
+    val severity: String? = null,
+
+    @SerialName("to_nm")
+    val toNm: Double,
+
+    @SerialName("valid_at")
+    val validAt: String? = null
 )
 
 /**

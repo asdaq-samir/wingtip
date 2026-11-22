@@ -75,8 +75,10 @@ final class RaisedMapView: MKMapView {
         return config
     }
 
+    /// The chart, its imagery and the hazard colouring over them
+    /// (HazardTileOverlay), tile overlays all, held off the map in 3D.
     private static func isGround(_ overlay: any MKOverlay) -> Bool {
-        overlay is ChartTileOverlay || overlay is CloseImageryOverlay
+        overlay is ChartTileOverlay || overlay is CloseImageryOverlay || overlay is HazardTileOverlay
     }
 
     private func level(for overlay: any MKOverlay, asked: MKOverlayLevel) -> MKOverlayLevel {

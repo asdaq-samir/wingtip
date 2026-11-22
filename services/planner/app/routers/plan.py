@@ -20,7 +20,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import Response
-from wingtip import airspace, altitude, chartlabels, faa_data, geo, planning
+from wingtip import airspace, altitude, chartlabels, faa_data, geo, planning, profile_weather
 from wingtip import flight_plan as fp
 from wingtip.engine import ask as engine
 from wingtip.planning import route_line
@@ -29,7 +29,7 @@ from wingtip.profile import route_profile as side_view
 from .. import chart_model, cycle_in_address, foreflight, fuel_replan, prefetch
 from ..route_way import load_way
 from ..router_basics import load_route
-from ..schemas.plan import Checkpoints, Course, Plan, RouteProfile, Totals
+from ..schemas.plan import Checkpoints, Course, Plan, RouteProfile, RouteWeather, Totals
 from ..checkpoint_scoring import route_checkpoints
 from ..plan_query import PlanQuery, named_checkpoints
 from ..gateway import PUBLIC, gateway
@@ -48,6 +48,26 @@ def route_profile(dep: str, dest: str, stops: str = "") -> RouteProfile:
     shp_path = airspace.ensure_class_airspace_shapefile(altitude.DEFAULT_FAA_CACHE_DIR)
     dof_path = faa_data.ensure_nasr_file("DOF.DAT", altitude.DEFAULT_FAA_CACHE_DIR)
     return side_view([(a["lat"], a["lon"]) for a in r.airports], shp_path, dof_path)
+
+
+@router.get("/api/route-profile/weather", openapi_extra=PUBLIC)
+def route_profile_weather(
+    dep: str,
+    dest: str,
+    stops: str = "",
+    depart: datetime | None = None,
+    ete_min: Annotated[float, Query(ge=0, le=24 * 60)] = 0.0,
+) -> RouteWeather:
+    """The weather on the route's side view, along the same hops as
+    /api/route-profile's ground: the TAFs' cloud bases, the GFS's freezing
+    level and the G-AIRMETs' icing for a flight departing `depart` (now
+    where not given; a naive time is UTC) and taking `ete_min`, each with
+    its source and time (wingtip.profile_weather), from the weather store."""
+    r = load_route(dep, dest, stops)
+    at = depart or datetime.now(timezone.utc)
+    at = at if at.tzinfo else at.replace(tzinfo=timezone.utc)
+    start = at.timestamp()
+    return profile_weather.along([(a["lat"], a["lon"]) for a in r.airports], start, start + ete_min * 60, at)
 
 
 @router.get("/api/course", dependencies=[Depends(cycle_in_address.in_address)], openapi_extra=PUBLIC)

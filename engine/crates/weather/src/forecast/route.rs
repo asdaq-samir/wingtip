@@ -145,6 +145,8 @@ pub fn tafs_along_route(tafs: &[Value], a: (f64, f64), b: (f64, f64), corridor_n
         stations.push_str(if worst.ceiling_unknown { "true" } else { "false" });
         stations.push_str(",\"visibility_sm\":");
         json::opt_number(&mut stations, worst.visibility_sm);
+        stations.push_str(",\"issued\":");
+        json::value(&mut stations, station.get("issued").unwrap_or(&Value::Null));
         stations.push('}');
         if worst.ceiling_unknown {
             unknown_at.push(ident);

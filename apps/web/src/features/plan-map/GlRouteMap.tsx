@@ -65,6 +65,9 @@ const NO_CHECKPOINTS: GlCheckpoint[] = [];
  *  the owner took Flat out (2026-11-13) and loading this chunk for it
  *  fetched deck.gl at every open (PERF-2). */
 const TerrainGl = lazy(() => import("./terrain/TerrainGl"));
+/** The hazard colouring (the Map card's), a chunk of its own, loaded only
+ *  once it is turned on. */
+const HazardGl = lazy(() => import("./hazard/HazardGl"));
 
 export type { GlCandidate, GlCheckpoint, GlEndpoint, GlLeg };
 
@@ -211,9 +214,15 @@ function EngineLayers(p: GlRouteMapProps) {
   const weather = usePreferences((s) => s.weather) && !routeOnly;
   const loop = useWeatherLayers((s) => s.loop !== "off") && weather;
   const flow = useWeatherLayers((s) => s.flow !== "off") && weather;
+  const hazard = usePreferences((s) => s.hazard) !== "off";
   return (
     <>
       <ReliefGl />
+      {hazard && (
+        <Suspense fallback={null}>
+          <HazardGl cruiseFt={p.cruiseFt} />
+        </Suspense>
+      )}
       {terrain.mode === "3d" && (
         <Suspense fallback={null}>
           <TerrainGl

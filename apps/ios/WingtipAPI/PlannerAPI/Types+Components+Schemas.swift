@@ -1502,8 +1502,6 @@ extension Components {
             public var isPrivate: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/procedures`.
             public var procedures: [Components.Schemas.TerminalChart]?
-            /// - Remark: Generated from `#/components/schemas/AirportPlace/publications`.
-            public var publications: Components.Schemas.FaaPublications?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/radio_notes`.
             public var radioNotes: [Swift.String]?
             /// - Remark: Generated from `#/components/schemas/AirportPlace/region`.
@@ -1561,7 +1559,6 @@ extension Components {
             ///   - phones:
             ///   - isPrivate:
             ///   - procedures:
-            ///   - publications:
             ///   - radioNotes:
             ///   - region:
             ///   - runways:
@@ -1606,7 +1603,6 @@ extension Components {
                 phones: [Components.Schemas.Phone]? = nil,
                 isPrivate: Swift.Bool? = nil,
                 procedures: [Components.Schemas.TerminalChart]? = nil,
-                publications: Components.Schemas.FaaPublications? = nil,
                 radioNotes: [Swift.String]? = nil,
                 region: Swift.String? = nil,
                 runways: [Components.Schemas.Runway],
@@ -1651,7 +1647,6 @@ extension Components {
                 self.phones = phones
                 self.isPrivate = isPrivate
                 self.procedures = procedures
-                self.publications = publications
                 self.radioNotes = radioNotes
                 self.region = region
                 self.runways = runways
@@ -1697,7 +1692,6 @@ extension Components {
                 case phones
                 case isPrivate = "private"
                 case procedures
-                case publications
                 case radioNotes = "radio_notes"
                 case region
                 case runways
@@ -3286,87 +3280,6 @@ extension Components {
                 case predictedScore = "predicted_score"
                 case selected
                 case waypoint
-            }
-        }
-        /// A subpart, or the sections before the first.
-        ///
-        /// - Remark: Generated from `#/components/schemas/CfrGroup`.
-        public struct CfrGroup: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/CfrGroup/head`.
-            public var head: Swift.String
-            /// - Remark: Generated from `#/components/schemas/CfrGroup/sections`.
-            public var sections: [Components.Schemas.CfrSection]
-            /// Creates a new `CfrGroup`.
-            ///
-            /// - Parameters:
-            ///   - head:
-            ///   - sections:
-            public init(
-                head: Swift.String,
-                sections: [Components.Schemas.CfrSection]
-            ) {
-                self.head = head
-                self.sections = sections
-            }
-            public enum CodingKeys: String, CodingKey {
-                case head
-                case sections
-            }
-        }
-        /// A section, or an appendix or SFAR read as one.
-        ///
-        /// - Remark: Generated from `#/components/schemas/CfrSection`.
-        public struct CfrSection: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/CfrSection/head`.
-            public var head: Swift.String
-            /// - Remark: Generated from `#/components/schemas/CfrSection/id`.
-            public var id: Swift.String
-            /// - Remark: Generated from `#/components/schemas/CfrSection/paragraphs`.
-            public var paragraphs: [Swift.String]
-            /// Creates a new `CfrSection`.
-            ///
-            /// - Parameters:
-            ///   - head:
-            ///   - id:
-            ///   - paragraphs:
-            public init(
-                head: Swift.String,
-                id: Swift.String,
-                paragraphs: [Swift.String]
-            ) {
-                self.head = head
-                self.id = id
-                self.paragraphs = paragraphs
-            }
-            public enum CodingKeys: String, CodingKey {
-                case head
-                case id
-                case paragraphs
-            }
-        }
-        /// A CFR part's text in one edition (the eCFR's issue date).
-        ///
-        /// - Remark: Generated from `#/components/schemas/CfrText`.
-        public struct CfrText: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/CfrText/groups`.
-            public var groups: [Components.Schemas.CfrGroup]
-            /// - Remark: Generated from `#/components/schemas/CfrText/head`.
-            public var head: Swift.String
-            /// Creates a new `CfrText`.
-            ///
-            /// - Parameters:
-            ///   - groups:
-            ///   - head:
-            public init(
-                groups: [Components.Schemas.CfrGroup],
-                head: Swift.String
-            ) {
-                self.groups = groups
-                self.head = head
-            }
-            public enum CodingKeys: String, CodingKey {
-                case groups
-                case head
             }
         }
         /// A briefing read twice, as GET /api/briefing answered it then and
@@ -8668,32 +8581,6 @@ extension Components {
                 case unit
             }
         }
-        /// The card's plates (the d-TPP: diagram, procedures, minimums) and its
-        /// Chart Supplement page, each by the edition its links are of.
-        ///
-        /// - Remark: Generated from `#/components/schemas/FaaPublications`.
-        public struct FaaPublications: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/FaaPublications/plates`.
-            public var plates: Components.Schemas.PublicationEdition?
-            /// - Remark: Generated from `#/components/schemas/FaaPublications/supplement`.
-            public var supplement: Components.Schemas.PublicationEdition?
-            /// Creates a new `FaaPublications`.
-            ///
-            /// - Parameters:
-            ///   - plates:
-            ///   - supplement:
-            public init(
-                plates: Components.Schemas.PublicationEdition? = nil,
-                supplement: Components.Schemas.PublicationEdition? = nil
-            ) {
-                self.plates = plates
-                self.supplement = supplement
-            }
-            public enum CodingKeys: String, CodingKey {
-                case plates
-                case supplement
-            }
-        }
         /// Every live feed as last checked (each minute), and after how many
         /// minutes stale a feed is an alert; `webhook` whether alerts are POSTed
         /// anywhere (FEED_ALERT_WEBHOOK).
@@ -11766,85 +11653,6 @@ extension Components {
                 case path
             }
         }
-        /// The shelf in its order.
-        ///
-        /// - Remark: Generated from `#/components/schemas/Library`.
-        public struct Library: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/Library/documents`.
-            public var documents: [Components.Schemas.LibraryDocument]
-            /// Creates a new `Library`.
-            ///
-            /// - Parameters:
-            ///   - documents:
-            public init(documents: [Components.Schemas.LibraryDocument]) {
-                self.documents = documents
-            }
-            public enum CodingKeys: String, CodingKey {
-                case documents
-            }
-        }
-        /// One document of the shelf, by the name the engine's citations give
-        /// it (cfr-14-91, aim, ac-61-65, phak).
-        ///
-        /// - Remark: Generated from `#/components/schemas/LibraryDocument`.
-        public struct LibraryDocument: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/LibraryDocument/bytes`.
-            public var bytes: Swift.Int?
-            /// - Remark: Generated from `#/components/schemas/LibraryDocument/date`.
-            public var date: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/LibraryDocument/edition`.
-            public var edition: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/LibraryDocument/group`.
-            public var group: Swift.String
-            /// - Remark: Generated from `#/components/schemas/LibraryDocument/id`.
-            public var id: Swift.String
-            /// - Remark: Generated from `#/components/schemas/LibraryDocument/kind`.
-            public var kind: Swift.String
-            /// - Remark: Generated from `#/components/schemas/LibraryDocument/label`.
-            public var label: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/LibraryDocument/title`.
-            public var title: Swift.String
-            /// Creates a new `LibraryDocument`.
-            ///
-            /// - Parameters:
-            ///   - bytes:
-            ///   - date:
-            ///   - edition:
-            ///   - group:
-            ///   - id:
-            ///   - kind:
-            ///   - label:
-            ///   - title:
-            public init(
-                bytes: Swift.Int? = nil,
-                date: Swift.String? = nil,
-                edition: Swift.String? = nil,
-                group: Swift.String,
-                id: Swift.String,
-                kind: Swift.String,
-                label: Swift.String? = nil,
-                title: Swift.String
-            ) {
-                self.bytes = bytes
-                self.date = date
-                self.edition = edition
-                self.group = group
-                self.id = id
-                self.kind = kind
-                self.label = label
-                self.title = title
-            }
-            public enum CodingKeys: String, CodingKey {
-                case bytes
-                case date
-                case edition
-                case group
-                case id
-                case kind
-                case label
-                case title
-            }
-        }
         /// A sentence of the remarks the engine could not read as systems: its
         /// contractions written out, every other word kept (`words`), and as
         /// sent (`as_written`).
@@ -12082,8 +11890,6 @@ extension Components {
             public var envelope: [[Swift.Double]]
             /// - Remark: Generated from `#/components/schemas/Loading/fuel_arm_in`.
             public var fuelArmIn: Swift.Double
-            /// - Remark: Generated from `#/components/schemas/Loading/fuel_grade`.
-            public var fuelGrade: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Loading/fuel_lb_per_gal`.
             public var fuelLbPerGal: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/Loading/fuel_max_gal`.
@@ -12110,7 +11916,6 @@ extension Components {
             ///   - baggageCombinedMaxLb:
             ///   - envelope:
             ///   - fuelArmIn:
-            ///   - fuelGrade:
             ///   - fuelLbPerGal:
             ///   - fuelMaxGal:
             ///   - maxLandingLb:
@@ -12125,7 +11930,6 @@ extension Components {
                 baggageCombinedMaxLb: Swift.Double? = nil,
                 envelope: [[Swift.Double]],
                 fuelArmIn: Swift.Double,
-                fuelGrade: Swift.String? = nil,
                 fuelLbPerGal: Swift.Double? = nil,
                 fuelMaxGal: Swift.Double,
                 maxLandingLb: Swift.Double,
@@ -12140,7 +11944,6 @@ extension Components {
                 self.baggageCombinedMaxLb = baggageCombinedMaxLb
                 self.envelope = envelope
                 self.fuelArmIn = fuelArmIn
-                self.fuelGrade = fuelGrade
                 self.fuelLbPerGal = fuelLbPerGal
                 self.fuelMaxGal = fuelMaxGal
                 self.maxLandingLb = maxLandingLb
@@ -12156,7 +11959,6 @@ extension Components {
                 case baggageCombinedMaxLb = "baggage_combined_max_lb"
                 case envelope
                 case fuelArmIn = "fuel_arm_in"
-                case fuelGrade = "fuel_grade"
                 case fuelLbPerGal = "fuel_lb_per_gal"
                 case fuelMaxGal = "fuel_max_gal"
                 case maxLandingLb = "max_landing_lb"
@@ -14010,15 +13812,13 @@ extension Components {
         }
         /// The flight's NOTAMs best first, every one heard (`notams`), how many
         /// are said first (`top`), the day the NOTAM feed was first heard
-        /// (`coverage_since`), whether the planner holds every NOTAM in force
-        /// (`full_set`) and what could not be checked ("tfrs").
+        /// (`coverage_since`: earlier NOTAMs never changed since are not held) and
+        /// what could not be checked ("tfrs").
         ///
         /// - Remark: Generated from `#/components/schemas/NotamsRanked`.
         public struct NotamsRanked: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/NotamsRanked/coverage_since`.
             public var coverageSince: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/NotamsRanked/full_set`.
-            public var fullSet: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/NotamsRanked/notams`.
             public var notams: [Components.Schemas.RankedNotam]
             /// - Remark: Generated from `#/components/schemas/NotamsRanked/time_zone`.
@@ -14031,21 +13831,18 @@ extension Components {
             ///
             /// - Parameters:
             ///   - coverageSince:
-            ///   - fullSet:
             ///   - notams:
             ///   - timeZone:
             ///   - top:
             ///   - unchecked:
             public init(
                 coverageSince: Swift.String? = nil,
-                fullSet: Swift.Bool? = nil,
                 notams: [Components.Schemas.RankedNotam],
                 timeZone: Swift.String? = nil,
                 top: Swift.Int,
                 unchecked: [Swift.String]? = nil
             ) {
                 self.coverageSince = coverageSince
-                self.fullSet = fullSet
                 self.notams = notams
                 self.timeZone = timeZone
                 self.top = top
@@ -14053,7 +13850,6 @@ extension Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case coverageSince = "coverage_since"
-                case fullSet = "full_set"
                 case notams
                 case timeZone = "time_zone"
                 case top
@@ -17294,6 +17090,78 @@ extension Components {
                 case toNm = "to_nm"
             }
         }
+        /// A TAF station's forecast cloud base on the side view
+        /// (wingtip.profile_weather): where along the route, its base MSL (the
+        /// ceiling over the flight above the field, plus its elevation), and when
+        /// its TAF was issued.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ProfileCloud`.
+        public struct ProfileCloud: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ProfileCloud/along_nm`.
+            public var alongNm: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/ProfileCloud/base_ft`.
+            public var baseFt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/ProfileCloud/issued`.
+            public var issued: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ProfileCloud/station`.
+            public var station: Swift.String
+            /// Creates a new `ProfileCloud`.
+            ///
+            /// - Parameters:
+            ///   - alongNm:
+            ///   - baseFt:
+            ///   - issued:
+            ///   - station:
+            public init(
+                alongNm: Swift.Double,
+                baseFt: Swift.Double,
+                issued: Swift.String? = nil,
+                station: Swift.String
+            ) {
+                self.alongNm = alongNm
+                self.baseFt = baseFt
+                self.issued = issued
+                self.station = station
+            }
+            public enum CodingKeys: String, CodingKey {
+                case alongNm = "along_nm"
+                case baseFt = "base_ft"
+                case issued
+                case station
+            }
+        }
+        /// The freezing level over a point of the route, ft MSL; at or below
+        /// it where the forecast is freezing at its lowest level already.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ProfileFreezing`.
+        public struct ProfileFreezing: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ProfileFreezing/along_nm`.
+            public var alongNm: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/ProfileFreezing/at_or_below`.
+            public var atOrBelow: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/ProfileFreezing/ft`.
+            public var ft: Swift.Double
+            /// Creates a new `ProfileFreezing`.
+            ///
+            /// - Parameters:
+            ///   - alongNm:
+            ///   - atOrBelow:
+            ///   - ft:
+            public init(
+                alongNm: Swift.Double,
+                atOrBelow: Swift.Bool? = nil,
+                ft: Swift.Double
+            ) {
+                self.alongNm = alongNm
+                self.atOrBelow = atOrBelow
+                self.ft = ft
+            }
+            public enum CodingKeys: String, CodingKey {
+                case alongNm = "along_nm"
+                case atOrBelow = "at_or_below"
+                case ft
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/ProfileGround`.
         public struct ProfileGround: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/ProfileGround/along_nm`.
@@ -17317,11 +17185,77 @@ extension Components {
                 case groundFt = "ground_ft"
             }
         }
+        /// A G-AIRMET icing area the route crosses: from where to where along
+        /// it, between which altitudes (ft MSL; the floor the freezing level
+        /// where `from_freezing_level`), and when it is valid and was issued.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ProfileIcing`.
+        public struct ProfileIcing: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/from_freezing_level`.
+            public var fromFreezingLevel: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/from_nm`.
+            public var fromNm: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/high_ft`.
+            public var highFt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/issued`.
+            public var issued: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/low_ft`.
+            public var lowFt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/severity`.
+            public var severity: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/to_nm`.
+            public var toNm: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/valid_at`.
+            public var validAt: Swift.String?
+            /// Creates a new `ProfileIcing`.
+            ///
+            /// - Parameters:
+            ///   - fromFreezingLevel:
+            ///   - fromNm:
+            ///   - highFt:
+            ///   - issued:
+            ///   - lowFt:
+            ///   - severity:
+            ///   - toNm:
+            ///   - validAt:
+            public init(
+                fromFreezingLevel: Swift.Bool? = nil,
+                fromNm: Swift.Double,
+                highFt: Swift.Double? = nil,
+                issued: Swift.String? = nil,
+                lowFt: Swift.Double? = nil,
+                severity: Swift.String? = nil,
+                toNm: Swift.Double,
+                validAt: Swift.String? = nil
+            ) {
+                self.fromFreezingLevel = fromFreezingLevel
+                self.fromNm = fromNm
+                self.highFt = highFt
+                self.issued = issued
+                self.lowFt = lowFt
+                self.severity = severity
+                self.toNm = toNm
+                self.validAt = validAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case fromFreezingLevel = "from_freezing_level"
+                case fromNm = "from_nm"
+                case highFt = "high_ft"
+                case issued
+                case lowFt = "low_ft"
+                case severity
+                case toNm = "to_nm"
+                case validAt = "valid_at"
+            }
+        }
         /// An obstacle of the FAA's DOF near the route's line: where along it,
-        /// and its top, feet MSL.
+        /// its top, feet MSL, and its height above the ground there, feet AGL
+        /// (the DOF's AMSL and AGL columns).
         ///
         /// - Remark: Generated from `#/components/schemas/ProfileObstacle`.
         public struct ProfileObstacle: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ProfileObstacle/agl_ft`.
+            public var aglFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/ProfileObstacle/along_nm`.
             public var alongNm: Swift.Double
             /// - Remark: Generated from `#/components/schemas/ProfileObstacle/amsl_ft`.
@@ -17329,16 +17263,20 @@ extension Components {
             /// Creates a new `ProfileObstacle`.
             ///
             /// - Parameters:
+            ///   - aglFt:
             ///   - alongNm:
             ///   - amslFt:
             public init(
+                aglFt: Swift.Double? = nil,
                 alongNm: Swift.Double,
                 amslFt: Swift.Double
             ) {
+                self.aglFt = aglFt
                 self.alongNm = alongNm
                 self.amslFt = amslFt
             }
             public enum CodingKeys: String, CodingKey {
+                case aglFt = "agl_ft"
                 case alongNm = "along_nm"
                 case amslFt = "amsl_ft"
             }
@@ -17366,31 +17304,36 @@ extension Components {
                 case altFt = "alt_ft"
             }
         }
-        /// Which edition of one of the FAA's publications a card's links are of
-        /// (wingtip.publications.editions): an FAA outage is said, not read as a
-        /// field with no plates.
+        /// Whose forecast a figure is and for when: its name, its run, ISO
+        /// UTC, and the time it is read at.
         ///
-        /// - Remark: Generated from `#/components/schemas/PublicationEdition`.
-        public struct PublicationEdition: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/PublicationEdition/edition`.
-            public var edition: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/PublicationEdition/state`.
-            public var state: Swift.String?
-            /// Creates a new `PublicationEdition`.
+        /// - Remark: Generated from `#/components/schemas/ProfileWeatherSource`.
+        public struct ProfileWeatherSource: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ProfileWeatherSource/label`.
+            public var label: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ProfileWeatherSource/run`.
+            public var run: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ProfileWeatherSource/valid_at`.
+            public var validAt: Swift.String?
+            /// Creates a new `ProfileWeatherSource`.
             ///
             /// - Parameters:
-            ///   - edition:
-            ///   - state:
+            ///   - label:
+            ///   - run:
+            ///   - validAt:
             public init(
-                edition: Swift.String? = nil,
-                state: Swift.String? = nil
+                label: Swift.String,
+                run: Swift.String? = nil,
+                validAt: Swift.String? = nil
             ) {
-                self.edition = edition
-                self.state = state
+                self.label = label
+                self.run = run
+                self.validAt = validAt
             }
             public enum CodingKeys: String, CodingKey {
-                case edition
-                case state
+                case label
+                case run
+                case validAt = "valid_at"
             }
         }
         /// A pass of the charts job's `pyramid` under way: sheets done of
@@ -17666,60 +17609,6 @@ extension Components {
                 case method
                 case path
                 case status
-            }
-        }
-        /// The answers to a RecordsBatchAsk, each list in the order asked.
-        ///
-        /// - Remark: Generated from `#/components/schemas/RecordsBatch`.
-        public struct RecordsBatch: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/RecordsBatch/endorsements`.
-            public var endorsements: [Components.Schemas.Endorsements]
-            /// - Remark: Generated from `#/components/schemas/RecordsBatch/experience`.
-            public var experience: [[Components.Schemas.ExperienceItem]]
-            /// Creates a new `RecordsBatch`.
-            ///
-            /// - Parameters:
-            ///   - endorsements:
-            ///   - experience:
-            public init(
-                endorsements: [Components.Schemas.Endorsements],
-                experience: [[Components.Schemas.ExperienceItem]]
-            ) {
-                self.endorsements = endorsements
-                self.experience = experience
-            }
-            public enum CodingKeys: String, CodingKey {
-                case endorsements
-                case experience
-            }
-        }
-        /// Many students' records asked at once, for an instructor's page:
-        /// each student's experience (ExperienceAsk) and every endorsements ask
-        /// (EndorsementsAsk: a student's solo day, a review's 61.93(d) checks,
-        /// a signed list's last good days), answered in the same order. One
-        /// round trip for the page rather than two a student and two a review.
-        ///
-        /// - Remark: Generated from `#/components/schemas/RecordsBatchAsk`.
-        public struct RecordsBatchAsk: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/RecordsBatchAsk/endorsements`.
-            public var endorsements: [Components.Schemas.EndorsementsAsk]?
-            /// - Remark: Generated from `#/components/schemas/RecordsBatchAsk/experience`.
-            public var experience: [Components.Schemas.ExperienceAsk]?
-            /// Creates a new `RecordsBatchAsk`.
-            ///
-            /// - Parameters:
-            ///   - endorsements:
-            ///   - experience:
-            public init(
-                endorsements: [Components.Schemas.EndorsementsAsk]? = nil,
-                experience: [Components.Schemas.ExperienceAsk]? = nil
-            ) {
-                self.endorsements = endorsements
-                self.experience = experience
-            }
-            public enum CodingKeys: String, CodingKey {
-                case endorsements
-                case experience
             }
         }
         /// A document filed for recording against the N-number (DOCINDEX.txt,
@@ -18633,64 +18522,6 @@ extension Components {
                 case terrain
             }
         }
-        /// One route and method as the planner has answered it since it
-        /// started (app.route_metrics): calls, those of 500 or more, their share,
-        /// and the time at the 50th and 95th percentile in milliseconds (none
-        /// before a call).
-        ///
-        /// - Remark: Generated from `#/components/schemas/RouteStat`.
-        public struct RouteStat: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/RouteStat/count`.
-            public var count: Swift.Int
-            /// - Remark: Generated from `#/components/schemas/RouteStat/error_rate`.
-            public var errorRate: Swift.Double
-            /// - Remark: Generated from `#/components/schemas/RouteStat/errors`.
-            public var errors: Swift.Int
-            /// - Remark: Generated from `#/components/schemas/RouteStat/method`.
-            public var method: Swift.String
-            /// - Remark: Generated from `#/components/schemas/RouteStat/p50_ms`.
-            public var p50Ms: Swift.Double?
-            /// - Remark: Generated from `#/components/schemas/RouteStat/p95_ms`.
-            public var p95Ms: Swift.Double?
-            /// - Remark: Generated from `#/components/schemas/RouteStat/route`.
-            public var route: Swift.String
-            /// Creates a new `RouteStat`.
-            ///
-            /// - Parameters:
-            ///   - count:
-            ///   - errorRate:
-            ///   - errors:
-            ///   - method:
-            ///   - p50Ms:
-            ///   - p95Ms:
-            ///   - route:
-            public init(
-                count: Swift.Int,
-                errorRate: Swift.Double,
-                errors: Swift.Int,
-                method: Swift.String,
-                p50Ms: Swift.Double? = nil,
-                p95Ms: Swift.Double? = nil,
-                route: Swift.String
-            ) {
-                self.count = count
-                self.errorRate = errorRate
-                self.errors = errors
-                self.method = method
-                self.p50Ms = p50Ms
-                self.p95Ms = p95Ms
-                self.route = route
-            }
-            public enum CodingKeys: String, CodingKey {
-                case count
-                case errorRate = "error_rate"
-                case errors
-                case method
-                case p50Ms = "p50_ms"
-                case p95Ms = "p95_ms"
-                case route
-            }
-        }
         /// A TFR within a few miles of the route and in force at some time
         /// during the flight: how far along the route it is, whether the route
         /// goes through it, and whether it is in force now.
@@ -18800,6 +18631,59 @@ extension Components {
                 case rule
                 case state
                 case title
+            }
+        }
+        /// The weather on the route's side view (wingtip.profile_weather),
+        /// along the same hops as RouteProfile's ground: the cloud bases, the
+        /// freezing level and its source, the icing, and which of the three
+        /// could not be read (`unavailable`: "clouds", "freezing", "icing"),
+        /// unknown rather than none.
+        ///
+        /// - Remark: Generated from `#/components/schemas/RouteWeather`.
+        public struct RouteWeather: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/clouds`.
+            public var clouds: [Components.Schemas.ProfileCloud]
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/for_time`.
+            public var forTime: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/freezing`.
+            public var freezing: [Components.Schemas.ProfileFreezing]
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/freezing_source`.
+            public var freezingSource: Components.Schemas.ProfileWeatherSource?
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/icing`.
+            public var icing: [Components.Schemas.ProfileIcing]
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/unavailable`.
+            public var unavailable: [Swift.String]?
+            /// Creates a new `RouteWeather`.
+            ///
+            /// - Parameters:
+            ///   - clouds:
+            ///   - forTime:
+            ///   - freezing:
+            ///   - freezingSource:
+            ///   - icing:
+            ///   - unavailable:
+            public init(
+                clouds: [Components.Schemas.ProfileCloud],
+                forTime: Swift.String,
+                freezing: [Components.Schemas.ProfileFreezing],
+                freezingSource: Components.Schemas.ProfileWeatherSource? = nil,
+                icing: [Components.Schemas.ProfileIcing],
+                unavailable: [Swift.String]? = nil
+            ) {
+                self.clouds = clouds
+                self.forTime = forTime
+                self.freezing = freezing
+                self.freezingSource = freezingSource
+                self.icing = icing
+                self.unavailable = unavailable
+            }
+            public enum CodingKeys: String, CodingKey {
+                case clouds
+                case forTime = "for_time"
+                case freezing
+                case freezingSource = "freezing_source"
+                case icing
+                case unavailable
             }
         }
         /// What the run is warned of, when and where, its rule and product cited.
@@ -20163,8 +20047,6 @@ extension Components {
             public var pipeline: Components.Schemas.PipelineStatus
             /// - Remark: Generated from `#/components/schemas/Status/recent_errors`.
             public var recentErrors: [Components.Schemas.RecentError]?
-            /// - Remark: Generated from `#/components/schemas/Status/routes`.
-            public var routes: [Components.Schemas.RouteStat]?
             /// - Remark: Generated from `#/components/schemas/Status/services`.
             public var services: Components.Schemas.Services
             /// - Remark: Generated from `#/components/schemas/Status/weather`.
@@ -20181,7 +20063,6 @@ extension Components {
             ///   - model:
             ///   - pipeline:
             ///   - recentErrors:
-            ///   - routes:
             ///   - services:
             ///   - weather:
             public init(
@@ -20194,7 +20075,6 @@ extension Components {
                 model: Components.Schemas.ModelRegistry,
                 pipeline: Components.Schemas.PipelineStatus,
                 recentErrors: [Components.Schemas.RecentError]? = nil,
-                routes: [Components.Schemas.RouteStat]? = nil,
                 services: Components.Schemas.Services,
                 weather: [Components.Schemas.WeatherDataset]
             ) {
@@ -20207,7 +20087,6 @@ extension Components {
                 self.model = model
                 self.pipeline = pipeline
                 self.recentErrors = recentErrors
-                self.routes = routes
                 self.services = services
                 self.weather = weather
             }
@@ -20221,7 +20100,6 @@ extension Components {
                 case model
                 case pipeline
                 case recentErrors = "recent_errors"
-                case routes
                 case services
                 case weather
             }
@@ -22025,8 +21903,6 @@ extension Components {
             public var hops: [Components.Schemas.HopTotals]?
             /// - Remark: Generated from `#/components/schemas/Totals/legs_without_wind`.
             public var legsWithoutWind: Swift.Int
-            /// - Remark: Generated from `#/components/schemas/Totals/lights`.
-            public var lights: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/Totals/night`.
             public var night: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/Totals/night_passengers`.
@@ -22066,7 +21942,6 @@ extension Components {
             ///   - groundMin:
             ///   - hops:
             ///   - legsWithoutWind:
-            ///   - lights:
             ///   - night:
             ///   - nightPassengers:
             ///   - noFuelStop:
@@ -22091,7 +21966,6 @@ extension Components {
                 groundMin: Swift.Double? = nil,
                 hops: [Components.Schemas.HopTotals]? = nil,
                 legsWithoutWind: Swift.Int,
-                lights: Swift.Bool? = nil,
                 night: Swift.Bool? = nil,
                 nightPassengers: Swift.Bool? = nil,
                 noFuelStop: [Components.Schemas.NoFuelStop]? = nil,
@@ -22116,7 +21990,6 @@ extension Components {
                 self.groundMin = groundMin
                 self.hops = hops
                 self.legsWithoutWind = legsWithoutWind
-                self.lights = lights
                 self.night = night
                 self.nightPassengers = nightPassengers
                 self.noFuelStop = noFuelStop
@@ -22142,7 +22015,6 @@ extension Components {
                 case groundMin = "ground_min"
                 case hops
                 case legsWithoutWind = "legs_without_wind"
-                case lights
                 case night
                 case nightPassengers = "night_passengers"
                 case noFuelStop = "no_fuel_stop"
@@ -23357,8 +23229,8 @@ extension Components {
         /// date) and what could not be checked ("tfrs"). The feed (SWIM's FNS)
         /// sends what is issued or changed once it is heard, so NOTAMs issued
         /// before that day and never changed are not in the store: the list is
-        /// what was heard since, not every NOTAM in force, until NMS's full set
-        /// is held (decision 0059, amending 0023).
+        /// what was heard since, not every NOTAM in force (the owner, 2026-11-09,
+        /// chose the feed alone over the FAA NOTAM API's full load).
         ///
         /// - Remark: Generated from `#/components/schemas/WordsSources`.
         public struct WordsSources: Codable, Hashable, Sendable {

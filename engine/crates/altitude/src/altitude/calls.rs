@@ -6,7 +6,7 @@
 use super::floor::{self, Ground, Obstacle, CORRIDOR_HALF_WIDTH_NM, IFR_OBSTACLE_RADIUS_NM};
 use super::select;
 use super::words;
-use super::{cautions, clouds, congested, cruising, profile_calls};
+use super::{cautions, clouds, congested, cruising, hazard, profile_calls};
 use crate::json::{self, Value};
 pub(super) use wingtip_core::ask::{num_in as num, opt_num_in as opt_num};
 
@@ -109,6 +109,9 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         "congested_points" => congested_points(name, v),
         "profile_clearance" => profile_calls::profile_clearance(name, v),
         "altitude_advisor" => profile_calls::altitude_advisor(name, v),
+        "hazard_view" => hazard::hazard_view(name, v),
+        "profile_obstacles" => hazard::profile_obstacles(name, v),
+        "profile_clouds" => profile_calls::profile_clouds(name, v),
         "ifr_obstacle_radius_nm" => Ok(number(Some(IFR_OBSTACLE_RADIUS_NM))),
         "floor_corridor_nm" => Ok(number(Some(CORRIDOR_HALF_WIDTH_NM))),
         "airway_floor_ft" => Ok(number(floor::published(opt_num(name, v, "mea_ft")?, opt_num(name, v, "gnss_mea_ft")?))),

@@ -25,6 +25,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import app.wingtipmaps.android.api.generated.RouteProfile
+import app.wingtipmaps.android.api.generated.RouteWeather
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.format.Format
@@ -39,7 +40,10 @@ import kotlin.math.ceil
  * slider as a dashed level across. The ground and obstacles near the
  * previewed altitude are drawn in the engine's bands (`profile_clearance`:
  * red under 500 ft, 14 CFR 91.119(c)'s least height, amber within
- * 1,000 ft, 91.119(b)'s). Each waypoint is a 48 dp target over the
+ * 1,000 ft, 91.119(b)'s), and over it the DOF's obstacles as posts in
+ * the same bands, the tallest named, and the weather along the route
+ * (ProfileHazards: TAF cloud bases, the freezing level, G-AIRMET icing).
+ * Each waypoint is a 48 dp target over the
  * chart that opens its altitude (LegAltitudeSheet). Nothing is worked out
  * here: the planner's side view and the engine's line and bands, drawn.
  * The chart is a picture for the eye; TalkBack hears the clearance on the
@@ -52,6 +56,8 @@ fun ProfileChart(
     waypoints: List<ProfileModel.Waypoint>,
     previewFt: Double?,
     clearance: AltitudeEngine.Clearance?,
+    obstacles: List<AltitudeEngine.Obstacle>,
+    weather: RouteWeather?,
     topFt: Double,
     onWaypoint: (ProfileModel.Waypoint) -> Unit,
     modifier: Modifier = Modifier,
@@ -65,6 +71,7 @@ fun ProfileChart(
             val y = { ft: Double -> (size.height * (1 - ft / top)).toFloat() }
             airspace(profile, x, y)
             ground(profile, clearance, x, y)
+            hazards(obstacles, weather, length, top, x, y)
             if (line.size > 1) {
                 val path = Path().apply {
                     moveTo(x(line[0].first), y(line[0].second))
@@ -78,6 +85,7 @@ fun ProfileChart(
             // Each waypoint marked at the chart's foot, under its target.
             waypoints.forEach { w -> drawCircle(tint, radius = 5f, center = Offset(x(w.alongNm), size.height - 5f)) }
         }
+        ObstacleNames(obstacles, length, top)
         // The waypoints' targets, each 48 dp round its mark at the chart's foot.
         val half = WingtipSize.TapTarget / 2
         waypoints.forEach { w ->
@@ -101,6 +109,7 @@ internal fun topOf(profile: RouteProfile, line: List<Pair<Double, Double>>, prev
         profile.terrain.maxOfOrNull { it.groundFt } ?: 0.0,
         line.maxOfOrNull { it.second } ?: 0.0,
         profile.airspace.mapNotNull { it.ceilingFt }.maxOrNull() ?: 0.0,
+        profile.obstacles?.maxOfOrNull { it.amslFt } ?: 0.0,
         previewFt ?: 0.0,
         topFt,
     )

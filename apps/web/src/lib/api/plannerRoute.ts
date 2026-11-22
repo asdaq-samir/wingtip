@@ -13,6 +13,7 @@ import type {
   Course,
   NavLogMessage,
   RouteProfile,
+  RouteWeather,
   RouteOptions,
   Totals,
   ClearanceAsk,
@@ -173,6 +174,15 @@ export const plannerRoute = {
   /** The route from the side: the ground and the airspace along it. */
   routeProfile: (dep: string, dest: string, stops?: string[]) =>
     planner.GET("/api/route-profile", { params: { query: { dep, dest, stops: stopsParam(stops) } } }).then(data<RouteProfile>),
+  /** The weather on the side view, along the same hops: the TAFs' cloud
+   *  bases, the GFS's freezing level and the G-AIRMETs' icing for a
+   *  flight leaving `depart` (now when empty) and taking `eteMin`. */
+  routeWeather: (dep: string, dest: string, stops: string[] | undefined, depart: string | undefined, eteMin: number) =>
+    planner
+      .GET("/api/route-profile/weather", {
+        params: { query: { dep, dest, stops: stopsParam(stops), depart: depart || undefined, ete_min: Math.max(0, Math.round(eteMin)) } },
+      })
+      .then(data<RouteWeather>),
 
   /** `legs`, the nav log's (lib/briefingLegs), places each hazard on its
    *  legs and times it by their ETEs (Briefing's `on_route`). */

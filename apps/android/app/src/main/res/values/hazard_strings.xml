@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Terrain Hazards on the Map card (map/HazardRows), in the web's words
+     (features/map-settings/HazardChoice). -->
+<resources>
+    <string name="hazard_setting">Terrain Hazards</string>
+    <string name="hazard_red_within">Red Within</string>
+</resources>

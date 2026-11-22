@@ -2,6 +2,7 @@
 //! crate::call answers them (calls.rs dispatches to them), JSON in and out.
 
 use super::calls::{list, num, nums, obj, opt_num, written, R};
+use super::clouds::{self, Station};
 use super::{advisor, clearance};
 use crate::json::Value;
 
@@ -78,6 +79,51 @@ pub fn altitude_advisor(name: &str, v: &Value) -> R<String> {
                     ("economical", Value::Bool(r.economical)),
                     ("warning", opt_text(r.warning)),
                     ("note", opt_text(r.note.map(str::to_owned))),
+                ])
+            })
+            .collect(),
+    )))
+}
+
+/// `profile_clouds`: each TAF station's forecast cloud base placed along
+/// the route (clouds::along_route), with when its TAF was issued.
+pub fn profile_clouds(name: &str, v: &Value) -> R<String> {
+    let path = list(name, v, "path")?
+        .iter()
+        .map(|p| match p.as_array() {
+            Some([lat, lon]) => Ok((lat.as_f64().unwrap_or(f64::NAN), lon.as_f64().unwrap_or(f64::NAN))),
+            _ => Err(format!("{name}: a point of \"path\" is not [lat, lon]")),
+        })
+        .collect::<R<Vec<_>>>()?;
+    let raw = list(name, v, "stations")?;
+    let stations = raw
+        .iter()
+        .map(|s| {
+            Ok(Station {
+                ident: s.get("icaoId").and_then(Value::as_str).unwrap_or("").to_owned(),
+                at: (num(name, s, "lat")?, num(name, s, "lon")?),
+                ceiling_ft: opt_num(name, s, "ceiling_ft")?,
+                elevation_ft: opt_num(name, s, "elevation_ft")?,
+            })
+        })
+        .collect::<R<Vec<_>>>()?;
+    let issued = |ident: &str| {
+        raw.iter()
+            .find(|s| s.get("icaoId").and_then(Value::as_str) == Some(ident))
+            .and_then(|s| s.get("issued"))
+            .cloned()
+            .unwrap_or(Value::Null)
+    };
+    Ok(written(&Value::Array(
+        clouds::along_route(&path, &stations)
+            .into_iter()
+            .map(|(ident, along, base)| {
+                let when = issued(&ident);
+                obj(vec![
+                    ("station", Value::String(ident)),
+                    ("along_nm", Value::Number(super::tenth(along))),
+                    ("base_ft", Value::Number(base)),
+                    ("issued", when),
                 ])
             })
             .collect(),

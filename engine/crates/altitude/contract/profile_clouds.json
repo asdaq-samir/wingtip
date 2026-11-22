@@ -1,0 +1,108 @@
+{
+  "x-call": "wingtip_altitude::altitude::calls::call",
+  "description": "The profile's cloud bases: each TAF station (tafs_along_route's, with its TAF's issue time) whose forecast ceiling is known and which is within 25 nm of a leg of the route through `path` (the stations a leg's altitudes are kept under, 14 CFR 91.155; TAF_REACH_NM), placed at its foot on the nearest leg, in order along the route: its base MSL, the ceiling above the field plus the field's elevation. A stated simplification, as the altitude plan's: the ceiling (the lowest broken or overcast layer, FAA-H-8083-28B 27.4.2.9), not a FEW or SCT layer under it.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ProfileCloudsInput",
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "description": "The route's points, [lat, lon], its airports in order."
+        },
+        "stations": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "icaoId": {
+                "type": "string"
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "ceiling_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "elevation_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "issued": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "icaoId",
+              "lat",
+              "lon"
+            ]
+          }
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "answer": {
+      "title": "ProfileCloudsAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "station": {
+            "type": "string"
+          },
+          "along_nm": {
+            "type": "number"
+          },
+          "base_ft": {
+            "type": "number"
+          },
+          "issued": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "station",
+          "along_nm",
+          "base_ft",
+          "issued"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

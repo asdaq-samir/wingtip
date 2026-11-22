@@ -11,7 +11,7 @@ import type { Preferences } from "./prefs/state";
 import { keptTheme, migratePreferences } from "./prefs/migrate";
 
 export { BASE_CHARTS, HEIGHT_STRETCHES } from "./prefs/mapSlice";
-export type { BaseChart, HeightStretch, ChartLight, MapOverlay, OverlayStrength } from "./prefs/mapTypes";
+export type { BaseChart, HazardSetting, HeightStretch, ChartLight, MapOverlay, OverlayStrength } from "./prefs/mapTypes";
 export type { Brand, FlightRules, NavEdge, OwnShipLook } from "./prefs/lookTypes";
 export { airplaneChosen, NO_AIRPLANE, STOCK_C172 } from "./prefs/airplaneSlice";
 export type { RouteWeather } from "./prefs/airplaneTypes";

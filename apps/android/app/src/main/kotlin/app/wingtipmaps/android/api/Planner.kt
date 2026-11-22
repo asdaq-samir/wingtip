@@ -4,6 +4,7 @@ import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.generated.GoNoGo
 import app.wingtipmaps.android.api.generated.GoNoGoAsk
 import app.wingtipmaps.android.api.generated.RouteProfile
+import app.wingtipmaps.android.api.generated.RouteWeather
 import app.wingtipmaps.android.api.generated.client.apis.PlannerApi
 import app.wingtipmaps.android.di.NetworkModule
 import kotlinx.coroutines.Dispatchers
@@ -116,6 +117,13 @@ object Planner {
      *  and the iPhone's profiles draw it. */
     suspend fun routeProfile(dep: String, dest: String, stops: List<String>): RouteProfile =
         api.routeProfile(dep, dest, stops.joinToString(",")).planned()
+
+    /** The weather along the side view's own hops for a flight leaving at
+     *  `depart` (ISO 8601, null for now) and taking `eteMin`
+     *  (/api/route-profile/weather): the TAFs' cloud bases, the freezing
+     *  level and the G-AIRMETs' icing, each with its source and time. */
+    suspend fun routeWeather(dep: String, dest: String, stops: List<String>, depart: String?, eteMin: Double?): RouteWeather =
+        api.routeProfileWeather(dep, dest, stops.joinToString(","), depart, eteMin ?: 0.0).planned()
 
     /** The nav log for a route, line by line as the planner sends them
      *  (/api/navlog), under the flight rules picked (the planner's

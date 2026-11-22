@@ -36,6 +36,9 @@ struct RootMap: View {
     @AppStorage(PlateLook.Keys.opacity) private var plateOpacity = PlateLook.defaultOpacity
     @AppStorage(PlateLook.Keys.inverted) private var plateInverted = false
     @AppStorage(PlateLook.Keys.annotations) private var plateAnnotations = true
+    // The Map card's Terrain Hazards (HazardRows); no clearance kept is the engine's default.
+    @AppStorage(TerrainHazard.Keys.setting) private var hazardSetting = TerrainHazard.Setting.off
+    @AppStorage(TerrainHazard.Keys.clearanceFt) private var hazardClearanceFt: Double?
 
     private var plan: Plan { flight.plan }
     private var ownShip: OwnShip { flight.ownShip }
@@ -95,7 +98,11 @@ struct RootMap: View {
                     search.close()
                     nav.showPlan()
                 } : nil,
-                emergency: emergency.open != nil),
+                emergency: emergency.open != nil,
+                // Own ship's GPS in flight, the plan's cruise on the ground:
+                // the engine picks (TerrainHazard).
+                hazard: HazardInput(setting: hazardSetting, clearanceFt: hazardClearanceFt, speedKt: ownShip.fix?.groundspeedKt,
+                                    gpsFt: ownShip.fix?.altitudeFt, plannedFt: plan.altitudeFt)),
             // A tap on the course opens its nearest leg's card, that leg
             // cased in green while it is in sight (RouteLegView).
             routeLegs: RouteLegInput(

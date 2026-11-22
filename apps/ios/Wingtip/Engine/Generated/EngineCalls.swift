@@ -15,7 +15,7 @@ extension Engine {
         try Self.rule("acs_codes", EngineContract.AcsCodesInput(text: text))
     }
 
-    /// Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground. Near the antimeridian a box is read the short way round, so its west may be under -180 or its east over 180: the planner reads it as its two halves (wingtip.geo_boxes).
+    /// Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground.
     static func aheadFrame(lat: Double, lon: Double, trackDeg: Double, gsKt: Double, altFt: Double? = nil, vsFpm: Double? = nil) throws -> EngineContract.AheadFrameAnswer {
         try Self.rule("ahead_frame", EngineContract.AheadFrameInput(lat: lat, lon: lon, trackDeg: trackDeg, gsKt: gsKt, altFt: altFt, vsFpm: vsFpm))
     }
@@ -240,7 +240,7 @@ extension Engine {
         try Self.rule("aviation_grid_bands", EngineContract.AviationGridBandsInput())
     }
 
-    /// The Aviation Weather Center's combined SIGMET cache file (sigmets.cache.xml, XML: the US convective and non-convective SIGMETs and the international ones, data API v4.34) read into the shape the weather store keeps, one advisory an area, a convective SIGMET's CONV hazard as CONVECTIVE: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].
+    /// The Aviation Weather Center's national airsigmets cache file (XML) read into the shape the weather store keeps: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].
     static func awcAirsigmetsRead(text: String) throws -> [[String: OpenAPIValueContainer]] {
         try Self.rule("awc_airsigmets_read", EngineContract.AwcAirsigmetsReadInput(text: text))
     }
@@ -396,8 +396,8 @@ extension Engine {
     }
 
     /// The in-flight copilot: from own ship and the live data, the messages that change what the pilot should do, most pressing first (warning, caution, advisory; then the kinds' order), each with the words to show and speak and its sources. Warns, never limits.
-    static func copilotWatch(nowS: Double, own: EngineContract.CopilotWatchInputOwn, fields: [EngineContract.CopilotField], rules: String? = nil, minimums: EngineContract.CopilotWatchInputMinimums? = nil, fuelGal: Double? = nil, startedS: Double? = nil, burnGph: Double? = nil, tasKt: Double? = nil, dest: String, alternate: String? = nil, remainingNm: Double? = nil, plannedGsKt: Double? = nil, passengers: Bool? = nil, nightCurrent: Bool? = nil, areas: [EngineContract.CopilotWatchInputAreasItem]? = nil, itws: [EngineContract.CopilotWatchInputItwsItem]? = nil, ahead: [EngineContract.CopilotWatchInputAheadItem]? = nil) throws -> EngineContract.CopilotWatchAnswer {
-        try Self.rule("copilot_watch", EngineContract.CopilotWatchInput(nowS: nowS, own: own, fields: fields, rules: rules, minimums: minimums, fuelGal: fuelGal, startedS: startedS, burnGph: burnGph, tasKt: tasKt, dest: dest, alternate: alternate, remainingNm: remainingNm, plannedGsKt: plannedGsKt, passengers: passengers, nightCurrent: nightCurrent, areas: areas, itws: itws, ahead: ahead))
+    static func copilotWatch(nowS: Double, own: EngineContract.CopilotWatchInputOwn, fields: [EngineContract.CopilotField], rules: String? = nil, minimums: EngineContract.CopilotWatchInputMinimums? = nil, fuelGal: Double? = nil, burnGph: Double? = nil, tasKt: Double? = nil, dest: String, alternate: String? = nil, remainingNm: Double? = nil, plannedGsKt: Double? = nil, passengers: Bool? = nil, nightCurrent: Bool? = nil, areas: [EngineContract.CopilotWatchInputAreasItem]? = nil, itws: [EngineContract.CopilotWatchInputItwsItem]? = nil, ahead: [EngineContract.CopilotWatchInputAheadItem]? = nil) throws -> EngineContract.CopilotWatchAnswer {
+        try Self.rule("copilot_watch", EngineContract.CopilotWatchInput(nowS: nowS, own: own, fields: fields, rules: rules, minimums: minimums, fuelGal: fuelGal, burnGph: burnGph, tasKt: tasKt, dest: dest, alternate: alternate, remainingNm: remainingNm, plannedGsKt: plannedGsKt, passengers: passengers, nightCurrent: nightCurrent, areas: areas, itws: itws, ahead: ahead))
     }
 
     /// A CSV file's rows of fields.
@@ -595,12 +595,7 @@ extension Engine {
         try Self.rule("field_military", EngineContract.FieldMilitaryInput(ownership: ownership, use: use))
     }
 
-    /// Every name a field may be filed under, in the order to try them: NASR's ICAO_ID where given, the K form of a three-letter ident (FAA JO 7350.9GG 4-1), the ident as asked and its FAA form.
-    static func fieldNames(ident: String, icaoId: String? = nil) throws -> [String] {
-        try Self.rule("field_names", EngineContract.FieldNamesInput(ident: ident, icaoId: icaoId))
-    }
-
-    /// The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport. `airplane`: whether an airplane on wheels lands there, an airport (A), a gliderport (G) or an ultralight park (U), each a strip of ground; not a heliport, a balloonport or a seaplane base, whose runways are water. What every list of fields to land at is held to (nearest, a stop, a glide's); true with no code, the host's own list then deciding.
+    /// The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport.
     static func fieldSiteType(siteType: String? = nil) throws -> EngineContract.FieldSiteTypeAnswer {
         try Self.rule("field_site_type", EngineContract.FieldSiteTypeInput(siteType: siteType))
     }
@@ -965,6 +960,11 @@ extension Engine {
         try Self.rule("handbook_read_check", EngineContract.HandbookReadCheckInput(speedUnit: speedUnit, cruiseSpeedKind: cruiseSpeedKind, distanceUnit: distanceUnit, weightUnit: weightUnit, armUnit: armUnit, fuelUnit: fuelUnit, burnUnit: burnUnit, cruise: cruise, climb: climb, glide: glide, takeoff: takeoff, landing: landing, empty: empty, maxTakeoffWeight: maxTakeoffWeight, envelope: envelope, fuel: fuel))
     }
 
+    /// Hazard colouring (ForeFlight's Hazard Advisor): the ground and obstacles on the map against the altitude flown, the GPS's in flight (`underway`, flying speed), the plan's cruise on the ground. Red over `warning_from_ft`, the altitude less the pilot's clearance -- 500 ft (14 CFR 91.119(c)), 1,000 ft by default (91.119(b), 91.177(a)(2)(ii)) or 2,000 ft (91.177(a)(2)(i), a Part 95 mountainous area); exactly the clearance meets the rule and is yellow -- yellow from `caution_from_ft`, 1,000 ft under that, nothing below. `shown` where the setting (off, on, or by itself in flight) and an altitude allow; each of `tops_ft` (obstacle tops, ft MSL) as `levels` against the bands ("warning", "caution", "clear"; null with no altitude). A picture against one altitude, not terrain clearance: no TAWS (TSO-C151). A phone's GPS height is over the WGS84 ellipsoid, some 100 ft under sea level over the US (GEOID18), so it errs red.
+    static func hazardView(setting: String, speedKt: Double? = nil, gpsAltitudeFt: Double? = nil, plannedAltitudeFt: Double? = nil, clearanceFt: Double? = nil, topsFt: [Double]? = nil) throws -> EngineContract.HazardViewAnswer {
+        try Self.rule("hazard_view", EngineContract.HazardViewInput(setting: setting, speedKt: speedKt, gpsAltitudeFt: gpsAltitudeFt, plannedAltitudeFt: plannedAltitudeFt, clearanceFt: clearanceFt, topsFt: topsFt))
+    }
+
     /// The entry into a route's hold for an airplane arriving on a course (AIM 5-3-8 j.3's sectors, read by the course flown).
     static func holdEntry(arrivalDeg: Double, inboundDeg: Double, turns: String? = nil) throws -> String {
         try Self.rule("hold_entry", EngineContract.HoldEntryInput(arrivalDeg: arrivalDeg, inboundDeg: inboundDeg, turns: turns))
@@ -1083,11 +1083,6 @@ extension Engine {
     /// A standard day's temperature at a pressure altitude (ICAO Doc 7488).
     static func isaTempC(altitudeFt: Double) throws -> Double {
         try Self.rule("isa_temp_c", EngineContract.IsaTempCInput(altitudeFt: altitudeFt))
-    }
-
-    /// Whose rules a point is under. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).
-    static func jurisdictionOf(lat: Double, lon: Double) throws -> EngineContract.JurisdictionOfAnswer {
-        try Self.rule("jurisdiction_of", EngineContract.JurisdictionOfInput(lat: lat, lon: lon))
     }
 
     /// A kept answer's age, as the apps show it with no signal ("Fetched 42 min ago"), and whether it is past the freshness ready_to_fly holds it to: the briefing, the plan's nav log, the Go / No-Go and the weather loop for an hour (the app's choice, at AIM 7-1-28's hourly METAR), METARs and TAFs for the routine report's hour (AIM 7-1-28), the NOTAMs for an hour (14 CFR 91.103, AIM 5-1-3; the age the app's choice), and the airport cards and plates for the AIRAC cycle they came in (FAA 28 and 56 Day Product Schedule). A caution at worst: the answer is still shown.
@@ -1485,6 +1480,16 @@ extension Engine {
         try Self.rule("profile_clearance", EngineContract.ProfileClearanceInput(altitudeFt: altitudeFt, alongNm: alongNm, groundFt: groundFt, obstacles: obstacles, points: points))
     }
 
+    /// The profile's cloud bases: each TAF station (tafs_along_route's, with its TAF's issue time) whose forecast ceiling is known and which is within 25 nm of a leg of the route through `path` (the stations a leg's altitudes are kept under, 14 CFR 91.155; TAF_REACH_NM), placed at its foot on the nearest leg, in order along the route: its base MSL, the ceiling above the field plus the field's elevation. A stated simplification, as the altitude plan's: the ceiling (the lowest broken or overcast layer, FAA-H-8083-28B 27.4.2.9), not a FEW or SCT layer under it.
+    static func profileClouds(path: [[Double]], stations: [EngineContract.ProfileCloudsInputStationsItem]? = nil) throws -> [EngineContract.ProfileCloudsAnswerItem] {
+        try Self.rule("profile_clouds", EngineContract.ProfileCloudsInput(path: path, stations: stations))
+    }
+
+    /// The FAA Digital Obstacle File's obstacles along the route for the profile, in order along it: each coloured against `altitude_ft` as the profile's ground is (profile_clearance: "warning" under 14 CFR 91.119(c)'s 500 ft or above, "caution" within 91.119(b)'s 1,000 ft, else "clear"; null with no altitude), and the tallest three, at least an eighth of the route apart, `named`, for the profile to label with their heights above the ground and the sea (DOF's AGL and AMSL).
+    static func profileObstacles(altitudeFt: Double? = nil, lengthNm: Double, obstacles: [EngineContract.ProfileObstaclesInputObstaclesItem]? = nil) throws -> [EngineContract.ProfileObstaclesAnswerItem] {
+        try Self.rule("profile_obstacles", EngineContract.ProfileObstaclesInput(altitudeFt: altitudeFt, lengthNm: lengthNm, obstacles: obstacles))
+    }
+
     /// Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.
     static func prohibitedCaution(selection: [String: OpenAPIValueContainer]) throws -> [String] {
         try Self.rule("prohibited_caution", EngineContract.ProhibitedCautionInput(selection: selection))
@@ -1540,7 +1545,7 @@ extension Engine {
         try Self.rule("readback_check", EngineContract.ReadbackCheckInput(cleared: cleared, said: said, tail: tail))
     }
 
-    /// Ready to fly: whether the device holds what the flight needs before it loses the signal -- the route's charts kept and of the 56-day edition in force, the cycle packs of the AIRAC cycle in force (FAA 28 and 56 Day Product Schedule; 14 CFR 91.103), a weather briefing under an hour old (the app's choice, at AIM 7-1-28's hourly METAR), each field's METAR in force and its TAF, the route's NOTAMs under an hour old (91.103, AIM 5-1-3; the age the app's choice) and the full set in force, not only those heard since a day, the plan's route, airplane and altitude (none assumed), what Keep for the Air holds for the route (its ages are kept_age's), the plan saved, location allowed, the battery at half or charging (the app's choice) and an ADS-B receiver where the pilot uses one. A caution at worst, never a stop; one line and at most three actions, the most pressing first.
+    /// Ready to fly: whether the device holds what the flight needs before it loses the signal -- the route's charts kept and of the 56-day edition in force, the cycle packs of the AIRAC cycle in force (FAA 28 and 56 Day Product Schedule; 14 CFR 91.103), a weather briefing under an hour old (the app's choice, at AIM 7-1-28's hourly METAR), each field's METAR in force and its TAF, the route's NOTAMs under an hour old (91.103, AIM 5-1-3; the age the app's choice), the plan's route, airplane and altitude (none assumed), what Keep for the Air holds for the route (its ages are kept_age's), the plan saved, location allowed, the battery at half or charging (the app's choice) and an ADS-B receiver where the pilot uses one. A caution at worst, never a stop; one line and at most three actions, the most pressing first.
     static func readyToFly(now: Double, plan: EngineContract.ReadyToFlyInputPlan? = nil, charts: EngineContract.ReadyToFlyInputCharts? = nil, packs: EngineContract.ReadyToFlyInputPacks? = nil, briefing: EngineContract.ReadyToFlyInputBriefing? = nil, fields: [EngineContract.ReadyToFlyInputFieldsItem]? = nil, notams: EngineContract.ReadyToFlyInputNotams? = nil, kept: EngineContract.ReadyToFlyInputKept? = nil, device: EngineContract.ReadyToFlyInputDevice? = nil, receiver: EngineContract.ReadyToFlyInputReceiver? = nil) throws -> EngineContract.ReadyToFlyAnswer {
         try Self.rule("ready_to_fly", EngineContract.ReadyToFlyInput(now: now, plan: plan, charts: charts, packs: packs, briefing: briefing, fields: fields, notams: notams, kept: kept, device: device, receiver: receiver))
     }
@@ -1548,11 +1553,6 @@ extension Engine {
     /// FIS-B NEXRAD to draw (products 63 and 64, AIM 4-5-9): for each level 1 to 7, rectangles [south, west, north, east], the regional product's where sent and the CONUS product's elsewhere, with the newest block's time. Not for avoiding weather close in.
     static func receiverNexrad(picture: EngineContract.ReceiverPicture? = nil) throws -> EngineContract.ReceiverNexradAnswer {
         try Self.rule("receiver_nexrad", EngineContract.ReceiverNexradInput(picture: picture))
-    }
-
-    /// Own ship from the receiver's GPS or the device's (GDL 90 560-1058-00 Rev A 3.4, 3.5.1.6, 3.8). The receiver's Ownship Report is a fix only while the receiver is heard, its Heartbeat says GPS Pos Valid (3.1.1), the report is under 3 s old and not extrapolated (AC 120-76D 11.17.2.3's three seconds) and its NIC and NACp reach 14 CFR 91.227(c)(1)'s floor (NIC 7, under 0.2 nm; NACp 8, under 0.05 nm). It is used where the device has no fresh fix (a Wi-Fi iPad) or the receiver's is better by twice, the device's accuracy put on the EPU's 95%; the one in use is kept until the other is twice as good, and the device's is taken back the moment the receiver's goes. Height is the GPS's, MSL where the receiver says so (ForeFlight's ID message), else ellipsoid_ft alone for a geoid model; pressure altitude is a flight level only at and above 18,000 ft (14 CFR 91.121(a)(2), 1.1).
-    static func receiverPosition(ownship: EngineContract.ReceiverOwnship? = nil, receiver: EngineContract.ReceiverState? = nil, device: EngineContract.ReceiverPositionInputDevice? = nil, was: String? = nil, at: Double) throws -> EngineContract.ReceiverPositionAnswer {
-        try Self.rule("receiver_position", EngineContract.ReceiverPositionInput(ownship: ownship, receiver: receiver, device: device, was: was, at: at))
     }
 
     /// A portable ADS-B receiver's GDL 90 bytes (Garmin 560-1058-00 Rev A; ForeFlight's ID message) read into what it has said: its state, own ship, the traffic it hears (AIM 4-5-7, 4-5-8) and the FIS-B products it is sent (AIM 4-5-9), each dropped once it is no longer heard. Traffic is for seeing, not avoiding (AIM 4-5-7).
@@ -1605,14 +1605,9 @@ extension Engine {
         try Self.rule("reserve_min", EngineContract.ReserveMinInput(ifr: ifr, night: night))
     }
 
-    /// The Air Defense Identification Zones a route meets (14 CFR part 99, subpart B), each as the regulation draws it: the Contiguous U.S. ADIZ (99.43, its line along the U.S.-Mexico border taken as crossed by a leg from one country to the other), Alaska's (99.45), Guam's (99.47) and Hawaii's (99.49), great circles between their points and rhumb lines along a parallel (99.41). Each point, each leg checked every 2 nm along its geodesic, the zones met in order and the Brief's one line: a flight plan filed and open (99.11), a two-way radio and a listening watch (99.9), the transponder on (99.13) and a position report before crossing (99.15), with 99.1(b)'s exceptions said. Warn, never limit: any altitude or speed is taken as meeting the zone.
-    static func routeAdiz(points: [EngineContract.RouteAdizInputPointsItem]) throws -> EngineContract.RouteAdizAnswer {
-        try Self.rule("route_adiz", EngineContract.RouteAdizInput(points: points))
-    }
-
-    /// Which of a route's points and legs lie outside the United States, each leg checked every 2 nm along its geodesic, and the Brief's one line for them. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).
-    static func routeJurisdiction(points: [EngineContract.RouteJurisdictionInputPointsItem]) throws -> EngineContract.RouteJurisdictionAnswer {
-        try Self.rule("route_jurisdiction", EngineContract.RouteJurisdictionInput(points: points))
+    /// The route's strongest headwind: of the nav log's legs, the one whose wind aloft blows most against its true course, its headwind the wind's component along that course (the wind triangle, FAA-H-8083-25C ch. 16; the winds aloft forecast's direction is true, FAA-H-8083-28B 27.6), to a tenth of a knot, a tailwind negative, so with tailwinds all the way it is the least of them. The first such leg where two tie; a leg with no wind or no course is passed over; null where no leg has both. The Brief's glance shows it as the route's wind aloft.
+    static func routeHeadwind(legs: [EngineContract.RouteHeadwindInputLegsItem]) throws -> EngineContract.RouteHeadwindAnswer? {
+        try Self.rule("route_headwind", EngineContract.RouteHeadwindInput(legs: legs))
     }
 
     /// The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route, the most filed one and the one round the Class B it enters (14 CFR 91.131(a)(1)) with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.
@@ -1755,11 +1750,6 @@ extension Engine {
         try Self.rule("special_use_tab", EngineContract.SpecialUseTabInput(name: name, type: type, floor: floor, ceiling: ceiling, excluded: excluded))
     }
 
-    /// 14 CFR 91.157's special VFR for an airplane (eCFR, current on 2026-11-21): within the surface area of an airport's Class B, C, D or E airspace and below 10,000 ft MSL (91.157(a)), never at the airports of part 91 appendix D, section 3 (fixed-wing special VFR prohibited: O'Hare, LaGuardia and 31 more, by FAA or ICAO ident); with an ATC clearance, clear of clouds and at least 1 statute mile flight visibility (91.157(b)(1)-(3)); between sunset and sunrise (in Alaska, the sun more than 6 degrees below the horizon) only for a pilot meeting part 61's requirements for instrument flight in an airplane equipped as 91.205(d) asks (91.157(b)(4)); and to take off or land, at least 1 sm ground visibility, or flight visibility where none is reported (91.157(c)). `available` is false where anything known rules it out (each in `problems`); what is not given rules nothing out and stays in `needs`, never said to be met.
-    static func specialVfr(surfaceArea: String? = nil, airport: String? = nil, altitudeFt: Double? = nil, night: Bool? = nil, alaska: Bool? = nil, sunElevationDeg: Double? = nil, instrumentCurrent: Bool? = nil, ifrEquipped: Bool? = nil, flightVisibilitySm: Double? = nil, groundVisibilitySm: Double? = nil, clearOfClouds: Bool? = nil, takeoffOrLanding: Bool? = nil) throws -> EngineContract.SpecialVfrAnswer {
-        try Self.rule("special_vfr", EngineContract.SpecialVfrInput(surfaceArea: surfaceArea, airport: airport, altitudeFt: altitudeFt, night: night, alaska: alaska, sunElevationDeg: sunElevationDeg, instrumentCurrent: instrumentCurrent, ifrEquipped: ifrEquipped, flightVisibilitySm: flightVisibilitySm, groundVisibilitySm: groundVisibilitySm, clearOfClouds: clearOfClouds, takeoffOrLanding: takeoffOrLanding))
-    }
-
     /// What a squawk says, where it says more than a code: 7500 unlawful interference (AIM 6-3-4), 7600 two-way radio failure (AIM 6-4-2), 7700 an emergency (AIM 6-2-2); null for any other.
     static func squawkMeaning(squawk: String? = nil) throws -> String? {
         try Self.rule("squawk_meaning", EngineContract.SquawkMeaningInput(squawk: squawk))
@@ -1790,6 +1780,11 @@ extension Engine {
         try Self.rule("surface_hours", EngineContract.SurfaceHoursInput(hours: hours, year: year, month: month, day: day, weekday: weekday, minute: minute, utcOffsetMin: utcOffsetMin, dst: dst))
     }
 
+    /// A TAF's own times and whether it speaks for now: its station, when it was issued and its valid period, as its header gives them, and its state, not yet before the period, in force during it and expired at its end (FAA-H-8083-28B 27.4.1, a TAF is a forecast for its valid period; the same rule as weather_in_force's for a TAF). The airport card says it under the hours, so a TAF kept from before the signal was lost is never read as today's forecast (14 CFR 91.103). Null where the words are not a TAF.
+    static func tafValidity(taf: String, now: Double) throws -> EngineContract.TafValidityAnswer? {
+        try Self.rule("taf_validity", EngineContract.TafValidityInput(taf: taf, now: now))
+    }
+
     /// What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).
     static func tafWindow(fcsts: [EngineContract.TafPeriod], start: Double, end: Double? = nil) throws -> EngineContract.TafWindowAnswer {
         try Self.rule("taf_window", EngineContract.TafWindowInput(fcsts: fcsts, start: start, end: end))
@@ -1810,7 +1805,7 @@ extension Engine {
         try Self.rule("terrain_view_bands", EngineContract.TerrainViewBandsInput(altitudeFt: altitudeFt))
     }
 
-    /// The way round high ground's frame: the grid's corner, cells and samples a cell's side the planner reads the ground at, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159, under Class A, 71.33), and the box the fields with fuel are wanted in. Across the antimeridian the end is read within 180 degrees of the start, so lon0 and the box may pass -180 or 180 (wingtip.terrain_detour reads them at their own longitudes).
+    /// The way round high ground's frame: the grid's corner, cells and samples a cell's side the planner reads the ground at, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159, under Class A, 71.33), and the box the fields with fuel are wanted in.
     static func terrainWayFrame(start: [Double], end: [Double], ceilingFt: Double) throws -> EngineContract.TerrainWayFrameAnswer {
         try Self.rule("terrain_way_frame", EngineContract.TerrainWayFrameInput(start: start, end: end, ceilingFt: ceilingFt))
     }
@@ -1903,11 +1898,6 @@ extension Engine {
     /// The surface-area minimums (14 CFR 91.155(c), (d)), which the planner holds every route to: no VFR under a 1,000 ft ceiling or in under 3 statute miles within a surface area of controlled airspace. Not the least VFR ever asks (Class G at or below 1,200 ft above the surface by day: 1 sm and clear of clouds, 91.155(a)).
     static func vfrBasicMinimums() throws -> EngineContract.VfrBasicMinimumsAnswer {
         try Self.rule("vfr_basic_minimums", EngineContract.VfrBasicMinimumsInput())
-    }
-
-    /// 14 CFR 91.155(b)(2), Class G's one exception to 91.155(a) for an airplane (eCFR, current on 2026-11-21): below 1,200 ft above the surface (not at it: the table's low row is "1,200 feet or less"), at night, in an airport traffic pattern within 1/2 mile of the runway, with the visibility under 3 statute miles but not under 1, the airplane may fly clear of clouds. By day the table's low row already asks 1 sm and clear of clouds (91.155(a)); 91.155(b)(1) is the helicopter's. A visibility not given leaves the other conditions to decide.
-    static func vfrClassGNightPattern(`class`: String, aglFt: Double, night: Bool? = nil, inPattern: Bool? = nil, visibilitySm: Double? = nil) throws -> EngineContract.VfrClassGNightPatternAnswer {
-        try Self.rule("vfr_class_g_night_pattern", EngineContract.VfrClassGNightPatternInput(class: `class`, aglFt: aglFt, night: night, inPattern: inPattern, visibilitySm: visibilitySm))
     }
 
     /// The VFR floor of each piece of the route between consecutive breaks: the ground plus 1,000 ft, or a DOF obstacle's top plus 14 CFR 91.119's clearance where it stands (1,000 ft over a congested area, (b); 500 elsewhere, (c); 1,000 where the towns are not known), rounded up to the next 100 ft; with 91.119's own minimum under it.

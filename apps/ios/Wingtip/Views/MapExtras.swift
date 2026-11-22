@@ -107,6 +107,8 @@ struct MapExtrasInput {
     /// 2026-11-13). The switches themselves are never changed, so they are
     /// as they were once the card closes.
     var emergency = false
+    /// The Map card's Terrain Hazards and what it is drawn from (HazardLayer).
+    var hazard = HazardInput()
 
     /// Which of Setup's field switches the map draws by now.
     func fieldSwitches(military: Bool, privateFields: Bool) -> (military: Bool, privateFields: Bool) {
@@ -148,6 +150,8 @@ final class MapExtrasState: NSObject {
     private var waypointMarks: [String: WaypointAnnotation] = [:]
     private var classBMarks: [AirportAnnotation] = []
     let plates = PlateLayer()
+    /// The ground and the obstacles against the altitude flown (HazardLayer).
+    let hazard = HazardLayer()
     private var waypointTask: Task<Void, Never>?
     private var classBTask: Task<Void, Never>?
 
@@ -212,11 +216,18 @@ final class MapExtrasState: NSObject {
         plates.onPlate = input.onPlate
         plates.update(map, picks: PlateLayer.shown(plates: input.plates, approaches: input.approaches, hidden: input.hiddenPlates),
                       look: input.plateLook, tiles: tiles)
+        hazard.update(map, input.hazard)
     }
 
     /// The map rested: the waypoints in view asked for again.
     func regionChanged(_ map: MKMapView) {
         if showWaypoints || !waypointMarks.isEmpty { refreshWaypoints(map, after: 300) }
+        hazard.rested(map)
+    }
+
+    /// The plates' renderers and the hazard colouring's obstacles'.
+    func renderer(for overlay: any MKOverlay) -> MKOverlayRenderer? {
+        plates.renderer(for: overlay) ?? hazard.renderer(for: overlay)
     }
 
     func view(for annotation: any MKAnnotation, on map: MKMapView) -> MKAnnotationView? {

@@ -326,7 +326,7 @@ struct ChartMap: UIViewRepresentable {
             }
             if let imagery = overlay as? CloseImageryOverlay { return MainActor.assumeIsolated { CloseImagery.shared.renderer(imagery, zoom: Self.zoom(of: mapView)) } }
             if let tiles = overlay as? MKTileOverlay { return MKTileOverlayRenderer(tileOverlay: tiles) }
-            if let renderer = MainActor.assumeIsolated({ extras.plates.renderer(for: overlay) }) { return renderer }
+            if let renderer = MainActor.assumeIsolated({ extras.renderer(for: overlay) }) { return renderer }
             if let edge = overlay as? CourseEdgePolyline {
                 let renderer = MKPolylineRenderer(polyline: edge)
                 renderer.strokeColor = NightPalette.routeEdge(night: shade > 0)

@@ -514,6 +514,27 @@ has Terrain, Flat | 3D, segmented as the web's Map menu has it.
   altitude for one, so each airplane keeps the engine's TCAS tag
   (`traffic_marks`, "+12" against own ship) as its height.
 
+**Terrain Hazards** (`Map/TerrainHazard.swift`, `Map/HazardTiles.swift`,
+`Map/HazardLayer.swift`, `Map/HazardRows.swift`). The web's hazard
+colouring, the Map card's row under its layers: Off (the default), On,
+or In Flight, and while it is not off Red Within, segmented from the
+engine's `hazard_view` clearances. The engine is given own ship's GPS
+speed and height (to 50 ft) and the plan's cruise and picks the altitude,
+whether to draw, and the red and amber lines. MapKit has no colour
+relief, so `HazardTileOverlay` (an `MKTileOverlay`) fetches the planner's
+terrarium terrain tile through the generated client, decodes its heights
+once (kept in an `NSCache`), and colours each pixel clear, amber or red
+against the lines off the main thread. MapKit's stock tile renderer keeps
+the tiles it draws and reloads them only when the lines move. The DOF's
+obstacles round the view (the half-degree box the web uses, from its
+zoom 9) are levelled by the engine and drawn as dots, red and amber
+only. It is held off the map in 3D with the chart. On the Profile, the
+side view's obstacles are posts coloured by `profile_obstacles`, with the
+tallest three named MSL (AGL). The TAF cloud bases, the freezing level
+and the icing from `/api/route-profile/weather` are drawn over them
+(`Profile/ProfileHazardMarks.swift`), and a key under the chart says
+each one's source and time (`Profile/ProfileWeatherKey.swift`).
+
 **Model weather** (`ModelWeather/`). The Map card's Model Weather menu
 (Off and the web's twelve fields) and, where the field has them, its
 Level menu (Surface ... FL300, Max; the engine's `flow_levels`).

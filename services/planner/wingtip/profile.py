@@ -36,14 +36,15 @@ PROFILE_OBSTACLE_NM = engine("ground_figures")["profile_obstacle_nm"]
 
 def _obstacles_along(start: tuple, end: tuple, length: float, offset: float, dof_path) -> list[dict]:
     """The DOF's obstacles within PROFILE_OBSTACLE_NM of one hop's line,
-    where along the route each is and its height above sea level."""
+    where along the route each is and its heights above sea level and
+    above the ground (the DOF's AMSL and AGL), for the profile to name."""
     found = faa_data.load_obstacles(dof_path, geo_boxes.corridor_box(start, end, buffer_nm=PROFILE_OBSTACLE_NM), min_agl_ft=0)
     if not len(found):
         return []
     cross, along = geo.track_distances_nm(found["lat"].to_numpy(dtype=float), found["lon"].to_numpy(dtype=float), start, end)
     return [
-        {"along_nm": round(offset + float(a), 2), "amsl_ft": float(ft)}
-        for c, a, ft in zip(cross, along, found["amsl_ft"].to_numpy(dtype=float))
+        {"along_nm": round(offset + float(a), 2), "amsl_ft": float(ft), "agl_ft": float(agl)}
+        for c, a, ft, agl in zip(cross, along, found["amsl_ft"].to_numpy(dtype=float), found["agl_ft"].to_numpy(dtype=float))
         if abs(c) <= PROFILE_OBSTACLE_NM and 0.0 <= a <= length
     ]
 
@@ -78,7 +79,7 @@ def route_profile(path: list, shp_path, dof_path=None) -> dict:
     lon)], its airports in order: {"length_nm", "terrain": [{"along_nm",
     "ground_ft"}], "airspace": [{"name", "class", "from_nm", "to_nm",
     "floor_ft", "ceiling_ft", "ident"}], "obstacles": [{"along_nm",
-    "amsl_ft"}]}, distances from the departure, hop after hop, the airspace
+    "amsl_ft", "agl_ft"}]}, distances from the departure, hop after hop, the airspace
     in the order it is reached; obstacles from `dof_path` (DOF.DAT) where
     given."""
     terrain, airspace, obstacles, offset = [], [], [], 0.0

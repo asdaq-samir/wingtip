@@ -290,3 +290,20 @@ def winds_period(key: str | None = None) -> dict | None:
         "fallback": bool(wind["fallback"]),
         "stale": bool(wind["stale"]),
     }
+
+
+def temperatures_source(key: str | None = None) -> dict | None:
+    """Whose temperatures aloft a plan's freezing level is read from, for
+    the profile to say: {"label", "run", "valid_at"} -- on the grid, the
+    GFS's part of the hour round the departure (the temperatures are the
+    GFS's whoever's the wind is, _column), past it the GFS's FB stations'
+    period; None where neither can be had."""
+    key = _resolved(key)
+    if not is_grid(key):
+        period = winds_stations.winds_period(key)
+        return None if period is None else {"label": "NOAA GFS", "run": period.get("run"), "valid_at": period.get("valid_at")}
+    hours = _bracket(_at_s(key))
+    if not hours:
+        return None
+    part = ((hours[0][1].get("parts") or {}).get("aloft") or {}).get("key") or {}
+    return {"label": "NOAA GFS", "run": part.get("run"), "valid_at": utc.iso(_at_s(key))}

@@ -1,0 +1,59 @@
+{
+  "_note": "Hazard colouring (the engine's hazard_view and profile_obstacles), worked by hand from 14 CFR 91.119 and 91.177. At 5,500 ft with the default 1,000 ft clearance (91.119(b), 91.177(a)(2)(ii)) red is over 4,500 ft MSL and yellow from 3,500 (a further 1,000 ft); exactly 4,500, the clearance kept, is yellow. With 2,000 ft (91.177(a)(2)(i)) at 8,500: red over 6,500, yellow from 5,500. In flight (at or over 40 kt, the engine's underway) the GPS height is used, on the ground the plan's cruise. The profile's obstacles are coloured as its ground (profile_clearance): at 3,500 ft red over 3,000 (under 91.119(c)'s 500 ft), yellow from 2,500 (91.119(b)'s 1,000). The engine (engine/facade/tests/hazard_view.rs) and the web (features/plan-map/terrain/hazard.test.ts) are held to it.",
+  "views": [
+    {
+      "why": "on the ground, the plan's cruise and the default clearance",
+      "input": { "setting": "on", "speed_kt": 0, "gps_altitude_ft": 700, "planned_altitude_ft": 5500, "tops_ft": [4501, 4500, 3500, 3499, 6000] },
+      "expected": {
+        "shown": true,
+        "in_flight": false,
+        "altitude_ft": 5500,
+        "source": "plan",
+        "clearance_ft": 1000,
+        "warning_from_ft": 4500,
+        "caution_from_ft": 3500,
+        "levels": ["warning", "caution", "caution", "clear", "warning"]
+      }
+    },
+    {
+      "why": "in flight, the GPS height and the pilot's 2,000 ft",
+      "input": { "setting": "flight", "speed_kt": 110, "gps_altitude_ft": 8500, "planned_altitude_ft": 9500, "clearance_ft": 2000 },
+      "expected": { "shown": true, "in_flight": true, "altitude_ft": 8500, "source": "gps", "clearance_ft": 2000, "warning_from_ft": 6500, "caution_from_ft": 5500, "levels": [] }
+    },
+    {
+      "why": "by itself in flight, not on the ground",
+      "input": { "setting": "flight", "speed_kt": 12, "gps_altitude_ft": 700, "planned_altitude_ft": 5500 },
+      "expected": { "shown": false, "in_flight": false, "source": "plan" }
+    },
+    {
+      "why": "off is never shown; a clearance not offered is the default",
+      "input": { "setting": "off", "speed_kt": 110, "gps_altitude_ft": 4300, "clearance_ft": 750 },
+      "expected": { "shown": false, "in_flight": true, "clearance_ft": 1000, "warning_from_ft": 3300 }
+    },
+    {
+      "why": "no altitude at all: nothing to colour against",
+      "input": { "setting": "on", "speed_kt": null, "tops_ft": [1000] },
+      "expected": { "shown": false, "altitude_ft": null, "source": null, "warning_from_ft": null, "levels": [null] }
+    }
+  ],
+  "obstacles": {
+    "input": {
+      "altitude_ft": 3500,
+      "length_nm": 100,
+      "obstacles": [
+        { "along_nm": 40, "amsl_ft": 3001, "agl_ft": 1999 },
+        { "along_nm": 10, "amsl_ft": 2500, "agl_ft": 1500 },
+        { "along_nm": 41, "amsl_ft": 2990, "agl_ft": 1990 },
+        { "along_nm": 70, "amsl_ft": 2499, "agl_ft": 600 },
+        { "along_nm": 90, "amsl_ft": 1200 }
+      ]
+    },
+    "expected": [
+      { "along_nm": 10, "amsl_ft": 2500, "agl_ft": 1500, "level": "caution", "named": true },
+      { "along_nm": 40, "amsl_ft": 3001, "agl_ft": 1999, "level": "warning", "named": true },
+      { "along_nm": 41, "amsl_ft": 2990, "agl_ft": 1990, "level": "caution", "named": false },
+      { "along_nm": 70, "amsl_ft": 2499, "agl_ft": 600, "level": "clear", "named": true },
+      { "along_nm": 90, "amsl_ft": 1200, "agl_ft": null, "level": "clear", "named": false }
+    ]
+  }
+}
