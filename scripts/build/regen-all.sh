@@ -53,7 +53,20 @@ in_planner() {
   if python3 -c 'import fastapi' 2>/dev/null; then (cd services/planner && python3 "$@")
   else
     local image
-    image=$(docker image ls -q wingtip-check-py-requirements-dev 2>/dev/null | head -1)
+    # The image of this tree's requirements and engine (check-images.sh's
+    # py_image, built where it is missing): an older tag may lack a package
+    # the planner now imports (prometheus_client, vitals).
+    image=$(
+      NODE=$("$here/scripts/build/toolchain.sh" get nodejs) PYTHON=$("$here/scripts/build/toolchain.sh" get python)
+      RUST=$("$here/scripts/build/toolchain.sh" get rust)
+      RUST_IMAGE=rust:$RUST-slim-$("$here/scripts/build/toolchain.sh" get debian)
+      sha() { shasum -a 256 | cut -c1-16; }
+      # shellcheck source=scripts/build/shared-cache.sh
+      . "$here/scripts/build/shared-cache.sh"
+      # shellcheck source=scripts/dev/check-images.sh
+      . "$here/scripts/dev/check-images.sh"
+      py_image services/planner requirements-dev.txt
+    ) || image=""
     [ -n "$image" ] || { echo "no planner image: scripts/dev/check.sh planner builds it"; return 3; }
     turn "regen-all planner ($(basename "$here"))" docker run --rm -v "$here:/repo" -w /repo/services/planner "$image" python "$@"
   fi
