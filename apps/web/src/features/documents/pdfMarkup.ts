@@ -1,6 +1,6 @@
 import { AnnotationEditorParamsType, AnnotationEditorType, AnnotationMode, type PDFDocumentProxy } from "pdfjs-dist";
 import type { EventBus, PDFViewer } from "pdfjs-dist/web/pdf_viewer.mjs";
-import { carryOver, draws, erases, sameMark, withNote, type MarkData, type MarkKind, type SavedMark, type Tool } from "./markup";
+import { carryOver, draws, erases, sameMark, sweep, withNote, type MarkData, type MarkKind, type SavedMark, type Tool } from "./markup";
 import type { MarkupHandle, MarkupState } from "./readerBody";
 
 /** What of pdf.js's annotation editors this reads; its own types keep
@@ -8,7 +8,6 @@ import type { MarkupHandle, MarkupState } from "./readerBody";
 interface Editor {
   mode: number;
   pageIndex: number;
-  div?: HTMLElement | null;
   serialize(copying?: boolean): Record<string, unknown> | null;
 }
 interface UiManager {
@@ -55,9 +54,7 @@ function markOf(value: unknown): SavedMark | null {
   const kind = raw && !raw.deleted ? kindOf(raw.annotationType) : null;
   if (!raw || !kind) return null;
   const { isClone: _clone, id: _id, ...data } = raw;
-  // A highlight's words are its editor's name (pdf.js's aria-label).
-  const text = editor?.div?.getAttribute("aria-label") || undefined;
-  return { page: (data.pageIndex as number) + 1, kind, data: data as MarkData, ...(text ? { text } : {}) };
+  return { page: (data.pageIndex as number) + 1, kind, data: data as MarkData };
 }
 
 /** The kept marks given to pdf.js before its pages are drawn, as its own
@@ -89,9 +86,24 @@ export function startMarkup(opts: {
   let ui: UiManager | null = null;
   let tool: Tool | null = null;
   let marks = opts.marks;
+  // Every mark's words and note seen this sitting, not only the marks of
+  // now: pdf.js takes a kept mark out of its storage before it draws it
+  // again, and a mark erased comes back with Undo, each with its note.
+  let known = opts.marks;
   let states: States = {};
-  let erasing = false;
+  let erasing: [number, number] | null = null;
   let drawingOn: PageView | null = null;
+  // The words last picked on the pages, for the highlight made of them:
+  // pdf.js keeps them to itself (its editor's aria-label is its own
+  // name for it once localised) and empties the selection as it
+  // highlights. Heard first, as this listens before pdf.js's editor is made.
+  let words: string | null = null;
+  const onSelection = () => {
+    const picked = document.getSelection();
+    const said = picked && !picked.isCollapsed && picked.anchorNode && box.contains(picked.anchorNode) ? picked.toString().trim() : "";
+    if (said) words = said;
+  };
+  document.addEventListener("selectionchange", onSelection);
   let keepTimer: ReturnType<typeof setTimeout> | undefined;
 
   const storage = () => doc.annotationStorage as unknown as Iterable<[string, unknown]>;
@@ -102,10 +114,18 @@ export function startMarkup(opts: {
   };
   const tell = () => opts.onState({ canUndo: !!states.hasSomethingToUndo, canRedo: !!states.hasSomethingToRedo, picked: picked(), marks });
   const collect = () => {
+    const before = known;
     marks = carryOver(
       [...storage()].flatMap(([, v]) => markOf(v) ?? []),
-      marks,
-    );
+      before,
+    ).map((m) => {
+      // A new highlight takes the words just picked.
+      if (m.kind !== "highlight" || m.text || !words || before.some((b) => sameMark(b, m))) return m;
+      const text = words;
+      words = null;
+      return { ...m, text };
+    });
+    known = [...marks, ...known.filter((k) => !marks.some((m) => sameMark(m, k)))];
     tell();
     opts.onKeep(marks);
   };
@@ -118,10 +138,10 @@ export function startMarkup(opts: {
     ui = e.uiManager;
     if (tool) handle.setTool(tool, null);
   };
+  // At once, so a highlight just made and picked has its words for its note.
   const onStates = (e: { details: States }) => {
     states = { ...e.details };
-    tell();
-    keepSoon();
+    collect();
   };
   bus.on("annotationeditoruimanager", onUi);
   bus.on("editingstateschanged", onStates);
@@ -160,14 +180,20 @@ export function startMarkup(opts: {
     if (!draws(e.pointerType, opts.pencilOnly() === true)) return void e.stopPropagation();
     if (tool === "pen") drawingOn = pageAt(e.clientX, e.clientY)?.view ?? null;
     if (tool === "eraser" && e.isPrimary) {
-      erasing = true;
+      erasing = [e.clientX, e.clientY];
       e.preventDefault();
       eraseAt(e.clientX, e.clientY);
     }
   };
-  const move = (e: PointerEvent) => erasing && eraseAt(e.clientX, e.clientY);
+  // The whole way from the last point, not each point alone: a swipe
+  // moves farther between two pointer events than the eraser reaches.
+  const move = (e: PointerEvent) => {
+    if (!erasing) return;
+    for (const [x, y] of sweep(erasing, [e.clientX, e.clientY], ERASER_PX / 2)) eraseAt(x, y);
+    erasing = [e.clientX, e.clientY];
+  };
   const up = () => {
-    erasing = false;
+    erasing = null;
     // Each stroke its own mark, as a pencil's is in Notes: the eraser
     // takes one stroke and Undo one stroke, not the whole sitting. After
     // pdf.js's own pointerup has ended the line, on the page it began on.
@@ -177,9 +203,11 @@ export function startMarkup(opts: {
     keepSoon();
   };
   // A finger erasing scrolls nothing.
-  const touchMove = (e: TouchEvent) => erasing && e.cancelable && e.preventDefault();
+  const touchMove = (e: TouchEvent) => !!erasing && e.cancelable && e.preventDefault();
   box.addEventListener("pointerdown", down, { capture: true });
-  box.addEventListener("pointermove", move);
+  // Heard on the way down: in WebKit a move over the pages never bubbled
+  // up to the box (on the iPad a swipe erased only where it began).
+  box.addEventListener("pointermove", move, { capture: true });
   window.addEventListener("pointerup", up);
   box.addEventListener("touchmove", touchMove, { passive: false });
   box.addEventListener("keyup", keepSoon);
@@ -209,6 +237,7 @@ export function startMarkup(opts: {
     },
     setNote(mark: SavedMark, note: string) {
       marks = withNote(marks, mark, note);
+      known = withNote(known, mark, note);
       tell();
       opts.onKeep(marks);
     },
@@ -233,8 +262,9 @@ export function startMarkup(opts: {
       collect();
       bus.off("annotationeditoruimanager", onUi);
       bus.off("editingstateschanged", onStates);
+      document.removeEventListener("selectionchange", onSelection);
       box.removeEventListener("pointerdown", down, { capture: true });
-      box.removeEventListener("pointermove", move);
+      box.removeEventListener("pointermove", move, { capture: true });
       window.removeEventListener("pointerup", up);
       box.removeEventListener("touchmove", touchMove);
       box.removeEventListener("keyup", keepSoon);

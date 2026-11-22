@@ -53,11 +53,11 @@ test.beforeEach(async ({ page }) => {
 const keptMarks = (page: Page) =>
   page.evaluate(
     (key) =>
-      new Promise<{ kind: string; note?: string }[]>((done) => {
+      new Promise<{ kind: string; text?: string; note?: string }[]>((done) => {
         const open = indexedDB.open("wingtip-documents");
         open.onsuccess = () => {
           const get = open.result.transaction("files").objectStore("files").get(key);
-          get.onsuccess = () => done((get.result ?? []) as { kind: string; note?: string }[]);
+          get.onsuccess = () => done((get.result ?? []) as { kind: string; text?: string; note?: string }[]);
         };
       }),
     `marks/phak@${EDITION}`,
@@ -126,7 +126,8 @@ test("@smoke a passage highlighted with a note, a stroke drawn, undone and erase
   // The page shared as a picture with its marks drawn in.
   const download = page.waitForEvent("download");
   await bar.getByTestId("document-share-marked").click();
-  expect((await download).suggestedFilename()).toBe("Pilot's Handbook of Aeronautical Knowledge p1 marked.png");
+  // WebKit writes a download's spaces as underscores.
+  expect((await download).suggestedFilename().replaceAll("_", " ")).toBe("Pilot's Handbook of Aeronautical Knowledge p1 marked.png");
 
   // The notes, listed, each opening its page.
   await reader.getByTestId("document-contents-button").click();
@@ -138,9 +139,14 @@ test("@smoke a passage highlighted with a note, a stroke drawn, undone and erase
   await row.click();
   await expect(reader.getByTestId("document-contents")).toHaveCount(0);
 
-  // Kept on the device, and back after a reload, the note with it.
-  await expect.poll(() => keptMarks(page)).toEqual([expect.objectContaining({ kind: "highlight", note: NOTE })]);
+  // Kept on the device with its words and note, and back when the
+  // document is opened again after a reload (the reload itself closes
+  // the reader: the address keeps no doc key across one).
+  await expect
+    .poll(() => keptMarks(page))
+    .toEqual([expect.objectContaining({ kind: "highlight", text: "Normal Procedures Checklist", note: NOTE })]);
   await page.reload();
+  await page.goto("/app/plan?doc=phak");
   await expect(pdf.locator(".highlightEditor")).toHaveCount(1);
   await reader.getByTestId("document-contents-button").click();
   await reader.getByTestId("document-contents-half").getByText("Notes").click();

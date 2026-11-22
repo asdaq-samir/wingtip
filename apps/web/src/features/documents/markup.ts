@@ -135,6 +135,14 @@ export function erases(kind: MarkKind, data: MarkData, x: number, y: number, slo
   return (data.paths?.points ?? []).some((stroke) => distanceToStroke(stroke, x, y) <= slop);
 }
 
+/** The points along a move from one place to the next, no more than
+ *  `step` apart, the last the place reached: what the eraser touches on
+ *  its way. */
+export function sweep(from: readonly [number, number], to: readonly [number, number], step: number): [number, number][] {
+  const n = Math.max(1, Math.ceil(Math.hypot(to[0] - from[0], to[1] - from[1]) / step));
+  return Array.from({ length: n }, (_, i) => [from[0] + ((to[0] - from[0]) * (i + 1)) / n, from[1] + ((to[1] - from[1]) * (i + 1)) / n]);
+}
+
 /** Palm rejection, as iPadOS's "Only Draw with Apple Pencil": once a
  *  pencil has drawn, a finger (or the palm resting on the glass) scrolls
  *  and zooms and draws nothing; a mouse and a pencil always draw. */

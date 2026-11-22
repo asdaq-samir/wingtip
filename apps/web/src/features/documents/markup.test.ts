@@ -10,6 +10,7 @@ import {
   pageFileName,
   pageNotes,
   sameMark,
+  sweep,
   withNote,
   type SavedMark,
 } from "./markup";
@@ -91,6 +92,17 @@ describe("markup", () => {
     expect(erases("highlight", h.data, 150, 690, 4)).toBe(true);
     expect(erases("highlight", h.data, 150, 702, 4)).toBe(true);
     expect(erases("highlight", h.data, 150, 600, 4)).toBe(false);
+  });
+
+  it("sweeps the eraser's whole way between two pointer events, never farther apart than its step", () => {
+    expect(sweep([0, 0], [0, 25], 6)).toEqual([
+      [0, 5],
+      [0, 10],
+      [0, 15],
+      [0, 20],
+      [0, 25],
+    ]);
+    expect(sweep([3, 4], [3, 4], 6)).toEqual([[3, 4]]);
   });
 
   it("rejects the palm: once a pencil draws, a finger does not; a mouse and a pencil always do", () => {
