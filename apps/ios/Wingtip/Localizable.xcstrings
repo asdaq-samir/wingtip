@@ -1031,6 +1031,9 @@
     "Clear %@" : {
 
     },
+    "Clear Markup" : {
+
+    },
     "Clear Route" : {
 
     },
@@ -1038,6 +1041,9 @@
 
     },
     "Clear Your Path" : {
+
+    },
+    "Clear your markup on this chart?" : {
 
     },
     "Clearance" : {
@@ -2342,6 +2348,9 @@
     "Map: the line to %@ and the glide's reach" : {
 
     },
+    "Markup" : {
+
+    },
     "May count toward WINGS: %@, ACS %@" : {
       "localizations" : {
         "en" : {
@@ -2759,6 +2768,9 @@
 
     },
     "Open in ForeFlight" : {
+
+    },
+    "Open in New Window" : {
 
     },
     "Open the Brief" : {
@@ -3702,6 +3714,9 @@
 
     },
     "Terms of Use" : {
+
+    },
+    "That file isn't a Wingtip flight or a GPX or KML track." : {
 
     },
     "That's Not Me" : {
