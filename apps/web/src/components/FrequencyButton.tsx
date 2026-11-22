@@ -42,9 +42,9 @@ export default function FrequencyButton({
         // The frequency's own tap, not the row's or the card's under it.
         event.stopPropagation();
         // Called in the tap, as the clipboard asks.
-        const button = event.currentTarget;
+        const tapped = event.currentTarget;
         void copyText(text).then(
-          () => done("Copied", { near: button }),
+          () => done("Copied", { near: tapped }),
           () => showError("Not Copied", "This browser would not let the frequency be copied."),
         );
       }}
