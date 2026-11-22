@@ -77,6 +77,8 @@ endorsements_in_force
 endurance
 faa_words
 field_hours
+field_names
+field_status
 field_taf
 filed_dof
 filed_level
@@ -105,6 +107,7 @@ gairmet_title
 glide_range
 glide_reaches
 glide_ring
+gonogo_adverse_rows
 gonogo_balance
 gonogo_brief
 gonogo_default_load
@@ -141,6 +144,7 @@ ifr_alternate_not_required
 in_flight
 kept_age
 kneeboard_radio
+landing_runway
 least_crosswind
 live_feed_refresh
 logbook_csv_read

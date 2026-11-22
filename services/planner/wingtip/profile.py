@@ -56,14 +56,14 @@ def _along(point: tuple, start: tuple, end: tuple, length_nm: float) -> float:
 def _airport_ident(faa_ident: str, bounds: tuple) -> str:
     """The ident, as a route names it (KDLH), of the airport an airspace is
     drawn round: the FAA's file tags each piece with the airport's own
-    three letters (DLH), tried as ICAO -- K in the lower 48, P in the
-    Pacific -- then bare, and taken only where the airport sits within the
+    three letters (DLH), tried by each name the engine's field_names
+    gives it, the K form first, then the FAA's own (ANC, HNL), and taken only where the airport sits within the
     piece's bounds (min_lon, min_lat, max_lon, max_lat), as wingtip.classb
     places a Class B's; "" where none does."""
     if not faa_ident:
         return ""
     min_lon, min_lat, max_lon, max_lat = bounds
-    for candidate in (f"K{faa_ident}", f"P{faa_ident}", faa_ident):
+    for candidate in engine("field_names", ident=faa_ident):
         try:
             airport = airports_module.get_airport(candidate)
         except ValueError:

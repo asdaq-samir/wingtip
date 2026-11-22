@@ -64,7 +64,7 @@ table, and its why below, in the same commit.
 | `wording` | wording (with script: the radio calls' words) | core, procedures, airspace, brief, route (without its options) |
 | `altitude` | altitude (the floor, the band, the cruising altitudes, the selection and its words, the cautions on a pilot's own altitude, 91.119(b)'s congested areas; ground: the figures the planner's readers of the ground take, where a tile is the sea's, the obstacles drawn (77.9(a)), the side view's width, the finer terrain's reach), congested_reach (how far round a point the planner looks for 91.119(b)'s congested areas) | core, flight, weather, procedures |
 | `inflight` | watch, checks, message (`copilot_watch`: the in-flight copilot's ranked messages), flight (`copilot_flight`: the planned flight it starts from, the fuel at takeoff, the planned ground speed and whether a passenger is aboard), fields (its alternative: brief's best_fields in diversion mode, held to its weather and fuel checks) | core, flight, weather, procedures, brief |
-| `receiver` | frame, message, report, uplink, dlac, fisb, nexrad, picture (a portable ADS-B receiver's GDL 90: own ship, its traffic, FIS-B's text and NEXRAD; AIM 4-5-7, 4-5-9), views | core |
+| `receiver` | frame, message, report, uplink, dlac, fisb, nexrad, picture (a portable ADS-B receiver's GDL 90: own ship, its traffic, FIS-B's text and NEXRAD; AIM 4-5-7, 4-5-9), views | core, flight |
 | `facade/` | call | all of them |
 
 Why these lines:
@@ -116,7 +116,8 @@ Why these lines:
   and the airplane's performance, which sit in `flight` because the
   altitude selection needs the service ceiling on the day from them too.
 - `receiver` reads bytes a receiver sent into what it says, and needs
-  only `core` (its JSON and Base64): the METARs and TAFs it is sent are
+  only `core` (its JSON and Base64) and `flight`'s one ident rule
+  (`same_field`, a FIS-B location against the field asked): the METARs and TAFs it is sent are
   handed on as sent, for `weather` to read where a screen asks, so it
   sits beside `weather`, not on it.
 - `call.rs` dispatches every rule, so it alone stays in the facade, over all;

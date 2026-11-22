@@ -6,6 +6,7 @@
 
 use crate::geo;
 use wingtip_core::units::NM_PER_SM;
+use wingtip_flight::field::same_field;
 
 /// A TAF is the forecast for the area within 5 statute miles of the
 /// airport's centre (FAA-H-8083-28B 27.4.1; NWSI 10-813),
@@ -32,12 +33,12 @@ pub struct Station<'a> {
 }
 
 /// The station that speaks for the field `ident` at `at`: its own -- the
-/// station whose ICAO id is the ident, or K and the ident for a
-/// three-letter US ident -- by its index and no distance; else the nearest
+/// station whose ICAO id names the field (same_field: the ident, or K and
+/// a three-letter one, FAA JO 7350.9GG 4-1) -- by its index and no
+/// distance; else the nearest
 /// within TAF_REACH_NM and how far it is; None past that.
 pub fn field_taf(ident: &str, at: Option<(f64, f64)>, stations: &[Station]) -> Option<(usize, Option<f64>)> {
-    let k = format!("K{ident}");
-    if let Some(own) = stations.iter().position(|s| s.icao_id == ident || (ident.len() == 3 && s.icao_id == k)) {
+    if let Some(own) = stations.iter().position(|s| same_field(s.icao_id, ident)) {
         return Some((own, None));
     }
     let (lat, lon) = at?;

@@ -715,7 +715,13 @@ fun Engine.fieldMilitary(ownership: String? = null, use: String? = null): Result
     rule("field_military", EngineContract.FieldMilitaryInput(ownership = ownership, use = use))
 
 /**
- * The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport.
+ * Every name a field may be filed under, in the order to try them: NASR's ICAO_ID where given, the K form of a three-letter ident (FAA JO 7350.9GG 4-1), the ident as asked and its FAA form.
+ */
+fun Engine.fieldNames(ident: String, icaoId: String? = null): Result<List<String>> =
+    rule("field_names", EngineContract.FieldNamesInput(ident = ident, icaoId = icaoId))
+
+/**
+ * The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport. `airplane`: whether an airplane on wheels lands there, an airport (A), a gliderport (G) or an ultralight park (U), each a strip of ground; not a heliport, a balloonport or a seaplane base, whose runways are water. What every list of fields to land at is held to (nearest, a stop, a glide's); true with no code, the host's own list then deciding.
  */
 fun Engine.fieldSiteType(siteType: String? = null): Result<EngineContract.FieldSiteTypeAnswer> =
     rule("field_site_type", EngineContract.FieldSiteTypeInput(siteType = siteType))
@@ -971,6 +977,12 @@ fun Engine.glideReaches(altitudeFt: Double? = null, speedKt: Double? = null, dis
  */
 fun Engine.glideRing(lat: Double, lon: Double, altitudeFt: Double? = null, speedKt: Double? = null, terrainFt: Double? = null, fieldFt: Double? = null, glideRatio: Double? = null): Result<EngineContract.GlideRingAnswer?> =
     rule("glide_ring", EngineContract.GlideRingInput(lat = lat, lon = lon, altitudeFt = altitudeFt, speedKt = speedKt, terrainFt = terrainFt, fieldFt = fieldFt, glideRatio = glideRatio))
+
+/**
+ * The Brief's Adverse Conditions rows under its findings, the standard briefing's first element (AIM 7-1-5(b)(1)): what the flight meets on the route while it is there (OnRoute `when` "during", or none given) -- a TFR the route goes through (14 CFR 91.137-91.145) and a Convective SIGMET or SIGMET (AIM 7-1-6), stops; a Center Weather Advisory (AIM 7-1-6), an urgent pilot report (UUA, AIM 7-1-18) and an AIRMET or G-AIRMET (AIM 7-1-6), cautions -- in that order, of a kind the one met first along the route first, at most three, with how many more. A TFR only near the route, a routine PIREP and a hazard before or after the flight are left to their pages. Each row's time is for the host to write: `at` when the flight meets a TFR, `until` an advisory's end, `reported` a pilot report's time.
+ */
+fun Engine.gonogoAdverseRows(advisories: List<EngineContract.GonogoAdverseRowsInputAdvisoriesItem>): Result<EngineContract.GonogoAdverseRowsAnswer> =
+    rule("gonogo_adverse_rows", EngineContract.GonogoAdverseRowsInput(advisories = advisories))
 
 /**
  * Weight and balance at takeoff and landing, against the profile's limits and envelope, with the problems found.
@@ -1307,6 +1319,12 @@ fun Engine.keptAge(now: Double, fetchedAt: Double, kind: String): Result<EngineC
  */
 fun Engine.kneeboardRadio(frequencies: List<EngineContract.FieldFrequency>): Result<List<List<JsonElement>>> =
     rule("kneeboard_radio", EngineContract.KneeboardRadioInput(frequencies = frequencies))
+
+/**
+ * The runway landed on at a field the route flies an instrument approach to: the approach's own runway, straight in (AIM 5-4-20, Approach and Landing Minimums; 14 CFR 91.175, the runway of intended landing), unless the pilot picked another and the plate publishes circling minimums, a circle to land (AIM 5-4-20). A runway picked into the wind gives way to the approach's own. With no approach, or one circling only (no runway in its name), the pick stands and any runway may be picked. `circling` null (the plate still coming) is taken as no circling. The runway is answered as painted ("9", "8L").
+ */
+fun Engine.landingRunway(approach: Boolean, straightIn: String? = null, circling: Boolean? = null, picked: String? = null, byPilot: Boolean): Result<EngineContract.LandingRunwayAnswer> =
+    rule("landing_runway", EngineContract.LandingRunwayInput(approach = approach, straightIn = straightIn, circling = circling, picked = picked, byPilot = byPilot))
 
 /**
  * Of a field's runways, each on the end the wind favours, the least crosswind, steady or gust, whichever is more: the runway a pilot would pick to keep the wind most nearly down it. A variable wind is all crosswind (AIM 7-1-28); calm is none. null with no wind or no runway end with a heading.
@@ -1901,6 +1919,12 @@ fun Engine.reportNear(distanceNm: Double): Result<EngineContract.ReportNearAnswe
  */
 fun Engine.reserveMin(ifr: Boolean? = null, night: Boolean? = null): Result<Double> =
     rule("reserve_min", EngineContract.ReserveMinInput(ifr = ifr, night = night))
+
+/**
+ * The Air Defense Identification Zones a route meets (14 CFR part 99, subpart B), each as the regulation draws it: the Contiguous U.S. ADIZ (99.43, its line along the U.S.-Mexico border taken as crossed by a leg from one country to the other), Alaska's (99.45), Guam's (99.47) and Hawaii's (99.49), great circles between their points and rhumb lines along a parallel (99.41). Each point, each leg checked every 2 nm along its geodesic, the zones met in order and the Brief's one line: a flight plan filed and open (99.11), a two-way radio and a listening watch (99.9), the transponder on (99.13) and a position report before crossing (99.15), with 99.1(b)'s exceptions said. Warn, never limit: any altitude or speed is taken as meeting the zone.
+ */
+fun Engine.routeAdiz(points: List<EngineContract.RouteAdizInputPointsItem>): Result<EngineContract.RouteAdizAnswer> =
+    rule("route_adiz", EngineContract.RouteAdizInput(points = points))
 
 /**
  * Which of a route's points and legs lie outside the United States, each leg checked every 2 nm along its geodesic, and the Brief's one line for them. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).

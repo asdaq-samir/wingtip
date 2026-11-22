@@ -9282,6 +9282,42 @@
       ],
       "additionalProperties": false
     },
+    "field_names": {
+      "description": "Every name a field may be filed under, in the order to try them: NASR's ICAO_ID where given, the K form of a three-letter ident (FAA JO 7350.9GG 4-1), the ident as asked and its FAA form.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FieldNamesInput",
+          "type": "object",
+          "properties": {
+            "ident": {
+              "type": "string"
+            },
+            "icao_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "ident"
+          ]
+        },
+        "answer": {
+          "title": "FieldNamesAnswer",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "field_site_type": {
       "description": "The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport. `airplane`: whether an airplane on wheels lands there, an airport (A), a gliderport (G) or an ultralight park (U), each a strip of ground; not a heliport, a balloonport or a seaplane base, whose runways are water. What every list of fields to land at is held to (nearest, a stop, a glide's); true with no code, the host's own list then deciding.",
       "type": "object",
@@ -32317,6 +32353,7 @@
     "field_hours",
     "field_mark_rank",
     "field_military",
+    "field_names",
     "field_site_type",
     "field_status",
     "field_taf",

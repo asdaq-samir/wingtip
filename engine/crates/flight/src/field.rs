@@ -151,7 +151,7 @@ pub fn hard_surface(code: &str) -> bool {
 /// The one statement for the glide's and the diversion's runway and the
 /// runway picked into the wind.
 pub fn water_surface(code: &str) -> bool {
-    let first = code.split(['-', '/', ' ']).next().unwrap_or("").trim().to_ascii_uppercase();
+    let first = code.trim().split(['-', '/', ' ']).next().unwrap_or("").to_ascii_uppercase();
     matches!(first.as_str(), "WATER" | "WAT" | "W")
 }
 
@@ -241,9 +241,55 @@ pub fn same_field(a: &str, b: &str) -> bool {
     bare_field(a) == bare_field(b)
 }
 
+/// Every name a field may be filed under, as a TAF, a METAR, a NOTAM, the
+/// CIFP or a frequency table may give it, the one copy for each lookup
+/// that tries them in turn: NASR's own ICAO_ID first where the caller has
+/// it (APT_BASE.csv), then the K form, the ident as asked, and the FAA's
+/// (bare_field), each once. FAA JO 7350.9GG, paragraph 4-1: "The location
+/// indicator for airports in the contiguous United States is the
+/// three-letter identifier preceded by 'K'"; Alaska's are PA, PF, PO or PP,
+/// Hawaii's PH, Puerto Rico's TJ and the Virgin Islands' TI, by ICAO Doc
+/// 7910's listing, not by a rule a program can follow (Juneau is JNU and
+/// PAJN, Hilo ITO and PHTO, San Juan SJU and TJSJ), so outside the
+/// contiguous states only NASR's ICAO_ID names the ICAO form, and none is
+/// guessed. The K form is offered for any three-letter ident: an
+/// identifier names one landing facility (JO 7350.9GG, 2-5 a) and K
+/// indicators are the contiguous states' alone, so the K form of an Alaska
+/// field's (KENA for Kenai, ENA) names no other field, it is only not
+/// found, and the lookup goes on to the next name. An
+/// ident with a figure in it (C81, 1C5) has no ICAO indicator, and gets
+/// no K.
+pub fn field_names(ident: &str, icao_id: Option<&str>) -> Vec<String> {
+    let asked = ident.trim().to_ascii_uppercase();
+    let bare = bare_field(&asked);
+    let k = (bare.len() == 3 && bare.bytes().all(|c| c.is_ascii_uppercase())).then(|| format!("K{bare}"));
+    let icao = icao_id.map(|i| i.trim().to_ascii_uppercase()).filter(|i| !i.is_empty());
+    let mut names: Vec<String> = Vec::new();
+    for name in [icao, k, Some(asked), Some(bare)].into_iter().flatten() {
+        if !name.is_empty() && !names.contains(&name) {
+            names.push(name);
+        }
+    }
+    names
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // JO 7350.9GG 4-1: the K form in the contiguous states; NASR's ICAO_ID
+    // where the K is not the rule; none for an ident with a figure.
+    #[test]
+    fn a_fields_names_are_its_icao_k_and_faa_forms() {
+        assert_eq!(field_names("dlh", None), ["KDLH", "DLH"]);
+        assert_eq!(field_names("KDLH", None), ["KDLH", "DLH"]);
+        assert_eq!(field_names("C81", None), ["C81"]);
+        assert_eq!(field_names("KC81", None), ["KC81", "C81"]);
+        assert_eq!(field_names("JNU", Some("PAJN")), ["PAJN", "KJNU", "JNU"]);
+        assert_eq!(field_names("SJU", Some("tjsj")), ["TJSJ", "KSJU", "SJU"]);
+        assert_eq!(field_names("PAEN", None), ["PAEN"]);
+        assert_eq!(field_names("ENA", Some("")), ["KENA", "ENA"]);
+    }
 
     // NASR APT_BASE's ownership codes, each side of the rule.
     #[test]

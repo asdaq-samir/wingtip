@@ -41,6 +41,7 @@ from html import escape
 from wingtip import places
 
 from .checkpoint_scoring import KIND_NAMES
+from wingtip.engine import ask as engine
 
 #: What to look for, by the chart's kind of thing.
 LOOK_FOR = {
@@ -109,8 +110,7 @@ def short(ident: str) -> str:
     screenshot, 2026-10-24)."""
     if ident.startswith("@"):
         return "POS"
-    upper = re.sub(r"[^A-Z0-9]", "", ident.upper())
-    return upper[1:] if len(upper) == 4 and upper.startswith("K") else upper
+    return engine("bare_field", ident=re.sub(r"[^A-Z0-9]", "", ident.upper()))
 
 
 def waypoint_names(dep: str, dest: str, cps: list[PackCheckpoint]) -> list[str]:

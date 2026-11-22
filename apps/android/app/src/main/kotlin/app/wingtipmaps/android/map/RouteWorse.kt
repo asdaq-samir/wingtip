@@ -9,8 +9,11 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.AlternateLeg
 import app.wingtipmaps.android.api.generated.Briefing
 import app.wingtipmaps.android.api.routeBriefing
+import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.sameField
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -19,7 +22,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 /**
  * The plan's fields whose weather gets worse by the pilot's time there
@@ -104,7 +106,7 @@ class RouteWorse @Inject constructor() : ViewModel() {
             val atEta = mutableListOf<EngineContract.WorseField>()
             for (ident in fields.distinct()) {
                 val metar = briefing.metars[ident] ?: continue
-                val taf = briefing.forecast.stations.firstOrNull { (it.icaoId == ident || it.icaoId == "K$ident") && it.eta != null } ?: continue
+                val taf = briefing.forecast.stations.firstOrNull { Engine.sameField(it.icaoId, ident).getOrNull() == true && it.eta != null } ?: continue
                 then += EngineContract.WorseField(ident, metar.ceilingFt, metar.visibilitySm, metar.ceilingUnknown)
                 atEta += EngineContract.WorseField(ident, taf.etaCeilingFt, taf.etaVisibilitySm, taf.etaCeilingUnknown)
             }

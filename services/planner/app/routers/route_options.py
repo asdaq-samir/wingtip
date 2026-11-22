@@ -21,6 +21,7 @@ from wingtip.winds_aloft import winds_key_for
 from ..schemas.route_options import RouteOptions
 from ..gateway import PUBLIC
 from ..plan_query import CruiseTas, FuelBurn, GlideRatio, ServiceCeiling, TaxiFuel, UsableFuel
+from wingtip.engine import ask as engine
 
 router = APIRouter()
 
@@ -53,9 +54,9 @@ CLASS_B_WORDS = "Avoid Class B"
 
 
 def _same(ident: str) -> str:
-    """An ident as the route's box may spell it: KUES and UES alike."""
-    s = ident.strip().upper()
-    return s[1:] if len(s) == 4 and s.startswith("K") and s.isalpha() else s
+    """An ident as the route's box may spell it: KUES and UES alike (the
+    engine's bare_field)."""
+    return engine("bare_field", ident=ident)
 
 
 def _chips(found: dict, typed: list[str]) -> list[dict]:
