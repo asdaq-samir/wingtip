@@ -728,6 +728,30 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/icing/route`.
     /// - Remark: Generated from `#/paths//api/icing/route/get(icing_on_the_route)`.
     func icingOnTheRoute(_ input: Operations.IcingOnTheRoute.Input) async throws -> Operations.IcingOnTheRoute.Output
+    /// Library Shelf
+    ///
+    /// Every document on the shelf, in its order: the FAA's books, the AIM,
+    /// the circulars and the CFR parts, each with the edition kept and its
+    /// date, or none yet where it has never been had.
+    ///
+    /// - Remark: HTTP `GET /api/library`.
+    /// - Remark: Generated from `#/paths//api/library/get(library_shelf)`.
+    func libraryShelf(_ input: Operations.LibraryShelf.Input) async throws -> Operations.LibraryShelf.Output
+    /// Library Pdf
+    ///
+    /// A document's PDF in the edition kept.
+    ///
+    /// - Remark: HTTP `GET /api/library/{doc}/{edition}.pdf`.
+    /// - Remark: Generated from `#/paths//api/library/{doc}/{edition}.pdf/get(library_pdf)`.
+    func libraryPdf(_ input: Operations.LibraryPdf.Input) async throws -> Operations.LibraryPdf.Output
+    /// Library Text
+    ///
+    /// A CFR part's text in the edition kept (the eCFR's issue date): its
+    /// subparts and sections, each section's paragraphs.
+    ///
+    /// - Remark: HTTP `GET /api/library/{doc}/{edition}/text`.
+    /// - Remark: Generated from `#/paths//api/library/{doc}/{edition}/text/get(library_text)`.
+    func libraryText(_ input: Operations.LibraryText.Input) async throws -> Operations.LibraryText.Output
     /// Digital Atis
     ///
     /// An airport's D-ATIS as the tower's data link sends it, with the
@@ -2612,6 +2636,48 @@ extension APIProtocol {
     ) async throws -> Operations.IcingOnTheRoute.Output {
         try await icingOnTheRoute(Operations.IcingOnTheRoute.Input(
             query: query,
+            headers: headers
+        ))
+    }
+    /// Library Shelf
+    ///
+    /// Every document on the shelf, in its order: the FAA's books, the AIM,
+    /// the circulars and the CFR parts, each with the edition kept and its
+    /// date, or none yet where it has never been had.
+    ///
+    /// - Remark: HTTP `GET /api/library`.
+    /// - Remark: Generated from `#/paths//api/library/get(library_shelf)`.
+    public func libraryShelf(headers: Operations.LibraryShelf.Input.Headers = .init()) async throws -> Operations.LibraryShelf.Output {
+        try await libraryShelf(Operations.LibraryShelf.Input(headers: headers))
+    }
+    /// Library Pdf
+    ///
+    /// A document's PDF in the edition kept.
+    ///
+    /// - Remark: HTTP `GET /api/library/{doc}/{edition}.pdf`.
+    /// - Remark: Generated from `#/paths//api/library/{doc}/{edition}.pdf/get(library_pdf)`.
+    public func libraryPdf(
+        path: Operations.LibraryPdf.Input.Path,
+        headers: Operations.LibraryPdf.Input.Headers = .init()
+    ) async throws -> Operations.LibraryPdf.Output {
+        try await libraryPdf(Operations.LibraryPdf.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Library Text
+    ///
+    /// A CFR part's text in the edition kept (the eCFR's issue date): its
+    /// subparts and sections, each section's paragraphs.
+    ///
+    /// - Remark: HTTP `GET /api/library/{doc}/{edition}/text`.
+    /// - Remark: Generated from `#/paths//api/library/{doc}/{edition}/text/get(library_text)`.
+    public func libraryText(
+        path: Operations.LibraryText.Input.Path,
+        headers: Operations.LibraryText.Input.Headers = .init()
+    ) async throws -> Operations.LibraryText.Output {
+        try await libraryText(Operations.LibraryText.Input(
+            path: path,
             headers: headers
         ))
     }

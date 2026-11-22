@@ -6094,6 +6094,271 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Library Shelf
+    ///
+    /// Every document on the shelf, in its order: the FAA's books, the AIM,
+    /// the circulars and the CFR parts, each with the edition kept and its
+    /// date, or none yet where it has never been had.
+    ///
+    /// - Remark: HTTP `GET /api/library`.
+    /// - Remark: Generated from `#/paths//api/library/get(library_shelf)`.
+    public func libraryShelf(_ input: Operations.LibraryShelf.Input) async throws -> Operations.LibraryShelf.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.LibraryShelf.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/library",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.LibraryShelf.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.Library.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Library Pdf
+    ///
+    /// A document's PDF in the edition kept.
+    ///
+    /// - Remark: HTTP `GET /api/library/{doc}/{edition}.pdf`.
+    /// - Remark: Generated from `#/paths//api/library/{doc}/{edition}.pdf/get(library_pdf)`.
+    public func libraryPdf(_ input: Operations.LibraryPdf.Input) async throws -> Operations.LibraryPdf.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.LibraryPdf.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/library/{}/{}.pdf",
+                    parameters: [
+                        input.path.doc,
+                        input.path.edition
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.LibraryPdf.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/pdf"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/pdf":
+                        body = try converter.getResponseBodyAsBinary(
+                            OpenAPIRuntime.HTTPBody.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .pdf(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 206:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.LibraryPdf.Output.PartialContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/pdf"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/pdf":
+                        body = try converter.getResponseBodyAsBinary(
+                            OpenAPIRuntime.HTTPBody.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .pdf(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .partialContent(.init(body: body))
+                case 404:
+                    return .notFound(.init())
+                case 422:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.LibraryPdf.Output.UnprocessableContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.HTTPValidationError.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unprocessableContent(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Library Text
+    ///
+    /// A CFR part's text in the edition kept (the eCFR's issue date): its
+    /// subparts and sections, each section's paragraphs.
+    ///
+    /// - Remark: HTTP `GET /api/library/{doc}/{edition}/text`.
+    /// - Remark: Generated from `#/paths//api/library/{doc}/{edition}/text/get(library_text)`.
+    public func libraryText(_ input: Operations.LibraryText.Input) async throws -> Operations.LibraryText.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.LibraryText.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/library/{}/{}/text",
+                    parameters: [
+                        input.path.doc,
+                        input.path.edition
+                    ]
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.LibraryText.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.CfrText.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 404:
+                    return .notFound(.init())
+                case 422:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.LibraryText.Output.UnprocessableContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.HTTPValidationError.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unprocessableContent(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
     /// Digital Atis
     ///
     /// An airport's D-ATIS as the tower's data link sends it, with the

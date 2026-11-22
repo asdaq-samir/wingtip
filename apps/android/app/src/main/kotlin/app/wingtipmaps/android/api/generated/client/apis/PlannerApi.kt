@@ -1100,6 +1100,51 @@ interface PlannerApi {
     suspend fun itwsAlerts(@Query("airports") airports: kotlin.String): Response<app.wingtipmaps.android.api.generated.ItwsAlerts>
 
     /**
+     * GET library/{doc}/{edition}.pdf
+     * Library Pdf
+     * A document&#39;s PDF in the edition kept.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 206: The byte range asked for (Range: bytes=a-b)
+     *  - 404: Not on the shelf, or not the edition kept
+     *  - 422: Validation Error
+     *
+     * @param doc
+     * @param edition
+     * @return [Unit]
+     */
+    @GET("library/{doc}/{edition}.pdf")
+    suspend fun libraryPdf(@Path("doc") doc: kotlin.String, @Path("edition") edition: kotlin.String): Response<Unit>
+
+    /**
+     * GET library
+     * Library Shelf
+     * Every document on the shelf, in its order: the FAA&#39;s books, the AIM, the circulars and the CFR parts, each with the edition kept and its date, or none yet where it has never been had.
+     * Responses:
+     *  - 200: Successful Response
+     *
+     * @return [app.wingtipmaps.android.api.generated.Library]
+     */
+    @GET("library")
+    suspend fun libraryShelf(): Response<app.wingtipmaps.android.api.generated.Library>
+
+    /**
+     * GET library/{doc}/{edition}/text
+     * Library Text
+     * A CFR part&#39;s text in the edition kept (the eCFR&#39;s issue date): its subparts and sections, each section&#39;s paragraphs.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 404: Not a CFR part on the shelf, or not the edition kept
+     *  - 422: Validation Error
+     *
+     * @param doc
+     * @param edition
+     * @return [app.wingtipmaps.android.api.generated.CfrText]
+     */
+    @GET("library/{doc}/{edition}/text")
+    suspend fun libraryText(@Path("doc") doc: kotlin.String, @Path("edition") edition: kotlin.String): Response<app.wingtipmaps.android.api.generated.CfrText>
+
+    /**
      * GET local-flight
      * Local Flight
      * A flight that leaves and lands at the same airport -- the pattern, practice approaches, an hour&#39;s sightseeing: no course and no legs to plan, so its totals are the time aloft at the aeroplane&#39;s cruise burn, with the fuel check a route&#39;s has (the start and taxi allowance, the VFR reserve by day or by night, the usable fuel). Night is judged at the field at both ends of the time aloft, from now where no departure time is given (planning.flight_totals). A 422 for a route that is not one airport to itself. With no airplane, the time aloft and the reserve&#39;s minutes alone: no fuel is worked out.
