@@ -1900,19 +1900,70 @@ Next Flight, Airport Weather and Currency Status.
    with its own bar: put on the map, whose bar is hidden, its card had no
    title, close or gear (the owner's word for the move, 2026-11-21).
 4. **The figure strip** floats along the map's foot on a solid card in
-   the sheet's colour, at most 520 pt wide, its words in the system's
+   the sheet's colour, at most 640 pt wide, its words in the system's
    inks: on glass the names failed 4.5:1 even semibold in the tokens'
-   black.
+   black. Read at arm's length on a kneeboard or a yoke mount, its
+   figures are a size up from the iPhone's (title 2 over footnote,
+   `glanceFigures`; HIG Designing for iPadOS: "Use viewing distance and
+   input mode to help you determine the size and density").
 5. **Brief, Nav Log and Logbook** open in the sidebar's stack. A large
    `Table` takes the detail column only when the pilot asks for it in
    full (the nav log).
 
+6. **The sidebar beside a card** needs the width (`SplitRoom`: 375 pt of
+   sidebar, 375 of inspector and an iPhone's 375 of map, 1,125 pt). In a
+   narrower regular window (any iPad held upright, Split View at a half
+   or two thirds of a 13-inch) the sidebar gives way while a card is up
+   and comes back with its close; ⌘F or Show Sidebar brings it at any
+   time. The iPad mini upright had no map between them.
+7. **Show Sidebar:** with the sidebar up the map has no bar (the
+   sidebar's own holds Hide Sidebar); with it put away the map's bar
+   is up, clear over the chart, for the system's Show Sidebar.
+
 **Compact width** (Slide Over, a narrow window, iPhone Duo's outer
 display, a resized iPhone window): the iPhone's sheet with detents,
-chosen by size class (`RootLayout.of`).
+chosen by size class (`RootLayout.of`). Crossing the size classes moves
+what is open rather than closing it (`Navigator.relayout`): a page in the
+iPhone's card goes to the sidebar's stack and back.
 
-**Pointer and keyboard:** hover effects on rows and map buttons, and
-`keyboardShortcut` for search (⌘F), Direct To and the tabs.
+**Popovers:** a small form or a raw report opened from a control (Type
+Route, a source's raw text) is a popover in a regular width and the
+sheet it was in a compact one (HIG Popovers: "Reserve popovers for wide
+views").
+
+**Windows** (`UIApplicationSupportsMultipleScenes`): each window its own
+map, sidebar and cards (`MainWindow`, its own `Navigator`) over the one
+flight; the app's loops run in one window, the lead (`WindowLead`,
+`AppLoops`, `FlightLoops`). A chart opens in a window of its own beside
+the map (`PictureWindow`, `openWindow(id: "picture", value:)`) from the
+viewer's Open in New Window or a chart row's context menu; links, files
+and Siri go to the app's window, never a chart's
+(`handlesExternalEvents(matching: [])`). An external display shows a
+window as Stage Manager puts it there, nothing of the app's own.
+
+**Menu bar and keyboard** (`WingtipCommands`, iPadOS 26's menu bar and
+the ⌘-held list): File > Open Flight or Track… (⌘O); View > Search (⌘1),
+FPL (⌘2), the system's sidebar and inspector items; Flight > Search (⌘F),
+Brief (⌘B), Nav Log (⌘L), Profile (⌥⌘P), Nearest (⇧⌘N), Checklists
+(⇧⌘K), Saved Flights, Logbook, Your Airplanes, Emergency Assistant (⇧⌘E);
+Wingtip Settings… under the app's Settings. Escape closes a card
+(`CloseButton`). Each window publishes its own (`WindowActions`).
+
+**Pointer:** the system's highlight on bars, lists and Liquid Glass
+buttons; `.hoverEffect(.highlight)` on the plain buttons over the map (the
+figure strip, the alerts, the copilot's and the radio's banners).
+Context menus by a secondary click: a field's row (its preview and the
+plan's three), a chart's row (Open in New Window).
+
+**Drag and drop** (`WindowHost`): a Wingtip flight, a GPX or a KML dropped
+on a window opens as from Files (previewed, never planned unasked);
+words dropped go into the one search; a field's row drags out as its
+identifier.
+
+**Apple Pencil:** Scribble in every field (all stock `TextField`s). The
+plate and chart viewer has Markup (`PlateMarkup`, PencilKit's canvas and
+tool picker): the pilot's notes, kept on the device by the chart's
+address (a new cycle starts clean), forgotten at sign-out.
 
 **Avoid:**
 

@@ -30,6 +30,7 @@ struct CopilotBanner: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .buttonStyle(.plain)
+                    .hoverEffect(.highlight)
                     .accessibilityHint(open ? "Folds the reasons" : "Shows why")
                     Button("OK") {
                         copilot.dismiss()

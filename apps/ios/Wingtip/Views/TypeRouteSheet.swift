@@ -18,8 +18,13 @@ struct TypeRouteButton: View {
         .accessibilityLabel("Type Route")
         .accessibilityHint("Type or paste the whole route")
         .accessibilityIdentifier("route-type-open")
-        .sheet(isPresented: $typing) {
-            TypeRouteSheet().presentationDetents([.medium, .large])
+        // A popover from the button where there is the width (an iPad's
+        // sidebar), as HIG Popovers keeps popovers for regular widths; on
+        // the iPhone the system makes it the sheet it was.
+        .popover(isPresented: $typing) {
+            TypeRouteSheet()
+                .frame(minWidth: 320, idealWidth: 420, minHeight: 260, idealHeight: 300)
+                .presentationDetents([.medium, .large])
         }
     }
 }

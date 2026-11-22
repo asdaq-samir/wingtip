@@ -135,6 +135,11 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+        # More than one window on an iPad (MainWindow, and a chart's own,
+        # PictureWindow): HIG Multitasking, "every app needs to work well
+        # with multitasking". SwiftUI's scenes, no scene delegate of ours.
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
         # Read by Config at run time: the host the build was made for.
         WingtipHost: $(WINGTIP_HOST)
         # Honest about the background (the store audit's S1, App Review

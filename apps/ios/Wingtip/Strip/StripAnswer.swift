@@ -61,7 +61,9 @@ struct StripAnswerCard: View {
         .padding(WingtipSpace.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .inkCard()
-        .sheet(item: $source) { source in StripSourceSheet(source: source) }
+        // A popover by the answer on an iPad (HIG Popovers: regular
+        // widths), the sheet it was on the iPhone.
+        .popover(item: $source) { source in StripSourceSheet(source: source) }
         .accessibilityIdentifier("strip-answer")
     }
 }
@@ -85,6 +87,7 @@ struct StripSourceSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .closeButton { dismiss() }
         }
+        .frame(minWidth: 320, idealWidth: 480, minHeight: 240, idealHeight: 360)
         .presentationDetents([.medium, .large])
     }
 }
