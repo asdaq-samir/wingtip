@@ -54,3 +54,8 @@ fn the_weather_rules_are_14_cfr_1_1s_91_175s_and_the_handbooks() {
 fn the_go_no_go_rules_hold_to_their_sources() {
     holds("rules/gonogo.json");
 }
+
+#[test]
+fn the_approach_glide_fuel_and_altitude_rules_hold_to_their_sources() {
+    holds("rules/flight.json");
+}

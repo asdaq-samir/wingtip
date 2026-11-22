@@ -1,0 +1,1035 @@
+{
+  "_note": "The approach, glide, transponder, field, fuel, floor and altitude rules' figures and boundaries, written down from 14 CFR 97.3, 91.119, 91.151, 91.167, 91.175 and 91.177, AC 90-66C, the AIM and NASR's codes, never from the code. Shape and checks as engine/facade/tests/common/cases.rs says; asked by engine/facade/tests/rule_cases.rs.",
+  "cases": [
+    {
+      "name": "VREF 90.9: category A",
+      "rule": "approach_category",
+      "input": {
+        "vref_kt": 90.9,
+        "vso_kt": null
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "A"
+        }
+      ],
+      "source": "14 CFR 97.3, aircraft approach category: by VREF, or where none is specified 1.3 VSO at the maximum certificated landing weight; \"Category A: Speed less than 91 knots. Category B: Speed 91 knots or more but less than 121 knots. Category C: Speed 121 knots or more but less than 141 knots. Category D: Speed 141 knots or more but less than 166 knots. Category E: Speed 166 knots or more.\""
+    },
+    {
+      "name": "VREF 91: category B",
+      "rule": "approach_category",
+      "input": {
+        "vref_kt": 91,
+        "vso_kt": null
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "B"
+        }
+      ],
+      "source": "14 CFR 97.3, aircraft approach category: by VREF, or where none is specified 1.3 VSO at the maximum certificated landing weight; \"Category A: Speed less than 91 knots. Category B: Speed 91 knots or more but less than 121 knots. Category C: Speed 121 knots or more but less than 141 knots. Category D: Speed 141 knots or more but less than 166 knots. Category E: Speed 166 knots or more.\""
+    },
+    {
+      "name": "VREF 120.9: category B",
+      "rule": "approach_category",
+      "input": {
+        "vref_kt": 120.9,
+        "vso_kt": null
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "B"
+        }
+      ],
+      "source": "14 CFR 97.3, aircraft approach category: by VREF, or where none is specified 1.3 VSO at the maximum certificated landing weight; \"Category A: Speed less than 91 knots. Category B: Speed 91 knots or more but less than 121 knots. Category C: Speed 121 knots or more but less than 141 knots. Category D: Speed 141 knots or more but less than 166 knots. Category E: Speed 166 knots or more.\""
+    },
+    {
+      "name": "VREF 121: category C",
+      "rule": "approach_category",
+      "input": {
+        "vref_kt": 121,
+        "vso_kt": null
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "C"
+        }
+      ],
+      "source": "14 CFR 97.3, aircraft approach category: by VREF, or where none is specified 1.3 VSO at the maximum certificated landing weight; \"Category A: Speed less than 91 knots. Category B: Speed 91 knots or more but less than 121 knots. Category C: Speed 121 knots or more but less than 141 knots. Category D: Speed 141 knots or more but less than 166 knots. Category E: Speed 166 knots or more.\""
+    },
+    {
+      "name": "VREF 140.9: category C",
+      "rule": "approach_category",
+      "input": {
+        "vref_kt": 140.9,
+        "vso_kt": null
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "C"
+        }
+      ],
+      "source": "14 CFR 97.3, aircraft approach category: by VREF, or where none is specified 1.3 VSO at the maximum certificated landing weight; \"Category A: Speed less than 91 knots. Category B: Speed 91 knots or more but less than 121 knots. Category C: Speed 121 knots or more but less than 141 knots. Category D: Speed 141 knots or more but less than 166 knots. Category E: Speed 166 knots or more.\""
+    },
+    {
+      "name": "VREF 141: category D",
+      "rule": "approach_category",
+      "input": {
+        "vref_kt": 141,
+        "vso_kt": null
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "D"
+        }
+      ],
+      "source": "14 CFR 97.3, aircraft approach category: by VREF, or where none is specified 1.3 VSO at the maximum certificated landing weight; \"Category A: Speed less than 91 knots. Category B: Speed 91 knots or more but less than 121 knots. Category C: Speed 121 knots or more but less than 141 knots. Category D: Speed 141 knots or more but less than 166 knots. Category E: Speed 166 knots or more.\""
+    },
+    {
+      "name": "VREF 165.9: category D",
+      "rule": "approach_category",
+      "input": {
+        "vref_kt": 165.9,
+        "vso_kt": null
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "D"
+        }
+      ],
+      "source": "14 CFR 97.3, aircraft approach category: by VREF, or where none is specified 1.3 VSO at the maximum certificated landing weight; \"Category A: Speed less than 91 knots. Category B: Speed 91 knots or more but less than 121 knots. Category C: Speed 121 knots or more but less than 141 knots. Category D: Speed 141 knots or more but less than 166 knots. Category E: Speed 166 knots or more.\""
+    },
+    {
+      "name": "VREF 166: category E",
+      "rule": "approach_category",
+      "input": {
+        "vref_kt": 166,
+        "vso_kt": null
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "E"
+        }
+      ],
+      "source": "14 CFR 97.3, aircraft approach category: by VREF, or where none is specified 1.3 VSO at the maximum certificated landing weight; \"Category A: Speed less than 91 knots. Category B: Speed 91 knots or more but less than 121 knots. Category C: Speed 121 knots or more but less than 141 knots. Category D: Speed 141 knots or more but less than 166 knots. Category E: Speed 166 knots or more.\""
+    },
+    {
+      "name": "VSO 70 (1.3 x 70 = 91.00): category B",
+      "rule": "approach_category",
+      "input": {
+        "vref_kt": null,
+        "vso_kt": 70
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "B"
+        }
+      ],
+      "source": "14 CFR 97.3, aircraft approach category: by VREF, or where none is specified 1.3 VSO at the maximum certificated landing weight; \"Category A: Speed less than 91 knots. Category B: Speed 91 knots or more but less than 121 knots. Category C: Speed 121 knots or more but less than 141 knots. Category D: Speed 141 knots or more but less than 166 knots. Category E: Speed 166 knots or more.\""
+    },
+    {
+      "name": "VSO 69.9 (1.3 x 69.9 = 90.87): category A",
+      "rule": "approach_category",
+      "input": {
+        "vref_kt": null,
+        "vso_kt": 69.9
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "A"
+        }
+      ],
+      "source": "14 CFR 97.3, aircraft approach category: by VREF, or where none is specified 1.3 VSO at the maximum certificated landing weight; \"Category A: Speed less than 91 knots. Category B: Speed 91 knots or more but less than 121 knots. Category C: Speed 121 knots or more but less than 141 knots. Category D: Speed 141 knots or more but less than 166 knots. Category E: Speed 166 knots or more.\""
+    },
+    {
+      "name": "VREF 85, VSO 70 set aside: category A",
+      "rule": "approach_category",
+      "input": {
+        "vref_kt": 85,
+        "vso_kt": 70
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "A"
+        }
+      ],
+      "source": "14 CFR 97.3, aircraft approach category: by VREF, or where none is specified 1.3 VSO at the maximum certificated landing weight; \"Category A: Speed less than 91 knots. Category B: Speed 91 knots or more but less than 121 knots. Category C: Speed 121 knots or more but less than 141 knots. Category D: Speed 141 knots or more but less than 166 knots. Category E: Speed 166 knots or more.\""
+    },
+    {
+      "name": "Neither speed known: no category",
+      "rule": "approach_category",
+      "input": {
+        "vref_kt": null,
+        "vso_kt": null
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": null
+        }
+      ],
+      "source": "14 CFR 97.3, aircraft approach category: by VREF, or where none is specified 1.3 VSO at the maximum certificated landing weight; \"Category A: Speed less than 91 knots. Category B: Speed 91 knots or more but less than 121 knots. Category C: Speed 121 knots or more but less than 141 knots. Category D: Speed 141 knots or more but less than 166 knots. Category E: Speed 166 knots or more.\""
+    },
+    {
+      "name": "A missed approach down to 787 ft against 700 ft minimums: at or above them",
+      "rule": "approach_minimums",
+      "input": {
+        "findings": [],
+        "lowest_ft": 787,
+        "outcome": "missed",
+        "minimums_ft": 700
+      },
+      "expect": [
+        {
+          "path": "0.minimums",
+          "equals": true
+        },
+        {
+          "path": "0.tone",
+          "equals": "ok"
+        }
+      ],
+      "source": "14 CFR 91.175(c): no one may operate below the authorized MDA or continue an approach below the authorized DA/DH unless the runway environment is in sight; the pilot's own minimums are the pilot's."
+    },
+    {
+      "name": "Down to the 700 ft minimums exactly: at them, not under",
+      "rule": "approach_minimums",
+      "input": {
+        "findings": [],
+        "lowest_ft": 700,
+        "outcome": "missed",
+        "minimums_ft": 700
+      },
+      "expect": [
+        {
+          "path": "0.minimums",
+          "equals": true
+        },
+        {
+          "path": "0.tone",
+          "equals": "ok"
+        }
+      ],
+      "source": "14 CFR 91.175(c): no one may operate below the authorized MDA or continue an approach below the authorized DA/DH unless the runway environment is in sight; the pilot's own minimums are the pilot's. At the DA or MDA is not below it."
+    },
+    {
+      "name": "A missed approach down to 650 ft against 700 ft minimums: under them, a stop",
+      "rule": "approach_minimums",
+      "input": {
+        "findings": [],
+        "lowest_ft": 650,
+        "outcome": "missed",
+        "minimums_ft": 700
+      },
+      "expect": [
+        {
+          "path": "0.minimums",
+          "equals": true
+        },
+        {
+          "path": "0.tone",
+          "equals": "stop"
+        }
+      ],
+      "source": "14 CFR 91.175(c): no one may operate below the authorized MDA or continue an approach below the authorized DA/DH unless the runway environment is in sight; the pilot's own minimums are the pilot's."
+    },
+    {
+      "name": "Below the minimums to land: what 91.175(c) allows with the runway in sight",
+      "rule": "approach_minimums",
+      "input": {
+        "findings": [],
+        "lowest_ft": 0,
+        "outcome": "landed",
+        "minimums_ft": 1000
+      },
+      "expect": [
+        {
+          "path": "0.minimums",
+          "equals": true
+        },
+        {
+          "path": "0.tone",
+          "equals": "info"
+        },
+        {
+          "path": "0.text",
+          "contains": "91.175(c)"
+        }
+      ],
+      "source": "14 CFR 91.175(c): no one may operate below the authorized MDA or continue an approach below the authorized DA/DH unless the runway environment is in sight; the pilot's own minimums are the pilot's."
+    },
+    {
+      "name": "5,000 ft, a field 5 nm off at 600 ft, 9 to 1: 5.04 nm of glide, within",
+      "rule": "glide_reaches",
+      "input": {
+        "altitude_ft": 5000,
+        "speed_kt": 100,
+        "distance_nm": 5.0,
+        "elevation_ft": 600,
+        "glide_ratio": 9
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": true
+        }
+      ],
+      "source": "AC 90-66C (2023) Appendix A: the traffic pattern altitude is usually 1,000 ft above the airport's elevation; a glide is arriving there, so the height to spare is the altitude less the field's elevation and 1,000 ft, flown at the airplane's glide ratio (FAA-H-8083-3C ch. 18, best glide). A nautical mile is 6,076.12 ft."
+    },
+    {
+      "name": "5,000 ft, a field 6 nm off at 600 ft, 9 to 1: 5.04 nm of glide, beyond",
+      "rule": "glide_reaches",
+      "input": {
+        "altitude_ft": 5000,
+        "speed_kt": 100,
+        "distance_nm": 6.0,
+        "elevation_ft": 600,
+        "glide_ratio": 9
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": false
+        }
+      ],
+      "source": "AC 90-66C (2023) Appendix A: the traffic pattern altitude is usually 1,000 ft above the airport's elevation; a glide is arriving there, so the height to spare is the altitude less the field's elevation and 1,000 ft, flown at the airplane's glide ratio (FAA-H-8083-3C ch. 18, best glide). A nautical mile is 6,076.12 ft."
+    },
+    {
+      "name": "5,000 ft, a field 2 nm off at 2,500 ft, 9 to 1: 2.22 nm of glide, within",
+      "rule": "glide_reaches",
+      "input": {
+        "altitude_ft": 5000,
+        "speed_kt": 100,
+        "distance_nm": 2.0,
+        "elevation_ft": 2500,
+        "glide_ratio": 9
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": true
+        }
+      ],
+      "source": "AC 90-66C (2023) Appendix A: the traffic pattern altitude is usually 1,000 ft above the airport's elevation; a glide is arriving there, so the height to spare is the altitude less the field's elevation and 1,000 ft, flown at the airplane's glide ratio (FAA-H-8083-3C ch. 18, best glide). A nautical mile is 6,076.12 ft."
+    },
+    {
+      "name": "5,000 ft, a field 3 nm off at 2,500 ft, 9 to 1: 2.22 nm of glide, beyond",
+      "rule": "glide_reaches",
+      "input": {
+        "altitude_ft": 5000,
+        "speed_kt": 100,
+        "distance_nm": 3.0,
+        "elevation_ft": 2500,
+        "glide_ratio": 9
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": false
+        }
+      ],
+      "source": "AC 90-66C (2023) Appendix A: the traffic pattern altitude is usually 1,000 ft above the airport's elevation; a glide is arriving there, so the height to spare is the altitude less the field's elevation and 1,000 ft, flown at the airplane's glide ratio (FAA-H-8083-3C ch. 18, best glide). A nautical mile is 6,076.12 ft."
+    },
+    {
+      "name": "No glide ratio: nothing judged within a glide",
+      "rule": "glide_reaches",
+      "input": {
+        "altitude_ft": 5000,
+        "speed_kt": 100,
+        "distance_nm": 1,
+        "elevation_ft": 600
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": false
+        }
+      ],
+      "source": "AC 90-66C (2023) Appendix A: the traffic pattern altitude is usually 1,000 ft above the airport's elevation; a glide is arriving there, so the height to spare is the altitude less the field's elevation and 1,000 ft, flown at the airplane's glide ratio (FAA-H-8083-3C ch. 18, best glide). A nautical mile is 6,076.12 ft. With no airplane's ratio no glide is assumed (the owner's rule, no assumed airplane)."
+    },
+    {
+      "name": "Squawk 7500",
+      "rule": "squawk_meaning",
+      "input": {
+        "squawk": "7500"
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "hijack"
+        }
+      ],
+      "source": "AIM 6-2-2: Code 7700, emergency; AIM 6-3-4 (Special Emergency, Air Piracy): Code 7500; AIM 6-4-2: \"the pilot should adjust the transponder to reply on Mode A/3, Code 7600\" for two-way radio failure. Other codes say nothing more."
+    },
+    {
+      "name": "Squawk 7600",
+      "rule": "squawk_meaning",
+      "input": {
+        "squawk": "7600"
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "lost radio"
+        }
+      ],
+      "source": "AIM 6-2-2: Code 7700, emergency; AIM 6-3-4 (Special Emergency, Air Piracy): Code 7500; AIM 6-4-2: \"the pilot should adjust the transponder to reply on Mode A/3, Code 7600\" for two-way radio failure. Other codes say nothing more."
+    },
+    {
+      "name": "Squawk 7700",
+      "rule": "squawk_meaning",
+      "input": {
+        "squawk": "7700"
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "emergency"
+        }
+      ],
+      "source": "AIM 6-2-2: Code 7700, emergency; AIM 6-3-4 (Special Emergency, Air Piracy): Code 7500; AIM 6-4-2: \"the pilot should adjust the transponder to reply on Mode A/3, Code 7600\" for two-way radio failure. Other codes say nothing more."
+    },
+    {
+      "name": "Squawk 7777",
+      "rule": "squawk_meaning",
+      "input": {
+        "squawk": "7777"
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": null
+        }
+      ],
+      "source": "AIM 6-2-2: Code 7700, emergency; AIM 6-3-4 (Special Emergency, Air Piracy): Code 7500; AIM 6-4-2: \"the pilot should adjust the transponder to reply on Mode A/3, Code 7600\" for two-way radio failure. Other codes say nothing more."
+    },
+    {
+      "name": "Squawk 1200",
+      "rule": "squawk_meaning",
+      "input": {
+        "squawk": "1200"
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": null
+        }
+      ],
+      "source": "AIM 6-2-2: Code 7700, emergency; AIM 6-3-4 (Special Emergency, Air Piracy): Code 7500; AIM 6-4-2: \"the pilot should adjust the transponder to reply on Mode A/3, Code 7600\" for two-way radio failure. Other codes say nothing more."
+    },
+    {
+      "name": "Owned MA, use PU: joint",
+      "rule": "field_military",
+      "input": {
+        "ownership": "MA",
+        "use": "PU"
+      },
+      "expect": [
+        {
+          "path": "military",
+          "equals": "joint"
+        }
+      ],
+      "source": "NASR APT_BASE.csv OWNERSHIP_TYPE_CODE: MA Air Force, MN Navy, MR Army, CG Coast Guard owned; FACILITY_USE_CODE PU public use, PR private: an armed service's field open to the public is joint use (AIM 4-1-1's \"joint-use\")."
+    },
+    {
+      "name": "Owned MA, use PR: military",
+      "rule": "field_military",
+      "input": {
+        "ownership": "MA",
+        "use": "PR"
+      },
+      "expect": [
+        {
+          "path": "military",
+          "equals": "military"
+        }
+      ],
+      "source": "NASR APT_BASE.csv OWNERSHIP_TYPE_CODE: MA Air Force, MN Navy, MR Army, CG Coast Guard owned; FACILITY_USE_CODE PU public use, PR private: an armed service's field open to the public is joint use (AIM 4-1-1's \"joint-use\")."
+    },
+    {
+      "name": "Owned MN, use None: military",
+      "rule": "field_military",
+      "input": {
+        "ownership": "MN",
+        "use": null
+      },
+      "expect": [
+        {
+          "path": "military",
+          "equals": "military"
+        }
+      ],
+      "source": "NASR APT_BASE.csv OWNERSHIP_TYPE_CODE: MA Air Force, MN Navy, MR Army, CG Coast Guard owned; FACILITY_USE_CODE PU public use, PR private: an armed service's field open to the public is joint use (AIM 4-1-1's \"joint-use\")."
+    },
+    {
+      "name": "Owned CG, use PU: joint",
+      "rule": "field_military",
+      "input": {
+        "ownership": "CG",
+        "use": "PU"
+      },
+      "expect": [
+        {
+          "path": "military",
+          "equals": "joint"
+        }
+      ],
+      "source": "NASR APT_BASE.csv OWNERSHIP_TYPE_CODE: MA Air Force, MN Navy, MR Army, CG Coast Guard owned; FACILITY_USE_CODE PU public use, PR private: an armed service's field open to the public is joint use (AIM 4-1-1's \"joint-use\")."
+    },
+    {
+      "name": "Owned PU, use PU: None",
+      "rule": "field_military",
+      "input": {
+        "ownership": "PU",
+        "use": "PU"
+      },
+      "expect": [
+        {
+          "path": "military",
+          "equals": null
+        }
+      ],
+      "source": "NASR APT_BASE.csv OWNERSHIP_TYPE_CODE: MA Air Force, MN Navy, MR Army, CG Coast Guard owned; FACILITY_USE_CODE PU public use, PR private: an armed service's field open to the public is joint use (AIM 4-1-1's \"joint-use\")."
+    },
+    {
+      "name": "The tanks walked: 40 gal less 1.4 taxi and each leg's burn; filled at the stop; under a 6 gal reserve, low",
+      "rule": "fuel_in_tanks",
+      "input": {
+        "usable_gal": 40.0,
+        "taxi_gal": 1.4,
+        "reserves_gal": [6.0],
+        "points": [
+          {
+            "departure": true
+          },
+          {
+            "fuel_gal": 10.0
+          },
+          {
+            "fuel_gal": 20.0,
+            "refuel": true
+          },
+          {
+            "fuel_gal": 34.0
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "0.gal",
+          "value": 40,
+          "tolerance": 1e-09
+        },
+        {
+          "path": "1.gal",
+          "value": 28.6,
+          "tolerance": 1e-09
+        },
+        {
+          "path": "2.gal",
+          "value": 8.6,
+          "tolerance": 1e-09
+        },
+        {
+          "path": "2.low",
+          "equals": false
+        },
+        {
+          "path": "3.gal",
+          "value": 4.6,
+          "tolerance": 1e-09
+        },
+        {
+          "path": "3.low",
+          "equals": true
+        }
+      ],
+      "source": "14 CFR 91.151(a): enough fuel to fly to the first point of intended landing and after that, at normal cruise, 30 minutes by day (a)(1), 45 at night (a)(2); 91.167(a)(2) and (3) under IFR: on to the alternate and 45 minutes. 40 - 1.4 - 10 = 28.6; less 20, 8.6; full again, less 1.4 and 34, 4.6."
+    },
+    {
+      "name": "A day flight after a night one is held to its own 30 minutes",
+      "rule": "fuel_in_tanks",
+      "input": {
+        "usable_gal": 40.0,
+        "taxi_gal": 1.4,
+        "reserves_gal": [7.5, 5.0],
+        "points": [
+          {
+            "departure": true
+          },
+          {
+            "fuel_gal": 20.0,
+            "refuel": true
+          },
+          {
+            "fuel_gal": 32.0
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "2.gal",
+          "value": 6.6,
+          "tolerance": 1e-09
+        },
+        {
+          "path": "2.low",
+          "equals": false
+        }
+      ],
+      "source": "14 CFR 91.151(a): enough fuel to fly to the first point of intended landing and after that, at normal cruise, 30 minutes by day (a)(1), 45 at night (a)(2); 91.167(a)(2) and (3) under IFR: on to the alternate and 45 minutes. At 10 gph: 45 minutes 7.5 gal, 30 minutes 5; 6.6 is over 5."
+    },
+    {
+      "name": "Under IFR the landing is held to the fuel on to the alternate too",
+      "rule": "fuel_in_tanks",
+      "input": {
+        "usable_gal": 40.0,
+        "taxi_gal": 1.4,
+        "reserves_gal": [7.5, 5.0],
+        "alternate_gal": 2.0,
+        "points": [
+          {
+            "departure": true
+          },
+          {
+            "fuel_gal": 20.0,
+            "refuel": true
+          },
+          {
+            "fuel_gal": 32.0
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "2.low",
+          "equals": true
+        }
+      ],
+      "source": "14 CFR 91.151(a): enough fuel to fly to the first point of intended landing and after that, at normal cruise, 30 minutes by day (a)(1), 45 at night (a)(2); 91.167(a)(2) and (3) under IFR: on to the alternate and 45 minutes. 6.6 gal is under 5 and 2 more."
+    },
+    {
+      "name": "A leg with no burn known: nothing known after it",
+      "rule": "fuel_in_tanks",
+      "input": {
+        "usable_gal": 40.0,
+        "taxi_gal": 1.4,
+        "reserves_gal": [6.0],
+        "points": [
+          {
+            "departure": true
+          },
+          {
+            "fuel_gal": null
+          },
+          {
+            "fuel_gal": 1.0
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "1",
+          "equals": null
+        },
+        {
+          "path": "2",
+          "equals": null
+        }
+      ],
+      "source": "14 CFR 91.103: a figure not known is not made up; the tanks after it are not known either."
+    },
+    {
+      "name": "With a stop, the strip's fuel is the first flight's; the second is 3.5 gal short",
+      "rule": "strip_fuel",
+      "input": {
+        "fuel_required_gal": 50.0,
+        "fuel_margin_gal": -3.5,
+        "hops": [
+          {
+            "departure": "C81",
+            "destination": "KMSN",
+            "fuel_required_gal": 20.4,
+            "fuel_margin_gal": 12.0
+          },
+          {
+            "departure": "KMSN",
+            "destination": "KDLH",
+            "fuel_required_gal": 29.6,
+            "fuel_margin_gal": -3.5
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "required_gal",
+          "value": 20.4,
+          "tolerance": 1e-09
+        },
+        {
+          "path": "short",
+          "length": 1
+        },
+        {
+          "path": "short.0.hop",
+          "equals": 1
+        },
+        {
+          "path": "short.0.short_gal",
+          "value": 3.5,
+          "tolerance": 1e-09
+        }
+      ],
+      "source": "14 CFR 91.151(a): enough fuel to fly to the first point of intended landing and after that, at normal cruise, 30 minutes by day (a)(1), 45 at night (a)(2); 91.167(a)(2) and (3) under IFR: on to the alternate and 45 minutes. Each flight from a fill to a landing needs its own fuel and reserve; the tanks are filled at the stop."
+    },
+    {
+      "name": "Flying the second flight with 10 gal burnt: 19.6 to go",
+      "rule": "strip_fuel",
+      "input": {
+        "fuel_required_gal": 50.0,
+        "fuel_margin_gal": -3.5,
+        "hops": [
+          {
+            "departure": "C81",
+            "destination": "KMSN",
+            "fuel_required_gal": 20.4,
+            "fuel_margin_gal": 12.0
+          },
+          {
+            "departure": "KMSN",
+            "destination": "KDLH",
+            "fuel_required_gal": 29.6,
+            "fuel_margin_gal": -3.5
+          }
+        ],
+        "hop": 1,
+        "burnt_gal": 10.0
+      },
+      "expect": [
+        {
+          "path": "required_gal",
+          "value": 19.6,
+          "tolerance": 1e-09
+        }
+      ],
+      "source": "14 CFR 91.151(a): enough fuel to fly to the first point of intended landing and after that, at normal cruise, 30 minutes by day (a)(1), 45 at night (a)(2); 91.167(a)(2) and (3) under IFR: on to the alternate and 45 minutes."
+    },
+    {
+      "name": "Never below nothing",
+      "rule": "strip_fuel",
+      "input": {
+        "fuel_required_gal": 50.0,
+        "fuel_margin_gal": -3.5,
+        "hops": [
+          {
+            "departure": "C81",
+            "destination": "KMSN",
+            "fuel_required_gal": 20.4,
+            "fuel_margin_gal": 12.0
+          },
+          {
+            "departure": "KMSN",
+            "destination": "KDLH",
+            "fuel_required_gal": 29.6,
+            "fuel_margin_gal": -3.5
+          }
+        ],
+        "hop": 1,
+        "burnt_gal": 40.0
+      },
+      "expect": [
+        {
+          "path": "required_gal",
+          "value": 0,
+          "tolerance": 0
+        }
+      ],
+      "source": "14 CFR 91.151(a): enough fuel to fly to the first point of intended landing and after that, at normal cruise, 30 minutes by day (a)(1), 45 at night (a)(2); 91.167(a)(2) and (3) under IFR: on to the alternate and 45 minutes."
+    },
+    {
+      "name": "The highest floor of the pieces, with the lowest ground of all",
+      "rule": "floor_along_path",
+      "input": {
+        "floors": [
+          {
+            "floor_ft": 3000,
+            "lowest_ground_ft": 1200
+          },
+          {
+            "floor_ft": 3500,
+            "lowest_ground_ft": 900
+          },
+          {
+            "floor_ft": 2500,
+            "lowest_ground_ft": 600
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "floor_ft",
+          "value": 3500,
+          "tolerance": 0
+        },
+        {
+          "path": "lowest_ground_ft",
+          "value": 600,
+          "tolerance": 0
+        }
+      ],
+      "source": "14 CFR 91.119 (VFR) and 91.177(a)(2) (IFR): the floor holds over all the ground the airplane flies, so along a path of several pieces the highest floor of any of them holds."
+    },
+    {
+      "name": "IFR's floors, no ground",
+      "rule": "floor_along_path",
+      "input": {
+        "floors": [
+          {
+            "floor_ft": 4000
+          },
+          {
+            "floor_ft": 5000
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "floor_ft",
+          "value": 5000,
+          "tolerance": 0
+        }
+      ],
+      "source": "14 CFR 91.119 (VFR) and 91.177(a)(2) (IFR): the floor holds over all the ground the airplane flies, so along a path of several pieces the highest floor of any of them holds."
+    },
+    {
+      "name": "3,500 ft with a 3,200 ft obstacle: 300 ft, red",
+      "rule": "profile_clearance",
+      "input": {
+        "altitude_ft": 3500,
+        "along_nm": [0, 10, 20],
+        "ground_ft": [900, 3000, 1200],
+        "obstacles": [
+          {
+            "along_nm": 15,
+            "amsl_ft": 3200
+          }
+        ],
+        "points": [
+          {
+            "ident": "KAAA",
+            "along_nm": 0
+          },
+          {
+            "ident": "KXYZ",
+            "along_nm": 20
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "red_from_ft",
+          "value": 3000,
+          "tolerance": 0
+        },
+        {
+          "path": "yellow_from_ft",
+          "value": 2500,
+          "tolerance": 0
+        },
+        {
+          "path": "least_ft",
+          "value": 300,
+          "tolerance": 0
+        },
+        {
+          "path": "level",
+          "equals": "red"
+        },
+        {
+          "path": "obstacle",
+          "equals": true
+        }
+      ],
+      "source": "14 CFR 91.119(c): \"An altitude of 500 feet above the surface ... the aircraft may not be operated closer than 500 feet to any person, vessel, vehicle, or structure\"; 91.119(b): 1,000 ft above the highest obstacle over a congested area. Red under 500 ft of clearance, yellow under 1,000, exactly 500 meets the rule."
+    },
+    {
+      "name": "3,500 ft over 3,000 ft of ground: exactly 500, yellow",
+      "rule": "profile_clearance",
+      "input": {
+        "altitude_ft": 3500,
+        "along_nm": [0, 10, 20],
+        "ground_ft": [900, 3000, 1200],
+        "obstacles": [],
+        "points": [
+          {
+            "ident": "KAAA",
+            "along_nm": 0
+          },
+          {
+            "ident": "KXYZ",
+            "along_nm": 20
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "least_ft",
+          "value": 500,
+          "tolerance": 0
+        },
+        {
+          "path": "level",
+          "equals": "yellow"
+        }
+      ],
+      "source": "14 CFR 91.119(c): \"An altitude of 500 feet above the surface ... the aircraft may not be operated closer than 500 feet to any person, vessel, vehicle, or structure\"; 91.119(b): 1,000 ft above the highest obstacle over a congested area. Red under 500 ft of clearance, yellow under 1,000, exactly 500 meets the rule."
+    },
+    {
+      "name": "3,500 ft over 2,400 ft at most: 1,100, clear",
+      "rule": "profile_clearance",
+      "input": {
+        "altitude_ft": 3500,
+        "along_nm": [0, 10, 20],
+        "ground_ft": [900, 2400, 1200],
+        "obstacles": [],
+        "points": [
+          {
+            "ident": "KAAA",
+            "along_nm": 0
+          },
+          {
+            "ident": "KXYZ",
+            "along_nm": 20
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "least_ft",
+          "value": 1100,
+          "tolerance": 0
+        },
+        {
+          "path": "level",
+          "equals": "clear"
+        }
+      ],
+      "source": "14 CFR 91.119(c): \"An altitude of 500 feet above the surface ... the aircraft may not be operated closer than 500 feet to any person, vessel, vehicle, or structure\"; 91.119(b): 1,000 ft above the highest obstacle over a congested area. Red under 500 ft of clearance, yellow under 1,000, exactly 500 meets the rule."
+    },
+    {
+      "name": "Crossing 4,500 ft at 40 nm from 6,500: the descent begins 6 nm before",
+      "rule": "altitude_change",
+      "input": {
+        "profile": null,
+        "along_nm": 40,
+        "from_ft": 6500,
+        "to_ft": 4500,
+        "mode": "cross_at"
+      },
+      "expect": [
+        {
+          "path": "kind",
+          "equals": "descent"
+        },
+        {
+          "path": "begins_nm",
+          "value": 34,
+          "tolerance": 0.05
+        },
+        {
+          "path": "ends_nm",
+          "value": 40,
+          "tolerance": 1e-09
+        },
+        {
+          "path": "ft_per_nm",
+          "value": 333.3333333333333,
+          "tolerance": 0.5
+        }
+      ],
+      "source": "The nav log's descent at three to one, three nautical miles for each 1,000 ft (about a 3 degree path, AIM 2-1-2's approach slope; FAA-H-8083-15B ch. 10 plans descents the same way), so 2,000 ft takes 6 nm."
+    },
+    {
+      "name": "Starting down at 40 nm from 6,500 to 4,500: done 6 nm on",
+      "rule": "altitude_change",
+      "input": {
+        "profile": null,
+        "along_nm": 40,
+        "from_ft": 6500,
+        "to_ft": 4500,
+        "mode": "start_at"
+      },
+      "expect": [
+        {
+          "path": "begins_nm",
+          "value": 40,
+          "tolerance": 1e-09
+        },
+        {
+          "path": "ends_nm",
+          "value": 46,
+          "tolerance": 0.05
+        }
+      ],
+      "source": "The nav log's descent at three to one, three nautical miles for each 1,000 ft (about a 3 degree path, AIM 2-1-2's approach slope; FAA-H-8083-15B ch. 10 plans descents the same way), so 2,000 ft takes 6 nm."
+    },
+    {
+      "name": "The wheel's rows: 1,000 to 17,500 ft by 500, highest first",
+      "rule": "altitude_advisor",
+      "input": {
+        "figures": [
+          {
+            "altitude_ft": 4500,
+            "ete_min": 60,
+            "fuel_gal": 9,
+            "tailwind_kt": -5,
+            "everywhere": true
+          },
+          {
+            "altitude_ft": 6500,
+            "ete_min": 55,
+            "fuel_gal": 9.5,
+            "tailwind_kt": 8,
+            "everywhere": false
+          }
+        ],
+        "flown_ft": 4500,
+        "plans": [
+          {
+            "kind": "fastest",
+            "altitude_ft": 6500
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "",
+          "length": 34
+        },
+        {
+          "path": "0.altitude_ft",
+          "value": 17500,
+          "tolerance": 0
+        },
+        {
+          "path": "33.altitude_ft",
+          "value": 1000,
+          "tolerance": 0
+        }
+      ],
+      "source": "The Altitude Advisor's wheel: every 500 ft from 1,000 ft up to 17,500 ft, the last under Class A, which begins at 18,000 ft MSL (14 CFR 71.33, 91.135). Highest first."
+    }
+  ]
+}
