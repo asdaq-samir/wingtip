@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Lint's settings for what is not the app's own code. Bouncy Castle's
+     PKIX jar (bcpkix-jdk15to18, a dependency of PdfBox-Android's, which the
+     documents library reads outlines and text with: library/PdfIndex) has
+     its own trust-everything X509TrustManager in its EST client's
+     utilities, which lint finds in the jar's bytecode. The app never makes
+     an EST call or any TLS connection through Bouncy Castle, so the finding
+     is ignored for that jar alone; the app's own code is still checked. -->
+<lint>
+    <issue id="TrustAllX509TrustManager">
+        <ignore regexp="bcpkix-jdk15to18" />
+    </issue>
+</lint>

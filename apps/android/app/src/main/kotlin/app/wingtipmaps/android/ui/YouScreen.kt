@@ -118,7 +118,7 @@ fun YouCard(session: Session, exit: CardExit, open: (SheetPage) -> Unit) {
 
 /** One of You's rows: a round badge, the name, where it stands, a chevron. */
 @Composable
-private fun YouRow(icon: ImageVector, title: String, value: String?, index: Int, count: Int, enabled: Boolean = true, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun YouRow(icon: ImageVector, title: String, value: String?, index: Int, count: Int, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
     ActionSettingRow(
         title, index = index, count = count, enabled = enabled, modifier = modifier,
         leading = {

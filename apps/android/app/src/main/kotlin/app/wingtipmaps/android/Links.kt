@@ -48,7 +48,7 @@ object Links {
      */
     fun parse(url: String?, host: String = Config.host): Link? {
         if (url.isNullOrBlank()) return null
-        val uri = runCatching { URI(url) }.getOrNull() ?: return null
+        val uri = runCatching { URI(withoutBadParts(url)) }.getOrNull() ?: return null
         val query = query(uri.rawQuery)
         val screen = Screen.of(query[Screen.LINK_KEY]?.lowercase())
         if (uri.scheme == Screen.SCHEME) return if (uri.host == Screen.SCHEME_HOST) planner(query, screen) else null
@@ -95,4 +95,18 @@ object Links {
             val value = if (at < 0) "" else part.substring(at + 1)
             runCatching { URLDecoder.decode(name, "UTF-8") to URLDecoder.decode(value, "UTF-8") }.getOrNull()
         }.toMap()
+
+    /** A "%" not followed by two hex digits: java.net.URI refuses the
+     *  whole address over one, where only its part is to be left out. */
+    private val BAD_ESCAPE = Regex("%(?![0-9A-Fa-f]{2})")
+
+    /** The address with each query part whose escapes are bad left out,
+     *  so URI reads the rest (query, below, leaves out what still does
+     *  not decode). */
+    private fun withoutBadParts(url: String): String {
+        val start = url.indexOf('?').takeIf { it >= 0 } ?: return url
+        val end = url.indexOf('#', start).takeIf { it >= 0 } ?: url.length
+        val parts = url.substring(start + 1, end).split("&").filterNot { BAD_ESCAPE.containsMatchIn(it) }
+        return url.substring(0, start + 1) + parts.joinToString("&") + url.substring(end)
+    }
 }

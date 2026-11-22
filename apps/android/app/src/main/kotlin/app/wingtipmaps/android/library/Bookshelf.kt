@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.library
 
+import android.annotation.SuppressLint
 import android.content.Context
 import app.wingtipmaps.android.KeptFile
 import app.wingtipmaps.android.api.Gateway
@@ -92,6 +93,9 @@ class Bookshelf private constructor(private val context: Context) {
         fun grouped(shelf: List<LibraryDocument>): List<Pair<String, List<LibraryDocument>>> =
             shelf.groupBy { it.group }.toList().sortedBy { (g, _) -> GROUPS.indexOf(g).let { if (it < 0) GROUPS.size else it } }
 
+        // The application's context, which lives as long as the process:
+        // no activity is held, so nothing leaks.
+        @SuppressLint("StaticFieldLeak")
         @Volatile
         private var shared: Bookshelf? = null
 

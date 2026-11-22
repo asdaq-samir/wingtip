@@ -31,6 +31,7 @@ import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SectionTitle
+import app.wingtipmaps.android.ui.SpecialVfrGroup
 
 /**
  * What's Here's card (HereModel): where the point is and the ground's
@@ -75,7 +76,8 @@ fun HereCard(lat: Double, lon: Double, model: HereModel = hiltViewModel()) {
 /** One class over the point, as the iPhone's BandRow: "Class C ·
  *  Madison", SFC to 4,700 ft MSL, then its rules a line each: its VFR
  *  minimums (one line where day and night agree), what it takes to go
- *  in, the equipment, the speed limit (14 CFR 91.117). */
+ *  in, the equipment, the speed limit (14 CFR 91.117); then, in a
+ *  surface area, Special VFR there. */
 @Composable
 private fun BandRow(band: AirspaceBand) {
     val floor = if (band.floorFt <= 0.0) "SFC" else Format.altitude(band.floorFt)
@@ -95,6 +97,12 @@ private fun BandRow(band: AirspaceBand) {
             band.speedKt?.takeIf { it > 0 }?.let { stringResource(R.string.band_speed, it) },
         ),
     )
+    // Special VFR where the point is in a B, C or D surface area (14 CFR
+    // 91.157(a)): the planner names the band's primary airport (`ident`)
+    // only for those, and the engine answers for that airport, as the
+    // airspace volume's card does.
+    val airport = band.ident
+    if (band.floorFt <= 0.0 && airport != null) SpecialVfrGroup(band.airspaceClass, airport)
 }
 
 /** "3 sm, 500 ft below, 1,000 ft above, 2,000 ft horizontal", or "1 sm,

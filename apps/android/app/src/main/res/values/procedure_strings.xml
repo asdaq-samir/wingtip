@@ -14,8 +14,8 @@
     <string name="proc_ask_arrival">an arrival</string>
     <string name="proc_ask_departure">a departure</string>
     <string name="proc_none">None</string>
-    <string name="proc_as_published">As published</string>
-    <string name="proc_transition">%1$s transition</string>
+    <string name="proc_as_published">As Published</string>
+    <string name="proc_transition">%1$s Transition</string>
     <string name="proc_back">Back</string>
     <string name="proc_head_said">%1$s at %2$s, %3$s: picks another</string>
     <string name="runway_land">Land RWY %1$s</string>
@@ -27,7 +27,7 @@
     <string name="runway_end">Runway %1$s</string>
     <string name="fix_fly_charted">Fly %1$s as Charted</string>
     <string name="fix_cross_at">Cross at…</string>
-    <string name="fix_cross_title">Cross %1$s at</string>
+    <string name="fix_cross_title">Cross %1$s At</string>
     <string name="fix_cross_hint">The altitude ATC gave you to cross it at, in feet above sea level.</string>
     <string name="fix_cross_feet">Feet</string>
     <string name="fix_as_charted">As Charted</string>

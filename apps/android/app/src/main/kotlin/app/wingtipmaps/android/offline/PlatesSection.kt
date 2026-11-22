@@ -95,7 +95,7 @@ private fun KeptStateRow(kept: KeptState, running: Int?, onRetry: (KeptState) ->
         if (kept.unlisted) ProblemLine(stringResource(R.string.plates_unlisted))
         if (kept.failed > 0) ProblemLine(pluralStringResource(R.plurals.plates_failed, kept.failed, kept.failed))
         if (running == null && (kept.unlisted || kept.failed > 0 || kept.unfinished)) {
-            TextButton(onClick = { onRetry(kept) }) { Text(stringResource(R.string.offline_try_again)) }
+            TextButton(onClick = { onRetry(kept) }) { Text(stringResource(R.string.wording_try_again)) }
         }
         TextButton(onClick = { onDelete(kept) }) { Text(stringResource(R.string.offline_delete)) }
     }

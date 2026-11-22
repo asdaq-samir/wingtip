@@ -16,11 +16,11 @@
     <string name="documents_kept_remove">Kept for the Air: Remove</string>
     <string name="documents_more_for">More for %1$s</string>
     <string name="documents_rename">Rename</string>
-    <string name="documents_name">Document name</string>
+    <string name="documents_name">Document Name</string>
     <string name="documents_deleted">%1$s Deleted</string>
     <string name="reader_fetching">Fetching the document…</string>
     <string name="reader_reading">Reading the document…</string>
-    <string name="reader_search">Search this document</string>
+    <string name="reader_search">Search This Document</string>
     <string name="reader_previous">Previous Match</string>
     <string name="reader_next">Next Match</string>
     <string name="reader_not_found">Not Found</string>
@@ -48,5 +48,5 @@
     <string name="reader_page">Page %1$d</string>
     <string name="reader_page_of">Page %1$d of %2$d</string>
     <string name="reader_rename_bookmark">Rename Bookmark</string>
-    <string name="reader_bookmark_name">Bookmark name</string>
+    <string name="reader_bookmark_name">Bookmark Name</string>
 </resources>

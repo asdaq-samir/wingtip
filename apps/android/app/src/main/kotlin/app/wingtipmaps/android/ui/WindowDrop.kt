@@ -49,16 +49,17 @@ sealed interface Dropped {
 /**
  * The window as a drop target for text and links, from the app's own
  * rows or another app's (a browser's address, a note's words), with the
- * system's own drag shadow and drop.
+ * system's own drag shadow and drop; put on the window with
+ * [windowDrop].
  *
  * @param onDrop what was dropped, read (Dropped.of).
- * @return the modifier that makes what it is put on the target.
+ * @return the target a drop is handed to.
  */
 @Composable
-fun rememberWindowDrop(onDrop: (Dropped) -> Unit): Modifier {
+fun rememberWindowDrop(onDrop: (Dropped) -> Unit): DragAndDropTarget {
     val context = LocalContext.current
     val latest by rememberUpdatedState(onDrop)
-    val target = remember(context) {
+    return remember(context) {
         object : DragAndDropTarget {
             override fun onDrop(event: DragAndDropEvent): Boolean {
                 val clip = event.toAndroidDragEvent().clipData ?: return false
@@ -69,14 +70,17 @@ fun rememberWindowDrop(onDrop: (Dropped) -> Unit): Modifier {
             }
         }
     }
-    // Plain text, a link, a list of addresses: every text/ type.
-    return remember(target) { Modifier.dragAndDropTarget(shouldStartDragAndDrop = { event -> event.mimeTypes().any { it.startsWith("text/") } }, target = target) }
 }
+
+/** What this is put on takes a drop of text for [target]: plain text, a
+ *  link, a list of addresses, every text/ type. */
+fun Modifier.windowDrop(target: DragAndDropTarget): Modifier =
+    dragAndDropTarget(shouldStartDragAndDrop = { event -> event.mimeTypes().any { it.startsWith("text/") } }, target = target)
 
 /** The root's drop: a link opened as one sent to the app is (`onLink`),
  *  words typed into the one search over every card closed. */
 @Composable
-internal fun rememberSheetDrop(pages: SheetNav, search: SearchControl, onLink: (Links.Link) -> Unit): Modifier = rememberWindowDrop { dropped ->
+internal fun rememberSheetDrop(pages: SheetNav, search: SearchControl, onLink: (Links.Link) -> Unit): DragAndDropTarget = rememberWindowDrop { dropped ->
     when (dropped) {
         is Dropped.Link -> onLink(dropped.link)
         is Dropped.Words -> {

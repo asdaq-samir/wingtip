@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +44,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -68,6 +70,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ReaderPage(placeText: String, onClose: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val place = remember(placeText) { DocPlace.parse(placeText) ?: DocPlace(placeText) }
     val app = context.applicationContext as Application
     val model: ReaderModel = viewModel(key = "reader:${place.text}") { ReaderModel(app, place) }
@@ -81,7 +84,9 @@ fun ReaderPage(placeText: String, onClose: () -> Unit) {
     val control = pages?.let { rememberPdfControl(state.startPage, it.count) }
     val list = rememberLazyListState()
     val rows = remember(text) { text?.let(PartRow::of).orEmpty() }
-    val section = rows.getOrNull(list.firstVisibleItemIndex)?.section
+    // The section at the list's top, drawn again only as it changes, not
+    // at every row scrolled.
+    val section by remember(rows, list) { derivedStateOf { rows.getOrNull(list.firstVisibleItemIndex)?.section } }
     val here = if (control != null) Bookmark(page = control.page, label = "") else Bookmark(at = section, label = "")
     val marked = places.bookmarks[place.doc].orEmpty().any { it.page == here.page && it.at == here.at }
     var menu by remember { mutableStateOf(false) }
@@ -98,7 +103,7 @@ fun ReaderPage(placeText: String, onClose: () -> Unit) {
         with(density) { (if (pen == Pen.HIGHLIGHT) WingtipSpace.Lg else WingtipSpace.Xs).toPx() },
     )
     val bookmark = {
-        val label = if (control != null) Finding.titleAt(state.outline, control.page) ?: context.getString(R.string.reader_page, control.page) else rows.firstOrNull { it is PartRow.Heading && it.section == section }?.let { (it as PartRow.Heading).head } ?: section.orEmpty()
+        val label = if (control != null) Finding.titleAt(state.outline, control.page) ?: resources.getString(R.string.reader_page, control.page) else rows.firstOrNull { it is PartRow.Heading && it.section == section }?.let { (it as PartRow.Heading).head } ?: section.orEmpty()
         if (here.page != null || here.at != null) model.memory.toggle(place.doc, here.copy(label = label))
     }
     LaunchedEffect(Unit) { keys.requestFocus() }
@@ -111,7 +116,7 @@ fun ReaderPage(placeText: String, onClose: () -> Unit) {
                 ReaderKey.NEXT_PAGE -> scope.launch { control?.turn(1) }
                 ReaderKey.PREVIOUS_PAGE -> scope.launch { control?.turn(-1) }
                 ReaderKey.FIRST_PAGE -> scope.launch { control?.go(1) }
-                ReaderKey.LAST_PAGE -> scope.launch { control?.go(pages?.count ?: 1) }
+                ReaderKey.LAST_PAGE -> scope.launch { control?.go(pages.count) }
                 ReaderKey.FIND -> find.requestFocus()
                 ReaderKey.NEXT_MATCH -> model.step(1)
                 ReaderKey.PREVIOUS_MATCH -> model.step(-1)

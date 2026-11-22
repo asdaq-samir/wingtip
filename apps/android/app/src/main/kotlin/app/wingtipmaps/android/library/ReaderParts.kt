@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Clear
@@ -25,10 +27,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -44,6 +43,7 @@ import androidx.compose.ui.text.withStyle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.WingtipIcons
+import app.wingtipmaps.android.ui.rememberFieldText
 
 /**
  * The search of the document under the reader's bar, as the web's: its
@@ -54,9 +54,8 @@ import app.wingtipmaps.android.ui.WingtipIcons
 internal fun ReaderSearch(state: ReaderModel.State, focus: FocusRequester, onQuery: (String) -> Unit, onStep: (Int) -> Unit, onFocus: (Boolean) -> Unit) {
     val found = state.hits.size
     OutlinedTextField(
-        value = state.query,
-        onValueChange = onQuery,
-        singleLine = true,
+        state = rememberFieldText(state.query, onQuery),
+        lineLimits = TextFieldLineLimits.SingleLine,
         placeholder = { Text(stringResource(R.string.reader_search)) },
         leadingIcon = { Icon(WingtipIcons.search, contentDescription = null) },
         trailingIcon = {
@@ -123,12 +122,12 @@ internal fun MarkupBar(pen: Pen, onPen: (Pen) -> Unit, onUndo: () -> Unit, onCle
  *  Material's dialog with Save, and Delete Highlight to take it off. */
 @Composable
 internal fun NoteDialog(mark: Mark, onSave: (String) -> Unit, onDelete: () -> Unit, onDismiss: () -> Unit) {
-    var text by remember(mark.id) { mutableStateOf(mark.note.orEmpty()) }
+    val field = remember(mark.id) { TextFieldState(mark.note.orEmpty()) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(if (mark.note == null) R.string.reader_note_add else R.string.reader_note)) },
-        text = { OutlinedTextField(text, { text = it }, label = { Text(stringResource(R.string.reader_note)) }, minLines = 2) },
-        confirmButton = { TextButton(onClick = { onSave(text) }) { Text(stringResource(R.string.save)) } },
+        text = { OutlinedTextField(state = field, label = { Text(stringResource(R.string.reader_note)) }, lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 2)) },
+        confirmButton = { TextButton(onClick = { onSave(field.text.toString()) }) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(onClick = onDelete) { Text(stringResource(R.string.reader_note_delete), color = MaterialTheme.colorScheme.error) } },
     )
 }

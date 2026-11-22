@@ -3,18 +3,14 @@ package app.wingtipmaps.android.flight
 import android.content.Context
 import android.location.Location
 import androidx.core.location.LocationCompat
-import androidx.core.location.altitude.AltitudeConverterCompat
 import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.receiverPosition
 import app.wingtipmaps.android.format.Units
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.withContext
 
 /**
  * Whose position own ship is: the device's (the fused provider) or the
@@ -102,8 +98,7 @@ class OwnShipSource(private val context: Context) {
 
     /** The receiver's fix as own ship's. Its height is the GPS's MSL where
      *  the receiver gives one; above the ellipsoid it is put on the geoid
-     *  as the device's own fixes are (AltitudeConverterCompat, OwnShip's
-     *  callback), else none rather than a height 30 to 115 ft out. */
+     *  as the device's own fixes are (DeviceFix.converted), else none rather than a height 30 to 115 ft out. */
     private suspend fun fixOf(f: EngineContract.ReceiverPositionAnswerFix): OwnShip.Fix {
         val altitude = f.altitudeFt ?: f.ellipsoidFt?.let { mslOf(f.lat, f.lon, it) }
         return OwnShip.Fix(
@@ -112,19 +107,13 @@ class OwnShipSource(private val context: Context) {
         )
     }
 
-    private suspend fun mslOf(lat: Double, lon: Double, ellipsoidFt: Double): Double? = withContext(Dispatchers.Default) {
+    private suspend fun mslOf(lat: Double, lon: Double, ellipsoidFt: Double): Double? {
         val at = Location("receiver").apply {
             latitude = lat
             longitude = lon
             altitude = ellipsoidFt / Units.FT_PER_M
         }
-        try {
-            AltitudeConverterCompat.addMslAltitudeToLocation(context, at)
-            if (LocationCompat.hasMslAltitude(at)) OwnShip.mslFeet(LocationCompat.getMslAltitudeMeters(at)) else null
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            null
-        }
+        DeviceFix.converted(context, at)
+        return if (LocationCompat.hasMslAltitude(at)) DeviceFix.mslFeet(LocationCompat.getMslAltitudeMeters(at)) else null
     }
 }

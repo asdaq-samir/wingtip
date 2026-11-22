@@ -368,22 +368,19 @@ aboutLibraries {
     license {
         strictMode = com.mikepenz.aboutlibraries.plugin.StrictMode.FAIL
         allowedLicenses.addAll(
-            "Apache-2.0",
-            "MIT",
-            "BSD-2-Clause",
-            "BSD-3-Clause",
-            "ISC",
-            "Unicode-3.0",
-            "https://developer.android.com/studio/terms.html",
-            "https://developers.google.com/ml-kit/terms",
-            "wingtip-engine",
-            "inter-ofl",
+            "Apache-2.0", "MIT", "BSD-2-Clause", "BSD-3-Clause", "ISC", "Unicode-3.0",
+            "https://developer.android.com/studio/terms.html", "https://developers.google.com/ml-kit/terms",
+            "wingtip-engine", "inter-ofl",
         )
         // Reactive Streams' interfaces (a library's dependency) are CC0, a
         // public-domain dedication the web's list allows as well
         // (vite-plugins/licences.ts); let through for that artifact alone.
-        allowedLicensesMap =
-            mapOf("LGPL-2.1-or-later" to listOf("net.java.dev.jna"), "CC0-1.0" to listOf("org.reactivestreams"))
+        // Bouncy Castle's (PdfBox-Android's) is MIT's words under its own
+        // name, with no SPDX id in its POM: let through for its group alone.
+        allowedLicensesMap = mapOf(
+            "LGPL-2.1-or-later" to listOf("net.java.dev.jna"), "CC0-1.0" to listOf("org.reactivestreams"),
+            "Bouncy Castle Licence" to listOf("org.bouncycastle"),
+        )
     }
 }
 
