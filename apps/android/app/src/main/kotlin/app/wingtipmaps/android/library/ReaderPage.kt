@@ -34,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
@@ -51,7 +50,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.Loading
-import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.WingtipIcons
@@ -84,9 +82,9 @@ fun ReaderPage(placeText: String, onClose: () -> Unit) {
     val control = pages?.let { rememberPdfControl(state.startPage, it.count) }
     val list = rememberLazyListState()
     val rows = remember(text) { text?.let(PartRow::of).orEmpty() }
-    // The section at the list's top, drawn again only as it changes, not
-    // at every row scrolled.
-    val section by remember(rows, list) { derivedStateOf { rows.getOrNull(list.firstVisibleItemIndex)?.section } }
+    // The first row in sight, read as it changes rather than at each frame of a scroll.
+    val first by remember(list) { derivedStateOf { list.firstVisibleItemIndex } }
+    val section = rows.getOrNull(first)?.section
     val here = if (control != null) Bookmark(page = control.page, label = "") else Bookmark(at = section, label = "")
     val marked = places.bookmarks[place.doc].orEmpty().any { it.page == here.page && it.at == here.at }
     var menu by remember { mutableStateOf(false) }
@@ -97,11 +95,7 @@ fun ReaderPage(placeText: String, onClose: () -> Unit) {
     val keys = remember { FocusRequester() }
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
-    val marking = Marking(
-        pen,
-        (if (pen == Pen.HIGHLIGHT) WingtipColors.Brand.TaxiwayYellow.copy(alpha = HIGHLIGHT_ALPHA) else WingtipColors.Chart.MapBlue).toArgb(),
-        with(density) { (if (pen == Pen.HIGHLIGHT) WingtipSpace.Lg else WingtipSpace.Xs).toPx() },
-    )
+    val marking = Marking.of(pen, density)
     val bookmark = {
         val label = if (control != null) Finding.titleAt(state.outline, control.page) ?: resources.getString(R.string.reader_page, control.page) else rows.firstOrNull { it is PartRow.Heading && it.section == section }?.let { (it as PartRow.Heading).head } ?: section.orEmpty()
         if (here.page != null || here.at != null) model.memory.toggle(place.doc, here.copy(label = label))
@@ -197,6 +191,3 @@ fun ReaderPage(placeText: String, onClose: () -> Unit) {
 
 /** A zoom key's step: a quarter more, or less. */
 private const val ZOOM_STEP = 1.25f
-
-/** The highlighter's ink, see-through over the page's words. */
-private const val HIGHLIGHT_ALPHA = 0.4f

@@ -117,8 +117,10 @@ internal fun NameDialog(title: String, label: String, start: String, onDone: (St
     AlertDialog(
         onDismissRequest = { onDone(null) },
         title = { Text(title) },
-        text = { OutlinedTextField(state = field, lineLimits = TextFieldLineLimits.SingleLine, label = { Text(label) }) },
-        confirmButton = { TextButton(onClick = { onDone(field.text.toString()) }, enabled = field.text.isNotBlank()) { Text(stringResource(R.string.save)) } },
+        text = { OutlinedTextField(field, lineLimits = TextFieldLineLimits.SingleLine, label = { Text(label) }) },
+        confirmButton = {
+            TextButton(onClick = { onDone(field.text.toString()) }, enabled = field.text.isNotBlank()) { Text(stringResource(R.string.save)) }
+        },
         dismissButton = { TextButton(onClick = { onDone(null) }) { Text(stringResource(R.string.cancel)) } },
     )
 }

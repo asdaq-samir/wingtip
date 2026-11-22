@@ -83,9 +83,8 @@ asks for none.)
   KDLH flown by N3429J, from an emulator whose debug build trusts the
   local authority (`apps/android/app/src/debug`, build.gradle.kts's "The
   local authority"), framed by `store-frames.sh` from `raw/android/`.
-  Tablet screenshots are optional on Play; leave them out unless the
-  listing is to be promoted on tablets. `store-frames.sh` frames
-  `raw/android-tablet/` (a Pixel Tablet emulator upright, the panel, the
-  map and a field's card in its pane) at 1800 x 2400 once the PNGs are
-  there.
+  Tablet screenshots are optional on Play; `store-frames.sh` frames
+  `raw/android-tablet/` (a Pixel Tablet emulator upright, the panel,
+  the map and a field's card in its pane) at 1800 x 2400 if the listing
+  is to be promoted on tablets.
 

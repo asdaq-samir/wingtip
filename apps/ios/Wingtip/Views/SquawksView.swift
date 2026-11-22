@@ -94,7 +94,7 @@ struct SquawksView: View {
     }
 
     private func load() async {
-        do { squawks = try await Gateway.squawks(aircraft.id); problem = nil } catch { problem = "The squawks could not be fetched: \(error.localizedDescription)" }
+        do { squawks = try await Gateway.squawks(aircraft.id); problem = nil } catch { problem = Problems.say("The squawks could not be fetched", error) }
     }
 
     private func add() async {
@@ -107,7 +107,7 @@ struct SquawksView: View {
             text = ""; inoperative = false; deferredFor = nil
             await load()
             onChange()
-        } catch { problem = error.localizedDescription }
+        } catch { problem = Problems.say("The squawk could not be added", error) }
     }
 
     private func fix(_ s: Squawk) async {
@@ -122,6 +122,6 @@ struct SquawksView: View {
             fixing = nil
             await load()
             onChange()
-        } catch { problem = error.localizedDescription }
+        } catch { problem = Problems.say("The squawk could not be changed", error) }
     }
 }

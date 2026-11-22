@@ -65,7 +65,7 @@ final class DiversionDrillModel {
                 fields = try Self.ranked(near, fix: fix)
             } catch {
                 fields = []
-                fieldsProblem = "The nearest fields could not be found: \(error.localizedDescription)"
+                fieldsProblem = Problems.say(Wording.nearestNotFound, error)
             }
         }
     }
@@ -103,7 +103,7 @@ final class DiversionDrillModel {
                                                      aircraft: aircraft, figures: figures, estimates: estimates)
                 problem = nil
             } catch {
-                problem = "The diversion could not be worked out: \(error.localizedDescription)"
+                problem = Problems.say("The diversion could not be worked out", error)
                 stopped = nil
             }
         }

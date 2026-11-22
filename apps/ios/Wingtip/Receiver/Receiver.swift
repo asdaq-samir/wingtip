@@ -122,7 +122,7 @@ final class Receiver {
             if Self.trafficChanged(before, next) { onRead?() }
             if next.receiver.heartbeatAt != nil { onOwnship?(next.ownship, next.receiver) }
         case let .failure(error):
-            problem = error.localizedDescription
+            problem = Problems.say("The receiver could not be read", error)
         }
     }
 

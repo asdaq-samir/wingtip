@@ -314,7 +314,7 @@ final class ModelWeather {
                                              noCeiling: at.noCeiling, tempC: temp)
                 readingProblem = nil
             } catch {
-                (reading, readingProblem) = (nil, "The \(field.label.lowercased()) there could not be worked out: \(error.localizedDescription)")
+                (reading, readingProblem) = (nil, Problems.say("The \(field.label.lowercased()) there could not be worked out", error))
             }
         }
     }

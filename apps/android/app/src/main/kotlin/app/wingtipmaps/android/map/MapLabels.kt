@@ -25,7 +25,8 @@ import kotlin.math.roundToInt
  *   lettering stays a chart's; off, the map's words are their own size, as
  *   Apple Maps and ForeFlight keep theirs. MapLibre takes the zoom only as
  *   the input of the top interpolate or step, so the scale goes in each
- *   stop's output.
+ *   stop's output. The layers added after the style is in take the same
+ *   scale (`late`, `lateSize`).
  * - **After dark** (rules.md 13.6): a light-haloed word turns to its night
  *   ink (map.label.night-ink: the field's blue and magenta, the VFR green,
  *   the fixes' dark, each lighter) on the tag's dark halo at
@@ -39,8 +40,29 @@ object MapLabels {
 
     /** How far the map's words grow: the font scale with the switch on,
      *  1 to scale-max; 1 off. */
-    fun scale(on: Boolean, context: Context): Float =
-        if (!on) 1f else context.resources.configuration.fontScale.coerceIn(1f, WingtipMapLabel.SCALE_MAX)
+    fun scale(on: Boolean, context: Context): Float = capped(on, context.resources.configuration.fontScale)
+
+    /** The font scale as the map's words take it: 1 to scale-max with the
+     *  switch on, 1 off. */
+    fun capped(on: Boolean, fontScale: Float): Float = if (!on) 1f else fontScale.coerceIn(1f, WingtipMapLabel.SCALE_MAX)
+
+    /**
+     * The scale of the words drawn after the style is in -- the station
+     * model's winds and lines, the AIRMETs' names, the 3D shelves' tabs and
+     * the plates' fix tags -- the style's own, set as each style is written
+     * (`styled`). A new style takes every layer off, and each is added
+     * again over it with this size, so a change of the switch reaches
+     * them too.
+     */
+    @Volatile
+    var late: Float = 1f
+        internal set
+
+    /** The scale for a style about to be written, kept for the late layers. */
+    fun styled(on: Boolean, context: Context): Float = scale(on, context).also { late = it }
+
+    /** A late layer's text size, `dp` at the style's scale. */
+    fun lateSize(dp: Float): Float = dp * late
 
     /** The style with its words scaled and, at night, inked for the dark. */
     fun adjust(style: String, scale: Float, night: Boolean): String {

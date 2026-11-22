@@ -189,6 +189,6 @@ struct DocumentsTests {
     @Test func theReadersRefusalsAreSaidInItsWords() {
         #expect(DocumentReader.words(for: WordsUnavailable(why: "That photo could not be opened.")) == "That photo could not be opened.")
         struct Other: LocalizedError { var errorDescription: String? { "no model" } }
-        #expect(DocumentReader.words(for: Other()) == "The page could not be read: no model")
+        #expect(DocumentReader.words(for: Other()) == "The page could not be read.")
     }
 }

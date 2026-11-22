@@ -363,6 +363,16 @@ and replay views are.
   section that failed. They are never a toast, and never an alert for
   something that can be undone ([HIG Alerts][hig-alerts]: "Avoid
   displaying alerts for common, undoable actions").
+- **An error's words are the app's**, through `Problems` (API/Problems,
+  Android's api/Problems and the web's lib/problems): what failed, as
+  "The chart could not be fetched", led by "No connection." with no
+  network (the shared `no_connection`), then the server's own words for a refusal (a
+  4xx), or the app's and the engine's own (`SaidToPilot`), and nothing
+  more. The system's text ("The Internet connection appears to be
+  offline.", a decoder's, a host and a port) goes to the log only;
+  `error.localizedDescription` is never put on a screen. `say` logs,
+  `words` doesn't (a view's body, a line already logged), and
+  `refusal` says a typed figure's refusal in the engine's words alone.
 - **Empty states** use `ContentUnavailableView`, with the one action
   that fills them. For example, "No Airplane Picked" and Pick an
   Airplane.
@@ -1128,6 +1138,12 @@ with no nav log yet it says it waits for the ETA.
    - The engine decides the verdict.
 2. **At most three one-line actions**, the owner's "look and go" rule.
    For example "Leave by 1430Z", "File IFR", "Check KFDK NOTAM".
+   - **The ADIZ line** after them, where the route meets an Air Defense
+     Identification Zone (the engine's `route_adiz`, 14 CFR 99.41-99.49;
+     `Brief/RouteAdiz`, `AdizLine`), a caution as on the web: the
+     finding and what part 99 asks in one line, opening to what it asks
+     in the first zone met (its 99.1(b) exceptions said), why and the
+     rule cited. Warn, never limit.
 3. **Hazards on the legs:** TFRs, convective SIGMETs and AIRMETs, as
    rows with their `color.weather.*` badge, each opening its area on
    the map.
@@ -1637,6 +1653,16 @@ has it on. The Apple Watch app is parked by leaving it out of the
 iPhone's build (`apps/ios/project.yml`; its target and tests stay), so
 it has no switch here.
 
+**Connected Apps** (round 3, as the web's, the deep security review of
+2026-11-21, N2): You's last row, greyed signed out, pushes
+`ConnectedAppsView` (`Pilot/`, its model `ConnectedAppsModel`): each AI
+app the pilot connected through the MCP connector, its name and "Last
+used" day, with Disconnect at the row's end. Disconnect asks first, the
+system's confirmation dialog with the destructive button ("Disconnect
+Claude?"), then the gateway revokes that connection's tokens at once
+(`DELETE /api/me/connections/{id}`); one already gone is simply no longer
+listed, any other failure is said under the list.
+
 **Theme and Appearance moved to the Map card** (its Look section, the
 owner, 2026-11-14); Settings keeps no Display group, as the iPhone has no
 Sunlight. The Map card (`MapSettingsView`) is the charts as pictures with
@@ -1763,8 +1789,12 @@ else its number set as a heading, "7-1-5.") or the page it was left at
 **Every cited rule a tap.** `CitedText` draws the engine's `citations`
 (the web's `Cited`) as a `Text` with links, each the app's own
 `doc=` link taken by the view's `openURL` into the reader: the Go / No-Go's
-whys and an airspace band's entry rules. A cite links only where the shelf
-holds its document in an edition. A link's `doc=` from anywhere opens the
+whys, the ADIZ line's rule and an airspace band's entry rules. A cite links only where the shelf
+holds its document in an edition. **VoiceOver** reads a row that combines
+its children (a band's entry rules, a risk factor's why) as one element,
+whose links it cannot follow, so each such row also carries its cites as
+actions, "Open 14 CFR 91.155", in the Actions rotor (`citeActions`), and
+keeps its one spoken label. A link's `doc=` from anywhere opens the
 reader too (`AppCommand.document`).
 
 **Keep in iCloud.** Off by default. On, each of the pilot's own
@@ -1809,13 +1839,11 @@ room above its buttons, scrolling at the larger text sizes.
 - **HIG Alerts:** "Avoid showing an alert when your app starts"
   ([HIG Alerts][hig-alerts]).
 
-**The one exception: the planning-aid notice.** The very first launch
-puts up one stock alert, "A Planning Aid, Not for Navigation", with the
-planning-aid words and the listing's not-for-navigation paragraph and
-one button, I Understand (`Navigation/PlanningAidNotice`). It is the
-pilot-safety position the terms take and what App Review 5.1.5 looks for
-in a moving-map app, so it is said before anything else, once, and
-About keeps the words.
+**No planning-aid notice at launch** (round 3, 2026-11-21, as the web
+and Android dropped theirs at the owner's word: "no aviation app does
+that"). A fresh install opens straight onto the map; the planning-aid
+words stay in About, on the instruments bar ("A Planning Aid, Not for
+Navigation") and at the kneeboard's foot.
 
 **Structure.**
 
@@ -1938,6 +1966,18 @@ Next Flight, Airport Weather and Currency Status.
 - **Small and medium** on the Home Screen. **Accessory rectangular,
   circular and inline** on the Lock Screen: currency, and a field's
   category.
+- **Large, and extra large on an iPad** (round 3, 2026-11-21: the iPad is
+  the primary users' device): Next Flight and Airport Weather, each
+  designed for its size rather than a smaller card stretched ("offer
+  widgets in multiple sizes when doing so adds value", [HIG
+  Widgets][hig-widgets]). Next Flight's large card reads top to bottom
+  as a Brief does: the route with its stops, the verdict and its words,
+  Distance, Time En Route and Fuel as three tiles, the departure's
+  weather with its METAR as sent; the extra large sets the route and
+  figures, the Go / No-Go and the departure a column each
+  (`FlightWidgetsLarge`). Airport Weather's large shows the METAR and the
+  TAF whole, one under the other with their names; its extra large side
+  by side. Currency stays small and medium: five rows fill the medium.
 - **No real-time data.** Show "Updated 1450Z" ("consider displaying
   text that describes when the data was last updated",
   [HIG Widgets][hig-widgets]).
@@ -1949,9 +1989,10 @@ Next Flight, Airport Weather and Currency Status.
   StandBy support covers CarPlay as well.
 - **Tapping** opens the exact screen, through its `design/screens.json`
   link.
-- **Extra large:** `systemExtraLargePortrait` is in iOS 27's WidgetKit,
-  but the HIG's table still says it is not supported on iPhone (a
-  conflict between Apple's sources; leave it out).
+- **Extra large on an iPhone:** `systemExtraLargePortrait` is in iOS 27's
+  WidgetKit, but the HIG's table still says it is not supported on
+  iPhone (a conflict between Apple's sources; leave it out). The iPad's
+  `systemExtraLarge` is in, as above.
 
 ### Control Center, the Lock Screen and the Action button (`FlightControl`, `OpenControls`)
 

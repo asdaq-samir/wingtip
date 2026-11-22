@@ -261,7 +261,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             // Past the chart's own detail the imagery (CloseMap), to its zoom.
             chartTileMax = maxZoom
             map.setMaxZoomPreference(maxOf(MapStyle.maxZoom(maxZoom), CloseMap.MAX_ZOOM))
-            val json = app.wingtipmaps.android.offline.OfflineLayers.styled(view.context, template, MapLabels.adjust(MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather), MapLabels.scale(lastLayers.largerLabels, view.context), night), lastLayers.tac)
+            val json = app.wingtipmaps.android.offline.OfflineLayers.styled(view.context, template, MapLabels.adjust(MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather), MapLabels.styled(lastLayers.largerLabels, view.context), night), lastLayers.tac)
             val builder = Style.Builder().fromJson(json)
             OverlayPictures.addTo(builder, density)
             // At the latest this long after the style is set the map is

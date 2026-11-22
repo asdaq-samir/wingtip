@@ -61,7 +61,7 @@ final class Charts {
             // cycle has turned since it was.
             Task.detached { await CyclePacks.shared.refresh() }
         } catch {
-            problem = info == nil ? "The chart could not be fetched: \(error.localizedDescription)" : nil
+            problem = info == nil ? Problems.words("The chart could not be fetched", error) : nil
             Log.map.error("the chart could not be fetched (\(self.info == nil ? "none kept" : "the kept one stands", privacy: .public)): \(error.localizedDescription, privacy: .public)")
         }
     }

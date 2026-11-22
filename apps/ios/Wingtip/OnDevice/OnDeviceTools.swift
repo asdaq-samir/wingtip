@@ -25,7 +25,7 @@ enum OnDeviceTools {
             return figures.map(\.forModel).joined(separator: "\n")
         } catch {
             log.add([], by: name)
-            return "Not available: \((error as? AskRefused)?.why ?? error.localizedDescription)"
+            return "Not available: " + Problems.refusal(error, otherwise: "The figures could not be worked out")
         }
     }
 }

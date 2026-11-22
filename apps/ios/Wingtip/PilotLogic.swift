@@ -228,7 +228,7 @@ struct AircraftForm: Equatable {
                 descentIasKt: descentIasKt, descentFuelBurnGph: descentFuelBurnGph, usableFuelGal: usableFuelGal, equipment: equipment, surveillance: surveillance, colour: colour)
         } catch {
             Log.engine.error("aircraft_problems: \(error.localizedDescription, privacy: .public)")
-            return [Self.formKey: "The figures could not be checked: \(error.localizedDescription)"]
+            return [Self.formKey: Problems.say("The figures could not be checked", error)]
         }
         let byField: [String: String?] = [
             "tailNumber": answer.tailNumber, "typeDesignator": answer.typeDesignator, "cruiseTasKt": answer.cruiseTasKt,

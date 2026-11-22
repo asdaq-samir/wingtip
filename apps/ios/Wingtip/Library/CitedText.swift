@@ -41,3 +41,48 @@ struct CitedText: View {
         return out
     }
 }
+
+/// Each cited rule in a row VoiceOver reads as one element (a row that
+/// combines its children: an airspace band's entry rules, a risk factor's
+/// why) as one of the row's actions, "Open 14 CFR 91.155": a link inside a
+/// combined element is read but cannot be followed, so the row keeps its
+/// one spoken label and the Actions rotor opens each cite at its paragraph
+/// (items 103 and 104 of the round-3 queue; the web's links are reached by
+/// Tab). Only cites the shelf holds, as CitedText links them.
+private struct CiteActions: ViewModifier {
+    let texts: [String]
+    @Environment(Navigator.self) private var nav
+    @Environment(DocumentLibrary.self) private var library
+
+    func body(content: Content) -> some View {
+        content.accessibilityActions {
+            ForEach(Array(CitedText.cites(texts, shelf: library.shelf).enumerated()), id: \.offset) { _, cite in
+                Button("Open \(cite.words)") { nav.reading = cite.place }
+            }
+        }
+    }
+}
+
+extension CitedText {
+    /// The cites in `texts` the shelf holds, each once: its words as
+    /// written and the place it opens.
+    static func cites(_ texts: [String], shelf: [LibraryEntry]) -> [(words: String, place: DocPlace)] {
+        guard !shelf.isEmpty else { return [] }
+        var seen = Set<String>()
+        var out: [(words: String, place: DocPlace)] = []
+        for text in texts {
+            guard let pieces = try? Engine.citations(text: text).pieces else { continue }
+            for piece in pieces {
+                guard let cite = piece.cite, let place = DocPlace.cited(doc: cite.doc, at: cite.at, shelf: shelf),
+                      seen.insert(place.text).inserted else { continue }
+                out.append((piece.text, place))
+            }
+        }
+        return out
+    }
+}
+
+extension View {
+    /// The cites in `texts` as the row's VoiceOver actions (CiteActions).
+    func citeActions(_ texts: [String]) -> some View { modifier(CiteActions(texts: texts)) }
+}

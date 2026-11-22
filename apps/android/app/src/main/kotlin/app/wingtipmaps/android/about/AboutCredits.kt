@@ -54,5 +54,6 @@ object AboutCredits {
 
     val software: List<Credit> = listOf(
         Credit("MapLibre GL", "BSD 3-Clause"),
+        Credit("PdfBox-Android", "Apache 2.0"),
     )
 }

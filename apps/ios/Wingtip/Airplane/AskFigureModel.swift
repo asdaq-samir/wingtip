@@ -85,7 +85,7 @@ final class AskFigureModel {
             text = ""
             plan.took(saved, for: plan.tail)
         } catch {
-            problem = "\(figure.label) could not be saved: \(error.localizedDescription)"
+            problem = Problems.say("\(figure.label) could not be saved", error)
         }
     }
 }

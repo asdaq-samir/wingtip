@@ -285,7 +285,7 @@ object Map3dLayer {
         val layer = org.maplibre.android.style.layers.SymbolLayer(SHELF_LABELS, SHELF_LABELS).withProperties(
             PropertyFactory.textField(Expression.get("text")),
             PropertyFactory.textFont(arrayOf(MapStyle.FONT)),
-            PropertyFactory.textSize(12f),
+            PropertyFactory.textSize(MapLabels.lateSize(12f)),
             PropertyFactory.textLineHeight(1.1f),
             PropertyFactory.textColor(app.wingtipmaps.android.design.generated.WingtipColors.Chart.CASING_HEX.toColorInt()),
             PropertyFactory.textPitchAlignment(Property.TEXT_PITCH_ALIGNMENT_VIEWPORT),

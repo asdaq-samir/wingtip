@@ -68,6 +68,6 @@ struct OwnAircraftListView: View {
     }
 
     private func load() async {
-        do { list = try await Gateway.aircraftRecords(); problem = nil } catch { problem = error.localizedDescription }
+        do { list = try await Gateway.aircraftRecords(); problem = nil } catch { problem = Problems.say("Your airplanes could not be fetched", error) }
     }
 }

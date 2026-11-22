@@ -25656,6 +25656,81 @@
       ],
       "additionalProperties": false
     },
+    "read_route_file": {
+      "description": "A route from another app's flight-plan file read: Garmin's FlightPlan XML (.fpl) or a GPX route, its ends and the points between that have an identifier, for the apps to preview; or the words for the pilot where it is not one.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ReadRouteFileInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The file's text."
+            }
+          },
+          "required": [
+            "text"
+          ]
+        },
+        "answer": {
+          "title": "ReadRouteFileAnswer",
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "dep": {
+                  "type": "string"
+                },
+                "dest": {
+                  "type": "string"
+                },
+                "stops": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "The route's name in the file."
+                },
+                "dropped": {
+                  "type": "integer",
+                  "description": "Points left out: user waypoints and points with no identifier."
+                }
+              },
+              "required": [
+                "dep",
+                "dest",
+                "stops",
+                "name",
+                "dropped"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "error"
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "read_track": {
       "description": "A GPX or KML track read: its points in time order, or the words for the pilot where it has none to use.",
       "type": "object",
@@ -33902,6 +33977,7 @@
     "read_atis",
     "read_clearance",
     "read_datis",
+    "read_route_file",
     "read_track",
     "readback_check",
     "ready_to_fly",

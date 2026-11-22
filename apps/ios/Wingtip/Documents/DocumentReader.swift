@@ -121,7 +121,7 @@ enum DocumentReader {
     /// Why a read failed, in words for the screen.
     static func words(for error: any Error) -> String {
         if let unavailable = error as? WordsUnavailable { return unavailable.why }
-        return "The page could not be read: \(error.localizedDescription)"
+        return Problems.say(Wording.pageNotRead, error)
     }
 }
 

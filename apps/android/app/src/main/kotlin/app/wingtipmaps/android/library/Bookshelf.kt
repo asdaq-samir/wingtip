@@ -93,8 +93,8 @@ class Bookshelf private constructor(private val context: Context) {
         fun grouped(shelf: List<LibraryDocument>): List<Pair<String, List<LibraryDocument>>> =
             shelf.groupBy { it.group }.toList().sortedBy { (g, _) -> GROUPS.indexOf(g).let { if (it < 0) GROUPS.size else it } }
 
-        // The application's context, which lives as long as the process:
-        // no activity is held, so nothing leaks.
+        // The application's context alone (of), which lives as long as
+        // the process, so the one shelf holds no screen's.
         @SuppressLint("StaticFieldLeak")
         @Volatile
         private var shared: Bookshelf? = null

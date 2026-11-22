@@ -113,7 +113,9 @@ private fun Timeline(state: FlowState, model: ModelWeather) {
         }
         Column(Modifier.weight(1f).padding(vertical = WingtipSpace.Xs)) {
             when {
-                state.failed -> Text(stringResource(R.string.flow_unavailable), color = LocalWingtipPalette.current.cautionInk, style = MaterialTheme.typography.bodyMedium)
+                // "No connection" is a value in the shared words; a line on its
+                // own ends with a full stop, as the web's and the iPhone's do.
+                state.failed -> Text(if (state.offline) stringResource(R.string.wording_no_connection) + "." else stringResource(R.string.flow_unavailable), color = LocalWingtipPalette.current.cautionInk, style = MaterialTheme.typography.bodyMedium)
                 state.frames.isEmpty() || steps.isEmpty() -> Text(stringResource(R.string.wording_fetching_model_weather), style = MaterialTheme.typography.bodyMedium)
                 else -> {
                     val first = steps.first()

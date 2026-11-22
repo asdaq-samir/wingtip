@@ -234,7 +234,7 @@ final class Plan {
             routes = found
         } catch {
             guard routesAskedFor == asked, !(error is CancellationError) else { return }
-            routesProblem = error.said
+            routesProblem = Problems.words("The routes could not be found", error)
             Log.planner.notice("the route options for \(dep, privacy: .private) to \(dest, privacy: .private) failed: \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -272,7 +272,7 @@ final class Plan {
             noteKept(nil, .briefing, .weather)
             keep()
         } catch {
-            briefingProblem = error.said
+            briefingProblem = Problems.say("The briefing could not be fetched", error)
             // The briefing kept stands, said with its age (KeptAgeLine).
             if briefing != nil, KeptForAir.fallsBack(error) { noteKept(briefedAt, .briefing, .weather) }
             Log.planner.notice("the briefing for \(dep, privacy: .private) to \(dest, privacy: .private) failed: \(error.localizedDescription, privacy: .public)")
@@ -291,7 +291,7 @@ final class Plan {
         do { try extras.apply(to: &extra, procedures: picks) } catch {
             // A hold or a procedure the engine could not write is said, not
             // left out of a route planned without it.
-            problem = NavLogError(advice: nil, brief: nil, detail: "Your holds and procedures could not be written for the planner: \(error.said)", reasons: nil)
+            problem = NavLogError(advice: nil, brief: nil, detail: Problems.say("Your holds and procedures could not be written for the planner", error), reasons: nil)
             return
         }
         self.dep = dep; self.dest = dest; self.stops = stops
@@ -330,7 +330,7 @@ final class Plan {
                         self?.sideProblems[.checkpoints] = nil
                         self?.keep()
                     } catch {
-                        self?.sideProblems[.checkpoints] = "The checkpoints could not be fetched: \(error.said)"
+                        self?.sideProblems[.checkpoints] = Problems.say("The checkpoints could not be fetched", error)
                     }
                 }
                 if self.profile == nil || self.profile?.lengthNm != course.distanceNm {
@@ -342,7 +342,7 @@ final class Plan {
                             self?.sideProblems[.profile] = nil
                             self?.keep()
                         } catch {
-                            self?.sideProblems[.profile] = "The ground along the route could not be fetched: \(error.said)"
+                            self?.sideProblems[.profile] = Problems.say("The ground along the route could not be fetched", error)
                         }
                     }
                 }
@@ -383,7 +383,7 @@ final class Plan {
                     if let before = self.directFrom, error is URLError {
                         self.undoDirect(before)
                     } else if self.legs.isEmpty || !(error is URLError) {
-                        self.problem = NavLogError(advice: nil, brief: nil, detail: error.said, reasons: nil)
+                        self.problem = NavLogError(advice: nil, brief: nil, detail: Problems.say("The route could not be planned", error), reasons: nil)
                     } else { self.noteKept(self.plannedAt, .plan) }
                     self.stage = nil
                 }

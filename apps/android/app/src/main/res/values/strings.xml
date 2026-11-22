@@ -507,8 +507,16 @@
     <string name="plates_kept_why">The cycle in force could not be fetched from the FAA</string>
     <string name="climb_fuel_unknown">Climb fuel not counted: the airplane has no climb fuel flow.</string>
     <string name="emergency_visibility">Visibility %1$s</string>
+    <!-- You's Connected Apps (account/ConnectedApps), the web's ConnectedAppsPage words. -->
+    <string name="connected_apps">Connected Apps</string>
+    <string name="connected_apps_none">No apps are connected.</string>
+    <string name="connected_apps_last_used">Last used %1$s</string>
+    <string name="connected_apps_disconnect">Disconnect</string>
+    <string name="connected_apps_disconnect_question">Disconnect %1$s?</string>
+    <string name="connected_apps_disconnect_text">It can no longer read your airplanes or flights or save one, until you connect it again.</string>
     <string name="saved_flights">Saved Flights</string>
-    <string name="saved_flights_none">No saved flights yet. Save a plan from its share menu to see it here.</string>
+    <!-- Android has no Save of its own yet: the line names where a flight is saved (the web's Brief ••• menu, the iPhone's Save), not a menu that does not offer it (parity3 row 51). -->
+    <string name="saved_flights_none">No saved flights yet. A flight saved on the web or the iPhone with this account is kept here.</string>
     <string name="replay_play">Play</string>
     <string name="replay_pause">Pause</string>
     <string name="airplane_tab_flights">Flights</string>

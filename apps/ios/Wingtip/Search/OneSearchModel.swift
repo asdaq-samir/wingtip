@@ -141,7 +141,7 @@ final class OneSearchModel {
     /// What a failed search says: no connection said as such, with what
     /// the iPhone could still find.
     static func failedWords(_ error: any Error, kept: Bool) -> String {
-        guard error is URLError else { return "The search could not be done: \(error.localizedDescription)" }
+        guard error is URLError else { return Problems.say("The search could not be done", error) }
         return kept ? "No connection: airports from the chart data on this iPhone only. Waypoints, towns and N-numbers need a connection."
             : "No connection: the search needs one, and no airport kept on this iPhone matches."
     }

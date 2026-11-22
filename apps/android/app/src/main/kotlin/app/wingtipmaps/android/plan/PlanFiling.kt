@@ -66,8 +66,8 @@ object PlanFiling {
 
         /** The form as text, an item to a line ("Item 15  Route: BAE V191
          *  OSH"), to paste into a filing service or read out. */
-        fun text(persons: Int?): String {
-            val items = listOf(
+        fun text(persons: Int?): String = (
+            listOf(
                 "$departure to $destination",
                 "Item 8  Flight Rules: $rules",
                 "Item 7  Aircraft Identification: ${aircraftId ?: NONE}",
@@ -86,8 +86,7 @@ object PlanFiling {
                 "Item 19  Endurance: ${endurance ?: NONE}",
                 "Item 19  Persons on Board: ${persons ?: NONE}",
             )
-            return items.joinToString("\n")
-        }
+            ).joinToString("\n")
     }
 
     /** The engine's filing rules, a parameter so a test can give them. */

@@ -23,6 +23,8 @@ import app.wingtipmaps.android.design.generated.WingtipSize
  *   tablet's 1,024 dp on its side, a book-posture foldable), the panel
  *   gives way while a card is up and comes back with its close; the one
  *   search asked for (Ctrl+F, the microphone) brings it back at once.
+ * - Each pane's divider with the map drags it wider or narrower
+ *   (PaneDivider), within what the window has (paneWidth).
  */
 internal object PaneRoom {
     /** Whether the window takes a card in a pane of its own at its end. */
@@ -43,6 +45,19 @@ internal object PaneRoom {
      *  without the room for both, and then once the search is asked for
      *  over that card (`askedOver`). */
     fun panelShown(top: SheetPage, width: Dp, askedOver: SheetPage?): Boolean = !top.inspects || cardBesidePanel(width) || askedOver == top
+
+    /** The narrowest a pane is dragged to: three quarters of a panel, where
+     *  a field's card still reads its rows on one line. */
+    val LEAST_PANE: Dp = WingtipSize.Panel * 0.75f
+
+    /** A pane's width as the pilot dragged it (`wanted`), kept within what
+     *  the window has: never under LEAST_PANE, and leaving the map a
+     *  panel's width beside the window's `panes` (the panel, and the
+     *  card's pane where there is one), shared out evenly. */
+    fun paneWidth(wanted: Dp, window: Dp, panes: Int): Dp {
+        val most = maxOf(LEAST_PANE, (window - WingtipSize.Panel) / panes)
+        return wanted.coerceIn(LEAST_PANE, most)
+    }
 }
 
 /**

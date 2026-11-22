@@ -12,7 +12,8 @@ import SwiftUI
 /// but disabled. Then one inset list of round-badged rows with
 /// their values: Pilot Details, Airplanes (the checklists inside), Flights,
 /// Logbook, Minimums, Documents (the library), Training (the coach and
-/// the drills) and Emergency.
+/// the drills), Emergency and Connected Apps (the AI apps connected
+/// through the connector).
 /// Settings is the gear at the card's top left, the close at its right
 /// (CardStack).
 struct YouView: View {
@@ -65,6 +66,14 @@ struct YouView: View {
                 }
                 .accessibilityIdentifier("training-row")
                 EmergencyRow()
+                // The AI apps connected through the connector, each ended
+                // from here (the deep security review of 2026-11-21, N2):
+                // the account's, greyed signed out as the others are.
+                NavigationLink { ConnectedAppsView() } label: {
+                    YouRowLabel(title: "Connected Apps", systemImage: "powerplug", colour: WingtipColor.Badge.approach)
+                }
+                .disabled(!session.signedIn)
+                .accessibilityIdentifier("connected-apps-row")
             }
         }
         .listStyle(.insetGrouped)

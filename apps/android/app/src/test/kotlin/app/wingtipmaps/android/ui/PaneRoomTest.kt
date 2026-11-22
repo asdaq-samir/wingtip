@@ -55,4 +55,17 @@ class PaneRoomTest {
         listOf(SheetPage.Home, SheetPage.Plan, SheetPage.Brief, SheetPage.NavLog, SheetPage.You, SheetPage.Settings, SheetPage.Emergency)
             .forEach { assertFalse(it.toString(), it.inspects) }
     }
+
+    @Test
+    fun aDraggedPaneKeepsWithinWhatTheWindowHas() {
+        // Dragged narrower than three quarters of a panel: held there.
+        assertEquals(PaneRoom.LEAST_PANE, PaneRoom.paneWidth(100.dp, 1280.dp, 2))
+        // Dragged wider than the window shares out, the map keeping a
+        // panel's 384 dp: (1280 - 384) / 2 for two panes.
+        assertEquals(448.dp, PaneRoom.paneWidth(900.dp, 1280.dp, 2))
+        // One panel on a medium window: all but the map's panel width.
+        assertEquals(316.dp, PaneRoom.paneWidth(500.dp, 700.dp, 1))
+        // In between, as dragged.
+        assertEquals(400.dp, PaneRoom.paneWidth(400.dp, 1280.dp, 2))
+    }
 }

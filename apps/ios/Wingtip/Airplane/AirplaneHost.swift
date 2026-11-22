@@ -90,7 +90,7 @@ struct AirplaneFigureAlerts: ViewModifier {
                 if case .device(let why) = kept { failed.append(why ?? tail) } else { OwnFigureStore.forget(tail) }
                 plan.took(saved, for: tail)
             } catch {
-                failed.append("\(tail): \(error.localizedDescription)")
+                failed.append(Problems.say("\(tail) could not be saved", error))
             }
         }
         if !failed.isEmpty { offer.problem = failed.joined(separator: "\n") }

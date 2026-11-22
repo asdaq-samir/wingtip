@@ -13,7 +13,8 @@ struct AppLoops: View {
     let charts: Charts
     let screens: ScreenModels
     @Environment(\.scenePhase) private var scenePhase
-    /// The pilot's kept fields (Home, Favorites), read here for the widgets.
+    /// The widgets' feed, and the pilot's kept fields it offers them.
+    private let feed = WidgetFeed.shared
     @Environment(AirportShelf.self) private var shelf
 
     var body: some View {
@@ -58,9 +59,9 @@ struct AppLoops: View {
             // Group only as they change, on the same clock; and the
             // fields the weather widget's settings offer first, written
             // as the home base or the favourites change, not each 15 s.
-            .task { await Repeating.every(15) { WidgetFeed.shared.update(plan: plan, verdict: flight.verdict) } }
+            .task { await Repeating.every(15) { feed.update(plan: plan, verdict: flight.verdict) } }
             .onChange(of: [session.pilot?.homeBase ?? ""] + shelf.favorites.map(\.ident), initial: true) {
-                WidgetFeed.shared.airports(homeBase: session.pilot?.homeBase, favorites: shelf.favorites)
+                feed.airports(homeBase: session.pilot?.homeBase, favorites: shelf.favorites)
             }
             // The route's weather watched after the Brief (WeatherWatch):
             // a look every quarter hour while the app runs, and iOS's

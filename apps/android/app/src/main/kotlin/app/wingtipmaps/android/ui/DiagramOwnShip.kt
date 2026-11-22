@@ -14,6 +14,10 @@ import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.plates.ChartInkBar
+import app.wingtipmaps.android.plates.ChartInkButton
+import app.wingtipmaps.android.plates.pageInk
+import app.wingtipmaps.android.plates.rememberChartInk
 
 /**
  * The FAA's airport diagram with the airplane on it (#218), as the iOS
@@ -50,10 +54,14 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit, model:
         model.open(ident, url)
         onDispose { model.close() }
     }
+    // The pilot's ink on the diagram, kept by it and its cycle (ChartInk).
+    val ink = rememberChartInk(url)
     FullScreenPage(
         title = "$ident airport diagram",
         onClose = onClose,
+        actions = { ChartInkButton(ink) },
         footer = {
+            ChartInkBar(ink)
             read.page?.let {
                 Text(
                     model.note(it, fixAsked),
@@ -66,7 +74,7 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit, model:
     ) {
         val shown = read.page
         when {
-            shown != null -> ZoomablePage(shown.image, "Airport diagram", ownShipOn(shown, fix, fix?.let { model.place(shown, it) }))
+            shown != null -> ZoomablePage(shown.image, "Airport diagram", ownShipOn(shown, fix, fix?.let { model.place(shown, it) }), ink.pageInk())
             read.problem != null -> ProblemLine(read.problem)
             else -> Loading()
         }

@@ -173,7 +173,9 @@ private fun StopRow(
                 menu = { RoutePointMenu(ident, plan, onAddStopAfter) },
             )
         }),
-        modifier = Modifier.fillMaxWidth().timelineThread(thread, first = index == 0, last = last, dot = markColour(point.category), gap = ListItemDefaults.SegmentedGap),
+        // A field or a fix given drags out to another app as its ident (DragOut).
+        modifier = Modifier.fillMaxWidth().timelineThread(thread, first = index == 0, last = last, dot = markColour(point.category), gap = ListItemDefaults.SegmentedGap)
+            .then(if (given) Modifier.dragOut { DragOut.place(ident) } else Modifier),
         content = { Text(if (given) ident else stringResource(ask), color = if (given) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.primary) },
     )
 }

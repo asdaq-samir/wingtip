@@ -115,6 +115,14 @@ final class Navigator {
         }
     }
 
+    /// A plan's page from the menu bar (View > Search, FPL): the card put
+    /// away so the page is in sight, as the toggle on the map turns it.
+    func showPage(_ page: PlanPage) {
+        close()
+        planPath = []
+        sheetPage = page
+    }
+
     /// The card put away (its close, a swipe down, Escape).
     func close() {
         cardPath = []
@@ -129,14 +137,6 @@ final class Navigator {
         close()
         planPath = []
         sheetPage = .fpl
-    }
-
-    /// A plan's page from the menu bar (View > Search, FPL): the card put
-    /// away so the page is in sight, as the toggle on the map turns it.
-    func show(_ page: PlanPage) {
-        close()
-        planPath = []
-        sheetPage = page
     }
 
     /// The empty route box's close (PlanView), a level back: the field's

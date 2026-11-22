@@ -95,7 +95,7 @@ struct AirportWeatherTab: View {
                         }
                         let read: Atis
                         do { read = try Atis.read(text) } catch {
-                            problem = "The broadcast could not be read: \(error.localizedDescription)"
+                            problem = Problems.say("The broadcast could not be read", error)
                             return
                         }
                         reading = read

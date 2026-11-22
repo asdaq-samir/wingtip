@@ -121,7 +121,7 @@ struct AircraftFormView: View {
             onSaved(saved)
             if record == nil { dismiss() }
         } catch {
-            problem = error.localizedDescription
+            problem = Problems.say("The airplane could not be saved", error)
         }
     }
 }
@@ -169,7 +169,7 @@ struct OwnAircraftPage: View {
         .confirmationDialog("Delete \(record.tailNumber)?", isPresented: $askingDelete, titleVisibility: .visible) {
             Button(Wording.deleteAirplane, role: .destructive) {
                 Task {
-                    do { try await Gateway.deleteAircraft(record.id); onChange(); dismiss() } catch { problem = error.localizedDescription }
+                    do { try await Gateway.deleteAircraft(record.id); onChange(); dismiss() } catch { problem = Problems.say("The airplane could not be deleted", error) }
                 }
             }
         } message: {
@@ -182,7 +182,7 @@ struct OwnAircraftPage: View {
             if let fresh = try await Gateway.aircraftRecords().first(where: { $0.id == record.id }) { record = fresh }
         } catch {
             // Said here, so what is shown is not taken for what was just saved.
-            problem = "Its record could not be fetched again: \(error.localizedDescription)"
+            problem = Problems.say("Its record could not be fetched again", error)
         }
         onChange()
     }
@@ -280,7 +280,7 @@ struct InspectionsSection: View {
         var request = form
         request.hundredHourAtHours = Typed.number(hoursAt)
         request.hoursNow = Typed.number(hoursNow)
-        do { record = try await Gateway.saveInspections(record.id, request); problem = nil; onChange() } catch { problem = error.localizedDescription }
+        do { record = try await Gateway.saveInspections(record.id, request); problem = nil; onChange() } catch { problem = Problems.say("The inspections could not be saved", error) }
     }
 }
 
@@ -335,7 +335,7 @@ struct VorCheckSection: View {
         let trimmed = place.trimmingCharacters(in: .whitespaces)
         let request = VorCheckRequest(checkedOn: Day.string(checkedOn), errorDeg: Typed.number(errorText) ?? 0,
                                       kind: kind, place: trimmed.isEmpty ? nil : trimmed)
-        do { record = try await Gateway.recordVorCheck(record.id, request); problem = nil; onChange() } catch { problem = error.localizedDescription }
+        do { record = try await Gateway.recordVorCheck(record.id, request); problem = nil; onChange() } catch { problem = Problems.say("The VOR check could not be saved", error) }
     }
 }
 

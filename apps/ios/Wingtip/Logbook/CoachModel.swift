@@ -95,7 +95,7 @@ final class CoachModel {
             pilot = try await fetchPilot()
             problem = nil
         } catch {
-            problem = "Your logbook could not be fetched: \(error.localizedDescription)"
+            problem = Problems.say(Wording.logbookNotFetched, error)
         }
     }
 
@@ -120,7 +120,7 @@ final class CoachModel {
         do {
             plan = try await calls.plan(ask(home: home))
         } catch {
-            problem = "Your plan could not be made: \(error.localizedDescription)"
+            problem = Problems.say("Your plan could not be made", error)
         }
     }
 

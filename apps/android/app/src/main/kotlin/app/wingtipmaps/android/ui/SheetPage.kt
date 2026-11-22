@@ -91,6 +91,10 @@ sealed interface SheetPage {
     @Serializable
     data object Flights : SheetPage
 
+    /** You's Connected Apps: the AI apps connected through the connector. */
+    @Serializable
+    data object ConnectedApps : SheetPage
+
     @Serializable
     data object Coach : SheetPage
 

@@ -74,7 +74,7 @@ struct PointAlerts: ViewModifier {
     /// in FlightUI.problem.
     private func refused<T>(_ body: () throws -> T?) -> T? {
         do { return try body() } catch {
-            flightUI.problem = error.said
+            flightUI.problem = Problems.refusal(error, otherwise: "What was typed could not be read")
             return nil
         }
     }
@@ -292,7 +292,7 @@ struct HoldSheet: View {
             course = String(format: "%03d", rounded == 0 ? 360 : rounded)
             // Where the engine refuses, the minute the form starts on
             // stands and the reason shows under it.
-            do { legMin = try Hold.legMinutes(altitudeFt: leg.altitudeFt); problem = nil } catch { problem = error.said }
+            do { legMin = try Hold.legMinutes(altitudeFt: leg.altitudeFt); problem = nil } catch { problem = Problems.refusal(error, otherwise: "The leg could not be worked out") }
         }
     }
 
@@ -360,7 +360,7 @@ struct ProcedureFixesView: View {
         .navigationTitle(pick?.name ?? id)
         .task {
             guard let pick else { return }
-            do { drawing = try await Planner.procedure(ident, id: id, transition: pick.transition) } catch { problem = error.said }
+            do { drawing = try await Planner.procedure(ident, id: id, transition: pick.transition) } catch { problem = Problems.say("The procedure could not be fetched", error) }
         }
     }
 }

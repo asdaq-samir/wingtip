@@ -20,7 +20,6 @@ struct PlanSheet: View {
     @Environment(\.splitLayout) private var split
     @Environment(\.sheetAtPill) private var atPill
     @Environment(FirstFlightModel.self) private var firstFlight
-    @AppStorage(PlanningAidNotice.acceptedKey) private var planningAidAccepted = false
     let search: OneSearchModel
     /// A screen by its name, as a link opens it (RootView.openScreen): the
     /// one way a page opens by name.
@@ -57,11 +56,10 @@ struct PlanSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: SheetPage.self) { page in SheetPageView(page: page, nearest: search.nearest) }
         }
-        // The welcome, the first time with no route, once the planning
-        // aid's words are accepted (the two never stack); put away, the
+        // The welcome, the first time with no route; put away, the
         // Search page asks for the destination (welcomeDone).
         .sheet(isPresented: Binding(
-            get: { firstFlight.shown(routed: plan.routed) && (planningAidAccepted || !PlanningAidNotice.wanted()) && nav.card == nil },
+            get: { firstFlight.shown(routed: plan.routed) && nav.card == nil },
             set: { up in if !up { welcomeDone() } })) {
                 WelcomeSheet(go: welcomeDone)
                     .presentationDetents([.large])

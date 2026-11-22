@@ -33,13 +33,13 @@ final class ReceiverListener: @unchecked Sendable {
                 let listener = try NWListener(using: params, on: Self.port)
                 listener.newConnectionHandler = { [weak self] connection in self?.take(connection) }
                 listener.stateUpdateHandler = { [weak self] state in
-                    if case .failed(let error) = state { self?.stopped("\(error)") }
+                    if case .failed(let error) = state { self?.stopped(Problems.say("The receiver could not be listened to", error)) }
                 }
                 listener.start(queue: queue)
                 self.listener = listener
                 problem = nil
             } catch {
-                problem = "\(error)"
+                problem = Problems.say("The receiver could not be listened to", error)
             }
         }
     }

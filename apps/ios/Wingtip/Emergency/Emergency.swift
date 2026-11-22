@@ -108,7 +108,7 @@ final class Emergency {
                         problem = "No fields: the planner did not answer and no chart data is kept on this iPhone here. Keep the route for the air before you fly."
                     }
                 } catch {
-                    problem = "The fields could not be ranked on this iPhone: \(error.localizedDescription)"
+                    problem = Problems.say("The fields could not be ranked on this iPhone", error)
                 }
             }
         }
@@ -120,7 +120,7 @@ final class Emergency {
         do {
             ranked = try Self.bestFields(answer, fix: fix, variationDeg: Self.variation(at: fix.coordinate))
         } catch {
-            problem = "The fields could not be ranked: \(error.localizedDescription)"
+            problem = Problems.say("The fields could not be ranked", error)
         }
     }
 

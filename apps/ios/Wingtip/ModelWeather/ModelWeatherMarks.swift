@@ -99,7 +99,7 @@ extension ModelWeather {
         do {
             return (try Engine.gairmetHazards().labels, nil)
         } catch {
-            return ([:], "The G-AIRMETs' hazard names could not be read: \(error.localizedDescription)")
+            return ([:], Problems.say("The G-AIRMETs' hazard names could not be read", error))
         }
     }
 }

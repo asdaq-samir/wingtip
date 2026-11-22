@@ -80,7 +80,7 @@ struct SavedFlightsModelTests {
         model.notes = "Fuel at KHIB"
         await model.commitEdit()
         #expect(model.editingID == 1)
-        #expect(model.rowProblem == "Not kept: The server answered 400.")
+        #expect(model.rowProblem == "The change could not be kept.")
     }
 
     @Test func aNameOverTheLimitIsSaidBeforeAsking() async {

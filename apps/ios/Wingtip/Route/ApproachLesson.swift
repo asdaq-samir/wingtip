@@ -62,7 +62,7 @@ final class ApproachLesson {
             problem = nil
             coach()
         } catch {
-            problem = "The \(pick.name) couldn't be had: \(error.localizedDescription)"
+            problem = Problems.say("The \(pick.name) couldn't be had", error)
         }
     }
 
@@ -74,7 +74,7 @@ final class ApproachLesson {
             step = min(step, max(steps.count - 1, 0))
         } catch {
             steps = []
-            problem = "The dry run couldn't be worked out: \(error.localizedDescription)"
+            problem = Problems.say("The dry run couldn't be worked out", error)
         }
     }
 }

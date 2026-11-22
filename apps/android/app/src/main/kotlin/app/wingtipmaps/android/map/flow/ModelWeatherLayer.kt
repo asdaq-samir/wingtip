@@ -314,7 +314,7 @@ object ModelWeatherLayer {
             PropertyFactory.symbolPlacement(Property.SYMBOL_PLACEMENT_LINE),
             PropertyFactory.textField(Expression.get("label")),
             PropertyFactory.textFont(arrayOf(MapStyle.FONT)),
-            PropertyFactory.textSize(11f),
+            PropertyFactory.textSize(app.wingtipmaps.android.map.MapLabels.lateSize(11f)),
             PropertyFactory.symbolSpacing(320f),
             PropertyFactory.textColor(colour),
             PropertyFactory.textHaloColor(WingtipColors.Chart.CASING_HEX.toColorInt()),

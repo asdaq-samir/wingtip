@@ -54,7 +54,7 @@ struct ProfilePhotoSection: View {
             for (figure, read) in pairs { if let read { model.drafts[figure] = Format.tenths(read.value) } }
             words = Array(Set(found.words)).sorted()
         } catch {
-            problem = "The page could not be read: \(error.localizedDescription)"
+            problem = Problems.say(Wording.pageNotRead, error)
         }
     }
 }

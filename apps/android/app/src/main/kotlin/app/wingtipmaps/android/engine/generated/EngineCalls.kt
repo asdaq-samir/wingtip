@@ -1891,6 +1891,12 @@ fun Engine.readDatis(text: String): Result<EngineContract.ReadDatisAnswer> =
     rule("read_datis", EngineContract.ReadDatisInput(text = text))
 
 /**
+ * A route from another app's flight-plan file read: Garmin's FlightPlan XML (.fpl) or a GPX route, its ends and the points between that have an identifier, for the apps to preview; or the words for the pilot where it is not one.
+ */
+fun Engine.readRouteFile(text: String): Result<JsonElement> =
+    rule("read_route_file", EngineContract.ReadRouteFileInput(text = text))
+
+/**
  * A GPX or KML track read: its points in time order, or the words for the pilot where it has none to use.
  */
 fun Engine.readTrack(text: String): Result<JsonElement> =

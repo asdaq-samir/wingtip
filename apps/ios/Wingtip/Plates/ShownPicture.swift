@@ -24,8 +24,7 @@ struct ShownPicture: Identifiable {
 
     /// The planner's pictures by their paths.
     static func paths(_ title: String, _ paths: [String], credit: String? = nil, creditLink: URL? = nil) -> ShownPicture {
-        var shown = ShownPicture(title: title, credit: credit) { try await PictureCache.images(paths) }
-        shown.creditLink = creditLink
+        var shown = ShownPicture(title: title, credit: credit, creditLink: creditLink) { try await PictureCache.images(paths) }
         shown.request = PictureRequest(title: title, credit: credit, creditLink: creditLink, source: .paths(paths))
         return shown
     }
@@ -54,9 +53,10 @@ struct ShownPicture: Identifiable {
         self.request?.georeference = request.georeference
     }
 
-    init(title: String, credit: String? = nil, kept: (kind: KeptForAir.Kind, key: String)? = nil, load: @escaping () async throws -> [UIImage]) {
+    init(title: String, credit: String? = nil, creditLink: URL? = nil, kept: (kind: KeptForAir.Kind, key: String)? = nil, load: @escaping () async throws -> [UIImage]) {
         self.title = title
         self.credit = credit
+        self.creditLink = creditLink
         self.kept = kept
         self.load = load
     }

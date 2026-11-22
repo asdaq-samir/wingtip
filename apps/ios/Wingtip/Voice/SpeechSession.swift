@@ -81,7 +81,7 @@ final class SpeechSession {
                 try await install.downloadAndInstall()
             }
         } catch {
-            throw Refused(errorDescription: "The iPhone's speech model could not be fetched: \(error.localizedDescription)")
+            throw Refused(errorDescription: Problems.say("The iPhone's speech model could not be fetched", error))
         }
         let input = audio.inputNode
         let natural = input.outputFormat(forBus: 0)

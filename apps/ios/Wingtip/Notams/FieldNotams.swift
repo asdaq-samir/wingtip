@@ -46,7 +46,7 @@ final class FieldNotams {
             await take(fresh, for: ident)
         } catch {
             if ranked == nil || force {
-                problem = "Its NOTAMs could not be had, so closures and TFRs aren't shown: \(error.said)"
+                problem = Problems.say("Its NOTAMs could not be had, so closures and TFRs aren't shown", error)
             }
         }
     }
@@ -59,7 +59,7 @@ final class FieldNotams {
         do {
             names = try FieldNotamWords.idents(ident)
         } catch {
-            problem = "Its NOTAMs could not be read, so closures and TFRs aren't shown: \(error.said)"
+            problem = Problems.say("Its NOTAMs could not be read, so closures and TFRs aren't shown", error)
             return
         }
         let read = await Self.read(fresh.notams, idents: names)

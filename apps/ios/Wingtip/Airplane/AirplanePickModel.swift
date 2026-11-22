@@ -16,7 +16,7 @@ final class AirplanePickModel {
     private(set) var ownProblem: String?
 
     func loadProfiles() async {
-        do { profiles = try await Planner.aircraftProfiles(); problem = nil } catch { problem = error.localizedDescription }
+        do { profiles = try await Planner.aircraftProfiles(); problem = nil } catch { problem = Problems.say("The airplane types could not be fetched", error) }
     }
 
     /// The pilot's own, signed in; none signed out (they are the gateway's).
@@ -26,7 +26,7 @@ final class AirplanePickModel {
             own = try await Gateway.aircraftRecords()
             ownProblem = nil
         } catch {
-            ownProblem = "Your airplanes could not be fetched: \(error.localizedDescription)"
+            ownProblem = Problems.say("Your airplanes could not be fetched", error)
         }
     }
 }

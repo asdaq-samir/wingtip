@@ -42,7 +42,7 @@ struct ContactView: View {
                     Task {
                         let p = phone.trimmingCharacters(in: .whitespaces), h = homeBase.trimmingCharacters(in: .whitespaces).uppercased()
                         do { try await session.setContact(phone: p.isEmpty ? nil : p, homeBase: h.isEmpty ? nil : h); dismiss() }
-                        catch { problem = error.localizedDescription }
+                        catch { problem = Problems.say("The change could not be saved", error) }
                         saving = false
                     }
                 }
@@ -78,7 +78,7 @@ struct DeleteAccountButton: View {
                             plan.forgetPilot()
                             problem = nil
                         } catch {
-                            problem = "Your account was not deleted: \(error.localizedDescription)"
+                            problem = Problems.say("Your account could not be deleted", error)
                         }
                         deleting = false
                     }
@@ -118,7 +118,7 @@ final class DataExportState {
             problem = nil
             return file
         } catch {
-            problem = "Your data could not be exported: \(error.localizedDescription)"
+            problem = Problems.say("Your data could not be exported", error)
             throw error
         }
     }

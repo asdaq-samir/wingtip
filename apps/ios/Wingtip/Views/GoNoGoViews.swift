@@ -115,6 +115,8 @@ struct GoNoGoSection: View {
                         FindingFold(item: item, words: line.words, open: open)
                     }
                 }
+                // The ADIZs the route meets (14 CFR part 99), the engine's one line.
+                AdizLine(result: RouteAdiz.brief(plan))
                 if let rest = Glance.restWords(answer) {
                     DisclosureGroup(isExpanded: $restOpen) {
                         ForEach(Glance.rest(answer)) { item in row(item) }
@@ -298,6 +300,7 @@ struct RiskView: View {
                                 }
                             }
                             .accessibilityElement(children: .combine)
+                            .citeActions([factor.why].compactMap { $0 })
                         }
                     }
                 }

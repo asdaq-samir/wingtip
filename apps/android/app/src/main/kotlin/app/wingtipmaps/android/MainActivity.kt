@@ -25,14 +25,14 @@ import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.plan.KeptPlan
 import app.wingtipmaps.android.route.redoEdit
 import app.wingtipmaps.android.route.undoEdit
+import app.wingtipmaps.android.share.FileProblem
+import app.wingtipmaps.android.share.FlightFiles
+import app.wingtipmaps.android.ui.FileTaker
 import app.wingtipmaps.android.ui.RootScreen
 import app.wingtipmaps.android.ui.WingtipTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-
-/** What another app shares or opens for the documents library. */
-private const val PDF = "application/pdf"
 
 /**
  * The one activity: the map under the sheet (RootScreen), drawn edge to
@@ -43,7 +43,7 @@ private const val PDF = "application/pdf"
  * point (AndroidEntryPoint), so hiltViewModel makes the screens' models.
  */
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), FileTaker {
     private val session: Session by viewModels()
 
     /** The one plan the screens share (RootScreen's hiltViewModel is this
@@ -52,6 +52,9 @@ class MainActivity : ComponentActivity() {
 
     /** A link for the screens, until RootScreen has taken it. */
     private val pending = MutableStateFlow<Links.Link?>(null)
+
+    /** Why a file handed to the app was not taken, until it is read. */
+    private val problem = MutableStateFlow<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // The launch's splash screen, the same from Android 8 on (the
@@ -64,6 +67,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             WingtipTheme {
                 RootScreen(pending = pending, onHandled = { pending.value = null }, onLink = { pending.value = it })
+                FileProblem(problem)
             }
         }
         // The launch's own link once: a rotation recreates the activity
@@ -115,8 +119,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun open(intent: Intent?) {
-        shared(intent)?.let { pdf ->
-            keep(pdf)
+        handed(intent)?.let { file ->
+            take(file, intent?.type)
             return
         }
         val data = intent?.data ?: return
@@ -127,13 +131,33 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** A PDF another app shared (Send) or opened with Wingtip (View): the
-     *  manifest's application/pdf filters. */
-    private fun shared(intent: Intent?): Uri? = when (intent?.action) {
+    /** A file another app shared (Send) or opened with Wingtip (View): the
+     *  manifest's PDF, GPX and flight-plan filters. A link is no file. */
+    private fun handed(intent: Intent?): Uri? = when (intent?.action) {
         Intent.ACTION_SEND -> IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
-        Intent.ACTION_VIEW -> intent.data?.takeIf { intent.type == PDF || it.scheme == "content" && contentResolver.getType(it) == PDF }
+        Intent.ACTION_VIEW -> intent.data
         else -> null
     }?.takeIf { it.scheme == "content" }
+
+    /** A file handed over, opened, shared or dropped on the window
+     *  (WindowDrop), taken for what it is (FlightFiles): a PDF among the
+     *  pilot's own documents, a route in the shared flight's preview, and
+     *  otherwise why not, said over the map. */
+    override fun take(uri: Uri, type: String?) {
+        val kind = FlightFiles.kind(FlightFiles.name(contentResolver, uri), type ?: contentResolver.getType(uri))
+        when (kind) {
+            FlightFiles.Kind.PDF -> keep(uri)
+            FlightFiles.Kind.ROUTE -> lifecycleScope.launch {
+                FlightFiles.readRoute(contentResolver, uri)
+                    .onSuccess { route ->
+                        pending.value = route.link
+                        if (route.dropped > 0) problem.value = resources.getQuantityString(R.plurals.route_file_dropped, route.dropped, route.dropped)
+                    }
+                    .onFailure { problem.value = (it as? IllegalArgumentException)?.message ?: getString(R.string.route_file_unreadable) }
+            }
+            null -> problem.value = getString(R.string.route_file_unreadable)
+        }
+    }
 
     /** The PDF kept among the pilot's own documents, on this phone only,
      *  and opened in the reader; one that is not a PDF is said there. */

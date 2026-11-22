@@ -92,7 +92,9 @@ class OpenScreenTest {
     @Test
     fun noWordSaysItIsNotOnThisPhoneForTheRulesScreens() {
         listOf(FieldScreen.DRYRUN, FieldScreen.PROFILE, FieldScreen.MAP, FieldScreen.CLEARANCE, FieldScreen.RADIO).forEach { word ->
-            val said = OpenScreen.field(word, routed = true)
+            // With the ATC Copilot on: off, the clearance words ask for its
+            // switch (asserted above), which is not the web's alone either.
+            val said = OpenScreen.field(word, routed = true, atc = true)
             assertTrue("$word: $said", said == null)
         }
         CardRequests.take()

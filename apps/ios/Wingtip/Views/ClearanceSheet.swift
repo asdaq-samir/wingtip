@@ -94,7 +94,7 @@ struct ClearanceSheet: View {
             ("The route it gives", { if case .failure(let e) = clearing { e } else { nil } }()),
             ("The read back", { if case .failure(let e)? = checking { e } else { nil } }()),
         ]
-        return failures.compactMap { what, e in e.map { "\(what) could not be read: \($0.localizedDescription)" } }.first
+        return failures.compactMap { what, e in e.map { Problems.words("\(what) could not be read", $0) } }.first
     }
 
     /// When the clearance shown was heard, where it came off the radio.

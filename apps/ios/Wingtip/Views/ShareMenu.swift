@@ -112,7 +112,7 @@ struct ShareMenu: View {
             plan.shareProblem = nil
             return made
         } catch {
-            plan.shareProblem = "\(what) could not be made, so nothing was sent: \(error.localizedDescription)"
+            plan.shareProblem = Problems.say("\(what) could not be made, so nothing was sent", error)
             throw error
         }
     }

@@ -116,7 +116,7 @@ struct StripSheetView: View {
                     let along = place.along(points, fix: fix)
                     StripAir(points: points, position: try? along.get(), fix: fix)
                     if case .failure(let error) = along {
-                        Text("Your place on the strip could not be worked out: \(error.localizedDescription)")
+                        Text(Problems.words("Your place on the strip could not be worked out", error))
                             .font(ChartInk.note).foregroundStyle(WingtipInk.caution)
                     }
                     radio

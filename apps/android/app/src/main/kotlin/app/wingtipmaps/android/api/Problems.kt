@@ -40,11 +40,19 @@ object Problems {
         }
         val said = refused?.takeIf { it.first in CLIENT_ERRORS }?.second?.trim()?.trimEnd('.')?.ifEmpty { null }
         return when {
-            e is IOException -> "$what: there is no connection to Wingtip."
+            // No connection said first and as such, as the web's lib/problems
+            // (NO_CONNECTION) and the iPhone say it: in the air most of a
+            // flight, and not the server's fault.
+            e is IOException -> "$NO_CONNECTION. $what."
             said != null -> "$what: $said."
             else -> "$what."
         }
     }
 
     private val CLIENT_ERRORS = 400..499
+
+    /** What a list or a figure says where its answer could not be had for
+     *  want of a network (the web's NO_CONNECTION; design/wording.json's
+     *  no_connection for a screen's own words). */
+    const val NO_CONNECTION = "No connection"
 }

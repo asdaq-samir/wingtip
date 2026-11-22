@@ -121,7 +121,7 @@ struct HandbookReviewView: View {
             model.close()
             dismiss()
         } catch {
-            model.problem = "The confirmed figures could not be checked: \(error.localizedDescription)"
+            model.problem = Problems.say("The confirmed figures could not be checked", error)
         }
     }
 }

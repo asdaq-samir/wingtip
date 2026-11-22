@@ -895,6 +895,11 @@ placement wins, and the difference is noted.
      filed with a tap and the route planned again. The Go / No-Go is asked
      with the alternate, so its 91.169 finding is the planner's.
   7. Detail folded under a tap (a `ListItem` that expands).
+  8. The FAA data out of cycle (`brief/DataCycles`, the web's
+     dataWarning): the planner's map ages' `data_cycles`, each judged
+     again on the phone's day by the engine's `data_cycle`, said in one
+     caution line ("FAA data out of date: charts and procedures"; 14 CFR
+     91.103), in BriefGlance's caution row (§3.21).
 - **Ready to Fly** (`ready/`): a checklist of what is still missing,
   each a `ListItem` with a leading state glyph and a trailing "Fix"
   `TextButton` (`ReadyFixer`), at the top of the Brief when the plan is
@@ -1186,6 +1191,14 @@ a Material `Badge` at the top of the map, beside the receiver's, says
      connected `ToggleButton` group, never a slider (0017).
   5. Downloads (`offline/`), Minimums, Checklists and About as rows
      with chevrons.
+- **Connected Apps** (round 3, the web's ConnectedAppsPage; the deep
+  security review's N2): You's last row, signed in, opens a card
+  (`account/ConnectedApps`, one view model) listing each AI app connected
+  through the MCP connector, its name and when it was last used, with
+  Disconnect at its end in the error colour. Disconnect asks first in
+  Material's `AlertDialog`, then revokes that connection's tokens
+  (DELETE /api/me/connections/{id}); one already gone is simply no longer
+  listed, any other failure said in place (`ProblemLine`).
 - **Opened from** the account button beside the one search, by its tap
   alone (`account/AccountButton`), no menu between (the owner,
   2026-11-10). What its menu held is on this page: Sign In or Sign Out
@@ -1356,7 +1369,7 @@ terms; checked against Android's adaptive app quality guidelines
   - Coach debriefs
   - Downloads
   - the nav log, with the leg list and the leg
-- **The documents library** (§3.19): the library in the list pane and
+- **The documents library** (§3.20): the library in the list pane and
   the reader in the detail pane beside it and the map.
 - **Navigation**: the four tabs stay the panel's first row (0013). Do
   not swap them for a `NavigationRail` or `NavigationSuiteScaffold`
@@ -1397,20 +1410,52 @@ terms; checked against Android's adaptive app quality guidelines
   another app opens as a tap on it does (a shared flight still
   previewed first); words dropped are typed into the one search; a
   sign-in link or another address is refused (Tier 1
-  Drag_Drop_Support).
-- **Not yet** (each its own piece): ink markup on a plate (the iPad's
-  PencilKit `PlateMarkup`; Android's `androidx.ink`), a second window of
-  the app (multi-instance; the iPad's `MainWindow`, here held back by the
-  single task the sign-in link needs), a plate in a window of its own,
-  dragging a field's row out, files (a flight, a GPX) dropped or opened
-  (the app opens none yet), resizable pane dividers (Tier 1 UI_Config),
-  and the tablet's store captures (docs/store/screenshots).
+  Drag_Drop_Support). A file dropped is taken as one opened with the
+  app is (below). Rows drag out (`ui/DragOut`, a long press, Compose's
+  `dragAndDropSource` with `DRAG_FLAG_GLOBAL`): a field's or a fix's
+  search result and a route point as its identifier with its card's
+  link, a nav log leg as its sentence (`LegWords`) with its end's link.
+- **Files** (`share/FlightFiles`, `MainActivity.take`): a Garmin flight
+  plan (`.fpl`) or a GPX route, opened with Wingtip from Files or a
+  mail, shared to it, or dropped on its window, is read by the engine's
+  `read_route_file` (the points with an identifier; a user waypoint is
+  left out and the pilot told how many) and opens in the shared flight's
+  preview, never planned unasked (the security review's N3), as the
+  iPad's WindowHost opens a flight or a track. A PDF goes to the pilot's
+  own documents (§3.20). Anything else, or a file the engine cannot
+  read, is said in Material's dialog over the map (`share/FileProblem`).
+- **Ink on charts** (`plates/PlateInk`, `plates/ChartInk`): Markup in a
+  plate's or the airport diagram's full-screen bar, Jetpack Ink's pen
+  and highlighter as the documents reader has them (§3.20,
+  `library/MarkLayer`, the reader's own Markup bar at the foot), the
+  page held still while marking. Kept on the device alone by the chart
+  and its d-TPP cycle (the cycle read from the plate's address), so the
+  next cycle's plate starts clean and the last cycle's ink is dropped as
+  it is first opened, as the iPad's PencilKit `PlateMarkup` keeps it.
+- **A plate in its own window** (`plates/PlateWindow`): on a medium or
+  wider window the plate viewer's Open in New Window opens it beside
+  the app (`FLAG_ACTIVITY_LAUNCH_ADJACENT`, a task of its own,
+  resizable), as the iPad's chart window; links and files still go to
+  the app's own window alone (the plate's activity has no intent
+  filter).
+- **Resizable panes** (`ui/PaneDivider`, `PaneRoom.paneWidth`): the
+  panel's and the card pane's divider with the map is Material's
+  `VerticalDragHandle`, dragged to widen or narrow the pane (TalkBack:
+  Widen Pane, Narrow Pane), from three quarters of a panel to what
+  leaves the map a panel's width, kept through a resize, a rotation
+  and a fold (Tier 1 UI_Config).
+- **Not yet** (each its own piece): a second window of the whole app
+  (multi-instance; the iPad's `MainWindow`, here held back by the
+  single task the sign-in link needs), a Wingtip flight file of its own
+  and GPX or KML tracks (Android has no track replay yet), and the
+  tablet's store captures (docs/store/screenshots).
 - **Tests**: `WidePanesTest` (the panes at 1280, 1024 and 700 dp on any
   emulator) and `TabletLayoutTest` (the whole app in an expanded
   window, skipped on a narrower one), both `@LargeScreen`, run on CI's
   Pixel Tablet emulator at night and in a wave's validation
-  (docs/CI.md); `PaneRoomTest`, `ShortcutTest` and `DroppedTest` on the
-  JVM.
+  (docs/CI.md); `PaneRoomTest`, `ShortcutTest`, `DroppedTest`,
+  `PlateInkTest` and `FlightFilesTest` on the JVM, and the engine's
+  `read_route_file` against apps/web/src/lib/fixtures/routeFile.json.
 - **Sources**:
   - https://developer.android.com/develop/ui/compose/layouts/adaptive/use-window-size-classes
   - https://developer.android.com/develop/ui/compose/layouts/adaptive/build-a-supporting-pane-layout
@@ -1443,6 +1488,21 @@ From the offline and store audits of 2026-11-10:
   silence (`voice/RecognizerErrors`).
 - **Every call** through the app's client ends after 10 s, a write after
   60 s; streams and downloads use `Gateway.streaming`.
+- **No connection said as such** (round 3, the web's NO_CONNECTION): a
+  failure for want of a network reads "No connection. The chart could not
+  be fetched." (`api/Problems`), and the model weather's bar says "No
+  connection." (design/wording.json's `no_connection`) instead of
+  "Fetching model weather…" for ever.
+- **Emergency in flying mode** has flying mode's 60-dp touch target
+  (`WingtipSize.FlyingTarget`, design/tokens.json's `flying-target`, as
+  the web's and the iPhone's), Material's text button drawn its own size
+  inside it (`LocalMinimumInteractiveComponentSize`).
+- **Traffic's heights** are marked against own ship's GPS height to the
+  nearest 10 ft (`Traffic.markedFt`), as the web and the iPhone mark
+  them, so the engine's 1,000 ft near band (`traffic_marks`, after 14 CFR
+  91.159's spacing) gives one airplane one answer on all three.
+- **Saved Flights' empty line** says where a flight is saved (the web or
+  the iPhone, with the account), since Android has no Save of its own.
 - **Sign-out and Delete Account** forget everything the phone kept of the
   pilot (`account/PhoneWipe`).
 
@@ -1482,45 +1542,7 @@ for, by the phones' wasted-work audit:
   it the fix, so a traffic answer draws the map's traffic, not the
   whole pane with its bars and field actions.
 
-### 3.20 The web's 2026-11-21 changes on Android (claude/parity3-android)
-
-What the web changed in the wave of 2026-11-21 that a pilot sees, as
-Android has it, each in the platform's own parts:
-
-- **The Brief** (`brief/BriefGlance`, `brief/BriefGlanceRows`): under the
-  verdict and its findings, one caution each for what the briefing could
-  not check, an ADIZ on the route (`route_adiz`, 14 CFR part 99) and a
-  route out of the United States (`route_jurisdiction`, decision 0053);
-  then Adverse Conditions (`gonogo_adverse_rows`, AIM 7-1-5(b)(1)) as
-  `ListItem`s with the legs and the time on the phone's clock and zone;
-  then Before You Go's Beyond Reserve and En Route's Lowest Ceiling,
-  Visibility and Most Headwind (`route_headwind`); When to Go at the foot.
-  The briefing is the route's `/api/briefing`, asked after the Go / No-Go.
-- **FPL**: on the first flight the airplane pill reads "Add Your Airplane
-  for Times and Fuel" until the FPL tip is closed; a first route's wait for
-  a position past 400 ms says "Finding where you are…" in a Snackbar; an
-  approach picked lands on its own runway (`plan/LandingRunway`, the
-  engine's `landing_runway`; circling minimums not yet read, so taken as
-  none); the fuel is set in `WingtipSheet` at half height over the plan,
-  the gauge in sight; the Undo Snackbar is Material's short one; the empty
-  Nav Log says where its legs come from.
-- **Flying**: the view's `keepScreenOn` while the instruments are up; Done
-  Flying across their foot, 60 dp tall, the instruments back by
-  themselves after a minute on the ground.
-- **The map**: Larger Map Labels, a tile in the Map card's layers, and the
-  night inks on the dark halo (`map/MapLabels`, from design/tokens.json's
-  map.label), applied to the style MapStyle writes.
-- **The airport card**: the TAF's issued and valid times under it, its
-  expiry in the caution ink (`taf_validity`); the NOTAMs' age under their
-  title (`kept_age`) and Try Again on their problem line.
-- **The airspace card**: Special VFR, or No Special VFR at part 91
-  appendix D's airports, for a Class B, C or D volume from the surface
-  (`special_vfr`).
-
-The inventory, each web change with its Android status, is the wave's
-audit page (audit/parity3-android.md).
-
-### 3.21 The documents library and its reader (2026-11-21)
+### 3.20 The documents library and its reader (2026-11-21)
 
 The web's §13a on Android (the owner, 2026-11-21: "Also port over
 everything to phones and iPads and android tablets"; decision 0057).
@@ -1582,8 +1604,10 @@ everything to phones and iPads and android tablets"; decision 0057).
   paragraph on the sheet's stack (`CardRequests`), over wherever the
   pilot is: "14 CFR 91.155" at § 91.155, "AIM 7-1-5" at its row of the
   outline or, without one, the first page its heading's words are on.
-  The Brief's finding row keeps its one spoken description, so TalkBack
-  reads the why but does not reach the link in it yet.
+  The Brief's finding row keeps its one spoken description, and each
+  cite in it is one of the row's TalkBack actions ("Open 14 CFR 91.155",
+  `rememberCiteActions`, round 3), so the actions menu opens the rule as
+  a tap on its link does.
 - **Links**: `?doc=` on the app's address (`aim@7-1-5`,
   `cfr-14-91@91.155`, `phak@p42`; `library/DocPlace`, the web's own
   format) opens the reader (`Links.Doc`).
@@ -1611,6 +1635,62 @@ everything to phones and iPads and android tablets"; decision 0057).
 - **Avoid**: a rule's citation typed into a screen (ask `citations`); a
   pilot's own document or mark sent anywhere; a second home for a
   document control.
+
+### 3.21 The web's 2026-11-21 changes on Android (claude/parity3-android)
+
+What the web changed in the wave of 2026-11-21 that a pilot sees, as
+Android has it, each in the platform's own parts:
+
+- **The Brief** (`brief/BriefGlance`, `brief/BriefGlanceRows`): under the
+  verdict and its findings, one caution each for what the briefing could
+  not check, an ADIZ on the route (`route_adiz`, 14 CFR part 99) and a
+  route out of the United States (`route_jurisdiction`, decision 0053);
+  then Adverse Conditions (`gonogo_adverse_rows`, AIM 7-1-5(b)(1)) as
+  `ListItem`s with the legs and the time on the phone's clock and zone;
+  then Before You Go's Beyond Reserve and En Route's Lowest Ceiling,
+  Visibility and Most Headwind (`route_headwind`); When to Go at the foot.
+  The briefing is the route's `/api/briefing`, asked after the Go / No-Go.
+  Round 3: the one caution row holds what could not be checked with the
+  FAA data out of its cycle under it, or either alone (`brief/DataCycles`,
+  the engine's `data_cycle` on the phone's day; 14 CFR 91.103), as the
+  web's CautionRow; and Depart and Arrive sit either side of En Route, as
+  the web's FieldRow (`brief/BriefFields`): the field, its METAR's flight
+  category and the time there, the field's finding first, the runway
+  flown, the takeoff or landing over 50 ft and the runway's length, all
+  from the engine's `gonogo_runway_checks` with the briefing's METARs and
+  runways, the airplane's POH tables the planner sent with the nav log's
+  altitude line, and the runways picked (14 CFR 91.103(b)). Only the
+  figures it has are shown: none without an airplane's tables.
+- **FPL**: on the first flight the airplane pill reads "Add Your Airplane
+  for Times and Fuel" until the FPL tip is closed; a first route's wait for
+  a position past 400 ms says "Finding where you are…" in a Snackbar; an
+  approach picked lands on its own runway (`plan/LandingRunway`, the
+  engine's `landing_runway`), or, where its plate publishes circling
+  minimums (the planner's placed plate's `circling`, `plan/PlateCircling`,
+  asked as the approach is picked), the runway the pilot picks: a circle
+  to land (AIM 5-4-20). Until the plate is in, none is taken; the fuel is set in `WingtipSheet` at half height over the plan,
+  the gauge in sight; the Undo Snackbar is Material's short one; the empty
+  Nav Log says where its legs come from.
+- **Flying**: the view's `keepScreenOn` while the instruments are up; Done
+  Flying across their foot, 60 dp tall, the instruments back by
+  themselves after a minute on the ground.
+- **The map**: Larger Map Labels, a tile in the Map card's layers, and the
+  night inks on the dark halo (`map/MapLabels`, from design/tokens.json's
+  map.label), applied to the style MapStyle writes. Round 3: the layers
+  added after the style is in (the station model's winds and lines, the
+  AIRMETs' names, the 3D shelves' tabs, the plates' fix tags, drawn that
+  much larger rather than stretched) take the same scale, at most 1.2×
+  (`MapLabels.late`); a new style is written as the switch changes, and
+  each is added again over it. Android's map draws no route pills.
+- **The airport card**: the TAF's issued and valid times under it, its
+  expiry in the caution ink (`taf_validity`); the NOTAMs' age under their
+  title (`kept_age`) and Try Again on their problem line.
+- **The airspace card**: Special VFR, or No Special VFR at part 91
+  appendix D's airports, for a Class B, C or D volume from the surface
+  (`special_vfr`).
+
+The inventory, each web change with its Android status, is the wave's
+audit page (audit/parity3-android.md).
 
 ## 4. Not verified
 
@@ -1710,7 +1790,7 @@ swapped:
   and the sheet's first content (`Home` in `ui/SheetPages`). The system's
   and Macrobenchmark's time to full display is measured to that moment
   (NATIVE-ANDROID.md, "Release build").
-- The documents reader (§3.19): the platform's `PdfRenderer`, Compose's
+- The documents reader (§3.20): the platform's `PdfRenderer`, Compose's
   `HorizontalPager`, telephoto's `zoomable`, Jetpack Ink's
   `InProgressStrokes` and `CanvasStrokeRenderer`, Material's
   `ModalBottomSheet`, segmented buttons, `BottomAppBar` and dialogs.

@@ -140,7 +140,7 @@ struct DiagramOwnShipView: View {
             }
             diagram = read
         } catch {
-            problem = "The FAA's diagram for \(ident) could not be fetched. \(error.localizedDescription)"
+            problem = Problems.say("The FAA's diagram for \(ident) could not be fetched", error)
         }
     }
 }

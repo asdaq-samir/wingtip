@@ -87,7 +87,7 @@ final class VoiceInput {
             }
         } catch {
             await close()
-            problem = error.localizedDescription
+            problem = Problems.words("The microphone would not start", error)
             Log.radio.error("the microphone for a question would not start: \(error.localizedDescription, privacy: .public)")
             return nil
         }

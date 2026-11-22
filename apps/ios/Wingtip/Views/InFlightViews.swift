@@ -66,7 +66,7 @@ struct CheckpointNotesView: View {
             }
         } catch {
             guard !Task.isCancelled else { return }
-            problem = "The route's notes could not be fetched: \(error.localizedDescription)"
+            problem = Problems.say("The route's notes could not be fetched", error)
         }
     }
 
@@ -82,7 +82,7 @@ struct CheckpointNotesView: View {
                 // A failed save takes its own text back out, where the note
                 // still holds it.
                 if notes[key]?.text == text { notes[key] = before }
-                problem = "The note could not be saved: \(error.localizedDescription)"
+                problem = Problems.say("The note could not be saved", error)
             }
         }
     }
@@ -210,7 +210,7 @@ struct FlownTrackView: View {
                     }
                     Button("Delete the Track", role: .destructive) {
                         Task {
-                            do { try await Gateway.deleteTrack(flight); self.track = nil; tracking.flown = []; replay.clear(replayKey) } catch { problem = error.localizedDescription }
+                            do { try await Gateway.deleteTrack(flight); self.track = nil; tracking.flown = []; replay.clear(replayKey) } catch { problem = Problems.say("The track could not be deleted", error) }
                         }
                     }
                 }
@@ -228,7 +228,7 @@ struct FlownTrackView: View {
                     Button("Keep the Path This iPhone Flew") {
                         let saved = ownShip.trail.asSavedTrack
                         Task {
-                            do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = error.localizedDescription }
+                            do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = Problems.say("The track could not be saved", error) }
                         }
                     }
                 }
@@ -238,7 +238,7 @@ struct FlownTrackView: View {
         }
         .navigationTitle(title)
         .task {
-            do { track = try await Gateway.track(flight) } catch { problem = error.localizedDescription }
+            do { track = try await Gateway.track(flight) } catch { problem = Problems.say("The track could not be fetched", error) }
             loaded = true
         }
         .onDisappear { replay.clear(replayKey) }
@@ -248,7 +248,7 @@ struct FlownTrackView: View {
             defer { if reading { url.stopAccessingSecurityScopedResource() } }
             let found: [SavedTrackPoint]?
             do { found = try GPXTrack.points(try Data(contentsOf: url)) } catch {
-                problem = "The file could not be read: \(error.localizedDescription)"
+                problem = Problems.say("The file could not be read", error)
                 return
             }
             guard let read = found, !read.isEmpty else {
@@ -257,7 +257,7 @@ struct FlownTrackView: View {
             }
             let saved = SavedTrack(points: read, source: "gpx")
             Task {
-                do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = error.localizedDescription }
+                do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = Problems.say("The track could not be saved", error) }
             }
         }
     }
@@ -362,7 +362,7 @@ struct ForgetNotesButton: View {
                             said = removed == 1 ? "1 note forgotten" : "\(removed) notes forgotten"
                             problem = nil
                         } catch {
-                            problem = "Your notes could not be forgotten: \(error.localizedDescription)"
+                            problem = Problems.say("Your notes could not be forgotten", error)
                         }
                     }
                 }

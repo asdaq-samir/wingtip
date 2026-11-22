@@ -110,7 +110,7 @@ struct DebriefSections: View {
             answer = try await Planner.debrief(checkpoints: detail.checkpoints, points: points)
             problem = nil
         } catch {
-            problem = "The debrief could not be worked out: \(error.localizedDescription)"
+            problem = Problems.say("The debrief could not be worked out", error)
         }
         loaded = true
     }
@@ -223,7 +223,7 @@ struct HoldingView: View {
                                               windKt: Double(windKt), altitudeFt: Double(altitude))
                 problem = nil
             } catch {
-                problem = error.localizedDescription
+                problem = Problems.refusal(error, otherwise: "The hold could not be worked out")
             }
         }
     }
@@ -404,7 +404,7 @@ struct LostCommsSegmentsSections: View {
                 leave = found.leave
                 problem = nil
             } catch {
-                problem = error.localizedDescription
+                problem = Problems.refusal(error, otherwise: "The lost communications plan could not be worked out")
             }
         }
         Section("The Route's Segments") {

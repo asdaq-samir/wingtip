@@ -261,7 +261,7 @@ struct LogbookView: View {
             var next = now
             next[keyPath: key] = value
             Task {
-                do { currency = try await Gateway.setCurrencyDates(next) } catch { problem = error.localizedDescription }
+                do { currency = try await Gateway.setCurrencyDates(next) } catch { problem = Problems.say("The dates could not be saved", error) }
             }
         })
     }
@@ -276,7 +276,7 @@ struct LogbookView: View {
                 do {
                     return SavedFile(data: try Data(contentsOf: exportFile), type: .commaSeparatedText, name: exportFile.lastPathComponent)
                 } catch {
-                    $problem.wrappedValue = "The CSV could not be made, so nothing was sent: \(error.localizedDescription)"
+                    $problem.wrappedValue = Problems.say("The CSV could not be made, so nothing was sent", error)
                     throw error
                 }
             }) { label }
@@ -310,7 +310,7 @@ struct LogbookView: View {
     }
 
     private func remind(_ on: Bool) async {
-        do { reminders = try await Gateway.setReminders(on) } catch { problem = error.localizedDescription }
+        do { reminders = try await Gateway.setReminders(on) } catch { problem = Problems.say("The reminders could not be changed", error) }
     }
 
     private func load() async {
@@ -323,17 +323,17 @@ struct LogbookView: View {
             flights.entries = list.filter { !held.contains($0.id) }
             currency = try await Gateway.currency()
             do { reminders = try await Gateway.reminders(); remindersProblem = nil } catch {
-                remindersProblem = "Whether reminders are on could not be fetched: \(error.localizedDescription)"
+                remindersProblem = Problems.say("Whether reminders are on could not be fetched", error)
             }
             do { paperwork = try await Gateway.paperwork(); paperworkProblem = nil } catch {
-                paperworkProblem = "What falls due could not be fetched: \(error.localizedDescription)"
+                paperworkProblem = Problems.say("What falls due could not be fetched", error)
             }
             problem = nil
             do { exportFile = try Self.write(list) } catch {
                 exportFile = nil
-                problem = "Your logbook's CSV could not be written: \(error.localizedDescription)"
+                problem = Problems.say("Your logbook's CSV could not be written", error)
             }
-        } catch { problem = "Your logbook could not be fetched: \(error.localizedDescription)" }
+        } catch { problem = Problems.say(Wording.logbookNotFetched, error) }
     }
 
     /// The logbook as a file to share, named for today.
@@ -355,7 +355,7 @@ struct LogbookView: View {
             imported = nil
             preview = (url.lastPathComponent, try LogbookCSV.read(text))
         } catch {
-            problem = "Could not import the logbook: \(error.localizedDescription)"
+            problem = Problems.say("The logbook could not be imported", error)
         }
     }
 
@@ -369,7 +369,7 @@ struct LogbookView: View {
             preview = nil
             await load()
         } catch {
-            problem = "Could not import the logbook: \(error.localizedDescription)"
+            problem = Problems.say("The logbook could not be imported", error)
         }
     }
 }

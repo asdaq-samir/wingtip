@@ -131,7 +131,7 @@ struct NearFromView: View {
         }
         .navigationTitle("Nearest")
         .task(id: label) {
-            do { fields = try await Planner.nearest(lat: lat, lon: lon, limit: 25) } catch { problem = error.said }
+            do { fields = try await Planner.nearest(lat: lat, lon: lon, limit: 25) } catch { problem = Problems.say(Wording.nearestNotFound, error) }
         }
     }
 }

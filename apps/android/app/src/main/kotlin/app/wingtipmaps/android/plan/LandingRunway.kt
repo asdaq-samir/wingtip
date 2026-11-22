@@ -11,16 +11,27 @@ import app.wingtipmaps.android.engine.generated.landingRunway
  * intended landing), as the web's landingRunway asks it: the approach's
  * own, straight in, where one is picked ("Land RWY 9" with an ILS 09, the
  * HIG review's Q3), a runway the wind or the pilot picked giving way to
- * it. Android does not yet read the plate's circling minimums here, so
- * `circling` is null, which the rule takes as none: the approach's own
- * runway always. Null at a field with no approach picked, where the
- * runway menu stands as it was.
+ * it, unless the plate publishes circling minimums: then the pilot's
+ * own pick stands, a circle to land (AIM 5-4-20), as the web sends the
+ * plate's `circling`. `circling` holds each approach's flag as the
+ * planner placed its plate (PlateCircling, by its pick's key); one not
+ * yet known is sent as null, which the rule takes as none: the
+ * approach's own runway. Null at a field with no approach picked, where
+ * the runway menu stands as it was.
  */
 object LandingRunway {
-    fun at(picks: PlanProcedures.State, ident: String, list: ProcedureList?): EngineContract.LandingRunwayAnswer? {
+    fun at(
+        picks: PlanProcedures.State,
+        ident: String,
+        list: ProcedureList?,
+        circling: Map<String, Boolean> = PlateCircling.shared.known.value,
+    ): EngineContract.LandingRunwayAnswer? {
         val approach = PlanProcedures.at(picks, ident, listOf("approach")).firstOrNull() ?: return null
         val own = list?.procedures?.firstOrNull { it.id == approach.id }?.runway
         val picked = picks.landings[ident.uppercase()]
-        return Engine.landingRunway(approach = true, straightIn = own, circling = null, picked = picked, byPilot = picked != null).getOrNull()
+        return Engine.landingRunway(
+            approach = true, straightIn = own, circling = circling[PlateCircling.key(ident, approach.id)],
+            picked = picked, byPilot = picked != null,
+        ).getOrNull()
     }
 }

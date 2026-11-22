@@ -22,7 +22,7 @@ struct FlightWidget: Widget {
         }
         .configurationDisplayName("Next Flight")
         .description("The route, its Go / No-Go and the departure's weather: the plan on the page or a saved flight.")
-        .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular])
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .systemExtraLarge, .accessoryRectangular])
     }
 }
 
@@ -32,8 +32,9 @@ struct FlightEntry: TimelineEntry {
     let flight: WidgetSnapshot?
 }
 
-/// The widget by its family: a card on the Home Screen, small or
-/// medium, and a line on the Lock Screen.
+/// The widget by its family: a card on the Home Screen, small, medium,
+/// large or (on an iPad) extra large, each laid out for its own size
+/// (FlightWidgetsLarge), and a line on the Lock Screen.
 private struct FlightWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: FlightEntry
@@ -45,6 +46,10 @@ private struct FlightWidgetView: View {
                 LockLine(flight: flight)
             case .systemMedium:
                 MediumCard(flight: flight)
+            case .systemLarge:
+                LargeFlightCard(flight: flight)
+            case .systemExtraLarge:
+                ExtraLargeFlightCard(flight: flight)
             default:
                 SmallCard(flight: flight)
             }
@@ -174,7 +179,7 @@ private struct NoFlight: View {
 
 /// "C81 → KDLH", with the airplane symbol in the brand's tint, as the Live
 /// Activity's RouteLine writes it.
-private struct RouteTitle: View {
+struct RouteTitle: View {
     let flight: WidgetSnapshot
 
     var body: some View {
@@ -191,7 +196,7 @@ private struct RouteTitle: View {
 }
 
 /// The verdict's mark and word in its colour.
-private struct VerdictLine: View {
+struct VerdictLine: View {
     let verdict: String?
 
     var body: some View {
@@ -205,7 +210,7 @@ private struct VerdictLine: View {
 }
 
 /// The departure's flight category in its colour and the wind in words.
-private struct WeatherLine: View {
+struct WeatherLine: View {
     let flight: WidgetSnapshot
 
     var body: some View {

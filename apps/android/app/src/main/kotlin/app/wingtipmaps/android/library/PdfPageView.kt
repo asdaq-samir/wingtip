@@ -25,22 +25,14 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
-import androidx.ink.authoring.compose.InProgressStrokes
-import androidx.ink.rendering.android.canvas.CanvasStrokeRenderer
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.Loading
 import me.saket.telephoto.zoomable.ZoomableState
 import me.saket.telephoto.zoomable.zoomable
 import kotlin.math.roundToInt
-
-/** How a page is marked now: not at all (reading, the page zooms), or
- *  with the pen or the highlighter (the page holds still for the ink). */
-data class Marking(val pen: Pen?, val color: Int, val size: Float)
 
 /**
  * One page of a PDF, fitted to the reader and drawn at twice its width on
@@ -84,7 +76,8 @@ internal fun PdfPageView(
                 val image = remember(page) { page.asImageBitmap() }
                 Image(image, contentDescription = stringResource(R.string.reader_page_of, index + 1, pages.count), colorFilter = if (inverted) INVERT else null, modifier = Modifier.fillMaxSize())
             }
-            Overlay(matches, marks, wPx)
+            Matches(matches)
+            MarkLayer(marks, index + 1, wPx, hPx, marking, onMarked)
             for (m in marks.filter { it.note != null }) {
                 IconButton(
                     onClick = { onNote(m) },
@@ -93,31 +86,17 @@ internal fun PdfPageView(
                     Icon(Icons.AutoMirrored.Filled.StickyNote2, contentDescription = m.note, tint = MaterialTheme.colorScheme.primary)
                 }
             }
-            if (pen != null) {
-                val brush = remember(marking) { Mark.brush(pen, marking.color, marking.size) }
-                InProgressStrokes(defaultBrush = brush) { strokes ->
-                    onMarked(strokes.map { Mark.of(index + 1, pen, it, wPx, hPx) })
-                }
-            }
         }
     }
 }
 
-/** The search's matches, a wash of the tint, then the marks, each drawn by
- *  Ink's Canvas renderer at the page's width now over its width then. */
+/** The search's matches, a wash of the tint over each. */
 @Composable
-private fun Overlay(matches: List<RectF>, marks: List<Mark>, wPx: Float) {
-    val renderer = remember { CanvasStrokeRenderer.create() }
+private fun Matches(matches: List<RectF>) {
+    if (matches.isEmpty()) return
     val wash = MaterialTheme.colorScheme.primary.copy(alpha = MATCH_ALPHA)
-    val strokes = remember(marks) { marks.mapNotNull { m -> m.stroke()?.let { it to m.width } } }
     Canvas(Modifier.fillMaxSize()) {
         for (r in matches) drawRect(wash, Offset(r.left * size.width, r.top * size.height), Size(r.width() * size.width, r.height() * size.height))
-        drawIntoCanvas { canvas ->
-            for ((stroke, width) in strokes) {
-                val scale = wPx / width.coerceAtLeast(1f)
-                renderer.draw(canvas.nativeCanvas, stroke, android.graphics.Matrix().apply { setScale(scale, scale) })
-            }
-        }
     }
 }
 

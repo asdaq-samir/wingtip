@@ -10514,6 +10514,11 @@ enum EngineContract {
         var text: String
     }
 
+    struct ReadRouteFileInput: Codable, Equatable, Sendable {
+        /// The file's text.
+        var text: String
+    }
+
     struct ReadTrackInput: Codable, Equatable, Sendable {
         var text: String
     }

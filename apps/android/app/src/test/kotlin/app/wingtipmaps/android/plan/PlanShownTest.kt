@@ -56,6 +56,6 @@ class PlanShownTest {
         val (back, reverted) = PlanShown.failed(asked, null, IOException("offline"))
         assertFalse(reverted)
         assertTrue(back.legs.isEmpty())
-        assertEquals("The route could not be planned: there is no connection to Wingtip.", back.problem)
+        assertEquals("No connection. The route could not be planned.", back.problem)
     }
 }

@@ -134,7 +134,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
             }
             return NearestReply(airports: airports, problem: nil)
         } catch {
-            return NearestReply(airports: [], problem: "The phone could not reach the planner: \(error.localizedDescription)")
+            return NearestReply(airports: [], problem: Problems.say(Wording.plannerNotReached, error))
         }
     }
 

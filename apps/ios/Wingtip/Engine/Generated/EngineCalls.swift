@@ -1575,6 +1575,11 @@ extension Engine {
         try Self.rule("read_datis", EngineContract.ReadDatisInput(text: text))
     }
 
+    /// A route from another app's flight-plan file read: Garmin's FlightPlan XML (.fpl) or a GPX route, its ends and the points between that have an identifier, for the apps to preview; or the words for the pilot where it is not one.
+    static func readRouteFile(text: String) throws -> OpenAPIValueContainer {
+        try Self.rule("read_route_file", EngineContract.ReadRouteFileInput(text: text))
+    }
+
     /// A GPX or KML track read: its points in time order, or the words for the pilot where it has none to use.
     static func readTrack(text: String) throws -> OpenAPIValueContainer {
         try Self.rule("read_track", EngineContract.ReadTrackInput(text: text))

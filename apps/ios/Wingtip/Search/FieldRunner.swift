@@ -128,7 +128,7 @@ struct FieldRunner {
     /// where one was done; else why not.
     func spoken(_ text: String) async -> String? {
         let direct: String?
-        do { direct = try HeardCall.directOf(text) } catch { return "The words could not be read: \(error.localizedDescription)" }
+        do { direct = try HeardCall.directOf(text) } catch { return Problems.say("The words could not be read", error) }
         if let said = direct {
             guard plan.routed else { return "Direct To needs a route." }
             var near: [(Double, Double)] = []
@@ -166,7 +166,7 @@ struct FieldRunner {
         do {
             found = try await Planner.places(words)
         } catch {
-            return "The place could not be looked up: \(error.localizedDescription)"
+            return Problems.say("The place could not be looked up", error)
         }
         guard let place = found.first else { return "“\(words)” was not found." }
         guard let fields = try? await Planner.nearestOrPacks(lat: place.lat, lon: place.lon, limit: 5).fields, !fields.isEmpty else {

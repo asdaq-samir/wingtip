@@ -190,7 +190,7 @@ private struct SpecialVfrSection: View {
             }
             .accessibilityIdentifier("airspace-special-vfr")
         case .failure(let error):
-            Section("Special VFR") { ProblemLine("Special VFR could not be checked: \(error.localizedDescription)") }
+            Section("Special VFR") { ProblemLine(Problems.say("Special VFR could not be checked", error)) }
         }
     }
 }
@@ -253,6 +253,8 @@ struct BandRow: View {
             }
         }
         .accessibilityElement(children: .combine)
+        // Its cites the row's actions, where the combined row hides the links.
+        .citeActions(Self.rules(band).map(\.text))
     }
 }
 

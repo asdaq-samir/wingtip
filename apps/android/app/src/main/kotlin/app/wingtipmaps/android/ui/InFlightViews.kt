@@ -17,11 +17,13 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -206,9 +208,14 @@ fun InstrumentsBar(state: InFlight.State, onNearest: () -> Unit, onDone: () -> U
                 // target its own, nothing grown.
                 FilledTonalButton(onClick = onNearest) { Text(stringResource(R.string.nearest)) }
                 // The emergency assistant's way in from flying mode, in its
-                // own bar rather than a map button (decision 0010).
-                TextButton(onClick = { EmergencyOpen.open(EmergencyOpen.From.FLYING) }) {
-                    Text(stringResource(R.string.emergency), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
+                // own bar rather than a map button (decision 0010). Its
+                // touch target is flying mode's 60 dp (WingtipSize.FlyingTarget,
+                // a hand in turbulence), as the web's and the iPhone's are;
+                // Material's stock button is drawn its own 40 dp, not grown.
+                CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides WingtipSize.FlyingTarget) {
+                    TextButton(onClick = { EmergencyOpen.open(EmergencyOpen.From.FLYING) }) {
+                        Text(stringResource(R.string.emergency), color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.SemiBold)
+                    }
                 }
                 Text(
                     stringResource(R.string.wording_planning_aid_notice_title),

@@ -10737,6 +10737,14 @@ object EngineContract {
     )
 
     @Serializable
+    data class ReadRouteFileInput(
+        /**
+         * The file's text.
+         */
+        val text: String,
+    )
+
+    @Serializable
     data class ReadTrackInput(
         val text: String,
     )

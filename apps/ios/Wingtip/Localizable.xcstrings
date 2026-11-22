@@ -560,16 +560,6 @@
     "%lld percent solid" : {
 
     },
-    "%lld/%lld" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$lld/%2$lld"
-          }
-        }
-      }
-    },
     "%lld×" : {
 
     },
@@ -648,10 +638,19 @@
     "ADS-B receiver: %@" : {
 
     },
+    "AI Apps" : {
+
+    },
     "ATC" : {
 
     },
     "ATC Alerts" : {
+
+    },
+    "ATC Copilot" : {
+
+    },
+    "ATIS at ${airport}" : {
 
     },
     "ATIS at an Airport" : {
@@ -673,6 +672,9 @@
 
     },
     "Add" : {
+
+    },
+    "Add ${approach} to the route" : {
 
     },
     "Add %@ at %@" : {
@@ -921,9 +923,6 @@
     "Asking You" : {
 
     },
-    "Asking the iPhone…" : {
-
-    },
     "Asking…" : {
 
     },
@@ -990,10 +989,16 @@
     "Brief" : {
 
     },
+    "Brief ${approach}" : {
+
+    },
     "Brief Them" : {
 
     },
     "Brief a Flight" : {
+
+    },
+    "Brief a flight to ${airport}" : {
 
     },
     "Brief a flight to where?" : {
@@ -1210,10 +1215,16 @@
     "Comms Assist" : {
 
     },
+    "Comms Assist, ATC alerts and the clearance readback check" : {
+
+    },
     "Compass Heading" : {
 
     },
     "Confirmed" : {
+
+    },
+    "Connected Apps" : {
 
     },
     "Contact" : {
@@ -1426,6 +1437,12 @@
     "Direct To %@" : {
 
     },
+    "Direct to ${airport}" : {
+
+    },
+    "Direct to ${place}" : {
+
+    },
     "Direct to %@." : {
 
     },
@@ -1451,6 +1468,12 @@
 
     },
     "Discard your changes?" : {
+
+    },
+    "Disconnect" : {
+
+    },
+    "Disconnect %@?" : {
 
     },
     "Dismiss" : {
@@ -1552,6 +1575,9 @@
     "Edit Airplane" : {
 
     },
+    "Edit the %@" : {
+
+    },
     "Edition" : {
 
     },
@@ -1565,6 +1591,9 @@
 
     },
     "Email" : {
+
+    },
+    "Email Address" : {
 
     },
     "Email Reminders" : {
@@ -1618,6 +1647,9 @@
     "Enter a clearance" : {
 
     },
+    "Enter an email address like you@example.com" : {
+
+    },
     "Entry" : {
 
     },
@@ -1639,6 +1671,9 @@
     "Expires" : {
 
     },
+    "Explain ${notam}" : {
+
+    },
     "Explain a NOTAM" : {
 
     },
@@ -1646,6 +1681,9 @@
 
     },
     "Export as CSV" : {
+
+    },
+    "Extras" : {
 
     },
     "FAA ATCSCC" : {
@@ -1810,6 +1848,9 @@
     "Fixed Today" : {
 
     },
+    "Flash cards, holding entries and lost comms practice" : {
+
+    },
     "Flashing" : {
 
     },
@@ -1880,6 +1921,9 @@
     "Fly" : {
 
     },
+    "Fly ${airplane}" : {
+
+    },
     "Fly %@" : {
 
     },
@@ -1927,6 +1971,9 @@
 
     },
     "Follow %@ on the map" : {
+
+    },
+    "Follow, past flights and history of airplanes not yours" : {
 
     },
     "Forecast" : {
@@ -2124,9 +2171,6 @@
     "Hold for Depart From" : {
 
     },
-    "Hold to reset" : {
-
-    },
     "Holding" : {
 
     },
@@ -2152,9 +2196,6 @@
 
     },
     "How the Altitude Was Chosen" : {
-
-    },
-    "I Understand" : {
 
     },
     "I cannot tell where you are, so here are the nearest airports." : {
@@ -2261,6 +2302,9 @@
 
     },
     "Invert Plate Colors" : {
+
+    },
+    "It can no longer read your airplanes or flights or save one, until you connect it again." : {
 
     },
     "It goes from your airplanes and from the nav log's picker. This cannot be undone." : {
@@ -2782,22 +2826,13 @@
     "No Airplane" : {
 
     },
-    "No Airplane Picked" : {
-
-    },
     "No Airplanes" : {
-
-    },
-    "No Airports" : {
 
     },
     "No Bookmarks" : {
 
     },
     "No Briefing" : {
-
-    },
-    "No Checklist Yet" : {
 
     },
     "No Contents" : {
@@ -2846,6 +2881,9 @@
     "No Saved Flights" : {
 
     },
+    "No Special VFR" : {
+
+    },
     "No TAF along the route reaches past the next hour." : {
 
     },
@@ -2861,6 +2899,12 @@
     "No answer from the planner." : {
 
     },
+    "No answer in time. Try again in a moment." : {
+
+    },
+    "No apps are connected." : {
+
+    },
     "No ceiling" : {
 
     },
@@ -2870,7 +2914,7 @@
     "No codes yet" : {
 
     },
-    "No connection." : {
+    "No connection" : {
 
     },
     "No fields near here" : {
@@ -2895,6 +2939,9 @@
 
     },
     "No fuel" : {
+
+    },
+    "No items under the headings yet" : {
 
     },
     "No most-economical plan: the climb's fuel flow isn't known for this airplane." : {
@@ -2978,9 +3025,6 @@
     "Not current" : {
 
     },
-    "Not done" : {
-
-    },
     "Not found" : {
 
     },
@@ -2991,6 +3035,9 @@
 
     },
     "Not verified" : {
+
+    },
+    "Not worked out" : {
 
     },
     "Notes" : {
@@ -3006,6 +3053,9 @@
 
     },
     "Nothing to practise for now: every currency is good past the reminders, and no debrief shows a weak area." : {
+
+    },
+    "Nothing written yet" : {
 
     },
     "Now" : {
@@ -3049,6 +3099,9 @@
 
     },
     "Open" : {
+
+    },
+    "Open %@" : {
 
     },
     "Open %@'s Profile" : {
@@ -3147,6 +3200,9 @@
     "Other" : {
 
     },
+    "Other Airplanes" : {
+
+    },
     "Our flight" : {
 
     },
@@ -3216,9 +3272,6 @@
     "Pick an Airplane" : {
 
     },
-    "Pick an airplane on the iPhone." : {
-
-    },
     "Pick on the Map" : {
 
     },
@@ -3259,6 +3312,9 @@
 
     },
     "Plan a route on FPL; its legs are listed here." : {
+
+    },
+    "Plan a trip to ${airport} leaving ${departure}" : {
 
     },
     "Plan and brief your flight in Wingtip Maps first, and I'll tell you." : {
@@ -3607,6 +3663,9 @@
     "Save" : {
 
     },
+    "Save %@" : {
+
+    },
     "Save Inspections" : {
 
     },
@@ -3929,9 +3988,6 @@
     "Standard Briefing" : {
 
     },
-    "Start %@ timer" : {
-
-    },
     "Start Flight" : {
 
     },
@@ -3942,6 +3998,9 @@
 
     },
     "Start and Taxi Fuel" : {
+
+    },
+    "Start from the Phases" : {
 
     },
     "Start or Stop the Flight" : {
@@ -3979,9 +4038,6 @@
       }
     },
     "Stop" : {
-
-    },
-    "Stop %@ timer" : {
 
     },
     "Stop Instructing" : {
@@ -4071,9 +4127,6 @@
     "Tap a sheet, or download the map's view." : {
 
     },
-    "Tap refresh to ask." : {
-
-    },
     "Tell Me When It Lands" : {
 
     },
@@ -4094,16 +4147,6 @@
     },
     "That's Not Me" : {
 
-    },
-    "The %@ at %@ could not be briefed: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "The %1$@ at %2$@ couldn't be briefed: %3$@"
-          }
-        }
-      }
     },
     "The %@ at %@. %@" : {
       "localizations" : {
@@ -4272,6 +4315,12 @@
     "The planner could not read the airspace here. Try again in a moment." : {
 
     },
+    "The planner is not answering. Try again in a moment." : {
+
+    },
+    "The planner's answer came back garbled. Try again in a moment." : {
+
+    },
     "The read back could not be checked." : {
 
     },
@@ -4353,9 +4402,6 @@
     "Time En Route" : {
 
     },
-    "Timers" : {
-
-    },
     "To" : {
 
     },
@@ -4410,7 +4456,13 @@
     "Traffic Management" : {
 
     },
+    "Traffic and FIS-B weather from a receiver on the cockpit's Wi-Fi" : {
+
+    },
     "Training" : {
+
+    },
+    "Training Tools" : {
 
     },
     "Training Tools Are Off" : {
@@ -4524,6 +4576,9 @@
     "Version" : {
 
     },
+    "Via %@" : {
+
+    },
     "View Full Screen" : {
 
     },
@@ -4561,6 +4616,9 @@
 
     },
     "Weather and Traffic" : {
+
+    },
+    "Weather at ${airport}" : {
 
     },
     "Weather at an Airport" : {
@@ -4653,6 +4711,9 @@
     "Wind Level" : {
 
     },
+    "Wind and weather fields on the map's Weather menu" : {
+
+    },
     "Wingtip Maps" : {
 
     },
@@ -4689,7 +4750,7 @@
     "Write a Squawk" : {
 
     },
-    "Write it on the iPhone, from the flight manual." : {
+    "Write the %@" : {
 
     },
     "Writing the glance…" : {
@@ -4764,6 +4825,9 @@
     "Your airplanes, flights, logbook and endorsements go, and you are signed out on every device. This cannot be undone." : {
 
     },
+    "Your connected apps could not be read." : {
+
+    },
     "Your documents in your own iCloud, on your other devices. Markup and bookmarks stay on each device." : {
 
     },
@@ -4786,9 +4850,6 @@
 
     },
     "Your name" : {
-
-    },
-    "Your place on the strip could not be worked out: %@" : {
 
     },
     "Your plan is made from the logbook kept with your account." : {
