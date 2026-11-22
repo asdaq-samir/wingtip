@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android's words for the web's changes of the 2026-11-21 wave
+     (audit/parity3-android.md); the words all three apps share are
+     design/wording.json's (R.string.wording_*). -->
+<resources>
+    <!-- The first flight's airplane pill (the web's FIRST_AIRPLANE_ASK). -->
+    <string name="first_airplane_ask">Add Your Airplane for Times and Fuel</string>
+</resources>

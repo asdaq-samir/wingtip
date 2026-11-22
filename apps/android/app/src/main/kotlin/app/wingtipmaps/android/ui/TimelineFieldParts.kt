@@ -28,6 +28,7 @@ import app.wingtipmaps.android.api.generated.ProcedureList
 import app.wingtipmaps.android.api.generated.ProcedureSummary
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.plan.LandingRunway
 import app.wingtipmaps.android.plan.PlanProcedures
 import app.wingtipmaps.android.plan.RouteFieldFacts
 
@@ -39,7 +40,9 @@ import app.wingtipmaps.android.plan.RouteFieldFacts
  * the field's runway ends with Into the Wind first (the one its report's
  * wind picks, which the planner flies where none is picked); then "+ ARR",
  * "+ APCH" and "+ DEP" for each kind the field publishes and the route has
- * none of, each a menu of its procedures. A stop lands and leaves, so it
+ * none of, each a menu of its procedures. With an approach picked the
+ * landing's chip is the approach's own runway (LandingRunway, the
+ * engine's landing_runway). A stop lands and leaves, so it
  * has both, its landing's first. Material's assist chips, each opening
  * Material's dropdown menu. A picked kind is no chip: its fixes are rows
  * on the line (TimelineProcedureRows).
@@ -49,7 +52,10 @@ fun TimelineFieldParts(ident: String, lands: Boolean, leaves: Boolean, facts: Ro
     if (facts == null || !facts.open) return
     FlowRow(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm), itemVerticalAlignment = Alignment.CenterVertically) {
         if (lands) {
-            RunwayChip(ident, facts, picks.landings[ident.uppercase()], takeoff = false, onChanged)
+            // With an approach picked, the runway it lands on, the
+            // engine's (LandingRunway); another only where the rule allows.
+            val landing = LandingRunway.at(picks, ident, list)
+            RunwayChip(ident, facts, landing?.runway ?: picks.landings[ident.uppercase()], takeoff = false, onChanged, onlyEnd = landing?.takeIf { !it.othersAllowed }?.runway)
             KindChips(ident, PlanProcedures.ARRIVING, list, picks, onChanged)
         }
         if (leaves) {
@@ -61,7 +67,7 @@ fun TimelineFieldParts(ident: String, lands: Boolean, leaves: Boolean, facts: Ro
 
 /** The runway menu, its label the runway picked or the wind's. */
 @Composable
-private fun RunwayChip(ident: String, facts: RouteFieldFacts.Facts, picked: String?, takeoff: Boolean, onChanged: () -> Unit) {
+private fun RunwayChip(ident: String, facts: RouteFieldFacts.Facts, picked: String?, takeoff: Boolean, onChanged: () -> Unit, onlyEnd: String? = null) {
     if (facts.ends.isEmpty()) return
     var open by rememberSaveable(ident, takeoff) { mutableStateOf(false) }
     val shown = picked ?: facts.windEnd ?: Format.NONE
@@ -78,13 +84,16 @@ private fun RunwayChip(ident: String, facts: RouteFieldFacts.Facts, picked: Stri
             modifier = Modifier.semantics { contentDescription = "$said, $shown" },
         )
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-            DropdownMenuItem(
-                text = { Text(facts.windEnd?.let { stringResource(R.string.runway_into_wind, it) } ?: stringResource(R.string.runway_into_wind_plain)) },
-                leadingIcon = { if (picked == null) Icon(Icons.Filled.Check, contentDescription = null) },
-                onClick = { set(null) },
-            )
-            HorizontalDivider()
-            facts.ends.forEach { end ->
+            // An approach's own runway alone, straight in: no wind's pick.
+            if (onlyEnd == null) {
+                DropdownMenuItem(
+                    text = { Text(facts.windEnd?.let { stringResource(R.string.runway_into_wind, it) } ?: stringResource(R.string.runway_into_wind_plain)) },
+                    leadingIcon = { if (picked == null) Icon(Icons.Filled.Check, contentDescription = null) },
+                    onClick = { set(null) },
+                )
+                HorizontalDivider()
+            }
+            facts.ends.filter { onlyEnd == null || it == onlyEnd }.forEach { end ->
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.runway_end, end)) },
                     leadingIcon = { if (picked == end) Icon(Icons.Filled.Check, contentDescription = null) },
@@ -131,6 +140,9 @@ fun ProcedureMenu(expanded: Boolean, onDismiss: () -> Unit, ident: String, kind:
     val take = { procedure: ProcedureSummary?, transition: String? ->
         onDismiss()
         PlanProcedures.pick(ident, kind, procedure?.let { PlanProcedures.Pick(ident.uppercase(), it.id, kind, it.name, transition) })
+        // An approach picked lands on its own runway, the field's landing
+        // kept in step with it, so the planner flies the same (the web's pick).
+        if (kind == "approach") LandingRunway.at(PlanProcedures.state.value, ident, list)?.runway?.let { PlanProcedures.setRunway(ident, it, takeoff = false) }
         onChanged()
     }
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {

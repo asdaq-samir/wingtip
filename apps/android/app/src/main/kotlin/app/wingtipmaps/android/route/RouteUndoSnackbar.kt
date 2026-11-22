@@ -41,11 +41,14 @@ fun RouteUndoSnackbar(plan: Plan, host: SnackbarHostState) {
     }
     val undo = stringResource(R.string.undo)
     // Keyed on the edit: a newer one (or an Undo from the toolbar) takes
-    // this one's Snackbar down as it goes.
+    // this one's Snackbar down as it goes. Material's short time, as the
+    // web's Undo went from 8 s to 5 (the HIG review's 12, 2026-11-21): two
+    // or three words to read and one tap; TalkBack's own timeout setting
+    // lengthens it for those who need it (the Snackbar's own).
     LaunchedEffect(note?.id) {
         val shown = note ?: return@LaunchedEffect
         val said = words ?: return@LaunchedEffect
-        when (host.showSnackbar(said, actionLabel = undo, withDismissAction = true, duration = SnackbarDuration.Long)) {
+        when (host.showSnackbar(said, actionLabel = undo, withDismissAction = true, duration = SnackbarDuration.Short)) {
             SnackbarResult.ActionPerformed -> plan.undoEdit()
             SnackbarResult.Dismissed -> plan.undo.dismiss(shown.id)
         }

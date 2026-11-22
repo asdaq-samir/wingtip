@@ -23,6 +23,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetState
@@ -80,13 +82,13 @@ const val WELCOME_TAG = "welcome"
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WelcomeSheet(plan: Plan, search: SearchControl, ownShip: OwnShipControl, onPlanned: () -> Unit) {
+fun WelcomeSheet(plan: Plan, search: SearchControl, ownShip: OwnShipControl, snackbars: SnackbarHostState, onPlanned: () -> Unit) {
     val context = LocalContext.current
     val memory = remember(context) { FirstFlightMemory.of(context) }
     val seen by memory.seen.collectAsStateWithLifecycle()
     val planned by plan.state.collectAsStateWithLifecycle()
     val model: FirstFlightModel = hiltViewModel()
-    FirstFlightAsks(model, plan, search, onPlanned)
+    FirstFlightAsks(model, plan, search, snackbars, onPlanned)
     if (seen || planned.routed) return
     val sheet = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
     var refused by rememberSaveable { mutableStateOf(false) }
@@ -160,13 +162,20 @@ private fun WelcomeRow(icon: ImageVector, title: Int, line: Int) {
  * The first route's asks after the welcome (the web's useFirstFlight):
  * planned from own ship's nearest field, else Home (FirstFlightModel);
  * with neither, the one search asks where from; a pick that is where the
- * pilot already is, where to again. Planned, the FPL comes up (`onPlanned`)
+ * pilot already is, where to again. A wait for the position past 400 ms
+ * says "Finding where you are…" in the screen's Snackbar. Planned, the FPL comes up (`onPlanned`)
  * and its tip is due (FplTip).
  */
 @Composable
-private fun FirstFlightAsks(model: FirstFlightModel, plan: Plan, search: SearchControl, onPlanned: () -> Unit) {
+private fun FirstFlightAsks(model: FirstFlightModel, plan: Plan, search: SearchControl, snackbars: SnackbarHostState, onPlanned: () -> Unit) {
     val state by model.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    // The wait for a position, said in Material's Snackbar for as long as
+    // it lasts: taken down as the wait ends, its effect cancelled.
+    val finding = stringResource(R.string.wording_finding_where_you_are)
+    LaunchedEffect(state.finding) {
+        if (state.finding) snackbars.showSnackbar(finding, duration = SnackbarDuration.Indefinite)
+    }
     LaunchedEffect(state.needsFrom, state.from) {
         if (state.needsFrom && state.from == null) {
             search.pickAirport(R.string.where_from) { ident -> model.pickFrom(ident); model.planIt(plan, onPlanned) }

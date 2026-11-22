@@ -108,7 +108,7 @@ internal fun PhoneSheetLayout(
     }
     // The first flight's welcome, once on this phone (WelcomeSheet); its
     // first route brings the FPL up.
-    WelcomeSheet(plan, search, ownShip, onPlanned = { ScreenRequests.ask(Screen.FPL) })
+    WelcomeSheet(plan, search, ownShip, snackbars, onPlanned = { ScreenRequests.ask(Screen.FPL) })
 }
 
 /** The stock drag handle's height: its 4-dp bar in 22 dp above and below,

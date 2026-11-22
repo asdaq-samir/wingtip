@@ -30,6 +30,7 @@ import app.wingtipmaps.android.airplane.ProfileOpen
 import app.wingtipmaps.android.altitude.PlanAltitudes
 import app.wingtipmaps.android.altitude.ProfileModel
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.firstflight.FplTip
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.navigation.ScreenRequests
@@ -46,7 +47,8 @@ import app.wingtipmaps.android.plan.FlightChoices
  * the pill's word the leading button, its glyph the trailing one, two
  * targets of their own -- in a row that scrolls sideways on a narrow
  * phone rather than squeezing a pill (the owner's larger text). With no
- * airplane the pill says so and is the way to pick one (decision 0011).
+ * airplane the pill says so and is the way to pick one (decision 0011),
+ * on the first flight in words: "Add Your Airplane for Times and Fuel".
  *
  * @param onAltitude the plan scrolled to the Altitude Advisor, where the
  *   cruise is picked.
@@ -56,6 +58,10 @@ fun PlanPills(plan: Plan, state: Plan.State, onAltitude: () -> Unit, modifier: M
     val context = LocalContext.current
     val tail by remember(context) { FlightChoices.of(context) }.tail.collectAsStateWithLifecycle()
     val altitudes by PlanAltitudes.state.collectAsStateWithLifecycle()
+    // The first flight's pill says why the times and fuel are blank, as
+    // the web's N-number field does until its FPL tip is closed (the
+    // errors-and-onboarding audit, 2026-11-21); then "No Airplane".
+    val firstFlight = !remember(context) { FplTip.of(context) }.closed.collectAsStateWithLifecycle().value
     val airplane = tail ?: state.own?.type?.ifEmpty { null }?.uppercase() ?: state.aircraft.uppercase().ifEmpty { null }
     Row(
         modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -63,7 +69,7 @@ fun PlanPills(plan: Plan, state: Plan.State, onAltitude: () -> Unit, modifier: M
     ) {
         val info = stringResource(R.string.airplane_info)
         Pill(
-            word = airplane ?: stringResource(R.string.no_airplane),
+            word = airplane ?: stringResource(if (firstFlight) R.string.first_airplane_ask else R.string.no_airplane),
             onWord = { ScreenRequests.ask(Screen.AIRPLANE) },
             glyph = { Icon(WingtipIcons.info, contentDescription = null, Modifier.size(SplitButtonDefaults.TrailingIconSize)) },
             glyphSaid = info,
