@@ -174,32 +174,24 @@ test(
   "a SID and a STAR typed among the route's points are picked as its departure and arrival, by their transitions",
   { tag: "@smoke" },
   async ({ page }) => {
-    // The two fields' procedures as the planner would list them, made up:
-    // neither field publishes these.
-    await page.route(
-      (url) => /\/api\/planner\/airport\/(C81|KATW)\/procedures$/.test(url.pathname),
-      (route) => {
-        const airport = new URL(route.request().url()).pathname.split("/")[4];
-        const procedures =
-          airport === "C81"
-            ? [{ id: "BAEE1", kind: "departure", name: "BAEE ONE", transitions: ["BAE"], runway_transitions: [] }]
-            : [{ id: "OSHH2", kind: "arrival", name: "OSHH TWO", transitions: ["OSH"], runway_transitions: [] }];
-        return route.fulfill({ json: { airport, cycle: "261001", stale: false, procedures } });
-      },
-    );
+    // The planner's own procedures, unstubbed (the test-quality audit,
+    // round 2): a pair whose CIFP publishes both, checked in cycles 261029
+    // and 261126 -- Minneapolis's ZMBRO1 departure by its BRIBE transition
+    // and O'Hare's JVL1 arrival by its MCW transition (FAA CIFP,
+    // FAACIFP18's KMSP SID and KORD STAR records).
     await page.goto("/app/plan");
     await settle(page);
     await emptyPlan(page);
     const field = page.getByTestId("route-type");
-    await field.fill("C81 BAEE1 BAE OSH OSHH2 KATW");
+    await field.fill("KMSP ZMBRO1 BRIBE MCW JVL1 KORD");
     await field.press("Enter");
     // The points without the two, the two the fields' procedures.
-    await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
-    await expect(page).toHaveURL(/[?&]dest=KATW(&|$)/);
-    await expect(page).toHaveURL(/[?&]stops=BAE(%2C|,)OSH(&|$)/);
+    await expect(page).toHaveURL(/[?&]dep=KMSP(&|$)/);
+    await expect(page).toHaveURL(/[?&]dest=KORD(&|$)/);
+    await expect(page).toHaveURL(/[?&]stops=BRIBE(%2C|,)MCW(&|$)/);
     await expect
-      .poll(() => new URL(page.url()).searchParams.get("procs")?.split(",").sort().join(","))
-      .toBe("C81:BAEE1:BAE,KATW:OSHH2:OSH");
+      .poll(() => new URL(page.url()).searchParams.get("procs")?.split(",").sort().join(","), { timeout: slow(30_000) })
+      .toBe("KMSP:ZMBRO1:BRIBE,KORD:JVL1:MCW");
   },
 );
 
