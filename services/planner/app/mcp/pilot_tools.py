@@ -76,6 +76,24 @@ def checkpoints(p, distance_nm: float) -> list[dict]:
     ]
 
 
+def save_request(p: dict, flown: dict | None, planned_for: str | None, picks: str | None) -> dict:
+    """A planned flight (/api/plan's answer) as the gateway's SaveFlightRequest."""
+    totals = p["totals"]
+    return {
+        "aircraftId": flown["id"] if flown else None,
+        "departureIdent": p["departure"]["ident"],
+        "destinationIdent": p["destination"]["ident"],
+        "stops": [s["ident"] for s in p.get("stops", [])],
+        "cruiseAltitudeFt": round(p["altitude_ft"]),
+        "totalDistanceNm": totals["distance_nm"],
+        "totalEteMin": totals.get("ete_min"),
+        "totalFuelGal": totals.get("fuel_gal"),
+        "plannedFor": planned_for,
+        "checkpoints": checkpoints(p, totals["distance_nm"]),
+        "picks": picks,
+    }
+
+
 def register(server: MCPServer) -> None:
     @server.tool(
         name="my_airplanes",
@@ -124,24 +142,14 @@ def register(server: MCPServer) -> None:
         who = pilot(WRITE)
         fields, flown = await route_fields(who, departure, destination, stops, cruise_altitude_ft, airplane_tail, depart_at, rules)
         p = await planned(fields)
-        totals = p["totals"]
-        request = {
-            "aircraftId": flown["id"] if flown else None,
-            "departureIdent": p["departure"]["ident"],
-            "destinationIdent": p["destination"]["ident"],
-            "stops": [s["ident"] for s in p.get("stops", [])],
-            "cruiseAltitudeFt": round(p["altitude_ft"]),
-            "totalDistanceNm": totals["distance_nm"],
-            "totalEteMin": totals.get("ete_min"),
-            "totalFuelGal": totals.get("fuel_gal"),
-            "plannedFor": depart_at.isoformat() if depart_at else None,
-            "checkpoints": checkpoints(p, totals["distance_nm"]),
-            # The altitude asked, kept as the app's own address keeps it
-            # (lib/flightLink PICK_KEYS), so it opens at that altitude.
-            "picks": f"altitude_ft={cruise_altitude_ft}"
+        # The altitude asked, kept as the app's own address keeps it
+        # (lib/flightLink PICK_KEYS), so it opens at that altitude.
+        picks = (
+            f"altitude_ft={cruise_altitude_ft}"
             if cruise_altitude_ft is not None
-            else (f"altitude_choice={p['altitude_choice']}" if p.get("altitude_choice") else None),
-        }
+            else (f"altitude_choice={p['altitude_choice']}" if p.get("altitude_choice") else None)
+        )
+        request = save_request(p, flown, depart_at.isoformat() if depart_at else None, picks)
         saved = await records.save_flight(who, request)
         return {
             "saved": {k: v for k, v in saved.items() if v is not None},

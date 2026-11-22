@@ -22,7 +22,9 @@ from starlette.applications import Starlette
 from starlette.routing import Route
 
 from ..settings import get_settings
-from . import airport_tools, flight_tools, pilot_tools, weather_tools
+from mcp.server.apps import Apps
+
+from . import airport_tools, edit_tools, flight_tools, pilot_tools, saved_tools, view_resource, weather_tools
 from .auth import GatewayTokens
 from .calls import PLANNER, READ, SCOPES
 
@@ -31,6 +33,9 @@ INSTRUCTIONS = (
     "NOTAMs at a field, plan a route with the nav log on the pilot's own airplane, give the flight's Go / No-Go "
     "briefing, list the pilot's saved airplanes and flights, and save a planned flight to their account. Each "
     "answer names its sources. Airport identifiers are US ones (KDLH, C81). "
+    "show_flight opens the flight in Wingtip's live view; each edit tool (add_stop, set_cruise_altitude, "
+    "change_approach and the rest) takes the flight the last answer gave and answers it changed, which the "
+    "view draws; a change the pilot makes in the view is told as the flight's new state. "
     # The answers quote text third parties wrote: NOTAMs, METAR and TAF
     # remarks, a field's remarks, registry names. The model reads them
     # beside the pilot's words, so it is told they are data (the deep
@@ -44,6 +49,12 @@ INSTRUCTIONS = (
 
 def build(*, resource: str, issuer: str, jwks_url: str, verifier=None) -> MCPServer:
     """The server and its tools; `verifier` replaces the gateway's keys in tests."""
+    # The live view (MCP Apps): its page and the tools whose answers it
+    # draws, one extension the server advertises to the hosts that take it.
+    apps = Apps()
+    apps.add_resource(view_resource.resource())
+    edit_tools.register(apps)
+    saved_tools.register_view(apps)
     server = MCPServer(
         "wingtip",
         title="Wingtip Maps",
@@ -53,8 +64,9 @@ def build(*, resource: str, issuer: str, jwks_url: str, verifier=None) -> MCPSer
         # The verifier checks the audience itself (RFC 8707), so the SDK's
         # own comparison is left off rather than done twice.
         auth=AuthSettings(issuer_url=issuer, resource_server_url=resource, required_scopes=[READ], validate_token_resource=False),
+        extensions=[apps],
     )
-    for group in (airport_tools, weather_tools, flight_tools, pilot_tools):
+    for group in (airport_tools, weather_tools, flight_tools, pilot_tools, saved_tools):
         group.register(server)
     return server
 

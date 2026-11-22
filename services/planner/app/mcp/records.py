@@ -36,7 +36,7 @@ async def _ask(method: str, path: str, pilot_id: str, body: dict | None = None):
         raise ToolError(f"Wingtip refused the flight: {resp.text[:300]}")
     if resp.status_code >= 400:
         raise ToolError(f"Wingtip's account service answered {resp.status_code}; try again in a minute.")
-    return resp.json()
+    return resp.json() if resp.content else None
 
 
 async def airplanes(pilot_id: str) -> list[dict]:
@@ -52,6 +52,17 @@ async def flights(pilot_id: str) -> list[dict]:
 async def save_flight(pilot_id: str, request: dict) -> dict:
     """Saves a flight (the gateway's SaveFlightRequest) and answers its row."""
     return await _ask("POST", "/flights", pilot_id, request)
+
+
+async def replan_flight(pilot_id: str, flight_id: int, request: dict) -> dict:
+    """Replaces a saved flight's route and nav log with a new plan (the
+    gateway's SaveFlightRequest), keeping its name, notes and share link."""
+    return await _ask("PUT", f"/flights/{flight_id}", pilot_id, request)
+
+
+async def delete_flight(pilot_id: str, flight_id: int) -> None:
+    """Deletes one of the pilot's saved flights; a 404 where it is not theirs."""
+    await _ask("DELETE", f"/flights/{flight_id}", pilot_id)
 
 
 async def connection_live(pilot_id: str, client_id: str, token: str) -> bool:

@@ -27,6 +27,10 @@ def gateway(monkeypatch):
                 and request.headers["X-Connector-Token"] == "the-token"
             )
             return httpx2.Response(204 if live else 404)
+        if request.method == "DELETE":
+            return httpx2.Response(204)
+        if request.method == "PUT":
+            return httpx2.Response(200, json={"id": 12})
         return httpx2.Response(200, json=[{"tailNumber": "N12345"}])
 
     real = httpx2.AsyncClient
@@ -40,6 +44,15 @@ def test_records_are_asked_on_the_gateways_internal_port(gateway):
     (asked,) = gateway
     assert str(asked.url) == "http://gateway:8081/internal/mcp/aircraft"
     assert asked.headers["X-Internal-Token"] == "planner-secret" and asked.headers["X-Pilot-Id"] == "42"
+
+
+def test_a_saved_flight_is_replanned_and_deleted_by_its_id(gateway):
+    assert anyio.run(records.replan_flight, "42", 12, {"departureIdent": "C81"}) == {"id": 12}
+    assert anyio.run(records.delete_flight, "42", 12) is None
+    put, delete = gateway
+    assert (put.method, str(put.url)) == ("PUT", "http://gateway:8081/internal/mcp/flights/12")
+    assert (delete.method, str(delete.url)) == ("DELETE", "http://gateway:8081/internal/mcp/flights/12")
+    assert delete.headers["X-Pilot-Id"] == "42"
 
 
 def test_a_connection_stands_while_the_gateway_says_so(gateway):
