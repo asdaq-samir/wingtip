@@ -1,10 +1,14 @@
+import { useRef } from "react";
 import { flushSync } from "react-dom";
+import { FileTrigger } from "react-aria-components";
+import FileDrop from "../../../components/FileDrop";
 import { cn } from "cn";
 import { Button } from "../../../components/ui/button";
 import { FieldClearButton } from "../../../components/ui/field-clear";
 import { usePlanUndo } from "../../../lib/planUndo";
 import { TEXT } from "../../../lib/text";
-import { EndRow, TIMELINE_CARD, TypeRouteRow } from "../../procedures";
+import { EndRow, OpenRouteFileRow, TIMELINE_CARD, TypeRouteRow } from "../../procedures";
+import { openRouteFile, ROUTE_FILE_ENDINGS, ROUTE_FILE_TYPES } from "../../shared-flight";
 import type { PlanSlices } from "../vm/planSlices";
 
 type StartSlices = PlanSlices<"route" | "routeList">;
@@ -53,17 +57,48 @@ export function MissingEnd({ vm, end }: { vm: StartSlices; end: "Departure" | "D
 }
 
 /**
+ * A route file opened from the empty route: React Aria's FileTrigger, the
+ * device's own picker, its hidden input pressed by the row (the
+ * timeline's row is its own button). The file is read and previewed
+ * before it is used (features/shared-flight), as a shared flight is.
+ */
+function OpenFileRow() {
+  const input = useRef<HTMLInputElement>(null);
+  return (
+    <>
+      <OpenRouteFileRow onOpen={() => input.current?.click()} />
+      <FileTrigger
+        ref={input}
+        acceptedFileTypes={[...ROUTE_FILE_TYPES, ...ROUTE_FILE_ENDINGS]}
+        onSelect={(files) => files?.[0] && void openRouteFile(files[0])}
+        data-testid="route-file-input"
+      />
+    </>
+  );
+}
+
+/**
  * FPL's route with no point yet, as the timeline draws a whole one (the
  * owner, 2026-11-18: "the empty fpl page looks a bit different than filled
  * one"): its card, the departure's and the destination's rows to pick, on
- * the course's line, and the route typed or pasted under them.
+ * the course's line, the route typed or pasted under them, and a route
+ * file opened, picked or dropped on the card (an iPad's Files beside the
+ * app, a desktop's Finder).
  */
 export function EmptyRoute({ vm }: { vm: StartSlices }) {
   return (
-    <div className={TIMELINE_CARD} role="group" aria-label="The route" data-testid="route-empty">
-      <MissingEnd vm={vm} end="Departure" />
-      <MissingEnd vm={vm} end="Destination" />
-      <TypeRow vm={vm} />
-    </div>
+    <FileDrop
+      label="Drop a route file (.fpl or .gpx) to preview it"
+      types={ROUTE_FILE_TYPES}
+      extensions={ROUTE_FILE_ENDINGS}
+      onFiles={(files) => void openRouteFile(files[0]!)}
+    >
+      <div className={TIMELINE_CARD} role="group" aria-label="The route" data-testid="route-empty">
+        <MissingEnd vm={vm} end="Departure" />
+        <MissingEnd vm={vm} end="Destination" />
+        <TypeRow vm={vm} />
+        <OpenFileRow />
+      </div>
+    </FileDrop>
   );
 }

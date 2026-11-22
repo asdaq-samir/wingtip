@@ -130,7 +130,7 @@
             </intent-filter>
             <!-- A route from another app's flight-plan file, Garmin's .fpl or a
                  GPX, opened with Wingtip or shared to it: read by the engine
-                 (read_route_file) and previewed as a shared flight is,
+                 (route_file_read) and previewed as a shared flight is,
                  never planned unasked (share/FlightFiles). An .fpl has no
                  type of its own: Files and mail hand it over as XML. -->
             <intent-filter>

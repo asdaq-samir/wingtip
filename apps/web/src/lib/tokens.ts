@@ -195,6 +195,17 @@ export const SIGNAL = {
   white: "#f8fafc",
 };
 
+export const MARKUP = {
+  highlightYellow: "#f2b600",
+  highlightGreen: "#52c41a",
+  highlightBlue: "#2f8cff",
+  highlightPink: "#e02ad8",
+  penBlack: "#1c1a17",
+  penBlue: "#0066d6",
+  penRed: "#dc2626",
+  penGreen: "#148a3b",
+};
+
 /** Chart ink's own inks by day (index.css's --ink-*), for where the stylesheet is not loaded. */
 export const INK = {
   inkMagenta: "#b3338c",

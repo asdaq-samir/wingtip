@@ -2,7 +2,7 @@ import { describe, expect, test, vi } from "vitest";
 import { QueryClient } from "@tanstack/react-query";
 import type { Course, FlightPlates } from "../../lib/api/types";
 import { useBriefPlan } from "../../lib/briefPlan";
-import { flightPlatesLine, flightPlatesQuery, keepFlightPlates } from "./keepPlates";
+import { fixesOf, flightPlatesLine, flightPlatesQuery, keepFlightPlates } from "./keepPlates";
 
 vi.mock("../../lib/kept/keepChart", () => ({
   keepChart: vi.fn(async (_c: unknown, chart: { url: string }) => {
@@ -55,7 +55,16 @@ describe("the plates Keep for the Air keeps for a flight", () => {
     useBriefPlan.setState({ depart: "", eteMin: null, flight: null });
     const bare = flightPlatesQuery(course, null).queryKey[1] as Record<string, unknown>;
     expect(bare).toMatchObject({ route: "KSFO,KMRY", tas_kt: undefined, usable_gal: undefined, burn_gph: undefined, eta: undefined });
-    expect((bare.fixes as string).split(";").length).toBeLessThanOrEqual(61);
+    expect((bare.fixes as string).split(";").length).toBeLessThanOrEqual(60);
     expect((bare.fixes as string).endsWith("38.9900,-122.0000")).toBe(true);
+  });
+
+  test("a line of any length is sent as 60 points at most, both ends among them", () => {
+    for (let length = 2; length <= 400; length++) {
+      const line = Array.from({ length }, (_, i) => [i, 0] as [number, number]);
+      const sent = fixesOf(line).split(";");
+      expect(sent.length).toBeLessThanOrEqual(60);
+      expect([sent[0], sent.at(-1)]).toEqual(["0.0000,0.0000", `${(length - 1).toFixed(4)},0.0000`]);
+    }
   });
 });

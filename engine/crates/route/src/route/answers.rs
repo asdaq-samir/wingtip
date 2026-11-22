@@ -219,6 +219,7 @@ pub fn answer(name: &str, v: &Value) -> Result<String, String> {
             let written = points::frd_ident(text(name, v, "base")?, num(name, v, "course")?, num(name, v, "distance_nm")?);
             json::string(&mut out, &written);
         }
+        "route_file_read" => return super::route_file::read_rule(v),
         _ => return Err(format!("the engine has no rule called {name:?}")),
     }
     Ok(out)

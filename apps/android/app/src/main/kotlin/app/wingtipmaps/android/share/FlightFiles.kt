@@ -5,13 +5,14 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import app.wingtipmaps.android.Links
 import app.wingtipmaps.android.engine.Engine
-import app.wingtipmaps.android.engine.generated.readRouteFile
+import app.wingtipmaps.android.engine.generated.routeFileRead
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.int
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
@@ -20,7 +21,7 @@ import java.io.InputStream
  * A file another app hands Wingtip -- opened with it from Files or a mail
  * (View), shared to it (Send), or dropped on its window from another app
  * beside it -- read for what it is: a route, from Garmin's flight-plan
- * file (.fpl) or a GPX route, read by the engine's read_route_file; or a
+ * file (.fpl) or a GPX route, read by the engine's route_file_read; or a
  * PDF for the pilot's own documents (library/OwnShelf). A route opens as a
  * shared flight does, in its preview, never planned over the pilot's own
  * plan until Use This Plan (the security review of 2026-11-21, N3), as
@@ -52,17 +53,26 @@ object FlightFiles {
      *  its points the file named without an identifier, left out. */
     data class Route(val link: Links.Shared, val dropped: Int)
 
-    /** The engine's answer as a route, or its words for the pilot. */
+    /** The engine's answer as a route, or its words for the pilot. Its
+     *  ends always have an ident (the rule refuses a route that starts or
+     *  ends at one with none); a point between with none -- a user
+     *  waypoint, a GPX point named in words -- is left out and counted,
+     *  where the web names it off the nearest fix. */
     fun route(answer: JsonElement): Result<Route> = runCatching {
         val o = answer as JsonObject
         o["error"]?.let { throw IllegalArgumentException(it.jsonPrimitive.content) }
-        val stops = o.getValue("stops").jsonArray.map { it.jsonPrimitive.content }
-        val plan = SharedPlan(dep = o.getValue("dep").jsonPrimitive.content, dest = o.getValue("dest").jsonPrimitive.content, stops = stops)
-        Route(Links.Shared(plan, null), o["dropped"]?.jsonPrimitive?.int ?: 0)
+        fun ident(point: JsonElement): String? = point.jsonObject["ident"]?.takeIf { it !is JsonNull }?.jsonPrimitive?.content
+        val between = o.getValue("between").jsonArray.map(::ident)
+        val plan = SharedPlan(
+            dep = requireNotNull(ident(o.getValue("departure"))),
+            dest = requireNotNull(ident(o.getValue("destination"))),
+            stops = between.filterNotNull(),
+        )
+        Route(Links.Shared(plan, null), between.count { it == null })
     }
 
     /** The file's text read and asked of the engine, off the main thread. */
-    suspend fun readRoute(resolver: ContentResolver, uri: Uri, ask: (String) -> Result<JsonElement> = { Engine.readRouteFile(it) }): Result<Route> =
+    suspend fun readRoute(resolver: ContentResolver, uri: Uri, ask: (String) -> Result<JsonElement> = { Engine.routeFileRead(it) }): Result<Route> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val bytes = resolver.openInputStream(uri)?.use { bounded(it) } ?: error("The file could not be opened.")

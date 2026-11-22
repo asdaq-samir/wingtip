@@ -29,7 +29,7 @@ describe("the airport card's letters on a desktop", () => {
     const fly = vi.fn(),
       stop = vi.fn();
     const { unmount } = renderHook(() => {
-      useShortcuts(true);
+      useShortcuts();
       useCardKeys(true, { F: fly, S: stop });
     });
     expect(press("f").defaultPrevented).toBe(false);

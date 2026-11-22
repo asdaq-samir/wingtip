@@ -325,6 +325,18 @@ enum WingtipColor {
         static let red = rgb(0xDC2626)
         static let white = rgb(0xF8FAFC)
     }
+    enum Markup {
+        /// The highlighter's first ink, where it starts.
+        static let highlightYellow = rgb(0xF2B600)
+        static let highlightGreen = rgb(0x52C41A)
+        static let highlightBlue = rgb(0x2F8CFF)
+        static let highlightPink = rgb(0xE02AD8)
+        /// The pen's first ink, where it starts.
+        static let penBlack = rgb(0x1C1A17)
+        static let penBlue = rgb(0x0066D6)
+        static let penRed = rgb(0xDC2626)
+        static let penGreen = rgb(0x148A3B)
+    }
 }
 
 /// One scheme's surfaces, words and states, as the web's cascade resolves them (color.theme, color.look).

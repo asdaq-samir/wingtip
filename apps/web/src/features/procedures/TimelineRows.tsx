@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode, CSSProperties } from "react";
-import { ChevronsUpDown, Fuel, Keyboard, Plus } from "lucide-react";
+import { ChevronsUpDown, FileUp, Fuel, Keyboard, Plus } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { TEXT } from "../../lib/text";
@@ -319,6 +319,21 @@ export function TypeRouteRow({ onType, trailing }: { onType: () => void; trailin
       data-testid="timeline-type-route"
     >
       Type or Paste a Route
+    </TimelineAction>
+  );
+}
+
+/** A route file opened, under Type or Paste a Route: the device's file
+ *  picker for a flight plan's .fpl or a GPX route (RouteStart's), which
+ *  is previewed before it is used, as a shared flight is. */
+export function OpenRouteFileRow({ onOpen }: { onOpen: () => void }) {
+  return (
+    <TimelineAction
+      mark={<RowMark filled glyph={<FileUp className="size-4" strokeWidth={2.4} aria-hidden />} />}
+      onClick={onOpen}
+      data-testid="timeline-open-route-file"
+    >
+      Open a Route File
     </TimelineAction>
   );
 }

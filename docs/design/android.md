@@ -1418,7 +1418,7 @@ terms; checked against Android's adaptive app quality guidelines
 - **Files** (`share/FlightFiles`, `MainActivity.take`): a Garmin flight
   plan (`.fpl`) or a GPX route, opened with Wingtip from Files or a
   mail, shared to it, or dropped on its window, is read by the engine's
-  `read_route_file` (the points with an identifier; a user waypoint is
+  `route_file_read` (the points with an identifier; a user waypoint is
   left out and the pilot told how many) and opens in the shared flight's
   preview, never planned unasked (the security review's N3), as the
   iPad's WindowHost opens a flight or a track. A PDF goes to the pilot's
@@ -1455,7 +1455,7 @@ terms; checked against Android's adaptive app quality guidelines
   Pixel Tablet emulator at night and in a wave's validation
   (docs/CI.md); `PaneRoomTest`, `ShortcutTest`, `DroppedTest`,
   `PlateInkTest` and `FlightFilesTest` on the JVM, and the engine's
-  `read_route_file` against apps/web/src/lib/fixtures/routeFile.json.
+  `route_file_read` against apps/web/src/lib/fixtures/routeFile.json.
 - **Sources**:
   - https://developer.android.com/develop/ui/compose/layouts/adaptive/use-window-size-classes
   - https://developer.android.com/develop/ui/compose/layouts/adaptive/build-a-supporting-pane-layout

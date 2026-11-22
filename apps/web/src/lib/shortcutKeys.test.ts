@@ -17,7 +17,7 @@ describe("the shortcuts' keys (WCAG 2.1.4)", () => {
   let unmount: () => void;
   beforeEach(() => {
     useWanted.setState({ screen: null });
-    unmount = renderHook(() => useShortcuts(true)).unmount;
+    unmount = renderHook(() => useShortcuts()).unmount;
   });
   afterEach(() => {
     unmount();

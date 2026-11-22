@@ -225,9 +225,11 @@ export function groundOf(value: string | null | undefined): Record<string, numbe
 export function tanksOf(value: string | null | undefined, pointOf: (ident: string | undefined) => string = stopOf): Record<string, number> {
   const out: Record<string, number> = {};
   for (const part of (value ?? "").split(",")) {
-    const [ident, gallons] = part.split(":");
+    // Whole gallons, 0 to 9,999, and nothing after them, as the phones'
+    // SharedPlan reads a link's: a part that is not one is left out.
+    const [ident, gallons, extra] = part.split(":");
     const point = pointOf(ident);
-    if (point && /^\d{1,5}$/.test(gallons ?? "")) out[point] = Number(gallons);
+    if (point && extra === undefined && /^\d{1,4}$/.test(gallons ?? "")) out[point] = Number(gallons);
   }
   return out;
 }

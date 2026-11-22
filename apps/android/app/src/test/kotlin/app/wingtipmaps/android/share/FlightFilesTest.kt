@@ -9,7 +9,7 @@ import org.junit.Test
 import java.io.ByteArrayInputStream
 
 /** A file handed to the app read for what it is (FlightFiles), and the
- *  engine's read_route_file answer as the shared flight's preview, the
+ *  engine's route_file_read answer as the shared flight's preview, the
  *  same answers as apps/web/src/lib/fixtures/routeFile.json. */
 class FlightFilesTest {
     private fun json(text: String): JsonElement = Json.parseToJsonElement(text)
@@ -26,20 +26,29 @@ class FlightFilesTest {
 
     @Test
     fun aRouteReadIsASharedFlightToPreview() {
-        val route = FlightFiles.route(json("""{"dep":"KMSN","dest":"KOSH","stops":["DLL"],"name":"KMSN TO KOSH","dropped":1}""")).getOrThrow()
+        // The fixture's .fpl case: an airport, a VOR, a user waypoint, an airport.
+        val route = FlightFiles.route(
+            json(
+                """{"name":"KMSN TO KOSH",
+                "departure":{"ident":"KMSN","name":"DANE CO RGNL/TRUAX FLD","lat":43.139858,"lon":-89.337514,"kind":"airport"},
+                "destination":{"ident":"KOSH","name":"WITTMAN RGNL","lat":43.984389,"lon":-88.556972,"kind":"airport"},
+                "between":[{"ident":"MSN","name":"MADISON","lat":43.144772,"lon":-89.338661,"kind":"navaid"},
+                {"ident":null,"name":"USR001","lat":43.5,"lon":-88.9,"kind":"user"}]}""",
+            ),
+        ).getOrThrow()
         val plan = route.link.plan!!
         assertEquals("KMSN", plan.dep)
         assertEquals("KOSH", plan.dest)
-        assertEquals(listOf("DLL"), plan.stops)
+        assertEquals(listOf("MSN"), plan.stops)
         assertNull(route.link.token)
         assertEquals(1, route.dropped)
     }
 
     @Test
     fun theEnginesWordsAreThePilots() {
-        val failed = FlightFiles.route(json("""{"error":"This file is not a Garmin flight plan (.fpl) or a GPX route."}"""))
+        val failed = FlightFiles.route(json("""{"error":"This file is not a flight plan (.fpl) or a GPX route."}"""))
         assertTrue(failed.exceptionOrNull() is IllegalArgumentException)
-        assertEquals("This file is not a Garmin flight plan (.fpl) or a GPX route.", failed.exceptionOrNull()?.message)
+        assertEquals("This file is not a flight plan (.fpl) or a GPX route.", failed.exceptionOrNull()?.message)
     }
 
     @Test

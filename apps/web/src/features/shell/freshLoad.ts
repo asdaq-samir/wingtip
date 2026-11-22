@@ -10,6 +10,12 @@
  * Except the app's own reload, for a new build (main.tsx, registerSW's
  * onNeedReload): the pilot asked for nothing, and the route they had open
  * stays, for half a minute after it is marked.
+ *
+ * And the document open in the reader (the address's `doc`): a reload
+ * forgets the route and the cards, never the book in hand, as Books and
+ * Files keep theirs (item 113). Its name alone is kept, not the place a
+ * link opened it at, so it opens on the page it was left at (the reader's
+ * own readerPlaces).
  */
 const KEEP = "wingtip.keepAddress";
 const KEEP_MS = 30_000;
@@ -25,7 +31,9 @@ export function startingAddress(
 ): string | null {
   if (navigation !== "reload" || location.pathname !== "/app/plan" || !location.search) return null;
   if (keptAt !== null && now - keptAt < KEEP_MS) return null;
-  return location.pathname + location.hash;
+  const doc = new URLSearchParams(location.search).get("doc")?.split("@", 1)[0];
+  const kept = doc ? `?${new URLSearchParams({ doc })}` : "";
+  return location.pathname + kept + location.hash;
 }
 
 /** Before the router reads the address: on a reload, the planner's

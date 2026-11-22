@@ -177,7 +177,12 @@ struct StatePlatesTests {
     @Test func theRoutesLineIsThinnedToSixtyPointsWithItsEnds() {
         let line = (0..<200).map { CLLocationCoordinate2D(latitude: 37 + Double($0) / 100, longitude: -122) }
         let points = KeepPlates.fixes(line).split(separator: ";")
-        #expect(points.count <= KeepPlates.mostFixes + 1)
+        #expect(points.count <= KeepPlates.mostFixes)
+        // 120 points made 61 when the step was taken from the points' count.
+        for count in 2...400 {
+            let longer = (0..<count).map { CLLocationCoordinate2D(latitude: Double($0) / 100, longitude: 0) }
+            #expect(KeepPlates.fixes(longer).split(separator: ";").count <= KeepPlates.mostFixes)
+        }
         #expect(points.first == "37.0000,-122.0000" && points.last == "38.9900,-122.0000")
         #expect(KeepPlates.fixes(Array(line.prefix(3))) == "37.0000,-122.0000;37.0100,-122.0000;37.0200,-122.0000")
     }

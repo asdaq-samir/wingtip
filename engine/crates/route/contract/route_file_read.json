@@ -1,0 +1,70 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "A route from a file another app wrote, read before the pilot uses it: a flight plan's .fpl (Garmin's FlightPlan v1 XML, http://www8.garmin.com/xmlschemas/FlightPlan/v1, its route's points looked up in its waypoint table) or a GPX 1.1 route (its first rte's rtepts, or its wpts in order where it has none). Its departure, its destination and the points between, each with its ident where it is one the route takes and its place; or the words for the pilot where the file is neither, has fewer than two points, or starts or ends at a point with no ident (the plan's ends are fields).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RouteFileReadInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "The file's text."
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "RouteFileReadAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "departure": {
+              "$ref": "#/definitions/RouteFilePoint"
+            },
+            "destination": {
+              "$ref": "#/definitions/RouteFilePoint"
+            },
+            "between": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/RouteFilePoint"
+              }
+            }
+          },
+          "required": [
+            "name",
+            "departure",
+            "destination",
+            "between"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "error": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "error"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -16,8 +16,6 @@
 //!   (navlog/dryRun);
 //! - track: a flown track read from a GPX or KML file, and thinned for
 //!   keeping (lib/track);
-//! - route_file: a route from another app's flight-plan file, Garmin's
-//!   .fpl or a GPX route, for the apps to preview (read_route_file);
 //! - replay: a recorded flight made ready to replay -- its gaps, its
 //!   height smoothed, its vertical speed (features/replay);
 //! - sim: a replay made ready for a flight simulator -- a smooth path at
@@ -53,7 +51,6 @@ pub mod hot_spots;
 pub mod instruments;
 pub mod profile;
 pub mod replay;
-pub mod route_file;
 pub mod sim;
 pub mod sim_config;
 mod sim_json;
@@ -116,7 +113,6 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         "plan_profile" => profile::profile_rule(v),
         "dry_run" => dry_run::dry_run_rule(v),
         "read_track" => track::read_rule(v),
-        "read_route_file" => route_file::read_rule(v),
         "thin_track" => track::thin_rule(v),
         "replay_track" => replay::replay_rule(v),
         "sim_flight" => sim_json::sim_flight_rule(v),

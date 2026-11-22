@@ -1,30 +1,20 @@
 import { AnnotationEditorParamsType, AnnotationEditorType, AnnotationMode, type PDFDocumentProxy } from "pdfjs-dist";
 import type { EventBus, PDFViewer } from "pdfjs-dist/web/pdf_viewer.mjs";
-import { carryOver, draws, erases, sameMark, sweep, withNote, type MarkData, type MarkKind, type SavedMark, type Tool } from "./markup";
+import {
+  carryOver,
+  draws,
+  erases,
+  sameMark,
+  sweep,
+  twoFingerScroll,
+  withNote,
+  type MarkData,
+  type MarkKind,
+  type SavedMark,
+  type Tool,
+} from "./markup";
 import type { MarkupHandle, MarkupState } from "./readerBody";
-
-/** What of pdf.js's annotation editors this reads; its own types keep
- *  them private to its viewer. */
-interface Editor {
-  mode: number;
-  pageIndex: number;
-  serialize(copying?: boolean): Record<string, unknown> | null;
-}
-interface UiManager {
-  undo(): void;
-  redo(): void;
-  delete(): void;
-  setSelected(editor: Editor): void;
-  getEditors(pageIndex: number): Iterable<Editor>;
-  readonly firstSelectedEditor: Editor | undefined;
-  updateParams(type: number, value: unknown): void;
-}
-interface PageView {
-  div: HTMLElement;
-  viewport: { scale: number; convertToPdfPoint(x: number, y: number): number[] };
-  annotationEditorLayer?: { annotationEditorLayer?: { endDrawingSession(aborted?: boolean): unknown } | null } | null;
-}
-type States = { hasSomethingToUndo?: boolean; hasSomethingToRedo?: boolean; hasSelectedEditor?: boolean };
+import type { Editor, PageView, States, UiManager } from "./pdfjsEditors";
 
 /** Each tool's mode of pdf.js's editor; the eraser is ours, over its
  *  marks with none of its own tools on. */
@@ -169,11 +159,20 @@ export function startMarkup(opts: {
     }
   };
 
+  // Two fingers scroll the pages (markup's twoFingerScroll).
+  const fingers = twoFingerScroll();
   // Palm rejection: a touch pdf.js is not to see, before it does. Its
   // own stops a second finger's touch while a pencil draws; this stops
   // a finger drawing at all once a pencil has.
   const down = (e: PointerEvent) => {
     if (!tool || tool === "highlight") return;
+    // A second finger: the pages scroll, and pdf.js (whose own window
+    // listener has already ended or dropped the first finger's line)
+    // sees none of it.
+    if (fingers.down(e.pointerId, e.pointerType, e.clientX, e.clientY)) {
+      erasing = null;
+      return void e.stopPropagation();
+    }
     // The first pencil's stroke turns palm rejection on; a pilot who has
     // turned it off keeps it off.
     if (e.pointerType === "pen" && opts.pencilOnly() === null) opts.onPencil();
@@ -188,11 +187,18 @@ export function startMarkup(opts: {
   // The whole way from the last point, not each point alone: a swipe
   // moves farther between two pointer events than the eraser reaches.
   const move = (e: PointerEvent) => {
+    const by = fingers.move(e.pointerId, e.clientX, e.clientY);
+    if (by) {
+      box.scrollBy(by[0], by[1]);
+      return void e.stopPropagation();
+    }
+    if (fingers.scrolling && e.pointerType === "touch") return void e.stopPropagation();
     if (!erasing) return;
     for (const [x, y] of sweep(erasing, [e.clientX, e.clientY], ERASER_PX / 2)) eraseAt(x, y);
     erasing = [e.clientX, e.clientY];
   };
-  const up = () => {
+  const up = (e: PointerEvent) => {
+    fingers.up(e.pointerId);
     erasing = null;
     // Each stroke its own mark, as a pencil's is in Notes: the eraser
     // takes one stroke and Undo one stroke, not the whole sitting. After
@@ -209,6 +215,7 @@ export function startMarkup(opts: {
   // up to the box (on the iPad a swipe erased only where it began).
   box.addEventListener("pointermove", move, { capture: true });
   window.addEventListener("pointerup", up);
+  window.addEventListener("pointercancel", up);
   box.addEventListener("touchmove", touchMove, { passive: false });
   box.addEventListener("keyup", keepSoon);
 
@@ -266,6 +273,7 @@ export function startMarkup(opts: {
       box.removeEventListener("pointerdown", down, { capture: true });
       box.removeEventListener("pointermove", move, { capture: true });
       window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
       box.removeEventListener("touchmove", touchMove);
       box.removeEventListener("keyup", keepSoon);
     },

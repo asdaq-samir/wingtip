@@ -95,14 +95,14 @@ export function useShortcuts(on = true): void {
     (event) => {
       if (backOne(document)) event.preventDefault();
     },
-    { ...HEARD, enabled: on },
+    HEARD,
   );
   useHotkeys(
     "alt+slash",
     (event) => {
       if (focusSearch(document)) event.preventDefault();
     },
-    { ...HEARD, enabled: on },
+    HEARD,
   );
   useHotkeys(
     [...Object.values(SCREEN_KEYS).filter((key): key is string => !!key), DIRECT_KEY].map(altKey),
@@ -113,7 +113,7 @@ export function useShortcuts(on = true): void {
       if (screen) wantScreen(screen);
       else askSearch("direct");
     },
-    { ...HEARD, enabled: on },
+    HEARD,
   );
 }
 

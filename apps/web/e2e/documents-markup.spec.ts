@@ -5,8 +5,10 @@ import { tinyPdf } from "./tinyPdf";
 /**
  * The reader's markup and notes (features/documents, web.md 13a "Markup
  * and notes"): words highlighted with a note, a stroke drawn, undone and
- * erased, the notes listed and opening their page, a page shared with
- * its marks, and the marks back after a reload from this device alone,
+ * erased, two fingers scrolling with the pen in hand, the bar where the
+ * layout puts tools, the notes listed and opening their page, a page
+ * shared with its marks, and the marks and the open document back after a
+ * reload from this device alone,
  * none of it ever sent. On the phone's project and the iPad's
  * (webkit-ipad, Safari's engine with touch), the iPad being the device
  * pilots mark up on. The shelf and its PDF are stubbed, as in
@@ -72,6 +74,39 @@ async function stroke(page: Page, sheet: Locator, from: [number, number], to: [n
   await page.mouse.up();
 }
 
+/** Two fingers down on the pages and swiped up 120 px together, as
+ *  touch pointer events (Playwright's touchscreen has one finger): how far
+ *  the pages scrolled, and whether they could. */
+const twoFingerSwipe = (pdf: Locator) =>
+  pdf.evaluate(async (box) => {
+    const r = box.getBoundingClientRect();
+    const x = r.left + r.width / 2;
+    const y = r.top + r.height * 0.6;
+    const before = box.scrollTop;
+    const send = (type: string, id: number, px: number, py: number) =>
+      (document.elementFromPoint(px, py) ?? box).dispatchEvent(
+        new PointerEvent(type, {
+          pointerId: id,
+          pointerType: "touch",
+          isPrimary: id === 11,
+          clientX: px,
+          clientY: py,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    send("pointerdown", 11, x - 40, y);
+    send("pointerdown", 12, x + 40, y);
+    for (let step = 1; step <= 6; step++) {
+      send("pointermove", 11, x - 40, y - step * 20);
+      send("pointermove", 12, x + 40, y - step * 20);
+    }
+    send("pointerup", 11, x - 40, y - 120);
+    send("pointerup", 12, x + 40, y - 120);
+    await new Promise((done) => setTimeout(done, 100));
+    return { scrollable: box.scrollHeight > box.clientHeight + 1, by: box.scrollTop - before };
+  });
+
 test("@smoke a passage highlighted with a note, a stroke drawn, undone and erased, the notes listed, the page shared, and the marks back after a reload from this device alone", async ({
   page,
 }) => {
@@ -91,6 +126,13 @@ test("@smoke a passage highlighted with a note, a stroke drawn, undone and erase
   const bar = reader.getByTestId("document-markup-bar");
   await expect(bar).toBeVisible();
   await expect(bar.getByTestId("document-tool-highlight")).toHaveAttribute("aria-pressed", "true");
+  // Where the iPad's layout puts tools: from the regular width (660) under
+  // the reader's head, above the pages; on a phone at the pages' foot.
+  const regular = (page.viewportSize()?.width ?? 0) >= 660;
+  await expect(bar).toHaveAttribute("data-at", regular ? "head" : "foot");
+  const [barBox, pagesBox] = [(await bar.boundingBox())!, (await pdf.boundingBox())!];
+  if (regular) expect(barBox.y + barBox.height).toBeLessThanOrEqual(pagesBox.y + 1);
+  else expect(barBox.y).toBeGreaterThan(pagesBox.y + pagesBox.height / 2);
   await words.evaluate((el) => {
     const range = document.createRange();
     range.selectNodeContents(el);
@@ -123,6 +165,12 @@ test("@smoke a passage highlighted with a note, a stroke drawn, undone and erase
   await stroke(page, sheet, [0.45, 0.5], [0.45, 0.8]);
   await expect(ink).toHaveCount(0);
 
+  // Two fingers with the pen in hand scroll the pages and draw nothing.
+  await bar.getByTestId("document-tool-pen").click();
+  const scrolled = await twoFingerSwipe(pdf);
+  if (scrolled.scrollable) expect(scrolled.by).toBeGreaterThan(0);
+  await expect(ink).toHaveCount(0);
+
   // The page shared as a picture with its marks drawn in.
   const download = page.waitForEvent("download");
   await bar.getByTestId("document-share-marked").click();
@@ -139,14 +187,13 @@ test("@smoke a passage highlighted with a note, a stroke drawn, undone and erase
   await row.click();
   await expect(reader.getByTestId("document-contents")).toHaveCount(0);
 
-  // Kept on the device with its words and note, and back when the
-  // document is opened again after a reload (the reload itself closes
-  // the reader: the address keeps no doc key across one).
+  // Kept on the device with its words and note, and back after a reload,
+  // which keeps the document open (freshLoad keeps the address's doc).
   await expect
     .poll(() => keptMarks(page))
     .toEqual([expect.objectContaining({ kind: "highlight", text: "Normal Procedures Checklist", note: NOTE })]);
   await page.reload();
-  await page.goto("/app/plan?doc=phak");
+  await expect(page).toHaveURL(/[?&]doc=phak(&|$)/);
   await expect(pdf.locator(".highlightEditor")).toHaveCount(1);
   await reader.getByTestId("document-contents-button").click();
   await reader.getByTestId("document-contents-half").getByText("Notes").click();

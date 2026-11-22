@@ -496,6 +496,26 @@ object WingtipColors {
         val White = Color(0xFFF8FAFC)
         const val WHITE_HEX = "#f8fafc"
     }
+    object Markup {
+        /** The highlighter's first ink, where it starts. */
+        val HighlightYellow = Color(0xFFF2B600)
+        const val HIGHLIGHT_YELLOW_HEX = "#f2b600"
+        val HighlightGreen = Color(0xFF52C41A)
+        const val HIGHLIGHT_GREEN_HEX = "#52c41a"
+        val HighlightBlue = Color(0xFF2F8CFF)
+        const val HIGHLIGHT_BLUE_HEX = "#2f8cff"
+        val HighlightPink = Color(0xFFE02AD8)
+        const val HIGHLIGHT_PINK_HEX = "#e02ad8"
+        /** The pen's first ink, where it starts. */
+        val PenBlack = Color(0xFF1C1A17)
+        const val PEN_BLACK_HEX = "#1c1a17"
+        val PenBlue = Color(0xFF0066D6)
+        const val PEN_BLUE_HEX = "#0066d6"
+        val PenRed = Color(0xFFDC2626)
+        const val PEN_RED_HEX = "#dc2626"
+        val PenGreen = Color(0xFF148A3B)
+        const val PEN_GREEN_HEX = "#148a3b"
+    }
 }
 
 /** One scheme's surfaces, words and states, as the web's cascade resolves them. */
