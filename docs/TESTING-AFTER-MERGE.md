@@ -24,13 +24,19 @@ end is skipped. `--only stress,spike` runs some, `--redo chaos` one again,
   `--no-build`).
 - A quiet Mac ([LOCAL-DEV.md](LOCAL-DEV.md)): the measurements take every
   turn of `scripts/dev/one-at-a-time.sh` (`--alone`), and every turn waits
-  while swap in use is over 2 GB (`ONE_AT_A_TIME_SWAP_MAX_MB`, 2048 by
-  default).
+  while free memory is under 30% (`ONE_AT_A_TIME_FREE_MIN`, from
+  `memory_pressure`). Swap in use is no guide: macOS keeps it high long
+  after a spike. Start it with the load average under 16.
 - Docker with its 12 GB and 12 CPUs: the stack is held to two of them and
   6.7 GB, k6 runs on four others.
 - The internet: the stock tools' images are pulled once, trivy downloads
   its database, and the planner reaches the FAA and NOAA as it does in
   production.
+- 15 GB free on the Mac before every piece, 20 GB for the transcode
+  (sec@2x peaks at about 17 GB): short of it the campaign stops and says
+  so, and starts that piece again next time. The transcode first deletes
+  the staged copy beside the tiles (`chart_tiles.nosync.webp-staging`, about
+  6 GB), since it runs in place.
 - About 60 GB free on the Mac for the disk-full fault (it is skipped,
   and says so, without it), and room beside the largest chart archive for
   the transcode.
@@ -63,7 +69,7 @@ case.
 | Piece | What it does | Its limits | About |
 |---|---|---|---|
 | drill | [`restore-drill.sh`](../scripts/dev/restore-drill.sh): a backup restored into a scratch Postgres, checked against its manifest, the gateway started on it | Every check passes ("restore drill passed") | 10 min |
-| transcode | The charts job's `transcode` of the cycle's archives to lossless WebP ([services/jobs/README.md](../services/jobs/README.md)), then `publish` where there is a bucket | It finishes; no tile drawn again | 2 h |
+| transcode | The charts job's `transcode` of the cycle's archives to lossless WebP, in place on the live tree ([services/jobs/README.md](../services/jobs/README.md)), then `publish --bucket "$CHART_TILES_BUCKET"` where there is one | It finishes; no tile drawn again | 2 h |
 | stress | [`pilots.js`](../infra/load-tests/pilots.js), `PROFILE=stress`: 10, 25, 50, 100, 150, 200, 300, 400 and 500 pilots, each step reached in 30 s and held 2 min; k6 stops past 10% errors | Per step: each journey's p95 under its limit, errors under 1%. The breaking point is the last step that held | 35 min |
 | soak | 50 pilots, the launch's expected load, for 2 hours | The journeys' limits; after a 20-minute warm, no service's memory growing over 50 MB an hour, the planner's open files over 20 an hour, Postgres, the live stores or a cache on disk over 100 MB an hour | 2 h 15 min |
 | spike | 0 to 200 pilots in 10 s, a minute there, back to 10 and 3 minutes to come back | The limits again in the 3 minutes after | 10 min |
