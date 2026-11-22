@@ -11181,6 +11181,14 @@ object EngineContract {
     )
 
     @Serializable
+    data class RouteFileReadInput(
+        /**
+         * The file's text.
+         */
+        val text: String,
+    )
+
+    @Serializable
     data class RouteHeadwindAnswer(
         /**
          * The headwind on that leg's course, kt; negative a tailwind.

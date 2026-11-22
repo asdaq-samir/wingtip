@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "properties": {
+    "ident": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The ident the route takes it by, uppercase: an airport's or a named fix's, two to five letters and figures; null for the pilot's own point (a user waypoint, a GPX point named in words), which the host names off the nearest fix."
+    },
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The file's own name for it, where that is not the ident."
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "kind": {
+      "enum": [
+        "airport",
+        "navaid",
+        "fix",
+        "user"
+      ],
+      "description": "What the file says it is (an .fpl's waypoint-type, a GPX point's type or sym); whether a field is open is field_status's, never this."
+    }
+  },
+  "required": [
+    "ident",
+    "name",
+    "lat",
+    "lon",
+    "kind"
+  ],
+  "title": "RouteFilePoint"
+}

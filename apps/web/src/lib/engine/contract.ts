@@ -904,6 +904,16 @@ export type RegionOfAnswer = string;
 export type RegionsAheadAnswer = string[];
 export type RegisteredProfileAnswer = string | null;
 export type ReserveMinAnswer = number;
+export type RouteFileReadAnswer =
+  | {
+      name: string | null;
+      departure: RouteFilePoint;
+      destination: RouteFilePoint;
+      between: RouteFilePoint[];
+    }
+  | {
+      error: string;
+    };
 export type RouteHeadwindAnswer = {
   /**
    * The headwind on that leg's course, kt; negative a tailwind.
@@ -3378,6 +3388,13 @@ export interface EngineContract {
   route_adiz: {
     input: RouteAdizInput;
     answer: RouteAdizAnswer;
+  };
+  /**
+   * A route from a file another app wrote, read before the pilot uses it: a flight plan's .fpl (Garmin's FlightPlan v1 XML, http://www8.garmin.com/xmlschemas/FlightPlan/v1, its route's points looked up in its waypoint table) or a GPX 1.1 route (its first rte's rtepts, or its wpts in order where it has none). Its departure, its destination and the points between, each with its ident where it is one the route takes and its place; or the words for the pilot where the file is neither, has fewer than two points, or starts or ends at a point with no ident (the plan's ends are fields).
+   */
+  route_file_read: {
+    input: RouteFileReadInput;
+    answer: RouteFileReadAnswer;
   };
   /**
    * The route's strongest headwind: of the nav log's legs, the one whose wind aloft blows most against its true course, its headwind the wind's component along that course (the wind triangle, FAA-H-8083-25C ch. 16; the winds aloft forecast's direction is true, FAA-H-8083-28B 27.6), to a tenth of a knot, a tailwind negative, so with tailwinds all the way it is the least of them. The first such leg where two tie; a leg with no wind or no course is passed over; null where no leg has both. The Brief's glance shows it as the route's wind aloft.
@@ -12194,6 +12211,32 @@ export interface RouteAdizAnswer {
     why: string;
     cite: string;
   } | null;
+}
+export interface RouteFileReadInput {
+  /**
+   * The file's text.
+   */
+  text: string;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "RouteFilePoint".
+ */
+export interface RouteFilePoint {
+  /**
+   * The ident the route takes it by, uppercase: an airport's or a named fix's, two to five letters and figures; null for the pilot's own point (a user waypoint, a GPX point named in words), which the host names off the nearest fix.
+   */
+  ident: string | null;
+  /**
+   * The file's own name for it, where that is not the ident.
+   */
+  name: string | null;
+  lat: number;
+  lon: number;
+  /**
+   * What the file says it is (an .fpl's waypoint-type, a GPX point's type or sym); whether a field is open is field_status's, never this.
+   */
+  kind: "airport" | "navaid" | "fix" | "user";
 }
 export interface RouteHeadwindInput {
   /**

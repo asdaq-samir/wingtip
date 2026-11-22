@@ -26158,6 +26158,75 @@
       ],
       "additionalProperties": false
     },
+    "route_file_read": {
+      "description": "A route from a file another app wrote, read before the pilot uses it: a flight plan's .fpl (Garmin's FlightPlan v1 XML, http://www8.garmin.com/xmlschemas/FlightPlan/v1, its route's points looked up in its waypoint table) or a GPX 1.1 route (its first rte's rtepts, or its wpts in order where it has none). Its departure, its destination and the points between, each with its ident where it is one the route takes and its place; or the words for the pilot where the file is neither, has fewer than two points, or starts or ends at a point with no ident (the plan's ends are fields).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RouteFileReadInput",
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "The file's text."
+            }
+          },
+          "required": [
+            "text"
+          ]
+        },
+        "answer": {
+          "title": "RouteFileReadAnswer",
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "departure": {
+                  "$ref": "#/definitions/RouteFilePoint"
+                },
+                "destination": {
+                  "$ref": "#/definitions/RouteFilePoint"
+                },
+                "between": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/RouteFilePoint"
+                  }
+                }
+              },
+              "required": [
+                "name",
+                "departure",
+                "destination",
+                "between"
+              ]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "error"
+              ]
+            }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "route_headwind": {
       "description": "The route's strongest headwind: of the nav log's legs, the one whose wind aloft blows most against its true course, its headwind the wind's component along that course (the wind triangle, FAA-H-8083-25C ch. 16; the winds aloft forecast's direction is true, FAA-H-8083-28B 27.6), to a tenth of a knot, a tailwind negative, so with tailwinds all the way it is the least of them. The first such leg where two tie; a leg with no wind or no course is passed over; null where no leg has both. The Brief's glance shows it as the route's wind aloft.",
       "type": "object",
@@ -32853,6 +32922,7 @@
     "report_near",
     "reserve_min",
     "route_adiz",
+    "route_file_read",
     "route_headwind",
     "route_jurisdiction",
     "route_options",
@@ -39301,6 +39371,48 @@
         }
       },
       "description": "The field's last wind, for a calm one; both members needed where it is not empty."
+    },
+    "RouteFilePoint": {
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The ident the route takes it by, uppercase: an airport's or a named fix's, two to five letters and figures; null for the pilot's own point (a user waypoint, a GPX point named in words), which the host names off the nearest fix."
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The file's own name for it, where that is not the ident."
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "kind": {
+          "enum": [
+            "airport",
+            "navaid",
+            "fix",
+            "user"
+          ],
+          "description": "What the file says it is (an .fpl's waypoint-type, a GPX point's type or sym); whether a field is open is field_status's, never this."
+        }
+      },
+      "required": [
+        "ident",
+        "name",
+        "lat",
+        "lon",
+        "kind"
+      ],
+      "title": "RouteFilePoint"
     },
     "RouteHold": {
       "title": "RouteHold",

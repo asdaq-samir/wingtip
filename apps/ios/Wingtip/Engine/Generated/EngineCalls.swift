@@ -1610,6 +1610,11 @@ extension Engine {
         try Self.rule("route_adiz", EngineContract.RouteAdizInput(points: points))
     }
 
+    /// A route from a file another app wrote, read before the pilot uses it: a flight plan's .fpl (Garmin's FlightPlan v1 XML, http://www8.garmin.com/xmlschemas/FlightPlan/v1, its route's points looked up in its waypoint table) or a GPX 1.1 route (its first rte's rtepts, or its wpts in order where it has none). Its departure, its destination and the points between, each with its ident where it is one the route takes and its place; or the words for the pilot where the file is neither, has fewer than two points, or starts or ends at a point with no ident (the plan's ends are fields).
+    static func routeFileRead(text: String) throws -> OpenAPIValueContainer {
+        try Self.rule("route_file_read", EngineContract.RouteFileReadInput(text: text))
+    }
+
     /// The route's strongest headwind: of the nav log's legs, the one whose wind aloft blows most against its true course, its headwind the wind's component along that course (the wind triangle, FAA-H-8083-25C ch. 16; the winds aloft forecast's direction is true, FAA-H-8083-28B 27.6), to a tenth of a knot, a tailwind negative, so with tailwinds all the way it is the least of them. The first such leg where two tie; a leg with no wind or no course is passed over; null where no leg has both. The Brief's glance shows it as the route's wind aloft.
     static func routeHeadwind(legs: [EngineContract.RouteHeadwindInputLegsItem]) throws -> EngineContract.RouteHeadwindAnswer? {
         try Self.rule("route_headwind", EngineContract.RouteHeadwindInput(legs: legs))
