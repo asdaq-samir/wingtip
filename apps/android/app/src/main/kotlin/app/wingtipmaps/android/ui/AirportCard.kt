@@ -124,7 +124,7 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
     val view = AirportCardView(
         marks = marks,
         runways = badges,
-        notams = CardNotams(ranked, said, state.notamsProblem, allNotams, toggle = { allNotams = !allNotams }, open = open, none = words.notamsNone),
+        notams = CardNotams(ranked, said, state.notamsProblem, allNotams, toggle = { allNotams = !allNotams }, open = open, none = words.notamsNone, fetchedAtMs = state.notamsAtMs),
         onNotam = { open(it.notams) },
         onDiagram = place?.airportDiagramUrl?.let { { diagram = true } },
         words = words,
