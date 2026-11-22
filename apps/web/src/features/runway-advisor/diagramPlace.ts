@@ -53,7 +53,12 @@ export function markOf(fix: Fix | null, page: DiagramText, graticule: Graticule 
   const at = callEngine("diagram_point", { graticule, lat: fix.lat, lon: fix.lon, width: page.width, height: page.height });
   if (!at.on_page) return null;
   const track = fix.speedKt ? fix.headingDeg : null;
-  return { x: at.x / page.width, y: at.y / page.height, rotationDeg: track == null ? null : graticule.north_deg + track, moving: track != null };
+  return {
+    x: at.x / page.width,
+    y: at.y / page.height,
+    rotationDeg: track == null ? null : graticule.north_deg + track,
+    moving: track != null,
+  };
 }
 
 /** The advisor's answer for the fix at the field, or null with no fix.

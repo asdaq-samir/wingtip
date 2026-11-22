@@ -117,24 +117,22 @@ class CopilotModel @Inject constructor(
     private fun input(
         fix: OwnShip.Fix, flight: CopilotFlight, got: CopilotAround, along: Along?, ahead: List<AheadAlert>,
         minimums: EngineContract.CopilotWatchInputMinimums?,
-    ): EngineContract.CopilotWatchInput {
-        return EngineContract.CopilotWatchInput(
-            nowS = fix.atMs / 1000.0,
-            own = EngineContract.CopilotWatchInputOwn(fix.lat, fix.lon, fix.trackDeg, fix.groundspeedKt),
-            fields = CopilotShapes.fields(got, firstSeen),
-            rules = flight.rules,
-            // The pilot's own minimums (Setup) and whether anyone is aboard
-            // (the Airplane page), as the web's copilotInput passes them.
-            minimums = minimums, passengers = flight.passengers,
-            // The fuel at takeoff and when the flight began: the engine takes
-            // the burn over the time since (copilot_watch's started_s).
-            fuelGal = flight.fuelGal, startedS = startedAtMs?.let { it / 1000.0 },
-            burnGph = flight.burnGph, tasKt = flight.tasKt, dest = flight.dest, alternate = flight.alternate,
-            remainingNm = along?.leftNm, plannedGsKt = flight.plannedGsKt,
-            areas = CopilotShapes.areas(got), itws = CopilotShapes.itws(got),
-            ahead = ahead.map { EngineContract.CopilotWatchInputAheadItem(it.id, it.kind, it.level, it.name) },
-        )
-    }
+    ): EngineContract.CopilotWatchInput = EngineContract.CopilotWatchInput(
+        nowS = fix.atMs / 1000.0,
+        own = EngineContract.CopilotWatchInputOwn(fix.lat, fix.lon, fix.trackDeg, fix.groundspeedKt),
+        fields = CopilotShapes.fields(got, firstSeen),
+        rules = flight.rules,
+        // The pilot's own minimums (Setup) and whether anyone is aboard
+        // (the Airplane page), as the web's copilotInput passes them.
+        minimums = minimums, passengers = flight.passengers,
+        // The fuel at takeoff and when the flight began: the engine takes
+        // the burn over the time since (copilot_watch's started_s).
+        fuelGal = flight.fuelGal, startedS = startedAtMs?.let { it / 1000.0 },
+        burnGph = flight.burnGph, tasKt = flight.tasKt, dest = flight.dest, alternate = flight.alternate,
+        remainingNm = along?.leftNm, plannedGsKt = flight.plannedGsKt,
+        areas = CopilotShapes.areas(got), itws = CopilotShapes.itws(got),
+        ahead = ahead.map { EngineContract.CopilotWatchInputAheadItem(it.id, it.kind, it.level, it.name) },
+    )
 
     private fun reset() {
         _message.value = null

@@ -56,7 +56,13 @@ export function Pages({ placed, all, mark, rings = NO_RINGS }: ReturnType<typeof
       id: "rings",
       type: "circle",
       source: "rings",
-      paint: { "circle-radius": 18, "circle-color": CHART.caution, "circle-opacity": 0, "circle-stroke-width": 3, "circle-stroke-color": CHART.caution },
+      paint: {
+        "circle-radius": 18,
+        "circle-color": CHART.caution,
+        "circle-opacity": 0,
+        "circle-stroke-width": 3,
+        "circle-stroke-color": CHART.caution,
+      },
     });
     const map = new GlMap({
       container: box.current,

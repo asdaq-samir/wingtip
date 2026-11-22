@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ExternalLink, Maximize2 } from "lucide-react";
 import { cn } from "cn";
+import { CardHeadRow } from "../../components/CardHead";
 import FigureStrip from "../../components/FigureStrip";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Button } from "../../components/ui/button";
@@ -16,30 +17,29 @@ function Head({ answer, vm }: { answer: Answer; vm: ClaudeViewModel }) {
   const save = saveChange(flight);
   const blocked = vm.busy !== null || vm.superseded;
   return (
-    <header className="flex flex-wrap items-start gap-2">
-      <div className="min-w-0 flex-1">
-        <h1 className={cn("font-semibold", TEXT.title)}>{view.points.map((p) => p.ident).join(" → ")}</h1>
-        <p className={cn("text-muted-foreground", TEXT.detail)}>
-          {[view.airplane ?? "No airplane", `${Math.round(view.altitude_ft).toLocaleString("en-US")} ft`].join(" · ")}
-        </p>
-      </div>
-      <div className="flex gap-2">
-        <Button size="sm" disabled={blocked} data-testid="view-save" onClick={() => vm.change(save)}>
-          {save.label}
-        </Button>
-        {view.open_in_wingtip && (
-          <Button variant="outline" size="sm" data-testid="view-open" onClick={() => vm.open(view.open_in_wingtip!)}>
-            <ExternalLink aria-hidden />
-            Open in Wingtip
+    <CardHeadRow
+      wrap
+      name={view.points.map((p) => p.ident).join(" → ")}
+      sub={[view.airplane ?? "No airplane", `${Math.round(view.altitude_ft).toLocaleString("en-US")} ft`].join(" · ")}
+      end={
+        <div className="flex gap-2">
+          <Button size="sm" disabled={blocked} data-testid="view-save" onClick={() => vm.change(save)}>
+            {save.label}
           </Button>
-        )}
-        {vm.canExpand && (
-          <Button variant="ghost" size="icon-sm" aria-label="Open beside the chat" onClick={vm.expand}>
-            <Maximize2 aria-hidden />
-          </Button>
-        )}
-      </div>
-    </header>
+          {view.open_in_wingtip && (
+            <Button variant="outline" size="sm" data-testid="view-open" onClick={() => vm.open(view.open_in_wingtip!)}>
+              <ExternalLink aria-hidden />
+              Open in Wingtip
+            </Button>
+          )}
+          {vm.canExpand && (
+            <Button variant="ghost" size="icon-sm" aria-label="Open beside the chat" onClick={vm.expand}>
+              <Maximize2 aria-hidden />
+            </Button>
+          )}
+        </div>
+      }
+    />
   );
 }
 

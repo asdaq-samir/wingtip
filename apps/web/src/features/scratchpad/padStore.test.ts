@@ -6,7 +6,7 @@ import { TEMPLATES, templateOf } from "./templates";
 function memory(): PadStore {
   const kept = new Map<string, unknown>();
   return {
-    get: async <T,>(k: string) => kept.get(k) as T | undefined,
+    get: async <T>(k: string) => kept.get(k) as T | undefined,
     set: async (k, v) => void kept.set(k, structuredClone(v)),
     del: async (k) => void kept.delete(k),
   };

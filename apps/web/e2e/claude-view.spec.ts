@@ -63,7 +63,7 @@ async function openHost(page: Page, origin: string) {
   return page.frameLocator("#view");
 }
 
-test("the live view draws the flight Claude plans and a tap changes it @smoke", async ({ page, baseURL }) => {
+test("the live view draws the flight Claude plans and a tap changes it", { tag: "@smoke" }, async ({ page, baseURL }) => {
   const view = await openHost(page, baseURL!);
   await expect(view.getByRole("heading", { level: 1 })).toHaveText("C81 → KMSN → KDLH");
   await expect(view.getByTestId("view-figures")).toContainText("12.3");

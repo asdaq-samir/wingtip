@@ -10,8 +10,9 @@ import { useClock } from "../../lib/useMinuteClock";
 import { adviceOf, graticuleOf, hotSpotsOf, markOf } from "./diagramPlace";
 import { readDiagram } from "./diagramText";
 
-/** Once a second: a fix that stops coming takes the airplane off the
- *  page within AC 120-76D 11.17.2.3's 3 s, never frozen on it. */
+/** Once a second: the engine ages a fix that stops coming (its
+ *  diagram_fix_usable), so the page asks it each second and the airplane
+ *  leaves the page in time, never frozen on it. */
 const EVERY_MS = 1000;
 
 /**

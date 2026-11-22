@@ -5,8 +5,8 @@ import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.airplane.FigureKey
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
-import app.wingtipmaps.android.engine.generated.gonogoBalance
 import app.wingtipmaps.android.engine.generated.fuelGrades
+import app.wingtipmaps.android.engine.generated.gonogoBalance
 import app.wingtipmaps.android.engine.generated.gonogoDefaultLoad
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

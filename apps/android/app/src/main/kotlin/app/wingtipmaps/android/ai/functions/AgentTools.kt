@@ -34,14 +34,12 @@ class AgentTools(private val app: Application, private val open: (String) -> Uni
     /** One call answered, its arguments plain values: the action's entity
      *  as JSON under "result", or why there is none under "error", for the
      *  model to say. */
-    suspend fun run(name: String, args: Map<String, Any?>): Map<String, Any?> {
-        return try {
-            mapOf("result" to dispatch(name, args))
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            mapOf("error" to (e.message ?: "The app could not answer."))
-        }
+    suspend fun run(name: String, args: Map<String, Any?>): Map<String, Any?> = try {
+        mapOf("result" to dispatch(name, args))
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        mapOf("error" to (e.message ?: "The app could not answer."))
     }
 
     /** The action named, by WingtipFunctions' method names. */

@@ -204,9 +204,7 @@ function Unchecked({ data, none }: { data: FieldNotams | undefined; none: string
   if (!data) return null;
   return (
     <>
-      {data.unchecked.length > 0 && (
-        <p className={cn("pt-2 text-caution-ink", TEXT.note)}>{WORDING.tfrListNotRead}</p>
-      )}
+      {data.unchecked.length > 0 && <p className={cn("pt-2 text-caution-ink", TEXT.note)}>{WORDING.tfrListNotRead}</p>}
       {!data.full_set && !none && (
         <p className={cn("pt-2 text-caution-ink", TEXT.note)} data-testid="place-notams-coverage">
           {notamCredit(data.coverage_since)}

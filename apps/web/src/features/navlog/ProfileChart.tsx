@@ -26,15 +26,7 @@ const config = {
  */
 // Drawn again only when its profile or its plan is new (memo): recharts
 // measures a line's whole length at every draw.
-export default memo(function ProfileChart({
-  profile,
-  plan,
-  className,
-}: {
-  profile: RouteProfile;
-  plan: Line;
-  className?: string;
-}) {
+export default memo(function ProfileChart({ profile, plan, className }: { profile: RouteProfile; plan: Line; className?: string }) {
   const scale = plan.length_nm > 0 ? profile.length_nm / plan.length_nm : 1;
   // The line in pieces, a null height ending one: each piece its own
   // series, joined over the ground's rows between its points, never

@@ -3,6 +3,7 @@ package app.wingtipmaps.android.library
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.nio.file.Files
@@ -23,9 +24,10 @@ class OwnShelfTest {
         assertEquals(listOf(doc), shelf.documents.value)
     }
 
-    @Test(expected = OwnShelf.NotPdf::class)
+    @Test
     fun aFileThatIsNotAPdfIsRefused() {
-        add("photo.jpg", byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0, 0))
+        assertThrows(OwnShelf.NotPdf::class.java) { add("photo.jpg", byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 0, 0)) }
+        assertEquals(emptyList<Any>(), shelf.documents.value)
     }
 
     @Test

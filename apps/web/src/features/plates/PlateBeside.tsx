@@ -6,7 +6,6 @@ import type { PageMark } from "../../lib/diagram";
 import { TEXT } from "../../lib/text";
 import { PLATE_SHAPE } from "./plateLook";
 
-
 /**
  * The plate in its card beside the map (PlateCard at a tablet's width):
  * its pages on a map of their own, to pinch in on, own ship (`mark`) on
@@ -30,7 +29,11 @@ export default function PlateBeside({ title, url, airport, mark }: { title: stri
         <Pages {...layout} mark={mark} />
       ) : (
         <p className={cn("px-4 pt-4 text-muted-foreground", TEXT.prose)}>
-          {isError && !isFetching ? "The FAA's plate could not be had. Try again in a moment." : data ? "The FAA lists no page for this plate." : "Drawing the plate…"}
+          {isError && !isFetching
+            ? "The FAA's plate could not be had. Try again in a moment."
+            : data
+              ? "The FAA lists no page for this plate."
+              : "Drawing the plate…"}
         </p>
       )}
     </figure>

@@ -42,7 +42,14 @@ export function PublicationRows({
   return (
     <>
       {diagramCycle ? (
-        <DiagramRow media={<ChartBadge />} ident={ident} cycle={diagramCycle} url={diagram} testId="airport-diagram" viewer={AdvisedDiagram} />
+        <DiagramRow
+          media={<ChartBadge />}
+          ident={ident}
+          cycle={diagramCycle}
+          url={diagram}
+          testId="airport-diagram"
+          viewer={AdvisedDiagram}
+        />
       ) : diagram ? (
         <ChartRow media={<ChartBadge />} title="Airport Diagram" url={diagram} airport={ident} testId="airport-diagram" />
       ) : (

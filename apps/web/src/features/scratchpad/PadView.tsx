@@ -42,7 +42,12 @@ export function PadView({ id, onDelete }: { id: string; onDelete: () => void }) 
       )}
       <InkPad strokes={pad.strokes} onStroke={vm.addStroke} label={`${template.title}, ${pad.strokes.length} strokes`} />
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="ghost" className="relative text-tint after:absolute after:-inset-1" onClick={vm.undoStroke} disabled={!pad.strokes.length}>
+        <Button
+          variant="ghost"
+          className="relative text-tint after:absolute after:-inset-1"
+          onClick={vm.undoStroke}
+          disabled={!pad.strokes.length}
+        >
           <Undo2 aria-hidden /> Undo
         </Button>
         <Button

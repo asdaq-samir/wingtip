@@ -89,8 +89,8 @@ private fun Loads(state: BalanceModel.State, loading: EngineContract.GonogoLoadi
     loading.stations.orEmpty().forEachIndexed { i, station ->
         key(i) {
             Figure(
-            label = station.name, value = state.stations.getOrElse(i) { "" }, suffix = "lb",
-            most = station.maxLb?.let { String.format(Locale.US, "Most %,.0f lb", it) },
+                label = station.name, value = state.stations.getOrElse(i) { "" }, suffix = "lb",
+                most = station.maxLb?.let { String.format(Locale.US, "Most %,.0f lb", it) },
             ) { model.setStation(i, it) }
         }
     }

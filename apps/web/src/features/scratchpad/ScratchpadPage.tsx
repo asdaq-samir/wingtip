@@ -10,7 +10,8 @@ import { TEMPLATES } from "./templates";
 import { useScratchpads, type PadRow } from "./useScratchpads";
 
 /** When a page was last written, as its row says it: "21 Nov, 14:05". */
-const whenWords = (iso: string) => new Date(iso).toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const whenWords = (iso: string) =>
+  new Date(iso).toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 /**
  * The scratchpad, You's page (ScratchpadRow): this flight's pages, then
@@ -21,7 +22,10 @@ const whenWords = (iso: string) => new Date(iso).toLocaleString(undefined, { day
 export function ScratchpadPage() {
   const vm = useScratchpads();
   const pages = Object.fromEntries(
-    [...vm.thisFlight, ...vm.earlier].map((p) => [p.id, { title: p.title, content: <PadView id={p.id} onDelete={() => void vm.remove(p.id)} /> }]),
+    [...vm.thisFlight, ...vm.earlier].map((p) => [
+      p.id,
+      { title: p.title, content: <PadView id={p.id} onDelete={() => void vm.remove(p.id)} /> },
+    ]),
   );
   return (
     <ConsolePages back="Scratchpad" pages={pages}>
@@ -62,7 +66,9 @@ function NewPad({ create }: { create: ReturnType<typeof useScratchpads>["create"
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        render={<Button variant="ghost" className="relative self-end text-tint after:absolute after:-inset-1" data-testid="scratchpad-new" />}
+        render={
+          <Button variant="ghost" className="relative self-end text-tint after:absolute after:-inset-1" data-testid="scratchpad-new" />
+        }
       >
         <Plus aria-hidden /> New Page
       </DropdownMenuTrigger>

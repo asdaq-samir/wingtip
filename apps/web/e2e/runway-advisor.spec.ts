@@ -62,7 +62,10 @@ async function onRunway(page: Page) {
     (url) => url.pathname.endsWith("/api/planner/airport/KDLH"),
     async (route) => {
       const answer = await route.fetch();
-      await route.fulfill({ response: answer, json: { ...(await answer.json()), airport_diagram_url: PDF_URL, airport_diagram_cycle: "2611" } });
+      await route.fulfill({
+        response: answer,
+        json: { ...(await answer.json()), airport_diagram_url: PDF_URL, airport_diagram_cycle: "2611" },
+      });
     },
   );
   await page.route(
