@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useState } from "react";
-import { Bookmark, BookmarkCheck, ChevronDown, ChevronUp, ListTree, Moon, Share } from "lucide-react";
+import { Bookmark, BookmarkCheck, ChevronDown, ChevronUp, ListTree, Moon, PencilLine, Share } from "lucide-react";
 import { cn } from "cn";
 import FullScreenViewer from "../../components/FullScreenViewer";
 import IconButton from "../../components/IconButton";
@@ -7,9 +7,11 @@ import { SearchField } from "../../components/PanelCapsule";
 import { TEXT } from "../../lib/text";
 import type { DocPlace } from "./docPlace";
 import type { OutlineRow } from "./pdfPlaces";
+import { MarkupBar } from "./MarkupBar";
 import type { Find, Goto } from "./readerBody";
 import { ReaderContents } from "./ReaderContents";
 import TextBody from "./TextBody";
+import { useMarkup } from "./useMarkup";
 import { useReader } from "./useReader";
 
 // pdf.js and its viewer, half a megabyte, fetched with the first PDF opened.
@@ -20,12 +22,16 @@ const PdfBody = lazy(() => import("./PdfBody"));
  * its title and close on top, then a search of its text and the reader's
  * four buttons -- Contents (the outline and the bookmarks), Bookmark the
  * page, Invert for the night, Share the page as a link -- and under them
- * its pages, a PDF's (PdfBody) or a CFR part's text (TextBody). Opened
+ * its pages, a PDF's (PdfBody) or a CFR part's text (TextBody). A PDF's
+ * Markup button puts out the markup bar at the pages' foot (MarkupBar,
+ * useMarkup): highlights with notes, a pen, an eraser and Undo, kept on
+ * this device; the contents list the notes. Opened
  * from the address's `doc` (ReaderHost), so a cite tapped, a link shared
  * and Back all work as a card's do.
  */
 export default function Reader({ place, onClose }: { place: DocPlace; onClose: () => void }) {
   const vm = useReader(place);
+  const markup = useMarkup(vm.title);
   const [contents, setContents] = useState(false);
   const [typed, setTyped] = useState("");
   const [find, setFind] = useState<Find | null>(null);
@@ -47,34 +53,38 @@ export default function Reader({ place, onClose }: { place: DocPlace; onClose: (
   // A bookmark's name: a CFR part's section by its heading, a PDF's page by its number.
   const label = (at: number) =>
     (vm.source?.kind === "text" && vm.source.text.groups.flatMap((g) => g.sections)[at - 1]?.head) || `Page ${at}`;
-  const body = vm.source && !failed && {
-    source: vm.source,
-    startPage: vm.startPage,
-    startAt: vm.startAt,
-    find,
-    goto,
-    inverted: vm.inverted,
-    onOutline: setOutline,
-    onPage,
-    onMatches: setMatches,
-    onFailed: () => setFailed(true),
-  };
+  const body = vm.source &&
+    !failed && {
+      source: vm.source,
+      startPage: vm.startPage,
+      startAt: vm.startAt,
+      find,
+      goto,
+      inverted: vm.inverted,
+      onOutline: setOutline,
+      onPage,
+      onMatches: setMatches,
+      onFailed: () => setFailed(true),
+      marksKey: vm.marksKey,
+      onMarkup: markup.onMarkup,
+      onMarkupState: markup.onMarkupState,
+    };
   return (
     <FullScreenViewer title={vm.title} testId="document-reader" closeTestId="document-reader-close" onClose={onClose}>
       <div className="flex shrink-0 items-center gap-2 px-4 pb-2">
         <div className="min-w-0 flex-1">
-        <SearchField
-          value={typed}
-          onChange={(v) => {
-            setTyped(v);
-            if (!v) setMatches(null);
-          }}
-          onCancel={() => setTyped("")}
-          onSubmit={() => ask(find?.query === typed.trim() ? "next" : null)}
-          placeholder="Search"
-          label="Search this document"
-          testId="document-search"
-        />
+          <SearchField
+            value={typed}
+            onChange={(v) => {
+              setTyped(v);
+              if (!v) setMatches(null);
+            }}
+            onCancel={() => setTyped("")}
+            onSubmit={() => ask(find?.query === typed.trim() ? "next" : null)}
+            placeholder="Search"
+            label="Search this document"
+            testId="document-search"
+          />
         </div>
         <IconButton label="Contents" aria-pressed={contents} onClick={() => setContents((c) => !c)} data-testid="document-contents-button">
           <ListTree />
@@ -88,7 +98,17 @@ export default function Reader({ place, onClose }: { place: DocPlace; onClose: (
         >
           {marked ? <BookmarkCheck /> : <Bookmark />}
         </IconButton>
-        <IconButton label="Invert Colors" aria-pressed={vm.inverted} onClick={() => vm.setInverted(!vm.inverted)} data-testid="document-invert">
+        {markup.available && (
+          <IconButton label="Markup" aria-pressed={!!markup.tool} onClick={markup.toggle} data-testid="document-markup">
+            <PencilLine />
+          </IconButton>
+        )}
+        <IconButton
+          label="Invert Colors"
+          aria-pressed={vm.inverted}
+          onClick={() => vm.setInverted(!vm.inverted)}
+          data-testid="document-invert"
+        >
           <Moon />
         </IconButton>
         {vm.share && (
@@ -130,11 +150,13 @@ export default function Reader({ place, onClose }: { place: DocPlace; onClose: (
                   : "Opening…"}
           </p>
         )}
+        {markup.tool && !contents && <MarkupBar vm={markup} page={page?.page ?? null} />}
         {contents && (
           <ReaderContents
             edition={vm.edition}
             outline={outline}
             bookmarks={vm.bookmarks}
+            notes={markup.available ? markup.notes : null}
             paged={vm.source?.kind !== "text"}
             onPick={(to) => {
               setGoto((g) => ({ ...to, n: (g?.n ?? 0) + 1 }));

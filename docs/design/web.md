@@ -1689,11 +1689,45 @@ its heading's words. A cite links only where the shelf holds the
 document in an edition. Elsewhere, and until the engine and the shelf
 are in, it is words.
 
+**Markup and notes.** ForeFlight's markup, the owner's ask of
+2026-11-21 ("Ok just go maximum output"). A PDF's Markup button (the
+pencil, beside Invert Colors) puts out the markup bar at the pages'
+foot, as PencilKit's tool picker floats at the foot of an iPad's screen
+(`MarkupBar`, its view model `useMarkup`): the Highlighter, the Pen and
+the Eraser (a toggle group), the ink (a menu of four, from the tokens),
+Undo (and Redo from `sm` up), a picked highlight's Add Note (a popover
+with its words over the note) and Share Marked-Up Page. The marks are
+pdf.js's own annotation editors (`pdfMarkup`): its highlight, made by
+picking words, and its ink, drawn with a finger, a pencil or a mouse,
+each stroke its own mark so Undo and the eraser take one at a time. The
+eraser is ours, as pdf.js has none: it takes each mark within a
+fingertip of where it passes (along a stroke, not anywhere in its box),
+through pdf.js's own Delete so Undo puts it back. Palm rejection: pdf.js
+already ignores another kind of touch while a pencil draws; once a
+pencil has drawn here a finger scrolls and zooms and draws nothing, as
+iPadOS's "Only Draw with Apple Pencil" (a hand button in the bar turns
+it off, shown once a pencil has been seen). Every mark is tied to its
+page and kept on the device in IndexedDB beside the kept PDFs
+(`deviceFiles`' `marks/<doc>@<edition>`, an edition's pages being its
+own), never sent, and given back to pdf.js as its own copied marks
+before the pages are drawn. The words a highlight picked and its note
+are kept beside it (`markup`), known again by its page and box. The
+contents' third segment, Notes, lists every highlight and note page by
+page, each opening its page. Share Marked-Up Page draws the page in
+view with its marks flattened in, by pdf.js's own print rendering
+(`AnnotationMode.ENABLE_STORAGE`), and shares the picture with the
+page's notes as its words, or saves it where the browser shares no
+files. A CFR part's text has no markup (it is the app's own type, not
+a PDF).
+
 **Stock parts.** pdfjs-dist 6.5.438 and its viewer (Apache-2.0),
 loaded with the first PDF opened (about 0.5 MB of script and the 1.3 MB
 worker, none of it on the first load); idb-keyval 6.3.0 (Apache-2.0);
 React Aria's FileTrigger and SearchField; Base UI's Dialog (the viewer),
-Toast (Delete's Undo) and Menu (a row's •••, `RowMenu`).
+Toast (Delete's Undo) and Menu (a row's •••, `RowMenu`); for markup,
+pdf.js's own annotation editor layer (`AnnotationEditorUIManager`, its
+HIGHLIGHT and INK modes, undo and serialization), Base UI's Toggle
+Group, Menu and Popover, and no new dependency.
 
 **Avoid.** A copy of a rule's citation typed into a screen: ask
 `citations`. A pilot's own document sent to the server: there is no sync

@@ -6,11 +6,14 @@ import {
   keepDoc,
   keptBody,
   keptDocs,
+  loadMarks,
+  marksKey,
   ownBlob,
   ownDocs,
   removeOwn,
   renameOwn,
   restoreOwn,
+  saveMarks,
   staleKept,
   type FileStore,
 } from "./deviceFiles";
@@ -19,10 +22,10 @@ import {
 function memory(): FileStore {
   const kept = new Map<string, unknown>();
   return {
-    get: async <T,>(key: string) => kept.get(key) as T | undefined,
+    get: async <T>(key: string) => kept.get(key) as T | undefined,
     set: async (key, value) => void kept.set(key, value),
     del: async (key) => void kept.delete(key),
-    update: async <T,>(key: string, change: (old: T | undefined) => T) => void kept.set(key, change(kept.get(key) as T | undefined)),
+    update: async <T>(key: string, change: (old: T | undefined) => T) => void kept.set(key, change(kept.get(key) as T | undefined)),
   };
 }
 
@@ -53,6 +56,24 @@ describe("the documents kept on this device", () => {
     await restoreOwn(s, taken!);
     expect((await ownDocs(s)).map((d) => d.id)).toEqual(["a", "b"]);
     expect((await ownBlob(s, "a"))?.size).toBe(8);
+  });
+
+  it("keeps a document's marks by its edition, takes the key away when none is left, and an own document's go and come back with it", async () => {
+    const s = memory();
+    const mark = { page: 2, kind: "ink" as const, data: { pageIndex: 1, rect: [0, 0, 10, 10] }, note: "Flaps 10" };
+    await saveMarks(s, marksKey("phak", "FAA-H-8083-25C"), [mark]);
+    expect(await loadMarks(s, marksKey("phak", "FAA-H-8083-25C"))).toEqual([mark]);
+    // Another edition's pages are not this one's.
+    expect(await loadMarks(s, marksKey("phak", "FAA-H-8083-25D"))).toEqual([]);
+    await saveMarks(s, marksKey("phak", "FAA-H-8083-25C"), []);
+    expect(await s.get(marksKey("phak", "FAA-H-8083-25C"))).toBeUndefined();
+
+    await addOwn(s, pdf("POH.pdf"), "a");
+    await saveMarks(s, marksKey("own:a", "own"), [mark]);
+    const taken = await removeOwn(s, "a");
+    expect(await loadMarks(s, marksKey("own:a", "own"))).toEqual([]);
+    await restoreOwn(s, taken!);
+    expect(await loadMarks(s, marksKey("own:a", "own"))).toEqual([mark]);
   });
 
   it("keeps a library document in its edition, a new edition in the old one's place", async () => {

@@ -74,8 +74,12 @@ into Documents, were not confirmed. Nothing found said they do.
 
 ## What we left out, for now
 
-- **Markup and notes.** They are a second editor over pdf.js's annotation
-  layer. Bookmarks with names come first.
+- ~~**Markup and notes.**~~ Built the same day on the owner's word ("Ok
+  just go maximum output", "I will take your recs"): pdf.js's own
+  annotation editors for highlights and ink, our eraser, palm rejection
+  and notes, kept on the device beside the PDFs and never sent, a notes
+  list in the contents, and a page shared with its marks flattened
+  (web.md 13a, "Markup and notes"). No new dependency.
 - **Images and Office files.** PDFs only. A photographed page is the
   iPhone's page reader's.
 - **Binders and cloud drives.** One list of the pilot's own documents.
