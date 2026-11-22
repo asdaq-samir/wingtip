@@ -217,6 +217,8 @@ struct BandRow: View {
             }
         }
         .accessibilityElement(children: .combine)
+        // Its cites the row's actions, where the combined row hides the links.
+        .citeActions(Self.rules(band).map(\.text))
     }
 }
 

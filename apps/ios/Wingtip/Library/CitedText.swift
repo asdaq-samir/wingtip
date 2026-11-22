@@ -1,5 +1,8 @@
 import SwiftUI
 
+/// The library CitedText and CiteActions read the shelf from, the one app-wide.
+@MainActor private var citedLibrary: DocumentLibrary { .shared }
+
 /// Words as the app shows them, each cited rule among them a link that
 /// opens the documents library at its paragraph: "14 CFR 91.155" at
 /// § 91.155 of Part 91, "AIM 7-1-5" at its paragraph. Where each rule
@@ -13,7 +16,7 @@ import SwiftUI
 struct CitedText: View {
     let text: String
     @Environment(Navigator.self) private var nav
-    private var library: DocumentLibrary { .shared }
+    private var library: DocumentLibrary { citedLibrary }
 
     init(_ text: String) { self.text = text }
 
@@ -40,4 +43,49 @@ struct CitedText: View {
         }
         return out
     }
+}
+
+/// Each cited rule in a row VoiceOver reads as one element (a row that
+/// combines its children: an airspace band's entry rules, a risk factor's
+/// why) as one of the row's actions, "Open 14 CFR 91.155": a link inside a
+/// combined element is read but cannot be followed, so the row keeps its
+/// one spoken label and the Actions rotor opens each cite at its paragraph
+/// (items 103 and 104 of the round-3 queue; the web's links are reached by
+/// Tab). Only cites the shelf holds, as CitedText links them.
+private struct CiteActions: ViewModifier {
+    let texts: [String]
+    @Environment(Navigator.self) private var nav
+    private var library: DocumentLibrary { citedLibrary }
+
+    func body(content: Content) -> some View {
+        content.accessibilityActions {
+            ForEach(Array(CitedText.cites(texts, shelf: library.shelf).enumerated()), id: \.offset) { _, cite in
+                Button("Open \(cite.words)") { nav.reading = cite.place }
+            }
+        }
+    }
+}
+
+extension CitedText {
+    /// The cites in `texts` the shelf holds, each once: its words as
+    /// written and the place it opens.
+    static func cites(_ texts: [String], shelf: [LibraryEntry]) -> [(words: String, place: DocPlace)] {
+        guard !shelf.isEmpty else { return [] }
+        var seen = Set<String>()
+        var out: [(words: String, place: DocPlace)] = []
+        for text in texts {
+            guard let pieces = try? Engine.citations(text: text).pieces else { continue }
+            for piece in pieces {
+                guard let cite = piece.cite, let place = DocPlace.cited(doc: cite.doc, at: cite.at, shelf: shelf),
+                      seen.insert(place.text).inserted else { continue }
+                out.append((piece.text, place))
+            }
+        }
+        return out
+    }
+}
+
+extension View {
+    /// The cites in `texts` as the row's VoiceOver actions (CiteActions).
+    func citeActions(_ texts: [String]) -> some View { modifier(CiteActions(texts: texts)) }
 }

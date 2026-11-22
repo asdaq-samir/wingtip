@@ -44,7 +44,7 @@ final class FirstFlightModel {
     /// Whether the welcome is shown: with no route, until seen, and not
     /// under the UI tests' and CI's pictures' launch arguments, where it
     /// would cover what they look at, nor in the app that hosts the unit
-    /// tests (as PlanningAidNotice); `-firstFlight` asks for it all the same.
+    /// tests; `-firstFlight` asks for it all the same.
     func shown(routed: Bool) -> Bool {
         guard !routed else { return false }
         if arguments.contains("-firstFlight") { return !seen }

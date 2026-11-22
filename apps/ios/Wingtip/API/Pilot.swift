@@ -30,6 +30,9 @@ typealias CrossCountryReview = GWCrossCountryReviewDto
 /// (ExperienceItemDto): what is had and needed, in its unit, and the rule
 /// it comes from, judged by the gateway.
 typealias ExperienceItem = GWExperienceItemDto
+/// An AI app the pilot connected through the connector (ConnectionDto):
+/// its id, the app's name and when its token was last renewed.
+typealias ConnectedApp = GWConnectionDto
 
 extension SavedFlight: @retroactive Identifiable {}
 extension LogbookEntry: @retroactive Identifiable {}
@@ -82,5 +85,15 @@ extension Gateway {
     /// nil where it is not (or no longer) shared.
     static func sharedFlight(_ token: String) async throws -> GWSharedFlightDto? {
         try await read(none: [404]) { try await $0.shared(path: .init(token: token)).ok.body.json }
+    }
+
+    /// The AI apps the pilot connected through the connector, newest first
+    /// (GET /api/me/connections); none signed out.
+    static func connections() async throws -> [ConnectedApp] { try await read { try await $0.connections().ok.body.json } ?? [] }
+
+    /// One of them ended from Wingtip's side (DELETE /api/me/connections/{id}):
+    /// its tokens revoked at once; a 404 is one already gone.
+    static func disconnect(_ id: String) async throws {
+        _ = try await call { try await $0.disconnect(path: .init(id: id)) }
     }
 }

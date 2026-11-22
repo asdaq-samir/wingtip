@@ -98,8 +98,6 @@ struct TopHosts: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            // What the app is, once at first launch (PlanningAidNotice).
-            .modifier(PlanningAidAlert(active: active))
             // A figure asked for a point of the route (FlightUI).
             .modifier(PointAlerts(active: active))
             // The airplanes' figures kept on this device, offered to the

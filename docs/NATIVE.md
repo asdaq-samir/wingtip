@@ -653,10 +653,9 @@ Tests: `OfflineFieldsTests`, `FlightExtrasTests` (Direct To put back),
   again each time the app comes to the front with a network.
 - **Purpose strings** name the voice questions (microphone, speech) and
   the position read on in the background while flying (location).
-- **The first launch** puts up one stock alert, "A Planning Aid, Not for
-  Navigation", with About's planning-aid words and the listing's
-  not-for-navigation paragraph, accepted once (`PlanningAidNotice`). The
-  UI tests' launch arguments skip it (`-planningAid` asks for it).
+- **The first launch** puts up no notice (round 3, as the web and
+  Android): the planning-aid words are in About, on the instruments bar
+  and at the kneeboard's foot.
 - **Push in the App Store build.** `project.yml` keeps `aps-environment`
   development, which the archive's development signing needs; the App
   Store export re-signs with the distribution profile, whose value,

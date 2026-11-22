@@ -91,6 +91,7 @@ Android, the address on the web) or `wingtipmaps://plan?open=<id>` from another 
 | `logbook` | Logbook | yes | yes | yes | The pilot's logbook and currency. |
 | `coach` | Coach | yes | yes | yes | The training coach. |
 | `minimums` | Personal Minimums | yes | yes | yes | The weather the pilot will not take off or land in. |
+| `documents` | Documents | yes | yes | yes | The documents library: the FAA's regulations, AIM, handbooks and circulars in their current editions, and the pilot's own PDFs on the device; a cited rule anywhere opens it at its paragraph. |
 | `guide` | Guide | yes | yes | -- | How the app works, and the practice drills. |
 | `downloads` | Downloads | -- | yes | yes | Charts kept for flying with no signal. |
 | `passengers` | Passenger Briefing | -- | yes | yes | The passenger briefing. |

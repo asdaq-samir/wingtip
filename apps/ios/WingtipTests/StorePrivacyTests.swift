@@ -90,25 +90,6 @@ struct StorePrivacyTests {
         #expect(jar.cookies?.isEmpty != false)
     }
 
-    // MARK: The planning-aid notice (the store audit's S2)
-
-    @Test func thePlanningAidNoticeIsShownOnceAndNotUnderTheTests() throws {
-        let defaults = try #require(UserDefaults(suiteName: "notice-\(UUID().uuidString)"))
-        // An app launched as a pilot launches it: no test host around it.
-        let app: [String: String] = [:]
-        #expect(PlanningAidNotice.wanted(defaults: defaults, arguments: [], environment: app))
-        // The UI tests' and the store pictures' launches, as the first flight's.
-        #expect(!PlanningAidNotice.wanted(defaults: defaults, arguments: ["-fresh"], environment: app))
-        #expect(PlanningAidNotice.wanted(defaults: defaults, arguments: ["-fresh", "-planningAid"], environment: app))
-        // The app hosting the unit tests shows no alert over their windows.
-        #expect(!PlanningAidNotice.wanted(defaults: defaults, arguments: [], environment: ["XCTestConfigurationFilePath": "/x"]))
-        defaults.set(true, forKey: PlanningAidNotice.acceptedKey)
-        #expect(!PlanningAidNotice.wanted(defaults: defaults, arguments: [], environment: app))
-        // The words are About's and the listing's.
-        #expect(PlanningAidNotice.message.hasPrefix(Wording.planningAid))
-        #expect(PlanningAidNotice.message.contains("Not for navigation"))
-    }
-
     /// A notification's title, a watched airplane and a route's fields say
     /// what the pilot flies and watches; logged public, they went into any
     /// sysdiagnose the pilot shared (the deep security review of

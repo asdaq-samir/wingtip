@@ -58,9 +58,7 @@ struct WordingTests {
         }
     }
 
-    @Test func theNoticeAndAboutSayTheTablesPlanningAid() {
-        #expect(PlanningAidNotice.title == Wording.planningAidNoticeTitle)
-        #expect(PlanningAidNotice.message.hasPrefix(Wording.planningAid + "\n\n"))
+    @Test func aboutSaysTheTablesPlanningAid() {
         #expect(Wording.planningAidTitle == "A Planning Aid")
         #expect(Wording.planningAid.contains("(14 CFR 91.3, 91.103)"))
     }
