@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { mapPixelRatio } from "./softwareGl";
 
 /** A WebGL context whose renderer is `renderer`, refused where `caveat`
  *  is asked and `refused` is set. */
@@ -62,5 +63,18 @@ describe("the 3D ground on a software renderer", () => {
 
   it("is MapLibre's own on a graphics chip", async () => {
     expect(await coarsened("ANGLE (Apple, ANGLE Metal Renderer: Apple M4)")).toEqual(raisedMap());
+  });
+});
+
+describe("the map's pixel ratio", () => {
+  it("is the device's own with a graphics chip", () => {
+    expect(mapPixelRatio(1280, 800, 2, false)).toBe(2);
+  });
+
+  it("keeps a software renderer's frame to about 300,000 pixels, never above the device's", () => {
+    expect(mapPixelRatio(1280, 800, 1, true)).toBeCloseTo(0.54, 2);
+    expect(mapPixelRatio(393, 760, 1, true)).toBe(1);
+    expect(mapPixelRatio(393, 760, 3, true)).toBeCloseTo(1.0, 1);
+    expect(mapPixelRatio(0, 0, 2, true)).toBe(2);
   });
 });

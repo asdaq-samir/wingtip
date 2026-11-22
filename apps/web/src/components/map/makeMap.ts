@@ -45,6 +45,7 @@ import type { DrawnImage } from "../../lib/map/gl/drawSvg";
 import { OVERLAY_SOURCE, overlayPictures, overlayStyle } from "../../lib/map/gl/glOverlays";
 import { glZoom } from "../../lib/map/gl/glStyle";
 import { probeLayers } from "../../lib/map/gl/useGlProbe";
+import { fewerPixelsOnSoftware } from "../../lib/map/gl/softwareGl";
 
 /** The map GlMapShell makes (makeMap) and what every map of the page
  *  shares: the overlays' pictures, drawn once, the overlay tiles each map
@@ -146,6 +147,8 @@ export function makeMap(holder: HTMLDivElement, insets: MapInsets): maplibregl.M
   m.setPadding(padOf(insets));
   // A tile 404 left blank; any other failure said and reported (mapErrors).
   watchMapErrors(m);
+  // Fewer pixels where WebGL is drawn without a graphics chip (softwareGl).
+  fewerPixelsOnSoftware(m);
   // Whether it is moving, on its element, for the browser tests to wait
   // on a still map (e2e helpers' mapStill).
   const el = holder;

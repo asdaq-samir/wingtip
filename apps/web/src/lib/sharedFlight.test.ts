@@ -31,7 +31,9 @@ describe("a shared flight's link", () => {
     const url = sharedPlanLink({ ...PLAN, tanks: { KMSN: 30, KJVL: 0 } }, "");
     expect(new URL(url, "https://x").searchParams.get("tanks")).toBe("KMSN:30,KJVL:0");
     expect(sharedLinkOf(new URL(url, "https://x").searchParams)).toMatchObject({ plan: { tanks: { KMSN: 30, KJVL: 0 } } });
-    const wary = sharedLinkOf(new URLSearchParams("open=shared&dep=KMSN&dest=KOSH&tanks=KMSN:12.5,<b>:3,KJVL:-1,KOSH:20,KATW:10000,C81:7:1"));
+    const wary = sharedLinkOf(
+      new URLSearchParams("open=shared&dep=KMSN&dest=KOSH&tanks=KMSN:12.5,<b>:3,KJVL:-1,KOSH:20,KATW:10000,C81:7:1"),
+    );
     expect(wary).toMatchObject({ plan: { tanks: { KOSH: 20 } } });
   });
 

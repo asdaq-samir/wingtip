@@ -71,3 +71,39 @@ export function coarseGroundOnSoftware(map: GlMap) {
     map.terrain.qualityFactor = 1;
   }
 }
+
+/** The device pixels a software renderer fills a frame for the map, about
+ *  a phone's window at one pixel a point. */
+const SOFTWARE_PIXELS = 300_000;
+
+/** The pixel ratio a `width` by `height` map (CSS pixels) is drawn at: the
+ *  device's own, or on a software renderer at most what keeps it to
+ *  SOFTWARE_PIXELS. */
+export function mapPixelRatio(width: number, height: number, device: number, software: boolean): number {
+  if (!software || width <= 0 || height <= 0) return device;
+  return Math.min(device, Math.sqrt(SOFTWARE_PIXELS / (width * height)));
+}
+
+/**
+ * The map drawn at fewer pixels where WebGL has no graphics chip under it.
+ * Each frame's charts are four rasters and the relief over the whole
+ * window, and on a software renderer their fill is nearly all of a
+ * frame: a desktop's dry run, 1280 by 800, took 50 to 120 ms a frame on
+ * the Mac's SwiftShader, the page waiting on it at the compositor's read
+ * back (GLES2::ReadPixels, 4.3 of 5 s of the main thread in a trace), and
+ * about 1 s on CI's two cores, where dry-run-follow, dry-run:181 and
+ * flight-critical:114 ran out of frames. Drawn at 300,000 pixels (a 0.54
+ * ratio there) the same run took 17 ms a frame, every frame; a phone's
+ * window is hardly touched. Where there is a graphics chip, the device's
+ * own ratio. Kept to as the window changes size.
+ */
+export function fewerPixelsOnSoftware(map: GlMap) {
+  if (!softwareGl()) return;
+  const fit = () => {
+    const box = map.getContainer().getBoundingClientRect();
+    const ratio = mapPixelRatio(box.width, box.height, globalThis.devicePixelRatio || 1, true);
+    if (Math.abs(ratio - map.getPixelRatio()) > 0.01) map.setPixelRatio(ratio);
+  };
+  fit();
+  map.on("resize", fit);
+}
