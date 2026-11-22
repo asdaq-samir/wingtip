@@ -196,4 +196,26 @@
     <string name="wording_pattern_altitude">Pattern Altitude</string>
     <!-- The map, while its chart is asked for. -->
     <string name="wording_fetching_the_map">Fetching the map…</string>
+    <!-- The Brief's group of what the flight meets on the route, a briefer's first element (AIM 7-1-5(b)(1)). -->
+    <string name="wording_adverse_conditions">Adverse Conditions</string>
+    <!-- The Brief's row for what is left to do and the fuel beyond the reserve. -->
+    <string name="wording_before_you_go">Before You Go</string>
+    <!-- The Brief's row for the flight between its fields. -->
+    <string name="wording_en_route">En Route</string>
+    <!-- The fuel over what the flight needs and its reserve (14 CFR 91.151(a), 91.167(a)), a figure's name. -->
+    <string name="wording_beyond_reserve">Beyond Reserve</string>
+    <!-- The lowest ceiling a TAF near the route forecasts over the flight, a figure's name. -->
+    <string name="wording_lowest_ceiling">Lowest Ceiling</string>
+    <!-- A visibility, a figure's name. -->
+    <string name="wording_visibility">Visibility</string>
+    <!-- The strongest headwind on any leg (the engine's route_headwind), a figure's name. -->
+    <string name="wording_most_headwind">Most Headwind</string>
+    <!-- The first route's wait for the phone's position. -->
+    <string name="wording_finding_where_you_are">Finding where you are…</string>
+    <!-- The Nav Log with no route. -->
+    <string name="wording_nav_log_empty">Plan a route on FPL; its legs are listed here.</string>
+    <!-- Flying mode's way out for this flight. -->
+    <string name="wording_done_flying">Done Flying</string>
+    <!-- The Map card's switch that lets the map's words follow the text size, up to 1.2 times. -->
+    <string name="wording_larger_map_labels">Larger Map Labels</string>
 </resources>

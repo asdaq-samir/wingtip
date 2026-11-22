@@ -1834,6 +1834,17 @@ The words the three apps share, generated from `design/wording.json`:
 | `fuel_required` | label | Fuel Required | The fuel a leg or the flight needs. |
 | `pattern_altitude` | label | Pattern Altitude | A field's traffic pattern altitude. |
 | `fetching_the_map` | progress | Fetching the map… | The map, while its chart is asked for. |
+| `adverse_conditions` | label | Adverse Conditions | The Brief's group of what the flight meets on the route, a briefer's first element (AIM 7-1-5(b)(1)). |
+| `before_you_go` | label | Before You Go | The Brief's row for what is left to do and the fuel beyond the reserve. |
+| `en_route` | label | En Route | The Brief's row for the flight between its fields. |
+| `beyond_reserve` | label | Beyond Reserve | The fuel over what the flight needs and its reserve (14 CFR 91.151(a), 91.167(a)), a figure's name. |
+| `lowest_ceiling` | label | Lowest Ceiling | The lowest ceiling a TAF near the route forecasts over the flight, a figure's name. |
+| `visibility` | label | Visibility | A visibility, a figure's name. |
+| `most_headwind` | label | Most Headwind | The strongest headwind on any leg (the engine's route_headwind), a figure's name. |
+| `finding_where_you_are` | progress | Finding where you are… | The first route's wait for the phone's position. |
+| `nav_log_empty` | sentence | Plan a route on FPL; its legs are listed here. | The Nav Log with no route. |
+| `done_flying` | label | Done Flying | Flying mode's way out for this flight. |
+| `larger_map_labels` | label | Larger Map Labels | The Map card's switch that lets the map's words follow the text size, up to 1.2 times. |
 
 <!-- END generated wording -->
 

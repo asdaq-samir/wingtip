@@ -40,7 +40,10 @@ import app.wingtipmaps.android.ai.AiSources
 import app.wingtipmaps.android.ai.AiTask
 import app.wingtipmaps.android.ai.AiWordsRow
 import app.wingtipmaps.android.alternate.AlternateRows
+import app.wingtipmaps.android.brief.AdverseGroup
+import app.wingtipmaps.android.brief.CautionRows
 import app.wingtipmaps.android.brief.DepartureWindowStrip
+import app.wingtipmaps.android.brief.FlightFigures
 import app.wingtipmaps.android.brief.IcingRows
 import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.generated.WingtipHaptic
@@ -67,7 +70,9 @@ import app.wingtipmaps.android.ui.sheet.CardPage
  * verdict first in its words and colour, the actions it asks for under it
  * (at most three, decision 0012), then each finding -- the weather, the
  * airspace, the altitude, the fuel, the runways, the loading, the risk --
- * with its glyph and its line, as the web's Brief opens. The planner's and
+ * with its glyph and its line, as the web's Brief opens; then the Adverse
+ * Conditions and the flight's figures (BriefGlance), and when to go at
+ * the foot. The planner's and
  * the engine's words throughout (BriefModel). Ready to fly heads it
  * (ReadyToFlyRow), its Plan the Route closing every card onto the plan
  * (`onSetRoute`). A No-Go
@@ -100,8 +105,6 @@ fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () 
                 KeptAgeLine(KeptForAir.GO_NO_GO, state.keptAtMs)
                 // The plan it briefs: when it was made and whose winds it flies.
                 PlannedLine(plan.totals)
-                // "When should I go?": the hours across, under the verdict.
-                DepartureWindowStrip(plan, signedIn)
                 state.risk?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
                 // The verdict and findings in plain words, on the pilot's tap,
                 // beside them (docs/android-ai.md).
@@ -120,10 +123,23 @@ fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () 
                         content = { Text(item.label) },
                     )
                 }
+                // What could not be checked, and an ADIZ or a border on the
+                // way, one caution each at the findings' end; then the
+                // Adverse Conditions on the route, as a briefer gives them
+                // first (AIM 7-1-5(b)(1)), and the flight's figures (the
+                // web's option 2, the owner's pick of 2026-11-21).
+                state.glance?.let { glance ->
+                    CautionRows(glance)
+                    AdverseGroup(glance.adverse)
+                    FlightFigures(glance)
+                }
                 // Under IFR, the alternate (14 CFR 91.169), filed here.
                 AlternateRows(planModel)
                 // In the weather's adverse conditions: the forecast icing a leg.
                 IcingRows(plan)
+                // "When should I go?": the hours across, at the foot, the
+                // "when" after the "whether".
+                DepartureWindowStrip(plan, signedIn)
             }
         }
     }

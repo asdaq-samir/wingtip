@@ -7,8 +7,10 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.airplane.FigureKey
 import app.wingtipmaps.android.alternate.PlanAlternate
+import app.wingtipmaps.android.brief.BriefGlance
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
+import app.wingtipmaps.android.api.routeBriefing
 import app.wingtipmaps.android.api.generated.GoNoGo
 import app.wingtipmaps.android.api.generated.GoNoGoAsk
 import app.wingtipmaps.android.api.generated.VerdictItem
@@ -19,12 +21,14 @@ import app.wingtipmaps.android.strip.GlanceAction
 import app.wingtipmaps.android.strip.Verdict
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -52,6 +56,9 @@ class BriefModel @Inject constructor() : ViewModel() {
          *  the air because the network failed; null when it is the
          *  network's own (KeptAgeLine). */
         val keptAtMs: Long? = null,
+        /** The figures, Adverse Conditions and cautions under the findings
+         *  (BriefGlance), from the route's briefing; null until it is in. */
+        val glance: BriefGlance? = null,
     ) {
         /** Every finding to act on, the stops then the cautions, as the
          *  web's findingRows counts them on its Brief button. */
@@ -85,12 +92,29 @@ class BriefModel @Inject constructor() : ViewModel() {
                 // time where the network fails (KeptForAir).
                 val had = KeptForAir.had(KeptForAir.GO_NO_GO, ReadyFacts.flightKey(plan), GoNoGo.serializer()) { Planner.goNoGo(ask(plan)) }
                 _state.update { (it.copy(loading = false) + had.value).copy(fetchedAtMs = had.fetchedAtMs, keptAtMs = had.fetchedAtMs.takeIf { had.kept }) }
+                glance(plan)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 _state.update { it.copy(loading = false, problem = Problems.say("The brief could not be fetched", e)) }
             }
         }
+    }
+
+    /** The glance under the findings: the route's briefing (/api/briefing,
+     *  the one the map's route weather reads) and the plan, asked of the
+     *  engine off the main thread. A briefing not to be had leaves the
+     *  figures the plan alone gives (the headwind, the fuel, the borders). */
+    private suspend fun glance(plan: Plan.State) {
+        val briefing = try {
+            Planner.routeBriefing(plan.dep, plan.dest, plan.stops, plan.depart, plan.totals?.eteMin)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        }
+        val glance = withContext(Dispatchers.Default) { BriefGlance.of(briefing, plan.course, plan.legs, plan.totals, plan.airplane) }
+        _state.update { it.copy(glance = glance) }
     }
 
     /** The same route's brief asked again, from a pull on the Brief: the
