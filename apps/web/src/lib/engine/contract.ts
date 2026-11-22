@@ -823,6 +823,14 @@ export type ProceduresReadAnswer = {
     id: string;
     transition: string | null;
     direct: string | null;
+    /**
+     * An approach loaded, not yet activated: not in the route flown.
+     */
+    loaded: boolean;
+    /**
+     * Its missed approach unsuspended: flown on from the missed approach point (AIM 5-4-21).
+     */
+    missed: boolean;
   } | null;
   exact: boolean;
 }[];
@@ -3242,6 +3250,13 @@ export interface EngineContract {
     answer: ProcedureLegNmAnswer;
   };
   /**
+   * An approach's coded legs, in the order the CIFP codes them, split at its missed approach point (the leg whose waypoint description's fourth character is M, ARINC 424-18 5.17): `suspend_at`, the MAP's leg, where the route's sequencing is suspended until the pilot goes on into the missed approach (AIM 5-4-21), null with no MAP; `missed`, the legs after it up to and including the first flown as a hold (HA, HF, HM, ARINC 424-18 5.21), the published missed approach to its clearance limit.
+   */
+  procedure_missed: {
+    input: ProcedureMissedInput;
+    answer: ProcedureMissedAnswer;
+  };
+  /**
    * The figures a flown procedure path is drawn with: a hold entry's standard-rate turn radius at the 120 kt holds are drawn at (AIM 5-3-8), nm; and the join from vectors to final, 3 nm outside the final's first fix (2 miles outside the approach gate, which is 1 mile outside the FAF: FAA Order JO 7110.65 5-9-1a1, the Pilot/Controller Glossary) at 30 degrees (JO 7110.65 TBL 5-9-1).
    */
   procedure_path_figures: {
@@ -3263,7 +3278,7 @@ export interface EngineContract {
     answer: ProcedureTurnAnswer;
   };
   /**
-   * Each piece of the route's procedures text with its pick as the web app reads it, or null, and whether it is one exactly as the planner takes it.
+   * Each piece of the route's procedures text with its pick as the web app reads it, or null, and whether it is one exactly as the planner takes it. A fifth piece "L" is an approach loaded and not flown, "M" one flown on into its missed approach ("KDLH:I27:::L").
    */
   procedures_read: {
     input: ProceduresReadInput;
@@ -11351,6 +11366,16 @@ export interface ProcedureLegNmInput {
   altitude_ft?: number | null;
   known_ft?: number | null;
 }
+export interface ProcedureMissedInput {
+  legs: {
+    path: string;
+    map?: boolean | null;
+  }[];
+}
+export interface ProcedureMissedAnswer {
+  suspend_at: number | null;
+  missed: number[];
+}
 export interface ProcedurePathFiguresInput {}
 export interface ProcedurePathFiguresAnswer {
   hold_turn_nm: number;
@@ -11382,6 +11407,8 @@ export interface ProceduresWriteInput {
     id: string;
     transition?: string | null;
     direct?: string | null;
+    loaded?: boolean | null;
+    missed?: boolean | null;
   }[];
 }
 export interface ProficiencyPlanInput {

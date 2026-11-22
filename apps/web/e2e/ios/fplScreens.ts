@@ -1,6 +1,7 @@
 import { expect } from "@playwright/test";
 import {
   openRoute,
+  typeRoute,
   controlsInSight,
   grabberTo,
   openProfile,
@@ -173,7 +174,7 @@ export const FPL_SCREENS: Screen[] = [
       );
       await page.goto(`/app/plan?${ROUTE}&stops=VPBNG,KMSN&view=full`);
       await controlsInSight(page);
-      await openRoute(page);
+      await typeRoute(page);
       await expect(page.getByTestId("route-box")).toBeVisible({ timeout: slow(30000) });
       await expect(page.getByTestId("stop")).toHaveCount(2);
     },

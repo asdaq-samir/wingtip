@@ -115,6 +115,7 @@ The plan's own keys go beside it, and alone they open what they name:
 - `rules`: A shared plan's flight rules, vfr or ifr.
 - `tail`: A shared plan's N-number, only where its pilot chose to send it.
 - `tanks`: A shared plan's fuel as the airplane leaves a field, where its pilot set it on a gauge: idents and whole gallons, KOSH:30,KJVL:0 (the planner's tanks); none named, full.
+- `procs`: A shared plan's instrument procedures, as the address keeps them: each a field, a procedure, its transition and a fix flown direct to, colon-separated, and after a fifth colon L for an approach loaded and not flown or M for one flown on into its missed approach (KDLH:I27:::L), comma-separated (the engine's procedures_read).
 - `share`: A saved flight shared by its pilot, by its token (GET /api/shared-flights/{token}); read-only, until they stop sharing it.
 - `doc`: A document open in the reader and where in it: the library's by its name (aim, cfr-14-91, phak) or the pilot's own (own:<id>), after an @ a section, a paragraph or a page (aim@7-1-5, cfr-14-91@91.155, phak@p42).
 
@@ -185,9 +186,11 @@ the left side of search and avatar to the right side"). FPL's first row is
 the same size: its Search button at the start, the title, the airplane's and
 the altitude's pills and the ✕ (Clear Route, asking first) at the end, the
 route one row under it in its one layout (decision 0047), and at the
-sheet's foot the figures (Leg or Dest, Distance, ETE, Track, GPS alt) with
-the floating bar of Brief, Nav Log and More over them and the File button
-beside it, the figures alone and large at the pill (2026-11-16, 2026-11-21); Search's
+sheet's foot the floating bar of Brief, Nav Log, Routes and More, the
+Apple way, with the figures (Leg or Dest, Distance, ETE, Track, GPS alt)
+held just over it, sliding under it to be the pill as the sheet goes down,
+the figures alone and large at the pill (2026-11-16, 2026-11-22; the File
+button beside the bar hidden until filing works, 2026-11-22); Search's
 page under the search is the search's own page (with nothing typed, or
 the field in use). On a desktop the same in the
 side panel, ⌘K or Ctrl K focusing the field (the command palette it
@@ -251,8 +254,8 @@ with the sheet at rest: the search or a row of the plan is 1.
 gone on the iPhone: the sheet's top row is the search with the microphone
 and the account button beside it, and the route card sits under it (the
 route, Ready to Fly, the figures, Brief, Nav Log, File, ••• and ✕). The
-••• is the web's More since 2026-11-21: Route Options, Share Link and
-Open in ForeFlight, then Saved Flights and Show Route As; the nav log's
+••• is the web's More since 2026-11-21: Share Link and Open in
+ForeFlight (Route Options the bar's Routes since 2026-11-22), then Saved Flights and Show Route As; the nav log's
 Share holds the other ways out, the checkpoints for ForeFlight and Print.
 Undo is the undo bar's after each change (a stop or a procedure removed,
 the route cleared or replaced, a Direct To: 1 tap for six seconds), and 0
@@ -297,8 +300,8 @@ in the search is not counted.
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
 | Plan (was FPL; its legs are the nav log) | the flight's card | 1 → 1 | Titled "Flight Plan", Search at its bar's start (back to the search, the route kept) and ✕ at its end ("Clear Route?" first, 2026-11-21); the airplane's pill (its ⓘ the airplane's card), the altitude's (its end the Profile) and the time's (Material's time picker); the route as a timeline, each point's ⋮ (its menu) and times at its end, a stop's "Leaves" a tap that sets its time on the ground; route fields, stops, VFR/IFR as before; Add a Stop and a point's Add a Stop After open the one search for the stop, which greys a closed field or one already on the route; each field of the route opens its card, and once open by its card has its Land and Takeoff RWY menus (Into the Wind first) and "+ ARR", "+ APCH", "+ DEP" under it, a picked procedure's head row (its kind's menu) and fixes (each ⋮: Direct To, Cross at…) on the line; under IFR an Alternate row after the destination (its card), or Add Alternate, which opens the Brief's Alternate (2026-11-10); at its foot the floating toolbar (Brief, its findings counted on its glyph, Nav Log, More) over the figure strip, File beside it, greyed until the plan can be filed |
-| Route Options | the plan's More → Route Options | 2 | Use puts an option's stops in the route ("Route Replaced", with its Undo) |
-| File Flight Plan | the plan's File (beside its toolbar, greyed until the plan can be filed) | 1 | Persons on board typed; Copy the Flight Plan; File with Flight Service where connected and signed in; 1800wxbrief.com and Flight Service's numbers |
+| Route Options | the plan's Routes, in its tab bar (2026-11-22) | 1 | Use puts an option's stops in the route ("Route Replaced", with its Undo) |
+| File Flight Plan | hidden until filing works (the owner, 2026-11-22; `FILING_OFFERED`); was the plan's File, beside its toolbar | — | Persons on board typed; Copy the Flight Plan; File with Flight Service where connected and signed in; 1800wxbrief.com and Flight Service's numbers |
 | Nav Log, Profile | the flight's card → Nav Log (the foot's toolbar, or the figures); the altitude pill's end, the plan's Profile row or "profile" in the search opens the Profile card: the side view, its vertical altitude slider (Set, Auto in flight), a waypoint's Start At / Cross At sheet | 2 → 2 | as the plan; the Altitude Advisor's rows pick the cruise |
 | A leg | a leg on the map, a nav log row, or a strip checkpoint: the one leg card | 1 / 2 | Direct, Remove |
 | Brief | the flight's card → Brief; or search "brief" | 2 → 2 | Departure hour; Ready to Fly at its head; under IFR the Alternate (14 CFR 91.169): an alternate filed from those that will do, or taken off, as the web's (2026-11-10) |

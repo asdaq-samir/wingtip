@@ -136,8 +136,13 @@ run_fault() {
     pause)
       docker pause "$(c "$what")" > /dev/null
       sleep "${PAUSE_S:-180}"
-      docker unpause "$(c "$what")" > /dev/null
-      event "$fault" "healed by hand"
+      # health.sh may have restarted the frozen container on its own by now:
+      # that is the self-heal this fault tests, not a failure of the run.
+      if docker unpause "$(c "$what")" > /dev/null 2>&1; then
+        event "$fault" "healed by hand"
+      else
+        event "$fault" "healed by itself (restarted while paused)"
+      fi
       ;;
     hang)
       signal STOP "$what"

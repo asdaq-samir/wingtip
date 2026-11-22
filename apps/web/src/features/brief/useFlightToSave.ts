@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo } from "react";
+import { FILING_OFFERED } from "./filing";
 import { addressParams, type Address, type SetAddress } from "../../lib/address";
 import type { AircraftChoice } from "../../lib/api/types";
 import { NO_PLAN, useBriefPlan } from "../../lib/briefPlan";
@@ -107,5 +108,6 @@ export function useFlightToSave({
     });
   }, [planned.dep, planned.dest, planned.stops, aircraft.profile, flownFt, depart, eteMin, briefLegs, routed, s.local, flightToSave]);
   useEffect(() => () => useBriefPlan.getState().set(NO_PLAN), []);
-  return { fileable, fileFlightPlan, flightToSave };
+  // No File button while filing is not offered (FILING_OFFERED).
+  return { fileable, fileFlightPlan: FILING_OFFERED ? fileFlightPlan : undefined, flightToSave };
 }

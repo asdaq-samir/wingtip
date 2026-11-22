@@ -22,7 +22,11 @@ test("the map turns from the keyboard, and the compass turns it north up again",
   await mapStill(page);
   await expect(compass).toBeVisible();
   expect(Number(await compass.getAttribute("data-bearing"))).not.toBe(0);
-  await expect(compass).toHaveAccessibleName(/^Compass, the map turned \d+°: turn north up$/);
+  // Named first by the point its dial shows, as a voice-control user reads
+  // it off the button (WCAG 2.5.3, the accessibility audit of 2026-11-21).
+  await expect(compass).toHaveAccessibleName(/^Compass (N|NE|E|SE|S|SW|W|NW), the map turned \d+°: turn north up$/);
+  const point = /^Compass (\w+),/.exec((await compass.getAttribute("aria-label")) ?? "")![1]!;
+  await expect(compass).toHaveText(point);
   // A tap, north up again, and the compass goes.
   await compass.click();
   await mapStill(page);

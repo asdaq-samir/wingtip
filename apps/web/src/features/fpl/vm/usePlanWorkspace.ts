@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { markRouteDrawn } from "../../../lib/routeDrawn";
 import type { WorkspaceProps } from "../../../lib/workspace";
 import { usePrefetchWhenIdle } from "./usePrefetchWhenIdle";
 import { panelNow } from "../../plan";
@@ -58,6 +59,10 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   const { routed, planned, load, showWaypoints, flightRules } = route;
   const planSettled = !routed || plan.s.totals != null || plan.s.unflyable != null;
   usePlanAhead({ planSettled, planned, aircraft: plan.aircraft, load, showWaypoints, flightRules });
+  // What is fetched ahead for a later tap waits for it (lib/routeDrawn).
+  useEffect(() => {
+    if (planSettled) markRouteDrawn();
+  }, [planSettled]);
   useRecentRoute(route, plan.course);
   const view = usePlanView(route, cards, panel, setPanel);
   const routeList = usePlanRouteList(route, plan, view, setPanel);

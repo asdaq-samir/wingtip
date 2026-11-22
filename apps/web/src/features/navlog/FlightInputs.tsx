@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { cn } from "cn";
 import { useQueryClient } from "@tanstack/react-query";
 import { N_NUMBER, profileOfRegistered, shortName } from "../../lib/aircraftChoice";
@@ -64,8 +64,9 @@ export default function FlightInputs({
   // itself ("N1", "N1A"), so this is never a number half typed.
   const wrong = engineReady && !!typed && !N_NUMBER.test(typed);
   // The first flight (its FPL tip not yet put away) with no airplane at
-  // all: the field asks in words, wide enough to say them, in place of its
-  // five blanks; once one is picked, or after the first flight, the blanks.
+  // all: the field's name asks in words; its five blanks stay, the pill
+  // one width (the owner, 2026-11-22: "N input should be fixed size with 5
+  // underscores after N-"), where the words widened it to 36 figures.
   const firstAsk = useTips((s) => unseen(s.seen, FPL_TIP)) && !current && typed === null;
   const queryClient = useQueryClient();
   const registered = (tail: string) => queryClient.fetchQuery(registeredQuery(tail));
@@ -204,22 +205,34 @@ export default function FlightInputs({
           showTrigger={false}
           className={PILL}
           group={{ "aria-label": "Airplane", "data-testid": "aircraft-select" }}
-          // Five places after "N-", whatever is in it (the owner, 2026-11-20:
-          // "N number should be a fixed length for 5 letters"): five figures
-          // and room for two letters wider than a figure, "888MM".
+          // Five places after "N-", whatever is in it, one width as it is
+          // typed (the owner, 2026-11-20: "N number should be a fixed length
+          // for 5 letters"; 2026-11-22: "fixed size with 5 underscores after
+          // N-"; 14 CFR 47.15(b): at most five after the N): each place one
+          // figure wide in the field's fixed-width face, the places not yet
+          // typed in still a blank each (SLOTS), "N-12___".
           inputClassName={cn(
             PILL_FIELD,
             PREFIXED_FIELD,
-            firstAsk ? "w-[calc(36ch+0.5rem)] max-w-full" : "w-[calc(5ch+0.5rem)]",
+            "w-[calc(5ch+0.5rem)] font-mono",
+            rest && SLOTS,
             wrong ? "text-destructive" : "text-foreground",
           )}
+          style={{ "--typed": rest.length } as CSSProperties}
           ref={field}
-          placeholder={firstAsk ? FIRST_AIRPLANE_ASK : "_____"}
+          placeholder="_____"
           enterKeyHint="done"
           autoCapitalize="characters"
           autoCorrect="off"
           spellCheck={false}
-          aria-label={shown ? "Airplane, N-number" : "Airplane, N-number: none picked; pick one for times and fuel"}
+          aria-label={
+            shown
+              ? "Airplane, N-number"
+              : firstAsk
+                ? `Airplane, N-number: ${FIRST_AIRPLANE_ASK}`
+                : "Airplane, N-number: none picked; pick one for times and fuel"
+          }
+          title={firstAsk ? FIRST_AIRPLANE_ASK : undefined}
           // What is typed that no registration can be ("KOSH") said in red
           // as it is typed, by the engine's own test (N_NUMBER).
           aria-invalid={wrong || undefined}
@@ -267,3 +280,10 @@ export default function FlightInputs({
     </>
   );
 }
+
+/** The N-number's places not yet typed in, a blank each where the
+ *  placeholder's five were: a dash one place wide, under the line as an
+ *  underscore is, from the place after the last typed (--typed) to the
+ *  fifth, on the field's fixed-width face so each falls under its place. */
+const SLOTS =
+  "bg-[repeating-linear-gradient(to_right,currentColor_0_calc(1ch-2px),transparent_calc(1ch-2px)_1ch)] bg-no-repeat bg-size-[calc((5-var(--typed))*1ch)_1px] bg-position-[calc(var(--typed)*1ch)_calc(50%+0.6em)]";

@@ -21,13 +21,15 @@ export function useShareLink(planned: { dep: string; dest: string; stops: string
   const [depart] = useAddressKey("depart");
   // The fuel set on FPL's gauges goes with the route (the link's `tanks`).
   const [tanksSet] = useAddressKey("tanks");
+  // And the procedures, an approach loaded or activated as it is (`procs`).
+  const [procs] = useAddressKey("procs");
   const rules = usePreferences((p) => p.flightRules);
   const aircraft = usePreferences((p) => p.aircraft);
   const { type, tail } = airplaneOfChoice(aircraft);
 
   const share = useCallback(async () => {
     const url = sharedPlanLink(
-      { ...planned, altitudeFt: altitudeFt ?? null, depart: depart || null, type, rules, tail, tanks: tanksOf(tanksSet) },
+      { ...planned, altitudeFt: altitudeFt ?? null, depart: depart || null, type, rules, tail, tanks: tanksOf(tanksSet), procs },
       window.location.origin,
     );
     try {
@@ -35,7 +37,7 @@ export function useShareLink(planned: { dep: string; dest: string; stops: string
     } catch (err) {
       if (!cancelled(err)) showError("Could Not Share the Route", describeError(err));
     }
-  }, [planned, altitudeFt, depart, type, rules, tail, tanksSet]);
+  }, [planned, altitudeFt, depart, type, rules, tail, tanksSet, procs]);
 
   return { share };
 }

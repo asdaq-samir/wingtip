@@ -89,9 +89,16 @@ export async function openNavLog(page: Page) {
 }
 
 /** The nav log's card over FPL (the owner's "make Navlog open like brief
- *  does"), and what scrolls in it. */
+ *  does"), and what scrolls in it: the card's one scroller (SheetScroller's
+ *  data-sheet-scroll), the innermost holding the log. The log's own box
+ *  (navlog-card-scroller) is laid out whole in it, as tall as its rows, so
+ *  a row's place measured against that box was its place in the whole log. */
 export const navLogSheet = (page: Page) => page.getByTestId("navlog-sheet");
-export const navLogScroller = (page: Page) => page.getByTestId("navlog-card-scroller");
+export const navLogScroller = (page: Page) =>
+  page
+    .locator("[data-sheet-scroll]")
+    .filter({ has: page.getByTestId("navlog-card-scroller") })
+    .last();
 
 /** The nav log's card put away, FPL under it again: its close, kept for a
  *  keyboard and a screen reader (CardClose), the tab bar's Back's twin. */

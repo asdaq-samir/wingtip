@@ -49,9 +49,16 @@ test("plan page: a click or Enter selects a nav log checkpoint, with the briefin
   // Each row led by its point's mark as the map draws it: the fields'
   // symbols at the ends, the checkpoints' dots numbered as the map's are,
   // from 1 in the order flown, and a top of climb's tag.
-  const marks = await table
-    .locator('[role="row"][tabindex="0"] [data-mark]')
-    .evaluateAll((els) => els.map((e) => [e.getAttribute("data-mark") ?? "", (e.textContent ?? "").trim()] as const));
+  // The whole list once the card has come up: as it rises the card draws
+  // its first screen of rows alone, the rest after its ease (NavLogList's
+  // FIRST_ROWS, useCardUp; the speed audit of 2026-11-21), so a list read
+  // mid-ease ended at its twelfth row, a checkpoint.
+  const readMarks = () =>
+    table
+      .locator('[role="row"][tabindex="0"] [data-mark]')
+      .evaluateAll((els) => els.map((e) => [e.getAttribute("data-mark") ?? "", (e.textContent ?? "").trim()] as const));
+  await expect.poll(async () => (await readMarks()).at(-1)?.[0], { timeout: slow(5000) }).toBe("airport");
+  const marks = await readMarks();
   expect(marks[0]![0]).toBe("airport");
   expect(marks.at(-1)![0]).toBe("airport");
   const numbered = marks.filter(([kind]) => kind === "checkpoint").map(([, n]) => Number(n));

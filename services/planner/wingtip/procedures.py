@@ -247,7 +247,15 @@ def procedure_drawing(ident: str, procedure: str, transition: str | None = None,
                 engine("procedure_leg_nm", path=leg.path, distance_nm=leg.distance_nm, altitude_ft=leg.altitude1, known_ft=known_ft)
             )
 
-        for leg in runs[key]:
+        # Where the missed approach starts and ends among the run's legs,
+        # the engine's procedure_missed (AIM 5-4-21; the MAP by its
+        # waypoint description, ARINC 424-18 5.17): on from the MAP to its
+        # hold, none of what is coded past it.
+        split = engine("procedure_missed", legs=[{"path": leg.path, "map": leg.missed_approach_point} for leg in runs[key]])
+        last = max(split["missed"]) if kind == "approach" and split["missed"] else None
+        for at, leg in enumerate(runs[key]):
+            if last is not None and at > last:
+                break
             place = _fix_place(airport, leg.fix, leg.fix_icao, leg.fix_section, index)
             course = _course(leg, airport.variation)
             if kind == "approach" and missed:
@@ -328,7 +336,7 @@ def procedure_drawing(ident: str, procedure: str, transition: str | None = None,
                     "lon": round(place[1], 6),
                     "ft": leg.altitude1,
                 }
-            if kind == "approach" and leg.missed_approach_point:
+            if kind == "approach" and at == split["suspend_at"]:
                 # The rest is the missed approach, drawn dashed from here,
                 # its climb from about the field's elevation.
                 flush()

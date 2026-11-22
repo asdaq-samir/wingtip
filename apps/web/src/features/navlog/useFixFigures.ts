@@ -12,8 +12,8 @@ const variation = nearVariation();
 
 /** The strip's two figures from the fix: its GPS altitude (gpsFigure) and
  *  its magnetic track (trackFigure), exactly as each is written. */
-function fixFigures(fix: Fix | null): { gps: StripFigure | null; track: StripFigure } {
-  return { gps: gpsFigure(fix), track: trackFigure(fix, underway(fix), variation) };
+function fixFigures(fix: Fix | null, plannedCourseDeg: number | null): { gps: StripFigure | null; track: StripFigure } {
+  return { gps: gpsFigure(fix), track: trackFigure(fix, underway(fix), variation, plannedCourseDeg) };
 }
 
 /**
@@ -25,7 +25,7 @@ function fixFigures(fix: Fix | null): { gps: StripFigure | null; track: StripFig
  * figures are worked out from each fix as before (the selector), and
  * compared by what they say.
  */
-export function useFixFigures(): { gps: StripFigure | null; track: StripFigure } {
-  const said = useOwnShip((s) => JSON.stringify(fixFigures(s.enabled ? s.fix : null)));
+export function useFixFigures(plannedCourseDeg: number | null = null): { gps: StripFigure | null; track: StripFigure } {
+  const said = useOwnShip((s) => JSON.stringify(fixFigures(s.enabled ? s.fix : null, plannedCourseDeg)));
   return useMemo(() => JSON.parse(said) as ReturnType<typeof fixFigures>, [said]);
 }

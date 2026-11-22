@@ -6,6 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../compo
 import { colourOf } from "../../lib/map/marks/flightCategory";
 import { TEXT } from "../../lib/text";
 import { pointName } from "../../lib/identSchema";
+import { sameField } from "../../lib/procedures";
 import type { NavLogRow, ProcedureAirport } from "../plan";
 import { FuelGauge } from "./FuelGauge";
 import { FuelSet } from "./FuelSet";
@@ -16,6 +17,8 @@ import { TIMELINE_END, TIMELINE_GAP, TIMELINE_THREAD } from "./TimelineRows";
 import { askHold, type pointEnd } from "./pointEnd";
 import { HoldChip } from "./HoldChip";
 import { TimelineProcedureRows } from "./TimelineProcedureRows";
+import { LoadedApproach, MissedApproach } from "./TimelineApproachParts";
+import { missedOnTheLine } from "./approachState";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
 
 /** One point of FPL's timeline as the plan gives it (RouteTimeline). */
@@ -149,7 +152,11 @@ export function TimelineLine({
   // read in flight names it ("KMSN · Depart"); a kind not picked as
   // "+ APCH"; the destination's hold last, once it has one. A kind picked
   // is no chip: its fixes are points on the route's line (TimelineProcedureRows).
-  const onLine = (kinds: FieldPart["kinds"]) => (field && !point.problem ? kinds.filter((k) => kindPicked(vm, field, k)) : []);
+  // An approach only loaded is no point on the line: its box sits after
+  // the field's line, off it (LoadedApproach).
+  const loadedHere = !!field && vm.inRoute.some((p) => p.kind === "approach" && !!p.loaded && sameField(p.ident, field.ident));
+  const onLine = (kinds: FieldPart["kinds"]) =>
+    field && !point.problem ? kinds.filter((k) => kindPicked(vm, field, k) && !(k === "approach" && loadedHere)) : [];
   const chips = parts.map((part, i) => {
     const tray = (
       <PartTray
@@ -181,6 +188,9 @@ export function TimelineLine({
   // approach's before the field's line, a departure's after it.
   const before = onLine(parts.find((p) => p.role === "Arrive")?.kinds ?? []);
   const after = onLine(parts.find((p) => p.role === "Depart")?.kinds ?? []);
+  // Its missed approach unsuspended, the line goes on into it.
+  const missedOn = !!field && !point.problem && missedOnTheLine(vm, field);
+  const onPast = !last || after.length > 0;
   const line = (
     <Collapsible
       open={opens && open}
@@ -202,7 +212,7 @@ export function TimelineLine({
           under it into the next line, centred under the marks. */}
       <span className="relative flex w-8 shrink-0 justify-center">
         <span className="relative z-10 flex h-11 items-center">{mark}</span>
-        {(!last || after.length > 0) && <span aria-hidden="true" className={TIMELINE_THREAD} />}
+        {(onPast || missedOn) && <span aria-hidden="true" className={TIMELINE_THREAD} />}
       </span>
       <div className={cn("min-w-0 flex-1", TIMELINE_END, (!first || before.length > 0) && "border-t border-border")}>
         {/* Wrapping where the ident, its fuel and its time do not fit on one
@@ -350,6 +360,8 @@ export function TimelineLine({
         <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} />
       ))}
       {line}
+      {field && !point.problem && <MissedApproach vm={vm} field={field} stop={!onPast} />}
+      {field && !point.problem && <LoadedApproach vm={vm} field={field} through={onPast} />}
       {after.map((k, i) => (
         <TimelineProcedureRows key={k} vm={vm} field={field!} kind={k} stop={last && i === after.length - 1} />
       ))}

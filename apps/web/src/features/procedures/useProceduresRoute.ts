@@ -135,8 +135,10 @@ export function useProceduresRoute(given: ProceduresRouteProps) {
   // circling minimums -- the one plate the map draws (PlatesGl).
   const approachesIn = inRoute.filter((p) => p.kind === "approach");
   const plates = useQueries({ queries: approachesIn.map((p) => plateQuery(p.ident, p.id)) });
+  // Landed by an approach once it is activated: one only loaded is not
+  // flown, the field's runway landed on as with none.
   const landingOf = (ident: string): Landing | null => {
-    const i = approachesIn.findIndex((p) => sameField(p.ident, ident));
+    const i = approachesIn.findIndex((p) => sameField(p.ident, ident) && !p.loaded);
     return i < 0 ? null : { runway: approachesIn[i]!.runway, circling: plates[i]?.data?.circling, name: approachesIn[i]!.label };
   };
   const listOf = (ident: string): ProcedureList | undefined => lists[airports.findIndex((a) => sameField(a.ident, ident))]?.data;
@@ -159,7 +161,13 @@ export function useProceduresRoute(given: ProceduresRouteProps) {
   // One of a kind at a field: a new pick there takes the old one's place.
   const pick = (ident: string, kind: Kind, next: { id: string; transition: string | null; direct?: string | null } | null) => {
     const kept = procedures.filter((p) => !(sameField(p.ident, ident) && kindOf(p) === kind));
-    const made = next ? { ident, ...next } : null;
+    // An approach picked is loaded, not flown, until the pilot activates
+    // it on the timeline (the owner, 2026-11-22: Garmin's load, then
+    // activate); a new transition of one activated keeps it so, and a
+    // Direct To one of its fixes activates it, as a GPS navigator's does.
+    const was = pickOf(ident, kind);
+    const loaded = kind === "approach" && !next?.direct && (!was || was.id !== next?.id || !!was.loaded);
+    const made = next ? { ident, ...next, ...(loaded ? { loaded } : { missed: !!was?.missed }) } : null;
     onProcedures(made ? [...kept, made] : kept, made);
     // An approach picked lands on its own runway: the field's runway chip
     // goes to it, kept in step with the approach (at the owner's ask);

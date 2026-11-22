@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 import { cn } from "cn";
-import { FIGURE_SIZE, FIXED_FIGURE, FLYING_FIGURE, GROUP_HEADING, GROW_FIGURE } from "../lib/text";
+import { FIGURE_SIZE, FIXED_FIGURE, FLYING_FIGURE, GROUP_HEADING, GROW_FIGURE, PIN_FIGURE } from "../lib/text";
 import Explain from "./Explain";
 import FigureWait from "./FigureWait";
 import type { ExplainedTerm } from "../lib/explain";
@@ -32,12 +32,13 @@ export interface StripFigure {
  *  (GROW_FIGURE: MapPanel's --sheet-progress, small at half, full at the
  *  pill and all the way up; the owner, 2026-11-05), `flying` one large
  *  size whatever the sheet's (FLYING_FIGURE, useFlyingMode). */
-export type StripSize = "fixed" | "grow" | "flying";
+export type StripSize = "fixed" | "grow" | "flying" | "pin";
 
 const TYPE: Record<StripSize, { value: string; unit: string; name?: string; unitScale: number }> = {
   fixed: FIXED_FIGURE,
   grow: GROW_FIGURE,
   flying: FLYING_FIGURE,
+  pin: PIN_FIGURE,
 };
 
 /**

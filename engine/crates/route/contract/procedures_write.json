@@ -29,6 +29,18 @@
                   "string",
                   "null"
                 ]
+              },
+              "loaded": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "missed": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
               }
             },
             "required": [

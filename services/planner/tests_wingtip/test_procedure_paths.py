@@ -276,6 +276,12 @@ def test_an_approach_whose_missed_approach_point_is_short_of_the_runway_lands_at
     assert path[leg["map_at"]] == map_point
     assert leg["missed"]["path"][0] == [43.1, -88.5]
 
+    # Unsuspended (FPL's Unsuspend, AIM 5-4-21): the leg's miles are to the
+    # MAP and on along the missed approach, not on to the runway.
+    on = flown((43.0, -87.8), threshold, approach={**approach, "fly_missed": True})
+    assert on["nm"] == pytest.approx(length_nm(path[: leg["map_at"] + 1]) + length_nm([map_point, (43.1, -88.5)]))
+    assert on["nm"] > leg["nm"]
+
 
 def test_an_arrival_alone_goes_on_from_where_it_ends_to_the_field():
     """Rockford's ALEXS1 ends in vectors 29 miles out, where the dry run

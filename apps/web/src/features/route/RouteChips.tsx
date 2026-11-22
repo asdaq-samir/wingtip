@@ -24,6 +24,14 @@ export interface RouteProcedure {
    *  could be sent to (ProcedureMenu). */
   direct?: string | null;
   fixes?: BranchFix[];
+  /** An approach loaded, not in the route flown until activated; and,
+   *  activated, its missed approach unsuspended (lib/procedures). */
+  loaded?: boolean;
+  missed?: boolean;
+  /** Its missed approach's fixes, the MAP to its hold (the engine's
+   *  procedure_missed, AIM 5-4-21), and the MAP the route is suspended at. */
+  missedFixes?: BranchFix[];
+  suspendAt?: string | null;
 }
 
 const PROCEDURE_GLYPH = { approach: PlaneLanding, arrival: Route, departure: PlaneTakeoff } as const;

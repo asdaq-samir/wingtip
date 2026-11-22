@@ -70,6 +70,9 @@ stack_down() {
 
 # k6 on its own cores, on the stack's network, so neither the Mac's
 # loopback nor the services' two cores are in its way.
+# The sign-in link is read from Mailpit, whose UI login is in .env; without
+# it every inbox poll fails and the run counts them as errors (2026-11-22).
+: "${MAILPIT_UI_AUTH:=$(grep -s '^MAILPIT_UI_AUTH=' "$repo/.env" | cut -d= -f2-)}"
 k6_run() {
   local profile=$1 dir=$2
   shift 2

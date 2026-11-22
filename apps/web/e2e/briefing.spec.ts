@@ -113,7 +113,7 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   // account button beside the search, not a gear in the head.
   await openTab(page, "Nav Log");
   await expect(drawer.getByTestId("flight-line")).toBeVisible();
-  await expect(drawer.getByTestId("route-summary").or(drawer.getByTestId("route-head")).first()).toBeVisible();
+  await expect(drawer.getByTestId("route-summary").or(drawer.getByTestId("route-editor")).first()).toBeVisible();
   expect(await page.locator("header").getByTestId("account-button").count()).toBe(0);
 
   // The Brief, the Nav Log and the route's ••• one floating bar at the

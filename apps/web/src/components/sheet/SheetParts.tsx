@@ -90,6 +90,7 @@ export function SheetParts({ slots, layout, panelSize, onFootTap }: PartsProps) 
             off={at !== 1}
             head="0px"
             cut={footShown && !pages.floats}
+            endRoom={footShown && !!pages.floats}
             rises={rises}
             {...parts}
           />

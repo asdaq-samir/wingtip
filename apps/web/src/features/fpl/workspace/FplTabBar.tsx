@@ -5,7 +5,7 @@ import { findingRows } from "../vm/planWords";
 import { FloatingBar, FloatingBarButton, TabCount } from "../../../components/FloatingBar";
 import { ICON } from "../../../lib/icons";
 import type { PlanSlices } from "../vm/planSlices";
-import { RIDES_ON_PIN } from "../../../components/sheet/pinAtFoot";
+import { MAKES_WAY } from "../../../components/sheet/pinAtFoot";
 import { EDGE_ROOM } from "../../../components/sheet/insets";
 import { FLOATING_BAR_ROOM, FLOATING_BAR_SHEET_ROOM } from "../../../components/floatingBarLook";
 import { cn } from "cn";
@@ -44,11 +44,15 @@ export function FplTabBar({
   more,
   fileable = false,
   onFile,
+  routes,
 }: {
   vm: PlanSlices<"brief" | "fpl" | "plan">;
   more: ReactNode;
   fileable?: boolean;
   onFile?: () => void;
+  /** The suggested routes out above the route and on the map, or put
+   *  away; greyed while there are no ways to offer (routesOffered). */
+  routes?: RouteOptions;
 }) {
   const { course } = vm.plan;
   const { openBrief, openNavLogCard } = vm.fpl;
@@ -61,18 +65,20 @@ export function FplTabBar({
     // Is it different then airport card?"), where a fade to the sheet's
     // solid colour behind it (the UI audit's B1) hid the route as a white
     // band. Across the sheet's whole width, out over the foot's 16-point
-    // sides (SheetParts' px-4); only the capsule takes taps. It sits on the
-    // route's figures, held on the foot's edge under it, its foot 4 points
-    // over theirs, so both are whole in sight and the route scrolls under
-    // both (data-makes-way, sheet/pinAtFoot's RIDES_ON_PIN; the owner,
-    // 2026-11-21: "they would go to bottom and stay there while the rest
-    // slides under it").
+    // sides (SheetParts' px-4); only the capsule takes taps. At the sheet's
+    // foot, the Apple way, the route's figures held on its top just over
+    // it; as the sheet goes down toward the pill it moves down out of
+    // their way and they slide under it to the foot's edge, the pill's
+    // face (data-makes-way, sheet/pinAtFoot's MAKES_WAY; the owner,
+    // 2026-11-22: "I want it the Apple way at the bottom and figures
+    // should pin at the bottom of the plan and the slide under the tabs to
+    // pin to the pill as the card becomes a pill").
     // Its room under it the floating bar's (FLOATING_BAR_SHEET_ROOM), in
     // place of the sheet's 8-point edge (EDGE_ROOM) under the foot: the
     // margin takes back the difference, 4 points with no home indicator.
     <div
       data-makes-way=""
-      className={cn("pointer-events-none -mx-4 flex justify-center gap-2 px-4 pt-2", FLOATING_BAR_ROOM, RIDES_ON_PIN)}
+      className={cn("pointer-events-none -mx-4 flex justify-center gap-2 px-4 pt-2", FLOATING_BAR_ROOM, MAKES_WAY)}
       style={{ marginBottom: `calc(${FLOATING_BAR_SHEET_ROOM} - ${EDGE_ROOM})` }}
       data-testid="fpl-actions"
     >
@@ -99,6 +105,25 @@ export function FplTabBar({
           data-finding={briefMark ?? undefined}
         />
         <BarAction icon={<ICON.navLog />} label="Nav Log" onClick={openNavLogCard} disabled={!course} testId="route-navlog" />
+        {/* Route Options, a tab of the bar's own beside Nav Log, in the
+            route glyph FPL's button had before it read "FPL" (the owner,
+            2026-11-22: "route option can show in the tab bar instead with
+            the previous fpl icon we used"), where it was More's first item;
+            pressed while the suggested routes are out. */}
+        {/* Always there, so the bar never shifts; greyed, and named why,
+            with no ways to suggest (the owner, 2026-11-22: "Routes should
+            always show in the tab bar, just disabled if no routes"). */}
+        {routes && (
+          <BarAction
+            icon={<ICON.flightPlan />}
+            label="Routes"
+            spoken={routes.offered ? "Route Options" : "No route options"}
+            aria-pressed={routes.offered && routes.shown}
+            disabled={!routes.offered}
+            onClick={() => routes.onShown(!routes.shown)}
+            testId="routes-toggle"
+          />
+        )}
         {more}
       </Toolbar.Root>
       {/* File flight plan, a button of its own beside the bar (the owner,
@@ -129,4 +154,12 @@ export function FplTabBar({
  *  button is out of the Tab key's (focusableWhenDisabled off). */
 function BarAction({ disabled, ...action }: ComponentProps<typeof FloatingBarButton>) {
   return <Toolbar.Button disabled={disabled} focusableWhenDisabled={false} render={<FloatingBarButton {...action} />} />;
+}
+
+/** The suggested routes' switch (useRouteList's routesShown). */
+export interface RouteOptions {
+  /** Whether there are ways to suggest (routesOffered): greyed without. */
+  offered: boolean;
+  shown: boolean;
+  onShown: (shown: boolean) => void;
 }

@@ -55,6 +55,9 @@ interface ScrollerProps {
   head: string;
   /** The figures pinned at its foot, so its body is cut off there. */
   cut: boolean;
+  /** FPL's page, its figures held over a floating bar: room at its end for
+   *  the sheet's offset below full (data-page-end). */
+  endRoom?: boolean;
   /** Its band risen with the sheet from the pill (FPL's), frosted as at half from the finger's first move. */
   rises?: boolean;
   layout: SheetLayout;
@@ -72,8 +75,15 @@ export function SheetScroller(p: ScrollerProps) {
       // (a tab's lists); none over a card, which has the sheet to itself.
       // A row focused or brought into view stops under the search's row,
       // not behind it (WCAG 2.4.11).
-      style={{ "--sheet-head": p.head, scrollPaddingTop: p.head, paddingBottom: "var(--pin-foot-room, 0px)" } as CSSProperties}
-      className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto print:overflow-visible", onPhone && fromBottom && p.cut && CUT_BOTTOM)}
+      style={{ "--sheet-head": p.head, scrollPaddingTop: p.head } as CSSProperties}
+      // Its scroll stops at its own end, not chained on to the drawer or the
+      // page, so the head stays put as the rows stop (the owner,
+      // 2026-11-22: "When I scroll up on the plan, it keeps scrolling up
+      // and the title disappears"), as Apple Maps' card does.
+      className={cn(
+        "flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain print:overflow-visible",
+        onPhone && fromBottom && p.cut && CUT_BOTTOM,
+      )}
     >
       <PointerTapDiv
         data-head-band=""
@@ -116,6 +126,13 @@ export function SheetScroller(p: ScrollerProps) {
             is in sight (lib/shown). */}
         <TabKept away={false}>{p.body}</TabKept>
       </PointerTapDiv>
+      {/* Below full the sheet is laid out at its full height and slid down
+          (HOLD_AT_EDGE), so the page's end lies under the screen's foot by
+          the sheet's offset: room for that at its end, so the route's last
+          rows scroll up clear of the figures and the bar at half too (the
+          owner, 2026-11-22: "Figures are overlapping the grouped box at
+          the bottom"). FPL's page only, where the figures are pinned. */}
+      {onPhone && fromBottom && p.endRoom && <div aria-hidden="true" className="shrink-0 h-(--sheet-offset)" data-page-end="" />}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import { Suspense, useId, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { CardId, type CardFrame } from "../../lib/sheetCards";
 import { Shown, useShown } from "../../lib/shown";
@@ -51,7 +51,15 @@ export function CardLayer({
         <Shown.Provider value={shown}>
           {/* Its dialogs its own, not the sheet's (CardDialogs). */}
           <CardDialogs>
-            <CardId.Provider value={id}>{children}</CardId.Provider>
+            {/* A card's content from a chunk not in yet (the tap cards,
+                routePanelParts' cardsPanel) waits inside its own card: with
+                no boundary here it hid the whole page under MapPage's, which
+                put the card's own entry away and back with every try, and
+                Find Nearby's Stops opened before the chunk was in looped
+                until React gave up (error 185, the page's error shown). */}
+            <Suspense fallback={null}>
+              <CardId.Provider value={id}>{children}</CardId.Provider>
+            </Suspense>
           </CardDialogs>
         </Shown.Provider>,
         slot,
