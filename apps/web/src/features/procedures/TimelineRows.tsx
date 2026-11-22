@@ -326,11 +326,13 @@ export function TypeRouteRow({ onType, trailing }: { onType: () => void; trailin
 /** A route file opened, under Type or Paste a Route: the device's file
  *  picker for a flight plan's .fpl or a GPX route (RouteStart's), which
  *  is previewed before it is used, as a shared flight is. */
-export function OpenRouteFileRow({ onOpen }: { onOpen: () => void }) {
+export function OpenRouteFileRow(button: Omit<ComponentProps<typeof Button>, "children">) {
   return (
     <TimelineAction
       mark={<RowMark filled glyph={<FileUp className="size-4" strokeWidth={2.4} aria-hidden />} />}
-      onClick={onOpen}
+      // Its press and ref from what holds it (RouteStart's FileTrigger,
+      // through React Aria's Pressable), which opens the device's picker.
+      {...button}
       data-testid="timeline-open-route-file"
     >
       Open a Route File

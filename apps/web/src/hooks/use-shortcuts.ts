@@ -86,9 +86,8 @@ const letterOf = (keys: readonly string[] | undefined) => keys?.[0]?.toUpperCase
  *  still touch -- read off the desktop's fine pointer, Escape and Alt+B
  *  did nothing on an iPad with its keyboard (the iPad audit, 2026-11-21).
  *  A touch screen with none sends no keys outside a field, which typing
- *  leaves alone; the keys are shown (Kbd) on a desktop only. `on` false
- *  holds them, for a test. */
-export function useShortcuts(on = true): void {
+ *  leaves alone; the keys are shown (Kbd) on a desktop only. */
+export function useShortcuts(): void {
   // Escape is not a character key: it goes back one level alone, no Alt.
   useHotkeys(
     "escape",

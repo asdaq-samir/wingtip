@@ -33,7 +33,8 @@ export const fuelGrades = (): FuelGradesAnswer => callEngine("fuel_grades", {});
  *  given, the engine's own (gonogo_balance). */
 export function lbPerGal(loading: Loading, grade: FuelGrade | null | undefined): number | undefined {
   const picked = grade ? fuelGrades().find((g) => g.grade === grade) : undefined;
-  return picked?.lb_per_gal ?? loading.fuel_lb_per_gal;
+  // A loading with no figure of its own (null) leaves it to the engine.
+  return picked?.lb_per_gal ?? loading.fuel_lb_per_gal ?? undefined;
 }
 
 export interface Condition {

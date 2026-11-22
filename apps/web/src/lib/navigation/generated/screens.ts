@@ -22,6 +22,8 @@ export const SCREENS = {
   coach: { title: "Coach" },
   minimums: { title: "Personal Minimums" },
   documents: { title: "Documents" },
+  scratchpad: { title: "Scratchpad" },
+  balance: { title: "Weight & Balance" },
   guide: { title: "Guide" },
   shared: { title: "Shared Flight" },
   about: { title: "About" },

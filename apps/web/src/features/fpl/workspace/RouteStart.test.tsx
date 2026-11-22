@@ -22,11 +22,11 @@ function slices({ hasPoints = false, routed = false, boxOpen = false } = {}) {
 }
 
 describe("the empty route", () => {
-  test("is the timeline's card: the two ends in a placeholder's words, then Type or Paste a Route", () => {
+  test("is the timeline's card: the two ends in a placeholder's words, then Type or Paste a Route and Open a Route File", () => {
     const { vm } = slices();
     render(<EmptyRoute vm={vm} />);
     const card = screen.getByRole("group", { name: "The route" });
-    expect(card.textContent).toBe("DepartureDestinationType or Paste a Route");
+    expect(card.textContent).toBe("DepartureDestinationType or Paste a RouteOpen a Route File");
     expect(screen.getByRole("button", { name: "Pick the departure" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Pick the destination" })).toBeTruthy();
   });

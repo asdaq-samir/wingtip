@@ -8,13 +8,15 @@ import { stale, takeScreen, useWanted, wantScreen } from "../../../lib/navigatio
 import { tailOf } from "../../../lib/aircraftChoice";
 import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
 import { usePreferences } from "../../../lib/preferences";
-import { type PanelView, riseToSee } from "../../plan";
+import { type PanelView, riseToSee, useTabAsk } from "../../plan";
+import { WORDING } from "../../../lib/wording/generated/wording";
 
 /** You's pages a screen is (the account button's card, which took
  *  Setup's place), as the path of page keys down to it
  *  (lib/navigation/wantedPage): the card alone is none. The checklists
  *  under Airplanes, the coach under Training, the guide and about under
- *  Settings' Help & About (the owner's option A, 2026-11-13). */
+ *  Settings' Help & About (the owner's option A, 2026-11-13), and the
+ *  scratchpad beside the documents (ScratchpadRow). */
 const SETUP_PAGES: Partial<Record<ScreenId, string[]>> = {
   setup: [],
   flights: ["flights"],
@@ -24,12 +26,13 @@ const SETUP_PAGES: Partial<Record<ScreenId, string[]>> = {
   checklists: ["aircraft", "checklists"],
   minimums: ["minimums"],
   documents: ["documents"],
+  scratchpad: ["scratchpad"],
   guide: ["settings", "help", "guide"],
   about: ["settings", "help", "about"],
 };
 
 /** The screens drawn over a route, which wait for one. */
-const OVER_ROUTE = new Set<ScreenId>(["brief", "navlog", "profile"]);
+const OVER_ROUTE = new Set<ScreenId>(["brief", "navlog", "profile", "balance"]);
 
 /**
  * Any screen opened by its name (design/screens.json): a link's `open=`,
@@ -119,6 +122,16 @@ export function useOpenScreen({
         else if (screen === "navlog") openNavLogCard();
         else openProfileCard();
         return;
+      // Weight & Balance is the Brief's Preflight section on the web
+      // (PreflightSections' WeightBalanceSection): the Brief opened and
+      // scrolled to it, as File flight plan opens its Flight Plan
+      // (useFlightToSave).
+      case "balance":
+        setViewPick("plan");
+        if (!routed) return;
+        openBrief();
+        useTabAsk.getState().go("preflight", WORDING.weightAndBalance);
+        return;
       case "favorites":
         void setAddress({ list: "favorites" });
         riseToSee(setPanel);
@@ -137,6 +150,7 @@ export function useOpenScreen({
       case "checklists":
       case "minimums":
       case "documents":
+      case "scratchpad":
       case "guide":
       case "about":
         return;

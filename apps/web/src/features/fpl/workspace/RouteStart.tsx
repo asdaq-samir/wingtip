@@ -1,6 +1,6 @@
-import { useRef } from "react";
 import { flushSync } from "react-dom";
 import { FileTrigger } from "react-aria-components";
+import { Pressable } from "react-aria/Pressable";
 import FileDrop from "../../../components/FileDrop";
 import { cn } from "cn";
 import { Button } from "../../../components/ui/button";
@@ -63,17 +63,19 @@ export function MissingEnd({ vm, end }: { vm: StartSlices; end: "Departure" | "D
  * before it is used (features/shared-flight), as a shared flight is.
  */
 function OpenFileRow() {
-  const input = useRef<HTMLInputElement>(null);
+  // The row the FileTrigger's pressable child (Pressable), as Documents'
+  // Add a PDF is: a FileTrigger with none warned "A PressResponder was
+  // rendered without a pressable child" on every empty route.
   return (
-    <>
-      <OpenRouteFileRow onOpen={() => input.current?.click()} />
-      <FileTrigger
-        ref={input}
-        acceptedFileTypes={[...ROUTE_FILE_TYPES, ...ROUTE_FILE_ENDINGS]}
-        onSelect={(files) => files?.[0] && void openRouteFile(files[0])}
-        data-testid="route-file-input"
-      />
-    </>
+    <FileTrigger
+      acceptedFileTypes={[...ROUTE_FILE_TYPES, ...ROUTE_FILE_ENDINGS]}
+      onSelect={(files) => files?.[0] && void openRouteFile(files[0])}
+      data-testid="route-file-input"
+    >
+      <Pressable>
+        <OpenRouteFileRow />
+      </Pressable>
+    </FileTrigger>
   );
 }
 
