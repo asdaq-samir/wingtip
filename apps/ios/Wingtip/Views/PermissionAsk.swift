@@ -39,7 +39,7 @@ enum Permission: Sendable {
     @MainActor
     static func undecided(_ permission: Permission) async -> Bool {
         switch permission {
-        case .location: CLLocationManager().authorizationStatus == .notDetermined
+        case .location: LocationPermission.shared.undecided
         case .notifications: await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .notDetermined
         case .microphone: AVAudioApplication.shared.recordPermission == .undetermined
             || SFSpeechRecognizer.authorizationStatus() == .notDetermined

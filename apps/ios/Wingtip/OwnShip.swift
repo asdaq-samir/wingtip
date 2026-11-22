@@ -11,9 +11,18 @@ import Observation
 /// but the figures of flying it: the distance and time to the next point
 /// and what is ahead on the track, which the planner is asked for
 /// (/api/airspace/ahead).
+///
+/// The fixes come from Core Location's CLLocationUpdate.liveUpdates (iOS
+/// 17), the stock async stream, in its `.airborne` configuration while
+/// precise (an airplane's motion, which Core Location filters for) and
+/// its default on the ground, where a still phone goes stationary and
+/// gives nothing; a CLBackgroundActivitySession keeps it going with the
+/// phone locked while flying, with Apple's blue indicator. It was a
+/// CLLocationManager delegate with its own accuracy and filter switching
+/// (the stock audit, 2026-11-21). The permission is LocationPermission's.
 @MainActor
 @Observable
-final class OwnShip: NSObject, CLLocationManagerDelegate {
+final class OwnShip {
     struct Fix: Equatable, Sendable {
         let coordinate: CLLocationCoordinate2D
         let altitudeFt: Double?
@@ -35,10 +44,12 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     /// what a card's distance from the airplane reads, so a parked
     /// airplane's jitter does not draw it again and ask the engine again.
     private(set) var coarseCoordinate: CLLocationCoordinate2D?
+    /// The position refused, by the permission or by an update that says
+    /// so (CLLocationUpdate.authorizationDenied).
     private(set) var denied = false
     /// The position's permission as iOS last said it, for the welcome's
     /// foot (WelcomeFoot).
-    private(set) var authorization: CLAuthorizationStatus = .notDetermined
+    var authorization: CLAuthorizationStatus { LocationPermission.shared.status }
     /// What the track runs into in the next minutes, from the planner.
     private(set) var ahead: [AheadAlert] = []
     /// The ground under the airplane from the packs kept on the phone,
@@ -49,7 +60,12 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     /// FlightLoops as the route changes.
     var routeLine: [[Double]]?
 
-    private let manager = CLLocationManager()
+    /// The live updates being read, restarted as `isPrecise` changes; nil
+    /// while stopped.
+    @ObservationIgnored private var live: Task<Void, Never>?
+    @ObservationIgnored private var running = false
+    /// Held while flying, so the updates go on in the background.
+    @ObservationIgnored private var background: CLBackgroundActivitySession?
     /// Whether the map follows own ship (RootMap): the dot must keep up.
     var mapFollows = false { didSet { tune() } }
     /// Whether an airport diagram with own ship on it is up
@@ -61,10 +77,6 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     @ObservationIgnored private var flying = false
     /// Whether Core Location is asked for its best, each fix (precise).
     @ObservationIgnored private(set) var isPrecise = false
-    /// On the ground, the metres of move before a new fix: a parked
-    /// airplane needs none, a taxiing one still gives one every few
-    /// seconds for the flight recorder's taxi.
-    static let groundFilterM: CLLocationDistance = 10
     private var asking: Task<Void, Never>?
     /// The ahead question asked again (Repeating), while the position is
     /// being read.
@@ -82,27 +94,21 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     init(trail: OwnTrail = OwnTrail(), recorder: FlightRecorder = FlightRecorder()) {
         self.trail = trail
         self.recorder = recorder
-        super.init()
-        manager.delegate = self
-        manager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
-        manager.distanceFilter = Self.groundFilterM
-        manager.activityType = .airborne
-        // Kept going with the phone locked or the app put away while the
-        // airplane is at flying speed (took): the alerts ahead and the
-        // path flown (OwnTrail) went on only with the screen on, where a
-        // pilot's phone in a mount locks itself. Never paused by the
-        // system for a still airplane, which is a slow one. Apple's blue
-        // bar says the position is being read (the HIG asks for it).
-        manager.pausesLocationUpdatesAutomatically = false
-        manager.showsBackgroundLocationIndicator = true
+        denied = LocationPermission.shared.denied
     }
 
     func start() {
+        running = true
         // No question at launch (HIG Onboarding, docs/design/ios.md §14):
         // the position is asked for the first time the pilot wants it, the
         // position button, Nearest, the emergency assistant or Ready to
-        // Fly (askLocation). Until then the updates simply bring nothing.
-        manager.startUpdatingLocation()
+        // Fly (askLocation). The live updates ask by running, so they run
+        // only once it is allowed, started then by the permission's change.
+        LocationPermission.shared.onChange = { [weak self] status in
+            self?.denied = status == .denied || status == .restricted
+            self?.read()
+        }
+        read()
         if aheadEvery == nil {
             aheadEvery = Task { [weak self] in await Repeating.every(Self.aheadEveryS) { self?.askAhead() } }
         }
@@ -112,19 +118,43 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     /// asks for something that needs it; iOS asks once and ignores the
     /// rest.
     func askLocation() {
-        guard manager.authorizationStatus == .notDetermined else { return }
-        manager.requestWhenInUseAuthorization()
+        LocationPermission.shared.ask()
     }
 
     func stop() {
-        manager.stopUpdatingLocation()
+        running = false
+        live?.cancel()
+        live = nil
+        background?.invalidate()
+        background = nil
         aheadEvery?.cancel()
         aheadEvery = nil
         asking?.cancel()
     }
 
-    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let last = locations.last else { return }
+    /// The live updates read, in the configuration `isPrecise` asks for,
+    /// while started and allowed; read again from the start as it changes.
+    private func read() {
+        live?.cancel()
+        live = nil
+        guard running, LocationPermission.shared.allowed else { return }
+        let configuration: CLLocationUpdate.LiveConfiguration = isPrecise ? .airborne : .default
+        live = Task { [weak self] in
+            do {
+                for try await update in CLLocationUpdate.liveUpdates(configuration) {
+                    guard let self, !Task.isCancelled else { return }
+                    if update.authorizationDenied || update.authorizationDeniedGlobally || update.authorizationRestricted { self.denied = true }
+                    if let location = update.location { self.took(Self.fix(location)) }
+                }
+            } catch {
+                // The stream ended (it does not, short of cancelling):
+                // the last fix stands, as a dropped GPS's does.
+            }
+        }
+    }
+
+    /// A Core Location fix in the app's units.
+    nonisolated static func fix(_ last: CLLocation) -> Fix {
         // Core Location's altitude is metres above mean sea level and its
         // speed metres a second; the foot is Foundation's exact one, the
         // knot Units' (UnitSpeed.knots is rounded).
@@ -135,20 +165,11 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
             trackDeg: last.course >= 0 ? last.course : nil,
             groundspeedKt: last.speed >= 0 ? last.speed * Units.ktPerMS : nil,
             accuracyM: last.horizontalAccuracy, at: last.timestamp)
-        Task { @MainActor in self.took(fix) }
+        return fix
     }
 
-    nonisolated func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        let denied = status == .denied || status == .restricted
-        Task { @MainActor in
-            self.denied = denied
-            self.authorization = status
-        }
-    }
-
-    nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: any Error) {}
-
-    private func took(_ fix: Fix) {
+    /// A fix taken: the live updates', and a test's.
+    func took(_ fix: Fix) {
         self.fix = fix
         let marked = Traffic.markedFt(fix.altitudeFt)
         if marked != markedFt { markedFt = marked }
@@ -162,7 +183,12 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
         // the airplane landed and at rest: 1.1's flight time ends there.
         let recording = recorder.took(fix)
         flying = trail.took(fix) || recording
-        if manager.allowsBackgroundLocationUpdates != flying { manager.allowsBackgroundLocationUpdates = flying }
+        // Kept going with the phone locked or the app put away while
+        // flying: the alerts ahead and the path flown went on only with the
+        // screen on, where a pilot's phone in a mount locks itself. Apple's
+        // blue indicator says the position is being read (the HIG asks it).
+        if flying, background == nil { background = CLBackgroundActivitySession() }
+        if !flying, let held = background { held.invalidate(); background = nil }
         // In the air and until the recorder has seen the airplane come to
         // rest after landing (14 CFR 1.1's flight time ends there), every
         // fix at its best.
@@ -171,13 +197,13 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
 
     private func tune() { precise(flying || mapFollows || diagramShown) }
 
-    /// Core Location at its best, a fix a second, or on the ground to ten
-    /// metres and a ten-metre move: told only as it changes.
+    /// The airborne configuration, every fix at its best, or the default
+    /// one on the ground, which gives nothing while the phone is still:
+    /// the updates read again only as it changes.
     private func precise(_ yes: Bool) {
         guard yes != isPrecise else { return }
         isPrecise = yes
-        manager.desiredAccuracy = yes ? kCLLocationAccuracyBest : kCLLocationAccuracyNearestTenMeters
-        manager.distanceFilter = yes ? kCLDistanceFilterNone : Self.groundFilterM
+        read()
     }
 
     /// A place to a thousandth of a degree (coarseCoordinate).
