@@ -21,23 +21,23 @@ import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.plan.FlightChoices
+import app.wingtipmaps.android.plan.PlanTanks
 
 /**
- * The route's Share, on the plan: the plan as a link
- * (SharedPlan) through Android's sharesheet, which opens the app where it
- * is installed (App Links) and the web otherwise. The N-number stays off
- * the link unless the pilot ticks it in; with none known there is nothing
- * to ask, and the sharesheet opens at once.
+ * The route's Share: the plan as a link (SharedPlan) through Android's
+ * sharesheet, which opens the app where it is installed (App Links) and
+ * the web otherwise. The N-number stays off the link unless the pilot
+ * ticks it in; with none known there is nothing to ask, and the
+ * sharesheet opens at once. The tap that shares, for a button or a menu's
+ * item (the plan's More, the nav log's Share); its question is drawn
+ * where it is called.
  */
 @Composable
-fun ShareRouteButton(state: Plan.State) {
+fun rememberShareRoute(state: Plan.State): () -> Unit {
     val context = LocalContext.current
     val tail by remember(context) { FlightChoices.of(context).tail }.collectAsStateWithLifecycle()
     var asking by rememberSaveable { mutableStateOf(false) }
     var withTail by rememberSaveable { mutableStateOf(false) }
-    TextButton(onClick = { if (tail == null) send(context, planOf(state, null)) else asking = true }) {
-        Text(stringResource(R.string.share))
-    }
     val number = tail
     if (asking && number != null) {
         AlertDialog(
@@ -58,11 +58,12 @@ fun ShareRouteButton(state: Plan.State) {
             dismissButton = { TextButton(onClick = { asking = false }) { Text(stringResource(R.string.not_now)) } },
         )
     }
+    return { if (tail == null) send(context, planOf(state, null)) else asking = true }
 }
 
 /** The plan as the link carries it: the airplane's type where one is
  *  picked (the pilot's own record's, else the planner's profile), never
- *  one assumed. */
+ *  one assumed, and the fuel set on its gauges. */
 internal fun planOf(state: Plan.State, tail: String?): SharedPlan = SharedPlan(
     dep = state.dep,
     dest = state.dest,
@@ -73,6 +74,8 @@ internal fun planOf(state: Plan.State, tail: String?): SharedPlan = SharedPlan(
     type = state.own?.type?.ifEmpty { null } ?: state.aircraft.takeIf { it.isNotEmpty() && it != "own" }?.uppercase(),
     rules = state.rules,
     tail = tail,
+    // The fuel the pilot set on the route's gauges, its fields' alone.
+    tanks = PlanTanks.state.value.own.filterKeys { k -> (listOf(state.dep) + state.stops + state.dest).any { it.equals(k, ignoreCase = true) } },
 )
 
 private fun send(context: Context, plan: SharedPlan) {

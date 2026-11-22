@@ -59,6 +59,10 @@ export function FuelSet({
   const form = useId();
   const shown = pick === "full" ? usable : pick === "none" ? left : typed;
   const over = shown !== null && shown > tank.usable;
+  // A stop's figure under what the airplane lands with keeps what it lands
+  // with: the fuel is not taken out (the engine's tanks_leaving, which
+  // fuel_in_tanks and the planner's check fly). Said, not kept silently.
+  const kept = stop && pick === "own" && typed !== null && typed < tank.gal;
   const valid = pick !== "own" || (typed !== null && typed >= 0);
   const openWith = (next: boolean) => {
     if (next) {
@@ -123,7 +127,13 @@ export function FuelSet({
         aria-live="polite"
         data-testid="fuel-set-note"
       >
-        {over ? `More than the ${usable} gal the tanks hold` : stop ? `Lands with ${gaugeWords(tank.gal)}` : null}
+        {over
+          ? `More than the ${usable} gal the tanks hold`
+          : kept
+            ? `Keeps the ${gaugeWords(tank.gal)} it lands with`
+            : stop
+              ? `Lands with ${gaugeWords(tank.gal)}`
+              : null}
       </p>
       {!phone && (
         <div className="flex justify-end gap-2">

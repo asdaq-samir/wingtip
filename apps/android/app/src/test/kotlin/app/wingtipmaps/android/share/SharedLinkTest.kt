@@ -61,4 +61,15 @@ class SharedLinkTest {
         val read = Links.parse("wingtipmaps://plan?open=shared&dep=KMSN&dest=KOSH&altitude_ft=high&depart=soon&rules=spvfr") as Links.Shared
         assertEquals(SharedPlan("KMSN", "KOSH"), read.plan)
     }
+
+    @Test
+    fun theFuelSetGoesWithTheLinkAndIsReadBackWarily() {
+        val fuelled = plan.copy(tanks = mapOf("KMSN" to 20, "KJVL" to 0))
+        val link = fuelled.link("https://h")
+        assertEquals(true, link.endsWith("&tanks=KJVL%3A0,KMSN%3A20"))
+        assertEquals(Links.Shared(fuelled, null), Links.parse(link))
+        // A part that is not an ident and whole gallons is left out.
+        assertEquals(mapOf("KOSH" to 30), SharedPlan.tanksOf("KOSH:30,KJVL:lots,:4,KUES:-2"))
+        assertEquals(emptyMap<String, Int>(), SharedPlan.tanksOf(null))
+    }
 }

@@ -6,7 +6,7 @@ use super::*;
 const START: Point = (0.0, 0.0);
 const END: Point = (0.0, 10.0);
 const FIG: Figures =
-    Figures { fuel_per_nm: 0.1, min_per_nm: 0.6, usable_gal: 40.0, start_gal: 40.0, taxi_gal: 1.0, reserve_gal: 5.0, ground_min: 30.0 };
+    Figures { fuel_per_nm: 0.1, min_per_nm: 0.6, usable_gal: 40.0, start_gal: 40.0, taxi_gal: 1.0, reserve_gal: 5.0, alternate_gal: 0.0, ground_min: 30.0 };
 
 fn fields(rows: &[(&str, f64, f64)]) -> Vec<Field> {
     rows.iter()
@@ -105,4 +105,23 @@ fn less_fuel_at_the_start_lands_sooner() {
     let (s, _) = suggest(START, end, &Figures { start_gal: 25.0, ..FIG }, &fields, &[]);
     assert_eq!(idents(&s), vec!["EARLY"]);
     assert!((s[0].lands_with_gal - 9.0).abs() <= 0.3);
+}
+
+#[test]
+fn under_ifr_the_last_stretch_keeps_the_alternates_fuel() {
+    // 14 CFR 91.167(a)(2): to the destination, on to the alternate and the
+    // reserve after. 320 nm direct, 40 - 1 - 32 = 7 gal on landing: over
+    // the 5 gal reserve, no stop; with 3 gal on to the alternate it needs 8,
+    // and a stop is offered where none was (the aviation audit, F7.1).
+    let end = (0.0, 320.0 / 60.0);
+    let rows = fields(&[("MID", 0.0, end.1 / 2.0)]);
+    assert!(suggest(START, end, &FIG, &rows, &[]).0.is_empty());
+    let (s, _) = suggest(START, end, &Figures { alternate_gal: 3.0, ..FIG }, &rows, &[]);
+    assert_eq!(idents(&s), vec!["MID"]);
+    // A stop whose stretch on into the destination cannot keep it too is
+    // not one: 330 nm from MID leaves 40 - 1 - 33 = 6, under 5 + 3.
+    let far = (0.0, (160.0 + 330.0) / 60.0);
+    let rows = fields(&[("MID", 0.0, 160.0 / 60.0)]);
+    assert_eq!(idents(&suggest(START, far, &FIG, &rows, &[]).0), vec!["MID"]);
+    assert!(suggest(START, far, &Figures { alternate_gal: 3.0, ..FIG }, &rows, &[]).0.is_empty());
 }

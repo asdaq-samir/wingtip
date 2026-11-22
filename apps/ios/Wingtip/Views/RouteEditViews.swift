@@ -138,7 +138,6 @@ struct RouteExtrasSection: View {
                 // The one Nearest list, with Divert (NearestView).
                 NavigationLink(value: SheetPage.screen(.nearest)) { Label("Nearest for a Diversion", systemImage: WingtipIcon.nearest) }
                 NavigationLink(value: SheetPage.flight("notes")) { Label("Checkpoint Notes", systemImage: "text.bubble") }
-                NavigationLink(value: SheetPage.flight("file")) { Label("File Flight Plan", systemImage: WingtipIcon.send) }
             }
         }
     }

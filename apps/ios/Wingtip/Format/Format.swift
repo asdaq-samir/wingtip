@@ -107,6 +107,16 @@ enum Format {
         return "\(number(gal, decimals: decimals)) gal"
     }
 
+    /// The fuel in the tanks as FPL's gauge writes it, whole gallons
+    /// rounded down, so never more in them than there are; past empty the
+    /// gallons short with a minus, "−12 gal" (the engine's fuel_in_tanks;
+    /// the owner, 2026-11-20: "Instead of showing 0 gal, can you show
+    /// negative gal"), rounded the same way down, never fewer short.
+    static func tankGallons(_ gal: Double) -> String {
+        let whole = Int(gal.rounded(.down))
+        return "\(whole < 0 ? "\u{2212}" : "")\(abs(whole)) gal"
+    }
+
     /// A weight, grouped pounds: "2,450 lb".
     static func weight(_ lb: Double) -> String { "\(grouped(lb)) lb" }
 
