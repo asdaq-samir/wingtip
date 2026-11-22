@@ -100,9 +100,10 @@ run "guards (scripts/ci/guards.sh, repo leg)" env BASE="$base" PART=repo ARCH="$
   IOS="$(val ios)" ANDROID="$(val android)" API="$(val api)" WEB=false ENGINE=false FLIGHT=false scripts/ci/guards.sh
 
 # The generated files: regen-all's --check on what the change reaches.
-weight=--light
-[ -z "$heavy" ] || weight=--check
-run "generated files (scripts/build/regen-all.sh --check)" scripts/build/regen-all.sh --check --base "$base" "$weight"
+# The heavy generators (cargo, Maven, the planner's Python) only with --heavy.
+regen=(--check --base "$base")
+[ -n "$heavy" ] || regen+=(--light)
+run "generated files (scripts/build/regen-all.sh --check)" scripts/build/regen-all.sh "${regen[@]}"
 
 if want test-engine true; then
   run "the WebAssembly's size budget" python3 scripts/ci/wasm_size.py
