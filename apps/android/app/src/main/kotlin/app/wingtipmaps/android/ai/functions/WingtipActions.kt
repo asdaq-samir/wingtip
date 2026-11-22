@@ -164,7 +164,7 @@ class WingtipActions(private val app: Application) {
             }
         }
         refusal(closed)?.let { throw NoAnswer(it) }
-        return Opening("Planning ${(listOf(from) + via + to).joinToString(" ")}.", AgentLinks.route(from, to, via))
+        return Opening("Showing ${(listOf(from) + via + to).joinToString(" ")} to plan.", AgentLinks.route(from, to, via))
     }
 
     fun showAirport(ident: String): Opening = clean(ident).let { Opening("Opening $it.", AgentLinks.place(it)) }

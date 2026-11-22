@@ -2,6 +2,7 @@ package app.wingtipmaps.android.ai.functions
 
 import app.wingtipmaps.android.Links
 import app.wingtipmaps.android.navigation.generated.Screen
+import app.wingtipmaps.android.share.SharedPlan
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -13,8 +14,9 @@ class AgentLinksTest {
     }
 
     @Test
-    fun aRouteIsPlannedWithItsStops() {
-        assertEquals(Links.Route("KPAO", "KSQL", listOf("OSI", "KHAF")), Links.parse(AgentLinks.route("KPAO", "KSQL", listOf("OSI", "KHAF"))))
+    fun aRouteIsPreviewedWithItsStops() {
+        val shared = Links.Shared(SharedPlan("KPAO", "KSQL", listOf("OSI", "KHAF")), null)
+        assertEquals(shared, Links.parse(AgentLinks.route("KPAO", "KSQL", listOf("OSI", "KHAF"))))
     }
 
     @Test
