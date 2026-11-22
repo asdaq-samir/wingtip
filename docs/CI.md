@@ -312,7 +312,7 @@ run is the night's, but for the audits, the flake hunt and the issue:
 |---|---|---|
 | `guards` (three legs), `test-web` (three), `test-engine` (every crate), `test-python` (every suite), `test-gateway`, `test-sim`, `infra` | one runner each | 1-5 min |
 | `build-images`: every service image, built, not pushed | 1 | 2-6 min |
-| `e2e`: every spec on `mobile`, `desktop` and `webkit-phone` (`browser_specs.py`'s `WAVE_SHARDS`), after `e2e-images` | 16 | ~15-20 min |
+| `e2e`: every spec on `mobile`, `desktop`, `webkit-phone` and `webkit-ipad` (`browser_specs.py`'s `WAVE_SHARDS`), after `e2e-images` | 16 | ~15-20 min |
 | `ios`: `native-ios.yml` with `unit_only`, the build and `WingtipTests` on the newest iPhone, on macOS | 1 | 5-8 min |
 | `android`: `native-android.yml`, `testDebugUnitTest lintDebug assembleDebug` (the APK kept with the run) | 1 | 4-6 min |
 

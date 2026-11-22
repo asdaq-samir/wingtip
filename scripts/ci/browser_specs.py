@@ -3,7 +3,7 @@
 
 At night or by hand, every spec on every project, over ten shards. In
 a wave's validation (EVENT "wave", validate-wave.yml; decision 0054),
-every spec on the phone, desktop and WebKit phone projects, over
+every spec on the phone, desktop, WebKit phone and WebKit iPad projects, over
 WAVE_SHARDS: minutes, where the night's ten take half an hour. On
 main's push, the @smoke and @flight-critical tests on the phone project
 and the iPhone's WebKit, over two. On a pull request, every spec its
@@ -32,7 +32,9 @@ MAX_SHARDS = 10
 # Wide, as a wave waits on it; GitHub runs 20 jobs at once for a free
 # account, and the rest of the run's jobs need a few of them.
 WAVE_SHARDS = 16
-WAVE_PROJECTS = "--project=mobile --project=desktop --project=webkit-phone"
+# The iPad's WebKit among them: the app's primary device (the owner,
+# 2026-11-21: "Primary app users are on iPad").
+WAVE_PROJECTS = "--project=mobile --project=desktop --project=webkit-phone --project=webkit-ipad"
 # The list reaches a shell: a spec named with anything else is left to the night.
 PLAIN = re.compile(r"^e2e/[A-Za-z0-9._/-]+\.spec\.ts$")
 
