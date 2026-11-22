@@ -131,9 +131,19 @@ test("at twice the text size the route's panel reflows: nothing sideways, the fi
   });
   await atRest(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  // The flight's figures stay whole in their columns (FigureStrip).
+  // The flight's figures stay whole in their columns (FigureStrip): the
+  // figure's run not cut short with "…", and its button inside its column.
+  // The dd's own scrollWidth was read before, which counts the button's
+  // invisible 44-point area (hit-x-2's ::after, a rem's half either side),
+  // let past the dd on purpose, and never saw a cut figure, the run's
+  // overflow hidden inside the button.
   const ete = page.getByTestId("navlog-ete");
-  expect(await ete.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+  const fit = await ete.evaluate((el) => {
+    const run = el.querySelector("[data-fitted]")!.parentElement!;
+    const [cell, face] = [el.getBoundingClientRect(), (run.closest("button") ?? run).getBoundingClientRect()];
+    return { cut: run.scrollWidth > run.clientWidth + 1, inside: face.left >= cell.left - 1 && face.right <= cell.right + 1 };
+  });
+  expect(fit).toEqual({ cut: false, inside: true });
 });
 
 test("by keyboard: a visible focus ring, and the chart's airports reached and opened", async ({ page }) => {

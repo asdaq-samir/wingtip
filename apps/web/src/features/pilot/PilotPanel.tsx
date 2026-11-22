@@ -243,6 +243,8 @@ function YouHead({ pilot, opens }: { pilot: Pilot | null; opens: boolean }) {
           Add Your Name
         </span>
       )}
+      {/* A space between the two in the words read out, where the column
+          drew them apart but the text ran "Add Your Namepilot@…" (axe). */}{" "}
       {address && (
         <span className={cn("max-w-full truncate font-normal text-muted-foreground", TEXT.detail)} data-testid="you-address">
           {address}
@@ -260,8 +262,10 @@ function YouHead({ pilot, opens }: { pilot: Pilot | null; opens: boolean }) {
           variant="plain"
           size="inline"
           onClick={() => openPage("pilot")}
-          // Its visible words first, as voice control says them (WCAG 2.5.3).
-          aria-label={`${name ?? "Add Your Name"}, Pilot Details`}
+          // Its visible words first, the name and the address under it, as
+          // voice control says them (WCAG 2.5.3; axe's
+          // label-content-name-mismatch read the address left out).
+          aria-label={`${name ?? "Add Your Name"}${address ? `, ${address}` : ""}, Pilot Details`}
           data-testid="pilot-row"
           className="flex h-auto max-w-full flex-col items-center gap-1 whitespace-normal"
         >

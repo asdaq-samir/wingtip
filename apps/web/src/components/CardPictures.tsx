@@ -14,6 +14,11 @@ export type CardSlide = {
   /** The click's name, for VoiceOver. */
   label: string;
   testId?: string;
+  /** What lies over the picture and takes a tap of its own (a photo's
+   *  credit linked to its page, PhotoCredit): drawn beside the tile's
+   *  button, not in it, where a link inside a button is two controls in
+   *  one (axe's nested-interactive). */
+  credit?: ReactNode;
 };
 
 // A tile 70% of the card's width, so the next one shows at the edge and
@@ -87,6 +92,7 @@ export function CardPictures({
                     {slide.picture}
                   </div>
                 )}
+                {slide.credit}
               </div>
             </CarouselItem>
           ))}
