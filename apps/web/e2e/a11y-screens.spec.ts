@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { openConsole, openMapSettings, settle, slow, consoleSheet } from "./helpers";
+import { openConsole, openMapSettings, settle, slow, consoleSheet, noTips } from "./helpers";
 import { violations } from "./a11yAxe";
 import { pickAirplane } from "./startState";
 
@@ -13,18 +13,21 @@ import { pickAirplane } from "./startState";
  */
 test.beforeEach(({ page }) => pickAirplane(page));
 
-/** A card in sight, what the address opened, at rest. */
-async function cardOpen(page: Page) {
+/** What the address opened in sight, at rest: a card, or the sheet's
+ *  own page where the screen is one. */
+async function cardOpen(page: Page, shown = "[data-sheet-card][data-open]") {
   await settle(page);
-  await expect(page.locator("[data-sheet-card][data-open]").first()).toBeVisible({ timeout: slow(30000) });
+  await expect(page.locator(shown).first()).toBeVisible({ timeout: slow(30000) });
 }
 
 // The console's places and the cards each opens by its link (useOpenScreen,
 // design/screens.json), and a field's, a VOR's, a TFR's and an airplane's.
-const SCREENS: [string, string][] = [
+// Favorites is no card but Search's list in full, a page of the sheet
+// (useOpenScreen's `list`, PlanSidebar): its list is what is waited for.
+const SCREENS: [string, string, string?][] = [
   ["Settings", "/app/plan?open=setup"],
   ["Saved Flights", "/app/plan?open=flights"],
-  ["Favorites", "/app/plan?open=favorites"],
+  ["Favorites", "/app/plan?open=favorites", '[data-testid="favorites-list"]'],
   ["Nearest", "/app/plan?open=nearest"],
   ["Emergency Assistant", "/app/plan?open=emergency"],
   ["Checklists", "/app/plan?open=checklists"],
@@ -40,10 +43,10 @@ const SCREENS: [string, string][] = [
   ["an airplane's card", "/app/plan?flight=a89c1e"],
 ];
 
-for (const [name, address] of SCREENS) {
+for (const [name, address, shown] of SCREENS) {
   test(`${name}, by axe`, async ({ page }) => {
     await page.goto(address);
-    await cardOpen(page);
+    await cardOpen(page, shown);
     expect(await violations(page), name).toEqual([]);
   });
 }
@@ -69,6 +72,11 @@ test("You: Escape closes it and the focus is back on the account button", async 
 
 test.describe("signed out", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
+  // The first flight's welcome and FPL tip seen, as the suite's session has
+  // them (auth.setup) and signin.spec's fresh browser does: an empty session
+  // offers them again, and the tip over the sheet took the Sign In click.
+  // first-flight.spec reads them.
+  test.beforeEach(({ page }) => page.addInitScript(noTips));
 
   test("the sign-in dialog, by axe, its address field named and Escape closing it", async ({ page }) => {
     await page.goto("/app/plan");

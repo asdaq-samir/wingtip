@@ -1,7 +1,7 @@
 import { lazy, Suspense, useMemo, useState } from "react";
 import { cn } from "cn";
 import { CardPictures, type CardSlide } from "../../components/CardPictures";
-import { PhotoSlide } from "../../components/PictureSlides";
+import { PhotoCredit, PhotoSlide } from "../../components/PictureSlides";
 import type { AirportPhotos, AirportPlace } from "../../lib/api/types";
 import { TEXT } from "../../lib/text";
 import { FaaChart } from "../../components/AirportDiagram";
@@ -129,15 +129,12 @@ export function PlacePictures({
       key: "photo",
       open: () => setPicture("photo"),
       label: `${ident} from the ground, full screen`,
-      picture: (
-        <PhotoSlide
-          src={photos.photo.url}
-          alt=""
-          label={`${ident} from the ground`}
-          testId="place-photo"
-          // Its photographer and licence, linked to its page, as Commons' licences ask.
+      picture: <PhotoSlide src={photos.photo.url} alt="" label={`${ident} from the ground`} testId="place-photo" />,
+      // Its photographer and licence, linked to its page, as Commons' licences ask.
+      credit: (
+        <PhotoCredit
           credit={`${photos.photo.credit}${photos.photo.license ? ` · ${photos.photo.license}` : ""}`}
-          creditHref={photos.photo.source_url ?? undefined}
+          href={photos.photo.source_url ?? undefined}
         />
       ),
     },
