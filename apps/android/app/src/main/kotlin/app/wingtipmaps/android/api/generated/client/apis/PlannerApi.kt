@@ -909,6 +909,26 @@ interface PlannerApi {
     suspend fun feeds(): Response<app.wingtipmaps.android.api.generated.FeedHealth>
 
     /**
+     * GET plates/flight
+     * Flight Plates
+     * The plates Keep for the Air keeps for a flight, and their size, about, said before they are fetched: the departure&#39;s, the destination&#39;s, each stop&#39;s and the alternate&#39;s -- &#x60;alternate&#x60; filed, or the engine&#39;s pick of those that will do at &#x60;eta&#x60; (UTC; now where not given) at the airplane&#39;s cruise &#x60;tas_kt&#x60; (14 CFR 91.169(c)) -- and those of the fields within diversion range of the route (the engine&#39;s &#x60;diversion_range_nm&#x60;, from &#x60;tas_kt&#x60;, &#x60;usable_gal&#x60; and &#x60;burn_gph&#x60;, the picked airplane&#39;s own; none with no airplane).
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param route The flight&#39;s fields in order, departure to destination: \&quot;KSFO,KPRB,KSBA\&quot;.
+     * @param fixes The route flown, \&quot;lat,lon;lat,lon\&quot; (the nav log&#39;s); straight legs between the fields where none. (optional, default to "")
+     * @param alternate  (optional, default to "")
+     * @param eta  (optional)
+     * @param tasKt  (optional)
+     * @param usableGal  (optional)
+     * @param burnGph  (optional)
+     * @return [app.wingtipmaps.android.api.generated.FlightPlates]
+     */
+    @GET("plates/flight")
+    suspend fun flightPlates(@Query("route") route: kotlin.String, @Query("fixes") fixes: kotlin.String? = "", @Query("alternate") alternate: kotlin.String? = "", @Query("eta") eta: kotlin.String? = null, @Query("tas_kt") tasKt: kotlin.Double? = null, @Query("usable_gal") usableGal: kotlin.Double? = null, @Query("burn_gph") burnGph: kotlin.Double? = null): Response<app.wingtipmaps.android.api.generated.FlightPlates>
+
+    /**
      * GET weather/flow
      * Flow Layer
      * The timeline&#39;s frames, oldest first: the last hour, now and every second hour to twelve ahead, each with its models&#39; runs, its fields and (an hour past) the radar mosaic. A 404 where the weather service holds none yet, or none recent enough to show.
@@ -1072,20 +1092,6 @@ interface PlannerApi {
     suspend fun inspections(@Body appWingtipmapsAndroidApiGeneratedInspectionsAsk: app.wingtipmaps.android.api.generated.InspectionsAsk): Response<app.wingtipmaps.android.api.generated.Inspections>
 
     /**
-     * POST aircraft/inspections-batch
-     * Inspections Batch
-     * Many airplanes&#39; inspections in one call, each as /api/aircraft/inspections answers it, in the order asked: a pilot&#39;s aircraft list and the daily reminders ask every airplane at once, at most MAX_BATCH.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param appWingtipmapsAndroidApiGeneratedInspectionsAsk
-     * @return [kotlin.collections.List<app.wingtipmaps.android.api.generated.Inspections>]
-     */
-    @POST("aircraft/inspections-batch")
-    suspend fun inspectionsBatch(@Body appWingtipmapsAndroidApiGeneratedInspectionsAsk: kotlin.collections.List<app.wingtipmaps.android.api.generated.InspectionsAsk>): Response<kotlin.collections.List<app.wingtipmaps.android.api.generated.Inspections>>
-
-    /**
      * GET pilot/instructor-records-since
      * Instructor Records Since
      * The first day an instructor&#39;s page lists what they signed: 3 years before &#x60;today&#x60;, as 14 CFR 61.189(c) has them keep the records (the engine&#39;s instructor_records_since).
@@ -1112,51 +1118,6 @@ interface PlannerApi {
      */
     @GET("live/itws")
     suspend fun itwsAlerts(@Query("airports") airports: kotlin.String): Response<app.wingtipmaps.android.api.generated.ItwsAlerts>
-
-    /**
-     * GET library/{doc}/{edition}.pdf
-     * Library Pdf
-     * A document&#39;s PDF in the edition kept.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 206: The byte range asked for (Range: bytes=a-b)
-     *  - 404: Not on the shelf, or not the edition kept
-     *  - 422: Validation Error
-     *
-     * @param doc
-     * @param edition
-     * @return [Unit]
-     */
-    @GET("library/{doc}/{edition}.pdf")
-    suspend fun libraryPdf(@Path("doc") doc: kotlin.String, @Path("edition") edition: kotlin.String): Response<Unit>
-
-    /**
-     * GET library
-     * Library Shelf
-     * Every document on the shelf, in its order: the FAA&#39;s books, the AIM, the circulars and the CFR parts, each with the edition kept and its date, or none yet where it has never been had.
-     * Responses:
-     *  - 200: Successful Response
-     *
-     * @return [app.wingtipmaps.android.api.generated.Library]
-     */
-    @GET("library")
-    suspend fun libraryShelf(): Response<app.wingtipmaps.android.api.generated.Library>
-
-    /**
-     * GET library/{doc}/{edition}/text
-     * Library Text
-     * A CFR part&#39;s text in the edition kept (the eCFR&#39;s issue date): its subparts and sections, each section&#39;s paragraphs.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 404: Not a CFR part on the shelf, or not the edition kept
-     *  - 422: Validation Error
-     *
-     * @param doc
-     * @param edition
-     * @return [app.wingtipmaps.android.api.generated.CfrText]
-     */
-    @GET("library/{doc}/{edition}/text")
-    suspend fun libraryText(@Path("doc") doc: kotlin.String, @Path("edition") edition: kotlin.String): Response<app.wingtipmaps.android.api.generated.CfrText>
 
     /**
      * GET local-flight
@@ -1310,7 +1271,7 @@ interface PlannerApi {
     /**
      * POST notams/ranked
      * Notams Ranked
-     * Every NOTAM the FAA&#39;s feed has sent for the fields the route lands at and every TFR near it, best first: in force while the flight is there, at its departure, stops or destination, on the runway in use, closing a field, its altitudes taking in the cruise altitude, on an airspace the route passes (14 CFR 91.103). &#x60;top&#x60; are said first; the rest are folded, never dropped. &#x60;coverage_since&#x60;, the day the feed was first heard (UTC); &#x60;full_set&#x60;, whether every NOTAM in force is held (NMS&#39;s load, decision 0059) or only those heard since.
+     * Every NOTAM the FAA&#39;s feed has sent for the fields the route lands at and every TFR near it, best first: in force while the flight is there, at its departure, stops or destination, on the runway in use, closing a field, its altitudes taking in the cruise altitude, on an airspace the route passes (14 CFR 91.103). &#x60;top&#x60; are said first; the rest are folded, never dropped. &#x60;coverage_since&#x60;, the day the feed was first heard (UTC).
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error
@@ -1502,18 +1463,31 @@ interface PlannerApi {
     suspend fun plan(@Query("dep") dep: kotlin.String, @Query("dest") dest: kotlin.String, @Query("stops") stops: kotlin.String? = "", @Query("altitude_ft") altitudeFt: kotlin.Double? = null, @Query("altitude_nearest") altitudeNearest: kotlin.Boolean? = false, @Query("altitude_choice") altitudeChoice: kotlin.String? = "fastest", @Query("aircraft") aircraft: kotlin.String? = null, @Query("cruise_tas_kt") cruiseTasKt: kotlin.Double? = null, @Query("fuel_burn_gph") fuelBurnGph: kotlin.Double? = null, @Query("usable_fuel_gal") usableFuelGal: kotlin.Double? = null, @Query("climb_tas_kt") climbTasKt: kotlin.Double? = null, @Query("climb_fuel_burn_gph") climbFuelBurnGph: kotlin.Double? = null, @Query("descent_ias_kt") descentIasKt: kotlin.Double? = null, @Query("descent_fuel_burn_gph") descentFuelBurnGph: kotlin.Double? = null, @Query("cruise_power_pct") cruisePowerPct: kotlin.Double? = null, @Query("service_ceiling_ft") serviceCeilingFt: kotlin.Double? = null, @Query("climb_rate_fpm") climbRateFpm: kotlin.Double? = null, @Query("taxi_fuel_gal") taxiFuelGal: kotlin.Double? = null, @Query("glide_ratio") glideRatio: kotlin.Double? = null, @Query("depart") depart: kotlin.String? = null, @Query("rules") rules: kotlin.String? = "vfr", @Query("alternate") alternate: kotlin.String? = "", @Query("altitudes") altitudes: kotlin.String? = "", @Query("altitude_starts") altitudeStarts: kotlin.String? = "", @Query("procedures") procedures: kotlin.String? = "", @Query("runways") runways: kotlin.String? = "", @Query("patterns") patterns: kotlin.String? = "", @Query("wind_runways") windRunways: kotlin.Boolean? = false, @Query("crossings") crossings: kotlin.String? = "", @Query("holds") holds: kotlin.String? = "", @Query("ground") ground: kotlin.String? = "", @Query("tanks") tanks: kotlin.String? = "", @Query("checkpoints") checkpoints: kotlin.Boolean? = false): Response<app.wingtipmaps.android.api.generated.Plan>
 
     /**
-     * POST pilot/records-batch
-     * Records Batch
-     * Many students&#39; experience and endorsements in one call, each as /api/pilot/experience and /api/pilot/endorsements answer it, in the order asked: an instructor&#39;s page asks its students and the reviews waiting on them together (14 CFR 61.109(a), 61.87, 61.93(d)).
+     * GET plates/states/{cycle}/{state}
+     * Plate State
+     * A state&#39;s plates of &#x60;cycle&#x60;: each open field and its charts, which the device fetches as the card&#39;s Charts tab does (/api/faa-chart). 404 for a cycle not served or a state with no plates.
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error
      *
-     * @param appWingtipmapsAndroidApiGeneratedRecordsBatchAsk
-     * @return [app.wingtipmaps.android.api.generated.RecordsBatch]
+     * @param cycle
+     * @param state
+     * @return [app.wingtipmaps.android.api.generated.PlateStateCharts]
      */
-    @POST("pilot/records-batch")
-    suspend fun recordsBatch(@Body appWingtipmapsAndroidApiGeneratedRecordsBatchAsk: app.wingtipmaps.android.api.generated.RecordsBatchAsk): Response<app.wingtipmaps.android.api.generated.RecordsBatch>
+    @GET("plates/states/{cycle}/{state}")
+    suspend fun plateState(@Path("cycle") cycle: kotlin.String, @Path("state") state: kotlin.String): Response<app.wingtipmaps.android.api.generated.PlateStateCharts>
+
+    /**
+     * GET plates/states
+     * Plate States
+     * The states whose plates Downloads offers, each with its size, about, of the d-TPP cycle in force, and when the next takes over (0901Z on its AIRAC date), when a kept state is fetched again.
+     * Responses:
+     *  - 200: Successful Response
+     *
+     * @return [app.wingtipmaps.android.api.generated.PlateStates]
+     */
+    @GET("plates/states")
+    suspend fun plateStates(): Response<app.wingtipmaps.android.api.generated.PlateStates>
 
     /**
      * POST charts/refresh
@@ -1613,24 +1587,6 @@ interface PlannerApi {
      */
     @GET("route-profile")
     suspend fun routeProfile(@Query("dep") dep: kotlin.String, @Query("dest") dest: kotlin.String, @Query("stops") stops: kotlin.String? = ""): Response<app.wingtipmaps.android.api.generated.RouteProfile>
-
-    /**
-     * GET route-profile/weather
-     * Route Profile Weather
-     * The weather on the route&#39;s side view, along the same hops as /api/route-profile&#39;s ground: the TAFs&#39; cloud bases, the GFS&#39;s freezing level and the G-AIRMETs&#39; icing for a flight departing &#x60;depart&#x60; (now where not given; a naive time is UTC) and taking &#x60;ete_min&#x60;, each with its source and time (wingtip.profile_weather), from the weather store.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param dep
-     * @param dest
-     * @param stops  (optional, default to "")
-     * @param depart  (optional)
-     * @param eteMin  (optional, default to 0)
-     * @return [app.wingtipmaps.android.api.generated.RouteWeather]
-     */
-    @GET("route-profile/weather")
-    suspend fun routeProfileWeather(@Query("dep") dep: kotlin.String, @Query("dest") dest: kotlin.String, @Query("stops") stops: kotlin.String? = "", @Query("depart") depart: kotlin.String? = null, @Query("ete_min") eteMin: kotlin.Double? = 0.0): Response<app.wingtipmaps.android.api.generated.RouteWeather>
 
     /**
      * GET live/rvr
@@ -2123,6 +2079,7 @@ interface PlannerApi {
      */
     @GET("weather/loop")
     suspend fun weatherLoopFrames(@Query("kind") kind: kotlin.String): Response<app.wingtipmaps.android.api.generated.WeatherLoop>
+
     /**
      * GET weather/map
      * Weather On The Map

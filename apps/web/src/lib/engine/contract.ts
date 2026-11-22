@@ -1712,7 +1712,7 @@ export interface EngineContract {
     answer: CtafOfAnswer;
   };
   /**
-   * Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page.
+   * Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page. An AIRAC or charting edition takes over at 0901Z on its date ("Effective 0901 UTC", the Federal Register's airspace and procedure amendments), the DOF at 0000Z on its release day: asked with a UTC time the answer is exact to the minute.
    */
   data_cycle: {
     input: DataCycleInput;
@@ -1836,6 +1836,13 @@ export interface EngineContract {
   diversion: {
     input: DiversionInput;
     answer: DiversionAnswer;
+  };
+  /**
+   * How far off the route a field is still one the flight may divert to, for keeping its plates (Keep for the Air): the 45 minutes of reserve 14 CFR 91.167(a)(3) asks under IFR and 91.151(a)(2) at night under VFR (kept by day too, more than 91.151(a)(1)'s 30: more plates, never fewer) at the airplane's own cruise, or its whole tanks' reach where that is less. Null with no cruise speed: never a stock airplane's.
+   */
+  diversion_range_nm: {
+    input: DiversionRangeInput;
+    answer: DiversionRangeAnswer;
   };
   /**
    * Whether a student's estimate is within the diversion drill's allowance (ACS PA.VI.C.S2); an error for a key not estimated.
@@ -3103,6 +3110,13 @@ export interface EngineContract {
   plate_page_point: {
     input: PlatePagePointInput;
     answer: PlatePagePointAnswer;
+  };
+  /**
+   * The plates a flight keeps for the air, each field once in its first role (departure, destination, stop, alternate (14 CFR 91.169(a)(2)), then the fields within range_nm of the route, nearest first) with the charts its role keeps: every chart at the departure, the destination and each stop; the approaches, minimums, diagram, hot spots and land-and-hold-short at the alternate; the approaches, minimums and diagram at a diversion. No diversion is kept with no range.
+   */
+  plates_kept: {
+    input: PlatesKeptInput;
+    answer: PlatesKeptAnswerField[];
   };
   /**
    * What a route point typed is: a fix, the pilot's own point (fix-radial-distance), or null.
@@ -6073,7 +6087,7 @@ export interface DataCycleInput {
    */
   effective?: string | null;
   /**
-   * YYYY-MM-DD: the UTC day it is used on.
+   * YYYY-MM-DD, the UTC day it is used on (the whole effective day counted as the new edition's, toward the safe side), or a UTC time, YYYY-MM-DDTHH:MM[:SS]Z, exact to 0901Z: what a host choosing what to fetch, draw or warn of asks with.
    */
   on: string;
 }
@@ -6096,6 +6110,10 @@ export interface DataCycleAnswer {
    */
   next: string;
   /**
+   * YYYY-MM-DDTHH:MM:SSZ: the instant the next edition takes over, 0901Z on `next` (0000Z for the DOF).
+   */
+  next_at: string;
+  /**
    * YYYY-MM-DD: the day the edition held counts from; null where unknown.
    */
   effective: string | null;
@@ -6103,6 +6121,10 @@ export interface DataCycleAnswer {
    * YYYY-MM-DD: the first day the edition held no longer counts; null where unknown.
    */
   expires: string | null;
+  /**
+   * YYYY-MM-DDTHH:MM:SSZ: the instant the edition held stops counting; null where unknown.
+   */
+  expires_at: string | null;
   state: "in_force" | "expired" | "not_yet" | "unknown";
   /**
    * How many editions have come out since the one held; 0 unless expired.
@@ -6731,6 +6753,28 @@ export interface DiversionAnswer {
     written: string | null;
     reasonable: boolean | null;
   }[];
+}
+export interface DiversionRangeInput {
+  /**
+   * The airplane's cruise true airspeed, knots (its profile's); null or missing where none is picked.
+   */
+  tas_kt?: number | null;
+  /**
+   * Its usable fuel, gallons; null or missing for none.
+   */
+  usable_gal?: number | null;
+  /**
+   * Its cruise burn, gallons an hour; null or missing for none.
+   */
+  burn_gph?: number | null;
+}
+export interface DiversionRangeAnswer {
+  /**
+   * The range, nm; null with no cruise speed.
+   */
+  range_nm: number | null;
+  reserve_min: number;
+  basis: "reserve" | "tanks" | "no_airplane";
 }
 export interface DiversionReasonableInput {
   key: "mh" | "gs" | "ete" | "fuel";
@@ -10935,6 +10979,38 @@ export interface PlatePageBox {
   bottom: number;
   right: number;
   top: number;
+}
+export interface PlatesKeptInput {
+  /**
+   * diversion_range_nm's range; null for none.
+   */
+  range_nm?: number | null;
+  fields: PlatesKeptField[];
+}
+export interface PlatesKeptField {
+  ident: string;
+  role: "departure" | "destination" | "stop" | "alternate" | "diversion";
+  /**
+   * How far the field is off the route, nm (a diversion's).
+   */
+  off_nm?: number | null;
+  /**
+   * Items: A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.
+   */
+  charts: {
+    kind: string;
+  }[];
+}
+export interface PlatesKeptAnswerField {
+  ident: string;
+  role: "departure" | "destination" | "stop" | "alternate" | "diversion";
+  off_nm: number | null;
+  /**
+   * Items: A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.
+   */
+  charts: {
+    kind: string;
+  }[];
 }
 export interface PointKindInput {
   text: string;

@@ -5,9 +5,11 @@ import SwiftUI
 /// ForeFlight's and Garmin Pilot's downloads are. Pick the kinds and the
 /// density, see each region's size before it is fetched, follow it in the
 /// background, see the storage it takes, delete it, and update it when
-/// the FAA's next cycle is out. The state is DownloadsModel's.
+/// the FAA's next cycle is out; and a state's plates the same way
+/// (PlatesSection). The state is DownloadsModel's.
 struct DownloadsView: View {
     @State private var model = DownloadsModel()
+    @Environment(StatePlates.self) private var plates
     @State private var asking: APIOfflineRegion?
     @State private var search = ""
     private let progress = OfflineProgress.shared
@@ -32,10 +34,14 @@ struct DownloadsView: View {
             regionSection("Sectional Sheets", group: "sheet")
             regionSection("States", group: "state")
             ProblemLine(model.problem)
+            PlatesSection(model: model, search: search)
         }
         .navigationTitle("Downloads")
         .searchable(text: $search, prompt: "Sheet or State")
-        .task { await model.load() }
+        .task {
+            model.attach(plates)
+            await model.load()
+        }
         .onChange(of: progress.landed) { model.refresh() }
         .confirmationDialog(asking.map { "Download \($0.name)?" } ?? "", isPresented: Binding(get: { asking != nil }, set: { if !$0 { asking = nil } }),
                             titleVisibility: .visible, presenting: asking) { region in
@@ -52,6 +58,17 @@ struct DownloadsView: View {
                                newest: model.newestCycle, update: { Task { await model.update(kept) } },
                                retry: { Task { await model.keep(kept, cycle: kept.cycle) } })
                     .swipeActions { Button("Delete", role: .destructive) { model.delete(kept) } }
+            }
+            ForEach(plates.kept) { kept in
+                KeptPlatesRow(kept: kept, plates: plates)
+                    .swipeActions {
+                        Button("Delete", role: .destructive) {
+                            Task {
+                                await plates.delete(kept.id)
+                                model.refresh()
+                            }
+                        }
+                    }
             }
             LabeledContent("Storage Used", value: ByteCountFormatter.string(fromByteCount: model.storageUsed, countStyle: .file))
             if let free = model.storageFree {
@@ -110,5 +127,5 @@ private struct OfflineKeptRow: View {
 }
 
 #Preview("DownloadsView") {
-    NavigationStack { DownloadsView() }
+    NavigationStack { DownloadsView() }.environment(StatePlates())
 }

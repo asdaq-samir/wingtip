@@ -2003,6 +2003,17 @@
             "title": "Procedures",
             "type": "array"
           },
+          "publications": {
+            "$ref": "#/components/schemas/FaaPublications",
+            "default": {
+              "plates": {
+                "state": "current"
+              },
+              "supplement": {
+                "state": "current"
+              }
+            }
+          },
           "radio_notes": {
             "default": [],
             "items": {
@@ -3918,77 +3929,6 @@
           "selected"
         ],
         "title": "Candidate",
-        "type": "object"
-      },
-      "CfrGroup": {
-        "description": "A subpart, or the sections before the first.",
-        "properties": {
-          "head": {
-            "title": "Head",
-            "type": "string"
-          },
-          "sections": {
-            "items": {
-              "$ref": "#/components/schemas/CfrSection"
-            },
-            "title": "Sections",
-            "type": "array"
-          }
-        },
-        "required": [
-          "head",
-          "sections"
-        ],
-        "title": "CfrGroup",
-        "type": "object"
-      },
-      "CfrSection": {
-        "description": "A section, or an appendix or SFAR read as one.",
-        "properties": {
-          "head": {
-            "title": "Head",
-            "type": "string"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "paragraphs": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Paragraphs",
-            "type": "array"
-          }
-        },
-        "required": [
-          "id",
-          "head",
-          "paragraphs"
-        ],
-        "title": "CfrSection",
-        "type": "object"
-      },
-      "CfrText": {
-        "description": "A CFR part's text in one edition (the eCFR's issue date).",
-        "properties": {
-          "groups": {
-            "items": {
-              "$ref": "#/components/schemas/CfrGroup"
-            },
-            "title": "Groups",
-            "type": "array"
-          },
-          "head": {
-            "title": "Head",
-            "type": "string"
-          }
-        },
-        "required": [
-          "head",
-          "groups"
-        ],
-        "title": "CfrText",
         "type": "object"
       },
       "ChangesAsk": {
@@ -9479,6 +9419,25 @@
         "title": "ExperienceItem",
         "type": "object"
       },
+      "FaaPublications": {
+        "description": "The card's plates (the d-TPP: diagram, procedures, minimums) and its\nChart Supplement page, each by the edition its links are of.",
+        "properties": {
+          "plates": {
+            "$ref": "#/components/schemas/PublicationEdition",
+            "default": {
+              "state": "current"
+            }
+          },
+          "supplement": {
+            "$ref": "#/components/schemas/PublicationEdition",
+            "default": {
+              "state": "current"
+            }
+          }
+        },
+        "title": "FaaPublications",
+        "type": "object"
+      },
       "FeedHealth": {
         "description": "Every live feed as last checked (each minute), and after how many\nminutes stale a feed is an alert; `webhook` whether alerts are POSTed\nanywhere (FEED_ALERT_WEBHOOK).",
         "properties": {
@@ -9880,6 +9839,104 @@
           "hex"
         ],
         "title": "FlightDetail",
+        "type": "object"
+      },
+      "FlightPlates": {
+        "description": "The plates Keep for the Air keeps for a flight, with their size,\nabout, before any is fetched. `range_nm` is the diversion range (the\nengine's `diversion_range_nm`: the reserve's `reserve_min` at the\nairplane's cruise, or its tanks' reach, `basis`), null with no\nairplane. `alternate` is the one filed, or the engine's pick\n(`alternate_picked`, 14 CFR 91.169(c)). `cycle` is the d-TPP cycle the\ncharts are of (`state` \"kept\" where the FAA's could not be had), and\n`next_at` when the next takes over.",
+        "properties": {
+          "alternate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alternate"
+          },
+          "alternate_picked": {
+            "title": "Alternate Picked",
+            "type": "boolean"
+          },
+          "basis": {
+            "enum": [
+              "reserve",
+              "tanks",
+              "no_airplane"
+            ],
+            "title": "Basis",
+            "type": "string"
+          },
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "charts": {
+            "title": "Charts",
+            "type": "integer"
+          },
+          "cycle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cycle"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/KeptPlateField"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "next_at": {
+            "title": "Next At",
+            "type": "string"
+          },
+          "range_nm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Range Nm"
+          },
+          "reserve_min": {
+            "title": "Reserve Min",
+            "type": "number"
+          },
+          "state": {
+            "enum": [
+              "current",
+              "kept",
+              "unavailable"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "range_nm",
+          "reserve_min",
+          "basis",
+          "cycle",
+          "state",
+          "next_at",
+          "alternate",
+          "alternate_picked",
+          "fields",
+          "charts",
+          "bytes"
+        ],
+        "title": "FlightPlates",
         "type": "object"
       },
       "FlightRoute": {
@@ -10928,11 +10985,6 @@
             "title": "Destination",
             "type": "string"
           },
-          "passes": {
-            "default": false,
-            "title": "Passes",
-            "type": "boolean"
-          },
           "reason": {
             "default": "fuel",
             "enum": [
@@ -10941,17 +10993,6 @@
             ],
             "title": "Reason",
             "type": "string"
-          },
-          "short": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ShortFlight"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null
           },
           "stops": {
             "items": {
@@ -12520,6 +12561,51 @@
         "title": "KeptItem",
         "type": "object"
       },
+      "KeptPlateField": {
+        "description": "A field whose plates are kept: its part in the flight, how far it is\noff the route (a diversion's), and the charts its part keeps (the\nengine's `plates_kept`).",
+        "properties": {
+          "charts": {
+            "items": {
+              "$ref": "#/components/schemas/TerminalChart"
+            },
+            "title": "Charts",
+            "type": "array"
+          },
+          "ident": {
+            "title": "Ident",
+            "type": "string"
+          },
+          "off_nm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Off Nm"
+          },
+          "role": {
+            "enum": [
+              "departure",
+              "destination",
+              "stop",
+              "alternate",
+              "diversion"
+            ],
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ident",
+          "role",
+          "charts"
+        ],
+        "title": "KeptPlateField",
+        "type": "object"
+      },
       "Leg": {
         "description": "One dead-reckoning leg. `wind` is None when no winds-aloft station\nis near enough, which is not the same as calm: groundspeed then falls\nback to true airspeed. groundspeed/ETE/fuel are None when the wind\nexceeds true airspeed, i.e. the leg cannot be flown.\n\nThe true airspeed and fuel flow are the aeroplane's in the leg's own\nair (the engine's wingtip_flight::performance): its cruise figures are at a reference\naltitude on a standard day, and the forecast temperature at this\naltitude gives the density altitude they are flown at, at the power\nit allows -- the cruise power, or less where full throttle cannot\nmake it; `power_pct` None where the profile names no cruise power, its\nTAS and burn then as given. `oat_c` is None where no forecast\ntemperature was near: a standard day is assumed there.",
         "properties": {
@@ -13102,104 +13188,6 @@
           "more_gal"
         ],
         "title": "LegProcedure",
-        "type": "object"
-      },
-      "Library": {
-        "description": "The shelf in its order.",
-        "properties": {
-          "documents": {
-            "items": {
-              "$ref": "#/components/schemas/LibraryDocument"
-            },
-            "title": "Documents",
-            "type": "array"
-          }
-        },
-        "required": [
-          "documents"
-        ],
-        "title": "Library",
-        "type": "object"
-      },
-      "LibraryDocument": {
-        "description": "One document of the shelf, by the name the engine's citations give\nit (cfr-14-91, aim, ac-61-65, phak).",
-        "properties": {
-          "bytes": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Bytes"
-          },
-          "date": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date"
-          },
-          "edition": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Edition"
-          },
-          "group": {
-            "title": "Group",
-            "type": "string"
-          },
-          "id": {
-            "title": "Id",
-            "type": "string"
-          },
-          "kind": {
-            "enum": [
-              "pdf",
-              "text"
-            ],
-            "title": "Kind",
-            "type": "string"
-          },
-          "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Label"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "title",
-          "group",
-          "kind",
-          "edition",
-          "label",
-          "date",
-          "bytes"
-        ],
-        "title": "LibraryDocument",
         "type": "object"
       },
       "LightingNote": {
@@ -15562,30 +15550,6 @@
           "state"
         ],
         "title": "NextCycle",
-        "type": "object"
-      },
-      "NoFuelStop": {
-        "description": "A flight short of fuel the planner offers no stop on, and why: the\nfuel on board at the start under its start, taxi and reserve already\n(`on_board`, 14 CFR 91.151(a), 91.167(a)), or no field with fuel in\nreach of the tanks.",
-        "properties": {
-          "departure": {
-            "title": "Departure",
-            "type": "string"
-          },
-          "destination": {
-            "title": "Destination",
-            "type": "string"
-          },
-          "on_board": {
-            "default": false,
-            "title": "On Board",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "departure",
-          "destination"
-        ],
-        "title": "NoFuelStop",
         "type": "object"
       },
       "NotamReason": {
@@ -18532,6 +18496,143 @@
         "title": "PlatePage",
         "type": "object"
       },
+      "PlateStateCharts": {
+        "description": "A state's set of `cycle`: every open field the d-TPP files under it\nand its charts, each fetched as the card's Charts tab fetches it.",
+        "properties": {
+          "cycle": {
+            "title": "Cycle",
+            "type": "string"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/PlateStateField"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "next_at": {
+            "title": "Next At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cycle",
+          "next_at",
+          "id",
+          "name",
+          "fields"
+        ],
+        "title": "PlateStateCharts",
+        "type": "object"
+      },
+      "PlateStateField": {
+        "description": "One field of a state's set and its charts.",
+        "properties": {
+          "charts": {
+            "items": {
+              "$ref": "#/components/schemas/TerminalChart"
+            },
+            "title": "Charts",
+            "type": "array"
+          },
+          "ident": {
+            "title": "Ident",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ident",
+          "charts"
+        ],
+        "title": "PlateStateField",
+        "type": "object"
+      },
+      "PlateStateSet": {
+        "description": "A state's plates as Downloads offers them: its fields and charts\nand their size, about.",
+        "properties": {
+          "bytes": {
+            "title": "Bytes",
+            "type": "integer"
+          },
+          "charts": {
+            "title": "Charts",
+            "type": "integer"
+          },
+          "fields": {
+            "title": "Fields",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "fields",
+          "charts",
+          "bytes"
+        ],
+        "title": "PlateStateSet",
+        "type": "object"
+      },
+      "PlateStates": {
+        "description": "The states whose plates can be kept, of the d-TPP `cycle` (null\nwhere no index could be had), and when the next takes over.",
+        "properties": {
+          "cycle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cycle"
+          },
+          "next_at": {
+            "title": "Next At",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "current",
+              "kept",
+              "unavailable"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "states": {
+            "items": {
+              "$ref": "#/components/schemas/PlateStateSet"
+            },
+            "title": "States",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cycle",
+          "next_at",
+          "state",
+          "states"
+        ],
+        "title": "PlateStates",
+        "type": "object"
+      },
       "PointOffFix": {
         "description": "A point named as the pilot's own point off the nearest fix a pilot\nknows (wingtip.fixes.frd_near): \"VPBNG/095/14.2\", its fix, its magnetic\ncourse from it (a VOR's radial where `radial`), its distance, and its\nname, \"14.2 nm on 095\u00b0 from VPBNG\".",
         "properties": {
@@ -19208,65 +19309,6 @@
         "title": "ProfileAirspace",
         "type": "object"
       },
-      "ProfileCloud": {
-        "description": "A TAF station's forecast cloud base on the side view\n(wingtip.profile_weather): where along the route, its base MSL (the\nceiling over the flight above the field, plus its elevation), and when\nits TAF was issued.",
-        "properties": {
-          "along_nm": {
-            "title": "Along Nm",
-            "type": "number"
-          },
-          "base_ft": {
-            "title": "Base Ft",
-            "type": "number"
-          },
-          "issued": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Issued"
-          },
-          "station": {
-            "title": "Station",
-            "type": "string"
-          }
-        },
-        "required": [
-          "station",
-          "along_nm",
-          "base_ft"
-        ],
-        "title": "ProfileCloud",
-        "type": "object"
-      },
-      "ProfileFreezing": {
-        "description": "The freezing level over a point of the route, ft MSL; at or below\nit where the forecast is freezing at its lowest level already.",
-        "properties": {
-          "along_nm": {
-            "title": "Along Nm",
-            "type": "number"
-          },
-          "at_or_below": {
-            "default": false,
-            "title": "At Or Below",
-            "type": "boolean"
-          },
-          "ft": {
-            "title": "Ft",
-            "type": "number"
-          }
-        },
-        "required": [
-          "along_nm",
-          "ft"
-        ],
-        "title": "ProfileFreezing",
-        "type": "object"
-      },
       "ProfileGround": {
         "properties": {
           "along_nm": {
@@ -19285,99 +19327,9 @@
         "title": "ProfileGround",
         "type": "object"
       },
-      "ProfileIcing": {
-        "description": "A G-AIRMET icing area the route crosses: from where to where along\nit, between which altitudes (ft MSL; the floor the freezing level\nwhere `from_freezing_level`), and when it is valid and was issued.",
-        "properties": {
-          "from_freezing_level": {
-            "default": false,
-            "title": "From Freezing Level",
-            "type": "boolean"
-          },
-          "from_nm": {
-            "title": "From Nm",
-            "type": "number"
-          },
-          "high_ft": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "High Ft"
-          },
-          "issued": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Issued"
-          },
-          "low_ft": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Low Ft"
-          },
-          "severity": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Severity"
-          },
-          "to_nm": {
-            "title": "To Nm",
-            "type": "number"
-          },
-          "valid_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid At"
-          }
-        },
-        "required": [
-          "from_nm",
-          "to_nm"
-        ],
-        "title": "ProfileIcing",
-        "type": "object"
-      },
       "ProfileObstacle": {
-        "description": "An obstacle of the FAA's DOF near the route's line: where along it,\nits top, feet MSL, and its height above the ground there, feet AGL\n(the DOF's AMSL and AGL columns).",
+        "description": "An obstacle of the FAA's DOF near the route's line: where along it,\nand its top, feet MSL.",
         "properties": {
-          "agl_ft": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Agl Ft"
-          },
           "along_nm": {
             "title": "Along Nm",
             "type": "number"
@@ -19412,40 +19364,32 @@
         "title": "ProfilePoint",
         "type": "object"
       },
-      "ProfileWeatherSource": {
-        "description": "Whose forecast a figure is and for when: its name, its run, ISO\nUTC, and the time it is read at.",
+      "PublicationEdition": {
+        "description": "Which edition of one of the FAA's publications a card's links are of\n(wingtip.publications.editions): an FAA outage is said, not read as a\nfield with no plates.",
         "properties": {
-          "label": {
-            "title": "Label",
+          "edition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edition"
+          },
+          "state": {
+            "default": "current",
+            "enum": [
+              "current",
+              "kept",
+              "unavailable"
+            ],
+            "title": "State",
             "type": "string"
-          },
-          "run": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Run"
-          },
-          "valid_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Valid At"
           }
         },
-        "required": [
-          "label"
-        ],
-        "title": "ProfileWeatherSource",
+        "title": "PublicationEdition",
         "type": "object"
       },
       "PyramidPass": {
@@ -20933,67 +20877,6 @@
         "title": "RouteTfr",
         "type": "object"
       },
-      "RouteWeather": {
-        "description": "The weather on the route's side view (wingtip.profile_weather),\nalong the same hops as RouteProfile's ground: the cloud bases, the\nfreezing level and its source, the icing, and which of the three\ncould not be read (`unavailable`: \"clouds\", \"freezing\", \"icing\"),\nunknown rather than none.",
-        "properties": {
-          "clouds": {
-            "items": {
-              "$ref": "#/components/schemas/ProfileCloud"
-            },
-            "title": "Clouds",
-            "type": "array"
-          },
-          "for_time": {
-            "title": "For Time",
-            "type": "string"
-          },
-          "freezing": {
-            "items": {
-              "$ref": "#/components/schemas/ProfileFreezing"
-            },
-            "title": "Freezing",
-            "type": "array"
-          },
-          "freezing_source": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/ProfileWeatherSource"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "icing": {
-            "items": {
-              "$ref": "#/components/schemas/ProfileIcing"
-            },
-            "title": "Icing",
-            "type": "array"
-          },
-          "unavailable": {
-            "default": [],
-            "items": {
-              "enum": [
-                "clouds",
-                "freezing",
-                "icing"
-              ],
-              "type": "string"
-            },
-            "title": "Unavailable",
-            "type": "array"
-          }
-        },
-        "required": [
-          "clouds",
-          "freezing",
-          "icing",
-          "for_time"
-        ],
-        "title": "RouteWeather",
-        "type": "object"
-      },
       "RunAlert": {
         "description": "What the run is warned of, when and where, its rule and product cited.",
         "properties": {
@@ -22128,25 +22011,6 @@
           "grass_ground_roll_pct"
         ],
         "title": "ShortField",
-        "type": "object"
-      },
-      "ShortFlight": {
-        "description": "A flight between two landings, by its two ends.",
-        "properties": {
-          "departure": {
-            "title": "Departure",
-            "type": "string"
-          },
-          "destination": {
-            "title": "Destination",
-            "type": "string"
-          }
-        },
-        "required": [
-          "departure",
-          "destination"
-        ],
-        "title": "ShortFlight",
         "type": "object"
       },
       "SpecialUse": {
@@ -24833,14 +24697,6 @@
             ],
             "default": null,
             "title": "Night Passengers"
-          },
-          "no_fuel_stop": {
-            "default": [],
-            "items": {
-              "$ref": "#/components/schemas/NoFuelStop"
-            },
-            "title": "No Fuel Stop",
-            "type": "array"
           },
           "on_board_gal": {
             "anyOf": [
@@ -30003,150 +29859,6 @@
         }
       }
     },
-    "/api/library": {
-      "get": {
-        "description": "Every document on the shelf, in its order: the FAA's books, the AIM,\nthe circulars and the CFR parts, each with the edition kept and its\ndate, or none yet where it has never been had.",
-        "operationId": "library_shelf_api_library_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Library"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Library Shelf",
-        "x-gateway": {
-          "access": "public",
-          "cache": true
-        }
-      }
-    },
-    "/api/library/{doc}/{edition}.pdf": {
-      "get": {
-        "description": "A document's PDF in the edition kept.",
-        "operationId": "library_pdf_api_library__doc___edition__pdf_get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "doc",
-            "required": true,
-            "schema": {
-              "title": "Doc",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "edition",
-            "required": true,
-            "schema": {
-              "title": "Edition",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/pdf": {}
-            },
-            "description": "Successful Response"
-          },
-          "206": {
-            "content": {
-              "application/pdf": {}
-            },
-            "description": "The byte range asked for (Range: bytes=a-b)"
-          },
-          "404": {
-            "description": "Not on the shelf, or not the edition kept"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Library Pdf",
-        "x-gateway": {
-          "access": "public",
-          "cache": true,
-          "headers": [
-            "Content-Length",
-            "Content-Range",
-            "Accept-Ranges",
-            "ETag"
-          ],
-          "range": true
-        }
-      }
-    },
-    "/api/library/{doc}/{edition}/text": {
-      "get": {
-        "description": "A CFR part's text in the edition kept (the eCFR's issue date): its\nsubparts and sections, each section's paragraphs.",
-        "operationId": "library_text_api_library__doc___edition__text_get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "doc",
-            "required": true,
-            "schema": {
-              "title": "Doc",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "edition",
-            "required": true,
-            "schema": {
-              "title": "Edition",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CfrText"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "404": {
-            "description": "Not a CFR part on the shelf, or not the edition kept"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Library Text",
-        "x-gateway": {
-          "access": "public",
-          "cache": true
-        }
-      }
-    },
     "/api/live/atis": {
       "get": {
         "description": "An airport's D-ATIS as the tower's data link sends it, with the\nengine's reading of it (wingtip.datis).",
@@ -32813,6 +32525,214 @@
         "summary": "Plan"
       }
     },
+    "/api/plates/flight": {
+      "get": {
+        "description": "The plates Keep for the Air keeps for a flight, and their size,\nabout, said before they are fetched: the departure's, the\ndestination's, each stop's and the alternate's -- `alternate` filed,\nor the engine's pick of those that will do at `eta` (UTC; now where\nnot given) at the airplane's cruise `tas_kt` (14 CFR 91.169(c)) --\nand those of the fields within diversion range of the route (the\nengine's `diversion_range_nm`, from `tas_kt`, `usable_gal` and\n`burn_gph`, the picked airplane's own; none with no airplane).",
+        "operationId": "flight_plates_api_plates_flight_get",
+        "parameters": [
+          {
+            "description": "The flight's fields in order, departure to destination: \"KSFO,KPRB,KSBA\".",
+            "in": "query",
+            "name": "route",
+            "required": true,
+            "schema": {
+              "description": "The flight's fields in order, departure to destination: \"KSFO,KPRB,KSBA\".",
+              "title": "Route",
+              "type": "string"
+            }
+          },
+          {
+            "description": "The route flown, \"lat,lon;lat,lon\" (the nav log's); straight legs between the fields where none.",
+            "in": "query",
+            "name": "fixes",
+            "required": false,
+            "schema": {
+              "default": "",
+              "description": "The route flown, \"lat,lon;lat,lon\" (the nav log's); straight legs between the fields where none.",
+              "title": "Fixes",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "alternate",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Alternate",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "eta",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Eta"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tas_kt",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tas Kt"
+            }
+          },
+          {
+            "in": "query",
+            "name": "usable_gal",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Usable Gal"
+            }
+          },
+          {
+            "in": "query",
+            "name": "burn_gph",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Burn Gph"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlightPlates"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Flight Plates",
+        "x-gateway": {
+          "access": "public"
+        }
+      }
+    },
+    "/api/plates/states": {
+      "get": {
+        "description": "The states whose plates Downloads offers, each with its size,\nabout, of the d-TPP cycle in force, and when the next takes over\n(0901Z on its AIRAC date), when a kept state is fetched again.",
+        "operationId": "plate_states_api_plates_states_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlateStates"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Plate States",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
+      }
+    },
+    "/api/plates/states/{cycle}/{state}": {
+      "get": {
+        "description": "A state's plates of `cycle`: each open field and its charts, which\nthe device fetches as the card's Charts tab does (/api/faa-chart).\n404 for a cycle not served or a state with no plates.",
+        "operationId": "plate_state_api_plates_states__cycle___state__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cycle",
+            "required": true,
+            "schema": {
+              "title": "Cycle",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "state",
+            "required": true,
+            "schema": {
+              "title": "State",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlateStateCharts"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Plate State",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
+        }
+      }
+    },
     "/api/retrain": {
       "post": {
         "description": "Starts one training run (`python -m wingtip.pipeline run`): the\nchart model (retrain, evaluate, promote) and the landmark model where\nit has the ratings (collect, engineer features, retrain, evaluate,\npromote), each promoted only if it beats the one serving. The run is\ncompose's `retrain` container, started through the dev-services\nsidecar, the one door onto Docker (app/dev_services.py). This\nservice has no scikit-learn of its own on purpose (see\nrequirements.txt), so it cannot train in-process; without the\nsidecar the answer says how to run it by hand.\n\nChecked first (app.chart_model.readiness): with too few ratings to\nlearn from, it says so and what to do, a 409, rather than starting a\nrun that ends minutes later with the same news in its log. Then the\nchart model's table is written from the ratings as they are now,\nwhich the run trains on.",
@@ -33149,97 +33069,6 @@
           }
         },
         "summary": "Route Profile",
-        "x-gateway": {
-          "access": "public"
-        }
-      }
-    },
-    "/api/route-profile/weather": {
-      "get": {
-        "description": "The weather on the route's side view, along the same hops as\n/api/route-profile's ground: the TAFs' cloud bases, the GFS's freezing\nlevel and the G-AIRMETs' icing for a flight departing `depart` (now\nwhere not given; a naive time is UTC) and taking `ete_min`, each with\nits source and time (wingtip.profile_weather), from the weather store.",
-        "operationId": "route_profile_weather_api_route_profile_weather_get",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "dep",
-            "required": true,
-            "schema": {
-              "title": "Dep",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "dest",
-            "required": true,
-            "schema": {
-              "title": "Dest",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "stops",
-            "required": false,
-            "schema": {
-              "default": "",
-              "title": "Stops",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "depart",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "format": "date-time",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Depart"
-            }
-          },
-          {
-            "in": "query",
-            "name": "ete_min",
-            "required": false,
-            "schema": {
-              "default": 0.0,
-              "maximum": 1440,
-              "minimum": 0,
-              "title": "Ete Min",
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RouteWeather"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Route Profile Weather",
         "x-gateway": {
           "access": "public"
         }

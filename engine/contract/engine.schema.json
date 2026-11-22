@@ -8196,6 +8196,73 @@
       ],
       "additionalProperties": false
     },
+    "diversion_range_nm": {
+      "description": "How far off the route a field is still one the flight may divert to, for keeping its plates (Keep for the Air): the 45 minutes of reserve 14 CFR 91.167(a)(3) asks under IFR and 91.151(a)(2) at night under VFR (kept by day too, more than 91.151(a)(1)'s 30: more plates, never fewer) at the airplane's own cruise, or its whole tanks' reach where that is less. Null with no cruise speed: never a stock airplane's.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "DiversionRangeInput",
+          "type": "object",
+          "properties": {
+            "tas_kt": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The airplane's cruise true airspeed, knots (its profile's); null or missing where none is picked."
+            },
+            "usable_gal": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Its usable fuel, gallons; null or missing for none."
+            },
+            "burn_gph": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Its cruise burn, gallons an hour; null or missing for none."
+            }
+          }
+        },
+        "answer": {
+          "title": "DiversionRangeAnswer",
+          "type": "object",
+          "properties": {
+            "range_nm": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "The range, nm; null with no cruise speed."
+            },
+            "reserve_min": {
+              "type": "number"
+            },
+            "basis": {
+              "type": "string",
+              "enum": [
+                "reserve",
+                "tanks",
+                "no_airplane"
+              ]
+            }
+          },
+          "required": [
+            "range_nm",
+            "reserve_min",
+            "basis"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "diversion_reasonable": {
       "description": "Whether a student's estimate is within the diversion drill's allowance (ACS PA.VI.C.S2); an error for a key not estimated.",
       "type": "object",
@@ -23366,6 +23433,131 @@
       ],
       "additionalProperties": false
     },
+    "plates_kept": {
+      "description": "The plates a flight keeps for the air, each field once in its first role (departure, destination, stop, alternate (14 CFR 91.169(a)(2)), then the fields within range_nm of the route, nearest first) with the charts its role keeps: every chart at the departure, the destination and each stop; the approaches, minimums, diagram, hot spots and land-and-hold-short at the alternate; the approaches, minimums and diagram at a diversion. No diversion is kept with no range.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "PlatesKeptInput",
+          "type": "object",
+          "properties": {
+            "range_nm": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "diversion_range_nm's range; null for none."
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "title": "PlatesKeptField",
+                "type": "object",
+                "properties": {
+                  "ident": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "departure",
+                      "destination",
+                      "stop",
+                      "alternate",
+                      "diversion"
+                    ]
+                  },
+                  "off_nm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "How far the field is off the route, nm (a diversion's)."
+                  },
+                  "charts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "description": "A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.",
+                      "properties": {
+                        "kind": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "kind"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "ident",
+                  "role",
+                  "charts"
+                ]
+              }
+            }
+          },
+          "required": [
+            "fields"
+          ]
+        },
+        "answer": {
+          "type": "array",
+          "items": {
+            "title": "PlatesKeptAnswerField",
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "departure",
+                  "destination",
+                  "stop",
+                  "alternate",
+                  "diversion"
+                ]
+              },
+              "off_nm": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "charts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "description": "A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.",
+                  "properties": {
+                    "kind": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "ident",
+              "role",
+              "off_nm",
+              "charts"
+            ]
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "point_kind": {
       "description": "What a route point typed is: a fix, the pilot's own point (fix-radial-distance), or null.",
       "type": "object",
@@ -33372,6 +33564,7 @@
     "direct_of",
     "distance_nm",
     "diversion",
+    "diversion_range_nm",
     "diversion_reasonable",
     "drill_decks",
     "drill_next",
@@ -33557,6 +33750,7 @@
     "plan_profile",
     "planning_figures",
     "plate_page_point",
+    "plates_kept",
     "point_kind",
     "precip_dbz",
     "precip_intensity",

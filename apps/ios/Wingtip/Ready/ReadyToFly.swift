@@ -48,9 +48,11 @@ final class ReadyToFly {
     @ObservationIgnored weak var ownShip: OwnShip?
     @ObservationIgnored weak var verdict: Verdict?
     @ObservationIgnored weak var session: Session?
+    @ObservationIgnored weak var keepForAir: KeepForAir?
 
-    func attach(plan: Plan, charts: Charts, ownShip: OwnShip, verdict: Verdict, session: Session) {
+    func attach(plan: Plan, charts: Charts, ownShip: OwnShip, verdict: Verdict, session: Session, keepForAir: KeepForAir) {
         self.plan = plan; self.charts = charts; self.ownShip = ownShip; self.verdict = verdict; self.session = session
+        self.keepForAir = keepForAir
     }
 
     /// A flight's key: its route, so the check comes up once per flight.
@@ -173,7 +175,7 @@ final class ReadyToFly {
         switch fix {
         case "download_charts", "keep_for_air":
             if let charts, let template = charts.template {
-                KeepForAir.shared.keep(plan: plan, template: template, minZoom: charts.base?.minZoom ?? 6, verdict: verdict, signedIn: session?.signedIn ?? false)
+                keepForAir?.keep(plan: plan, template: template, minZoom: charts.base?.minZoom ?? 6, verdict: verdict, signedIn: session?.signedIn ?? false)
             }
         case "update_packs":
             do {

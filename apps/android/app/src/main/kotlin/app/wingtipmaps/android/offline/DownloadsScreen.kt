@@ -47,7 +47,8 @@ import app.wingtipmaps.android.ui.sheet.WingtipSheet
  * ForeFlight's and Garmin Pilot's downloads are: the kinds and density
  * picked, each region's size before it is fetched, the downloads in the
  * background with their progress, the storage they take, delete, and
- * the update when the FAA's next cycle is out. The state is DownloadsModel's.
+ * the update when the FAA's next cycle is out; and the FAA's plates by
+ * state (platesSection). The state is DownloadsModel's.
  */
 @Composable
 fun DownloadsScreen(model: DownloadsModel = hiltViewModel()) {
@@ -59,6 +60,11 @@ fun DownloadsScreen(model: DownloadsModel = hiltViewModel()) {
     val scale by model.scale.collectAsStateWithLifecycle()
     val busy by model.busy.collectAsStateWithLifecycle()
     val problem by model.problem.collectAsStateWithLifecycle()
+    val plateStates by model.plateStates.collectAsStateWithLifecycle()
+    val platesFailed by model.platesFailed.collectAsStateWithLifecycle()
+    val keptStates by model.keptStates.collectAsStateWithLifecycle()
+    val platesRunning by model.platesRunning.collectAsStateWithLifecycle()
+    var askingPlates by rememberSaveable { mutableStateOf<String?>(null) }
     val searchField = rememberTextFieldState()
     val search = searchField.text.toString()
     var asking by rememberSaveable { mutableStateOf<String?>(null) }
@@ -115,7 +121,12 @@ fun DownloadsScreen(model: DownloadsModel = hiltViewModel()) {
                 )
             }
         }
+        // The FAA's plates by state, by the same search (PlatesSection).
+        platesSection(PlatesView(plateStates, platesFailed, keptStates, platesRunning, search, { askingPlates = it.id }, model::retryState, model::deleteState))
     }
+    val plateSet = plateStates?.states?.firstOrNull { it.id == askingPlates }
+    val plateCycle = plateStates?.cycle
+    if (plateSet != null && plateCycle != null) ConfirmStatePlates(plateSet, plateCycle, { askingPlates = null }) { model.keepState(plateSet) }
     val region = catalog?.regions?.firstOrNull { it.id == asking }
     if (region != null) ConfirmDownload(region, bytes(DownloadsModel.size(region, archives)) ?: sizing, { asking = null }) { model.download(region.id) }
     if (map) {

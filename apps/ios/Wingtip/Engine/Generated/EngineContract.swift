@@ -2851,10 +2851,14 @@ enum EngineContract {
         var currentIdent: String?
         /// YYYY-MM-DD: the day the next edition takes its place.
         var next: String
+        /// YYYY-MM-DDTHH:MM:SSZ: the instant the next edition takes over, 0901Z on `next` (0000Z for the DOF).
+        var nextAt: String
         /// YYYY-MM-DD: the day the edition held counts from; null where unknown.
         var effective: String?
         /// YYYY-MM-DD: the first day the edition held no longer counts; null where unknown.
         var expires: String?
+        /// YYYY-MM-DDTHH:MM:SSZ: the instant the edition held stops counting; null where unknown.
+        var expiresAt: String?
         var state: String
         /// How many editions have come out since the one held; 0 unless expired.
         var behind: Int
@@ -2865,8 +2869,10 @@ enum EngineContract {
             case current
             case currentIdent = "current_ident"
             case next
+            case nextAt = "next_at"
             case effective
             case expires
+            case expiresAt = "expires_at"
             case state
             case behind
         }
@@ -2877,7 +2883,7 @@ enum EngineContract {
         var kind: String
         /// YYYY-MM-DD: the date the edition held is named by (its effective date; a DOF file's last day of changes). Missing or null where nothing says.
         var effective: String?
-        /// YYYY-MM-DD: the UTC day it is used on.
+        /// YYYY-MM-DD, the UTC day it is used on (the whole effective day counted as the new edition's, toward the safe side), or a UTC time, YYYY-MM-DDTHH:MM[:SS]Z, exact to 0901Z: what a host choosing what to fetch, draw or warn of asks with.
         var on: String
     }
 
@@ -3435,6 +3441,34 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case windDirTrueDeg = "wind_dir_true_deg"
             case windSpeedKt = "wind_speed_kt"
+        }
+    }
+
+    struct DiversionRangeNmAnswer: Codable, Equatable, Sendable {
+        /// The range, nm; null with no cruise speed.
+        var rangeNm: Double?
+        var reserveMin: Double
+        var basis: String
+
+        enum CodingKeys: String, CodingKey {
+            case rangeNm = "range_nm"
+            case reserveMin = "reserve_min"
+            case basis
+        }
+    }
+
+    struct DiversionRangeNmInput: Codable, Equatable, Sendable {
+        /// The airplane's cruise true airspeed, knots (its profile's); null or missing where none is picked.
+        var tasKt: Double?
+        /// Its usable fuel, gallons; null or missing for none.
+        var usableGal: Double?
+        /// Its cruise burn, gallons an hour; null or missing for none.
+        var burnGph: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case tasKt = "tas_kt"
+            case usableGal = "usable_gal"
+            case burnGph = "burn_gph"
         }
     }
 
@@ -9425,6 +9459,56 @@ enum EngineContract {
             case planView = "plan_view"
             case insets
         }
+    }
+
+    struct PlatesKeptAnswerItem: Codable, Equatable, Sendable {
+        var ident: String
+        var role: String
+        var offNm: Double?
+        var charts: [EngineContract.PlatesKeptAnswerItemChartsItem]
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case role
+            case offNm = "off_nm"
+            case charts
+        }
+    }
+
+    /// A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.
+    struct PlatesKeptAnswerItemChartsItem: Codable, Equatable, Sendable {
+        var kind: String
+    }
+
+    struct PlatesKeptInput: Codable, Equatable, Sendable {
+        /// diversion_range_nm's range; null for none.
+        var rangeNm: Double?
+        var fields: [EngineContract.PlatesKeptInputFieldsItem]
+
+        enum CodingKeys: String, CodingKey {
+            case rangeNm = "range_nm"
+            case fields
+        }
+    }
+
+    struct PlatesKeptInputFieldsItem: Codable, Equatable, Sendable {
+        var ident: String
+        var role: String
+        /// How far the field is off the route, nm (a diversion's).
+        var offNm: Double?
+        var charts: [EngineContract.PlatesKeptInputFieldsItemChartsItem]
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case role
+            case offNm = "off_nm"
+            case charts
+        }
+    }
+
+    /// A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.
+    struct PlatesKeptInputFieldsItemChartsItem: Codable, Equatable, Sendable {
+        var kind: String
     }
 
     struct PointKindInput: Codable, Equatable, Sendable {

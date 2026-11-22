@@ -606,6 +606,26 @@ it turns); past the region the old chart stays, and Ready to Fly says it
 is out of date. `WingtipTests/OfflineChartsTests` reads an archive the planner's
 writer made, leaf directories and all.
 
+Downloads' Plates keeps the FAA's plates a state at a time, as ForeFlight
+and Garmin Pilot download them: the planner lists each state's open
+fields and their charts of the d-TPP cycle in force with their size
+(`/api/plates/states`, `/api/plates/states/{cycle}/{state}`), asked once
+("Download California's plates?", its charts, fields, size and cycle),
+and each chart is kept as Keep for the Air keeps a flight's
+(`KeepPlates`), with the app open. `StatePlates` holds the record of the
+kept states (`state-plates/kept.json` and each state's list, under
+Application Support): its cycle, the charts done of those wanted, the
+failures with Try Again, swipe to Delete, which deletes the state's files
+but those another kept state also holds (a region's takeoff-minimums
+booklet is in each of its states) or a route kept for the air holds (Keep
+for the Air's manifest names its files). The section's footer names the cycle
+and when it ends ("Cycle 2611, until 24 Dec 0901Z"). With the app active
+(at launch, back in the foreground and each minute) a stopped download
+goes on, and a kept state whose cycle the planner's `next_at` says has
+been replaced is fetched for the cycle the planner now serves, the old
+one's files deleted once the new one is whole (`refreshDue`;
+`WingtipTests/StatePlatesTests`).
+
 The web app has no Downloads: a browser cannot be relied on to keep
 gigabytes (Safari may clear a site's storage after seven days without a
 visit, and every browser caps it and may evict it under pressure). The service worker keeps the tiles looked at and a route's corridor
@@ -639,7 +659,19 @@ offline audit of 2026-11-10:
   frame's tiles 25 nm either side of the course at zooms 5 to 8, at most
   300 (`Offline/KeepRadar`, drawn by the loop where IEM can't be
   reached), each field's FAA diagram PDF for the own-ship diagram, and the
-  route profile where the plan's own fetch had not brought it.
+  route profile where the plan's own fetch had not brought it. Its plates
+  are the flight's, as the planner names them (`/api/plates/flight`,
+  `wingtip.plate_sets`): every chart of the departure, the destination
+  and each stop, the alternate's (the one filed, else the engine's 91.169
+  pick) and those of the fields within diversion range of the route (the
+  engine's `diversion_range_nm`, from the picked airplane's own cruise and
+  fuel; with none picked, none, and the line asks for one). Each is kept
+  as the card's Charts tab shows it, its pages and their pictures, four at
+  a time (`Offline/KeepPlates`), and the plates are on board only when
+  every one was kept. Where the keep is offered (FPL's button, Ready to
+  Fly's fix) their size is said first: "This flight's plates: about 42 MB,
+  6 fields, within 90 nm of the route." (`KeepForAir.sizePlates`, asked
+  again as the plan changes).
 - **The corridor's chart tiles** are kept in Application Support
   (`kept-chart-tiles`, excluded from backup), which iOS does not purge;
   the tiles the map fetches as it pans stay under Caches (`TileStore`).

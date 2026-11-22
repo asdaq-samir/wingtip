@@ -464,6 +464,21 @@ async def plan(*, dep: str, dest: str, stops: str | None = None, altitude_ft: fl
     return await _send('GET', '/api/plan', query={'dep': dep, 'dest': dest, 'stops': stops, 'altitude_ft': altitude_ft, 'altitude_nearest': altitude_nearest, 'altitude_choice': altitude_choice, 'aircraft': aircraft, 'cruise_tas_kt': cruise_tas_kt, 'fuel_burn_gph': fuel_burn_gph, 'usable_fuel_gal': usable_fuel_gal, 'climb_tas_kt': climb_tas_kt, 'climb_fuel_burn_gph': climb_fuel_burn_gph, 'descent_ias_kt': descent_ias_kt, 'descent_fuel_burn_gph': descent_fuel_burn_gph, 'cruise_power_pct': cruise_power_pct, 'service_ceiling_ft': service_ceiling_ft, 'climb_rate_fpm': climb_rate_fpm, 'taxi_fuel_gal': taxi_fuel_gal, 'glide_ratio': glide_ratio, 'depart': depart, 'rules': rules, 'alternate': alternate, 'altitudes': altitudes, 'altitude_starts': altitude_starts, 'procedures': procedures, 'runways': runways, 'patterns': patterns, 'wind_runways': wind_runways, 'crossings': crossings, 'holds': holds, 'ground': ground, 'tanks': tanks, 'checkpoints': checkpoints}, body=None, headers={})
 
 
+async def flight_plates(*, route: str, fixes: str | None = None, alternate: str | None = None, eta: str | None = None, tas_kt: float | None = None, usable_gal: float | None = None, burn_gph: float | None = None) -> Any:
+    """GET /api/plates/flight: Flight Plates"""
+    return await _send('GET', '/api/plates/flight', query={'route': route, 'fixes': fixes, 'alternate': alternate, 'eta': eta, 'tas_kt': tas_kt, 'usable_gal': usable_gal, 'burn_gph': burn_gph}, body=None, headers={})
+
+
+async def plate_states() -> Any:
+    """GET /api/plates/states: Plate States"""
+    return await _send('GET', '/api/plates/states', query={}, body=None, headers={})
+
+
+async def plate_state(*, cycle: str, state: str) -> Any:
+    """GET /api/plates/states/{cycle}/{state}: Plate State"""
+    return await _send('GET', f"/api/plates/states/{_seg(cycle)}/{_seg(state)}", query={}, body=None, headers={})
+
+
 async def retrain() -> Any:
     """POST /api/retrain: Retrain"""
     return await _send('POST', '/api/retrain', query={}, body=None, headers={})

@@ -7,6 +7,8 @@ import SwiftUI
 /// (`ready_to_fly`); this draws them.
 struct ReadyToFlyRows: View {
     @Environment(Navigator.self) private var nav
+    @Environment(KeepForAir.self) private var keepForAir
+    @Environment(Plan.self) private var plan
     @Environment(\.lookAccent) private var accent
     @Environment(ReadyToFly.self) private var model
     @State private var allOpen = false
@@ -53,7 +55,12 @@ struct ReadyToFlyRows: View {
         if let fix = item.fix {
             Button { run(fix) } label: {
                 HStack {
-                    Text(item.line).font(WingtipType.row)
+                    VStack(alignment: .leading, spacing: WingtipSpace.xs) {
+                        Text(item.line).font(WingtipType.row)
+                        // Keep for the Air's fix says what the flight's
+                        // plates come to before it is tapped (KeepPlates).
+                        if Self.keeps(fix) { KeepPlatesLine(model: keepForAir).font(WingtipType.detail).foregroundStyle(.secondary) }
+                    }
                     Spacer(minLength: WingtipSpace.sm)
                     if model.fixing.contains(fix) { ProgressView() }
                 }
@@ -62,10 +69,14 @@ struct ReadyToFlyRows: View {
             }
             .tint(accent)
             .accessibilityHint(item.detail)
+            .modifier(SizingPlates(on: Self.keeps(fix), model: keepForAir, plan: plan))
         } else {
             Text(item.line).font(WingtipType.row).foregroundStyle(.secondary)
         }
     }
+
+    /// The fixes that run Keep for the Air (ReadyToFly.run).
+    static func keeps(_ fix: String) -> Bool { fix == "keep_for_air" || fix == "download_charts" }
 
     /// The fixes that ask the pilot open the pages that already ask it, in
     /// this card's stack with Back (Navigator.push): the Airplane page,
@@ -127,9 +138,10 @@ struct ReadyToFlyHost: ViewModifier {
     @Environment(OwnShip.self) private var ownShip
     @Environment(Verdict.self) private var verdict
     @Environment(Session.self) private var session
+    @Environment(KeepForAir.self) private var keepForAir
 
     func body(content: Content) -> some View {
-        content.task { ready.attach(plan: plan, charts: charts, ownShip: ownShip, verdict: verdict, session: session) }
+        content.task { ready.attach(plan: plan, charts: charts, ownShip: ownShip, verdict: verdict, session: session, keepForAir: keepForAir) }
     }
 }
 

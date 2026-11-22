@@ -17,6 +17,9 @@ export interface KeptRecord {
   onBoard: KeptKind[];
   missing: KeptKind[];
   bytes: number;
+  /** The plates kept, by lib/kept/keepChart's chartKey, so deleting a
+   *  state's plates leaves the flight's (features/statePlates). */
+  plates?: string[];
 }
 
 const KEPT_RECORD_KEY = "wingtip.kept-air";

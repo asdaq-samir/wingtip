@@ -493,7 +493,7 @@ fun Engine.ctafOf(frequencies: List<EngineContract.FieldFrequency>): Result<Json
     rule("ctaf_of", EngineContract.CtafOfInput(frequencies = frequencies))
 
 /**
- * Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page.
+ * Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page. An AIRAC or charting edition takes over at 0901Z on its date ("Effective 0901 UTC", the Federal Register's airspace and procedure amendments), the DOF at 0000Z on its release day: asked with a UTC time the answer is exact to the minute.
  */
 fun Engine.dataCycle(kind: String, effective: String? = null, on: String): Result<EngineContract.DataCycleAnswer> =
     rule("data_cycle", EngineContract.DataCycleInput(kind = kind, effective = effective, on = on))
@@ -599,6 +599,12 @@ fun Engine.distanceNm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): R
  */
 fun Engine.diversion(trueCourseDeg: Double, distanceNm: Double, tasKt: Double, fuelBurnGph: Double, magneticVariationDeg: Double, wind: EngineContract.DiversionInputWind? = null, to: String? = null, mh: Double? = null, gs: Double? = null, ete: Double? = null, fuel: Double? = null): Result<EngineContract.DiversionAnswer> =
     rule("diversion", EngineContract.DiversionInput(trueCourseDeg = trueCourseDeg, distanceNm = distanceNm, tasKt = tasKt, fuelBurnGph = fuelBurnGph, magneticVariationDeg = magneticVariationDeg, wind = wind, to = to, mh = mh, gs = gs, ete = ete, fuel = fuel))
+
+/**
+ * How far off the route a field is still one the flight may divert to, for keeping its plates (Keep for the Air): the 45 minutes of reserve 14 CFR 91.167(a)(3) asks under IFR and 91.151(a)(2) at night under VFR (kept by day too, more than 91.151(a)(1)'s 30: more plates, never fewer) at the airplane's own cruise, or its whole tanks' reach where that is less. Null with no cruise speed: never a stock airplane's.
+ */
+fun Engine.diversionRangeNm(tasKt: Double? = null, usableGal: Double? = null, burnGph: Double? = null): Result<EngineContract.DiversionRangeNmAnswer> =
+    rule("diversion_range_nm", EngineContract.DiversionRangeNmInput(tasKt = tasKt, usableGal = usableGal, burnGph = burnGph))
 
 /**
  * Whether a student's estimate is within the diversion drill's allowance (ACS PA.VI.C.S2); an error for a key not estimated.
@@ -1685,6 +1691,12 @@ fun Engine.planningFigures(): Result<EngineContract.PlanningFiguresAnswer> =
  */
 fun Engine.platePagePoint(lat: Double, lon: Double, trackDeg: Double? = null, georeference: EngineContract.PlatePagePointInputGeoreference): Result<EngineContract.PlatePagePointAnswer?> =
     rule("plate_page_point", EngineContract.PlatePagePointInput(lat = lat, lon = lon, trackDeg = trackDeg, georeference = georeference))
+
+/**
+ * The plates a flight keeps for the air, each field once in its first role (departure, destination, stop, alternate (14 CFR 91.169(a)(2)), then the fields within range_nm of the route, nearest first) with the charts its role keeps: every chart at the departure, the destination and each stop; the approaches, minimums, diagram, hot spots and land-and-hold-short at the alternate; the approaches, minimums and diagram at a diversion. No diversion is kept with no range.
+ */
+fun Engine.platesKept(rangeNm: Double? = null, fields: List<EngineContract.PlatesKeptInputFieldsItem>): Result<List<EngineContract.PlatesKeptAnswerItem>> =
+    rule("plates_kept", EngineContract.PlatesKeptInput(rangeNm = rangeNm, fields = fields))
 
 /**
  * What a route point typed is: a fix, the pilot's own point (fix-radial-distance), or null.

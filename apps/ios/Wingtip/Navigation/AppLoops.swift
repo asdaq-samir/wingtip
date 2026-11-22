@@ -32,6 +32,10 @@ struct AppLoops: View {
             .task { await charts.load() }
             .task { await charts.watchChangeover() }
             .task { if Self.first("downloads") { OfflineDownloads.shared.start() } }
+            // The states' plates kept current while the app is active: at
+            // launch, back in the foreground and each minute, a stopped
+            // download goes on and a replaced cycle is fetched anew.
+            .task(id: scenePhase) { if scenePhase == .active { await screens.statePlates.watch() } }
             // Once a launch: a window that takes the lead from one shut
             // later finds the plan the pilot has, not the one kept.
             .task { if Self.first("restore") { await plan.restore() } }
