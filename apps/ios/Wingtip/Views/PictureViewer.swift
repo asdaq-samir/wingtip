@@ -180,7 +180,7 @@ struct PictureViewer: View {
 
 /// A plate's pages with own ship on the first, where the engine places the
 /// fix (PlatePosition), drawn again at each fix; none while own ship is off.
-private struct PlatePictures: View {
+struct PlatePictures: View {
     @Environment(InFlight.self) private var inFlight
     let images: [UIImage]
     let georeference: APIPlateGeoreference

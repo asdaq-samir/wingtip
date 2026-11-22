@@ -59,8 +59,9 @@ enum SplitRoom {
 /// search in the NavigationSplitView's sidebar (on iPadOS 26 and later a
 /// floating card over the map, its rows on the sheet's solid ground), the
 /// map as its detail across the screen, the second-level card in the
-/// system inspector beside the split view, and the flight's figures on a
-/// solid card along the foot of the map.
+/// system inspector beside the split view, the flight's figures on a
+/// solid card along the foot of the map, and a chart the pilot stood
+/// beside the map in a column of its own (BesidePane).
 struct SplitLayout<Map: View>: View {
     @Environment(Navigator.self) private var nav
     let map: Map
@@ -74,6 +75,9 @@ struct SplitLayout<Map: View>: View {
     /// The sidebar put away by a card opened in a narrow window, to come
     /// back when the card goes (fit).
     @State private var hidForCard = false
+    /// The detail's width, the map's and the chart's beside it together.
+    @State private var detailWidth: CGFloat = 0
+    @AppStorage(BesideShare.key) private var share = BesideShare.half
 
     var body: some View {
         NavigationSplitView(columnVisibility: $columns) {
@@ -87,29 +91,19 @@ struct SplitLayout<Map: View>: View {
                 .background(WingtipInk.sheet)
                 .navigationSplitViewColumnWidth(min: 320, ideal: SplitRoom.sidebar, max: 420)
         } detail: {
-            map
-                .overlay(alignment: .bottom) {
-                    // Figures on a solid ground, as rows and cards are
-                    // (docs/design/ios.md §0): on glass over the chart the
-                    // same run found the names DIST and TO under 4.5:1,
-                    // semibold and in the tokens' black.
-                    FiguresStrip()
-                        .environment(\.glanceFigures, true)
-                        .padding(.vertical, WingtipSpace.md)
-                        // Room for the figures a size up (glanceFigures).
-                        .frame(maxWidth: 640)
-                        .background(WingtipInk.sheet, in: floatingCard)
-                        .padding(.bottom, WingtipSpace.lg)
-                        .padding(.horizontal, WingtipSpace.lg)
+            HStack(spacing: 0) {
+                mapWithFigures
+                // A chart standing beside the map (Beside the Map), its
+                // share of the detail's room the pilot's (BesideShare).
+                if let request = nav.beside {
+                    Divider().ignoresSafeArea()
+                    BesidePane(request: request)
+                        .frame(width: besideWidth)
+                        .transition(.move(edge: .trailing))
                 }
-                // No bar over the map while the sidebar is up, its own bar
-                // holding Hide Sidebar; with the sidebar put away, the
-                // map's bar is up, clear over the chart, for the system's
-                // Show Sidebar: hidden for good, it left a pilot who hid
-                // the sidebar no way back to the plan and the search but
-                // the menu bar (the iPad audit, 2026-11-21).
-                .toolbar(columns == .detailOnly ? .visible : .hidden, for: .navigationBar)
-                .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
+            }
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { detailWidth = $0 }
+            .animation(MapMotion.animated ? .default : nil, value: nav.beside)
         }
         .navigationSplitViewStyle(.balanced)
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
@@ -140,6 +134,36 @@ struct SplitLayout<Map: View>: View {
             search.close()
             nav.showPlan()
         })
+    }
+
+    /// The chart's width beside the map: its share of the detail's room.
+    private var besideWidth: CGFloat { (detailWidth * share.fraction).rounded() }
+
+    /// The map with the flight's figures along its foot.
+    private var mapWithFigures: some View {
+        map
+            .overlay(alignment: .bottom) {
+                // Figures on a solid ground, as rows and cards are
+                // (docs/design/ios.md §0): on glass over the chart the
+                // same run found the names DIST and TO under 4.5:1,
+                // semibold and in the tokens' black.
+                FiguresStrip()
+                    .environment(\.glanceFigures, true)
+                    .padding(.vertical, WingtipSpace.md)
+                    // Room for the figures a size up (glanceFigures).
+                    .frame(maxWidth: 640)
+                    .background(WingtipInk.sheet, in: floatingCard)
+                    .padding(.bottom, WingtipSpace.lg)
+                    .padding(.horizontal, WingtipSpace.lg)
+            }
+            // No bar over the map while the sidebar is up, its own bar
+            // holding Hide Sidebar; with the sidebar put away, the
+            // map's bar is up, clear over the chart, for the system's
+            // Show Sidebar: hidden for good, it left a pilot who hid
+            // the sidebar no way back to the plan and the search but
+            // the menu bar (the iPad audit, 2026-11-21).
+            .toolbar(columns == .detailOnly ? .visible : .hidden, for: .navigationBar)
+            .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
     }
 
     /// A card up in a window too narrow for the sidebar, the card and the

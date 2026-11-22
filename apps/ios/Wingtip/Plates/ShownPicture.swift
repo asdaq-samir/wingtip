@@ -4,7 +4,7 @@ import UIKit
 /// A picture to show full screen: what it is, how its pages are had,
 /// and the credit its licence asks for.
 struct ShownPicture: Identifiable {
-    let id = UUID()
+    private(set) var id = UUID()
     let title: String
     var credit: String?
     /// The kept answer it is drawn from, for its age with no signal.

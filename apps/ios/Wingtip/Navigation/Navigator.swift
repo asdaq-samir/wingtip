@@ -37,6 +37,10 @@ final class Navigator {
     private(set) var card: Card?
     /// The pages pushed inside the card.
     var cardPath: [SheetPage] = []
+    /// The chart beside the map on the iPad (SplitLayout's BesidePane): a
+    /// plate with own ship on it, the diagram, any FAA chart, standing in
+    /// its own column while cards come and go in the inspector. Nil, none.
+    var beside: PictureRequest?
     /// The plan's sheet's page, Search or FPL (SheetPager): kept here so a
     /// link, Siri and every "show the plan" turn it.
     var sheetPage: PlanPage = .search
