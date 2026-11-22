@@ -5,6 +5,7 @@ import type { Course } from "../../lib/api/types";
 import { usePreferences } from "../../lib/preferences";
 import { keepKey, keepingAvailable, keptAlready, stopKeeping, useKeepJob } from "../../lib/map/route/keepRoute";
 import { keepForAir, keptRecordStore } from "../keptForAir";
+import { useStatePlatesFresh } from "../statePlates";
 import { chartPair } from "../../lib/map/sources/tiles";
 import { grouped } from "../../lib/format";
 
@@ -33,6 +34,8 @@ export function useKeepOffline(course: Course | null) {
     void keepForAir(course, layer);
   }, [on, course, base]);
   useKeepRouteToast();
+  // The plates kept by state, gone on with and updated at the cycle's 0901Z.
+  useStatePlatesFresh();
 }
 
 const TOAST_ID = "keep-route";

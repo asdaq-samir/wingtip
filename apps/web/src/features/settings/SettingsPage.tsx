@@ -8,6 +8,10 @@ import { clearOwnTrail, useOwnTrail } from "../../lib/map/position/ownTrail";
 import { AIRPORT_WEATHER, useAirportWeatherPrefs, type AirportWeather } from "../../lib/map/marks/airportWeatherPrefs";
 import { keepingAvailable } from "../../lib/map/route/keepRoute";
 import { useSettingsGroup } from "../../lib/openSettings";
+import { useAddressKey } from "../../lib/address";
+import { useBriefPlan } from "../../lib/briefPlan";
+import { flightPlatesLine, useFlightPlates } from "../keptForAir";
+import { PlatesPage, PlatesRowValue } from "../statePlates";
 import { usePreferences } from "../../lib/preferences";
 import { CardId, setCard, useSheetCards } from "../../lib/sheetCards";
 import GlideRingRow from "./GlideRingRow";
@@ -33,6 +37,7 @@ export default function SettingsPage({ help }: { help: HelpPages }) {
         alerts: { title: "Alerts", content: <AlertsPage /> },
         atc: { title: "ATC", content: <AtcPage /> },
         help: { title: "Help & About", content: <HelpPage pages={help} /> },
+        plates: { title: "Plates", content: <PlatesPage /> },
       }}
     >
       <div className="flex flex-col gap-5" data-testid="settings-page">
@@ -44,6 +49,9 @@ export default function SettingsPage({ help }: { help: HelpPages }) {
               http there is no service worker to hold it, and it cannot be
               on. */}
           <KeepRow />
+          {/* The FAA's plates a state at a time, as the phones' Downloads
+              keep the charts' regions (features/statePlates). */}
+          <PageRow page="plates" title="Plates" value={<PlatesRowValue />} testId="plates-row" />
         </ListGroup>
         <ListGroup>
           {/* The guide, the stack's status, the load log, about, where the
@@ -152,9 +160,14 @@ function InFlightGroup() {
 function KeepRow() {
   const keepOffline = usePreferences((s) => s.keepOffline);
   const setKeepOffline = usePreferences((s) => s.setKeepOffline);
+  // What the flight's plates come to, said before they are kept.
+  const course = useBriefPlan((s) => s.flight?.course ?? null);
+  const alternate = useAddressKey("alternate")[0] || null;
+  const plates = useFlightPlates(course, alternate);
   return (
     <SwitchRow
       title="Keep for the Air"
+      description={flightPlatesLine(plates) ?? undefined}
       on={keepOffline && keepingAvailable()}
       onChange={setKeepOffline}
       disabled={!keepingAvailable()}

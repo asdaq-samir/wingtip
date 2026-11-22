@@ -1741,6 +1741,25 @@ WebAssembly and what Keep for the Air fetched; the page asks it first.
   where the browser has room (`overlay-archive`, answered in ranges by
   Workbox's range-requests plugin), the route's side view, and the
   newest radar frame over the corridor (`radar-frames`, capped).
+- Keep for the Air keeps the plates a flight may need (the planner's
+  `/api/plates/flight`, wingtip.plate_sets): every chart of the
+  departure, the destination and each stop; the alternate's approaches,
+  minimums and diagram (the one filed, or the engine's pick, 14 CFR
+  91.169(c)); and the approaches, minimums and diagram of each field
+  within diversion range of the route, the engine's
+  `diversion_range_nm` (the reserve's 45 minutes, 91.167(a)(3), at the
+  airplane's own cruise, or its tanks' reach; none with no airplane
+  picked). The engine's `plates_kept` says which chart each part keeps.
+  Their size is said under Settings' Keep for the Air before the keep.
+  The plates sit in the worker's own `faa-plates` cache (20,000
+  entries; the diagrams' cache keeps 200).
+- Settings → Plates keeps the FAA's plates a state at a time, as the
+  phones' Downloads keep the charts' regions (`features/statePlates`):
+  each state with its size, about, and the d-TPP cycle, those kept with
+  their progress and Delete. A kept state goes on after the page is
+  closed, and from the next cycle's 0901Z it is fetched again for the
+  new cycle and the old one's pages deleted (`useStatePlatesFresh`, with
+  the map). Deleting a state leaves a booklet another kept state holds.
 - The glide ring keeps the last field elevation it was given (within 20
   nm of that field).
 - Ages: the airport weather marks say "Field weather 45m old" in the

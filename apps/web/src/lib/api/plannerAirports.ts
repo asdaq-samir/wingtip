@@ -7,7 +7,10 @@ import type {
   ForecastWind,
   AirportsInView,
   ChartPages,
+  FlightPlates,
   NearestAirports,
+  PlateStateCharts,
+  PlateStates,
   PlacesFound,
   PlateOverlay,
   ProcedureDrawing,
@@ -121,6 +124,23 @@ export const plannerAirports = {
   /** The pages of one of the FAA's charts, by its address, drawn by the
    *  planner -- of a booklet, the ones naming `airport`. */
   faaChart: (url: string, airport: string) => planner.GET("/api/faa-chart", { params: { query: { url, airport } } }).then(data<ChartPages>),
+  /** The plates Keep for the Air keeps for a flight and their size, about,
+   *  before any is fetched (wingtip.plate_sets): its own fields', the
+   *  alternate's and those within the airplane's diversion range. */
+  flightPlates: (query: {
+    route: string;
+    fixes?: string;
+    alternate?: string;
+    eta?: string;
+    tas_kt?: number;
+    usable_gal?: number;
+    burn_gph?: number;
+  }) => planner.GET("/api/plates/flight", { params: { query } }).then(data<FlightPlates>),
+  /** The states whose plates Downloads offers, of the d-TPP cycle in force. */
+  plateStates: () => planner.GET("/api/plates/states").then(data<PlateStates>),
+  /** A state's fields and their charts, of `cycle`. */
+  plateState: (cycle: string, state: string) =>
+    planner.GET("/api/plates/states/{cycle}/{state}", { params: { path: { cycle, state } } }).then(data<PlateStateCharts>),
 
   /** The landing fields inside a box, the biggest first, each with its
    *  METAR's flight category: what the map lays its chips and tap

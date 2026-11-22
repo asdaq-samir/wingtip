@@ -13,7 +13,7 @@ const WHAT = { plates: "Plates", supplement: "Chart Supplement" } as const;
 
 /** The notes for the card's plates and supplement, none while both are of
  *  the editions in force (or from a planner older than the field). */
-export function publicationNotes(place: Pick<AirportPlace, "publications">): PublicationNote[] {
+export function publicationNotes(place: Partial<Pick<AirportPlace, "publications">>): PublicationNote[] {
   const notes: PublicationNote[] = [];
   for (const key of ["plates", "supplement"] as const) {
     const edition = place.publications?.[key];
