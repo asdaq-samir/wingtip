@@ -1,9 +1,7 @@
 package app.wingtipmaps.android.ui
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarHost
@@ -36,7 +34,6 @@ import app.wingtipmaps.android.logbook.AutoLogbookHost
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.ready.ReadyToFlyHost
 import app.wingtipmaps.android.route.RouteHome
-import app.wingtipmaps.android.route.RouteToolbar
 import app.wingtipmaps.android.route.RouteUndoSnackbar
 import app.wingtipmaps.android.route.hasPoints
 import app.wingtipmaps.android.search.OneSearch
@@ -62,10 +59,9 @@ import kotlinx.coroutines.launch
  * airplane, a fix, a leg, the Brief, You, Settings, the Map card -- takes the search's place with its name and ← (CardPage) and
  * fills the sheet below, on the sheet's own stack (MapViewModel, drawn by
  * Navigation 3, SheetPagesHost; SheetCard), the same card from every way
- * in. On a tablet or an unfolded phone the same stack sits in Material's
- * list-detail scene beside the map (WidePanes), the cards in the detail
- * pane, with the route's floating
- * toolbar over the map while the plan is open; on a half-folded phone the
+ * in. On a tablet or an unfolded phone the same stack sits in a panel
+ * beside the map, and from expanded width a thing's card in a pane of its
+ * own at the end, as the iPad's inspector (WidePanes, WideMap); on a half-folded phone the
  * map above the fold and the panel below (TabletopPanes); or the strip
  * layout (Settings' Layout), whose sheet shows the same cards. The sheet
  * is Material's standard bottom sheet (MapSheet), at its peek or
@@ -75,11 +71,12 @@ import kotlinx.coroutines.launch
  * card too, opened at the sheet's full height (EmergencyCard).
  *
  * @param pending a link opened in the app (MainActivity); `onHandled`
- *   once it has been taken.
+ *   once it has been taken; `onLink` for one dropped on the window, to be
+ *   opened as one sent to the app is.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
+fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit, onLink: (Links.Link) -> Unit = {}) {
     val plan: Plan = hiltViewModel()
     val session: Session = hiltViewModel()
     val airports: AirportModel = hiltViewModel()
@@ -166,10 +163,14 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         SheetCard(page, pages, plan, session, ownShip, assistant, airports, search, showPlan)
     }
     // The phone's sheet (neither the strip, the wide panes nor the fold).
+    // A half-folded foldable is wide too: the fold is asked first, so it
+    // stands as a laptop does, the map above the fold (TabletopPanes).
     val sheetLayout = !stripLayout && !wide && fold == null
-    val pagesView: @Composable (Modifier, Boolean, SceneStrategy<SheetPage>?, @Composable () -> Unit) -> Unit = { modifier, backEnabled, scenes, head ->
+    // The sheet's pages, all of the stack or the part a wide window's pane
+    // draws (WidePanes, PaneRoom).
+    val pagesView: @Composable (Modifier, Boolean, SceneStrategy<SheetPage>?, List<SheetPage>?, @Composable () -> Unit) -> Unit = { modifier, backEnabled, scenes, part, head ->
         SheetPagesHost(
-            pages, backEnabled, modifier, head = head, carousel = !stripLayout, scenes = scenes,
+            pages, backEnabled, modifier, head = head, carousel = !stripLayout, scenes = scenes, stack = part ?: pages.stack,
             // The strip's field and timeline are its Home and its plan. At
             // the peek only the search shows, so what lies under it (the
             // flight's card, under the gesture bar) is kept from TalkBack.
@@ -200,40 +201,31 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val mapView: @Composable (Dp, Boolean) -> Unit = { covered, buttonsOnSheet ->
         MapPane(plan, ownShip, covered = covered, onPick = onPick, actions = actions, buttonsOnSheet = buttonsOnSheet)
     }
-    if (stripLayout) {
-        StripLayout(
-            plan = plan, session = session, ownShip = ownShip.ownShip, flying = flying, raise = map.raised, searchRow = searchRow,
-            covered = pages.covered, cards = { modifier -> pagesView(modifier, true, null) {} },
-            map = { MapPane(plan, ownShip, covered = 0.dp, onPick = onPick, actions = actions.copy(onAsk = null)) },
-        )
-    } else if (wide) {
-        WidePanes(
-            // The list pane keeps the search over Home or the plan, the
-            // detail pane the cards.
-            pages = { modifier, scenes -> pagesView(modifier.fillMaxSize(), true, scenes) { searchRow(null) } },
-            // The route being worked on: its floating toolbar over the map,
-            // an edit's Snackbar over that.
-            map = {
-                Box(Modifier.fillMaxSize()) {
-                    mapView(0.dp, false)
-                    val editing = pages.planShown && planState.routed
-                    Column(Modifier.align(Alignment.BottomCenter), horizontalAlignment = Alignment.CenterHorizontally) {
-                        SnackbarHost(snackbars, if (editing) Modifier else Modifier.navigationBarsPadding())
-                        if (editing) RouteToolbar(plan, onAddPoint = search::addStop)
-                    }
-                }
-            },
-        )
-    } else if (fold != null) {
-        TabletopPanes(fold, map = { Box(Modifier.fillMaxSize()) { mapView(0.dp, false); SnackbarHost(snackbars, Modifier.align(Alignment.BottomCenter)) } }) {
-            // A card takes the search's place, as on the phone's sheet.
-            pagesView(Modifier.weight(1f), true, null) { searchRow(null) }
+    // A link or words dropped on the window (WindowDrop).
+    Box(Modifier.fillMaxSize().then(rememberSheetDrop(pages, search, onLink))) {
+        if (stripLayout) {
+            StripLayout(
+                plan = plan, session = session, ownShip = ownShip.ownShip, flying = flying, raise = map.raised, searchRow = searchRow,
+                covered = pages.covered, cards = { modifier -> pagesView(modifier, true, null, null) {} },
+                map = { MapPane(plan, ownShip, covered = 0.dp, onPick = onPick, actions = actions.copy(onAsk = null)) },
+            )
+        } else if (fold != null) {
+            TabletopPanes(fold, map = { Box(Modifier.fillMaxSize()) { mapView(0.dp, false); SnackbarHost(snackbars, Modifier.align(Alignment.BottomCenter)) } }) {
+                // A card takes the search's place, as on the phone's sheet.
+                pagesView(Modifier.weight(1f), true, null, null) { searchRow(null) }
+            }
+        } else if (wide) {
+            WidePanes(
+                sheet = pages, searchAsks = search.asked,
+                pages = { modifier, part, backEnabled, scenes -> pagesView(modifier.fillMaxSize(), backEnabled, scenes, part) { searchRow(null) } },
+                map = { WideMap(pages, plan, planState, snackbars, onAddPoint = search::addStop) { mapView(0.dp, false) } },
+            )
+        } else {
+            PhoneSheetLayout(
+                sheet, snackbars, pages, ownShip, actions, plan, search, map = { covered -> mapView(covered, true) }, searchRow = { searchRow(null) },
+                pages = { modifier, backEnabled, head -> pagesView(modifier, backEnabled, null, null, head) },
+            )
         }
-    } else {
-        PhoneSheetLayout(
-            sheet, snackbars, pages, ownShip, actions, plan, search, map = { covered -> mapView(covered, true) }, searchRow = { searchRow(null) },
-            pages = { modifier, backEnabled, head -> pagesView(modifier, backEnabled, null, head) },
-        )
     }
 
     map.source?.let { shown -> SourceDialog(shown, onClose = { map.source = null }) }

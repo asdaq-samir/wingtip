@@ -62,6 +62,18 @@ class SearchControl {
         asked++
     }
 
+    /** Words the search opens with, a drop on the window's (WindowDrop),
+     *  taken once by the bar that opens for them. */
+    private var words: String? = null
+
+    /** The search opened with `words` typed in it, ready to pick from. */
+    fun type(words: String) {
+        open()
+        this.words = words
+    }
+
+    fun takeWords(): String? = words.also { words = null }
+
     /** The one search opened for an airport field (card rule 5: the
      *  airport picker is the main search, never a field of its own). */
     fun pickAirport(@StringRes hint: Int, onPicked: (String) -> Unit) {
