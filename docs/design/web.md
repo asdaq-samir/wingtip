@@ -1834,6 +1834,39 @@ Toast (Delete's Undo) and Menu (a row's •••, `RowMenu`).
 yet, and any sync would go through the gateway's records and the privacy
 inventory first. A second home for a document control.
 
+### 13b. The scratchpad
+
+**What it is.** ForeFlight's Scratchpads for the web (the market-gap
+report's item 5, 2026-11-21; the owner: "Primary app users are on
+iPad"). You's Scratchpad row (`features/scratchpad`, `ScratchpadPage`)
+lists this flight's pages first, under "This flight · C81 → KOSH", then
+the rest under Earlier, each a row with its template and when it was
+last written that opens the page. New Page is a menu of the templates:
+Blank, Clearance (CRAFT: clearance limit, route, altitude, frequency,
+transponder, the items AIM 4-4-3 says a clearance holds), ATIS
+(information, wind, altimeter, runway, remarks) and Takeoff & Landing
+(runway, wind, altimeter, temperature, and the ground roll and the
+distance over 50 ft each way). The templates are words only: the pilot
+writes in what they were told or worked out, and no figure is filled in.
+
+**Ink and boxes.** A page is its template's boxes, the stock `Input`, and
+the ink under them. On an iPad Safari's Scribble turns an Apple Pencil's
+writing in a box to text. The ink takes an Apple Pencil, a finger or a
+mouse through Pointer Events, captured so that a stroke leaving the page
+still ends. Its stroke is perfect-freehand's (MIT, the one tldraw draws),
+with the pen's pressure, or pressure simulated for a finger. Palm
+rejection follows PencilKit's drawing policy: once a pen has written, a
+finger or a resting palm does not, and a second finger never inks.
+Undo takes back the last stroke, Clear Ink takes the ink, and Delete
+Page has its Undo in the toast. The strokes are kept in the page's own
+units, so they draw the same at any width.
+
+**Kept on the device, with the flight.** Every page is in IndexedDB
+(`idb-keyval`, its own store, `padStore`) and never sent anywhere. Each
+page keeps the route's departure and destination as the address had them
+when it was started. The boxes are kept once the typing rests, and the
+ink at once.
+
 ### 14. The welcome
 
 A welcome sheet again, the owner's option A (2026-11-13: "highlight that

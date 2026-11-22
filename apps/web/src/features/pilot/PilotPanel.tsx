@@ -23,6 +23,7 @@ import { TEXT } from "../../lib/text";
 import { useDevMode } from "../../hooks/use-dev-mode";
 import { SettingsPage, type HelpPages } from "../settings";
 import { DocumentsPage, DocumentsRow } from "../documents";
+import { ScratchpadPage, ScratchpadRow } from "../scratchpad";
 import { FlightsPanel } from "./AccountPanels";
 import { LargeFace } from "./AccountFace";
 import { LogbookPanel } from "./LogbookPanel";
@@ -112,6 +113,7 @@ function Personal({
     logbook: { title: "Logbook", content: <LogbookPanel aircraft={shortName(aircraft.label)} /> },
     minimums: { title: "Minimums", content: <MinimumsPanel /> },
     documents: { title: "Documents", content: <DocumentsPage /> },
+    scratchpad: { title: "Scratchpad", content: <ScratchpadPage /> },
     training: { title: "Training", content: <TrainingPage signedIn={signedIn} /> },
     settings: { title: "Settings", content: <SettingsPage help={help} /> },
     subscription: { title: "Subscription", content: <SubscriptionPanel /> },
@@ -184,6 +186,8 @@ function Personal({
               />
               {/* The documents library (features/documents): the FAA's and the pilot's own, on this device. */}
               <DocumentsRow />
+              {/* The scratchpad (features/scratchpad): clearances, the ATIS and figures by hand or typed, on this device. */}
+              <ScratchpadRow />
               <TrainingRow />
               <EmergencyRow />
               {signedIn && sold && <SubscriptionRow />}
