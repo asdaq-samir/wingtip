@@ -1,15 +1,14 @@
-import { Map as GlMap, type GeoJSONSource, type Marker, type LngLatBoundsLike, type StyleSpecification } from "maplibre-gl";
+import { Map as GlMap, type GeoJSONSource, type Marker, type StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 // The worker MapLibre parses its sources in (lib/map/gl/worker).
 import "../lib/map/gl/worker";
-import { useEffect, useMemo, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../lib/api/client";
-import { chartPagePicture, type PageMark } from "../lib/diagram";
+import { useEffect, useRef } from "react";
+import type { PageMark } from "../lib/diagram";
 import { ownShipHtml } from "../lib/map/marks/icons";
 import { usePreferences } from "../lib/preferences";
 import { drawOwnShip, ownShipMarker, placeOwnShip } from "../lib/map/gl/layers/ownShipMarker";
 import { CHART } from "../lib/tokens";
+import { bounds, corners, MAX_ZOOM, onPage, type laidOut, type PageRing } from "./chartLayout";
 
 /**
  * The pages of one of the FAA's charts on a MapLibre map of their own,
@@ -18,68 +17,7 @@ import { CHART } from "../lib/tokens";
  * PlateCard), one copy.
  */
 
-/** Between one page and the next, in the pages' own pixels. */
-const GAP = 60;
-/** Degrees a page's pixel is laid on: the pages sit on a sliver of the
- *  equator, a few hundredths of a degree across, where the map's Mercator
- *  is flat to a part in a million: MapLibre has no plane of plain
- *  pixels. */
-const K = 1e-5;
-/** No further in than two screen points a picture's pixel: past that the
- *  picture, drawn at 360 dots an inch (wingtip.publications), only grows
- *  coarser. MapLibre's world is 512 points across
- *  360 degrees at zoom 0. */
-const MAX_ZOOM = Math.log2((2 * 360) / (512 * K));
-
-export interface Page {
-  src: string;
-  width: number;
-  height: number;
-}
-
-type Box = [west: number, south: number, east: number, north: number];
-
-/** The pages one under another, each centred, in degrees (down the pages
- *  is south). */
-export function laidOut(pages: Page[]) {
-  const wide = Math.max(...pages.map((p) => p.width));
-  let top = 0;
-  const placed = pages.map((p) => {
-    const left = (wide - p.width) / 2;
-    const box: Box = [left * K, -(top + p.height) * K, (left + p.width) * K, -top * K];
-    top += p.height + GAP;
-    return { ...p, box };
-  });
-  const all: Box = [0, -(top - GAP) * K, wide * K, 0];
-  return { placed, all };
-}
-
-const corners = ([w, s, e, n]: Box): [[number, number], [number, number], [number, number], [number, number]] => [
-  [w, n],
-  [e, n],
-  [e, s],
-  [w, s],
-];
-const bounds = ([w, s, e, n]: Box): LngLatBoundsLike => [
-  [w, s],
-  [e, n],
-];
-
-/** A ring drawn on the first page, at fractions of its width from its
- *  left and its height from its top: an airport diagram's hot spot. */
-export interface PageRing {
-  x: number;
-  y: number;
-}
-
 const NO_RINGS: PageRing[] = [];
-
-/** The first page's fractions in the pages' degrees: across from its west
- *  edge, down from its north one. */
-const onPage = (page: { box: Box; width: number; height: number }, x: number, y: number): [number, number] => [
-  page.box[0] + x * page.width * K,
-  page.box[3] - y * page.height * K,
-];
 
 /** The pages on a MapLibre map of their own: a pinch, a drag and a double
  *  tap do what they do on the chart; the first page whole as the furthest
@@ -194,19 +132,4 @@ export function Pages({ placed, all, mark, rings = NO_RINGS }: ReturnType<typeof
   }, [placed, mark, look]);
   // Black at night where it is drawn white on black: the canvas inverted.
   return <div ref={box} data-pages={placed.length} className="min-h-0 flex-1 bg-white dark:bg-black dark:[&_canvas]:invert" />;
-}
-
-/** One of the FAA's charts' pages by its address (a card's approaches,
- *  the Chart Supplement), asked of the planner (/api/faa-chart), which
- *  draws them and, of a region's booklet, picks the field's. */
-export function useFaaChartPages(url: string, airport: string) {
-  const query = useQuery({
-    queryKey: ["faaChart", url, airport],
-    queryFn: () => api.faaChart(url, airport),
-    staleTime: Infinity,
-    meta: { silent: true },
-  });
-  const { data } = query;
-  const pages = useMemo(() => (data?.pages ?? []).map((p) => ({ src: chartPagePicture(p), width: p.width, height: p.height })), [data]);
-  return { ...query, pages };
 }

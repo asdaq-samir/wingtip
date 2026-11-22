@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { AirportPlace } from "../../lib/api/types";
+import { callEngine } from "../../lib/engine/engine";
+import type { RunwayProximityInput } from "../../lib/engine/contract";
+import proximityCases from "../../lib/fixtures/runwayProximity.json";
 import type { Fix } from "../../lib/map/position/ownShip";
 import { adviceOf, graticuleOf, hotSpotsOf, markOf } from "./diagramPlace";
 import type { DiagramText } from "./diagramText";
@@ -90,5 +93,11 @@ describe("the runway advisor", () => {
   it("says nothing from an old fix, and nothing with none", () => {
     expect(adviceOf(fix({ at: NOW - 5000 }), place, [], NOW)!.state).toBe("no_fix");
     expect(adviceOf(null, place, [], NOW)).toBeNull();
+  });
+});
+
+describe("the advisor's shared cases (lib/fixtures/runwayProximity.json, the engine's too)", () => {
+  it.each(proximityCases.cases)("$why", (c) => {
+    expect(callEngine("runway_proximity", c.input as RunwayProximityInput)).toMatchObject(c.expected);
   });
 });

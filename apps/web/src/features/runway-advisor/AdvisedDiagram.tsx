@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { cn } from "cn";
-import type { Page } from "../../components/ChartPages";
+import type { Page } from "../../components/chartLayout";
 import { TEXT } from "../../lib/text";
 import { useDiagramAdvisor } from "./useDiagramAdvisor";
 

@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { cn } from "cn";
-import { laidOut, Pages, useFaaChartPages } from "../../components/ChartPages";
+import { Pages } from "../../components/ChartPages";
+import { laidOut, useFaaChartPages } from "../../components/chartLayout";
 import type { PageMark } from "../../lib/diagram";
 import { TEXT } from "../../lib/text";
 import { PLATE_SHAPE } from "./plateLook";

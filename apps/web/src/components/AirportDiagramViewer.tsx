@@ -4,7 +4,8 @@ import type { PageMark } from "../lib/diagram";
 import { TEXT } from "../lib/text";
 import { cn } from "cn";
 import FullScreenViewer from "./FullScreenViewer";
-import { laidOut, Pages, useFaaChartPages, type Page, type PageRing } from "./ChartPages";
+import { Pages } from "./ChartPages";
+import { laidOut, useFaaChartPages, type Page, type PageRing } from "./chartLayout";
 
 export type { Page };
 

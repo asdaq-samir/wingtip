@@ -46,7 +46,8 @@ export function middleOf(run: Run): [number, number] {
 export async function readDiagram(url: string): Promise<DiagramText> {
   const [pdfjs, worker] = await Promise.all([import("pdfjs-dist"), import("pdfjs-dist/build/pdf.worker.min.mjs?url")]);
   pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
-  const doc = await pdfjs.getDocument({ url }).promise;
+  const task = pdfjs.getDocument({ url });
+  const doc = await task.promise;
   try {
     const page = await doc.getPage(1);
     const view = page.getViewport({ scale: 1 });
@@ -60,6 +61,6 @@ export async function readDiagram(url: string): Promise<DiagramText> {
     }
     return { width: view.width, height: view.height, items };
   } finally {
-    void doc.destroy();
+    void task.destroy();
   }
 }

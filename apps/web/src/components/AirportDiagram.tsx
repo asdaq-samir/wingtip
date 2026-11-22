@@ -2,7 +2,7 @@ import { lazy, Suspense, useState, type ComponentType, type ReactNode } from "re
 import { ListRow } from "./GroupedList";
 import { Spinner } from "./ui/spinner";
 import { diagramPicture, type PageMark } from "../lib/diagram";
-import type { Page } from "./ChartPages";
+import type { Page } from "./chartLayout";
 
 const ChartViewer = lazy(() => import("./AirportDiagramViewer"));
 const FaaChartViewer = lazy(() => import("./AirportDiagramViewer").then((m) => ({ default: m.FaaChartViewer })));
