@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material3.AlertDialog
@@ -25,10 +27,12 @@ import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -44,6 +48,7 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.plan.PlanProcedures
 import app.wingtipmaps.android.plan.RouteProcedures
+import kotlinx.coroutines.flow.drop
 
 /** How many rows a pick takes on the line: its head and a row a fix. */
 fun procedureRows(drawing: ProcedureDrawing?): Int = 1 + RouteProcedures.fixes(drawing).size
@@ -172,8 +177,10 @@ private fun FixRing(direct: Boolean, skipped: Boolean) {
  */
 @Composable
 private fun CrossAtDialog(fix: String, own: Int?, onDone: () -> Unit, onChanged: () -> Unit) {
-    var typed by rememberSaveable(fix) { mutableStateOf(own?.toString().orEmpty()) }
+    val field = rememberSaveable(fix, saver = TextFieldState.Saver) { TextFieldState(own?.toString().orEmpty()) }
     var why by rememberSaveable(fix) { mutableStateOf<String?>(null) }
+    // A figure typed again clears what was wrong with the last.
+    LaunchedEffect(field) { snapshotFlow { field.text.toString() }.drop(1).collect { why = null } }
     val set = { ft: Int? ->
         PlanProcedures.setCrossing(fix, ft)
         onDone()
@@ -187,13 +194,9 @@ private fun CrossAtDialog(fix: String, own: Int?, onDone: () -> Unit, onChanged:
             Column {
                 Text(stringResource(R.string.fix_cross_hint))
                 OutlinedTextField(
-                    value = typed,
-                    onValueChange = {
-                        typed = it
-                        why = null
-                    },
+                    state = field,
                     label = { Text(stringResource(R.string.fix_cross_feet)) },
-                    singleLine = true,
+                    lineLimits = TextFieldLineLimits.SingleLine,
                     isError = why != null,
                     supportingText = if (reason == null) null else ({ Text(reason) }),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -202,7 +205,7 @@ private fun CrossAtDialog(fix: String, own: Int?, onDone: () -> Unit, onChanged:
         },
         confirmButton = {
             TextButton(onClick = {
-                RouteProcedures.crossingTyped(typed).fold({ set(it) }, { why = it.message ?: Format.NONE })
+                RouteProcedures.crossingTyped(field.text.toString()).fold({ set(it) }, { why = it.message ?: Format.NONE })
             }) { Text(stringResource(R.string.depart_set)) }
         },
         dismissButton = {

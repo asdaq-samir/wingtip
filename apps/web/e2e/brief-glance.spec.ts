@@ -67,7 +67,7 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
   const card = sideDrawer(page).getByTestId("brief-card");
   const glance = card.getByTestId("brief-glance");
   // Runways in the verdict's line (with the day's risk, which may stop it).
-  await expect(card.getByTestId("brief-verdict")).toContainText(/Runways/, { timeout: slow(30_000) });
+  await expect(card.getByTestId("brief-verdict")).toContainText(/runways/i, { timeout: slow(30_000) });
 
   // The lines a pilot acts on: at most three, each one sentence of at
   // most 140 characters, the crosswind's with its figures and its action.

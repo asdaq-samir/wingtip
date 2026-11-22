@@ -115,7 +115,9 @@ class RouteActions(
 fun rememberRouteActions(plan: Plan, flight: FlightModel = hiltViewModel()): RouteActions {
     val context = LocalContext.current
     val ship = flight.ownShip
-    val hasFix by remember(ship) { ship.fix.map { it != null }.distinctUntilChanged() }.collectAsStateWithLifecycle(ship.fix.value != null)
+    // Whether there was a fix read once, as the flow is made, not at each drawing.
+    val fixedFirst = remember(ship) { ship.fix.value != null }
+    val hasFix by remember(ship) { ship.fix.map { it != null }.distinctUntilChanged() }.collectAsStateWithLifecycle(fixedFirst)
     val state by plan.state.collectAsStateWithLifecycle()
     val haptics = rememberHaptics()
     return remember(plan, ship, hasFix, state.routed, state.course) { RouteActions(plan, { ship.fix.value }, hasFix, state.routed && state.course != null, context, haptics) }
