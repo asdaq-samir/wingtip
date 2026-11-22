@@ -22,6 +22,7 @@ from datetime import datetime, timezone
 from shapely.geometry import Polygon, shape
 
 from . import airports, emergency, fuelstops, geo, itws, saa, sua, tfr, utc, weather
+from .engine import ask as engine
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ def fields(lat: float, lon: float, dest: str, alternate: str | None) -> list[dic
     except (OSError, ValueError, KeyError) as err:
         log.warning("fuel listings not read: %s", err)
         selling = set()
-    out = [{**field, "fuel": ident in selling or ident.removeprefix("K") in selling} for ident, field in found.items()]
+    out = [{**field, "fuel": ident in selling or engine("bare_field", ident=ident) in selling} for ident, field in found.items()]
     return out + _closed(dest, found, lat, lon)
 
 

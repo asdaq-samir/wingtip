@@ -21,6 +21,7 @@ import xml.etree.ElementTree as ET
 
 from . import stores
 from .config import Settings, get_settings
+from .engine import ask as engine
 
 STORE = get_settings().filed_store
 #: Where the store was kept before FILED_STORE moved it (the data
@@ -73,9 +74,9 @@ def reset() -> None:
 
 def same(ident: str) -> str:
     """An airport as both its idents name it: KUES and UES alike, as TFMS
-    writes a small field's FAA ident and the route box its ICAO one."""
-    s = ident.strip().upper()
-    return s[1:] if len(s) == 4 and s.startswith("K") and s.isalpha() else s
+    writes a small field's FAA ident and the route box its ICAO one (the
+    engine's bare_field)."""
+    return engine("bare_field", ident=ident)
 
 
 def route_stops(route: str, dep: str, dest: str) -> list[str] | None:

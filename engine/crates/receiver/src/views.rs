@@ -6,6 +6,7 @@ use crate::nexrad::{self, Block};
 use crate::picture::Picture;
 use crate::report;
 use wingtip_core::json::{self, Value};
+use wingtip_flight::field::same_field;
 
 /// The height to add to a target's pressure altitude to have it on own
 /// ship's scale: own ship's height less its own pressure altitude, so two
@@ -85,10 +86,10 @@ pub fn traffic(p: &Picture, internet: &[Value], own_ft: Option<f64>, at: f64) ->
 
 /// Whether a FIS-B location is the field asked for: the same, or the
 /// field's three-letter ident with the K the contiguous states' ICAO
-/// identifiers have before it ("ORD", "KORD"; FAA JO 7350.9).
+/// identifiers have before it ("ORD", "KORD"; flight's same_field, FAA JO
+/// 7350.9GG 4-1).
 fn is_field(location: &str, ident: &str) -> bool {
-    let (l, i) = (location.to_ascii_uppercase(), ident.to_ascii_uppercase());
-    l == i || (i.len() == 3 && l == format!("K{i}")) || (l.len() == 3 && i == format!("K{l}"))
+    same_field(location, ident)
 }
 
 /// A field's latest METAR (or SPECI) and TAF the receiver was sent, as

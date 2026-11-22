@@ -124,7 +124,7 @@ enum PackSearch {
         guard typed.count >= 2 else { return [] }
         func rank(_ pin: AirportPin) -> Int? {
             let ident = pin.ident.uppercased(), name = pin.name.uppercased()
-            if ident == typed || ident == "K" + typed { return 0 }
+            if (try? Engine.sameField(a: ident, b: typed)) ?? (ident == typed) { return 0 }
             if ident.hasPrefix(typed) { return 1 }
             if name.hasPrefix(typed) { return 2 }
             if name.contains(typed) { return 3 }

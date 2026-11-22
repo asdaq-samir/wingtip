@@ -36,7 +36,7 @@ enum EngineWords {
     /// its K ("MSN", "KMSN"); nil for the destination.
     static func ident(_ question: String, facts: OnDeviceFacts) -> String? {
         let tokens = question.uppercased().split { !$0.isLetter && !$0.isNumber }.map(String.init)
-        return tokens.first { facts.fields[$0] != nil || (($0.count == 3) && facts.fields["K" + $0] != nil) }
+        return tokens.first { facts.field($0) != nil }
     }
 
     /// The runway a question names: "runway 36", "rwy 18L".

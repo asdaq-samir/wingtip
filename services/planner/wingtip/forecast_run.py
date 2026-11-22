@@ -93,7 +93,7 @@ def play(track: list[dict], fields: list[dict], rules: str, minimums: dict | Non
     points = [(p["lat"], p["lon"]) for p in track] + [(f["lat"], f["lon"]) for f in fields]
     box = _box(points, TAF_REACH_NM)
     start, end = min(p["t"] for p in track), max(p["t"] for p in track)
-    idents = {f["ident"].upper() for f in fields} | {f"K{f['ident'].upper()}" for f in fields}
+    idents = {name for f in fields for name in _ask("field_names", ident=f["ident"])}
     tafs = [s for s in _dataset("tafs", unavailable) if _in_box(s["lat"], s["lon"], box) or s["icaoId"] in idents]
     sigmets = [a for a in _dataset("airsigmets", unavailable) if len(a["coords"]) >= 3 and _ring_in_box(a["coords"], box)]
     gairmets: list = []

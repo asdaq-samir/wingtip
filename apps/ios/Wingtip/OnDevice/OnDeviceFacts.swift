@@ -58,10 +58,11 @@ struct OnDeviceFacts: Equatable, Sendable {
     /// A field the question names, else the destination.
     func field(_ ident: String?) -> Field? {
         let asked = (ident ?? "").trimmingCharacters(in: .whitespaces).uppercased()
-        if let found = fields[asked] { return found }
-        // "MSN" for KMSN, as a pilot says it.
-        if asked.count == 3, let found = fields["K" + asked] { return found }
-        return asked.isEmpty ? fields[dest.uppercased()] : nil
+        if asked.isEmpty { return fields[dest.uppercased()] }
+        // "MSN" for KMSN, as a pilot says it: each name the engine's
+        // field_names gives it (FAA JO 7350.9GG 4-1).
+        let names = (try? Engine.fieldNames(ident: asked)) ?? [asked]
+        return names.lazy.compactMap { fields[$0] }.first
     }
 }
 

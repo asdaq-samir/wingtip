@@ -10,6 +10,7 @@ use crate::json::Value;
 use crate::metar;
 use crate::winds::{self, WindAt};
 use wingtip_core::sort::StableSort;
+use wingtip_flight::field::same_field;
 
 /// Whose forecast a figure is.
 #[derive(Clone, Debug, PartialEq)]
@@ -72,7 +73,7 @@ fn taf_met(station: &Value, nm: f64, start: f64, end: f64) -> Option<Met> {
 /// altitude plan's clouds take a TAF over).
 fn taf_near(tafs: &[Value], ident: Option<&str>, lat: f64, lon: f64, start: f64, end: f64) -> Option<Met> {
     if let Some(own) =
-        ident.and_then(|i| tafs.iter().find(|s| s.get("icaoId").and_then(Value::as_str).is_some_and(|id| id == i || id == format!("K{i}"))))
+        ident.and_then(|i| tafs.iter().find(|s| s.get("icaoId").and_then(Value::as_str).is_some_and(|id| same_field(id, i))))
         && let Some(m) = taf_met(own, 0.0, start, end)
     {
         return Some(m);

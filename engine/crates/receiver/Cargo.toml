@@ -8,7 +8,8 @@ description = "A portable ADS-B receiver's GDL 90 stream read: its frames, own s
 [lib]
 name = "wingtip_receiver"
 
-# The engine's own crates, below this one (engine/README.md), and the
+# The engine's own crates, below this one (engine/README.md; flight for
+# its one ident rule, same_field), and the
 # base64 crate (MIT/Apache-2.0, the maintained Rust codec) for the bytes a
 # host hands receiver_read: plain Rust, so the phones carry it as it is,
 # its default `simd-unsafe` feature off. The web asks no receiver rule, so
@@ -16,6 +17,7 @@ name = "wingtip_receiver"
 [dependencies]
 base64 = { version = "0.23.1", default-features = false, features = ["alloc"] }
 wingtip-core = { path = "../core" }
+wingtip-flight = { path = "../flight" }
 
 [lints]
 workspace = true
