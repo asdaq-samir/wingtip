@@ -786,6 +786,8 @@ extension Components {
         public struct ConnectionDto: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/ConnectionDto/app`.
             public var app: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ConnectionDto/can`.
+            public var can: [Swift.String]
             /// - Remark: Generated from `#/components/schemas/ConnectionDto/id`.
             public var id: Swift.String
             /// - Remark: Generated from `#/components/schemas/ConnectionDto/renewedAt`.
@@ -798,18 +800,21 @@ extension Components {
             ///
             /// - Parameters:
             ///   - app:
+            ///   - can:
             ///   - id:
             ///   - renewedAt:
             ///   - scopes:
             ///   - until:
             public init(
                 app: Swift.String,
+                can: [Swift.String],
                 id: Swift.String,
                 renewedAt: Swift.String? = nil,
                 scopes: Swift.String? = nil,
                 until: Swift.String? = nil
             ) {
                 self.app = app
+                self.can = can
                 self.id = id
                 self.renewedAt = renewedAt
                 self.scopes = scopes
@@ -817,6 +822,7 @@ extension Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case app
+                case can
                 case id
                 case renewedAt
                 case scopes

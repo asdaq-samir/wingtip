@@ -887,6 +887,7 @@ data class Capabilities (
 @Serializable
 data class ConnectionDto (
     val app: String,
+    val can: List<String>,
     val id: String,
     val renewedAt: String? = null,
     val scopes: String? = null,
