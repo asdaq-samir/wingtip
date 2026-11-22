@@ -1416,6 +1416,17 @@ not give; "no NOTAMs" (decision 0023: "none heard since").
 **Sources.** [ff-web], [ff-brief-record], [vercel-guidelines],
 [bui-releases], [apg-alert].
 
+**Weight and balance.** The Brief's Weight & Balance (`WeightBalanceSection`)
+is the loading editor: the airplane's empty weight and arm, each station
+of its POH's loading, the fuel in gallons and its grade, then the takeoff
+and landing conditions and the envelope graph (`EnvelopeChart`), each
+the engine's (`gonogo_balance`). The grade is a menu (`PullDown`). Its
+first choice is the POH's own weight a gallon, which counts until the
+pilot picks a grade; then come the engine's grades, each with its
+gallon's standard weight (`fuel_grades`, FAA-H-8083-1B: avgas 6, Jet A
+6.8). An airplane with no loading asks for it in place (`AskFigure`),
+with no airplane assumed.
+
 ### 6. NOTAMs
 
 **Reference.** ForeFlight 18.6 (July 2026) filters NOTAMs by category,
