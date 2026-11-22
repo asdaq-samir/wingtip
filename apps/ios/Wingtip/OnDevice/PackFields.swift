@@ -119,18 +119,18 @@ enum PackSearch {
     /// (KOSH, or OSH for KOSH), an ident starting with it, a name starting
     /// with it, then a name holding it; each with its use, the engine's,
     /// as the planner's search marks it.
-    static func search(_ q: String, in pins: [AirportPin], limit: Int = 12) -> [AirportSuggestion] {
+    static func search(_ q: String, in pins: [AirportPin], limit: Int = 12) throws -> [AirportSuggestion] {
         let typed = q.trimmingCharacters(in: .whitespaces).uppercased()
         guard typed.count >= 2 else { return [] }
-        func rank(_ pin: AirportPin) -> Int? {
+        func rank(_ pin: AirportPin) throws -> Int? {
             let ident = pin.ident.uppercased(), name = pin.name.uppercased()
-            if (try? Engine.sameField(a: ident, b: typed)) ?? (ident == typed) { return 0 }
+            if try Engine.sameField(a: ident, b: typed) { return 0 }
             if ident.hasPrefix(typed) { return 1 }
             if name.hasPrefix(typed) { return 2 }
             if name.contains(typed) { return 3 }
             return nil
         }
-        return pins.compactMap { pin in rank(pin).map { ($0, pin) } }
+        return try pins.compactMap { pin in try rank(pin).map { ($0, pin) } }
             .sorted { ($0.0, $0.1.ident) < ($1.0, $1.1.ident) }
             .prefix(limit)
             .map { AirportSuggestion(ident: $0.1.ident, kind: $0.1.kind, name: $0.1.name,

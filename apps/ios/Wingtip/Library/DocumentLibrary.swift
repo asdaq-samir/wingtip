@@ -12,7 +12,8 @@ enum ReaderSource {
 /// the web's useDocuments: the pilot's own documents and the FAA's shelf,
 /// each document's edition and whether it is kept on this device, and the
 /// verbs: Keep for the Air and its undoing, Add, Rename and Delete with
-/// its Undo. One for the app, every window reading the same shelf.
+/// its Undo. One for the app (ScreenModels), every window reading the
+/// same shelf from the environment.
 ///
 /// A kept document whose edition the shelf has replaced is kept again as
 /// the shelf is read (the FAA publishes a new one, the planner fetches it,
@@ -20,13 +21,15 @@ enum ReaderSource {
 @MainActor
 @Observable
 final class DocumentLibrary {
-    static let shared = DocumentLibrary(store: .device)
-
     /// The shelf's groups in the order the page lists them (the planner's
     /// LibraryDocument.group).
     static let groups = ["Regulations", "AIM", "Handbooks", "Advisory Circulars", "Charts"]
 
     @ObservationIgnored let store: DeviceDocuments
+    /// Keep in iCloud's mirror of the pilot's own, and the reader's places
+    /// in each document, kept with the documents they are of.
+    @ObservationIgnored let cloud: DocumentCloud
+    @ObservationIgnored let places: ReaderPlaces
     private(set) var shelf: [LibraryEntry]
     private(set) var shelfFailed = false
     private(set) var shelfLoading = false
@@ -40,12 +43,21 @@ final class DocumentLibrary {
     var problem: String?
     @ObservationIgnored private var askedAt: Date?
 
-    init(store: DeviceDocuments) {
+    init(store: DeviceDocuments, cloud: DocumentCloud, places: ReaderPlaces) {
         self.store = store
+        self.cloud = cloud
+        self.places = places
         shelf = store.loadShelf() ?? []
         // A delete's Undo lasts the launch it was made in.
         store.purge()
         reloadDevice()
+    }
+
+    /// This device's library, its iCloud switch and its places, made once
+    /// for the app (ScreenModels).
+    static func device() -> DocumentLibrary {
+        DocumentLibrary(store: .device, cloud: DocumentCloud(defaults: .standard, context: { Records.container.mainContext }),
+                        places: ReaderPlaces(file: DeviceDocuments.device.root.appending(path: "places.json")))
     }
 
     func reloadDevice() {
@@ -171,7 +183,7 @@ final class DocumentLibrary {
         }
         if !added.isEmpty { problem = nil }
         reloadDevice()
-        DocumentCloud.shared.pushed(added, from: store)
+        cloud.pushed(added, from: store)
         return added
     }
 
@@ -180,7 +192,7 @@ final class DocumentLibrary {
     func rename(_ id: String, to name: String) {
         try? store.renameOwn(id, to: name)
         reloadDevice()
-        if let doc = own.first(where: { $0.id == id }) { DocumentCloud.shared.renamed(doc) }
+        if let doc = own.first(where: { $0.id == id }) { cloud.renamed(doc) }
     }
 
     /// One of the pilot's own taken off this device, with the system's
@@ -189,7 +201,7 @@ final class DocumentLibrary {
     func remove(_ id: String, undo: UndoManager?) {
         guard let doc = own.first(where: { $0.id == id }), (try? store.removeOwn(id)) != nil else { return }
         reloadDevice()
-        DocumentCloud.shared.removed(id)
+        cloud.removed(id)
         guard let undo else {
             forgetRemoved(id)
             return
@@ -197,14 +209,14 @@ final class DocumentLibrary {
         undo.register(self, named: String(localized: "Delete \(doc.name)")) { library in
             try? library.store.restoreOwn(id)
             library.reloadDevice()
-            if let back = library.own.first(where: { $0.id == id }) { DocumentCloud.shared.pushed([back], from: library.store) }
+            if let back = library.own.first(where: { $0.id == id }) { library.cloud.pushed([back], from: library.store) }
         }
     }
 
     /// The deletes past their Undo gone for good, with their places.
     func forgetRemoved(_ id: String? = nil) {
         store.purge()
-        if let id { ReaderPlaces.shared.forget(DocPlace.own(id).doc) }
+        if let id { places.forget(DocPlace.own(id).doc) }
     }
 
     /// A pilot's own document by its record from iCloud (DocumentCloud):

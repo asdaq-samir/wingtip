@@ -14,6 +14,11 @@ final class Traffic {
     /// seconds (wingtip.traffic), so no sooner than that; twice that with the
     /// app put away (Repeating).
     static let everyS: TimeInterval = 5
+    /// The cockpit's receiver, whose airplanes are merged in (merge).
+    @ObservationIgnored private let receiver: Receiver
+
+    init(receiver: Receiver) { self.receiver = receiver }
+
     var on: Bool = UserDefaults.standard.object(forKey: "traffic") as? Bool ?? true {
         didSet { UserDefaults.standard.set(on, forKey: "traffic"); if !on { planes = [] } }
     }
@@ -50,7 +55,7 @@ final class Traffic {
     /// airplanes are near), else about the middle of the map.
     func run(near ownShip: @escaping @MainActor () -> OwnShip.Fix?) async {
         // The receiver's airplanes merged as each second's bytes are read.
-        Receiver.shared.onRead = { [weak self] in self?.merge() }
+        receiver.onRead = { [weak self] in self?.merge() }
         await Repeating.every(Self.everyS) { [weak self] in
             guard let self else { return }
             let fix = ownShip()
@@ -115,7 +120,7 @@ final class Traffic {
 
     /// The internet's airplanes and the receiver's, as drawn.
     private func merge() {
-        planes = on ? Receiver.shared.traffic(internet, ownFt: ownFt) : []
+        planes = on ? receiver.traffic(internet, ownFt: ownFt) : []
     }
 
     /// The airplanes the engine's `traffic_marks` says to tell (`tell`:

@@ -219,7 +219,7 @@ struct FieldNotamPage: View {
     let notam: APIRankedNotam
 
     var body: some View {
-        let number = "NOTAM \(FieldNotamWords.number(notam, ident: notams.ident))"
+        let number = "NOTAM \(FieldNotamWords.number(notam, idents: notams.idents))"
         let tfr = notam.kind == "tfr"
         List {
             Section {

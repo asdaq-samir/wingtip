@@ -16,6 +16,8 @@ final class FieldNotams {
     static let first = 3
 
     private(set) var ident = ""
+    /// The field's names as its NOTAMs write it (FieldNotamWords.idents).
+    private(set) var idents: [String] = []
     private(set) var ranked: APINotamsRanked?
     /// Where they couldn't be had, said where they go: none shown must not
     /// read as none in force.
@@ -53,8 +55,16 @@ final class FieldNotams {
     /// once, off the main actor (a busy field has dozens), and taken while
     /// the card still shows the field.
     private func take(_ fresh: APINotamsRanked, for ident: String) async {
-        let read = await Self.read(fresh.notams, idents: FieldNotamWords.idents(ident))
+        let names: [String]
+        do {
+            names = try FieldNotamWords.idents(ident)
+        } catch {
+            problem = "Its NOTAMs could not be read, so closures and TFRs aren't shown: \(error.said)"
+            return
+        }
+        let read = await Self.read(fresh.notams, idents: names)
         guard ident == self.ident else { return }
+        idents = names
         ranked = fresh
         problem = nil
         readings = read.readings
@@ -94,7 +104,7 @@ final class FieldNotams {
     }
 
     private func remark() {
-        marks = FieldNotamWords.marks(notams, ident: ident, place: place)
+        marks = FieldNotamWords.marks(notams, idents: idents, place: place)
     }
 
     func reading(_ notam: APIRankedNotam) -> EngineContract.NotamReadAnswer? { readings[notam.id] }

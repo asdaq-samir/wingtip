@@ -114,7 +114,7 @@ enum CardTests {
     /// sidebar's stack with Back, a thing's card in the inspector beside
     /// the map, the map's buttons at its top right, and no sheet ("Avoid: a
     /// sheet over the map on regular width"), so no grabber and no detents.
-    static var split: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+    @MainActor static var split: Bool { UIDevice.current.userInterfaceIdiom == .pad }
 
     /// The system's Back on the page on top. On the iPhone the card's bar
     /// is the only one up and Back its first button; the iPad has more

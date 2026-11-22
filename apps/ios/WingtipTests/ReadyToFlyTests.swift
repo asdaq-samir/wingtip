@@ -68,11 +68,11 @@ struct ReadyToFlyTests {
     @Test func eachFieldsReportIsReadFromTheBriefing() throws {
         let json = #"{"airports":{},"forecast":{"stations":[{"icaoId":"KOSH","ceiling_ft":null,"visibility_sm":null,"raw":"TAF KOSH 091720Z"}]},"hazards":[],"metars":{"KOSH":{"observed_at":"2026-11-09T17:53:00Z"},"C81":null},"weather_unavailable":[]}"#
         let briefing = try Planner.json.decode(Briefing.self, from: Data(json.utf8))
-        let fields = try #require(ReadyFacts.fields(dep: "OSH", dest: "C81", briefing: briefing))
+        let fields = try #require(try ReadyFacts.fields(dep: "OSH", dest: "C81", briefing: briefing))
         #expect(fields.map(\.ident) == ["OSH", "C81"] && fields.map(\.role) == ["departure", "destination"])
         #expect(fields[0].metarObserved == 1_794_246_780 && fields[0].taf == true)
         #expect(fields[1].metarObserved == nil && fields[1].taf == false)
-        #expect(ReadyFacts.fields(dep: "OSH", dest: "C81", briefing: nil) == nil)
+        #expect(try ReadyFacts.fields(dep: "OSH", dest: "C81", briefing: nil) == nil)
     }
 
     @Test func theFactsAreTheSystemsAsTheyAre() {

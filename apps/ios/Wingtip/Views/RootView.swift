@@ -95,6 +95,7 @@ struct RootView: View {
         // argument's screen (CI's pictures, the UI tests) wins over them.
         .onAppear {
             nav.split = layout == .split
+            AirportMarkMenu.shared.input = markPreview // a field's mark held: its card's preview
             let arguments = CommandLine.arguments
             if let at = arguments.firstIndex(of: "-layout"), at + 1 < arguments.count { layoutName = arguments[at + 1] }
             if let at = arguments.firstIndex(of: "-screen"), at + 1 < arguments.count, let screen = Screen(rawValue: arguments[at + 1]) {
@@ -120,12 +121,10 @@ struct RootView: View {
         .modifier(FeelHost())
         // The menu bar's commands and their keys for this window, Open
         // Flight or Track, and a file or words dropped on it (WindowHost).
-        .modifier(WindowHost(search: search, open: { openScreen($0) }, page: { showPage($0) }, run: { await apply($0) }))
+        .modifier(WindowHost(search: search, open: { openScreen($0) }, page: { nav.show($0) }, run: { await apply($0) }))
         // A link's, Siri's or a Shortcut's ask (the owner's, 2026-11-03:
         // Siri and Shortcuts through App Intents), and a card's own.
         .modifier(CommandHost { await apply($0, then: $1) })
-        // A field's mark held: its card's preview and the plan's three.
-        .onAppear { AirportMarkMenu.shared.input = markPreview }
         .environment(\.appCommand, AppCommandAction { command, then in Task { await apply(command, then: then) } })
     }
 
@@ -140,14 +139,6 @@ struct RootView: View {
         } else {
             nav.open(.airport(route))
         }
-    }
-
-    /// A plan's page from the menu bar (View > Search, FPL): the card put
-    /// away so the page is in sight, as the toggle on the map turns it.
-    func showPage(_ page: PlanPage) {
-        nav.close()
-        nav.planPath = []
-        nav.sheetPage = page
     }
 
     /// Ask, with the question the search sent where there is one: its

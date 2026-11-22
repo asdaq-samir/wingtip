@@ -92,9 +92,6 @@
     "%@ Transition" : {
 
     },
-    "%@ airport diagram" : {
-
-    },
     "%@ along" : {
 
     },
@@ -134,9 +131,6 @@
         }
       }
     },
-    "%@ fixes" : {
-
-    },
     "%@ flown of %@" : {
       "localizations" : {
         "en" : {
@@ -153,9 +147,6 @@
     "%@ fuel" : {
 
     },
-    "%@ fuel flow" : {
-
-    },
     "%@ groundspeed" : {
 
     },
@@ -166,6 +157,9 @@
 
     },
     "%@ is outside the planner's legal altitudes; flown with its warnings." : {
+
+    },
+    "%@ isn't a PDF, so it wasn't added." : {
 
     },
     "%@ leaving %@" : {
@@ -238,9 +232,6 @@
       }
     },
     "%@ to go" : {
-
-    },
-    "%@ transition" : {
 
     },
     "%@ true airspeed" : {
@@ -352,6 +343,16 @@
         }
       }
     },
+    "%@%@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$@%3$@"
+          }
+        }
+      }
+    },
     "%@%@: change it" : {
       "localizations" : {
         "en" : {
@@ -375,16 +376,13 @@
     "%@'s ATIS could not be fetched; check the connection." : {
 
     },
-    "%@'s ATIS couldn't be had; check the connection." : {
-
-    },
     "%@'s minimum altitude" : {
 
     },
-    "%@'s weather could not be fetched; check the connection." : {
+    "%@'s plates" : {
 
     },
-    "%@'s weather could not be had; check the connection." : {
+    "%@'s weather could not be fetched; check the connection." : {
 
     },
     "%@, %@" : {
@@ -403,16 +401,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@, %2$@%3$@"
-          }
-        }
-      }
-    },
-    "%@, %@, %@%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@, %2$@, %3$@%4$@"
           }
         }
       }
@@ -511,6 +499,9 @@
         }
       }
     },
+    "%lld found" : {
+
+    },
     "%lld ft wide" : {
 
     },
@@ -520,7 +511,7 @@
     "%lld more" : {
 
     },
-    "%lld more checkpoints" : {
+    "%lld more on the route" : {
 
     },
     "%lld of %lld" : {
@@ -539,6 +530,16 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$lld of %2$lld shown"
+          }
+        }
+      }
+    },
+    "%lld of %lld%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld%3$@"
           }
         }
       }
@@ -638,12 +639,6 @@
     "A call to you: %@" : {
 
     },
-    "A fix" : {
-
-    },
-    "A fix from %@" : {
-
-    },
     "A note for your instructor" : {
 
     },
@@ -657,12 +652,6 @@
 
     },
     "ATC Alerts" : {
-
-    },
-    "ATC Copilot" : {
-
-    },
-    "ATIS at ${airport}" : {
 
     },
     "ATIS at an Airport" : {
@@ -684,9 +673,6 @@
 
     },
     "Add" : {
-
-    },
-    "Add ${approach} to the route" : {
 
     },
     "Add %@ at %@" : {
@@ -720,16 +706,13 @@
     "Add Your Name" : {
 
     },
+    "Add a PDF" : {
+
+    },
     "Add a Segment" : {
 
     },
-    "Add a Stop" : {
-
-    },
     "Add a note" : {
-
-    },
-    "Add an Airplane" : {
 
     },
     "Add an Approach to the Route" : {
@@ -744,6 +727,9 @@
     "Add to Route" : {
 
     },
+    "Add your airplane for times and fuel" : {
+
+    },
     "Add yours with its handbook's figures." : {
 
     },
@@ -756,6 +742,9 @@
           }
         }
       }
+    },
+    "Adverse Conditions" : {
+
     },
     "Aeronautical" : {
 
@@ -775,16 +764,10 @@
     "Airplane Type" : {
 
     },
-    "Airplane type" : {
-
-    },
     "Airplanes" : {
 
     },
     "Airport" : {
-
-    },
-    "Airport Diagram" : {
 
     },
     "Airport Weather" : {
@@ -824,9 +807,6 @@
 
     },
     "Along the Route" : {
-
-    },
-    "Along the route" : {
 
     },
     "Alt" : {
@@ -920,9 +900,6 @@
     "As printed on the page, in %@." : {
 
     },
-    "As published" : {
-
-    },
     "Ask" : {
 
     },
@@ -933,9 +910,6 @@
 
     },
     "Ask about the flight" : {
-
-    },
-    "Ask about this flight" : {
 
     },
     "Ask by voice" : {
@@ -977,22 +951,25 @@
     "Band" : {
 
     },
-    "Based At" : {
+    "Base" : {
 
     },
-    "Based at" : {
+    "Based At" : {
 
     },
     "Bearing Error" : {
 
     },
-    "Bearing error" : {
+    "Before You Go" : {
 
     },
     "Best Fields" : {
 
     },
     "Best Fields · Glide About %@" : {
+
+    },
+    "Beyond Reserve" : {
 
     },
     "Blank where none was given" : {
@@ -1004,19 +981,19 @@
     "Book Figures" : {
 
     },
-    "Brief" : {
+    "Bookmark This Page" : {
 
     },
-    "Brief ${approach}" : {
+    "Bookmark This Page puts the page here." : {
+
+    },
+    "Brief" : {
 
     },
     "Brief Them" : {
 
     },
     "Brief a Flight" : {
-
-    },
-    "Brief a flight to ${airport}" : {
 
     },
     "Brief a flight to where?" : {
@@ -1076,9 +1053,6 @@
     "Certificate Expires" : {
 
     },
-    "Certificate expires" : {
-
-    },
     "Cessna 172" : {
 
     },
@@ -1115,9 +1089,6 @@
     "Checked On" : {
 
     },
-    "Checked on" : {
-
-    },
     "Checking the flight…" : {
 
     },
@@ -1136,13 +1107,7 @@
     "Checkpoint Colors" : {
 
     },
-    "Checkpoint Colours" : {
-
-    },
     "Checkpoint Notes" : {
-
-    },
-    "Checkpoint notes" : {
 
     },
     "Checkpoints" : {
@@ -1197,6 +1162,9 @@
     "Clear Markup" : {
 
     },
+    "Clear Page's Markup" : {
+
+    },
     "Clear Route" : {
 
     },
@@ -1224,9 +1192,6 @@
     "Climb and Descent" : {
 
     },
-    "Climb fuel" : {
-
-    },
     "Climbing" : {
 
     },
@@ -1245,9 +1210,6 @@
     "Comms Assist" : {
 
     },
-    "Comms Assist, ATC alerts and the clearance readback check" : {
-
-    },
     "Compass Heading" : {
 
     },
@@ -1255,6 +1217,9 @@
 
     },
     "Contact" : {
+
+    },
+    "Contents" : {
 
     },
     "Copied" : {
@@ -1281,7 +1246,7 @@
     "Could Not Read That" : {
 
     },
-    "Couldn't Read That" : {
+    "Couldn't keep it. Try again with a signal." : {
 
     },
     "Course" : {
@@ -1302,25 +1267,13 @@
     "Cross %@ At" : {
 
     },
-    "Cross %@ at" : {
-
-    },
     "Cross At" : {
 
     },
     "Cross At…" : {
 
     },
-    "Cross at" : {
-
-    },
-    "Cross at…" : {
-
-    },
     "Cross-Country" : {
-
-    },
-    "Cross-country" : {
 
     },
     "Cruise" : {
@@ -1353,12 +1306,6 @@
     "Cruising Speed" : {
 
     },
-    "Cruising level" : {
-
-    },
-    "Cruising speed" : {
-
-    },
     "Currency" : {
 
     },
@@ -1366,9 +1313,6 @@
 
     },
     "DME Channel" : {
-
-    },
-    "DME channel" : {
 
     },
     "Danger ahead" : {
@@ -1395,9 +1339,6 @@
     "Day of the Flight" : {
 
     },
-    "Day of the flight" : {
-
-    },
     "Debrief" : {
 
     },
@@ -1413,6 +1354,9 @@
     "Delete" : {
 
     },
+    "Delete %@" : {
+
+    },
     "Delete %@?" : {
 
     },
@@ -1420,6 +1364,9 @@
 
     },
     "Delete Airplane" : {
+
+    },
+    "Delete from iCloud" : {
 
     },
     "Delete the Track" : {
@@ -1479,15 +1426,6 @@
     "Direct To %@" : {
 
     },
-    "Direct to ${airport}" : {
-
-    },
-    "Direct to ${place}" : {
-
-    },
-    "Direct to %@" : {
-
-    },
     "Direct to %@." : {
 
     },
@@ -1510,9 +1448,6 @@
 
     },
     "Discard" : {
-
-    },
-    "Discard Changes" : {
 
     },
     "Discard your changes?" : {
@@ -1542,25 +1477,31 @@
     "Divert To" : {
 
     },
-    "Divert to" : {
-
-    },
     "Divert to %@" : {
 
     },
     "Do" : {
 
     },
-    "Documents Filed" : {
+    "Document" : {
 
     },
-    "Documents filed" : {
+    "Documents Filed" : {
 
     },
     "Done" : {
 
     },
+    "Done Flying" : {
+
+    },
+    "Download" : {
+
+    },
     "Download %@" : {
+
+    },
+    "Download %@'s plates?" : {
 
     },
     "Download %@?" : {
@@ -1590,9 +1531,6 @@
     "Dry Run" : {
 
     },
-    "Dry run" : {
-
-    },
     "ETA · %@" : {
 
     },
@@ -1614,9 +1552,6 @@
     "Edit Airplane" : {
 
     },
-    "Edit the %@" : {
-
-    },
     "Edition" : {
 
     },
@@ -1635,9 +1570,6 @@
     "Email Reminders" : {
 
     },
-    "Email reminders" : {
-
-    },
     "Emergency" : {
 
     },
@@ -1648,6 +1580,9 @@
 
     },
     "Empty Weight" : {
+
+    },
+    "En Route" : {
 
     },
     "En route" : {
@@ -1683,9 +1618,6 @@
     "Enter a clearance" : {
 
     },
-    "Enter the route" : {
-
-    },
     "Entry" : {
 
     },
@@ -1707,9 +1639,6 @@
     "Expires" : {
 
     },
-    "Explain ${notam}" : {
-
-    },
     "Explain a NOTAM" : {
 
     },
@@ -1717,9 +1646,6 @@
 
     },
     "Export as CSV" : {
-
-    },
-    "Extras" : {
 
     },
     "FAA ATCSCC" : {
@@ -1744,6 +1670,9 @@
 
     },
     "Feet" : {
+
+    },
+    "Fetching %@…" : {
 
     },
     "Fetching earlier flights…" : {
@@ -1785,6 +1714,9 @@
     "Fetching the hours…" : {
 
     },
+    "Fetching the library…" : {
+
+    },
     "Fetching the map…" : {
 
     },
@@ -1806,9 +1738,6 @@
     "Fields Near %@" : {
 
     },
-    "Fields near %@" : {
-
-    },
     "Figures" : {
 
     },
@@ -1819,9 +1748,6 @@
 
     },
     "File Flight Plan" : {
-
-    },
-    "File it with Flight Service" : {
 
     },
     "File with %@" : {
@@ -1851,10 +1777,16 @@
     "Find any airport, town or fix the way you would in Apple or Google Maps." : {
 
     },
+    "Find in Document" : {
+
+    },
     "Finding it…" : {
 
     },
     "Finding the fields round you…" : {
+
+    },
+    "Finding where you are…" : {
 
     },
     "Finding your position…" : {
@@ -1876,9 +1808,6 @@
 
     },
     "Fixed Today" : {
-
-    },
-    "Flash cards, holding entries and lost comms practice" : {
 
     },
     "Flashing" : {
@@ -1951,9 +1880,6 @@
     "Fly" : {
 
     },
-    "Fly ${airplane}" : {
-
-    },
     "Fly %@" : {
 
     },
@@ -1978,9 +1904,6 @@
     "Fly as Planned" : {
 
     },
-    "Fly this airplane" : {
-
-    },
     "Fly via %@ · %@" : {
       "localizations" : {
         "en" : {
@@ -2000,16 +1923,10 @@
     "Flying now" : {
 
     },
-    "Flying this airplane" : {
-
-    },
     "Folds the reasons" : {
 
     },
     "Follow %@ on the map" : {
-
-    },
-    "Follow, past flights and history of airplanes not yours" : {
 
     },
     "Forecast" : {
@@ -2027,22 +1944,22 @@
     "Forecast Mode" : {
 
     },
-    "Forecast mode" : {
-
-    },
     "Forget Them" : {
 
     },
     "Forget your checkpoint notes?" : {
 
     },
+    "Forward" : {
+
+    },
     "Found On" : {
 
     },
-    "Found on" : {
+    "Free on iPhone" : {
 
     },
-    "Free on iPhone" : {
+    "Freezing" : {
 
     },
     "Frequencies" : {
@@ -2094,9 +2011,6 @@
 
     },
     "Fuel Set" : {
-
-    },
-    "Fuel in the Tanks" : {
 
     },
     "Fuel remarks" : {
@@ -2186,7 +2100,7 @@
     "Hide from Map" : {
 
     },
-    "Hide from the Map" : {
+    "High" : {
 
     },
     "Highest" : {
@@ -2222,9 +2136,6 @@
     "Home Base" : {
 
     },
-    "Home base" : {
-
-    },
     "Hours" : {
 
     },
@@ -2234,13 +2145,7 @@
     "Hours at Last 100-Hour" : {
 
     },
-    "Hours at last 100-hour" : {
-
-    },
     "Hours flown by %@" : {
-
-    },
-    "Hours now" : {
 
     },
     "How" : {
@@ -2252,16 +2157,10 @@
     "I Understand" : {
 
     },
-    "I can't tell where you are, so here are the nearest airports." : {
-
-    },
     "I cannot tell where you are, so here are the nearest airports." : {
 
     },
     "ICAO Address" : {
-
-    },
-    "ICAO address" : {
 
     },
     "IPC needed" : {
@@ -2301,9 +2200,6 @@
     "In still air: the winds there could not be read." : {
 
     },
-    "In still air: the winds there couldn't be read." : {
-
-    },
     "In the Brief: %@" : {
 
     },
@@ -2311,9 +2207,6 @@
 
     },
     "In the air" : {
-
-    },
-    "In words" : {
 
     },
     "Inbound" : {
@@ -2329,9 +2222,6 @@
 
     },
     "Inoperative Equipment" : {
-
-    },
-    "Inoperative equipment" : {
 
     },
     "Inspections" : {
@@ -2358,9 +2248,6 @@
     "Instrument Currency" : {
 
     },
-    "Instrument currency" : {
-
-    },
     "Into the Pattern · Within %@ ft" : {
 
     },
@@ -2370,10 +2257,10 @@
     "Into the Wind (%@)" : {
 
     },
-    "Invert Plate Colors" : {
+    "Invert Colors" : {
 
     },
-    "It goes from your airplanes and from the nav log's picker. This can't be undone." : {
+    "Invert Plate Colors" : {
 
     },
     "It goes from your airplanes and from the nav log's picker. This cannot be undone." : {
@@ -2385,13 +2272,7 @@
     "Its Date" : {
 
     },
-    "Its date" : {
-
-    },
     "Its history could not be fetched. Try again in a moment." : {
-
-    },
-    "Its history couldn't be fetched. Try again in a moment." : {
 
     },
     "Its magnetic course from %@, a VOR's radial, and how far. Flown over next." : {
@@ -2401,9 +2282,6 @@
 
     },
     "Its pilot stopped sharing it." : {
-
-    },
-    "Its profile" : {
 
     },
     "J. J. Jones" : {
@@ -2427,6 +2305,12 @@
     "Keep for the Air" : {
 
     },
+    "Keep for the Air, %@" : {
+
+    },
+    "Keep in iCloud" : {
+
+    },
     "Keep on This iPhone" : {
 
     },
@@ -2434,6 +2318,9 @@
 
     },
     "Keep the path this iPhone flew, or put in a GPX file." : {
+
+    },
+    "Keeping %@ for the Air" : {
 
     },
     "Keeping for the Air: %lld of %lld" : {
@@ -2461,6 +2348,9 @@
     "Kept for the Air" : {
 
     },
+    "Kept for the Air. Remove" : {
+
+    },
     "Kept for the Air: %@" : {
 
     },
@@ -2486,6 +2376,9 @@
 
     },
     "Lands with %@" : {
+
+    },
+    "Larger Map Labels" : {
 
     },
     "Last Check" : {
@@ -2540,12 +2433,6 @@
         }
       }
     },
-    "Leg distance" : {
-
-    },
-    "Leg time" : {
-
-    },
     "Legal" : {
 
     },
@@ -2565,6 +2452,9 @@
 
     },
     "Level" : {
+
+    },
+    "Library Not Reached" : {
 
     },
     "Light" : {
@@ -2614,9 +2504,6 @@
 
     },
     "Loaded" : {
-
-    },
-    "Loading the map" : {
 
     },
     "Location Is Off" : {
@@ -2678,16 +2565,13 @@
     "Lost Communications" : {
 
     },
+    "Low" : {
+
+    },
     "Lowest Ceiling" : {
 
     },
     "Lowest Visibility" : {
-
-    },
-    "Lowest ceiling" : {
-
-    },
-    "Lowest visibility" : {
 
     },
     "MAYDAY" : {
@@ -2715,9 +2599,6 @@
     "Magnetic Heading" : {
 
     },
-    "Magnetic heading" : {
-
-    },
     "Magnetic heading %@" : {
 
     },
@@ -2728,9 +2609,6 @@
 
     },
     "Make and Model" : {
-
-    },
-    "Make and model" : {
 
     },
     "Map" : {
@@ -2779,6 +2657,9 @@
     "More than the %lld gal the tanks hold" : {
 
     },
+    "Most Headwind" : {
+
+    },
     "My position" : {
 
     },
@@ -2804,9 +2685,6 @@
 
     },
     "NOTAMs heard since %@, not a full set" : {
-
-    },
-    "NOTAMs issued before %@ and unchanged since aren't held." : {
 
     },
     "Name" : {
@@ -2852,9 +2730,6 @@
         }
       }
     },
-    "Nearest airports" : {
-
-    },
     "Nearest for a Diversion" : {
 
     },
@@ -2865,9 +2740,6 @@
 
     },
     "Nearest to You" : {
-
-    },
-    "Nearest to you" : {
 
     },
     "New Airplane" : {
@@ -2890,6 +2762,9 @@
 
     },
     "Next Lesson" : {
+
+    },
+    "Next Match" : {
 
     },
     "Next · %@" : {
@@ -2916,10 +2791,16 @@
     "No Airports" : {
 
     },
+    "No Bookmarks" : {
+
+    },
     "No Briefing" : {
 
     },
     "No Checklist Yet" : {
+
+    },
+    "No Contents" : {
 
     },
     "No D-ATIS or report at %@. %@" : {
@@ -2974,28 +2855,22 @@
     "No airplane picked" : {
 
     },
-    "No airports" : {
-
-    },
     "No alternate required" : {
 
     },
     "No answer from the planner." : {
 
     },
-    "No briefing" : {
-
-    },
     "No ceiling" : {
-
-    },
-    "No checklist yet" : {
 
     },
     "No clearance was read on this page." : {
 
     },
     "No codes yet" : {
+
+    },
+    "No connection." : {
 
     },
     "No fields near here" : {
@@ -3005,9 +2880,6 @@
 
     },
     "No flight in this track: it never went faster than taxiing." : {
-
-    },
-    "No flight planned" : {
 
     },
     "No flights heard" : {
@@ -3023,12 +2895,6 @@
 
     },
     "No fuel" : {
-
-    },
-    "No hour with nothing against it before %@." : {
-
-    },
-    "No items under the headings yet" : {
 
     },
     "No most-economical plan: the climb's fuel flow isn't known for this airplane." : {
@@ -3049,12 +2915,6 @@
     "No runways listed" : {
 
     },
-    "No saved flights" : {
-
-    },
-    "No track kept" : {
-
-    },
     "No weather station reports from this field." : {
 
     },
@@ -3062,9 +2922,6 @@
 
     },
     "None filed in the last month." : {
-
-    },
-    "None for the route" : {
 
     },
     "None found within 100 nm. File one you have checked yourself." : {
@@ -3088,6 +2945,9 @@
     "None listed" : {
 
     },
+    "None of the hours to %@ is a Go." : {
+
+    },
     "None open" : {
 
     },
@@ -3101,6 +2961,9 @@
 
     },
     "Not Now" : {
+
+    },
+    "Not Verified" : {
 
     },
     "Not Yet" : {
@@ -3118,10 +2981,16 @@
     "Not done" : {
 
     },
+    "Not found" : {
+
+    },
     "Not quite: %@" : {
 
     },
     "Not shown" : {
+
+    },
+    "Not verified" : {
 
     },
     "Notes" : {
@@ -3137,9 +3006,6 @@
 
     },
     "Nothing to practise for now: every currency is good past the reminders, and no debrief shows a weak area." : {
-
-    },
-    "Nothing written yet" : {
 
     },
     "Now" : {
@@ -3173,7 +3039,10 @@
     "On the Map" : {
 
     },
-    "On the clock" : {
+    "On this device and in your iCloud." : {
+
+    },
+    "On this device only. Wingtip never sends them anywhere." : {
 
     },
     "On to %@" : {
@@ -3278,9 +3147,6 @@
     "Other" : {
 
     },
-    "Other Airplanes" : {
-
-    },
     "Our flight" : {
 
     },
@@ -3296,25 +3162,16 @@
     "Ownership History" : {
 
     },
-    "Ownership history" : {
+    "Page %lld" : {
 
     },
     "Passenger Briefing" : {
 
     },
-    "Passengers" : {
-
-    },
     "Passengers at Night" : {
 
     },
-    "Passengers at night" : {
-
-    },
     "Passengers by Day" : {
-
-    },
-    "Passengers by day" : {
 
     },
     "Passengers by day and at night, instrument, flight review and medical, from your logbook." : {
@@ -3383,9 +3240,6 @@
     "Place" : {
 
     },
-    "Places near the field could not be looked up" : {
-
-    },
     "Places near the field could not be looked up." : {
 
     },
@@ -3404,16 +3258,13 @@
     "Plan a route first." : {
 
     },
-    "Plan a trip to ${airport} leaving ${departure}" : {
+    "Plan a route on FPL; its legs are listed here." : {
 
     },
     "Plan and brief your flight in Wingtip Maps first, and I'll tell you." : {
 
     },
     "Plan one in Wingtip Maps." : {
-
-    },
-    "Plan the route first." : {
 
     },
     "Plan the route to see it from the side." : {
@@ -3436,9 +3287,6 @@
       }
     },
     "Planning a trip to %@." : {
-
-    },
-    "Planning aid · not for navigation" : {
 
     },
     "Planning with %@." : {
@@ -3483,13 +3331,13 @@
     "Precipitation Span" : {
 
     },
-    "Precipitation span" : {
-
-    },
     "Preview" : {
 
     },
     "Previews the airplane's own altitude" : {
+
+    },
+    "Previous Match" : {
 
     },
     "Print Nav Log" : {
@@ -3513,13 +3361,7 @@
     "Profile" : {
 
     },
-    "Profile, Altitude Caution" : {
-
-    },
     "Profile, highest %@" : {
-
-    },
-    "Put In a GPX File…" : {
 
     },
     "Put away" : {
@@ -3571,9 +3413,6 @@
     "Read back" : {
 
     },
-    "Read back again" : {
-
-    },
     "Read from the page: check each against it before saving." : {
 
     },
@@ -3619,12 +3458,6 @@
     "Recent NOTAMs only, not a full set" : {
 
     },
-    "Recent experience" : {
-
-    },
-    "Recent experience through" : {
-
-    },
     "Recents" : {
 
     },
@@ -3632,6 +3465,9 @@
 
     },
     "Recording…" : {
+
+    },
+    "Red Within" : {
 
     },
     "Refresh" : {
@@ -3661,6 +3497,9 @@
     "Remove %@" : {
 
     },
+    "Remove Bookmark" : {
+
+    },
     "Remove Fuel Stops" : {
 
     },
@@ -3671,6 +3510,15 @@
 
     },
     "Remove from Favorites" : {
+
+    },
+    "Rename" : {
+
+    },
+    "Rename Bookmark" : {
+
+    },
+    "Rename Document" : {
 
     },
     "Replay time" : {
@@ -3753,16 +3601,10 @@
     "Safety History" : {
 
     },
-    "Safety history" : {
-
-    },
     "Said in Full" : {
 
     },
     "Save" : {
-
-    },
-    "Save %@" : {
 
     },
     "Save Inspections" : {
@@ -3792,9 +3634,6 @@
     "Saved Flights" : {
 
     },
-    "Saved flight" : {
-
-    },
     "Saving…" : {
 
     },
@@ -3822,19 +3661,16 @@
     "Search" : {
 
     },
-    "Search airports and airplanes" : {
+    "Search This Document" : {
 
     },
     "Search for Your Airplane" : {
 
     },
-    "Search for an airplane to keep" : {
-
-    },
-    "Search for your airplane" : {
-
-    },
     "Search, like Maps" : {
+
+    },
+    "Searching…" : {
 
     },
     "Section" : {
@@ -3853,15 +3689,6 @@
 
     },
     "See the Risk Assessment" : {
-
-    },
-    "See the loading" : {
-
-    },
-    "See the reports" : {
-
-    },
-    "See the risk assessment" : {
 
     },
     "Segment" : {
@@ -3930,6 +3757,9 @@
     "Share Link with %@" : {
 
     },
+    "Share This Page" : {
+
+    },
     "Shared Flight" : {
 
     },
@@ -3960,16 +3790,10 @@
     "Show Route As" : {
 
     },
-    "Show earlier flights" : {
-
-    },
     "Show flight plan" : {
 
     },
     "Show on Map" : {
-
-    },
-    "Show on the Map" : {
 
     },
     "Show search" : {
@@ -4032,22 +3856,10 @@
     "Sign as %@" : {
 
     },
-    "Sign in for your logbook" : {
-
-    },
-    "Sign in for your plan" : {
-
-    },
-    "Sign in for your training" : {
-
-    },
     "Sign in to keep your airplanes." : {
 
     },
     "Sign in to log it: the track is kept on this phone until then." : {
-
-    },
-    "Sign in to save flights" : {
 
     },
     "Sign in to see the hours to go across the next day." : {
@@ -4084,6 +3896,9 @@
 
     },
     "Special Use" : {
+
+    },
+    "Special VFR" : {
 
     },
     "Speed, Time and Fuel" : {
@@ -4127,9 +3942,6 @@
 
     },
     "Start and Taxi Fuel" : {
-
-    },
-    "Start from the Phases" : {
 
     },
     "Start or Stop the Flight" : {
@@ -4193,6 +4005,9 @@
     "Stop instructing here?" : {
 
     },
+    "Stop keeping your documents in iCloud?" : {
+
+    },
     "Stop listening" : {
 
     },
@@ -4200,9 +4015,6 @@
 
     },
     "Stopped listening to the radio." : {
-
-    },
-    "Stops" : {
 
     },
     "Stops listening to the radio." : {
@@ -4268,35 +4080,22 @@
     "Tell Me When It Takes Off" : {
 
     },
-    "Tell me when it lands" : {
-
-    },
-    "Tell me when it takes off" : {
-
-    },
     "Terms" : {
 
     },
     "Terms of Use" : {
 
     },
-    "That file isn't a Wingtip flight or a GPX or KML track." : {
+    "Terrain Hazards" : {
+
+    },
+    "That file isn't a Wingtip flight, a PDF or a GPX or KML track." : {
 
     },
     "That's Not Me" : {
 
     },
     "The %@ at %@ could not be briefed: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "The %1$@ at %2$@ couldn't be briefed: %3$@"
-          }
-        }
-      }
-    },
-    "The %@ at %@ couldn't be briefed: %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -4319,10 +4118,16 @@
     "The Airplane" : {
 
     },
+    "The Approach's (%@)" : {
+
+    },
     "The Clearance" : {
 
     },
     "The FAA publishes no airport diagram for this field" : {
+
+    },
+    "The FAA's documents can't be listed now. Those you keep for the air are listed here with no signal." : {
 
     },
     "The FAA's registry has no record of this N-number." : {
@@ -4350,9 +4155,6 @@
 
     },
     "The NOTAMs in Words" : {
-
-    },
-    "The NOTAMs in words" : {
 
     },
     "The Route's Segments" : {
@@ -4419,7 +4221,7 @@
     "The figures are the engine's and the planner's; each answer shows what it read." : {
 
     },
-    "The flight in words" : {
+    "The first %lld found" : {
 
     },
     "The forecast along the run" : {
@@ -4434,10 +4236,10 @@
     "The leg time for this altitude could not be worked out: %@" : {
 
     },
-    "The leg time for this altitude couldn't be worked out: %@" : {
+    "The legs come in as the planner works them out." : {
 
     },
-    "The legs come in as the planner works them out." : {
+    "The library sent something that isn't a PDF." : {
 
     },
     "The limit is a fix an approach begins from" : {
@@ -4447,9 +4249,6 @@
 
     },
     "The nearest airport could not be found; here's the list." : {
-
-    },
-    "The nearest airport couldn't be found; here's the list." : {
 
     },
     "The nearest fields could not be found." : {
@@ -4515,22 +4314,34 @@
     "The track is with the saved flight too: its debrief is there in Flights." : {
 
     },
-    "The weather in words" : {
-
-    },
     "The weather service could not be reached." : {
 
     },
     "Theme" : {
 
     },
+    "They stay on this device. Their copies in your iCloud are deleted." : {
+
+    },
     "This Month" : {
+
+    },
+    "This PDF can't be opened. It may be damaged." : {
 
     },
     "This Page" : {
 
     },
     "This VOR is not in the regions kept on this phone, or not in this cycle's data." : {
+
+    },
+    "This document can't be had now. Keep it for the Air to read it with no signal." : {
+
+    },
+    "This document has no table of contents." : {
+
+    },
+    "This document is no longer on this device." : {
 
     },
     "This flight is no longer shared." : {
@@ -4560,19 +4371,13 @@
     "Took Off" : {
 
     },
-    "Took off" : {
+    "Top" : {
 
     },
     "Top of Climb" : {
 
     },
     "Top of Descent" : {
-
-    },
-    "Top of climb" : {
-
-    },
-    "Top of descent" : {
 
     },
     "Total" : {
@@ -4605,16 +4410,7 @@
     "Traffic Management" : {
 
     },
-    "Traffic and FIS-B weather from a receiver on the cockpit's Wi-Fi" : {
-
-    },
-    "Traffic data" : {
-
-    },
     "Training" : {
-
-    },
-    "Training Tools" : {
 
     },
     "Training Tools Are Off" : {
@@ -4642,15 +4438,6 @@
 
     },
     "True Heading" : {
-
-    },
-    "True airspeed" : {
-
-    },
-    "True course" : {
-
-    },
-    "True heading" : {
 
     },
     "Try Again" : {
@@ -4689,9 +4476,6 @@
     "Types the Planner Has Figures For" : {
 
     },
-    "Types the Planner Has Figures for" : {
-
-    },
     "URGENT" : {
 
     },
@@ -4725,9 +4509,6 @@
     "Usually Based At" : {
 
     },
-    "Usually based at" : {
-
-    },
     "VFR Flight Not Recommended" : {
 
     },
@@ -4744,6 +4525,9 @@
 
     },
     "View Full Screen" : {
+
+    },
+    "Visibility" : {
 
     },
     "Void It" : {
@@ -4779,16 +4563,10 @@
     "Weather and Traffic" : {
 
     },
-    "Weather at ${airport}" : {
-
-    },
     "Weather at an Airport" : {
 
     },
     "Weather on the Map" : {
-
-    },
-    "Weather on the map" : {
 
     },
     "Weight & Balance" : {
@@ -4828,9 +4606,6 @@
 
     },
     "Where" : {
-
-    },
-    "Where are you flying to?" : {
 
     },
     "Where to, or ask" : {
@@ -4878,19 +4653,10 @@
     "Wind Level" : {
 
     },
-    "Wind and weather fields on the map's Weather menu" : {
-
-    },
-    "Wind correction" : {
-
-    },
     "Wingtip Maps" : {
 
     },
     "Wingtip Maps Feedback" : {
-
-    },
-    "Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1‑800‑WX‑BRIEF), current FAA charts and publications, or the pilot in command’s judgement and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103)." : {
 
     },
     "Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1‑800‑WX‑BRIEF), current FAA charts and publications, or the pilot in command’s judgment and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103)." : {
@@ -4926,9 +4692,6 @@
     "Write it on the iPhone, from the flight manual." : {
 
     },
-    "Write the %@" : {
-
-    },
     "Writing the glance…" : {
 
     },
@@ -4950,9 +4713,6 @@
     "You set figures for %@ while signed out. Save them with your airplanes?" : {
 
     },
-    "You took" : {
-
-    },
     "You're signed in as %@. Your airplanes, flights and logbook are saved to this account." : {
 
     },
@@ -4966,6 +4726,9 @@
 
     },
     "Your Determination" : {
+
+    },
+    "Your Documents" : {
 
     },
     "Your ETA" : {
@@ -4995,28 +4758,22 @@
     "Your Wingtip Maps data" : {
 
     },
-    "Your airplane in the day's air" : {
-
-    },
     "Your airplane's cruise speed and fuel burn are taken as its figures at its cruise power at 6,000 ft on a standard day, a row of its handbook's cruise table." : {
-
-    },
-    "Your airplanes, flights, logbook and endorsements go, and you are signed out on every device. This can't be undone." : {
 
     },
     "Your airplanes, flights, logbook and endorsements go, and you are signed out on every device. This cannot be undone." : {
 
     },
-    "Your endorsements and reviews are kept with your account." : {
+    "Your documents in your own iCloud, on your other devices. Markup and bookmarks stay on each device." : {
 
     },
-    "Your flight plan is one tap away" : {
+    "Your endorsements and reviews are kept with your account." : {
 
     },
     "Your flights are kept with your account, on every device." : {
 
     },
-    "Your instructor, %@, reviews the flights you put to them from their phone." : {
+    "Your instructor, %@, sees the flights you send them and can sign them off from their phone." : {
 
     },
     "Your logbook and currency are kept with your account." : {
@@ -5025,13 +4782,13 @@
     "Your logbook could not be fetched." : {
 
     },
+    "Your markup" : {
+
+    },
     "Your name" : {
 
     },
     "Your place on the strip could not be worked out: %@" : {
-
-    },
-    "Your place on the strip couldn't be worked out: %@" : {
 
     },
     "Your plan is made from the logbook kept with your account." : {
@@ -5050,9 +4807,6 @@
 
     },
     "active now" : {
-
-    },
-    "adsb.lol's flight history can't be read now, so only flights followed in this app are listed." : {
 
     },
     "adsb.lol's flight history could not be read just now, so only flights followed in this app are listed." : {
@@ -5098,6 +4852,9 @@
 
     },
     "turbulence %@" : {
+
+    },
+    "§ %@" : {
 
     },
     "°" : {

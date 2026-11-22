@@ -49,10 +49,11 @@ final class ReadyToFly {
     @ObservationIgnored weak var verdict: Verdict?
     @ObservationIgnored weak var session: Session?
     @ObservationIgnored weak var keepForAir: KeepForAir?
+    @ObservationIgnored weak var receiver: Receiver?
 
-    func attach(plan: Plan, charts: Charts, ownShip: OwnShip, verdict: Verdict, session: Session, keepForAir: KeepForAir) {
+    func attach(plan: Plan, charts: Charts, ownShip: OwnShip, verdict: Verdict, session: Session, keepForAir: KeepForAir, receiver: Receiver) {
         self.plan = plan; self.charts = charts; self.ownShip = ownShip; self.verdict = verdict; self.session = session
-        self.keepForAir = keepForAir
+        self.keepForAir = keepForAir; self.receiver = receiver
     }
 
     /// A flight's key: its route, so the check comes up once per flight.
@@ -61,8 +62,9 @@ final class ReadyToFly {
     // MARK: - Facts and the engine's answer
 
     /// Every fact, gathered now. Nil members leave their items out, as
-    /// the contract says: charts only where the app draws a chart.
-    func input(now: Date = Date()) -> ReadyFacts.Input? {
+    /// the contract says: charts only where the app draws a chart. The
+    /// engine's failure to name a field thrown, said as the answer's.
+    func input(now: Date = Date()) throws -> ReadyFacts.Input? {
         guard let plan else { return nil }
         let device = UIDevice.current
         device.isBatteryMonitoringEnabled = true
@@ -84,16 +86,16 @@ final class ReadyToFly {
             charts: charts,
             packs: EngineContract.ReadyToFlyInputPacks(edition: store?.packEdition, canUpdate: true),
             briefing: EngineContract.ReadyToFlyInputBriefing(fetchedAt: plan.briefedAt?.timeIntervalSince1970),
-            fields: ReadyFacts.fields(dep: plan.dep, dest: plan.dest, briefing: plan.briefing),
+            fields: try ReadyFacts.fields(dep: plan.dep, dest: plan.dest, briefing: plan.briefing),
             notams: EngineContract.ReadyToFlyInputNotams(fetchedAt: notamsAt?.timeIntervalSince1970,
                                                          fullSet: ranked.map { $0.fullSet ?? false },
                                                          heardSince: ranked?.coverageSince.map { String($0.prefix(10)) }),
             kept: plan.routed ? kept(plan, routeKey: routeKey, saved: saved) : nil,
             device: EngineContract.ReadyToFlyInputDevice(
                 batteryPct: battery.pct, charging: battery.charging,
-                location: ReadyFacts.location(LocationPermission.shared.status),
+                location: ownShip.map { ReadyFacts.location($0.authorization) },
                 planSaved: plan.routed ? saved : nil),
-            receiver: ReadyFacts.receiver(used: Receiver.used, listening: Receiver.shared.listening, live: Receiver.shared.live))
+            receiver: receiver.flatMap { ReadyFacts.receiver(used: Receiver.used, listening: $0.listening, live: $0.live) })
     }
 
     /// What Keep for the Air holds for this route, looked for on disk.
@@ -106,8 +108,12 @@ final class ReadyToFly {
     /// where the route or the chart's cycle has changed.
     func refresh(now: Date = Date()) async {
         await lookAtStore()
-        guard let input = input(now: now) else { return }
-        ask(input)
+        do {
+            guard let input = try input(now: now) else { return }
+            ask(input)
+        } catch {
+            problem = "Ready to fly could not be checked: \(error.localizedDescription)"
+        }
     }
 
     /// The engine's answer for these facts, as it is.
@@ -193,14 +199,14 @@ final class ReadyToFly {
             plan.keep()
         case "allow_location":
             // Asked once by iOS; once refused, only Settings can allow it.
-            if LocationPermission.shared.undecided {
+            if ownShip?.permission.undecided == true {
                 ownShip?.askLocation()
             } else if let settings = URL(string: UIApplication.openSettingsURLString) {
                 _ = await UIApplication.shared.open(settings)
             }
         case "connect_receiver":
             // A receiver joins on its own Wi-Fi; the phone listens for it.
-            Receiver.shared.mode = .auto
+            receiver?.mode = .auto
         default:
             return
         }

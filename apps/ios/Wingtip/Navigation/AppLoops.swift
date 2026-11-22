@@ -14,7 +14,7 @@ struct AppLoops: View {
     let screens: ScreenModels
     @Environment(\.scenePhase) private var scenePhase
     /// The pilot's kept fields (Home, Favorites), read here for the widgets.
-    private let shelf = AirportShelf.shared
+    @Environment(AirportShelf.self) private var shelf
 
     var body: some View {
         let flight = screens.flight
@@ -74,7 +74,7 @@ struct AppLoops: View {
             .task { await flight.watchLink.run(plan: plan, ownShip: ownShip) }
             // The cockpit's ADS-B receiver on the Wi-Fi, read once a
             // second while the setting is Auto (Receiver).
-            .task { await Receiver.shared.run() }
+            .task { await flight.receiver.run() }
     }
 
     /// The starts made once a launch, whichever window leads.

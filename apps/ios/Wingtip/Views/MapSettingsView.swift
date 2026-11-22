@@ -231,7 +231,7 @@ struct SettingsGear: View {
 
 #Preview("MapSettingsView") {
     NavigationStack { MapSettingsView() }
-        .environment(Traffic())
+        .environment(Traffic(receiver: Receiver()))
         .environment(Charts())
         .environment(Navigator())
         .environment(FlightSession())

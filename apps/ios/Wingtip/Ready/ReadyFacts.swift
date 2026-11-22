@@ -23,26 +23,26 @@ enum ReadyFacts {
     /// each METAR was observed and whether a TAF is among the forecast's
     /// stations. None before a briefing has come, where the briefing's own
     /// item already asks for one.
-    static func fields(dep: String, dest: String, briefing: Briefing?) -> [EngineContract.ReadyToFlyInputFieldsItem]? {
+    static func fields(dep: String, dest: String, briefing: Briefing?) throws -> [EngineContract.ReadyToFlyInputFieldsItem]? {
         guard let briefing, !dep.isEmpty, !dest.isEmpty else { return nil }
         let tafs = Set(briefing.forecast.stations.filter { $0.raw != nil }.map { $0.icaoId.uppercased() })
-        return [(dep, "departure"), (dest, "destination")].map { ident, role in
-            let station = station(ident, in: briefing)
+        return try [(dep, "departure"), (dest, "destination")].map { ident, role in
+            let station = try station(ident, in: briefing)
             let observed = station.flatMap { briefing.metars.additionalProperties[$0] ?? nil }?.observedAt.flatMap { AirportWords.date($0) }
             return EngineContract.ReadyToFlyInputFieldsItem(ident: ident, role: role, metarObserved: observed?.timeIntervalSince1970,
-                                                            taf: candidates(ident).contains { tafs.contains($0) })
+                                                            taf: try candidates(ident).contains { tafs.contains($0) })
         }
     }
 
     /// The briefing's key for a field: any name the engine's field_names
     /// gives it, the K a three-letter US identifier takes in ICAO form
     /// first ("OSH" is "KOSH", FAA JO 7350.9GG 4-1).
-    static func station(_ ident: String, in briefing: Briefing) -> String? {
-        candidates(ident).first { briefing.metars.additionalProperties.keys.contains($0) }
+    static func station(_ ident: String, in briefing: Briefing) throws -> String? {
+        try candidates(ident).first { briefing.metars.additionalProperties.keys.contains($0) }
     }
 
-    private static func candidates(_ ident: String) -> [String] {
-        (try? Engine.fieldNames(ident: ident)) ?? [ident.uppercased()]
+    private static func candidates(_ ident: String) throws -> [String] {
+        try Engine.fieldNames(ident: ident)
     }
 
     /// A chart cycle as the engine takes it, YYYY-MM-DD: the planner names

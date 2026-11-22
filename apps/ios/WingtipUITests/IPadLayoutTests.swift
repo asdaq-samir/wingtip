@@ -9,7 +9,8 @@ import XCTest
 final class IPadLayoutTests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
-        if !CardTests.split { throw XCTSkip("The iPad's layout: an iPhone has no sidebar") }
+        // XCTest sets up on the main thread, where the device is read.
+        if !MainActor.assumeIsolated({ CardTests.split }) { throw XCTSkip("The iPad's layout: an iPhone has no sidebar") }
     }
 
     /// Hide Sidebar, then the system's Show Sidebar over the map brings it

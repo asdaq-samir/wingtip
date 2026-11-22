@@ -25,10 +25,10 @@ final class ReaderModel {
     /// The text part's section shown first (a cite's), or none.
     private(set) var textStart: String?
 
-    init(place: DocPlace, library: DocumentLibrary = .shared, places: ReaderPlaces = .shared) {
+    init(place: DocPlace, library: DocumentLibrary) {
         self.place = place
         self.library = library
-        self.places = places
+        places = library.places
     }
 
     var title: String {

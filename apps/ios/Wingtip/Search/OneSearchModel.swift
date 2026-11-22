@@ -123,10 +123,15 @@ final class OneSearchModel {
                 // match; the fixes, towns and registry need the planner.
                 if keptFields == nil { keptFields = await Task.detached(priority: .userInitiated) { PackSearch.allKept() }.value }
                 guard !Task.isCancelled else { return }
-                airports = PackSearch.search(q, in: keptFields ?? [])
                 fixes = []
+                do {
+                    airports = try PackSearch.search(q, in: keptFields ?? [])
+                    failed = Self.failedWords(error, kept: !airports.isEmpty)
+                } catch let engine {
+                    airports = []
+                    failed = Self.failedWords(engine, kept: false)
+                }
                 fromDevice = !airports.isEmpty
-                failed = Self.failedWords(error, kept: !airports.isEmpty)
             }
             towns = (spots ?? []).filter { $0.kind != "airport" }
             registered = registration

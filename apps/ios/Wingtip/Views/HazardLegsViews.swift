@@ -133,5 +133,5 @@ private enum PreviewData {
 
 #Preview("LayerAgesRows") {
     Form { LayerAgesRows() }
-        .environment(Traffic())
+        .environment(Traffic(receiver: Receiver()))
 }

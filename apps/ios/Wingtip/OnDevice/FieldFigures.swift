@@ -10,7 +10,7 @@ enum FieldFigures {
     /// the flight category the planner read off the METAR (AIM 7-1-7).
     /// The ids are the planner's own ("metar:KMSN", "taf:KMSN").
     static func weather(_ ident: String?, facts: OnDeviceFacts) throws -> [AskFigure] {
-        guard let field = facts.field(ident) else { throw AskRefused(why: notHeld(ident, facts)) }
+        guard let field = try facts.field(ident) else { throw AskRefused(why: notHeld(ident, facts)) }
         var out: [AskFigure] = []
         if let metar = field.metar, let raw = metar.raw {
             let category = metar.flightCategory.map { ", \($0)" } ?? ""
@@ -33,7 +33,7 @@ enum FieldFigures {
     /// with none named, each runway's favoured end as the planner gave it
     /// (wingtip.runway_wind, the same rule).
     static func crosswind(_ ident: String?, runway: String?, facts: OnDeviceFacts) throws -> [AskFigure] {
-        guard let field = facts.field(ident) else { throw AskRefused(why: notHeld(ident, facts)) }
+        guard let field = try facts.field(ident) else { throw AskRefused(why: notHeld(ident, facts)) }
         guard let metar = field.metar, let raw = metar.raw else { throw AskRefused(why: "This iPhone holds no METAR for \(field.ident).") }
         let from = "the engine's wind_components (FAA-H-8083-25C ch. 11) from \(field.ident)'s METAR as sent, \(raw)\(asOf(facts))"
         if try Engine.windCalm(speedKt: metar.windSpeedKt) {
@@ -70,7 +70,7 @@ enum FieldFigures {
     /// its elevation and altimeter setting, then the density altitude at
     /// the reported temperature, both the engine's (PHAK ch. 4).
     static func densityAltitude(_ ident: String?, facts: OnDeviceFacts) throws -> [AskFigure] {
-        guard let field = facts.field(ident) else { throw AskRefused(why: notHeld(ident, facts)) }
+        guard let field = try facts.field(ident) else { throw AskRefused(why: notHeld(ident, facts)) }
         guard let elevation = field.elevationFt else { throw AskRefused(why: "This iPhone holds no elevation for \(field.ident).") }
         guard let metar = field.metar, let raw = metar.raw, let altimeter = metar.altimeterInHg, let temp = metar.tempC else {
             throw AskRefused(why: "This iPhone holds no altimeter setting and temperature for \(field.ident).")

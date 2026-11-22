@@ -100,7 +100,7 @@ struct DeviceDocumentsTests {
         let container = try Records.inMemory()
         let defaults = try #require(UserDefaults(suiteName: "documents-\(UUID().uuidString)"))
         let cloud = DocumentCloud(defaults: defaults, context: { container.mainContext })
-        let library = DocumentLibrary(store: store)
+        let library = DocumentLibrary(store: store, cloud: cloud, places: ReaderPlaces(file: store.root.appending(path: "places.json")))
         try store.addOwn(from: try samplePDF(), id: "mine")
         library.reloadDevice()
         // Off: nothing leaves the device.

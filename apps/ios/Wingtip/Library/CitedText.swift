@@ -13,7 +13,7 @@ import SwiftUI
 struct CitedText: View {
     let text: String
     @Environment(Navigator.self) private var nav
-    private var library: DocumentLibrary { .shared }
+    @Environment(DocumentLibrary.self) private var library
 
     init(_ text: String) { self.text = text }
 

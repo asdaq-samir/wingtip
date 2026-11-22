@@ -131,6 +131,14 @@ final class Navigator {
         sheetPage = .fpl
     }
 
+    /// A plan's page from the menu bar (View > Search, FPL): the card put
+    /// away so the page is in sight, as the toggle on the map turns it.
+    func show(_ page: PlanPage) {
+        close()
+        planPath = []
+        sheetPage = page
+    }
+
     /// The empty route box's close (PlanView), a level back: the field's
     /// card the plan was shown from, over the Search page, else the Search
     /// page itself (the web's clearRoute, its second step).

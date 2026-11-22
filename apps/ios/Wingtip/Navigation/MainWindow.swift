@@ -14,7 +14,7 @@ struct MainWindow: View {
     let screens: ScreenModels
     @State private var nav: Navigator
     @State private var id = UUID()
-    private let lead = WindowLead.shared
+    private var lead: WindowLead { screens.windows }
 
     init(session: Session, charts: Charts, screens: ScreenModels) {
         self.session = session
@@ -50,11 +50,10 @@ struct MainWindow: View {
 }
 
 /// Which window runs the app's loops: the first open, then, as it shuts,
-/// the next (MainWindow). One for the app.
+/// the next (MainWindow). One for the app (ScreenModels).
 @MainActor
 @Observable
 final class WindowLead {
-    static let shared = WindowLead()
     private(set) var windows: [UUID] = []
 
     func join(_ id: UUID) {

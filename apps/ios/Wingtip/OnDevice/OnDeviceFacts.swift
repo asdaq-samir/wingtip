@@ -55,13 +55,14 @@ struct OnDeviceFacts: Equatable, Sendable {
 
     var idents: [String] { [dep] + stops + [dest] }
 
-    /// A field the question names, else the destination.
-    func field(_ ident: String?) -> Field? {
+    /// A field the question names, else the destination; the engine's
+    /// failure to name it thrown, so the answer says so.
+    func field(_ ident: String?) throws -> Field? {
         let asked = (ident ?? "").trimmingCharacters(in: .whitespaces).uppercased()
         if asked.isEmpty { return fields[dest.uppercased()] }
         // "MSN" for KMSN, as a pilot says it: each name the engine's
         // field_names gives it (FAA JO 7350.9GG 4-1).
-        let names = (try? Engine.fieldNames(ident: asked)) ?? [asked]
+        let names = try Engine.fieldNames(ident: asked)
         return names.lazy.compactMap { fields[$0] }.first
     }
 }

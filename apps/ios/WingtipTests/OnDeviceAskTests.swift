@@ -196,7 +196,7 @@ struct OnDeviceAskTests {
         #expect(EngineWords.topics("What's the crosswind at MSN runway 36?") == [.wind])
         #expect(EngineWords.topics("Is the airplane OK?") == [.route])
         #expect(EngineWords.topics("How many gallons for the reserve?") == [.fuel])
-        #expect(EngineWords.ident("winds at msn", facts: facts) == "MSN")
+        #expect(try EngineWords.ident("winds at msn", facts: facts) == "MSN")
         #expect(EngineWords.runway("rwy 18 please") == "18")
     }
 

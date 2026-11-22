@@ -11,8 +11,8 @@ import UniformTypeIdentifiers
 struct DocumentsPage: View {
     @Environment(Navigator.self) private var nav
     @Environment(\.undoManager) private var undo
-    @State private var library = DocumentLibrary.shared
-    @State private var cloud = DocumentCloud.shared
+    @Environment(DocumentLibrary.self) private var library
+    private var cloud: DocumentCloud { library.cloud }
     @State private var adding = false
     @State private var renaming: OwnDocument?
     @State private var name = ""

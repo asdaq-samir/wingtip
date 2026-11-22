@@ -13,10 +13,11 @@ extension DocPlace {
 struct ReaderCover: ViewModifier {
     let active: Bool
     @Environment(Navigator.self) private var nav
+    @Environment(DocumentLibrary.self) private var library
 
     func body(content: Content) -> some View {
         content.fullScreenCover(item: Binding(get: { active ? nav.reading : nil }, set: { if active { nav.reading = $0 } })) { place in
-            ReaderView(place: place)
+            ReaderView(place: place, library: library)
         }
     }
 }
@@ -29,9 +30,10 @@ struct ReaderCover: ViewModifier {
 /// relaunch at its place.
 struct DocumentWindow: View {
     let place: DocPlace
+    @Environment(DocumentLibrary.self) private var library
 
     var body: some View {
-        ReaderView(place: place, inWindow: true)
+        ReaderView(place: place, library: library, inWindow: true)
             .accessibilityIdentifier("document-window")
     }
 }

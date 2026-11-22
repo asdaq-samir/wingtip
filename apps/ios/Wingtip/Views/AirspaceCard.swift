@@ -19,6 +19,9 @@ struct AirspaceCard: View {
     @State private var problem: String?
     /// SFDPS's word on each special-use area now, by its name (/api/live/saa).
     @State private var saa: [String: SaaStatus] = [:]
+    /// Special VFR for a B, C or D band from the surface here, or why the
+    /// engine could not say (SpecialVfrRead); none with no such band.
+    @State private var svfr: Result<SpecialVfrRead, any Error>?
 
     var body: some View {
         List {
@@ -72,6 +75,12 @@ struct AirspaceCard: View {
             if let here {
                 Section("Airspace Here") {
                     ForEach(here.bands) { band in BandRow(band: band, ground: here.groundFt) }
+                }
+                // Special VFR in the surface area here (14 CFR 91.157), the
+                // engine's answer for the band's primary airport, as the
+                // web's and Android's airspace cards say it.
+                if let svfr {
+                    SpecialVfrSection(read: svfr)
                 }
                 if let veil = here.modeCVeil {
                     Section {
@@ -152,11 +161,37 @@ struct AirspaceCard: View {
                 problem = (error as? URLError).map(ErrorWords.offline) == true ? Wording.noConnection + "." : Wording.airspaceNotRead
             }
         }
+        svfr = here.flatMap { SpecialVfrRead.surfaceBand($0.bands, ground: $0.groundFt) }.map { band in Result { try SpecialVfrRead.ask(band) } }
     }
 
     /// The TFR's page on tfr.faa.gov.
     static func tfrPage(_ notamId: String) -> URL {
         URL(string: "https://tfr.faa.gov/tfr3/?page=detail_\(notamId.replacingOccurrences(of: "/", with: "_"))")!
+    }
+}
+
+/// Special VFR's group: its title ("Special VFR", "No Special VFR") and
+/// each line the engine gave with its rule, the rule a tap to its
+/// paragraph (CitedText); where the engine could not answer, why.
+private struct SpecialVfrSection: View {
+    let read: Result<SpecialVfrRead, any Error>
+
+    var body: some View {
+        switch read {
+        case .success(let svfr):
+            Section(svfr.title) {
+                ForEach(svfr.lines, id: \.self) { line in
+                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                        Text(line.words)
+                        CitedText(line.source).font(.subheadline).foregroundStyle(.secondary)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            .accessibilityIdentifier("airspace-special-vfr")
+        case .failure(let error):
+            Section("Special VFR") { ProblemLine("Special VFR could not be checked: \(error.localizedDescription)") }
+        }
     }
 }
 

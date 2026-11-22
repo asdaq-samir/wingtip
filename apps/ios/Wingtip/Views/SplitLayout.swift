@@ -183,6 +183,6 @@ struct SplitLayout<Map: View>: View {
         .environment(Plan())
         .environment(OwnShip())
         .environment(DryRun())
-        .environment(Traffic())
+        .environment(Traffic(receiver: Receiver()))
         .environment(Verdict())
 }

@@ -139,9 +139,12 @@ struct ReadyToFlyHost: ViewModifier {
     @Environment(Verdict.self) private var verdict
     @Environment(Session.self) private var session
     @Environment(KeepForAir.self) private var keepForAir
+    @Environment(Receiver.self) private var receiver
 
     func body(content: Content) -> some View {
-        content.task { ready.attach(plan: plan, charts: charts, ownShip: ownShip, verdict: verdict, session: session, keepForAir: keepForAir) }
+        content.task {
+            ready.attach(plan: plan, charts: charts, ownShip: ownShip, verdict: verdict, session: session, keepForAir: keepForAir, receiver: receiver)
+        }
     }
 }
 

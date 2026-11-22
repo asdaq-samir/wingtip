@@ -35,8 +35,6 @@ final class OwnDocumentRecord {
 @MainActor
 @Observable
 final class DocumentCloud {
-    static let shared = DocumentCloud(defaults: .standard, context: { Records.container.mainContext })
-
     static let key = "documents.iCloud"
 
     @ObservationIgnored private let defaults: UserDefaults

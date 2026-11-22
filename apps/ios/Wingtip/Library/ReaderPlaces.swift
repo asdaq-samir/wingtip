@@ -16,8 +16,6 @@ struct Bookmark: Codable, Hashable, Sendable {
 @MainActor
 @Observable
 final class ReaderPlaces {
-    static let shared = ReaderPlaces(file: DeviceDocuments.device.root.appending(path: "places.json"))
-
     /// The most a document's bookmarks hold: a pilot's tabs, not an index.
     static let mostBookmarks = 50
 

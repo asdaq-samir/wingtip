@@ -22,8 +22,8 @@ struct ReaderView: View {
     @State private var query = ""
     @State private var searching = false
 
-    init(place: DocPlace, inWindow: Bool = false) {
-        _model = State(initialValue: ReaderModel(place: place))
+    init(place: DocPlace, library: DocumentLibrary, inWindow: Bool = false) {
+        _model = State(initialValue: ReaderModel(place: place, library: library))
         self.inWindow = inWindow
     }
 
