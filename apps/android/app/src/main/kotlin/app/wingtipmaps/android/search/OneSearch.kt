@@ -117,8 +117,13 @@ fun OneSearch(
     val own by remember(context) { OwnAirplanes.of(context) }.records.collectAsStateWithLifecycle()
     val tail by remember(context) { FlightChoices.of(context) }.tail.collectAsStateWithLifecycle()
 
-    // Opened from elsewhere: an Airport link, the plan's Add a Stop.
-    LaunchedEffect(control.asked) { if (control.takeAsk()) searchBarState.animateToExpanded() }
+    // Opened from elsewhere: an Airport link, the plan's Add a Stop, words
+    // dropped on the window (typed in, as the pilot would).
+    LaunchedEffect(control.asked) {
+        if (!control.takeAsk()) return@LaunchedEffect
+        control.takeWords()?.let(textFieldState::setTextAndPlaceCursorAtEnd)
+        searchBarState.animateToExpanded()
+    }
     LaunchedEffect(searchBarState) {
         snapshotFlow { searchBarState.currentValue }.collect { if (it == SearchBarValue.Collapsed) control.done() }
     }

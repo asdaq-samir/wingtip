@@ -96,7 +96,8 @@ fun PlanFoot(
                 }
             }
         }
-        if (state.routed) {
+        // On an expanded window the map carries them (MapFigures).
+        if (state.routed && !LocalFiguresOnMap.current) {
             StripCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(vertical = WingtipSpace.Sm)) { FiguresStrip(state, flight) } }
         }
     }
