@@ -12,6 +12,12 @@ final class Charts {
     /// The kept cycle later than the chart answer's that has taken over
     /// (OfflineStore.keptInForce), drawn where its region is kept.
     private(set) var keptInForce: String?
+    /// The regions kept on the phone, whose cycles `turnKept` asks of.
+    @ObservationIgnored private let offline: OfflineStore
+
+    init(offline: OfflineStore = .shared) {
+        self.offline = offline
+    }
     /// The chart picked on the Map card (None, Sectional, IFR Low, IFR
     /// High; the web's preference `base`), kept on this device; the
     /// sectional until one is picked.
@@ -64,14 +70,15 @@ final class Charts {
     /// phone offline across a changeover draws it from 0901Z with the app
     /// open (the data-cycles audit's 14); the map is drawn again only when
     /// the answer turns.
-    func watchChangeover(store: OfflineStore = .shared, now: @escaping () -> Date = { .now }) async {
+    func watchChangeover(store: OfflineStore? = nil, now: @escaping () -> Date = { .now }) async {
         while !Task.isCancelled {
-            turnKept(store: store, now: now())
+            turnKept(store: store ?? offline, now: now())
             try? await Task.sleep(for: .seconds(60))
         }
     }
 
-    func turnKept(store: OfflineStore = .shared, now: Date = .now) {
+    func turnKept(store: OfflineStore? = nil, now: Date = .now) {
+        let store = store ?? offline
         let turned = info.flatMap { store.keptInForce(after: $0.chartCycle, now: now) }
         if turned != keptInForce { keptInForce = turned }
     }

@@ -61,6 +61,7 @@ private struct ReachedModels: ViewModifier {
             .environment(Airplanes.shared)
             .environment(ReadyToFly.shared)
             .environment(KeepForAir.shared)
+            .environment(screens.statePlates)
             .environment(KeptShown.shared)
             .environment(VoiceInput.shared)
             .environment(ModelWeather.shared)
@@ -95,6 +96,8 @@ final class ScreenModels {
     let briefAsk = BriefAsk()
     let autoLogbook: AutoLogbook
     let sharedFlight = SharedFlightModel()
+    /// The states' plates kept (Downloads), kept current with the app active.
+    let statePlates = StatePlates()
 
     init() {
         let flight = FlightSession()

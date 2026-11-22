@@ -33,6 +33,10 @@ enum KeptForAir {
         var kinds: [String]
         var bytes: Int
         var at: Date
+        /// The files its answers are kept in, by their path in the kept
+        /// folder (the app's container moves with an update, so never a
+        /// whole one): what a state's plates deleted leave (StatePlates).
+        var files: [String]?
     }
 
     static let folder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -101,6 +105,23 @@ enum KeptForAir {
     static func manifest(route: String, in folder: URL = folder) -> Manifest? {
         guard let data = try? Data(contentsOf: file("routes", route, in: folder)) else { return nil }
         return try? decoder.decode(Manifest.self, from: data)
+    }
+
+    /// A kept file's path in the kept folder, as a manifest names it.
+    static func relative(_ file: URL, in folder: URL = folder) -> String {
+        let root = folder.standardizedFileURL.path + "/"
+        let path = file.standardizedFileURL.path
+        return path.hasPrefix(root) ? String(path.dropFirst(root.count)) : path
+    }
+
+    /// Every file a route kept for the air holds, by its manifest.
+    static func manifestFiles(in folder: URL = folder) -> Set<URL> {
+        let routes = folder.appending(path: "routes", directoryHint: .isDirectory)
+        let names = (try? FileManager.default.contentsOfDirectory(at: routes, includingPropertiesForKeys: nil)) ?? []
+        return Set(names.flatMap { name -> [URL] in
+            guard let data = try? Data(contentsOf: name), let manifest = try? decoder.decode(Manifest.self, from: data) else { return [] }
+            return (manifest.files ?? []).map { folder.appending(path: $0).standardizedFileURL }
+        })
     }
 
     /// A file's bytes on disk; 0 where there is none.

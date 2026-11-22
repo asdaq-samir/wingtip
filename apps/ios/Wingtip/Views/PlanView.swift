@@ -135,7 +135,8 @@ struct PlanView: View {
                 // The chart along the route for the air, as the web app's
                 // KeepRoute keeps it, and the briefing, NOTAMs, cards,
                 // plates and the rest with it (KeepForAir): tapped once,
-                // the count as it goes, then the size it came to.
+                // the count as it goes, then the size it came to; the
+                // flight's plates' size said under it before the tap.
                 Section {
                     Button {
                         keepForAir.keep(plan: plan, template: template, minZoom: charts.base?.minZoom ?? 6, verdict: verdict, signedIn: session.signedIn)
@@ -143,6 +144,9 @@ struct PlanView: View {
                         KeepForAirLabel(model: keepForAir)
                     }
                     .disabled(keepForAir.keeping != nil && keepForAir.sizeMb == nil)
+                    .sizingPlates(keepForAir, plan: plan)
+                } footer: {
+                    KeepPlatesLine(model: keepForAir)
                 }
             }
         }

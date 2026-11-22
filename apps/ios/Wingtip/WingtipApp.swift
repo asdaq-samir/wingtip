@@ -70,6 +70,10 @@ struct WingtipApp: App {
                 .task { await charts.load() }
                 .task { await charts.watchChangeover() }
                 .task { OfflineDownloads.shared.start() }
+                // The states' plates kept current while the app is active: at
+                // launch, back in the foreground and each minute, a stopped
+                // download goes on and a replaced cycle is fetched anew.
+                .task(id: scenePhase) { if scenePhase == .active { await screens.statePlates.watch() } }
                 .task { await plan.restore() }
                 // Under IFR, the alternate checked for the plan's ETA, asked
                 // again as the plan or the alternate filed changes (AlternateCheck).

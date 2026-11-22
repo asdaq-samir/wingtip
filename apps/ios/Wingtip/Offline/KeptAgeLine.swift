@@ -88,3 +88,39 @@ struct KeepForAirLabel: View {
         mb < 1 ? String(format: "%.1f MB", mb) : "\(Int(mb.rounded())) MB"
     }
 }
+
+/// The flight's plates' size, said where Keep for the Air is offered
+/// before it is tapped: "This flight's plates: about 40 MB, 6 fields,
+/// within 90 nm of the route." Asked of the planner as the plan changes
+/// (`sizingPlates`, KeepForAir.sizePlates).
+struct KeepPlatesLine: View {
+    let model: KeepForAir
+
+    var body: some View {
+        if let line = KeepPlates.line(model.flightPlates) { Text(line) }
+    }
+}
+
+extension View {
+    /// The flight's plates sized again whenever the plan's question for
+    /// them changes, by the model; on the row that offers the keep.
+    func sizingPlates(_ model: KeepForAir, plan: Plan) -> some View {
+        modifier(SizingPlates(on: true, model: model, plan: plan))
+    }
+}
+
+/// `sizingPlates`, on a row only where it offers the keep.
+struct SizingPlates: ViewModifier {
+    let on: Bool
+    let model: KeepForAir
+    let plan: Plan
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if on {
+            content.task(id: KeepPlates.ask(for: plan)) { await model.sizePlates(plan: plan) }
+        } else {
+            content
+        }
+    }
+}
