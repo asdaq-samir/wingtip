@@ -17,7 +17,9 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     && apt-get update && apt-get install -y --no-install-recommends mdbtools
 
 COPY services/ingest/requirements.txt ./
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt
+# pip goes once the packages are in (why: services/planner/Dockerfile).
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt \
+    && pip uninstall -y -q --root-user-action=ignore pip
 
 # wingtip where the planner keeps it, so wingtip.config finds the data
 # folder at /workspace/data as it does in the planner's image.

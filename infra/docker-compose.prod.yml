@@ -49,7 +49,7 @@ services:
   # group admits only CloudFront's addresses as well).
   caddy:
     <<: *restart
-    image: caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee
+    image: caddy:2.11.9-alpine@sha256:003a97808e781aa9f7e75cc2f43d34d461099031faf5e20faefb9f61126836f0
     ports: ["80:80", "443:443"]
     environment:
       ORIGIN_HOST: ${ORIGIN_HOST}
@@ -66,7 +66,7 @@ services:
     # agent's memory. Trixie, the Debian every image here is built on
     # (2026-11-09). A volume made under bookworm (glibc 2.36) would need its
     # collation version refreshed once (scripts/dev/pg-refresh-collation.sh).
-    image: postgres:18-trixie@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42
+    image: postgres:18-trixie@sha256:eb63372c1e05c755f55fa30cbd07aecc443676fc6c0fa90b9002d01537841e1a
     # A statement over half a second, and a wait on a lock over a second
     # (deadlock_timeout), written to its log, so a query that has turned
     # slow as the tables grew shows in CloudWatch with its text (the ops

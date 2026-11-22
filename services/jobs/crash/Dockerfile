@@ -24,7 +24,9 @@ WORKDIR /workspace/services/jobs
 # wingtip's own through its -r.
 COPY services/planner/requirements-wingtip.txt /workspace/services/planner/
 COPY services/jobs/crash/requirements.txt crash/
-RUN --mount=type=cache,target=/root/.cache/pip pip install -r crash/requirements.txt
+# pip goes once the packages are in (why: services/planner/Dockerfile).
+RUN --mount=type=cache,target=/root/.cache/pip pip install -r crash/requirements.txt \
+    && pip uninstall -y -q --root-user-action=ignore pip
 
 COPY services/planner/wingtip /workspace/services/planner/wingtip
 COPY services/jobs/crash ./crash
