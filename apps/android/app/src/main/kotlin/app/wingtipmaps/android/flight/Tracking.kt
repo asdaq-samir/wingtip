@@ -2,6 +2,7 @@ package app.wingtipmaps.android.flight
 
 import android.content.Context
 import app.wingtipmaps.android.AppClock
+import app.wingtipmaps.android.airplane.OtherAirplanes
 import app.wingtipmaps.android.api.FlightStatus
 import app.wingtipmaps.android.api.PathPoint
 import app.wingtipmaps.android.api.Planner
@@ -215,9 +216,12 @@ class Tracking(
         reported(plane, AppClock.nowMs() - ((plane.seenS ?: 0.0) * 1000).toLong())
     }
 
-    /** Each watched airplane's state, and any watch that goes off on it. */
+    /** Each watched airplane's state, and any watch that goes off on it.
+     *  Another airplane's watches wait, kept, while Settings' Extras has
+     *  Other Airplanes off (OtherAirplanes); the pilot's own are asked. */
     private suspend fun askWatched() {
-        for (hex in watches.value.map { it.hex }.toSet()) {
+        val offered = watches.value.filter { OtherAirplanes.historyOffered(context, it.name) }
+        for (hex in offered.map { it.hex }.toSet()) {
             val status = try {
                 Planner.flightStatus(hex)
             } catch (e: CancellationException) {
@@ -231,7 +235,7 @@ class Tracking(
             val asked = airborneNow(before, status)
             asked.exceptionOrNull()?.let { problem.value = "Watching $hex failed: ${it.message}" }
             val now = asked.getOrDefault(before)
-            for (watch in watches.value.filter { it.hex == hex }) {
+            for (watch in offered.filter { it.hex == hex }) {
                 val kind = WatchKind.of(watch.kind) ?: continue
                 val goes = fired(watch.name, kind, before, now, status)
                 goes.exceptionOrNull()?.let { problem.value = "Watching ${watch.name} failed: ${it.message}" }

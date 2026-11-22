@@ -39,6 +39,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import app.wingtipmaps.android.Extra
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.Loading
@@ -47,6 +48,7 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.plan.FlightChoices
+import app.wingtipmaps.android.rememberExtra
 import app.wingtipmaps.android.ui.LocalInk
 import app.wingtipmaps.android.ui.WingtipIcons
 
@@ -69,7 +71,10 @@ fun micAllowed(context: Context): Boolean =
 @Composable
 fun AtcCopilotHost(plan: Plan, flying: Boolean, fix: OwnShip.Fix?) {
     val context = LocalContext.current
-    val mode by remember(context) { AtcSetting.of(context) }.mode.collectAsStateWithLifecycle()
+    val saved by remember(context) { AtcSetting.of(context) }.mode.collectAsStateWithLifecycle()
+    // Off whatever was saved while Settings' Extras has the ATC Copilot
+    // parked: the radio not listened to, nothing of it shown.
+    val mode = if (rememberExtra(Extra.ATC_COPILOT)) saved else AtcMode.OFF
     val tail by remember(context) { FlightChoices.of(context) }.tail.collectAsStateWithLifecycle()
     val model = hiltViewModel<AtcCopilotModel, AtcCopilotModel.Factory> { it.create(RadioListener.of(context)) }
     var allowed by remember { mutableStateOf(micAllowed(context)) }

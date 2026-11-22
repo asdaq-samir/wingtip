@@ -1,21 +1,41 @@
 package app.wingtipmaps.android.ai
 
-import com.google.mlkit.genai.common.DownloadStatus
-import com.google.mlkit.genai.common.FeatureStatus
-import com.google.mlkit.genai.common.FunctionCall
-import com.google.mlkit.genai.prompt.Content
-import com.google.mlkit.genai.prompt.FunctionCallPart
-import com.google.mlkit.genai.prompt.FunctionResponsePart
-import com.google.mlkit.genai.prompt.GenerateContentRequest
-import com.google.mlkit.genai.prompt.Generation
-import com.google.mlkit.genai.prompt.GenerativeModel
-import com.google.mlkit.genai.prompt.SystemInstruction
-import com.google.mlkit.genai.prompt.TextPart
-import com.google.mlkit.genai.schema.tools.FunctionDeclaration
+import app.wingtipmaps.android.Extra
+import app.wingtipmaps.android.Extras
+import app.wingtipmaps.android.ai.functions.FunctionSchemaXml
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+
+/**
+ * What Gemini Nano is asked through: ML Kit's Prompt API over Android's
+ * AICore where the build has it (`-Pwingtip.genai=true`, src/genai), else
+ * nothing at all (src/nogenai, the first store build's: ML Kit GenAI
+ * sends Google device identifiers, the feature review).
+ */
+internal interface NanoBackend {
+    /** Whether Nano is on this phone; UNAVAILABLE where AICore is not. */
+    suspend fun status(): Nano.Status
+
+    /** AICore's download, each step as a status; null where there is no model to fetch. */
+    fun download(): Flow<Nano.Status>?
+
+    suspend fun answer(system: String, prompt: String, maxTokens: Int, temperature: Float): String?
+
+    /** A conversation answered with tools, `rounds` at most (Nano.converse). */
+    suspend fun converse(
+        system: String,
+        turns: List<Nano.Turn>,
+        tools: List<FunctionSchemaXml.Tool>,
+        maxTokens: Int,
+        temperature: Float,
+        rounds: Int,
+        onTool: (String) -> Unit,
+        run: suspend (name: String, args: Map<String, Any?>) -> Map<String, Any?>,
+    ): String?
+}
 
 /**
  * Gemini Nano on the phone, through ML Kit's Prompt API over Android's
@@ -24,10 +44,15 @@ import kotlinx.coroutines.flow.asStateFlow
  * the phone. A phone without it (most phones before 2025's flagships)
  * says UNAVAILABLE, and the app then has no AI words at all (the
  * server's Claude features were taken out, decision 0041); nothing else
- * changes.
+ * changes. Parked in Settings' Extras (Ask, off to start): while it is
+ * off nothing of ML Kit is made or asked, and every feature that needs a
+ * model reads as on a phone without one.
  */
 object Nano {
     enum class Status { UNKNOWN, UNAVAILABLE, DOWNLOADABLE, DOWNLOADING, AVAILABLE }
+
+    /** One turn of a conversation: the pilot's, or the model's. */
+    data class Turn(val user: Boolean, val text: String)
 
     /** How many rounds of tool calls an answer may take before it is
      *  given up: an answer is a look-up or two, not a search. */
@@ -36,22 +61,15 @@ object Nano {
     private val _status = MutableStateFlow(Status.UNKNOWN)
     val status: StateFlow<Status> = _status.asStateFlow()
 
-    /** The client, made on first use: a phone without AICore throws here,
-     *  which reads as UNAVAILABLE. */
-    private val model: GenerativeModel? by lazy { runCatching { Generation.getClient() }.getOrNull() }
+    /** Whether Settings' Extras has Ask off: then AICore is never asked. */
+    fun parked(): Boolean = !Extras.now(Extra.ASK)
 
-    fun of(code: Int): Status = when (code) {
-        FeatureStatus.AVAILABLE -> Status.AVAILABLE
-        FeatureStatus.DOWNLOADABLE -> Status.DOWNLOADABLE
-        FeatureStatus.DOWNLOADING -> Status.DOWNLOADING
-        else -> Status.UNAVAILABLE
-    }
-
-    /** Whether Nano is here, asked of AICore once and kept. */
+    /** Whether Nano is here, asked of AICore once and kept; UNAVAILABLE,
+     *  unasked and not kept, while Ask is parked. */
     suspend fun check(): Status {
-        val m = model ?: return Status.UNAVAILABLE.also { _status.value = it }
+        if (parked()) return Status.UNAVAILABLE
         val now = try {
-            of(m.checkStatus())
+            NanoClient.status()
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
@@ -61,32 +79,21 @@ object Nano {
         return now
     }
 
-    suspend fun ready(): Boolean = (status.value.takeIf { it != Status.UNKNOWN } ?: check()) == Status.AVAILABLE
+    suspend fun ready(): Boolean = !parked() && (status.value.takeIf { it != Status.UNKNOWN } ?: check()) == Status.AVAILABLE
 
     /** The model fetched by AICore, on the pilot's say (Setup's On-Phone
      *  AI): Google's download, over Wi-Fi or not as AICore decides. */
     suspend fun download() {
-        val m = model ?: return
+        if (parked()) return
+        val steps = NanoClient.download() ?: return
         _status.value = Status.DOWNLOADING
-        m.download().collect { step ->
-            _status.value = when (step) {
-                is DownloadStatus.DownloadCompleted -> Status.AVAILABLE
-                is DownloadStatus.DownloadFailed -> Status.DOWNLOADABLE
-                else -> Status.DOWNLOADING
-            }
-        }
+        steps.collect { _status.value = it }
     }
 
     /** One answer to one prompt, under the app's instructions; null where
      *  Nano gave nothing. */
-    suspend fun answer(system: String, prompt: String, maxTokens: Int): String? {
-        val m = model ?: return null
-        val request = GenerateContentRequest.Builder(SystemInstruction(system), TextPart(prompt)).apply {
-            maxOutputTokens = maxTokens
-            temperature = TEMPERATURE
-        }.build()
-        return m.generateContent(request).candidates.firstOrNull()?.text?.trim()?.takeIf { it.isNotEmpty() }
-    }
+    suspend fun answer(system: String, prompt: String, maxTokens: Int): String? =
+        if (parked()) null else NanoClient.answer(system, prompt, maxTokens, TEMPERATURE)
 
     /**
      * A conversation answered with tools: each round, Nano either answers
@@ -97,33 +104,12 @@ object Nano {
      */
     suspend fun converse(
         system: String,
-        turns: List<Content>,
-        tools: List<FunctionDeclaration>,
+        turns: List<Turn>,
+        tools: List<FunctionSchemaXml.Tool>,
         maxTokens: Int,
         onTool: (String) -> Unit,
-        run: suspend (FunctionCall) -> Map<String, Any?>,
-    ): String? {
-        val m = model ?: return null
-        val history = turns.toMutableList()
-        repeat(MAX_TOOL_ROUNDS) {
-            val request = GenerateContentRequest.Builder(history).apply {
-                systemInstruction = SystemInstruction(system)
-                maxOutputTokens = maxTokens
-                temperature = TEMPERATURE
-            }.setTools(tools).build()
-            val said = m.generateContent(request).candidates.firstOrNull() ?: return null
-            val calls = said.functionCalls
-            if (calls.isEmpty()) return said.text.trim().takeIf { it.isNotEmpty() }
-            history += Content.Builder().role(Content.Role.MODEL).apply { calls.forEach { addPart(FunctionCallPart(it)) } }.build()
-            val answers = Content.Builder().role(Content.Role.USER)
-            calls.forEach { call ->
-                onTool(call.name)
-                answers.addPart(FunctionResponsePart(call.id, call.name, run(call)))
-            }
-            history += answers.build()
-        }
-        return null
-    }
+        run: suspend (name: String, args: Map<String, Any?>) -> Map<String, Any?>,
+    ): String? = if (parked()) null else NanoClient.converse(system, turns, tools, maxTokens, TEMPERATURE, MAX_TOOL_ROUNDS, onTool, run)
 
     /** Low, so the words stay close to the sources they are given. */
     private const val TEMPERATURE = 0.2f

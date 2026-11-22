@@ -641,4 +641,16 @@
         <item quantity="one">%1$d day ago</item>
         <item quantity="other">%1$d days ago</item>
     </plurals>
+    <!-- Settings' Extras: the parked features, a switch each, off to start (Extras.kt; the web's lib/extras). -->
+    <string name="settings_extras">Extras</string>
+    <string name="extras_atc_copilot">ATC Copilot</string>
+    <string name="extras_atc_copilot_line">Comms Assist, ATC alerts and the clearance readback check</string>
+    <string name="extras_adsb_receiver">ADS-B Receiver</string>
+    <string name="extras_adsb_receiver_line">Traffic and FIS-B weather from a receiver on the cockpit\'s Wi-Fi</string>
+    <string name="extras_other_airplanes">Other Airplanes</string>
+    <string name="extras_other_airplanes_line">Follow, past flights and history of airplanes not yours</string>
+    <string name="extras_model_weather">Model Weather</string>
+    <string name="extras_model_weather_line">Wind and weather fields on the Map card</string>
+    <string name="extras_ask">Ask</string>
+    <string name="extras_ask_line">Gemini Nano on this phone: Ask, and photographed pages read</string>
 </resources>

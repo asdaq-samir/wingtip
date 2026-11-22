@@ -72,8 +72,11 @@ class OpenScreenTest {
         assertEquals(SheetPage.Profile, CardRequests.take())
         assertNull(OpenScreen.field(FieldScreen.MAP, routed = false))
         assertEquals(SheetPage.MapSettings, CardRequests.take())
-        assertNull(OpenScreen.field(FieldScreen.CLEARANCE, routed = false))
+        // The clearance card is the parked ATC Copilot's: its switch on first.
+        assertNull(OpenScreen.field(FieldScreen.CLEARANCE, routed = false, atc = true))
         assertEquals(SheetPage.Clearance, CardRequests.take())
+        assertEquals("Turn on ATC Copilot in Settings, under Extras.", OpenScreen.field(FieldScreen.CLEARANCE, routed = false, atc = false))
+        assertNull(CardRequests.take())
     }
 
     @Test

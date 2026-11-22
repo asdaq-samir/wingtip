@@ -1,5 +1,7 @@
 package app.wingtipmaps.android.ui
 
+import app.wingtipmaps.android.Extra
+import app.wingtipmaps.android.Extras
 import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
@@ -83,11 +85,13 @@ internal object OpenScreen {
      * A screen's word from the search, opened: what is on this phone opens
      * by its name; the clearance card and the map's settings as cards; the
      * dry run flown over the map (`onDryRun`); the rest is said to be the
-     * web's for now, where it was asked.
+     * web's for now, where it was asked. The radio's clearance card opens
+     * only while Settings' Extras has the ATC Copilot on (`atc`).
      */
-    fun field(screen: FieldScreen, routed: Boolean, onDryRun: () -> Unit = {}): String? {
+    fun field(screen: FieldScreen, routed: Boolean, atc: Boolean = Extras.now(Extra.ATC_COPILOT), onDryRun: () -> Unit = {}): String? {
         if (screen in needRoute && !routed) return "Plan a route first."
         pageOf(screen)?.let {
+            if (it == SheetPage.Clearance && !atc) return "Turn on ATC Copilot in Settings, under Extras."
             CardRequests.open(it)
             return null
         }

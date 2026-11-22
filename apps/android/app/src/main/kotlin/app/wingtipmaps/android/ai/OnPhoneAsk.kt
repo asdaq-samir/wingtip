@@ -11,7 +11,6 @@ import app.wingtipmaps.android.api.Assistant
 import app.wingtipmaps.android.api.AssistantContext
 import app.wingtipmaps.android.api.AssistantLine
 import app.wingtipmaps.android.api.AssistantSource
-import com.google.mlkit.genai.prompt.Content
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import org.xmlpull.v1.XmlPullParser
@@ -51,15 +50,13 @@ object OnPhoneAsk {
     fun stream(messages: List<Assistant.Message>, context: AssistantContext?): Flow<AssistantLine> = channelFlow {
         val plan = contextWords(context)
         val system = listOf(instructions, AiTask.RULES, plan).filter { it.isNotEmpty() }.joinToString("\n\n")
-        val turns = messages.map { m ->
-            Content.Builder().role(if (m.role == "user") Content.Role.USER else Content.Role.MODEL).text(m.content).build()
-        }
+        val turns = messages.map { m -> Nano.Turn(user = m.role == "user", text = m.content) }
         val looking = app.getString(R.string.ai_looking_up)
         val heard = mutableListOf<AssistantSource>()
         send(AssistantLine.OnPhone)
-        val words = Nano.converse(system, turns, tools.declarations, maxTokens = 400, onTool = { trySend(AssistantLine.Tool(it, looking)) }) { call ->
-            tools.run(call).also { answer ->
-                heard += AssistantSource("${call.name}-${heard.size}", label(call.name, call.arguments.values.joinToString(" ") { v -> AgentTools.plain(v).toString() }), AgentTools.json(answer).toString())
+        val words = Nano.converse(system, turns, tools.tools, maxTokens = 400, onTool = { trySend(AssistantLine.Tool(it, looking)) }) { name, args ->
+            tools.run(name, args).also { answer ->
+                heard += AssistantSource("$name-${heard.size}", label(name, args.values.joinToString(" ")), AgentTools.json(answer).toString())
             }
         }
         val kept = FigureGuard.keep(words.orEmpty(), heard.map { it.text } + messages.map { it.content } + plan)

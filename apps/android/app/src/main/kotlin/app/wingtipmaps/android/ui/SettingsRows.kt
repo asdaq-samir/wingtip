@@ -45,11 +45,19 @@ fun SettingsGroup(modifier: Modifier = Modifier, content: @Composable ColumnScop
  */
 @Composable
 fun SwitchSettingRow(title: String, on: Boolean, index: Int, count: Int, onChange: (Boolean) -> Unit) {
+    SwitchSettingRow(title, null, on, index, count, onChange)
+}
+
+/** A setting on or off with a line under its name saying what it is
+ *  (Settings' Extras), the same stock row. */
+@Composable
+fun SwitchSettingRow(title: String, line: String?, on: Boolean, index: Int, count: Int, onChange: (Boolean) -> Unit) {
     SegmentedListItem(
         checked = on,
         onCheckedChange = onChange,
         shapes = ListItemDefaults.segmentedShapes(index = index, count = count),
         modifier = Modifier.fillMaxWidth(),
+        supportingContent = line?.let { { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
         trailingContent = { Switch(checked = on, onCheckedChange = null) },
         content = { Text(title) },
     )

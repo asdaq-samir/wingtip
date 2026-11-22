@@ -16,6 +16,11 @@ import app.wingtipmaps.android.notify.Notifications
  * keeps the position: it hears nothing itself, RadioListener does, and it
  * is only Android's reason not to end the process, with the notification
  * Android requires while the microphone is in use (Notifications.atc).
+ * Parked with the ATC copilot, it is not declared in the manifest for
+ * the first store build (the feature review): Android then starts
+ * nothing for `keep`, and the radio is listened to while the app is in
+ * front. Declared again, with FOREGROUND_SERVICE_MICROPHONE, when the
+ * copilot comes back.
  */
 class AtcListenService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

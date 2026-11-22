@@ -96,7 +96,11 @@ fun AirplaneCard(at: ProfileOpen.At, plan: Plan, exit: CardExit, onFlown: () -> 
     val lookup: AirplaneLookup = hiltViewModel()
     val looked by lookup.state.collectAsStateWithLifecycle()
     val tail = at.tail?.takeIf { SearchGroups.looksLikeTail(it) }
-    LaunchedEffect(tail) { if (tail != null) lookup.open(tail) }
+    // Its Follow, flights and history: the pilot's own always, another's
+    // while Settings' Extras has Other Airplanes on, else neither offered
+    // nor its flights fetched (OtherAirplanes).
+    val history = rememberHistoryOffered(tail) || airplane.record != null
+    LaunchedEffect(tail, history) { if (tail != null) lookup.open(tail, flights = history) }
     val record = looked.record.takeIf { tail != null }
     val line = record?.let { r -> listOfNotNull(listOfNotNull(r.manufacturer, r.model).joinToString(" ").ifEmpty { null }, r.year?.toString()).joinToString(", ").ifEmpty { null } }
     val fly: () -> Unit = {
@@ -105,7 +109,7 @@ fun AirplaneCard(at: ProfileOpen.At, plan: Plan, exit: CardExit, onFlown: () -> 
         plan.setAircraft(choice.aircraft)
         onFlown()
     }
-    val tabs = if (tail != null) listOf(R.string.airplane_tab_flights, R.string.airplane_tab_info, R.string.profile_figures) else listOf(R.string.profile_figures, R.string.checklists)
+    val tabs = if (tail != null) listOfNotNull(R.string.airplane_tab_flights.takeIf { history }, R.string.airplane_tab_info, R.string.profile_figures) else listOf(R.string.profile_figures, R.string.checklists)
 
     CardPage(
         title = name,
@@ -135,7 +139,7 @@ fun AirplaneCard(at: ProfileOpen.At, plan: Plan, exit: CardExit, onFlown: () -> 
                         Modifier.padding(vertical = WingtipSpace.Xs),
                     )
                 }
-                AirplaneButtons(tail, looked, canFly, fly, Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs))
+                AirplaneButtons(tail, looked, canFly, history, fly, Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs))
             }
             SecondaryTabRow(selectedTabIndex = section.coerceAtMost(tabs.lastIndex), containerColor = Color.Transparent) {
                 tabs.forEachIndexed { i, title ->
@@ -155,7 +159,7 @@ fun AirplaneCard(at: ProfileOpen.At, plan: Plan, exit: CardExit, onFlown: () -> 
             val page = tabs.getOrNull(section) ?: tabs.first()
             when (page) {
                 R.string.airplane_tab_flights -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { AirplaneFlights(looked, name) }
-                R.string.airplane_tab_info -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { AirplaneInfo(looked, own = airplane.record != null) }
+                R.string.airplane_tab_info -> Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) { AirplaneInfo(looked, own = airplane.record != null, history = history) }
                 R.string.profile_figures -> AirplaneProfileScreen(airplane, at.focus) {
                     if (flownCard) FlownAirplaneRows(plan, onYourAirplanes = { onOpen(SheetPage.YourAirplanes) })
                     // An N-number's card has its checklists under its figures.
@@ -169,9 +173,10 @@ fun AirplaneCard(at: ProfileOpen.At, plan: Plan, exit: CardExit, onFlown: () -> 
 
 /** An N-number's buttons, the four of the owner's P1 in a button group:
  *  Fly This (where it is not flown already), Follow (alerts as it takes
- *  off and lands, Tracking's watches), Favorite and Share (its link). */
+ *  off and lands, Tracking's watches; only where its history is offered,
+ *  OtherAirplanes), Favorite and Share (its link). */
 @Composable
-private fun AirplaneButtons(tail: String, looked: AirplaneLookup.State, canFly: Boolean, fly: () -> Unit, modifier: Modifier) {
+private fun AirplaneButtons(tail: String, looked: AirplaneLookup.State, canFly: Boolean, history: Boolean, fly: () -> Unit, modifier: Modifier) {
     val context = LocalContext.current
     val shareTitle = stringResource(R.string.share_airplane)
     val tracking = hiltViewModel<FlightModel>().tracking
@@ -183,11 +188,13 @@ private fun AirplaneButtons(tail: String, looked: AirplaneLookup.State, canFly: 
     val following = hex != null && watches.any { it.hex == hex }
     val items = buildList {
         if (canFly) add(GroupAction(stringResource(R.string.fly_this_airplane), WingtipIcons.airplane, filled = true, onClick = fly))
-        add(
-            GroupAction(stringResource(if (following) R.string.airplane_unfollow else R.string.airplane_follow), null, enabled = hex != null, checked = following) {
-                if (hex != null) WatchKind.entries.forEach { kind -> if (tracking.watching(hex, kind) == following) tracking.toggleWatch(hex, tail, kind) }
-            },
-        )
+        if (history) {
+            add(
+                GroupAction(stringResource(if (following) R.string.airplane_unfollow else R.string.airplane_follow), null, enabled = hex != null, checked = following) {
+                    if (hex != null) WatchKind.entries.forEach { kind -> if (tracking.watching(hex, kind) == following) tracking.toggleWatch(hex, tail, kind) }
+                },
+            )
+        }
         add(GroupAction(stringResource(R.string.action_favorite), if (starred) Icons.Filled.Star else Icons.Outlined.StarOutline, enabled = hex != null, checked = starred) {
             if (hex != null) tracking.toggleFavorite(hex, tail, what)
         })

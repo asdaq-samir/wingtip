@@ -8,6 +8,8 @@ import androidx.core.content.ContextCompat
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import app.wingtipmaps.android.AppClock
+import app.wingtipmaps.android.Extra
+import app.wingtipmaps.android.Extras
 import app.wingtipmaps.android.api.TrafficAircraft
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -73,12 +75,16 @@ class Receiver private constructor(private val context: Context, private val tic
         loaded.cancel()
         _mode.value = mode
         scope.launch { context.settings.edit { it[KEY] = mode.name } }
-        if (mode == ReceiverMode.OFF) {
-            socket.stop()
-            _picture.value = null
-            _nexrad.value = null
-            serve(false)
-        }
+        if (mode == ReceiverMode.OFF) quiet()
+    }
+
+    /** Nothing listened to and nothing kept: the socket closed, the
+     *  picture and its NEXRAD let go, the foreground service stopped. */
+    private fun quiet() {
+        socket.stop()
+        _picture.value = null
+        _nexrad.value = null
+        serve(false)
     }
 
     /** Listen and read once a second from now on (Ticker's clock). */
@@ -88,6 +94,13 @@ class Receiver private constructor(private val context: Context, private val tic
 
     fun read(nowMs: Long = AppClock.nowMs()) {
         if (_mode.value != ReceiverMode.AUTO) return
+        // Parked in Settings' Extras (ADS-B Receiver, off to start): its
+        // Auto acts as off, nothing opened and nothing drawn from it; a
+        // switch turned off while one was heard lets it go here.
+        if (!Extras.of(context).isOn(Extra.ADSB_RECEIVER)) {
+            quiet()
+            return
+        }
         socket.start()
         _problem.value = socket.problem
         val bytes = socket.drain()

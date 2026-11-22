@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.Extra
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.ai.OnPhoneAiRow
@@ -26,6 +27,7 @@ import app.wingtipmaps.android.airplane.GlideRingRow
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.receiver.ReceiverSettingRows
+import app.wingtipmaps.android.rememberExtra
 
 /**
  * Where Settings opens: at its top, or at its Map group when the Map
@@ -43,8 +45,9 @@ object SettingsAt {
  * Android's own Settings groups its rows -- Look (Theme, Appearance and
  * the layout), Map (Airport Weather, Glide Ring, Clear Your Path), In
  * Flight (the alerts said aloud, ATC to its page, the passenger
- * briefing, a receiver on the cockpit's Wi-Fi), Data (Downloads, the
- * on-phone AI) and Help & About to its page. What is the pilot's own --
+ * briefing, a receiver on the cockpit's Wi-Fi), Extras (the parked
+ * features' switches), Data (Downloads, the on-phone AI) and Help &
+ * About to its page. What is the pilot's own --
  * the account, the minimums, the logbook -- is You's; what is on the map
  * is the Map card's.
  *
@@ -77,14 +80,18 @@ fun SettingsScreen(open: (SheetPage) -> Unit) {
             ActionSettingRow(stringResource(R.string.passenger_briefing), index = 2, count = 3) { open(SheetPage.Passengers) }
         }
         // A Stratux, Sentry or the like on the cockpit's Wi-Fi: its traffic
-        // and FIS-B weather with no internet.
-        ReceiverSettingRows()
+        // and FIS-B weather with no internet, while Extras has it on.
+        if (rememberExtra(Extra.ADSB_RECEIVER)) ReceiverSettingRows()
+
+        // The parked features, a switch each (Extras), right after In Flight.
+        ExtrasGroup()
 
         SectionTitle(stringResource(R.string.settings_data))
         // The charts kept for flying with no signal (the web's Keep for the
-        // Air is the route's own here, on FPL) and where the AI's words are made.
+        // Air is the route's own here, on FPL) and where the AI's words are
+        // made, while Extras has Ask on (nothing of ML Kit's is asked till then).
         SettingsGroup { ActionSettingRow(stringResource(R.string.offline_downloads), index = 0, count = 1) { open(SheetPage.Downloads) } }
-        OnPhoneAiRow()
+        if (rememberExtra(Extra.ASK)) OnPhoneAiRow()
 
         SettingsGroup(Modifier.padding(top = WingtipSpace.Md)) {
             ActionSettingRow(stringResource(R.string.help_and_about), index = 0, count = 1) { open(SheetPage.Help) }

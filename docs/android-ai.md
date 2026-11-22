@@ -138,9 +138,23 @@ each bound to `OPEN_APP_FEATURE`.
   AppFunctions opening the screen with its action.
 - **Firebase AI Logic**: above.
 
+## Parked for the first store build
+
+Ask and every use of Nano are parked (the feature review,
+docs/store/feature-review.md, 2026-11-21): ML Kit GenAI sends Google
+device identifiers and diagnostics, the Data safety form's only "Device
+or other IDs" row. `com.google.mlkit:genai-prompt` is built in only with
+`-Pwingtip.genai=true` (app/build.gradle.kts), which compiles
+`src/genai`'s `ai/NanoClient`, the one file that touches ML Kit GenAI;
+without it `src/nogenai`'s stub builds and every phone reads as one
+without Nano. Either way Settings › Extras' Ask (off to start) gates
+`Nano`: while it is off no ML Kit client is made and AICore is not
+asked. The scanner and ML Kit text recognition stay.
+
 ## What needs a real phone
 
-The checks here compile, lint and unit-test; none runs a model.
+The checks here compile, lint and unit-test; none runs a model. Build
+with `-Pwingtip.genai=true` and turn on Settings › Extras › Ask first.
 
 1. **A phone with Gemini Nano** (Pixel 9, 10 or 11; Galaxy S25 or S26;
    Galaxy Z Fold8 or Flip8; ML Kit's list is the authority), with AICore

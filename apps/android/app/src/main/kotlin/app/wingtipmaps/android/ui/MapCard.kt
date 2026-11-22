@@ -39,6 +39,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.Extra
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -47,6 +48,7 @@ import app.wingtipmaps.android.map.MapLayersStore
 import app.wingtipmaps.android.map.ModelWeatherRow
 import app.wingtipmaps.android.map.WeatherLoopRows
 import app.wingtipmaps.android.plates.PlateCardModel
+import app.wingtipmaps.android.rememberExtra
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
 
@@ -88,9 +90,10 @@ fun MapCard(exit: CardExit, open: (SheetPage) -> Unit) {
             SectionTitle(stringResource(R.string.map_layers))
             LayerTiles()
             // The radar and satellite loop and its speed (map/WeatherLoop),
-            // and the model weather's field (map/flow).
+            // and the model weather's field (map/flow), offered only while
+            // Settings' Extras has Model Weather on.
             WeatherLoopRows()
-            ModelWeatherRow()
+            if (rememberExtra(Extra.MODEL_WEATHER)) ModelWeatherRow()
         }
     }
 }

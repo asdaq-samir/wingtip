@@ -141,7 +141,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         dryRun.start(planState)
         showPlan()
     }
-    val doLine: (String) -> Unit = { line -> strip.submit(line, plan, pilot, fix.value, assistant, askContext()) { OpenScreen.field(it, routed, flyDryRun) } }
+    val doLine: (String) -> Unit = { line -> strip.submit(line, plan, pilot, fix.value, assistant, askContext()) { OpenScreen.field(it, routed, onDryRun = flyDryRun) } }
     val picks = SearchPicks(
         plan, fix::value, search.addingStop, search.stopAfter, search.picking, onAirport = openField, onPlan = showPlan,
         ask = { q -> strip.ask(q, assistant, askContext()) },
