@@ -477,8 +477,8 @@ fun Engine.copilotFlight(fuelGal: Double? = null, taxiGal: Double? = null, dista
 /**
  * The in-flight copilot: from own ship and the live data, the messages that change what the pilot should do, most pressing first (warning, caution, advisory; then the kinds' order), each with the words to show and speak and its sources. Warns, never limits.
  */
-fun Engine.copilotWatch(nowS: Double, own: EngineContract.CopilotWatchInputOwn, fields: List<EngineContract.CopilotField>, rules: String? = null, minimums: EngineContract.CopilotWatchInputMinimums? = null, fuelGal: Double? = null, burnGph: Double? = null, tasKt: Double? = null, dest: String, alternate: String? = null, remainingNm: Double? = null, plannedGsKt: Double? = null, passengers: Boolean? = null, nightCurrent: Boolean? = null, areas: List<EngineContract.CopilotWatchInputAreasItem>? = null, itws: List<EngineContract.CopilotWatchInputItwsItem>? = null, ahead: List<EngineContract.CopilotWatchInputAheadItem>? = null): Result<EngineContract.CopilotWatchAnswer> =
-    rule("copilot_watch", EngineContract.CopilotWatchInput(nowS = nowS, own = own, fields = fields, rules = rules, minimums = minimums, fuelGal = fuelGal, burnGph = burnGph, tasKt = tasKt, dest = dest, alternate = alternate, remainingNm = remainingNm, plannedGsKt = plannedGsKt, passengers = passengers, nightCurrent = nightCurrent, areas = areas, itws = itws, ahead = ahead))
+fun Engine.copilotWatch(nowS: Double, own: EngineContract.CopilotWatchInputOwn, fields: List<EngineContract.CopilotField>, rules: String? = null, minimums: EngineContract.CopilotWatchInputMinimums? = null, fuelGal: Double? = null, startedS: Double? = null, burnGph: Double? = null, tasKt: Double? = null, dest: String, alternate: String? = null, remainingNm: Double? = null, plannedGsKt: Double? = null, passengers: Boolean? = null, nightCurrent: Boolean? = null, areas: List<EngineContract.CopilotWatchInputAreasItem>? = null, itws: List<EngineContract.CopilotWatchInputItwsItem>? = null, ahead: List<EngineContract.CopilotWatchInputAheadItem>? = null): Result<EngineContract.CopilotWatchAnswer> =
+    rule("copilot_watch", EngineContract.CopilotWatchInput(nowS = nowS, own = own, fields = fields, rules = rules, minimums = minimums, fuelGal = fuelGal, startedS = startedS, burnGph = burnGph, tasKt = tasKt, dest = dest, alternate = alternate, remainingNm = remainingNm, plannedGsKt = plannedGsKt, passengers = passengers, nightCurrent = nightCurrent, areas = areas, itws = itws, ahead = ahead))
 
 /**
  * A CSV file's rows of fields.
@@ -713,12 +713,6 @@ fun Engine.fieldMarkRank(siteType: String? = null, use: String? = null, towered:
  */
 fun Engine.fieldMilitary(ownership: String? = null, use: String? = null): Result<EngineContract.FieldMilitaryAnswer> =
     rule("field_military", EngineContract.FieldMilitaryInput(ownership = ownership, use = use))
-
-/**
- * Every name a field may be filed under, in the order to try them: NASR's ICAO_ID where given, the K form of a three-letter ident (FAA JO 7350.9GG 4-1), the ident as asked and its FAA form.
- */
-fun Engine.fieldNames(ident: String, icaoId: String? = null): Result<List<String>> =
-    rule("field_names", EngineContract.FieldNamesInput(ident = ident, icaoId = icaoId))
 
 /**
  * The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport. `airplane`: whether an airplane on wheels lands there, an airport (A), a gliderport (G) or an ultralight park (U), each a strip of ground; not a heliport, a balloonport or a seaplane base, whose runways are water. What every list of fields to land at is held to (nearest, a stop, a glide's); true with no code, the host's own list then deciding.

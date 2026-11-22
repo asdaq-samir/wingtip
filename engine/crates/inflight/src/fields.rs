@@ -100,15 +100,33 @@ pub struct Ask {
 }
 
 pub fn ask(name: &str, v: &Value) -> R<Ask> {
+    let burn_gph = input::num(name, v, "burn_gph")?.filter(|b| *b > 0.0);
+    let now_s = input::num(name, v, "now_s")?;
+    let fuel_gal = input::num(name, v, "fuel_gal")?;
     Ok(Ask {
         own: input::own(name, v)?,
         ifr: input::ifr(name, v)?,
         minimums: input::minimums(name, v)?,
-        fuel_gal: input::num(name, v, "fuel_gal")?,
-        burn_gph: input::num(name, v, "burn_gph")?.filter(|b| *b > 0.0),
+        fuel_gal: match input::num(name, v, "started_s")? {
+            Some(started_s) => fuel_since(fuel_gal, burn_gph, started_s, now_s),
+            None => fuel_gal,
+        },
+        burn_gph,
         tas_kt: input::num(name, v, "tas_kt")?,
-        now_s: input::num(name, v, "now_s")?,
+        now_s,
     })
+}
+
+/// The fuel aboard now, from the fuel at takeoff and the plan's burn over
+/// the time flown since `started_s` (FAA-H-8083-25C ch. 16: fuel used is
+/// the burn over the time), never below none. The one place the hosts'
+/// three copies of it (the web's copilotInput, the iPhone's Copilot and
+/// Android's CopilotModel) now ask; none without a burn, which would be
+/// an assumed airplane's.
+pub fn fuel_since(fuel_gal: Option<f64>, burn_gph: Option<f64>, started_s: f64, now_s: Option<f64>) -> Option<f64> {
+    let (fuel, burn) = (fuel_gal?, burn_gph?);
+    let hours = now_s.map_or(0.0, |now| (now - started_s).max(0.0) / 3600.0);
+    Some((fuel - burn * hours).max(0.0))
 }
 
 /// The ground speed minutes are worked at: own ship's once flying, else

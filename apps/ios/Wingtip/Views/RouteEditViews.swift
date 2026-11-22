@@ -283,8 +283,9 @@ struct HoldSheet: View {
             legNm = was.legNm ?? 4
             length = was.turns.map { "\($0)T" } ?? "\(was.minutes ?? 10)M"
         } else if let leg = legIn {
-            let magnetic = ((leg.trueCourseDeg - leg.magneticVariationDeg).truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360)
-            let rounded = Int(magnetic.rounded()) % 360
+            // The leg's own magnetic course (the nav log's, the engine's),
+            // as the web's and Android's holds start on, not a copy of it.
+            let rounded = Int(leg.magneticCourseDeg.rounded()) % 360
             course = String(format: "%03d", rounded == 0 ? 360 : rounded)
             // Where the engine refuses, the minute the form starts on
             // stands and the reason shows under it.

@@ -126,13 +126,12 @@ final class Copilot {
     /// The engine's question from what the app has: own ship, the flight
     /// as planned, the planner's answer round the airplane (its members
     /// the engine's, in its snake case), the alerts ahead, the pilot's
-    /// minimums, the fuel left by the plan's burn since the flight began,
+    /// minimums, the fuel at takeoff and when the flight began (the engine
+    /// takes the plan's burn since, copilot_watch's started_s),
     /// and the category each field was first seen in.
     static func input(fix: OwnShip.Fix, flight: Flight, around: APICopilotAround, ahead: [AheadAlert], minimums: PersonalMinimums,
                       remainingNm: Double?, startedAt: Date?, firstSeen: [String: String?]) throws -> Input {
         let snake = Planner.snakeEncoder
-        let hours = startedAt.map { max(0, fix.at.timeIntervalSince($0)) / 3600 } ?? 0
-        let fuel = flight.fuelGal.flatMap { gal in flight.burnGph.map { max(0, gal - $0 * hours) } }
         let fields: [EngineContract.CopilotField] = try around.fields.map { field in
             var read: EngineContract.CopilotField = try Engine.recoded(field, encoder: snake)
             read.plannedCategory = firstSeen[field.ident] ?? nil
@@ -143,7 +142,7 @@ final class Copilot {
             own: .init(lat: fix.coordinate.latitude, lon: fix.coordinate.longitude, trackDeg: fix.trackDeg, gsKt: fix.groundspeedKt),
             fields: fields, rules: "VFR",
             minimums: .init(ceilingFt: minimums.ceilingFt, visibilitySm: minimums.visibilitySm, crosswindKt: minimums.crosswindKt, windKt: minimums.windKt),
-            fuelGal: fuel, burnGph: flight.burnGph, tasKt: flight.tasKt, dest: flight.dest, alternate: nil, remainingNm: remainingNm,
+            fuelGal: flight.fuelGal, startedS: startedAt?.timeIntervalSince1970, burnGph: flight.burnGph, tasKt: flight.tasKt, dest: flight.dest, alternate: nil, remainingNm: remainingNm,
             plannedGsKt: flight.plannedGsKt, passengers: nil, nightCurrent: nil,
             areas: try around.areas.map { try Engine.recoded($0, encoder: snake) },
             itws: try around.itws.map { try Engine.recoded($0, encoder: snake) },
