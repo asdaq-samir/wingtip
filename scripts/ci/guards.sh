@@ -37,7 +37,8 @@
 # `changes`). INSTALL=true lets it install what it needs (npm ci, the
 # planner's requirements, cargo-machete), as CI does on a fresh runner; on
 # the Mac a check whose tool is missing is skipped with a note, and in CI it
-# fails. BASE_REF is the branch the file sizes are held against (main).
+# fails. BASE_REF is the branch the file sizes are held against (main);
+# BASE a commit to hold them against without fetching.
 #
 #   scripts/ci/guards.sh
 #   WEB=false ENGINE=false FLIGHT=false scripts/ci/guards.sh    the seconds-long ones
@@ -101,8 +102,10 @@ ruff_check() {
 
 # The branch a change is held against, fetched once for every check that
 # reads it (one deep: a tree is all they compare).
-base=refs/guards/base
-if part repo && { on ARCH || on IOS || on ANDROID || on API; }; then
+# BASE names a commit already here instead (scripts/dev/preflight.sh's,
+# on the Mac, where a shallow fetch into a clone breaks its worktrees).
+base=${BASE:-refs/guards/base}
+if [ -z "${BASE:-}" ] && part repo && { on ARCH || on IOS || on ANDROID || on API; }; then
   git fetch -q --depth=1 origin "+refs/heads/${BASE_REF:-main}:$base" 2> /dev/null || base=origin/${BASE_REF:-main}
 fi
 
