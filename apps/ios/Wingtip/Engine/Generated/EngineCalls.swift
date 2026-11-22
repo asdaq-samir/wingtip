@@ -810,6 +810,11 @@ extension Engine {
         try Self.rule("glide_ring", EngineContract.GlideRingInput(lat: lat, lon: lon, altitudeFt: altitudeFt, speedKt: speedKt, terrainFt: terrainFt, fieldFt: fieldFt, glideRatio: glideRatio))
     }
 
+    /// The Brief's Adverse Conditions rows under its findings, the standard briefing's first element (AIM 7-1-5(b)(1)): what the flight meets on the route while it is there (OnRoute `when` "during", or none given) -- a TFR the route goes through (14 CFR 91.137-91.145) and a Convective SIGMET or SIGMET (AIM 7-1-6), stops; a Center Weather Advisory (AIM 7-1-6), an urgent pilot report (UUA, AIM 7-1-18) and an AIRMET or G-AIRMET (AIM 7-1-6), cautions -- in that order, of a kind the one met first along the route first, at most three, with how many more. A TFR only near the route, a routine PIREP and a hazard before or after the flight are left to their pages. Each row's time is for the host to write: `at` when the flight meets a TFR, `until` an advisory's end, `reported` a pilot report's time.
+    static func gonogoAdverseRows(advisories: [EngineContract.GonogoAdverseRowsInputAdvisoriesItem]) throws -> EngineContract.GonogoAdverseRowsAnswer {
+        try Self.rule("gonogo_adverse_rows", EngineContract.GonogoAdverseRowsInput(advisories: advisories))
+    }
+
     /// Weight and balance at takeoff and landing, against the profile's limits and envelope, with the problems found.
     static func gonogoBalance(loading: EngineContract.GonogoLoading, load: EngineContract.GonogoLoad, tripFuelGal: Double? = nil) throws -> EngineContract.GonogoBalanceAnswer {
         try Self.rule("gonogo_balance", EngineContract.GonogoBalanceInput(loading: loading, load: load, tripFuelGal: tripFuelGal))
@@ -955,6 +960,11 @@ extension Engine {
         try Self.rule("handbook_read_check", EngineContract.HandbookReadCheckInput(speedUnit: speedUnit, cruiseSpeedKind: cruiseSpeedKind, distanceUnit: distanceUnit, weightUnit: weightUnit, armUnit: armUnit, fuelUnit: fuelUnit, burnUnit: burnUnit, cruise: cruise, climb: climb, glide: glide, takeoff: takeoff, landing: landing, empty: empty, maxTakeoffWeight: maxTakeoffWeight, envelope: envelope, fuel: fuel))
     }
 
+    /// Hazard colouring (ForeFlight's Hazard Advisor): the ground and obstacles on the map against the altitude flown, the GPS's in flight (`underway`, flying speed), the plan's cruise on the ground. Red over `warning_from_ft`, the altitude less the pilot's clearance -- 500 ft (14 CFR 91.119(c)), 1,000 ft by default (91.119(b), 91.177(a)(2)(ii)) or 2,000 ft (91.177(a)(2)(i), a Part 95 mountainous area); exactly the clearance meets the rule and is yellow -- yellow from `caution_from_ft`, 1,000 ft under that, nothing below. `shown` where the setting (off, on, or by itself in flight) and an altitude allow; each of `tops_ft` (obstacle tops, ft MSL) as `levels` against the bands ("warning", "caution", "clear"; null with no altitude). A picture against one altitude, not terrain clearance: no TAWS (TSO-C151). A phone's GPS height is over the WGS84 ellipsoid, some 100 ft under sea level over the US (GEOID18), so it errs red.
+    static func hazardView(setting: String, speedKt: Double? = nil, gpsAltitudeFt: Double? = nil, plannedAltitudeFt: Double? = nil, clearanceFt: Double? = nil, topsFt: [Double]? = nil) throws -> EngineContract.HazardViewAnswer {
+        try Self.rule("hazard_view", EngineContract.HazardViewInput(setting: setting, speedKt: speedKt, gpsAltitudeFt: gpsAltitudeFt, plannedAltitudeFt: plannedAltitudeFt, clearanceFt: clearanceFt, topsFt: topsFt))
+    }
+
     /// The entry into a route's hold for an airplane arriving on a course (AIM 5-3-8 j.3's sectors, read by the course flown).
     static func holdEntry(arrivalDeg: Double, inboundDeg: Double, turns: String? = nil) throws -> String {
         try Self.rule("hold_entry", EngineContract.HoldEntryInput(arrivalDeg: arrivalDeg, inboundDeg: inboundDeg, turns: turns))
@@ -1083,6 +1093,11 @@ extension Engine {
     /// A field's radio as the kneeboard lists it, [short name, MHz] in its order (the tower's before the CTAF's).
     static func kneeboardRadio(frequencies: [EngineContract.FieldFrequency]) throws -> [[OpenAPIValueContainer]] {
         try Self.rule("kneeboard_radio", EngineContract.KneeboardRadioInput(frequencies: frequencies))
+    }
+
+    /// The runway landed on at a field the route flies an instrument approach to: the approach's own runway, straight in (AIM 5-4-20, Approach and Landing Minimums; 14 CFR 91.175, the runway of intended landing), unless the pilot picked another and the plate publishes circling minimums, a circle to land (AIM 5-4-20). A runway picked into the wind gives way to the approach's own. With no approach, or one circling only (no runway in its name), the pick stands and any runway may be picked. `circling` null (the plate still coming) is taken as no circling. The runway is answered as painted ("9", "8L").
+    static func landingRunway(approach: Bool, straightIn: String? = nil, circling: Bool? = nil, picked: String? = nil, byPilot: Bool) throws -> EngineContract.LandingRunwayAnswer {
+        try Self.rule("landing_runway", EngineContract.LandingRunwayInput(approach: approach, straightIn: straightIn, circling: circling, picked: picked, byPilot: byPilot))
     }
 
     /// Of a field's runways, each on the end the wind favours, the least crosswind, steady or gust, whichever is more: the runway a pilot would pick to keep the wind most nearly down it. A variable wind is all crosswind (AIM 7-1-28); calm is none. null with no wind or no runway end with a heading.
@@ -1465,6 +1480,16 @@ extension Engine {
         try Self.rule("profile_clearance", EngineContract.ProfileClearanceInput(altitudeFt: altitudeFt, alongNm: alongNm, groundFt: groundFt, obstacles: obstacles, points: points))
     }
 
+    /// The profile's cloud bases: each TAF station (tafs_along_route's, with its TAF's issue time) whose forecast ceiling is known and which is within 25 nm of a leg of the route through `path` (the stations a leg's altitudes are kept under, 14 CFR 91.155; TAF_REACH_NM), placed at its foot on the nearest leg, in order along the route: its base MSL, the ceiling above the field plus the field's elevation. A stated simplification, as the altitude plan's: the ceiling (the lowest broken or overcast layer, FAA-H-8083-28B 27.4.2.9), not a FEW or SCT layer under it.
+    static func profileClouds(path: [[Double]], stations: [EngineContract.ProfileCloudsInputStationsItem]? = nil) throws -> [EngineContract.ProfileCloudsAnswerItem] {
+        try Self.rule("profile_clouds", EngineContract.ProfileCloudsInput(path: path, stations: stations))
+    }
+
+    /// The FAA Digital Obstacle File's obstacles along the route for the profile, in order along it: each coloured against `altitude_ft` as the profile's ground is (profile_clearance: "warning" under 14 CFR 91.119(c)'s 500 ft or above, "caution" within 91.119(b)'s 1,000 ft, else "clear"; null with no altitude), and the tallest three, at least an eighth of the route apart, `named`, for the profile to label with their heights above the ground and the sea (DOF's AGL and AMSL).
+    static func profileObstacles(altitudeFt: Double? = nil, lengthNm: Double, obstacles: [EngineContract.ProfileObstaclesInputObstaclesItem]? = nil) throws -> [EngineContract.ProfileObstaclesAnswerItem] {
+        try Self.rule("profile_obstacles", EngineContract.ProfileObstaclesInput(altitudeFt: altitudeFt, lengthNm: lengthNm, obstacles: obstacles))
+    }
+
     /// Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.
     static func prohibitedCaution(selection: [String: OpenAPIValueContainer]) throws -> [String] {
         try Self.rule("prohibited_caution", EngineContract.ProhibitedCautionInput(selection: selection))
@@ -1578,6 +1603,11 @@ extension Engine {
     /// The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).
     static func reserveMin(ifr: Bool? = nil, night: Bool? = nil) throws -> Double {
         try Self.rule("reserve_min", EngineContract.ReserveMinInput(ifr: ifr, night: night))
+    }
+
+    /// The route's strongest headwind: of the nav log's legs, the one whose wind aloft blows most against its true course, its headwind the wind's component along that course (the wind triangle, FAA-H-8083-25C ch. 16; the winds aloft forecast's direction is true, FAA-H-8083-28B 27.6), to a tenth of a knot, a tailwind negative, so with tailwinds all the way it is the least of them. The first such leg where two tie; a leg with no wind or no course is passed over; null where no leg has both. The Brief's glance shows it as the route's wind aloft.
+    static func routeHeadwind(legs: [EngineContract.RouteHeadwindInputLegsItem]) throws -> EngineContract.RouteHeadwindAnswer? {
+        try Self.rule("route_headwind", EngineContract.RouteHeadwindInput(legs: legs))
     }
 
     /// The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route, the most filed one and the one round the Class B it enters (14 CFR 91.131(a)(1)) with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.
@@ -1748,6 +1778,11 @@ extension Engine {
     /// When a part-time surface area is in effect, day by day from the field's today for a week, read from NASR's CLS_ARSP AIRSPACE_HRS, the Chart Supplement's AIRSPACE line ("CLASS D SVC 0600-2200 MON-FRI, 0700-2200 SAT-SUN; OTHER TIMES CLASS E"): the class at other times the one the line names (AIM 3-2-5a1; 14 CFR 71.61, 71.71(b)), never a guess. A time with no Z is the field's local time; Z is UTC at the offset now; Z++ is the Chart Supplement's double dagger, one hour earlier in daylight saving time, so the figure at the field's standard offset all year. Reads CONTINUOUS, time ranges, days (MON-FRI, SAT & SUN, WKEND) and seasons (16 MAR-31 OCT, OCT-MAR); anything else (holidays, BY NOTAM, SR-SS) leaves the hours not known (`known` false). Spans are local minutes from midnight, [from, to), a span past midnight carried into the next day. `in_force` and `change` are now's: in effect until `change.at`, or not until `change.at`, `next_day` where that is tomorrow; null where today's hours are not known. The engine has no clock: the host gives the field's local date, minute, UTC offset and whether in daylight saving time.
     static func surfaceHours(hours: String? = nil, year: Int, month: Int, day: Int, weekday: Int, minute: Int, utcOffsetMin: Int, dst: Bool? = nil) throws -> EngineContract.SurfaceHoursAnswer {
         try Self.rule("surface_hours", EngineContract.SurfaceHoursInput(hours: hours, year: year, month: month, day: day, weekday: weekday, minute: minute, utcOffsetMin: utcOffsetMin, dst: dst))
+    }
+
+    /// A TAF's own times and whether it speaks for now: its station, when it was issued and its valid period, as its header gives them, and its state, not yet before the period, in force during it and expired at its end (FAA-H-8083-28B 27.4.1, a TAF is a forecast for its valid period; the same rule as weather_in_force's for a TAF). The airport card says it under the hours, so a TAF kept from before the signal was lost is never read as today's forecast (14 CFR 91.103). Null where the words are not a TAF.
+    static func tafValidity(taf: String, now: Double) throws -> EngineContract.TafValidityAnswer? {
+        try Self.rule("taf_validity", EngineContract.TafValidityInput(taf: taf, now: now))
     }
 
     /// What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).

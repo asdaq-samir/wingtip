@@ -824,6 +824,19 @@ export type ProceduresReadAnswer = {
   exact: boolean;
 }[];
 export type ProceduresWriteAnswer = string;
+export type ProfileCloudsAnswer = {
+  station: string;
+  along_nm: number;
+  base_ft: number;
+  issued: string | null;
+}[];
+export type ProfileObstaclesAnswer = {
+  along_nm: number;
+  amsl_ft: number;
+  agl_ft: number | null;
+  level: ("warning" | "caution" | "clear") | null;
+  named: boolean;
+}[];
 export type ProhibitedCautionAnswer = string[];
 export type PublicUseAnswer = boolean;
 export type RadialOfAnswer = {
@@ -903,6 +916,16 @@ export type RegionOfAnswer = string;
 export type RegionsAheadAnswer = string[];
 export type RegisteredProfileAnswer = string | null;
 export type ReserveMinAnswer = number;
+export type RouteHeadwindAnswer = {
+  /**
+   * The headwind on that leg's course, kt; negative a tailwind.
+   */
+  headwind_kt: number;
+  from: string;
+  to: string;
+  wind_dir_true_deg: number;
+  wind_speed_kt: number;
+} | null;
 export type RoutePositionAnswer = {
   along_nm: number;
   total_nm: number;
@@ -2249,6 +2272,13 @@ export interface EngineContract {
     answer: GlideRingAnswer;
   };
   /**
+   * The Brief's Adverse Conditions rows under its findings, the standard briefing's first element (AIM 7-1-5(b)(1)): what the flight meets on the route while it is there (OnRoute `when` "during", or none given) -- a TFR the route goes through (14 CFR 91.137-91.145) and a Convective SIGMET or SIGMET (AIM 7-1-6), stops; a Center Weather Advisory (AIM 7-1-6), an urgent pilot report (UUA, AIM 7-1-18) and an AIRMET or G-AIRMET (AIM 7-1-6), cautions -- in that order, of a kind the one met first along the route first, at most three, with how many more. A TFR only near the route, a routine PIREP and a hazard before or after the flight are left to their pages. Each row's time is for the host to write: `at` when the flight meets a TFR, `until` an advisory's end, `reported` a pilot report's time.
+   */
+  gonogo_adverse_rows: {
+    input: GonogoAdverseRowsInput;
+    answer: GonogoAdverseRowsAnswer;
+  };
+  /**
    * Weight and balance at takeoff and landing, against the profile's limits and envelope, with the problems found.
    */
   gonogo_balance: {
@@ -2452,6 +2482,13 @@ export interface EngineContract {
     answer: HandbookReadCheck;
   };
   /**
+   * Hazard colouring (ForeFlight's Hazard Advisor): the ground and obstacles on the map against the altitude flown, the GPS's in flight (`underway`, flying speed), the plan's cruise on the ground. Red over `warning_from_ft`, the altitude less the pilot's clearance -- 500 ft (14 CFR 91.119(c)), 1,000 ft by default (91.119(b), 91.177(a)(2)(ii)) or 2,000 ft (91.177(a)(2)(i), a Part 95 mountainous area); exactly the clearance meets the rule and is yellow -- yellow from `caution_from_ft`, 1,000 ft under that, nothing below. `shown` where the setting (off, on, or by itself in flight) and an altitude allow; each of `tops_ft` (obstacle tops, ft MSL) as `levels` against the bands ("warning", "caution", "clear"; null with no altitude). A picture against one altitude, not terrain clearance: no TAWS (TSO-C151). A phone's GPS height is over the WGS84 ellipsoid, some 100 ft under sea level over the US (GEOID18), so it errs red.
+   */
+  hazard_view: {
+    input: HazardViewInput;
+    answer: HazardViewAnswer;
+  };
+  /**
    * The entry into a route's hold for an airplane arriving on a course (AIM 5-3-8 j.3's sectors, read by the course flown).
    */
   hold_entry: {
@@ -2632,6 +2669,13 @@ export interface EngineContract {
   kneeboard_radio: {
     input: KneeboardRadioInput;
     answer: KneeboardRadioAnswer;
+  };
+  /**
+   * The runway landed on at a field the route flies an instrument approach to: the approach's own runway, straight in (AIM 5-4-20, Approach and Landing Minimums; 14 CFR 91.175, the runway of intended landing), unless the pilot picked another and the plate publishes circling minimums, a circle to land (AIM 5-4-20). A runway picked into the wind gives way to the approach's own. With no approach, or one circling only (no runway in its name), the pick stands and any runway may be picked. `circling` null (the plate still coming) is taken as no circling. The runway is answered as painted ("9", "8L").
+   */
+  landing_runway: {
+    input: LandingRunwayInput;
+    answer: LandingRunwayAnswer;
   };
   /**
    * Of a field's runways, each on the end the wind favours, the least crosswind, steady or gust, whichever is more: the runway a pilot would pick to keep the wind most nearly down it. A variable wind is all crosswind (AIM 7-1-28); calm is none. null with no wind or no runway end with a heading.
@@ -3166,6 +3210,20 @@ export interface EngineContract {
     answer: ProfileClearanceAnswer;
   };
   /**
+   * The profile's cloud bases: each TAF station (tafs_along_route's, with its TAF's issue time) whose forecast ceiling is known and which is within 25 nm of a leg of the route through `path` (the stations a leg's altitudes are kept under, 14 CFR 91.155; TAF_REACH_NM), placed at its foot on the nearest leg, in order along the route: its base MSL, the ceiling above the field plus the field's elevation. A stated simplification, as the altitude plan's: the ceiling (the lowest broken or overcast layer, FAA-H-8083-28B 27.4.2.9), not a FEW or SCT layer under it.
+   */
+  profile_clouds: {
+    input: ProfileCloudsInput;
+    answer: ProfileCloudsAnswer;
+  };
+  /**
+   * The FAA Digital Obstacle File's obstacles along the route for the profile, in order along it: each coloured against `altitude_ft` as the profile's ground is (profile_clearance: "warning" under 14 CFR 91.119(c)'s 500 ft or above, "caution" within 91.119(b)'s 1,000 ft, else "clear"; null with no altitude), and the tallest three, at least an eighth of the route apart, `named`, for the profile to label with their heights above the ground and the sea (DOF's AGL and AMSL).
+   */
+  profile_obstacles: {
+    input: ProfileObstaclesInput;
+    answer: ProfileObstaclesAnswer;
+  };
+  /**
    * Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.
    */
   prohibited_caution: {
@@ -3325,6 +3383,13 @@ export interface EngineContract {
   reserve_min: {
     input: ReserveMinInput;
     answer: ReserveMinAnswer;
+  };
+  /**
+   * The route's strongest headwind: of the nav log's legs, the one whose wind aloft blows most against its true course, its headwind the wind's component along that course (the wind triangle, FAA-H-8083-25C ch. 16; the winds aloft forecast's direction is true, FAA-H-8083-28B 27.6), to a tenth of a knot, a tailwind negative, so with tailwinds all the way it is the least of them. The first such leg where two tie; a leg with no wind or no course is passed over; null where no leg has both. The Brief's glance shows it as the route's wind aloft.
+   */
+  route_headwind: {
+    input?: RouteHeadwindInput;
+    answer?: RouteHeadwindAnswer;
   };
   /**
    * The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route, the most filed one and the one round the Class B it enters (14 CFR 91.131(a)(1)) with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.
@@ -7703,6 +7768,39 @@ export interface GlideRingInput {
    */
   glide_ratio?: number | null;
 }
+export interface GonogoAdverseRowsInput {
+  advisories: {
+    /**
+     * OnRoute's source: TFR, Convective SIGMET, SIGMET, CWA, PIREP, AIRMET or G-AIRMET.
+     */
+    source: string;
+    /**
+     * Its name in words: the hazard (sigmet_hazard, gairmet_title), a TFR's NOTAM and title, a PIREP's conditions.
+     */
+    name: string | null;
+    when: "during" | "before" | "after" | null;
+    enter: string | null;
+    valid_to: string | null;
+    issued: string | null;
+    from_nm: number | null;
+    legs: number[];
+    crosses: boolean;
+    urgent: boolean;
+  }[];
+}
+export interface GonogoAdverseRowsAnswer {
+  rows: {
+    source: string;
+    title: string;
+    finding: "stop" | "caution";
+    tab: "enroute" | "preflight";
+    section: string;
+    time_kind: "at" | "until" | "reported" | null;
+    time: string | null;
+    legs: number[];
+  }[];
+  more: number;
+}
 export interface GonogoBalanceInput {
   loading: GonogoLoading;
   load: GonogoLoad;
@@ -8478,6 +8576,44 @@ export interface HandbookProfile {
   climb_fuel_burn_gph: number | null;
   usable_fuel_gal: number | null;
 }
+export interface HazardViewInput {
+  /**
+   * The Map card's Hazard Colouring: off, on, or on by itself in flight.
+   */
+  setting: "off" | "on" | "flight";
+  /**
+   * The GPS's ground speed, kt; null with no fix.
+   */
+  speed_kt?: number | null;
+  /**
+   * The GPS's height, ft, where it gives one.
+   */
+  gps_altitude_ft?: number | null;
+  /**
+   * The plan's cruise, ft MSL.
+   */
+  planned_altitude_ft?: number | null;
+  /**
+   * The pilot's clearance, one of clearances_ft; the default for null or another.
+   */
+  clearance_ft?: number | null;
+  /**
+   * Obstacle tops, ft MSL, to colour.
+   */
+  tops_ft?: number[] | null;
+}
+export interface HazardViewAnswer {
+  shown: boolean;
+  in_flight: boolean;
+  altitude_ft: number | null;
+  source: ("gps" | "plan") | null;
+  clearance_ft: number;
+  caution_band_ft: number;
+  clearances_ft: number[];
+  warning_from_ft: number | null;
+  caution_from_ft: number | null;
+  levels: (("warning" | "caution" | "clear") | null)[];
+}
 export interface HoldEntryInput {
   /**
    * The magnetic course flown to the fix.
@@ -9000,6 +9136,17 @@ export interface KeptAgeAnswer {
 }
 export interface KneeboardRadioInput {
   frequencies: FieldFrequency[];
+}
+export interface LandingRunwayInput {
+  approach: boolean;
+  straight_in: string | null;
+  circling: boolean | null;
+  picked: string | null;
+  by_pilot: boolean;
+}
+export interface LandingRunwayAnswer {
+  runway: string | null;
+  others_allowed: boolean;
 }
 export interface LeastCrosswindInput {
   runways?:
@@ -11185,6 +11332,33 @@ export interface ProfileClearanceAnswer {
   near: string | null;
   words: string;
 }
+export interface ProfileCloudsInput {
+  /**
+   * The route's points, [lat, lon], its airports in order.
+   */
+  path: [number, number][];
+  stations?:
+    | {
+        icaoId: string;
+        lat: number;
+        lon: number;
+        ceiling_ft?: number | null;
+        elevation_ft?: number | null;
+        issued?: string | null;
+      }[]
+    | null;
+}
+export interface ProfileObstaclesInput {
+  altitude_ft?: number | null;
+  length_nm: number;
+  obstacles?:
+    | {
+        along_nm: number;
+        amsl_ft: number;
+        agl_ft?: number | null;
+      }[]
+    | null;
+}
 export interface ProhibitedCautionInput {
   selection: {};
 }
@@ -11938,6 +12112,20 @@ export interface ReportNearAnswer {
 export interface ReserveMinInput {
   ifr?: boolean | null;
   night?: boolean | null;
+}
+export interface RouteHeadwindInput {
+  /**
+   * The nav log's legs in order, as the planner gives them.
+   */
+  legs: {
+    from?: string | null;
+    to?: string | null;
+    true_course_deg?: number | null;
+    wind?: {
+      wind_dir_true_deg: number;
+      wind_speed_kt: number;
+    } | null;
+  }[];
 }
 /**
  * This interface was referenced by `EngineContract`'s JSON-Schema

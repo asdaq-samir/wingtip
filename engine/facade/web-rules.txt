@@ -130,6 +130,7 @@ gonogo_tfr_when
 gonogo_under_minimums
 great_circles
 handbook_figures
+hazard_view
 hold_inbound_deg
 hold_length_read
 hold_length_write
@@ -180,6 +181,7 @@ procedures_read
 procedures_write
 proficiency_plan
 profile_clearance
+profile_obstacles
 public_use
 radial_of
 radio_call_sign

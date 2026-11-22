@@ -1,0 +1,105 @@
+{
+  "x-call": "wingtip_altitude::altitude::calls::call",
+  "description": "The FAA Digital Obstacle File's obstacles along the route for the profile, in order along it: each coloured against `altitude_ft` as the profile's ground is (profile_clearance: \"warning\" under 14 CFR 91.119(c)'s 500 ft or above, \"caution\" within 91.119(b)'s 1,000 ft, else \"clear\"; null with no altitude), and the tallest three, at least an eighth of the route apart, `named`, for the profile to label with their heights above the ground and the sea (DOF's AGL and AMSL).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ProfileObstaclesInput",
+      "type": "object",
+      "properties": {
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "length_nm": {
+          "type": "number"
+        },
+        "obstacles": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "along_nm": {
+                "type": "number"
+              },
+              "amsl_ft": {
+                "type": "number"
+              },
+              "agl_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "along_nm",
+              "amsl_ft"
+            ]
+          }
+        }
+      },
+      "required": [
+        "length_nm"
+      ],
+      "additionalProperties": false
+    },
+    "answer": {
+      "title": "ProfileObstaclesAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "along_nm": {
+            "type": "number"
+          },
+          "amsl_ft": {
+            "type": "number"
+          },
+          "agl_ft": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "level": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "warning",
+                  "caution",
+                  "clear"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "named": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "along_nm",
+          "amsl_ft",
+          "agl_ft",
+          "level",
+          "named"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}
