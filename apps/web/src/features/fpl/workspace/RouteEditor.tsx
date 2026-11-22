@@ -7,6 +7,7 @@ import { coverCard, useSheetCards } from "../../../lib/sheetCards";
 import { RouteBox } from "../../route";
 import type { PlanSlices } from "../vm/planSlices";
 import { FlightFigures } from "./FlightFoot";
+import { TypeRouteButton } from "../../procedures/lazy";
 
 /**
  * FPL's route's field, open under its timeline (RouteHead) once asked for
@@ -26,7 +27,7 @@ export default function RouteEditor({
   const { selectPlace } = vm.cards;
   const { openProcedures, routeProcedures, typeProcedures } = vm.picks;
   const { fuelStops, hideFuelStop, keepFuelStops } = vm.stops;
-  const { addAt, addingChange, addingStop, clearRoute, setEditorFocused, waypointStops } = vm.routeList;
+  const { addAt, addingChange, addingStop, clearRoute, foldRoute, routeOpen, setEditorFocused, waypointStops } = vm.routeList;
   const { airspaceOf, altitudeAt, metarColour, searchNear } = vm.brief;
   // A stop asked for from a card (the profile's no-legal-altitude problem,
   // its Add a Stop): asked of the field once the card has gone. Under it the
@@ -85,6 +86,22 @@ export default function RouteEditor({
           </SearchNear.Provider>
         </Suspense>
       </div>
+      {/* The toggle back to the timeline, in the box's lower left where it
+          was on the timeline's face (TypeRouteButton): what is typed is
+          read as the field is left, the tap's own blur, so the route
+          folds with it in (the plan's Undo as ever); the focus kept on the
+          toggle there. Only on a whole route opened by it. */}
+      {wholeRoute && routeOpen && (
+        <div className="flex pt-2">
+          <TypeRouteButton
+            pressed
+            onToggle={() => {
+              foldRoute();
+              requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-testid="route-type-open"]')?.focus());
+            }}
+          />
+        </div>
+      )}
       {/* The figures under the cards while they are edited, so each change
           is read as it is made (the canvas's "Tap the route to expand"). */}
       {wholeRoute && (

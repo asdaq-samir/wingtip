@@ -618,7 +618,12 @@ off by default (the owner, 2026-11-13).
    nothing; a closed field or an unknown point says why in red under its
    line, no chips. The route's field to type or paste a whole route opens
    under the timeline ("Route" over it, Done after) with no route, half a
-   route, an unknown point, or from the keyboard button at Add a Stop's end, the
+   route or an unknown point; on a whole route the keyboard button at the
+   grouped box's lower left, Add a Stop's end, is a toggle that turns the
+   same box into the route's field and back, pressed while it is the field,
+   with no "Route" row and no Done (the owner, 2026-11-22: "It should make
+   the same grouped box into route box and the other way"), what is typed
+   read as the field is left, the plan's Undo as ever; the
    figures under it and the Routes' chips put away; a present position is "My Location" (Apple Maps' words)
    wherever the route shows it, never an ident (decision 0047); under the
    timeline the route's figures (To,

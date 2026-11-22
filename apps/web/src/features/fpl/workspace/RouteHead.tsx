@@ -26,8 +26,12 @@ export default function RouteHead({
   vm: PlanSlices<"brief" | "cards" | "flight" | "leg" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
 }) {
   const { hasPoints, wholeRoute } = vm.route;
-  const { foldRoute } = vm.routeList;
+  const { foldRoute, routeOpen } = vm.routeList;
   const editing = routeEditing(vm);
+  // The whole route's field opened by the box's toggle (TypeRouteButton):
+  // the same box turned into the field, the timeline not drawn over it and
+  // no "Route" row or Done (the owner, 2026-11-22).
+  const typed = editing && wholeRoute && routeOpen;
   const props = useRouteListProps(vm);
   // Done keeps the focus on the timeline that is there after it and says
   // so to VoiceOver; a fold by anything else moves nothing.
@@ -46,7 +50,7 @@ export default function RouteHead({
   };
   return (
     <div ref={head} className="flex min-w-0 flex-1 flex-col gap-2" data-testid={editing ? "route-editing" : "route-folded"}>
-      {editing && wholeRoute && (
+      {editing && wholeRoute && !typed && (
         <div className="flex h-11 items-center justify-between gap-2 pl-1">
           {/* The shared section title, in the drawer title's 17-point
               semibold it has always had over the typed route. */}
@@ -69,7 +73,7 @@ export default function RouteHead({
         </div>
       )}
       {editing && !hasPoints && <EmptyRoute vm={vm} />}
-      {hasPoints && (
+      {hasPoints && !typed && (
         // Its room while its code comes: two lines' height.
         <Suspense fallback={<div className="h-24 rounded-(--radius-banner) bg-card" />}>
           <RouteTimeline vm={vm} props={props} />

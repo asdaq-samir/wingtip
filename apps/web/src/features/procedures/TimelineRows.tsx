@@ -214,19 +214,27 @@ export function NoFuelStopNote({ flight }: { flight: { name: string; onBoard: bo
   );
 }
 
-/** Type the Route on a whole route, at Add a Stop's end (the owner,
- *  2026-11-21: More keeps three items): the keyboard glyph alone in the fuel
- *  stops' chip's shape and wash, named in full, opening the route's field
- *  (RouteEditor) to type or paste the route in whole. */
-export function TypeRouteButton({ onType }: { onType: () => void }) {
+/** Type the Route on a whole route, at the grouped box's lower left, Add
+ *  a Stop's end: a toggle between the two faces of the same box, the
+ *  timeline and the route's field (RouteEditor) to type or paste the route
+ *  in whole, with no row or Done of its own (the owner, 2026-11-22: "It
+ *  should make the same grouped box into route box and the other way. No
+ *  need for a separate row and done etc."). The keyboard glyph alone in the
+ *  fuel stops' chip's shape, its wash, and its 44-point area (chipLook),
+ *  pressed (aria-pressed, the tint filled) while the field is the face. */
+export function TypeRouteButton({ pressed, onToggle }: { pressed: boolean; onToggle: () => void }) {
   return (
     <Button
       variant="ghost"
       type="button"
-      onClick={onType}
+      onClick={onToggle}
       aria-label="Type the route"
+      aria-pressed={pressed}
       data-testid="route-type-open"
-      className={cn(chipLook(true), "bg-tint/12 hover:bg-tint/20! dark:hover:bg-tint/20!")}
+      className={cn(
+        chipLook(true),
+        pressed ? "bg-tint text-primary-foreground hover:bg-tint/90!" : "bg-tint/12 hover:bg-tint/20! dark:hover:bg-tint/20!",
+      )}
     >
       <Keyboard className="size-4" aria-hidden="true" />
     </Button>

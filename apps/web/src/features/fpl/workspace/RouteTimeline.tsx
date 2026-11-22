@@ -218,7 +218,7 @@ export default function RouteTimeline({
   const typeFuel =
     wholeRoute && vm.routeList.routeFolded ? (
       <>
-        <TypeRouteButton onType={() => vm.routeList.setRouteOpen(true)} />
+        <TypeRouteButton pressed={false} onToggle={() => vm.routeList.setRouteOpen(true)} />
         {fuelPill}
       </>
     ) : (

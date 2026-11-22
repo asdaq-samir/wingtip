@@ -80,12 +80,24 @@ test.describe("/app/plan", () => {
     await expect(drawer.getByTestId("route-done")).toHaveCount(0);
     await expect(drawer.getByTestId("route-summary-open")).toHaveCount(0);
 
-    // The route's field from its ••• to type the route in, Done folding it.
+    // The box's lower-left toggle turns the same box into the route's
+    // field, no "Route" row or Done, and back (the owner, 2026-11-22).
     await openRoute(page);
     await expect(drawer.getByTestId("route-box")).toBeVisible();
-    await expect(timeline).toBeVisible();
+    await expect(timeline).toHaveCount(0);
+    await expect(drawer.getByTestId("route-done")).toHaveCount(0);
+    await expect(drawer.getByTestId("route-head")).toHaveCount(0);
+    const toggle = drawer.getByTestId("route-type-open");
+    await expect(toggle).toHaveAttribute("aria-pressed", "true");
+    const hit = await toggle.evaluate((el) => {
+      const after = getComputedStyle(el, "::after");
+      return Math.max(el.getBoundingClientRect().height, parseFloat(after.height) || 0);
+    });
+    expect(hit, "a 44-point area").toBeGreaterThanOrEqual(44);
     await foldRoute(page);
     await expect(drawer.getByTestId("route-box")).toHaveCount(0);
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await expect(toggle).toBeFocused();
 
     // A line opened leaves the sheet where it is: at half again, where
     // More's menu took it all the way up for the route's field (openRoute).
@@ -194,16 +206,16 @@ test.describe("/app/plan", () => {
     await expect(drawer.getByTestId("route-type")).toHaveCount(0);
 
     // Its Type or Paste a Route opens the field, focused; a whole route
-    // pasted into it keeps it open, the pilot still at it, till Done folds it.
+    // pasted into it keeps it open, the pilot still at it, till the toggle turns it back.
     await empty.getByTestId("timeline-type-route").click();
     await expect(drawer.getByTestId("route-type")).toBeFocused();
     await page.keyboard.insertText("KORD KOMA KDEN");
     await page.keyboard.press("Enter");
-    await expect(drawer.getByTestId("route-done")).toBeVisible({ timeout: slow(30_000) });
+    await expect(drawer.locator('[data-testid="route-type-open"][aria-pressed="true"]')).toBeVisible({ timeout: slow(30_000) });
+    await foldRoute(page);
     await expect(drawer.getByTestId("route-summary").getByTestId("timeline-ident")).toHaveText(["KORD", "KOMA", "KDEN"], {
       timeout: slow(30_000),
     });
-    await foldRoute(page);
     await expect(drawer.getByTestId("route-box")).toHaveCount(0);
 
     // The route's ••• keeps three items, and no Show Route As.
@@ -288,7 +300,7 @@ test.describe("/app/plan", () => {
     await drawer.getByTestId("route-type").click();
     await page.keyboard.insertText("KORD KMSP");
     await page.keyboard.press("Enter");
-    await expect(drawer.getByTestId("route-done")).toBeVisible({ timeout: slow(30_000) });
+    await expect(drawer.locator('[data-testid="route-type-open"][aria-pressed="true"]')).toBeVisible({ timeout: slow(30_000) });
     await foldRoute(page);
     await expect(page).toHaveURL(/[?&]dest=KMSP(&|$)/);
     await expect(async () => {

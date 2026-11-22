@@ -17,19 +17,22 @@ import { closeCard, grabberTo, openPanel, settled, sideDrawer, slow } from "./sh
 export async function openRoute(page: Page) {
   const panel = sideDrawer(page);
   const timeline = panel.getByTestId("route-summary");
-  const done = panel.getByTestId("route-done");
-  await expect(timeline.or(done).first()).toBeVisible({ timeout: slow(30_000) });
-  if (await done.isVisible()) return;
+  // The box's lower-left toggle, timeline or field (TypeRouteButton; the
+  // owner, 2026-11-22), pressed while the box is the route's field.
+  const toggle = panel.getByTestId("route-type-open");
+  const typing = panel.locator('[data-testid="route-type-open"][aria-pressed="true"]');
+  await expect(timeline.or(typing).first()).toBeVisible({ timeout: slow(30_000) });
+  if (await typing.isVisible()) return;
   await controlsInSight(page);
-  await panel.getByTestId("route-type-open").click();
-  await expect(done).toBeVisible();
+  await toggle.click();
+  await expect(typing).toBeVisible();
 }
 
-/** The route's field folded away by its Done, where it is open (a route
- *  typed in), the timeline alone. */
+/** The route's field turned back into the timeline by the box's toggle,
+ *  where it is the field (a route typed in), the timeline alone. */
 export async function foldRoute(page: Page) {
-  const done = sideDrawer(page).getByTestId("route-done");
-  if (await done.isVisible()) await done.click();
+  const typing = sideDrawer(page).locator('[data-testid="route-type-open"][aria-pressed="true"]');
+  if (await typing.isVisible()) await typing.click();
   await expect(sideDrawer(page).getByTestId("route-summary")).toBeVisible();
 }
 
