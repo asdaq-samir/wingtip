@@ -49,7 +49,7 @@ async function step(page: Page, key: "ArrowUp" | "ArrowDown") {
 }
 
 test("on a phone the tabs move with the sheet from the pill to half way and back, not at the turn", async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's sheet");
   await page.goto("/app/plan");
   await settle(page);
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
@@ -72,7 +72,7 @@ test("on a phone the tabs move with the sheet from the pill to half way and back
 });
 
 test("on a phone a route's figures stay in sight at the sheet's foot from half all the way up and back", async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's sheet");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");

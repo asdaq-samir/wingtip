@@ -210,7 +210,7 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
         }
       }
     }
-    if (innerWidth >= 375 && innerWidth < 768) {
+    if (innerWidth >= 375 && innerWidth < 660) {
       for (const el of document.querySelectorAll<HTMLElement>("*")) {
         const s = getComputedStyle(el);
         if (!/auto|scroll/.test(s.overflowX) || !on(el)) continue;

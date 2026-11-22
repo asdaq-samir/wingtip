@@ -208,7 +208,7 @@ test("the dry run's airplane is kept in the middle of what the panel leaves as t
   await inTheMiddle();
   // Panned by hand, off the middle: the map no longer follows it, and the arrow offers to again.
   const viewport = page.viewportSize()!;
-  const from = { x: viewport.width < 768 ? viewport.width / 2 : viewport.width * 0.75, y: 150 };
+  const from = { x: viewport.width < 660 ? viewport.width / 2 : viewport.width * 0.75, y: 150 };
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   await page.mouse.move(from.x - 90, from.y - 60, { steps: 8 });
@@ -223,7 +223,7 @@ test("the dry run's airplane is kept in the middle of what the panel leaves as t
 });
 
 test("half way a dry run started from the profile's card plays in the card, in on its airplane", async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's sheet");
   // The owner's asks: "Let's make the half card this tall. This way we
   // won't have to hide the buttons for dry run"; "the dry run drags up
   // instead of staying still like the profile".

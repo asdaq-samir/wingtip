@@ -18,7 +18,7 @@ import { SharedFlightHost } from "../shared-flight";
 import { DocumentReaderHost } from "../documents";
 import { BootMap } from "../plan-map";
 import { MODES, type Mode } from "./modes";
-import { isDesktopNow, useIsDesktop } from "../../hooks/use-desktop";
+import { isDesktopNow } from "../../hooks/use-desktop";
 import { useShortcuts } from "../../hooks/use-shortcuts";
 import ConsoleLayer from "./ConsoleLayer";
 import type { WorkspacePieces } from "../../lib/workspace";
@@ -46,7 +46,7 @@ const RouteForm = lazy(() => import("../../components/RouteForm"));
  */
 export default function MapPage({ mode }: { mode: Mode }) {
   const { title, panel: panelLabel, console: consoleLabel, Workspace, route } = MODES[mode];
-  useShortcuts(useIsDesktop()); // a desktop's keys: / the search, B, N, D, Escape back
+  useShortcuts(); // a keyboard's keys, a desktop's or an iPad's: / the search, B, N, D, Escape back
   const [address, setAddress] = useAddress();
   // The route in the panel: the address's, unless the pilot has typed
   // over it -- and a draft belongs to the address it was typed over. The

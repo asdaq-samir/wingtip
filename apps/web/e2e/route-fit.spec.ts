@@ -310,7 +310,7 @@ test("an airport's card keeps its field in sight: the next position the GPS give
 test("a route fitted at the pill and untouched is slid, not fitted again, as the sheet rises to half", async ({ page }) => {
   // The FPL audit's A13 (2026-11-08) had the route fitted again above the half sheet; the owner's stock rule (2026-11-11) has the map
   // move itself only for a pick, so the sheet's rise slides it at its zoom, as Apple Maps' does.
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's sheet");
   await page.goto("/app/plan?dep=KUGN&dest=KOSH");
   await settle(page);
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");

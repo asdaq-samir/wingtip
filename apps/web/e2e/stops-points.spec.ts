@@ -89,7 +89,7 @@ test("every point's row ends in its time over its altitude and a menu: an airpor
 test("on a phone a point's altitude is asked in the floating sheet from the bottom, Cancel and Set in its title row", async ({ page }) => {
   // The sheet consolidation (2026-10-27): it stood in the middle of a
   // phone as a box, its Cancel and Set under the field.
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet; wider it is an alert in the middle");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet; wider it is an alert in the middle");
   await recordedStops(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KMSN");
   await openPanel(page);

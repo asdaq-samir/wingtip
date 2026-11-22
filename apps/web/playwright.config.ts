@@ -143,13 +143,13 @@ export default defineConfig({
     {
       name: "mobile",
       dependencies: ["setup"],
-      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts"],
+      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts", "**/ipad-*.spec.ts"],
       use: { viewport: { width: 390, height: 844 }, storageState: DEVELOPER_STATE },
     },
     {
       name: "desktop",
       dependencies: ["setup"],
-      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts"],
+      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts", "**/ipad-*.spec.ts"],
       use: { viewport: { width: 1280, height: 800 }, storageState: DEVELOPER_STATE },
     },
     // The phone's sheet in Safari's engine at an iPhone's size and touch
@@ -170,7 +170,9 @@ export default defineConfig({
       name: "webkit-ipad",
       dependencies: ["setup"],
       testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts"],
-      grep: /@smoke|@flight-critical/,
+      // And the ipad-* specs whole, each held at every iPad size (the
+      // grep reads the file's name with the title).
+      grep: [/@smoke|@flight-critical/, /ipad-[a-z-]+\.spec\.ts/],
       use: { ...devices["iPad Pro 11"], storageState: DEVELOPER_STATE },
     },
     ...iosAudit,

@@ -61,7 +61,7 @@ test(
     // Opened as the one search alone on a phone, at the owner's ask
     // (MapPanel); a desktop's side panel out from the start, the search
     // and the plan in it (the one-search design's Desktop, 2026-11-09).
-    const opened = page.viewportSize()!.width < 768 ? "peek" : "half";
+    const opened = page.viewportSize()!.width < 660 ? "peek" : "half";
     await expect(page.locator('[data-slot="map-panel"]')).toHaveAttribute("data-panel", opened);
     expect(await consoleSheet(page).count()).toBe(0);
 
@@ -141,7 +141,7 @@ test("You is a card over the map's sheet as every card is: its nested drawer, ha
   await expect(card).toHaveCount(1);
   expect(await card.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))).toBe(true);
   const viewport = page.viewportSize()!;
-  if (viewport.width < 768) await expect(card).toHaveAttribute("data-panel", "half");
+  if (viewport.width < 660) await expect(card).toHaveAttribute("data-panel", "half");
   // The sheet under it where it was.
   await expect(panel).toHaveAttribute("data-panel", "half");
   const now = (await panel.boundingBox())!;

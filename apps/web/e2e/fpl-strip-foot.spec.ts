@@ -14,7 +14,7 @@ test.beforeEach(({ page }) => pickAirplane(page));
  * and carried it up through the route; it is measured at each scroll now.
  */
 test("a long route scrolled at full: the figures stay at the sheet's foot, no row below them", async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's sheet");
   // Nine stops, the route several rows longer than the sheet: with six it
   // was only 40 points longer at a large text size (CI, PR #589), too
   // little room to scroll the strip through.

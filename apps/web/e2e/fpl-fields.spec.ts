@@ -30,7 +30,7 @@ test("the N-number field takes an N typed first as its own, and says in red what
 });
 
 test("the departure's picker on a phone has its close and its pick in sight at half", async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a popover beside its button from md up");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a popover beside its button from md up");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await controlsInSight(page);

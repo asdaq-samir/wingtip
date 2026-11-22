@@ -37,7 +37,7 @@ describe("a desktop's shortcuts", () => {
     page();
     // jsdom lays nothing out: everything here is in sight.
     HTMLElement.prototype.checkVisibility = () => true;
-    unmount = renderHook(() => useShortcuts(true)).unmount;
+    unmount = renderHook(() => useShortcuts()).unmount;
   });
   afterEach(() => unmount());
 

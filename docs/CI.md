@@ -326,7 +326,7 @@ run is the night's, but for the audits, the flake hunt and the issue:
 |---|---|---|
 | `guards` (three legs), `test-web` (three), `test-engine` (every crate), `test-python` (every suite), `test-gateway`, `test-sim`, `infra` | one runner each | 1-5 min |
 | `build-images`: every service image, built, not pushed | 1 | 2-6 min |
-| `e2e`: every spec on `mobile`, `desktop` and `webkit-phone`, and the smoke set on `webkit-ipad` (`browser_specs.py`'s `WAVE_SHARDS`), after `e2e-images` | 16 | ~15-20 min |
+| `e2e`: every spec on `mobile`, `desktop` and `webkit-phone`, and on `webkit-ipad` the smoke set and the `ipad-*` specs (`browser_specs.py`'s `WAVE_SHARDS`), after `e2e-images` | 16 | ~15-20 min |
 | `ios`: `native-ios.yml` without `unit_only`: on the newest iPhone the build, `WingtipTests` and `CardSmokeTests`, as main's push runs them; on the newest iPad its whole suite, as the night runs it, in two legs (`test (iPad 1/2)`, the UI classes `ios_test.sh`'s `IPAD_FIRST` names, and `test (iPad 2/2)`, every other test; decision 0058), on macOS | 3 | 6-10 min (iPhone), ~20-25 min (each iPad leg) |
 | `android`: `native-android.yml`, `testDebugUnitTest lintDebug assembleDebug` (the APK kept with the run) | 1 | 4-6 min |
 

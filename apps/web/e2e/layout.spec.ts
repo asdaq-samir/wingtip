@@ -77,7 +77,7 @@ test.describe("/app/plan", () => {
     // search. A no-break space between a figure and its unit, so \s.
     const figures = sideDrawer(page).getByTestId("flight-line");
     await expect(figures).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
-    if ((page.viewportSize()?.width ?? 0) < 768) {
+    if ((page.viewportSize()?.width ?? 0) < 660) {
       await expect(sideDrawer(page).getByTestId("route-summary").or(sideDrawer(page).getByTestId("route-box")).first()).toBeHidden();
       // The pill no taller for them: the search's own 4.25 rem, on the
       // screen's foot (no home indicator here; the pages' toggle rides its
@@ -104,7 +104,7 @@ test.describe("/app/plan", () => {
     await expect(page.getByTestId("search-close")).toHaveCount(0);
 
     // The grabber on the panel's far edge, once the panel has come to rest.
-    const phone = page.viewportSize()!.width < 768;
+    const phone = page.viewportSize()!.width < 660;
     await expect(async () => {
       const panelBox = (await sideDrawer(page).boundingBox())!;
       const grabber = (await page.getByTestId("sidebar-trigger-button").boundingBox())!;
@@ -245,7 +245,7 @@ test.describe("/app/plan", () => {
     await openPanel(page);
     const viewport = page.viewportSize();
     if (!viewport) throw new Error("no viewport configured");
-    const phone = viewport.width < 768;
+    const phone = viewport.width < 660;
 
     const header = page.locator("header");
     await expect(header.getByRole("tablist")).toHaveCount(0);
@@ -307,7 +307,7 @@ for (const path of PAGES) {
     // 3D and the page toggle do at the left (the owner, 2026-11-11), at the
     // bottom under a desktop's card.
     expect(viewport.width - (firstBox.x + firstBox.width)).toBeLessThan(20);
-    if (viewport.width < 768) {
+    if (viewport.width < 660) {
       await settled(page.locator("[data-slot=map-panel]"));
       const sheet = (await page.locator("[data-slot=map-panel]").boundingBox())!;
       const group = (await page.locator("[data-map-controls]").boundingBox())!;

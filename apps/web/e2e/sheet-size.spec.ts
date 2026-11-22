@@ -13,7 +13,7 @@ import { closeNavLog, frontSheet, grabberTo, navLogSheet, settle, settled, sideD
 const ROUTE = "/app/plan?dep=C81&dest=KDLH";
 
 test.beforeEach(({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet and its three sizes");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet and its three sizes");
 });
 
 test("the Nav Log, a card of its own, opens at half from the pill and leaves the sheet where it was", async ({ page }) => {

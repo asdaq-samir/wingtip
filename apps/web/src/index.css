@@ -57,7 +57,19 @@
    here, from the first frame, rather than after a render has measured
    the screen. */
 @custom-variant nav-bottom {
-  @media (width < 48rem) {
+  @media (width < 41.25rem) {
+    @slot;
+  }
+}
+
+/* A tablet on a kneeboard or a yoke mount, read at arm's length (about
+   twice a phone's distance): a touch screen at the regular width both
+   ways (design/tokens.json size.regular), an iPad in either orientation
+   and not a phone on its side, whose height is compact. The figures the
+   pilot glances at take a larger size there (lib/text's GROW_FIGURE; the
+   owner, 2026-11-21: "Yes do it all for iPad", the kneeboard type scale). */
+@custom-variant kneeboard {
+  @media (pointer: coarse) and (width >= 41.25rem) and (height >= 41.25rem) {
     @slot;
   }
 }
@@ -156,6 +168,12 @@ button,
 .maplibregl-map .maplibregl-ctrl-top-right {
   top: max(var(--map-inset-top, 0px), env(safe-area-inset-top));
   transition: top var(--motion-drawer) var(--motion-drawer-ease);
+}
+/* And the chart's credit at the right clear of the inspector's card
+   (MapPanel, a touch screen from size.inspector wide). */
+.maplibregl-map .maplibregl-ctrl-bottom-right,
+.maplibregl-map .maplibregl-ctrl-top-right {
+  right: var(--map-inset-right, 0px);
 }
 
 /* With the phone's sheet all the way up, the map's buttons give way,
@@ -263,6 +281,16 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
     size: landscape;
     margin: 10mm;
   }
+}
+
+/* Tailwind's md, the one width the phone's sheet gives way to the side
+   panel at: design/tokens.json's size.regular (660, iPadOS's regular
+   width: an iPad mini upright, a 13-inch iPad's half), which useIsMobile
+   reads, so a class and the layout never disagree between 660 and 768
+   (the owner, 2026-11-21: "Yes do it all for iPad"). A breakpoint takes
+   no variable, hence the number. */
+@theme {
+  --breakpoint-md: 41.25rem;
 }
 
 @theme inline {
