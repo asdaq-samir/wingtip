@@ -54,7 +54,7 @@ final class DepartureWindow {
         case .success(let ask): await refresh(ask)
         case .failure(let error):
             answer = nil
-            problem = "Hours unavailable: the question couldn't be put together (\(error.localizedDescription))."
+            problem = "Hours unavailable: the question could not be put together (\(error.localizedDescription))."
         }
     }
 

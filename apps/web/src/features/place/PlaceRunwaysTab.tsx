@@ -11,6 +11,7 @@ import { NotamBadge, NotamSheet } from "./NotamBadge";
 import { useNotamMarks, useNotamSheet } from "./notamBadges";
 import { NO_RUNWAYS } from "../../lib/emptyWords";
 import { longestOpen, withNotamClosures } from "./runwayPicks";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** An airport's card's Runways tab (PlaceCard): its pattern altitude, each
  *  runway, a NOTAM's badge by its name ("Closed") and a tap on it opening
@@ -41,7 +42,7 @@ export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
                 <Repeat />
               </RowBadge>
             }
-            title="Pattern altitude"
+            title={WORDING.patternAltitude}
             // 1,000 ft above the field where none is published (AIM 4-3-3a), and NASR's remarks on it after
             // (APT_RMK's TPA: other aircraft's heights), which the facts' Pattern says differ.
             description={[

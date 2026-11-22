@@ -14,6 +14,7 @@ import NotamToolbar from "./NotamToolbar";
 import { useNotamMarks } from "./notamMarks";
 import { ALL_NOTAMS } from "./notamView";
 import { useArrangedNotams } from "./useArrangedNotams";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * The NOTAMs that matter (useNotamRanking), on Preflight, where the
@@ -47,7 +48,7 @@ export default function NotamRankingSection() {
             <Skeleton className="h-4 w-2/3" />
           </div>
         ) : error && !answer ? (
-          <p className={cn("text-muted-foreground", TEXT.note)}>{describeError(error, "The NOTAMs could not be ranked")}</p>
+          <p className={cn("text-muted-foreground", TEXT.note)}>{describeError(error, "The NOTAMs could not be ranked.")}</p>
         ) : (
           <>
             {/* The ranking kept on this device, with its age, where it could
@@ -105,7 +106,7 @@ export default function NotamRankingSection() {
               </Collapsible>
             )}
             {answer?.unchecked.includes("tfrs") && (
-              <p className={cn("text-muted-foreground", TEXT.note)}>TFRs could not be checked just now.</p>
+              <p className={cn("text-muted-foreground", TEXT.note)}>{WORDING.tfrsNotChecked}</p>
             )}
             <p className={cn("text-muted-foreground", TEXT.note)} data-testid="brief-notams-credit">
               {notamCredit(since)}

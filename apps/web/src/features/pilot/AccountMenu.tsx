@@ -16,6 +16,7 @@ import {
 } from "../../components/ui/dropdown-menu";
 import { useConfirm } from "../../components/useConfirm";
 import { useDevMode, type AppMode } from "../../hooks/use-dev-mode";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** Each page as the menu names it. */
 const MODE_NAMES: Record<AppMode, string> = { pilot: "Pilot", developer: "Developer", studio: "Studio" };
@@ -57,11 +58,11 @@ function AccountMenu() {
   const deleteAccount = useDeleteAccount();
   const exportAccount = useExportAccount();
   const [askDelete, deleteDialog] = useConfirm({
-    title: "Delete your account?",
+    title: WORDING.deleteAccountQuestion,
     description:
       "Your airplanes, flights, logbook, saved tracks and the checkpoint notes you wrote go, on every " +
       "device, and you are signed out. This can't be undone.",
-    confirmLabel: "Delete account",
+    confirmLabel: WORDING.deleteAccount,
     destructive: true,
     onConfirm: () => deleteAccount.mutate(),
   });
@@ -114,10 +115,10 @@ function AccountMenu() {
               {/* A copy of everything the account keeps, as one file: the
                 right to take one's data away, beside deleting it. */}
               <DropdownMenuItem onClick={() => exportAccount.mutate()} disabled={exportAccount.isPending}>
-                Export my data
+                Export My Data
               </DropdownMenuItem>
               <DropdownMenuItem variant="destructive" onClick={() => logout.mutate()} disabled={logout.isPending}>
-                Sign out
+                Sign Out
               </DropdownMenuItem>
               <DropdownMenuItem
                 variant="destructive"
@@ -127,7 +128,7 @@ function AccountMenu() {
                 // holds the focus has its own taken back.
                 onClick={() => setTimeout(askDelete)}
               >
-                Delete account…
+                {WORDING.deleteAccount}
               </DropdownMenuItem>
             </>
           )}

@@ -1,11 +1,12 @@
 import SwiftUI
 
-/// The flight's figures in one line -- To, Dist, ETE, Fuel -- what the
-/// web app's pill shows at the sheet's foot (FlightLine), and what the
-/// pilot glances at in the air. The fuel is the engine's `strip_fuel`,
-/// the web's and Android's: the fuel required, less what a flight under
-/// way has burnt, red where the tanks do not hold it and its reserve (14
-/// CFR 91.151, 91.167).
+/// The flight's figures in one line -- To, Dist, ETE, Trk, and GPS Alt
+/// whenever the airplane's position is known -- what the web app's strip
+/// shows at the sheet's foot (FlightLine), and what the pilot glances at
+/// in the air. Track took the fuel's place (the owner, 2026-11-21:
+/// "replace Fuel with Track"): the fuel is FPL's gauges at each field
+/// (TimelineGauge), the nav log's and the Brief's. In flight and in a
+/// dry run no To, which the flying head names.
 struct FiguresStrip: View {
     @Environment(InFlight.self) private var inFlight
     @Environment(\.appCommand) private var appCommand
@@ -14,16 +15,10 @@ struct FiguresStrip: View {
     /// In the air on the route -- moving, within 3 nm of the line (the
     /// engine's `in_flight`, InFlight) -- the figures count down from where
     /// the airplane is, as the web app's do in a dry run: what is left to
-    /// the destination at the groundspeed now, and the fuel still required.
-    /// The fuel is the engine's for the flight being flown: the hop the
-    /// airplane is on and what it has burnt since that hop began (in_flight's
-    /// hop and hop_burnt_gal, the tanks filled at each fuel stop), as the
-    /// web's stripFuel sends them. A refusal is carried, so it is said as on
-    /// the ground (IOS-23).
-    private var flying: (leftNm: Double, minutes: Double?, fuel: Result<StripFuel, any Error>)? {
+    /// the destination at the groundspeed now.
+    private var flying: (leftNm: Double, minutes: Double?)? {
         guard let progress = inFlight.progress, progress.onRoute else { return nil }
-        let fuel = Result { try StripFuel.of(plan.totals, hop: progress.hop, burntGal: progress.hopBurntGal) }
-        return (progress.destination?.distanceNm ?? progress.leftNm, progress.destination?.eteMin, fuel)
+        return (progress.destination?.distanceNm ?? progress.leftNm, progress.destination?.eteMin)
     }
 
     var body: some View {
@@ -40,45 +35,54 @@ struct FiguresStrip: View {
     }
 
     @ViewBuilder private var figures: some View {
-        // A fuel the engine could not work out is shown as unknown and in
-        // the warning's colour, never as fuel enough.
-        let asked = flying?.fuel ?? Result { try StripFuel.of(plan.totals) }
-        let fuel = (try? asked.get()) ?? StripFuel(requiredGal: nil, short: [])
-        // Which flight is short, by its ends, for VoiceOver (CODE-13).
-        let shortSaid = fuel.shortWords(plan.course).joined(separator: "; ")
-        let refused = (try? asked.get()) == nil
-        let warn = plan.airplaneChosen && (!fuel.short.isEmpty || refused)
         FigureRow {
-            stripFigure("TO", plan.routed ? plan.dest : "—")
-            if !plan.airplaneChosen {
-                // No airplane picked: the route's own figures, To and Dist;
-                // the time and the fuel are an airplane's, and none is
-                // assumed (docs/decisions/0011).
-                let distance = flying?.leftNm ?? plan.totals?.distanceNm ?? plan.course?.distanceNm
-                stripFigure("DIST", distance.map { Format.distance($0) } ?? "—", spoken: distance.map(SpokenFigures.nauticalMiles))
-            } else if let flying {
+            if flying == nil { stripFigure("TO", plan.routed ? plan.dest : "—") }
+            if let flying {
                 stripFigure("DIST", Format.distance(flying.leftNm), spoken: SpokenFigures.nauticalMiles(flying.leftNm))
                 stripFigure("ETE", flying.minutes.map(Format.duration) ?? "—", spoken: flying.minutes.map(SpokenFigures.minutes))
-                stripFigure("FUEL", fuel.requiredGal.map { Format.fuel($0) } ?? (refused ? "?" : "—"),
-                            spoken: Self.fuelSaid(fuel, refused: refused, short: shortSaid), warn: warn)
             } else {
                 let distance = plan.totals?.distanceNm ?? plan.course?.distanceNm
                 stripFigure("DIST", distance.map { Format.distance($0) } ?? "—", spoken: distance.map(SpokenFigures.nauticalMiles))
-                stripFigure("ETE", plan.totals?.eteMin.map(Format.duration) ?? "—", spoken: plan.totals?.eteMin.map(SpokenFigures.minutes))
-                stripFigure("FUEL", fuel.requiredGal.map { Format.fuel($0) } ?? (refused ? "?" : "—"),
-                            spoken: Self.fuelSaid(fuel, refused: refused, short: shortSaid), warn: warn)
+                // The time is an airplane's, and none is assumed (docs/decisions/0011).
+                let ete = plan.airplaneChosen ? plan.totals?.eteMin : nil
+                stripFigure("ETE", ete.map(Format.duration) ?? "—", spoken: ete.map(SpokenFigures.minutes))
+            }
+            let track = StripTrack.of(inFlight.fix, underway: inFlight.underway, magneticDeg: inFlight.progress?.trackMagDeg)
+            stripFigure("TRK", track.map(Format.heading) ?? "—", spoken: track.map { "magnetic, \(SpokenFigures.degrees($0))" } ?? "none from this position")
+            if let fix = inFlight.fix {
+                let feet = fix.altitudeFt.map(StripTrack.tens)
+                stripFigure("GPS ALT", feet.map { "\(Format.grouped($0)) ft" } ?? "—", spoken: feet.map { Format.spokenAltitude($0) })
             }
         }
         .padding(.horizontal)
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
     }
+}
 
-    /// The fuel as VoiceOver says it, with the flights it falls short on.
-    private static func fuelSaid(_ fuel: StripFuel, refused: Bool, short: String) -> String? {
-        let said = fuel.requiredGal.map(SpokenFigures.gallons) ?? (refused ? "Fuel not worked out" : nil)
-        return short.isEmpty ? said : [said, short].compactMap { $0 }.joined(separator: ", ")
+/// The strip's track and GPS height, as the web's trackFigure and
+/// gpsFigure give them.
+@MainActor
+enum StripTrack {
+    /// The airplane's track over the ground in degrees magnetic, as a
+    /// pilot flies and ATC assigns headings by the compass: the engine's
+    /// own on the route (`in_flight`'s track_mag_deg), else the fix's true
+    /// course less the engine's WMM variation there (`magnetic_variation`;
+    /// "east is least", FAA-H-8083-25C, ch. 16). None with no fix, no
+    /// course in it (a GPS gives none while stationary), or below flying
+    /// speed (the engine's `underway`): a course at a walk is noise.
+    static func of(_ fix: OwnShip.Fix?, underway: Bool, magneticDeg: Double?) -> Double? {
+        guard let fix, underway, let trueDeg = fix.trackDeg, trueDeg.isFinite else { return nil }
+        if let magneticDeg { return magneticDeg }
+        let variation = try? Engine.magneticVariation(lat: fix.coordinate.latitude, lon: fix.coordinate.longitude)
+        return Emergency.magnetic(trueDeg, variationDeg: variation)
     }
+
+    /// The GPS's height to the nearest 10 ft, no finer than a GPS gives
+    /// it: Core Location's altitude over mean sea level by its geoid model
+    /// (OwnShip), never the altimeter's, which is set to the local
+    /// pressure (14 CFR 91.121).
+    static func tens(_ feet: Double) -> Double { (feet / 10).rounded() * 10 }
 }
 
 /// A strip's figures side by side, or one under another at the
@@ -161,7 +165,8 @@ private func stripFigureName(_ name: String) -> String {
     case "TO": "To"
     case "DIST": "Distance"
     case "ETE": "Time en route"
-    case "FUEL": "Fuel"
+    case "TRK": "Track"
+    case "GPS ALT": "GPS altitude"
     default: name
     }
 }

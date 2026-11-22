@@ -101,7 +101,7 @@ export function CallActions({
         say(metarWords(airport.name || at.ident, metar));
       }
     } catch {
-      setProblem(`${at.ident}'s weather could not be had; check the connection.`);
+      setProblem(`${at.ident}'s weather could not be fetched; check the connection.`);
     }
     setBusy(null);
   };

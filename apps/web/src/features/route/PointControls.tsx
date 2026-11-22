@@ -19,6 +19,7 @@ import IconButton from "../../components/IconButton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
 import { DROPDOWN, useAfterMenu, type MenuKit } from "./pointMenu";
 import { TEXT } from "../../lib/text";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** What a point's altitude is: a field's elevation, the plan's cruise to
  *  it, the chart's crossing at a procedure's fix, or the pilot's own. */
@@ -137,7 +138,7 @@ export function PointMenuItems({
       {a.onDirect && (
         <Item onClick={a.onDirect} data-testid={`${testId}-direct`}>
           <MoveUpRight aria-hidden="true" />
-          {a.direct ? "Fly as Planned" : "Direct To"}
+          {a.direct ? "Fly as Planned" : WORDING.directTo}
         </Item>
       )}
       {a.onAltitude && (

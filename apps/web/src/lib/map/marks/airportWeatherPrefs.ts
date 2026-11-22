@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { keptAsIs } from "../../storage";
+import { WORDING } from "../../wording/generated/wording";
 
 /** How a field's weather looks on the chart (glOverlays' airport weather
  *  state): none at all, a ring in its flight category's colour round the
@@ -17,7 +18,7 @@ export type AirportWeather = "off" | "category" | "wind" | "station";
 
 export const AIRPORT_WEATHER: { value: AirportWeather; label: string }[] = [
   { value: "off", label: "Off" },
-  { value: "category", label: "Flight Category" },
+  { value: "category", label: WORDING.flightCategory },
   { value: "wind", label: "With Wind" },
   { value: "station", label: "Station Model" },
 ];

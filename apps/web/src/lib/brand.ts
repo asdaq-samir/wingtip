@@ -16,7 +16,7 @@ const INK: Brand = "ink";
 export const BRANDS: { value: Brand; label: string }[] = [
   { value: "wingtip", label: "Wingtip" },
   { value: "cockpit", label: "Glass Cockpit" },
-  { value: INK, label: "Chart ink" },
+  { value: INK, label: "Chart Ink" },
   { value: "native", label: "Native" },
 ];
 

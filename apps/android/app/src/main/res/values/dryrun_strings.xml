@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The dry run (dryrun/): the plan flown on paper over the map, and its forecast mode. -->
 <resources>
-    <string name="dry_run">Dry Run</string>
     <string name="dry_run_play">Play the dry run</string>
     <string name="dry_run_pause">Pause the dry run</string>
     <string name="dry_run_close">End the dry run</string>

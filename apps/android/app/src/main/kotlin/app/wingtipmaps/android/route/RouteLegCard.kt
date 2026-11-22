@@ -156,15 +156,15 @@ private fun Actions(leg: RouteLegModel.View, onDirect: () -> Unit, onRemove: () 
 @Composable
 private fun NavLogFigures(leg: Leg) {
     Column {
-        Fact(stringResource(R.string.leg_altitude), Format.cruiseAltitude(leg.altitudeFt), Spoken.altitude(leg.altitudeFt))
-        Fact(stringResource(R.string.leg_true_course), Format.heading(leg.trueCourseDeg), Spoken.headingTrue(leg.trueCourseDeg))
-        Fact(stringResource(R.string.leg_magnetic_course), Format.heading(leg.magneticCourseDeg), Spoken.headingMagnetic(leg.magneticCourseDeg))
-        leg.magneticHeadingDeg?.let { Fact(stringResource(R.string.leg_magnetic_heading), Format.heading(it), Spoken.headingMagnetic(it)) }
+        Fact(stringResource(R.string.wording_cruise_altitude), Format.cruiseAltitude(leg.altitudeFt), Spoken.altitude(leg.altitudeFt))
+        Fact(stringResource(R.string.wording_true_course), Format.heading(leg.trueCourseDeg), Spoken.headingTrue(leg.trueCourseDeg))
+        Fact(stringResource(R.string.wording_magnetic_course), Format.heading(leg.magneticCourseDeg), Spoken.headingMagnetic(leg.magneticCourseDeg))
+        leg.magneticHeadingDeg?.let { Fact(stringResource(R.string.wording_magnetic_heading), Format.heading(it), Spoken.headingMagnetic(it)) }
         Fact(stringResource(R.string.leg_variation), Format.variation(leg.magneticVariationDeg))
         Fact(stringResource(R.string.leg_distance), Format.distance(leg.distanceNm), Spoken.distance(leg.distanceNm))
-        leg.eteMin?.let { Fact(stringResource(R.string.leg_time), Format.navLogTime(it), Spoken.duration(it)) }
-        leg.groundspeedKt?.let { Fact(stringResource(R.string.leg_groundspeed), Format.speed(it), Spoken.speed(it)) }
-        leg.tasKt?.let { Fact(stringResource(R.string.leg_airspeed), Format.speed(it), Spoken.speed(it)) }
+        leg.eteMin?.let { Fact(stringResource(R.string.wording_time_en_route), Format.navLogTime(it), Spoken.duration(it)) }
+        leg.groundspeedKt?.let { Fact(stringResource(R.string.wording_ground_speed), Format.speed(it), Spoken.speed(it)) }
+        leg.tasKt?.let { Fact(stringResource(R.string.wording_true_airspeed), Format.speed(it), Spoken.speed(it)) }
         leg.fuelGal?.let { Fact(stringResource(R.string.leg_fuel), Format.fuel(it), Spoken.fuel(it)) }
     }
 }

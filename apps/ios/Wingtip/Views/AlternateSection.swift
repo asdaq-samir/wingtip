@@ -20,7 +20,7 @@ struct AlternateSection: View {
             Section("Alternate") {
                 Text(waiting).foregroundStyle(.secondary)
                 if check.needsAirplane, let pickAirplane {
-                    Button(action: pickAirplane) { Label("Pick an Airplane", systemImage: WingtipIcon.airplane) }
+                    Button(action: pickAirplane) { Label(Wording.pickAnAirplane, systemImage: WingtipIcon.airplane) }
                 }
             }
         } else if let problem = check.problem {
@@ -50,7 +50,7 @@ struct AlternateSection: View {
                 // The engine's reasons as it gives them: a TAF that does not
                 // cover the arrival window, no approach, the 1-2-3 missed.
                 let reasons = d.reasons ?? []
-                Text(reasons.isEmpty ? "An approach, and 2,000 ft and 3 SM an hour either side of the ETA (14 CFR 91.169(b))." : reasons.joined(separator: " "))
+                Text(reasons.isEmpty ? "An approach, and 2,000 ft and 3 sm an hour either side of the ETA (14 CFR 91.169(b))." : reasons.joined(separator: " "))
                     .font(.footnote).foregroundStyle(.secondary)
             }
             Text(d.taf ?? "No TAF for the destination").font(d.taf == nil ? .footnote : .footnote.monospaced()).foregroundStyle(.secondary)
@@ -101,10 +101,10 @@ struct AlternateSection: View {
         }
     }
 
-    /// "800 ft · 2 SM", a dash for what the forecast does not give.
+    /// "800 ft · 2 sm", a dash for what the forecast does not give.
     static func ceilingAndVisibility(_ ceilingFt: Double?, _ visibilitySm: Double?) -> String {
         let ceiling = ceilingFt.map { Format.altitude($0) } ?? "no ceiling"
-        let visibility = visibilitySm.map { String(format: "%g SM", $0) } ?? "—"
+        let visibility = visibilitySm.map { String(format: "%g sm", $0) } ?? "—"
         return "\(ceiling) · \(visibility)"
     }
 

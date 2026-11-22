@@ -14,7 +14,7 @@ struct LegFigureSections: View {
             // Each figure's accessibilityValue is the figure as a pilot says
             // it (SpokenFigures), where "090°" would be read as "ninety".
             Section("Course and Heading") {
-                LabeledContent("True course", value: Format.heading(leg.trueCourseDeg))
+                LabeledContent(Wording.trueCourse, value: Format.heading(leg.trueCourseDeg))
                     .accessibilityValue(SpokenFigures.degrees(leg.trueCourseDeg))
                 if let wind = leg.wind {
                     let (dir, kt) = (wind.windDirTrueDeg, wind.windSpeedKt)
@@ -25,17 +25,17 @@ struct LegFigureSections: View {
                 // airspeed against the wind: with no airplane chosen the
                 // planner sends none, and their rows are left out.
                 if let wca = leg.wcaDeg {
-                    LabeledContent("Wind correction", value: "\(wca >= 0 ? "+" : "")\(Format.number(wca, decimals: 0))°")
+                    LabeledContent(Wording.windCorrection, value: "\(wca >= 0 ? "+" : "")\(Format.number(wca, decimals: 0))°")
                         .accessibilityValue("\(wca < 0 ? "minus" : "plus") \(SpokenFigures.number(abs(wca))) degrees")
                 }
                 if let heading = leg.trueHeadingDeg {
-                    LabeledContent("True heading", value: Format.heading(heading))
+                    LabeledContent(Wording.trueHeading, value: Format.heading(heading))
                         .accessibilityValue(SpokenFigures.degrees(heading))
                 }
                 LabeledContent("Variation", value: "\(Format.number(abs(leg.magneticVariationDeg), decimals: 0))° \(Flight.variationSide(leg.magneticVariationDeg).letter)")
                     .accessibilityValue("\(SpokenFigures.number(abs(leg.magneticVariationDeg))) degrees \(Flight.variationSide(leg.magneticVariationDeg).word)")
                 if let heading = leg.magneticHeadingDeg {
-                    LabeledContent("Magnetic heading", value: Format.heading(heading))
+                    LabeledContent(Wording.magneticHeading, value: Format.heading(heading))
                         .accessibilityValue(SpokenFigures.degrees(heading))
                 }
             }
@@ -44,7 +44,7 @@ struct LegFigureSections: View {
             Section(LegPhase.of(leg).map { "Speed, Time and Fuel · \($0.word)" } ?? "Speed, Time and Fuel") {
                 LabeledContent("Altitude", value: Format.altitude(leg.altitudeFt))
                     .accessibilityValue(Format.spokenAltitude(leg.altitudeFt))
-                if let tas = leg.tasKt { LabeledContent("True airspeed", value: Format.speed(tas)).accessibilityValue(SpokenFigures.knots(tas)) }
+                if let tas = leg.tasKt { LabeledContent(Wording.trueAirspeed, value: Format.speed(tas)).accessibilityValue(SpokenFigures.knots(tas)) }
                 if let gs = leg.groundspeedKt { LabeledContent("Groundspeed", value: Format.speed(gs)).accessibilityValue(SpokenFigures.knots(gs)) }
                 LabeledContent("Distance", value: Format.distance(leg.distanceNm))
                     .accessibilityValue(SpokenFigures.nauticalMiles(leg.distanceNm))
@@ -55,7 +55,7 @@ struct LegFigureSections: View {
                 // fuel is missing, never nought (AV-8, decision 0011), and
                 // the figure is asked for in place.
                 if leg.climbFuelUnknown == true {
-                    LabeledContent("Climb fuel", value: "Not known")
+                    LabeledContent("Climb Fuel", value: "Not known")
                         .foregroundStyle(WingtipInk.caution)
                     AskFigureRow(needs: [.climb])
                 }

@@ -25,7 +25,7 @@ export default function RiskAssessment({ assessment }: { assessment: Assessment 
         </p>
         <p>{assessment.words}</p>
       </div>
-      <ListGroup title="From the briefing and your logbook">
+      <ListGroup title="From the Briefing and Your Logbook">
         {raised.length === 0 ? (
           <ListRow muted title="Nothing raised" />
         ) : (

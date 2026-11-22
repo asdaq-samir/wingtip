@@ -36,9 +36,9 @@ struct ChecklistView: View {
                         }
                     }
                 } else if session.context?.tail == nil {
-                    ContentUnavailableView("No airplane picked", systemImage: "airplane", description: Text("Pick an airplane on the iPhone."))
+                    ContentUnavailableView("No Airplane Picked", systemImage: "airplane", description: Text("Pick an airplane on the iPhone."))
                 } else {
-                    ContentUnavailableView("No checklist yet", systemImage: "checklist", description: Text("Write it on the iPhone, from the flight manual."))
+                    ContentUnavailableView("No Checklist Yet", systemImage: "checklist", description: Text("Write it on the iPhone, from the flight manual."))
                 }
             }
             .navigationTitle(session.context?.tail ?? "Checklist")

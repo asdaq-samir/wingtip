@@ -121,7 +121,7 @@ final class ChecklistModel {
             problem = nil
         } catch {
             checklist = Checklist(sections: [])
-            problem = "Your checklist couldn't be read: \(error.localizedDescription)"
+            problem = "Your checklist could not be read: \(error.localizedDescription)"
         }
     }
 
@@ -152,7 +152,7 @@ final class ChecklistModel {
             writing = try ChecklistPhases.text(kind)
             problem = nil
         } catch {
-            problem = "The phases couldn't be listed: \(error.localizedDescription)"
+            problem = "The phases could not be listed: \(error.localizedDescription)"
         }
     }
 

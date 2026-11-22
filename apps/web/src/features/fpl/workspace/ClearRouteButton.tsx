@@ -1,5 +1,6 @@
 import CloseButton from "../../../components/CloseButton";
 import { useConfirm } from "../../../components/useConfirm";
+import { WORDING } from "../../../lib/wording/generated/wording";
 
 /**
  * FPL's ✕: one tap asks "Clear Route?" in the stock centred alert (never
@@ -12,16 +13,16 @@ import { useConfirm } from "../../../components/useConfirm";
  */
 export default function ClearRouteButton({ hasRoute, onClear }: { hasRoute: boolean; onClear: () => void }) {
   const [ask, asked] = useConfirm({
-    title: "Clear Route?",
+    title: WORDING.clearRouteQuestion,
     description: "The route's points, stops and procedures come off the plan. Undo brings them back.",
-    confirmLabel: "Clear Route",
+    confirmLabel: WORDING.clearRoute,
     destructive: true,
     onConfirm: onClear,
   });
   return (
     <>
       {/* Every panel's ✕ is CloseButton, its name what it does here. */}
-      <CloseButton label="Clear route" disabled={!hasRoute} onClick={ask} data-testid="fpl-clear" />
+      <CloseButton label={WORDING.clearRoute} disabled={!hasRoute} onClick={ask} data-testid="fpl-clear" />
       {asked}
     </>
   );

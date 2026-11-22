@@ -85,7 +85,7 @@ export function ClearanceElements({ clearance, places, heard }: { clearance: Cle
     <div className="flex flex-col gap-1" aria-live="polite" data-testid="clearance-elements">
       {heard && (
         <>
-          {limit && <Line name="Cleared to">{limit}</Line>}
+          {limit && <Line name="Cleared To">{limit}</Line>}
           {(clearance.route.length > 0 || clearance.asFiled) && (
             <Line name="Route">
               <RouteWords items={clearance.route} asFiled={clearance.asFiled} found={places} />

@@ -73,7 +73,7 @@ fun FlightLoggedSheet(state: LogbookDraftModel.State, model: LogbookDraftModel) 
             }
             state.draftProblem?.let {
                 ProblemLine(it)
-                TextButton(onClick = model::retry) { Text(stringResource(R.string.try_again)) }
+                TextButton(onClick = model::retry) { Text(stringResource(R.string.wording_try_again)) }
             }
             state.draft?.let { DraftRows(it, state, model) }
             ProblemLine(state.logProblem)

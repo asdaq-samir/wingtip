@@ -72,7 +72,7 @@ export default function FlightFields({
         save(false);
       }}
     >
-      <RowField id={nameId} error={problem ?? undefined} wide label="Flight name">
+      <RowField id={nameId} error={problem ?? undefined} wide label="Flight Name">
         <Input
           id={nameId}
           ref={nameField}

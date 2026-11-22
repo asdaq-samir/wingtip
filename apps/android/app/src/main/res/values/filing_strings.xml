@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Filing the flight plan (FilingPage): FAA Form 7233-4's items as AIM Appendix 4 names them. -->
+<resources>
+    <string name="file_flight_plan">File Flight Plan</string>
+    <string name="filing_persons">Persons on Board</string>
+    <string name="filing_copy">Copy the Flight Plan</string>
+    <string name="filing_filed">Filed: %1$s</string>
+    <string name="filing_sending">Filing…</string>
+    <string name="filing_file_with">File with %1$s</string>
+    <string name="filing_needs">Needs your airplane\'s N-number, its type and a departure time</string>
+    <string name="filing_rules">Item 8 · Flight Rules</string>
+    <string name="filing_ident">Item 7 · Aircraft Identification</string>
+    <string name="filing_type">Item 9 · Type of Aircraft</string>
+    <string name="filing_departure">Item 13 · Departure</string>
+    <string name="filing_time">Item 13 · Departure Time (UTC)</string>
+    <string name="filing_speed">Item 15 · Cruising Speed</string>
+    <string name="filing_level">Item 15 · Cruising Level</string>
+    <string name="filing_route">Item 15 · Route</string>
+    <string name="filing_destination">Item 16 · Destination</string>
+    <string name="filing_eet">Item 16 · Total EET</string>
+    <string name="filing_alternate">Item 16 · Alternate</string>
+    <string name="filing_other">Item 18 · Other Information</string>
+    <string name="filing_endurance">Item 19 · Endurance</string>
+    <string name="filing_persons_item">Item 19 · Persons on Board</string>
+    <string name="filing_file_it">File It</string>
+    <string name="filing_wx_ifr">At least 30 min before departure</string>
+    <string name="filing_wx_vfr">Open it as you leave, close it when you land</string>
+    <string name="filing_fss">Flight Service</string>
+    <string name="filing_fss_alaska">Flight Service in Alaska</string>
+</resources>

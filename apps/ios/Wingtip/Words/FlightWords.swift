@@ -55,7 +55,7 @@ enum FlightWords {
         // Words beside the code, which is shown as sent either way. Where
         // the engine refuses (logged by Engine.rule) that is said, never read
         // as an ordinary code: 7700 must not pass unmarked.
-        do { return try Engine.squawkMeaning(squawk: code) } catch { return "its meaning couldn't be worked out" }
+        do { return try Engine.squawkMeaning(squawk: code) } catch { return "its meaning could not be worked out" }
     }
 
     /// Feet against own ship's: "500 ft above", "1,200 ft below", "level".

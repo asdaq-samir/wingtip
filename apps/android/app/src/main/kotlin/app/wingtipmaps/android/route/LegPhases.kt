@@ -55,11 +55,11 @@ object LegPhase {
 fun LegTops(leg: Leg, plan: Plan) {
     val from = leg.from
     leg.toc?.let { toc ->
-        Top(stringResource(R.string.top_of_climb), stringResource(R.string.top_along, Format.distance(toc.alongNm), from))
-        Figure(stringResource(R.string.leg_altitude), Format.altitude(toc.altitudeFt), Spoken.altitude(toc.altitudeFt))
-        Figure(stringResource(R.string.leg_groundspeed), Format.speed(toc.groundspeedKt), Spoken.speed(toc.groundspeedKt))
-        Figure(stringResource(R.string.leg_airspeed), Format.speed(toc.tasKt), Spoken.speed(toc.tasKt))
-        toc.magneticHeadingDeg?.let { Figure(stringResource(R.string.leg_magnetic_heading), Format.heading(it), Spoken.headingMagnetic(it)) }
+        Top(stringResource(R.string.wording_top_of_climb), stringResource(R.string.top_along, Format.distance(toc.alongNm), from))
+        Figure(stringResource(R.string.wording_cruise_altitude), Format.altitude(toc.altitudeFt), Spoken.altitude(toc.altitudeFt))
+        Figure(stringResource(R.string.wording_ground_speed), Format.speed(toc.groundspeedKt), Spoken.speed(toc.groundspeedKt))
+        Figure(stringResource(R.string.wording_true_airspeed), Format.speed(toc.tasKt), Spoken.speed(toc.tasKt))
+        toc.magneticHeadingDeg?.let { Figure(stringResource(R.string.wording_magnetic_heading), Format.heading(it), Spoken.headingMagnetic(it)) }
         toc.fuelBurnGph?.let { Figure(stringResource(R.string.leg_fuel_flow), Format.burn(it)) }
     }
     // Where the airplane gave no climb fuel flow, the climb's fuel is not
@@ -74,11 +74,11 @@ fun LegTops(leg: Leg, plan: Plan) {
         AskFigures(rememberAirplaneNow(plan), "climb", Modifier.padding(top = WingtipSpace.Xs))
     }
     leg.tod?.let { tod ->
-        Top(stringResource(R.string.top_of_descent), stringResource(R.string.top_along, Format.distance(tod.alongNm), from))
+        Top(stringResource(R.string.wording_top_of_descent), stringResource(R.string.top_along, Format.distance(tod.alongNm), from))
         Figure(stringResource(R.string.leg_descent_rate), fpm(tod.fpm))
-        tod.groundspeedKt?.let { Figure(stringResource(R.string.leg_groundspeed), Format.speed(it), Spoken.speed(it)) }
-        tod.tasKt?.let { Figure(stringResource(R.string.leg_airspeed), Format.speed(it), Spoken.speed(it)) }
-        tod.magneticHeadingDeg?.let { Figure(stringResource(R.string.leg_magnetic_heading), Format.heading(it), Spoken.headingMagnetic(it)) }
+        tod.groundspeedKt?.let { Figure(stringResource(R.string.wording_ground_speed), Format.speed(it), Spoken.speed(it)) }
+        tod.tasKt?.let { Figure(stringResource(R.string.wording_true_airspeed), Format.speed(it), Spoken.speed(it)) }
+        tod.magneticHeadingDeg?.let { Figure(stringResource(R.string.wording_magnetic_heading), Format.heading(it), Spoken.headingMagnetic(it)) }
         tod.fuelBurnGph?.let { Figure(stringResource(R.string.leg_fuel_flow), Format.burn(it)) }
         if (tod.descentAtCruise == true) {
             Text(

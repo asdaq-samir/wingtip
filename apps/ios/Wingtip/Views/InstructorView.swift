@@ -130,12 +130,12 @@ struct CertificateSection: View {
                 TextField("987654321CFI", text: $certificate).multilineTextAlignment(.trailing).font(.body.monospaced())
                     .textInputAutocapitalization(.characters).autocorrectionDisabled()
             }
-            Picker("Its date", selection: $untilKind) {
-                Text("Recent experience").tag("RE")
+            Picker("Its Date", selection: $untilKind) {
+                Text("Recent Experience").tag("RE")
                 Text("Expires").tag("EXP")
             }
             .pickerStyle(.segmented)
-            DatePicker(untilKind == "RE" ? "Recent experience through" : "Certificate expires", selection: $until, displayedComponents: .date)
+            DatePicker(untilKind == "RE" ? "Recent Experience Through" : "Certificate Expires", selection: $until, displayedComponents: .date)
             Button(saving ? "Saving…" : "Save") {
                 saving = true
                 let request = InstructorRequest(certificate: certificate.trimmingCharacters(in: .whitespaces), fullName: fullName.trimmingCharacters(in: .whitespaces),

@@ -125,7 +125,7 @@ export default function SearchResultsPage() {
     : failed
       ? offline
         ? `${NO_CONNECTION}.`
-        : "The fields near there couldn't be fetched."
+        : "The fields near there could not be fetched."
       : rows.length === 0
         ? all > 0
           ? "No field nearby fits these filters."

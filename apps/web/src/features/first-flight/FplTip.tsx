@@ -51,7 +51,7 @@ export default function FplTip({ onClose }: { onClose: () => void }) {
             turned a quarter, its lower half out under the tip. */}
         <PopoverPrimitive.Arrow className="size-3 rotate-45 bg-popover data-[side=top]:-bottom-1.5" />
         <div className="min-w-0 flex-1">
-          <PopoverTitle className={cn("font-semibold text-foreground", TEXT.row)}>Your flight plan is one tap away</PopoverTitle>
+          <PopoverTitle className={cn("font-semibold text-foreground", TEXT.row)}>Your Flight Plan Is One Tap Away</PopoverTitle>
           <PopoverDescription className={cn("mt-0.5", TEXT.detail)}>
             Route, nav log, profile and brief, like your EFB. Tap FPL any time.
           </PopoverDescription>

@@ -22,7 +22,7 @@ final class FlightServiceModel {
             status = try await Gateway.flightService()
             statusProblem = nil
         } catch {
-            statusProblem = "Whether filing is connected here couldn't be checked: \(error.localizedDescription)"
+            statusProblem = "Whether filing is connected here could not be checked: \(error.localizedDescription)"
         }
     }
 

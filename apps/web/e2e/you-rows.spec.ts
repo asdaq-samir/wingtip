@@ -47,7 +47,7 @@ test("Checklists are inside Airplanes, and Training holds the Coach and Practice
   await expect(sheet.getByTestId("setup-coach-row")).not.toContainText("Sign In");
   await sheet.getByTestId("practice-row").click();
   await expect(sheet.getByTestId("practice-page")).toBeVisible();
-  await sheet.getByRole("button", { name: /^Holding entries/ }).click();
+  await sheet.getByRole("button", { name: /^Holding Entries/ }).click();
   await expect(sheet.getByTestId("hold-entry")).toBeVisible();
 });
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Spinner } from "./ui/spinner";
 import type { MapInsets } from "../lib/mapChrome";
+import { WORDING } from "../lib/wording/generated/wording";
 
 /**
  * The stock spinner in the middle of the map while it loads, in the
@@ -16,7 +17,7 @@ export default function MapLoading({ shown, insets }: { shown: boolean; insets: 
   return (
     <div
       role="status"
-      aria-label="Loading the map"
+      aria-label={WORDING.fetchingTheMap}
       data-testid="map-loading"
       className={`pointer-events-none absolute flex items-center justify-center transition-opacity duration-150 ease-out ${shown ? "opacity-100" : "opacity-0"}`}
       style={{ top: insets.top, bottom: insets.bottom, left: insets.left, right: 0 }}

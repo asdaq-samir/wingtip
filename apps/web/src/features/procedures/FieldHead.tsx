@@ -9,6 +9,7 @@ import { CardMark } from "./routeCard";
 import { FuelGauge } from "./FuelGauge";
 import type { pointEnd } from "./pointEnd";
 import type { ProceduresRouteModel } from "./useProceduresRoute";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** A field's head: its symbol and menu, its ident, fuel, time, wind and
  *  elevation, in the Collapsible's trigger's reach (FieldStep). */
@@ -162,7 +163,7 @@ export function WindLine({
       data-testid="field-wind"
     >
       {direct
-        ? "Direct to"
+        ? WORDING.directTo
         : wind && (
             <>
               <Wind className="size-3.5 shrink-0" aria-hidden />

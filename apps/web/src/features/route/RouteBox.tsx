@@ -329,7 +329,7 @@ export default function RouteBox({
             <AlertDescription className={cn("text-destructive", TEXT.detail)}>
               {unknownPoint.ident
                 ? `${unknownPoint.ident} ${unknownWhy(unknownPoint)}. Tap it to change it.`
-                : "A point of the route isn't an airport or waypoint we know."}
+                : "A point of the route is not an airport or waypoint we know."}
             </AlertDescription>
             {unknownPoint.ident && points.includes(unknownPoint.ident) && (
               <AlertAction className="top-1/2 right-0 -translate-y-1/2">

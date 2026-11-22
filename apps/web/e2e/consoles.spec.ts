@@ -87,9 +87,9 @@ test(
     await pilot.getByTestId("role-menu").click();
     await expect(page.getByRole("menuitemradio", { name: "Pilot" })).toHaveAttribute("aria-checked", "true");
     await expect(page.getByRole("menuitemradio", { name: "Developer" })).toHaveAttribute("aria-checked", "false");
-    await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Sign Out" })).toBeVisible();
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("menuitem", { name: "Sign out" })).toHaveCount(0);
+    await expect(page.getByRole("menuitem", { name: "Sign Out" })).toHaveCount(0);
     // One page, no tabs over it: the account first, then the rest as rows
     // (Setup, the owner's pick of the redesign).
     await expect(pilot.getByTestId("setup-page")).toBeVisible();

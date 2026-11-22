@@ -6,6 +6,7 @@ import { compassPoint } from "../../../lib/compass";
 import { nmAway } from "../../../lib/useAway";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { TEXT } from "../../../lib/text";
+import { WORDING } from "../../../lib/wording/generated/wording";
 
 // Apart from Nearest's list in full (NearestCard), which is loaded when it
 // is opened: the strip is drawn with Airport's pill, in the first load.
@@ -45,14 +46,14 @@ export function NearestStrip({
       // At the left where the tiles start, as every strip's words are (F-L2).
       className={cn("relative self-start py-1 text-left after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
     >
-      Show my position
+      Show My Position
     </Button>
   );
   if (!located && !nearMap) return showPosition;
   if (!fields)
     return (
       <p className={cn("py-1 text-center text-foreground/65", TEXT.note)} role="status">
-        Fetching the nearest fields…
+        {WORDING.fetchingNearestFields}
       </p>
     );
   const strip = (

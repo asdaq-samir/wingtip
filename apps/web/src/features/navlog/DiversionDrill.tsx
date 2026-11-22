@@ -18,6 +18,7 @@ import { FINDING_TONE } from "../../lib/findings";
 import { written } from "./workings";
 import { api } from "../../lib/api/client";
 import { AskFigure } from "../../components/airplane/AskFigure";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** Who may land at a field, the engine's card line, for a row. */
 function whoMayLand(f: { private: boolean; military: "military" | "joint" | null }): string | null {
@@ -27,11 +28,11 @@ function whoMayLand(f: { private: boolean; military: "military" | "joint" | null
 /** The diversion worked out, step by step, once checked. */
 function Answer({ ident, d }: { ident: string; d: Diversion }) {
   const steps: [string, string][] = [
-    ["True course", `${bearing(d.tc)}, ${nm(d.distanceNm)}`],
-    ["Wind correction", windCorrection(d.wca)],
-    ["True heading", bearing(d.th)],
-    ["Magnetic heading", bearing(d.mh)],
-    ["Ground speed", knots(d.gs)],
+    [WORDING.trueCourse, `${bearing(d.tc)}, ${nm(d.distanceNm)}`],
+    [WORDING.windCorrection, windCorrection(d.wca)],
+    [WORDING.trueHeading, bearing(d.th)],
+    [WORDING.magneticHeading, bearing(d.mh)],
+    [WORDING.groundSpeed, knots(d.gs)],
     ["Time", `${Math.round(d.ete)} min`],
     ["Fuel", gal(d.fuel)],
   ];
@@ -98,7 +99,7 @@ export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: stri
           onClick={(e) => e.stopPropagation()}
           data-testid="diversion-drill"
         >
-          Divert from here
+          Divert from Here
         </Button>
       </ResponsivePopoverTrigger>
       <ResponsivePopoverContent
@@ -140,9 +141,9 @@ export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: stri
                   who may use them (the engine's card line, "Private:
                   permission required"): how far and which way are the
                   chart's to read. */}
-                <ListGroup title="Divert to">
+                <ListGroup title="Divert To">
                   {nearest.isPending ? (
-                    <ListRow muted title="Finding the nearest fields…" />
+                    <ListRow muted title={WORDING.fetchingNearestFields} />
                   ) : fields.length === 0 ? (
                     <ListRow muted title="No fields near here" />
                   ) : (
@@ -168,7 +169,7 @@ export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: stri
               {/* The ACS asks for a reasonable estimate (PA.VI.C.S2) and
                   gives no figures: within 10° and 10 kt, 3 minutes and a
                   gallon is this drill's own (ALLOWANCES). */}
-              <ListGroup title="Your estimates">
+              <ListGroup title="Your Estimates">
                 {ALLOWANCES.map((a) => {
                   const value = number(a.key);
                   const marked = checked && !!exact && value !== null && Number.isFinite(value);

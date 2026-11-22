@@ -27,6 +27,7 @@ import { useClock } from "../../lib/useMinuteClock";
 import { suaWhen } from "../plan/lazy";
 import { pointLink } from "../../lib/address";
 import { shareOrCopy } from "../../lib/share";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /** One of a band's rules on a line of its own, its glyph before it: the
  *  weather minimums, what it takes to go in, what the airplane carries,
@@ -220,7 +221,7 @@ export default function AirspaceCard({
           stays as it was (the owner's ask). */}
       {(data || isLoading) && (
         <div className="pt-3">
-          <PillSection title="Airspace here" onMore={summary ? () => card?.setSize("full") : undefined}>
+          <PillSection title="Airspace Here" onMore={summary ? () => card?.setSize("full") : undefined}>
             {/* Feet MSL (each range says so), from the FAA's airspace file
                 and the ground's height there: the chart is the authority. */}
             <ListGroup>
@@ -244,7 +245,7 @@ export default function AirspaceCard({
       {!summary && (
         <div className="space-y-5 pt-4">
           {isError && (
-            <p className={cn("text-destructive", TEXT.prose)}>The planner could not read the airspace here. Try again in a moment.</p>
+            <p className={cn("text-destructive", TEXT.prose)}>{WORDING.airspaceNotRead}</p>
           )}
           {data && (
             <>
@@ -256,16 +257,16 @@ export default function AirspaceCard({
                         <Radio />
                       </RowBadge>
                     }
-                    title="In a Mode C veil"
+                    title="In a Mode C Veil"
                     description={`${data.mode_c_veil.distance_nm} nm from ${data.mode_c_veil.ident}: a transponder with altitude reporting and ADS-B Out from the surface to 10,000 ft (91.215, 91.225).`}
                     data-testid="airspace-veil"
                   />
                 </ListGroup>
               )}
-              <ListGroup title="Special use">
+              <ListGroup title="Special Use">
                 {data.special_use_unavailable ? (
                   <ListRow
-                    title={<span className="text-caution-ink">The FAA's special-use airspace did not answer. Check the chart.</span>}
+                    title={<span className="text-caution-ink">{WORDING.specialUseNoAnswer}</span>}
                   />
                 ) : data.special_use.length === 0 ? (
                   <ListRow muted title="None here" />

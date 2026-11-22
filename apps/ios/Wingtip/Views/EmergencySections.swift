@@ -27,8 +27,8 @@ struct EmergencyFieldsSection: View {
                 if model.from == .device {
                     // The packs hold no weather, elevation or runway: said
                     // over the list, so no field reads as checked for them.
-                    CardRow(title: "From this iPhone, without weather",
-                            detail: "The planner can't be reached: the fields are the chart data kept here, ranked by distance\(ranked.glide == nil ? "" : " and still-air glide"), with no runways or weather weighed")
+                    CardRow(title: "From This iPhone, Without Weather",
+                            detail: "The planner could not be reached: the fields are the chart data kept here, ranked by distance\(ranked.glide == nil ? "" : " and still-air glide"), with no runways or weather weighed")
                 }
                 if ranked.needsAirplane {
                     // No airplane, or one with no glide ratio: the nearest
@@ -56,7 +56,7 @@ struct EmergencyFieldsSection: View {
                 ProgressView("Fetching the fields round you…")
             } else {
                 // Never a spinner with nothing being asked.
-                CardRow(title: "No fields yet", detail: "They are asked as the next GPS fix comes in")
+                CardRow(title: "No Fields Yet", detail: "They are asked as the next GPS fix comes in.")
             }
         } header: {
             Text(model.ranked?.glide.map { "Best Fields · Glide About \(Format.distance($0.stillAirNm, decimals: 0))" } ?? "Best Fields")
@@ -74,12 +74,12 @@ struct EmergencyFieldsSection: View {
     /// waitS, each saying what the pilot can do, never a spinner forever.
     @ViewBuilder private var noPosition: some View {
         if ownShipOff {
-            CardRow(title: "Location is off for Wingtip Maps", detail: "The fields within a glide are worked out from your position")
+            CardRow(title: "Location Is Off for Wingtip Maps", detail: "The fields within a glide are worked out from your position")
             if let settings = URL(string: UIApplication.openSettingsURLString) {
                 Link("Turn On Location in Settings", destination: settings)
             }
         } else if noFixYet {
-            CardRow(title: "No GPS position", detail: "The fields within a glide need one. Put the iPhone where it sees the sky; use the radio and 7700 meanwhile")
+            CardRow(title: "No GPS Position", detail: "The fields within a glide need one. Put the iPhone where it sees the sky; use the radio and 7700 meanwhile.")
         } else {
             CardRow(title: "Finding your position…", detail: "The fields within a glide are worked out from it")
                 .task {

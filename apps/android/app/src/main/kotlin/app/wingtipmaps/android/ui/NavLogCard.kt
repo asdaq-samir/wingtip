@@ -45,6 +45,7 @@ import app.wingtipmaps.android.format.Spoken
 import app.wingtipmaps.android.route.LegPhase
 import app.wingtipmaps.android.route.LegWords
 import app.wingtipmaps.android.route.RoutePointMenu
+import app.wingtipmaps.android.share.NavLogShare
 import app.wingtipmaps.android.strip.StripData
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
@@ -67,7 +68,11 @@ fun NavLogCard(plan: Plan, exit: CardExit, onLeg: (Int) -> Unit, onAddStopAfter:
     val state by plan.state.collectAsStateWithLifecycle()
     val pad = Modifier.padding(horizontal = WingtipSpace.Lg)
     val route = if (state.dep.isEmpty() && state.dest.isEmpty()) null else StripData.routeName(state.dep, state.dest, state.stops)
-    CardPage(title = stringResource(R.string.nav_log), exit = exit, subtitle = route) { padding ->
+    // Its Share in the bar, as the web's nav log holds the route's link,
+    // the log as text and its print (the owner, 2026-11-21: the sharing
+    // is the nav log's).
+    val share: @Composable RowScope.() -> Unit = { if (state.routed && !state.planning) NavLogShare(state) }
+    CardPage(title = stringResource(R.string.nav_log), exit = exit, subtitle = route, actions = share) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
             itemsIndexed(state.legs, key = { i, _ -> "leg-$i" }) { i, leg ->
                 Column(pad) {
@@ -160,9 +165,9 @@ private fun TotalsRows(totals: NavLogTotals, airplane: AirplaneNow) {
         Figure(stringResource(R.string.figure_dist), Format.distance(totals.distanceNm), said = stringResource(R.string.leg_distance) + ", " + Spoken.distance(totals.distanceNm))
         // Time and fuel only with an airplane: the planner sends none
         // without one, and none is guessed (decision 0011).
-        totals.eteMin?.let { Figure(stringResource(R.string.figure_ete), Format.duration(it), said = stringResource(R.string.leg_time) + ", " + Spoken.duration(it)) }
+        totals.eteMin?.let { Figure(stringResource(R.string.figure_ete), Format.duration(it), said = stringResource(R.string.wording_time_en_route) + ", " + Spoken.duration(it)) }
         totals.fuelGal?.let { Figure(stringResource(R.string.figure_fuel), Format.fuel(it), warn = warn, said = stringResource(R.string.leg_fuel) + ", " + Spoken.fuel(it)) }
-        totals.fuelRequiredGal?.let { Figure(stringResource(R.string.figure_required), Format.fuel(it), warn = warn, said = stringResource(R.string.said_fuel_required) + ", " + Spoken.fuel(it)) }
+        totals.fuelRequiredGal?.let { Figure(stringResource(R.string.figure_required), Format.fuel(it), warn = warn, said = stringResource(R.string.wording_fuel_required) + ", " + Spoken.fuel(it)) }
     }
     if (warn) {
         val line = if (shortOn.isEmpty()) stringResource(R.string.under_reserve) else stringResource(R.string.under_reserve_on, shortOn.joinToString(", "))

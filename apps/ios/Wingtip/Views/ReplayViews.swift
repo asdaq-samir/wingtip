@@ -33,7 +33,7 @@ struct ReplaySection: View {
                 .accessibilityLabel("Stop the replay")
                 Spacer()
                 // A discrete setting, the dry run's own control.
-                SpeedPicker(name: "Replay speed", speed: $replay.speed)
+                SpeedPicker(name: "Replay Speed", speed: $replay.speed)
             }
             .buttonStyle(.borderless)
             VStack(alignment: .leading, spacing: WingtipSpace.sm) {

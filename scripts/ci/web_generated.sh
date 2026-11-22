@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # ci.yml's test-web: the files generated and committed -- the phones' API
-# models and engine calls, the design tokens, the screens' links, the app
-# icons -- each checked against what its generator makes, but on a pull
+# models and engine calls, the design tokens, the screens' links, the
+# shared words, the app icons -- each checked against what its generator makes, but on a pull
 # request only where the change touched the generator, its source or its
 # output. They took 1.5 of test-web's 3.8 minutes on every web change
 # (PR #577's runs), though a change to apps/web/src alone can change none
-# of them. Main's push and the night check all four (no base given), so an
+# of them. Main's push and the night check all five (no base given), so an
 # input missing from a list below is caught after merge, not shipped.
 #
 #   scripts/ci/web_generated.sh [BASE]   BASE: the commit the pull request lands on
@@ -41,6 +41,10 @@ check "The design tokens" "scripts/build/design-tokens.sh --check" -- \
 check "The screens and their links" "scripts/build/screens.sh --check" -- \
   design/screens.json 'scripts/build/screens.*' docs/navigation.md \
   apps/web/src/lib/navigation/generated apps/ios/Wingtip/Navigation/Generated "$A/navigation/generated"
+check "The words every app says the same" "scripts/build/wording.sh --check" -- \
+  design/wording.json 'scripts/build/wording.*' docs/design/rules.md \
+  apps/web/src/lib/wording/generated apps/ios/Wingtip/Design/Generated \
+  apps/android/app/src/main/res/values/wording_strings.xml
 check "The app icons" "scripts/build/app-icons.sh --check" -- \
   docs/brand docs/store design/tokens.json 'scripts/build/app-icons.sh' 'scripts/build/app_icons*' \
   'scripts/build/brand-render*' apps/ios/Wingtip/Assets.xcassets apps/ios/WingtipWatch/Assets.xcassets \

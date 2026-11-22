@@ -13,6 +13,7 @@ import { nthTyped } from "./visits";
 import { HoldRow, Step } from "./RouteRows";
 import { RouteGrid, type RouteItem } from "./RouteGrid";
 import { RouteSheets } from "./RouteSheets";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 // The list's types and its Routes row, where PlanWorkspace and the
 // routePanel chunk import them from.
@@ -158,7 +159,7 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
           // flown, and only what is tapped is in the tint.
           sub={
             end?.direct ? (
-              <span className="font-semibold">Direct to</span>
+              <span className="font-semibold">{WORDING.directTo}</span>
             ) : (
               `${row.kind === "stop" ? (to && frdOf(row.airport.ident) ? row.airport.name : "Fly over") : row.kind === "destination" ? "Destination" : "airport" in row && isPosition(row.airport.ident) ? placeOfPoint(row.airport.ident) : "Departure"}${along(row)}`
             )

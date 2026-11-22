@@ -64,7 +64,7 @@ class KeepForAirModel @Inject constructor(app: Application) : AndroidViewModel(a
                 }
                 val regions = withContext(Dispatchers.Default) { CyclePacks.regions(line) }
                 regions.getOrNull()?.takeIf { it.isNotEmpty() }?.let { CyclePacks.of(app).keep(it) }
-                packsProblem = regions.exceptionOrNull()?.let { "The route's chart packs could not be worked out, so none were kept" }
+                packsProblem = regions.exceptionOrNull()?.let { "The route's chart packs could not be worked out, so none were kept." }
             }
             val bytes = withContext(Dispatchers.IO) { KeepForAir.bytes(store, s) }
             _state.value = State(route = route, keeping = false, keptMb = bytes / 1e6, problem = packsProblem)

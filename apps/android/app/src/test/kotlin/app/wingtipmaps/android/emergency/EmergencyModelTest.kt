@@ -140,7 +140,7 @@ class EmergencyModelTest {
         )
         model.start(aircraft = "c172", airplaneName = "C172", callsign = null, checklist = "")
         model.took(fix, trackMagDeg = null)
-        assertEquals("The fields could not be had: there is no connection to Wingtip.", model.state.value.problem)
+        assertEquals("The fields could not be fetched: there is no connection to Wingtip.", model.state.value.problem)
         assertFalse(model.state.value.onPhone)
     }
 
@@ -158,7 +158,7 @@ class EmergencyModelTest {
         val model = EmergencyModel({ _, _, _, _, _ -> EmergencyFields(fields = emptyList()) }, Rules())
         model.start(aircraft = "c172", airplaneName = "C172", callsign = null, checklist = "unreadable")
         val s = model.state.value
-        assertEquals("Your checklist could not be read", s.checklistProblem)
+        assertEquals("Your checklist could not be read.", s.checklistProblem)
         assertEquals("Squawk 7700", s.guidance.single().title)
     }
 }

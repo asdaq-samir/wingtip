@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useConfirm } from "./useConfirm";
+import { WORDING } from "../lib/wording/generated/wording";
 
 /**
  * A form swiped closed, or put away by its Cancel, Escape or a tap beside
@@ -11,9 +12,9 @@ import { useConfirm } from "./useConfirm";
  */
 export function useDiscardGuard(dirty: boolean, close: () => void): [(open: boolean) => void, ReactNode] {
   const [ask, question] = useConfirm({
-    title: "Discard your changes?",
+    title: WORDING.discardChangesQuestion,
     description: "What you typed here isn't kept.",
-    confirmLabel: "Discard",
+    confirmLabel: WORDING.discard,
     destructive: true,
     onConfirm: close,
   });

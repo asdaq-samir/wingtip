@@ -22,10 +22,10 @@ const today = () => localDay();
 /** The kinds of flight a 91.213(d) determination can be made for, in the
  *  rule's order (91.205(b)-(d)). */
 const REACHES: { value: NonNullable<SquawkRequest["deferredFor"]> | "none"; label: string }[] = [
-  { value: "none", label: "Not deferred" },
-  { value: "VFR_DAY", label: "Deferred for VFR by day" },
-  { value: "VFR", label: "Deferred for VFR, day and night" },
-  { value: "ALL", label: "Deferred for every kind" },
+  { value: "none", label: "Not Deferred" },
+  { value: "VFR_DAY", label: "Deferred for VFR by Day" },
+  { value: "VFR", label: "Deferred for VFR, Day and Night" },
+  { value: "ALL", label: "Deferred for Every Kind" },
 ];
 
 // As the server checks a squawk (SquawkRequest.java): what was found said,
@@ -144,7 +144,7 @@ export default function SquawksPage({ aircraft }: { aircraft: Aircraft }) {
       {fixing && (
         <ListGroup title={`Fix: ${fixing.text}`}>
           <div className="p-2">
-            <RowField id={fixId} error={fixForm.formState.errors.note?.message} wide label="The fix">
+            <RowField id={fixId} error={fixForm.formState.errors.note?.message} wide label="The Fix">
               <Textarea
                 id={fixId}
                 {...fixForm.register("note")}
@@ -156,7 +156,7 @@ export default function SquawksPage({ aircraft }: { aircraft: Aircraft }) {
             </RowField>
           </div>
           <ListRow
-            title={<span className="font-medium text-tint">Fixed today</span>}
+            title={<span className="font-medium text-tint">Fixed Today</span>}
             disabled={save.isPending}
             data-testid="squawk-fix"
             onClick={() => void onFix()}
@@ -169,9 +169,9 @@ export default function SquawksPage({ aircraft }: { aircraft: Aircraft }) {
           required for (91.205, the equipment list, the kinds of operations
           list, an AD), removed or deactivated and placarded INOPERATIVE, by a
           pilot or a mechanic who finds it no hazard (14 CFR 91.213(d)). */}
-      <ListGroup title="Write a squawk">
+      <ListGroup title="Write a Squawk">
         <div className="p-2">
-          <RowField id={textId} error={errors.text?.message} wide label="What was found">
+          <RowField id={textId} error={errors.text?.message} wide label="What Was Found">
             <Textarea
               id={textId}
               {...register("text")}
@@ -183,7 +183,7 @@ export default function SquawksPage({ aircraft }: { aircraft: Aircraft }) {
             />
           </RowField>
         </div>
-        <ListRow id={foundId} title="Found on">
+        <ListRow id={foundId} title="Found On">
           <RowField id={foundId} error={errors.reportedOn?.message}>
             <Controller
               control={control}
@@ -203,7 +203,7 @@ export default function SquawksPage({ aircraft }: { aircraft: Aircraft }) {
             />
           </RowField>
         </ListRow>
-        <ListRow title="Inoperative equipment">
+        <ListRow title="Inoperative Equipment">
           <Controller
             control={control}
             name="inoperative"
@@ -224,7 +224,7 @@ export default function SquawksPage({ aircraft }: { aircraft: Aircraft }) {
           </ListRow>
         )}
         <ListRow
-          title={<span className="font-medium text-tint">Write it</span>}
+          title={<span className="font-medium text-tint">Write It</span>}
           onClick={() => void onAdd()}
           disabled={add.isPending}
           data-testid="squawk-add"

@@ -58,26 +58,26 @@ test(
     // The form opens from the list's New airplane row -- a popover, or
     // on a phone a sheet from the bottom -- on the page, not inside the
     // console's own element.
-    await expect(page.getByLabel("Tail number")).toHaveCount(0);
+    await expect(page.getByLabel("Tail Number")).toHaveCount(0);
     await console.getByTestId("new-aircraft-button").click();
-    await page.getByLabel("Tail number").fill("N3");
+    await page.getByLabel("Tail Number").fill("N3");
     await page.getByLabel("Type designator").fill("C172");
     await page.getByLabel("Cruise TAS in knots").fill("110");
     await page.getByLabel("Cruise fuel burn in gallons per hour").fill("8");
-    await page.getByRole("button", { name: "Add airplane" }).click();
+    await page.getByRole("button", { name: "Add Airplane" }).click();
 
     // The form closes at once and the new airplane is in the list while
     // its add is still in flight (useAirplanes' optimistic row).
-    await expect(page.getByLabel("Tail number")).toHaveCount(0);
+    await expect(page.getByLabel("Tail Number")).toHaveCount(0);
     await expect(console.locator("[data-aircraft-row]:visible", { hasText: "N3" })).toBeVisible();
     // The airplane's row, or on a phone its card: whichever is shown.
     await console.locator("[data-aircraft-row]:visible", { hasText: "N2" }).getByRole("button", { name: "Edit" }).click();
-    await expect(page.getByLabel("Tail number")).toHaveValue("N2");
+    await expect(page.getByLabel("Tail Number")).toHaveValue("N2");
     hold.release();
 
     await expect(page.getByTestId("done-note").filter({ hasText: "Airplane Added" })).toBeVisible();
     await expect(page.getByTestId("done-note").filter({ hasText: "Airplane Saved" })).toHaveCount(0);
-    await expect(page.getByLabel("Tail number")).toHaveValue("N2");
+    await expect(page.getByLabel("Tail Number")).toHaveValue("N2");
   },
 );
 
@@ -94,7 +94,7 @@ test.describe("the email sign-in link", () => {
     });
     const console = await openPlannerConsole(page);
     await console.getByTestId("sign-in").click();
-    const box = page.getByLabel("Email address");
+    const box = page.getByLabel("Email Address");
     await box.fill("a@example.com");
     await page.getByRole("button", { name: "Send Link" }).click();
     await box.fill("b@example.com");
@@ -118,20 +118,20 @@ test.describe("the email sign-in link", () => {
     // of its own over the dialog, and on CI's desktop runner the Escape
     // below went to it and left the dialog up (run 41014180625, passed
     // on its retry).
-    await page.getByLabel("Email address").fill("a@example.com");
-    await page.getByLabel("Email address").press("Enter");
+    await page.getByLabel("Email Address").fill("a@example.com");
+    await page.getByLabel("Email Address").press("Enter");
     await expect(page.getByRole("button", { name: "Send Link" })).toBeDisabled();
     await page.keyboard.press("Escape");
     // Escape closes the sign-in dialog, the top layer, and leaves the
     // console under it open.
-    await expect(page.getByLabel("Email address")).toHaveCount(0);
+    await expect(page.getByLabel("Email Address")).toHaveCount(0);
     await expect(console).toBeVisible();
     const answered = page.waitForResponse((r) => r.url().includes("/api/auth/magic-link"));
     hold.release();
     await answered;
 
     await console.getByTestId("sign-in").click();
-    await expect(page.getByLabel("Email address")).toBeVisible();
+    await expect(page.getByLabel("Email Address")).toBeVisible();
     await expect(page.getByRole("dialog").getByRole("status")).toHaveCount(0);
   });
 
@@ -139,7 +139,7 @@ test.describe("the email sign-in link", () => {
     await page.route("**/api/auth/magic-link", (route) => route.fulfill({ status: 429, body: "" }));
     const console = await openPlannerConsole(page);
     await console.getByTestId("sign-in").click();
-    await page.getByLabel("Email address").fill("a@example.com");
+    await page.getByLabel("Email Address").fill("a@example.com");
     await page.getByRole("button", { name: "Send Link" }).click();
 
     // Under the field it is about, not over the map.
@@ -152,9 +152,9 @@ test.describe("the email sign-in link", () => {
     await page.route("**/api/auth/magic-link", (route) => route.fulfill({ status: 401, body: "" }));
     const console = await openPlannerConsole(page);
     await console.getByTestId("sign-in").click();
-    await page.getByLabel("Email address").fill("a@example.com");
+    await page.getByLabel("Email Address").fill("a@example.com");
     await page.getByRole("button", { name: "Send Link" }).click();
-    await expect(page.getByTestId("sign-in-error")).toHaveText("Couldn't send that link. Reload the page and try again.");
+    await expect(page.getByTestId("sign-in-error")).toHaveText("That link could not be sent. Reload the page and try again.");
   });
 });
 
@@ -176,9 +176,9 @@ test("the airplane the nav log flies is ticked, and a tap on another flies that 
   await expect(pick("N1")).toHaveAttribute("aria-checked", "false");
   // The ⓘ still opens its figures, and the tick stays where it is.
   await console.getByRole("button", { name: "Edit N1" }).click();
-  await expect(page.getByLabel("Tail number")).toHaveValue("N1");
+  await expect(page.getByLabel("Tail Number")).toHaveValue("N1");
   await page.getByRole("button", { name: "Cancel" }).click();
-  await expect(page.getByLabel("Tail number")).toHaveCount(0);
+  await expect(page.getByLabel("Tail Number")).toHaveCount(0);
   await expect(pick("N2")).toHaveAttribute("aria-checked", "true");
 
   // The picker under the route flies it too, with the panel out.

@@ -94,7 +94,7 @@ export default function FlightFoot({
         data-testid="done-flying"
         onClick={doneFlying}
       >
-        Done flying
+        Done Flying
       </Button>
     </div>
   );

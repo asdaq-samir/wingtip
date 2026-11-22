@@ -65,7 +65,7 @@ export default function RouteSuggestions({
         </Group>
       )}
       {ownPoint && (
-        <Group heading="Your point">
+        <Group heading="Your Point">
           <Row
             id="own"
             waypoint

@@ -16,6 +16,7 @@ import { BADGE } from "../../lib/rowBadges";
 import { TEXT } from "../../lib/text";
 import { duration, wholeNm } from "../../lib/format";
 import type { SuggestedStop } from "../plan";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 export type { SuggestedStop };
 
@@ -115,7 +116,7 @@ export function StopServices({
   if (!s) {
     return (
       <Section title="Services">
-        <QueryState row query={asked} fetching="Fetching the services…" failed="The services could not be fetched." />
+        <QueryState row query={asked} fetching={WORDING.fetchingServices} failed={WORDING.servicesNotFetched} />
       </Section>
     );
   }
@@ -150,7 +151,7 @@ export function StopServices({
     s.fuel_notes.length > 0 && (
       <ListRow
         key="fuel-notes"
-        title="Fuel remarks"
+        title="Fuel Remarks"
         description={s.fuel_notes.map((note) => (
           <span key={note} className="block" data-testid="services-fuel-note">
             {note}
@@ -183,7 +184,7 @@ export function StopServices({
             <CarFront />
           </RowBadge>
         }
-        title="Courtesy car"
+        title="Courtesy Car"
         description={s.ground_notes.join(" ")}
         data-testid="services-courtesy-car"
       />
@@ -241,7 +242,7 @@ export function StopServices({
             <Receipt />
           </RowBadge>
         }
-        title="Landing fee"
+        title="Landing Fee"
         value={s.landing_fee ? "Yes" : "None"}
       />
     ),
@@ -249,10 +250,10 @@ export function StopServices({
   const near = s.food.length + s.lodging.length + s.cars.length > 0;
   return (
     <div data-testid="place-services">
-      {field.length > 0 && <FewSection title="On the field" rows={field} />}
+      {field.length > 0 && <FewSection title="On the Field" rows={field} />}
       {s.food.length > 0 && (
         <FewSection
-          title="Food nearby"
+          title="Food Nearby"
           rows={placeRows(
             s.food,
             <RowBadge colour={BADGE.food}>
@@ -264,7 +265,7 @@ export function StopServices({
       )}
       {s.lodging.length > 0 && (
         <FewSection
-          title="Places to stay"
+          title="Places to Stay"
           rows={placeRows(
             s.lodging,
             <RowBadge colour={BADGE.lodging}>
@@ -278,7 +279,7 @@ export function StopServices({
           data's, not a note (the owner's no-footnotes rule keeps these). */}
       {s.cars.length > 0 && (
         <FewSection
-          title="Car rental"
+          title="Car Rental"
           rows={placeRows(
             s.cars,
             <RowBadge colour={BADGE.car}>
@@ -291,7 +292,7 @@ export function StopServices({
       {near && <p className={cn("px-1 pt-1.5 text-muted-foreground", TEXT.note)}>Places © Overture Maps Foundation</p>}
       {s.nearby_unavailable && (
         <Section title="Nearby">
-          <ListRow muted title="Places near the field could not be looked up" />
+          <ListRow muted title={WORDING.placesNotLookedUp} />
         </Section>
       )}
     </div>
@@ -311,11 +312,11 @@ export function StopStrip({ ident, stop }: { ident: string; stop: SuggestedStop 
   );
   return (
     <div className="pt-3" data-testid="place-stop">
-      <PillSection title={stop.reason === "break" ? "Suggested break" : "Suggested fuel stop"}>
+      <PillSection title={stop.reason === "break" ? "Suggested Break" : "Suggested Fuel Stop"}>
         <div className="grid grid-cols-3 gap-2">
           {tile(`From ${pointName(stop.from)}`, duration(stop.minutes), "place-stop-after")}
-          {tile("Lands with", `${Math.floor(stop.landsWithGal)} gal`, "place-stop-fuel")}
-          {tile("Off the line", `+${wholeNm(stop.addedNm)}`, "place-stop-added")}
+          {tile("Lands With", `${Math.floor(stop.landsWithGal)} gal`, "place-stop-fuel")}
+          {tile("Off the Line", `+${wholeNm(stop.addedNm)}`, "place-stop-added")}
         </div>
         <StopGlance ident={ident} />
       </PillSection>

@@ -25,7 +25,7 @@ struct AtcCardRows: View {
             if card.awaiting {
                 Text("Read it back…").font(.footnote).foregroundStyle(.secondary)
             } else {
-                Button(card.readback == nil ? "Read Back" : "Read Back Again") {
+                Button(card.readback == nil ? Wording.readBack : Wording.readBackAgain) {
                     Task { await atc.readBack(card.id, tail: tail) }
                 }
                 .glassButton().buttonBorderShape(.capsule)

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The plan's fuel in the tanks at each field and its fuel stops (FuelTanks). -->
+<resources>
+    <string name="fuel_in_tanks">Fuel in the Tanks</string>
+    <string name="fuel_on_board">On Board</string>
+    <string name="fuel_lands_with">Lands With</string>
+    <string name="fuel_full">Full (%1$s)</string>
+    <string name="fuel_none">No Fuel</string>
+    <string name="fuel_gallons">Gallons</string>
+    <string name="fuel_at">Fuel at %1$s</string>
+    <string name="fuel_on_board_at">Fuel on Board at %1$s</string>
+    <string name="fuel_over">More than the %1$s the tanks hold</string>
+    <string name="fuel_lands">Lands with %1$s</string>
+    <string name="fuel_start_help">The fuel in the tanks at engine start: full, or the gallons.</string>
+    <string name="add_fuel_stops">Add Fuel Stops</string>
+    <string name="remove_fuel_stops">Remove Fuel Stops</string>
+    <string name="done">Done</string>
+    <string name="fuel_no_stop_in_reach">No fuel stop in reach on %1$s</string>
+    <string name="fuel_too_little_on_board">Too little fuel on board for %1$s</string>
+    <string name="shared_fuel_set">Fuel Set</string>
+    <string name="clear_route_ask_line">The route, its stops and what was set on it go. Undo brings them back.</string>
+</resources>

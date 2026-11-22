@@ -59,7 +59,7 @@ struct AirportTiles: View {
                 // it has kept a miss for the cycle), else the whole page.
                 let crop = place.airportDiagramRunways != false
                 PictureTile(caption: "Diagram", label: "\(ident) airport diagram, full screen") {
-                    shown = .paths("\(ident) airport diagram", [Planner.diagramPath(ident: ident, cycle: cycle)])
+                    shown = .paths("\(ident) Airport Diagram", [Planner.diagramPath(ident: ident, cycle: cycle)])
                 } picture: {
                     RemotePicture(path: Planner.diagramPath(ident: ident, cycle: cycle, runwaysOnly: crop), fit: !crop).background(Color.white)
                 }

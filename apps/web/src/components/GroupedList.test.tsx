@@ -8,8 +8,8 @@ afterEach(cleanup);
 describe("ListRow on the stock Button", () => {
   it("is one button the row's height, its tap the caller's", () => {
     const onClick = vi.fn();
-    render(<ListRow title="Saved flights" onClick={onClick} data-testid="row" />);
-    const row = screen.getByRole("button", { name: "Saved flights" });
+    render(<ListRow title="Saved Flights" onClick={onClick} data-testid="row" />);
+    const row = screen.getByRole("button", { name: "Saved Flights" });
     expect(row.getAttribute("type")).toBe("button");
     fireEvent.click(row);
     expect(onClick).toHaveBeenCalledOnce();

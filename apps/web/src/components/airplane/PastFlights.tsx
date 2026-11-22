@@ -10,6 +10,7 @@ import { pastFlightsQuery } from "../../lib/airplane/pastFlightsQuery";
 import PastFlightsDay from "./PastFlightsDay";
 import StatusBadge from "../StatusBadge";
 import { useShown } from "../../lib/shown";
+import { WORDING } from "../../lib/wording/generated/wording";
 
 /**
  * An airplane's past flights on its card, at the pilot's ask ("can we
@@ -77,7 +78,7 @@ export default function PastFlights({
         // No footnote under it, at the owner's ask ("Avoid putting so many
         // footnotes for pilots experience"): the rows say it.
         title={
-          from ? `On and before ${dayOf(new Date(`${from}T12:00:00Z`))}` : untitled ? undefined : nowShown ? "Earlier" : "Last flights"
+          from ? `On and before ${dayOf(new Date(`${from}T12:00:00Z`))}` : untitled ? undefined : nowShown ? "Earlier" : "Last Flights"
         }
       >
         {(!data || looking) && !isError && (
@@ -91,7 +92,7 @@ export default function PastFlights({
         )}
         {isError && !data && (
           <ListRow
-            title={<span className={cn("text-destructive", TEXT.detail)}>Its past flights could not be had. Try again in a moment.</span>}
+            title={<span className={cn("text-destructive", TEXT.detail)}>{WORDING.pastFlightsNotFetched}</span>}
           />
         )}
         {data && !flights.length && !hasNextPage && !unread && (
@@ -126,7 +127,7 @@ export default function PastFlights({
         {/* Ten more, before the last listed, as far back as the archive goes. */}
         {hasNextPage && !looking && (
           <ListRow
-            title={isFetchingNextPage ? "Fetching earlier flights…" : "Show earlier flights"}
+            title={isFetchingNextPage ? "Fetching earlier flights…" : "Show Earlier Flights"}
             onClick={() => void fetchNextPage()}
             disabled={isFetchingNextPage}
             data-testid="past-flights-more"

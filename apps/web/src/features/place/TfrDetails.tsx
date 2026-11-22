@@ -62,8 +62,8 @@ export function TfrDetails({ n }: { n: FieldNotam }) {
           ))}
         </div>
       )}
-      {t?.facility && <ContactLine label="Coordination facility" c={t.facility} testId="place-tfr-facility" />}
-      {t?.contact && <ContactLine label="Point of contact" c={t.contact} />}
+      {t?.facility && <ContactLine label="Coordination Facility" c={t.facility} testId="place-tfr-facility" />}
+      {t?.contact && <ContactLine label="Point of Contact" c={t.contact} />}
     </>
   );
 }

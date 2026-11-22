@@ -94,7 +94,7 @@ class AirplaneLookup @Inject constructor() : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                InAir.Failed(Problems.say("Couldn't check whether it's in the air", e))
+                InAir.Failed(Problems.say("Whether it is in the air could not be checked", e))
             }
             _state.update { it.copy(inAir = inAir) }
             (inAir as? InAir.Flying)?.hex?.let(::flightsOf)
@@ -106,7 +106,7 @@ class AirplaneLookup @Inject constructor() : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(detailsProblem = Problems.say("Its history couldn't be fetched", e)) }
+                _state.update { it.copy(detailsProblem = Problems.say("Its history could not be fetched", e)) }
             }
         }
         jobs += viewModelScope.launch {
@@ -126,7 +126,7 @@ class AirplaneLookup @Inject constructor() : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(flightsProblem = Problems.say("Its flights couldn't be fetched", e)) }
+                _state.update { it.copy(flightsProblem = Problems.say("Its past flights could not be fetched", e)) }
             }
         }
     }

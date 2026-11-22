@@ -248,7 +248,7 @@ export const FPL_SCREENS: Screen[] = [
         route.fulfill({ status: 502, contentType: "application/json", body: JSON.stringify({ detail: "planner service unreachable" }) }),
       );
       await page.goto(`/app/plan?${ROUTE}`);
-      await expect(page.locator("[data-problem-banner]").getByRole("button", { name: "Try again" })).toBeVisible({ timeout: slow(30000) });
+      await expect(page.locator("[data-problem-banner]").getByRole("button", { name: "Try Again" })).toBeVisible({ timeout: slow(30000) });
     },
   },
   {

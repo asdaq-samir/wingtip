@@ -35,7 +35,7 @@ export default function MyPositionButton() {
   const recentre = useOwnShip((s) => s.recentre);
   useEffect(() => {
     // Said once, as it happens: a refusal of the browser's prompt.
-    if (error) showError("No position", error);
+    if (error) showError("No Position", error);
   }, [error]);
   // Precise Location off: said once as the position comes in that way,
   // since everything drawn from it may be a mile or more out.
@@ -72,7 +72,7 @@ export default function MyPositionButton() {
     if (routeFace) {
       showRoute();
     } else if (!ownShipAvailable()) {
-      showError("No position over this connection", "The browser gives a page the phone's position only over https.");
+      showError("No Position over This Connection", "The browser gives a page the phone's position only over https.");
     } else if (!enabled) {
       setEnabled(true);
       recentre();

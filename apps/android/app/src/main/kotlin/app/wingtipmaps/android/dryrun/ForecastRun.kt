@@ -77,7 +77,7 @@ class ForecastRun @Inject constructor(app: Application) : AndroidViewModel(app) 
                 throw e
             } catch (e: Exception) {
                 asked = null
-                _state.update { it.copy(loading = false, problem = Problems.say("The forecast couldn't be fetched", e)) }
+                _state.update { it.copy(loading = false, problem = Problems.say("The forecast could not be fetched", e)) }
             }
         }
     }

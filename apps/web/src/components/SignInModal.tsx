@@ -16,6 +16,7 @@ import { TEXT } from "../lib/text";
 import { Separator } from "./ui/separator";
 import { FieldError, FieldLabel } from "./ui/field";
 import { errorIdOf, invalidProps } from "../lib/fieldError";
+import { WORDING } from "../lib/wording/generated/wording";
 
 /**
  * Three ways in, the standard shape every "sign in" prompt (Auth.js,
@@ -66,10 +67,10 @@ export default function SignInModal({
     : linkError instanceof ApiError && linkError.status === 429
       ? "Too many sign-in links asked for. Wait a few minutes and try again."
       : linkError instanceof ApiError && linkError.status === 400
-        ? "Couldn't send that link. Check the address and try again."
+        ? "That link could not be sent. Check the address and try again."
         : linkError instanceof ApiError && linkError.status < 500
-          ? "Couldn't send that link. Reload the page and try again."
-          : "Couldn't reach the sign-in service. Try again in a minute.";
+          ? "That link could not be sent. Reload the page and try again."
+          : "The sign-in service could not be reached. Try again in a minute.";
   // The address checked on Send by the field's own email grammar (the
   // stock type="email"), its words said under the field where the
   // server's refusals are, not in the browser's bubble (the owner's Q3,
@@ -98,7 +99,7 @@ export default function SignInModal({
           magicLink.reset();
         }
       }}
-      title="Sign in to Wingtip Maps"
+      title="Sign In to Wingtip Maps"
       description="Save your airplanes and filed flights to your own account."
       trigger={
         inline ? (
@@ -118,7 +119,7 @@ export default function SignInModal({
           </Button>
         ) : (
           <Button variant="outline" size="sm">
-            Sign in
+            {WORDING.signIn}
           </Button>
         )
       }
@@ -171,7 +172,7 @@ export default function SignInModal({
             {/* Its title in sight once typed in, where a placeholder goes
                 (WCAG 3.3.2), and the field's name the words seen (2.5.3). */}
             <FieldLabel htmlFor={emailId} className={cn("font-normal text-muted-foreground", TEXT.note)}>
-              Email address
+              Email Address
             </FieldLabel>
             <div className="flex gap-2">
               <Input

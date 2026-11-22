@@ -20,7 +20,7 @@ struct NotamListView: View {
             if let ranked {
                 let shown = NotamRows.inOrder(ranked.notams)
                 if ranked.unchecked?.contains("tfrs") == true {
-                    Section { ProblemLine("TFRs couldn't be checked just now.") }
+                    Section { ProblemLine(Wording.tfrsNotChecked) }
                 }
                 ForEach(NotamRows.places(shown, source: source), id: \.title) { place in
                     Section {
@@ -46,7 +46,7 @@ struct NotamListView: View {
                             Text("The NOTAM's subject").font(.headline)
                             Text("What it says and until when, in plain words").font(.subheadline).foregroundStyle(.secondary)
                         }
-                        .loading("Fetching NOTAMs")
+                        .loading(Wording.fetchingNotams)
                     }
                 }
             }
@@ -69,7 +69,7 @@ struct NotamListView: View {
                 ranked = try await KeptForAir.answer(.notams, key: "field:\(ident)") { try await Planner.notams(ident) }.value
                 problem = nil
             } catch {
-                problem = "\(ident)'s NOTAMs couldn't be fetched: \(error.localizedDescription)"
+                problem = "\(ident)'s NOTAMs could not be fetched: \(error.localizedDescription)"
             }
         }
     }

@@ -55,7 +55,7 @@ async function linkIn(id: string): Promise<URL> {
  */
 export async function signInByEmail(page: Page, address: string) {
   await openLinkFor(page, address);
-  await page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Sign In", exact: true }).click();
 }
 
 /** Asks for a link for `address` and opens it: the planner, with its
@@ -67,7 +67,7 @@ export async function openLinkFor(page: Page, address: string): Promise<string> 
   // Signed out, Sign In is You's head's large line, under the avatar (YouHead).
   await consolePage(console, "Account");
   await console.getByRole("button", { name: "Sign In", exact: true }).click();
-  await page.getByLabel("Email address").fill(address);
+  await page.getByLabel("Email Address").fill(address);
   await page.getByRole("button", { name: "Send Link" }).click();
   // The dialog's own status line: a toast is a status too (Base UI's),
   // and on the plan page the planner's progress toast is often up.
@@ -80,7 +80,7 @@ export async function openLinkFor(page: Page, address: string): Promise<string> 
   const link = await linkIn(id!);
   const path = link.pathname + link.search;
   await page.goto(path);
-  await expect(page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("button", { name: "Sign In", exact: true })).toBeVisible();
   return path;
 }
 

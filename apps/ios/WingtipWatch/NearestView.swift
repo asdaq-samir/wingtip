@@ -53,9 +53,9 @@ struct NearestView: View {
         NavigationStack {
             Group {
                 if let problem, airports.isEmpty {
-                    ContentUnavailableView("No airports", systemImage: "antenna.radiowaves.left.and.right.slash", description: Text(problem))
+                    ContentUnavailableView("No Airports", systemImage: "antenna.radiowaves.left.and.right.slash", description: Text(problem))
                 } else if airports.isEmpty {
-                    ContentUnavailableView(asking ? "Asking the iPhone…" : "Nearest airports", systemImage: "airplane.circle", description: Text(asking ? "" : "Tap refresh to ask."))
+                    ContentUnavailableView(asking ? "Asking the iPhone…" : "Nearest Airports", systemImage: "airplane.circle", description: Text(asking ? "" : "Tap refresh to ask."))
                 } else {
                     List(airports) { airport in
                         VStack(alignment: .leading) {
