@@ -26,7 +26,6 @@ import app.wingtipmaps.android.Links
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
-import app.wingtipmaps.android.about.PlanningAidNotice
 import app.wingtipmaps.android.airplane.AirplaneProfileHost
 import app.wingtipmaps.android.api.AskScreenModel
 import app.wingtipmaps.android.api.AssistantTurn
@@ -243,8 +242,6 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     AirplaneProfileHost(session)
     // A sign-in link, asked before it is followed.
     SignInDialog(session)
-    // The planning aid's words, once at first launch (PlanningAidNotice).
-    PlanningAidNotice()
     ReadyToFlyHost(plan, ownShipOn = ownShip.on, underway = underway, onSetRoute = if (stripLayout) null else showPlan)
     AutoLogbookHost(plan, session)
     NextFlightFeed(plan)

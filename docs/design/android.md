@@ -1207,9 +1207,10 @@ a Material `Badge` at the top of the map, beside the receiver's, says
   a new pilot lands on the map. Each permission is asked where it is
   needed, by the system's own dialog: location at the position button
   or the first flight's Plan It, notifications when a watch is set or
-  traffic is near, the microphone at the microphone. Before anything,
-  once, the planning aid's words in a stock `AlertDialog`
-  (`about/PlanningAidNotice`).
+  traffic is near, the microphone at the microphone. No planning-aid
+  dialog to accept first, as the web dropped its own (94b03b223, the
+  owner: "no aviation app does that"): the planning aid's words are in
+  About and on the in-flight bar.
 - **The first flight's card** (`firstflight/FirstFlightCard`, the web's
   FirstFlight): Material's `ElevatedCard` riding the sheet's top under
   the map's buttons, the first time with no route and no card up: "Your

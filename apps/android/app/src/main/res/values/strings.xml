@@ -257,7 +257,6 @@
     <string name="about_chart_edition">Chart Edition</string>
     <string name="about_cycle_packs">Cycle Packs</string>
     <!-- The first launch's notice (about/PlanningAidNotice), its button; its words are wording_strings.xml's. -->
-    <string name="planning_aid_accept">I Understand</string>
     <string name="about_credits">Credits</string>
     <string name="about_legal">Legal</string>
     <string name="about_privacy">Privacy Policy</string>
