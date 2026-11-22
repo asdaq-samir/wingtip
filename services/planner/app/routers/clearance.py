@@ -10,7 +10,7 @@ import functools
 import re
 
 from fastapi import APIRouter, Query, Response
-from wingtip import airports, fixes, geo, procedures
+from wingtip import airports, fixes, geo, geo_boxes, procedures
 from wingtip.engine import ask as engine
 
 from ..router_basics import near_points
@@ -34,6 +34,9 @@ def _corridor(near: tuple) -> list[tuple[float, float, float, float]]:
     its ends, and a box round both ends is most of the country."""
     boxes = []
     for (lat1, lon1), (lat2, lon2) in zip(near, near[1:] or near):
+        # The short way round 180 (geo_boxes): Adak to Shemya is 378 nm, not
+        # 350 degrees of boxes; fixes.within and places_in read one past it.
+        lon2 = geo_boxes.lon_near(lon2, lon1)
         steps = max(1, int(max(abs(lat2 - lat1), abs(lon2 - lon1))))
         for k in range(steps + 1):
             lat, lon = lat1 + (lat2 - lat1) * k / steps, lon1 + (lon2 - lon1) * k / steps

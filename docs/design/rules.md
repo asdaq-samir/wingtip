@@ -1589,6 +1589,13 @@ Most routes are flown over the Midwest; the edge-places audit of
    variation and air, the TAFs along it, the airplane's place on the
    route and the course drawn on the map are each read along the
    geodesic, not a line in degrees the long way round (Adak to Shemya).
+   Every search box in degrees (the obstacles, airspace, special-use
+   airspace, TFRs, fixes, fields, stations, SIGMETs and G-AIRMETs, the
+   IFR floor's and the terrain's tiles, the own-ship look-ahead) is
+   worked out the short way round and read as its one or two halves
+   either side of 180 (`wingtip.geo_boxes`, `wingtip_core::geo`
+   `corridor_boxes`/`split_box`); a box nowhere near 180 is the one it
+   always was.
 4. **A route goes somewhere**: a departure that is its own destination
    with no stop (C81 to C81, or KOSH to OSH) is a local flight, not a
    route of no length (`same_field` on the web; a 422 from the plan).
@@ -1596,7 +1603,7 @@ Most routes are flown over the Midwest; the edge-places audit of
 |       | Web                                                                                                                                                              | iPhone                                       | Android |
 | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------- |
 | Where | `features/plan/adiz` (`routeAdiz`), the Brief's glance `adiz` line; `lib/geo` `unwrapLine`, `lonBounds`                                                          | Not yet: on the owner's word (decision 0038) | Not yet |
-| Tests | `engine/crates/flight/src/adiz_tests.rs`, `engine/facade/tests/edge_places.rs` (`lib/fixtures/edgePlaces.json`); `features/plan/adiz.test.ts`, `lib/geo.test.ts` | --                                           | --      |
+| Tests | `engine/crates/flight/src/adiz_tests.rs`, `engine/facade/tests/edge_places.rs` (`lib/fixtures/edgePlaces.json`), `core/src/geo_tests.rs`, `weather/src/forecast/route/tests.rs`; `tests_wingtip/test_geo_boxes.py`; `features/plan/adiz.test.ts`, `lib/geo.test.ts` | --                                           | --      |
 
 ## 17. The app's words (the owner, 2026-11-21)
 

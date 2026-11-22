@@ -20,6 +20,7 @@ import pandas as pd
 import requests
 
 # Overpass rejects requests without an identifiable User-Agent (406 Not Acceptable).
+from . import geo_boxes
 from .config import REQUEST_HEADERS
 from .geo import distance_nm
 from .retry import with_retries
@@ -100,15 +101,28 @@ def build_overpass_query(bbox: tuple, specs: dict = CANDIDATE_SPECS, timeout_s: 
     _bbox_area_m2 uses to tell a farm pond from a real lake; the true
     polygon area isn't needed for that.
     """
-    min_lat, min_lon, max_lat, max_lon = bbox
-    bbox_str = f"{min_lat},{min_lon},{max_lat},{max_lon}"
     clauses = []
     for filt, _match in specs.values():
-        clauses.append(f"node{filt}({bbox_str});")
-        clauses.append(f"way{filt}({bbox_str});")
-        clauses.append(f"relation{filt}({bbox_str});")
+        for bbox_str in overpass_boxes(bbox):
+            clauses.append(f"node{filt}({bbox_str});")
+            clauses.append(f"way{filt}({bbox_str});")
+            clauses.append(f"relation{filt}({bbox_str});")
     body = "\n".join(clauses)
     return f"[out:json][timeout:{timeout_s}];\n(\n{body}\n);\nout geom;"
+
+
+def overpass_boxes(bbox: tuple) -> list[str]:
+    """Overpass's (south,west,north,east) for bbox: one, or its two halves
+    either side of 180 (geo_boxes), Overpass's own boxes being between -180
+    and 180, so a leg near or across it (Adak to Shemya) is read whole."""
+    return [f"{s},{w},{n},{e}" for s, w, n, e in geo_boxes.split_box(bbox)]
+
+
+def overpass_statement(query: str, bbox: tuple) -> str:
+    """`query(box);` over overpass_boxes(bbox): a union of the two where
+    there are two."""
+    parts = [f"{query}({b});" for b in overpass_boxes(bbox)]
+    return parts[0] if len(parts) == 1 else "(" + "".join(parts) + ");"
 
 
 def _post_overpass_query(query: str, retries: int = 3) -> dict:
@@ -274,7 +288,5 @@ def query_line_features(bbox: tuple, tag_filter: str, retries: int = 3, timeout_
     Returns the raw list of way elements, each with a `geometry` array of
     {lat, lon} vertices.
     """
-    min_lat, min_lon, max_lat, max_lon = bbox
-    bbox_str = f"{min_lat},{min_lon},{max_lat},{max_lon}"
-    query = f'[out:json][timeout:{timeout_s}];\nway{tag_filter}({bbox_str});\nout geom;'
+    query = f"[out:json][timeout:{timeout_s}];\n{overpass_statement('way' + tag_filter, bbox)}\nout geom;"
     return _post_overpass_query(query, retries).get("elements", [])

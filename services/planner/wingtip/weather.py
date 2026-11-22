@@ -35,7 +35,7 @@ import time
 
 import numpy as np
 
-from . import geo, utc, weather_store
+from . import geo, geo_boxes, utc, weather_store
 from .engine import ask as _ask
 from .weather_asks import below_vfr_minimums as below_vfr_minimums, forecast_hour as forecast_hour, temperature_at as temperature_at
 from .weather_asks import temperature_at_altitude as temperature_at_altitude, temperatures_aloft as temperatures_aloft
@@ -285,9 +285,9 @@ def ceiling_visibility_along_route(
     start, end = window if window else (time.time(), time.time())
     # Only the stations in the corridor's box are handed over, so the
     # national set is not written out for every leg; the engine holds them
-    # to the same box.
-    s, w, n, e = geo.corridor_bbox(route_start, route_end, corridor_buffer_nm)
-    near = [t for t in _dataset("tafs") if s <= t["lat"] <= n and w <= t["lon"] <= e]
+    # to the same box, the short way round 180 (geo_boxes: Adak to Shemya).
+    box = geo_boxes.corridor_box(route_start, route_end, corridor_buffer_nm)
+    near = [t for t in _dataset("tafs") if geo_boxes.in_box(box, t["lat"], t["lon"])]
     return _ask(
         "tafs_along_route",
         tafs=near,

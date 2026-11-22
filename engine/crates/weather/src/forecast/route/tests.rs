@@ -53,3 +53,23 @@ fn pireps_are_told_in_route_order_urgent_first() {
     assert!(along[0] < along[1] || got.as_array().unwrap()[0].get("urgent") == Some(&Value::Bool(true)));
     assert!(got.as_array().unwrap()[0].get("observed").is_none());
 }
+
+// The edge-places audit's S10: Adak (PADK, 176.65 W) to Shemya (PASY,
+// 174.11 E) crosses 180 the short way. An area drawn across the line
+// between them is met; one over the North Sea, the long way round, is not.
+#[test]
+fn a_sigmet_across_the_antimeridian_is_met_the_short_way() {
+    let (adak, shemya) = ((51.878, -176.646), (52.712, 174.114));
+    let areas = json::parse(
+        r#"[{"hazard":"ICE","valid_from":0,"valid_to":2000,"coords":[[51.0,179.0],[54.0,179.0],[54.0,-179.0],[51.0,-179.0]]},
+            {"hazard":"TURB","valid_from":0,"valid_to":2000,"coords":[[51.0,1.0],[54.0,1.0],[54.0,3.0],[51.0,3.0]]}]"#,
+    )
+    .unwrap();
+    let areas = areas.as_array().unwrap();
+    let got = json::parse(&sigmets_along_route(areas, adak, shemya, 25.0, 1000.0)).unwrap();
+    let hazards: Vec<&str> = got.as_array().unwrap().iter().map(|a| a.get("hazard").unwrap().as_str().unwrap()).collect();
+    assert_eq!(hazards, ["ICE"]);
+    let snapshots = json::parse(r#"[{"valid":1000,"coords":[[51.0,179.0],[54.0,179.0],[54.0,-179.0],[51.0,-179.0]]},{"valid":1000,"coords":[[51.0,1.0],[54.0,1.0],[54.0,3.0],[51.0,3.0]]}]"#).unwrap();
+    let got = json::parse(&gairmets_along_route(snapshots.as_array().unwrap(), &[adak, shemya], 0.0, 2000.0)).unwrap();
+    assert_eq!(got.as_array().unwrap().len(), 1);
+}

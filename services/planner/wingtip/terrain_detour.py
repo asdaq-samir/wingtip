@@ -25,7 +25,7 @@ import threading
 
 import numpy as np
 
-from . import elevation, fixes, fuelstops, geo
+from . import elevation, fixes, fuelstops, geo, geo_boxes
 from .engine import ask as engine
 from .units import M_TO_FT
 
@@ -84,10 +84,13 @@ def _way_round(start: tuple, end: tuple, ceiling_ft: float, fields=None) -> list
     step = frame["cell_deg"] / frame["per_cell"]
     lats = frame["lat0"] + (np.arange(frame["rows"] * frame["per_cell"]) + 0.5) * step
     lons = frame["lon0"] + (np.arange(frame["cols"] * frame["per_cell"]) + 0.5) * step
+    # A frame across the antimeridian (Adak to Shemya) passes -180 or 180:
+    # its samples read at the tiles' own longitudes, its data_box as its two
+    # halves (geo_boxes); a frame nowhere near is read as it always was.
+    lons = np.where(np.abs(lons) > 180.0, (lons + 180.0) % 360.0 - 180.0, lons)
     heights = heights_ft(*np.meshgrid(lats, lons, indexing="ij"))
     table = fields if fields is not None else fuelstops.fields_with_fuel()
-    s, w, n, e = frame["data_box"]
-    near = table[(table["lat"] >= s) & (table["lat"] <= n) & (table["lon"] >= w) & (table["lon"] <= e)]
+    near = table[geo_boxes.in_box(frame["data_box"], table["lat"].to_numpy(dtype=float), table["lon"].to_numpy(dtype=float))]
     stones = engine(
         "terrain_way_round",
         start=list(start),

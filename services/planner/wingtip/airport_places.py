@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import geo
+from . import geo, geo_boxes
 from .airport_tables import DEFAULT_CACHE_PATH, FAA_COUNTRIES, OURAIRPORTS_URL, _ensure_cached, _faa_key, _read_table, countries_of
 from .airport_us import _US_AIRPORTS_LOCK, _us_airports, _us_airports_of
 from .single_flight import once
@@ -145,7 +145,9 @@ def places_in(
     never a small field's weather chip."""
     df = _us_airports(cache_path)
     inside = _landing(df)
-    inside = inside[inside["latitude_deg"].between(south, north) & inside["longitude_deg"].between(west, east)]
+    # A box past -180 or 180 read as its two halves (geo_boxes).
+    box = (south, west, north, east)
+    inside = inside[geo_boxes.in_box(box, inside["latitude_deg"].to_numpy(dtype=float), inside["longitude_deg"].to_numpy(dtype=float))]
     if only is not None:
         inside = inside[_among(inside["ident"], only)]
     rank = inside["type"].map({kind: i for i, kind in enumerate(_FIELD_KINDS)})

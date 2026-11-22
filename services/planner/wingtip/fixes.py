@@ -18,7 +18,7 @@ import time
 
 import wingtip_native
 
-from . import faa_data, geo, magnetic
+from . import faa_data, geo, geo_boxes, magnetic
 from .engine import ask as engine
 from .config import DATA_DIR
 from .fix_rows import _read, _read_navaids
@@ -133,16 +133,20 @@ def search_fixes(query: str, limit: int = 5) -> list[dict]:
 def within(south: float, west: float, north: float, east: float, vfr: bool = False) -> list[dict]:
     """Every fix inside the box, for a route to be bent through one
     (wingtip.airspace.detour_waypoint) -- every navaid of an ident too,
-    wherever each is; with `vfr`, the map's VFR waypoints alone."""
+    wherever each is; with `vfr`, the map's VFR waypoints alone. A box
+    past -180 or 180 is read as its two halves (geo_boxes)."""
     cells = _table().vfr_cells if vfr else _table().cells
-    (bottom, left), (top, right) = _cell(south, west), _cell(north, east)
-    return [
-        fix
-        for lat_cell in range(bottom, top + 1)
-        for lon_cell in range(left, right + 1)
-        for fix in cells.get((lat_cell, lon_cell), ())
-        if south <= fix["lat"] <= north and west <= fix["lon"] <= east
-    ]
+    found = []
+    for s, w, n, e in geo_boxes.split_box((south, west, north, east)):
+        (bottom, left), (top, right) = _cell(s, w), _cell(n, e)
+        found += [
+            fix
+            for lat_cell in range(bottom, top + 1)
+            for lon_cell in range(left, right + 1)
+            for fix in cells.get((lat_cell, lon_cell), ())
+            if s <= fix["lat"] <= n and w <= fix["lon"] <= e
+        ]
+    return found
 
 
 _REMARKS: tuple[float, dict[tuple[str, str], list[str]]] | None = None

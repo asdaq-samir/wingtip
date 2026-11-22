@@ -59,7 +59,7 @@ from pathlib import Path
 
 import numpy as np
 
-from . import congested, elevation, faa_data, geo, ground_grid
+from . import congested, elevation, faa_data, geo, geo_boxes, ground_grid
 from .engine import ask as engine
 from .units import M_TO_FT
 
@@ -178,7 +178,7 @@ def _floors(route_start: tuple, route_end: tuple, breaks_nm: list, sample_interv
     # obstacle on the line, keeps the corridor's, and gives each 91.119's
     # clearance. Where the towns cannot be read the congested flags go as
     # null and the engine takes 91.119(b)'s 1,000 ft everywhere.
-    bbox = geo.corridor_bbox(route_start, route_end, buffer_nm=OBSTACLE_READ_NM)
+    bbox = geo_boxes.corridor_box(route_start, route_end, buffer_nm=OBSTACLE_READ_NM)
     obstacles = faa_data.load_obstacles(faa_data.ensure_nasr_file("DOF.DAT", faa_cache_dir), bbox, min_agl_ft=0)
     obstacle_lats = obstacles["lat"].to_numpy(dtype=float) if len(obstacles) else np.empty(0)
     obstacle_lons = obstacles["lon"].to_numpy(dtype=float) if len(obstacles) else np.empty(0)

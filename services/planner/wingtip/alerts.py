@@ -18,7 +18,6 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 import requests
-from shapely.geometry import box as envelope
 
 from . import airports, airspace, elevation, faa_data, saa, sua, terrain, tfr, utc
 from .engine import ask as engine
@@ -103,9 +102,8 @@ def _tfrs(box: tuple) -> list | None:
     only where the track goes into it (ahead.rs, tfr_alerts), so one
     further off gives none, and its ground is not read. Their shapes are
     parsed once a copy of the list (wingtip.tfr.with_shapes)."""
-    south, west, north, east = box
     try:
-        found = tfr.with_shapes(envelope(west, south, east, north))
+        found = tfr.with_shapes_in(box)
     except tfr.TfrUnavailable:
         return None
     out = []

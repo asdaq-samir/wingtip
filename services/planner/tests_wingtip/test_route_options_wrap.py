@@ -9,10 +9,7 @@ from wingtip import route_options
 
 
 def test_a_box_past_the_antimeridian_is_read_as_its_two_halves():
-    assert route_options._boxes((50.0, -190.0, 54.0, -170.0)) == [(50.0, 170.0, 54.0, 180.0), (50.0, -180.0, 54.0, -170.0)]
-    assert route_options._boxes((50.0, 170.0, 54.0, 185.0)) == [(50.0, 170.0, 54.0, 180.0), (50.0, -180.0, 54.0, -175.0)]
-    assert route_options._boxes((40.0, -90.0, 42.0, -85.0)) == [(40.0, -90.0, 42.0, -85.0)]
-    # Shemya's station is inside a frame drawn west of Adak past -180.
+    # The split itself is wingtip.geo_boxes.split_box's (test_geo_boxes). Shemya's station is inside a frame drawn west of Adak past -180.
     assert route_options._in((50.0, -190.0, 54.0, -170.0), 52.7, 174.1)
     assert not route_options._in((50.0, -190.0, 54.0, -170.0), 52.7, 160.0)
 

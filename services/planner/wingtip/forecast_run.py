@@ -18,7 +18,7 @@ played against the rest, never failed for it.
 
 from __future__ import annotations
 
-from . import airports, glmp, utc, weather, weather_store, winds_stations
+from . import airports, geo_boxes, glmp, utc, weather, weather_store, winds_stations
 from .engine import ask as _ask
 from .geo import corridor_bbox
 
@@ -29,23 +29,24 @@ HOUR_S = 3600.0
 
 
 def _box(points: list[tuple[float, float]], pad_nm: float) -> tuple[float, float, float, float]:
-    """The box round every point, padded (south, west, north, east)."""
+    """The box round every point, padded (south, west, north, east), each
+    longitude read within 180 degrees of the first's (geo_boxes), so the
+    box may pass -180 or 180 near the antimeridian."""
     s, w, n, e = corridor_bbox(points[0], points[0], pad_nm)
     for p in points[1:]:
+        p = (p[0], geo_boxes.lon_near(p[1], points[0][1]))
         ps, pw, pn, pe = corridor_bbox(p, p, pad_nm)
         s, w, n, e = min(s, ps), min(w, pw), max(n, pn), max(e, pe)
     return s, w, n, e
 
 
 def _in_box(lat: float, lon: float, box: tuple) -> bool:
-    s, w, n, e = box
-    return s <= lat <= n and w <= lon <= e
+    return geo_boxes.in_box(box, lat, lon)
 
 
 def _ring_in_box(coords: list, box: tuple) -> bool:
-    s, w, n, e = box
     lats, lons = [c[0] for c in coords], [c[1] for c in coords]
-    return bool(coords) and not (max(lats) < s or min(lats) > n or max(lons) < w or min(lons) > e)
+    return bool(coords) and geo_boxes.meets(box, min(lats), min(lons), max(lats), max(lons))
 
 
 def _winds(track: list[dict], unavailable: list[str]) -> list[list[dict]]:

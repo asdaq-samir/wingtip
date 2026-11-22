@@ -18,7 +18,7 @@ import datetime as dt
 
 import numpy as np
 
-from .. import airports, geo, utc, weather_loop, weather_store
+from .. import airports, geo, geo_boxes, utc, weather_loop, weather_store
 from . import iem
 
 #: How near the track a station's reports are given: a design choice for
@@ -88,12 +88,12 @@ def stations_near(points: list[tuple[float, float]]) -> list[str]:
     idents = list(known)
     lats = np.array([known[i][0] for i in idents])
     lons = np.array([known[i][1] for i in idents])
-    # A box round the track first (geo.corridor_bbox over its corners), so
-    # the distances are worked out for the few stations it holds.
+    # A box round the track first (geo.corridor_bbox over its corners, the
+    # short way round 180: geo_boxes), so the distances are worked out for
+    # the few stations it holds.
     t_lats = np.array([p[0] for p in track])
     t_lons = np.array([p[1] for p in track])
-    s, w, n, e = geo.corridor_bbox((t_lats.min(), t_lons.min()), (t_lats.max(), t_lons.max()), NEAR_NM)
-    inside = (lats >= s) & (lats <= n) & (lons >= w) & (lons <= e)
+    inside = geo_boxes.in_box(geo_boxes.box_over(t_lats, t_lons, NEAR_NM), lats, lons)
     near = np.full(len(idents), np.inf)
     for i in np.flatnonzero(inside):
         near[i] = float(np.min(geo.distance_nm(np.full(len(track), lats[i]), np.full(len(track), lons[i]), t_lats, t_lons)))

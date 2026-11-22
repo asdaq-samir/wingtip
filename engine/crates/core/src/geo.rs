@@ -162,30 +162,54 @@ pub fn track_from(lat: f64, lon: f64, a: (f64, f64), course: f64) -> (f64, f64) 
 /// A longitude written within 180° of `reference` (179 near -179 is -181):
 /// so a box or a line between two points across the antimeridian is the
 /// short way round, as the geodesic between them is, not some 350° the
-/// long way. The one copy for the engine's boxes in degrees.
+/// long way. The one copy for the engine's boxes in degrees. A longitude
+/// within 180° already is given back as it is, to the bit, so a box that
+/// is nowhere near 180 is the one it always was.
 pub fn lon_near(lon: f64, reference: f64) -> f64 {
+    if (lon - reference).abs() <= 180.0 {
+        return lon;
+    }
     reference + (lon - reference + 180.0).rem_euclid(360.0) - 180.0
 }
 
-/// A padded (min_lat, min_lon, max_lat, max_lon) box round the route a ->
-/// b (wingtip.geo.corridor_bbox): `buffer_nm` at WGS-84's shortest degree
-/// of latitude, the equator's 59.7 nm (110,574 m), and of longitude
-/// cos(latitude) of that at the box's poleward edge, where a degree is
-/// shortest. A prefilter: a cross-track or a crossing test holds after it.
-pub fn corridor_bbox(a: (f64, f64), b: (f64, f64), buffer_nm: f64) -> (f64, f64, f64, f64) {
-    let pad_lat = buffer_nm / 59.7;
-    let widest = (a.0.abs().max(b.0.abs()) + pad_lat).min(89.0);
-    let pad_lon = pad_lat / widest.to_radians().cos().max(0.05);
-    (a.0.min(b.0) - pad_lat, a.1.min(b.1) - pad_lon, a.0.max(b.0) + pad_lat, a.1.max(b.1) + pad_lon)
+/// A (south, west, north, east) box as the one or two boxes it is between
+/// -180 and 180: one past the antimeridian (a box from lon_near's
+/// longitudes) is cut there into its two halves, and one a whole turn
+/// wide is every longitude (wingtip.geo_boxes.split_box). The edge-places
+/// audit's S10: a box past 180 met nothing across the line, so Shemya's
+/// obstacles, airspace and fields were missed from Adak.
+pub fn split_box(b: (f64, f64, f64, f64)) -> Vec<(f64, f64, f64, f64)> {
+    let (s, w, n, e) = b;
+    if e - w >= 360.0 {
+        vec![(s, -180.0, n, 180.0)]
+    } else if w < -180.0 {
+        vec![(s, w + 360.0, n, 180.0), (s, -180.0, n, e)]
+    } else if e > 180.0 {
+        vec![(s, w, n, 180.0), (s, -180.0, n, e - 360.0)]
+    } else {
+        vec![b]
+    }
 }
 
-/// A (min_lat, min_lon, max_lat, max_lon) box holding what lies within
-/// `radius_nm` of a point (wingtip.geo.box_around): corridor_bbox's box
-/// round a route of one point, so its pad is the same 59.7 nm a degree
-/// of latitude and cos(latitude) of that at the poleward edge. A search's
-/// first cut, the distance measured within it after.
-pub fn box_around(lat: f64, lon: f64, radius_nm: f64) -> (f64, f64, f64, f64) {
-    corridor_bbox((lat, lon), (lat, lon), radius_nm)
+/// corridor_bbox round the route a -> b the short way round, b's
+/// longitude read within 180° of a's, as split_box's one or two boxes
+/// (wingtip.geo_boxes.corridor_box, split as its readers split it).
+pub fn corridor_boxes(a: (f64, f64), b: (f64, f64), buffer_nm: f64) -> Vec<(f64, f64, f64, f64)> {
+    split_box(corridor_bbox(a, (b.0, lon_near(b.1, a.1)), buffer_nm))
+}
+
+/// corridor_bbox over the corners of a set of (lat, lon) points, each
+/// longitude read within 180° of the first's, so it may pass -180 or 180
+/// (wingtip.geo_boxes.box_over); None for no points.
+pub fn box_over(points: &[(f64, f64)], pad_nm: f64) -> Option<(f64, f64, f64, f64)> {
+    let &(_, first) = points.first()?;
+    let (mut low, mut high) = ((f64::INFINITY, f64::INFINITY), (f64::NEG_INFINITY, f64::NEG_INFINITY));
+    for &(lat, lon) in points {
+        let lon = lon_near(lon, first);
+        low = (low.0.min(lat), low.1.min(lon));
+        high = (high.0.max(lat), high.1.max(lon));
+    }
+    Some(corridor_bbox(low, high, pad_nm))
 }
 
 /// Whether a ring of (x, y) points (longitude, latitude, on a plane of
