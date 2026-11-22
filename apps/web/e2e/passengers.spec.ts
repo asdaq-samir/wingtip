@@ -31,7 +31,7 @@ test("the passengers are briefed as 91.107 asks, and sent the flight", async ({ 
   // What is sent under the row that sends it, where it was a footnote.
   await expect(section.getByTestId("passenger-send")).toContainText("KMSN to");
   await section.getByTestId("passenger-send").click();
-  await expect(section.getByTestId("passenger-send")).toContainText("Copied");
+  await expect(page.locator('[data-slot="toast"]').filter({ hasText: "Copied" })).toBeVisible();
   const text = await page.evaluate(() => navigator.clipboard.readText());
   expect(text.split("\n")[0]).toMatch(/^KMSN to .*\(KOSH\)$|^KMSN to KOSH$/);
   expect(text).toContain("in the air");

@@ -31,6 +31,19 @@ function PlanRows({ plan, ownAirplane }: { plan: SharedPlan; ownAirplane: string
         description={ownAirplane ? `Planned with your ${ownAirplane}` : "Pick your airplane for its figures"}
       />
       {plan.rules && <ListRow title="Rules" value={plan.rules.toUpperCase()} />}
+      {/* The fuel its pilot set on a gauge, as the phones' sheets list it. */}
+      {Object.keys(plan.tanks).length > 0 && (
+        <ListRow
+          title="Fuel Set"
+          value={
+            <span className="tabular-nums">
+              {Object.entries(plan.tanks)
+                .map(([ident, gallons]) => `${ident} ${gal(gallons)}`)
+                .join(" · ")}
+            </span>
+          }
+        />
+      )}
     </ListGroup>
   );
 }

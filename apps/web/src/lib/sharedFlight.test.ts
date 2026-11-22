@@ -36,6 +36,14 @@ describe("a shared flight's link", () => {
     expect(sharedPlanLink({ ...PLAN, tail: "n123ab" }, "")).toContain("tail=N123AB");
   });
 
+  it("carries the fuel set on a gauge, and leaves out a part that is not an ident and whole gallons", () => {
+    const url = sharedPlanLink({ ...PLAN, tanks: { KMSN: 30, KJVL: 0 } }, "");
+    expect(new URL(url, "https://x").searchParams.get("tanks")).toBe("KMSN:30,KJVL:0");
+    expect(sharedLinkOf(new URL(url, "https://x").searchParams)).toMatchObject({ plan: { tanks: { KMSN: 30, KJVL: 0 } } });
+    const wary = sharedLinkOf(new URLSearchParams("open=shared&dep=KMSN&dest=KOSH&tanks=KMSN:12.5,<b>:3,KJVL:-1,KOSH:20"));
+    expect(wary).toMatchObject({ plan: { tanks: { KOSH: 20 } } });
+  });
+
   it("is a saved flight's by its token", () => {
     expect(sharedLinkOf(new URLSearchParams("open=shared&share=abcdefghijklmnopqrstuv"))).toEqual({
       kind: "saved",
@@ -70,6 +78,10 @@ describe("a shared plan used", () => {
       "dep=KMSN&dest=KOSH&stops=KJVL&altitude_ft=3500&depart=2026-11-10T15%3A00%3A00.000Z",
     );
     expect(paramsForSharedPlan(PLAN, Date.parse("2026-11-11T00:00:00Z")).has("depart")).toBe(false);
+  });
+
+  it("sets the sender's fuel on the receiver's gauges", () => {
+    expect(paramsForSharedPlan({ ...PLAN, tanks: { KJVL: 0 } }).get("tanks")).toBe("KJVL:0");
   });
 });
 

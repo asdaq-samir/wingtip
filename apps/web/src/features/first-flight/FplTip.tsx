@@ -33,10 +33,8 @@ export default function FplTip({ onClose }: { onClose: () => void }) {
   const full = useMapInsets((i) => i.up);
   const sidePanel = !useIsMobile();
   // Its left edge at the toggle's own, at the row's start, the rest over
-  // the map to the right of it: aligned at its end, as when the toggle
-  // ended the row, it stood off the screen's left and leaned on the
-  // collision padding to come back. On a phone over the toggle; in a
-  // desktop's side panel, at the window's top, under it.
+  // the map to the right of it (the owner, 2026-11-20); on a phone over
+  // the toggle, in a side panel under it, where there is no room above.
   if (!button || full) return null;
   return (
     <Popover

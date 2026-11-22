@@ -122,9 +122,9 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
   // headwind, and the fuel beyond the reserve, where a C172 is picked.
   const enroute = glance.getByTestId("brief-glance-enroute");
   await expect(enroute).toContainText("Lowest ceiling");
-  await expect(enroute).toContainText("Most headwind");
+  await expect(enroute).toContainText("Most Headwind");
   await expect(enroute).not.toContainText("Wind aloft");
-  await expect(glance.getByTestId("brief-glance-preflight")).toContainText("Beyond reserve");
+  await expect(glance.getByTestId("brief-glance-preflight")).toContainText("Beyond Reserve");
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 

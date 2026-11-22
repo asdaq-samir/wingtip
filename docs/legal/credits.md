@@ -43,7 +43,7 @@ the terms it is used under.
 |---|---|---|
 | MapLibre GL | BSD 3-Clause | The web map and the Android map |
 | Apple MapKit | Apple's terms | The iPhone's map under the chart |
-| Google Maps Platform map tiles | Google's terms; its attribution is drawn on the map | The web's Google overlay where it is turned on |
+| Google Maps Platform map tiles | Google's terms; its attribution, Google's own Google Maps logo and the data's copyright, is drawn on the map | The web's Google overlay where it is turned on |
 
 ## Open-source licences
 

@@ -4,6 +4,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { useFailedAction } from "../lib/problems";
 import FrequencyButton from "./FrequencyButton";
 
+const done = vi.hoisted(() => vi.fn());
+vi.mock("../lib/doneNote", () => ({ done }));
+
 afterEach(() => {
   cleanup();
   useFailedAction.setState({ failed: null });
@@ -19,7 +22,10 @@ describe("a frequency", () => {
     render(<FrequencyButton mhz={118.3} name="Tower" />);
     fireEvent.click(screen.getByRole("button", { name: "Copy Tower 118.3" }));
     expect(writeText).toHaveBeenCalledWith("118.3");
-    await waitFor(() => expect(screen.getByRole("button", { name: "Copied Tower 118.3" }).textContent).toBe("Copied"));
+    // "Copied" by the button, the app's one confirmation (lib/doneNote).
+    const button = screen.getByRole("button", { name: "Copy Tower 118.3" });
+    await waitFor(() => expect(done).toHaveBeenCalledWith("Copied", { near: button }));
+    expect(button.textContent).toBe("118.3");
   });
 
   it("as heard, is copied as heard, its name before it", () => {

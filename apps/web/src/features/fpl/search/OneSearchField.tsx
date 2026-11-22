@@ -2,7 +2,7 @@ import { useEffect, useEffectEvent } from "react";
 import { CardHeadRow } from "../../../components/CardHead";
 import CloseButton from "../../../components/CloseButton";
 import PageToggle from "../../../components/PageToggle";
-import { isSearchKey } from "../../../hooks/use-shortcuts";
+import { useSearchKey } from "../../../hooks/use-shortcuts";
 import { askSearch, useSearchPick, type SearchPick } from "../../../lib/oneSearch";
 import { useVoice } from "../../voice";
 import SearchBox from "./SearchBox";
@@ -56,16 +56,10 @@ export default function OneSearchField({ model, inputRef }: { model: OneSearchMo
     if (voice.listening && voice.words) typeSaid(voice.words);
   }, [voice.listening, voice.words]);
   // ⌘K anywhere, a field's too: the search, or out of it again.
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || !isSearchKey(event)) return;
-      event.preventDefault();
-      if (document.activeElement === inputRef.current) model.cancel();
-      else askSearch();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [model, inputRef]);
+  useSearchKey(() => {
+    if (document.activeElement === inputRef.current) model.cancel();
+    else askSearch();
+  });
   // A picker's ask (Add Stop, Change Stop, the departure): its title and a
   // ✕ in this row, the field under them at the top of its suggestions
   // (OneSearchResults), as Apple Maps' Add Stop sheet (the owner's

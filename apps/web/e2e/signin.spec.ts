@@ -88,7 +88,7 @@ test("signed out, Personal says once what signing in keeps, its minimums need no
   // browser's bubble (the owner's Q3, 2026-11-21), and goes as it is typed.
   await dialog.getByLabel("Email Address").fill("pilot@");
   await dialog.getByRole("button", { name: "Send Link" }).click();
-  await expect(dialog.getByTestId("sign-in-error")).toHaveText("Enter an email address like you@example.com");
+  await expect(dialog.getByTestId("sign-in-error")).toHaveText("Enter an email address like you@example.com.");
   await expect(dialog.getByLabel("Email Address")).toHaveAttribute("aria-invalid", "true");
   await dialog.getByLabel("Email Address").fill("pilot@example.com");
   await expect(dialog.getByTestId("sign-in-error")).toHaveCount(0);
