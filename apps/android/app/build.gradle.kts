@@ -88,6 +88,10 @@ android {
         versionCode = (System.getenv("ANDROID_VERSION_CODE") ?: "1").toInt()
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // The cockpit ADS-B receiver's switch (Receiver.ENABLED), the iOS
+        // app's WingtipReceiver: on, as Android hears a receiver's
+        // broadcast with the Wi-Fi's multicast lock and needs no grant.
+        buildConfigField("boolean", "RECEIVER_ENABLED", "true")
         // Read by Config at run time, and by the manifest's App Links filter.
         buildConfigField("String", "WINGTIP_HOST", "\"$wingtipHost\"")
         manifestPlaceholders["wingtipHost"] = wingtipHost

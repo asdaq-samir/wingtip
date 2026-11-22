@@ -193,6 +193,15 @@
     <string name="receiver_off">Off</string>
     <string name="receiver_chip">ADS-B receiver: %1$s</string>
     <string name="receiver_report">%1$s over FIS-B, heard %2$s</string>
+    <string name="receiver_position_from">Your position from %1$s</string>
+    <string name="receiver_no_gps">%1$s has no GPS fix</string>
+    <string name="receiver_gps_weak">%1$s\'s GPS too weak to show</string>
+    <string name="receiver_radar_age">Radar from receiver %1$d min</string>
+    <string name="receiver_heard_by">Heard by %1$s %2$d s ago</string>
+    <string name="receiver_position">Position: %1$s</string>
+    <string name="receiver_position_device">from this device</string>
+    <string name="receiver_brief">From Your Receiver</string>
+    <string name="receiver_unnamed">the receiver</string>
     <string name="traffic_gone">No longer heard.</string>
     <string name="track">Track</string>
     <string name="stop_tracking">Stop Tracking</string>

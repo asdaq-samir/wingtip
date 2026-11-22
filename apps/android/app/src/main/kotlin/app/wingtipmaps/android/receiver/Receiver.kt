@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import app.wingtipmaps.android.AppClock
+import app.wingtipmaps.android.BuildConfig
 import app.wingtipmaps.android.api.TrafficAircraft
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -34,9 +35,10 @@ import kotlinx.serialization.encodeToString
 enum class ReceiverMode { AUTO, OFF }
 
 /**
- * A portable ADS-B receiver in the cockpit (Stratux, Sentry, Garmin's GDL
- * 39 and 52, uAvionix's): its traffic and the FIS-B weather it is sent,
- * with no internet; the twin of the iOS app's Receiver. The socket gathers
+ * A portable ADS-B receiver in the cockpit that sends GDL 90 over its
+ * Wi-Fi (Stratux, Sentry, uAvionix's SkyEcho, a Stratus in its open mode;
+ * docs/receivers.md): its GPS as own ship (OwnShipSource), its traffic and
+ * the FIS-B weather it is sent, with no internet; the twin of the iOS app's Receiver. The socket gathers
  * its GDL 90; once a second the engine reads the bytes into the picture
  * (`receiver_read`), off the main thread and once a minute where it has
  * gone quiet (`due`), which this model keeps and hands back; the map's
@@ -67,6 +69,10 @@ class Receiver private constructor(private val context: Context, private val tic
 
     /** Told after each read, for Traffic to merge the receiver's own. */
     var onRead: (() -> Unit)? = null
+    /** Told after each read with the picture's own ship and receiver, for
+     *  OwnShip to weigh its GPS against the device's; nulls when the
+     *  receiver is turned off. */
+    var onOwnship: ((EngineContract.ReceiverOwnship?, EngineContract.ReceiverState?) -> Unit)? = null
 
     private val loaded = scope.launch {
         context.settings.data.first()[KEY]?.let { kept -> ReceiverMode.entries.firstOrNull { it.name == kept }?.let { _mode.value = it } }
@@ -81,11 +87,13 @@ class Receiver private constructor(private val context: Context, private val tic
             _picture.value = null
             _nexrad.value = null
             serve(false)
+            onOwnship?.invoke(null, null)
         }
     }
 
     /** Listen and read once a second from now on (Ticker's clock). */
     fun start() {
+        if (!ENABLED) return
         if (every == null) every = ticker.every(EVERY_MS) { read() }
     }
 
@@ -119,6 +127,7 @@ class Receiver private constructor(private val context: Context, private val tic
                 _nexrad.value = nexrad
                 serve(picture.receiver.live)
                 if (trafficChanged(before, picture)) onRead?.invoke()
+                if (picture.receiver.heartbeatAt != null) onOwnship?.invoke(picture.ownship, picture.receiver)
             }
             .onFailure { _problem.value = it.message }
     }
@@ -162,6 +171,12 @@ class Receiver private constructor(private val context: Context, private val tic
     }
 
     companion object {
+        /** The switch the receiver is parked behind, the iOS app's
+         *  WingtipReceiver: on here, as Android needs no entitlement to
+         *  hear a receiver's broadcast (the Wi-Fi's multicast lock,
+         *  ReceiverSocket); off, nothing listens and no setting or chip
+         *  shows it. build.gradle.kts's RECEIVER_ENABLED. */
+        val ENABLED: Boolean = BuildConfig.RECEIVER_ENABLED
         const val EVERY_MS = 1_000L
         /** Quiet, with nothing left that ages by the second, the picture
          *  is aged once a minute: the FIS-B products it keeps are held

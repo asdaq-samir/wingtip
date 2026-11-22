@@ -16,6 +16,7 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.ahead
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.underway
 import app.wingtipmaps.android.format.Units
 import app.wingtipmaps.android.logbook.FlightRecorder
@@ -153,7 +154,7 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
             // fix has no altitude rather than the ellipsoid's.
             // developer.android.com/reference/android/location/Location#getAltitude()
             if (!last.hasAltitude() || LocationCompat.hasMslAltitude(last)) {
-                took(fixOf(last))
+                fromDevice(fixOf(last))
                 return
             }
             scope.launch {
@@ -166,7 +167,7 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
                         // No conversion: the fix goes without an altitude.
                     }
                 }
-                took(fixOf(last))
+                fromDevice(fixOf(last))
             }
         }
     }
@@ -228,13 +229,34 @@ class OwnShip(private val context: Context, private val trail: OwnTrail) {
         serve(false)
     }
 
+    /** Whose fix own ship is: the device's, or the cockpit receiver's GPS
+     *  once one is heard (OwnShipSource, the engine's receiver_position). */
+    private val source = OwnShipSource(context)
+    val weighed: StateFlow<OwnShipSource.Weighed?> get() = source.weighed
+
+    private fun fromDevice(fix: Fix) {
+        scope.launch { next(source.device(fix)) }
+    }
+
+    /** The receiver's own ship after each read (Receiver.onOwnship). */
+    fun fromReceiver(own: EngineContract.ReceiverOwnship?, state: EngineContract.ReceiverState?) {
+        scope.launch { next(source.receiver(own, state)) }
+    }
+
+    private fun next(next: OwnShipSource.Next) {
+        when (next) {
+            is OwnShipSource.Next.Show -> took(next.fix)
+            OwnShipSource.Next.Clear -> if (reading) _fix.value = null
+            OwnShipSource.Next.Keep -> Unit
+        }
+    }
+
     private fun took(fix: Fix) {
-        // A fix converted after the reading stopped is left out.
+        // A fix converted after the reading stopped is left out. One
+        // converted late and overtaken is OwnShipSource's to leave out; a
+        // device fix handed back after the receiver's may be older than
+        // the receiver's last, and is own ship again all the same.
         if (!reading) return
-        // A fix converted late can be overtaken by a newer one that needed
-        // no conversion; time does not go backwards for the trail and the
-        // alerts.
-        if (_fix.value.let { it != null && fix.atMs <= it.atMs }) return
         _fix.value = fix
         if (fix.atMs - keptAtMs >= KEEP_EVERY_MS) {
             keptAtMs = fix.atMs

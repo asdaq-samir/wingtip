@@ -11,7 +11,7 @@ import java.net.SocketTimeoutException
 /**
  * The cockpit's ADS-B receiver heard on the Wi-Fi: GDL 90 sent to UDP
  * port 4000 (Garmin's GDL 90 Data Interface Specification), as Stratux,
- * Sentry, Garmin's GDL 39 and 52 and uAvionix's receivers send it to the
+ * Sentry, uAvionix's SkyEcho and a Stratus in open mode send it to the
  * phones that join them, to each phone or to the network's broadcast
  * address. The datagrams are only gathered here, on a thread of their
  * own; the engine reads them (`receiver_read`, Receiver). The Wi-Fi's
