@@ -146,10 +146,12 @@ struct FieldNotamsSection: View {
                 ProblemLine(problem)
             } else if let ranked = notams.ranked, ranked.notams.isEmpty {
                 // Never "no NOTAMs": none heard since the feed's time (decision
-                // 0023), or for a private field none issued (airport_notams_none).
+                // 0059, NotamCoverage), or for a private field none issued
+                // (airport_notams_none).
                 switch notams.outsideNotams {
                 case .success(let outside?): Text(outside).foregroundStyle(.secondary)
-                case .success(nil): Text(ranked.coverageSince.map { "None heard since \($0)" } ?? "None heard").foregroundStyle(.secondary)
+                case .success(nil):
+                    Text(NotamCoverage.none(since: ranked.coverageSince, full: ranked.fullSet ?? false)).foregroundStyle(.secondary)
                 case let failed: ProblemLine(failed, "Whether this field has NOTAMs")
                 }
             } else if notams.ranked == nil {
@@ -166,6 +168,14 @@ struct FieldNotamsSection: View {
                 } label: {
                     Text("All \(notams.notams.count) NOTAMs")
                 }
+            }
+            // Only what the feed has sent since its day, not the full set
+            // (decision 0059), as the web's card says under its list; not
+            // for a field outside the NOTAM system.
+            if let ranked = notams.ranked, ranked.fullSet != true, case .success(nil) = notams.outsideNotams {
+                Text(NotamCoverage.line(since: ranked.coverageSince, full: false))
+                    .font(WingtipType.note).foregroundStyle(WingtipInk.caution)
+                    .accessibilityIdentifier("place-notams-coverage")
             }
         } header: {
             header

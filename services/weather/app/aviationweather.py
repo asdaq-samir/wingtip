@@ -1,7 +1,7 @@
 """aviationweather.gov's national cache files, fetched on the schedule
 (app.main) and stored parsed (wingtip.weather_store) for the planner to
-read (wingtip.weather): the METARs, TAFs, SIGMETs and AIRMETs, PIREPs and
-G-AIRMETs, each the complete current national set, gzipped, regenerated
+read (wingtip.weather): the METARs, TAFs, SIGMETs, PIREPs and G-AIRMETs
+(the AIRMETs over the CONUS), each the complete current national set, gzipped, regenerated
 every minute (TAFs every ten). Moved from the planner's wingtip.weather
 (#535), which fetched them on its own requests' way.
 
@@ -73,7 +73,11 @@ SOURCES = {
     for name, file in (
         ("metars", "metars"),
         ("tafs", "tafs"),
-        ("airsigmets", "airsigmets"),
+        # The combined SIGMET file, the US convective and non-convective
+        # SIGMETs and the international ones; the airsigmets file it
+        # replaced was deprecated in the data API's v4.34 (2026-10-08). The
+        # store keeps the name its readers know.
+        ("airsigmets", "sigmets"),
         ("pireps", "aircraftreports"),
         ("gairmets", "gairmets"),
     )

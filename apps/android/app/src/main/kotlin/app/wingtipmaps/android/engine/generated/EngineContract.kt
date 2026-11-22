@@ -10554,6 +10554,16 @@ object EngineContract {
     data class ReadyToFlyInputNotams(
         @SerialName("fetched_at")
         val fetchedAt: Double? = null,
+        /**
+         * Whether the NOTAMs are the full set in force (the planner's NotamsRanked.full_set); false, only those heard since heard_since, a caution (decision 0059).
+         */
+        @SerialName("full_set")
+        val fullSet: Boolean? = null,
+        /**
+         * The day the NOTAM feed was first heard, YYYY-MM-DD (NotamsRanked.coverage_since).
+         */
+        @SerialName("heard_since")
+        val heardSince: String? = null,
     )
 
     /**

@@ -167,6 +167,6 @@ def pick(row: dict, keys) -> dict:
 
 #: Where the live products come from, as the app credits them.
 METAR_SOURCE = {"source": "NWS Aviation Weather Center (aviationweather.gov) METAR and TAF, as sent"}
-NOTAM_SOURCE = {"source": "FAA NOTAM System (SWIM FNS feed), as sent; TFRs from tfr.faa.gov"}
+NOTAM_SOURCE = {"source": "FAA NOTAM System (SWIM FNS feed; NMS-API's full set where full_set), as sent; TFRs from tfr.faa.gov"}
 WINDS_SOURCE = {"source": "NWS winds and temperatures aloft forecast (FB)"}
 ENGINE_SOURCE = {"source": "Wingtip engine: dead reckoning, altitudes and fuel, each rule citing its 14 CFR or AIM paragraph"}

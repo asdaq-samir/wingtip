@@ -92,4 +92,16 @@ import Testing
         let later = notam("!ORD 11/440 ORD RWY 04L/22R CLSD 2612100600-2612301200", id: "ORD 11/440", inForce: false)
         #expect(FieldNotamWords.marks([later], ident: "KORD", place: place).runway.isEmpty)
     }
+
+    /// The web's notamCoverage cases (decision 0059): from when, and that the
+    /// list is not the full set, until the planner holds every NOTAM in force.
+    @Test func theCoverageSaysTheListIsNotTheFullSet() {
+        #expect(NotamCoverage.line(since: "2026-10-19", full: false) == "NOTAMs heard since 19 Oct 2026, not a full set")
+        #expect(NotamCoverage.line(since: "2026-11-10T06:00:00Z", full: false) == "NOTAMs heard since 10 Nov 2026, not a full set")
+        #expect(NotamCoverage.line(since: nil, full: false) == "Recent NOTAMs only, not a full set")
+        #expect(NotamCoverage.line(since: "2026-10-19", full: true) == "FAA NOTAM System, every NOTAM in force")
+        #expect(NotamCoverage.none(since: "2026-10-19", full: false) == "None heard since 19 Oct")
+        #expect(NotamCoverage.none(since: nil, full: false) == "None heard")
+        #expect(NotamCoverage.none(since: "2026-10-19", full: true) == "None in force")
+    }
 }

@@ -83,6 +83,9 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   await expect(card(page).getByTestId("place-runway-sketch")).toHaveAttribute("aria-label", /09\/27 closed/);
   const notams = card(page).getByTestId("place-notams");
   await expect(notams).toBeVisible();
+  // Only what the feed has sent since its day, not the full set (decision
+  // 0059): said under the list, as the Brief says it.
+  await expect(card(page).getByTestId("place-notams-coverage")).toHaveText("NOTAMs heard since 10 Nov 2026, not a full set");
   const one = notams.getByTestId("place-notam");
   // The engine's reading in our words, a line each (the owner,
   // 2026-11-11: "title(what), when, where ... on different lines"): what

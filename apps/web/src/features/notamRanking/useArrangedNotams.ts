@@ -18,10 +18,11 @@ export function useArrangedNotams() {
   const all = ranking.answer?.notams ?? [];
   const arranged = arrangeNotams(all, filter, sort, { pinned, read });
   const since = ranking.answer?.coverage_since;
+  const full = ranking.answer?.full_set ?? false;
   const count = ranking.pending
     ? "Ranking…"
     : all.length === 0
-      ? notamNone(since)
+      ? notamNone(since, full)
       : `${arranged.top.length} that matter${arranged.rest.length ? `, ${arranged.rest.length} more` : ""}`;
-  return { ...ranking, ...arranged, all, since, count };
+  return { ...ranking, ...arranged, all, since, full, count };
 }

@@ -99,12 +99,18 @@ class RankedNotam(BaseModel):
 class NotamsRanked(BaseModel):
     """The flight's NOTAMs best first, every one heard (`notams`), how many
     are said first (`top`), the day the NOTAM feed was first heard
-    (`coverage_since`: earlier NOTAMs never changed since are not held) and
-    what could not be checked ("tfrs")."""
+    (`coverage_since`), whether the planner holds every NOTAM in force
+    (`full_set`) and what could not be checked ("tfrs")."""
 
     notams: list[RankedNotam]
     top: int
     coverage_since: str | None = None
+    #: Whether these are from the full set of NOTAMs in force: NMS's
+    #: initial load, kept up to date (decision 0059). False, and they are
+    #: only what the FAA's feed has sent since `coverage_since`: one issued
+    #: before it and never changed is not held, so the list is not the
+    #: briefing 14 CFR 91.103 asks for, and says so.
+    full_set: bool = False
     unchecked: list[str] = []
     #: The field's IANA time zone ("America/Chicago"), for its card to say
     #: its NOTAMs' UTC times (JO 7930.2 3-3-2) in the field's own local

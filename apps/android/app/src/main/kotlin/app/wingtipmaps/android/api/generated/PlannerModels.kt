@@ -6270,13 +6270,16 @@ data class InboundRadio (
 /**
  * The flight's NOTAMs best first, every one heard (`notams`), how many
  * are said first (`top`), the day the NOTAM feed was first heard
- * (`coverage_since`: earlier NOTAMs never changed since are not held) and
- * what could not be checked ("tfrs").
+ * (`coverage_since`), whether the planner holds every NOTAM in force
+ * (`full_set`) and what could not be checked ("tfrs").
  */
 @Serializable
 data class NotamsRanked (
     @SerialName("coverage_since")
     val coverageSince: String? = null,
+
+    @SerialName("full_set")
+    val fullSet: Boolean? = null,
 
     val notams: List<RankedNotam>,
 
@@ -8765,8 +8768,8 @@ data class StationWind (
  * date) and what could not be checked ("tfrs"). The feed (SWIM's FNS)
  * sends what is issued or changed once it is heard, so NOTAMs issued
  * before that day and never changed are not in the store: the list is
- * what was heard since, not every NOTAM in force (the owner, 2026-11-09,
- * chose the feed alone over the FAA NOTAM API's full load).
+ * what was heard since, not every NOTAM in force, until NMS's full set
+ * is held (decision 0059, amending 0023).
  */
 @Serializable
 data class WordsSources (

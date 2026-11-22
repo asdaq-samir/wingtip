@@ -2,7 +2,8 @@
 //! its fields, the NOTAMs, and the device (ready/mod.rs has the rule and its
 //! sources).
 
-use super::{age_words, flag, get, item, num, text, Item, APP_CHOICE, BATTERY_LOW_PCT, BRIEFING_FRESH_S, NOTAMS_FRESH_S};
+use super::{age_words, day_words, flag, get, item, num, text, Item, APP_CHOICE, BATTERY_LOW_PCT, BRIEFING_FRESH_S, NOTAMS_FRESH_S};
+use crate::cycles;
 use crate::json::Value;
 use crate::validity::ROUTINE_INTERVAL_S;
 
@@ -74,8 +75,15 @@ pub(super) fn list(items: &[String]) -> String {
     }
 }
 
+/// The route's NOTAMs: fetched, fresh, and the full set. A list that is
+/// only what the FAA's feed has sent since a day (`full_set` false, the
+/// planner's NotamsRanked; decision 0059) may lack a NOTAM issued before
+/// it, which 91.103's "all available information" takes in: a caution
+/// however fresh, with where the full set is had. Nothing on the device
+/// fixes it.
 pub(super) fn notam_item(notams: Option<&Value>, now: i64) -> Item {
     const SOURCE: &str = "14 CFR 91.103; AIM 5-1-3; age the app's choice";
+    let partial = flag(notams, "full_set") == Some(false);
     match num(notams, "fetched_at").map(|t| (now - t as i64).max(0)) {
         None => item("notams", false, "Get the NOTAMs for the route".into(), "Not fetched yet".into(), SOURCE, Some("fetch_notams")),
         Some(a) if a >= NOTAMS_FRESH_S => item(
@@ -85,6 +93,17 @@ pub(super) fn notam_item(notams: Option<&Value>, now: i64) -> Item {
             "A NOTAM may be issued at any time".into(),
             SOURCE,
             Some("fetch_notams"),
+        ),
+        Some(_) if partial => item(
+            "notams",
+            false,
+            match text(notams, "heard_since").and_then(cycles::day_of) {
+                Some(day) => format!("NOTAMs heard since {}, not a full set", day_words(day)),
+                None => "NOTAMs heard recently, not a full set".into(),
+            },
+            "Get the rest from Flight Service or the FAA's NOTAM Search".into(),
+            "14 CFR 91.103; AIM 5-1-3",
+            None,
         ),
         Some(a) => item("notams", true, format!("NOTAMs fetched {} ago", age_words(a)), "For the route".into(), SOURCE, None),
     }

@@ -1,7 +1,7 @@
 # 0023. NOTAMs come from the SWIM feed; no FAA NOTAM API key
 
 - **Date:** 2026-11-09
-- **Status:** Accepted
+- **Status:** Amended by 0059 (the full set from the FAA's NOTAM Management Service API, 2026-11-21)
 
 ## Context
 

@@ -14010,13 +14010,15 @@ extension Components {
         }
         /// The flight's NOTAMs best first, every one heard (`notams`), how many
         /// are said first (`top`), the day the NOTAM feed was first heard
-        /// (`coverage_since`: earlier NOTAMs never changed since are not held) and
-        /// what could not be checked ("tfrs").
+        /// (`coverage_since`), whether the planner holds every NOTAM in force
+        /// (`full_set`) and what could not be checked ("tfrs").
         ///
         /// - Remark: Generated from `#/components/schemas/NotamsRanked`.
         public struct NotamsRanked: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/NotamsRanked/coverage_since`.
             public var coverageSince: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/NotamsRanked/full_set`.
+            public var fullSet: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/NotamsRanked/notams`.
             public var notams: [Components.Schemas.RankedNotam]
             /// - Remark: Generated from `#/components/schemas/NotamsRanked/time_zone`.
@@ -14029,18 +14031,21 @@ extension Components {
             ///
             /// - Parameters:
             ///   - coverageSince:
+            ///   - fullSet:
             ///   - notams:
             ///   - timeZone:
             ///   - top:
             ///   - unchecked:
             public init(
                 coverageSince: Swift.String? = nil,
+                fullSet: Swift.Bool? = nil,
                 notams: [Components.Schemas.RankedNotam],
                 timeZone: Swift.String? = nil,
                 top: Swift.Int,
                 unchecked: [Swift.String]? = nil
             ) {
                 self.coverageSince = coverageSince
+                self.fullSet = fullSet
                 self.notams = notams
                 self.timeZone = timeZone
                 self.top = top
@@ -14048,6 +14053,7 @@ extension Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case coverageSince = "coverage_since"
+                case fullSet = "full_set"
                 case notams
                 case timeZone = "time_zone"
                 case top
@@ -23351,8 +23357,8 @@ extension Components {
         /// date) and what could not be checked ("tfrs"). The feed (SWIM's FNS)
         /// sends what is issued or changed once it is heard, so NOTAMs issued
         /// before that day and never changed are not in the store: the list is
-        /// what was heard since, not every NOTAM in force (the owner, 2026-11-09,
-        /// chose the feed alone over the FAA NOTAM API's full load).
+        /// what was heard since, not every NOTAM in force, until NMS's full set
+        /// is held (decision 0059, amending 0023).
         ///
         /// - Remark: Generated from `#/components/schemas/WordsSources`.
         public struct WordsSources: Codable, Hashable, Sendable {

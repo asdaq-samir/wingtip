@@ -184,11 +184,16 @@ struct NotamsSection: View {
                     DisclosureGroup("\(rest.count) more") { ForEach(rest, id: \.id) { notam in row(notam) } }
                 }
                 if ranked.notams.isEmpty {
-                    Text("None for the route").foregroundStyle(.secondary)
+                    // Never "no NOTAMs": none heard since the feed's day (NotamCoverage).
+                    Text(NotamCoverage.none(since: ranked.coverageSince, full: ranked.fullSet ?? false)).foregroundStyle(.secondary)
                 } else {
                     // Every one, searchable by place and kind (NotamListView).
                     NavigationLink("Show All \(ranked.notams.count)", value: SheetPage.notams(.route))
                 }
+                // Not the full set until the planner holds it (decision 0059), as the web's Brief says.
+                Text(NotamCoverage.line(since: ranked.coverageSince, full: ranked.fullSet ?? false))
+                    .font(WingtipType.note).foregroundStyle(ranked.fullSet == true ? .secondary : WingtipInk.caution)
+                    .accessibilityIdentifier("brief-notams-credit")
             }
             NotamWordsSection(ranked: ranked.notams, flight: plan.routed
                 ? WordsFigures.flight(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: plan.totals?.eteMin) : nil)

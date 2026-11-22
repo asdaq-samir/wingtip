@@ -10325,9 +10325,15 @@ enum EngineContract {
 
     struct ReadyToFlyInputNotams: Codable, Equatable, Sendable {
         var fetchedAt: Double?
+        /// Whether the NOTAMs are the full set in force (the planner's NotamsRanked.full_set); false, only those heard since heard_since, a caution (decision 0059).
+        var fullSet: Bool?
+        /// The day the NOTAM feed was first heard, YYYY-MM-DD (NotamsRanked.coverage_since).
+        var heardSince: String?
 
         enum CodingKeys: String, CodingKey {
             case fetchedAt = "fetched_at"
+            case fullSet = "full_set"
+            case heardSince = "heard_since"
         }
     }
 

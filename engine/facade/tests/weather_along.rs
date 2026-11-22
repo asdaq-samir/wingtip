@@ -82,12 +82,12 @@ fn a_fields_hours() {
 
 #[test]
 fn the_awc_files_read_and_held() {
-    let xml = r#"<response><data><AIRSIGMET><raw_text>WSUS32 KKCI 021655 SIGC CONVECTIVE SIGMET 12C</raw_text>
+    let xml = r#"<response><data><SIGMET><raw_text>WSUS32 KKCI 021655 SIGC CONVECTIVE SIGMET 12C</raw_text>
       <valid_time_from>2026-11-02T16:55:00Z</valid_time_from><valid_time_to>2026-11-02T18:55:00Z</valid_time_to>
-      <airsigmet_type>SIGMET</airsigmet_type><hazard type="CONVECTIVE" severity="SEV"/><altitude max_ft_msl="45000"/>
+      <altitude top_ft_msl="45000"/><hazard type="CONV" qualifier="SEV"/>
       <area num_points="4"><point><longitude>-90</longitude><latitude>41</latitude></point><point><longitude>-88</longitude><latitude>41</latitude></point>
       <point><longitude>-88</longitude><latitude>43</latitude></point><point><longitude>-90</longitude><latitude>43</latitude></point></area>
-      </AIRSIGMET></data></response>"#;
+      </SIGMET></data></response>"#;
     let advisories = ask("awc_airsigmets_read", json!({"text": xml}));
     let a = &advisories[0];
     assert_eq!(a["hazard"], json!("CONVECTIVE"));

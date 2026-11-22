@@ -34,8 +34,10 @@ struct NotamListView: View {
                 if shown.isEmpty {
                     ContentUnavailableView("No NOTAMs", systemImage: "checkmark.bubble", description: Text(source.noneWords))
                 }
-                if let since = ranked.coverageSince {
-                    Section { Text("NOTAMs issued before \(since) and unchanged since aren't held.").font(WingtipType.note).foregroundStyle(.secondary) }
+                // Not the full set until the planner holds it (decision 0059).
+                Section {
+                    Text(NotamCoverage.line(since: ranked.coverageSince, full: ranked.fullSet ?? false))
+                        .font(WingtipType.note).foregroundStyle(ranked.fullSet == true ? .secondary : WingtipInk.caution)
                 }
             } else if let problem {
                 Section { ProblemLine(problem) }

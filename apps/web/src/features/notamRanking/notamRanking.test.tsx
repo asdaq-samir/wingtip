@@ -40,6 +40,7 @@ const ANSWER: RankedNotams = {
   ],
   top: 3,
   coverage_since: "2026-10-19",
+  full_set: false,
   unchecked: [],
 };
 
@@ -61,7 +62,7 @@ describe("the NOTAMs that matter", () => {
     expect(rest.map((n) => n.id)).toEqual(["C81 11/004", "OSH 11/030"]);
   });
 
-  test("laid open: three lines with their chips, the rest behind N more, and the feed's coverage under them", () => {
+  test("laid open: three lines with their chips, the rest behind N more, and that they are not the full set under them", () => {
     state.value = { shown: true, ...splitRanking(ANSWER), answer: ANSWER, error: null, pending: false };
     render(<NotamRankingSection />);
     // Laid open on Preflight, how many beside its title as the Brief's row says it.
@@ -77,7 +78,8 @@ describe("the NOTAMs that matter", () => {
     fireEvent.click(screen.getByTestId("brief-notams-more"));
     expect(screen.getByTestId("brief-notams-more").textContent).toContain("2 more");
     expect(screen.getAllByTestId("brief-notam-folded")).toHaveLength(2);
-    expect(screen.getByTestId("brief-notams-credit").textContent).toBe("FAA NOTAM feed since 19 Oct 2026");
+    // Only the NOTAMs heard since the feed's day, not the full set (decision 0059).
+    expect(screen.getByTestId("brief-notams-credit").textContent).toBe("NOTAMs heard since 19 Oct 2026, not a full set");
   });
 
   test("none heard reads as such, never as no NOTAMs", () => {

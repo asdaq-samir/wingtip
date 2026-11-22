@@ -21,15 +21,16 @@ import { WORDING } from "../../lib/wording/generated/wording";
  * Brief's NOTAMs row opens them (option A, the owner 2026-11-19; they
  * were a fold of the overview): the top three the engine ranked for this
  * flight, each with its line and its chip, then the rest folded under "N
- * more", none dropped; the feed's coverage line under them
- * (lib/notamCoverage), and none heard said as such, never as no NOTAMs.
+ * more", none dropped; the coverage line under them (lib/notamCoverage:
+ * "NOTAMs heard since 19 Oct 2026, not a full set" until the planner holds
+ * every NOTAM in force), and none heard said as such, never as no NOTAMs.
  * How many there are beside its title, as the row says it.
  * Filtered, sorted, pinned and marked read as the pilot asks (web.md §6,
  * NotamToolbar, NotamLine): what the filters leave out is counted, with
  * Show All, so a NOTAM is folded or filtered by the pilot, never dropped.
  */
 export default function NotamRankingSection() {
-  const { shown, answer, error, pending, fetchedAt, failed, all, top, rest, hidden, since, count } = useArrangedNotams();
+  const { shown, answer, error, pending, fetchedAt, failed, all, top, rest, hidden, since, full, count } = useArrangedNotams();
   const setFilter = useNotamMarks((s) => s.setFilter);
   const titleId = useId();
   if (!shown) return null;
@@ -71,7 +72,7 @@ export default function NotamRankingSection() {
             )}
             {all.length === 0 && (
               <p className={cn("text-muted-foreground", TEXT.prose)} data-testid="brief-notams-empty">
-                {notamNone(since)}
+                {notamNone(since, full)}
               </p>
             )}
             {top.length > 0 && (
@@ -106,8 +107,10 @@ export default function NotamRankingSection() {
               </Collapsible>
             )}
             {answer?.unchecked.includes("tfrs") && <p className={cn("text-muted-foreground", TEXT.note)}>{WORDING.tfrsNotChecked}</p>}
-            <p className={cn("text-muted-foreground", TEXT.note)} data-testid="brief-notams-credit">
-              {notamCredit(since)}
+            {/* Not the full set (decision 0059): said in the caution's ink,
+                since a NOTAM issued before the day may be missing. */}
+            <p className={cn(full ? "text-muted-foreground" : "text-caution-ink", TEXT.note)} data-testid="brief-notams-credit">
+              {notamCredit(since, full)}
             </p>
           </>
         )}

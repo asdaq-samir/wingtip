@@ -14,8 +14,14 @@ replacement).
 
 Kept in a SQLite file so a restart forgets none, each until a day after it
 ends. The feed brings NOTAMs from the first connection on, never the ones
-already in force: `since()` says when that was, and until a first load of
-those (FNS's Initial Load) the store is not the whole list for a field.
+already in force: `since()` says when that was. The full set comes from
+the FAA's NOTAM Management Service API (NMS-API, decision 0059), read by
+ingest.nms where its credentials are set: its initial load (`loaded`),
+then its changes (`heard`, as the feed's are, and `synced`). Both give a
+NOTAM in the same AIXM form, read by the same engine rule, so one heard
+from both is one row, kept by its place and number. Until a load is
+held and kept up to date, `full_set()` is False and the store is only
+what was heard since `since()`, not the whole list for a field.
 Only the United States' own are kept: the feed sends the world's
 international ones too.
 """
@@ -54,6 +60,17 @@ US_PREFIXES = ("K", "P", "TJ", "TI", "NS")
 #: message's NOTAMs are read by the engine (notam.rs), by the same patterns.
 _ICAO_PLACE = re.compile(r"\bA\)\s*([A-Z]{4})\b")
 _DOMESTIC_ID = re.compile(r"^!(\w+)\s+([A-Z]?\d{1,4}/\d{1,4})")
+#: How long since NMS's last update the store still holds the full set,
+#: s: five of its updates, which it allows one each three minutes
+#: (ingest.nms.EVERY_S), a design choice. Longer, and a NOTAM issued since
+#: may be missing, so the set is said to be only what was heard.
+FULL_SYNC_WITHIN_S = 15 * 60
+#: How old NMS's initial load may be when it is fetched, s: it is made
+#: once a day (NMS allows one load a day), so a NOTAM issued in the day
+#: before it may not be in it. Its changes are first asked from this
+#: long before the load (ingest.nms), and a NOTAM is taken as ended for
+#: being left out of a load only where it was last heard before that.
+LOAD_AGE_S = 24 * 3600
 #: The store's layout: 1 since a NOTAM known only by its ICAO number is
 #: kept by its place and number, not the number alone (_upgrade).
 STORE_VERSION = 2
@@ -82,6 +99,7 @@ def _connection() -> sqlite3.Connection:
             CREATE INDEX IF NOT EXISTS notams_icao_location ON notams (icao_location);
             CREATE INDEX IF NOT EXISTS notams_icao_id ON notams (icao_id);
             CREATE TABLE IF NOT EXISTS heard (since REAL);
+            CREATE TABLE IF NOT EXISTS nms (loaded REAL, synced REAL);
         """)
         _upgrade(_db)
     return _db
@@ -170,55 +188,130 @@ def _ours(notam: dict) -> bool:
     return any((place or "").startswith(US_PREFIXES) for place in (notam["location"], notam["icao_location"]))
 
 
+def _keep(db: sqlite3.Connection, xml: str, now: float) -> list[dict]:
+    """One message's NOTAMs kept: added or updated, and the ones they
+    replace or cancel ended. The NOTAMs it gave."""
+    found = [n for n in notams(xml) if _ours(n)]
+    if db.execute("SELECT 1 FROM heard").fetchone() is None:
+        db.execute("INSERT INTO heard VALUES (?)", (now,))
+    for n in found:
+        if n["names"]:
+            # The one it names at its own place: another place's NOTAM
+            # may have the same number.
+            db.execute(
+                "UPDATE notams SET ended = 1 WHERE icao_id = ? AND (location = ? OR icao_location = ?)",
+                (n["names"], n["location"], n["icao_location"]),
+            )
+        if n["type"] == "C":
+            # A cancellation is no NOTAM a pilot reads: it ends the one it names.
+            continue
+        # The other form of one NOTAM already kept keeps what it has
+        # that this one lacks (its ICAO number, its domestic words).
+        db.execute(
+            """
+            INSERT INTO notams (id, icao_id, location, icao_location, classification, issued, starts,
+                                ends, estimated, schedule, text, raw, ended, heard)
+            VALUES (:id, :icao_id, :location, :icao_location, :classification, :issued, :starts,
+                    :ends, :estimated, :schedule, :text, :raw, 0, :heard)
+            ON CONFLICT (id) DO UPDATE SET
+                icao_id = COALESCE(excluded.icao_id, icao_id),
+                location = COALESCE(excluded.location, location),
+                icao_location = COALESCE(excluded.icao_location, icao_location),
+                issued = excluded.issued, starts = excluded.starts, ends = excluded.ends,
+                estimated = excluded.estimated, schedule = excluded.schedule, text = excluded.text,
+                raw = CASE WHEN raw LIKE '!%' AND excluded.raw NOT LIKE '!%' THEN raw ELSE excluded.raw END,
+                heard = excluded.heard
+        """,
+            {**n, "estimated": int(n["estimated"]), "heard": now},
+        )
+    return found
+
+
+def _let_go(db: sqlite3.Connection, now: float) -> None:
+    """Those a day past their end, or a day after they were ended, let go."""
+    db.execute(
+        "DELETE FROM notams WHERE (ends IS NOT NULL AND ends < ?) OR (ended = 1 AND heard < ?)",
+        (_stamp(now - KEEP_ENDED_S), now - KEEP_ENDED_S),
+    )
+
+
 def heard(xml: str, now: float | None = None) -> int:
-    """One FNS message kept: its NOTAMs added or updated, the ones they
-    replace or cancel ended, and those a day past their end let go, at
+    """One FNS or NMS message kept: its NOTAMs added or updated, the ones
+    they replace or cancel ended, and those a day past their end let go, at
     most once every PRUNE_EVERY_S. How many NOTAMs it gave."""
     global _pruned_at
     now = time.time() if now is None else now
-    found = [n for n in notams(xml) if _ours(n)]
     with _LOCK:
         db = _connection()
-        if db.execute("SELECT 1 FROM heard").fetchone() is None:
-            db.execute("INSERT INTO heard VALUES (?)", (now,))
-        for n in found:
-            if n["names"]:
-                # The one it names at its own place: another place's NOTAM
-                # may have the same number.
-                db.execute(
-                    "UPDATE notams SET ended = 1 WHERE icao_id = ? AND (location = ? OR icao_location = ?)",
-                    (n["names"], n["location"], n["icao_location"]),
-                )
-            if n["type"] == "C":
-                # A cancellation is no NOTAM a pilot reads: it ends the one it names.
-                continue
-            # The other form of one NOTAM already kept keeps what it has
-            # that this one lacks (its ICAO number, its domestic words).
-            db.execute(
-                """
-                INSERT INTO notams (id, icao_id, location, icao_location, classification, issued, starts,
-                                    ends, estimated, schedule, text, raw, ended, heard)
-                VALUES (:id, :icao_id, :location, :icao_location, :classification, :issued, :starts,
-                        :ends, :estimated, :schedule, :text, :raw, 0, :heard)
-                ON CONFLICT (id) DO UPDATE SET
-                    icao_id = COALESCE(excluded.icao_id, icao_id),
-                    location = COALESCE(excluded.location, location),
-                    icao_location = COALESCE(excluded.icao_location, icao_location),
-                    issued = excluded.issued, starts = excluded.starts, ends = excluded.ends,
-                    estimated = excluded.estimated, schedule = excluded.schedule, text = excluded.text,
-                    raw = CASE WHEN raw LIKE '!%' AND excluded.raw NOT LIKE '!%' THEN raw ELSE excluded.raw END,
-                    heard = excluded.heard
-            """,
-                {**n, "estimated": int(n["estimated"]), "heard": now},
-            )
+        found = _keep(db, xml, now)
         if abs(now - _pruned_at) >= PRUNE_EVERY_S:
-            db.execute(
-                "DELETE FROM notams WHERE (ends IS NOT NULL AND ends < ?) OR (ended = 1 AND heard < ?)",
-                (_stamp(now - KEEP_ENDED_S), now - KEEP_ENDED_S),
-            )
+            _let_go(db, now)
             _pruned_at = now
         db.commit()
     return len(found)
+
+
+def loaded(messages, asked: float | None = None, now: float | None = None) -> int:
+    """NMS's initial load kept, asked for at `asked`: every NOTAM in force,
+    its messages each read as `heard` reads one. It is the whole set, so a
+    NOTAM of a classification it holds, last heard LOAD_AGE_S before it was
+    asked for, that it does not list has ended (its cancellation missed
+    while the feed was down); one heard since may be newer than the load,
+    and one of a classification it holds none of is left as it was. The
+    load's time is kept; the store is not up to date until its changes
+    since have been asked (`synced`). How many NOTAMs it gave."""
+    now = time.time() if now is None else now
+    asked = now if asked is None else asked
+    ids: set[str] = set()
+    kinds: set[str] = set()
+    with _LOCK:
+        db = _connection()
+        for xml in messages:
+            for n in _keep(db, xml, now):
+                ids.add(n["id"])
+                kinds.add(n["classification"])
+        db.execute("CREATE TEMP TABLE IF NOT EXISTS in_load (id TEXT PRIMARY KEY)")
+        db.execute("DELETE FROM in_load")
+        db.executemany("INSERT OR IGNORE INTO in_load VALUES (?)", [(i,) for i in ids])
+        marks = ",".join("?" * len(kinds))
+        if kinds:
+            db.execute(
+                f"""UPDATE notams SET ended = 1, heard = ? WHERE heard < ? AND ended = 0
+                    AND classification IN ({marks}) AND id NOT IN (SELECT id FROM in_load)""",
+                (now, asked - LOAD_AGE_S, *sorted(kinds)),
+            )
+        db.execute("DELETE FROM nms")
+        db.execute("INSERT INTO nms VALUES (?, NULL)", (now,))
+        _let_go(db, now)
+        db.commit()
+    return len(ids)
+
+
+def synced(now: float | None = None) -> None:
+    """NMS's changes asked and kept (each message by `heard`): the store
+    is up to date to `now`."""
+    now = time.time() if now is None else now
+    with _LOCK:
+        _connection().execute("UPDATE nms SET synced = ?", (now,))
+        _connection().commit()
+
+
+def nms_state() -> tuple[float | None, float | None]:
+    """When NMS's initial load was kept, and when the store was last
+    brought up to date from it (None until its first changes are asked);
+    (None, None) before any load."""
+    with _LOCK:
+        row = _connection().execute("SELECT loaded, synced FROM nms").fetchone()
+    return (row[0], row[1]) if row else (None, None)
+
+
+def full_set(now: float | None = None) -> bool:
+    """Whether the store holds every NOTAM in force: NMS's initial load
+    held and brought up to date within FULL_SYNC_WITHIN_S. False, and the
+    store is only what was heard since `since()`."""
+    now = time.time() if now is None else now
+    loaded_at, synced_at = nms_state()
+    return loaded_at is not None and synced_at is not None and now - synced_at <= FULL_SYNC_WITHIN_S
 
 
 def since() -> float | None:

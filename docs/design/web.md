@@ -1422,7 +1422,10 @@ Web too ([ForeFlight 18.6][ff-186]). Windy v49 shows NOTAMs raw and
 decoded and lets them be marked read ([Windy v49][windy-v49]).
 
 **Structure, top to bottom.** The coverage line ("none heard since …"
-when empty, decision 0023); a filter row (category, active now / later,
+when empty, decision 0023; under the list, "NOTAMs heard since 19 Oct
+2026, not a full set" in the caution's ink until the planner holds every
+NOTAM in force, decision 0059, and the airport card says the same under
+its list); a filter row (category, active now / later,
 read); the ranked list (`features/notamRanking`), each NOTAM's plain
 words first and its raw text as sent beneath, folded; pinned first.
 
