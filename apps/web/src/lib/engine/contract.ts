@@ -1843,6 +1843,13 @@ export interface EngineContract {
     answer: DiversionAnswer;
   };
   /**
+   * How far off the route a field is still one the flight may divert to, for keeping its plates (Keep for the Air): the 45 minutes of reserve 14 CFR 91.167(a)(3) asks under IFR and 91.151(a)(2) at night under VFR (kept by day too, more than 91.151(a)(1)'s 30: more plates, never fewer) at the airplane's own cruise, or its whole tanks' reach where that is less. Null with no cruise speed: never a stock airplane's.
+   */
+  diversion_range_nm: {
+    input: DiversionRangeInput;
+    answer: DiversionRangeAnswer;
+  };
+  /**
    * Whether a student's estimate is within the diversion drill's allowance (ACS PA.VI.C.S2); an error for a key not estimated.
    */
   diversion_reasonable: {
@@ -3115,6 +3122,13 @@ export interface EngineContract {
   plate_page_point: {
     input: PlatePagePointInput;
     answer: PlatePagePointAnswer;
+  };
+  /**
+   * The plates a flight keeps for the air, each field once in its first role (departure, destination, stop, alternate (14 CFR 91.169(a)(2)), then the fields within range_nm of the route, nearest first) with the charts its role keeps: every chart at the departure, the destination and each stop; the approaches, minimums, diagram, hot spots and land-and-hold-short at the alternate; the approaches, minimums and diagram at a diversion. No diversion is kept with no range.
+   */
+  plates_kept: {
+    input: PlatesKeptInput;
+    answer: PlatesKeptAnswerField[];
   };
   /**
    * What a route point typed is: a fix, the pilot's own point (fix-radial-distance), or null.
@@ -6803,6 +6817,28 @@ export interface DiversionAnswer {
     written: string | null;
     reasonable: boolean | null;
   }[];
+}
+export interface DiversionRangeInput {
+  /**
+   * The airplane's cruise true airspeed, knots (its profile's); null or missing where none is picked.
+   */
+  tas_kt?: number | null;
+  /**
+   * Its usable fuel, gallons; null or missing for none.
+   */
+  usable_gal?: number | null;
+  /**
+   * Its cruise burn, gallons an hour; null or missing for none.
+   */
+  burn_gph?: number | null;
+}
+export interface DiversionRangeAnswer {
+  /**
+   * The range, nm; null with no cruise speed.
+   */
+  range_nm: number | null;
+  reserve_min: number;
+  basis: "reserve" | "tanks" | "no_airplane";
 }
 export interface DiversionReasonableInput {
   key: "mh" | "gs" | "ete" | "fuel";
@@ -11017,6 +11053,38 @@ export interface PlatePageBox {
   bottom: number;
   right: number;
   top: number;
+}
+export interface PlatesKeptInput {
+  /**
+   * diversion_range_nm's range; null for none.
+   */
+  range_nm?: number | null;
+  fields: PlatesKeptField[];
+}
+export interface PlatesKeptField {
+  ident: string;
+  role: "departure" | "destination" | "stop" | "alternate" | "diversion";
+  /**
+   * How far the field is off the route, nm (a diversion's).
+   */
+  off_nm?: number | null;
+  /**
+   * Items: A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.
+   */
+  charts: {
+    kind: string;
+  }[];
+}
+export interface PlatesKeptAnswerField {
+  ident: string;
+  role: "departure" | "destination" | "stop" | "alternate" | "diversion";
+  off_nm: number | null;
+  /**
+   * Items: A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.
+   */
+  charts: {
+    kind: string;
+  }[];
 }
 export interface PointKindInput {
   text: string;

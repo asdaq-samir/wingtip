@@ -94,6 +94,21 @@ def _charts_of(xml_bytes: bytes) -> dict:
     return found
 
 
+def _states_of(xml_bytes: bytes) -> dict:
+    """{state code: {"name": the state's name, "idents": its fields' FAA
+    idents}} from a d-TPP metafile, whose fields are filed under their
+    state (its state_code elements, "CA" "California"): the plates a
+    pilot downloads a state at a time (wingtip.plate_sets)."""
+    found = {}
+    for state in ET.fromstring(xml_bytes).iter("state_code"):
+        code = (state.get("ID") or "").strip().upper()
+        idents = [a.get("apt_ident", "").strip().upper() for a in state.iter("airport_name") if a.get("apt_ident")]
+        if code and idents:
+            entry = found.setdefault(code, {"name": (state.get("state_fullname") or code).strip(), "idents": []})
+            entry["idents"] += [i for i in idents if i not in entry["idents"]]
+    return found
+
+
 def _supplements_of(xml_bytes: bytes) -> dict:
     """{FAA ident: its Chart Supplement pages' PDFs, in order} from a d-CS
     airport list: an entry may run on to a second page."""
@@ -208,6 +223,18 @@ def serves(source: str, edition: str, on: date | datetime | None = None) -> bool
         return True
     name = _KINDS[source][0]
     return not (CACHE_DIR / f"{name}-{in_force}.json").exists() and edition == _kept_edition(source, in_force)
+
+
+def states(on: date | datetime | None = None) -> tuple:
+    """(the d-TPP cycle, its fields by state as `_states_of` gives them):
+    of the cycle in force, or of the kept cycle the cards show while that
+    one's index cannot be had (`editions`); (None, {}) where neither can.
+    Read from the same metafile as the charts, once a cycle."""
+    cycle, _, _ = _edition("dtpp", on)
+    if cycle is None:
+        return None, {}
+    index = _index("dtpp-states", cycle, f"{DTPP_BASE}/{cycle}/xml_data/d-tpp_Metafile.xml", _states_of)
+    return (cycle, index) if index is not None else (None, {})
 
 
 def _faa_idents(ident: str) -> list:

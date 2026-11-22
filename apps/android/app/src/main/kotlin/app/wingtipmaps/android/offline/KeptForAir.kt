@@ -54,6 +54,12 @@ class KeptForAir(private val dir: File) {
      *  is there yet. */
     fun pdf(kind: String, url: String): File = file(kind, url, "pdf")
 
+    /** Every answer kept of `kind`, the flights' plates records among them
+     *  (KeepForAir), for what a deleted state's charts must leave. */
+    fun entries(kind: String): List<Entry> =
+        File(dir, kind).listFiles { f -> f.name.endsWith(".json") }.orEmpty()
+            .mapNotNull { f -> runCatching { JSON.decodeFromString(Entry.serializer(), f.readText()) }.getOrNull() }
+
     /** What the answers named take on the phone, bytes. */
     fun bytes(kind: String, keys: Collection<String>): Long =
         keys.sumOf { k -> file(kind, k, "json").length() + file(kind, k, "pdf").length() }
@@ -87,6 +93,9 @@ class KeptForAir(private val dir: File) {
         const val NOTAMS = "notams"
         const val PLAN = "plan"
         const val WEATHER_LOOP = "weather_loop"
+        /** The FAA's charts kept whole (ChartKeeper), and under the flight's
+         *  key the planner's list of a flight's (KeepForAir). */
+        const val PLATES = "plates"
 
         /** The route's side view (/api/route-profile): the ground and the
          *  obstacles under it, a cycle's data, so said with no age. Not one

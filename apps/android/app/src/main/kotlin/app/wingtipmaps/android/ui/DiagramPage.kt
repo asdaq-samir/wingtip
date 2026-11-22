@@ -71,9 +71,12 @@ class DiagramPage(
         suspend fun read(url: String, cache: File): DiagramPage? = withContext(Dispatchers.IO) { render(url, cache) }
 
         private suspend fun render(url: String, cache: File): DiagramPage? {
-            // The one Keep for the Air kept (KeptForAir) first, so it opens
-            // with no signal; else the cache's, fetched where it is not.
-            val file = KeptForAir.current?.pdf(KeptForAir.AIRPORTS, url)?.takeIf { it.isFile } ?: File(cache, "diagram-${url.hashCode()}.pdf")
+            // The one Keep for the Air kept (KeptForAir), or a state's plates
+            // (ChartKeeper), first, so it opens with no signal; else the
+            // cache's, fetched where it is not.
+            val kept = KeptForAir.current
+            val file = listOfNotNull(kept?.pdf(KeptForAir.AIRPORTS, url), kept?.pdf(KeptForAir.PLATES, url)).firstOrNull { it.isFile }
+                ?: File(cache, "diagram-${url.hashCode()}.pdf")
             if (!file.exists()) download(url, file)
             ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
                 PdfRenderer(fd).use { renderer ->

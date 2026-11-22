@@ -1,0 +1,74 @@
+{
+  "_note": "Which plates a flight keeps for the air (the engine's diversion_range_nm and plates_kept). The range is the reserve 14 CFR 91.167(a)(3) asks under IFR ('Fly after that for 45 minutes at normal cruising speed'), and 91.151(a)(2) at night under VFR, at the airplane's cruise: 45 minutes at 120 kt is 90 nm; 5 gal at 8 gph is 37.5 minutes, 75 nm at 120 kt, less than the reserve's 90. No cruise, no range. The engine (engine/facade/tests/plates_kept.rs) and the planner (tests_wingtip/test_plate_sets.py) are held to it.",
+  "ranges": [
+    { "why": "the reserve's 45 minutes at 120 kt", "input": { "tas_kt": 120 }, "expected": { "range_nm": 90, "reserve_min": 45, "basis": "reserve" } },
+    { "why": "tanks that last exactly the reserve", "input": { "tas_kt": 120, "usable_gal": 6, "burn_gph": 8 }, "expected": { "range_nm": 90, "basis": "reserve" } },
+    { "why": "tanks that reach less far than the reserve", "input": { "tas_kt": 120, "usable_gal": 5, "burn_gph": 8 }, "expected": { "range_nm": 75, "basis": "tanks" } },
+    { "why": "no airplane picked: no range, never a stock one's", "input": { "usable_gal": 53, "burn_gph": 10 }, "expected": { "range_nm": null, "basis": "no_airplane" } }
+  ],
+  "flight": {
+    "range_nm": 90,
+    "fields": [
+      {
+        "ident": "KMRY",
+        "role": "destination",
+        "charts": [
+          { "kind": "IAP", "name": "ILS OR LOC RWY 10R", "url": "https://aeronav.faa.gov/d-tpp/2611/00366IL10R.PDF" },
+          { "kind": "STR", "name": "SNS ONE", "url": "https://aeronav.faa.gov/d-tpp/2611/00366SNS.PDF" },
+          { "kind": "APD", "name": "AIRPORT DIAGRAM", "url": "https://aeronav.faa.gov/d-tpp/2611/00366AD.PDF" }
+        ]
+      },
+      {
+        "ident": "KSFO",
+        "role": "departure",
+        "charts": [
+          { "kind": "DP", "name": "SSTIK FIVE (RNAV)", "url": "https://aeronav.faa.gov/d-tpp/2611/00375SSTIK.PDF" },
+          { "kind": "MIN", "name": "TAKEOFF MINIMUMS", "url": "https://aeronav.faa.gov/d-tpp/2611/SW2TO.PDF" }
+        ]
+      },
+      {
+        "ident": "KSNS",
+        "role": "alternate",
+        "charts": [
+          { "kind": "IAP", "name": "ILS OR LOC RWY 31", "url": "https://aeronav.faa.gov/d-tpp/2611/00455IL31.PDF" },
+          { "kind": "DP", "name": "SALINAS ONE", "url": "https://aeronav.faa.gov/d-tpp/2611/00455SALINAS.PDF" }
+        ]
+      },
+      {
+        "ident": "KWVI",
+        "role": "diversion",
+        "off_nm": 40,
+        "charts": [
+          { "kind": "IAP", "name": "RNAV (GPS) RWY 20", "url": "https://aeronav.faa.gov/d-tpp/2611/05327R20.PDF" },
+          { "kind": "STR", "name": "NOT KEPT", "url": "https://aeronav.faa.gov/d-tpp/2611/05327X.PDF" }
+        ]
+      },
+      {
+        "ident": "KSJC",
+        "role": "diversion",
+        "off_nm": 12,
+        "charts": [{ "kind": "APD", "name": "AIRPORT DIAGRAM", "url": "https://aeronav.faa.gov/d-tpp/2611/00483AD.PDF" }]
+      },
+      {
+        "ident": "KFAT",
+        "role": "diversion",
+        "off_nm": 91,
+        "charts": [{ "kind": "IAP", "name": "ILS OR LOC RWY 29R", "url": "https://aeronav.faa.gov/d-tpp/2611/00119IL29R.PDF" }]
+      },
+      {
+        "ident": "KSNS",
+        "role": "diversion",
+        "off_nm": 5,
+        "charts": [{ "kind": "IAP", "name": "ILS OR LOC RWY 31", "url": "https://aeronav.faa.gov/d-tpp/2611/00455IL31.PDF" }]
+      }
+    ],
+    "expected": [
+      { "ident": "KSFO", "role": "departure", "kinds": ["DP", "MIN"] },
+      { "ident": "KMRY", "role": "destination", "kinds": ["IAP", "STR", "APD"] },
+      { "ident": "KSNS", "role": "alternate", "kinds": ["IAP"] },
+      { "ident": "KSJC", "role": "diversion", "kinds": ["APD"] },
+      { "ident": "KWVI", "role": "diversion", "kinds": ["IAP"] }
+    ],
+    "_why": "The route's own in role order (departure, destination, stop, alternate); the alternate keeps no departure; diversions within 90 nm nearest first, KFAT at 91 nm left out, KSNS kept once as the alternate; a diversion keeps no arrival."
+  }
+}

@@ -5,6 +5,7 @@ import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.airportNotams
+import app.wingtipmaps.android.api.generated.FlightPlates
 import app.wingtipmaps.android.api.generated.GoNoGo
 import app.wingtipmaps.android.api.generated.NotamsRanked
 import app.wingtipmaps.android.api.generated.RouteProfile
@@ -31,9 +32,13 @@ import app.wingtipmaps.android.api.generated.WeatherLoop as LoopAnswer
  * (`status`, its `kept`), and their ages are the engine's (kept_age).
  *
  * Under IFR the alternate filed is one of the fields (PlanAlternate, the
- * nav log's leg on to it). The approach plates this phone lays on the
- * map (PlatesOnMap) are asked for as they are put there, not kept for the
- * air, so none is asked or counted here.
+ * nav log's leg on to it). The flight's plates (the market-gap audit's
+ * 3) are those the planner names (/api/plates/flight, FlightPlatesAsk):
+ * every chart of the departure, the destination and each stop, the
+ * alternate's (the one filed, else the engine's 91.169 pick) and those of
+ * the fields within the picked airplane's diversion range, each kept as
+ * this phone opens it (ChartKeeper), the planner's list kept under the
+ * flight's key; the plates are on board only when every chart named is.
  */
 object KeepForAir {
     /** What a diagram is about, for the size said before it is kept: a
@@ -58,7 +63,10 @@ object KeepForAir {
     /** Everything fetched and kept for `plan`; how many could not be had
      *  (each kept one stands where the network failed). Run off the main
      *  thread: the diagrams are written as they come. */
-    suspend fun keep(store: KeptForAir, plan: Plan.State, cruiseFt: Double?, loop: LoopKind): Int {
+    suspend fun keep(
+        store: KeptForAir, plan: Plan.State, cruiseFt: Double?, loop: LoopKind, plates: FlightPlatesAsk?,
+        planner: PlatesPlanner = PlatesPlanner.Live, keeper: ChartKeeper = ChartKeeper(store),
+    ): Int {
         if (!plan.routed) return 0
         val key = ReadyFacts.flightKey(plan)
         var failed = 0
@@ -82,6 +90,13 @@ object KeepForAir {
             quietly { store.orKept(KeptForAir.NOTAMS, KeptForAir.fieldNotams(ident), NotamsRanked.serializer()) { Planner.airportNotams(ident) } }
         }
         quietly { store.orKept(KeptForAir.NOTAMS, key, NotamsRanked.serializer()) { Planner.notamsRanked(PlannerReadyWeather.ask(plan, cruiseFt)) } }
+        plates?.let { ask ->
+            quietly {
+                val wanted = planner.flight(ask)
+                store.write(KeptForAir.PLATES, key, KeptForAir.JSON.encodeToString(FlightPlates.serializer(), wanted))
+                if (keeper.keepAll(chartsOf(wanted)) > 0) failed++
+            }
+        }
         quietly { store.orKept(KeptForAir.GO_NO_GO, key, GoNoGo.serializer()) { Planner.goNoGo(BriefModel.ask(plan)) } }
         quietly { store.orKept(KeptForAir.ROUTE_PROFILE, key, RouteProfile.serializer()) { Planner.routeProfile(plan.dep, plan.dest, plan.stops) } }
         val kind = loopKind(loop)
@@ -101,6 +116,13 @@ object KeepForAir {
         return failed
     }
 
+    /** Every chart a flight's plates name, once. */
+    fun chartsOf(plates: FlightPlates): List<String> = plates.fields.flatMap { f -> f.charts.map { it.url } }.distinct()
+
+    /** The flight's plates as the planner named them when they were kept. */
+    private fun keptPlates(store: KeptForAir, key: String): FlightPlates? =
+        store.read(KeptForAir.PLATES, key)?.let { runCatching { KeptForAir.JSON.decodeFromString(FlightPlates.serializer(), it.body) }.getOrNull() }
+
     /** What the route's kept answers and diagrams take on the phone, bytes. */
     fun bytes(store: KeptForAir, plan: Plan.State): Long {
         val key = ReadyFacts.flightKey(plan)
@@ -112,7 +134,9 @@ object KeepForAir {
             diagrams.sumOf { store.pdf(KeptForAir.AIRPORTS, it).length() } +
             store.bytes(KeptForAir.NOTAMS, listOf(key) + fields.map(KeptForAir::fieldNotams)) + store.bytes(KeptForAir.GO_NO_GO, listOf(key)) +
             store.bytes(KeptForAir.ROUTE_PROFILE, listOf(key)) +
-            store.bytes(KeptForAir.WEATHER_LOOP, LoopKind.entries.map { it.kind }) + loopTilesBytes()
+            store.bytes(KeptForAir.WEATHER_LOOP, LoopKind.entries.map { it.kind }) + loopTilesBytes() +
+            store.bytes(KeptForAir.PLATES, listOf(key)) +
+            keptPlates(store, key)?.let(::chartsOf).orEmpty().sumOf { store.pdf(KeptForAir.PLATES, it).length() }
     }
 
     /** The loop's kept tiles, none where the app's store is not made (a
@@ -141,9 +165,14 @@ object KeepForAir {
             KeptForAir.GO_NO_GO to (store.read(KeptForAir.GO_NO_GO, key) != null),
             KeptForAir.WEATHER_LOOP to LoopKind.entries.any { it != LoopKind.OFF && store.read(KeptForAir.WEATHER_LOOP, it.kind) != null },
         )
+        // The plates, where the flight has any: none named, none counted
+        // (as the web's); not yet asked, missing.
+        val plates = keptPlates(store, key)
+        val charts = plates?.let(::chartsOf)
+        if (charts == null || charts.isNotEmpty()) have[KeptForAir.PLATES] = charts != null && charts.all { store.pdf(KeptForAir.PLATES, it).isFile }
         val missing = have.filterValues { !it }.keys.toList()
         val onDisk = bytes(store, plan)
-        val size = if (missing.isEmpty()) onDisk else maxOf(onDisk, fields.size * DIAGRAM_BYTES + ANSWERS_BYTES + LOOP_TILES_BYTES)
+        val size = if (missing.isEmpty()) onDisk else maxOf(onDisk, fields.size * DIAGRAM_BYTES + ANSWERS_BYTES + LOOP_TILES_BYTES + (plates?.bytes ?: 0L))
         return EngineContract.ReadyToFlyInputKept(
             onBoard = have.filterValues { it }.keys.toList(),
             missing = missing,

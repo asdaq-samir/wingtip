@@ -505,6 +505,11 @@ extension Engine {
         try Self.rule("diversion", EngineContract.DiversionInput(trueCourseDeg: trueCourseDeg, distanceNm: distanceNm, tasKt: tasKt, fuelBurnGph: fuelBurnGph, magneticVariationDeg: magneticVariationDeg, wind: wind, to: to, mh: mh, gs: gs, ete: ete, fuel: fuel))
     }
 
+    /// How far off the route a field is still one the flight may divert to, for keeping its plates (Keep for the Air): the 45 minutes of reserve 14 CFR 91.167(a)(3) asks under IFR and 91.151(a)(2) at night under VFR (kept by day too, more than 91.151(a)(1)'s 30: more plates, never fewer) at the airplane's own cruise, or its whole tanks' reach where that is less. Null with no cruise speed: never a stock airplane's.
+    static func diversionRangeNm(tasKt: Double? = nil, usableGal: Double? = nil, burnGph: Double? = nil) throws -> EngineContract.DiversionRangeNmAnswer {
+        try Self.rule("diversion_range_nm", EngineContract.DiversionRangeNmInput(tasKt: tasKt, usableGal: usableGal, burnGph: burnGph))
+    }
+
     /// Whether a student's estimate is within the diversion drill's allowance (ACS PA.VI.C.S2); an error for a key not estimated.
     static func diversionReasonable(key: String, typed: Double, exact: Double) throws -> Bool {
         try Self.rule("diversion_reasonable", EngineContract.DiversionReasonableInput(key: key, typed: typed, exact: exact))
@@ -1413,6 +1418,11 @@ extension Engine {
     /// Where a position is drawn on an approach plate's page, for own ship on the plate full screen as an EFB's geo-referenced plates draw it: the latitude and longitude through the plate's Lambert conformal conic projection on NAD 83's GRS 80 (Snyder, USGS Professional Paper 1395, eqs. 14-1, 14-2, 14-4, 14-15, 15-7 to 15-10) and the page's affine from its GeoPDF viewport (ISO 32000-2 12.9, as the planner fits it: PlateGeoreference), as fractions of the page's width from the left and its height from the top, with a true track turned onto the page (degrees clockwise from the page's up, null without a track). Null outside the plan view's box or inside an inset cut from it, the only part of a d-TPP plate drawn to scale being the plan view.
     static func platePagePoint(lat: Double, lon: Double, trackDeg: Double? = nil, georeference: EngineContract.PlatePagePointInputGeoreference) throws -> EngineContract.PlatePagePointAnswer? {
         try Self.rule("plate_page_point", EngineContract.PlatePagePointInput(lat: lat, lon: lon, trackDeg: trackDeg, georeference: georeference))
+    }
+
+    /// The plates a flight keeps for the air, each field once in its first role (departure, destination, stop, alternate (14 CFR 91.169(a)(2)), then the fields within range_nm of the route, nearest first) with the charts its role keeps: every chart at the departure, the destination and each stop; the approaches, minimums, diagram, hot spots and land-and-hold-short at the alternate; the approaches, minimums and diagram at a diversion. No diversion is kept with no range.
+    static func platesKept(rangeNm: Double? = nil, fields: [EngineContract.PlatesKeptInputFieldsItem]) throws -> [EngineContract.PlatesKeptAnswerItem] {
+        try Self.rule("plates_kept", EngineContract.PlatesKeptInput(rangeNm: rangeNm, fields: fields))
     }
 
     /// What a route point typed is: a fix, the pilot's own point (fix-radial-distance), or null.

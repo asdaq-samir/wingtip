@@ -69,9 +69,8 @@ export default defineConfig({
     // WebAssembly (397,838 bytes to 492,654, 2026-11-14), which iPhone Safari
     // takes (Accept-Encoding: gzip, deflate, br). The service worker's
     // globPatterns name no .br or .gz, so it keeps only the files themselves.
-    // CI's build check reads the JavaScript's own bytes (scripts/first-load.mjs)
-    // and serves nothing, so it asks for none (WINGTIP_PRECOMPRESS=0): they
-    // took the build from about 30 s to 89 (run 43735121847).
+    // CI's build check serves nothing, so asks for none (WINGTIP_PRECOMPRESS=0:
+    // they took the build from about 30 s to 89, run 43735121847).
     process.env.WINGTIP_PRECOMPRESS !== "0" &&
       compression({
         include: /\.(js|mjs|css|html|svg|json|webmanifest|wasm)$/,
@@ -98,8 +97,8 @@ export default defineConfig({
       registerType: "prompt",
       manifest: MANIFEST,
       workbox: {
-        // The first worker claims its page: an uncontrolled page's keep for
-        // the air cached nothing. A new build still waits (no skipWaiting).
+        // The first worker claims its page (an uncontrolled page's keep
+        // cached nothing); a new build still waits (no skipWaiting).
         clientsClaim: true,
         navigateFallback: "/app/index.html",
         navigateFallbackAllowlist: [/^\/app\//],
@@ -136,17 +135,23 @@ export default defineConfig({
           // The chart tiles, cache first, older editions dropped (vite-plugins/workboxRules).
           CHART_TILES,
           {
-            // The airport diagrams' pictures, cache first as the tiles
-            // are: an address names its 28-day d-TPP cycle, so what is
-            // kept is right for the whole of it, and a card opened again
-            // in the air, with no network, still shows its field's.
-            // The FAA's other charts' pages and their lists too, the
-            // edition in each address (/faa-chart).
-            urlPattern: ({ url }) => url.pathname.includes("/airport-diagram/") || url.pathname.includes("/faa-chart"),
+            // The airport diagrams' pictures, cache first as the tiles are:
+            // an address names its 28-day d-TPP cycle, right for all of it.
+            urlPattern: ({ url }) => url.pathname.includes("/airport-diagram/"),
             handler: "CacheFirst",
             options: {
               cacheName: "airport-diagrams",
               expiration: { maxEntries: 200, maxAgeSeconds: 30 * 24 * 3600, purgeOnQuotaError: true },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // The plates' pages and lists, as many as a state's (lib/kept/keepChart).
+            urlPattern: ({ url }) => url.pathname.includes("/faa-chart"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "faa-plates",
+              expiration: { maxEntries: 20000, maxAgeSeconds: 30 * 24 * 3600, purgeOnQuotaError: true },
               cacheableResponse: { statuses: [0, 200] },
             },
           },

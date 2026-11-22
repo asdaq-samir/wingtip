@@ -607,6 +607,12 @@ fun Engine.diversion(trueCourseDeg: Double, distanceNm: Double, tasKt: Double, f
     rule("diversion", EngineContract.DiversionInput(trueCourseDeg = trueCourseDeg, distanceNm = distanceNm, tasKt = tasKt, fuelBurnGph = fuelBurnGph, magneticVariationDeg = magneticVariationDeg, wind = wind, to = to, mh = mh, gs = gs, ete = ete, fuel = fuel))
 
 /**
+ * How far off the route a field is still one the flight may divert to, for keeping its plates (Keep for the Air): the 45 minutes of reserve 14 CFR 91.167(a)(3) asks under IFR and 91.151(a)(2) at night under VFR (kept by day too, more than 91.151(a)(1)'s 30: more plates, never fewer) at the airplane's own cruise, or its whole tanks' reach where that is less. Null with no cruise speed: never a stock airplane's.
+ */
+fun Engine.diversionRangeNm(tasKt: Double? = null, usableGal: Double? = null, burnGph: Double? = null): Result<EngineContract.DiversionRangeNmAnswer> =
+    rule("diversion_range_nm", EngineContract.DiversionRangeNmInput(tasKt = tasKt, usableGal = usableGal, burnGph = burnGph))
+
+/**
  * Whether a student's estimate is within the diversion drill's allowance (ACS PA.VI.C.S2); an error for a key not estimated.
  */
 fun Engine.diversionReasonable(key: String, typed: Double, exact: Double): Result<Boolean> =
@@ -1697,6 +1703,12 @@ fun Engine.planningFigures(): Result<EngineContract.PlanningFiguresAnswer> =
  */
 fun Engine.platePagePoint(lat: Double, lon: Double, trackDeg: Double? = null, georeference: EngineContract.PlatePagePointInputGeoreference): Result<EngineContract.PlatePagePointAnswer?> =
     rule("plate_page_point", EngineContract.PlatePagePointInput(lat = lat, lon = lon, trackDeg = trackDeg, georeference = georeference))
+
+/**
+ * The plates a flight keeps for the air, each field once in its first role (departure, destination, stop, alternate (14 CFR 91.169(a)(2)), then the fields within range_nm of the route, nearest first) with the charts its role keeps: every chart at the departure, the destination and each stop; the approaches, minimums, diagram, hot spots and land-and-hold-short at the alternate; the approaches, minimums and diagram at a diversion. No diversion is kept with no range.
+ */
+fun Engine.platesKept(rangeNm: Double? = null, fields: List<EngineContract.PlatesKeptInputFieldsItem>): Result<List<EngineContract.PlatesKeptAnswerItem>> =
+    rule("plates_kept", EngineContract.PlatesKeptInput(rangeNm = rangeNm, fields = fields))
 
 /**
  * What a route point typed is: a fix, the pilot's own point (fix-radial-distance), or null.

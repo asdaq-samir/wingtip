@@ -121,8 +121,15 @@ internal fun ReadyActionRow(item: EngineContract.ReadyItem, fixer: ReadyFixer, b
             fixer.run(f)
         }
     }
+    // Keep for the Air's size before it is kept (KeepForAirModel).
+    val under = if (item.fix == "keep_for_air") fixer.platesWords() else null
     ListItem(
         leadingContent = { FindingIcon(BriefModel.finding(item.finding), Modifier.size(WingtipSpace.Xl)) },
+        supportingContent = if (under != null) {
+            { Text(under) }
+        } else {
+            null
+        },
         trailingContent = if (busy || run != null) {
             {
                 if (busy) Loading(Modifier.size(WingtipSpace.Lg))

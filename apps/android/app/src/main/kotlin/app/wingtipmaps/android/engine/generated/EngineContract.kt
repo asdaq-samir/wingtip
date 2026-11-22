@@ -3464,6 +3464,37 @@ object EngineContract {
     )
 
     @Serializable
+    data class DiversionRangeNmAnswer(
+        /**
+         * The range, nm; null with no cruise speed.
+         */
+        @SerialName("range_nm")
+        val rangeNm: Double? = null,
+        @SerialName("reserve_min")
+        val reserveMin: Double,
+        val basis: String,
+    )
+
+    @Serializable
+    data class DiversionRangeNmInput(
+        /**
+         * The airplane's cruise true airspeed, knots (its profile's); null or missing where none is picked.
+         */
+        @SerialName("tas_kt")
+        val tasKt: Double? = null,
+        /**
+         * Its usable fuel, gallons; null or missing for none.
+         */
+        @SerialName("usable_gal")
+        val usableGal: Double? = null,
+        /**
+         * Its cruise burn, gallons an hour; null or missing for none.
+         */
+        @SerialName("burn_gph")
+        val burnGph: Double? = null,
+    )
+
+    @Serializable
     data class DiversionReasonableInput(
         val key: String,
         val typed: Double,
@@ -9673,6 +9704,53 @@ object EngineContract {
         @SerialName("plan_view")
         val planView: EngineContract.PlatePageBox,
         val insets: List<EngineContract.PlatePageBox>? = null,
+    )
+
+    @Serializable
+    data class PlatesKeptAnswerItem(
+        val ident: String,
+        val role: String,
+        @SerialName("off_nm")
+        val offNm: Double? = null,
+        val charts: List<EngineContract.PlatesKeptAnswerItemChartsItem>,
+    )
+
+    /**
+     * A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.
+     */
+    @Serializable
+    data class PlatesKeptAnswerItemChartsItem(
+        val kind: String,
+    )
+
+    @Serializable
+    data class PlatesKeptInput(
+        /**
+         * diversion_range_nm's range; null for none.
+         */
+        @SerialName("range_nm")
+        val rangeNm: Double? = null,
+        val fields: List<EngineContract.PlatesKeptInputFieldsItem>,
+    )
+
+    @Serializable
+    data class PlatesKeptInputFieldsItem(
+        val ident: String,
+        val role: String,
+        /**
+         * How far the field is off the route, nm (a diversion's).
+         */
+        @SerialName("off_nm")
+        val offNm: Double? = null,
+        val charts: List<EngineContract.PlatesKeptInputFieldsItemChartsItem>,
+    )
+
+    /**
+     * A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.
+     */
+    @Serializable
+    data class PlatesKeptInputFieldsItemChartsItem(
+        val kind: String,
     )
 
     @Serializable

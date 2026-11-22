@@ -29,9 +29,11 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.engine.MapRules
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.live.LiveAirportRows
+import app.wingtipmaps.android.offline.ChartKeeper
 import app.wingtipmaps.android.offline.KeptAgeLine
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.plates.APPROACH_CHART
+import app.wingtipmaps.android.plates.PlateViewer
 import app.wingtipmaps.android.plates.ShowPlateButton
 import app.wingtipmaps.android.receiver.ReceiverReports
 import java.util.Locale
@@ -154,13 +156,19 @@ fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, s
                 var placed by remember(place.ident, p.name) { mutableStateOf(true) }
                 val show: (@Composable () -> Unit)? = if (p.kind == APPROACH_CHART) ({ ShowPlateButton(place.ident, p.name) { placed = it } }) else null
                 val mark = view.marks.approach[p.url]
+                // A chart kept on the phone (Keep for the Air, a state's
+                // plates) opens in the app's viewer, with no signal; others
+                // at the FAA's page, as before.
+                val kept = remember(p.url) { KeptForAir.current?.let { ChartKeeper(it).kept(p.url) } == true }
+                var viewing by remember(p.url) { mutableStateOf(false) }
+                if (viewing) PlateViewer(MapRules.faaWords(p.name), p.url, null, onClose = { viewing = false })
                 PlaceRow(
                     // The d-TPP's capitals in sentence case, its codes kept (faa_words).
                     headline = { Titled(MapRules.faaWords(p.name)) { mark?.let { NotamBadgeButton(it, view.onNotam) } } },
                     supporting = if (placed) p.kind else stringResource(R.string.plate_not_placed),
                     modifier = pad,
                     trailing = show,
-                ) { context.startActivity(Intent(Intent.ACTION_VIEW, p.url.toUri())) }
+                ) { if (kept) viewing = true else context.startActivity(Intent(Intent.ACTION_VIEW, p.url.toUri())) }
             }
         }
         AirportSection.NOTAMS -> notamsSection(view.notams, pad)

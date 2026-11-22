@@ -15,6 +15,8 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.PlateGeoreference
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.flight.FlightModel
+import app.wingtipmaps.android.offline.ChartKeeper
+import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.ui.DiagramPage
 import app.wingtipmaps.android.ui.FullScreenPage
 import app.wingtipmaps.android.ui.PageMark
@@ -51,10 +53,12 @@ fun PlateViewer(title: String, url: String, georeference: PlateGeoreference?, on
     }
 }
 
-/** The plate's PDF from the FAA, kept in the cache, its first page drawn
- *  three times its size, as the airport diagram's is (DiagramPage). */
+/** The plate's PDF, its first page drawn three times its size, as the
+ *  airport diagram's is (DiagramPage): the one kept for the air or with a
+ *  state's plates (ChartKeeper) first, so it opens with no signal; else
+ *  the FAA's, kept in the cache. */
 private suspend fun readPlate(url: String, cache: File): Bitmap? = withContext(Dispatchers.IO) {
-    val file = File(cache, "plate-${url.hashCode()}.pdf")
+    val file = KeptForAir.current?.let { ChartKeeper(it).file(url) }?.takeIf { it.isFile } ?: File(cache, "plate-${url.hashCode()}.pdf")
     if (!file.exists()) DiagramPage.download(url, file)
     ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
         PdfRenderer(fd).use { renderer ->

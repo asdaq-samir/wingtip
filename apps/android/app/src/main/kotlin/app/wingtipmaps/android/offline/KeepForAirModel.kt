@@ -4,10 +4,13 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.altitude.PlanAltitudes
+import app.wingtipmaps.android.api.generated.FlightPlates
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.map.WeatherLoop
 import app.wingtipmaps.android.ready.ReadyFacts
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +27,9 @@ import javax.inject.Inject
  * plan and its nav log as they are (KeptPlan), the cycle packs of the
  * regions it crosses, and -- from the flight plan -- the route's charts
  * as Setup → Downloads keeps a box (DownloadsModel). Then what the
- * answers take on the phone, said as "Kept for the Air: N MB".
+ * answers take on the phone, said as "Kept for the Air: N MB". Before
+ * the tap, the flight's plates' size, asked of the planner as the plan
+ * changes (`size`, FlightPlatesLine).
  */
 @HiltViewModel
 class KeepForAirModel @Inject constructor(app: Application) : AndroidViewModel(app) {
@@ -43,6 +48,36 @@ class KeepForAirModel @Inject constructor(app: Application) : AndroidViewModel(a
 
     private val store = KeptForAir.of(app)
 
+    private val _plates = MutableStateFlow<FlightPlates?>(null)
+    /** The flight's plates the planner names, with their size, about. */
+    val plates: StateFlow<FlightPlates?> = _plates.asStateFlow()
+    private var sized: FlightPlatesAsk? = null
+    private var sizing: Job? = null
+
+    /** The ask for the plan on the page, the airplane the nav log's. */
+    private fun ask(s: Plan.State): FlightPlatesAsk? = FlightPlatesAsk.of(s, PlanAltitudes.state.value.line?.aircraft)
+
+    /** The flight's plates sized for `s`, asked again only for another
+     *  flight; none said where the planner could not answer. */
+    fun size(s: Plan.State) {
+        val ask = ask(s)
+        val same = ask?.flight == sized?.flight
+        if (same && (ask == null || _plates.value != null || sizing?.isActive == true)) return
+        sized = ask
+        sizing?.cancel()
+        _plates.value = null
+        if (ask == null || s.course == null) return
+        sizing = viewModelScope.launch {
+            _plates.value = try {
+                withContext(Dispatchers.IO) { PlatesPlanner.Live.flight(ask) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
+
     /** Everything kept for the plan on the page; `downloads` keeps the
      *  route's charts too where given. Done when the job is. */
     fun keep(plan: Plan, downloads: DownloadsModel? = null): Job {
@@ -54,7 +89,7 @@ class KeepForAirModel @Inject constructor(app: Application) : AndroidViewModel(a
             val app = getApplication<Application>()
             val line = s.course?.courseLine.orEmpty().filter { it.size == 2 }
             withContext(Dispatchers.IO) {
-                KeepForAir.keep(store, s, ReadyFacts.cruise(s.legs.map { it.altitudeFt }), WeatherLoop.of(app).state.value.kind)
+                KeepForAir.keep(store, s, ReadyFacts.cruise(s.legs.map { it.altitudeFt }), WeatherLoop.of(app).state.value.kind, ask(s))
             }
             plan.save()
             if (line.isNotEmpty()) {

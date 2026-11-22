@@ -4,6 +4,7 @@ import type { keepForAir as KeepForAir } from "./keepForAir";
  *  on board for Ready to fly, the feature's entries. */
 export { useKeptForAir } from "./useKeptForAir";
 export { forgetKeptRecord, keptRecordStore } from "./keptRecord";
+export { aboutMb, flightPlatesLine, useFlightPlates } from "./keepPlates";
 
 /** The keep itself (keepForAir) on a chunk of its own, with the answers it
  *  asks for (the briefing, NOTAMs and their ranking, plates, the side view

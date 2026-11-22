@@ -1112,6 +1112,38 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/plan`.
     /// - Remark: Generated from `#/paths//api/plan/get(plan)`.
     func plan(_ input: Operations.Plan.Input) async throws -> Operations.Plan.Output
+    /// Flight Plates
+    ///
+    /// The plates Keep for the Air keeps for a flight, and their size,
+    /// about, said before they are fetched: the departure's, the
+    /// destination's, each stop's and the alternate's -- `alternate` filed,
+    /// or the engine's pick of those that will do at `eta` (UTC; now where
+    /// not given) at the airplane's cruise `tas_kt` (14 CFR 91.169(c)) --
+    /// and those of the fields within diversion range of the route (the
+    /// engine's `diversion_range_nm`, from `tas_kt`, `usable_gal` and
+    /// `burn_gph`, the picked airplane's own; none with no airplane).
+    ///
+    /// - Remark: HTTP `GET /api/plates/flight`.
+    /// - Remark: Generated from `#/paths//api/plates/flight/get(flight_plates)`.
+    func flightPlates(_ input: Operations.FlightPlates.Input) async throws -> Operations.FlightPlates.Output
+    /// Plate States
+    ///
+    /// The states whose plates Downloads offers, each with its size,
+    /// about, of the d-TPP cycle in force, and when the next takes over
+    /// (0901Z on its AIRAC date), when a kept state is fetched again.
+    ///
+    /// - Remark: HTTP `GET /api/plates/states`.
+    /// - Remark: Generated from `#/paths//api/plates/states/get(plate_states)`.
+    func plateStates(_ input: Operations.PlateStates.Input) async throws -> Operations.PlateStates.Output
+    /// Plate State
+    ///
+    /// A state's plates of `cycle`: each open field and its charts, which
+    /// the device fetches as the card's Charts tab does (/api/faa-chart).
+    /// 404 for a cycle not served or a state with no plates.
+    ///
+    /// - Remark: HTTP `GET /api/plates/states/{cycle}/{state}`.
+    /// - Remark: Generated from `#/paths//api/plates/states/{cycle}/{state}/get(plate_state)`.
+    func plateState(_ input: Operations.PlateState.Input) async throws -> Operations.PlateState.Output
     /// Retrain
     ///
     /// Starts one training run (`python -m wingtip.pipeline run`): the
@@ -3286,6 +3318,56 @@ extension APIProtocol {
     ) async throws -> Operations.Plan.Output {
         try await plan(Operations.Plan.Input(
             query: query,
+            headers: headers
+        ))
+    }
+    /// Flight Plates
+    ///
+    /// The plates Keep for the Air keeps for a flight, and their size,
+    /// about, said before they are fetched: the departure's, the
+    /// destination's, each stop's and the alternate's -- `alternate` filed,
+    /// or the engine's pick of those that will do at `eta` (UTC; now where
+    /// not given) at the airplane's cruise `tas_kt` (14 CFR 91.169(c)) --
+    /// and those of the fields within diversion range of the route (the
+    /// engine's `diversion_range_nm`, from `tas_kt`, `usable_gal` and
+    /// `burn_gph`, the picked airplane's own; none with no airplane).
+    ///
+    /// - Remark: HTTP `GET /api/plates/flight`.
+    /// - Remark: Generated from `#/paths//api/plates/flight/get(flight_plates)`.
+    public func flightPlates(
+        query: Operations.FlightPlates.Input.Query,
+        headers: Operations.FlightPlates.Input.Headers = .init()
+    ) async throws -> Operations.FlightPlates.Output {
+        try await flightPlates(Operations.FlightPlates.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Plate States
+    ///
+    /// The states whose plates Downloads offers, each with its size,
+    /// about, of the d-TPP cycle in force, and when the next takes over
+    /// (0901Z on its AIRAC date), when a kept state is fetched again.
+    ///
+    /// - Remark: HTTP `GET /api/plates/states`.
+    /// - Remark: Generated from `#/paths//api/plates/states/get(plate_states)`.
+    public func plateStates(headers: Operations.PlateStates.Input.Headers = .init()) async throws -> Operations.PlateStates.Output {
+        try await plateStates(Operations.PlateStates.Input(headers: headers))
+    }
+    /// Plate State
+    ///
+    /// A state's plates of `cycle`: each open field and its charts, which
+    /// the device fetches as the card's Charts tab does (/api/faa-chart).
+    /// 404 for a cycle not served or a state with no plates.
+    ///
+    /// - Remark: HTTP `GET /api/plates/states/{cycle}/{state}`.
+    /// - Remark: Generated from `#/paths//api/plates/states/{cycle}/{state}/get(plate_state)`.
+    public func plateState(
+        path: Operations.PlateState.Input.Path,
+        headers: Operations.PlateState.Input.Headers = .init()
+    ) async throws -> Operations.PlateState.Output {
+        try await plateState(Operations.PlateState.Input(
+            path: path,
             headers: headers
         ))
     }

@@ -1125,7 +1125,8 @@ way: three homes, and every control in one of them.
    the buttons.
 2. **Settings**, one page, You's gear: Map (Airport Weather, Glide Ring, Clear Your Path), In
    Flight (Alerts; ATC, one page of Comms Assist, ATC Alerts and the
-   Copilot), Data (Keep for the Air), and Help & About (Guide, Status,
+   Copilot), Data (Keep for the Air, with the flight's plates' size, and
+   Plates, kept by state), and Help & About (Guide, Status,
    Log, About, Sources, and the Privacy, Terms and Legal links). The Map
    card's gear opens the same page at its Map group; it is the one
    thing called Settings.

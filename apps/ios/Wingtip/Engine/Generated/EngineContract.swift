@@ -3468,6 +3468,34 @@ enum EngineContract {
         }
     }
 
+    struct DiversionRangeNmAnswer: Codable, Equatable, Sendable {
+        /// The range, nm; null with no cruise speed.
+        var rangeNm: Double?
+        var reserveMin: Double
+        var basis: String
+
+        enum CodingKeys: String, CodingKey {
+            case rangeNm = "range_nm"
+            case reserveMin = "reserve_min"
+            case basis
+        }
+    }
+
+    struct DiversionRangeNmInput: Codable, Equatable, Sendable {
+        /// The airplane's cruise true airspeed, knots (its profile's); null or missing where none is picked.
+        var tasKt: Double?
+        /// Its usable fuel, gallons; null or missing for none.
+        var usableGal: Double?
+        /// Its cruise burn, gallons an hour; null or missing for none.
+        var burnGph: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case tasKt = "tas_kt"
+            case usableGal = "usable_gal"
+            case burnGph = "burn_gph"
+        }
+    }
+
     struct DiversionReasonableInput: Codable, Equatable, Sendable {
         var key: String
         var typed: Double
@@ -9446,6 +9474,56 @@ enum EngineContract {
             case planView = "plan_view"
             case insets
         }
+    }
+
+    struct PlatesKeptAnswerItem: Codable, Equatable, Sendable {
+        var ident: String
+        var role: String
+        var offNm: Double?
+        var charts: [EngineContract.PlatesKeptAnswerItemChartsItem]
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case role
+            case offNm = "off_nm"
+            case charts
+        }
+    }
+
+    /// A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.
+    struct PlatesKeptAnswerItemChartsItem: Codable, Equatable, Sendable {
+        var kind: String
+    }
+
+    struct PlatesKeptInput: Codable, Equatable, Sendable {
+        /// diversion_range_nm's range; null for none.
+        var rangeNm: Double?
+        var fields: [EngineContract.PlatesKeptInputFieldsItem]
+
+        enum CodingKeys: String, CodingKey {
+            case rangeNm = "range_nm"
+            case fields
+        }
+    }
+
+    struct PlatesKeptInputFieldsItem: Codable, Equatable, Sendable {
+        var ident: String
+        var role: String
+        /// How far the field is off the route, nm (a diversion's).
+        var offNm: Double?
+        var charts: [EngineContract.PlatesKeptInputFieldsItemChartsItem]
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case role
+            case offNm = "off_nm"
+            case charts
+        }
+    }
+
+    /// A d-TPP chart as the planner lists it: its chart_code `kind`, `name` and `url`, passed through.
+    struct PlatesKeptInputFieldsItemChartsItem: Codable, Equatable, Sendable {
+        var kind: String
     }
 
     struct PointKindInput: Codable, Equatable, Sendable {

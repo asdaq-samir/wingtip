@@ -11,9 +11,11 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -30,7 +32,8 @@ import java.util.Locale
  * has a course, as the iOS app's FPLView has it: one tap keeps the route's
  * answers, plan, cycle packs and charts (KeepForAirModel), "Keeping for
  * the Air…" while it does, then what the answers take on the phone. A row
- * in the tint, a stock list item; tapped again, kept afresh.
+ * in the tint, a stock list item, the flight's plates' size under it
+ * (flightPlatesWords); tapped again, kept afresh.
  */
 @Composable
 fun KeepForAirRow(plan: Plan, keeper: KeepForAirModel = hiltViewModel(), downloads: DownloadsModel = hiltViewModel()) {
@@ -39,6 +42,8 @@ fun KeepForAirRow(plan: Plan, keeper: KeepForAirModel = hiltViewModel(), downloa
     val mine = state.route == ReadyFacts.flightKey(route)
     val keeping = mine && state.keeping
     val keptMb = state.keptMb.takeIf { mine }
+    // The flight's plates' size, said before the tap.
+    val sized = flightPlatesWords(plan, keeper)
     val words = when {
         keeping -> stringResource(R.string.keeping_for_air)
         keptMb != null -> stringResource(R.string.kept_for_air, String.format(Locale.US, "%.1f", keptMb))
@@ -52,7 +57,29 @@ fun KeepForAirRow(plan: Plan, keeper: KeepForAirModel = hiltViewModel(), downloa
             else Icon(if (keptMb != null) Icons.Filled.CloudDone else Icons.Filled.CloudDownload, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        supportingContent = if (sized != null) {
+            { Text(sized) }
+        } else {
+            null
+        },
         content = { Text(words, color = MaterialTheme.colorScheme.primary) },
     )
     ProblemLine(state.problem.takeIf { mine }, Modifier.padding(horizontal = WingtipSpace.Lg))
+}
+
+/**
+ * The flight's plates' size said before they are kept (the web's
+ * flightPlatesLine): "This flight's plates: about 52 MB, 9 fields, within
+ * 118 nm of the route.", or with no airplane picked that one is needed
+ * for the diversions'. Asked of the model whenever the plan changes; null
+ * until the planner has answered.
+ */
+@Composable
+fun flightPlatesWords(plan: Plan, keeper: KeepForAirModel): String? {
+    val route by plan.state.collectAsStateWithLifecycle()
+    val plates by keeper.plates.collectAsStateWithLifecycle()
+    LaunchedEffect(route.dep, route.dest, route.stops, route.course, route.totals, route.aircraft, route.own, route.rules) { keeper.size(route) }
+    val line = FlightPlatesLine.of(plates) ?: return null
+    return line.rangeNm?.let { pluralStringResource(R.plurals.plates_flight_size, line.fields, line.mb, line.fields, it) }
+        ?: pluralStringResource(R.plurals.plates_flight_size_no_airplane, line.fields, line.mb, line.fields)
 }

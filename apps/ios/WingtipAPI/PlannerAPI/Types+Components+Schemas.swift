@@ -9041,6 +9041,92 @@ extension Components {
                 case year
             }
         }
+        /// The plates Keep for the Air keeps for a flight, with their size,
+        /// about, before any is fetched. `range_nm` is the diversion range (the
+        /// engine's `diversion_range_nm`: the reserve's `reserve_min` at the
+        /// airplane's cruise, or its tanks' reach, `basis`), null with no
+        /// airplane. `alternate` is the one filed, or the engine's pick
+        /// (`alternate_picked`, 14 CFR 91.169(c)). `cycle` is the d-TPP cycle the
+        /// charts are of (`state` "kept" where the FAA's could not be had), and
+        /// `next_at` when the next takes over.
+        ///
+        /// - Remark: Generated from `#/components/schemas/FlightPlates`.
+        public struct FlightPlates: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/FlightPlates/alternate`.
+            public var alternate: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/FlightPlates/alternate_picked`.
+            public var alternatePicked: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/FlightPlates/basis`.
+            public var basis: Swift.String
+            /// - Remark: Generated from `#/components/schemas/FlightPlates/bytes`.
+            public var bytes: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/FlightPlates/charts`.
+            public var charts: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/FlightPlates/cycle`.
+            public var cycle: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/FlightPlates/fields`.
+            public var fields: [Components.Schemas.KeptPlateField]
+            /// - Remark: Generated from `#/components/schemas/FlightPlates/next_at`.
+            public var nextAt: Swift.String
+            /// - Remark: Generated from `#/components/schemas/FlightPlates/range_nm`.
+            public var rangeNm: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/FlightPlates/reserve_min`.
+            public var reserveMin: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/FlightPlates/state`.
+            public var state: Swift.String
+            /// Creates a new `FlightPlates`.
+            ///
+            /// - Parameters:
+            ///   - alternate:
+            ///   - alternatePicked:
+            ///   - basis:
+            ///   - bytes:
+            ///   - charts:
+            ///   - cycle:
+            ///   - fields:
+            ///   - nextAt:
+            ///   - rangeNm:
+            ///   - reserveMin:
+            ///   - state:
+            public init(
+                alternate: Swift.String? = nil,
+                alternatePicked: Swift.Bool,
+                basis: Swift.String,
+                bytes: Swift.Int,
+                charts: Swift.Int,
+                cycle: Swift.String? = nil,
+                fields: [Components.Schemas.KeptPlateField],
+                nextAt: Swift.String,
+                rangeNm: Swift.Double? = nil,
+                reserveMin: Swift.Double,
+                state: Swift.String
+            ) {
+                self.alternate = alternate
+                self.alternatePicked = alternatePicked
+                self.basis = basis
+                self.bytes = bytes
+                self.charts = charts
+                self.cycle = cycle
+                self.fields = fields
+                self.nextAt = nextAt
+                self.rangeNm = rangeNm
+                self.reserveMin = reserveMin
+                self.state = state
+            }
+            public enum CodingKeys: String, CodingKey {
+                case alternate
+                case alternatePicked = "alternate_picked"
+                case basis
+                case bytes
+                case charts
+                case cycle
+                case fields
+                case nextAt = "next_at"
+                case rangeNm = "range_nm"
+                case reserveMin = "reserve_min"
+                case state
+            }
+        }
         /// The route a flight number is scheduled to fly (wingtip.traffic.route),
         /// from Virtual Radar Server's route database (CC0): the airports in
         /// order, and whether the airplane is on or near it now. Not the flight
@@ -11326,6 +11412,45 @@ extension Components {
                 case kind
                 case reference
                 case title
+            }
+        }
+        /// A field whose plates are kept: its part in the flight, how far it is
+        /// off the route (a diversion's), and the charts its part keeps (the
+        /// engine's `plates_kept`).
+        ///
+        /// - Remark: Generated from `#/components/schemas/KeptPlateField`.
+        public struct KeptPlateField: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/KeptPlateField/charts`.
+            public var charts: [Components.Schemas.TerminalChart]
+            /// - Remark: Generated from `#/components/schemas/KeptPlateField/ident`.
+            public var ident: Swift.String
+            /// - Remark: Generated from `#/components/schemas/KeptPlateField/off_nm`.
+            public var offNm: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/KeptPlateField/role`.
+            public var role: Swift.String
+            /// Creates a new `KeptPlateField`.
+            ///
+            /// - Parameters:
+            ///   - charts:
+            ///   - ident:
+            ///   - offNm:
+            ///   - role:
+            public init(
+                charts: [Components.Schemas.TerminalChart],
+                ident: Swift.String,
+                offNm: Swift.Double? = nil,
+                role: Swift.String
+            ) {
+                self.charts = charts
+                self.ident = ident
+                self.offNm = offNm
+                self.role = role
+            }
+            public enum CodingKeys: String, CodingKey {
+                case charts
+                case ident
+                case offNm = "off_nm"
+                case role
             }
         }
         /// One dead-reckoning leg. `wind` is None when no winds-aloft station
@@ -16666,6 +16791,157 @@ extension Components {
                 case topLeft = "top_left"
                 case topRight = "top_right"
                 case width
+            }
+        }
+        /// A state's set of `cycle`: every open field the d-TPP files under it
+        /// and its charts, each fetched as the card's Charts tab fetches it.
+        ///
+        /// - Remark: Generated from `#/components/schemas/PlateStateCharts`.
+        public struct PlateStateCharts: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/PlateStateCharts/cycle`.
+            public var cycle: Swift.String
+            /// - Remark: Generated from `#/components/schemas/PlateStateCharts/fields`.
+            public var fields: [Components.Schemas.PlateStateField]
+            /// - Remark: Generated from `#/components/schemas/PlateStateCharts/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/PlateStateCharts/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/PlateStateCharts/next_at`.
+            public var nextAt: Swift.String
+            /// Creates a new `PlateStateCharts`.
+            ///
+            /// - Parameters:
+            ///   - cycle:
+            ///   - fields:
+            ///   - id:
+            ///   - name:
+            ///   - nextAt:
+            public init(
+                cycle: Swift.String,
+                fields: [Components.Schemas.PlateStateField],
+                id: Swift.String,
+                name: Swift.String,
+                nextAt: Swift.String
+            ) {
+                self.cycle = cycle
+                self.fields = fields
+                self.id = id
+                self.name = name
+                self.nextAt = nextAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case cycle
+                case fields
+                case id
+                case name
+                case nextAt = "next_at"
+            }
+        }
+        /// One field of a state's set and its charts.
+        ///
+        /// - Remark: Generated from `#/components/schemas/PlateStateField`.
+        public struct PlateStateField: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/PlateStateField/charts`.
+            public var charts: [Components.Schemas.TerminalChart]
+            /// - Remark: Generated from `#/components/schemas/PlateStateField/ident`.
+            public var ident: Swift.String
+            /// Creates a new `PlateStateField`.
+            ///
+            /// - Parameters:
+            ///   - charts:
+            ///   - ident:
+            public init(
+                charts: [Components.Schemas.TerminalChart],
+                ident: Swift.String
+            ) {
+                self.charts = charts
+                self.ident = ident
+            }
+            public enum CodingKeys: String, CodingKey {
+                case charts
+                case ident
+            }
+        }
+        /// A state's plates as Downloads offers them: its fields and charts
+        /// and their size, about.
+        ///
+        /// - Remark: Generated from `#/components/schemas/PlateStateSet`.
+        public struct PlateStateSet: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/PlateStateSet/bytes`.
+            public var bytes: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/PlateStateSet/charts`.
+            public var charts: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/PlateStateSet/fields`.
+            public var fields: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/PlateStateSet/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/PlateStateSet/name`.
+            public var name: Swift.String
+            /// Creates a new `PlateStateSet`.
+            ///
+            /// - Parameters:
+            ///   - bytes:
+            ///   - charts:
+            ///   - fields:
+            ///   - id:
+            ///   - name:
+            public init(
+                bytes: Swift.Int,
+                charts: Swift.Int,
+                fields: Swift.Int,
+                id: Swift.String,
+                name: Swift.String
+            ) {
+                self.bytes = bytes
+                self.charts = charts
+                self.fields = fields
+                self.id = id
+                self.name = name
+            }
+            public enum CodingKeys: String, CodingKey {
+                case bytes
+                case charts
+                case fields
+                case id
+                case name
+            }
+        }
+        /// The states whose plates can be kept, of the d-TPP `cycle` (null
+        /// where no index could be had), and when the next takes over.
+        ///
+        /// - Remark: Generated from `#/components/schemas/PlateStates`.
+        public struct PlateStates: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/PlateStates/cycle`.
+            public var cycle: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/PlateStates/next_at`.
+            public var nextAt: Swift.String
+            /// - Remark: Generated from `#/components/schemas/PlateStates/state`.
+            public var state: Swift.String
+            /// - Remark: Generated from `#/components/schemas/PlateStates/states`.
+            public var states: [Components.Schemas.PlateStateSet]
+            /// Creates a new `PlateStates`.
+            ///
+            /// - Parameters:
+            ///   - cycle:
+            ///   - nextAt:
+            ///   - state:
+            ///   - states:
+            public init(
+                cycle: Swift.String? = nil,
+                nextAt: Swift.String,
+                state: Swift.String,
+                states: [Components.Schemas.PlateStateSet]
+            ) {
+                self.cycle = cycle
+                self.nextAt = nextAt
+                self.state = state
+                self.states = states
+            }
+            public enum CodingKeys: String, CodingKey {
+                case cycle
+                case nextAt = "next_at"
+                case state
+                case states
             }
         }
         /// A point named as the pilot's own point off the nearest fix a pilot
