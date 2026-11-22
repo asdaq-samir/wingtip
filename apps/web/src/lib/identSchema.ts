@@ -1,5 +1,5 @@
 import { degreesMinutes } from "./coords";
-import { callEngine } from "./engine/engine";
+import { callEngine, engineLoaded } from "./engine/engine";
 
 /** An airport ident, normalized (trimmed, uppercased) and shape-checked
  *  -- the same 3-4 alphanumeric character rule services/gateway's own
@@ -153,7 +153,10 @@ export function routeOf(
     a = identOf(dest);
   if (!d || !a) return null;
   const idents = [d, ...stops, a];
-  return idents.every((ident, i) => i === 0 || !callEngine("same_field", { a: ident, b: idents[i - 1]! })) ? { dep: d, dest: a } : null;
+  // Before the engine is in (the page's first draw reads the address's
+  // route), the idents alike as written; never a throw that takes the page down.
+  const same = (x: string, y: string) => (engineLoaded() ? callEngine("same_field", { a: x, b: y }) : x === y);
+  return idents.every((ident, i) => i === 0 || !same(ident, idents[i - 1]!)) ? { dep: d, dest: a } : null;
 }
 
 const ARROW = " → ";

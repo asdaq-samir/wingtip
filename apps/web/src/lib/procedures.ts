@@ -1,5 +1,5 @@
 import type { ProcedureFix, ProcedureList } from "./api/types";
-import { callEngine } from "./engine/engine";
+import { callEngine, engineLoaded } from "./engine/engine";
 import { altFt } from "./format";
 
 /** An instrument procedure picked at a field of the route (the route's
@@ -112,6 +112,10 @@ export async function typedProcedure(
  *  come with a space round it. The one test for the app, which the
  *  traffic's (fbo) had a second of. */
 export function sameField(a: string, b: string): boolean {
+  // Before the engine is in (a page's first draw can ask, a kept route's
+  // ways read on load): the idents alike as written, never a throw that
+  // takes the page down; the engine's answer, KBUR for BUR, once it is.
+  if (!engineLoaded()) return a.trim().toUpperCase() === b.trim().toUpperCase();
   return callEngine("same_field", { a, b });
 }
 
