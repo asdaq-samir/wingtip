@@ -189,7 +189,12 @@ These hold on every screen below and win over any reference app.
   plan staying in the side panel, as the iPad app's SplitLayout holds a
   card in `.inspector`; the map's room, its buttons, the banners and the
   chart's credit end at it (`--map-inset-right`). A desktop's cards keep
-  covering the side panel. On a kneeboard (index.css `kneeboard`: a
+  covering the side panel. From the regular width up, an approach plate's
+  card holds the plate itself (`PlateBeside`, usePlateCard's `beside`)
+  with own ship on its plan view by its georeference: the map and the
+  plate side by side, in the inspector where there is one, else over the
+  side panel with the map beside it. A phone's card keeps View Full
+  Screen (`e2e/plates-map.spec.ts`, at 1194 by 834). On a kneeboard (index.css `kneeboard`: a
   touch screen at the regular width both ways) the figures at the
   panel's foot are the flying size, 26 on 31 with 15-point names. The
   keyboard's shortcuts are on wherever there is a keyboard (an iPad's

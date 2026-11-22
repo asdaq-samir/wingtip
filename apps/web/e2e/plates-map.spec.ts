@@ -139,69 +139,75 @@ const ON_FINAL = { lat: 43.95, lon: -88.557, y: 1 - (306 + 5560 * SCALE) / 612 }
 /** The FAA chart's one page, as the planner draws it (/api/faa-chart/page). */
 const SHEET = { width: 1980, height: 3060 };
 
+/** A GPS answering later, as a real one does, flying north up the final
+ *  (ON_FINAL); the field listing the plate's chart, its one page drawn
+ *  white; and the plate's card open. */
+async function openPlacedPlate(page: Page) {
+  await page.addInitScript(
+    ([lat, lon]) => {
+      const position = () =>
+        ({
+          coords: {
+            latitude: lat,
+            longitude: lon,
+            accuracy: 5,
+            heading: 0,
+            speed: 45,
+            altitude: 600,
+            altitudeAccuracy: 10,
+            toJSON() {
+              return this;
+            },
+          },
+          timestamp: Date.now(),
+          toJSON() {
+            return this;
+          },
+        }) as unknown as GeolocationPosition;
+      Geolocation.prototype.watchPosition = function (success: PositionCallback) {
+        window.setTimeout(() => success(position()), 0);
+        return window.setInterval(() => success(position()), 1000);
+      };
+      Geolocation.prototype.clearWatch = function (id: number) {
+        window.clearInterval(id);
+      };
+      Geolocation.prototype.getCurrentPosition = function (success: PositionCallback) {
+        window.setTimeout(() => success(position()), 0);
+      };
+      localStorage.setItem("wingtip.ownship", JSON.stringify({ state: { enabled: true, follow: false, lastFix: null }, version: 0 }));
+    },
+    [ON_FINAL.lat, ON_FINAL.lon] as const,
+  );
+  // The field lists the plate's chart, its one page drawn white.
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/KOSH"),
+    async (route) => {
+      const answer = await route.fetch();
+      await route.fulfill({
+        response: answer,
+        json: {
+          ...(await answer.json()),
+          procedures: [{ kind: "IAP", name: PLATE.name, url: "https://aeronav.faa.gov/d-tpp/2611/00078IL36.PDF" }],
+        },
+      });
+    },
+  );
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/faa-chart"),
+    (route) => route.fulfill({ json: { pages: [{ source: "dtpp", edition: "2611", pdf: "00078IL36.PDF", page: 1, ...SHEET }] } }),
+  );
+  await page.route(
+    (url) => url.pathname.includes("/api/planner/faa-chart/page/"),
+    (route) => route.fulfill({ body: WHITE, contentType: "image/png" }),
+  );
+  return openPlateCard(page, PLATE_PLACED);
+}
+
 test.describe("own ship on the plate full screen", () => {
   test.use({ permissions: ["geolocation"] });
 
   test("the position is on the plate's plan view where its georeference puts it, and stays there through a zoom", async ({ page }) => {
-    // A GPS answering later, as a real one does, flying north up the final.
-    await page.addInitScript(
-      ([lat, lon]) => {
-        const position = () =>
-          ({
-            coords: {
-              latitude: lat,
-              longitude: lon,
-              accuracy: 5,
-              heading: 0,
-              speed: 45,
-              altitude: 600,
-              altitudeAccuracy: 10,
-              toJSON() {
-                return this;
-              },
-            },
-            timestamp: Date.now(),
-            toJSON() {
-              return this;
-            },
-          }) as unknown as GeolocationPosition;
-        Geolocation.prototype.watchPosition = function (success: PositionCallback) {
-          window.setTimeout(() => success(position()), 0);
-          return window.setInterval(() => success(position()), 1000);
-        };
-        Geolocation.prototype.clearWatch = function (id: number) {
-          window.clearInterval(id);
-        };
-        Geolocation.prototype.getCurrentPosition = function (success: PositionCallback) {
-          window.setTimeout(() => success(position()), 0);
-        };
-        localStorage.setItem("wingtip.ownship", JSON.stringify({ state: { enabled: true, follow: false, lastFix: null }, version: 0 }));
-      },
-      [ON_FINAL.lat, ON_FINAL.lon] as const,
-    );
-    // The field lists the plate's chart, its one page drawn white.
-    await page.route(
-      (url) => url.pathname.endsWith("/api/planner/airport/KOSH"),
-      async (route) => {
-        const answer = await route.fetch();
-        await route.fulfill({
-          response: answer,
-          json: {
-            ...(await answer.json()),
-            procedures: [{ kind: "IAP", name: PLATE.name, url: "https://aeronav.faa.gov/d-tpp/2611/00078IL36.PDF" }],
-          },
-        });
-      },
-    );
-    await page.route(
-      (url) => url.pathname.endsWith("/api/planner/faa-chart"),
-      (route) => route.fulfill({ json: { pages: [{ source: "dtpp", edition: "2611", pdf: "00078IL36.PDF", page: 1, ...SHEET }] } }),
-    );
-    await page.route(
-      (url) => url.pathname.includes("/api/planner/faa-chart/page/"),
-      (route) => route.fulfill({ body: WHITE, contentType: "image/png" }),
-    );
-    const card = await openPlateCard(page, PLATE_PLACED);
+    const card = await openPlacedPlate(page);
     await card.getByTestId("plate-full-screen").click();
     const viewer = page.getByTestId("airport-diagram-viewer");
     const mark = viewer.getByTestId("chart-own-ship");
@@ -240,5 +246,25 @@ test.describe("own ship on the plate full screen", () => {
         { timeout: slow(5_000) },
       )
       .toBeLessThan(3);
+  });
+});
+
+// At an 11-inch iPad's width on its side the plate is in its card beside
+// the map, own ship on it, the map still in sight to its left: the
+// layout an IFR pilot flies (the market-gap report's item 4, 2026-11-21).
+test.describe("the plate beside the map at a tablet's width", () => {
+  test.use({ permissions: ["geolocation"], viewport: { width: 1194, height: 834 } });
+
+  test("the card holds the plate with own ship on it, the map beside it", async ({ page }) => {
+    const card = await openPlacedPlate(page);
+    const beside = card.getByTestId("plate-beside");
+    await expect(beside).toBeVisible({ timeout: slow(10_000) });
+    await expect(beside.getByTestId("chart-own-ship")).toBeVisible({ timeout: slow(10_000) });
+    await expect(beside).toHaveAttribute("data-own-ship", "shown");
+    // The map's room still wide beside the card: the two side by side.
+    const box = (await beside.boundingBox())!;
+    expect(box.width).toBeGreaterThan(250);
+    const map = (await page.locator("#content").boundingBox())!;
+    expect(map.width - box.width).toBeGreaterThan(400);
   });
 });
