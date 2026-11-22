@@ -3,10 +3,10 @@ Description: >
   Wingtip Maps on AWS, built for low cost: one EC2 server (gateway, planner, ingest,
   Postgres) behind CloudFront, FAA chart tiles drawn once
   per 56-day cycle by a Fargate Spot task into S3, and the web app's
-  fingerprinted files cached at the edge. About $29 a month with the
+  fingerprinted files cached at the edge. About $41 a month with the
   server on Spot capacity, the default (docs/README-AWS.md has the
   itemised cost and the runbook). Deploy in
-  us-east-1: CloudFront's certificate must be there.
+  us-east-1: CloudFront's certificate and its WAF web ACL must be there.
 
 Metadata:
   AWS::CloudFormation::Interface:
@@ -751,11 +751,72 @@ Resources:
             QueryStringBehavior: whitelist
             QueryStrings: [c, r]
 
+  # A rate rule on the tile paths that reach the server (the deep
+  # security review of 2026-11-21, N5). A tile's address with a ?c= or ?r=
+  # of its own is a cache miss, so a loop of them made every tile the
+  # planner's to read on the server's two cores. Past 3,000 tile requests
+  # in five minutes from one address (10 a second, held), that address is
+  # answered 429 at the edge until it slows. A pilot asks far fewer: a
+  # session is some 200 tiles, the web's service worker keeps 20,000 for
+  # the cycle and the phones their own cache, and a whole screen at 2x is
+  # about 40. Counted before the cache, so a hit counts too; an airport's
+  # shared Wi-Fi of ten pilots panning at once stays under it. CLOUDFRONT
+  # scope, which AWS takes only in us-east-1, where this stack is deployed
+  # (its Description). Its cost, $6 a month and $0.60 a million requests,
+  # is in docs/README-AWS.md.
+  TileRateLimit:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub "${AWS::StackName}-tiles"
+      Description: Rate limit on the planner tile paths, everything else let through.
+      Scope: CLOUDFRONT
+      DefaultAction: { Allow: {} }
+      VisibilityConfig:
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub "${AWS::StackName}-waf"
+        SampledRequestsEnabled: true
+      CustomResponseBodies:
+        slow-down:
+          ContentType: TEXT_PLAIN
+          Content: Too many tile requests from this address. Try again in a few minutes.
+      Rules:
+        - Name: tiles-per-address
+          Priority: 0
+          Action:
+            Block:
+              CustomResponse:
+                ResponseCode: 429
+                CustomResponseBodyKey: slow-down
+                ResponseHeaders: [{ Name: Retry-After, Value: "60" }]
+          VisibilityConfig:
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub "${AWS::StackName}-tiles-per-address"
+            SampledRequestsEnabled: true
+          Statement:
+            RateBasedStatement:
+              Limit: 3000
+              EvaluationWindowSec: 300
+              AggregateKeyType: IP
+              ScopeDownStatement:
+                OrStatement:
+                  Statements:
+                    - ByteMatchStatement:
+                        FieldToMatch: { UriPath: {} }
+                        PositionalConstraint: STARTS_WITH
+                        SearchString: /api/planner/chart-tile/
+                        TextTransformations: [{ Priority: 0, Type: NONE }]
+                    - ByteMatchStatement:
+                        FieldToMatch: { UriPath: {} }
+                        PositionalConstraint: STARTS_WITH
+                        SearchString: /api/planner/terrain-tile/
+                        TextTransformations: [{ Priority: 0, Type: NONE }]
+
   Distribution:
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
         Enabled: true
+        WebACLId: !GetAtt TileRateLimit.Arn
         Comment: !Sub "Wingtip Maps (${AWS::StackName})"
         Aliases: [!Ref PublicHost]
         ViewerCertificate:
