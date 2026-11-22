@@ -142,6 +142,11 @@ struct FieldNotamsSection: View {
     var body: some View {
         @Bindable var notams = notams
         Section {
+            // The NOTAMs kept for the air, shown with no signal, with their
+            // age, amber past kept_age's hour (AIM 5-1-3), as the route's.
+            if !notams.ident.isEmpty, notams.ranked != nil {
+                KeptAgeLine(kind: .notams, key: KeptForAir.fieldNotamsKey(notams.ident))
+            }
             if let problem = notams.problem {
                 ProblemLine(problem)
             } else if let ranked = notams.ranked, ranked.notams.isEmpty {

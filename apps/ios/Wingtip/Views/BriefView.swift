@@ -40,6 +40,24 @@ struct BriefView: View {
         part == anchorAt && index == 0 ? anchor : "\(part)-\(index)"
     }
 
+    /// To a part of the Brief: a jump, not a scroll, with Reduce Motion on.
+    private func scroll(_ reader: ScrollViewProxy, to anchor: String) {
+        if reduceMotion { reader.scrollTo(anchor, anchor: .top) } else { withAnimation { reader.scrollTo(anchor, anchor: .top) } }
+    }
+
+    /// The first row of the part an Adverse Conditions row opens, by its
+    /// source; nil for one the Brief has no part for yet (a CWA).
+    private func adverseAnchor(_ source: String, _ briefing: Briefing) -> String? {
+        let weatherAt = weatherPart(briefing)
+        switch source {
+        case "TFR": return VerdictTarget.airspaceAnchor
+        case "Convective SIGMET", "SIGMET": return rowId("hazards", 0, anchorAt: weatherAt, anchor: VerdictTarget.weatherAnchor)
+        case "G-AIRMET", "AIRMET": return rowId("gairmets", 0, anchorAt: weatherAt, anchor: VerdictTarget.weatherAnchor)
+        case "PIREP": return "pireps-0"
+        default: return nil
+        }
+    }
+
     var body: some View {
         ScrollViewReader { reader in
             List {
@@ -52,10 +70,12 @@ struct BriefView: View {
                 if plan.routed {
                     // A finding scrolls the Brief to its part; a jump, not
                     // a scroll, with Reduce Motion on.
-                    GoNoGoSection { anchor in
-                        if reduceMotion { reader.scrollTo(anchor, anchor: .top) } else { withAnimation { reader.scrollTo(anchor, anchor: .top) } }
+                    GoNoGoSection { anchor in scroll(reader, to: anchor) }
+                    // Then what the flight meets on the route (AIM 7-1-5(b)(1),
+                    // the engine's gonogo_adverse_rows), each opening its part.
+                    AdverseConditionsSection(answer: AdverseConditions.rows(plan.briefing)) { source in
+                        if let briefing = plan.briefing, let anchor = adverseAnchor(source, briefing) { scroll(reader, to: anchor) }
                     }
-                    DepartureWindowSection(model: window, signedIn: session.signedIn, airplane: plan.airplaneChosen)
                 }
                 if let briefing = plan.briefing {
                     let weatherAt = weatherPart(briefing)
@@ -141,6 +161,7 @@ struct BriefView: View {
                                     }
                                     if let raw = p.raw { Text(raw).font(.footnote.monospaced()).foregroundStyle(.secondary) }
                                 }
+                                .id("pireps-\(i)")
                                 OnRouteRow(on: p.onRoute, key: "pirep-\(i)-\(p.raw ?? "")")
                             }
                         }
@@ -151,6 +172,9 @@ struct BriefView: View {
                         LabeledContent("Lowest Ceiling", value: Format.altitude(briefing.forecast.minCeilingFt))
                             .id(rowId("forecast", 0, anchorAt: weatherAt, anchor: VerdictTarget.weatherAnchor))
                         LabeledContent("Lowest Visibility", value: briefing.forecast.minVisibilitySm.map { String(format: "%g sm", $0) } ?? "—")
+                        // The route's strongest headwind, over every leg, as
+                        // the web's glance (the engine's route_headwind).
+                        if !plan.legs.isEmpty { LabeledContent("Most Headwind", value: BriefWind.mostHeadwind(plan.legs)) }
                         ForEach(Array(briefing.forecast.stations.enumerated()), id: \.offset) { _, station in
                             if let raw = station.raw {
                                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
@@ -198,6 +222,11 @@ struct BriefView: View {
                 }
                 // The route's NOTAMs, fetched for Ready to fly (91.103, AIM 5-1-3).
                 if plan.routed { NotamsSection() }
+                // When to go at the foot, after the flight's rows (the
+                // Brief audit's option 2, the owner, 2026-11-21).
+                if plan.routed {
+                    DepartureWindowSection(model: window, signedIn: session.signedIn, airplane: plan.airplaneChosen)
+                }
                 // The passengers' briefing (91.107, the SAFETY briefing) and
                 // the flight to send them, after the weather.
                 if plan.routed {

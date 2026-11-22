@@ -139,7 +139,7 @@ struct GoNoGoSection: View {
             }
             if let instructor {
                 Label {
-                    Text("Your instructor, \(instructor.name ?? instructor.email), reviews the flights you put to them from their phone.")
+                    Text("Your instructor, \(instructor.name ?? instructor.email), sees the flights you send them and can sign them off from their phone.")
                         .font(.subheadline)
                 } icon: {
                     Image(systemName: "person.crop.circle").foregroundStyle(accent)
