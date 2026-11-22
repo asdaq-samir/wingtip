@@ -92,6 +92,10 @@ else
   say "restoring $(basename "$backup") (pg_dumpall)"
   gunzip -c "$work/cluster.sql.gz" | docker exec -i "$db" psql -U wingtip -d postgres -q -v ON_ERROR_STOP=0 > "$work/restore.log" 2>&1 || true
   grep -v 'already exists' "$work/restore.log" | grep -m5 'ERROR' && fail "the dump restored with errors (above)"
+  # Its ALTER ROLE then sets the dumped stack's password on wingtip, so the
+  # gateway below could not sign in with the drill's (its first run,
+  # 2026-11-21: "password authentication failed"). The drill's again.
+  psql "ALTER ROLE wingtip PASSWORD 'drill'" > /dev/null
 fi
 say "restored in $(( $(date +%s) - started )) s"
 
@@ -140,7 +144,11 @@ else
   done
   [ "$ready" = yes ] || { docker logs --tail 40 "$gw" >&2; fail "the gateway did not come up on the restored database (its log above)"; }
   migrated=$(psql "SELECT max(version::int) FROM flyway_schema_history WHERE success AND version IS NOT NULL")
-  [ "$migrated" = "$newest" ] || fail "Flyway left the schema at V$migrated, not V$newest"
+  # The gateway's image may be newer than this checkout (built from a
+  # branch with a migration this one lacks: V49 on its first run,
+  # 2026-11-21); below this checkout's newest is the failure.
+  [ "$migrated" -ge "$newest" ] || fail "Flyway left the schema at V$migrated, not V$newest"
+  [ "$migrated" = "$newest" ] || say "the gateway's image migrates to V$migrated, newer than this checkout's V$newest"
   back=$(psql "SELECT count(*) FROM pilots p JOIN deleted_accounts d ON d.pilot_id = p.id")
   [ "$back" = 0 ] || fail "$back deleted accounts are back after the gateway started (DeletionsReapplied)"
   say "the gateway ready on it: migrated V$version to V$migrated, $noted deletions noted, none back"

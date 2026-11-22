@@ -326,19 +326,18 @@ fields @timestamp, @message
 
 ## Load
 
-[`infra/load-tests/pilots.js`](../infra/load-tests/pilots.js) is 50 pilots
-at once with k6: the map's chart and airports, a screenful of tiles, a
-route's course, checkpoints and nav log, and its Brief, each with its own
-95th-percentile threshold. Against the live stack on the Mac, quiet
-(`--alone`):
+[`infra/load-tests/pilots.js`](../infra/load-tests/pilots.js) is pilots at
+once with k6: signing in, the map's chart and airports, a screenful of
+tiles, a route's course, checkpoints and nav log, its Brief and the saved
+flights, each with its own 95th-percentile threshold. Its profiles (load,
+stress, soak, spike) and the stack held to the server's size are the
+after-merge campaign's ([TESTING-AFTER-MERGE.md](TESTING-AFTER-MERGE.md)),
+which runs them all; one by hand, on a quiet Mac (`--alone`), the stack up:
 
 ```bash
-scripts/dev/one-at-a-time.sh --alone "load test" \
-  docker run --rm -i --add-host=host.docker.internal:host-gateway \
-    -e BASE_URL=http://host.docker.internal:8080 grafana/k6:1.3.0 run - < infra/load-tests/pilots.js
+scripts/dev/one-at-a-time.sh --alone "load test" scripts/dev/after-merge/load.sh load
 ```
 
-k6 exits non-zero when a threshold is missed. Read beside it the planner's
-CPU and memory (`docker stats`), and run it again after a change that
-touches a route's work. The server is a t3a.large's two cores; the Mac
-has more, so a pass here is a ceiling, not a promise.
+k6 exits non-zero when a threshold is missed. The server is a t3a.large's
+two cores; the stack is held to two of the Mac's, which do more a second,
+so a pass here is a ceiling, not a promise.
