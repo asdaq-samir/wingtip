@@ -412,6 +412,31 @@
       "text": "Plan a route first.",
       "about": "What needs a route, where there is none."
     },
+    "no_connection": {
+      "kind": "value",
+      "text": "No connection",
+      "about": "What a list, a card or a figure says in place where its answer could not be had for want of a network (the web's lib/problems NO_CONNECTION)."
+    },
+    "no_answer_in_time": {
+      "kind": "sentence",
+      "text": "No answer in time. Try again in a moment.",
+      "about": "A request that timed out (the web's describeError)."
+    },
+    "answer_garbled": {
+      "kind": "sentence",
+      "text": "The planner's answer came back garbled. Try again in a moment.",
+      "about": "An answer that was not the JSON asked for (the web's describeError)."
+    },
+    "planner_not_answering": {
+      "kind": "sentence",
+      "text": "The planner is not answering. Try again in a moment.",
+      "about": "The planner refused with a server error and no words of its own (the web's describeError)."
+    },
+    "nav_log_empty": {
+      "kind": "sentence",
+      "text": "Plan a route on FPL; its legs are listed here.",
+      "about": "The Nav Log with no route (owner rec 4)."
+    },
     "no_ceiling": {
       "kind": "value",
       "text": "No ceiling",

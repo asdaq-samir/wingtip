@@ -2144,6 +2144,48 @@ What each fix asks for, by the phones' wasted-work audit:
   flight's every 15 minutes; and the flight recorder writes its file
   every five minutes on the ground, every 30 s from the takeoff.
 
+## 20. The web's 2026-11-21 wave, on the iPhone and iPad
+
+What the web changed that a pilot sees, as the iPhone has it (the
+inventory: audit/parity3-ios.md). Each rule is the engine's; each view
+is stock SwiftUI and the same in compact and regular width.
+
+- **Brief.** Under the Go / No-Go's findings, **Adverse Conditions**
+  (AIM 7-1-5(b)(1); `AdverseConditions`, the engine's
+  `gonogo_adverse_rows`): at most three rows, stops first, each with
+  its legs and time, a tap scrolling to its part; nothing where there
+  are none. **When to Go** is at the Brief's foot. The forecast's
+  section gains **Most Headwind**, the engine's `route_headwind` over
+  every leg (`BriefWind`), "None" with tailwinds all the way.
+- **The airport card's TAF** says when it was issued and to when it is
+  valid under its periods, and once its period has ended, in the
+  caution's colour, "TAF expired 12 1200Z: no forecast in force"
+  (`TafValidityLine`, the engine's `taf_validity`). The field's NOTAMs
+  say their age when they are the ones kept (`KeptAgeLine`).
+- **The approach's runway.** With an approach picked at a field, its
+  Land RWY reads the approach's own runway, and another can be picked
+  only where the plate publishes circling minimums
+  (`TimelineRunwayMenu`, `LandingRunway`, the engine's `landing_runway`).
+- **First flight.** With no airplane of the pilot's yet, the route's
+  airplane chip reads "Add your airplane for times and fuel"; a route
+  typed with no departure waits up to 4 s for the position, saying
+  "Finding where you are…" under the search past 400 ms
+  (`FieldRunner.waitForFix`). The Nav Log with no route says "Plan a
+  route on FPL; its legs are listed here." Sign-in checks the address
+  under its field.
+- **Errors.** `Error.said` (Words/ErrorWords.swift) says a lost
+  connection "No connection.", a timeout and a garbled answer as the
+  web does, where URLSession's own words were shown; the airspace card
+  and the model weather say "no connection" with nothing kept.
+- **Map labels.** After dark the fields' and fixes' idents take their
+  night ink on the night's halo (`MapLabelLook`, map.label.night-ink);
+  Larger Map Labels, in the Map card's Look, lets them follow the text
+  size up to 1.2 times.
+- **In flight.** The screen stays on while the airplane is under way
+  (`UIApplication.isIdleTimerDisabled`, FlightLoops), as the web's
+  Screen Wake Lock; Nearest, Emergency and End Flight take a 60-point
+  area (`hitArea(WingtipSize.flyingTarget)`), their look unchanged.
+
 ---
 
 ## What could not be verified

@@ -58,6 +58,9 @@ final class OneSearchModel {
     /// Why a line sent or said was not done, said under the field.
     var problem: String?
     var busy = false
+    /// A route's departure waits on the airplane's position: said under
+    /// the field, "Finding where you are…" (FieldRunner.waitForFix).
+    var finding = false
 
     private(set) var airports: [AirportSuggestion] = []
     private(set) var fixes: [AirportSuggestion] = []

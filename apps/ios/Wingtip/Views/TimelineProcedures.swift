@@ -89,46 +89,17 @@ struct TimelineFieldParts: View {
 
     @ViewBuilder private var landing: some View {
         if point.role != .departure {
-            runway(takeoff: false)
+            TimelineRunwayMenu(point: point, cards: cards, takeoff: false)
             kinds(TimelineRunways.arriving)
         }
     }
 
     @ViewBuilder private var leaving: some View {
         if point.role != .destination {
-            runway(takeoff: true)
+            TimelineRunwayMenu(point: point, cards: cards, takeoff: true)
             kinds(TimelineRunways.leaving)
             // When a stop leaves again, after its takeoff's chips.
             TimelineLeavesPicker(point: point, clock: clock)
-        }
-    }
-
-    /// The runway menu, its label the runway picked or the wind's.
-    @ViewBuilder private func runway(takeoff: Bool) -> some View {
-        let place = cards.place(point.ident)
-        let ends = TimelineRunways.ends(place)
-        if !ends.isEmpty {
-            let key = point.ident.uppercased()
-            let picked = takeoff ? plan.extras.takeoffs[key] : plan.extras.landings[key]
-            let wind = place.flatMap { AirportWords.windEnd($0.runways) }
-            let shown = picked ?? wind
-            let verb = takeoff ? "Takeoff" : "Land"
-            Menu {
-                Button { plan.setRunway(nil, at: point.ident, takeoff: takeoff) } label: {
-                    Label(wind.map { "Into the Wind (\($0))" } ?? "Into the Wind", systemImage: picked == nil ? "checkmark" : "wind")
-                }
-                Divider()
-                ForEach(ends, id: \.self) { end in
-                    Button { plan.setRunway(end, at: point.ident, takeoff: takeoff) } label: {
-                        if picked == end { Label("Runway \(end)", systemImage: "checkmark") } else { Text("Runway \(end)") }
-                    }
-                }
-            } label: {
-                Text(shown.map { "\(verb) RWY \($0)" } ?? "\(verb) RWY \(Format.none)")
-            }
-            .accessibilityLabel("\(point.ident) \(takeoff ? "takeoff" : "landing") runway")
-            .accessibilityValue(shown.map { "Runway \($0)\(picked == nil ? ", into the wind" : "")" } ?? "none picked")
-            .accessibilityIdentifier("\(takeoff ? "takeoff" : "land")-runway-\(point.ident)")
         }
     }
 

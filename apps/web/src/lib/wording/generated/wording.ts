@@ -166,6 +166,16 @@ export const WORDING = {
   comingUpNotFetched: "What falls due could not be fetched.",
   /** What needs a route, where there is none. */
   planARouteFirst: "Plan a route first.",
+  /** What a list, a card or a figure says in place where its answer could not be had for want of a network (the web's lib/problems NO_CONNECTION). */
+  noConnection: "No connection",
+  /** A request that timed out (the web's describeError). */
+  noAnswerInTime: "No answer in time. Try again in a moment.",
+  /** An answer that was not the JSON asked for (the web's describeError). */
+  answerGarbled: "The planner's answer came back garbled. Try again in a moment.",
+  /** The planner refused with a server error and no words of its own (the web's describeError). */
+  plannerNotAnswering: "The planner is not answering. Try again in a moment.",
+  /** The Nav Log with no route (owner rec 4). */
+  navLogEmpty: "Plan a route on FPL; its legs are listed here.",
   /** A report with no broken or overcast layer, a figure's value (14 CFR 1.1, "ceiling"). */
   noCeiling: "No ceiling",
   /** Takes the airport or airplane shown out of the favorites. */

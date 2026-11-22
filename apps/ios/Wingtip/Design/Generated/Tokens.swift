@@ -1114,6 +1114,7 @@ enum WingtipFlow {
 
 enum WingtipSize {
     static let tapTarget: CGFloat = 44
+    static let flyingTarget: CGFloat = 60
     static let chip: CGFloat = 32
     static let mapButton: CGFloat = 44
     static let roundButton: CGFloat = 44

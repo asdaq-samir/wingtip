@@ -22,6 +22,8 @@ struct FieldWeatherSection: View {
         if let taf = place.taf, !taf.isEmpty {
             Section("Forecast") {
                 TafStrip(taf: taf).listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
+                // Its issue and valid times, or that it has run out.
+                TafValidityLine(taf: taf)
             }
         }
         Section {

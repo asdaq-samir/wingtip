@@ -226,6 +226,7 @@
   --depth-mark: 0 1px 3px 0 rgb(0 0 0 / 0.349);
   --depth-overlay: 0 0 0 0.5px rgb(0 0 0 / 0.078), 0 4px 8px 0 rgb(0 0 0 / 0.059), 0 16px 40px 0 rgb(0 0 0 / 0.18);
   --tap-target: 44px;
+  --size-flying-target: 60px;
   --size-chip: 32px;
   --size-map-button: 44px;
   --size-round-button: 2.75rem;

@@ -62,6 +62,9 @@ struct InstrumentsBar: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.large)
+                    // A flying control's 60-point area (the in-flight
+                    // audit's Q3), the button its own size.
+                    .hitArea(WingtipSize.flyingTarget)
                     .accessibilityHint("The nearest fields, with Divert")
                     // Flying mode's way to the emergency assistant, the
                     // web's FlyingHead Emergency (not a map button,
@@ -72,6 +75,7 @@ struct InstrumentsBar: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.large)
+                    .hitArea(WingtipSize.flyingTarget)
                     .accessibilityHint("The best fields within a glide, the emergency checklist and the MAYDAY")
                     Spacer(minLength: 0)
                     // The planning aid's words, where the figures are (the

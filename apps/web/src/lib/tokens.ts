@@ -348,6 +348,7 @@ export const TAP_TARGET = 44;
 /** Sizes, in points: a chip's height, the map panel's widths and the desktop's least width. */
 export const SIZE = {
   tapTarget: 44,
+  flyingTarget: 60,
   chip: 32,
   mapButton: 44,
   roundButton: 44,
