@@ -73,7 +73,7 @@ async function vor(page: Page): Promise<{ x: number; y: number } | null> {
 }
 
 test("a VOR tapped low on the chart is brought over its card once, and own ship's next fix leaves it there", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's card over the chart");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's card over the chart");
   await standing(page);
   await page.goto("/app/plan");
   await settle(page);
@@ -126,7 +126,7 @@ test("an airport tapped low on the chart below zoom 9 is eased over its card onc
   // field tapped on the chart was flown to, and the flight aimed again as
   // the card's room came, two moves for one tap; now a tap never flies
   // (GlMapShell's place, the camera's owner).
-  test.skip(page.viewportSize()!.width >= 768, "a phone's card over the chart");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's card over the chart");
   await installFrameRecorder(page);
   await standing(page);
   await page.goto("/app/plan");

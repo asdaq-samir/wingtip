@@ -903,6 +903,16 @@ export type RegionOfAnswer = string;
 export type RegionsAheadAnswer = string[];
 export type RegisteredProfileAnswer = string | null;
 export type ReserveMinAnswer = number;
+export type RouteHeadwindAnswer = {
+  /**
+   * The headwind on that leg's course, kt; negative a tailwind.
+   */
+  headwind_kt: number;
+  from: string;
+  to: string;
+  wind_dir_true_deg: number;
+  wind_speed_kt: number;
+} | null;
 export type RoutePositionAnswer = {
   along_nm: number;
   total_nm: number;
@@ -982,6 +992,22 @@ export type SpecialUseTabAnswer = {
 export type SquawkMeaningAnswer = "hijack" | "lost radio" | "emergency" | null;
 export type SuaAltitudesAnswer = string;
 export type SunDownAnswer = boolean;
+export type TafValidityAnswer = {
+  station: string;
+  /**
+   * When it was issued, Unix seconds; the time it was read where its header gives none.
+   */
+  issued: number;
+  /**
+   * The start of its valid period, Unix seconds.
+   */
+  valid_from: number;
+  /**
+   * The end of its valid period, Unix seconds.
+   */
+  valid_to: number;
+  state: "not_yet" | "in_force" | "expired";
+} | null;
 export type TemperatureAtAnswer = number | null;
 export type TfrDetailReadAnswer = {
   effective: string | null;
@@ -2233,6 +2259,13 @@ export interface EngineContract {
     answer: GlideRingAnswer;
   };
   /**
+   * The Brief's Adverse Conditions rows under its findings, the standard briefing's first element (AIM 7-1-5(b)(1)): what the flight meets on the route while it is there (OnRoute `when` "during", or none given) -- a TFR the route goes through (14 CFR 91.137-91.145) and a Convective SIGMET or SIGMET (AIM 7-1-6), stops; a Center Weather Advisory (AIM 7-1-6), an urgent pilot report (UUA, AIM 7-1-18) and an AIRMET or G-AIRMET (AIM 7-1-6), cautions -- in that order, of a kind the one met first along the route first, at most three, with how many more. A TFR only near the route, a routine PIREP and a hazard before or after the flight are left to their pages. Each row's time is for the host to write: `at` when the flight meets a TFR, `until` an advisory's end, `reported` a pilot report's time.
+   */
+  gonogo_adverse_rows: {
+    input: GonogoAdverseRowsInput;
+    answer: GonogoAdverseRowsAnswer;
+  };
+  /**
    * Weight and balance at takeoff and landing, against the profile's limits and envelope, with the problems found.
    */
   gonogo_balance: {
@@ -2616,6 +2649,13 @@ export interface EngineContract {
   kneeboard_radio: {
     input: KneeboardRadioInput;
     answer: KneeboardRadioAnswer;
+  };
+  /**
+   * The runway landed on at a field the route flies an instrument approach to: the approach's own runway, straight in (AIM 5-4-20, Approach and Landing Minimums; 14 CFR 91.175, the runway of intended landing), unless the pilot picked another and the plate publishes circling minimums, a circle to land (AIM 5-4-20). A runway picked into the wind gives way to the approach's own. With no approach, or one circling only (no runway in its name), the pick stands and any runway may be picked. `circling` null (the plate still coming) is taken as no circling. The runway is answered as painted ("9", "8L").
+   */
+  landing_runway: {
+    input: LandingRunwayInput;
+    answer: LandingRunwayAnswer;
   };
   /**
    * Of a field's runways, each on the end the wind favours, the least crosswind, steady or gust, whichever is more: the runway a pilot would pick to keep the wind most nearly down it. A variable wind is all crosswind (AIM 7-1-28); calm is none. null with no wind or no runway end with a heading.
@@ -3311,6 +3351,13 @@ export interface EngineContract {
     answer: ReserveMinAnswer;
   };
   /**
+   * The route's strongest headwind: of the nav log's legs, the one whose wind aloft blows most against its true course, its headwind the wind's component along that course (the wind triangle, FAA-H-8083-25C ch. 16; the winds aloft forecast's direction is true, FAA-H-8083-28B 27.6), to a tenth of a knot, a tailwind negative, so with tailwinds all the way it is the least of them. The first such leg where two tie; a leg with no wind or no course is passed over; null where no leg has both. The Brief's glance shows it as the route's wind aloft.
+   */
+  route_headwind: {
+    input?: RouteHeadwindInput;
+    answer?: RouteHeadwindAnswer;
+  };
+  /**
    * The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route, the most filed one and the one round the Class B it enters (14 CFR 91.131(a)(1)) with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.
    */
   route_options: {
@@ -3547,6 +3594,13 @@ export interface EngineContract {
   surface_hours: {
     input: SurfaceHoursInput;
     answer: SurfaceHoursAnswer;
+  };
+  /**
+   * A TAF's own times and whether it speaks for now: its station, when it was issued and its valid period, as its header gives them, and its state, not yet before the period, in force during it and expired at its end (FAA-H-8083-28B 27.4.1, a TAF is a forecast for its valid period; the same rule as weather_in_force's for a TAF). The airport card says it under the hours, so a TAF kept from before the signal was lost is never read as today's forecast (14 CFR 91.103). Null where the words are not a TAF.
+   */
+  taf_validity: {
+    input: TafValidityInput;
+    answer: TafValidityAnswer;
   };
   /**
    * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).
@@ -7680,6 +7734,39 @@ export interface GlideRingInput {
    */
   glide_ratio?: number | null;
 }
+export interface GonogoAdverseRowsInput {
+  advisories: {
+    /**
+     * OnRoute's source: TFR, Convective SIGMET, SIGMET, CWA, PIREP, AIRMET or G-AIRMET.
+     */
+    source: string;
+    /**
+     * Its name in words: the hazard (sigmet_hazard, gairmet_title), a TFR's NOTAM and title, a PIREP's conditions.
+     */
+    name: string | null;
+    when: "during" | "before" | "after" | null;
+    enter: string | null;
+    valid_to: string | null;
+    issued: string | null;
+    from_nm: number | null;
+    legs: number[];
+    crosses: boolean;
+    urgent: boolean;
+  }[];
+}
+export interface GonogoAdverseRowsAnswer {
+  rows: {
+    source: string;
+    title: string;
+    finding: "stop" | "caution";
+    tab: "enroute" | "preflight";
+    section: string;
+    time_kind: "at" | "until" | "reported" | null;
+    time: string | null;
+    legs: number[];
+  }[];
+  more: number;
+}
 export interface GonogoBalanceInput {
   loading: GonogoLoading;
   load: GonogoLoad;
@@ -8977,6 +9064,17 @@ export interface KeptAgeAnswer {
 }
 export interface KneeboardRadioInput {
   frequencies: FieldFrequency[];
+}
+export interface LandingRunwayInput {
+  approach: boolean;
+  straight_in: string | null;
+  circling: boolean | null;
+  picked: string | null;
+  by_pilot: boolean;
+}
+export interface LandingRunwayAnswer {
+  runway: string | null;
+  others_allowed: boolean;
 }
 export interface LeastCrosswindInput {
   runways?:
@@ -11916,6 +12014,20 @@ export interface ReserveMinInput {
   ifr?: boolean | null;
   night?: boolean | null;
 }
+export interface RouteHeadwindInput {
+  /**
+   * The nav log's legs in order, as the planner gives them.
+   */
+  legs: {
+    from?: string | null;
+    to?: string | null;
+    true_course_deg?: number | null;
+    wind?: {
+      wind_dir_true_deg: number;
+      wind_speed_kt: number;
+    } | null;
+  }[];
+}
 /**
  * This interface was referenced by `EngineContract`'s JSON-Schema
  * via the `definition` "RouteOptionsInput".
@@ -12859,6 +12971,16 @@ export interface SurfaceHoursAnswer {
     at: number;
     next_day: boolean;
   } | null;
+}
+export interface TafValidityInput {
+  /**
+   * The TAF as sent.
+   */
+  taf: string;
+  /**
+   * Unix seconds, UTC: the engine has no clock.
+   */
+  now: number;
 }
 export interface TafWindowInput {
   fcsts: TafPeriod[];

@@ -253,7 +253,7 @@ test("plan page: iOS never zooms the page in on a phone's field: every field but
   // itself, over every field the page can show: the route form, and
   // the nav log's altitude box and description boxes.
   const viewport = page.viewportSize();
-  if (!viewport || viewport.width >= 768) return; // `md` and up keep the small type
+  if (!viewport || viewport.width >= 660) return; // `md` and up keep the small type
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);

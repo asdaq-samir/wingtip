@@ -84,7 +84,7 @@ function StopFieldCard({
             onClick={() => onOpenField(field.ident)}
             data-testid="stops-field-open"
             data-ident={field.ident}
-            className="relative text-left outline-none after:absolute after:-inset-x-1 after:-inset-y-2.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring"
+            className="relative text-left outline-none hit-x-1 hit-y-2.5 focus-visible:ring-2 focus-visible:ring-ring"
           >
             <span className="font-bold text-tint">{field.ident}</span>
             {field.city && <span className="font-semibold"> {placeWords(field.city)}</span>}

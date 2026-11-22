@@ -20,6 +20,11 @@ const radioLabel = (to: string) => (/traffic$/i.test(to) ? "CTAF" : (to.split(" 
  *  a bare "04:17" on the Depart row read as Z or local (WEB-9). */
 const time = (iso: string | null) => (iso ? `${clockTime(new Date(iso))} ${zoneName(new Date(iso))}` : undefined);
 
+/** The route's strongest headwind in a few words: "18 kt", "None" where
+ *  it is a tailwind all the way, a dash before the legs are in. */
+const headwindText = (headwind: BriefGlance["enroute"]["headwind"] | undefined) =>
+  headwind == null ? DASH : Math.round(headwind.kt) > 0 ? `${Math.round(headwind.kt)} kt` : "None";
+
 /** One figure of a row: its name over it, the figure at a glance's size,
  *  in the foreground over the row's grey line. */
 function Stat({ label, value, finding }: { label: string; value: ReactNode; finding?: Finding }) {
@@ -83,7 +88,7 @@ function Title({
 type Open = (tab: PanelTab, section?: string) => void;
 
 /** Before You Go: what is left to do on this device (Ready to Fly's
- *  count, the engine's), and with an airplane its fuel to spare and its
+ *  count, the engine's), and with an airplane its fuel beyond the reserve and its
  *  loading. With none they are not shown at all, not a dash: both are an
  *  airplane's figures (the owner, 2026-11-09). Opens Preflight. */
 export function BeforeRow({ before, airplane, onOpen }: { before?: BriefGlance["before"]; airplane: boolean; onOpen: Open }) {
@@ -94,8 +99,13 @@ export function BeforeRow({ before, airplane, onOpen }: { before?: BriefGlance["
       description={
         airplane && (
           <Figures note={before?.balance?.problem ?? undefined}>
+            {/* The fuel over what the flight needs and its reserve (14 CFR
+                91.151(a), 91.167(a): enough fuel to fly to the destination
+                and on for the reserve), named for the reserve it is beyond:
+                "Fuel spare" was no pilot's term (the Brief audit of
+                2026-11-21, finding 10). */}
             <Stat
-              label="Fuel spare"
+              label="Beyond reserve"
               value={before?.spareGal != null ? `${before.spareGal.toFixed(1)} gal` : DASH}
               finding={before?.spareGal != null && before.spareGal < 0 ? "stop" : undefined}
             />
@@ -133,7 +143,7 @@ export function FieldRow({
 }) {
   const here = isPosition(field.ident);
   const note =
-    [field.runwayFt != null && `Of ${grouped(field.runwayFt)} ft`, field.wind && `wind ${field.wind}`].filter(Boolean).join(" · ") ||
+    [field.runwayFt != null && `${grouped(field.runwayFt)} ft long`, field.wind && `wind ${field.wind}`].filter(Boolean).join(" · ") ||
     undefined;
   return (
     <ListRow
@@ -155,7 +165,7 @@ export function FieldRow({
             {field.overFiftyFt != null && (
               <Stat
                 label={landing ? "Landing 50 ft" : "Takeoff 50 ft"}
-                value={grouped(field.overFiftyFt)}
+                value={`${grouped(field.overFiftyFt)} ft`}
                 finding={field.finding === "stop" ? "stop" : undefined}
               />
             )}
@@ -172,7 +182,7 @@ export function FieldRow({
 }
 
 /** En Route: its time, then the lowest ceiling and visibility forecast
- *  and the wind aloft, and its finding in a line where no line over the
+ *  and the strongest headwind, and its finding in a line where no line over the
  *  list says it already. */
 export function EnrouteRow({ enroute, said, onOpen }: { enroute?: BriefGlance["enroute"]; said: boolean; onOpen: Open }) {
   const stop = enroute?.finding === "stop";
@@ -188,8 +198,10 @@ export function EnrouteRow({ enroute, said, onOpen }: { enroute?: BriefGlance["e
       wide
       description={
         <Figures note={said ? undefined : (enroute?.line ?? undefined)}>
+          {/* The lowest ceiling any TAF near the route forecasts over the
+              flight, not a ceiling now: named so (finding 12). */}
           <Stat
-            label="Ceiling"
+            label="Lowest ceiling"
             value={enroute?.ceilingFt != null ? `${grouped(enroute.ceilingFt)} ft` : "None"}
             finding={stop && enroute.ceilingFt != null ? "stop" : undefined}
           />
@@ -198,7 +210,11 @@ export function EnrouteRow({ enroute, said, onOpen }: { enroute?: BriefGlance["e
             value={enroute?.visibilitySm != null ? `${enroute.visibilitySm} sm` : DASH}
             finding={stop && enroute.visibilitySm != null ? "stop" : undefined}
           />
-          <Stat label="Wind Aloft" value={enroute?.wind ?? DASH} />
+          {/* The route's strongest headwind, the engine's route_headwind
+              over every leg, where the first stretch's wind said nothing of
+              a later leg flown into a strong one (finding 11); "None" with
+              tailwinds all the way. */}
+          <Stat label="Most headwind" value={headwindText(enroute?.headwind)} />
         </Figures>
       }
       chevron

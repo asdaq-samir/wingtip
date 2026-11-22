@@ -57,7 +57,8 @@ function RecentCard({ airport, detail, onClick }: { airport: RecentAirport; deta
       size="inline"
       type="button"
       onClick={onClick}
-      aria-label={`${airport.ident}, ${airport.name}`}
+      // Its name is every line it shows, the distance too (WCAG 2.5.3, 1.3.1).
+      aria-label={[airport.ident, airport.name, detail].filter(Boolean).join(", ")}
       data-testid="airport-recent"
       className={cn(
         "text-inherit",

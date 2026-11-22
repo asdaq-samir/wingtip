@@ -101,7 +101,7 @@ export default function MapBanner({
             <CollapsibleTrigger
               data-testid={titleTestId}
               // The line's whole height, so its 44-point hit area is its own.
-              className="flex min-w-0 flex-1 flex-col justify-center py-1 text-left outline-none focus-visible:underline"
+              className="flex min-w-0 flex-1 flex-col justify-center py-1 text-left outline-none focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-ring"
             >
               {words}
             </CollapsibleTrigger>

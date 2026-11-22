@@ -80,17 +80,16 @@ struct AirspaceVolume: Decodable, Equatable, Sendable {
 
 // MARK: - Airspace
 
-/// From which Leaflet zoom each class is drawn, the web map's
-/// (glStyle AIRSPACE_FROM): B from 6, C from 7, D and the tabs from 8.
+/// From which Leaflet zoom each class and the tabs are drawn: design/tokens.json's map.zoom, the web's AIRSPACE_FROM.
 enum AirspaceZoom {
     static func from(_ cls: String) -> Double {
         switch cls {
-        case "B": return 6
-        case "C": return 7
-        default: return 8
+        case "B": return WingtipMapZoom.airspaceB
+        case "C": return WingtipMapZoom.airspaceC
+        default: return WingtipMapZoom.airspaceD
         }
     }
-    static let tabsFrom = 8.0
+    static let tabsFrom = WingtipMapZoom.airspaceLabels
 }
 
 /// One line of a volume's ring, told by its class.

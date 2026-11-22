@@ -166,7 +166,7 @@ export default function LegAltitude({
       className={cn(
         "justify-start text-inherit",
         "absolute bottom-6 size-3 -translate-x-1/2 rotate-45 rounded-[2px] border-2 border-background bg-tint shadow-(--depth-mark) outline-none",
-        "after:absolute after:-inset-4 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+        "hit-4 focus-visible:ring-2 focus-visible:ring-ring",
       )}
       style={{ left: `calc(0.5rem + (100% - 1rem) * ${point.share})` }}
       onClick={phone ? () => openWith(true) : undefined}

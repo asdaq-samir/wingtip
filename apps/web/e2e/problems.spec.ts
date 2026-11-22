@@ -232,7 +232,7 @@ test("the line sits beside the map's buttons, level with them, one line tall, an
 
   const box = (await line.boundingBox())!;
   const controls = (await page.locator("[data-map-controls]").boundingBox())!;
-  if (page.viewportSize()!.width < 768) {
+  if (page.viewportSize()!.width < 660) {
     // A phone: at the top, the buttons riding on the sheet below it
     // (2026-10-26), clear of them.
     expect(box.y + box.height <= controls.y || box.x + box.width <= controls.x).toBe(true);
@@ -257,7 +257,7 @@ test("the panel all the way out goes over the line, and its grabber still lowers
   // sheet all the way out has its grabber at the top of the screen, where
   // a toast came in and a folded one stayed, and the sheet could not be
   // lowered while the problem lasted.
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet");
   await plannerDown(page);
   await page.goto(PLAN);
   const line = banner(page).getByRole("status");
@@ -296,7 +296,7 @@ test("the progress line spans the screen and is centred on it", async ({ page })
   const rightGap = viewport.width - (box.x + box.width);
   expect(leftGap).toBeGreaterThanOrEqual(8); // a gutter, not edge to edge
   expect(Math.abs(leftGap - rightGap)).toBeLessThanOrEqual(2); // centred
-  if (viewport.width < 768) {
+  if (viewport.width < 660) {
     // A phone: the screen's width less a gutter either side, at its top
     // (the map's buttons ride on the sheet since 2026-10-26).
     expect(box.y).toBeLessThan(80);
@@ -318,7 +318,7 @@ test("a toast sits clear of the panel: at the top of a phone's screen, the botto
   await settled(page, "[data-slot=toast]");
   const box = (await first.boundingBox())!;
   const panel = (await page.locator('[data-slot="map-panel"]').boundingBox())!;
-  if (page.viewportSize()!.width < 768) {
+  if (page.viewportSize()!.width < 660) {
     expect(box.y).toBeLessThan(60);
     expect(box.y + box.height).toBeLessThanOrEqual(panel.y);
   } else {

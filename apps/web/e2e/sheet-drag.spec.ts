@@ -39,7 +39,7 @@ async function onGrabber(page: Page) {
 }
 
 test("the panel follows a finger from its grabber out to the top, and down from its content's start", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet");
   // On an iPhone SE's screen (375 x 667), so the Brief's Preflight has room
   // to scroll past the drag whatever the day's weather adds to it: at 844
   // tall it was about 230 past the screen on CI and less on the Mac, and
@@ -108,7 +108,7 @@ test("the panel follows a finger from its grabber out to the top, and down from 
 });
 
 test("a drag held still before it is let go sets the sheet down where it is, not on past it", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet");
   await page.goto("/app/plan");
   await settle(page);
   await grabberTo(page, "half");
@@ -122,7 +122,7 @@ test("a drag held still before it is let go sets the sheet down where it is, not
 });
 
 test("a flick goes on the way it was thrown: up from the pill, down from all the way up", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet");
   // The stock Drawer reads the throw itself (no one-size rule of our own
   // since the owner's 2026-11-10 "let them be as is for stock ones").
   await page.goto("/app/plan");
@@ -177,7 +177,7 @@ async function onTabs(page: Page) {
 test("a drag from half down past the pill lands on the pill: not closed, not back at half, and the pill its own height", async ({
   page,
 }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet");
   await page.goto("/app/plan");
   await settle(page);
   const panel = sideDrawer(page);
@@ -197,7 +197,7 @@ test("a drag from half down past the pill lands on the pill: not closed, not bac
 });
 
 test("a touch on the sheet that does not move leaves it where it is", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet");
   // A touch once took the stock sheet all the way up (the owner,
   // 2026-11-04). On the figures, not a tab, which a tap would pick.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -225,7 +225,7 @@ test("a touch on the sheet that does not move leaves it where it is", async ({ p
 test.describe("by a pointer's drag", () => {
   test.use({ hasTouch: false });
   test("an airport's card dragged past its pill goes to the pill in sight, never fading, and its pill raises it", async ({ page }) => {
-    test.skip(page.viewportSize()!.width >= 768, "a phone's cards");
+    test.skip(page.viewportSize()!.width >= 660, "a phone's cards");
     await installFrameRecorder(page);
     await page.goto("/app/plan?place=KDLH");
     await settle(page);

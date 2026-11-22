@@ -11,7 +11,7 @@ import { type BriefingState, clockTime, type BriefingPart } from "../plan";
 import { useFlightBriefing } from "./useFlightBriefing";
 import { WEATHER_SOURCE_LABEL } from "./briefingFigures";
 import { TakeoffLandingSection } from "./PreflightSections";
-import AirportSections from "./AirportSections";
+import AirportSections from "./AirportSectionsPart";
 import WeatherAlongRoute from "./WeatherAlongRoute";
 import AlternateSection from "./AlternateSection";
 import type { FiledProcedure } from "./flightPlanForm";

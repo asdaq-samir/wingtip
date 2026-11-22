@@ -14,7 +14,7 @@ test.beforeEach(({ page }) => pickAirplane(page));
  * and carried it up through the route; it is measured at each scroll now.
  */
 test("a long route scrolled at full: the figures stay at the sheet's foot, no row below them", async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's sheet");
   await page.goto("/app/plan?dep=C81&dest=KATW&stops=KUGN,KENW,BAE,OSH,KMKE,KRAC&view=full");
   await settle(page);
   await grabberTo(page, "full");

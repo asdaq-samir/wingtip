@@ -12266,6 +12266,185 @@
       ],
       "additionalProperties": false
     },
+    "gonogo_adverse_rows": {
+      "description": "The Brief's Adverse Conditions rows under its findings, the standard briefing's first element (AIM 7-1-5(b)(1)): what the flight meets on the route while it is there (OnRoute `when` \"during\", or none given) -- a TFR the route goes through (14 CFR 91.137-91.145) and a Convective SIGMET or SIGMET (AIM 7-1-6), stops; a Center Weather Advisory (AIM 7-1-6), an urgent pilot report (UUA, AIM 7-1-18) and an AIRMET or G-AIRMET (AIM 7-1-6), cautions -- in that order, of a kind the one met first along the route first, at most three, with how many more. A TFR only near the route, a routine PIREP and a hazard before or after the flight are left to their pages. Each row's time is for the host to write: `at` when the flight meets a TFR, `until` an advisory's end, `reported` a pilot report's time.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "GonogoAdverseRowsInput",
+          "type": "object",
+          "properties": {
+            "advisories": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "description": "OnRoute's source: TFR, Convective SIGMET, SIGMET, CWA, PIREP, AIRMET or G-AIRMET."
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Its name in words: the hazard (sigmet_hazard, gairmet_title), a TFR's NOTAM and title, a PIREP's conditions."
+                  },
+                  "when": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "during",
+                      "before",
+                      "after",
+                      null
+                    ]
+                  },
+                  "enter": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "valid_to": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "issued": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "from_nm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "legs": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  "crosses": {
+                    "type": "boolean"
+                  },
+                  "urgent": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "source",
+                  "name",
+                  "when",
+                  "enter",
+                  "valid_to",
+                  "issued",
+                  "from_nm",
+                  "legs",
+                  "crosses",
+                  "urgent"
+                ]
+              }
+            }
+          },
+          "required": [
+            "advisories"
+          ]
+        },
+        "answer": {
+          "title": "GonogoAdverseRowsAnswer",
+          "type": "object",
+          "properties": {
+            "rows": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "finding": {
+                    "type": "string",
+                    "enum": [
+                      "stop",
+                      "caution"
+                    ]
+                  },
+                  "tab": {
+                    "type": "string",
+                    "enum": [
+                      "enroute",
+                      "preflight"
+                    ]
+                  },
+                  "section": {
+                    "type": "string"
+                  },
+                  "time_kind": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "at",
+                      "until",
+                      "reported",
+                      null
+                    ]
+                  },
+                  "time": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "legs": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                },
+                "required": [
+                  "source",
+                  "title",
+                  "finding",
+                  "tab",
+                  "section",
+                  "time_kind",
+                  "time",
+                  "legs"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "more": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "rows",
+            "more"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "gonogo_balance": {
       "description": "Weight and balance at takeoff and landing, against the profile's limits and envelope, with the problems found.",
       "type": "object",
@@ -16859,6 +17038,74 @@
             ],
             "additionalItems": false
           }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "landing_runway": {
+      "description": "The runway landed on at a field the route flies an instrument approach to: the approach's own runway, straight in (AIM 5-4-20, Approach and Landing Minimums; 14 CFR 91.175, the runway of intended landing), unless the pilot picked another and the plate publishes circling minimums, a circle to land (AIM 5-4-20). A runway picked into the wind gives way to the approach's own. With no approach, or one circling only (no runway in its name), the pick stands and any runway may be picked. `circling` null (the plate still coming) is taken as no circling. The runway is answered as painted (\"9\", \"8L\").",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "LandingRunwayInput",
+          "type": "object",
+          "properties": {
+            "approach": {
+              "type": "boolean"
+            },
+            "straight_in": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "circling": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "picked": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "by_pilot": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "approach",
+            "straight_in",
+            "circling",
+            "picked",
+            "by_pilot"
+          ]
+        },
+        "answer": {
+          "title": "LandingRunwayAnswer",
+          "type": "object",
+          "properties": {
+            "runway": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "others_allowed": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "runway",
+            "others_allowed"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -25540,6 +25787,106 @@
       ],
       "additionalProperties": false
     },
+    "route_headwind": {
+      "description": "The route's strongest headwind: of the nav log's legs, the one whose wind aloft blows most against its true course, its headwind the wind's component along that course (the wind triangle, FAA-H-8083-25C ch. 16; the winds aloft forecast's direction is true, FAA-H-8083-28B 27.6), to a tenth of a knot, a tailwind negative, so with tailwinds all the way it is the least of them. The first such leg where two tie; a leg with no wind or no course is passed over; null where no leg has both. The Brief's glance shows it as the route's wind aloft.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "RouteHeadwindInput",
+          "type": "object",
+          "properties": {
+            "legs": {
+              "type": "array",
+              "description": "The nav log's legs in order, as the planner gives them.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "from": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "to": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "true_course_deg": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "wind": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "wind_dir_true_deg": {
+                            "type": "number"
+                          },
+                          "wind_speed_kt": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "wind_dir_true_deg",
+                          "wind_speed_kt"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "legs"
+          ]
+        },
+        "answer": {
+          "title": "RouteHeadwindAnswer",
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "headwind_kt": {
+                  "type": "number",
+                  "description": "The headwind on that leg's course, kt; negative a tailwind."
+                },
+                "from": {
+                  "type": "string"
+                },
+                "to": {
+                  "type": "string"
+                },
+                "wind_dir_true_deg": {
+                  "type": "number"
+                },
+                "wind_speed_kt": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "headwind_kt",
+                "from",
+                "to",
+                "wind_dir_true_deg",
+                "wind_speed_kt"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
     "route_options": {
       "description": "The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route, the most filed one and the one round the Class B it enters (14 CFR 91.131(a)(1)) with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.",
       "type": "object",
@@ -28486,6 +28833,75 @@
             "days",
             "in_force",
             "change"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "taf_validity": {
+      "description": "A TAF's own times and whether it speaks for now: its station, when it was issued and its valid period, as its header gives them, and its state, not yet before the period, in force during it and expired at its end (FAA-H-8083-28B 27.4.1, a TAF is a forecast for its valid period; the same rule as weather_in_force's for a TAF). The airport card says it under the hours, so a TAF kept from before the signal was lost is never read as today's forecast (14 CFR 91.103). Null where the words are not a TAF.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "TafValidityInput",
+          "type": "object",
+          "properties": {
+            "taf": {
+              "type": "string",
+              "description": "The TAF as sent."
+            },
+            "now": {
+              "type": "number",
+              "description": "Unix seconds, UTC: the engine has no clock."
+            }
+          },
+          "required": [
+            "taf",
+            "now"
+          ]
+        },
+        "answer": {
+          "title": "TafValidityAnswer",
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "station": {
+              "type": "string"
+            },
+            "issued": {
+              "type": "number",
+              "description": "When it was issued, Unix seconds; the time it was read where its header gives none."
+            },
+            "valid_from": {
+              "type": "number",
+              "description": "The start of its valid period, Unix seconds."
+            },
+            "valid_to": {
+              "type": "number",
+              "description": "The end of its valid period, Unix seconds."
+            },
+            "state": {
+              "type": "string",
+              "enum": [
+                "not_yet",
+                "in_force",
+                "expired"
+              ]
+            }
+          },
+          "required": [
+            "station",
+            "issued",
+            "valid_from",
+            "valid_to",
+            "state"
           ],
           "additionalProperties": false
         }
@@ -31466,6 +31882,7 @@
     "glide_range",
     "glide_reaches",
     "glide_ring",
+    "gonogo_adverse_rows",
     "gonogo_balance",
     "gonogo_brief",
     "gonogo_default_load",
@@ -31521,6 +31938,7 @@
     "isa_temp_c",
     "kept_age",
     "kneeboard_radio",
+    "landing_runway",
     "least_crosswind",
     "legal_cruising_altitudes",
     "lighting_read",
@@ -31620,6 +32038,7 @@
     "replay_track",
     "report_near",
     "reserve_min",
+    "route_headwind",
     "route_options",
     "route_options_frame",
     "route_position",
@@ -31654,6 +32073,7 @@
     "sun_down",
     "surface_airspace",
     "surface_hours",
+    "taf_validity",
     "taf_window",
     "tafs_along_route",
     "temperature_at",

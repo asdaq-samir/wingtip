@@ -57,7 +57,19 @@
    here, from the first frame, rather than after a render has measured
    the screen. */
 @custom-variant nav-bottom {
-  @media (width < 48rem) {
+  @media (width < 41.25rem) {
+    @slot;
+  }
+}
+
+/* A tablet on a kneeboard or a yoke mount, read at arm's length (about
+   twice a phone's distance): a touch screen at the regular width both
+   ways (design/tokens.json size.regular), an iPad in either orientation
+   and not a phone on its side, whose height is compact. The figures the
+   pilot glances at take a larger size there (lib/text's GROW_FIGURE; the
+   owner, 2026-11-21: "Yes do it all for iPad", the kneeboard type scale). */
+@custom-variant kneeboard {
+  @media (pointer: coarse) and (width >= 41.25rem) and (height >= 41.25rem) {
     @slot;
   }
 }
@@ -139,6 +151,12 @@ button,
   top: max(var(--map-inset-top, 0px), env(safe-area-inset-top));
   transition: top var(--motion-drawer) var(--motion-drawer-ease);
 }
+/* And the chart's credit at the right clear of the inspector's card
+   (MapPanel, a touch screen from size.inspector wide). */
+.maplibregl-map .maplibregl-ctrl-bottom-right,
+.maplibregl-map .maplibregl-ctrl-top-right {
+  right: var(--map-inset-right, 0px);
+}
 
 /* With the phone's sheet all the way up, the map's buttons give way,
    as Maps' do: only a sliver of them showed past its edge. The panel's
@@ -171,13 +189,18 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
   pointer-events: none;
 }
 
-/* iOS's leading on a touch screen: each text style's line is its size
-   and five points -- 13/18, 15/20, 16/21, 17/22, 20/25, within a point
-   of Apple's own table from 12 to 28 -- where Tailwind's ratios gave a
-   17-point row 24.3 and a 15-point line 21.4. Every text-* class reads
-   its line height from these, so a touch size set beside one (lib/text.ts,
-   the stock controls) takes its leading with it. An explicit leading-*
-   still wins. Not in the Native look, which keeps Tailwind's own. */
+/* iOS's leading on a touch screen, for the stock controls' touch sizes
+   (ui/button's text-sm with the row's 17 beside it, and the like): a
+   line is its size and five points -- 13/18, 15/20, 16/21, 17/22, 20/25,
+   within a point of Apple's own table from 12 to 28 -- where Tailwind's
+   ratios gave a 17-point row 24.3 and a 15-point line 21.4. Every text-*
+   class reads its line height from these. The text roles carry their own
+   leading in rem instead (design/tokens.json type, `touchLeading`: a
+   row's 1.375rem, a line's 1.25rem), which an explicit leading-* wins
+   over these with: at 19.65 px a row leads 27, as iOS's xxLarge Body
+   does, where the five points held stayed 25.9 (the scale audit's Q7,
+   the owner, 2026-11-21). Not in the Native look, which keeps
+   Tailwind's own. */
 @media (pointer: coarse) {
   :root:not([data-brand="native"]) {
     --text-xs--line-height: calc(1em + 5px);
@@ -240,6 +263,16 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
     size: landscape;
     margin: 10mm;
   }
+}
+
+/* Tailwind's md, the one width the phone's sheet gives way to the side
+   panel at: design/tokens.json's size.regular (660, iPadOS's regular
+   width: an iPad mini upright, a 13-inch iPad's half), which useIsMobile
+   reads, so a class and the layout never disagree between 660 and 768
+   (the owner, 2026-11-21: "Yes do it all for iPad"). A breakpoint takes
+   no variable, hence the number. */
+@theme {
+  --breakpoint-md: 41.25rem;
 }
 
 @theme inline {
@@ -420,7 +453,8 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
    squares read as a different app. So on a coarse pointer nothing
    grows. Every button reaches 44 through a pseudo-element hit area
    around it instead, the way a toolbar glyph does on iOS: `min(0, …)`
-   so a control already that size is not shrunk. Not for a tab, whose
+   so a control already that size is not shrunk (--tap-target, 44, from
+   design/tokens.json). Not for a tab, whose
    own ::after is the line variant's underline. A calendar's days are 44
    to a finger (calendar.tsx), so theirs is the cell itself, square, its
    rounded corners included; its month buttons get the 44 round them. A
@@ -438,7 +472,7 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
     a[data-slot="button"]::after {
       content: "";
       position: absolute;
-      inset: min(0px, calc(50% - 22px));
+      inset: min(0px, calc(50% - var(--tap-target) / 2));
     }
     button,
     a[data-slot="button"] {
@@ -664,6 +698,50 @@ html:not([data-brand="native"])::view-transition-new(.page-back) {
 @property --glass-fill {
   syntax: "*";
   inherits: false;
+}
+
+/* A control's own hit area, the one home for the `::after` the base layer
+   above gives every button, for a control that is not 44 round it by that
+   rule: a label, a link, a chip, a glyph that sits close to its
+   neighbours. `hit-y-3` is a band 12 (3 x 4) above and below, `hit-x-2
+   hit-y-3` adds 8 each side, `hit-3` is the same on all four; the number
+   is Tailwind's spacing, or `[11px]`, so the area is the control's size
+   plus twice it (a 20 tall line and `hit-y-3` is 44, the area
+   docs/decisions/0030 asks). Written once here so no fragment of
+   `after:-inset-…` is typed by hand (the simplicity ratchet counts what is left);
+   the amount is each control's own because the controls differ in size
+   and nothing grows to reach 44. Place the control `relative`. */
+@utility hit-* {
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: var(--hit-x, 0px);
+    inset-block: var(--hit-y, 0px);
+  }
+  --hit-x: calc(var(--spacing) * --value(number) * -1);
+  --hit-x: calc(--value([length]) * -1);
+  --hit-y: calc(var(--spacing) * --value(number) * -1);
+  --hit-y: calc(--value([length]) * -1);
+}
+@utility hit-x-* {
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: var(--hit-x, 0px);
+    inset-block: var(--hit-y, 0px);
+  }
+  --hit-x: calc(var(--spacing) * --value(number) * -1);
+  --hit-x: calc(--value([length]) * -1);
+}
+@utility hit-y-* {
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline: var(--hit-x, 0px);
+    inset-block: var(--hit-y, 0px);
+  }
+  --hit-y: calc(var(--spacing) * --value(number) * -1);
+  --hit-y: calc(--value([length]) * -1);
 }
 
 /* A row of a long list drawn only once it nears the screen (a logbook of

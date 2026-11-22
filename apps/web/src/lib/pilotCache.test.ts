@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { api } from "./api/client";
 import type { Pilot } from "./api/types";
-import { PILOT_CACHE, forgetPilotCache, signedInPilot } from "./pilotCache";
+import { PILOT_CACHE, PLANNER_CACHES, forgetPilotCache, forgetPlannerAnswers, signedInPilot } from "./pilotCache";
 
 function stubCaches() {
   const deleted: string[] = [];
@@ -40,5 +40,12 @@ describe("the pilot's cached copies", () => {
     const deleted = stubCaches();
     forgetPilotCache();
     expect(deleted).toEqual(["pilot-own"]);
+  });
+
+  it("empties the planner's answers with a point in them, the steady data kept", () => {
+    const deleted = stubCaches();
+    forgetPlannerAnswers();
+    expect(deleted).toEqual([...PLANNER_CACHES]);
+    expect(deleted).not.toContain("planner-steady");
   });
 });

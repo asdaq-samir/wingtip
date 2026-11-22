@@ -21,7 +21,7 @@ export function RoundIcon({ children, tone = "grey" }: { children: ReactNode; to
     <span
       aria-hidden="true"
       className={cn(
-        "grid size-9 shrink-0 place-items-center rounded-full [&_svg]:size-4.5",
+        "grid size-(--size-search-disc) shrink-0 place-items-center rounded-full [&_svg]:size-4.5",
         tone === "tint" ? "bg-tint text-primary-foreground" : "bg-muted text-muted-foreground",
       )}
     >
@@ -34,7 +34,7 @@ export function RoundIcon({ children, tone = "grey" }: { children: ReactNode; to
  *  top hit (the query its card asks first anyway); the plain symbol for the
  *  rest, so a list typed into asks the planner nothing more. */
 export function AirportIcon({ ident, name, kept = false }: { ident: string; name: string; kept?: boolean }) {
-  return kept ? <KeptChartMark airport={{ ident, name }} size={30} /> : <ChartMark space={null} category={null} use={null} size={30} />;
+  return kept ? <KeptChartMark airport={{ ident, name }} size="row" /> : <ChartMark space={null} category={null} use={null} size="row" />;
 }
 
 /** The group a set of rows is in: its name for a screen reader only, as

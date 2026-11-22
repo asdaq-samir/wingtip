@@ -15,9 +15,10 @@ import { EmergencyHost } from "../emergency";
 import { AirplaneProfileHost } from "../airplane";
 import { AutoLogbookHost } from "../logbook-auto";
 import { SharedFlightHost } from "../shared-flight";
+import { DocumentReaderHost } from "../documents";
 import { BootMap } from "../plan-map";
 import { MODES, type Mode } from "./modes";
-import { isDesktopNow, useIsDesktop } from "../../hooks/use-desktop";
+import { isDesktopNow } from "../../hooks/use-desktop";
 import { useShortcuts } from "../../hooks/use-shortcuts";
 import ConsoleLayer from "./ConsoleLayer";
 import type { WorkspacePieces } from "../../lib/workspace";
@@ -45,7 +46,7 @@ const RouteForm = lazy(() => import("../../components/RouteForm"));
  */
 export default function MapPage({ mode }: { mode: Mode }) {
   const { title, panel: panelLabel, console: consoleLabel, Workspace, route } = MODES[mode];
-  useShortcuts(useIsDesktop()); // a desktop's keys: / the search, B, N, D, Escape back
+  useShortcuts(); // a keyboard's keys, a desktop's or an iPad's: / the search, B, N, D, Escape back
   const [address, setAddress] = useAddress();
   // The route in the panel: the address's, unless the pilot has typed
   // over it -- and a draft belongs to the address it was typed over. The
@@ -239,6 +240,8 @@ export default function MapPage({ mode }: { mode: Mode }) {
                 <AutoLogbookHost />
                 {/* A flight another pilot sent, previewed before it is used (features/shared-flight). */}
                 <SharedFlightHost />
+                {/* A document in the reader, by the address's doc: a cite tapped, the library's row, a link (features/documents). */}
+                <DocumentReaderHost />
                 {/* Dev mode's refusal: someone it is not for, on the dev page, is taken to the map. */}
                 <DevGuard />
                 {/* For a keyboard: past the panel to the map in one press.

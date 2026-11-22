@@ -67,7 +67,7 @@ test("the route box's pills sit as close to their marks and arrows as each other
 });
 
 test("a stop taken out fits the map to the course again, above the half sheet", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet; from md up the card is at the side");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet; from md up the card is at the side");
   await page.goto("/app/plan?dep=C81&stops=KDPA&dest=KPWK");
   await settle(page);
   await openPanel(page);
@@ -86,7 +86,7 @@ test("a stop taken out fits the map to the course again, above the half sheet", 
 });
 
 test("a destination typed as the sheet goes down is fitted to the room the sheet leaves, not left half way", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet; from md up the card is at the side");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet; from md up the card is at the side");
   await page.goto("/app/plan?dep=C81&dest=KUGN");
   await settle(page);
   await openPanel(page);

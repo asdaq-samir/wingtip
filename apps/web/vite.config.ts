@@ -8,7 +8,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { compression, defineAlgorithm } from "vite-plugin-compression2";
 import { constants as zlib } from "node:zlib";
-import { IN_FLIGHT_READS, OVERLAY_ARCHIVE, RADAR_FRAMES, markFromCache } from "./vite-plugins/workboxRules";
+import { CHART_TILES, IN_FLIGHT_READS, LIBRARY_BOOKS, OVERLAY_ARCHIVE, RADAR_FRAMES, markFromCache } from "./vite-plugins/workboxRules";
 import { preloadEngine } from "./vite-plugins/preloadEngine.ts";
 import { MANIFEST, themeColor } from "./vite-plugins/manifest.ts";
 import { CHUNK_SIZE_LIMIT, strictRolldown, warningsFail } from "./vite-plugins/strictBuild.ts";
@@ -130,19 +130,8 @@ export default defineConfig({
             urlPattern: ({ url }) => url.hostname === "tile.googleapis.com",
             handler: "NetworkOnly",
           },
-          {
-            // The chart tiles, served by the planner (…/chart-tile/…) or
-            // from the CDN (…/tiles/<cycle>/…): cache first, they are
-            // the same for the whole 56-day cycle, and a miss offline
-            // is simply a blank tile.
-            urlPattern: ({ url }) => url.pathname.includes("/chart-tile/") || url.pathname.includes("/tiles/"),
-            handler: "CacheFirst",
-            options: {
-              cacheName: "chart-tiles",
-              expiration: { maxEntries: 20000, maxAgeSeconds: 60 * 24 * 3600, purgeOnQuotaError: true },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
+          // The chart tiles, cache first, older editions dropped (vite-plugins/workboxRules).
+          CHART_TILES,
           {
             // The airport diagrams' pictures, cache first as the tiles
             // are: an address names its 28-day d-TPP cycle, so what is
@@ -295,7 +284,8 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
-          // In flight, a shorter wait on the network (vite-plugins/workboxRules).
+          // The library's books never through the caches; in flight, a shorter wait (vite-plugins/workboxRules).
+          LIBRARY_BOOKS,
           IN_FLIGHT_READS,
           {
             // The planner's answers: the network when there is one

@@ -58,10 +58,10 @@ table, and its why below, in the same commit.
 | `procedures` | figures (debrief, diversion, endurance (91.151(a) and 91.167(a)(3)'s reserve kept back), holding, lost comms, words), paths (a procedure's legs as drawn: arcs, CIFP holds, procedure turns; the planner's path figures, a hold entry's turn and JO 7110.65's join from vectors to final), legs (how far a leg with no fix to end at is drawn, and the course reversal flown where the path turns back, AIM 5-4-9), occurrence (an accident report, the registry and an ADS-B track as one airplane: the Studio's crash drafts), track_start (whether a recorded ADS-B track starts at its takeoff from the nearest field, from AC 90-66C's departure) | core, flight |
 | `radio` | clearance, callsign (our call sign and where it was said, AIM 4-2-3 c, 4-2-4), instruction (an instruction heard in flight read into its items), readback (AIM 4-4-7 b), atc (the ATC copilot's `atc_call` and `readback_check`), atis, datis (a digital ATIS as the tower's data link writes it), datis_remarks (its remarks as the card lists them, an item a sentence in the FAA's words, like runways folded), mayday (the distress call, AIM 6-3-2), guidance (an emergency's general good practice with no airplane picked) | core, flight, weather, procedures |
 | `pilot` | pilot (a checklist, the logbook's CSV, endorsements, currency and 61.109, records: endorsements' days, 61.93(d), inspections and 91.171; paperwork: what falls due, each named and cited, for the gateway's list and reminders, an AD by 14 CFR 39.7), autolog (a logbook entry drawn from a flown track: 1.1, 61.1(b), 61.57), aircraft (with figures: an airplane's figures and where each comes from, and what a figure lacks), documents (a photographed page's figures checked before the pilot sees them), coach (a pilot's proficiency plan: what is due under 61.56 and 61.57, the weak areas their debriefs show, the sessions) | core, flight, procedures, route (without its options) |
-| `brief` | gonogo, runway (with marks: a field's wind on the map), alternates (91.169's IFR alternate), fields (the best fields to land at: a glide or a diversion), icing_forecast (the AWC's forecast icing on an IFR route), passengers (the passengers' SAFETY briefing, 91.107(a)) | core, flight, procedures |
+| `brief` | gonogo, runway (with marks: a field's wind on the map), alternates (91.169's IFR alternate), fields (the best fields to land at: a glide or a diversion), icing_forecast (the AWC's forecast icing on an IFR route), passengers (the passengers' SAFETY briefing, 91.107(a)), route_wind (the route's strongest headwind, the Brief's glance) | core, flight, procedures |
 | `route` | route (and its options: route options' grid and ways, fuel stops, the way round high ground, Class B detours and Avoid Class B), motion (with along: where the airplane is on the route; fuel_left: the fuel the plan leaves in flight, from the last fuel stop, less each start and taxi, and the hop flown and its burn, which the strip's fuel takes off that hop's), approach, navlog | core, flight, weather, procedures |
 | `airspace` | airspace, pack, rules, pack_query, view, spoken (with spoken_ask: the places a clearance names and its SID and STAR, `clearance_places`), ahead, drills (91.125's light signals and 91.155's minimums as cards and by name), surface_class and surface_hours (the class at a field's surface and a part-time one's hours, `surface_airspace`, `surface_hours`) | core, flight, procedures, radio |
-| `wording` | wording (with script: the radio calls' words) | core, procedures, airspace, brief, route (without its options) |
+| `wording` | wording (with script: the radio calls' words, and cite: a rule's citation cut into the documents library's links, `citations`) | core, procedures, airspace, brief, route (without its options) |
 | `altitude` | altitude (the floor, the band, the cruising altitudes, the selection and its words, the cautions on a pilot's own altitude, 91.119(b)'s congested areas; ground: the figures the planner's readers of the ground take, where a tile is the sea's, the obstacles drawn (77.9(a)), the side view's width, the finer terrain's reach), congested_reach (how far round a point the planner looks for 91.119(b)'s congested areas) | core, flight, weather, procedures |
 | `inflight` | watch, checks, message (`copilot_watch`: the in-flight copilot's ranked messages), flight (`copilot_flight`: the planned flight it starts from, the fuel at takeoff, the planned ground speed and whether a passenger is aboard), fields (its alternative: brief's best_fields in diversion mode, held to its weather and fuel checks) | core, flight, weather, procedures, brief |
 | `receiver` | frame, message, report, uplink, dlac, fisb, nexrad, picture (a portable ADS-B receiver's GDL 90: own ship, its traffic, FIS-B's text and NEXRAD; AIM 4-5-7, 4-5-9), views | core |
@@ -253,7 +253,9 @@ Then the callers switch to the name and the old copy is deleted.
   findings where none is picked, the line over them -- by `gonogo_brief`,
   and worded for the Brief as it opens (at most three lines a pilot acts
   on, each with what to do, why and its rule, the rest in one row) by
-  `gonogo_glance_lines`. Each is a name in `call.rs`
+  `gonogo_glance_lines`, with the Adverse Conditions under them (at most
+  three, a TFR crossed, the SIGMETs, CWAs, urgent PIREPs and G-AIRMETs
+  met on the route, AIM 7-1-5(b)(1)) by `gonogo_adverse_rows`. Each is a name in `call.rs`
   (`gonogo_brief`, `gonogo_risk`, `gonogo_runway_checks` ...), asked by
   the web app (callEngine), the planner's app.gonogo (wingtip_native.call;
   its POST /api/go-no-go asks `gonogo_brief` once) and the phones (the
@@ -291,7 +293,10 @@ Then the callers switch to the name and the old copy is deleted.
   pattern's legs on the map and as the planner flies them (the web's
   lib/wind, lib/pattern, lib/runwayFit, lib/takeoffLanding and
   lib/trafficPattern; wingtip.runway_wind and wingtip.pattern), each a name in
-  `call.rs` (`wind_pick`, `runway_end_fit`, `traffic_pattern` ...). The
+  `call.rs` (`wind_pick`, `runway_end_fit`, `traffic_pattern` ...), and
+  with an instrument approach the runway landed on, its own straight in,
+  another only by a circle the plate allows (`landing_runway`, AIM
+  5-4-20). The
   Go / No-Go's runway check goes by the same. A crosswind is rounded to
   the knot for the page only: a limit (the POH's demonstrated crosswind,
   the pilot's own) is judged against the unrounded one, which a

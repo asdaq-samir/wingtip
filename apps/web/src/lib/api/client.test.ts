@@ -77,6 +77,17 @@ describe("describeError", () => {
     expect(describeError("nope", "request failed")).toBe("request failed");
   });
 
+  test("an answer that is not JSON is said as garbled, never the parser's words", () => {
+    const parse = (() => {
+      try {
+        JSON.parse("<!doctype html><html>oops</html>");
+      } catch (err) {
+        return err;
+      }
+    })();
+    expect(describeError(parse)).toBe("The planner's answer came back garbled. Try again in a moment.");
+  });
+
   test("an answer with only HTTP's reason phrase is said as what it means, never 'Not Found'", () => {
     expect(describeError(new ApiError("Not Found", 404))).toBe("Not available yet");
     expect(describeError(new ApiError("Bad Gateway", 502))).toBe("The planner is not answering; try again in a moment");

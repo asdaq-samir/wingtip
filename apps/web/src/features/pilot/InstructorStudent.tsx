@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, X } from "lucide-react";
 import { cn } from "cn";
 import ConsoleClose from "../../components/ConsoleClose";
 import { ListGroup, ListRow } from "../../components/GroupedList";
+import RowField from "../../components/RowField";
 import { Textarea } from "../../components/ui/textarea";
 import { api } from "../../lib/api/client";
 import { feet, gal, hm, nm } from "../../lib/format";
@@ -35,6 +36,7 @@ function ReviewSection({
   const queryClient = useQueryClient();
   const [answering, setAnswering] = useState<"sign" | "decline" | null>(null);
   const [note, setNote] = useState("");
+  const noteId = useId();
   const decline = useMutation({
     mutationFn: () => api.instructor.decline(review.id, note.trim()),
     onSuccess: (next) => {
@@ -106,14 +108,16 @@ function ReviewSection({
         // The note goes to the student by email and on their Checkride page.
         <ListGroup title="Not endorsed">
           <div className="p-2">
-            <Textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              rows={3}
-              maxLength={500}
-              placeholder="Why, and what to change"
-              aria-label="Why not"
-            />
+            <RowField id={noteId} error={undefined} wide label="Why not">
+              <Textarea
+                id={noteId}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                rows={3}
+                maxLength={500}
+                placeholder="Why, and what to change"
+              />
+            </RowField>
           </div>
           <ListRow
             title={<span className="font-medium text-tint">Send</span>}

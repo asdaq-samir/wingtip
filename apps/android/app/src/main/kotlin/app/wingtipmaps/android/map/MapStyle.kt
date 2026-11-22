@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.toArgb
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.design.generated.WingtipMapZoom
 import app.wingtipmaps.android.design.generated.WingtipPalettes
 import app.wingtipmaps.android.tiles.TileTemplate
 import kotlinx.serialization.json.JsonArray
@@ -124,16 +125,13 @@ object MapStyle {
         "D" to Ink(WingtipColors.Chart.AIRSPACE_BLUE_HEX, 3.5f, listOf(10 / 3.5, 5 / 3.5), band = 0.22),
     )
 
-    /** From which Leaflet zoom each class is drawn, the web's
-     *  AIRSPACE_FROM: B from 6, C from 7, D and every label from 8. */
-    val AIRSPACE_FROM: Map<String, Double> = mapOf("B" to 6.0, "C" to 7.0, "D" to 8.0)
-    const val AIRSPACE_LABELS_FROM = 8.0
+    /** From which Leaflet zoom each class and every label is drawn: design/tokens.json's map.zoom, the web's AIRSPACE_FROM. */
+    val AIRSPACE_FROM = mapOf("B" to WingtipMapZoom.AIRSPACE_B, "C" to WingtipMapZoom.AIRSPACE_C, "D" to WingtipMapZoom.AIRSPACE_D)
+    const val AIRSPACE_LABELS_FROM = WingtipMapZoom.AIRSPACE_LABELS
 
-    /** The airports' farthest zoom, Leaflet's (the web's
-     *  AIRPORTS_FARTHEST_ZOOM); within it each field is in the tiles from
-     *  its own zoom by its rank (AIRPORT_MIN_ZOOM in
-     *  services/jobs/charts/overlays.py). */
-    const val AIRPORTS_FARTHEST_ZOOM = 4.0
+    /** The airports' farthest zoom, Leaflet's (the web's AIRPORTS_FARTHEST_ZOOM); within it each field is in the
+     *  tiles from its own tier's zoom (AIRPORT_MIN_ZOOM in services/jobs/charts/overlay_layers.py, the same tokens). */
+    const val AIRPORTS_FARTHEST_ZOOM = WingtipMapZoom.AIRPORTS_FARTHEST
     /** The VORs from a region's zoom, the fixes and the VFR waypoints from
      *  10, Leaflet's (the web's VOR_ZOOM, FIX_ZOOM). */
     const val VOR_ZOOM = 8.0
@@ -341,7 +339,7 @@ object MapStyle {
      *  line's way, and a vector tile's outer ring runs clockwise on the
      *  screen and its holes anticlockwise (the Mapbox Vector Tile spec
      *  2.1, 4.3.4.4), so the right is always the inside. */
-    private val BAND_STOPS = listOf(7.0 to 3.0, 9.0 to 6.0, 11.0 to 10.0, 13.0 to 16.0)
+    private val BAND_STOPS = listOf(WingtipMapZoom.AIRSPACE_FULL to 3.0, 9.0 to 6.0, 11.0 to 10.0, 13.0 to 16.0)
     val BAND_WIDTH: JsonArray = byZoom(*BAND_STOPS.toTypedArray())
     val BAND_OFFSET: JsonArray = byZoom(*BAND_STOPS.map { (z, w) -> z to w / 2 + 1.5 }.toTypedArray())
 
@@ -360,7 +358,7 @@ object MapStyle {
                     put("id", "airspace-$cls-band")
                     put("type", "line")
                     from("airspace")
-                    put("minzoom", glZoom(AIRSPACE_FROM.getValue(cls)))
+                    put("minzoom", glZoom(maxOf(AIRSPACE_FROM.getValue(cls), WingtipMapZoom.AIRSPACE_FULL)))
                     put("filter", e("==", e("get", "class"), cls))
                     putJsonObject("layout") { put("line-join", "round") }
                     putJsonObject("paint") {
@@ -382,7 +380,8 @@ object MapStyle {
                     }
                     putJsonObject("paint") {
                         put("line-color", ink.colour)
-                        put("line-width", ink.width)
+                        // Half its width out past the band, so a Class C is a ring and not a dot (the web's lineWidth).
+                        put("line-width", byZoom(WingtipMapZoom.AIRSPACE_B to ink.width / 2.0, WingtipMapZoom.AIRSPACE_FULL to ink.width.toDouble()))
                         if (ink.dash != null) put("line-dasharray", e(*ink.dash.toTypedArray()))
                     }
                 },
@@ -587,10 +586,11 @@ object MapStyle {
             // Smaller out at a state's width, larger closer in, each times its field's step (MARK_SIZE).
             put("icon-size", e("interpolate", e("linear"), e("zoom"), farthest, e("*", 0.7, MARK_SIZE), glZoom(10.0), MARK_SIZE, glZoom(13.0), e("*", 1.25, MARK_SIZE)))
             put("icon-allow-overlap", false)
-            // Out at a few states a mark's room is 27 px; closer in, its own.
-            put("icon-padding", e("step", e("zoom"), 27, glZoom(7.0), 2))
+            // Two px round each mark at every zoom, so the towered fields stand side by side out at a few states (the web's).
+            put("icon-padding", 2)
             put("symbol-sort-key", e("get", "rank"))
-            put("text-field", e("get", "ident"))
+            // Out past map.zoom.airport-idents only a Class B field's ident, wider than the room between two fields there.
+            put("text-field", e("step", e("zoom"), e("case", e("==", e("get", "size"), "largest"), e("get", "ident"), ""), glZoom(WingtipMapZoom.AIRPORT_IDENTS), e("get", "ident")))
             put("text-font", e(FONT))
             put("text-size", e("interpolate", e("linear"), e("zoom"), farthest, 10, glZoom(10.0), 12, glZoom(13.0), 13))
             put("text-anchor", "left")

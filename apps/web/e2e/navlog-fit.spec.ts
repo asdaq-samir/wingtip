@@ -32,7 +32,7 @@ const LONG = [
 ];
 
 test("the nav log fits a phone's panel with long names, five-figure altitudes and an ETA column", async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's panel");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's panel");
   await page.route(
     (url) => url.pathname.endsWith("/api/planner/checkpoints"),
     async (route) => {
@@ -89,7 +89,7 @@ test("the nav log fits a phone's panel with long names, five-figure altitudes an
 });
 
 test("a long trip's figures keep their full size on one line in the strip, exact, nothing cut or over the screen", async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's panel");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's panel");
   // The pilot's iPhone, 393 points wide.
   await page.setViewportSize({ width: 393, height: 852 });
   // Chicago to Las Vegas, over 1,300 nm, with no legal altitude: the
@@ -195,7 +195,7 @@ test("the airplane and the altitude stay on the first row's line, the page toggl
 }) => {
   // The FPL audit's A3 (2026-11-08): at 19.65 px the three round buttons
   // wrapped onto a line of their own under N-_____ and FL-0xx.
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's panel");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's panel");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);

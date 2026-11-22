@@ -62,12 +62,13 @@ describe("the overlay tiles' layers", () => {
       "sua-labels",
     ]);
     expect(layers.marks!.map((l) => l.id)).toEqual([
-      "navaids",
-      "navaids-idents",
+      // Bottom to top: the VORs over the waypoints and fixes, so their idents are placed first.
       "fixes",
       "fixes-idents",
       "vfr-waypoints",
       "vfr-waypoints-idents",
+      "navaids",
+      "navaids-idents",
       "airports",
     ]);
     // Each class from its own zoom (AIRSPACE_FROM).
@@ -105,7 +106,7 @@ describe("the overlay tiles' layers", () => {
     expect(airports.paint!["text-opacity"]).toEqual(["case", ["==", ["get", "ident"], ["global-state", "selectedAirport"]], 0, 1]);
   });
 
-  it("name only the Class B fields out at a few states, every field from 6, each mark a little apart", () => {
+  it("name only the Class B fields out at a few states, the towered from 6, every field from 8, each mark a little apart", () => {
     const airports = overlayStyle(TILES, ORIGIN).layers.marks!.find((l) => l.id === "airports") as SymbolLayerSpecification;
     expect(airports.minzoom).toBe(glZoom(4));
     expect(airports.layout!["text-field"]).toEqual([
@@ -113,6 +114,8 @@ describe("the overlay tiles' layers", () => {
       ["zoom"],
       ["case", ["==", ["get", "size"], "largest"], ["get", "ident"], ""],
       glZoom(6),
+      ["case", ["==", ["get", "towered"], true], ["get", "ident"], ""],
+      glZoom(8),
       ["get", "ident"],
     ]);
     expect(airports.layout!["icon-padding"]).toBe(2);

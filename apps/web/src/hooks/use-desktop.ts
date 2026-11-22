@@ -6,8 +6,8 @@ import { SIZE } from "../lib/tokens";
  *  iPad held wide, all touch, is not one: it keeps the touch layout. */
 const QUERY = `(min-width: ${SIZE.desktop}px) and (pointer: fine)`;
 
-/** Whether the page is on a desktop: the wide side panel, hover and the
- *  keyboard's shortcuts (useShortcuts). Read as the page renders, as
+/** Whether the page is on a desktop: hover and the keyboard's shortcuts
+ *  shown (Kbd). Read as the page renders, as
  *  useIsMobile is, so the first frame is already the right layout. */
 export function useIsDesktop(): boolean {
   return useMediaQuery(QUERY);

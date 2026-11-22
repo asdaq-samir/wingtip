@@ -281,7 +281,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
     (to: MapInsets) => {
       const was = insetsRef.current;
       insetsRef.current = to;
-      if (!map || (was.top === to.top && was.bottom === to.bottom && was.left === to.left)) return;
+      if (!map || (was.top === to.top && was.bottom === to.bottom && was.left === to.left && was.right === to.right)) return;
       // The sheet moving slides the map with it, frame by frame, and sets
       // this room once it has settled (useSheetSlide).
       if (sliding() && !to.card && !was.card) return;

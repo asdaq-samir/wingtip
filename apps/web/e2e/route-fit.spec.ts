@@ -48,7 +48,8 @@ test("opened fresh, the map is on the pilot's position in the middle of what the
   await settle(page);
   // Opened as the one search alone on a phone (the owner's ask); a desktop's side panel put away to start from the same rest.
   await fromRest(page);
-  await expect(page.getByTestId("my-position-button")).toHaveAttribute("aria-pressed", "true");
+  // The position shown: the arrow offers to hide or follow it, not to show it (a plain button named by its tap).
+  await expect(page.getByTestId("my-position-button")).not.toHaveAccessibleName("Show my position");
   await shipInTheMiddle(page);
   await closeSidebarWithTheStockKey(page);
   await expectDrawerClosed(page);
@@ -154,7 +155,10 @@ test("opened on the whole country, land and water lie under the charts where the
   // Under every chart layer, the sectional's included. The map's layers bottom to top (GlMapShell's data-layers).
   // Both read in one look, as the probe writes the layers as each is added.
   const order = async () => ((await page.getByTestId("gl-map").getAttribute("data-layers")) ?? "").split(" ");
-  await expect.poll(async () => (await order()).filter((id) => id === "land-water" || id === "chart")).toEqual(["land-water", "chart"]);
+  // The base chart's layer is "chart:<kind>" (glStyle's chartId), the last base picked kept beside it.
+  await expect
+    .poll(async () => (await order()).filter((id) => id === "land-water" || id.startsWith("chart:")).slice(0, 2))
+    .toEqual(["land-water", "chart:sec"]);
 });
 
 test("opened fresh where the position was given before, it is asked for again as the page opens", async ({ page }) => {
@@ -284,7 +288,8 @@ test("an airport's card keeps its field in sight: the next position the GPS give
   await context.setGeolocation({ latitude: 42.3247, longitude: -88.0742 });
   await page.goto("/app/plan");
   await settle(page);
-  await expect(page.getByTestId("my-position-button")).toHaveAttribute("aria-pressed", "true");
+  // The position shown: the arrow offers to hide or follow it, not to show it (a plain button named by its tap).
+  await expect(page.getByTestId("my-position-button")).not.toHaveAccessibleName("Show my position");
   await shipInTheMiddle(page);
 
   // A field far from the position, from the search: the map goes to it (Madison, in the overlay tiles' box).
@@ -305,7 +310,7 @@ test("an airport's card keeps its field in sight: the next position the GPS give
 test("a route fitted at the pill and untouched is slid, not fitted again, as the sheet rises to half", async ({ page }) => {
   // The FPL audit's A13 (2026-11-08) had the route fitted again above the half sheet; the owner's stock rule (2026-11-11) has the map
   // move itself only for a pick, so the sheet's rise slides it at its zoom, as Apple Maps' does.
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's sheet");
   await page.goto("/app/plan?dep=KUGN&dest=KOSH");
   await settle(page);
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");

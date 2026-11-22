@@ -12,7 +12,7 @@
  * chapter 16).
  */
 import { callEngine, engineReady } from "./engine/engine";
-import { normalizeDeg } from "./geo";
+import { flatNm, normalizeDeg } from "./geo";
 
 export type Declination = (lat: number, lon: number) => number;
 
@@ -25,6 +25,31 @@ export async function loadDeclination(day: Date = new Date()): Promise<Declinati
   await engineReady;
   const date = day.toISOString().slice(0, 10);
   return (lat: number, lon: number) => callEngine("magnetic_variation", { lat, lon, date });
+}
+
+/** How far the airplane goes before the variation under it is asked of
+ *  the engine again, nm. The WMM is a smooth field of degree 12 (WMM-2025's
+ *  technical report, NOAA NCEI and BGS: its spherical harmonics to n = 12,
+ *  so no feature narrower than some 1,700 km), and its one-degree isogonic
+ *  lines lie many miles apart (NOAA's WMM-2025 declination chart); its
+ *  yearly drift is a fraction of a degree. Over one nm the variation moves
+ *  by a small part of the whole degree the strip's track is written in. */
+export const VARIATION_STEP_NM = 1;
+
+/** The variation (`magnetic_variation`) on the UTC day of `now()`, kept
+ *  while the point stays within VARIATION_STEP_NM of the one it was asked
+ *  at and the day is the same: the strip's track asks it at every GPS fix,
+ *  about once a second, for a figure that changes over miles and years
+ *  (the waste audit of 2026-11-21, item 12). */
+export function nearVariation(now: () => Date = () => new Date()): Declination {
+  let last: { lat: number; lon: number; date: string; east: number } | null = null;
+  return (lat, lon) => {
+    const date = now().toISOString().slice(0, 10);
+    if (last && last.date === date && flatNm(lat - last.lat, lon - last.lon, lat) < VARIATION_STEP_NM) return last.east;
+    const east = callEngine("magnetic_variation", { lat, lon, date });
+    last = { lat, lon, date, east };
+    return east;
+  };
 }
 
 /** A true direction as a magnetic one, for a variation east positive. */

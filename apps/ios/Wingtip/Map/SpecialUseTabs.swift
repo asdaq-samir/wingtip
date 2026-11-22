@@ -10,9 +10,9 @@ import UIKit
 /// all the engine's (special_use_in_view's `tab`, crate::sua_tab), as the
 /// web draws the tiles' `tab`; the app only turns it with the map.
 enum SpecialUseTab {
-    /// From the zoom of the Class B, C and D tabs (the web's
-    /// AIRSPACE_LABELS_FROM).
-    static let from = 8.0
+    /// From the zoom of the Class B, C and D tabs (design/tokens.json's
+    /// map.zoom, the web's AIRSPACE_LABELS_FROM).
+    static let from = WingtipMapZoom.airspaceLabels
     /// How far off the line the tab's middle sits, towards the area: about
     /// half its two lines' height, so its edge meets the line (the web's
     /// INSIDE_EM, 1.35 ems of 11 points).

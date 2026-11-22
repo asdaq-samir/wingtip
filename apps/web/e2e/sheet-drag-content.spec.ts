@@ -55,7 +55,7 @@ const drawnBelowHead = (page: Page) =>
   });
 
 test.beforeEach(({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet; the desktop's side panel has no detents");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet; the desktop's side panel has no detents");
 });
 
 test("an airport card dragged up from its pill shows its content before it is let go", async ({ page }) => {

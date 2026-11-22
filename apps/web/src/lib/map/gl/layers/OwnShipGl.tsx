@@ -4,7 +4,7 @@ import { SHEET_SECONDS } from "../../../mapChrome";
 import { underway } from "../../position/glide";
 import { ownShipHtml } from "../../marks/icons";
 import { usePreferences } from "../../../preferences";
-import { drawOwnShip, ownShipMarker } from "./ownShipMarker";
+import { drawOwnShip, ownShipMarker, placeOwnShip } from "./ownShipMarker";
 import { useOwnShip } from "../../position/ownShip";
 import { useGlMap } from "../glLayer";
 import { glZoom } from "../glStyle";
@@ -75,9 +75,7 @@ export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
     // `data-own-ship` the specs find), turned by the marker to the heading.
     const heading = enabled ? fix.headingDeg : null;
     drawOwnShip(m, drawn, ownShipHtml(heading == null ? null : 0, !enabled, look, enabled && (simulated || underway(fix))));
-    m.setLngLat([fix.lon, fix.lat])
-      .setRotation(heading ?? 0)
-      .addTo(map);
+    placeOwnShip(m, map, [fix.lon, fix.lat], heading ?? 0);
   }, [map, fix, enabled, simulated, look]);
   useEffect(() => {
     if (!fix || !enabled) return;

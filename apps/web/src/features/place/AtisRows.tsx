@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Radio } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
+import { FieldError } from "../../components/ui/field";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { RowBadge } from "../../components/RowBadge";
 import { BADGE } from "../../lib/rowBadges";
@@ -115,9 +116,17 @@ export function AtisRows() {
           <ListRow
             muted
             title={
-              <span className={cn(problem ? "text-destructive" : "text-caution-ink", TEXT.detail)} data-testid="place-atis-problem">
-                {problem ?? caution}
-              </span>
+              // Said as it comes, the listen just tapped (WCAG 4.1.3): a
+              // problem as the stock field error's alert, a caution as a status.
+              problem ? (
+                <FieldError className={TEXT.detail} data-testid="place-atis-problem">
+                  {problem}
+                </FieldError>
+              ) : (
+                <span role="status" className={cn("text-caution-ink", TEXT.detail)} data-testid="place-atis-problem">
+                  {caution}
+                </span>
+              )
             }
           />
         )}

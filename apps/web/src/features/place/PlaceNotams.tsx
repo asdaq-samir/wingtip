@@ -6,6 +6,7 @@ import { SheetCard } from "../../components/SheetCard";
 import StatusBadge from "../../components/StatusBadge";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { NotamAsSent } from "../../components/NotamAsSent";
+import KeptAge from "../../components/KeptAge";
 import { TEXT } from "../../lib/text";
 import { useMinuteClock } from "../../lib/useMinuteClock";
 import {
@@ -222,11 +223,11 @@ function kindsOf(notams: FieldNotam[], ident: string): [string, FieldNotam[]][] 
  * "None heard", where the field is outside the NOTAM system.
  */
 export function PlaceNotamsSection({ ident, none = null }: { ident: string; none?: string | null }) {
-  const { data, isError, total, shown, long, all, toggle } = useFieldNotams(ident);
+  const { data, isError, query, atMs, failed, total, shown, long, all, toggle } = useFieldNotams(ident);
   if (!data && !isError) return null;
   // "3 of 9" at the right while closed, as FirstFew's sections.
   const count = long && !all ? <span className={cn("text-muted-foreground", TEXT.note)}>{`${shown.length} of ${total}`}</span> : undefined;
-  const state = <NotamsState data={data} isError={isError} none={none} />;
+  const state = <NotamsState data={data} query={query} none={none} />;
   return (
     <div className="scroll-mt-16 pt-5" data-testid={SECTION}>
       <PillSection
@@ -236,6 +237,10 @@ export function PlaceNotamsSection({ ident, none = null }: { ident: string; none
         expanded={long ? all : undefined}
         right={count}
       >
+        {/* "Fetched 42 min ago" over a list kept from before the signal
+            was lost, amber past the engine's hour for NOTAMs (kept_age;
+            14 CFR 91.103, AIM 5-1-3), as the route's list says it. */}
+        <KeptAge kind="notams" path={`/api/planner/airport/${ident}/notams`} atMs={atMs} failed={failed} className="px-1" />
         {/* Opened, every one in the stock Collapsible's content, under its
             kind (Runway, Taxiway, Obstacle ...), the kinds in the order
             their first NOTAM ranks, as ForeFlight heads its list's groups

@@ -4,6 +4,7 @@
 # listed here, so each new spec chooses its tier: give its one
 # end-to-end test @smoke (one per journey), or add it here. Paths are
 # relative to apps/web/e2e.
+a11y-screens.spec.ts
 a11y.spec.ts
 airplane-lookup.spec.ts
 airplane-mode.spec.ts
@@ -31,6 +32,7 @@ desktop.spec.ts
 devswitch.spec.ts
 direct-to.spec.ts
 diversion.spec.ts
+documents.spec.ts
 dry-run-bar.spec.ts
 dry-run-follow.spec.ts
 dry-run-profile.spec.ts
@@ -60,6 +62,7 @@ instrument-currency.spec.ts
 ios/audit.spec.ts
 ios/gestures.spec.ts
 ios/menus.spec.ts
+ipad-layout.spec.ts
 kneeboard.spec.ts
 legal.spec.ts
 limits.spec.ts
@@ -76,6 +79,7 @@ navlog-fit.spec.ts
 navlog-winds.spec.ts
 night.spec.ts
 no-airplane.spec.ts
+offline-ages.spec.ts
 overlay.spec.ts
 pass-times.spec.ts
 passengers.spec.ts

@@ -14,15 +14,15 @@ import { ListGroup } from "../../components/GroupedList";
 import { RowBadge } from "../../components/RowBadge";
 import { SETTING_BADGE } from "../../lib/rowBadges";
 import type { Pilot } from "../../lib/api/types";
-import { api } from "../../lib/api/client";
 import { feet, miles } from "../../lib/format";
-import { flightsQuery, pilotQuery } from "../../lib/queryClient";
+import { flightsQuery, logbookQuery, pilotQuery } from "../../lib/queryClient";
 import { shortName } from "../../lib/aircraftChoice";
 import { usePreferences } from "../../lib/preferences";
 import type { Minimums } from "../../lib/minimums";
 import { TEXT } from "../../lib/text";
 import { useDevMode } from "../../hooks/use-dev-mode";
 import { SettingsPage, type HelpPages } from "../settings";
+import { DocumentsPage, DocumentsRow } from "../documents";
 import { FlightsPanel } from "./AccountPanels";
 import { LargeFace } from "./AccountFace";
 import { LogbookPanel } from "./LogbookPanel";
@@ -82,7 +82,7 @@ function Personal({
   // the owner's pick (T3): asked for only signed in, as the rows open to
   // nothing otherwise.
   const { data: flights } = useQuery({ ...flightsQuery, enabled: signedIn });
-  const { data: entries } = useQuery({ queryKey: ["logbook"], queryFn: api.logbook.list, enabled: signedIn, meta: { silent: true } });
+  const { data: entries } = useQuery({ ...logbookQuery, enabled: signedIn });
   const hours = entries?.reduce((sum, e) => sum + (e.totalHours ?? 0), 0);
   const settings = minimumsWords(minimums);
   // Settings' Help & About: how old the plan's data is, and what is kept
@@ -111,6 +111,7 @@ function Personal({
     flights: { title: "Flights", content: <FlightsPanel /> },
     logbook: { title: "Logbook", content: <LogbookPanel aircraft={shortName(aircraft.label)} /> },
     minimums: { title: "Minimums", content: <MinimumsPanel /> },
+    documents: { title: "Documents", content: <DocumentsPage /> },
     training: { title: "Training", content: <TrainingPage signedIn={signedIn} /> },
     settings: { title: "Settings", content: <SettingsPage help={help} /> },
     subscription: { title: "Subscription", content: <SubscriptionPanel /> },
@@ -181,6 +182,8 @@ function Personal({
                   </RowBadge>
                 }
               />
+              {/* The documents library (features/documents): the FAA's and the pilot's own, on this device. */}
+              <DocumentsRow />
               <TrainingRow />
               <EmergencyRow />
               {signedIn && sold && <SubscriptionRow />}
@@ -246,7 +249,8 @@ function YouHead({ pilot, opens }: { pilot: Pilot | null; opens: boolean }) {
           variant="plain"
           size="inline"
           onClick={() => openPage("pilot")}
-          aria-label={name ? `${name}, Pilot Details` : "Pilot Details"}
+          // Its visible words first, as voice control says them (WCAG 2.5.3).
+          aria-label={`${name ?? "Add Your Name"}, Pilot Details`}
           data-testid="pilot-row"
           className="flex h-auto max-w-full flex-col items-center gap-1 whitespace-normal"
         >

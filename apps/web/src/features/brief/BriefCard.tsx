@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { CardHead } from "../../components/CardHead";
 import { PanelTabs } from "../navlog/lazy";
 import BriefOverview from "./BriefOverview";
@@ -6,6 +6,7 @@ import VerdictPill from "./VerdictPill";
 import type { PanelTab } from "../plan";
 import { useLiveRefresh } from "../../lib/liveRefresh";
 import { CardLayer } from "../../components/sheet/CardLayer";
+import { prefetchAirportSections } from "./AirportSectionsPart";
 
 /**
  * FPL's Brief, a card over it as an airport's is, at the owner's ask ("we
@@ -48,6 +49,8 @@ export default function BriefCard({
   // Its live reports kept fresh by themselves (on their timers and as the
   // card comes back into sight); asked again now from its ••• (ShareMenu).
   useLiveRefresh("brief");
+  // The airport sections' chunk as the card comes up, before its pages ask.
+  useEffect(prefetchAirportSections, []);
   // A card of its own over the sheet, the stock Drawer's nested drawer
   // (CardLayer, the owner 2026-11-11), as an airport's card is.
   return (

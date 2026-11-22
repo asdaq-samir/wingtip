@@ -26,7 +26,7 @@ export function NotamAsSent({
     <Collapsible open={open} onOpenChange={onOpenChange}>
       <CollapsibleTrigger
         className={cn(
-          "group relative inline-flex items-center gap-1 self-start font-medium text-tint outline-none after:absolute after:-inset-y-3 after:inset-x-0 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
+          "group relative inline-flex items-center gap-1 self-start font-medium text-tint outline-none hit-y-3 focus-visible:ring-2 focus-visible:ring-ring",
           TEXT.note,
         )}
         data-testid={testId ? `${testId}-source` : undefined}

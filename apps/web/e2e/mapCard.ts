@@ -28,17 +28,17 @@ export async function closeMapSettings(page: Page) {
 }
 
 /** The map's round 3D button (ThreeDButton) set on or off on the planner,
- *  before a route is loaded, as Apple Maps' 3D is: pressed while the map
- *  stands in 3D. Over a phone's sheet all the way up the map's buttons
+ *  before a route is loaded, as Apple Maps' 3D is: "2D" while the map
+ *  stands in 3D, named by what a tap does (ThreeDButton). Over a phone's sheet all the way up the map's buttons
  *  give way: the sheet lowered first. */
 export async function setMap3d(page: Page, on: boolean) {
   await page.goto("/app/plan");
-  if ((page.viewportSize()?.width ?? 0) < 768 && (await frontSheet(page).getAttribute("data-panel")) === "full")
+  if ((page.viewportSize()?.width ?? 0) < 660 && (await frontSheet(page).getAttribute("data-panel")) === "full")
     await grabberTo(page, "peek");
   const button = page.getByTestId("map-3d-button");
-  if ((await button.getAttribute("aria-pressed")) !== String(on)) await button.click();
-  await expect(button).toHaveAttribute("aria-pressed", String(on));
+  if ((await button.textContent()) !== (on ? "2D" : "3D")) await button.click();
   await expect(button).toHaveText(on ? "2D" : "3D");
+  await expect(button).toHaveAccessibleName(on ? "Show in 2D" : "Show in 3D");
 }
 
 /** The Map card's Route Checkpoints switch (`waypoints-toggle`; moved from

@@ -5,6 +5,7 @@ import { ConsolePages, PageRow } from "../../components/ConsolePages";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Button } from "../../components/ui/button";
 import { api } from "../../lib/api/client";
+import { RECORDS_FRESH_MS } from "../../lib/queryClient";
 import type { Instructor } from "../../lib/api/types";
 import { FINDING_TONE, type Finding } from "../../lib/findings";
 import { studentLines, type StudentLine } from "./students";
@@ -52,7 +53,7 @@ function Dots({ line }: { line: StudentLine }) {
  */
 export default function InstructorPage() {
   const queryClient = useQueryClient();
-  const { data: instructor, error } = useQuery({ queryKey: ["instructor"], queryFn: api.instructor.get });
+  const { data: instructor, error } = useQuery({ queryKey: ["instructor"], queryFn: api.instructor.get, staleTime: RECORDS_FRESH_MS });
   const [editing, setEditing] = useState(false);
   const keep = (next: Instructor) => queryClient.setQueryData(["instructor"], next);
   const accept = useMutation({ mutationFn: api.instructor.accept, onSuccess: keep });
@@ -95,7 +96,8 @@ export default function InstructorPage() {
               <ListRow key={s.linkId} title={s.name} description={s.email} data-testid="student-ask">
                 <span className="flex gap-1">
                   <Button type="button" variant="ghost" size="sm" disabled={leave.isPending} onClick={() => leave.mutate(s.linkId)}>
-                    Decline
+                    {/* Whose, for a reader's list of buttons (WCAG 2.4.6), after the word seen (2.5.3). */}
+                    Decline<span className="sr-only"> {s.name}</span>
                   </Button>
                   <Button
                     type="button"
@@ -104,7 +106,7 @@ export default function InstructorPage() {
                     onClick={() => accept.mutate(s.linkId)}
                     data-testid="student-accept"
                   >
-                    Accept
+                    Accept<span className="sr-only"> {s.name}</span>
                   </Button>
                 </span>
               </ListRow>

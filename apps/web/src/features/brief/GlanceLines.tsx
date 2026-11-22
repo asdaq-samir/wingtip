@@ -4,6 +4,7 @@ import { Button } from "../../components/ui/button";
 import FindingIcon from "../../components/FindingIcon";
 import { AccordionContent, AccordionItem, AccordionTrigger } from "../../components/ui/accordion";
 import { TEXT } from "../../lib/text";
+import { Cited } from "../documents";
 import type { PanelTab } from "../plan";
 import type { glanceLines, GlanceLine } from "./glance";
 
@@ -39,7 +40,8 @@ export function Line({ line, onOpen }: { line: GlanceLine; onOpen: (tab: PanelTa
         </p>
         <p className={TEXT.detail}>
           <span className="font-semibold">Why it matters: </span>
-          {line.why} <span className="text-muted-foreground">({line.cite})</span>
+          {/* Each cited rule a tap to its paragraph in the library. */}
+          <Cited text={line.why} /> <span className="text-muted-foreground">(<Cited text={line.cite} />)</span>
         </p>
         {line.raw.length > 0 && (
           <div className={cn("space-y-1 font-mono whitespace-pre-wrap text-muted-foreground", TEXT.note)} data-testid="brief-line-raw">

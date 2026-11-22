@@ -24,7 +24,7 @@ const SORTS: { value: NotamSort; label: string }[] = [
 
 /** A toolbar button's look: the tint, its 44-point reach a pseudo-element. */
 const TOOL =
-  "relative inline-flex h-8 items-center gap-1.5 rounded-full px-3 font-medium text-tint outline-none after:absolute after:-inset-y-1.5 after:inset-x-0 after:content-[''] hover:bg-tint/10 focus-visible:ring-2 focus-visible:ring-ring data-[popup-open]:bg-tint/12";
+  "relative inline-flex h-8 items-center gap-1.5 rounded-full px-3 font-medium text-tint outline-none hit-y-1.5 hover:bg-tint/10 focus-visible:ring-2 focus-visible:ring-ring data-[popup-open]:bg-tint/12";
 
 const toggled = <T,>(list: T[], item: T, on: boolean) => (on ? [...list, item] : list.filter((x) => x !== item));
 

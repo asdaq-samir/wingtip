@@ -16,7 +16,7 @@ import { expectBack, hittable, nestedOverSheet, scrollOf } from "./cardEntries";
  * replacing its address at each change, so history back would leave it.
  */
 
-const phone = (page: Page) => page.viewportSize()!.width < 768;
+const phone = (page: Page) => page.viewportSize()!.width < 660;
 
 async function open(page: Page, row: CardRow, entry: Entry) {
   await entry.open(page);

@@ -1,4 +1,5 @@
 import { useId, useState } from "react";
+import { errorIdOf, invalidProps } from "../../lib/fieldError";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import FieldHit from "../../components/FieldHit";
 import { ListGroup, ListRow } from "../../components/GroupedList";
@@ -62,7 +63,14 @@ function PilotFields({ pilot }: { pilot: Pilot }) {
     if (phone.trim() === (pilot.phone ?? "") && home.trim().toUpperCase() === (pilot.homeBase ?? "")) return;
     saveContact.mutate({ phone: phone.trim(), homeBase: home.trim() });
   };
-  const problem = (message?: string | null) => (message ? <span className="text-destructive">{message}</span> : undefined);
+  // Said under its title with the id its field is described by, so a reader
+  // says the two together (WCAG 3.3.1).
+  const problem = (field: string, message?: string | null) =>
+    message ? (
+      <span id={errorIdOf(field)} className="text-destructive">
+        {message}
+      </span>
+    ) : undefined;
 
   return (
     <section aria-label="Pilot details">
@@ -70,19 +78,20 @@ function PilotFields({ pilot }: { pilot: Pilot }) {
         <NameFieldRow
           id={`${id}-name`}
           title="Name"
-          description={problem(saveName.error?.message) ?? "As on your pilot certificate"}
+          description={problem(`${id}-name`, saveName.error?.message) ?? "As on your pilot certificate"}
           placeholder="Avery B. Pilot"
           value={name}
           saved={pilot.fullName}
           onChange={setName}
           onSave={saveName.mutate}
           testId="pilot-name"
+          error={saveName.error?.message}
           className="h-8 w-44 text-right sm:w-56"
         />
         <ListRow
           id={`${id}-phone`}
           title="Phone"
-          description={problem(phoneWrong ?? saveContact.error?.message) ?? "One that reaches you at your ETA"}
+          description={problem(`${id}-phone`, phoneWrong ?? saveContact.error?.message) ?? "One that reaches you at your ETA"}
         >
           <FieldHit htmlFor={`${id}-phone`}>
             <Input
@@ -94,14 +103,14 @@ function PilotFields({ pilot }: { pilot: Pilot }) {
               className="h-8 w-44 text-right sm:w-56"
               autoComplete="tel"
               inputMode="tel"
-              aria-invalid={!!phoneWrong}
+              {...invalidProps(`${id}-phone`, phoneWrong ?? saveContact.error?.message)}
               onChange={(e) => setPhone(e.target.value)}
               onBlur={contact}
               data-testid="pilot-phone"
             />
           </FieldHit>
         </ListRow>
-        <ListRow id={`${id}-home`} title="Home base" description={problem(homeWrong)}>
+        <ListRow id={`${id}-home`} title="Home base" description={problem(`${id}-home`, homeWrong)}>
           <FieldHit htmlFor={`${id}-home`}>
             <Input
               id={`${id}-home`}
@@ -113,7 +122,7 @@ function PilotFields({ pilot }: { pilot: Pilot }) {
               autoCorrect="off"
               autoComplete="off"
               spellCheck={false}
-              aria-invalid={!!homeWrong}
+              {...invalidProps(`${id}-home`, homeWrong)}
               onChange={(e) => setHome(e.target.value)}
               onBlur={contact}
               data-testid="pilot-home-base"

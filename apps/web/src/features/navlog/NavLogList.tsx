@@ -12,6 +12,7 @@ import type { NavLogRow } from "../plan";
 import { wantPlace } from "../../lib/navigation/wanted";
 import { TEXT } from "../../lib/text";
 import { PointMark } from "./PointMark";
+import { useCardUp } from "../../components/sheet/useCardUp";
 
 /** The rail's middle, across the row: the row's own 6 and half the
  *  mark's column (2.125 rem). */
@@ -20,6 +21,9 @@ const RAIL = "left-[calc(0.375rem+1.0625rem)]";
 const MARK_MIDDLE = "1.25rem";
 /** The selection's wash by night, the row's and its note's alike. */
 const SELECTED_NIGHT = "dark:bg-foreground/5 dark:hover:bg-foreground/5 dark:focus-visible:bg-foreground/5";
+/** The rows drawn as a card comes up, more than a phone's first screen
+ *  holds (NavLogList): the rest once it is up. */
+const FIRST_ROWS = 12;
 
 /** The way a leg is flown, magnetic and named so, as a paper nav log's
  *  MC and MH columns are: its heading with an airplane picked ("MH 252°"),
@@ -153,6 +157,12 @@ export function NavLogList({
   const airplane = useAirplaneChosen();
   const rows = airplane ? allRows : allRows.filter((r) => !isLegPoint(r));
   const rail = railOf(rows);
+  // The first screen's rows as the card comes up, the rest once it is up
+  // (useCardUp), so the list is not one long task in its ease; past them a
+  // row picked or flown to, which is scrolled to, at once.
+  const up = useCardUp();
+  const wanted = up ? -1 : Math.max(flying ?? -1, rows.map((r) => isSelected(r)).lastIndexOf(true));
+  const upTo = up ? rows.length : Math.max(FIRST_ROWS, wanted + 1);
   return (
     <>
       {/* Its age where it is the one kept on this device (lib/kept). */}
@@ -194,6 +204,7 @@ export function NavLogList({
         </div>
         <div role="rowgroup">
           {rows.map((row, at) => {
+            if (at >= upTo) return null;
             const leg = legOf(row);
             const selected = isSelected(row);
             const first = at === 0,
@@ -291,7 +302,7 @@ export function NavLogList({
                             event.stopPropagation();
                             wantPlace(field);
                           }}
-                          className="relative justify-start text-left after:absolute after:-inset-y-[11px] after:inset-x-0 after:content-['']"
+                          className="relative justify-start text-left hit-y-[11px]"
                         >
                           {name}
                         </Button>

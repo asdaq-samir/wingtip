@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { data, planner } from "../../lib/api/client";
 import type { components } from "../../lib/api/schema";
 import { prefersReducedMotion } from "../../lib/motion";
+import { noConnection } from "../../lib/problems";
 import { usePauseWhileHidden } from "../../lib/usePauseWhileHidden";
 import { useWeatherLayers } from "../../lib/map/sources/weatherLayers";
 
@@ -129,6 +130,9 @@ export function useWeatherFlow({ drive = false }: { drive?: boolean } = {}) {
     steps,
     loading: query.isPending && field !== "off",
     failed: !!query.error && !query.data,
+    /** Nothing kept and no connection to ask: its ask waits paused, so not
+     *  "Fetching" for good (lib/problems). */
+    offline: !query.data && noConnection(query),
     seek: (i: number) => set({ index: i, playing: false }),
     toggle: () => set({ playing: !playing, index: !playing && (shown >= last || shown < first) ? first : shown }),
     now: () => set({ index: null, playing: false }),

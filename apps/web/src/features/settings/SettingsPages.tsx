@@ -171,6 +171,9 @@ function SourcesPage() {
           ) : undefined
         }
       />
+      {/* The documents library's (features/documents): the FAA's and the
+          eCFR's, public domain, credited once here as the charts are. */}
+      <ListRow title="Documents" value={<span className="text-foreground">FAA, eCFR</span>} />
       <ListRow
         title="METARs"
         value={<span className="text-foreground">{ages.metars ? `aviationweather.gov · ${ages.metars}` : "aviationweather.gov"}</span>}

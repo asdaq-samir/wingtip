@@ -6,7 +6,7 @@ import { usePreferences } from "../../lib/preferences";
 import { keepKey, keepingAvailable, keptAlready, stopKeeping, useKeepJob } from "../../lib/map/route/keepRoute";
 import { keepForAir, keptRecordStore } from "../keptForAir";
 import { chartPair } from "../../lib/map/sources/tiles";
-import { grouped } from "../../lib/format";
+import { grouped, megabytes } from "../../lib/format";
 
 /**
  * Keep for the Air, a setting under Map: while it is on, each route
@@ -86,10 +86,4 @@ export function useKeepRouteToast() {
       clearProblem(TOAST_ID);
     }
   }, [job]);
-}
-
-/** A size as the toast says it: "3 MB", "0.4 MB". */
-function megabytes(bytes: number): string {
-  const mb = bytes / 1e6;
-  return `${mb >= 1 ? Math.round(mb) : Math.max(0.1, Math.round(mb * 10) / 10)} MB`;
 }

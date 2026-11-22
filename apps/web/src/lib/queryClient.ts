@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
-import { api, isUnknownPlace } from "./api/client";
+import { api, data, isUnknownPlace, planner } from "./api/client";
+import type { components } from "./api/schema";
 import type { ChartInfo } from "./api/types";
 import { keptStore } from "./storage";
 import { signedInPilot } from "./pilotCache";
@@ -222,6 +223,25 @@ export const classBQuery = queryOptions({
 export const airportQuery = (ident: string) =>
   queryOptions({ queryKey: ["airport", ident], queryFn: () => api.airport(ident), staleTime: 5 * 60_000, meta: { silent: true } });
 
+/** A field's own NOTAMs and the TFRs near it, as the planner ranks them. */
+export type FieldNotams = components["schemas"]["NotamsRanked"];
+
+/**
+ * A field's own NOTAMs (the FAA's feed, by any ident it goes by) and the
+ * TFRs within 5 nm of it, best first, as the engine ranks a route's: the
+ * planner's GET /api/airport/{ident}/notams, which the iPhone's and
+ * Android's cards read too. 14 CFR 91.103 asks for the NOTAMs of every
+ * field a flight uses; a card is where a pilot looks at one field, and
+ * Keep for the Air asks it for each of the route's (keepAnswers).
+ */
+export const fieldNotamsQuery = (ident: string) =>
+  queryOptions({
+    queryKey: ["airport-notams", ident],
+    queryFn: () => planner.GET("/api/airport/{ident}/notams", { params: { path: { ident } } }).then(data<FieldNotams>),
+    staleTime: 5 * 60_000,
+    meta: { silent: true },
+  });
+
 /** A cycle's procedures hold for its 28 days. */
 const PROCEDURE_STALE_MS = 6 * 60 * 60_000;
 
@@ -313,13 +333,37 @@ export const plateQuery = (airport: string, id: string) =>
     meta: { silent: true },
   });
 
+/** How long the pilot's own records are fresh: a minute, as their
+ *  airplanes, currency and what falls due are. Each change made here sets
+ *  or invalidates its query (SaveFlight, refreshLogbook, the checkride's
+ *  `keep`), and a sign-out drops them (useLogout); with none, each was
+ *  stale at once, and every console, panel and tab that mounted it, and
+ *  every return to the window, asked the gateway again for the same list
+ *  (the logbook's four readers, the flights' three). */
+export const RECORDS_FRESH_MS = 60_000;
+
 /** The pilot's saved flights, for FPL's Saved and its list in full: quiet,
  *  each saying in place what it could not fetch (QueryState). */
-export const flightsQuery = queryOptions({ queryKey: ["flights"], queryFn: () => api.flights.list(), meta: { silent: true } });
+export const flightsQuery = queryOptions({
+  queryKey: ["flights"],
+  queryFn: () => api.flights.list(),
+  staleTime: RECORDS_FRESH_MS,
+  meta: { silent: true },
+});
 
 /** The pilot's training record: the logbook's, the checkride's, the
  *  Brief's solo review's, a flight's page's. */
-export const trainingQuery = queryOptions({ queryKey: ["training"], queryFn: () => api.training.get() });
+export const trainingQuery = queryOptions({ queryKey: ["training"], queryFn: () => api.training.get(), staleTime: RECORDS_FRESH_MS });
+
+/** The pilot's logbook, for the You page's hours, the Logbook, its flights'
+ *  list and the coach: one set of options for its four readers. Quiet,
+ *  each list saying in place what it could not fetch (QueryState). */
+export const logbookQuery = queryOptions({
+  queryKey: ["logbook"],
+  queryFn: () => api.logbook.list(),
+  staleTime: RECORDS_FRESH_MS,
+  meta: { silent: true },
+});
 
 /** The pilot's own airplanes, for the aircraft chips, the Brief and
  *  Setup's Aircraft: fresh for a minute. */

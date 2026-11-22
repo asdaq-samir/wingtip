@@ -41,16 +41,17 @@ export function FloatingBarFace({ icon, badge, label }: { icon: ReactNode; badge
         // Important, as the stock Button's own rule for a glyph with no size
         // of its own (16, `[&_svg:not([class*='size-'])]`) outranks a plain
         // descendant rule: every size set here read 16 on the phone.
-        className="relative flex shrink-0 [&_svg]:size-6!"
+        className="relative flex shrink-0 [&_svg]:size-(--size-glyph-bar)!"
       >
         {icon}
         {badge}
       </span>
-      {/* iOS's Footnote, 13 on its own 18 line (TEXT.note): with the glyph
-          back at 24 (c23b9baec) the two fit the item's 48 without the 16
-          line the 28-point glyph needed, which the iOS audit's P3 found off
-          the type scale. */}
-      <span className={cn("font-normal whitespace-nowrap", TEXT.note)}>{label}</span>
+      {/* The tab bar's own role, iOS's Footnote, 13 on its 18 line
+          (TEXT.tabBar, the scale audit's Q3: it drew a note's, and the
+          role said 12): with the glyph at 24 (size.glyph-bar, c23b9baec)
+          the two fit the item's 48 without the 16 line the 28-point glyph
+          needed, which the iOS audit's P3 found off the type scale. */}
+      <span className={cn("font-normal whitespace-nowrap", TEXT.tabBar)}>{label}</span>
     </>
   );
 }

@@ -35,26 +35,43 @@ export default function ReplayCameraGl() {
     const el = map.getContainer();
     let frame = 0,
       shownAt: number | null = null;
-    // A keyframe added or changed, or another camera picked: shown again.
-    const unsubscribe = useReplayCamera.subscribe(() => (shownAt = null));
+    // Drawn in the frame after the replay's clock, the camera or the
+    // export changes, and each frame only while an orbit turns by itself:
+    // a paused replay ran a frame loop for nothing, writing the same
+    // camera name on the map at every one (the waste audit of 2026-11-21,
+    // item 14).
     const step = (now: number) => {
-      frame = requestAnimationFrame(step);
+      frame = 0;
       const cam = useReplayCamera.getState();
-      el.dataset.replayCamera = cam.keyed ? "keyframes" : (cam.kind ?? "");
+      const name = cam.keyed ? "keyframes" : (cam.kind ?? "");
+      if (el.dataset.replayCamera !== name) el.dataset.replayCamera = name;
       const { at } = usePastFlight.getState();
-      if (useExporting.getState().running) return;
+      if (useExporting.getState().running || at === null) return;
       // The orbit goes round by itself; the rest move only with the replay.
       const turning = cam.kind === "orbit" || (cam.keyed && cam.keys.some((k) => k.kind === "orbit"));
-      if (at === null || (at === shownAt && !turning)) return;
+      if (turning) ask();
+      if (at === shownAt && !turning) return;
       const view = replayView(map, at, now / 1000);
       if (!view) return;
       shownAt = at;
       showView(map, view);
     };
-    frame = requestAnimationFrame(step);
+    const ask = () => {
+      if (!frame) frame = requestAnimationFrame(step);
+    };
+    // A keyframe added or changed, or another camera picked: shown again.
+    const unsubscribe = [
+      useReplayCamera.subscribe(() => {
+        shownAt = null;
+        ask();
+      }),
+      usePastFlight.subscribe(ask),
+      useExporting.subscribe(ask),
+    ];
+    ask();
     return () => {
       cancelAnimationFrame(frame);
-      unsubscribe();
+      for (const off of unsubscribe) off();
       delete el.dataset.replayCamera;
       if (!map.style) return;
       map.setMaxZoom(maxZoom);

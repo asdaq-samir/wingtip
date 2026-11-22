@@ -25,6 +25,9 @@ export interface MapInsets {
   top: number;
   bottom: number;
   left: number;
+  /** The inspector's column at the map's right while a card is in it
+   *  (MapPanel, a touch screen from size.inspector wide); none elsewhere. */
+  right?: number;
   /** Where the panel has settled: at rest (its capsule, or a desktop's
    *  corner) or out. The map follows a change of this (GlMapShell), not
    *  every change of the size -- a notice under the route, the head
@@ -56,6 +59,7 @@ export function setMapInsets(next: MapInsets) {
     prev.top === next.top &&
     prev.bottom === next.bottom &&
     prev.left === next.left &&
+    prev.right === next.right &&
     prev.out === next.out &&
     prev.up === next.up &&
     prev.card === next.card;
@@ -85,6 +89,7 @@ export function insetVars(el: HTMLElement | null) {
     el.style.setProperty("--map-inset-top", `${insets.top}px`);
     el.style.setProperty("--map-inset-bottom", `${insets.bottom}px`);
     el.style.setProperty("--map-inset-left", `${insets.left}px`);
+    el.style.setProperty("--map-inset-right", `${insets.right ?? 0}px`);
   };
   write(useMapInsets.getState());
   return useMapInsets.subscribe(write);
@@ -195,7 +200,7 @@ export const GRABBER_BAR = "h-[5px] w-9 rounded-full bg-muted-foreground/40";
 /** A capsule whose 44-point hit area is a pseudo-element six points out
  *  round it (the app's rule: a control never grows to get there). The
  *  caller adds its height (h-8 for the 32-point ones) and fill. */
-export const CAPSULE_HIT = "relative rounded-full after:absolute after:-inset-1.5 after:content-['']";
+export const CAPSULE_HIT = "relative rounded-full hit-1.5";
 
 /** A tinted capsule that adds a field to the route -- the Stops' Add
  *  Stop and Direct To (StopsCard) -- one height, padding and hit area (the
@@ -223,6 +228,13 @@ export const usePanelDragging = create<{ dragging: boolean }>(() => ({ dragging:
  *  glyphs are a desk's. One size for the whole stack, the microphone's
  *  circle included, set on the stack rather than each button. */
 export const FLYING_STACK = "gap-3 [&_button]:size-[60px]";
+/** The map's buttons on the ground: 44 px (size.map-button) whatever the
+ *  pilot's text size, as Apple Maps' do not grow with Dynamic Type (the
+ *  scale audit's Q1, the owner, 2026-11-21; they were rem, 54 at 19.65 px),
+ *  their glyphs 20 px (size.glyph-map). Their 44-point hit area is the
+ *  button itself (index.css's --tap-target is px too). */
+export const MAP_BUTTON_SIZE = "[&_button]:size-(--size-map-button)";
+export const MAP_BUTTON_GLYPH = "[&_button>svg]:size-(--size-glyph-map)";
 export const FLYING_BUTTON = "rounded-full font-bold text-tint";
 
 /** Flying mode, as the planner sets it (useFlyingMode) for the map's

@@ -22,7 +22,7 @@ export const SETTLE_MS = DRAWER_MS + 50;
  * each where it belongs, and a render never hands it a new number.
  *
  * - The pill: the one search's band with the grabber over it, 4.25 rem on
- *   a bottom sheet (SheetParts' barRowPad: the grabber's 16-point room, the
+ *   a bottom sheet (SheetHead's barRowPad: the grabber's 16-point room, the
  *   least iOS keeps, the 46-point field, six under: the owner, 2026-11-13,
  *   "taking minimal space"); on a top sheet the band's 4.25 rem and the
  *   grabber's own 1 rem row under it, 5.25 rem. Standing on the screen's
@@ -180,9 +180,8 @@ function rootRem() {
 }
 
 /** The side panel's width from `md` up (design/tokens.json size.panel),
- *  and a desktop's from 1024 wide (panel-wide). */
+ *  before it is measured: the room the map is fitted beside until then. */
 export const CARD = SIZE.panel;
-export const CARD_WIDE = SIZE.panelWide;
 
 /** From `md` up the side panel floats this far inside the window's top
  *  and left, its four corners round, as Maps' card does on an iPad and a
@@ -196,8 +195,13 @@ export const FLOAT_PX = 16;
  * phone the strip the sheet in sight covers (`cover`, read from the
  * Drawer: the pill's at rest, half's from half and all the way up, where
  * what counts is what shows once it comes down); from `md` up the side
- * panel's column while it is out, or the corner its head (`cover`, its
- * height at rest) rests in.
+ * panel's column while it is out, its measured width (`side`), or the
+ * corner its head (`cover`, its height at rest) rests in. The width was
+ * the token's by the pointer, 384 for a touch screen, while the CSS drew
+ * the wide 448 from 1024 on every screen: on a 13-inch iPad the map was
+ * fitted 64 px under the panel (the iPad audit, 2026-11-21). And `right`,
+ * the inspector's column at the map's right while a card is in it
+ * (MapPanel), its float on both sides.
  *
  * The screen's top under a sheet from the bottom is the status bar's and
  * the Dynamic Island's (`safeTop`, env(safe-area-inset-top)): kept out of
@@ -205,11 +209,12 @@ export const FLOAT_PX = 16;
  * where a fit put KOSH at y = 38 under it (the FPL audit's A11). A sheet
  * from the top covers it.
  */
-export function insetsOf(s: PanelState, cover: number, onPhone: boolean, fromBottom: boolean, safeTop = 0, wide = false): MapInsets {
+export function insetsOf(s: PanelState, cover: number, onPhone: boolean, fromBottom: boolean, safeTop = 0, side = 0, right = 0): MapInsets {
   const up = s === "full";
   if (!onPhone) {
-    if (s !== "peek") return { top: safeTop, bottom: 0, left: FLOAT_PX + (wide ? CARD_WIDE : CARD), out: true, up };
-    return { top: cover + SHEET_MARGIN + FLOAT_PX, bottom: 0, left: 0, out: false, up };
+    const inspector = right ? { right: right + 2 * FLOAT_PX } : {};
+    if (s !== "peek") return { top: safeTop, bottom: 0, left: FLOAT_PX + (side || CARD), out: true, up, ...inspector };
+    return { top: cover + SHEET_MARGIN + FLOAT_PX, bottom: 0, left: 0, out: false, up, ...inspector };
   }
   return fromBottom
     ? { top: safeTop, bottom: cover, left: 0, out: s !== "peek", up }

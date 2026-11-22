@@ -10,6 +10,7 @@ const BOX =
  *  finger (lib/text). */
 const FIGURE =
   "h-full w-full min-w-0 bg-transparent py-1 text-base tabular-nums outline-none placeholder:text-muted-foreground md:text-sm pointer-coarse:text-(length:--type-row)";
+const UNIT = "shrink-0 text-sm text-muted-foreground pointer-coarse:text-(length:--type-row)";
 
 /** The figure as it is typed, each change: React Aria's own reading of the
  *  text (its state's numberValue, parsed in the locale), for a button
@@ -38,7 +39,9 @@ function Typed({ onTyped }: { onTyped: (value: number | null) => void }) {
  * Its value is a number, null for none (React Aria's NaN). The test id and
  * the id are on the figure itself, so a label's htmlFor (FieldHit's 44)
  * and a test's fill reach it. `unit` is said inside the box, at its end,
- * `lead` at its start ("FL").
+ * `lead` at its start ("FL"), both at the figure's own size under a
+ * finger (Body, 17), as an iOS field writes its unit: at 14 they were off
+ * the type scale (the HIG review's "gal", 2026-11-21).
  *
  * The locale is the browser's: the app sets no I18nProvider, so React
  * Aria reads navigator.language, and a pilot whose phone writes 12,5 has
@@ -90,9 +93,9 @@ function NumberField({
     >
       {onTyped && <Typed onTyped={onTyped} />}
       <Group className={cn(BOX, className)}>
-        {lead != null && <span className="shrink-0 text-sm text-muted-foreground">{lead}</span>}
+        {lead != null && <span className={UNIT}>{lead}</span>}
         <Input id={id} placeholder={placeholder} enterKeyHint={enterKeyHint} data-testid={testId} className={cn(FIGURE, inputClassName)} />
-        {unit != null && <span className="shrink-0 text-sm text-muted-foreground">{unit}</span>}
+        {unit != null && <span className={UNIT}>{unit}</span>}
       </Group>
     </AriaNumberField>
   );

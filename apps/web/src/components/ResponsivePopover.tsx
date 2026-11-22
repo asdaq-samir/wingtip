@@ -167,6 +167,12 @@ type ContentProps = ComponentProps<typeof PopoverContent> & {
    *  nothing else is there (`action`, `leading`). False where the card's
    *  own Done is it. */
   closeButton?: boolean;
+  /** Its content to the popover's edges (a calendar, whose grid has its
+   *  own room): the popover's padding taken off and the name's row, where
+   *  there is one, kept 12 in from the edges. With the padding taken off by
+   *  a class, the Departure picker's name and Done stood on the popover's
+   *  very edges (the HIG review, 2026-11-21, an iPhone on its side). */
+  bleed?: boolean;
 };
 
 export function ResponsivePopoverContent({
@@ -177,6 +183,7 @@ export function ResponsivePopoverContent({
   leading,
   className,
   closeButton,
+  bleed = false,
   children,
   align,
   side,
@@ -196,7 +203,7 @@ export function ResponsivePopoverContent({
         // Eight off its trigger, past the trigger's hit area (index.css),
         // where the stock four laid the popover over it.
         aria-label={title}
-        className={className}
+        className={cn(bleed && "p-0", className)}
         align={align}
         side={side}
         sideOffset={sideOffset ?? 8}
@@ -205,7 +212,7 @@ export function ResponsivePopoverContent({
         {...props}
       >
         {action !== undefined && (
-          <div className="flex min-h-8 items-center justify-between gap-2">
+          <div className={cn("flex min-h-8 items-center justify-between gap-2", bleed && "px-3 pt-3")}>
             {leading}
             {/* A heading, as the phone's card's name is, so a page pushed
                 in the popover (the Procedures') is named alike on both. */}

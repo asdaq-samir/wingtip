@@ -117,6 +117,14 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
   expect(await top("brief-line-runways")).toBeLessThan(await top("brief-glance-preflight"));
   await expect(glance.getByTestId("brief-list").locator("button[data-testid^='brief-glance-']")).toHaveCount(4);
   await expect(glance.getByTestId("brief-glance-depart")).toContainText(/Runway/);
+  // Each figure named for what it is (the Brief audit of 2026-11-21): the
+  // lowest ceiling forecast along the route, the route's strongest
+  // headwind, and the fuel beyond the reserve, where a C172 is picked.
+  const enroute = glance.getByTestId("brief-glance-enroute");
+  await expect(enroute).toContainText("Lowest ceiling");
+  await expect(enroute).toContainText("Most headwind");
+  await expect(enroute).not.toContainText("Wind aloft");
+  await expect(glance.getByTestId("brief-glance-preflight")).toContainText("Beyond reserve");
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 

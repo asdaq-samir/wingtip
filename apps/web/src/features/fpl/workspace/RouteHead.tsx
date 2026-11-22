@@ -62,10 +62,7 @@ export default function RouteHead({
             // line) and 8 past its words each side, nothing grown that is
             // seen: -inset-2 left it 38 tall (the iOS audit's P1, "Done"
             // 46×22).
-            className={cn(
-              "relative px-1 font-semibold text-tint after:absolute after:-inset-x-2 after:-inset-y-[11px] after:content-['']",
-              TEXT.row,
-            )}
+            className={cn("relative px-1 font-semibold text-tint hit-x-2 hit-y-[11px]", TEXT.row)}
           >
             Done
           </Button>

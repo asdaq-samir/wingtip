@@ -49,16 +49,13 @@ export const TEXT = {
   /** A chip's category inside a column the width of the star, with
    *  font-bold: iOS's Caption 2, 11 on 13, the same with a mouse. */
   caption: TYPE_CLASS.caption,
-  /** The tab bar's words: iOS's Footnote, 13 on 17, two sizes up from its
-   *  tab bar's Caption 2, at the owner's asks ("make the label font and icon
-   *  size a bit bigger so it fits nicely"; the tabs to "pop out more",
-   *  2026-10-22). */
-  tab: TYPE_CLASS.tab,
-  /** The tab bar's words: 12, a size under the 13 they were, for a
-   *  slimmer bar with room round its tabs (the owner, 2026-11-04: 49
-   *  points "seems too congested and small"), on iOS's own 16 for 12
-   *  (Caption 1, 12/16; the iOS audit's P3). 14 failed the audit on every
-   *  screen with the tabs; the tab is 50 tall, so the bar keeps its height. */
+  /** The floating tab bar's words under their glyphs (FloatingBar, FPL's
+   *  and the airport card's bars): iOS's Footnote, 13 on 18, two sizes up
+   *  from its tab bar's Caption 2, at the owner's asks ("make the label font
+   *  and icon size a bit bigger so it fits nicely"; the tabs to "pop out
+   *  more", 2026-10-22). The bars drew a note's 13 while this role said 12,
+   *  and the 13-on-17 `tab` role had no caller; one role now, and `tab` is
+   *  gone (the scale audit's Q3, the owner, 2026-11-21). */
   tabBar: TYPE_CLASS.tabBar,
   /** A figure's name, an ident, a chip's word in the display face
    *  (index.css --display: Barlow Condensed in the Chart ink look, the
@@ -99,13 +96,16 @@ export const TEXT_POINTS = { caption: TYPE_POINTS.caption, row: TYPE_POINTS.row 
  *  two; the owner, 2026-11-05), each with its iOS leading at either end (the audit's P3: 15
  *  on 20 to 20 on 25, 11 on 13 to 13 on 18), eased between as the size
  *  is. The value's size is `--fig`; the unit is a share of it, so the two grow
- *  together, 11 of 15 at half to 13 of 20 at the pill. */
-const GROW_SMALL =
-  "text-[length:calc(0.6875rem+0.0625rem*var(--sheet-progress,1))] leading-[calc(0.8125rem+0.1875rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(0.6875rem+0.125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(0.8125rem+0.3125rem*var(--sheet-progress,1))]";
+ *  together, 11 of 15 at half to 13 of 20 at the pill. On a kneeboard
+ *  (index.css: an iPad, read at arm's length, where the side panel has no
+ *  half) the flying figures' size, 26 on 31 with 15-point names and units,
+ *  where the phone's 20 read as 10 at twice the distance. */
+const KNEEBOARD_SMALL = "kneeboard:text-(length:--type-detail) kneeboard:leading-5";
+const GROW_SMALL = `text-[length:calc(0.6875rem+0.0625rem*var(--sheet-progress,1))] leading-[calc(0.8125rem+0.1875rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(0.6875rem+0.125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(0.8125rem+0.3125rem*var(--sheet-progress,1))] ${KNEEBOARD_SMALL}`;
 export const GROW_FIGURE = {
   value:
-    "[--fig:calc(0.75rem+0.375rem*var(--sheet-progress,1))] leading-[calc(1rem+0.75rem*var(--sheet-progress,1))] pointer-coarse:[--fig:calc(0.9375rem+0.3125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(1.25rem+0.3125rem*var(--sheet-progress,1))]",
-  unit: "text-[length:calc(1em*(0.6875+0.0625*var(--sheet-progress,1))/(0.75+0.375*var(--sheet-progress,1)))] leading-[calc(0.8125rem+0.1875rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(1em*(0.6875+0.125*var(--sheet-progress,1))/(0.9375+0.3125*var(--sheet-progress,1)))] pointer-coarse:leading-[calc(0.8125rem+0.3125rem*var(--sheet-progress,1))]",
+    "[--fig:calc(0.75rem+0.375rem*var(--sheet-progress,1))] leading-[calc(1rem+0.75rem*var(--sheet-progress,1))] pointer-coarse:[--fig:calc(0.9375rem+0.3125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(1.25rem+0.3125rem*var(--sheet-progress,1))] kneeboard:[--fig:var(--type-figure)] kneeboard:leading-[1.9375rem]",
+  unit: `text-[length:calc(1em*(0.6875+0.0625*var(--sheet-progress,1))/(0.75+0.375*var(--sheet-progress,1)))] leading-[calc(0.8125rem+0.1875rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(1em*(0.6875+0.125*var(--sheet-progress,1))/(0.9375+0.3125*var(--sheet-progress,1)))] pointer-coarse:leading-[calc(0.8125rem+0.3125rem*var(--sheet-progress,1))] ${KNEEBOARD_SMALL}`,
   name: GROW_SMALL,
   /** The unit's share of the value at the pill, for the room it takes. */
   unitScale: 0.65,

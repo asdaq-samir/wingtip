@@ -55,7 +55,7 @@ test("a field's approach is picked on its own page with its transition, drawn on
   // The close goes back, to the field's approaches: no Back (the owner's
   // "close button should behave as the back button").
   // (Its name on the bar's close, on a phone, is the bar's own.)
-  const wide = page.viewportSize()!.width >= 768;
+  const wide = page.viewportSize()!.width >= 660;
   if (wide) await expect(page.getByTestId("procedures-close")).toHaveAccessibleName("Back");
   await cardClose(page, "procedures-close").click();
   await expect(page.getByRole("heading", { name: "KDLH approaches" })).toBeVisible();
@@ -156,7 +156,7 @@ test("an approach puts its field's runway on its own, and another is let only wh
   await menu.getByTestId("procedure-menu-item").filter({ hasText: "ILS" }).click();
   // Its transitions in the menu's own place, on the screen: side by side,
   // a phone's ran off its edge (the owner's screenshot).
-  if (page.viewportSize()!.width >= 768) await expect(menu.getByTestId("procedure-menu-close")).toHaveAccessibleName("Back");
+  if (page.viewportSize()!.width >= 660) await expect(menu.getByTestId("procedure-menu-close")).toHaveAccessibleName("Back");
   const placed = (await menu.boundingBox())!;
   expect(placed.x + placed.width).toBeLessThanOrEqual(page.viewportSize()!.width);
   await page.getByTestId("procedure-menu-transition").filter({ hasText: "From DLH" }).click();

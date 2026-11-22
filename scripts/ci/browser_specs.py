@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """What ci.yml's e2e job runs, and on how many shards (decision 0048).
 
-At night or by hand, every spec on every project, over ten shards. On
+At night or by hand, every spec on every project, over ten shards. In
+a wave's validation (EVENT "wave", validate-wave.yml; decision 0054),
+every spec on the phone, desktop, WebKit phone and WebKit iPad projects, over
+WAVE_SHARDS: minutes, where the night's ten take half an hour. On
 main's push, the @smoke and @flight-critical tests on the phone project
 and the iPhone's WebKit, over two. On a pull request, every spec its
 change reaches (apps/web/scripts/reached-specs.mjs: the specs whose
@@ -26,6 +29,12 @@ import sys
 
 SPECS_A_SHARD = 3
 MAX_SHARDS = 10
+# Wide, as a wave waits on it; GitHub runs 20 jobs at once for a free
+# account, and the rest of the run's jobs need a few of them.
+WAVE_SHARDS = 16
+# The iPad's WebKit among them: the app's primary device (the owner,
+# 2026-11-21: "Primary app users are on iPad").
+WAVE_PROJECTS = "--project=mobile --project=desktop --project=webkit-phone --project=webkit-ipad"
 # The list reaches a shell: a spec named with anything else is left to the night.
 PLAIN = re.compile(r"^e2e/[A-Za-z0-9._/-]+\.spec\.ts$")
 
@@ -37,6 +46,8 @@ def shards(n: int) -> str:
 def plan(event: str) -> dict[str, str]:
     if event in ("schedule", "workflow_dispatch"):
         return {"run": "true", "args": "", "shards": shards(MAX_SHARDS)}
+    if event == "wave":
+        return {"run": "true", "args": WAVE_PROJECTS, "shards": shards(WAVE_SHARDS)}
     if event != "pull_request":
         return {"run": "true", "args": '--project=mobile --project=webkit-phone --grep "@smoke|@flight-critical"', "shards": shards(2)}
     changed = subprocess.run(["git", "diff", "--name-only", "HEAD^1", "HEAD"], check=True, capture_output=True, text=True).stdout

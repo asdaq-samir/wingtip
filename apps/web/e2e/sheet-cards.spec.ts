@@ -34,7 +34,7 @@ import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 test.beforeEach(({ page }) => installFrameRecorder(page));
 
 test("the Map settings open as a card in the map's sheet, and its close goes back to what was under it", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet and its heights; the side panel's card is in layout.spec");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet and its heights; the side panel's card is in layout.spec");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   const panel = sideDrawer(page);
@@ -144,7 +144,7 @@ test("the Map card's gear opens Settings over it at Map, and Settings' close goe
 });
 
 test("the approaches' pull-down is a card in the sheet, and the list it opens takes its place there", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's card; wider it is a popover");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's card; wider it is a popover");
   await page.route(
     (url) => /\/airport\/[^/]+\/procedures/.test(url.pathname),
     (route) => route.fulfill({ json: { airport: "KDLH", cycle: "261001", procedures: [] } }),
@@ -175,7 +175,7 @@ test("the approaches' pull-down is a card in the sheet, and the list it opens ta
 });
 
 test("a checkpoint tapped on the chart opens its card in the sheet; one opened over it closes back to it", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's card; wider it is the chart's popup");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's card; wider it is the chart's popup");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   const panel = sideDrawer(page);
@@ -235,7 +235,7 @@ test("a checkpoint tapped on the chart opens its card in the sheet; one opened o
 // way, as Apple Maps' do at its large detent; with the card under at half
 // and the one on top lowered to its pill, they ride the card under.
 test("a card opened over a higher one leaves the map's buttons with the higher", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's cards and their heights");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's cards and their heights");
   const raw = "!DLH 11/101 DLH OBST TOWER LGT (ASN 2026-AGL-1) 465000N0921200W (1.2NM SE DLH) 1600FT (210FT AGL) U/S 2611101200-2611202359";
   await page.route(
     (url) => url.pathname === "/api/planner/airport/KDLH/notams",
@@ -328,7 +328,7 @@ test("a card opened over a higher one leaves the map's buttons with the higher",
 test("a card tapped open on the chart comes up at the sheet's top and eases once to half, its buttons on its top throughout", async ({
   page,
 }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's cards and their heights");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's cards and their heights");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await settled(sideDrawer(page));

@@ -10,7 +10,7 @@ import { closeMapSettings, openSettingsPage } from "./mapCard";
  * listening pill widens out of it to the left (RadioPill), on the screen.
  */
 test("the map's microphone is over the map's buttons at the right, and its pill widens to the left", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet across the screen's foot");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet across the screen's foot");
   // Playwright's headless shell has no on-device recognizer behind
   // `available`, and asking it there ends the page (lib/speechLocal): a
   // Safari-like recognizer, which hears nothing, stands in for the tap.

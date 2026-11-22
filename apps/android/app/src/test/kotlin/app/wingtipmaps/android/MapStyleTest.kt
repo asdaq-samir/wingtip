@@ -101,11 +101,17 @@ class MapStyleTest {
         val s = style(tiles("airspace", "airspace_labels"))
         val b = layer(s, "airspace-B")
         assertEquals("#2f8cff", b["paint"]!!.jsonObject["line-color"]!!.jsonPrimitive.content)
-        assertEquals("4.0", b["paint"]!!.jsonObject["line-width"]!!.jsonPrimitive.content)
-        assertEquals("5.0", b["minzoom"]!!.jsonPrimitive.content)
+        // The web's zooms (design/tokens.json's map.zoom), MapLibre's: B and
+        // C from the app's 5, half their width there, full by 7 with their
+        // band; D from 7; every tab from 9.
+        assertEquals("""["interpolate",["linear"],["zoom"],4.0,2.0,6.0,4.0]""", b["paint"]!!.jsonObject["line-width"].toString())
+        assertEquals("4.0", b["minzoom"]!!.jsonPrimitive.content)
+        assertEquals("4.0", layer(s, "airspace-C")["minzoom"]!!.jsonPrimitive.content)
+        assertEquals("6.0", layer(s, "airspace-C-band")["minzoom"]!!.jsonPrimitive.content)
         val d = layer(s, "airspace-D")
         assertTrue(d["paint"]!!.jsonObject.containsKey("line-dasharray"))
-        assertEquals("7.0", d["minzoom"]!!.jsonPrimitive.content)
+        assertEquals("6.0", d["minzoom"]!!.jsonPrimitive.content)
+        assertEquals("8.0", layer(s, "airspace-labels")["minzoom"]!!.jsonPrimitive.content)
         // The band inside each line: its own ink, faint, offset inwards.
         val band = layer(s, "airspace-C-band")["paint"]!!.jsonObject
         assertEquals("#e02ad8", band["line-color"]!!.jsonPrimitive.content)
@@ -149,7 +155,7 @@ class MapStyleTest {
         // From the archive's tab points: the name, then the limits, turned.
         val tab = layer(style(tiles("special_use", "special_use_labels")), SpecialUseLayers.LABELS)
         assertEquals("special_use_labels", tab["source-layer"]!!.jsonPrimitive.content)
-        assertEquals("7.0", tab["minzoom"]!!.jsonPrimitive.content)
+        assertEquals("8.0", tab["minzoom"]!!.jsonPrimitive.content)
         val layout = tab["layout"]!!.jsonObject
         assertEquals(SpecialUseLayers.TAB_TEXT, layout["text-field"])
         assertEquals("""["get","angle"]""", layout["text-rotate"].toString())
@@ -180,6 +186,13 @@ class MapStyleTest {
         // Each zoom's size times the engine's size step (field_mark_rank).
         val size = layout["icon-size"]!!.toString()
         assertTrue(size, size.contains("""["match",["get","size"],"largest",1.5,"larger",1.2,"small",0.82,1]"""))
+        // As the web's: 2 px round each mark at every zoom, and out past the
+        // app's zoom 6 only a Class B field's ident.
+        assertEquals("2", layout["icon-padding"]!!.jsonPrimitive.content)
+        assertEquals(
+            """["step",["zoom"],["case",["==",["get","size"],"largest"],["get","ident"],""],5.0,["get","ident"]]""",
+            layout["text-field"].toString(),
+        )
         val colour = airports["paint"]!!.jsonObject["text-color"]!!.jsonArray
         assertEquals(MapStyle.BLUE, colour[2].jsonPrimitive.content)
         assertEquals(MapStyle.MAGENTA, colour[3].jsonPrimitive.content)

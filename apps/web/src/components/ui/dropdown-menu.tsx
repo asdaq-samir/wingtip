@@ -82,7 +82,7 @@ function DropdownMenuItem({
       data-variant={variant}
       className={cn(
         MENU_ITEM,
-        "group/dropdown-menu-item data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:*:[svg]:text-destructive data-inset:pl-10",
+        "group/dropdown-menu-item data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:*:[svg]:text-destructive data-inset:pl-10 native:data-inset:pl-8",
         className,
       )}
       {...props}

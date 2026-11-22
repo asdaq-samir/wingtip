@@ -34,7 +34,7 @@ test(
     await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();
     await expect(page.getByTestId("tab-train")).toHaveAttribute("aria-selected", "true");
     // Its figures half way; down again, the pill.
-    if ((page.viewportSize()?.width ?? 0) < 768) {
+    if ((page.viewportSize()?.width ?? 0) < 660) {
       await grabberTo(page, "half");
       await expect(sideDrawer(page).getByTestId("train-figures")).toBeVisible();
     }

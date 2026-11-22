@@ -77,7 +77,7 @@ test.describe("cards over the pages", () => {
 });
 
 test("the route cleared all the way up leaves the sheet all the way up", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "the phone's sheet");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await grabberTo(page, "full");

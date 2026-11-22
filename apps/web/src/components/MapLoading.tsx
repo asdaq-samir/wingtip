@@ -9,7 +9,7 @@ import type { MapInsets } from "../lib/mapChrome";
  * owner, 2026-11-07); it stays on the launch screen alone (index.html),
  * the stock spinner for every wait after it (the owner, 2026-11-10).
  */
-export default function MapLoading({ shown, insets }: { shown: boolean; insets: Pick<MapInsets, "top" | "bottom" | "left"> }) {
+export default function MapLoading({ shown, insets }: { shown: boolean; insets: Pick<MapInsets, "top" | "bottom" | "left" | "right"> }) {
   // Gone from the tree once it has faded, so nothing turns under the map.
   const [gone, setGone] = useState(false);
   if (gone) return null;
@@ -19,7 +19,7 @@ export default function MapLoading({ shown, insets }: { shown: boolean; insets: 
       aria-label="Loading the map"
       data-testid="map-loading"
       className={`pointer-events-none absolute flex items-center justify-center transition-opacity duration-150 ease-out ${shown ? "opacity-100" : "opacity-0"}`}
-      style={{ top: insets.top, bottom: insets.bottom, left: insets.left, right: 0 }}
+      style={{ top: insets.top, bottom: insets.bottom, left: insets.left, right: insets.right ?? 0 }}
       onTransitionEnd={() => {
         if (!shown) setGone(true);
       }}

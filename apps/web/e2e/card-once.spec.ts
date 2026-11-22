@@ -129,13 +129,13 @@ test("You opened again opens at half, not at the size it was put away at", async
 
 test.describe("by a pointer's drag", () => {
   test.use({ hasTouch: false });
-  // A phone's sheet: on the desktop project, and from 768 wide, the cards
+  // A phone's sheet: on the desktop project, and from 660 wide (size.regular), the cards
   // ride the side panel, which keeps one height and does not swipe
   // (CardStack's data-base-ui-swipe-ignore off a phone; rules.md's Detents,
   // 92e217114), so there is no half to drag to.
   test.beforeEach(({ page }, info) => {
     test.skip(
-      info.project.name === "desktop" || page.viewportSize()!.width >= 768,
+      info.project.name === "desktop" || page.viewportSize()!.width >= 660,
       "a phone's detents; the owner, 2026-11-19, desktop cards keep one height",
     );
   });
@@ -280,7 +280,7 @@ test("a field tapped on the chart with You open comes up once over it", async ({
 // gone with no close, and the map's buttons were thrown off the screen's top
 // and swept down to the sheet. Now it closes where it is, its own drawer.
 test("a kept card closes where it is, the map's buttons never off the screen", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's cards");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's cards");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await settled(sideDrawer(page));

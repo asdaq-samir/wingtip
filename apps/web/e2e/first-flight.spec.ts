@@ -119,7 +119,7 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   await expectPage(page, 0);
   await expect(tip).toBeVisible();
   await expect(tip).toContainText("Your flight plan is one tap away");
-  await expect(tip).toContainText("Tap here any time");
+  await expect(tip).toContainText("Tap FPL any time");
   // Over the toggle on a phone, its arrow at it, the tip's edge reaching
   // over it, on the screen. In a desktop's side panel the toggle is at the
   // window's top, with no room over it: the tip hangs under it (FplTip).

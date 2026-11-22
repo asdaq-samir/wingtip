@@ -141,13 +141,13 @@ export default defineConfig({
     {
       name: "mobile",
       dependencies: ["setup"],
-      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts"],
+      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts", "**/ipad-*.spec.ts"],
       use: { viewport: { width: 390, height: 844 }, storageState: DEVELOPER_STATE },
     },
     {
       name: "desktop",
       dependencies: ["setup"],
-      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts"],
+      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts", "**/ipad-*.spec.ts"],
       use: { viewport: { width: 1280, height: 800 }, storageState: DEVELOPER_STATE },
     },
     // The phone's sheet in Safari's engine at an iPhone's size and touch
@@ -158,6 +158,17 @@ export default defineConfig({
       dependencies: ["setup"],
       testMatch: /sheet-webkit\.spec\.ts/,
       use: { ...devices["iPhone 15 Pro"], storageState: DEVELOPER_STATE },
+    },
+    // The iPad in Safari's engine, its touch and its user agent (the
+    // owner, 2026-11-21: "Primary app users are on iPad"): the ipad-*
+    // specs, each setting the window to every iPad size, held either way,
+    // and every Split View and Stage Manager width it is measured at. In
+    // a wave's validation (browser_specs.py) and at night.
+    {
+      name: "webkit-ipad",
+      dependencies: ["setup"],
+      testMatch: /ipad-[a-z-]+\.spec\.ts/,
+      use: { ...devices["iPad Pro 11"], storageState: DEVELOPER_STATE },
     },
     ...iosAudit,
   ],

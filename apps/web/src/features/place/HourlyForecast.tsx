@@ -121,6 +121,12 @@ export function HourlyForecast({
                 <span className="h-1.5 rounded-full" style={{ backgroundColor: colourOf(hour.category) }} />
                 {hour.atTimes && <span className="h-1 rounded-full opacity-50" style={{ backgroundColor: colourOf(hour.atTimes) }} />}
               </span>
+              {/* The category's word under its bar, so it is not told by
+                colour alone (WCAG 1.4.1); "LIFR" fits the 52-point column
+                in the caption size. VoiceOver has it in the column's words. */}
+              <span aria-hidden data-testid="place-hour-category" className={cn("font-bold text-muted-foreground", TEXT.caption)}>
+                {hour.category ?? "—"}
+              </span>
               <span aria-hidden className={cn("font-semibold text-foreground", TEXT.note)}>
                 {hour.ceilingFt == null ? "—" : altFt(hour.ceilingFt)}
               </span>

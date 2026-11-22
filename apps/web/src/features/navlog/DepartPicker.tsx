@@ -1,14 +1,26 @@
-import { Suspense, lazy, useState } from "react";
+import { Suspense, useState } from "react";
 import { clockTime, localDay, twoFigures, zoneName } from "../../lib/format";
 import { leaveWhen } from "../../lib/format/leaveWhen";
 import { CalendarIcon } from "lucide-react";
 import { Button } from "../../components/ui/button";
+import { fromChunk } from "../../lib/fromChunk";
 
 /** The month grid and the time's wheels are React Aria's, only ever seen
- *  inside this popover -- so they arrive with the popover rather than
- *  with the page. */
-const DayCalendar = lazy(() => import("../../components/ui/calendar").then((m) => ({ default: m.DayCalendar })));
-const TimeField = lazy(() => import("../../components/ui/time-field").then((m) => ({ default: m.TimeField })));
+ *  inside this popover -- so they arrive with it rather than with the
+ *  page: one chunk for both (departPickerParts), asked as the trigger is
+ *  touched, hovered or focused, ahead of the tap's open, and drawn from
+ *  its module once in (fromChunk), where two `lazy()`s were each fetched
+ *  only at the open and suspended it once more (the speed audit of
+ *  2026-11-21). */
+const loadParts = () => import("./departPickerParts");
+const { Part: DayCalendar, prefetch: prefetchCalendar } = fromChunk(loadParts, (m) => m.DayCalendar);
+const { Part: TimeField, prefetch: prefetchTime } = fromChunk(loadParts, (m) => m.TimeField);
+const prefetchParts = () => {
+  prefetchCalendar();
+  prefetchTime();
+};
+/** The trigger's intent: a touch, a hover or a focus asks for the parts. */
+const INTENT = { onPointerDown: prefetchParts, onPointerEnter: prefetchParts, onFocus: prefetchParts };
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../components/ResponsivePopover";
 import { cn } from "cn";
 import { CHIP_TEXT } from "../../lib/mapChrome";
@@ -88,11 +100,12 @@ export default function DepartPicker({
             variant="link"
             size="inline"
             data-testid={testId}
+            {...INTENT}
             className={cn(
               // 44 tall round its 20 (12 over and under), so a tap just
               // above or below "Now" picks the time, not the field's row
               // toggle under it (the audit's WEB-5); 10 either side.
-              "relative shrink-0 gap-0.5 font-semibold tabular-nums after:absolute after:-inset-x-2.5 after:-inset-y-3 after:content-['']",
+              "relative shrink-0 gap-0.5 font-semibold tabular-nums hit-x-2.5 hit-y-3",
               TEXT.detail,
             )}
           >
@@ -131,6 +144,7 @@ export default function DepartPicker({
             // audit's P1, "Departure date" 57×32 on a local flight).
             className={cn("relative z-10 ml-1 rounded-full px-2.5 font-normal pointer-coarse:px-1.5", CHIP_TEXT)}
             data-testid={testId}
+            {...INTENT}
           >
             {/* Named by what it shows, its label before it for a screen
                 reader alone, as the time's look is: "Departure date" held
@@ -150,7 +164,8 @@ export default function DepartPicker({
       <ResponsivePopoverContent
         title={label}
         description={date ? `Leaving ${leaveWhen(date)}` : "Leaving now"}
-        className="w-auto p-0"
+        className="w-auto"
+        bleed
         align="start"
         closeButton={false}
         leading={
