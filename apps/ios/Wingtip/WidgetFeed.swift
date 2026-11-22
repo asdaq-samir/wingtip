@@ -10,6 +10,9 @@ import WidgetKit
 /// (Repeating, WingtipApp).
 @MainActor
 final class WidgetFeed {
+    /// WidgetKit's center, asked to draw the widgets again.
+    private static var widgets: WidgetCenter { .shared }
+
     static let shared = WidgetFeed()
 
     /// The widget's kind, as FlightWidget names it.
@@ -41,7 +44,7 @@ final class WidgetFeed {
             if last != nil {
                 last = nil
                 WidgetSnapshot.clear()
-                WidgetCenter.shared.reloadTimelines(ofKind: Self.kind)
+                Self.widgets.reloadTimelines(ofKind: Self.kind)
             }
             return
         }
@@ -64,7 +67,7 @@ final class WidgetFeed {
         fresh.updatedAt = Date()
         last = fresh
         fresh.write()
-        WidgetCenter.shared.reloadTimelines(ofKind: Self.kind)
+        Self.widgets.reloadTimelines(ofKind: Self.kind)
     }
 
     /// The pilot's saved flights as Next Flight's settings offer them
@@ -75,7 +78,7 @@ final class WidgetFeed {
                                     stops: $0.stops, distanceNm: $0.totalDistanceNm, eteMin: $0.totalEteMin, fuelGal: $0.totalFuelGal,
                                     plannedFor: $0.plannedFor)
         }
-        if WidgetStore.write(listed) { WidgetCenter.shared.reloadTimelines(ofKind: Self.kind) }
+        if WidgetStore.write(listed) { Self.widgets.reloadTimelines(ofKind: Self.kind) }
     }
 
     /// Signed out or the account deleted: the widgets' copies of the
@@ -83,7 +86,7 @@ final class WidgetFeed {
     /// every widget drawn again without them.
     func forgetPilot() {
         WidgetStore.forgetPilot()
-        WidgetCenter.shared.reloadAllTimelines()
+        Self.widgets.reloadAllTimelines()
     }
 
     /// The home base and the Favorites, offered first in Home Airport

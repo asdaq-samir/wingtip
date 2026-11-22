@@ -20,6 +20,9 @@ enum ReaderSource {
 @MainActor
 @Observable
 final class DocumentLibrary {
+    /// The pilot's iCloud copy of their own documents, where it is on.
+    private static var cloud: DocumentCloud { .shared }
+
     static let shared = DocumentLibrary(store: .device)
 
     /// The shelf's groups in the order the page lists them (the planner's
@@ -171,7 +174,7 @@ final class DocumentLibrary {
         }
         if !added.isEmpty { problem = nil }
         reloadDevice()
-        DocumentCloud.shared.pushed(added, from: store)
+        Self.cloud.pushed(added, from: store)
         return added
     }
 
@@ -180,7 +183,7 @@ final class DocumentLibrary {
     func rename(_ id: String, to name: String) {
         try? store.renameOwn(id, to: name)
         reloadDevice()
-        if let doc = own.first(where: { $0.id == id }) { DocumentCloud.shared.renamed(doc) }
+        if let doc = own.first(where: { $0.id == id }) { Self.cloud.renamed(doc) }
     }
 
     /// One of the pilot's own taken off this device, with the system's
@@ -189,7 +192,7 @@ final class DocumentLibrary {
     func remove(_ id: String, undo: UndoManager?) {
         guard let doc = own.first(where: { $0.id == id }), (try? store.removeOwn(id)) != nil else { return }
         reloadDevice()
-        DocumentCloud.shared.removed(id)
+        Self.cloud.removed(id)
         guard let undo else {
             forgetRemoved(id)
             return
@@ -197,7 +200,7 @@ final class DocumentLibrary {
         undo.register(self, named: String(localized: "Delete \(doc.name)")) { library in
             try? library.store.restoreOwn(id)
             library.reloadDevice()
-            if let back = library.own.first(where: { $0.id == id }) { DocumentCloud.shared.pushed([back], from: library.store) }
+            if let back = library.own.first(where: { $0.id == id }) { Self.cloud.pushed([back], from: library.store) }
         }
     }
 

@@ -80,7 +80,7 @@ enum Problems {
         // One line: a detail can run to a traceback, and a line is not the
         // place for one.
         let line = words?.split(separator: "\n").first.map(String.init) ?? ""
-        let trimmed = line.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: CharacterSet(charactersIn: "."))
+        let trimmed = line.trimmingCharacters(in: .whitespaces).trimmingCharacters(in: CharacterSet(charactersIn: ".:"))
         return trimmed.isEmpty ? nil : trimmed
     }
 

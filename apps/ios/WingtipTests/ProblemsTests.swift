@@ -30,7 +30,7 @@ struct ProblemsTests {
         #expect(Problems.words("The briefing could not be fetched", planner) == "The briefing could not be fetched.")
         #expect(Problems.words("The flights could not be fetched", GatewayRefusal(status: 400, words: nil)) == "The flights could not be fetched.")
         #expect(Problems.words("The plate could not be fetched", Planner.Failure(status: 404, detail: "Traceback (most recent call last):\n  File"))
-            == "The plate could not be fetched: Traceback (most recent call last):")
+            == "The plate could not be fetched: Traceback (most recent call last).")
     }
 
     @Test func theSystemsOwnTextIsNeverSaid() {

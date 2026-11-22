@@ -116,6 +116,14 @@ final class Navigator {
     }
 
     /// The card put away (its close, a swipe down, Escape).
+    /// A plan's page from the menu bar (View > Search, FPL): the card put
+    /// away so the page is in sight, as the toggle on the map turns it.
+    func showPage(_ page: PlanPage) {
+        close()
+        planPath = []
+        sheetPage = page
+    }
+
     func close() {
         cardPath = []
         set(nil)

@@ -23,6 +23,9 @@ import Observation
 @MainActor
 @Observable
 final class OwnShip {
+    /// The app's one location permission.
+    private static var permission: LocationPermission { .shared }
+
     struct Fix: Equatable, Sendable {
         let coordinate: CLLocationCoordinate2D
         let altitudeFt: Double?
@@ -49,7 +52,7 @@ final class OwnShip {
     private(set) var denied = false
     /// The position's permission as iOS last said it, for the welcome's
     /// foot (WelcomeFoot).
-    var authorization: CLAuthorizationStatus { LocationPermission.shared.status }
+    var authorization: CLAuthorizationStatus { Self.permission.status }
     /// What the track runs into in the next minutes, from the planner.
     private(set) var ahead: [AheadAlert] = []
     /// The ground under the airplane from the packs kept on the phone,
@@ -94,7 +97,7 @@ final class OwnShip {
     init(trail: OwnTrail = OwnTrail(), recorder: FlightRecorder = FlightRecorder()) {
         self.trail = trail
         self.recorder = recorder
-        denied = LocationPermission.shared.denied
+        denied = Self.permission.denied
     }
 
     func start() {
@@ -104,7 +107,7 @@ final class OwnShip {
         // position button, Nearest, the emergency assistant or Ready to
         // Fly (askLocation). The live updates ask by running, so they run
         // only once it is allowed, started then by the permission's change.
-        LocationPermission.shared.onChange = { [weak self] status in
+        Self.permission.onChange = { [weak self] status in
             self?.denied = status == .denied || status == .restricted
             self?.read()
         }
@@ -118,7 +121,7 @@ final class OwnShip {
     /// asks for something that needs it; iOS asks once and ignores the
     /// rest.
     func askLocation() {
-        LocationPermission.shared.ask()
+        Self.permission.ask()
     }
 
     func stop() {
@@ -149,7 +152,7 @@ final class OwnShip {
     private func read() {
         live?.cancel()
         live = nil
-        guard running, LocationPermission.shared.allowed else { return }
+        guard running, Self.permission.allowed else { return }
         let configuration: CLLocationUpdate.LiveConfiguration = isPrecise ? .airborne : .default
         live = Task { [weak self] in
             do {

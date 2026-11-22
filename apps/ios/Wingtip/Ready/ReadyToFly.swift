@@ -14,6 +14,9 @@ import UIKit
 @MainActor
 @Observable
 final class ReadyToFly {
+    /// The cockpit's receiver.
+    private static var receiver: Receiver { .shared }
+
     static let shared = ReadyToFly()
 
     private(set) var answer: EngineContract.ReadyToFlyAnswer?
@@ -86,7 +89,7 @@ final class ReadyToFly {
                 batteryPct: battery.pct, charging: battery.charging,
                 location: ReadyFacts.location(LocationPermission.shared.status),
                 planSaved: plan.routed ? saved : nil),
-            receiver: ReadyFacts.receiver(used: Receiver.used, listening: Receiver.shared.mode == .auto, live: Receiver.shared.live))
+            receiver: ReadyFacts.receiver(used: Receiver.used, listening: Self.receiver.mode == .auto, live: Self.receiver.live))
     }
 
     /// What Keep for the Air holds for this route, looked for on disk.
@@ -193,7 +196,7 @@ final class ReadyToFly {
             }
         case "connect_receiver":
             // A receiver joins on its own Wi-Fi; the phone listens for it.
-            Receiver.shared.mode = .auto
+            Self.receiver.mode = .auto
         default:
             return
         }

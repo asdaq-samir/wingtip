@@ -65,6 +65,12 @@ final class LoopTiles: Sendable {
 /// seconds have passed with some still coming (the web's PRELOAD_CAP_MS).
 @MainActor
 final class WeatherLoopLayer {
+    /// The loop's tiles, as their overlays load them.
+    private static var tiles: LoopTiles { .shared }
+
+    /// The radar loop the map plays.
+    private static var loop: WeatherLoop { .shared }
+
     private weak var map: MKMapView?
     private var overlays: [String: LoopTileOverlay] = [:]
     private var renderers: [String: MKTileOverlayRenderer] = [:]
@@ -82,7 +88,7 @@ final class WeatherLoopLayer {
 
     private func follow() {
         withObservationTracking {
-            let loop = WeatherLoop.shared
+            let loop = Self.loop
             draw(loop.kind == .off ? [] : loop.frames, shown: loop.shown, ready: loop.ready)
         } onChange: { [weak self] in
             Task { @MainActor in self?.follow() }
@@ -105,7 +111,7 @@ final class WeatherLoopLayer {
         // The radar's over the satellite's, both just above the chart (at
         // 0) and under every line drawn on it.
         let added = wanted.filter { overlays[$0.key] == nil }.sorted { $0.value.radar && !$1.value.radar }
-        if !added.isEmpty { LoopTiles.shared.reset() }
+        if !added.isEmpty { Self.tiles.reset() }
         for (key, want) in added {
             let overlay = LoopTileOverlay(template: want.template, key: key, radar: want.radar)
             overlays[key] = overlay
@@ -124,9 +130,9 @@ final class WeatherLoopLayer {
             let start = ContinuousClock.now
             while !Task.isCancelled, ContinuousClock.now - start < Self.preloadCap {
                 try? await Task.sleep(for: .milliseconds(250))
-                if LoopTiles.shared.settled { break }
+                if Self.tiles.settled { break }
             }
-            WeatherLoop.shared.loaded()
+            Self.loop.loaded()
             self?.watching = nil
         }
     }
@@ -136,7 +142,7 @@ final class WeatherLoopLayer {
     func renderer(for overlay: any MKOverlay) -> MKOverlayRenderer? {
         guard let tiles = overlay as? LoopTileOverlay else { return nil }
         let renderer = MKTileOverlayRenderer(tileOverlay: tiles)
-        let loop = WeatherLoop.shared
+        let loop = Self.loop
         let frame = loop.frames.firstIndex { tiles.key.hasSuffix($0.valid) }
         renderer.alpha = frame == loop.shown ? Self.alpha(radar: tiles.radar) : 0
         renderers[tiles.key] = renderer
