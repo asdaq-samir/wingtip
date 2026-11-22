@@ -127,10 +127,8 @@ export const plannerAirports = {
    *  (the airport diagram's latitude and longitude labels and hot spots):
    *  the browser may not read aeronav's own (it sends no CORS headers), so
    *  it is the planner's copy, under the gateway's prefix. Null for any
-   *  other address.
-   *  TODO(planner): GET /api/faa-chart/pdf/{source}/{edition}/{pdf} is not
-   *  served yet (publications._pdf_of's bytes, SHARED, DIAGRAM_CACHE);
-   *  until it is, the diagram has no own ship and says so. */
+   *  other address. The planner serves only the cycle in force
+   *  (app.routers.airport_charts faa_chart_pdf). */
   faaChartPdfUrl: (url: string): string | null => {
     const m = /^https:\/\/aeronav\.faa\.gov\/d-tpp\/(\d{4})\/([\w-]+\.PDF)$/i.exec(url);
     return m ? `/api/planner/faa-chart/pdf/dtpp/${m[1]}/${encodeURIComponent(m[2]!)}` : null;
