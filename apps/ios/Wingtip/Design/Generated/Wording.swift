@@ -10,7 +10,7 @@ enum Wording {
     /// The planning aid's notice, where an app shows it on its own.
     static let planningAidNoticeTitle = String(localized: "A Planning Aid, Not for Navigation")
     /// What the app is and is not, in About and at the briefing's foot (14 CFR 91.3, 91.103; docs/legal/credits.md, "A planning aid").
-    static let planningAid = String(localized: "Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1‑800‑WX‑BRIEF), current FAA charts and publications, or the pilot in command’s judgement and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103).")
+    static let planningAid = String(localized: "Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1‑800‑WX‑BRIEF), current FAA charts and publications, or the pilot in command’s judgment and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103).")
     /// The printed kneeboard's foot.
     static let planningAidKneeboard = String(localized: "Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight.")
     /// The button that asks again after an error.

@@ -24,7 +24,7 @@
     <string name="voice_radio_busy">The radio is being listened to; stop it to ask by voice.</string>
     <string name="said_clear_search">Clear the search</string>
     <string name="nothing_heard">Nothing was heard.</string>
-    <string name="allow_microphone">Allow the microphone to ask by voice. What you say is recognised on this phone and never leaves it.</string>
+    <string name="allow_microphone">Allow the microphone to ask by voice. What you say is recognized on this phone and never leaves it.</string>
     <string name="your_flight">Your Flight</string>
     <string name="no_flight">No Flight Yet</string>
     <string name="no_flight_line">Search for where to, or tap to plan one.</string>
@@ -449,7 +449,7 @@
     <string name="microphone">Microphone</string>
     <string name="loading">Loading</string>
     <!-- What the microphone is for, both uses named (store audit S1): the radio and voice questions. -->
-    <string name="microphone_line">Wingtip listens to the radio to write down your clearance, and hears the questions you ask it by voice. Speech is recognised on this phone and never leaves it.</string>
+    <string name="microphone_line">Wingtip listens to the radio to write down your clearance, and hears the questions you ask it by voice. Speech is recognized on this phone and never leaves it.</string>
     <!-- The trip planner (the web's features/tripPlanner words). -->
     <!-- Ready to fly (ready/): the engine's own lines are shown as sent. -->
     <string name="ready_all">All Checks</string>
