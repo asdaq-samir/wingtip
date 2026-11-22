@@ -87,6 +87,22 @@ class InFlight {
      *  drawn again at every fix. */
     val underway: StateFlow<Boolean> = state.map { it.underway }.distinctUntilChanged().stateIn(scope, SharingStarted.Eagerly, false)
 
+    /** The route's half of in_flight's input, built once per plan (its
+     *  course, legs and totals, by identity) rather than at every fix:
+     *  waste-phones item 7, the whole line encoded once a second. */
+    private var routeOf: Triple<Any?, Any?, Any?>? = null
+    private var route: Route? = null
+
+    private fun routeFor(plan: Plan.State): Route? {
+        val key = Triple(plan.course, plan.legs, plan.totals)
+        val was = routeOf
+        if (was == null || was.first !== key.first || was.second !== key.second || was.third !== key.third) {
+            routeOf = key
+            route = route(plan)
+        }
+        return route
+    }
+
     /** The GPS altitudes of the last seconds, for the vertical speed. */
     private val altitudes = ArrayDeque<Pair<Double, Double>>()
 
@@ -113,7 +129,7 @@ class InFlight {
         // motion), the strip shows the planned totals, and the whole line
         // went to the engine once a second for nothing. Where the engine
         // cannot say, it is asked.
-        val progress = if (underway.getOrDefault(true)) progress(fix, plan, nowMs) else Result.success(null)
+        val progress = if (underway.getOrDefault(true)) progress(fix, routeFor(plan), nowMs) else Result.success(null)
         // The first rule that failed, in the engine's words (Engine.rule
         // has logged it); the figures it would have given are left out.
         val failed = listOf("vertical speed" to vs, "glide ring" to glide, "route progress" to progress, "flying speed" to underway)
@@ -152,6 +168,16 @@ class InFlight {
         }
     }
 
+    /** The route as in_flight reads it, built once per plan (routeFor). */
+    data class Route(
+        val line: List<List<Double>>,
+        val points: List<EngineContract.InFlightInputPointsItem>,
+        val legs: List<EngineContract.InFlightInputLegsItem>,
+        val usableGal: Double?,
+        val taxiGal: Double?,
+        val refuelAt: List<Int>,
+    )
+
     companion object {
         /** The points (indices into the fields in order) each of the
          *  planner's hops after the first begins at: its fuel stops, in
@@ -169,28 +195,43 @@ class InFlight {
          *  field's elevation changes slowly as an airplane flies. */
         const val FIELD_EVERY_MS = 60_000L
 
-        /** The engine's `in_flight` for a fix on the plan's route: the
-         *  fields in order (the departure, the stops, the destination) are
-         *  its waypoints. The fuel is the engine's from the last fuel stop
+        /** The route's half of the engine's `in_flight`: the fields in
+         *  order (the departure, the stops, the destination) are its
+         *  waypoints. The fuel is the engine's from the last fuel stop
          *  passed (the aviation audit's AV-4): the tanks filled to the
          *  plan's usable fuel at each stop a hop of the planner's totals
          *  begins at (`refuel_at`), less the airplane's start and taxi
          *  allowance (the totals' taxi_gal; none where its profile gives
          *  none). Null with no route. */
-        fun progress(fix: OwnShip.Fix, plan: Plan.State, nowMs: Long = AppClock.nowMs()): Result<EngineContract.InFlightAnswer?> {
-            val course = plan.course ?: return Result.success(null)
+        fun route(plan: Plan.State): Route? {
+            val course = plan.course ?: return null
             val line = course.courseLine.filter { it.size == 2 }
-            if (line.size < 2) return Result.success(null)
+            if (line.size < 2) return null
             val ends = listOf(course.departure) + course.stops.orEmpty() + listOf(course.destination)
-            return Engine.inFlight(
-                fix = EngineContract.InFlightInputFix(fix.lat, fix.lon, fix.trackDeg, fix.groundspeedKt),
+            return Route(
                 line = line,
                 points = ends.map { EngineContract.InFlightInputPointsItem(it.ident, it.lat, it.lon) },
                 legs = plan.legs.map { EngineContract.InFlightInputLegsItem(it.distanceNm, it.fuelGal) },
-                fuelStartGal = plan.totals?.usableFuelGal,
-                fuelFullGal = plan.totals?.usableFuelGal,
-                taxiFuelGal = plan.totals?.taxiGal,
+                usableGal = plan.totals?.usableFuelGal,
+                taxiGal = plan.totals?.taxiGal,
                 refuelAt = refuelAt(ends.map { it.ident }, plan.totals?.hops.orEmpty().map { it.departure }),
+            )
+        }
+
+        /** The engine's `in_flight` for a fix on the plan's route. */
+        fun progress(fix: OwnShip.Fix, plan: Plan.State, nowMs: Long = AppClock.nowMs()) = progress(fix, route(plan), nowMs)
+
+        fun progress(fix: OwnShip.Fix, route: Route?, nowMs: Long = AppClock.nowMs()): Result<EngineContract.InFlightAnswer?> {
+            route ?: return Result.success(null)
+            return Engine.inFlight(
+                fix = EngineContract.InFlightInputFix(fix.lat, fix.lon, fix.trackDeg, fix.groundspeedKt),
+                line = route.line,
+                points = route.points,
+                legs = route.legs,
+                fuelStartGal = route.usableGal,
+                fuelFullGal = route.usableGal,
+                taxiFuelGal = route.taxiGal,
+                refuelAt = route.refuelAt,
                 nowS = nowMs / 1000.0,
             )
         }
