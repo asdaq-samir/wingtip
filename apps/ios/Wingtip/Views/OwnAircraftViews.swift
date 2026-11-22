@@ -212,7 +212,7 @@ struct InspectionsSection: View {
             ("Annual", "12 calendar months, 14 CFR 91.409(a)", \.annualOn, i.annualGoodThrough),
             ("Altimeter and static", "24 calendar months, for IFR, 91.411", \.staticCheckOn, i.staticCheckGoodThrough),
             ("Transponder", "24 calendar months, 91.413", \.transponderCheckOn, i.transponderCheckGoodThrough),
-            ("ELT inspection", "12 calendar months, 91.207(d)", \.eltInspectedOn, i.eltInspectionGoodThrough),
+            ("ELT Inspection", "12 calendar months, 91.207(d)", \.eltInspectedOn, i.eltInspectionGoodThrough),
         ]
     }
 

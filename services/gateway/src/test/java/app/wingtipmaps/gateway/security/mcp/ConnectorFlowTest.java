@@ -119,7 +119,7 @@ class ConnectorFlowTest {
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
-        assertThat(page).contains("Sign in to connect Claude").contains("name=\"_csrf\"");
+        assertThat(page).contains("Sign In to Connect Claude").contains("name=\"_csrf\"");
 
         // Signed in: the waiting request is carried on, once.
         Pilot pilot = signIn(session, UUID.randomUUID() + "@example.com");
@@ -133,7 +133,7 @@ class ConnectorFlowTest {
                         .andReturn()
                         .getResponse()
                         .getContentAsString())
-                .contains("Nothing to connect");
+                .contains("Nothing to Connect");
 
         // The pilot's consent, which names where the answer goes.
         String consent = mvc.perform(get(URI.create(authorize)).cookie(session))

@@ -17,7 +17,7 @@ struct WordsTests {
 
     static let figures = [
         WordsSource(id: "metar:KMSN", label: "KMSN METAR, VFR", text: "KMSN 031853Z 27008KT 10SM FEW045 12/03 A3012"),
-        WordsSource(id: "finding:fuel", label: "Fuel: ok", text: "Needs 30.2 gal with taxi and a 30 min reserve; 22.8 gal spare"),
+        WordsSource(id: "finding:fuel", label: "Fuel: ok", text: "Needs 30.2 gal with taxi and a 30 min reserve; 22.8 gal beyond reserve"),
     ]
 
     static let ask = WordsAsk(kind: .weather, figures: figures)

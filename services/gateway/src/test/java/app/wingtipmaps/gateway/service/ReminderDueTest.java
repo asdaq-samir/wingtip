@@ -20,26 +20,26 @@ class ReminderDueTest {
     private static List<PlannerPaperworkDue> currency(
             LocalDate review, LocalDate medical, LocalDate day, LocalDate night, LocalDate instrument) {
         List<PlannerPaperworkDue> out = new ArrayList<>();
-        add(out, "flight-review", "Flight review", "14 CFR 61.56(c)", review, "Your flight review runs out");
-        add(out, "medical", "Medical certificate", "14 CFR 61.23", medical, "Your medical certificate runs out");
+        add(out, "flight-review", "Flight Review", "14 CFR 61.56(c)", review, "Your flight review runs out");
+        add(out, "medical", "Medical Certificate", "14 CFR 61.23", medical, "Your medical certificate runs out");
         add(
                 out,
                 "day-passengers",
-                "Passengers by day",
+                "Passengers by Day",
                 "14 CFR 61.57(a)",
                 day,
                 "You may carry passengers by day until");
         add(
                 out,
                 "night-passengers",
-                "Passengers at night",
+                "Passengers at Night",
                 "14 CFR 61.57(b)",
                 night,
                 "You may carry passengers at night until");
         add(
                 out,
                 "instrument",
-                "Instrument currency",
+                "Instrument Currency",
                 "14 CFR 61.57(c)",
                 instrument,
                 "Your instrument currency runs out");

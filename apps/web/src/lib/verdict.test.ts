@@ -20,7 +20,7 @@ describe("the Go / No-Go", () => {
   it("finds nothing against a quiet day, every row saying what it checked", () => {
     const { items, line } = verdict(quiet);
     expect(items.map((i) => i.finding)).toEqual(["ok", "ok", "ok", "ok", "ok", "ok", "ok"]);
-    expect(items.find((i) => i.key === "fuel")!.detail).toBe("Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare");
+    expect(items.find((i) => i.key === "fuel")!.detail).toBe("Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve");
     expect(line).toEqual({ finding: "ok", words: "Nothing found against this flight" });
   });
 

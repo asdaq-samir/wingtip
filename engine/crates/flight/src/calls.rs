@@ -368,8 +368,9 @@ pub fn usual_base(name: &str, v: &Value) -> Result<String, String> {
     Ok(out)
 }
 
-/// A field's ident as its FAA one, and whether two name one field
-/// (field.rs, `bare_field`, `same_field`).
+/// A field's ident as its FAA one, whether two name one field, and every
+/// name it may be filed under (field.rs, `bare_field`, `same_field`,
+/// `field_names`).
 #[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn field_ident(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
@@ -377,6 +378,18 @@ pub fn field_ident(name: &str, v: &Value) -> Result<String, String> {
     match name {
         "bare_field" => json::string(&mut out, &field::bare_field(ask.str("ident")?)),
         "same_field" => out.push_str(if field::same_field(ask.str("a")?, ask.str("b")?) { "true" } else { "false" }),
+        "field_names" => {
+            let icao = ask.opt_str("icao_id")?;
+            let names = field::field_names(ask.str("ident")?, (!icao.is_empty()).then_some(icao));
+            out.push('[');
+            for (i, n) in names.iter().enumerate() {
+                if i > 0 {
+                    out.push(',');
+                }
+                json::string(&mut out, n);
+            }
+            out.push(']');
+        }
         _ => return Err(format!("the engine has no rule called {name:?}")),
     }
     Ok(out)

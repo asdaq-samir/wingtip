@@ -4,6 +4,7 @@ import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.fieldNames
 import app.wingtipmaps.android.engine.generated.notamRead
 import app.wingtipmaps.android.engine.generated.tfrRead
 import java.time.Instant
@@ -29,11 +30,10 @@ object FieldNotams {
 
     fun isTfr(n: RankedNotam): Boolean = n.kind == TFR
 
-    /** The field's idents as a NOTAM may write them ("OSH", "KOSH"). */
-    fun identsOf(ident: String): List<String> {
-        val bare = if (ident.length == 4 && ident.startsWith("K")) ident.drop(1) else ident
-        return listOf(ident, bare, "K$bare").distinct()
-    }
+    /** The field's idents as a NOTAM may write them ("OSH", "KOSH"): the
+     *  engine's field_names (FAA JO 7350.9GG 4-1); the ident alone where
+     *  the engine cannot be asked. */
+    fun identsOf(ident: String): List<String> = Engine.fieldNames(ident).getOrNull() ?: listOf(ident)
 
     /** The NOTAM read by the engine (notam_read); null where it fails, the
      *  NOTAM's words as sent standing in then. */

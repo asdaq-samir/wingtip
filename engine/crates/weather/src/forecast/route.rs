@@ -258,6 +258,9 @@ fn object_with(out: &mut String, v: &Value, keep: impl Fn(&str) -> bool, extra: 
 /// January 2025 (gairmets_along_route). Each keeps its times, issue and
 /// area for the briefing to say where and when the flight meets it.
 pub fn sigmets_along_route(advisories: &[Value], a: (f64, f64), b: (f64, f64), corridor_nm: f64, now: f64) -> String {
+    // The route and each area read with their longitudes beside a's
+    // (beside), so a leg or an area across 180 is the short way round.
+    let b = (b.0, geo::lon_near(b.1, a.1));
     let (s, w, n, e) = geo::corridor_bbox(a, b, corridor_nm);
     let keys = ["hazard", "type", "altitude_low_ft", "altitude_high_ft", "raw", "valid_from", "valid_to", "issued", "coords"];
     let mut out = Vec::new();
@@ -265,7 +268,7 @@ pub fn sigmets_along_route(advisories: &[Value], a: (f64, f64), b: (f64, f64), c
         if num(adv, "valid_to").is_some_and(|t| t <= now) || num(adv, "valid_from").is_some_and(|f| f > now) {
             continue;
         }
-        let ring = points(adv.get("coords"));
+        let ring = beside(points(adv.get("coords")), a.1);
         if ring.len() < 3 {
             continue;
         }
@@ -365,12 +368,14 @@ pub fn pireps_in_box(reports: &[Value], box_: (f64, f64, f64, f64), now: f64) ->
 /// for when the flight is in it.
 pub fn gairmets_along_route(advisories: &[Value], path: &[(f64, f64)], start: f64, end: f64) -> String {
     let margin = GAIRMET_SNAPSHOT_S as f64;
+    let reference = path.first().map_or(0.0, |p| p.1);
+    let path = beside(path.to_vec(), reference);
     let items: Vec<String> = advisories
         .iter()
         .filter(|a| num(a, "valid").is_some_and(|v| start - margin <= v && v <= end + margin))
         .filter(|a| {
             let ring = points(a.get("coords"));
-            ring.len() >= 3 && geo::path_meets_polygon(path, &ring)
+            ring.len() >= 3 && geo::path_meets_polygon(&path, &beside(ring, reference))
         })
         .map(|a| {
             let mut s = String::new();
@@ -379,6 +384,20 @@ pub fn gairmets_along_route(advisories: &[Value], path: &[(f64, f64)], start: f6
         })
         .collect();
     format!("[{}]", items.join(","))
+}
+
+/// (lat, lon) points each with its longitude beside the one before, the
+/// first beside `reference` (geo::lon_near): a path or an area drawn across
+/// the antimeridian read as one shape the short way round, on the plane of
+/// degrees path_meets_polygon tests on (the edge-places audit's S10). Points
+/// nowhere near 180 are as they were.
+fn beside(mut points: Vec<(f64, f64)>, reference: f64) -> Vec<(f64, f64)> {
+    let mut before = reference;
+    for p in &mut points {
+        p.1 = geo::lon_near(p.1, before);
+        before = p.1;
+    }
+    points
 }
 
 #[cfg(test)]

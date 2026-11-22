@@ -165,7 +165,7 @@ pub fn balance(loading: &Loading, load: &Load, trip_fuel_gal: Option<f64>) -> Ba
                 Some((_, aft)) => format!("aft of its limit, {} in", to_fixed(aft, 1)),
                 None => "outside the envelope".into(),
             };
-            problems.push(format!("At {name} the centre of gravity, {} in, is {side}", to_fixed(c.arm_in, 1)));
+            problems.push(format!("At {name} the center of gravity, {} in, is {side}", to_fixed(c.arm_in, 1)));
         }
     }
     for (i, station) in loading.stations.iter().enumerate() {

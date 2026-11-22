@@ -51,7 +51,7 @@ def finding(v: dict, key: str) -> dict:
 def test_finds_nothing_against_a_quiet_day_every_row_saying_what_it_checked():
     items = verdict_items(quiet())
     assert [i["finding"] for i in items] == ["ok"] * 7
-    assert finding(quiet(), "fuel")["detail"] == "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare"
+    assert finding(quiet(), "fuel")["detail"] == "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve"
     assert verdict_line(quiet()) == {"finding": "ok", "words": "Nothing found against this flight"}
 
 

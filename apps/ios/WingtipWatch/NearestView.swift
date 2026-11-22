@@ -80,7 +80,7 @@ struct NearestView: View {
                             HStack(alignment: .firstTextBaseline) {
                                 Text(airport.name).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                                 Spacer()
-                                Text(String(format: "%03.0f°", airport.bearingDeg)).font(.caption).monospacedDigit()
+                                Text(airport.bearingWords).font(.caption).monospacedDigit()
                             }
                             if let category = airport.flightCategory {
                                 Text(category).font(.caption2).foregroundStyle(.secondary)

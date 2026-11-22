@@ -56,11 +56,11 @@ test("Preflight opens on its Go / No-Go: VFR not recommended is no-go, marked on
   await expect(drawer.locator("[data-testid^='verdict-'][data-finding]")).toHaveCount(7);
   await expect(drawer.getByTestId("verdict").getByRole("button")).toHaveText([
     /^Weather/,
-    /^TFRs & special use/,
+    /^TFRs & Special Use/,
     /^Altitude/,
     /^Fuel/,
     /^Runways/,
-    /^Weight & balance/,
+    /^Weight & Balance/,
     /^Risk/,
     /^Alternates/,
   ]);

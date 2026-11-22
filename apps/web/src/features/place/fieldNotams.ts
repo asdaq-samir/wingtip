@@ -55,10 +55,9 @@ export function useFieldZone(ident: string): string | null {
 }
 
 /** The field's idents as a NOTAM may write them ("OSH", "KOSH"), kept as
- *  written in its words. */
+ *  written in its words: the engine's field_names (FAA JO 7350.9GG 4-1). */
 export function identsOf(ident: string): string[] {
-  const bare = ident.length === 4 && ident.startsWith("K") ? ident.slice(1) : ident;
-  return [...new Set([ident, bare, `K${bare}`])];
+  return callEngine("field_names", { ident });
 }
 
 /** The NOTAM read by the engine (notam_read): its heading, its words

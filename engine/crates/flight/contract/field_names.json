@@ -1,0 +1,37 @@
+{
+  "x-call": "wingtip_flight::calls::field_ident",
+  "description": "Every name a field may be filed under, in the order to try them: NASR's ICAO_ID where given, the K form of a three-letter ident (FAA JO 7350.9GG 4-1), the ident as asked and its FAA form.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FieldNamesInput",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        },
+        "icao_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "ident"
+      ]
+    },
+    "answer": {
+      "title": "FieldNamesAnswer",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

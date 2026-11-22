@@ -80,7 +80,7 @@ pub const HIGH_FROM: i64 = 12;
 pub const LEVELS: [(&str, &str, &str); 3] = [
     ("low", "Low", "Go, with the usual care."),
     ("caution", "Raised", "Bring it down where you can (a later time, a shorter leg, an instructor along), or talk it over."),
-    ("high", "High", "Don't go as planned."),
+    ("high", "High", "Do not go as planned."),
 ];
 
 pub fn level_name(level: &str) -> &str {

@@ -41,4 +41,13 @@ struct AtcCopilotTests {
             "Runway 27, cleared to land", "Cleared into Class B",
         ])
     }
+
+    /// A heading or radial of north is said 360, never 000 (FAA Order JO
+    /// 7110.65, 2-4-17), as the web's threeFigures says it.
+    @Test func northIs360() throws {
+        let json = #"[{"kind":"heading","deg":0,"turn":"right","by_deg":null},{"kind":"heading","deg":360,"turn":null,"by_deg":null},{"kind":"hold","fix":"gopher","direction":"south","on":"radial","on_deg":0,"turns":"right","published":false,"efc":null}]"#
+        let items = try JSONDecoder().decode([AtcItem].self, from: Data(json.utf8))
+        #expect(items.map(\.words)[0...1] == ["Right heading 360", "Heading 360"])
+        #expect(items[2].words.contains("360 radial"))
+    }
 }

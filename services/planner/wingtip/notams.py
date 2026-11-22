@@ -34,6 +34,7 @@ import wingtip_native
 
 from . import stores
 from .config import Settings, get_settings
+from .engine import ask as engine
 
 STORE = get_settings().notam_store
 #: Where the store was kept before NOTAM_STORE moved it (the data
@@ -239,12 +240,9 @@ def every() -> list[dict]:
 
 def _places(field: str) -> set[str]:
     """A field's identifiers as NOTAMs give them: the domestic location
-    drops the K of a contiguous-states ICAO one (KBJC is BJC)."""
-    field = field.strip().upper()
-    places = {field}
-    if len(field) == 4 and field.startswith("K"):
-        places.add(field[1:])
-    return places
+    drops the K of a contiguous-states ICAO one (KBJC is BJC): the
+    engine's field_names."""
+    return set(engine("field_names", ident=field))
 
 
 def at_fields(fields: list[str], now: float | None = None) -> list[dict]:

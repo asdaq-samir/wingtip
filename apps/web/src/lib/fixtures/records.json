@@ -145,7 +145,7 @@
           {
             "what": "annual",
             "itemId": null,
-            "label": "Annual inspection",
+            "label": "Annual Inspection",
             "rule": "14 CFR 91.409(a)",
             "until": "2026-10-31",
             "dueAtHours": null,
@@ -154,7 +154,7 @@
           {
             "what": "elt",
             "itemId": null,
-            "label": "ELT inspection",
+            "label": "ELT Inspection",
             "rule": "14 CFR 91.207(d)",
             "until": "2026-10-31",
             "dueAtHours": null,
@@ -163,7 +163,7 @@
           {
             "what": "static",
             "itemId": null,
-            "label": "Altimeter and static system",
+            "label": "Altimeter and Static System",
             "rule": "14 CFR 91.411(a)",
             "until": "2026-02-28",
             "dueAtHours": null,
@@ -172,7 +172,7 @@
           {
             "what": "vor-check",
             "itemId": null,
-            "label": "VOR check for IFR",
+            "label": "VOR Check for IFR",
             "rule": "14 CFR 91.171(a)(2)",
             "until": "2026-12-01",
             "dueAtHours": null,
@@ -258,7 +258,7 @@
           {
             "what": "annual",
             "itemId": null,
-            "label": "Annual inspection",
+            "label": "Annual Inspection",
             "rule": "14 CFR 91.409(a)",
             "until": "2026-11-30",
             "dueAtHours": null,
@@ -267,7 +267,7 @@
           {
             "what": "hundred-hour",
             "itemId": null,
-            "label": "100-hour inspection",
+            "label": "100-Hour Inspection",
             "rule": "14 CFR 91.409(b)",
             "until": null,
             "dueAtHours": 2350.0,
@@ -276,7 +276,7 @@
           {
             "what": "elt-battery",
             "itemId": null,
-            "label": "ELT battery",
+            "label": "ELT Battery",
             "rule": "14 CFR 91.207(c)",
             "until": "2026-11-15",
             "dueAtHours": null,

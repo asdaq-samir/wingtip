@@ -38,7 +38,7 @@ import numpy as np
 import requests
 from cachetools import TTLCache
 
-from . import geo, outside
+from . import geo, geo_boxes, outside
 from .elevation import terrarium_m
 from .units import M_TO_FT
 
@@ -135,7 +135,8 @@ def line_points(start: tuple, end: tuple) -> tuple[np.ndarray, np.ndarray, np.nd
     cell it crosses holds one -- a third of a cell apart -- and how far
     along each is, nm: (lats, lons, along_nm)."""
     total = float(geo.distance_nm(start[0], start[1], end[0], end[1]))
-    span = max(abs(end[0] - start[0]), abs(end[1] - start[1]))
+    # The short way round 180 (geo_boxes): its longitudes, not 350 degrees.
+    span = max(abs(end[0] - start[0]), abs(geo_boxes.lon_near(end[1], start[1]) - start[1]))
     n = max(2, int(math.ceil(span * PER_DEG * 3)) + 1)
     # Along the great circle, not the straight line on the chart: the
     # same path wingtip.terrain's samples and the course line take.

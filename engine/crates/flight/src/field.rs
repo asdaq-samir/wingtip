@@ -220,30 +220,25 @@ pub fn mark_rank(site_type: &str, facility_use: &str, towered: bool, hard_ft: u3
     MarkRank { tier, order: class * RUNWAY_ROOM + (RUNWAY_ROOM - 1 - hard_ft.min(RUNWAY_ROOM - 1)), size }
 }
 
-/// A field's FAA ident, trimmed and uppercased: a field in the contiguous
-/// US whose FAA location identifier is three letters is named by ICAO with
-/// a K before them (FAA JO 7350.9, Location Identifiers), and the CIFP, a
-/// domestic NOTAM or a pilot may use either, so a K and three letters or
-/// figures is the three. "kdlh" is DLH; "KABCD" and "K12" stay as they are.
-/// The one copy for the route, the clearance, the NOTAMs and the in-flight
-/// copilot.
-pub fn bare_field(ident: &str) -> String {
-    let s = ident.trim().to_ascii_uppercase();
-    if s.len() == 4 && s.starts_with('K') && s.bytes().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()) {
-        s[1..].to_owned()
-    } else {
-        s
-    }
-}
-
-/// Whether two idents name one field: "KOSH" and "OSH" (bare_field).
-pub fn same_field(a: &str, b: &str) -> bool {
-    bare_field(a) == bare_field(b)
-}
+pub use crate::ident::{bare_field, field_names, same_field};
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // JO 7350.9GG 4-1: the K form in the contiguous states; NASR's ICAO_ID
+    // where the K is not the rule; none for an ident with a figure.
+    #[test]
+    fn a_fields_names_are_its_icao_k_and_faa_forms() {
+        assert_eq!(field_names("dlh", None), ["KDLH", "DLH"]);
+        assert_eq!(field_names("KDLH", None), ["KDLH", "DLH"]);
+        assert_eq!(field_names("C81", None), ["C81"]);
+        assert_eq!(field_names("KC81", None), ["KC81", "C81"]);
+        assert_eq!(field_names("JNU", Some("PAJN")), ["PAJN", "KJNU", "JNU"]);
+        assert_eq!(field_names("SJU", Some("tjsj")), ["TJSJ", "KSJU", "SJU"]);
+        assert_eq!(field_names("PAEN", None), ["PAEN"]);
+        assert_eq!(field_names("ENA", Some("")), ["KENA", "ENA"]);
+    }
 
     // NASR APT_BASE's ownership codes, each side of the rule.
     #[test]

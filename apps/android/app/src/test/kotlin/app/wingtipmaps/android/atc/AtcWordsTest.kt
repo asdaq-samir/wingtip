@@ -35,6 +35,19 @@ class AtcWordsTest {
         assertEquals(listOf(ItemAction.SQUAWK, ItemAction.FREQUENCY, ItemAction.DIRECT, null), more.take(4).map(AtcWords::actionOf))
     }
 
+    /** A heading or radial of north is said 360, never 000 (FAA Order JO
+     *  7110.65, 2-4-17), as the web's threeFigures says it. */
+    @Test
+    fun northIs360() {
+        val north = items(
+            """[{"kind":"heading","deg":0,"turn":"right","by_deg":null},{"kind":"heading","deg":360,"turn":null,"by_deg":null},""" +
+                """{"kind":"hold","fix":"gopher","direction":"south","on":"radial","on_deg":0,"turns":"right","published":false,"efc":null}]""",
+        )
+        val words = north.map { AtcWords.itemWords(it, said) }
+        assertEquals(listOf("Right heading 360", "Heading 360"), words.take(2))
+        assert(words[2].contains("360 radial")) { words[2] }
+    }
+
     @Test
     fun aReadbackSaysWhatWasMissedRequiredFirst() {
         assertEquals(listOf("Readback complete"), AtcWords.readbackLines(EngineContract.ReadbackCheckAnswer(emptyList(), "")))

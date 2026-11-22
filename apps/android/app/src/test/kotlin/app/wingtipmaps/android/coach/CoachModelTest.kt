@@ -30,10 +30,10 @@ class CoachModelTest {
         ProficiencyPlan.serializer(),
         """{"today":"2026-11-09",
         "due":[
-          {"key":"flight_review","id":"due:flight_review","label":"Flight review","rule":"14 CFR 61.56(c)","until":"2027-06-30","from":null,"days_left":233,"status":"current","detail":"24 calendar months"},
-          {"key":"night_passengers","id":"due:night_passengers","label":"Passengers at night","rule":"14 CFR 61.57(b)","until":"2026-11-18","from":null,"days_left":9,"status":"due_soon","detail":"3 full-stop landings at night in 90 days"},
-          {"key":"day_passengers","id":"due:day_passengers","label":"Passengers by day","rule":"14 CFR 61.57(a)","until":null,"from":null,"days_left":null,"status":"lapsed","detail":"3 landings in 90 days"},
-          {"key":"instrument","id":"due:instrument","label":"Instrument currency","rule":"14 CFR 61.57(c)","until":null,"from":"2026-12-01","days_left":null,"status":"pending","detail":"6 approaches, holding, tracking"},
+          {"key":"flight_review","id":"due:flight_review","label":"Flight Review","rule":"14 CFR 61.56(c)","until":"2027-06-30","from":null,"days_left":233,"status":"current","detail":"24 calendar months"},
+          {"key":"night_passengers","id":"due:night_passengers","label":"Passengers at Night","rule":"14 CFR 61.57(b)","until":"2026-11-18","from":null,"days_left":9,"status":"due_soon","detail":"3 full-stop landings at night in 90 days"},
+          {"key":"day_passengers","id":"due:day_passengers","label":"Passengers by Day","rule":"14 CFR 61.57(a)","until":null,"from":null,"days_left":null,"status":"lapsed","detail":"3 landings in 90 days"},
+          {"key":"instrument","id":"due:instrument","label":"Instrument Currency","rule":"14 CFR 61.57(c)","until":null,"from":"2026-12-01","days_left":null,"status":"pending","detail":"6 approaches, holding, tracking"},
           {"key":"medical","id":"due:medical","label":"Medical","rule":"14 CFR 61.23","until":null,"from":null,"days_left":null,"status":"unknown","detail":"Not given"}],
         "reminders":[{"key":"night_passengers","text":"Night passengers lapse in 9 days","until":"2026-11-18","days_left":9}],
         "evidence":[

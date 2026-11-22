@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{page :: head('Connect')}"></head>
 <body>
-<h1 th:text="'Sign in to connect ' + ${clientName}">Sign in to connect</h1>
+<h1 th:text="'Sign In to Connect ' + ${clientName}">Sign In to Connect</h1>
 <p th:text="'Sign in to Wingtip Maps, and ' + ${clientName} + ' can then plan with your airplanes and flights.'"></p>
 <p class="muted" th:if="${!#strings.isEmpty(notice)}" th:text="${notice}"></p>
 <a th:each="provider : ${providers}" class="button plain" th:href="@{/oauth2/authorization/{p}(p=${provider})}"

@@ -20,7 +20,7 @@ public class NoSuchAircraftException extends ErrorResponseException {
     public NoSuchAircraftException(Long aircraftId) {
         super(
                 HttpStatus.NOT_FOUND,
-                ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "No such aircraft: " + aircraftId),
+                ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "No such airplane: " + aircraftId + "."),
                 null);
     }
 }

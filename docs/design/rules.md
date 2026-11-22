@@ -1654,6 +1654,13 @@ Most routes are flown over the Midwest; the edge-places audit of
    variation and air, the TAFs along it, the airplane's place on the
    route and the course drawn on the map are each read along the
    geodesic, not a line in degrees the long way round (Adak to Shemya).
+   Every search box in degrees (the obstacles, airspace, special-use
+   airspace, TFRs, fixes, fields, stations, SIGMETs and G-AIRMETs, the
+   IFR floor's and the terrain's tiles, the own-ship look-ahead) is
+   worked out the short way round and read as its one or two halves
+   either side of 180 (`wingtip.geo_boxes`, `wingtip_core::geo`
+   `corridor_boxes`/`split_box`); a box nowhere near 180 is the one it
+   always was.
 4. **A route goes somewhere**: a departure that is its own destination
    with no stop (C81 to C81, or KOSH to OSH) is a local flight, not a
    route of no length (`same_field` on the web; a 422 from the plan).
@@ -1661,7 +1668,7 @@ Most routes are flown over the Midwest; the edge-places audit of
 |       | Web                                                                                                                                                              | iPhone                                       | Android |
 | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------- |
 | Where | `features/plan/adiz` (`routeAdiz`), the Brief's glance `adiz` line; `lib/geo` `unwrapLine`, `lonBounds`                                                          | Not yet: on the owner's word (decision 0038) | Not yet |
-| Tests | `engine/crates/flight/src/adiz_tests.rs`, `engine/facade/tests/edge_places.rs` (`lib/fixtures/edgePlaces.json`); `features/plan/adiz.test.ts`, `lib/geo.test.ts` | --                                           | --      |
+| Tests | `engine/crates/flight/src/adiz_tests.rs`, `engine/facade/tests/edge_places.rs` (`lib/fixtures/edgePlaces.json`), `core/src/geo_tests.rs`, `weather/src/forecast/route/tests.rs`; `tests_wingtip/test_geo_boxes.py`; `features/plan/adiz.test.ts`, `lib/geo.test.ts` | --                                           | --      |
 
 ## 17. Registry names in the store apps (the owner, 2026-11-21)
 
@@ -1730,6 +1737,16 @@ on from [0020](../decisions/0020-airplane-not-aircraft.md) and
    capital, and the FAA's codes in capitals: TFR, NOTAM, METAR, TAF, ETE,
    ETA, SM and NM spelled as the units module writes them (nm, sm). The
    nav log is "Nav Log" as a name and "nav log" in a sentence.
+7. **The engine's and the gateway's words too.** A label the engine sends
+   for an app to show (a finding's, a due item's, a handbook figure's, an
+   endorsement's name: "Flight Review", "Passengers at Night", "Weight &
+   Balance", "Solo Flight at Night") is in Title Case, and its sentences,
+   errors and pages follow rules 3 to 6, as the gateway's pages and
+   problems do ("The planner did not answer. Try again in a moment.").
+   A label the engine also sets inside a sentence is lowered there with
+   its codes kept (`in_sentence`); the aircraft form's field names, which
+   begin its sentences ("Cruise speed must be a positive number"), stay in
+   sentence case.
 
 The words the three apps share, generated from `design/wording.json`:
 

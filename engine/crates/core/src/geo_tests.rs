@@ -172,3 +172,60 @@ fn a_longitude_is_written_near_its_reference() {
     // Nothing to wrap: as it is.
     assert!((lon_near(-88.07, -92.19) - -88.07).abs() < 1e-9);
 }
+
+// Adak (PADK, 51.88 N 176.65 W) and Shemya (PASY, 52.71 N 174.11 E), the
+// edge-places audit's S10: either side of 180, 378 nm apart the short way.
+const ADAK: (f64, f64) = (51.878, -176.646);
+const SHEMYA: (f64, f64) = (52.712, 174.114);
+
+fn in_boxes(boxes: &[(f64, f64, f64, f64)], lat: f64, lon: f64) -> bool {
+    boxes.iter().any(|&(s, w, n, e)| s <= lat && lat <= n && w <= lon && lon <= e)
+}
+
+fn boxes_around(lat: f64, lon: f64, nm: f64) -> Vec<(f64, f64, f64, f64)> {
+    split_box(box_around(lat, lon, nm))
+}
+
+#[test]
+fn a_box_across_the_antimeridian_is_its_two_halves() {
+    let boxes = corridor_boxes(ADAK, SHEMYA, 10.0);
+    assert_eq!(boxes.len(), 2, "{boxes:?}");
+    let (east_half, west_half) = (boxes[0], boxes[1]);
+    // Shemya's side, from about 174 E to 180; Adak's, from -180 to about 176 W.
+    assert!(east_half.1 > 173.0 && east_half.1 < 174.114 && east_half.3 == 180.0, "{east_half:?}");
+    assert!(west_half.1 == -180.0 && west_half.3 > -176.646 && west_half.3 < -176.0, "{west_half:?}");
+    assert!(in_boxes(&boxes, SHEMYA.0, SHEMYA.1) && in_boxes(&boxes, ADAK.0, ADAK.1));
+    // Not the long way round: the Midwest is in neither.
+    assert!(!in_boxes(&boxes, 52.0, 0.0) && !in_boxes(&boxes, 52.0, -93.0));
+    // Either way round, the same two boxes.
+    let back = corridor_boxes(SHEMYA, ADAK, 10.0);
+    assert!(in_boxes(&back, SHEMYA.0, SHEMYA.1) && in_boxes(&back, ADAK.0, ADAK.1) && !in_boxes(&back, 52.0, 0.0));
+}
+
+#[test]
+fn a_point_near_the_antimeridian_reaches_across_it() {
+    // 30 nm round Shemya is under a degree of longitude at 53 N, so not
+    // across; 200 nm round it is some 6 degrees, past 180 to 179.9 W.
+    assert_eq!(boxes_around(SHEMYA.0, SHEMYA.1, 30.0).len(), 1);
+    let wide = boxes_around(SHEMYA.0, SHEMYA.1, 200.0);
+    assert_eq!(wide.len(), 2, "{wide:?}");
+    assert!(in_boxes(&wide, 52.5, -179.95) && in_boxes(&wide, 52.5, 179.5));
+    let near_adak = boxes_around(ADAK.0, ADAK.1, 300.0);
+    assert!(in_boxes(&near_adak, 52.0, 178.5), "{near_adak:?}");
+}
+
+#[test]
+fn a_box_nowhere_near_180_is_the_one_it_always_was() {
+    // KMSN to KOSH: one box, to the bit.
+    let (msn, osh) = ((43.1399, -89.3375), (43.9844, -88.5570));
+    assert_eq!(corridor_boxes(msn, osh, 10.0), vec![corridor_bbox(msn, osh, 10.0)]);
+    assert_eq!(boxes_around(msn.0, msn.1, 25.0), vec![box_around(msn.0, msn.1, 25.0)]);
+    assert_eq!(box_over(&[msn, osh, (43.5, -90.0)], 5.0), Some(corridor_bbox((43.1399, -90.0), (43.9844, -88.557), 5.0)));
+    assert_eq!(box_over(&[], 5.0), None);
+    // A track across 180 boxed the short way: past -180, then its halves.
+    let track = box_over(&[ADAK, SHEMYA], 1.0).unwrap();
+    assert!(track.1 < -185.886 && track.3 < -176.0);
+    assert_eq!(split_box(track).len(), 2);
+    assert_eq!(split_box((50.0, -200.0, 54.0, 170.0)), vec![(50.0, -180.0, 54.0, 180.0)]);
+    assert_eq!(lon_near(-88.07, -92.19), -88.07);
+}

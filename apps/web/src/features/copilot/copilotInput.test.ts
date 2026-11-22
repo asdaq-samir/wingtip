@@ -77,7 +77,10 @@ describe("the engine's question from the app's state", () => {
       startedAtMs: fix.at - 3_600_000,
       firstSeen: {},
     });
-    expect(input!.fuel_gal).toBe(11);
+    // The fuel at takeoff and the start go to the engine, which takes the
+    // hour's 9 gal off the 20 (copilot.json's started_s cases).
+    expect(input!.fuel_gal).toBe(20);
+    expect(input!.started_s).toBe((fix.at - 3_600_000) / 1000);
     // The miles to go are along the line, from route_position.
     expect(input!.remaining_nm).toBeGreaterThan(20);
     expect(input!.remaining_nm).toBeLessThan(30);

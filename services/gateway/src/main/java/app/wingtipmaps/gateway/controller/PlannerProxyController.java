@@ -59,7 +59,7 @@ public class PlannerProxyController {
      *  do, where "planner service unreachable" read as a log line. */
     private static final StreamingProxy.Upstream PLANNER = new StreamingProxy.Upstream(
             "planner service",
-            "The planner isn't answering. Try again in a moment.",
+            "The planner did not answer. Try again in a moment.",
             "The planner took too long to answer. Try again in a moment.");
 
     /** The largest body forwarded on any POST. The biggest sent is a flown

@@ -357,7 +357,7 @@ struct RiskView: View {
 
 #Preview("FindingFold") {
     List {
-        FindingFold(item: VerdictItem(detail: "The baggage, 170 lb in all, is over its 120 lb", finding: "stop", key: "balance", label: "Weight & balance", section: "Weight & Balance", tab: "preflight"),
+        FindingFold(item: VerdictItem(detail: "The baggage, 170 lb in all, is over its 120 lb", finding: "stop", key: "balance", label: "Weight & Balance", section: "Weight & Balance", tab: "preflight"),
                     words: "Weight & balance: The baggage, 170 lb in all, is over its 120 lb.") { _ in }
     }
 }

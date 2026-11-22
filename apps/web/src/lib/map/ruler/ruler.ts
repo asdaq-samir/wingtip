@@ -6,6 +6,7 @@
  * then drag it to see the distance etc"). What it says and when it comes
  * are worked out here; MapRuler follows the fingers and draws it.
  */
+import { callEngine } from "../../engine/engine";
 import { hoursMinutes, duration } from "../../format";
 import type { Geo, LatLon } from "../../geo";
 import { magneticOf, type Declination } from "../../magnetic";
@@ -39,8 +40,10 @@ export function middleCourse(geo: Geo, a: LatLon, b: LatLon): { trueDeg: number;
 }
 
 /** Minutes to fly `nm` at `tasKt`, no wind: the ruler's time is the
- *  airplane's book cruise, as ForeFlight's, not a wind-corrected one. */
-export const eteMinutes = (nm: number, tasKt: number) => (nm / tasKt) * 60;
+ *  airplane's book cruise, as ForeFlight's, not a wind-corrected one --
+ *  the engine's fuel_estimate, the same figure the FPL's estimate gives
+ *  before the nav log has its winds. */
+export const eteMinutes = (nm: number, tasKt: number) => callEngine("fuel_estimate", { distance_nm: nm, cruise_tas_kt: tasKt }).minutes;
 
 interface RulerWords {
   /** The course from the left end to the right, with its arrow: "134°M →". */

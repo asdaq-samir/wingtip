@@ -49,7 +49,7 @@ pub(super) fn class_alerts(track: &Track, volumes: Vec<Volume>) -> Vec<Alert> {
 }
 
 pub(super) fn classes(packs: &[Pack], track: &Track) -> Vec<Alert> {
-    let box_ = track.bbox(1.0);
+    let boxes = track.boxes(1.0);
     let mut volumes = Vec::new();
     for p in packs {
         let (Some(layer), Some(vols), Some(names)) = (p.layer("airspace"), p.section("airspace.vol"), p.section("airspace.names")) else {
@@ -58,7 +58,7 @@ pub(super) fn classes(packs: &[Pack], track: &Track) -> Vec<Alert> {
         for i in 0..layer.count {
             let Some(r) = vols.get(32 * i..32 * i + 32) else { continue };
             let class = r[0] as char;
-            if class_need(class).is_none() || !meets(layer.bbox(i), box_) {
+            if class_need(class).is_none() || !meets(layer.bbox(i), &boxes) {
                 continue;
             }
             let (Some(wkb), Some(floor), Some(ceiling), Some(name)) = (layer.wkb(i), f64_at(r, 8), f64_at(r, 16), text(names, r, 24))
@@ -134,7 +134,7 @@ pub(super) fn special_use_alerts(track: &Track, areas: Vec<Area>) -> Vec<Alert> 
 }
 
 pub(super) fn special_use(packs: &[Pack], track: &Track, ground: Option<f64>) -> Vec<Alert> {
-    let box_ = track.bbox(1.0);
+    let boxes = track.boxes(1.0);
     let mut areas = Vec::new();
     for p in packs {
         let (Some(layer), Some(alt), Some(names), Some(rec), Some(times)) =
@@ -149,7 +149,7 @@ pub(super) fn special_use(packs: &[Pack], track: &Track, ground: Option<f64>) ->
                 continue;
             }
             let bbox = layer.bbox(i);
-            if !meets(bbox, box_) {
+            if !meets(bbox, &boxes) {
                 continue;
             }
             let (Some(wkb), Some(name)) = (layer.wkb(i), text(names, r, 16)) else { continue };

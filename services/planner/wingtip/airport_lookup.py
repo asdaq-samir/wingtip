@@ -8,6 +8,7 @@ import pandas as pd
 
 from . import field_use, nasr_fields
 from .airport_tables import DEFAULT_CACHE_PATH, OURAIRPORTS_URL, _airport_rows, _ensure_cached, _faa_key, _read_table
+from .engine import ask as engine
 
 
 class OutsideCharts(ValueError):
@@ -65,8 +66,9 @@ def get_airport(ident: str, cache_path: Path = DEFAULT_CACHE_PATH) -> dict:
     # Only a US field's: the K is the contiguous US's, so KIGN is not
     # Indagen, Papua New Guinea, whose local code is IGN.
     table = _read_table(str(path), mtime)
-    if at is None and len(ident) == 4 and ident[0] == "K" and ident[1:].isalnum():
-        at = rows.get(ident[1:])
+    bare = engine("bare_field", ident=ident)
+    if at is None and bare != ident:
+        at = rows.get(bare)
         at = at if at is not None and _country(table.iloc[at]) == "US" else None
     if at is None:
         # The pilot's words, which the route box shows on the ident's own

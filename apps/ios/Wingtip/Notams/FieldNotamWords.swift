@@ -4,12 +4,11 @@ import Observation
 /// The NOTAM card's words and times, apart from the views so the tests
 /// read them (FieldNotamsTests). The web's fieldNotams and notamTimes.
 enum FieldNotamWords {
-    /// The field's idents as a NOTAM may write them ("OSH", "KOSH").
+    /// The field's idents as a NOTAM may write them ("OSH", "KOSH"): the
+    /// engine's field_names (FAA JO 7350.9GG 4-1); the ident alone where
+    /// the engine cannot be asked.
     static func idents(_ ident: String) -> [String] {
-        let bare = ident.count == 4 && ident.hasPrefix("K") ? String(ident.dropFirst()) : ident
-        var seen: [String] = []
-        for one in [ident, bare, "K\(bare)"] where !seen.contains(one) { seen.append(one) }
-        return seen
+        (try? Engine.fieldNames(ident: ident)) ?? [ident]
     }
 
     /// Its number as a briefer reads it, the field's own name off it on the

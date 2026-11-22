@@ -18,6 +18,7 @@ import pandas as pd
 
 from . import altitude, faa_data, procedures
 from .single_flight import once
+from .engine import ask as engine
 
 log = logging.getLogger(__name__)
 
@@ -131,8 +132,8 @@ def _names(place: dict) -> list[str]:
     first (DLH, C81: APT_RWY knows no other), the map's (KDLH), OurAirports'
     (KC81), and the FAA's with a K (the CIFP's KDLH)."""
     faa = (place.get("faa_id") or "").upper()
-    names = [faa, place.get("ident", ""), place.get("source_ident", ""), f"K{faa}" if len(faa) == 3 and faa.isalpha() else ""]
-    return [n.upper() for n in names if n]
+    names = [faa, place.get("ident", ""), place.get("source_ident", ""), *(engine("field_names", ident=faa) if faa else [])]
+    return list(dict.fromkeys(n.upper() for n in names if n))
 
 
 def facts_for(places: list[dict]) -> list[dict]:

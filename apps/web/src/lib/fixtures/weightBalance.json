@@ -154,8 +154,8 @@
           "arm_in": 79.97574777687954
         },
         "problems": [
-          "At takeoff the centre of gravity, 80.7 in, is forward of its limit, 81.7 in",
-          "At landing the centre of gravity, 80.0 in, is forward of its limit, 80.5 in"
+          "At takeoff the center of gravity, 80.7 in, is forward of its limit, 81.7 in",
+          "At landing the center of gravity, 80.0 in, is forward of its limit, 80.5 in"
         ],
         "takeoff_words": "2,654 lb at 80.7 in"
       }
@@ -319,8 +319,8 @@
           "arm_in": 93.14522494080505
         },
         "problems": [
-          "At takeoff the centre of gravity, 93.0 in, is aft of its limit, 92.0 in",
-          "At landing the centre of gravity, 93.1 in, is aft of its limit, 92.0 in"
+          "At takeoff the center of gravity, 93.0 in, is aft of its limit, 92.0 in",
+          "At landing the center of gravity, 93.1 in, is aft of its limit, 92.0 in"
         ],
         "takeoff_words": "2,624 lb at 93.0 in"
       }

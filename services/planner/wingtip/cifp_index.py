@@ -11,6 +11,7 @@ from pathlib import Path
 
 from .cifp_records import Leg, _col, _continuation, _navaid_place, _position, _variation
 from .single_flight import once
+from .engine import ask as engine
 
 #: What a procedure is, by its record's subsection (ARINC 424-18 5.5).
 KINDS = {"D": "departure", "E": "arrival", "F": "approach"}
@@ -69,7 +70,7 @@ def _records(ident: str, path: Path) -> tuple[str, list[str]] | None:
     ident, and by the FAA's where it has none (the Readme)."""
     index = _index(path)
     ident = ident.strip().upper()
-    for name in (ident, ident[1:] if len(ident) == 4 and ident.startswith("K") else f"K{ident}"):
+    for name in engine("field_names", ident=ident):
         if name in index.airports:
             start, size = index.airports[name]
             with path.open("rb") as f:

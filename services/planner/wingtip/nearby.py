@@ -33,6 +33,7 @@ import requests
 from . import outside
 from .config import DATA_DIR
 from .geo import box_around, distance_nm
+from .geo_boxes import split_box
 from .units import M_PER_NM
 from .single_flight import once
 
@@ -245,13 +246,15 @@ def _on_field(outline, lat: float, lon: float, metres: float) -> bool:
 def _read(lat: float, lon: float, release: str) -> dict:
     import pyarrow.dataset as ds
 
-    south, west, north, east = box_around(lat, lon, REACH_M / M_PER_NM)
-    box = (
+    # Its one or two halves either side of 180 (geo_boxes), either met.
+    halves = [
         (ds.field("bbox", "xmin") >= west)
         & (ds.field("bbox", "xmin") <= east)
         & (ds.field("bbox", "ymin") >= south)
         & (ds.field("bbox", "ymin") <= north)
-    )
+        for south, west, north, east in split_box(box_around(lat, lon, REACH_M / M_PER_NM))
+    ]
+    box = halves[0] if len(halves) == 1 else halves[0] | halves[1]
     # The field's outline read beside its places, not after them: each is a
     # second or so of S3 (KBMI 1.5 s and 0.9 s, 2026-11-18), and a stop's
     # card waited on both one after the other.

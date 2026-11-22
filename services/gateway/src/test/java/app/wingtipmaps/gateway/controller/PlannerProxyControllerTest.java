@@ -236,7 +236,7 @@ class PlannerProxyControllerTest extends PlannerProxyTestBase {
                 .andExpect(request().asyncNotStarted())
                 .andExpect(status().is(502))
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
-                .andExpect(jsonPath("$.detail").value("The planner isn't answering. Try again in a moment."));
+                .andExpect(jsonPath("$.detail").value("The planner did not answer. Try again in a moment."));
     }
 
     /** A checkpoint note is its pilot's own, so the planner is told who

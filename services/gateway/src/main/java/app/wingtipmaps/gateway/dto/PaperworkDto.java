@@ -27,7 +27,7 @@ public record PaperworkDto(
                     example = "annual")
             String what,
 
-            @Schema(example = "Annual inspection") String title,
+            @Schema(example = "Annual Inspection") String title,
 
             @Schema(description = "The rule that asks for it, or an AD's number", example = "14 CFR 91.409(a)")
             @Nullable

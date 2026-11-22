@@ -43,7 +43,7 @@ const WHY: [(&str, &str, &str); 9] = [
     (
         // 91.211(a)(1)-(3), the three heights brief.rs's oxygen_item reads.
         "oxygen",
-        "In an airplane without a pressurised cabin, 14 CFR 91.211(a) asks for oxygen for the crew for any time past 30 minutes over 12,500 ft MSL, all the time over 14,000 ft, and for every occupant over 15,000 ft.",
+        "In an airplane without a pressurized cabin, 14 CFR 91.211(a) asks for oxygen for the crew for any time past 30 minutes over 12,500 ft MSL, all the time over 14,000 ft, and for every occupant over 15,000 ft.",
         "14 CFR 91.211(a)",
     ),
     (

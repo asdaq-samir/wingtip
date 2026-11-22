@@ -72,7 +72,7 @@ class AccountDeletionByEmailTest extends AccountTestBase {
     void thePageAsksForTheAddressWithoutSigningIn() throws Exception {
         mockMvc.perform(get("/delete-account"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Delete your Wingtip Maps account")))
+                .andExpect(content().string(containsString("Delete Your Wingtip Maps Account")))
                 .andExpect(content().string(containsString("name=\"email\"")));
     }
 

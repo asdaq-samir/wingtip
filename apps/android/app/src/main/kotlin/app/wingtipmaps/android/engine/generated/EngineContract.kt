@@ -2190,42 +2190,6 @@ object EngineContract {
     )
 
     @Serializable
-    data class CitationsAnswer(
-        val pieces: List<EngineContract.CitationsAnswerPiecesItem>,
-    )
-
-    @Serializable
-    data class CitationsAnswerPiecesItem(
-        val text: String,
-        val cite: EngineContract.CitationsAnswerPiecesItemCite? = null,
-    )
-
-    @Serializable
-    data class CitationsAnswerPiecesItemCite(
-        val kind: String,
-        /**
-         * The library's document: "cfr-14-91", "aim", "ac-61-65".
-         */
-        val doc: String,
-        /**
-         * The place in it: a CFR section ("91.155"), an AIM paragraph ("7-1-5"); null for a whole part or circular.
-         */
-        val at: String? = null,
-        /**
-         * A CFR section's paragraph as written, "(a)(1)".
-         */
-        val paragraph: String? = null,
-    )
-
-    @Serializable
-    data class CitationsInput(
-        /**
-         * The words as the app shows them: a finding's why, a rule's cite.
-         */
-        val text: String? = null,
-    )
-
-    @Serializable
     data class ClassBAtAltitudeInput(
         val bands: List<EngineContract.ClassBAtAltitudeInputBandsItem>,
         @SerialName("altitude_ft")
@@ -2797,8 +2761,16 @@ object EngineContract {
         val fields: List<EngineContract.CopilotField>,
         val rules: String? = null,
         val minimums: EngineContract.CopilotWatchInputMinimums? = null,
+        /**
+         * The fuel aboard, gallons: at takeoff where `started_s` is given (the engine takes the burn over the time since), else now.
+         */
         @SerialName("fuel_gal")
         val fuelGal: Double? = null,
+        /**
+         * When the flight began, s since 1970: with it the fuel aboard now is `fuel_gal` less `burn_gph` over the time from then to `now_s`, never below none (FAA-H-8083-25C ch. 16). Left out, `fuel_gal` is taken as the fuel aboard now.
+         */
+        @SerialName("started_s")
+        val startedS: Double? = null,
         @SerialName("burn_gph")
         val burnGph: Double? = null,
         @SerialName("tas_kt")
@@ -2903,11 +2875,6 @@ object EngineContract {
          */
         val next: String,
         /**
-         * YYYY-MM-DDTHH:MM:SSZ: the instant the next edition takes over, 0901Z on `next` (0000Z for the DOF).
-         */
-        @SerialName("next_at")
-        val nextAt: String,
-        /**
          * YYYY-MM-DD: the day the edition held counts from; null where unknown.
          */
         val effective: String? = null,
@@ -2915,11 +2882,6 @@ object EngineContract {
          * YYYY-MM-DD: the first day the edition held no longer counts; null where unknown.
          */
         val expires: String? = null,
-        /**
-         * YYYY-MM-DDTHH:MM:SSZ: the instant the edition held stops counting; null where unknown.
-         */
-        @SerialName("expires_at")
-        val expiresAt: String? = null,
         val state: String,
         /**
          * How many editions have come out since the one held; 0 unless expired.
@@ -2938,7 +2900,7 @@ object EngineContract {
          */
         val effective: String? = null,
         /**
-         * YYYY-MM-DD, the UTC day it is used on (the whole effective day counted as the new edition's, toward the safe side), or a UTC time, YYYY-MM-DDTHH:MM[:SS]Z, exact to 0901Z: what a host choosing what to fetch, draw or warn of asks with.
+         * YYYY-MM-DD: the UTC day it is used on.
          */
         val on: String,
     )
@@ -3926,6 +3888,13 @@ object EngineContract {
     )
 
     @Serializable
+    data class FieldNamesInput(
+        val ident: String,
+        @SerialName("icao_id")
+        val icaoId: String? = null,
+    )
+
+    @Serializable
     data class FieldsAlongAnswerItem(
         val ident: String,
         val name: String,
@@ -4372,7 +4341,7 @@ object EngineContract {
         @SerialName("visibility_sm")
         val visibilitySm: Double? = null,
         /**
-         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
          */
         val source: String? = null,
     )
@@ -4411,7 +4380,7 @@ object EngineContract {
         @SerialName("visibility_sm")
         val visibilitySm: Double? = null,
         /**
-         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
          */
         val source: String? = null,
         @SerialName("wind_dir_true_deg")
@@ -5610,10 +5579,6 @@ object EngineContract {
          */
         @SerialName("night_passengers")
         val nightPassengers: Boolean? = null,
-        /**
-         * Whether any of the flight is in 14 CFR 91.209(a)'s period for lighted position lights, sunset to sunrise (lights_on_the_way), which begins before 1.1's night: an open squawk deferred for day flight grounds such a flight. Left out or null, `night` stands for it.
-         */
-        val lights: Boolean? = null,
         @SerialName("fuel_margin_gal")
         val fuelMarginGal: Double? = null,
         /**
@@ -7324,26 +7289,6 @@ object EngineContract {
          * Its beacon's remarks as sent (BCN_LGT_SKED), whose sentence naming no light is the beacon's: "DUSK-DAWN."
          */
         val beacon: List<String>? = null,
-    )
-
-    @Serializable
-    data class LightsOnTheWayInput(
-        /**
-         * [lat, lon]
-         */
-        val start: List<Double>,
-        /**
-         * [lat, lon]
-         */
-        val end: List<Double>,
-        @SerialName("depart_s")
-        val departS: Double,
-        val minutes: Double,
-        /**
-         * In Alaska only, the reported visibility, statute miles; below 3 the lights are on whatever the sun (91.209(a)). Left out or null outside Alaska or where none is known.
-         */
-        @SerialName("alaska_visibility_sm")
-        val alaskaVisibilitySm: Double? = null,
     )
 
     @Serializable
@@ -11180,46 +11125,6 @@ object EngineContract {
         val lon: Double,
     )
 
-    @Serializable
-    data class RouteHeadwindAnswer(
-        /**
-         * The headwind on that leg's course, kt; negative a tailwind.
-         */
-        @SerialName("headwind_kt")
-        val headwindKt: Double,
-        val from: String,
-        val to: String,
-        @SerialName("wind_dir_true_deg")
-        val windDirTrueDeg: Double,
-        @SerialName("wind_speed_kt")
-        val windSpeedKt: Double,
-    )
-
-    @Serializable
-    data class RouteHeadwindInput(
-        /**
-         * The nav log's legs in order, as the planner gives them.
-         */
-        val legs: List<EngineContract.RouteHeadwindInputLegsItem>,
-    )
-
-    @Serializable
-    data class RouteHeadwindInputLegsItem(
-        val from: String? = null,
-        val to: String? = null,
-        @SerialName("true_course_deg")
-        val trueCourseDeg: Double? = null,
-        val wind: EngineContract.RouteHeadwindInputLegsItemWind? = null,
-    )
-
-    @Serializable
-    data class RouteHeadwindInputLegsItemWind(
-        @SerialName("wind_dir_true_deg")
-        val windDirTrueDeg: Double,
-        @SerialName("wind_speed_kt")
-        val windSpeedKt: Double,
-    )
-
     /**
      * A pilot's hold as the route's address writes it ("VPBNG/090/30:270:R:1M:2T"): legs by minutes or by nm, length by turns or by minutes, the other of each pair null.
      */
@@ -12899,38 +12804,6 @@ object EngineContract {
         val corridorNm: Double? = null,
         val start: Double,
         val end: Double? = null,
-    )
-
-    @Serializable
-    data class TafValidityAnswer(
-        val station: String,
-        /**
-         * When it was issued, Unix seconds; the time it was read where its header gives none.
-         */
-        val issued: Double,
-        /**
-         * The start of its valid period, Unix seconds.
-         */
-        @SerialName("valid_from")
-        val validFrom: Double,
-        /**
-         * The end of its valid period, Unix seconds.
-         */
-        @SerialName("valid_to")
-        val validTo: Double,
-        val state: String,
-    )
-
-    @Serializable
-    data class TafValidityInput(
-        /**
-         * The TAF as sent.
-         */
-        val taf: String,
-        /**
-         * Unix seconds, UTC: the engine has no clock.
-         */
-        val now: Double,
     )
 
     @Serializable

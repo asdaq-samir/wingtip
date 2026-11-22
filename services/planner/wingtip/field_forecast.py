@@ -14,6 +14,7 @@ the ceiling 14 CFR 1.1's). Nothing here works a figure out.
 from . import weather
 from .engine import ask as _ask
 from .geo import box_around
+from .geo_boxes import in_box
 
 #: How far round a field the TAF stations are handed to the engine, nm:
 #: past field_taf's 25 nm reach, so the engine, not this box, decides
@@ -24,12 +25,9 @@ _BOX_NM = 30.0
 def _near(stations: list, lat: float, lon: float) -> list:
     """The stations in a box round a point, for the engine to choose from:
     the national set is some seven hundred."""
-    south, west, north, east = box_around(lat, lon, _BOX_NM)
-    return [
-        s
-        for s in stations
-        if s.get("lat") is not None and s.get("lon") is not None and south <= s["lat"] <= north and west <= s["lon"] <= east
-    ]
+    # Read as its one or two halves either side of 180 (geo_boxes).
+    box = box_around(lat, lon, _BOX_NM)
+    return [s for s in stations if s.get("lat") is not None and s.get("lon") is not None and in_box(box, s["lat"], s["lon"])]
 
 
 def category_at(place: dict, at_unix: float, stations: list) -> dict | None:

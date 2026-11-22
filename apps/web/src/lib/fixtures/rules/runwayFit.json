@@ -1,0 +1,1014 @@
+{
+  "_note": "The runway checks' figures from the Cessna 172S POH's own tables and notes, SAFO 19001, the AIM and NASR's codes, never from the code. The POH tables are data/aircraft/c172.json's, written once under `shared`. Shape and checks as engine/facade/tests/common/cases.rs says; asked by engine/facade/tests/rule_cases.rs.",
+  "shared": {
+    "takeoff": {
+      "source": "Cessna 172S POH (1998), figure 5-5: short field, flaps 10°, paved, level and dry",
+      "pressure_altitudes_ft": [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000],
+      "temperatures_c": [0, 10, 20, 30, 40],
+      "weights_lb": [2550, 2400],
+      "tables": [
+        {
+          "ground_roll_ft": [
+            [860, 925, 995, 1070, 1150],
+            [940, 1010, 1090, 1170, 1260],
+            [1025, 1110, 1195, 1285, 1380],
+            [1125, 1215, 1310, 1410, 1515],
+            [1235, 1335, 1440, 1550, 1660],
+            [1355, 1465, 1585, 1705, 1825],
+            [1495, 1615, 1745, 1875, 2010],
+            [1645, 1785, 1920, 2065, 2215],
+            [1820, 1970, 2120, 2280, 2450]
+          ],
+          "total_50ft_ft": [
+            [1465, 1575, 1690, 1810, 1945],
+            [1600, 1720, 1850, 1990, 2135],
+            [1755, 1890, 2035, 2190, 2355],
+            [1925, 2080, 2240, 2420, 2605],
+            [2120, 2295, 2480, 2685, 2880],
+            [2345, 2545, 2755, 2975, 3205],
+            [2605, 2830, 3075, 3320, 3585],
+            [2910, 3170, 3440, 3730, 4045],
+            [3265, 3575, 3880, 4225, 4615]
+          ]
+        },
+        {
+          "ground_roll_ft": [
+            [745, 800, 860, 925, 995],
+            [810, 875, 940, 1010, 1085],
+            [885, 955, 1030, 1110, 1190],
+            [970, 1050, 1130, 1215, 1305],
+            [1065, 1150, 1240, 1335, 1430],
+            [1170, 1265, 1360, 1465, 1570],
+            [1285, 1390, 1500, 1610, 1725],
+            [1415, 1530, 1650, 1770, 1900],
+            [1560, 1690, 1815, 1950, 2095]
+          ],
+          "total_50ft_ft": [
+            [1275, 1370, 1470, 1570, 1685],
+            [1390, 1495, 1605, 1720, 1845],
+            [1520, 1635, 1760, 1890, 2030],
+            [1665, 1795, 1930, 2080, 2230],
+            [1830, 1975, 2130, 2295, 2455],
+            [2015, 2180, 2355, 2530, 2715],
+            [2230, 2410, 2610, 2805, 3015],
+            [2470, 2685, 2900, 3125, 3370],
+            [2755, 3000, 3240, 3500, 3790]
+          ]
+        }
+      ],
+      "grass_ground_roll_pct": 15,
+      "headwind_kt_per_10pct": 9,
+      "tailwind_kt_per_10pct": 2,
+      "tailwind_max_kt": 10,
+      "wind_source": "Cessna 172S POH (1998), notes to figures 5-5 and 5-11: decrease distances 10% for each 9 knots headwind; with tail winds up to 10 knots, increase distances by 10% for each 2 knots"
+    },
+    "landing": {
+      "source": "Cessna 172S POH (1998), figure 5-11: short field, flaps 30°, paved, level and dry",
+      "pressure_altitudes_ft": [0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000],
+      "temperatures_c": [0, 10, 20, 30, 40],
+      "weights_lb": [2550],
+      "tables": [
+        {
+          "ground_roll_ft": [
+            [545, 565, 585, 605, 625],
+            [565, 585, 605, 625, 650],
+            [585, 610, 630, 650, 670],
+            [610, 630, 655, 675, 695],
+            [630, 655, 675, 700, 725],
+            [655, 680, 705, 725, 750],
+            [680, 705, 730, 755, 780],
+            [705, 730, 760, 785, 810],
+            [735, 760, 790, 815, 840]
+          ],
+          "total_50ft_ft": [
+            [1290, 1320, 1350, 1380, 1415],
+            [1320, 1350, 1385, 1420, 1450],
+            [1355, 1385, 1420, 1455, 1490],
+            [1385, 1425, 1460, 1495, 1530],
+            [1425, 1460, 1495, 1535, 1570],
+            [1460, 1500, 1535, 1575, 1615],
+            [1500, 1540, 1580, 1620, 1660],
+            [1545, 1585, 1625, 1665, 1705],
+            [1585, 1630, 1670, 1715, 1755]
+          ]
+        }
+      ],
+      "grass_ground_roll_pct": 45,
+      "headwind_kt_per_10pct": 9,
+      "tailwind_kt_per_10pct": 2,
+      "tailwind_max_kt": 10,
+      "wind_source": "Cessna 172S POH (1998), notes to figures 5-5 and 5-11: decrease distances 10% for each 9 knots headwind; with tail winds up to 10 knots, increase distances by 10% for each 2 knots"
+    },
+    "c172": {
+      "takeoff": "$takeoff",
+      "landing": "$landing",
+      "crosswind": {
+        "demonstrated_kt": 15
+      }
+    }
+  },
+  "cases": [
+    {
+      "name": "Sea level, 10 C, 2,550 lb, still air: the table's own 925 and 1,575 ft",
+      "rule": "gonogo_end_distance",
+      "input": {
+        "table": "$takeoff",
+        "runway": {
+          "surface": "ASP",
+          "length_ft": null
+        },
+        "pressure_alt_ft": 0,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "headwind_kt": 0
+      },
+      "expect": [
+        {
+          "path": "ground_roll_ft",
+          "at_least": 924.99
+        },
+        {
+          "path": "ground_roll_ft",
+          "at_most": 930
+        },
+        {
+          "path": "total_ft",
+          "at_least": 1574.99
+        },
+        {
+          "path": "total_ft",
+          "at_most": 1580
+        }
+      ],
+      "source": "Cessna 172S POH (1998), figure 5-5, short field takeoff distance, flaps 10, paved, level and dry (the table as data/aircraft/c172.json keeps it)."
+    },
+    {
+      "name": "9 kt of headwind takes 10 per cent off",
+      "rule": "gonogo_end_distance",
+      "input": {
+        "table": "$takeoff",
+        "runway": {
+          "surface": "ASP",
+          "length_ft": null
+        },
+        "pressure_alt_ft": 0,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "headwind_kt": 9
+      },
+      "expect": [
+        {
+          "path": "ground_roll_ft",
+          "at_least": 832.49
+        },
+        {
+          "path": "ground_roll_ft",
+          "at_most": 837.5
+        },
+        {
+          "path": "total_ft",
+          "at_least": 1417.49
+        },
+        {
+          "path": "total_ft",
+          "at_most": 1422.5
+        }
+      ],
+      "source": "Cessna 172S POH (1998), figure 5-5, short field takeoff distance, flaps 10, paved, level and dry (the table as data/aircraft/c172.json keeps it), and its notes: \"Decrease distances 10% for each 9 knots headwind. For operation with tail winds up to 10 knots, increase distances by 10% for each 2 knots.\""
+    },
+    {
+      "name": "2 kt of tailwind adds 10 per cent",
+      "rule": "gonogo_end_distance",
+      "input": {
+        "table": "$takeoff",
+        "runway": {
+          "surface": "ASP",
+          "length_ft": null
+        },
+        "pressure_alt_ft": 0,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "headwind_kt": -2
+      },
+      "expect": [
+        {
+          "path": "ground_roll_ft",
+          "at_least": 1017.4900000000001
+        },
+        {
+          "path": "ground_roll_ft",
+          "at_most": 1022.5000000000001
+        },
+        {
+          "path": "total_ft",
+          "at_least": 1732.4900000000002
+        },
+        {
+          "path": "total_ft",
+          "at_most": 1737.5000000000002
+        }
+      ],
+      "source": "Cessna 172S POH (1998), figure 5-5, short field takeoff distance, flaps 10, paved, level and dry (the table as data/aircraft/c172.json keeps it), and its notes: \"Decrease distances 10% for each 9 knots headwind. For operation with tail winds up to 10 knots, increase distances by 10% for each 2 knots.\""
+    },
+    {
+      "name": "Between the rows and columns: 500 ft and 15 C, read straight between",
+      "rule": "gonogo_end_distance",
+      "input": {
+        "table": "$takeoff",
+        "runway": {
+          "surface": "ASP",
+          "length_ft": null
+        },
+        "pressure_alt_ft": 500,
+        "temp_c": 15,
+        "weight_lb": 2550,
+        "headwind_kt": 0
+      },
+      "expect": [
+        {
+          "path": "ground_roll_ft",
+          "at_least": 1004.99
+        },
+        {
+          "path": "ground_roll_ft",
+          "at_most": 1010.0
+        },
+        {
+          "path": "total_ft",
+          "at_least": 1708.74
+        },
+        {
+          "path": "total_ft",
+          "at_most": 1713.75
+        }
+      ],
+      "source": "Cessna 172S POH (1998), figure 5-5, short field takeoff distance, flaps 10, paved, level and dry (the table as data/aircraft/c172.json keeps it); FAA-H-8083-25C ch. 11, performance charts: a figure between a table's entries is interpolated."
+    },
+    {
+      "name": "Grass adds 15 per cent of the ground roll",
+      "rule": "gonogo_end_distance",
+      "input": {
+        "table": "$takeoff",
+        "runway": {
+          "surface": "TURF",
+          "length_ft": null
+        },
+        "pressure_alt_ft": 0,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "headwind_kt": 0
+      },
+      "expect": [
+        {
+          "path": "ground_roll_ft",
+          "at_least": 1063.74
+        },
+        {
+          "path": "ground_roll_ft",
+          "at_most": 1068.75
+        },
+        {
+          "path": "total_ft",
+          "at_least": 1713.74
+        },
+        {
+          "path": "total_ft",
+          "at_most": 1718.75
+        }
+      ],
+      "source": "Cessna 172S POH (1998), figure 5-5, short field takeoff distance, flaps 10, paved, level and dry (the table as data/aircraft/c172.json keeps it), and its note: \"For operation on dry, grass runway, increase distances by 15% of the 'ground roll' figure.\""
+    },
+    {
+      "name": "At 2,400 lb, the lighter table",
+      "rule": "gonogo_end_distance",
+      "input": {
+        "table": "$takeoff",
+        "runway": {
+          "surface": "ASP",
+          "length_ft": null
+        },
+        "pressure_alt_ft": 0,
+        "temp_c": 10,
+        "weight_lb": 2400,
+        "headwind_kt": 0
+      },
+      "expect": [
+        {
+          "path": "ground_roll_ft",
+          "at_least": 799.99
+        },
+        {
+          "path": "ground_roll_ft",
+          "at_most": 805
+        },
+        {
+          "path": "total_ft",
+          "at_least": 1369.99
+        },
+        {
+          "path": "total_ft",
+          "at_most": 1375
+        }
+      ],
+      "source": "Cessna 172S POH (1998), figure 5-5, short field takeoff distance, flaps 10, paved, level and dry (the table as data/aircraft/c172.json keeps it), its 2,400 lb table."
+    },
+    {
+      "name": "No weight known: the heaviest table, the longest distance",
+      "rule": "gonogo_end_distance",
+      "input": {
+        "table": "$takeoff",
+        "runway": {
+          "surface": "ASP",
+          "length_ft": null
+        },
+        "pressure_alt_ft": 0,
+        "temp_c": 10,
+        "weight_lb": null,
+        "headwind_kt": 0
+      },
+      "expect": [
+        {
+          "path": "total_ft",
+          "at_least": 1574.99
+        },
+        {
+          "path": "total_ft",
+          "at_most": 1580
+        }
+      ],
+      "source": "Cessna 172S POH (1998), figure 5-5, short field takeoff distance, flaps 10, paved, level and dry (the table as data/aircraft/c172.json keeps it); 14 CFR 91.103(b): with the weight not known, the safer figure."
+    },
+    {
+      "name": "Past the table's 8,000 ft: said to be beyond it",
+      "rule": "gonogo_end_distance",
+      "input": {
+        "table": "$takeoff",
+        "runway": {
+          "surface": "ASP",
+          "length_ft": null
+        },
+        "pressure_alt_ft": 9000,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "headwind_kt": 0
+      },
+      "expect": [
+        {
+          "path": "caveats",
+          "contains": "higher than the table"
+        },
+        {
+          "path": "total_ft",
+          "at_least": 3575
+        }
+      ],
+      "source": "Cessna 172S POH (1998), figure 5-5, short field takeoff distance, flaps 10, paved, level and dry (the table as data/aircraft/c172.json keeps it): the table stops at 8,000 ft; nothing past it is the POH's, so it is said, and never less than its last row (FAA-H-8083-25C ch. 11: a chart is valid only within its stated conditions)."
+    },
+    {
+      "name": "A runway shorter than the distance over 50 ft is over",
+      "rule": "gonogo_end_distance",
+      "input": {
+        "table": "$takeoff",
+        "runway": {
+          "surface": "ASP",
+          "length_ft": 1500
+        },
+        "pressure_alt_ft": 0,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "headwind_kt": 0
+      },
+      "expect": [
+        {
+          "path": "over",
+          "equals": true
+        }
+      ],
+      "source": "Cessna 172S POH (1998), figure 5-5, short field takeoff distance, flaps 10, paved, level and dry (the table as data/aircraft/c172.json keeps it): 1,575 ft over 50 ft against 1,500 ft of runway."
+    },
+    {
+      "name": "A tailwind past the POH's 10 kt is said",
+      "rule": "gonogo_end_distance",
+      "input": {
+        "table": "$takeoff",
+        "runway": {
+          "surface": "ASP",
+          "length_ft": null
+        },
+        "pressure_alt_ft": 0,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "headwind_kt": -12
+      },
+      "expect": [
+        {
+          "path": "caveats",
+          "contains": "tailwind"
+        }
+      ],
+      "source": "Cessna 172S POH (1998), figure 5-5, short field takeoff distance, flaps 10, paved, level and dry (the table as data/aircraft/c172.json keeps it), and its notes: \"Decrease distances 10% for each 9 knots headwind. For operation with tail winds up to 10 knots, increase distances by 10% for each 2 knots.\" Nothing is given past 10 knots."
+    },
+    {
+      "name": "Landing at sea level, 10 C: 565 and 1,320 ft",
+      "rule": "gonogo_end_distance",
+      "input": {
+        "table": "$landing",
+        "runway": {
+          "surface": "ASP",
+          "length_ft": null
+        },
+        "pressure_alt_ft": 0,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "headwind_kt": 0
+      },
+      "expect": [
+        {
+          "path": "ground_roll_ft",
+          "at_least": 564.99
+        },
+        {
+          "path": "ground_roll_ft",
+          "at_most": 570
+        },
+        {
+          "path": "total_ft",
+          "at_least": 1319.99
+        },
+        {
+          "path": "total_ft",
+          "at_most": 1325
+        }
+      ],
+      "source": "Cessna 172S POH (1998), figure 5-11, short field landing distance, flaps 30."
+    },
+    {
+      "name": "Landing on grass adds 45 per cent of the ground roll",
+      "rule": "gonogo_end_distance",
+      "input": {
+        "table": "$landing",
+        "runway": {
+          "surface": "TURF",
+          "length_ft": null
+        },
+        "pressure_alt_ft": 0,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "headwind_kt": 0
+      },
+      "expect": [
+        {
+          "path": "total_ft",
+          "at_least": 1574.24
+        },
+        {
+          "path": "total_ft",
+          "at_most": 1579.25
+        }
+      ],
+      "source": "Cessna 172S POH (1998), figure 5-11, short field landing distance, flaps 30, and its note: \"For operation on dry, grass runway, increase distances by 45% of the 'ground roll' figure.\""
+    },
+    {
+      "name": "360 at 12 gusting 20 across 27: 20 kt across, over the demonstrated 15",
+      "rule": "runway_end_fit",
+      "input": {
+        "aircraft": "$c172",
+        "runway": {
+          "length_ft": 5000,
+          "surface": "ASP",
+          "closed": false,
+          "runway_ends": []
+        },
+        "end": {
+          "ident": "27",
+          "heading_true_deg": 270
+        },
+        "wind": {
+          "dir_true_deg": 360,
+          "speed_kt": 12,
+          "gust_kt": 20
+        },
+        "elevation_ft": 0,
+        "altimeter_in_hg": 29.92,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "kind": "takeoff"
+      },
+      "expect": [
+        {
+          "path": "crosswind_kt",
+          "value": 20,
+          "tolerance": 0.01
+        },
+        {
+          "path": "crosswind_over",
+          "equals": true
+        }
+      ],
+      "source": "Cessna 172S POH (1998) section 4: maximum demonstrated crosswind velocity 15 knots. The gust's crosswind, straight across."
+    },
+    {
+      "name": "15 kt straight across: at the demonstrated, not over it",
+      "rule": "runway_end_fit",
+      "input": {
+        "aircraft": "$c172",
+        "runway": {
+          "length_ft": 5000,
+          "surface": "ASP",
+          "closed": false,
+          "runway_ends": []
+        },
+        "end": {
+          "ident": "27",
+          "heading_true_deg": 270
+        },
+        "wind": {
+          "dir_true_deg": 360,
+          "speed_kt": 15
+        },
+        "elevation_ft": 0,
+        "altimeter_in_hg": 29.92,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "kind": "takeoff"
+      },
+      "expect": [
+        {
+          "path": "crosswind_kt",
+          "value": 15,
+          "tolerance": 0.01
+        },
+        {
+          "path": "crosswind_over",
+          "equals": false
+        }
+      ],
+      "source": "Cessna 172S POH (1998) section 4: maximum demonstrated crosswind velocity 15 knots."
+    },
+    {
+      "name": "A variable wind may all be across",
+      "rule": "runway_end_fit",
+      "input": {
+        "aircraft": "$c172",
+        "runway": {
+          "length_ft": 5000,
+          "surface": "ASP",
+          "closed": false,
+          "runway_ends": []
+        },
+        "end": {
+          "ident": "27",
+          "heading_true_deg": 270
+        },
+        "wind": {
+          "dir_true_deg": null,
+          "speed_kt": 15,
+          "gust_kt": 25
+        },
+        "elevation_ft": 0,
+        "altimeter_in_hg": 29.92,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "kind": "takeoff"
+      },
+      "expect": [
+        {
+          "path": "crosswind_kt",
+          "value": 25,
+          "tolerance": 0.01
+        },
+        {
+          "path": "crosswind_over",
+          "equals": true
+        }
+      ],
+      "source": "Cessna 172S POH (1998) section 4: maximum demonstrated crosswind velocity 15 knots. AIM 7-1-28: VRB is a wind of no steady direction, so any of it, the gusts too, may blow straight across (the safer side)."
+    },
+    {
+      "name": "A runway a foot short of the distance over 50 ft is short",
+      "rule": "runway_end_fit",
+      "input": {
+        "aircraft": "$c172",
+        "runway": {
+          "length_ft": 1574,
+          "surface": "ASP",
+          "closed": false,
+          "runway_ends": []
+        },
+        "end": {
+          "ident": "27",
+          "heading_true_deg": 270
+        },
+        "wind": null,
+        "elevation_ft": 0,
+        "altimeter_in_hg": 29.92,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "kind": "takeoff"
+      },
+      "expect": [
+        {
+          "path": "needed_ft",
+          "at_least": 1574.99
+        },
+        {
+          "path": "needed_ft",
+          "at_most": 1580
+        },
+        {
+          "path": "short",
+          "equals": true
+        }
+      ],
+      "source": "Cessna 172S POH (1998), figure 5-5, short field takeoff distance, flaps 10, paved, level and dry (the table as data/aircraft/c172.json keeps it); 29.92 inHg at sea level is a pressure altitude of 0 (FAA-H-8083-25C Figure 11-22)."
+    },
+    {
+      "name": "Within SAFO 19001's 15 per cent: close",
+      "rule": "runway_end_fit",
+      "input": {
+        "aircraft": "$c172",
+        "runway": {
+          "length_ft": 1733,
+          "surface": "ASP",
+          "closed": false,
+          "runway_ends": []
+        },
+        "end": {
+          "ident": "27",
+          "heading_true_deg": 270
+        },
+        "wind": null,
+        "elevation_ft": 0,
+        "altimeter_in_hg": 29.92,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "kind": "takeoff"
+      },
+      "expect": [
+        {
+          "path": "short",
+          "equals": false
+        },
+        {
+          "path": "close",
+          "equals": true
+        }
+      ],
+      "source": "SAFO 19001 (2019), landing performance: a 15 per cent margin over the distance the manufacturer's data gives; 1.10 of the distance is inside 1.15."
+    },
+    {
+      "name": "Past the 15 per cent: neither short nor close",
+      "rule": "runway_end_fit",
+      "input": {
+        "aircraft": "$c172",
+        "runway": {
+          "length_ft": 1827,
+          "surface": "ASP",
+          "closed": false,
+          "runway_ends": []
+        },
+        "end": {
+          "ident": "27",
+          "heading_true_deg": 270
+        },
+        "wind": null,
+        "elevation_ft": 0,
+        "altimeter_in_hg": 29.92,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "kind": "takeoff"
+      },
+      "expect": [
+        {
+          "path": "short",
+          "equals": false
+        },
+        {
+          "path": "close",
+          "equals": false
+        }
+      ],
+      "source": "SAFO 19001 (2019), landing performance: a 15 per cent margin over the distance the manufacturer's data gives."
+    },
+    {
+      "name": "A landing has the runway past its displaced threshold",
+      "rule": "runway_end_fit",
+      "input": {
+        "aircraft": "$c172",
+        "runway": {
+          "length_ft": 3000,
+          "surface": "ASP",
+          "closed": false,
+          "runway_ends": [
+            {
+              "ident": "27",
+              "heading_true_deg": 270,
+              "displaced_threshold_ft": 600
+            }
+          ]
+        },
+        "end": {
+          "ident": "27",
+          "heading_true_deg": 270
+        },
+        "wind": null,
+        "elevation_ft": 0,
+        "altimeter_in_hg": 29.92,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "kind": "landing"
+      },
+      "expect": [
+        {
+          "path": "length_ft",
+          "value": 2400,
+          "tolerance": 0
+        }
+      ],
+      "source": "AIM 2-3-3: \"The portion of runway behind a displaced threshold is available for takeoffs in either direction and landings from the opposite direction.\""
+    },
+    {
+      "name": "A takeoff has all of it",
+      "rule": "runway_end_fit",
+      "input": {
+        "aircraft": "$c172",
+        "runway": {
+          "length_ft": 3000,
+          "surface": "ASP",
+          "closed": false,
+          "runway_ends": [
+            {
+              "ident": "27",
+              "heading_true_deg": 270,
+              "displaced_threshold_ft": 600
+            }
+          ]
+        },
+        "end": {
+          "ident": "27",
+          "heading_true_deg": 270
+        },
+        "wind": null,
+        "elevation_ft": 0,
+        "altimeter_in_hg": 29.92,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "kind": "takeoff"
+      },
+      "expect": [
+        {
+          "path": "length_ft",
+          "value": 3000,
+          "tolerance": 0
+        }
+      ],
+      "source": "AIM 2-3-3, as the landing case."
+    },
+    {
+      "name": "No elevation: the fit is not known, never read as fitting",
+      "rule": "runway_end_fit",
+      "input": {
+        "aircraft": "$c172",
+        "runway": {
+          "length_ft": 5000,
+          "surface": "ASP",
+          "closed": false,
+          "runway_ends": []
+        },
+        "end": {
+          "ident": "27",
+          "heading_true_deg": 270
+        },
+        "wind": null,
+        "elevation_ft": null,
+        "altimeter_in_hg": 29.92,
+        "temp_c": 10,
+        "weight_lb": 2550,
+        "kind": "takeoff"
+      },
+      "expect": [
+        {
+          "path": "needed_ft",
+          "equals": null
+        },
+        {
+          "path": "unknown",
+          "equals": true
+        },
+        {
+          "path": "short",
+          "equals": false
+        }
+      ],
+      "source": "14 CFR 91.103(b): runway lengths and takeoff and landing distance data; with no elevation there is no pressure altitude to read the table at."
+    },
+    {
+      "name": "The departure's check: a variable 12 gusting 22 may be 22 across, over the 15",
+      "rule": "gonogo_runway_checks",
+      "input": {
+        "aircraft": "$c172",
+        "fields": [
+          {
+            "ident": "C81",
+            "elevation_ft": 0
+          }
+        ],
+        "metars": {
+          "C81": {
+            "temp_c": 10,
+            "altimeter_in_hg": 29.92,
+            "wind_dir_true_deg": null,
+            "wind_speed_kt": 12,
+            "wind_gust_kt": 22
+          }
+        },
+        "airports": {
+          "C81": {
+            "runways": [
+              {
+                "length_ft": 5000,
+                "surface": "ASP",
+                "closed": false,
+                "runway_ends": [],
+                "wind": null
+              }
+            ]
+          }
+        },
+        "takeoff_lb": 2550,
+        "landing_lb": 2550
+      },
+      "expect": [
+        {
+          "path": "0.crosswind_kt",
+          "value": 22,
+          "tolerance": 0.01
+        },
+        {
+          "path": "0.crosswind_over",
+          "equals": true
+        },
+        {
+          "path": "0.pressure_alt_ft",
+          "value": 0,
+          "tolerance": 2
+        }
+      ],
+      "source": "Cessna 172S POH (1998) section 4: maximum demonstrated crosswind velocity 15 knots. AIM 7-1-28 VRB; FAA-H-8083-25C Figure 11-22, 29.92 inHg is the standard datum."
+    },
+    {
+      "name": "TURF is soft",
+      "rule": "gonogo_soft_surface",
+      "input": {
+        "surface": "TURF"
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": true
+        }
+      ],
+      "source": "NASR APT_RWY.csv SURFACE_TYPE_CODE: TURF, GRVL and DIRT unpaved; ASPH and CONC paved (the POH's grass correction is for an unpaved runway)."
+    },
+    {
+      "name": "GRVL is soft",
+      "rule": "gonogo_soft_surface",
+      "input": {
+        "surface": "GRVL"
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": true
+        }
+      ],
+      "source": "NASR APT_RWY.csv SURFACE_TYPE_CODE: TURF, GRVL and DIRT unpaved; ASPH and CONC paved (the POH's grass correction is for an unpaved runway)."
+    },
+    {
+      "name": "DIRT is soft",
+      "rule": "gonogo_soft_surface",
+      "input": {
+        "surface": "DIRT"
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": true
+        }
+      ],
+      "source": "NASR APT_RWY.csv SURFACE_TYPE_CODE: TURF, GRVL and DIRT unpaved; ASPH and CONC paved (the POH's grass correction is for an unpaved runway)."
+    },
+    {
+      "name": "ASPH is paved",
+      "rule": "gonogo_soft_surface",
+      "input": {
+        "surface": "ASPH"
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": false
+        }
+      ],
+      "source": "NASR APT_RWY.csv SURFACE_TYPE_CODE: TURF, GRVL and DIRT unpaved; ASPH and CONC paved (the POH's grass correction is for an unpaved runway)."
+    },
+    {
+      "name": "CONC is paved",
+      "rule": "gonogo_soft_surface",
+      "input": {
+        "surface": "CONC"
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": false
+        }
+      ],
+      "source": "NASR APT_RWY.csv SURFACE_TYPE_CODE: TURF, GRVL and DIRT unpaved; ASPH and CONC paved (the POH's grass correction is for an unpaved runway)."
+    },
+    {
+      "name": "ASPH is hard-surfaced",
+      "rule": "runway_hard_surface",
+      "input": {
+        "surface": "ASPH"
+      },
+      "expect": [
+        {
+          "path": "hard",
+          "equals": true
+        }
+      ],
+      "source": "FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports: \"hard-surfaced runways\"; NASR APT_RWY.csv SURFACE_TYPE_CODE, a runway of two surfaces hard only where both are."
+    },
+    {
+      "name": "CONC is hard-surfaced",
+      "rule": "runway_hard_surface",
+      "input": {
+        "surface": "CONC"
+      },
+      "expect": [
+        {
+          "path": "hard",
+          "equals": true
+        }
+      ],
+      "source": "FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports: \"hard-surfaced runways\"; NASR APT_RWY.csv SURFACE_TYPE_CODE, a runway of two surfaces hard only where both are."
+    },
+    {
+      "name": "ASPH-CONC is hard-surfaced",
+      "rule": "runway_hard_surface",
+      "input": {
+        "surface": "ASPH-CONC"
+      },
+      "expect": [
+        {
+          "path": "hard",
+          "equals": true
+        }
+      ],
+      "source": "FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports: \"hard-surfaced runways\"; NASR APT_RWY.csv SURFACE_TYPE_CODE, a runway of two surfaces hard only where both are."
+    },
+    {
+      "name": "ASPH-TURF is not hard-surfaced",
+      "rule": "runway_hard_surface",
+      "input": {
+        "surface": "ASPH-TURF"
+      },
+      "expect": [
+        {
+          "path": "hard",
+          "equals": false
+        }
+      ],
+      "source": "FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports: \"hard-surfaced runways\"; NASR APT_RWY.csv SURFACE_TYPE_CODE, a runway of two surfaces hard only where both are."
+    },
+    {
+      "name": "TURF is not hard-surfaced",
+      "rule": "runway_hard_surface",
+      "input": {
+        "surface": "TURF"
+      },
+      "expect": [
+        {
+          "path": "hard",
+          "equals": false
+        }
+      ],
+      "source": "FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports: \"hard-surfaced runways\"; NASR APT_RWY.csv SURFACE_TYPE_CODE, a runway of two surfaces hard only where both are."
+    },
+    {
+      "name": "GRVL is not hard-surfaced",
+      "rule": "runway_hard_surface",
+      "input": {
+        "surface": "GRVL"
+      },
+      "expect": [
+        {
+          "path": "hard",
+          "equals": false
+        }
+      ],
+      "source": "FAA Aeronautical Chart User's Guide, VFR Terms and Symbols, Airports: \"hard-surfaced runways\"; NASR APT_RWY.csv SURFACE_TYPE_CODE, a runway of two surfaces hard only where both are."
+    }
+  ]
+}

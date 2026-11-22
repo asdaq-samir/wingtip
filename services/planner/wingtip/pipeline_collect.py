@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from wingtip import airports, elevation, faa_data, geo, ml_features, osm, osm_resolvers
+from wingtip import airports, elevation, faa_data, geo, geo_boxes, ml_features, osm, osm_resolvers
 
 from wingtip.config import CANDIDATES_PATH, DATA_DIR, FEATURES_PATH, corridor_paths
 from .pipeline_shared import FEATURE_COLS_BASE, ROUTE_POSITION_COLS, _publish
@@ -44,7 +44,8 @@ def collect(dep_ident: str = "C81", dest_ident: str = "KDLH", out_path: Path | N
     route_end = (dest["lat"], dest["lon"])
 
     bbox_pad_nm = FALLBACK_HALF_WIDTH_NM + 2
-    bbox = geo.corridor_bbox(route_start, route_end, bbox_pad_nm)
+    # The short way round 180 (geo_boxes): each reader splits it there.
+    bbox = geo_boxes.corridor_box(route_start, route_end, bbox_pad_nm)
 
     raw = osm.query_overpass(bbox)
     raw_df = osm.parse_overpass_response(raw)

@@ -9,6 +9,7 @@ import pandas as pd
 
 from .faa_apt_base import _read_apt_base_cached
 from .single_flight import once
+from .engine import ask as engine
 
 
 # NASR's FREQ_USE for what a VFR pilot calls on, as the card's types
@@ -140,6 +141,7 @@ def _listed(table: tuple[dict, frozenset], ident: str) -> list[dict] | None:
     by_id, no_icao = table
     ident = ident.strip().upper()
     found = by_id.get(ident)
-    if not found and len(ident) == 4 and ident.startswith("K") and ident[1:] in no_icao:
-        found = by_id.get(ident[1:])
+    bare = engine("bare_field", ident=ident)
+    if not found and bare != ident and bare in no_icao:
+        found = by_id.get(bare)
     return found

@@ -12,12 +12,11 @@ from __future__ import annotations
 import time
 from datetime import datetime, timezone
 
-import numpy as np
 from shapely import STRtree
-from shapely.geometry import LineString, Point, box, shape
+from shapely.geometry import Point, box, shape
 from shapely.ops import nearest_points
 
-from . import utc, weather_store
+from . import geo_boxes, utc, weather_store
 from .engine import ask as engine
 from .geo import along_track_distance_nm, box_around, corridor_bbox, path_points, shape_distance_nm
 
@@ -144,6 +143,16 @@ def with_shapes(near=None, predicate: str | None = None) -> list[tuple[dict, obj
     return [(dict(record.data[i]), geometries[i]) for i in found if geometries[i] is not None and kept(record.data[i])]
 
 
+def with_shapes_in(bbox: tuple) -> list[tuple[dict, object]]:
+    """with_shapes over a (south, west, north, east) box, read as its one
+    or two halves either side of 180 (geo_boxes), each TFR once."""
+    found: dict = {}
+    for s, w, n, e in geo_boxes.split_box(bbox):
+        for tfr, geometry in with_shapes(box(w, s, e, n)):
+            found.setdefault(id(geometry), (tfr, geometry))
+    return list(found.values())
+
+
 def in_force(tfr: dict, start: datetime, end: datetime) -> bool:
     """Whether a TFR is in force at any time from `start` to `end` (UTC):
     one with no times is taken as in force (_when, the engine's)."""
@@ -159,18 +168,18 @@ def along_route(path: list, start: datetime, end: datetime, near_nm: float = NEA
     # points close enough that a straight edge between them on the flat
     # projection is the course (geo.shape_distance_nm).
     lats, lons = path_points(path, STEP_NM)
-    line = LineString(np.column_stack([lons, lats]))
+    # Across 180 the short way, the line cut there (geo_boxes: Adak to Shemya).
+    line = geo_boxes.line_across(zip(lats.tolist(), lons.tolist()))
     # A first cut by the route's box, padded by near_nm as a degree of
     # longitude is at its poleward edge, where it is shortest: never short.
-    south, west, north, east = corridor_bbox((lats.min(), lons.min()), (lats.max(), lons.max()), near_nm)
     now = datetime.now(timezone.utc)
     found = []
-    for tfr, geometry in with_shapes(box(west, south, east, north)):
+    for tfr, geometry in with_shapes_in(geo_boxes.box_over(lats, lons, near_nm)):
         g_west, g_south, g_east, g_north = geometry.bounds
         # The route within the TFR's own box, padded the same way: what
         # lies outside it is further than near_nm, and is not projected.
         reach = corridor_bbox((g_south, g_west), (g_north, g_east), near_nm)
-        nearby = line.intersection(box(reach[1], reach[0], reach[3], reach[2]))
+        nearby = line.intersection(geo_boxes.shape_of(reach))
         if nearby.is_empty:
             continue
         point = geometry.representative_point()
@@ -199,10 +208,9 @@ def near_point(lat: float, lon: float, start: datetime, end: datetime, near_nm: 
     field ({"lat", "lon"}), which the engine says how far and which way
     (tfr_read)."""
     point = Point(lon, lat)
-    south, west, north, east = box_around(lat, lon, near_nm)
     now = datetime.now(timezone.utc)
     found = []
-    for tfr, geometry in with_shapes(box(west, south, east, north)):
+    for tfr, geometry in with_shapes_in(box_around(lat, lon, near_nm)):
         if shape_distance_nm(point, geometry, (lat, lon)) <= near_nm and in_force(tfr, start, end):
             edge = nearest_points(geometry, point)[0]
             found.append(

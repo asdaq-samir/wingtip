@@ -34,15 +34,15 @@ enum ReadyFacts {
         }
     }
 
-    /// The briefing's key for a field: as typed, else with the K a
-    /// three-letter US identifier takes in ICAO form ("OSH" is "KOSH").
+    /// The briefing's key for a field: any name the engine's field_names
+    /// gives it, the K a three-letter US identifier takes in ICAO form
+    /// first ("OSH" is "KOSH", FAA JO 7350.9GG 4-1).
     static func station(_ ident: String, in briefing: Briefing) -> String? {
         candidates(ident).first { briefing.metars.additionalProperties.keys.contains($0) }
     }
 
     private static func candidates(_ ident: String) -> [String] {
-        let up = ident.uppercased()
-        return up.count == 3 && up.allSatisfy(\.isLetter) ? [up, "K" + up] : [up]
+        (try? Engine.fieldNames(ident: ident)) ?? [ident.uppercased()]
     }
 
     /// A chart cycle as the engine takes it, YYYY-MM-DD: the planner names

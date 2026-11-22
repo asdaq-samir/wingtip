@@ -20,7 +20,7 @@ from pathlib import Path
 import pandas as pd
 from cachetools import LRUCache
 
-from . import data_cycles, outside
+from . import data_cycles, geo_boxes, outside
 from .atomic import atomic_path
 
 # The FAA's site 403s a bare python-requests User-Agent.
@@ -266,10 +266,8 @@ def load_obstacles(dof_dat_path, bbox: tuple, min_agl_ft: float = 200) -> pd.Dat
     height back out of the dict, ten thousand rows at a time.
     """
     all_obstacles = _load_all_obstacles(dof_dat_path)
-    min_lat, min_lon, max_lat, max_lon = bbox
-    wanted = (
-        (all_obstacles["agl_ft"] >= min_agl_ft)
-        & all_obstacles["lat"].between(min_lat, max_lat)
-        & all_obstacles["lon"].between(min_lon, max_lon)
+    # The box read as its one or two halves either side of 180 (geo_boxes).
+    wanted = (all_obstacles["agl_ft"] >= min_agl_ft).to_numpy() & geo_boxes.in_box(
+        bbox, all_obstacles["lat"].to_numpy(), all_obstacles["lon"].to_numpy()
     )
     return all_obstacles[wanted].reset_index(drop=True)

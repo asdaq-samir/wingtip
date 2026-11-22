@@ -101,7 +101,7 @@ export function WeightBalanceSection({
               <NumberField
                 value={load.emptyWeightLb}
                 unit="lb"
-                label="Empty weight"
+                label="Empty Weight"
                 onChange={(n) => setLoad({ ...load, emptyWeightLb: n })}
                 testId="wb-empty-weight"
               />

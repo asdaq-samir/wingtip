@@ -1,0 +1,566 @@
+{
+  "_note": "Each traffic-pattern and landing-runway rule's boundaries, written down from AC 90-66C, 14 CFR 91.126 and the AIM, never from the code. Shape and checks as engine/facade/tests/common/cases.rs says; asked by engine/facade/tests/rule_cases.rs.",
+  "cases": [
+    {
+      "name": "Left traffic on 27, coming from the south: the pattern's side, on the 45 abeam midfield",
+      "rule": "pattern_entry",
+      "input": {
+        "end": {
+          "ident": "27",
+          "heading_true_deg": 270,
+          "traffic": "left"
+        },
+        "course_deg": 0
+      },
+      "expect": [
+        {
+          "path": "from",
+          "equals": "south"
+        },
+        {
+          "path": "pattern_side",
+          "equals": true
+        },
+        {
+          "path": "words",
+          "contains": "45°"
+        },
+        {
+          "path": "words",
+          "contains": "midfield"
+        }
+      ],
+      "source": "AC 90-66C (2023) 11.3, Traffic Pattern Entry: \"Entry to the downwind leg should be at a 45-degree angle abeam the midpoint of the runway to be used for landing.\" Left traffic landing west puts the downwind south of the runway (91.126(b)(1))."
+    },
+    {
+      "name": "Left traffic on 27, coming from the north: the other side",
+      "rule": "pattern_entry",
+      "input": {
+        "end": {
+          "ident": "27",
+          "heading_true_deg": 270,
+          "traffic": "left"
+        },
+        "course_deg": 180
+      },
+      "expect": [
+        {
+          "path": "from",
+          "equals": "north"
+        },
+        {
+          "path": "pattern_side",
+          "equals": false
+        },
+        {
+          "path": "words",
+          "contains": "midfield"
+        }
+      ],
+      "source": "AC 90-66C Appendix A-5: from the upwind (other) side, the preferred and the alternate midfield entries (FAA-H-8083-3C ch. 7)."
+    },
+    {
+      "name": "Leaving right traffic: straight out or a 45 to the right",
+      "rule": "pattern_exit",
+      "input": {
+        "traffic": "right"
+      },
+      "expect": [
+        {
+          "path": "",
+          "contains": "Straight out"
+        },
+        {
+          "path": "",
+          "contains": "45° right"
+        }
+      ],
+      "source": "AC 90-66C 11.8 and Appendix A's key, item 6: \"If departing the traffic pattern, continue straight out, or exit with a 45-degree turn (to the left when in a left-hand traffic pattern; to the right when in a right-hand traffic pattern) beyond the departure end of the runway, after reaching pattern altitude.\""
+    },
+    {
+      "name": "Leaving left traffic: a 45 to the left",
+      "rule": "pattern_exit",
+      "input": {
+        "traffic": "left"
+      },
+      "expect": [
+        {
+          "path": "",
+          "contains": "45° left"
+        }
+      ],
+      "source": "AC 90-66C 11.8 and Appendix A's key, item 6: \"If departing the traffic pattern, continue straight out, or exit with a 45-degree turn (to the left when in a left-hand traffic pattern; to the right when in a right-hand traffic pattern) beyond the departure end of the runway, after reaching pattern altitude.\""
+    },
+    {
+      "name": "Landing 09 in left traffic: five legs, the downwind north, the final to the threshold",
+      "rule": "traffic_pattern",
+      "input": {
+        "ident": "KTST",
+        "runway": {
+          "length_ft": 6076,
+          "runway_ends": [
+            {
+              "ident": "09",
+              "heading_true_deg": 90,
+              "traffic": "left",
+              "lat": 0,
+              "lon": 0
+            },
+            {
+              "ident": "27",
+              "heading_true_deg": 270,
+              "traffic": "right",
+              "lat": 0,
+              "lon": 0.016666666666666666
+            }
+          ]
+        },
+        "end_ident": "09",
+        "altitude_ft": 1800
+      },
+      "expect": [
+        {
+          "path": "legs",
+          "length": 5
+        },
+        {
+          "path": "legs.0.name",
+          "equals": "Upwind"
+        },
+        {
+          "path": "legs.2.name",
+          "equals": "Downwind"
+        },
+        {
+          "path": "legs.4.name",
+          "equals": "Final"
+        },
+        {
+          "path": "legs.2.from.lat",
+          "at_least": 0.0001
+        },
+        {
+          "path": "legs.4.to.lat",
+          "value": 0,
+          "tolerance": 1e-09
+        },
+        {
+          "path": "legs.4.to.lon",
+          "value": 0,
+          "tolerance": 1e-09
+        },
+        {
+          "path": "traffic",
+          "equals": "left"
+        },
+        {
+          "path": "kind",
+          "equals": "arrival"
+        },
+        {
+          "path": "altitude_ft",
+          "value": 1800,
+          "tolerance": 0
+        }
+      ],
+      "source": "AC 90-66C Appendix A, the traffic pattern's legs: upwind, crosswind, downwind, base and final, the final \"along the extended runway centerline from the base leg to the runway\"; 14 CFR 91.126(b)(1): left unless marked right."
+    },
+    {
+      "name": "Landing 27 in right traffic: the downwind north too",
+      "rule": "traffic_pattern",
+      "input": {
+        "ident": "KTST",
+        "runway": {
+          "length_ft": 6076,
+          "runway_ends": [
+            {
+              "ident": "09",
+              "heading_true_deg": 90,
+              "traffic": "left",
+              "lat": 0,
+              "lon": 0
+            },
+            {
+              "ident": "27",
+              "heading_true_deg": 270,
+              "traffic": "right",
+              "lat": 0,
+              "lon": 0.016666666666666666
+            }
+          ]
+        },
+        "end_ident": "27",
+        "altitude_ft": 1800
+      },
+      "expect": [
+        {
+          "path": "traffic",
+          "equals": "right"
+        },
+        {
+          "path": "legs.2.from.lat",
+          "at_least": 0.0001
+        }
+      ],
+      "source": "AC 90-66C Appendix A, the traffic pattern's legs: upwind, crosswind, downwind, base and final, the final \"along the extended runway centerline from the base leg to the runway\"; 14 CFR 91.126(b)(1): left unless marked right. Right traffic landing west turns right, to the north."
+    },
+    {
+      "name": "The 45 joins the downwind abeam midfield",
+      "rule": "traffic_pattern",
+      "input": {
+        "ident": "KTST",
+        "runway": {
+          "length_ft": 6076,
+          "runway_ends": [
+            {
+              "ident": "09",
+              "heading_true_deg": 90,
+              "traffic": "left",
+              "lat": 0,
+              "lon": 0
+            },
+            {
+              "ident": "27",
+              "heading_true_deg": 270,
+              "traffic": "right",
+              "lat": 0,
+              "lon": 0.016666666666666666
+            }
+          ]
+        },
+        "end_ident": "09",
+        "altitude_ft": 1800
+      },
+      "expect": [
+        {
+          "path": "entry.to.lon",
+          "value": 0.008333333333333333,
+          "tolerance": 0.0005
+        }
+      ],
+      "source": "AC 90-66C (2023) 11.3, Traffic Pattern Entry: \"Entry to the downwind leg should be at a 45-degree angle abeam the midpoint of the runway to be used for landing.\" Midfield of a runway from 0 to 1/60 degree of longitude is 1/120."
+    },
+    {
+      "name": "No threshold surveyed: no pattern drawn",
+      "rule": "traffic_pattern",
+      "input": {
+        "ident": "KTST",
+        "runway": {
+          "length_ft": 6076,
+          "runway_ends": [
+            {
+              "ident": "09",
+              "heading_true_deg": 90,
+              "traffic": "left",
+              "lat": null,
+              "lon": null
+            },
+            {
+              "ident": "27",
+              "heading_true_deg": 270,
+              "traffic": "right",
+              "lat": null,
+              "lon": null
+            }
+          ]
+        },
+        "end_ident": "09"
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": null
+        }
+      ],
+      "source": "NASR APT_RWY_END's threshold position: a pattern drawn without it would be drawn somewhere it is not."
+    },
+    {
+      "name": "Departing 09 toward the east: straight out",
+      "rule": "departure_pattern",
+      "input": {
+        "ident": "KTST",
+        "runway": {
+          "length_ft": 6076,
+          "runway_ends": [
+            {
+              "ident": "09",
+              "heading_true_deg": 90,
+              "traffic": "left",
+              "lat": 0,
+              "lon": 0
+            },
+            {
+              "ident": "27",
+              "heading_true_deg": 270,
+              "traffic": "right",
+              "lat": 0,
+              "lon": 0.016666666666666666
+            }
+          ]
+        },
+        "end_ident": "09",
+        "altitude_ft": 1800,
+        "toward": {
+          "lat": 0,
+          "lon": 2
+        }
+      },
+      "expect": [
+        {
+          "path": "kind",
+          "equals": "departure"
+        },
+        {
+          "path": "entry.name",
+          "equals": "Straight out"
+        }
+      ],
+      "source": "AC 90-66C 11.8 and Appendix A's key, item 6: \"If departing the traffic pattern, continue straight out, or exit with a 45-degree turn (to the left when in a left-hand traffic pattern; to the right when in a right-hand traffic pattern) beyond the departure end of the runway, after reaching pattern altitude.\""
+    },
+    {
+      "name": "Departing 09 toward the north in left traffic: the 45 to the left",
+      "rule": "departure_pattern",
+      "input": {
+        "ident": "KTST",
+        "runway": {
+          "length_ft": 6076,
+          "runway_ends": [
+            {
+              "ident": "09",
+              "heading_true_deg": 90,
+              "traffic": "left",
+              "lat": 0,
+              "lon": 0
+            },
+            {
+              "ident": "27",
+              "heading_true_deg": 270,
+              "traffic": "right",
+              "lat": 0,
+              "lon": 0.016666666666666666
+            }
+          ]
+        },
+        "end_ident": "09",
+        "altitude_ft": 1800,
+        "toward": {
+          "lat": 1,
+          "lon": 0.5
+        }
+      },
+      "expect": [
+        {
+          "path": "entry.name",
+          "equals": "45° departure"
+        }
+      ],
+      "source": "AC 90-66C 11.8 and Appendix A's key, item 6: \"If departing the traffic pattern, continue straight out, or exit with a 45-degree turn (to the left when in a left-hand traffic pattern; to the right when in a right-hand traffic pattern) beyond the departure end of the runway, after reaching pattern altitude.\""
+    },
+    {
+      "name": "UGN 5's arrival lands on its threshold",
+      "rule": "arrival_circuit",
+      "input": {
+        "runway": {
+          "runway_ends": [
+            {
+              "ident": "05",
+              "heading_true_deg": 49.0,
+              "traffic": "left",
+              "lat": 42.4176,
+              "lon": -87.8742
+            },
+            {
+              "ident": "23",
+              "heading_true_deg": 229.0,
+              "traffic": "right",
+              "lat": 42.4268,
+              "lon": -87.8593
+            }
+          ]
+        },
+        "end_ident": "5"
+      },
+      "expect": [
+        {
+          "path": "points",
+          "length": 5
+        },
+        {
+          "path": "points.4.0",
+          "value": 42.4176,
+          "tolerance": 1e-09
+        },
+        {
+          "path": "points.4.1",
+          "value": -87.8742,
+          "tolerance": 1e-09
+        }
+      ],
+      "source": "AC 90-66C Appendix A, the traffic pattern's legs: upwind, crosswind, downwind, base and final, the final \"along the extended runway centerline from the base leg to the runway\"; 14 CFR 91.126(b)(1): left unless marked right. NASR's \"05\" is runway 5 (AIM 2-3-3)."
+    },
+    {
+      "name": "UGN 5's departure toward a point ahead leaves straight out",
+      "rule": "departure_circuit",
+      "input": {
+        "runway": {
+          "runway_ends": [
+            {
+              "ident": "05",
+              "heading_true_deg": 49.0,
+              "traffic": "left",
+              "lat": 42.4176,
+              "lon": -87.8742
+            },
+            {
+              "ident": "23",
+              "heading_true_deg": 229.0,
+              "traffic": "right",
+              "lat": 42.4268,
+              "lon": -87.8593
+            }
+          ]
+        },
+        "end_ident": "5",
+        "toward": [42.74623, -87.33744]
+      },
+      "expect": [
+        {
+          "path": "exit_deg",
+          "value": 50.0847591170031,
+          "tolerance": 0.3
+        },
+        {
+          "path": "points.0.0",
+          "value": 42.4176,
+          "tolerance": 1e-09
+        }
+      ],
+      "source": "AC 90-66C 11.8 and Appendix A's key, item 6: \"If departing the traffic pattern, continue straight out, or exit with a 45-degree turn (to the left when in a left-hand traffic pattern; to the right when in a right-hand traffic pattern) beyond the departure end of the runway, after reaching pattern altitude.\"",
+      "method": "The runway's own bearing, threshold to threshold, worked on a sphere; the point ahead 30 nm along it."
+    },
+    {
+      "name": "UGN 5's departure toward a point 60 degrees left: the 45 to the left",
+      "rule": "departure_circuit",
+      "input": {
+        "runway": {
+          "runway_ends": [
+            {
+              "ident": "05",
+              "heading_true_deg": 49.0,
+              "traffic": "left",
+              "lat": 42.4176,
+              "lon": -87.8742
+            },
+            {
+              "ident": "23",
+              "heading_true_deg": 229.0,
+              "traffic": "right",
+              "lat": 42.4268,
+              "lon": -87.8593
+            }
+          ]
+        },
+        "end_ident": "5",
+        "toward": [42.91894, -87.97679]
+      },
+      "expect": [
+        {
+          "path": "exit_deg",
+          "value": 5.084759117003102,
+          "tolerance": 0.3
+        }
+      ],
+      "source": "AC 90-66C 11.8 and Appendix A's key, item 6: \"If departing the traffic pattern, continue straight out, or exit with a 45-degree turn (to the left when in a left-hand traffic pattern; to the right when in a right-hand traffic pattern) beyond the departure end of the runway, after reaching pattern altitude.\""
+    },
+    {
+      "name": "A straight-in approach to 9 lands on 9, a pick of 27 set aside",
+      "rule": "landing_runway",
+      "input": {
+        "approach": true,
+        "straight_in": "09",
+        "circling": false,
+        "picked": "27",
+        "by_pilot": true
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "9"
+        }
+      ],
+      "source": "AIM 5-4-20, Approach and Landing Minimums: a straight-in approach lands on the runway it is aligned with; circling minimums let the airplane circle to another; 14 CFR 91.175, the runway of intended landing."
+    },
+    {
+      "name": "With circling minimums the pilot's 27 stands",
+      "rule": "landing_runway",
+      "input": {
+        "approach": true,
+        "straight_in": "09",
+        "circling": true,
+        "picked": "27",
+        "by_pilot": true
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "27"
+        }
+      ],
+      "source": "AIM 5-4-20, Approach and Landing Minimums: a straight-in approach lands on the runway it is aligned with; circling minimums let the airplane circle to another; 14 CFR 91.175, the runway of intended landing."
+    },
+    {
+      "name": "A pick into the wind, not the pilot's, gives way to the approach's own",
+      "rule": "landing_runway",
+      "input": {
+        "approach": true,
+        "straight_in": "09",
+        "circling": true,
+        "picked": "27",
+        "by_pilot": false
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "9"
+        }
+      ],
+      "source": "AIM 5-4-20, Approach and Landing Minimums: a straight-in approach lands on the runway it is aligned with; circling minimums let the airplane circle to another; 14 CFR 91.175, the runway of intended landing."
+    },
+    {
+      "name": "The plate still coming is taken as no circling",
+      "rule": "landing_runway",
+      "input": {
+        "approach": true,
+        "straight_in": "09",
+        "circling": null,
+        "picked": "27",
+        "by_pilot": true
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "9"
+        }
+      ],
+      "source": "AIM 5-4-20, Approach and Landing Minimums: a straight-in approach lands on the runway it is aligned with; circling minimums let the airplane circle to another; 14 CFR 91.175, the runway of intended landing."
+    },
+    {
+      "name": "No approach: the pick stands",
+      "rule": "landing_runway",
+      "input": {
+        "approach": false,
+        "straight_in": null,
+        "circling": null,
+        "picked": "27",
+        "by_pilot": true
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "27"
+        }
+      ],
+      "source": "AIM 5-4-20, Approach and Landing Minimums: a straight-in approach lands on the runway it is aligned with; circling minimums let the airplane circle to another; 14 CFR 91.175, the runway of intended landing."
+    }
+  ]
+}

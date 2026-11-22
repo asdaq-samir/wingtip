@@ -2185,30 +2185,6 @@ enum EngineContract {
         }
     }
 
-    struct CitationsAnswer: Codable, Equatable, Sendable {
-        var pieces: [EngineContract.CitationsAnswerPiecesItem]
-    }
-
-    struct CitationsAnswerPiecesItem: Codable, Equatable, Sendable {
-        var text: String
-        var cite: EngineContract.CitationsAnswerPiecesItemCite?
-    }
-
-    struct CitationsAnswerPiecesItemCite: Codable, Equatable, Sendable {
-        var kind: String
-        /// The library's document: "cfr-14-91", "aim", "ac-61-65".
-        var doc: String
-        /// The place in it: a CFR section ("91.155"), an AIM paragraph ("7-1-5"); null for a whole part or circular.
-        var at: String?
-        /// A CFR section's paragraph as written, "(a)(1)".
-        var paragraph: String?
-    }
-
-    struct CitationsInput: Codable, Equatable, Sendable {
-        /// The words as the app shows them: a finding's why, a rule's cite.
-        var text: String?
-    }
-
     struct ClassBAtAltitudeInput: Codable, Equatable, Sendable {
         var bands: [EngineContract.ClassBAtAltitudeInputBandsItem]
         var altitudeFt: Double
@@ -2759,7 +2735,10 @@ enum EngineContract {
         var fields: [EngineContract.CopilotField]
         var rules: String?
         var minimums: EngineContract.CopilotWatchInputMinimums?
+        /// The fuel aboard, gallons: at takeoff where `started_s` is given (the engine takes the burn over the time since), else now.
         var fuelGal: Double?
+        /// When the flight began, s since 1970: with it the fuel aboard now is `fuel_gal` less `burn_gph` over the time from then to `now_s`, never below none (FAA-H-8083-25C ch. 16). Left out, `fuel_gal` is taken as the fuel aboard now.
+        var startedS: Double?
         var burnGph: Double?
         var tasKt: Double?
         /// The destination's ident. Sent among `fields` with its `status`, a closed one (NASR ARPT_STATUS not O) is said in a "closed" warning with the best alternative; not among them at all, it is still watched for, its weather and position unknown and `remaining_nm` the host's.
@@ -2780,6 +2759,7 @@ enum EngineContract {
             case rules
             case minimums
             case fuelGal = "fuel_gal"
+            case startedS = "started_s"
             case burnGph = "burn_gph"
             case tasKt = "tas_kt"
             case dest
@@ -2875,14 +2855,10 @@ enum EngineContract {
         var currentIdent: String?
         /// YYYY-MM-DD: the day the next edition takes its place.
         var next: String
-        /// YYYY-MM-DDTHH:MM:SSZ: the instant the next edition takes over, 0901Z on `next` (0000Z for the DOF).
-        var nextAt: String
         /// YYYY-MM-DD: the day the edition held counts from; null where unknown.
         var effective: String?
         /// YYYY-MM-DD: the first day the edition held no longer counts; null where unknown.
         var expires: String?
-        /// YYYY-MM-DDTHH:MM:SSZ: the instant the edition held stops counting; null where unknown.
-        var expiresAt: String?
         var state: String
         /// How many editions have come out since the one held; 0 unless expired.
         var behind: Int
@@ -2893,10 +2869,8 @@ enum EngineContract {
             case current
             case currentIdent = "current_ident"
             case next
-            case nextAt = "next_at"
             case effective
             case expires
-            case expiresAt = "expires_at"
             case state
             case behind
         }
@@ -2907,7 +2881,7 @@ enum EngineContract {
         var kind: String
         /// YYYY-MM-DD: the date the edition held is named by (its effective date; a DOF file's last day of changes). Missing or null where nothing says.
         var effective: String?
-        /// YYYY-MM-DD, the UTC day it is used on (the whole effective day counted as the new edition's, toward the safe side), or a UTC time, YYYY-MM-DDTHH:MM[:SS]Z, exact to 0901Z: what a host choosing what to fetch, draw or warn of asks with.
+        /// YYYY-MM-DD: the UTC day it is used on.
         var on: String
     }
 
@@ -3873,6 +3847,16 @@ enum EngineContract {
         var use: String?
     }
 
+    struct FieldNamesInput: Codable, Equatable, Sendable {
+        var ident: String
+        var icaoId: String?
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case icaoId = "icao_id"
+        }
+    }
+
     struct FieldsAlongAnswerItem: Codable, Equatable, Sendable {
         var ident: String
         var name: String
@@ -4303,7 +4287,7 @@ enum EngineContract {
         var ceilingFt: Double?
         var ceilingUnknown: Bool
         var visibilitySm: Double?
-        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
         var source: String?
 
         enum CodingKeys: String, CodingKey {
@@ -4345,7 +4329,7 @@ enum EngineContract {
         var ceilingFt: Double?
         var ceilingUnknown: Bool
         var visibilitySm: Double?
-        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
         var source: String?
         var windDirTrueDeg: Double?
         var windSpeedKt: Double?
@@ -5488,8 +5472,6 @@ enum EngineContract {
         var night: Bool?
         /// Whether any of the flight is in 14 CFR 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise (passenger_night_on_the_way), its own window rather than 1.1's night; left out or null, `night` stands for it.
         var nightPassengers: Bool?
-        /// Whether any of the flight is in 14 CFR 91.209(a)'s period for lighted position lights, sunset to sunrise (lights_on_the_way), which begins before 1.1's night: an open squawk deferred for day flight grounds such a flight. Left out or null, `night` stands for it.
-        var lights: Bool?
         var fuelMarginGal: Double?
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var ifr: Bool?
@@ -5510,7 +5492,6 @@ enum EngineContract {
             case hazards
             case night
             case nightPassengers = "night_passengers"
-            case lights
             case fuelMarginGal = "fuel_margin_gal"
             case ifr
             case vorCheck = "vor_check"
@@ -7174,25 +7155,6 @@ enum EngineContract {
         var lighting: [String]
         /// Its beacon's remarks as sent (BCN_LGT_SKED), whose sentence naming no light is the beacon's: "DUSK-DAWN."
         var beacon: [String]?
-    }
-
-    struct LightsOnTheWayInput: Codable, Equatable, Sendable {
-        /// [lat, lon]
-        var start: [Double]
-        /// [lat, lon]
-        var end: [Double]
-        var departS: Double
-        var minutes: Double
-        /// In Alaska only, the reported visibility, statute miles; below 3 the lights are on whatever the sun (91.209(a)). Left out or null outside Alaska or where none is known.
-        var alaskaVisibilitySm: Double?
-
-        enum CodingKeys: String, CodingKey {
-            case start
-            case end
-            case departS = "depart_s"
-            case minutes
-            case alaskaVisibilitySm = "alaska_visibility_sm"
-        }
     }
 
     struct LiveFeedRefreshAnswer: Codable, Equatable, Sendable {
@@ -10857,52 +10819,6 @@ enum EngineContract {
         var lon: Double
     }
 
-    struct RouteHeadwindAnswer: Codable, Equatable, Sendable {
-        /// The headwind on that leg's course, kt; negative a tailwind.
-        var headwindKt: Double
-        var from: String
-        var to: String
-        var windDirTrueDeg: Double
-        var windSpeedKt: Double
-
-        enum CodingKeys: String, CodingKey {
-            case headwindKt = "headwind_kt"
-            case from
-            case to
-            case windDirTrueDeg = "wind_dir_true_deg"
-            case windSpeedKt = "wind_speed_kt"
-        }
-    }
-
-    struct RouteHeadwindInput: Codable, Equatable, Sendable {
-        /// The nav log's legs in order, as the planner gives them.
-        var legs: [EngineContract.RouteHeadwindInputLegsItem]
-    }
-
-    struct RouteHeadwindInputLegsItem: Codable, Equatable, Sendable {
-        var from: String?
-        var to: String?
-        var trueCourseDeg: Double?
-        var wind: EngineContract.RouteHeadwindInputLegsItemWind?
-
-        enum CodingKeys: String, CodingKey {
-            case from
-            case to
-            case trueCourseDeg = "true_course_deg"
-            case wind
-        }
-    }
-
-    struct RouteHeadwindInputLegsItemWind: Codable, Equatable, Sendable {
-        var windDirTrueDeg: Double
-        var windSpeedKt: Double
-
-        enum CodingKeys: String, CodingKey {
-            case windDirTrueDeg = "wind_dir_true_deg"
-            case windSpeedKt = "wind_speed_kt"
-        }
-    }
-
     /// A pilot's hold as the route's address writes it ("VPBNG/090/30:270:R:1M:2T"): legs by minutes or by nm, length by turns or by minutes, the other of each pair null.
     struct RouteHold: Codable, Equatable, Sendable {
         /// The point held at: an airport, a fix, or the pilot's own point off one.
@@ -12571,32 +12487,6 @@ enum EngineContract {
             case start
             case end
         }
-    }
-
-    struct TafValidityAnswer: Codable, Equatable, Sendable {
-        var station: String
-        /// When it was issued, Unix seconds; the time it was read where its header gives none.
-        var issued: Double
-        /// The start of its valid period, Unix seconds.
-        var validFrom: Double
-        /// The end of its valid period, Unix seconds.
-        var validTo: Double
-        var state: String
-
-        enum CodingKeys: String, CodingKey {
-            case station
-            case issued
-            case validFrom = "valid_from"
-            case validTo = "valid_to"
-            case state
-        }
-    }
-
-    struct TafValidityInput: Codable, Equatable, Sendable {
-        /// The TAF as sent.
-        var taf: String
-        /// Unix seconds, UTC: the engine has no clock.
-        var now: Double
     }
 
     struct TafWindowAnswer: Codable, Equatable, Sendable {

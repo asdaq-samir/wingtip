@@ -35,7 +35,7 @@
       "additionalProperties": false
     },
     "ahead_frame": {
-      "description": "Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground.",
+      "description": "Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground. Near the antimeridian a box is read the short way round, so its west may be under -180 or its east over 180: the planner reads it as its two halves (wingtip.geo_boxes).",
       "type": "object",
       "properties": {
         "input": {
@@ -6169,6 +6169,14 @@
               }
             },
             "fuel_gal": {
+              "description": "The fuel aboard, gallons: at takeoff where `started_s` is given (the engine takes the burn over the time since), else now.",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "started_s": {
+              "description": "When the flight began, s since 1970: with it the fuel aboard now is `fuel_gal` less `burn_gph` over the time from then to `now_s`, never below none (FAA-H-8083-25C ch. 16). Left out, `fuel_gal` is taken as the fuel aboard now.",
               "type": [
                 "number",
                 "null"
@@ -9388,6 +9396,42 @@
       ],
       "additionalProperties": false
     },
+    "field_names": {
+      "description": "Every name a field may be filed under, in the order to try them: NASR's ICAO_ID where given, the K form of a three-letter ident (FAA JO 7350.9GG 4-1), the ident as asked and its FAA form.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FieldNamesInput",
+          "type": "object",
+          "properties": {
+            "ident": {
+              "type": "string"
+            },
+            "icao_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "ident"
+          ]
+        },
+        "answer": {
+          "title": "FieldNamesAnswer",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "field_site_type": {
       "description": "The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport. `airplane`: whether an airplane on wheels lands there, an airport (A), a gliderport (G) or an ultralight park (U), each a strip of ground; not a heliport, a balloonport or a seaplane base, whose runways are water. What every list of fields to land at is held to (nearest, a stop, a glide's); true with no code, the host's own list then deciding.",
       "type": "object",
@@ -10890,7 +10934,7 @@
                       "string",
                       "null"
                     ],
-                    "description": "Whose forecast it is: \"TAF KMSN\", \"TAF KMSN, 12 nm away\" or \"NWS Gridded LAMP, modelled for 1500Z\"."
+                    "description": "Whose forecast it is: \"TAF KMSN\", \"TAF KMSN, 12 nm away\" or \"NWS Gridded LAMP, modeled for 1500Z\"."
                   },
                   "wind_dir_true_deg": {
                     "type": [
@@ -11025,7 +11069,7 @@
                       "string",
                       "null"
                     ],
-                    "description": "Whose forecast it is: \"TAF KMSN\", \"TAF KMSN, 12 nm away\" or \"NWS Gridded LAMP, modelled for 1500Z\"."
+                    "description": "Whose forecast it is: \"TAF KMSN\", \"TAF KMSN, 12 nm away\" or \"NWS Gridded LAMP, modeled for 1500Z\"."
                   }
                 },
                 "required": [
@@ -29899,7 +29943,7 @@
       "additionalProperties": false
     },
     "terrain_way_frame": {
-      "description": "The way round high ground's frame: the grid's corner, cells and samples a cell's side the planner reads the ground at, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159, under Class A, 71.33), and the box the fields with fuel are wanted in.",
+      "description": "The way round high ground's frame: the grid's corner, cells and samples a cell's side the planner reads the ground at, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159, under Class A, 71.33), and the box the fields with fuel are wanted in. Across the antimeridian the end is read within 180 degrees of the start, so lon0 and the box may pass -180 or 180 (wingtip.terrain_detour reads them at their own longitudes).",
       "type": "object",
       "properties": {
         "input": {
@@ -32651,6 +32695,7 @@
     "field_hours",
     "field_mark_rank",
     "field_military",
+    "field_names",
     "field_site_type",
     "field_status",
     "field_taf",

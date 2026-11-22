@@ -5,7 +5,7 @@
 import functools
 
 import numpy as np
-from wingtip import airports, fuelstops, geo
+from wingtip import airports, fuelstops, geo, geo_boxes
 
 from .router_basics import load_route
 
@@ -14,8 +14,10 @@ def off_course_nm(start: tuple, end: tuple, lat: float, lon: float) -> float:
     """How far a point is off the straight course from start to end, nm:
     its least distance to the line, read every hundredth of the way."""
     t = np.linspace(0.0, 1.0, 101)
+    # The short way round 180 (geo_boxes): Adak to Shemya is not the world.
+    end_lon = geo_boxes.lon_near(end[1], start[1])
     lats = start[0] + (end[0] - start[0]) * t
-    lons = start[1] + (end[1] - start[1]) * t
+    lons = start[1] + (end_lon - start[1]) * t
     return float(np.min(geo.distance_nm(lats, lons, lat, lon)))
 
 

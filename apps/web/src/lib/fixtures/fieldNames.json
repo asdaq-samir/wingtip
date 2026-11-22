@@ -1,0 +1,18 @@
+{
+  "about": "The names a field may be filed under (the engine's field_names), in the order a lookup tries them. FAA JO 7350.9GG, paragraph 4-1: the location indicator for airports in the contiguous United States is the three-letter identifier preceded by K; Alaska's are PA, PF, PO or PP, Hawaii's PH, Puerto Rico's TJ, the Virgin Islands' TI, by ICAO Doc 7910's listing, not a rule (Juneau JNU is PAJN, Hilo ITO is PHTO, San Juan SJU is TJSJ), so only NASR APT_BASE.csv's ICAO_ID names those. An ident with a figure (C81) has no ICAO indicator. Read by engine/facade/tests/field_names.rs and the web's features/place/fieldNotams.test.ts.",
+  "cases": [
+    { "ident": "DLH", "icao_id": null, "names": ["KDLH", "DLH"] },
+    { "ident": "kosh", "icao_id": null, "names": ["KOSH", "OSH"] },
+    { "ident": "KOSH", "icao_id": null, "names": ["KOSH", "OSH"] },
+    { "ident": "C81", "icao_id": null, "names": ["C81"] },
+    { "ident": "1C5", "icao_id": null, "names": ["1C5"] },
+    { "ident": "KC81", "icao_id": null, "names": ["KC81", "C81"] },
+    { "ident": "JNU", "icao_id": null, "names": ["KJNU", "JNU"] },
+    { "ident": "JNU", "icao_id": "PAJN", "names": ["PAJN", "KJNU", "JNU"] },
+    { "ident": "ITO", "icao_id": "PHTO", "names": ["PHTO", "KITO", "ITO"] },
+    { "ident": "SJU", "icao_id": "TJSJ", "names": ["TJSJ", "KSJU", "SJU"] },
+    { "ident": "ENA", "icao_id": "PAEN", "names": ["PAEN", "KENA", "ENA"] },
+    { "ident": "PAEN", "icao_id": null, "names": ["PAEN"] },
+    { "ident": "STT", "icao_id": "TIST", "names": ["TIST", "KSTT", "STT"] }
+  ]
+}

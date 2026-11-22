@@ -1,0 +1,696 @@
+{
+  "_note": "The Go/No-Go rules' figures and boundaries, written down from the Aviation Weather Handbook, 14 CFR 91.103, 91.133 and 91.137-91.145, the AIM and the PHAK, never from the code. Shape and checks as engine/facade/tests/common/cases.rs says; asked by engine/facade/tests/rule_cases.rs.",
+  "cases": [
+    {
+      "name": "6,000 ft flown over a 5,000 ft freezing level in the moisture: icing possible",
+      "rule": "gonogo_icing",
+      "input": {
+        "selection": {
+          "freezing_level_ft": 5000,
+          "icing_possible": true
+        },
+        "flown_ft": [6000],
+        "pireps": [
+          {
+            "icing": "MOD"
+          },
+          {
+            "icing": "NEG"
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "altitude_ft",
+          "value": 6000,
+          "tolerance": 0
+        },
+        {
+          "path": "freezing_level_ft",
+          "value": 5000,
+          "tolerance": 0
+        },
+        {
+          "path": "reports",
+          "equals": 1
+        }
+      ],
+      "source": "FAA-H-8083-28B (Aviation Weather Handbook) ch. 20: structural icing needs visible moisture at a temperature at or below 0 C, so an altitude at or above the freezing level, in the moisture, may ice; one below it does not. A PIREP of NEG icing reports none (AIM 7-1-20)."
+    },
+    {
+      "name": "At the freezing level itself: icing possible",
+      "rule": "gonogo_icing",
+      "input": {
+        "selection": {
+          "freezing_level_ft": 5000,
+          "icing_possible": true
+        },
+        "flown_ft": [5000]
+      },
+      "expect": [
+        {
+          "path": "altitude_ft",
+          "value": 5000,
+          "tolerance": 0
+        }
+      ],
+      "source": "FAA-H-8083-28B (Aviation Weather Handbook) ch. 20: structural icing needs visible moisture at a temperature at or below 0 C, so an altitude at or above the freezing level, in the moisture, may ice; one below it does not."
+    },
+    {
+      "name": "Below the freezing level: none",
+      "rule": "gonogo_icing",
+      "input": {
+        "selection": {
+          "freezing_level_ft": 5000,
+          "icing_possible": true
+        },
+        "flown_ft": [4000]
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": null
+        }
+      ],
+      "source": "FAA-H-8083-28B (Aviation Weather Handbook) ch. 20: structural icing needs visible moisture at a temperature at or below 0 C, so an altitude at or above the freezing level, in the moisture, may ice; one below it does not."
+    },
+    {
+      "name": "No moisture forecast: none",
+      "rule": "gonogo_icing",
+      "input": {
+        "selection": {
+          "freezing_level_ft": 5000,
+          "icing_possible": false
+        },
+        "flown_ft": [6000]
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": null
+        }
+      ],
+      "source": "FAA-H-8083-28B (Aviation Weather Handbook) ch. 20: structural icing needs visible moisture at a temperature at or below 0 C, so an altitude at or above the freezing level, in the moisture, may ice; one below it does not."
+    },
+    {
+      "name": "Moisture but no freezing level: icing not checked",
+      "rule": "gonogo_icing_unchecked",
+      "input": {
+        "selection": {
+          "freezing_level_ft": null,
+          "icing_possible": true
+        },
+        "flown_ft": [8000]
+      },
+      "expect": [
+        {
+          "path": "",
+          "contains": "not checked"
+        }
+      ],
+      "source": "FAA-H-8083-28B (Aviation Weather Handbook) ch. 20: structural icing needs visible moisture at a temperature at or below 0 C, so an altitude at or above the freezing level, in the moisture, may ice; one below it does not. With no freezing level no altitude can be held to it, so it is said rather than taken as clear."
+    },
+    {
+      "name": "A freezing level known: checked (gonogo_icing)",
+      "rule": "gonogo_icing_unchecked",
+      "input": {
+        "selection": {
+          "freezing_level_ft": 6000,
+          "icing_possible": true
+        },
+        "flown_ft": [8000]
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": null
+        }
+      ],
+      "source": "FAA-H-8083-28B (Aviation Weather Handbook) ch. 20: structural icing needs visible moisture at a temperature at or below 0 C, so an altitude at or above the freezing level, in the moisture, may ice; one below it does not."
+    },
+    {
+      "name": "A TFR of 16:00 to 18:00Z, the flight there An hour before: before",
+      "rule": "gonogo_tfr_when",
+      "input": {
+        "at_us": 1759762800000000,
+        "effective_us": 1759766400000000,
+        "expires_us": 1759773600000000
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "before"
+        }
+      ],
+      "source": "14 CFR 91.137-91.145: a TFR binds from its effective to its expiry time; the rule widens that by its own margin, 30 minutes either side, so a flight near its edges is told of it (the safer side); one with no times is in force."
+    },
+    {
+      "name": "A TFR of 16:00 to 18:00Z, the flight there 31 minutes before: before",
+      "rule": "gonogo_tfr_when",
+      "input": {
+        "at_us": 1759764540000000,
+        "effective_us": 1759766400000000,
+        "expires_us": 1759773600000000
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "before"
+        }
+      ],
+      "source": "14 CFR 91.137-91.145: a TFR binds from its effective to its expiry time; the rule widens that by its own margin, 30 minutes either side, so a flight near its edges is told of it (the safer side); one with no times is in force."
+    },
+    {
+      "name": "A TFR of 16:00 to 18:00Z, the flight there 30 minutes before: in force",
+      "rule": "gonogo_tfr_when",
+      "input": {
+        "at_us": 1759764600000000,
+        "effective_us": 1759766400000000,
+        "expires_us": 1759773600000000
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "in-force"
+        }
+      ],
+      "source": "14 CFR 91.137-91.145: a TFR binds from its effective to its expiry time; the rule widens that by its own margin, 30 minutes either side, so a flight near its edges is told of it (the safer side); one with no times is in force."
+    },
+    {
+      "name": "A TFR of 16:00 to 18:00Z, the flight there 30 minutes after: in force",
+      "rule": "gonogo_tfr_when",
+      "input": {
+        "at_us": 1759775400000000,
+        "effective_us": 1759766400000000,
+        "expires_us": 1759773600000000
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "in-force"
+        }
+      ],
+      "source": "14 CFR 91.137-91.145: a TFR binds from its effective to its expiry time; the rule widens that by its own margin, 30 minutes either side, so a flight near its edges is told of it (the safer side); one with no times is in force."
+    },
+    {
+      "name": "A TFR of 16:00 to 18:00Z, the flight there 31 minutes after: after",
+      "rule": "gonogo_tfr_when",
+      "input": {
+        "at_us": 1759775460000000,
+        "effective_us": 1759766400000000,
+        "expires_us": 1759773600000000
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "after"
+        }
+      ],
+      "source": "14 CFR 91.137-91.145: a TFR binds from its effective to its expiry time; the rule widens that by its own margin, 30 minutes either side, so a flight near its edges is told of it (the safer side); one with no times is in force."
+    },
+    {
+      "name": "A TFR with no times is in force",
+      "rule": "gonogo_tfr_when",
+      "input": {
+        "at_us": 1759762800000000
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "in-force"
+        }
+      ],
+      "source": "14 CFR 91.137-91.145: a TFR binds from its effective to its expiry time; the rule widens that by its own margin, 30 minutes either side, so a flight near its edges is told of it (the safer side); one with no times is in force."
+    },
+    {
+      "name": "\"CONTINUOUS\" on a Tuesday at 1420Z: active",
+      "rule": "gonogo_sua_when",
+      "input": {
+        "times_of_use": "CONTINUOUS",
+        "utc": [2, 860]
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "active"
+        }
+      ],
+      "source": "FAA JO 7400.10, Special Use Airspace, each area's times of designation as published (\"CONTINUOUS\", a UTC range by days, \"INTERMITTENT BY NOTAM\", \"OTHER TIMES BY NOTAM\"); 14 CFR 91.133, a restricted area in use is not entered."
+    },
+    {
+      "name": "\"INTERMITTENT BY NOTAM 4 HOURS IN ADVANCE\" on a Tuesday at 1420Z: by-notam",
+      "rule": "gonogo_sua_when",
+      "input": {
+        "times_of_use": "INTERMITTENT BY NOTAM 4 HOURS IN ADVANCE",
+        "utc": [2, 860]
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "by-notam"
+        }
+      ],
+      "source": "FAA JO 7400.10, Special Use Airspace, each area's times of designation as published (\"CONTINUOUS\", a UTC range by days, \"INTERMITTENT BY NOTAM\", \"OTHER TIMES BY NOTAM\"); 14 CFR 91.133, a restricted area in use is not entered."
+    },
+    {
+      "name": "\"1400 - 2200Z, MON - FRI\" on a Tuesday at 1420Z: active",
+      "rule": "gonogo_sua_when",
+      "input": {
+        "times_of_use": "1400 - 2200Z, MON - FRI",
+        "utc": [2, 860]
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "active"
+        }
+      ],
+      "source": "FAA JO 7400.10, Special Use Airspace, each area's times of designation as published (\"CONTINUOUS\", a UTC range by days, \"INTERMITTENT BY NOTAM\", \"OTHER TIMES BY NOTAM\"); 14 CFR 91.133, a restricted area in use is not entered."
+    },
+    {
+      "name": "\"1500 - 2200Z, MON - FRI; OTHER TIMES BY NOTAM\" on a Tuesday at 1420Z: by-notam",
+      "rule": "gonogo_sua_when",
+      "input": {
+        "times_of_use": "1500 - 2200Z, MON - FRI; OTHER TIMES BY NOTAM",
+        "utc": [2, 860]
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "by-notam"
+        }
+      ],
+      "source": "FAA JO 7400.10, Special Use Airspace, each area's times of designation as published (\"CONTINUOUS\", a UTC range by days, \"INTERMITTENT BY NOTAM\", \"OTHER TIMES BY NOTAM\"); 14 CFR 91.133, a restricted area in use is not entered."
+    },
+    {
+      "name": "\"1400 - 2200Z, SAT - SUN\" on a Tuesday at 1420Z: not-scheduled",
+      "rule": "gonogo_sua_when",
+      "input": {
+        "times_of_use": "1400 - 2200Z, SAT - SUN",
+        "utc": [2, 860]
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "not-scheduled"
+        }
+      ],
+      "source": "FAA JO 7400.10, Special Use Airspace, each area's times of designation as published (\"CONTINUOUS\", a UTC range by days, \"INTERMITTENT BY NOTAM\", \"OTHER TIMES BY NOTAM\"); 14 CFR 91.133, a restricted area in use is not entered."
+    },
+    {
+      "name": "\"2200 - 0600Z\" on a Tuesday at 0200Z: active",
+      "rule": "gonogo_sua_when",
+      "input": {
+        "times_of_use": "2200 - 0600Z",
+        "utc": [2, 120]
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "active"
+        }
+      ],
+      "source": "FAA JO 7400.10, Special Use Airspace, each area's times of designation as published (\"CONTINUOUS\", a UTC range by days, \"INTERMITTENT BY NOTAM\", \"OTHER TIMES BY NOTAM\"); 14 CFR 91.133, a restricted area in use is not entered."
+    },
+    {
+      "name": "Local hours with no zone known are not guessed at",
+      "rule": "gonogo_sua_when",
+      "input": {
+        "times_of_use": "0800 - 1700, MON - FRI",
+        "utc": [2, 860]
+      },
+      "expect": [
+        {
+          "path": "",
+          "equals": "unknown"
+        }
+      ],
+      "source": "FAA JO 7400.10, Special Use Airspace, each area's times of designation as published (\"CONTINUOUS\", a UTC range by days, \"INTERMITTENT BY NOTAM\", \"OTHER TIMES BY NOTAM\"); 14 CFR 91.133, a restricted area in use is not entered. A local range needs the area's clock; unknown is the safer answer than a guess."
+    },
+    {
+      "name": "A 2,500 ft ceiling under the pilot's 3,000",
+      "rule": "gonogo_under_minimums",
+      "input": {
+        "minimums": {
+          "ceiling_ft": 3000
+        },
+        "landings": ["C81"],
+        "dest": "KDLH",
+        "metars": {
+          "C81": {
+            "ceiling_ft": 2500
+          }
+        },
+        "airports": {
+          "C81": {
+            "runways": []
+          }
+        },
+        "forecast": {
+          "stations": []
+        }
+      },
+      "expect": [
+        {
+          "path": "",
+          "length": 1
+        },
+        {
+          "path": "",
+          "contains": "2,500 ft"
+        }
+      ],
+      "source": "14 CFR 91.103: the pilot's own minimums are the pilot's; a figure under one is said, one at it is not (FAA-H-8083-2A, Risk Management Handbook, ch. 3, personal minimums)."
+    },
+    {
+      "name": "A ceiling at the pilot's 3,000 is not under it",
+      "rule": "gonogo_under_minimums",
+      "input": {
+        "minimums": {
+          "ceiling_ft": 3000
+        },
+        "landings": ["C81"],
+        "dest": "KDLH",
+        "metars": {
+          "C81": {
+            "ceiling_ft": 3000
+          }
+        },
+        "airports": {
+          "C81": {
+            "runways": []
+          }
+        },
+        "forecast": {
+          "stations": []
+        }
+      },
+      "expect": [
+        {
+          "path": "",
+          "length": 0
+        }
+      ],
+      "source": "14 CFR 91.103: the pilot's own minimums are the pilot's; a figure under one is said, one at it is not (FAA-H-8083-2A, Risk Management Handbook, ch. 3, personal minimums)."
+    },
+    {
+      "name": "4 sm under the pilot's 5",
+      "rule": "gonogo_under_minimums",
+      "input": {
+        "minimums": {
+          "visibility_sm": 5
+        },
+        "landings": ["C81"],
+        "dest": "KDLH",
+        "metars": {
+          "C81": {
+            "visibility_sm": 4
+          }
+        },
+        "airports": {
+          "C81": {
+            "runways": []
+          }
+        },
+        "forecast": {
+          "stations": []
+        }
+      },
+      "expect": [
+        {
+          "path": "",
+          "length": 1
+        }
+      ],
+      "source": "14 CFR 91.103: the pilot's own minimums are the pilot's; a figure under one is said, one at it is not (FAA-H-8083-2A, Risk Management Handbook, ch. 3, personal minimums)."
+    },
+    {
+      "name": "A variable 15 gusting 25 may all be crosswind, over the pilot's 15",
+      "rule": "gonogo_under_minimums",
+      "input": {
+        "minimums": {
+          "crosswind_kt": 15
+        },
+        "landings": ["C81"],
+        "dest": "KDLH",
+        "metars": {
+          "C81": {
+            "wind_speed_kt": 15,
+            "wind_gust_kt": 25
+          }
+        },
+        "airports": {
+          "C81": {
+            "runways": [
+              {
+                "closed": false,
+                "wind": null
+              }
+            ]
+          }
+        },
+        "forecast": {
+          "stations": []
+        }
+      },
+      "expect": [
+        {
+          "path": "",
+          "length": 1
+        },
+        {
+          "path": "",
+          "contains": "25 kt"
+        }
+      ],
+      "source": "14 CFR 91.103: the pilot's own minimums are the pilot's; a figure under one is said, one at it is not (FAA-H-8083-2A, Risk Management Handbook, ch. 3, personal minimums). AIM 7-1-28 VRB: no steady direction, so all of it may blow across."
+    },
+    {
+      "name": "25 nm along legs of 50 nm in 30 min and 100 nm in 50: 15 min",
+      "rule": "gonogo_pass_minutes",
+      "input": {
+        "legs": [
+          {
+            "distance_nm": 50,
+            "ete_min": 30
+          },
+          {
+            "distance_nm": 100,
+            "ete_min": 50
+          }
+        ],
+        "along_nm": 25
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 15,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "FAA-H-8083-25C ch. 16: time = distance / groundspeed, so a point part way along a leg is passed that share of the leg's time after its start."
+    },
+    {
+      "name": "100 nm along legs of 50 nm in 30 min and 100 nm in 50: 55 min",
+      "rule": "gonogo_pass_minutes",
+      "input": {
+        "legs": [
+          {
+            "distance_nm": 50,
+            "ete_min": 30
+          },
+          {
+            "distance_nm": 100,
+            "ete_min": 50
+          }
+        ],
+        "along_nm": 100
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 55,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "FAA-H-8083-25C ch. 16: time = distance / groundspeed, so a point part way along a leg is passed that share of the leg's time after its start."
+    },
+    {
+      "name": "150 nm along legs of 50 nm in 30 min and 100 nm in 50: 80 min",
+      "rule": "gonogo_pass_minutes",
+      "input": {
+        "legs": [
+          {
+            "distance_nm": 50,
+            "ete_min": 30
+          },
+          {
+            "distance_nm": 100,
+            "ete_min": 50
+          }
+        ],
+        "along_nm": 150
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 80,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "FAA-H-8083-25C ch. 16: time = distance / groundspeed, so a point part way along a leg is passed that share of the leg's time after its start."
+    },
+    {
+      "name": "400 nm along legs of 50 nm in 30 min and 100 nm in 50: 80 min",
+      "rule": "gonogo_pass_minutes",
+      "input": {
+        "legs": [
+          {
+            "distance_nm": 50,
+            "ete_min": 30
+          },
+          {
+            "distance_nm": 100,
+            "ete_min": 50
+          }
+        ],
+        "along_nm": 400
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 80,
+          "tolerance": 0.01
+        }
+      ],
+      "source": "FAA-H-8083-25C ch. 16: time = distance / groundspeed, so a point part way along a leg is passed that share of the leg's time after its start. Past the end, the arrival."
+    },
+    {
+      "name": "Adverse conditions: the crossed TFR and the Convective SIGMET stop, then the CWA; the AIRMET one more",
+      "rule": "gonogo_adverse_rows",
+      "input": {
+        "advisories": [
+          {
+            "source": "AIRMET",
+            "name": "AIRMET",
+            "when": "during",
+            "enter": null,
+            "valid_to": null,
+            "issued": null,
+            "from_nm": 10,
+            "legs": [0],
+            "crosses": true,
+            "urgent": false
+          },
+          {
+            "source": "TFR",
+            "name": "TFR",
+            "when": "during",
+            "enter": null,
+            "valid_to": null,
+            "issued": null,
+            "from_nm": 50,
+            "legs": [0],
+            "crosses": true,
+            "urgent": false
+          },
+          {
+            "source": "CWA",
+            "name": "CWA",
+            "when": "during",
+            "enter": null,
+            "valid_to": null,
+            "issued": null,
+            "from_nm": 5,
+            "legs": [0],
+            "crosses": true,
+            "urgent": false
+          },
+          {
+            "source": "PIREP",
+            "name": "PIREP",
+            "when": "during",
+            "enter": null,
+            "valid_to": null,
+            "issued": null,
+            "from_nm": 2,
+            "legs": [0],
+            "crosses": true,
+            "urgent": false
+          },
+          {
+            "source": "SIGMET",
+            "name": "SIGMET",
+            "when": "before",
+            "enter": null,
+            "valid_to": null,
+            "issued": null,
+            "from_nm": 1,
+            "legs": [0],
+            "crosses": true,
+            "urgent": false
+          },
+          {
+            "source": "Convective SIGMET",
+            "name": "Convective SIGMET",
+            "when": "during",
+            "enter": null,
+            "valid_to": null,
+            "issued": null,
+            "from_nm": 30,
+            "legs": [0],
+            "crosses": true,
+            "urgent": false
+          },
+          {
+            "source": "TFR",
+            "name": "TFR",
+            "when": "during",
+            "enter": null,
+            "valid_to": null,
+            "issued": null,
+            "from_nm": 3,
+            "legs": [0],
+            "crosses": false,
+            "urgent": false
+          }
+        ]
+      },
+      "expect": [
+        {
+          "path": "rows",
+          "length": 3
+        },
+        {
+          "path": "rows.0.source",
+          "equals": "TFR"
+        },
+        {
+          "path": "rows.0.finding",
+          "equals": "stop"
+        },
+        {
+          "path": "rows.1.source",
+          "equals": "Convective SIGMET"
+        },
+        {
+          "path": "rows.1.finding",
+          "equals": "stop"
+        },
+        {
+          "path": "rows.2.source",
+          "equals": "CWA"
+        },
+        {
+          "path": "rows.2.finding",
+          "equals": "caution"
+        },
+        {
+          "path": "more",
+          "equals": 1
+        }
+      ],
+      "source": "AIM 7-1-5(b)(1): a standard briefing gives first the adverse conditions, \"significant meteorological and/or aeronautical information that might influence the pilot to alter or cancel the proposed flight\": a TFR the route crosses (14 CFR 91.137-91.145) and a Convective SIGMET or SIGMET (AIM 7-1-6) before a CWA, an urgent PIREP (UUA, AIM 7-1-18) or an AIRMET. A routine PIREP, a TFR only near the route and a SIGMET over before the flight are not adverse conditions on it."
+    }
+  ]
+}

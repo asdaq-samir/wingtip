@@ -32,11 +32,12 @@ from pathlib import Path
 import shapefile
 from cachetools import LRUCache, TTLCache
 from shapely import STRtree, points as shapely_points
-from shapely.geometry import LineString, Point, shape as shapely_shape
+from shapely.geometry import Point, shape as shapely_shape
 
 from .airspace_file import CONTROLLED_CLASSES as CONTROLLED_CLASSES, _ALL_AIRSPACE_LOCK, _text as _text
 from .airspace_file import _load_all_controlled_airspace as _load_all_controlled_airspace
 from .airspace_file import ensure_class_airspace_shapefile as ensure_class_airspace_shapefile
+from . import geo_boxes
 from .engine import ask as engine
 
 # Class E surface areas (E2) and their extensions (E3, E4): controlled
@@ -91,11 +92,9 @@ def load_controlled_airspace(shp_path, bbox: tuple) -> list:
     Callers must treat the result as read-only, since it's filtered
     from the same cached list every other bbox query shares.
     """
-    min_lat, min_lon, max_lat, max_lon = bbox
+    # The box read as its one or two halves either side of 180 (geo_boxes).
     return [
-        p
-        for p in _load_all_controlled_airspace(shp_path)
-        if not (p["bbox"][3] < min_lat or p["bbox"][1] > max_lat or p["bbox"][2] < min_lon or p["bbox"][0] > max_lon)
+        p for p in _load_all_controlled_airspace(shp_path) if geo_boxes.meets(bbox, p["bbox"][1], p["bbox"][0], p["bbox"][3], p["bbox"][2])
     ]
 
 
@@ -193,14 +192,13 @@ def detour_waypoints(route_start: tuple, route_end: tuple, shp_path, below_ft: f
     here. The route's own surface areas aside (own_class_b). Each as
     {"ident", "kind", "added_nm"}."""
     from . import fixes
-    from .geo import corridor_bbox
 
     key = (tuple(route_start), tuple(route_end), below_ft)
     with _DETOURS_LOCK:
         if key in _DETOURS:
             return _DETOURS[key]
     start_point, end_point = Point(route_start[1], route_start[0]), Point(route_end[1], route_end[0])
-    polygons = load_controlled_airspace(shp_path, corridor_bbox(route_start, route_end, buffer_nm=30.0))
+    polygons = load_controlled_airspace(shp_path, geo_boxes.corridor_box(route_start, route_end, buffer_nm=30.0))
     shelves = _shelves(polygons, own_class_b(polygons, start_point, end_point))
     if not shelves:
         return []
@@ -229,10 +227,8 @@ def class_b_entered(route_start: tuple, route_end: tuple, shp_path, altitude_ft:
     than its own fields' (own_class_b), which a flight in or out of them
     enters anyway: the engine's (class_b_entered, 14 CFR 91.131), on the
     shelves read here."""
-    from .geo import corridor_bbox
-
     start_point, end_point = Point(route_start[1], route_start[0]), Point(route_end[1], route_end[0])
-    polygons = load_controlled_airspace(shp_path, corridor_bbox(route_start, route_end, buffer_nm=2.0))
+    polygons = load_controlled_airspace(shp_path, geo_boxes.corridor_box(route_start, route_end, buffer_nm=2.0))
     shelves = _shelves(polygons, own_class_b(polygons, start_point, end_point))
     return bool(shelves) and engine(
         "class_b_entered", start=list(route_start), end=list(route_end), altitude_ft=altitude_ft, shelves=shelves
@@ -259,13 +255,12 @@ def airspace_transits(route_start: tuple, route_end: tuple, shp_path, fixes: lis
     An airport's own surface area is included: you are going to talk to
     that tower whether or not it constrains the route.
     """
-    from .geo import along_track_distance_nm, corridor_bbox
+    from .geo import along_track_distance_nm
 
     path = list(fixes) if fixes and len(fixes) >= 2 else [route_start, route_end]
-    boxes = [corridor_bbox(a, b, buffer_nm=2.0) for a, b in zip(path, path[1:])]
-    bbox = (min(b[0] for b in boxes), min(b[1] for b in boxes), max(b[2] for b in boxes), max(b[3] for b in boxes))
-    polygons = load_controlled_airspace(shp_path, bbox)
-    route_line = LineString([(lon, lat) for lat, lon in path])
+    # The short way round 180, the line cut there (geo_boxes: Adak to Shemya).
+    polygons = load_controlled_airspace(shp_path, geo_boxes.path_box(path, buffer_nm=2.0))
+    route_line = geo_boxes.line_across(path)
 
     transits = []
     # The polygons the route crosses, through their index (STRtree), rather

@@ -97,4 +97,12 @@ struct WatchAirport: Codable, Equatable, Sendable, Identifiable {
     var flightCategory: String?
 
     var id: String { ident }
+
+    /// The bearing as the wrist writes it: three figures, whole degrees,
+    /// north as 360, never 000 (FAA Order JO 7110.65, 2-4-17), as the
+    /// phone's Format.heading does; the watch has no Format of its own.
+    var bearingWords: String {
+        let whole = (Int(bearingDeg.rounded()) % 360 + 360) % 360
+        return String(format: "%03d°", whole == 0 ? 360 : whole)
+    }
 }

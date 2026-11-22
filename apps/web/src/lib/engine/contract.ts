@@ -324,6 +324,7 @@ export type EndorsementsInForceAnswer = [string, number][];
 export type FaaIdsAnswer = string[];
 export type FaaWordsAnswer = string | string[];
 export type FieldHoursAnswer = FieldHour[];
+export type FieldNamesAnswer = string[];
 export type FiledDofAnswer = string | null;
 export type FiledDurationAnswer = string;
 export type FiledEnduranceAnswer = number | null;
@@ -695,7 +696,6 @@ export type LeastCrosswindAnswer = {
   crosswind_kt: number;
 } | null;
 export type LegalCruisingAltitudesAnswer = number[];
-export type LightsOnTheWayAnswer = boolean;
 export type LogbookCsvWriteAnswer = string;
 /**
  * The page's "total this page" row, where it has one.
@@ -904,16 +904,6 @@ export type RegionOfAnswer = string;
 export type RegionsAheadAnswer = string[];
 export type RegisteredProfileAnswer = string | null;
 export type ReserveMinAnswer = number;
-export type RouteHeadwindAnswer = {
-  /**
-   * The headwind on that leg's course, kt; negative a tailwind.
-   */
-  headwind_kt: number;
-  from: string;
-  to: string;
-  wind_dir_true_deg: number;
-  wind_speed_kt: number;
-} | null;
 export type RoutePositionAnswer = {
   along_nm: number;
   total_nm: number;
@@ -993,22 +983,6 @@ export type SpecialUseTabAnswer = {
 export type SquawkMeaningAnswer = "hijack" | "lost radio" | "emergency" | null;
 export type SuaAltitudesAnswer = string;
 export type SunDownAnswer = boolean;
-export type TafValidityAnswer = {
-  station: string;
-  /**
-   * When it was issued, Unix seconds; the time it was read where its header gives none.
-   */
-  issued: number;
-  /**
-   * The start of its valid period, Unix seconds.
-   */
-  valid_from: number;
-  /**
-   * The end of its valid period, Unix seconds.
-   */
-  valid_to: number;
-  state: "not_yet" | "in_force" | "expired";
-} | null;
 export type TemperatureAtAnswer = number | null;
 export type TfrDetailReadAnswer = {
   effective: string | null;
@@ -1147,7 +1121,7 @@ export interface EngineContract {
     answer: AcsCodesAnswer;
   };
   /**
-   * Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground.
+   * Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground. Near the antimeridian a box is read the short way round, so its west may be under -180 or its east over 180: the planner reads it as its two halves (wingtip.geo_boxes).
    */
   ahead_frame: {
     input: AheadFrameInput;
@@ -1588,13 +1562,6 @@ export interface EngineContract {
     answer: CheckpointsSelectAnswer;
   };
   /**
-   * A text cut into pieces, each cited rule among them named by the document that holds it and the place in it, for the documents library to open (docs/decisions/0057-documents-library.md): 14 CFR and 49 CFR sections with their paragraphs ("14 CFR 91.211(a)(1)", "49 CFR 830.5", a list after one, a bare section after a title or with its paragraph, never a bare figure such as 121.5), 14 CFR's parts ("Part 135"), AIM paragraphs ("AIM 7-1-5") and advisory circulars ("AC 61-65K", named without the edition's letter). A document is cfr-<title>-<part>, aim or ac-<number>; the pieces' texts joined are the text.
-   */
-  citations: {
-    input: CitationsInput;
-    answer: CitationsAnswer;
-  };
-  /**
    * Which Class B band along a route's profile holds an altitude (14 CFR 91.131(a)(1): an ATC clearance before entering Class B): the index of the first band of class B whose floor is at or under altitude_ft and whose ceiling is at or over it, both ft MSL as the FAA's Class Airspace shapefile publishes them; null where none does. A band with no ceiling given holds every altitude from its floor up, so a clearance is said to be needed rather than not (Class B tops run from 7,000 ft at KMSY to 12,500 ft at KDEN, so no one figure stands in for it).
    */
   class_b_at_altitude: {
@@ -1707,7 +1674,7 @@ export interface EngineContract {
     answer: CtafOfAnswer;
   };
   /**
-   * Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page. An AIRAC or charting edition takes over at 0901Z on its date ("Effective 0901 UTC", the Federal Register's airspace and procedure amendments), the DOF at 0000Z on its release day: asked with a UTC time the answer is exact to the minute.
+   * Whether an FAA data set's edition is in force on a day, by its cycle: AIRAC's 28 days (NASR, CIFP, d-TPP), the 56-day charting cycle (sectional, terminal area and IFR enroute charts, the Chart Supplement) or the Digital Obstacle File's 56-day releases, from the FAA's 28 and 56 Day Product Schedule and its DOF page.
    */
   data_cycle: {
     input: DataCycleInput;
@@ -1964,6 +1931,13 @@ export interface EngineContract {
   field_military: {
     input: FieldMilitaryInput;
     answer: FieldMilitaryAnswer;
+  };
+  /**
+   * Every name a field may be filed under, in the order to try them: NASR's ICAO_ID where given, the K form of a three-letter ident (FAA JO 7350.9GG 4-1), the ident as asked and its FAA form.
+   */
+  field_names: {
+    input: FieldNamesInput;
+    answer: FieldNamesAnswer;
   };
   /**
    * The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport. `airplane`: whether an airplane on wheels lands there, an airport (A), a gliderport (G) or an ultralight park (U), each a strip of ground; not a heliport, a balloonport or a seaplane base, whose runways are water. What every list of fields to land at is held to (nearest, a stop, a glide's); true with no code, the host's own list then deciding.
@@ -2694,13 +2668,6 @@ export interface EngineContract {
     answer: LightingReadAnswer;
   };
   /**
-   * Whether any of a flight from `start` to `end` of `minutes`, leaving at `depart_s`, falls in 14 CFR 91.209(a)'s period for lighted position lights, "from sunset to sunrise" (the sun's upper limb on the horizon, as sun_down), judged every half hour along the straight line as night_on_the_way judges the night. Not 1.1's night: twenty minutes after sunset the lights are needed though it is not yet night for 91.151 or 91.205(c). In Alaska the rule's period is the sun more than six degrees down or a prominent unlighted object not seen from 3 statute miles: sunset to sunrise is read there too, erring toward the lights, and `alaska_visibility_sm`, the reported visibility below 3 statute miles, puts the lights on all the way.
-   */
-  lights_on_the_way: {
-    input: LightsOnTheWayInput;
-    answer: LightsOnTheWayAnswer;
-  };
-  /**
    * How long an answer from one of the FAA's SWIM feeds (the planner's /api/live/*) is fresh and how often a screen showing it asks again: a runway's RVR each minute, as it is updated (AIM 7-1-13), the ITWS alerts and special activity airspace's SFDPS status as often (the app's choice), the Command Center's programs every five minutes, and the D-ATIS and a flight's tower departures fresh for five minutes and not polled (the app's choice).
    */
   live_feed_refresh: {
@@ -3380,13 +3347,6 @@ export interface EngineContract {
     answer: RouteAdizAnswer;
   };
   /**
-   * The route's strongest headwind: of the nav log's legs, the one whose wind aloft blows most against its true course, its headwind the wind's component along that course (the wind triangle, FAA-H-8083-25C ch. 16; the winds aloft forecast's direction is true, FAA-H-8083-28B 27.6), to a tenth of a knot, a tailwind negative, so with tailwinds all the way it is the least of them. The first such leg where two tie; a leg with no wind or no course is passed over; null where no leg has both. The Brief's glance shows it as the route's wind aloft.
-   */
-  route_headwind: {
-    input?: RouteHeadwindInput;
-    answer?: RouteHeadwindAnswer;
-  };
-  /**
    * Which of a route's points and legs lie outside the United States, each leg checked every 2 nm along its geodesic, and the Brief's one line for them. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).
    */
   route_jurisdiction: {
@@ -3639,13 +3599,6 @@ export interface EngineContract {
     answer: SurfaceHoursAnswer;
   };
   /**
-   * A TAF's own times and whether it speaks for now: its station, when it was issued and its valid period, as its header gives them, and its state, not yet before the period, in force during it and expired at its end (FAA-H-8083-28B 27.4.1, a TAF is a forecast for its valid period; the same rule as weather_in_force's for a TAF). The airport card says it under the hours, so a TAF kept from before the signal was lost is never read as today's forecast (14 CFR 91.103). Null where the words are not a TAF.
-   */
-  taf_validity: {
-    input: TafValidityInput;
-    answer: TafValidityAnswer;
-  };
-  /**
    * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).
    */
   taf_window: {
@@ -3674,7 +3627,7 @@ export interface EngineContract {
     answer: TerrainViewBandsAnswer;
   };
   /**
-   * The way round high ground's frame: the grid's corner, cells and samples a cell's side the planner reads the ground at, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159, under Class A, 71.33), and the box the fields with fuel are wanted in.
+   * The way round high ground's frame: the grid's corner, cells and samples a cell's side the planner reads the ground at, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159, under Class A, 71.33), and the box the fields with fuel are wanted in. Across the antimeridian the end is read within 180 degrees of the start, so lon0 and the box may pass -180 or 180 (wingtip.terrain_detour reads them at their own longitudes).
    */
   terrain_way_frame: {
     input: TerrainWayFrameInput;
@@ -5602,33 +5555,6 @@ export interface CheckpointsSelectInput {
   min_score?: number | null;
   length_nm?: number | null;
 }
-export interface CitationsInput {
-  /**
-   * The words as the app shows them: a finding's why, a rule's cite.
-   */
-  text?: string | null;
-}
-export interface CitationsAnswer {
-  pieces: {
-    text: string;
-    cite: null | Citation;
-  }[];
-}
-export interface Citation {
-  kind: "cfr" | "aim" | "ac";
-  /**
-   * The library's document: "cfr-14-91", "aim", "ac-61-65".
-   */
-  doc: string;
-  /**
-   * The place in it: a CFR section ("91.155"), an AIM paragraph ("7-1-5"); null for a whole part or circular.
-   */
-  at: string | null;
-  /**
-   * A CFR section's paragraph as written, "(a)(1)".
-   */
-  paragraph: string | null;
-}
 export interface ClassBAtAltitudeInput {
   bands: {
     class: string;
@@ -5940,7 +5866,14 @@ export interface CopilotWatchInput {
   fields: CopilotField[];
   rules?: "VFR" | "IFR" | null;
   minimums?: CopilotMinimums;
+  /**
+   * The fuel aboard, gallons: at takeoff where `started_s` is given (the engine takes the burn over the time since), else now.
+   */
   fuel_gal?: number | null;
+  /**
+   * When the flight began, s since 1970: with it the fuel aboard now is `fuel_gal` less `burn_gph` over the time from then to `now_s`, never below none (FAA-H-8083-25C ch. 16). Left out, `fuel_gal` is taken as the fuel aboard now.
+   */
+  started_s?: number | null;
   burn_gph?: number | null;
   tas_kt?: number | null;
   /**
@@ -6116,7 +6049,7 @@ export interface DataCycleInput {
    */
   effective?: string | null;
   /**
-   * YYYY-MM-DD, the UTC day it is used on (the whole effective day counted as the new edition's, toward the safe side), or a UTC time, YYYY-MM-DDTHH:MM[:SS]Z, exact to 0901Z: what a host choosing what to fetch, draw or warn of asks with.
+   * YYYY-MM-DD: the UTC day it is used on.
    */
   on: string;
 }
@@ -6139,10 +6072,6 @@ export interface DataCycleAnswer {
    */
   next: string;
   /**
-   * YYYY-MM-DDTHH:MM:SSZ: the instant the next edition takes over, 0901Z on `next` (0000Z for the DOF).
-   */
-  next_at: string;
-  /**
    * YYYY-MM-DD: the day the edition held counts from; null where unknown.
    */
   effective: string | null;
@@ -6150,10 +6079,6 @@ export interface DataCycleAnswer {
    * YYYY-MM-DD: the first day the edition held no longer counts; null where unknown.
    */
   expires: string | null;
-  /**
-   * YYYY-MM-DDTHH:MM:SSZ: the instant the edition held stops counting; null where unknown.
-   */
-  expires_at: string | null;
   state: "in_force" | "expired" | "not_yet" | "unknown";
   /**
    * How many editions have come out since the one held; 0 unless expired.
@@ -6357,10 +6282,6 @@ export interface GonogoRiskInput {
    * Whether any of the flight is in 14 CFR 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise (passenger_night_on_the_way), its own window rather than 1.1's night; left out or null, `night` stands for it.
    */
   night_passengers?: boolean | null;
-  /**
-   * Whether any of the flight is in 14 CFR 91.209(a)'s period for lighted position lights, sunset to sunrise (lights_on_the_way), which begins before 1.1's night: an open squawk deferred for day flight grounds such a flight. Left out or null, `night` stands for it.
-   */
-  lights?: boolean | null;
   fuel_margin_gal?: number | null;
   /**
    * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
@@ -7143,6 +7064,10 @@ export interface FieldMilitaryAnswer {
    */
   military: "military" | "joint" | null;
 }
+export interface FieldNamesInput {
+  ident: string;
+  icao_id?: string | null;
+}
 export interface FieldSiteTypeInput {
   /**
    * NASR APT_BASE's SITE_TYPE_CODE (A, B, C, G, H, U); null where NASR has no record.
@@ -7514,7 +7439,7 @@ export interface ForecastRunAnswer {
     ceiling_unknown: boolean;
     visibility_sm: number | null;
     /**
-     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
      */
     source: string | null;
     wind_dir_true_deg: number | null;
@@ -7549,7 +7474,7 @@ export interface ForecastRunAnswer {
     ceiling_unknown: boolean;
     visibility_sm: number | null;
     /**
-     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
      */
     source: string | null;
   }[];
@@ -9295,28 +9220,6 @@ export interface LightingNote {
    */
   words: string;
   as_written: string;
-}
-export interface LightsOnTheWayInput {
-  /**
-   * [lat, lon]
-   *
-   * @minItems 2
-   * @maxItems 2
-   */
-  start: [number, number];
-  /**
-   * [lat, lon]
-   *
-   * @minItems 2
-   * @maxItems 2
-   */
-  end: [number, number];
-  depart_s: number;
-  minutes: number;
-  /**
-   * In Alaska only, the reported visibility, statute miles; below 3 the lights are on whatever the sun (91.209(a)). Left out or null outside Alaska or where none is known.
-   */
-  alaska_visibility_sm?: number | null;
 }
 export interface LiveFeedRefreshInput {
   feed: "rvr" | "itws" | "saa" | "flow" | "atis" | "departures";
@@ -12195,20 +12098,6 @@ export interface RouteAdizAnswer {
     cite: string;
   } | null;
 }
-export interface RouteHeadwindInput {
-  /**
-   * The nav log's legs in order, as the planner gives them.
-   */
-  legs: {
-    from?: string | null;
-    to?: string | null;
-    true_course_deg?: number | null;
-    wind?: {
-      wind_dir_true_deg: number;
-      wind_speed_kt: number;
-    } | null;
-  }[];
-}
 export interface RouteJurisdictionInput {
   /**
    * The route's points in order, as the nav log's rows: a leg from each to the next.
@@ -13295,16 +13184,6 @@ export interface SurfaceHoursAnswer {
     at: number;
     next_day: boolean;
   } | null;
-}
-export interface TafValidityInput {
-  /**
-   * The TAF as sent.
-   */
-  taf: string;
-  /**
-   * Unix seconds, UTC: the engine has no clock.
-   */
-  now: number;
 }
 export interface TafWindowInput {
   fcsts: TafPeriod[];

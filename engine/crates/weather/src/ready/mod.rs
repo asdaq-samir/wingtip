@@ -155,7 +155,7 @@ fn chart_item(charts: Option<&Value>, today: i64) -> R<Option<Item>> {
     let Some(charts) = charts else { return Ok(None) };
     let size = num(Some(charts), "download_mb").map(|mb| format!(", {} MB", mb.round().max(1.0) as i64)).unwrap_or_default();
     if flag(Some(charts), "can_keep") == Some(false) {
-        let line = "Charts can't be kept offline here".to_owned();
+        let line = "Charts cannot be kept offline here".to_owned();
         return Ok(Some(item("charts", false, line, "They need a connection in the air".into(), CYCLE_SOURCE, None)));
     }
     if !flag(Some(charts), "kept").unwrap_or(false) {
