@@ -35,6 +35,7 @@ import app.wingtipmaps.android.dryrun.DryRun
 import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.logbook.AutoLogbookHost
 import app.wingtipmaps.android.map.MapPick
+import app.wingtipmaps.android.plates.MapWithPlate
 import app.wingtipmaps.android.ready.ReadyToFlyHost
 import app.wingtipmaps.android.route.RouteHome
 import app.wingtipmaps.android.route.RouteToolbar
@@ -198,7 +199,8 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     // The map's buttons' taps, each a card on the sheet (MapActions).
     val actions = rememberMapActions(pages)
     val mapView: @Composable (Dp, Boolean) -> Unit = { covered, buttonsOnSheet ->
-        MapPane(plan, ownShip, covered = covered, onPick = onPick, actions = actions, buttonsOnSheet = buttonsOnSheet)
+        // At expanded width, a plate put beside the map (PlateBeside).
+        MapWithPlate { MapPane(plan, ownShip, covered = covered, onPick = onPick, actions = actions, buttonsOnSheet = buttonsOnSheet) }
     }
     if (stripLayout) {
         StripLayout(
