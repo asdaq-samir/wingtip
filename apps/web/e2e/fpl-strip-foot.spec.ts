@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { grabberTo, settle, slow } from "./helpers";
+import { grabberTo, settle, slow, typeRoute } from "./helpers";
 import { pickAirplane } from "./startState";
 
 test.use({ viewport: { width: 393, height: 852 }, hasTouch: true, isMobile: true });
@@ -34,9 +34,16 @@ test("a long route scrolled at full: the figures stay at the sheet's foot, no ro
     await scroller.evaluate((el, y) => el.scrollTo(0, y), Math.round(room * at));
     await page.waitForTimeout(400);
     const box = (await strip.boundingBox())!;
-    // On the foot's edge, over the bar's room at most: never half way up.
-    expect(box.y + box.height, `strip's bottom at scroll ${at}`).toBeGreaterThan(foot.y + foot.height - 140);
-    expect(box.y + box.height).toBeLessThanOrEqual(foot.y + foot.height + 1);
+    // Held on the foot's top (within its own 4-point foot room), just over the tab bar at the sheet's very
+    // foot (the owner, 2026-11-22: "the Apple way at the bottom and figures
+    // should pin at the bottom of the plan"): never half way up, never
+    // under the bar.
+    // At the page's end the strip sits in its place under the route's
+    // last row, a little over the foot's top: never under the bar, never half way up.
+    expect(box.y + box.height, `strip's bottom at scroll ${at}`).toBeLessThanOrEqual(foot.y + 6);
+    expect(box.y + box.height, `strip's bottom at scroll ${at}`).toBeGreaterThan(foot.y - 40);
+    const bar = (await page.getByTestId("fpl-actions").boundingBox())!;
+    expect(bar.y, "the bar under the figures").toBeGreaterThanOrEqual(box.y + box.height - 1);
     // And no list row drawn below it.
     const below = await scroller.evaluate((el, edge) => {
       return [...el.querySelectorAll("[data-pin-foot] ~ *, [data-pill-row] > *")].filter(
@@ -49,4 +56,150 @@ test("a long route scrolled at full: the figures stay at the sheet's foot, no ro
     }, box.y + box.height);
     expect(below).toBe(0);
   }
+});
+
+test("the tab bar is at the sheet's foot, the figures over it, and they slide under it to be the pill", async ({ page }) => {
+  // The owner, 2026-11-22: "figures should pin at the bottom of the plan
+  // and the slide under the tabs to pin to the pill as the card becomes a pill".
+  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+  await page.goto("/app/plan?dep=C81&dest=KATW&stops=KUGN,KENW,BAE,OSH,KMKE,KRAC,KJVL,KMSN,KDLL");
+  await settle(page);
+  await grabberTo(page, "half");
+  const strip = page.locator("[data-pin-foot]").first();
+  await expect(strip.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(90_000) });
+  const bar = page.getByTestId("fpl-actions");
+  const [s, b] = [(await strip.boundingBox())!, (await bar.boundingBox())!];
+  // The bar at the very foot, the figures wholly over it, in sight.
+  expect(b.y + b.height).toBeGreaterThan(page.viewportSize()!.height - 60);
+  expect(s.y + s.height).toBeLessThanOrEqual(b.y + 1);
+  expect(await strip.getByTestId("navlog-ete").evaluate((el) => getComputedStyle(el).opacity)).toBe("1");
+  // One thin line at half (the owner, 2026-11-22: "make the figures strip very thin").
+  expect(s.height, "thin at half").toBeLessThanOrEqual(32);
+  // Each name in sight on the thin strip, short (the owner, 2026-11-22: "Show the labels even for thin strip").
+  for (const name of await strip.locator("dt").all()) await expect(name).toBeVisible();
+  const names = (await strip.locator("dt").allInnerTexts()).join(" ");
+  for (const short of ["Dist", "ETE"]) expect(names).toContain(short);
+  // At the pill the figures are its face, full size, on the screen's foot, the bar put away.
+  await grabberTo(page, "peek");
+  await page.waitForTimeout(600);
+  const pill = (await strip.boundingBox())!;
+  expect(pill.height, "full size as the pill").toBeGreaterThan(40);
+  await grabberTo(page, "full");
+  await page.waitForTimeout(600);
+  expect((await strip.boundingBox())!.height, "thin all the way up").toBeLessThanOrEqual(32);
+  await grabberTo(page, "peek");
+  await page.waitForTimeout(600);
+  expect(pill.y + pill.height).toBeGreaterThan(page.viewportSize()!.height - 60);
+  await expect(bar).toBeHidden();
+});
+
+for (const size of ["half", "full"] as const)
+  test(`at ${size} the plan's last row scrolls clear of the figures and the bar`, async ({ page }) => {
+    // The owner, 2026-11-22: "Figures are overlapping the grouped box at the bottom."
+    test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+    await page.goto("/app/plan?dep=C81&dest=KATW&stops=KUGN,KENW,BAE,OSH,KMKE,KRAC,KJVL,KMSN,KDLL");
+    await settle(page);
+    await grabberTo(page, size);
+    const strip = page.locator("[data-pin-foot]").first();
+    await expect(strip.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(90_000) });
+    const scroller = page
+      .locator("[data-sheet-scroll]")
+      .filter({ has: page.locator("[data-pin-foot]") })
+      .first();
+    await scroller.evaluate((el) => el.scrollTo(0, el.scrollHeight));
+    await page.waitForTimeout(400);
+    const last = (await page.getByTestId("timeline-add-stop").boundingBox())!;
+    const s = (await strip.boundingBox())!;
+    expect(last.y + last.height, "the last row clear of the figures").toBeLessThanOrEqual(s.y + 1);
+  });
+
+test("pulled slowly down to the pill, the figures go down with the plan, frame by frame, never held up and then jumping", async ({
+  page,
+}) => {
+  // The owner, 2026-11-22: "doesn't slide down with the plan, waits until it touches the grabber on top".
+  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await grabberTo(page, "half");
+  const strip = page.locator("[data-pin-foot]").first();
+  await expect(strip.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(90_000) });
+  const grabber = (await page.getByTestId("sidebar-trigger-button").boundingBox())!;
+  const x = grabber.x + grabber.width / 2;
+  let y = grabber.y + grabber.height / 2;
+  const sample = () =>
+    page.evaluate(() => {
+      const sheet = document.querySelector<HTMLElement>('[data-swipe-direction="down"]')!.getBoundingClientRect();
+      const fig = document.querySelector<HTMLElement>("[data-pin-foot]")!.getBoundingClientRect();
+      return { sheetTop: sheet.top, bottom: fig.bottom, top: fig.top, height: fig.height };
+    });
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  let was = await sample();
+  // The screen's foot, less the sheet's 8-point edge, where the figures are held at the pill.
+  const foot = (await page.getByTestId("panel-foot").boundingBox())!;
+  const edge = foot.y + foot.height;
+  for (let i = 0; i < 24; i++) {
+    y += 12;
+    await page.mouse.move(x, y, { steps: 2 });
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    const now = await sample();
+    // With the sheet: never further than the sheet went, nor held while it went.
+    const sheetMoved = now.sheetTop - was.sheetTop;
+    const moved = now.bottom - was.bottom;
+    expect(moved, `step ${i}: no jump`).toBeLessThanOrEqual(Math.max(0, sheetMoved) + 4);
+    if (now.bottom < edge - 4) expect(moved, `step ${i}: down with the plan`).toBeGreaterThanOrEqual(sheetMoved - 4);
+    // Its size grows in step with the slide toward the pill, a frame at a
+    // time, never shrinking nor jumping (the owner, 2026-11-22: "It should
+    // follow finger to look natural").
+    expect(now.height, `step ${i}: never shrinking`).toBeGreaterThanOrEqual(was.height - 1);
+    expect(now.height - was.height, `step ${i}: no jump in size`).toBeLessThanOrEqual(6);
+    // Never past the screen's foot.
+    expect(now.bottom).toBeLessThanOrEqual(edge + 1);
+    was = now;
+  }
+  const pulled = (await sample()).height;
+  await page.mouse.up();
+  // Let go short of the pill's room it settles there, full size, with no snap past it.
+  await page.waitForTimeout(800);
+  expect((await sample()).height).toBeGreaterThanOrEqual(pulled - 1);
+});
+
+test("with the box turned into the route's field, typed in, the figures stay pinned and thin at half and full", async ({ page }) => {
+  // The owner, 2026-11-22: "Route box still shows figures full size."
+  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await grabberTo(page, "half");
+  const strip = page.locator("[data-pin-foot]").first();
+  await expect(strip.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(90_000) });
+  await typeRoute(page);
+  await page.getByTestId("route-type").click();
+  for (const size of ["half", "full"] as const) {
+    await grabberTo(page, size);
+    await page.waitForTimeout(500);
+    await expect(strip.getByTestId("navlog-ete")).toBeVisible();
+    const box = (await strip.boundingBox())!;
+    expect(box.height, `thin at ${size}`).toBeLessThanOrEqual(32);
+    // Pinned at the plan's bottom, on the tab bar (the owner, 2026-11-22:
+    // "Route box figures strip is not pinning to the bottom").
+    const bar = (await page.getByTestId("fpl-actions").boundingBox())!;
+    expect(Math.abs(box.y + box.height - bar.y), `on the bar at ${size}`).toBeLessThanOrEqual(12);
+  }
+});
+
+test.describe("at 375 points and the owner's 19.65-px text", () => {
+  test.use({ viewport: { width: 375, height: 812 } });
+  test("the thin strip keeps every name in sight, wrapping to a second thin row before any is put away", async ({ page }) => {
+    test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+    await page.goto("/app/plan?dep=C81&dest=KDLH");
+    await settle(page);
+    await page.evaluate(() => (document.documentElement.style.fontSize = "19.65px"));
+    await grabberTo(page, "half");
+    const strip = page.locator("[data-pin-foot]").first();
+    await expect(strip.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(90_000) });
+    for (const name of await strip.locator("dt").all()) await expect(name).toBeVisible();
+    // Nothing past the screen's side.
+    const box = (await strip.boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(375 + 1);
+  });
 });

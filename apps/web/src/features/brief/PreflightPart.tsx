@@ -20,6 +20,7 @@ import PassengerBriefing from "./PassengerBriefing";
 import FlightChecklists from "./FlightChecklists";
 import { passengerMessage } from "./passengers";
 import FuelSection from "./FuelSection";
+import { FILING_OFFERED } from "./filing";
 import FlightPlanSection from "./FlightPlanSection";
 import RiskAssessment from "./RiskAssessment";
 import FindingIcon from "../../components/FindingIcon";
@@ -89,8 +90,9 @@ export default function PreflightPart({ vm, nav, totals, dep, dest, depart }: Pr
           <WeightBalanceSection aircraft={nav?.aircraft} tripFuelGal={totals?.fuel_gal ?? null} />
 
           {/* The FAA's flight plan form filled in from the plan, from an
-          airport: a present position is a flight already flying. */}
-          {identOf(dep) && totals && <FlightPlanSection forms={planForms} ifr={ifr} />}
+          airport: a present position is a flight already flying. Not while
+          filing is not offered (FILING_OFFERED). */}
+          {FILING_OFFERED && identOf(dep) && totals && <FlightPlanSection forms={planForms} ifr={ifr} />}
 
           {/* The passengers' briefing (91.107), and the flight to send them. */}
           <PassengerBriefing

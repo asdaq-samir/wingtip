@@ -1,13 +1,13 @@
 import { Suspense, useRef, type ReactNode } from "react";
 import { cn } from "cn";
-import { PIN_AT_FOOT, PIN_STICKS, usePinAtFoot } from "../../../components/sheet/pinAtFoot";
+import { PIN_AT_FOOT, usePinAtFoot } from "../../../components/sheet/pinAtFoot";
 import { CardAction as Action } from "../../../components/CardAction";
 import { ICON } from "../../../lib/icons";
 import { RouteLine } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
 import RouteHead from "./RouteHead";
 import { FlightFigures } from "./FlightFoot";
-import { routeEditing, routesOut } from "./routeEditing";
+import { routeEditing, routesOut, routeTyped } from "./routeEditing";
 
 /**
  * FPL's actions in flight, one row of four tiles at the top of the flying
@@ -80,7 +80,12 @@ export function FplRoute({
   const { panelOpen } = vm.view;
   const { dryRunning, flying } = vm.flight;
   const { routeLine } = vm.routeList;
-  const editing = routeEditing(vm);
+  // The route's field open under the page puts the pinned figures away (its
+  // own under it); the grouped box turned into the field by its toggle does
+  // not: the figures stay pinned and follow the sheet alone, thin above the
+  // pill whatever the box shows or the keyboard does (the owner,
+  // 2026-11-22: "Route box still shows figures full size").
+  const editing = routeEditing(vm) && !routeTyped(vm);
   const routesShown = routesOut(vm);
   // The figures are FPL's pill too, one copy at every size: held on the
   // foot's edge at the pill, and as the sheet goes down they stop there
@@ -110,9 +115,13 @@ export function FplRoute({
           from the sheet's side as the pinned pill's are (PINNED's px-4),
           where the first figure flush with the head's edge read "Dest" at
           12 (the iOS audit's margin, a local flight). */}
-      <div className={cn("pt-2 pb-1", PIN_STICKS, editing && "hidden")} data-pill-keeps="">
+      <div className={cn("pt-2 pb-1", editing && "hidden")} data-pill-keeps="">
         <div ref={figures} data-pin-foot="" className={cn(PIN_AT_FOOT, "px-1", PINNED)}>
-          {!editing && <FlightFigures vm={vm} grow={false} />}
+          {/* One thin line at half and all the way up, full size as the
+              pill (the owner, 2026-11-22: "Maybe just make the figures
+              strip very thin when fpl is half or full?"): one strip that
+              changes size, eased, never two copies. */}
+          {!editing && <FlightFigures vm={vm} grow={false} thin={ground} />}
         </div>
       </div>
     </div>
@@ -124,8 +133,7 @@ const SHEET_FOOT = '[data-testid="panel-foot"]';
 
 /** The figures held at the foot (data-pinned) drawn as the pill: in sight
  *  where the rest of the head is not (sheet/insets' RISEN_FACE at the
- *  pill), a Direct to's strip over them kept out of sight there (data-pill;
- *  held at the foot off the pill too now, they keep it in sight) in its
+ *  pill), a Direct to's strip over them kept out of sight there in its
  *  room, so nothing moves; the foot's 16-point sides where the head's 12
  *  laid them 8 points wider (the owner, 2026-11-16: "is it changing size
  *  at the end? And do you see a small gap below/above the strip?"); over

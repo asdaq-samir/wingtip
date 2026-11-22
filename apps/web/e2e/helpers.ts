@@ -23,7 +23,16 @@ export {
   closeCard,
   cardClose,
 } from "./sheetHelpers";
-export { openRoute, foldRoute, timelineLine, clearTheRoute, controlsInSight, suggestedRoutes, routeOptionsItem } from "./routeHelpers";
+export {
+  openRoute,
+  typeRoute,
+  foldRoute,
+  timelineLine,
+  clearTheRoute,
+  controlsInSight,
+  suggestedRoutes,
+  routeOptionsItem,
+} from "./routeHelpers";
 export {
   openConsole,
   openSetup,

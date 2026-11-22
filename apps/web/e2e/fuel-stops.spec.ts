@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { inSheet, mapStill, openPanel, settle, sideDrawer, slow, openRoute } from "./helpers";
+import { inSheet, mapStill, openPanel, settle, sideDrawer, slow, typeRoute } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { drawnMarks } from "./marks";
 import { noCheckpoints } from "./startState";
@@ -80,7 +80,7 @@ test("a fuel stop the planner suggests is dashed in the route's box and pinned o
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   await expect(sideDrawer(page).getByTestId("route-fuel-stop")).toHaveText("KRPD", { timeout: slow(60_000) });
   await expect.poll(() => pinned(page)).toBe(1);
   // No cards of it in FPL's list: the route line does their job.
@@ -95,7 +95,7 @@ test("a stop suggested on a flight from a present position is dashed in the rout
   await page.goto("/app/plan?dep=@42.2333,-87.9883&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   await expect(sideDrawer(page).getByTestId("route-fuel-stop")).toHaveText("KRPD", { timeout: slow(60_000) });
   await expect.poll(() => pinned(page)).toBe(1);
 });
@@ -107,7 +107,7 @@ test("a suggested fuel stop can be taken out of the route box and put back, or a
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   const chip = sideDrawer(page).getByTestId("route-fuel-stop");
   await expect(chip).toHaveText("KRPD", { timeout: slow(60_000) });
   // Its menu's Remove takes it out of the box.
@@ -118,7 +118,7 @@ test("a suggested fuel stop can be taken out of the route box and put back, or a
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   await expect(chip).toHaveText("KRPD", { timeout: slow(60_000) });
   // And its menu's Add to Route makes it a stop of the route.
   await chip.click();
@@ -218,7 +218,7 @@ test("a long flight the tanks hold is offered a break about half way, kept as th
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   const chip = sideDrawer(page).getByTestId("route-fuel-stop");
   await expect(chip).toHaveAccessibleName("Suggested stop KRPD", { timeout: slow(60_000) });
   await chip.click();
@@ -227,7 +227,7 @@ test("a long flight the tanks hold is offered a break about half way, kept as th
   await expect(page).not.toHaveURL(/[?&]fuel=/);
 });
 
-test("FPL's Add a Stop row has Add Fuel Stops, and once they are in, Remove Fuel Stops", async ({ page }) => {
+test("FPL's Add a Stop row has the fuel glyph's Add Stops, and once they are in, Remove Stops", async ({ page }) => {
   // The owner's ask (2026-11-20): "We should have a add fuel stops pill in
   // the last row and when added, remove fuel stops pill".
   await suggested(page);
@@ -235,19 +235,21 @@ test("FPL's Add a Stop row has Add Fuel Stops, and once they are in, Remove Fuel
   await settle(page);
   await openPanel(page);
   const pill = sideDrawer(page).getByTestId("timeline-add-stop").locator("..").getByTestId("timeline-fuel-stops");
-  await expect(pill).toHaveText("Add Fuel Stops", { timeout: slow(60_000) });
+  await expect(pill).toHaveText("Add Stops", { timeout: slow(60_000) });
+  await expect(pill).toHaveAccessibleName("Add fuel stops");
   await inSheet(page, pill);
   await page.screenshot({ path: "test-results/fuel-pill-add.png" });
   await pill.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("fuel")).toBe("KRPD");
-  await expect(pill).toHaveText("Remove Fuel Stops", { timeout: slow(60_000) });
+  await expect(pill).toHaveText("Remove Stops", { timeout: slow(60_000) });
+  await expect(pill).toHaveAccessibleName("Remove fuel stops");
   await inSheet(page, pill);
   await page.screenshot({ path: "test-results/fuel-pill-remove.png" });
   await pill.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("stops")).toBeNull();
 });
 
-test("Add Fuel Stops puts in every flight's suggested stops, a later flight's too", async ({ page }) => {
+test("Add Stops puts in every flight's suggested stops, a later flight's too", async ({ page }) => {
   // The owner's trip (2026-11-20): to KLAS and on to KPWK, the pill put in
   // the first flight's stops alone and the last flight still read 21 gal
   // short. Here the route C81, KMSN, KDLH, each flight with a stop of its
@@ -261,7 +263,7 @@ test("Add Fuel Stops puts in every flight's suggested stops, a later flight's to
   await settle(page);
   await openPanel(page);
   const pill = sideDrawer(page).getByTestId("timeline-add-stop").locator("..").getByTestId("timeline-fuel-stops");
-  await expect(pill).toHaveText("Add Fuel Stops", { timeout: slow(60_000) });
+  await expect(pill).toHaveText("Add Stops", { timeout: slow(60_000) });
   // Two flights' rows put Add a Stop under the half sheet's edge, where a
   // click finds the pill outside the viewport and retries till the test's
   // end: brought up first, as the test above does.
@@ -269,7 +271,7 @@ test("Add Fuel Stops puts in every flight's suggested stops, a later flight's to
   await pill.click();
   await expect(page).toHaveURL(stopsAre("KJVL,KMSN,KRPD"));
   await expect.poll(() => new URL(page.url()).searchParams.get("fuel")).toBe("KJVL,KRPD");
-  await expect(pill).toHaveText("Remove Fuel Stops", { timeout: slow(60_000) });
+  await expect(pill).toHaveText("Remove Stops", { timeout: slow(60_000) });
 });
 
 test("a flight short with no stop offered says why where the pill would be", async ({ page }) => {
@@ -289,3 +291,45 @@ test("a flight short with no stop offered says why where the pill would be", asy
   await expect(note).toHaveText("Too little fuel on board for C81 → KDLH", { timeout: slow(60_000) });
   await expect(sideDrawer(page).getByTestId("timeline-fuel-stops")).toHaveCount(0);
 });
+
+for (const width of [375, 393])
+  test.describe(`at ${width} points and the owner's 19.65-px text`, () => {
+    test.use({ viewport: { width, height: 852 } });
+    test("Add a Stop, the fuel stops' pill and the route's toggle are one line, to add and to remove", async ({ page }) => {
+      // The owner, 2026-11-22: "Remove fuel stops goes to the next line."
+      await suggested(page);
+      await page.goto("/app/plan?dep=C81&dest=KDLH");
+      await settle(page);
+      await page.evaluate(() => (document.documentElement.style.fontSize = "19.65px"));
+      await openPanel(page);
+      const drawer = sideDrawer(page);
+      const pill = drawer.getByTestId("timeline-add-stop").locator("..").getByTestId("timeline-fuel-stops");
+      await expect(pill).toHaveText("Add Stops", { timeout: slow(60_000) });
+      const oneLine = async () => {
+        const boxes = await Promise.all(
+          [drawer.getByTestId("timeline-add-stop"), pill, drawer.getByTestId("route-type-open")].map(async (l) => (await l.boundingBox())!),
+        );
+        const mid = (b: { y: number; height: number }) => b.y + b.height / 2;
+        const card = (await drawer.getByTestId("route-summary").boundingBox())!;
+        test
+          .info()
+          .annotations.push({
+            type: "row",
+            description: JSON.stringify({
+              card: [card.x, card.width],
+              boxes: boxes.map((b) => [Math.round(b.x), Math.round(b.y), Math.round(b.width)]),
+            }),
+          });
+        console.log(
+          "ROW",
+          JSON.stringify({ card: [card.x, card.width], boxes: boxes.map((b) => [Math.round(b.x), Math.round(b.y), Math.round(b.width)]) }),
+        );
+        for (const b of boxes) expect(Math.abs(mid(b) - mid(boxes[0]!)), "one line").toBeLessThan(4);
+      };
+      await oneLine();
+      await inSheet(page, pill);
+      await pill.click();
+      await expect(pill).toHaveText("Remove Stops", { timeout: slow(60_000) });
+      await oneLine();
+    });
+  });

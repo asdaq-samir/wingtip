@@ -290,7 +290,7 @@ form `WingtipSheet`, and the photo, plate and diagram viewers full screen.
    picked tab in the tint on a soft lighter pill, Weather with the field's category dot
    and Charts with its count. Each tab is an icon (Info, CloudSun,
    PlaneLanding, FileText; the owner, 2026-11-14: "make the tabs icons
-   instead so it takes less space"), every tab showing its word under its icon (the owner, 2026-11-14, from an iOS 26 tab bar: "similar size and see through"), in the one floating bar FPL's actions are drawn in too (`components/FloatingBar`; the owner, 2026-11-18: "Yes make it common. Also I meant shorter not narrower, but apply the same height and width for both"): items 48 points tall in a 56-point capsule, the glyph 24 over the word on the `tab-bar` type (12/16 regular, iOS 26's tab bar), its items one width on every bar, 73 points (a quarter of 18.75 rem less the capsule's sides, so four tabs make it 300 and FPL's three 227; growing with the text size as the words do, capped at a quarter of the room there is, never narrower than its words; the owner, 2026-11-21: "fpl and other tabs placement look different"), 4 points over the screen's foot or the home indicator's inset, FPL's 4 points over its figures, which are at the screen's foot under it), centred, with equal columns, the glass much more see-through (`material.bar-fill` 0.6, the blur kept), so nothing moves on a switch, each named by its aria-label
+   instead so it takes less space"), every tab showing its word under its icon (the owner, 2026-11-14, from an iOS 26 tab bar: "similar size and see through"), in the one floating bar FPL's actions are drawn in too (`components/FloatingBar`; the owner, 2026-11-18: "Yes make it common. Also I meant shorter not narrower, but apply the same height and width for both"): items 48 points tall in a 56-point capsule, the glyph 24 over the word on the `tab-bar` type (12/16 regular, iOS 26's tab bar), its items one width on every bar, 73 points (a quarter of 18.75 rem less the capsule's sides, so four tabs make it 300 and FPL's three 227; growing with the text size as the words do, capped at a quarter of the room there is, never narrower than its words; the owner, 2026-11-21: "fpl and other tabs placement look different"), 4 points over the screen's foot or the home indicator's inset, so FPL's figures at half clear it), centred, with equal columns, the glass much more see-through (`material.bar-fill` 0.6, the blur kept), so nothing moves on a switch, each named by its aria-label
    ("Weather, VFR"), the dot and count over the icon's corner. The bar is glass because it floats over the
    card (the owner's decision of 2026-11-10 keeps glass for what floats).
    This replaces T4's tabs under the actions and its one-line report.
@@ -618,7 +618,14 @@ off by default (the owner, 2026-11-13).
    nothing; a closed field or an unknown point says why in red under its
    line, no chips. The route's field to type or paste a whole route opens
    under the timeline ("Route" over it, Done after) with no route, half a
-   route, an unknown point, or from the keyboard button at Add a Stop's end, the
+   route or an unknown point; on a whole route the keyboard button at the
+   grouped box's bottom right, after Add a Stop and the fuel stops' pill on
+   one line (2026-11-22: "pinned to the bottom right"), is a toggle that
+   turns the same box into the route's field and back, its size and shape
+   kept and the route wrapped in it, pressed while it is the field,
+   with no "Route" row and no Done (the owner, 2026-11-22: "It should make
+   the same grouped box into route box and the other way"), what is typed
+   read as the field is left, the plan's Undo as ever; the
    figures under it and the Routes' chips put away; a present position is "My Location" (Apple Maps' words)
    wherever the route shows it, never an ident (decision 0047); under the
    timeline the route's figures (To,
@@ -647,19 +654,22 @@ off by default (the owner, 2026-11-13).
    changes over miles and years, its track written in whole degrees), "—" with no position, no course
    or below flying speed (the engine's `underway`), a column always. The
    fuel stays on the timeline's tank gauges, the nav log and the Brief,
-   no longer on the strip, so the strip no longer opens its breakdown. The
-   strip is at the bottom, on the sheet's foot, at every size and scroll,
-   the route sliding and scrolling under it (the owner, 2026-11-21: "they
-   would go to bottom and stay there while the rest slides under it").
-   Under the bar, iOS 26's soft scroll edge: what scrolls under it fades
-   towards the sheet's colour from just over the bar's top, so the route
-   shows through but its words never run into the bar's (the HIG review,
-   2026-11-21; not a solid band).
-   Sitting on it, 4 points over it, from half up a floating glass bar, the one floating bar the airport card's
+   no longer on the strip, so the strip no longer opens its breakdown. At the sheet's very foot from
+   half up, the Apple way, the strip held just over it and sliding under
+   it to the pill as the sheet goes down (the owner, 2026-11-22), the strip one
+   thin line at half and full (each value a detail's 15 after its name in a
+   note's 13, the names dropping first where the line is short; "make the
+   figures strip very thin when fpl is half or full") and full size as the pill, a floating glass bar, the one floating bar the airport card's
    tabs are drawn in, the same height and width (`FloatingBar`, 2026-11-18),
    round Base UI's stock Toolbar (one tab stop, the arrows between them),
-   of three buttons: Brief and Nav Log, each opening its card over FPL,
-   and the route's •••, "More", its one menu, three items (the owner, 2026-11-21): Route Options, Share link and Open in ForeFlight, their glyphs and words lined up with Route Options' checkmark column as an iOS menu lines them up. Undo and Redo, Clear route, the map's choices,
+   of four buttons: Brief and Nav Log, each opening its card over FPL;
+   Routes, the route glyph FPL's button had before it read "FPL", pressed
+   while the suggested routes are out (Route Options, More's first item
+   until the owner's 2026-11-22: "route option can show in the tab bar
+   instead with the previous fpl icon we used"), always in the bar and
+   greyed, named "No route options", while there are no ways to suggest
+   (2026-11-22: "Routes should always show in the tab bar, just disabled if no routes"); and the route's •••, "More", its one menu, two
+   items: Share link and Open in ForeFlight. Undo and Redo, Clear route, the map's choices,
    Show Fuel Stops, Refresh, Save and Type the Route are no longer its items:
    Undo is the toast's, "Route Cleared · Undo" or "Altitude Changed · Undo",
    with Cmd-Z and Shift-Cmd-Z on a keyboard (the toast 5 s on screen, held
@@ -683,7 +693,10 @@ off by default (the owner, 2026-11-13).
    "File" (its glyph over its word, as the bar's items), to the bar's right in its
    glass and height, a gap-2 apart, the pair centred together (the owner,
    2026-11-21: "File flight plan should be a separate button next to tabs");
-   no longer More's item, greyed where the plan cannot be filed. At the
+   no longer More's item, greyed where the plan cannot be filed. Hidden
+   for now, with the Brief's Flight Plan form, until filing works through
+   Leidos Flight Service (the owner, 2026-11-22: "For now hide the file
+   button as we don't support it"; `FILING_OFFERED` in features/brief/filing.ts). At the
    pill the figures alone, large: swiped down, they grow. Taken up from
    the pill, FPL rises as the airport card does, one shared way for every
    sheet (the owner, 2026-11-16: "can we make it a shared code for all

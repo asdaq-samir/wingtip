@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps, ReactNode, CSSProperties } from "react";
 import { ChevronsUpDown, Fuel, Keyboard, Plus } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
@@ -102,7 +102,12 @@ function TimelineAction({
         // As wide as its words at the least, the controls after it going
         // under it where the two do not fit on one line.
         className={cn(
-          "h-11 flex-auto justify-start rounded-none px-0 font-normal hover:bg-transparent pointer-coarse:active:bg-muted pointer-coarse:active:opacity-100 dark:hover:bg-transparent",
+          // With controls after it, as wide as its words alone, so Add a
+          // Stop, the fuel stops' pill and the route's toggle share its
+          // line on a 375-point iPhone (the owner, 2026-11-22: "can you
+          // adjust the spacing so they fit in the same line as add a stop?").
+          trailing ? "flex-none" : "flex-auto",
+          "h-11 justify-start rounded-none px-0 font-normal hover:bg-transparent pointer-coarse:active:bg-muted pointer-coarse:active:opacity-100 dark:hover:bg-transparent",
           TIMELINE_GAP,
           TEXT.row,
         )}
@@ -116,15 +121,17 @@ function TimelineAction({
             "flex h-full min-w-0 flex-1 items-center",
             !first && !trailing && "border-t border-border",
             placeholder ? "text-muted-foreground" : "text-tint",
-            trailing ? "pr-2" : TIMELINE_END,
+            trailing ? "pr-0" : TIMELINE_END,
           )}
         >
           {children}
         </span>
       </Button>
-      {/* 12 points between its 32-point chips, so their 44-point areas meet
-          and do not cross (the iOS rule's gap-3). */}
-      {trailing && <span className="ml-auto flex h-11 items-center gap-3 pr-4">{trailing}</span>}
+      {/* 8 points between its 32-point chips, the rows' gap-2, their 44-point
+          areas (hit-1.5, 6 out each side) meeting over it; 8 in from the
+          card's edge, the toggle last, at the box's bottom right (the owner,
+          2026-11-22: "the route box toggle should be pinned to the bottom right"). */}
+      {trailing && <span className="ml-auto flex h-11 items-center gap-0.5">{trailing}</span>}
     </div>
   );
 }
@@ -190,12 +197,19 @@ export function FuelStopsChip({ added, onClick }: { added: boolean; onClick: () 
       variant={added ? "destructive" : "ghost"}
       type="button"
       onClick={onClick}
+      // The fuel glyph says "fuel", so the words are "Add Stops" and "Remove
+      // Stops" and the row stays one line at the owner's 19.65-px text on a
+      // 375- or 393-point iPhone (the owner, 2026-11-22: "Remove fuel stops
+      // goes to the next line"; "So icon with add/remove stops"); said in
+      // full to a screen reader.
+      aria-label={added ? "Remove fuel stops" : "Add fuel stops"}
       data-testid="timeline-fuel-stops"
+      style={CHIP_44}
       data-look={added ? "remove" : "add"}
-      className={cn(chipLook(true), !added && "bg-tint/12 hover:bg-tint/20! dark:hover:bg-tint/20!")}
+      className={cn(chipLook(true), ROW_CHIP, !added && "bg-tint/12 hover:bg-tint/20! dark:hover:bg-tint/20!")}
     >
-      <Fuel className="mr-1 size-4" aria-hidden="true" />
-      {added ? "Remove Fuel Stops" : "Add Fuel Stops"}
+      <Fuel className="size-4" aria-hidden="true" />
+      {added ? "Remove Stops" : "Add Stops"}
     </Button>
   );
 }
@@ -214,19 +228,44 @@ export function NoFuelStopNote({ flight }: { flight: { name: string; onBoard: bo
   );
 }
 
-/** Type the Route on a whole route, at Add a Stop's end (the owner,
- *  2026-11-21: More keeps three items): the keyboard glyph alone in the fuel
- *  stops' chip's shape and wash, named in full, opening the route's field
- *  (RouteEditor) to type or paste the route in whole. */
-export function TypeRouteButton({ onType }: { onType: () => void }) {
+/** The row's chips' areas 44 tall whatever their own height (30 at the
+ *  default text, where chipLook's hit-1.5 made 42): the area's reach over
+ *  and under the chip, as a pseudo-element, so nothing that is seen grows. */
+const CHIP_44 = { "--hit-y": "calc((100% - 44px) / 2)" } as CSSProperties;
+
+/** The last row's two chips, closer and in a note's size, so Add a Stop, the
+ *  fuel stops' pill and the route's toggle are one line at the owner's
+ *  19.65-px text on a 375- or 393-point iPhone (measured: "Remove Stops"
+ *  wrapped by 27 points at 393, 15 at 375): their areas stay 44 (CHIP_44,
+ *  hit-1.5), overlapping where the chips are closer than 12. */
+const ROW_CHIP = cn("gap-0.5 px-1 font-medium", TEXT.note);
+
+/** Type the Route on a whole route, at the grouped box's bottom right, after Add
+ *  a Stop and the fuel stops' pill: a toggle between the two faces of the same box, the
+ *  timeline and the route's field (RouteEditor) to type or paste the route
+ *  in whole, with no row or Done of its own (the owner, 2026-11-22: "It
+ *  should make the same grouped box into route box and the other way. No
+ *  need for a separate row and done etc."). The keyboard glyph alone in the
+ *  fuel stops' chip's shape, its wash, and its 44-point area (chipLook),
+ *  pressed (aria-pressed, the tint filled) while the field is the face. */
+export function TypeRouteButton({ pressed, onToggle }: { pressed: boolean; onToggle: () => void }) {
   return (
     <Button
       variant="ghost"
       type="button"
-      onClick={onType}
+      onClick={onToggle}
       aria-label="Type the route"
+      aria-pressed={pressed}
       data-testid="route-type-open"
-      className={cn(chipLook(true), "bg-tint/12 hover:bg-tint/20! dark:hover:bg-tint/20!")}
+      // 44 across as well, the glyph's chip 27 wide at its tightest.
+      style={{ ...CHIP_44, "--hit-x": "calc((100% - 44px) / 2)" } as CSSProperties}
+      className={cn(
+        chipLook(true),
+        ROW_CHIP,
+        // The glyph alone, its room round it the least of the row's.
+        "px-0.5",
+        pressed ? "bg-tint text-primary-foreground hover:bg-tint/90!" : "bg-tint/12 hover:bg-tint/20! dark:hover:bg-tint/20!",
+      )}
     >
       <Keyboard className="size-4" aria-hidden="true" />
     </Button>

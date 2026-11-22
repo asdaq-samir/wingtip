@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { FILING_OFFERED } from "./filing";
 import {
   closeCard,
   closeNavLog,
@@ -152,6 +153,8 @@ test("under IFR an airway in the route is flown fix by fix, its published MEA th
   await expect(popover).toContainText(/Along V191 from BAE the published MEA, [\d,]+ ft/);
   await closeCard(page, "profile-close");
 
+  // Not while filing is not offered (FILING_OFFERED).
+  if (!FILING_OFFERED) return;
   // The flight plan's form (FAA Form 7233-4): the airway between the
   // fixes it is joined and left at, the departure and the arrival picked
   // at its ends, the level in hundreds of feet.
@@ -260,7 +263,8 @@ test("under IFR the Weather tab says whether an alternate is needed, files one w
   await expect.poll(() => navlogs.at(-1), { timeout: slow(30000) }).toBe("KMSN");
   await openSection(page, "Fuel");
   await expect(page.getByTestId("fuel-detail")).toContainText("on to KMSN", { timeout: slow(90000) });
-  // And the flight plan's alternate (item 16).
+  // And the flight plan's alternate (item 16), where filing is offered.
+  if (!FILING_OFFERED) return;
   await openTab(page, "Brief");
   await openSection(page, "Flight Plan");
   await expect(page.getByTestId("flight-plan-alternate")).toContainText("KMSN");

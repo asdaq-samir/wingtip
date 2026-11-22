@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { FILING_OFFERED } from "./filing";
 import {
   consoleSheet,
   controlsInSight,
@@ -139,8 +140,9 @@ test("signed out, there is nothing to save", async ({ page }) => {
   // Share showing means the page is not hidden behind a console: while
   // one is up, the page under it is out of reach of the queries below.
   await expect(page.getByTestId("share-route")).toBeVisible({ timeout: 30_000 });
-  // Filing is the button beside FPL's tab bar, signed in or not.
-  await expect(page.getByTestId("file-flight-plan")).toBeVisible();
+  // Filing, the button beside FPL's tab bar signed in or not, is not
+  // offered yet (FILING_OFFERED).
+  await expect(page.getByTestId("file-flight-plan")).toHaveCount(FILING_OFFERED ? 1 : 0);
   await openBriefMenu(page);
   await expect(page.getByTestId("save-flight-button")).toHaveCount(0);
   await page.keyboard.press("Escape");

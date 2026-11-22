@@ -87,6 +87,8 @@ export default function RouteBox({
   unknownPoint = null,
   onClear,
   onUndo,
+  wrapped = false,
+  height,
 }: RouteBoxProps) {
   // Each by its own name: three of them are refs (the field, the row and
   // its content), which the compiler keeps apart from what is drawn.
@@ -202,7 +204,14 @@ export default function RouteBox({
             // top and foot (the iOS audit's P1 on an approach's page). Its
             // buttons are the sheet's first row's strip over it (FplBar;
             // the owner, 2026-11-14), not a footer of its own.
-            className={cn("h-auto flex-wrap items-start rounded-(--radius-banner) border-0 pt-1 pr-1.5 pb-1 pl-1 shadow-none", PANEL_FIELD)}
+            className={cn(
+              "h-auto flex-wrap items-start border-0 pt-1 pr-1.5 pb-1 pl-1 shadow-none",
+              // Turned from the grouped box: the timeline card's corners.
+              wrapped ? "rounded-(--radius-card)" : "rounded-(--radius-banner)",
+              PANEL_FIELD,
+            )}
+            style={wrapped && height ? { height } : undefined}
+            data-wrapped={wrapped || undefined}
             data-testid="route-box"
           >
             {/* The pills in one row that slides sideways under a finger when the route is longer than the box (the
@@ -214,16 +223,19 @@ export default function RouteBox({
                 ref={slide}
                 // Out of the tab order; a drag up or down is the sheet's.
                 tabIndex={-1}
-                style={{ overflowY: "hidden" }}
+                // Its lines inside the box's height less its 8 of padding, scrolling past it.
+                style={
+                  wrapped ? { overflowX: "hidden", overflowY: "auto", maxHeight: height ? height - 8 : undefined } : { overflowY: "hidden" }
+                }
                 className={cn(
-                  "overscroll-x-contain",
+                  wrapped ? "overscroll-y-contain" : "overscroll-x-contain",
                   "data-overflow-x-end:[mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)]",
                   "data-overflow-x-start:[mask-image:linear-gradient(to_right,transparent,black_1.5rem)]",
                   "data-overflow-x-start:data-overflow-x-end:[mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)]",
                 )}
                 data-testid="route-slide"
               >
-                <ScrollArea.Content ref={slideRow} className="flex flex-nowrap items-center py-1 pr-2">
+                <ScrollArea.Content ref={slideRow} className={cn("flex items-center py-1 pr-2", wrapped ? "flex-wrap" : "flex-nowrap")}>
                   <TokenField<RouteValue>
                     aria-label={label}
                     value={value}
@@ -252,7 +264,11 @@ export default function RouteBox({
                       data-testid="route-type"
                       data-placeholder={placeholder}
                       data-typed={typed.text}
-                      className={cn("min-h-7 w-max min-w-full whitespace-pre! font-mono leading-7 uppercase outline-none", TEXT.row)}
+                      className={cn(
+                        "min-h-7 min-w-full font-mono leading-7 uppercase outline-none",
+                        wrapped ? "w-full whitespace-pre-wrap! break-words" : "w-max whitespace-pre!",
+                        TEXT.row,
+                      )}
                     >
                       {(segment) => (
                         <Token className="inline-block align-middle">

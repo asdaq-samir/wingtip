@@ -138,10 +138,12 @@ describe("FlightInputs' airplane", () => {
     expect(input.isConnected).toBe(false);
   });
 
-  test("asks for an airplane in words on the first flight, the blanks after it", () => {
+  test("asks for an airplane in words on the first flight, in its name, its five blanks kept", () => {
     act(() => useTips.setState({ seen: [] }));
     const first = pills();
-    expect(first.input.placeholder).toBe(FIRST_AIRPLANE_ASK);
+    expect(first.input.placeholder).toBe("_____");
+    expect(first.input.getAttribute("aria-label")).toContain(FIRST_AIRPLANE_ASK);
+    expect(first.input.className).toContain("w-[calc(5ch+0.5rem)]");
     cleanup();
     act(() => useTips.setState({ seen: [FPL_TIP] }));
     expect(pills().input.placeholder).toBe("_____");

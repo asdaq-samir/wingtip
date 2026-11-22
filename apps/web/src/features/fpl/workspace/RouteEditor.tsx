@@ -7,6 +7,8 @@ import { coverCard, useSheetCards } from "../../../lib/sheetCards";
 import { RouteBox } from "../../route";
 import type { PlanSlices } from "../vm/planSlices";
 import { FlightFigures } from "./FlightFoot";
+import { TypeRouteButton } from "../../procedures/lazy";
+import { keptTimelineHeight } from "./routeEditing";
 
 /**
  * FPL's route's field, open under its timeline (RouteHead) once asked for
@@ -18,15 +20,18 @@ import { FlightFigures } from "./FlightFoot";
  */
 export default function RouteEditor({
   vm,
+  inPlace = false,
 }: {
   vm: PlanSlices<"brief" | "cards" | "flight" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
+  /** Drawn in the timeline's own place (RouteHead), the box where the grouped box was. */
+  inPlace?: boolean;
 }) {
   const { directParam, hasPoints, planned, routed, setPointAltitude, setRoute, wholeRoute } = vm.route;
   const { directToPoint, s } = vm.plan;
   const { selectPlace } = vm.cards;
   const { openProcedures, routeProcedures, typeProcedures } = vm.picks;
   const { fuelStops, hideFuelStop, keepFuelStops } = vm.stops;
-  const { addAt, addingChange, addingStop, clearRoute, setEditorFocused, waypointStops } = vm.routeList;
+  const { addAt, addingChange, addingStop, clearRoute, foldRoute, routeOpen, setEditorFocused, waypointStops } = vm.routeList;
   const { airspaceOf, altitudeAt, metarColour, searchNear } = vm.brief;
   // A stop asked for from a card (the profile's no-legal-altitude problem,
   // its Add a Stop): asked of the field once the card has gone. Under it the
@@ -39,7 +44,8 @@ export default function RouteEditor({
   const routeUndo = usePlanUndo((u) => (u.undoName === "Route" ? u.undo : null));
   return (
     <div
-      className="flex flex-col px-4 pb-2"
+      // In the timeline's own place (RouteHead), none of its own room round it.
+      className={inPlace ? "flex flex-col" : "flex flex-col px-4 pb-2"}
       data-testid="route-editor"
       // Typed in, a route made whole stays open (usePlanRouteList).
       onFocus={() => setEditorFocused(true)}
@@ -49,7 +55,7 @@ export default function RouteEditor({
     >
       {/* The route's field: a whole route typed or pasted, its points as
           pills; its room while its code comes, the box's own line. */}
-      <div className="pt-2">
+      <div className={inPlace ? undefined : "pt-2"}>
         <Suspense fallback={<div className="h-10 rounded-(--radius-banner) bg-card" />}>
           <SearchNear.Provider value={searchNear}>
             <RouteBox
@@ -81,13 +87,34 @@ export default function RouteEditor({
               // a route planned, by FPL's ✕.
               onClear={hasPoints && !routed ? clearRoute : undefined}
               onUndo={!hasPoints && routeUndo ? routeUndo : undefined}
+              // Turned from the grouped box by its toggle: its size and shape, the route wrapped in it.
+              wrapped={inPlace}
+              height={inPlace ? keptTimelineHeight() : undefined}
             />
           </SearchNear.Provider>
         </Suspense>
       </div>
+      {/* The toggle back to the timeline, in the box's bottom right where it
+          was on the timeline's face (TypeRouteButton): what is typed is
+          read as the field is left, the tap's own blur, so the route
+          folds with it in (the plan's Undo as ever); the focus kept on the
+          toggle there. Only on a whole route opened by it. */}
+      {wholeRoute && routeOpen && (
+        // At the box's bottom right, where it is on the timeline's face, over
+        // the box's last line (z-10), its 44-point area whole.
+        <div className="relative z-10 -mt-11 flex h-11 items-center justify-end pr-2">
+          <TypeRouteButton
+            pressed
+            onToggle={() => {
+              foldRoute();
+              requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-testid="route-type-open"]')?.focus());
+            }}
+          />
+        </div>
+      )}
       {/* The figures under the cards while they are edited, so each change
           is read as it is made (the canvas's "Tap the route to expand"). */}
-      {wholeRoute && (
+      {wholeRoute && !inPlace && (
         // 4 in from the head's 12, at iOS's 16, as the folded route's (FplActions).
         <div className="px-1 pt-3" data-testid="route-editor-figures">
           <FlightFigures vm={vm} grow={false} />

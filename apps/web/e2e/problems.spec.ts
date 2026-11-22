@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
-import { clearTheRoute, settled as settledLocator, grabberTo, inSheet, openPanel, openRoute } from "./helpers";
+import { clearTheRoute, settled as settledLocator, grabberTo, inSheet, openPanel, openRoute, typeRoute } from "./helpers";
 
 /**
  * What a pilot meets when things go wrong, and the toasts that are left.
@@ -152,7 +152,7 @@ test("an ident the planner does not know is said on its pill, not the map's line
   await expect(line).toContainText("KZZZ", { timeout: 20000 });
   await expect(line.getByTestId("timeline-problem")).toHaveText("isn't an airport or waypoint we know");
   await expect(line.getByTestId("timeline-problem")).toHaveClass(/text-destructive/);
-  await openRoute(page);
+  await typeRoute(page);
   const said = page.getByTestId("route-unknown");
   await expect(said).toContainText("KZZZ isn't an airport or waypoint we know", { timeout: 20000 });
   await expect(page.getByTestId("route-dest").locator("[aria-invalid=true]")).toHaveCount(1);
@@ -181,11 +181,13 @@ test("an ident only a field abroad goes by is no destination: no distance, no wa
     "isn't an airport or waypoint we know",
     { timeout: 20000 },
   );
-  // No ways to suggest, so no Route Options in More: the chips' count below
+  // No ways to suggest, so Routes is greyed: the chips' count below
   // is then no vacuous zero (they render only while it is on).
   await page.getByTestId("share-route").click();
   await expect(page.getByRole("menuitem").first()).toBeVisible();
-  await expect(page.getByTestId("routes-toggle")).toHaveCount(0);
+  // Routes stays in the bar, greyed and named why (the owner, 2026-11-22).
+  await expect(page.getByTestId("routes-toggle")).toBeDisabled();
+  await expect(page.getByTestId("routes-toggle")).toHaveAccessibleName("No route options");
   await page.keyboard.press("Escape");
   await openRoute(page);
   const said = page.getByTestId("route-unknown");

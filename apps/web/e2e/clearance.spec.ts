@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { grabberTo, inSheet, openPanel, openRoute, settle, sideDrawer, slow } from "./helpers";
+import { grabberTo, inSheet, openPanel, typeRoute, settle, sideDrawer, slow } from "./helpers";
 import { extrasOn } from "./extras";
 // The parked features it exercises, on (Settings' Extras, src/lib/extras).
 test.beforeEach(({ page }) => extrasOn(page, "atcCopilot"));
@@ -26,7 +26,7 @@ test("a clearance read is shown in its items and entered as the route", async ({
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   const box = sideDrawer(page).getByTestId("route-box");
   // The route's field opened all the way up, over the map's buttons: half
   // way, the comms button in sight over the sheet.

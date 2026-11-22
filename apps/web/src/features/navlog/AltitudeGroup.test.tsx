@@ -64,6 +64,24 @@ describe("AltitudeGroup", () => {
     fireEvent.keyDown(input, { key: "Enter" });
   };
 
+  // The owner, 2026-11-22: "FL input is not letting me clear it." Emptied
+  // as it is typed, it stays empty, a figure typed after it taken; left
+  // empty, it goes back to the figure flown, nothing flown.
+  test("can be emptied while typing, and left empty goes back to the figure flown", () => {
+    const { input, onFlyAltitude } = pill();
+    act(() => input.focus());
+    fireEvent.change(input, { target: { value: "06" } });
+    fireEvent.change(input, { target: { value: "" } });
+    expect(input.value).toBe("");
+    fireEvent.change(input, { target: { value: "8" } });
+    expect(input.value).toBe("8");
+    fireEvent.change(input, { target: { value: "" } });
+    act(() => input.blur());
+    expect(input.value).toBe("065");
+    expect(onFlyAltitude).not.toHaveBeenCalled();
+    expect(input.getAttribute("aria-invalid")).toBeNull();
+  });
+
   test("Enter flies the figure once, not again as the field is left", () => {
     const { input, onFlyAltitude } = pill();
     type(input, "075");

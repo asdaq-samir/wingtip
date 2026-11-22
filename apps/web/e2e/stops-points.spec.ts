@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { inSheet, openPanel, settle, sideDrawer, slow, openRoute } from "./helpers";
+import { inSheet, openPanel, settle, sideDrawer, slow, openRoute, typeRoute } from "./helpers";
 import { stopsAre } from "./stopsParam";
 import { pickAirplane } from "./startState";
 import { recordedStops } from "./recordedStops";
@@ -180,7 +180,7 @@ test("the pilot's own point off a fix is made from a point's menu or typed as a 
   // point, offered as the pilot's own point: a stop before the destination.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   await sideDrawer(page).getByTestId("route-type").fill("vpbng/090/30");
   const own = page.getByTestId("route-own-point");
   await expect(own).toContainText("30 nm on 090° from VPBNG");
@@ -232,7 +232,7 @@ test("a point's menu has its altitude before Remove: an airport's pattern in fee
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=VPBNG");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  await typeRoute(page);
   const lines = sideDrawer(page).getByTestId("route-slide");
   // The pill's menu is FPL's "⋯"'s, in its words (PointMenuItems).
   const item = page.getByTestId("pill-menu-altitude");

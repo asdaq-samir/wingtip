@@ -11,7 +11,7 @@
  * itself, so a change of height draws nothing again.
  *
  * The room it is measured against is the scroller's less its foot's
- * padding (FPL's figures and actions' bar, pinAtFoot's --pin-foot-room):
+ * padding (a foot laid over the page's end, as FPL's was for a day):
  * a band that fit the scroller's whole height but not the room above the
  * foot still scrolled, and a sticky band can move no further than its
  * scroller's content, so all of it went up with the scroll, FPL's head

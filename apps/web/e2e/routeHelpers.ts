@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { planFromSearch } from "./oneSearch";
-import { closeCard, grabberTo, openPanel, settled, sideDrawer, slow } from "./sheetHelpers";
+import { closeCard, grabberTo, inSheet, openPanel, settled, sideDrawer, slow } from "./sheetHelpers";
 
 /**
  * The route in the map's sheet: its field and FPL's timeline, its
@@ -8,28 +8,48 @@ import { closeCard, grabberTo, openPanel, settled, sideDrawer, slow } from "./sh
  * routes' chips. The sheet's own moves are sheetHelpers'.
  */
 
-/** FPL's route's field open over its timeline (the one layout, decision
- *  0047): the timeline is where the route is edited -- a tap on a field's
- *  line opens its runways and procedures, the mark is its menu, a hold or
- *  the grip moves it -- and the route's field, to type or paste it in,
- *  opens from Add a Stop's keyboard button (Type the route), Done folding it away. A
- *  new plan or half a route has it open already. */
+/** FPL's route as its timeline, in sight (the one layout, decision 0047):
+ *  the timeline is where the route is edited -- a tap on a field's line
+ *  opens its runways and procedures, the mark is its menu, a hold or the
+ *  grip moves it. Where the box is the route's field (a route typed in) it
+ *  is turned back by its toggle first. */
 export async function openRoute(page: Page) {
   const panel = sideDrawer(page);
   const timeline = panel.getByTestId("route-summary");
-  const done = panel.getByTestId("route-done");
-  await expect(timeline.or(done).first()).toBeVisible({ timeout: slow(30_000) });
-  if (await done.isVisible()) return;
+  const typing = panel.locator('[data-testid="route-type-open"][aria-pressed="true"]');
+  const field = panel.getByTestId("route-editor");
+  await expect(timeline.or(typing).or(field).first()).toBeVisible({ timeout: slow(30_000) });
+  if (await typing.isVisible()) await typing.click();
+  // Half a route or none: its field is the box's face already, with no toggle.
+  if (await field.isVisible()) return;
+  await expect(timeline).toBeVisible();
   await controlsInSight(page);
-  await panel.getByTestId("route-type-open").click();
-  await expect(done).toBeVisible();
 }
 
-/** The route's field folded away by its Done, where it is open (a route
- *  typed in), the timeline alone. */
+/** FPL's route's field, to type or paste the route in: on a whole route
+ *  the same box turned into it by the toggle at its lower left (Type the
+ *  route, TypeRouteButton; the owner, 2026-11-22), pressed while it is the
+ *  field; a new plan or half a route has it open already. */
+export async function typeRoute(page: Page) {
+  const panel = sideDrawer(page);
+  const timeline = panel.getByTestId("route-summary");
+  const field = panel.getByTestId("route-editor");
+  await expect(timeline.or(field).first()).toBeVisible({ timeout: slow(30_000) });
+  if (await field.isVisible()) return;
+  await controlsInSight(page);
+  await panel.getByTestId("route-type-open").click();
+  await expect(panel.locator('[data-testid="route-type-open"][aria-pressed="true"]')).toBeVisible();
+}
+
+/** The route's field turned back into the timeline by the box's toggle,
+ *  where it is the field (a route typed in), the timeline alone. */
 export async function foldRoute(page: Page) {
-  const done = sideDrawer(page).getByTestId("route-done");
-  if (await done.isVisible()) await done.click();
+  const typing = sideDrawer(page).locator('[data-testid="route-type-open"][aria-pressed="true"]');
+  if (await typing.isVisible()) {
+    // Under the floating bar at the page's foot (a route typed into the empty box): raised to it first, as a finger does.
+    await inSheet(page, typing);
+    await typing.click();
+  }
   await expect(sideDrawer(page).getByTestId("route-summary")).toBeVisible();
 }
 
@@ -78,23 +98,21 @@ export async function controlsInSight(page: Page) {
   await planFromSearch(page);
 }
 
-/** More's Route Options (ShareMenu; the owner, 2026-11-19: "Let's put the
- *  more route options in the ... button"), the menu opened from FPL's
- *  floating bar: the item, which says whether the suggested routes are out
- *  (aria-checked). Escape puts the menu away again. */
+/** Route Options, the Routes tab of FPL's floating bar (FplTabBar; the
+ *  owner, 2026-11-22: "route option can show in the tab bar"), which says
+ *  whether the suggested routes are out (aria-pressed). */
 export async function routeOptionsItem(page: Page): Promise<Locator> {
-  await sideDrawer(page).getByTestId("share-route").click();
-  return page.getByRole("menuitemcheckbox", { name: "Route Options" });
+  return sideDrawer(page).getByTestId("routes-toggle");
 }
 
-/** The suggested routes' chips, put out above the route by More's Route
- *  Options where they are not out already. */
+/** The suggested routes' chips, put out above the route by the bar's
+ *  Routes where they are not out already. */
 export async function suggestedRoutes(page: Page): Promise<Locator> {
   await expect(async () => {
     const item = await routeOptionsItem(page);
     await expect(item).toBeVisible({ timeout: 2000 });
-    if ((await item.getAttribute("aria-checked")) === "true") await page.keyboard.press("Escape");
-    else await item.click();
+    if ((await item.getAttribute("aria-pressed")) !== "true") await item.click();
+    await expect(item).toHaveAttribute("aria-pressed", "true", { timeout: 2000 });
   }).toPass({ timeout: slow(30_000) });
   return sideDrawer(page).getByTestId("route-line");
 }

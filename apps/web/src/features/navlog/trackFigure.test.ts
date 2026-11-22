@@ -30,4 +30,16 @@ describe("trackFigure", () => {
       said: "Track, magnetic, 2 7 4 degrees",
     });
   });
+
+  it("not at flying speed, is the leg's planned magnetic course, named Course, a dash with no route either", () => {
+    expect(trackFigure(fix(271), false, west, 274)).toMatchObject({
+      name: "Course",
+      value: "274°",
+      said: "Course, magnetic, 2 7 4 degrees",
+    });
+    expect(trackFigure(null, false, west, 360).value).toBe("360°");
+    expect(trackFigure(null, false, west, null).value).toBe("—");
+    // Moving, the GPS's track whatever the plan says.
+    expect(trackFigure(fix(271), true, west, 100)).toMatchObject({ name: "Track", value: "274°" });
+  });
 });

@@ -34,7 +34,7 @@ export const SCREENS: Screen[] = [
     name: "flight planning drawer",
     ready: async (page) => {
       await page.goto(`/app/plan?${ROUTE}&view=full`);
-      await expect(sideDrawer(page).getByTestId("route-head").or(sideDrawer(page).getByTestId("route-summary")).first()).toBeVisible({
+      await expect(sideDrawer(page).getByTestId("route-editor").or(sideDrawer(page).getByTestId("route-summary")).first()).toBeVisible({
         timeout: slow(30000),
       });
       await expect(sideDrawer(page).getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });

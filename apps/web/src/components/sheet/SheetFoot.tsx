@@ -18,8 +18,7 @@ const SIDE_FLOAT_ROOM = `calc(${EDGE_ROOM} - 1rem)`;
 
 /**
  * The sheet's foot, the route's figures pinned at it -- in the pill its one
- * row; FPL's at its page's, put away with it under Search, over the page's
- * end (pinAtFoot's --pin-foot-room).
+ * row; FPL's at its page's, put away with it under Search.
  */
 export function SheetFoot(p: {
   foot: ReactNode;
@@ -73,25 +72,16 @@ export function SheetFoot(p: {
         pillFoot ? "border-transparent [&_[data-pill-hides]]:hidden [&>*]:flex-none" : cn("border-border/60", SHEET_BELOW),
         // No hairline over a bar that floats (FPL's actions' glass bar on
         // the ground), as none is over a card's tabs (the owner, 2026-11-16:
-        // "Why do I see a separator above the tabs bar?"); off the pill taps go through it to the figures under it but the bar's.
-        floats && cn("border-transparent", !pillFoot && "pointer-events-none"),
-        // Under the floating bar, iOS 26's soft scroll edge: what scrolls
-        // under it fades towards the sheet's own colour, from a little over
-        // the bar's top to most of the way solid at its foot, so the route
-        // still shows through the glass but its words never run into the
-        // bar's (the HIG review, 2026-11-21: "Brief Land RWY Nav Log ≋18
-        // More" at half; the owner took the fade under the bar only, not
-        // the solid band of the UI audit's B1). Drawn behind the bar, in
-        // the foot's own layer; no fade at the pill, where the bar is out
-        // of sight.
-        floats &&
-          !pillFoot &&
-          "before:pointer-events-none before:absolute before:inset-x-0 before:-top-4 before:bottom-0 before:-z-10 before:bg-linear-to-b before:from-transparent before:to-(--sheet)/85 before:to-60% before:content-['']",
+        // "Why do I see a separator above the tabs bar?"). No fade under it:
+        // the page ends at the foot's top, the figures held there over the
+        // bar, so nothing scrolls under it, and the fade drawn here lay
+        // over the figures held under the bar and dimmed them at half and
+        // full (the owner, 2026-11-22: "the figures are fainted at the bottom").
+        floats && "border-transparent",
       )}
       style={
         {
           "--sheet-progress": size === "half" && !p.layout.desktop ? "0" : "1",
-          marginTop: "calc(-1 * var(--pin-foot-room, 0px))",
           ...(p.layout.toEdge && fromBottom && !pillFoot ? { paddingBottom: "10px" } : {}),
           ...(figuresPill ? { height: `calc(${PILL_BELOW_GRABBER} - ${EDGE_ROOM})` } : {}),
           ...(floats && !fromBottom && !pillFoot ? { marginBottom: SIDE_FLOAT_ROOM } : {}),
