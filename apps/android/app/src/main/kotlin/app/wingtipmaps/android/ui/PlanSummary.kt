@@ -29,6 +29,7 @@ import app.wingtipmaps.android.plan.RouteFieldFacts
 import app.wingtipmaps.android.plan.RouteProcedures
 import app.wingtipmaps.android.plan.StopTimes
 import app.wingtipmaps.android.route.RoutePointMenu
+import app.wingtipmaps.android.route.removeProcedure
 
 /**
  * The route's fields in order, as the web's FPL timeline draws them (the
@@ -54,6 +55,7 @@ fun RouteStops(
     onFind: () -> Unit,
     onAddStop: () -> Unit,
     onAddStopAfter: (String) -> Unit,
+    onPlate: (ident: String, procedure: String) -> Unit = { _, _ -> },
     model: RouteFieldFacts = hiltViewModel(),
     procedures: RouteProcedures = hiltViewModel(),
 ) {
@@ -98,7 +100,7 @@ fun RouteStops(
         @Composable
         fun picked(list: List<PlanProcedures.Pick>) = list.forEach { pick ->
             val drawing = drawings[RouteProcedures.drawingKey(pick)]
-            TimelineProcedureRows(pick, drawing, lists[pick.ident.uppercase()], picks, index, count, replan)
+            TimelineProcedureRows(pick, drawing, lists[pick.ident.uppercase()], picks, index, count, replan, { plan.removeProcedure(pick) }, { onPlate(pick.ident, pick.id) })
             index += procedureRows(drawing)
         }
 

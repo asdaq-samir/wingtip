@@ -83,6 +83,7 @@ import kotlinx.coroutines.launch
  * @param onFind the search opened, for an end not given yet.
  * @param onAddStop the search opened for a stop.
  * @param onAddStopAfter the search opened for a stop after a point (its menu's).
+ * @param onPlate a picked approach's plate card (its head row's Plate).
  */
 @Composable
 fun PlanPage(
@@ -93,6 +94,7 @@ fun PlanPage(
     onFind: () -> Unit,
     onAddStop: () -> Unit,
     onAddStopAfter: (String) -> Unit,
+    onPlate: (ident: String, procedure: String) -> Unit = { _, _ -> },
 ) {
     val state by plan.state.collectAsStateWithLifecycle()
     val dryRun: DryRun = hiltViewModel()
@@ -123,7 +125,7 @@ fun PlanPage(
             item(key = "pills") {
                 Box(pad) { PlanPills(plan, state, onAltitude = { scope.launch { list.animateScrollToItem(altitudeIndex(state)) } }) }
             }
-            item(key = "stops") { Box(pad) { RouteStops(plan, state, onField = onField, onFind = onFind, onAddStop = onAddStop, onAddStopAfter = onAddStopAfter) } }
+            item(key = "stops") { Box(pad) { RouteStops(plan, state, onField = onField, onFind = onFind, onAddStop = onAddStop, onAddStopAfter = onAddStopAfter, onPlate = onPlate) } }
             // Add or Remove Fuel Stops by Add a Stop, then the fuel in the
             // tanks at each field, each a tap to set it (FuelTanks).
             item(key = "fuel-stops") { Box(pad) { FuelStopsRow(plan, state, index = 0, count = 1) } }

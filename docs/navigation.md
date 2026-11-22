@@ -324,7 +324,7 @@ or overflow).
 | A logbook entry | Edit, Delete, Undo | **in the row; Undo row (new)** | **in the row; Undo row (new)** | **in the row; Undo row (new)** |
 | A frequency | Copy (Tune nowhere: no radio link) | **tap (new)** | **hold (new)** | **tap (new)** |
 | A flight just ended | Debrief the approaches · Log it | FlightLoggedSheet | FlightLoggedSheet | FlightLoggedSheet |
-| An approach | Brief, Dry Run, Load into Route, Plate | procedures sheet | **FPL's timeline: "+ APCH" on the field's line picks it, its head row picks another and holds Approach Brief, Dry Run (one sheet, a segmented control between them) and Plate (its card), each fix's ring Direct To and Cross at… (2026-11-21)** | **the plan's timeline: "+ APCH" on the field's row picks it (with "+ ARR", "+ DEP" and the Land and Takeoff RWY menus, Into the Wind first), its head row picks another, each fix's ⋮ Direct To and Cross at… (2026-11-21)**; Brief, Dry Run and Plate not yet |
+| An approach | Brief, Dry Run, Load into Route, Plate | procedures sheet | **FPL's timeline: "+ APCH" on the field's line picks it, its head row picks another and holds Approach Brief, Dry Run (one sheet, a segmented control between them) and Plate (its card), each fix's ring Direct To and Cross at… (2026-11-21)** | **the plan's timeline: "+ APCH" on the field's row picks it (with "+ ARR", "+ DEP" and the Land and Takeoff RWY menus, Into the Wind first), its head row picks another, each fix's ⋮ Direct To and Cross at… (2026-11-21)**; its head row's Approach Brief, Dry Run and Plate, and None's Undo (round 2) |
 | An alert | what it is and its fix | AlertsBanner opens it | **the airspace card; copilot: Direct To, More Info (new)** | **the Ahead sheet; copilot: Fly to, More Info (new)** |
 | A Go / No-Go item, a Brief line | its fix | opens its page | targets only | **not tappable (gap)** |
 
@@ -347,11 +347,12 @@ The nav follow-ups (2026-11-09) closed the first list's gaps 1 to 8 as far
 as each platform has the screen. What is left needs a decision, a server
 change or another branch's work:
 
-1. **Approach actions on Android.** The iPhone's approach on FPL's line
-   opens its Approach Brief, Dry Run and Plate from its head row
-   (2026-11-21). Android's plan now picks approaches, arrivals and
-   departures on its line, but its approach has no Brief, Dry Run or
-   Plate yet, and a procedure removed there has no Undo.
+1. **Approach actions on Android.** Closed in audit round 2
+   (2026-11-21): Android's approach on the plan's line opens its Approach
+   Brief, Dry Run (one sheet, Material's segmented buttons between them)
+   and Plate from its head row's menu, as the iPhone's, and a procedure
+   taken off a field there (None) has the Snackbar's Undo ("ILS RWY 36
+   Removed").
 2. **No Tune anywhere.** No platform reaches a radio; Copy is the action.
    The web nav log and ATIS rows, Android's ATC card, nav log, D-ATIS and
    the strip's chips show no frequency to copy (the ATC card is

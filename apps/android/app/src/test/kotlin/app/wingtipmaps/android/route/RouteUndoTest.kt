@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.route
 
+import app.wingtipmaps.android.plan.PlanProcedures
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -33,5 +34,18 @@ class RouteUndoTest {
         // Kept for Redo with what the Undo left, the fuel too.
         undo.keepRedo(note.copy(tanks = emptyMap()))
         assertTrue(undo.takeRedo()!!.tanks.isEmpty())
+    }
+
+    @Test
+    fun aProcedureTakenOffIsALoudStepThatKeepsThePicks() {
+        // Plan.removeProcedure: "ILS RWY 36 Removed", the picks before it kept.
+        val ils = PlanProcedures.Pick("KOSH", "I36", "approach", "ILS RWY 36")
+        val picks = PlanProcedures.State(picks = listOf(ils), direct = mapOf(ils.key to "VEGAS"))
+        val undo = RouteUndo()
+        undo.took(RouteUndo.Kind.REMOVED, ils.name, route, emptyList(), direct = null, was = null, procedures = picks)
+        val note = undo.take()!!
+        assertTrue(note.kind.loud)
+        assertEquals("ILS RWY 36", note.ident)
+        assertEquals(picks, note.procedures)
     }
 }
