@@ -2,7 +2,6 @@ package app.wingtipmaps.android.map
 
 import android.view.View
 import androidx.core.graphics.toColorInt
-import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.design.generated.WingtipMap
@@ -30,8 +29,6 @@ import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.sources.GeoJsonSource
-import org.maplibre.android.style.sources.RasterDemSource
-import org.maplibre.android.style.sources.TileSet
 
 /**
  * The ground and the 3D view (Map Settings' Terrain; the web's TerrainGl),
@@ -57,16 +54,12 @@ import org.maplibre.android.style.sources.TileSet
  * the view, as NexradLayer.
  */
 object Map3dLayer {
-    private const val DEM = "terrain-dem"
     private const val HILLSHADE = "terrain-hillshade"
     private const val VOLUMES = "airspace-3d"
     private const val SHELF_LABELS = "airspace-3d-labels"
     private const val APPROACH = "approach-3d"
     private const val APPROACH_LINE = "approach-3d-line"
     private const val APPROACH_DASH = "approach-3d-centreline"
-
-    /** The finest terrain tile asked for, the planner's (wingtip.terrain_view.MAX_ZOOM). */
-    private const val DEM_MAX_ZOOM = 13f
 
     /** The tilt 3D opens at, for the ground to read as ground at once (the
      *  tokens' map.pitch-open); MapLibre Native's most is 60
@@ -218,33 +211,26 @@ object Map3dLayer {
         approach(style, if (three) scene else null)
     }
 
-    /** The planner's terrain tiles and their relief over the chart, under
-     *  the overlays: its shadows half clear, so the chart's own colours and
-     *  words stay as printed in the light (the web's HILLSHADE_LAYER). */
+    /** The planner's terrain tiles (TerrainDem, shared with the hazard
+     *  colouring) and their relief over the chart, under the overlays: its
+     *  shadows half clear, so the chart's own colours and words stay as
+     *  printed in the light (the web's HILLSHADE_LAYER). */
     private fun relief(style: Style, on: Boolean) {
         if (!on) {
             style.getLayer(HILLSHADE)?.let(style::removeLayer)
-            style.getSource(DEM)?.let(style::removeSource)
+            TerrainDem.release(style)
             return
         }
         if (style.getLayer(HILLSHADE) != null) return
-        if (style.getSource(DEM) == null) {
-            val tiles = TileSet("2.2.0", Config.gateway + Config.plannerPath("/api/terrain-tile/{z}/{x}/{y}.png")).apply {
-                encoding = "terrarium"
-                minZoom = 3f
-                maxZoom = DEM_MAX_ZOOM
-            }
-            style.addSource(RasterDemSource(DEM, tiles, 256))
-        }
-        val layer = HillshadeLayer(HILLSHADE, DEM).withProperties(
+        TerrainDem.add(style)
+        val layer = HillshadeLayer(HILLSHADE, TerrainDem.ID).withProperties(
             PropertyFactory.hillshadeExaggeration(0.35f),
             PropertyFactory.hillshadeShadowColor(arrayOf("rgba(40, 32, 20, 0.55)")),
             PropertyFactory.hillshadeHighlightColor(arrayOf("rgba(255, 255, 255, 0.18)")),
             PropertyFactory.hillshadeAccentColor("rgba(0, 0, 0, 0)"),
             PropertyFactory.hillshadeIlluminationDirection(arrayOf(315f)),
         )
-        val top = MapStyle.CHART_LAYERS.lastOrNull { style.getLayer(it) != null } ?: CloseMap.IMAGERY.takeIf { style.getLayer(it) != null }
-        if (top != null) style.addLayerAbove(layer, top) else below(style, layer)
+        TerrainDem.overChart(style, layer)
     }
 
     /** The volumes, one extrusion layer a kind and strength: MapLibre's

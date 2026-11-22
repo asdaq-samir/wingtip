@@ -341,4 +341,20 @@ class EngineFixturesTest {
         for (c in all) check(ask("airspace_volume_span", *c.input()), c["answer"], "airspace_volume_span ${c["about"]}")
         done()
     }
+
+    @Test
+    fun theHazardColouringComesThroughTheBridge() {
+        // HazardLayer's and the Profile's obstacles, as the engine's and the web's tests hold them;
+        // the fixture's expected keys only, as its cases list them.
+        val f = fixture("hazardView.json")
+        val views = f.cases("views")
+        assertTrue(views.isNotEmpty())
+        for (c in views) {
+            val got = ask("hazard_view", *c.input()) as? JsonObject
+            for ((key, want) in c.getValue("expected").jsonObject) check(got?.get(key), want, "hazard_view ${c["why"]}: $key")
+        }
+        val o = f.getValue("obstacles").jsonObject
+        check(ask("profile_obstacles", *o.input()), o["expected"], "profile_obstacles")
+        done()
+    }
 }

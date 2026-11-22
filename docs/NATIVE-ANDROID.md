@@ -315,6 +315,24 @@ and `glOverlays.ts`):
   rewritten against the plan (the web's `addProtocol`), which MapLibre
   Native has no hook for; it is not drawn. The volumes' taps open nothing
   of their own: their lines on the chart open the card as before.
+- **Terrain Hazards** (`map/Hazard`, `HazardLayer`, `HazardPrefs`,
+  `HazardRows`; the web's `features/plan-map/hazard`): ForeFlight's
+  Hazard Advisor on the chart. The Map card has Terrain Hazards under
+  the layers (Off, On, In Flight; off by default) and, while it is not
+  off, Red Within (the engine's `clearances_ft`), stock segmented
+  buttons, kept in the settings file. The engine's `hazard_view` takes
+  the setting, own ship's speed and GPS height (to 50 ft, so a fix a
+  second repaints nothing while level) and the plan's highest leg, and
+  answers whether to draw and the red and amber lines; a
+  `ColorReliefLayer` on the relief's own terrain source (`TerrainDem`,
+  shared with the hillshade and removed only once neither draws from it)
+  takes them as its stops, and the DOF's obstacles round the view
+  (`/api/terrain/obstacles`, from the app's zoom 9) are rings where the
+  engine levels them red or amber. The Profile card draws the same DOF
+  obstacles along the route as posts in `profile_obstacles`' levels, the
+  tallest three named MSL (AGL), with the TAF cloud bases, the freezing
+  level and the G-AIRMET icing from `/api/route-profile/weather`, and a
+  key under it naming each line's source and time (`ProfileHazards`).
 - **Model Weather** (`map/flow`, the web's `features/weather-flow`): the
   Map card has Model Weather, a menu of the web's twelve fields.
   `ModelWeather` holds the planner's timeline (`/api/weather/flow`, every

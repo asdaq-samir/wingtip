@@ -43,6 +43,7 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.FlightModel
+import app.wingtipmaps.android.map.HazardRows
 import app.wingtipmaps.android.map.MapLayersStore
 import app.wingtipmaps.android.map.ModelWeatherRow
 import app.wingtipmaps.android.map.WeatherLoopRows
@@ -60,8 +61,9 @@ object MapCardTags {
  * The Map card, the map's Layers button opens (the owner's three homes,
  * 2026-11-13; Google Maps' own Layers sheet, its "Map details" tiles):
  * what is on the map, and nothing else -- the layers as tiles three to a
- * row, each a glyph over its name, filled in the tint while on, then the
- * radar and satellite loop and the model weather. A gear in the card's
+ * row, each a glyph over its name, filled in the tint while on, then
+ * Terrain Hazards (HazardRows), the radar and satellite loop and the model
+ * weather. A gear in the card's
  * bar, Material's place for its own actions, opens Settings at its Map
  * group (SettingsAt), its ← back to this card. There is no Map Settings
  * page any more; 3D is the round map button (ThreeDButton).
@@ -87,6 +89,8 @@ fun MapCard(exit: CardExit, open: (SheetPage) -> Unit) {
         ) {
             SectionTitle(stringResource(R.string.map_layers))
             LayerTiles()
+            // The ground and obstacles coloured against the altitude flown (map/HazardLayer).
+            HazardRows()
             // The radar and satellite loop and its speed (map/WeatherLoop),
             // and the model weather's field (map/flow).
             WeatherLoopRows()
