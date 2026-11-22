@@ -296,6 +296,9 @@ export default function CheckridePage() {
   const recorded = new Map(training.endorsements.map((e) => [e.code, e]));
   const signed = inForce(training.signed);
   const voided = training.signed.filter((e) => e.voided);
+  // Signed by an instructor the FAA airmen registry did not bear out: kept
+  // and shown, but not signed, so not among the endorsements above.
+  const unverified = training.signed.filter((e) => !e.voided && !e.instructorVerified);
   return (
     <div className="space-y-5">
       <ExperienceGroup training={training} />
@@ -334,6 +337,13 @@ export default function CheckridePage() {
           );
         })}
       </ListGroup>
+      {unverified.length > 0 && (
+        <ListGroup title="Not Verified">
+          {unverified.map((e) => (
+            <SignedRow key={e.id} kind={training.kinds.find((k) => k.code === e.code)} e={e} />
+          ))}
+        </ListGroup>
+      )}
       {voided.length > 0 && (
         <ListGroup title="Voided">
           {voided.map((e) => (

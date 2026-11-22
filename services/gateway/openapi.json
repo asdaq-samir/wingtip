@@ -2644,6 +2644,9 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "instructorVerified" : {
+            "type" : "boolean"
+          },
           "signature" : {
             "type" : "string"
           },
@@ -2661,11 +2664,14 @@
             "format" : "date",
             "type" : [ "string", "null" ]
           },
+          "verification" : {
+            "type" : [ "string", "null" ]
+          },
           "voided" : {
             "type" : "boolean"
           }
         },
-        "required" : [ "code", "digest", "fields", "id", "signature", "signedOn", "studentName", "text", "until", "voided" ],
+        "required" : [ "code", "digest", "fields", "id", "instructorVerified", "signature", "signedOn", "studentName", "text", "until", "verification", "voided" ],
         "type" : "object"
       },
       "SignedIn" : {

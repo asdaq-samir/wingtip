@@ -342,8 +342,10 @@ Then the callers switch to the name and the old copy is deleted.
   (ForeFlight's export among them, papaparse's reading ported step for
   step), a handbook page's figures read off its photo, and endorsements
   (in force, an instructor's lapsed date under 14 CFR 61.197, the words
-  signed, a knowledge test's ACS codes), held to the web's fixtures
-  `checklist.json` and `logbookCsv.json`.
+  signed, a knowledge test's ACS codes, and whether the instructor signing
+  is a flight instructor the FAA's releasable airmen file bears out,
+  `instructor_verification`), held to the web's fixtures
+  `checklist.json`, `logbookCsv.json` and `instructorVerification.json`.
 - The map's overlays with no network are the engine's too (`crates/airspace`):
   the Class B, C and D, the landing fields and the VORs inside the map's
   box from the phone's kept packs, in the shapes the planner's in-view

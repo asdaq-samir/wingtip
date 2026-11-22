@@ -7,6 +7,9 @@ is kept of each day as it passes, and what is fetched once a month.
 - Each day, the NTSB's file directory read (ingest.ntsb): the store made
   again from avall.zip when the NTSB has remade it, then each weekly
   delta since applied once.
+- Each day, the FAA's monthly airmen file asked for (ingest.airmen): the
+  flight instructors' store made again from a month's file once, for
+  the endorsements' instructor check (wingtip.airmen).
 
 Each is a job on ingest's scheduler (wingtip.schedule): a failure is
 logged and tried again at the next turn; neither holds up the feeds.
@@ -18,16 +21,20 @@ from apscheduler.schedulers.base import BaseScheduler
 from wingtip import schedule
 from wingtip.history import notam_archive
 
-from . import ntsb
+from . import airmen, ntsb
 
 #: How often the day's archive is brought up to date, s.
 SNAPSHOT_EVERY_S = 3600.0
 #: How often the NTSB's directory is looked at, s: a delta comes weekly.
 NTSB_EVERY_S = 86400.0
+#: How often the FAA's airmen file is asked for, s: it comes monthly.
+AIRMEN_EVERY_S = 86400.0
 
 
 def jobs(on: BaseScheduler) -> None:
-    """The archive brought up to date each SNAPSHOT_EVERY_S, and the NTSB's
-    store each NTSB_EVERY_S, both first now: each a job on `on`."""
+    """The archive brought up to date each SNAPSHOT_EVERY_S, the NTSB's
+    store each NTSB_EVERY_S and the airmen's each AIRMEN_EVERY_S, all
+    first now: each a job on `on`."""
     schedule.every(on, SNAPSHOT_EVERY_S, notam_archive.snapshot, name="notam-archive")
     schedule.every(on, NTSB_EVERY_S, ntsb.refresh, name="ntsb")
+    schedule.every(on, AIRMEN_EVERY_S, airmen.refresh, name="airmen")

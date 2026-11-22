@@ -5,8 +5,9 @@ import java.util.Map;
 import org.jspecify.annotations.Nullable;
 
 /** An endorsement signed in the app: the words and the signature line as
- *  signed, the day, the day it runs out where it does, and whether a
- *  correction has voided it. */
+ *  signed, the day, the day it runs out where it does, whether a
+ *  correction has voided it, and whether the FAA airmen registry bore its
+ *  instructor out (Not verified otherwise). */
 public record SignedEndorsementDto(
         Long id,
         String code,
@@ -19,11 +20,16 @@ public record SignedEndorsementDto(
         @Nullable LocalDate until,
         boolean voided,
         /* SHA-256 of the words, the signature line and the moment signed. */
-        String digest) {
+        String digest,
+        /* Whether the FAA airmen registry bore the instructor out: only then is it signed. */
+        boolean instructorVerified,
+        /* The registry's verdict as the pilot reads it ("Not verified: ..."). */
+        @Nullable String verification) {
 
     /** The same endorsement with its last good day, the engine's, filled
      *  in once the planner is asked. */
     public SignedEndorsementDto withUntil(@Nullable LocalDate until) {
-        return new SignedEndorsementDto(id, code, studentName, fields, text, signature, signedOn, until, voided, digest);
+        return new SignedEndorsementDto(
+                id, code, studentName, fields, text, signature, signedOn, until, voided, digest, instructorVerified, verification);
     }
 }

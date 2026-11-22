@@ -351,6 +351,18 @@ in the day since the last copy, on a server whose database is itself
 lost, is not caught. The privacy policy says so ("Your copy and deleting
 it").
 
+## The FAA's flight instructors
+
+To say whether an endorsement's instructor is a flight instructor the FAA
+knows (the engine's `instructor_verification`), ingest keeps from the FAA's
+public Airmen Certification Releasable Database each active flight
+instructor's FAA unique id, name and certificate expiry (`airmen.sqlite`,
+`wingtip.airmen`), replaced each month; no address, medical or rating,
+though the file has them. An airman who asked the FAA to withhold their
+address is not in the file at all. A signed endorsement keeps the
+verdict, the matched FAA id and its words with it (`signed_endorsements`,
+V51), and goes as the endorsement does.
+
 ## Kept on the device (the web)
 
 Nothing below leaves the browser unless a row above says so; it is the

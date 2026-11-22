@@ -14,6 +14,8 @@ import app.wingtipmaps.gateway.planner.model.PlannerExperienceAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerHeldEndorsement;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
 import app.wingtipmaps.gateway.planner.model.PlannerInspectionsAsk;
+import app.wingtipmaps.gateway.planner.model.PlannerInstructorVerification;
+import app.wingtipmaps.gateway.planner.model.PlannerInstructorVerificationAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerPilotNotes;
 import app.wingtipmaps.gateway.planner.model.PlannerRecordsBatch;
 import app.wingtipmaps.gateway.planner.model.PlannerRecordsBatchAsk;
@@ -311,6 +313,23 @@ public class PlannerClient {
         (fields == null ? Map.<String, String>of() : fields)
                 .forEach((k, v) -> ask.putFieldsItem(k, v == null ? "" : v));
         return rule("the endorsement's words", () -> planner.fill(ask), f -> f);
+    }
+
+    /**
+     * Whether the FAA airmen registry bears out the instructor about to sign
+     * for a student (POST /api/pilot/instructor-verification, the engine's
+     * instructor_verification): their name and the student's as on their
+     * certificates, the day, and the registry records other accounts
+     * already sign as. Only a verified endorsement counts as signed.
+     *
+     * @throws PlannerUnavailableException when the planner cannot be reached or refuses
+     */
+    public PlannerInstructorVerification verifyInstructor(
+            String instructor, String student, LocalDate signedOn, List<String> boundElsewhere) {
+        PlannerInstructorVerificationAsk ask = new PlannerInstructorVerificationAsk(instructor, signedOn)
+                .studentName(student)
+                .boundElsewhere(boundElsewhere);
+        return rule("the instructor's certificate", () -> planner.verifyInstructor(ask), v -> v);
     }
 
     /**

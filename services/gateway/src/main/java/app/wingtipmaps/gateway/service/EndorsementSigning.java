@@ -6,6 +6,7 @@ import app.wingtipmaps.gateway.domain.SignedEndorsement;
 import app.wingtipmaps.gateway.dto.EndorsementKindDto;
 import app.wingtipmaps.gateway.dto.SignRequest;
 import app.wingtipmaps.gateway.planner.model.PlannerEndorsementFilled;
+import app.wingtipmaps.gateway.planner.model.PlannerInstructorVerification;
 import app.wingtipmaps.gateway.repository.CrossCountryReviewRepository;
 import app.wingtipmaps.gateway.repository.SignedEndorsementRepository;
 import java.nio.charset.StandardCharsets;
@@ -113,7 +114,18 @@ public class EndorsementSigning {
             }
         }
         String signature = signatureLine(instructor, request.signedOn());
-        SignedEndorsement endorsement = signed.save(new SignedEndorsement(
+        // Whether the FAA airmen registry bears the instructor out, the
+        // engine's to say (instructor_verification): their name against
+        // the registry's flight instructors, never the student themselves,
+        // never a record another account here signs as (the deep security
+        // review of 2026-11-21, N1). Kept with the record either way, as
+        // the app warns and never refuses; only a verified one is held.
+        PlannerInstructorVerification verdict = planner.verifyInstructor(
+                instructor.getFullName(),
+                student.getFullName(),
+                request.signedOn(),
+                signed.registryIdsSignedByOthers(instructor.getId()));
+        SignedEndorsement endorsement = new SignedEndorsement(
                 student,
                 instructor,
                 kind.code(),
@@ -123,12 +135,14 @@ public class EndorsementSigning {
                 signature,
                 request.signedOn(),
                 now,
-                digest(text, signature, now)));
+                digest(text, signature, now));
+        endorsement.verifiedAs(Boolean.TRUE.equals(verdict.getVerified()), verdict.getRegistryId(), verdict.getWords());
+        endorsement = signed.save(endorsement);
         if (review != null) {
             review.endorsed(endorsement, now);
         }
         String said = kind.label() + " (AC 61-65K " + kind.paragraph() + ", 14 CFR " + kind.rule() + ")\n\n" + text
-                + "\n\n" + signature;
+                + "\n\n" + signature + "\n\n" + verdict.getWords();
         mail.send(
                 student.getEmail(),
                 "Endorsed: " + kind.label(),

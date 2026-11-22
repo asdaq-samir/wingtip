@@ -434,6 +434,11 @@ async def instructor_records_since(*, today: str) -> Any:
     return await _send('GET', '/api/pilot/instructor-records-since', query={'today': today}, body=None, headers={})
 
 
+async def instructor_verification(*, body: dict[str, Any]) -> Any:
+    """POST /api/pilot/instructor-verification: Instructor Verification"""
+    return await _send('POST', '/api/pilot/instructor-verification', query={}, body=body, headers={})
+
+
 async def records_batch(*, body: dict[str, Any]) -> Any:
     """POST /api/pilot/records-batch: Records Batch"""
     return await _send('POST', '/api/pilot/records-batch', query={}, body=body, headers={})
