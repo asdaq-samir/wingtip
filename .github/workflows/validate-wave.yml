@@ -1,0 +1,31 @@
+name: Validate wave
+
+# A wave's validation on GitHub, not the Mac (decision 0054; docs/CI.md,
+# "Validating a wave"): a push to claude/validate-<wave> runs ci.yml as the
+# night does, with `wave`. A push trigger, as a dispatch needs main's file.
+on:
+  push:
+    branches: ["claude/validate-*"]
+
+# A new push to the branch replaces its running validation.
+concurrency:
+  group: validate-wave-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+    with:
+      wave: true
+    # The most any ci.yml job asks for, skipped ones too (GitHub checks all).
+    permissions:
+      actions: write
+      checks: read
+      contents: read
+      issues: write
+      packages: write
+      pull-requests: write

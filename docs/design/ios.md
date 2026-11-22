@@ -1,5 +1,12 @@
 # Wingtip on iOS 27: a design reference for every screen
 
+**The iPad is the primary device.** The owner, 2026-11-21: "Primary app
+users are on iPad, so make sure we pay special attention to iPad layout
+etc." (decision 0058). Every screen here is judged on the iPad first, in
+portrait, landscape and split views, then on the iPhone; the iPad's own
+layout is [section 16](#16-ipad-layouts-and-resizable-iphone-windows),
+and the `ipad-iphone-review` skill measures both.
+
 How each Wingtip screen should look and behave on the iPhone and iPad,
 following Apple's own apps and the Human Interface Guidelines as they
 stand for iOS 27 and iPadOS 27 (27.2). The owner asked for it on

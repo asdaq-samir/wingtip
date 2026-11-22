@@ -22,6 +22,12 @@ on:
   # and the runner images change without a commit. Promotes nothing.
   schedule:
     - cron: "17 9 * * *"
+  # A wave's validation (validate-wave.yml, decision 0054; docs/CI.md).
+  workflow_call:
+    inputs:
+      wave:
+        type: boolean
+        default: false
 
 # A new push to a pull request replaces its running run. Not on main,
 # whose push runs are what Promote deploys, nor between the night's run and
@@ -343,7 +349,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          EVENT: ${{ github.event_name }}
+          EVENT: ${{ inputs.wave && 'wave' || github.event_name }}
         run: scripts/ci/changes_since.sh last-green
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v4.0.3
         id: filter
@@ -618,7 +624,7 @@ jobs:
         env:
           CHANGED: ${{ steps.filter.outputs.changes }}
           ALL: ${{ steps.base.outputs.all }}
-          EVENT: ${{ github.event_name }}
+          EVENT: ${{ inputs.wave && 'wave' || github.event_name }}
           FORK: ${{ github.event.pull_request.head.repo.fork }}
           CODE: ${{ steps.docsonly.outputs.code }}
         run: python3 scripts/ci/plan.py
@@ -653,7 +659,7 @@ jobs:
         run: npm ci --no-audit --no-fund
       - id: plan
         env:
-          EVENT: ${{ github.event_name }}
+          EVENT: ${{ inputs.wave && 'wave' || github.event_name }}
         run: python3 scripts/ci/browser_specs.py
 
   # The browser suite (apps/web/e2e, Playwright) against the stack a pilot
@@ -662,8 +668,8 @@ jobs:
   # catches what no unit test can: a lost tap, a drawer that opens empty.
   #
   # After merge (docs/CI.md, "The tiers"; the owner, 2026-11-10): main's
-  # push runs the @smoke and @flight-critical tests on the phone project,
-  # over two shards; the night runs everything over ten. A pull request
+  # push runs the @smoke and @flight-critical tests on the phone project and
+  # the iPad's WebKit, over three; the night everything over ten. A pull request
   # runs every spec its change reaches, and "CI passed" waits for them
   # (decision 0048, after #585 merged with three red); a failure on main is
   # one issue (nightly-issue.yml). Each
@@ -689,8 +695,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The smoke set over two shards on main's push (5-9 min of tests on
-        # one, 2026-11-10); everything over ten at night or by hand; on a
+        # The smoke set over three shards on main's push (5-9 min a shard of two
+        # on 2026-11-10, before webkit-ipad); everything over ten at night; on a
         # pull request, the specs it reaches, three a shard (browser_specs.py).
         shard: ${{ fromJSON(needs.specs.outputs.shards) }}
     steps:
@@ -707,8 +713,8 @@ jobs:
       # done to /tmp/e2e-out/timeline (the shard's annotation lists it). Postgres
       # and Mailpit first, being small; Mailpit's start makes the network the
       # others need. The Playwright image is the slim copy e2e-images makes (no
-      # full Chrome, no Firefox; WebKit kept for the webkit-phone smoke on
-      # main's push), except at night, whose iOS audit and Lighthouse need
+      # full Chrome, no Firefox; WebKit kept for the webkit-phone and webkit-ipad
+      # smoke on main's push), except at night, whose iOS audit and Lighthouse need
       # the image itself.
       - name: The public images, in the background
         env:
@@ -835,49 +841,10 @@ jobs:
           echo "cycle=$cycle" >> "$GITHUB_OUTPUT"
           echo "key=planner-charts-v4-$cycle-${READER:0:16}" >> "$GITHUB_OUTPUT"
           echo "serving cycle $cycle; restored $RESTORED"
-      # What the planner has to work with, on the commit's checks: a
-      # job's log takes admin rights to read, an annotation does not.
-      # "Warm" means the warm-up finished, not that every fetch in it
-      # succeeded, and a planner without its obstacle file or its charts
-      # answers every nav log and tile slowly and wrongly. Once, from the
-      # first shard: the shards' stacks are alike.
+      # What the planner has to work with, on the commit's checks.
       - name: The planner's data, as annotations
         if: matrix.shard == 1
-        run: |
-          python3 - <<'EOF'
-          import json, subprocess, urllib.request
-          def notice(title, text):
-              text = text.replace("%", "%25").replace("\r", "").replace("\n", "%0A")[:4000]
-              print(f"::notice title={title}::{text}")
-          try:
-              s = json.load(urllib.request.urlopen("http://localhost:8084/api/status", timeout=60))
-              notice("planner data", json.dumps({
-                  "faa_files": [f["name"] for f in s["faa_files"]],
-                  "weather": {w["name"]: w["fetched_at"] for w in s["weather"]},
-                  "charts": s["charts"]["prepared"],
-                  "corridors": len(s["corridors"]),
-                  "services": {k: (v or {}).get("up") for k, v in s["services"].items()},
-              }))
-          except Exception as err:
-              notice("planner status", f"unavailable: {err!r}")
-          log = subprocess.run(["docker", "compose", "-f", "docker-compose.yml", "-f", "infra/docker-compose.ci.yml",
-                                "logs", "--no-color", "--tail", "400", "planner"], capture_output=True, text=True).stdout
-          kept = [l.split("| ", 1)[-1] for l in log.splitlines()
-                  if any(k in l for k in ("warm-up", "unavailable", "downloaded", "prepared ", "Error", "error", "Traceback", "refreshed"))]
-          notice("planner log", "\n".join(kept[-40:]) or "(nothing matched)")
-          reach = {}
-          for url in ("https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/NASR_Subscription/",
-                      "https://aeronav.faa.gov/visual/09-03-2026/sectional-files/Chicago.zip",
-                      "https://epqs.nationalmap.gov/v1/json?x=-88.09&y=42.32&units=Feet&wkid=4326",
-                      "https://davidmegginson.github.io/ourairports-data/airports.csv",
-                      "https://aviationweather.gov/data/cache/metars.cache.csv.gz"):
-              try:
-                  r = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "wingtip-maps/0.1"})
-                  reach[url] = urllib.request.urlopen(r, timeout=20).status
-              except Exception as err:
-                  reach[url] = repr(err)[:120]
-          notice("reachable from the runner", json.dumps(reach))
-          EOF
+        run: python3 scripts/ci/e2e_planner_data.py
 
       # The Playwright image, pulled since the job's first steps.
       - name: Wait for the Playwright image
@@ -1354,9 +1321,9 @@ jobs:
   # CI), where `changes` finds the pull request touches what they build
   # from; skipped, and so passing, otherwise. A pull request's set: Android
   # compiled, unit-tested and linted; iOS built and its unit tests
-  # (WingtipTests) on the iPhone. CardSmokeTests is main's push's, in
-  # native-ios.yml's own run, and the rest each workflow's night
-  # (docs/CI.md, "The tiers").
+  # (WingtipTests) on the iPhone. CardSmokeTests on the iPhone and iPad is
+  # main's push's, in native-ios.yml's own run, and a wave's here; the rest
+  # each workflow's night (docs/CI.md, "The tiers").
   android:
     name: Native Android
     needs: [changes]
@@ -1369,7 +1336,7 @@ jobs:
     if: needs.changes.outputs.ios == 'true'
     uses: ./.github/workflows/native-ios.yml
     with:
-      unit_only: true
+      unit_only: ${{ !inputs.wave }}
 
   # Nothing a phone already calls may break: a released app calls these
   # servers for months. oasdiff compares each OpenAPI document with main's

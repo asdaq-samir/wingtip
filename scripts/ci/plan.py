@@ -4,7 +4,8 @@ step "What this run builds and tests", moved here so the workflow stays
 within its line budget (scripts/ci/workflow_rules.py).
 
 Reads CHANGED (the paths-filter's matched filters, a JSON list), ALL ("true"
-for a run that does everything) and EVENT from the environment, writes the
+for a run that does everything) and EVENT (GitHub's event, or "wave" for a
+wave's validation) from the environment, writes the
 job's outputs to GITHUB_OUTPUT and prints them.
 """
 
@@ -41,8 +42,9 @@ outputs["python"] = json.dumps(legs)
 # `ios-app` and `android-app` filters; decision 0044). Main's pushes and
 # the nights have native-android.yml and native-ios.yml for them, which
 # also build on a change to the engine or the shared fixtures, so they
-# are not run twice there.
-gate = os.environ["EVENT"] in ("pull_request", "workflow_dispatch")
+# are not run twice there. A wave's validation (EVENT "wave", from
+# validate-wave.yml; decision 0054) builds both, every area being due.
+gate = os.environ["EVENT"] in ("pull_request", "workflow_dispatch", "wave")
 for name in ("android", "ios"):
     outputs[name] = "true" if gate and due(f"{name}-app") else "false"
 # The browser suite (decision 0048): main's push and the night run their

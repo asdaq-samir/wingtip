@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # A local copy of the stack CI's e2e job runs the browser suite against, as
 # one command (the owner, 2026-11-19), for a spec that fails on CI and not
-# beside the live stack, and for validate-wave.sh's browser step, which runs
-# on it. It never touches the owner's stack, nor another worktree's: a
+# beside the live stack. It never touches the owner's stack, nor another worktree's: a
 # compose project of this worktree's own on ports Docker picks, and `down`
 # takes it all away.
 #

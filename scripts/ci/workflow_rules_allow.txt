@@ -19,7 +19,6 @@ or-true | ci.yml | npx vitest run --reporter=default --reporter=json
 # The run blocks longer than 15 lines when the guard came in (2026-11-10):
 # workflow | job | step | lines. Each is to move into a script.
 long | ci.yml | e2e | Wait for the stack, the page and a warm planner | 21
-long | ci.yml | e2e | The planner's data, as annotations | 34
 long | ci.yml | api-compat | oasdiff breaking, each document against main's | 18
 long | ci.yml | standards | Speed trend | 35
 long | promote.yml | promote | This commit's images, as latest | 21

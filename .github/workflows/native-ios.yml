@@ -6,15 +6,15 @@ name: Native iOS
 # that touches the app, the build and its unit tests alone (`unit_only`), so
 # "CI passed" waits for it (#499 merged with a phone app not compiling when
 # its build ran beside CI). On its own: main's pushes, the unit tests and
-# the CardSmokeTests UI smoke after merge, then TestFlight; claude/native-*
-# pushes; and every night the whole suite (`full`).
+# the CardSmokeTests UI smoke on the iPhone and the iPad after merge, then
+# TestFlight; claude/native-* pushes; and every night the whole suite (`full`).
 #
 # Actions are pinned as in ci.yml (its opening comment says why).
 on:
   workflow_call:
     inputs:
       # The whole suite on the iPhone, the iPad and iPhone Duo. Without it
-      # (main's push): the unit tests and CardSmokeTests on the iPhone alone.
+      # (main's push, a wave): the unit tests and CardSmokeTests, iPhone and iPad.
       full:
         type: boolean
         default: false
@@ -69,16 +69,16 @@ jobs:
     # GitHub's xcode-27 image, the one hosted image with .tool-versions'
     # Xcode 27.2 (actions/runner-images, images/macos/xcode-27-arm64-Readme.md).
     runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
-    # The iPhone by day; at night the iPad and iPhone Duo too, each its own
-    # runner: the three on one ran every UI suite over 80 minutes, cancelled
-    # at the limit twice (#572). The iPhone's leg keeps the job's name.
+    # A pull request runs the iPhone; main's push the iPad too (the primary device,
+    # decision 0058), a wave the iPad's whole suite in two legs; the night iPhone Duo
+    # too, each its own runner (three on one ran over 80 minutes, #572).
     name: ${{ matrix.device == 'iPhone' && 'test' || format('test ({0})', matrix.device) }}
     strategy:
       fail-fast: false
       matrix:
-        device: ${{ fromJSON((inputs.full || github.event_name == 'schedule') && '["iPhone", "iPad", "iPhone Duo"]' || '["iPhone"]') }}
-    # A pull request's set is a few minutes; a night's device and every UI suite about thirty.
-    timeout-minutes: ${{ (inputs.full || github.event_name == 'schedule') && 100 || 25 }}
+        device: ${{ fromJSON((inputs.full || github.event_name == 'schedule') && '["iPhone", "iPad", "iPhone Duo"]' || inputs.unit_only && '["iPhone"]' || github.workflow == 'Validate wave' && '["iPhone", "iPad 1/2", "iPad 2/2"]' || '["iPhone", "iPad"]') }}
+    # A pull request's set is a few minutes; a wave's half of the iPad's suite about twenty, a night's device thirty.
+    timeout-minutes: ${{ (inputs.full || github.event_name == 'schedule') && 100 || contains(matrix.device, '/') && 45 || 25 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -137,12 +137,12 @@ jobs:
       - if: steps.derived.outputs.cache-matched-key == ''
         run: echo "::notice title=Cache miss::ios-derived-data"
       # This leg's device, the newest the runner's Xcode has (an iPad a Pro
-      # where there is one), by its id, picked as on the Mac.
+      # where there is one), by its id, picked as on the Mac; LEG for ios_test.sh.
       - name: The simulator to test on
         id: sim
         env:
           DEVICE: ${{ matrix.device }}
-        run: echo "id=$(xcrun simctl list devices available -j | python3 scripts/dev/newest_simulator.py "$DEVICE")" >> "$GITHUB_OUTPUT"
+        run: echo "id=$(xcrun simctl list devices available -j | python3 scripts/dev/newest_simulator.py "${DEVICE%% [0-9]*}")" >> "$GITHUB_OUTPUT" && echo "LEG=$DEVICE" >> "$GITHUB_ENV"
       # Built, then the string catalog's check, then the tests, so a stale
       # catalog fails before they run. scripts/ci/ios_test.sh picks them: a
       # pull request's unit tests, main's push's CardSmokeTests too (the one
