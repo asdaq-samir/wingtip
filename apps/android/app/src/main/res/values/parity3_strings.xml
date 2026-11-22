@@ -5,4 +5,7 @@
 <resources>
     <!-- The first flight's airplane pill (the web's FIRST_AIRPLANE_ASK). -->
     <string name="first_airplane_ask">Add Your Airplane for Times and Fuel</string>
+    <!-- The airspace card's surface-area group (14 CFR 91.157; part 91 appendix D). -->
+    <string name="special_vfr">Special VFR</string>
+    <string name="no_special_vfr">No Special VFR</string>
 </resources>
