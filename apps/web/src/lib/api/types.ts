@@ -120,6 +120,12 @@ export type ChartPages = Schemas["ChartPages"];
 export type Library = Schemas["Library"];
 export type LibraryDocument = Schemas["LibraryDocument"];
 export type CfrText = Schemas["CfrText"];
+/** The plates kept for the air (wingtip.plate_sets): a flight's, by its
+ *  fields' parts and the diversion range, and the states' for Downloads. */
+export type FlightPlates = Schemas["FlightPlates"];
+export type PlateStates = Schemas["PlateStates"];
+export type PlateStateSet = Schemas["PlateStateSet"];
+export type PlateStateCharts = Schemas["PlateStateCharts"];
 export type ClearanceAsk = Schemas["ClearanceAsk"];
 export type ClearancePlaces = Schemas["ClearancePlaces"];
 /** "When should I go?": the hours and the windows (app.window). */
