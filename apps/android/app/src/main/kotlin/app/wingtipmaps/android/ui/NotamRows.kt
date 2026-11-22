@@ -34,6 +34,8 @@ import app.wingtipmaps.android.api.generated.NotamsRanked
 import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.offline.KeptAgeLine
+import app.wingtipmaps.android.offline.KeptForAir
 
 /**
  * The airport card's NOTAMs, its view model's part the tab draws: the
@@ -53,6 +55,11 @@ class CardNotams(
     /** The engine's empty list for a private field outside the NOTAM
      *  system (airport_notams_none); null for the ordinary one. */
     val none: String? = null,
+    /** When the list was fetched, for its age ("Fetched 42 min ago",
+     *  amber past the engine's hour); null before it is in. */
+    val fetchedAtMs: Long? = null,
+    /** The list asked again from its problem line. */
+    val retry: (() -> Unit)? = null,
 )
 
 /**
@@ -64,7 +71,7 @@ class CardNotams(
  * shown is not read as none.
  */
 fun LazyListScope.notamsSection(notams: CardNotams, pad: Modifier) {
-    notams.problem?.let { item(key = "notams-problem") { ProblemLine(it, pad) } }
+    notams.problem?.let { item(key = "notams-problem") { ProblemLine(it, pad, onRetry = notams.retry) } }
     val said = notams.said
     if (said == null) {
         if (notams.problem == null) item(key = "notams-loading") { LoadingRow(pad) }
@@ -72,6 +79,9 @@ fun LazyListScope.notamsSection(notams: CardNotams, pad: Modifier) {
     }
     val long = said.size > FieldNotams.FIRST
     item(key = "notams-title") { NotamsTitle(long, notams.all, said.size, notams.toggle, pad) }
+    // How old the list is, kept or fresh, as the route's NOTAMs say it (the
+    // offline audit's 3, 2026-11-21; AIM 5-1-3, 14 CFR 91.103).
+    notams.fetchedAtMs?.let { at -> item(key = "notams-age") { KeptAgeLine(KeptForAir.NOTAMS, at, pad) } }
     if (said.isEmpty()) {
         item(key = "notams-none") {
             // Never "no NOTAMs": none heard since the feed's day, or none in

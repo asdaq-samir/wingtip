@@ -206,5 +206,27 @@ export const WORDING = {
   patternAltitude: "Pattern Altitude",
   /** The map, while its chart is asked for. */
   fetchingTheMap: "Fetching the map…",
+  /** The Brief's group of what the flight meets on the route, a briefer's first element (AIM 7-1-5(b)(1)). */
+  adverseConditions: "Adverse Conditions",
+  /** The Brief's row for what is left to do and the fuel beyond the reserve. */
+  beforeYouGo: "Before You Go",
+  /** The Brief's row for the flight between its fields. */
+  enRoute: "En Route",
+  /** The fuel over what the flight needs and its reserve (14 CFR 91.151(a), 91.167(a)), a figure's name. */
+  beyondReserve: "Beyond Reserve",
+  /** The lowest ceiling a TAF near the route forecasts over the flight, a figure's name. */
+  lowestCeiling: "Lowest Ceiling",
+  /** A visibility, a figure's name. */
+  visibility: "Visibility",
+  /** The strongest headwind on any leg (the engine's route_headwind), a figure's name. */
+  mostHeadwind: "Most Headwind",
+  /** The first route's wait for the phone's position. */
+  findingWhereYouAre: "Finding where you are…",
+  /** The Nav Log with no route. */
+  navLogEmpty: "Plan a route on FPL; its legs are listed here.",
+  /** Flying mode's way out for this flight. */
+  doneFlying: "Done Flying",
+  /** The Map card's switch that lets the map's words follow the text size, up to 1.2 times. */
+  largerMapLabels: "Larger Map Labels",
 } as const;
 

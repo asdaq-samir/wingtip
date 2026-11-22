@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.ui
 
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.generated.NotamsRanked
 import app.wingtipmaps.android.api.generated.RankedNotam
@@ -12,6 +13,7 @@ import app.wingtipmaps.android.engine.generated.fuelNames
 import app.wingtipmaps.android.engine.generated.gonogoRunwayInUse
 import app.wingtipmaps.android.engine.generated.gonogoRunwayNumber
 import app.wingtipmaps.android.engine.generated.notamSubject
+import app.wingtipmaps.android.engine.generated.tafValidity
 import app.wingtipmaps.android.plates.APPROACH_CHART
 
 /**
@@ -40,9 +42,17 @@ object AirportReads {
      * for a public or joint-use field); `data`, airport_data_words'
      * "Owner-reported, last updated Aug 2023" (NASR's INSPECT_METHOD_CODE
      * 1 or 2); and `notamsNone`, airport_notams_none's empty NOTAM list for
-     * a private field NASR gives no NOTAM id. Each null where it says nothing.
+     * a private field NASR gives no NOTAM id; and `taf`, its TAF's times
+     * and whether it is in force (taf_validity, TafWords' line and whether
+     * it is a caution). Each null where it says nothing.
      */
-    data class PlaceWords(val closed: String? = null, val use: String? = null, val data: String? = null, val notamsNone: String? = null)
+    data class PlaceWords(
+        val closed: String? = null,
+        val use: String? = null,
+        val data: String? = null,
+        val notamsNone: String? = null,
+        val taf: Pair<String, Boolean>? = null,
+    )
 
     fun read(place: AirportPlace, ranked: NotamsRanked?): Read {
         val said = ranked?.notams?.sortedBy { it.rank }?.map { FieldNotams.say(it, place.ident) }
@@ -55,6 +65,7 @@ object AirportReads {
         use = Engine.airportUseWords(place.isPrivate, place.military).getOrNull()?.words,
         data = Engine.airportDataWords(place.dataSource, place.infoDate).getOrNull(),
         notamsNone = Engine.airportNotamsNone(place.isPrivate, place.military, place.notamId).getOrNull(),
+        taf = place.taf?.let { Engine.tafValidity(it, (AppClock.nowMs() / 1000).toDouble()).getOrNull() }?.let(TafWords::line),
     )
 
     /** The fuel grades by their names (the engine's fuel_names); null with
