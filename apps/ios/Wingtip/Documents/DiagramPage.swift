@@ -16,6 +16,13 @@ struct DiagramPage {
     /// What the engine refused of the page, said under it; nil where it
     /// read the page (a page with no labels has no problem, just no fit).
     var problem: String?
+    /// The diagram's hot spots ("HS 1"), placed on the ground by its
+    /// graticule (the engine's diagram_hot_spots), for the runway
+    /// proximity advisor and their rings on the page; none where the page
+    /// has no graticule or draws none.
+    var hotSpots: [HotSpot] = []
+
+    typealias HotSpot = EngineContract.DiagramHotSpotsAnswerItem
 
     /// The fix to draw now, nil where it is stale or too coarse: the
     /// engine's `diagram_fix_usable` (AC 120-76D 11.17.2.3, three seconds;
@@ -69,10 +76,41 @@ struct DiagramPage {
                 placed.append(.init(text: word, x: Double(at.midX - box.minX), y: Double(box.maxY - at.midY)))
             }
         }
-        do {
-            return DiagramPage(document: document, size: box.size, graticule: try Engine.diagramGraticule(labels: placed))
-        } catch {
+        let graticule: Graticule?
+        do { graticule = try Engine.diagramGraticule(labels: placed) } catch {
             return DiagramPage(document: document, size: box.size, graticule: nil, problem: "Its latitude and longitude marks couldn't be fitted.")
         }
+        var read = DiagramPage(document: document, size: box.size, graticule: graticule)
+        if let graticule { read.hotSpots = hotSpots(text, on: page, in: document, graticule: graticule) }
+        return read
+    }
+
+    /// Whether a found "HS 1" is the start of a longer label, "HS 12":
+    /// the character after it a figure.
+    private static func runsOn(_ found: PDFSelection, _ word: String) -> Bool {
+        guard let longer = found.copy() as? PDFSelection else { return false }
+        longer.extend(atEnd: 1)
+        guard let text = longer.string, text.count > word.count, let last = text.last else { return false }
+        return last.isNumber
+    }
+
+    /// The hot spots the page draws, each label found as the graticule's
+    /// are (its words by the engine's diagram_hot_spot_labels, where it is
+    /// drawn by PDFKit) and taken to the ground by the engine. A page the
+    /// engine cannot read them on has none: the diagram still shows its
+    /// own circles, only the advisor's reminder goes without them.
+    private static func hotSpots(_ text: String, on page: PDFPage, in document: PDFDocument, graticule g: Graticule) -> [HotSpot] {
+        let box = page.bounds(for: .mediaBox)
+        guard let words = try? Engine.diagramHotSpotLabels(text: text) else { return [] }
+        var placed: [EngineContract.DiagramHotSpotsInputLabelsItem] = []
+        for word in words {
+            for found in document.findString(word, withOptions: .literal) where found.pages.first == page && !Self.runsOn(found, word) {
+                let at = found.bounds(for: page)
+                placed.append(.init(text: word, x: Double(at.midX - box.minX), y: Double(box.maxY - at.midY)))
+            }
+        }
+        guard !placed.isEmpty else { return [] }
+        return (try? Engine.diagramHotSpots(graticule: .init(latOnX: g.latOnX, a: g.a, b: g.b, c: g.c, d: g.d, northDeg: g.northDeg),
+                                            labels: placed)) ?? []
     }
 }

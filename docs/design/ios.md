@@ -1932,7 +1932,7 @@ window as Stage Manager puts it there, nothing of the app's own.
 the ⌘-held list): File > Open Flight or Track… (⌘O); View > Search (⌘1),
 FPL (⌘2), the system's sidebar and inspector items; Flight > Search (⌘F),
 Brief (⌘B), Nav Log (⌘L), Profile (⌥⌘P), Nearest (⇧⌘N), Checklists
-(⇧⌘K), Saved Flights, Logbook, Your Airplanes, Emergency Assistant (⇧⌘E);
+(⇧⌘K), Scratchpad (⇧⌘J), Saved Flights, Logbook, Your Airplanes, Emergency Assistant (⇧⌘E);
 Wingtip Settings… under the app's Settings. Escape closes a card
 (`CloseButton`). Each window publishes its own (`WindowActions`).
 
@@ -1940,7 +1940,7 @@ Wingtip Settings… under the app's Settings. Escape closes a card
 buttons; `.hoverEffect(.highlight)` on the plain buttons over the map (the
 figure strip, the alerts, the copilot's and the radio's banners).
 Context menus by a secondary click: a field's row (its preview and the
-plan's three), a chart's row (Open in New Window).
+plan's three), a chart's row (Beside the Map, Open in New Window).
 
 **Drag and drop** (`WindowHost`): a Wingtip flight, a GPX or a KML dropped
 on a window opens as from Files (previewed, never planned unasked);
@@ -1951,6 +1951,38 @@ identifier.
 plate and chart viewer has Markup (`PlateMarkup`, PencilKit's canvas and
 tool picker): the pilot's notes, kept on the device by the chart's
 address (a new cycle starts clean), forgotten at sign-out.
+
+**The cockpit (the market-gap report's items 4, 5, 8 and 9; the owner,
+2026-11-21, "Primary app users are on iPad"):**
+
+- **A chart beside the map** (`BesidePane`, `Navigator.beside`): the
+  viewer's and a chart row's menu's **Beside the Map** stands the plate,
+  the diagram or any FAA chart in a column of its own at the detail's
+  right, the map live beside it and the cards still in the inspector.
+  Own ship is on a plate whose page the planner placed (`PlatePosition`),
+  as full screen; Markup works there too. Its width is a menu of a
+  third, a half and two thirds (`BesideShare`, kept), not a drag; Open in
+  New Window takes it to its own window; its ✕ puts it away. The iPhone
+  keeps the viewer full screen.
+- **Scratchpad** (`ScratchpadView`, `SheetPage.scratchpad`; FPL's •••,
+  Flight > Scratchpad ⇧⌘J): pages of PencilKit ink, blank or a form --
+  Clearance (CRAFT), ATIS, Takeoff and Landing -- whose lines are
+  `TextField`s, so Scribble turns handwriting into text. Kept on the
+  device by the flight's route (`ScratchStore`), forgotten at sign-out;
+  in the inspector on the iPad, a card on the iPhone.
+- **Weight & Balance** (`LoadingView`, `LoadingModel`, `EnvelopeChart`):
+  the stations, the empty weight and arm and the fuel, weighed on the
+  device by the engine's `gonogo_balance` as they are typed, and drawn on
+  the POH's envelope in Swift Charts (the web's `EnvelopeChart`). No
+  airplane, or one without its loading: asked for in place
+  (`AskFigureRow`).
+- **Runway proximity advisor** (`RunwayAdvisor` on `DiagramOwnShipView`):
+  the engine's `runway_proximity` once a second -- "On runway 27",
+  "Approaching runway 9-27" and the hold short line's distance, lined up
+  below the pattern -- over the page, said aloud as it changes (its
+  speaker button, on by default; VoiceOver announces it when off). The
+  diagram's hot spots ringed in orange (`diagram_hot_spot_labels`,
+  `diagram_hot_spots`). Own ship keeps AC 120-76D 11.17.2's rules.
 
 **Avoid:**
 
