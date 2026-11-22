@@ -1820,7 +1820,9 @@ in the air.
 as the FAA's charts are), opened by the address's `doc` key
 (`ReaderHost`): `aim@7-1-5`, `cfr-14-91@91.155`, `phak@p42`,
 `own:<id>`. So a cite tapped, a library row, a bookmark and a shared link
-are one address, and Back closes it. Under the title is a search of its
+are one address, and Back closes it. A reload, which otherwise starts
+clean (`features/shell/freshLoad`), keeps the document open, by its name
+alone, so it opens on the page it was left at (item 113). Under the title is a search of its
 text and four buttons: Contents (the outline and the bookmarks, one
 segmented control), Bookmark This Page, Invert Colors (white on black,
 following the dark appearance until the pilot picks) and Share This Page
@@ -1845,10 +1847,15 @@ are in, it is words.
 
 **Markup and notes.** ForeFlight's markup, the owner's ask of
 2026-11-21 ("Ok just go maximum output"). A PDF's Markup button (the
-pencil, beside Invert Colors) puts out the markup bar at the pages'
-foot, as PencilKit's tool picker floats at the foot of an iPad's screen
-(`MarkupBar`, its view model `useMarkup`): the Highlighter, the Pen and
-the Eraser (a toggle group), the ink (a menu of four, from the tokens),
+pencil, beside Invert Colors) puts out the markup bar where the iPad's
+layout puts tools (item 113): from the regular width (660, an iPad) in
+the reader's head under its search and buttons, as Preview and Files put
+their markup tools under the title bar, clear of the hand resting on the
+page; at the compact width (an iPhone, an iPad's 1/3) floating at the
+pages' foot, as PencilKit's tool picker does on an iPhone (`MarkupBar`,
+its view model `useMarkup`): the Highlighter, the Pen and
+the Eraser (a toggle group), the ink (a menu of four each, from
+design/tokens.json's own `color.markup` group),
 Undo (and Redo from `sm` up), a picked highlight's Add Note (a popover
 with its words over the note) and Share Marked-Up Page. The marks are
 pdf.js's own annotation editors (`pdfMarkup`): its highlight, made by
@@ -1860,7 +1867,11 @@ through pdf.js's own Delete so Undo puts it back. Palm rejection: pdf.js
 already ignores another kind of touch while a pencil draws; once a
 pencil has drawn here a finger scrolls and zooms and draws nothing, as
 iPadOS's "Only Draw with Apple Pencil" (a hand button in the bar turns
-it off, shown once a pencil has been seen). Every mark is tied to its
+it off, shown once a pencil has been seen). With the pen or the eraser
+in hand two fingers scroll the pages, as in Notes: pdf.js's drawing
+layer takes every touch, so the reader scrolls by the fingers' middle
+(`markup`'s `twoFingerScroll`), and from a second finger down until all
+are lifted nothing is drawn. Every mark is tied to its
 page and kept on the device in IndexedDB beside the kept PDFs
 (`deviceFiles`' `marks/<doc>@<edition>`, an edition's pages being its
 own), never sent, and given back to pdf.js as its own copied marks

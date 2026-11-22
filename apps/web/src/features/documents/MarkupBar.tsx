@@ -21,26 +21,36 @@ const TOOLS: { value: Tool; label: string; icon: typeof PenLine }[] = [
 const TOOL = "relative size-10 rounded-full after:absolute after:-inset-0.5 after:content-[''] [&_svg]:size-5";
 
 /**
- * The markup bar: the tools floating at the foot of the pages, as
- * PencilKit's tool picker floats at the foot of an iPad's screen (and
- * ForeFlight's markup bar at its document's), clear of the reader's
- * buttons and of the hand that holds the pencil. The highlighter, the pen
- * and the eraser; the ink, a pull-down (discrete settings are menus); Undo
- * (and Redo where there is room, as iPadOS has both and the iPhone's
- * Notes keeps Undo); a picked highlight's note; and the page shared with
- * its marks.
- *
- * TODO(claude/ipad-web): where the iPad's layout puts tools once that
- * branch is in; at the foot until then.
+ * The markup bar, where the iPad's layout puts a document's tools: at the
+ * regular width (an iPad, the side panel's 660 up, useIsMobile) in the
+ * reader's head under its search and buttons, as iPadOS's Preview and
+ * Files put their markup tools under the title bar, clear of the hand
+ * that rests on the page's foot as the pencil writes; at the compact
+ * width (an iPhone, an iPad's 1/3) floating at the pages' foot, as
+ * PencilKit's tool picker does on an iPhone, by the thumb. The
+ * highlighter, the pen and the eraser; the ink, a pull-down (discrete
+ * settings are menus); Undo (and Redo where there is room, as iPadOS has
+ * both and the iPhone's Notes keeps Undo); a picked highlight's note;
+ * and the page shared with its marks.
  */
-export function MarkupBar({ vm, page }: { vm: MarkupModel; page: number | null }) {
+export function MarkupBar({ vm, page, at }: { vm: MarkupModel; page: number | null; at: "head" | "foot" }) {
+  const head = at === "head";
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+    <div
+      className={cn(
+        "flex justify-center px-4",
+        head ? "shrink-0 pb-2" : "pointer-events-none absolute inset-x-0 bottom-0 pb-[max(1rem,env(safe-area-inset-bottom))]",
+      )}
+    >
       <div
         role="toolbar"
         aria-label="Markup"
         data-testid="document-markup-bar"
-        className="pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-full bg-popover p-1 shadow-float"
+        data-at={at}
+        className={cn(
+          "pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-full p-1",
+          head ? "bg-muted" : "bg-popover shadow-float",
+        )}
       >
         <ToggleGroup value={vm.tool ? [vm.tool] : []} onValueChange={(v) => v[0] && vm.take(v[0] as Tool)} aria-label="Tool" spacing={1}>
           {TOOLS.map(({ value, label, icon: Icon }) => (
@@ -90,7 +100,7 @@ export function MarkupBar({ vm, page }: { vm: MarkupModel; page: number | null }
         <IconButton label="Undo" disabled={!vm.canUndo} onClick={vm.undo} className={TOOL} data-testid="document-undo-mark">
           <Undo2 />
         </IconButton>
-        <IconButton label="Redo" disabled={!vm.canRedo} onClick={vm.redo} className={cn(TOOL, "max-sm:hidden")}>
+        <IconButton label="Redo" disabled={!vm.canRedo} onClick={vm.redo} className={cn(TOOL, !head && "max-sm:hidden")}>
           <Redo2 />
         </IconButton>
         {vm.pencilOnly !== null && (

@@ -205,6 +205,14 @@
   --signal-green: #16a34a;
   --signal-red: #dc2626;
   --signal-white: #f8fafc;
+  --markup-highlight-yellow: #f2b600;
+  --markup-highlight-green: #52c41a;
+  --markup-highlight-blue: #2f8cff;
+  --markup-highlight-pink: #e02ad8;
+  --markup-pen-black: #1c1a17;
+  --markup-pen-blue: #0066d6;
+  --markup-pen-red: #dc2626;
+  --markup-pen-green: #148a3b;
   --glass-blur: 15px;
   --glass-fill-light: 80%;
   --glass-fill-dark: 85%;

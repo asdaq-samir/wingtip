@@ -4,6 +4,7 @@ import { cn } from "cn";
 import FullScreenViewer from "../../components/FullScreenViewer";
 import IconButton from "../../components/IconButton";
 import { SearchField } from "../../components/PanelCapsule";
+import { useIsMobile } from "../../hooks/use-mobile";
 import { TEXT } from "../../lib/text";
 import type { DocPlace } from "./docPlace";
 import type { OutlineRow } from "./pdfPlaces";
@@ -23,8 +24,8 @@ const PdfBody = lazy(() => import("./PdfBody"));
  * four buttons -- Contents (the outline and the bookmarks), Bookmark the
  * page, Invert for the night, Share the page as a link -- and under them
  * its pages, a PDF's (PdfBody) or a CFR part's text (TextBody). A PDF's
- * Markup button puts out the markup bar at the pages' foot (MarkupBar,
- * useMarkup): highlights with notes, a pen, an eraser and Undo, kept on
+ * Markup button puts out the markup bar, under the head on an iPad and at
+ * the pages' foot on a phone (MarkupBar, useMarkup): highlights with notes, a pen, an eraser and Undo, kept on
  * this device; the contents list the notes. Opened
  * from the address's `doc` (ReaderHost), so a cite tapped, a link shared
  * and Back all work as a card's do.
@@ -32,6 +33,8 @@ const PdfBody = lazy(() => import("./PdfBody"));
 export default function Reader({ place, onClose }: { place: DocPlace; onClose: () => void }) {
   const vm = useReader(place);
   const markup = useMarkup(vm.title);
+  // The markup bar's place: the head at an iPad's regular width, the foot on a phone (MarkupBar).
+  const barAt = useIsMobile() ? "foot" : "head";
   const [contents, setContents] = useState(false);
   const [typed, setTyped] = useState("");
   const [find, setFind] = useState<Find | null>(null);
@@ -40,6 +43,7 @@ export default function Reader({ place, onClose }: { place: DocPlace; onClose: (
   const [page, setPage] = useState<{ page: number; pages: number } | null>(null);
   const [matches, setMatches] = useState<{ current: number; total: number } | null>(null);
   const [failed, setFailed] = useState(false);
+  const bar = markup.tool && !contents ? <MarkupBar vm={markup} page={page?.page ?? null} at={barAt} /> : null;
   const { leftAt } = vm;
   const onPage = useCallback(
     (at: number, pages: number) => {
@@ -117,6 +121,7 @@ export default function Reader({ place, onClose }: { place: DocPlace; onClose: (
           </IconButton>
         )}
       </div>
+      {barAt === "head" && bar}
       {matches && vm.source?.kind === "pdf" && (
         <div className="flex shrink-0 items-center justify-end gap-2 px-4 pb-2" data-testid="document-matches">
           <span role="status" className={cn("text-muted-foreground tabular-nums", TEXT.detail)}>
@@ -150,7 +155,7 @@ export default function Reader({ place, onClose }: { place: DocPlace; onClose: (
                   : "Opening…"}
           </p>
         )}
-        {markup.tool && !contents && <MarkupBar vm={markup} page={page?.page ?? null} />}
+        {barAt === "foot" && bar}
         {contents && (
           <ReaderContents
             edition={vm.edition}

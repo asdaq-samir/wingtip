@@ -11,6 +11,7 @@ import {
   pageNotes,
   sameMark,
   sweep,
+  twoFingerScroll,
   withNote,
   type SavedMark,
 } from "./markup";
@@ -122,5 +123,32 @@ describe("markup", () => {
   it("names a shared page by its document and page, without a path's characters", () => {
     expect(pageFileName("C172S POH: Normal/Emergency", 4)).toBe("C172S POH Normal Emergency p4 marked.png");
     expect(pageFileName("  ", 1)).toBe("Document p1 marked.png");
+  });
+});
+
+describe("two fingers scroll while the pen is in hand", () => {
+  it("one finger draws; a second makes it a scroll by the fingers' middle, until both are lifted", () => {
+    const f = twoFingerScroll();
+    expect(f.down(1, "touch", 100, 100)).toBe(false);
+    expect(f.move(1, 110, 100)).toBeNull();
+    expect(f.down(2, "touch", 200, 100)).toBe(true);
+    // Both fingers 20 down: the pages scroll back up under them, 10 each move.
+    expect(f.move(1, 110, 120)).toEqual([0, -10]);
+    expect(f.move(2, 200, 120)).toEqual([0, -10]);
+    // One lifted: still a scroll, so the finger left draws nothing.
+    expect(f.up(2)).toBe(true);
+    expect(f.scrolling).toBe(true);
+    expect(f.move(1, 110, 130)).toEqual([0, -10]);
+    expect(f.up(1)).toBe(true);
+    expect(f.scrolling).toBe(false);
+    expect(f.down(3, "touch", 0, 0)).toBe(false);
+  });
+
+  it("a pencil and a mouse are never a scroll", () => {
+    const f = twoFingerScroll();
+    expect(f.down(1, "pen", 0, 0)).toBe(false);
+    expect(f.down(2, "mouse", 0, 0)).toBe(false);
+    expect(f.move(1, 5, 5)).toBeNull();
+    expect(f.up(2)).toBe(false);
   });
 });
