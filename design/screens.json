@@ -20,6 +20,7 @@
     { "key": "type", "about": "A shared plan's airplane type, its designator (C172); shown, never assumed: the receiver flies their own." },
     { "key": "rules", "about": "A shared plan's flight rules, vfr or ifr." },
     { "key": "tail", "about": "A shared plan's N-number, only where its pilot chose to send it." },
+    { "key": "tanks", "about": "A shared plan's fuel as the airplane leaves a field, where its pilot set it on a gauge: idents and whole gallons, KOSH:30,KJVL:0 (the planner's tanks); none named, full." },
     { "key": "share", "about": "A saved flight shared by its pilot, by its token (GET /api/shared-flights/{token}); read-only, until they stop sharing it." }
   ],
   "screens": [
