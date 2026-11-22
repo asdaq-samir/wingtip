@@ -28,7 +28,9 @@ fall due (91.409, 91.207, 91.411, 91.413, 91.171: POST
 /api/aircraft/inspections), and AC 61-65K's endorsements, their words and
 the fields they take (GET /api/pilot/endorsement-kinds, POST
 /api/pilot/endorsement-fill: the engine's endorsement_kinds and
-endorsement_fill). Add no rule here.
+endorsement_fill), and which of a student's flights landed at a lesson's
+field (POST /api/pilot/same-field: the engine's field_names over NASR's
+record of each ident, so BUR is KBUR and ANC is PANC). Add no rule here.
 
 A page of records asks the planner once, after its reads: the
 Checkride page and an instructor's page gather every student's

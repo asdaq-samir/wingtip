@@ -19657,6 +19657,49 @@ extension Components {
                 case areas
             }
         }
+        /// For each ident asked, in order, whether it names the field.
+        ///
+        /// - Remark: Generated from `#/components/schemas/SameField`.
+        public struct SameField: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SameField/same`.
+            public var same: [Swift.Bool]
+            /// Creates a new `SameField`.
+            ///
+            /// - Parameters:
+            ///   - same:
+            public init(same: [Swift.Bool]) {
+                self.same = same
+            }
+            public enum CodingKeys: String, CodingKey {
+                case same
+            }
+        }
+        /// Which of `idents` name the field `field`: a lesson's field and the
+        /// stops and ends of the flights put to its instructor.
+        ///
+        /// - Remark: Generated from `#/components/schemas/SameFieldAsk`.
+        public struct SameFieldAsk: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SameFieldAsk/field`.
+            public var field: Swift.String
+            /// - Remark: Generated from `#/components/schemas/SameFieldAsk/idents`.
+            public var idents: [Swift.String]?
+            /// Creates a new `SameFieldAsk`.
+            ///
+            /// - Parameters:
+            ///   - field:
+            ///   - idents:
+            public init(
+                field: Swift.String,
+                idents: [Swift.String]? = nil
+            ) {
+                self.field = field
+                self.idents = idents
+            }
+            public enum CodingKeys: String, CodingKey {
+                case field
+                case idents
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/ServiceStatus`.
         public struct ServiceStatus: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/ServiceStatus/detail`.

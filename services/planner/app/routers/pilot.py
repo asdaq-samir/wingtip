@@ -6,7 +6,9 @@ rules are the shared engine's (pilot_currency, pilot_experience:
 engine/crates/pilot/src/pilot/currency.rs; endorsement_records,
 inspections_due: records.rs; AC 61-65K's endorsements and their words,
 endorsement_kinds and endorsement_fill: kinds.rs; how far back an
-instructor's page lists, instructor_records_since: instructor_records.rs), asked by name through wingtip_native.call;
+instructor's page lists, instructor_records_since: instructor_records.rs;
+a field's names, field_names: flight's ident.rs, with NASR's record of
+it: wingtip.field_names), asked by name through wingtip_native.call;
 this only carries the records across.
 
 The entries are the gateway's LogbookEntry, camelCase, as the engine
@@ -17,6 +19,7 @@ from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Body, HTTPException
+from wingtip import field_names
 
 from ..gonogo import ask as engine
 from ..schemas.pilot import (
@@ -37,6 +40,8 @@ from ..schemas.pilot import (
     RecordsBatch,
     RecordsBatchAsk,
     ReviewCheck,
+    SameField,
+    SameFieldAsk,
     VorCheck,
 )
 
@@ -163,3 +168,12 @@ def inspections_batch(asks: Annotated[list[InspectionsAsk], Body(max_length=MAX_
     aircraft list and the daily reminders ask every airplane at once, at
     most MAX_BATCH."""
     return [inspections(a) for a in asks]
+
+
+@router.post("/api/pilot/same-field")
+def same_field(ask: SameFieldAsk) -> SameField:
+    """Which of the idents name the field, in the order asked: the
+    gateway's lessons put to an instructor a student's flights that
+    landed at the lesson's field, by whichever of its names each was
+    planned with (BUR, KBUR; ANC, PANC)."""
+    return SameField(same=field_names.same_field(ask.field, ask.idents))

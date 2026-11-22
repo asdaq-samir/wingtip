@@ -106,6 +106,7 @@ class PlannerClientContractTest {
             new Call("endorsementKinds", c -> c.planner().endorsementKinds()),
             new Call("instructorRecordsSince", c -> c.planner().instructorRecordsSince(DAY)),
             new Call("fill", c -> c.planner().fill("solo", "A. Pilot", Map.of("makeModel", "C172"))),
+            new Call("sameField", c -> c.planner().sameField("KBUR", List.of("BUR", "VNY"))),
             new Call(
                     "inspections",
                     c -> c.planner()

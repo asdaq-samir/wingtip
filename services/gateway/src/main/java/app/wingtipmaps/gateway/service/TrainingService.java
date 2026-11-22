@@ -5,7 +5,6 @@ import app.wingtipmaps.gateway.domain.Endorsement;
 import app.wingtipmaps.gateway.domain.LogbookEntry;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.domain.SignedEndorsement;
-import app.wingtipmaps.gateway.dto.ApproachLessonDto;
 import app.wingtipmaps.gateway.dto.CrossCountryReviewDto;
 import app.wingtipmaps.gateway.dto.EndorsementDto;
 import app.wingtipmaps.gateway.dto.InstructorLinkDto;
@@ -90,7 +89,7 @@ public class TrainingService {
             List<InstructorLinkDto> instructors,
             List<CrossCountryReviewDto> asked,
             List<Integer> checksOf,
-            List<ApproachLessonDto> lessons) {}
+            LessonService.LessonsRead lessons) {}
 
     /**
      * The record read in a read-only transaction, then every rule it needs
@@ -134,7 +133,7 @@ public class TrainingService {
                 pilot.getFullName(),
                 read.instructors(),
                 asked,
-                read.lessons());
+                lessons.lessonsOf(read.lessons()));
     }
 
     private Read read(Pilot pilot, Pilot instructor, RecordsAsks asks) {
@@ -180,7 +179,7 @@ public class TrainingService {
                 instructors,
                 asked,
                 checksOf,
-                lessons.lessonsOf(pilot, instructor));
+                lessons.read(pilot, instructor));
     }
 
     @Transactional

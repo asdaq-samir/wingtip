@@ -15,6 +15,8 @@ import app.wingtipmaps.gateway.planner.model.PlannerPilotNotes;
 import app.wingtipmaps.gateway.planner.model.PlannerPilotNotesForgotten;
 import app.wingtipmaps.gateway.planner.model.PlannerRecordsBatch;
 import app.wingtipmaps.gateway.planner.model.PlannerRecordsBatchAsk;
+import app.wingtipmaps.gateway.planner.model.PlannerSameField;
+import app.wingtipmaps.gateway.planner.model.PlannerSameFieldAsk;
 import app.wingtipmaps.gateway.planner.model.PlannerStudioDraft;
 import app.wingtipmaps.gateway.planner.model.PlannerWordsSources;
 import java.time.LocalDate;
@@ -67,6 +69,11 @@ public interface PlannerApi {
      *  instructor_records_since, 14 CFR 61.189(c)); `today` YYYY-MM-DD. */
     @GetExchange("/api/pilot/instructor-records-since")
     LocalDate instructorRecordsSince(@RequestParam String today);
+
+    /** Which idents name a field, in the order asked (the engine's
+     *  field_names over NASR's record of each): LessonService's flights. */
+    @PostExchange("/api/pilot/same-field")
+    PlannerSameField sameField(@RequestBody PlannerSameFieldAsk ask);
 
     @PostExchange("/api/pilot/endorsement-fill")
     PlannerEndorsementFilled fill(@RequestBody PlannerEndorsementFillAsk ask);
