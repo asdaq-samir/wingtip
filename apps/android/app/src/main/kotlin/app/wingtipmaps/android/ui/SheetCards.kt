@@ -10,6 +10,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
@@ -27,6 +29,8 @@ import app.wingtipmaps.android.coach.CoachScreen
 import app.wingtipmaps.android.emergency.EmergencyCard
 import app.wingtipmaps.android.filing.FilingPage
 import app.wingtipmaps.android.flights.FlightsCard
+import app.wingtipmaps.android.library.DocumentsPage
+import app.wingtipmaps.android.library.ReaderPage
 import app.wingtipmaps.android.logbook.LogbookScreen
 import app.wingtipmaps.android.offline.DownloadsScreen
 import app.wingtipmaps.android.plates.PlateCard
@@ -112,6 +116,8 @@ private fun Card(
             ClearancePage(plan, fix, exit, onEntered = showPlan)
         }
         SheetPage.YourAirplanes -> YourAirplanesPage(exit)
+        SheetPage.Documents -> DocumentsPage(exit, open = sheet::push)
+        is SheetPage.Reader -> Reader(page.place, exit)
         SheetPage.Profile -> ProfileCard(plan, exit)
         SheetPage.NavLog -> NavLogCard(plan, exit, onLeg = { sheet.push(SheetPage.Leg(it)) }, onAddStopAfter = search::addStopAfter)
         SheetPage.Emergency -> EmergencyCard(plan, control, exit)
@@ -120,6 +126,21 @@ private fun Card(
         is SheetPage.Checklist -> {
             val kind = ChecklistKind.entries.firstOrNull { it.name == page.kind } ?: ChecklistKind.NORMAL
             Page(stringResource(R.string.checklists_of, page.airplane.uppercase()), exit) { ChecklistScreen(airplane = page.airplane, kind = kind) }
+        }
+    }
+}
+
+/** The reader: beside the library on a wide window (the list-detail
+ *  scene's detail pane, SheetPage.listsBeside), and on a phone the whole
+ *  screen, a full-screen dialog over the sheet as the plates are, Back
+ *  and its ✕ coming back to the library or the cite it was opened from. */
+@Composable
+private fun Reader(place: String, exit: CardExit) {
+    if (isWide()) {
+        ReaderPage(place, onClose = exit.back)
+    } else {
+        Dialog(onDismissRequest = exit.back, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+            ReaderPage(place, onClose = exit.back)
         }
     }
 }

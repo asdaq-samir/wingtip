@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.library.Cited
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.engine.MapRules
@@ -87,7 +88,8 @@ internal fun AirspaceCard(volume: MapPick.Airspace) {
         SectionTitle(stringResource(R.string.to_enter))
         for (r in rules.rules) {
             ListItem(
-                supportingContent = { Text(r.cite) },
+                // The rule's cite a tap to its section in the library.
+                supportingContent = { Cited(r.cite) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 content = { Text(r.rule, style = MaterialTheme.typography.bodyMedium) },
             )

@@ -80,7 +80,9 @@ internal fun SheetPagesHost(
             onBack = sheet::back,
             sceneStrategies = listOf(scenes ?: single),
         ) { page ->
-            if (page.covers) {
+            if (page.listsBeside) {
+                NavEntry(page, contentKey = page.key, metadata = ListDetailSceneStrategy.listPane()) { card(page) }
+            } else if (page.covers) {
                 NavEntry(page, contentKey = page.key, metadata = ListDetailSceneStrategy.detailPane()) { card(page) }
             } else {
                 NavEntry(page, contentKey = page.key, metadata = ListDetailSceneStrategy.listPane()) {

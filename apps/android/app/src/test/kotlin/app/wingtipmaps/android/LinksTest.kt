@@ -24,6 +24,14 @@ class LinksTest {
         assertEquals(Links.Place("KORD"), Links.parse("https://wingtipmaps.app/app/plan?place=kord"))
     }
 
+    /** The documents library's place, the web's `doc` key (DocPlace). */
+    @Test
+    fun aDocumentsLinkOpensTheReaderAtItsPlace() {
+        assertEquals(Links.Doc("cfr-14-91@91.155"), Links.parse("https://wingtipmaps.app/app/plan?doc=cfr-14-91%4091.155"))
+        assertEquals(Links.Doc("aim@7-1-5"), Links.parse("wingtipmaps://plan?doc=aim@7-1-5"))
+        assertEquals(Links.Place("KORD"), Links.parse("https://wingtipmaps.app/app/plan?doc=../etc&place=kord"))
+    }
+
     @Test
     fun theSignInLinkGivesItsToken() {
         assertEquals(Links.SignIn("abc123"), Links.parse("https://wingtipmaps.app/api/auth/magic-link/verify?token=abc123", host = "wingtipmaps.app"))

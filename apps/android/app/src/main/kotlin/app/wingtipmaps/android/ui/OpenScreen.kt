@@ -41,6 +41,7 @@ internal object OpenScreen {
             Screen.AIRPLANE, Screen.CHECKLISTS -> Where.Page(SheetPage.Airplane())
             Screen.SETUP -> Where.Page(SheetPage.Settings)
             Screen.MINIMUMS -> Where.Page(SheetPage.Minimums)
+            Screen.DOCUMENTS -> Where.Page(SheetPage.Documents)
             Screen.LOGBOOK, Screen.COACH -> Where.Page(SheetPage.Logbook)
             Screen.FLIGHTS -> Where.Page(SheetPage.Flights)
             Screen.DOWNLOADS -> Where.Page(SheetPage.Downloads)

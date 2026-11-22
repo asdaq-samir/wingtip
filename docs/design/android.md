@@ -1292,6 +1292,8 @@ Ask is not on the screen list, but it sits under every brief.
   - Coach debriefs
   - Downloads
   - the nav log, with the leg list and the leg
+- **The documents library** (§3.19): the library in the list pane and
+  the reader in the detail pane beside it and the map.
 - **Navigation**: the four tabs stay the panel's first row (0013). Do
   not swap them for a `NavigationRail` or `NavigationSuiteScaffold`
   without the owner.
@@ -1332,6 +1334,98 @@ From the offline and store audits of 2026-11-10:
   60 s; streams and downloads use `Gateway.streaming`.
 - **Sign-out and Delete Account** forget everything the phone kept of the
   pilot (`account/PhoneWipe`).
+
+### 3.19 The documents library and its reader (2026-11-21)
+
+The web's §13a on Android (the owner, 2026-11-21: "Also port over
+everything to phones and iPads and android tablets"; decision 0056).
+
+- **Its home**: a Documents row on You, after Minimums, as on the web
+  (`ui/YouScreen`), open signed out too. The one search finds it by name
+  (`open=documents`, design/screens.json). Nothing else moved.
+- **The page** (`library/DocumentsPage`, `DocumentsModel`): Your
+  Documents, the pilot's own PDFs, newest first, each with ••• (Rename,
+  Delete with the Snackbar's Undo), and Add a PDF, which opens the
+  system's picker (`ActivityResultContracts.OpenMultipleDocuments`,
+  PDFs only). Then the FAA's shelf by its groups, from the planner's
+  `/api/library` through the generated client (`api/LibraryCalls`), each
+  row its edition and date and, at its end, Keep for the Air (the
+  download glyph, its size in its name), the download's own progress, or
+  a tinted check that takes it off. The shelf last read is kept, so with
+  no signal the page lists what it listed.
+- **Kept for the air** (`library/Bookshelf`, `KeepBookWorker`): a book
+  kept is the whole file in its edition under the app's files, fetched by
+  WorkManager (unique work per document), written beside its place and
+  moved there whole before the old edition is deleted. When the shelf
+  names a newer edition of a book kept, it is kept again in the old one's
+  place. A book not kept is fetched whole into the cache as it opens.
+- **The pilot's own PDFs** (`library/OwnShelf`): from the picker, or
+  shared in from another app (Send, or View with Wingtip; the manifest's
+  `application/pdf` filters), copied into the app's files and kept on
+  this phone alone. A file that is not a PDF is refused. They stay
+  through sign-out, as the web's do: they are no account's.
+- **The reader** (`library/ReaderPage`): Material's top app bar with ✕,
+  the title, Contents and Bookmark This Page, and in ••• Invert Colors,
+  Markup and Share This Page (none for the pilot's own); the search
+  under it. A PDF's pages are one at a time in Compose's
+  `HorizontalPager`, each drawn by the platform's `PdfRenderer` at twice
+  its width on screen and zoomed by telephoto's `zoomable`, as the plates
+  are (`PdfBody`, `PdfPageView`). A CFR part is text in the app's type,
+  each section's heading an anchor (`TextBody`). The page or section left
+  at, the named bookmarks and Invert Colors (following the dark
+  appearance until picked) are kept on the phone (`ReaderMemory`).
+  Contents is Material's `ModalBottomSheet` with a segmented button:
+  Contents (the outline), Bookmarks and Notes (`ReaderContents`).
+- **Search**: every place found listed under the field while it is
+  focused, the match in bold, with the match before and after. A PDF's
+  text is read once by PdfBox-Android and kept in the cache
+  (`PdfIndex`); from Android 15 the page shown also marks each match in
+  place (`PdfRenderer.Page.searchText`).
+- **Markup** (`library/Markup`): Jetpack Ink's `InProgressStrokes` for a
+  stylus's or a finger's ink with its low latency, the pen
+  (`StockBrushes.pressurePen`) or the highlighter
+  (`StockBrushes.highlighter`) picked in a segmented button on the bar
+  at the foot, with Undo Last Mark, Clear This Page and Done. Each mark
+  is kept as Ink's own stroke inputs (ink-storage) with its brush and
+  drawn again by Ink's `CanvasStrokeRenderer`, so it zooms with its
+  page. A highlight asks for a note (Material's dialog); its glyph on the
+  page opens it again. The page holds still while marking.
+- **Every cited rule a tap** (`library/Cited`): the Brief's whys and an
+  airspace card's entry rules draw each cite as a link
+  (`LinkAnnotation`), cut by the engine's `citations` and drawn only
+  where the shelf holds the document. A tap opens the reader at its
+  paragraph on the sheet's stack (`CardRequests`), over wherever the
+  pilot is: "14 CFR 91.155" at § 91.155, "AIM 7-1-5" at its row of the
+  outline or, without one, the first page its heading's words are on.
+  The Brief's finding row keeps its one spoken description, so TalkBack
+  reads the why but does not reach the link in it yet.
+- **Links**: `?doc=` on the app's address (`aim@7-1-5`,
+  `cfr-14-91@91.155`, `phak@p42`; `library/DocPlace`, the web's own
+  format) opens the reader (`Links.Doc`).
+- **Tablets and foldables** (§3.17): on a medium or wider window the
+  library takes the list-detail scene's list pane itself
+  (`SheetPage.listsBeside`) and the reader the detail pane beside it,
+  both beside the map; on a phone the reader fills the screen, a
+  full-screen dialog over the sheet as the plates are. Back closes it.
+- **Keyboard** (`library/ReaderKeys`): the arrows, Page Up and Down,
+  Space and Home and End turn the pages; Ctrl+F finds; Enter or Ctrl+G
+  the next match, with Shift the one before; Ctrl+D bookmarks; Ctrl+Plus,
+  Ctrl+Minus and Ctrl+0 zoom, as androidx.pdf's viewer does; Escape
+  closes.
+- **Why not Jetpack's PDF viewer**: androidx.pdf 1.0.0-beta01
+  (2026-08-26, the newest) was weighed first. Its release notes give it
+  search and zoom, and ink in `EditablePdfViewerFragment`, but no
+  outline, no way to open at a page, no inverted page and a Compose
+  `PdfViewer` still `@ExperimentalPdfApi`, and its floor is minSdk 28
+  against the app's 26. So the pages are `PdfRenderer` and the outline
+  and text PdfBox-Android 2.0.27.0 (Apache-2.0).
+  https://developer.android.com/jetpack/androidx/releases/pdf
+- **Versions**: PdfBox-Android 2.0.27.0; Jetpack Ink 1.1.0-alpha12
+  (2026-11-18, the newest; 1.0.0 is the stable).
+  https://developer.android.com/jetpack/androidx/releases/ink
+- **Avoid**: a rule's citation typed into a screen (ask `citations`); a
+  pilot's own document or mark sent anywhere; a second home for a
+  document control.
 
 ## 4. Not verified
 
@@ -1431,6 +1525,10 @@ swapped:
   and the sheet's first content (`Home` in `ui/SheetPages`). The system's
   and Macrobenchmark's time to full display is measured to that moment
   (NATIVE-ANDROID.md, "Release build").
+- The documents reader (§3.19): the platform's `PdfRenderer`, Compose's
+  `HorizontalPager`, telephoto's `zoomable`, Jetpack Ink's
+  `InProgressStrokes` and `CanvasStrokeRenderer`, Material's
+  `ModalBottomSheet`, segmented buttons, `BottomAppBar` and dialogs.
 - Rows built from `Modifier.clickable`, `toggleable` or `selectable`: the
   stock `ListItem` overloads (`onClick`, `checked`/`onCheckedChange`,
   `selected`/`onClick`), `Surface(onClick)`, `TextButton`, or Compose's

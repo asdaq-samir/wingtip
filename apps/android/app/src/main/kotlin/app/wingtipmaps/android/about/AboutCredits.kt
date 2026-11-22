@@ -35,10 +35,12 @@ object AboutCredits {
         Credit("adsb.fi ADS-B traffic", "Personal, non-commercial use, credited and linked"),
         Credit("Virtual Radar Server flight routes", "CC0"),
         Credit("Planespotters.net aircraft photos, each credited to its photographer beside it", "Planespotters.net's photo API terms"),
+        Credit("FAA publications and the eCFR: the documents library's regulations, AIM, handbooks and advisory circulars", PUBLIC_DOMAIN),
     )
 
     val software: List<Credit> = listOf(
         Credit("MapLibre GL", "BSD 3-Clause"),
         Credit("Google Maps Platform map tiles", "Google's terms; its attribution is drawn on the map"),
+        Credit("PdfBox-Android", "Apache 2.0"),
     )
 }

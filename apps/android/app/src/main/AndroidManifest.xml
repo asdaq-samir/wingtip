@@ -100,6 +100,21 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="wingtipmaps" android:host="plan" />
             </intent-filter>
+            <!-- A PDF shared from another app, or opened with Wingtip from
+                 Files or a mail, kept among the pilot's own documents on
+                 this phone and opened in the reader (library/OwnShelf;
+                 decision 0056). -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
             <!-- The app's shortcuts and App Actions' OPEN_APP_FEATURE, one
                  per screen (res/xml/shortcuts.xml, generated from
                  design/screens.json; docs/android-ai.md). -->

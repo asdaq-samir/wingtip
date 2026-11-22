@@ -131,6 +131,16 @@ sealed interface SheetPage {
     @Serializable
     data object YourAirplanes : SheetPage
 
+    /** You's Documents: the pilot's own PDFs, then the FAA's shelf
+     *  (library/DocumentsPage; decision 0056). */
+    @Serializable
+    data object Documents : SheetPage
+
+    /** A document open in the reader, at its place as the web's address
+     *  writes it ("aim@7-1-5", "cfr-14-91@91.155", "own:<id>"; DocPlace). */
+    @Serializable
+    data class Reader(val place: String) : SheetPage
+
     /** An airplane's checklist, by the key it is kept under and its kind
      *  (ChecklistKind's name). */
     @Serializable
@@ -153,6 +163,11 @@ sealed interface SheetPage {
     /** Whether it opens at the sheet's full height rather than at half:
      *  Emergency alone (the card rule's 2 and 4). */
     val opensFull: Boolean get() = this == Emergency
+
+    /** Whether, on a wide window, it takes the list pane itself, with what
+     *  it opens beside it: Documents, its reader in the detail pane beside
+     *  the map (docs/design/android.md 3.17). */
+    val listsBeside: Boolean get() = this == Documents
 
     /** The card's stable test id, the same whatever opened it (the card
      *  rule's UI tests: "card-airport", "card-settings"). */
