@@ -73,6 +73,18 @@ spring:
     open-in-view: false
   flyway:
     enabled: true
+    # The schema is the owner's: on a stack with a role of its own for the
+    # app (compose, the AWS server), Flyway signs in as the database's
+    # owner (SPRING_FLYWAY_USER / SPRING_FLYWAY_PASSWORD, set there and
+    # nowhere here, so a stack without them runs Flyway as the app's own
+    # user, the tests' Testcontainers among them), and db/callback's
+    # afterMigrate.sql gives the app's role rows only (docs/SECURITY.md,
+    # N4). Its name and password come from SPRING_DATASOURCE_*; empty, as
+    # in the tests, the callback does nothing.
+    locations: classpath:db/migration,classpath:db/callback
+    placeholders:
+      app_user: ${SPRING_DATASOURCE_USERNAME:}
+      app_password: ${SPRING_DATASOURCE_PASSWORD:}
   # The magic-link email flow's own sender (MagicLinkController).
   # Declared unconditionally, unlike Google/Apple's own credentials --
   # spring-boot-starter-mail only auto-configures a JavaMailSender bean

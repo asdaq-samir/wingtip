@@ -223,8 +223,15 @@ services:
       start_period: 120s
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/wingtip
-      SPRING_DATASOURCE_USERNAME: wingtip
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      # Two roles (docs/SECURITY.md, N4): Flyway as the database's owner,
+      # the app as wingtip_app, rows only, with a secret of its own (the
+      # stack's AppDbPasswordSecret); db/callback/afterMigrate.sql makes it
+      # and sets its password at each start, so a new secret takes at the
+      # next deploy.
+      SPRING_FLYWAY_USER: wingtip
+      SPRING_FLYWAY_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_USERNAME: wingtip_app
+      SPRING_DATASOURCE_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
       PLANNER_SERVICE_URL: http://planner:8000
       # The monitor's minute check (UptimeWatch, docs/OPERATIONS.md):
       # the weather service watched too, and its alerts mailed by SES to

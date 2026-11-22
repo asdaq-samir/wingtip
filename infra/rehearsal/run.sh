@@ -58,6 +58,7 @@ PUBLIC_HOST=cdn:9443
 ORIGIN_HOST=origin.localhost
 ORIGIN_SECRET=$(openssl rand -hex 20)
 POSTGRES_PASSWORD=$(openssl rand -hex 20)
+APP_DB_PASSWORD=$(openssl rand -hex 20)
 MAIL_HOST=mailpit
 MAIL_PORT=1025
 MAIL_USERNAME=rehearsal
@@ -68,6 +69,10 @@ REHEARSAL_DIR=$REHEARSAL_DIR
 TILES_DIR=$TILES_DIR
 CONF
 fi
+
+# A .env written before the gateway had a role of its own (docs/SECURITY.md,
+# N4) gets its second password once.
+grep -q '^APP_DB_PASSWORD=' "$env_file" || echo "APP_DB_PASSWORD=$(openssl rand -hex 20)" >> "$env_file"
 
 docker compose -p wingtip-prod --env-file "$env_file" \
   -f infra/docker-compose.prod.yml -f infra/rehearsal/docker-compose.rehearsal.yml up -d
