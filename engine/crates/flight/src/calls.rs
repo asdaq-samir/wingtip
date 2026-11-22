@@ -178,6 +178,14 @@ pub fn filed(name: &str, v: &Value) -> Result<String, String> {
         }
         // A route typed as item 15's words, read back (route_read.rs).
         "route_read" => route_read::write(&route_read::read(ask.str("text")?), &mut out),
+        // The SIDs and STARs among a route's words (route_read.rs).
+        "route_procedures" => {
+            let words: Vec<&str> = match v.get("words") {
+                Some(Value::Array(list)) => list.iter().filter_map(Value::as_str).collect(),
+                _ => return Err("route_procedures: \"words\" is not a list of strings".to_owned()),
+            };
+            route_read::write_procedures(&route_read::procedures(&words), &mut out);
+        }
         _ => json::string(&mut out, &filed_route(&ask)?),
     }
     Ok(out)

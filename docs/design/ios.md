@@ -2137,6 +2137,17 @@ behaviour; only the content, its order and the brand tokens are ours.
 | VoiceOver announcements through `UIAccessibility.post` with an attributes dictionary (`Announce`) | `AccessibilityNotification.Announcement` of an `AttributedString` with its announcement priority (the queue flag iOS 17 deprecated is gone) |
 | The Watch's `CLLocationManager` delegate and a two-second wait for its fix (`WatchLocation`) | `CLLocationUpdate.liveUpdates()` under a `CLServiceSession` asking When In Use, the first fix waited for five seconds before the phone's stands in |
 
+**Replaced (2026-11-21, audit round 2).**
+
+| Was hand-built | Now |
+|---|---|
+| `SFSpeechRecognizer` with `requiresOnDeviceRecognition`, its request and task, the `Once` continuation and the `Feed` (VoiceInput, ClearanceListener) | `SpeechAnalyzer` (iOS 26) in `Voice/SpeechSession`: `DictationTranscriber` for a question or a readback, `SpeechTranscriber` for the radio, the model fetched by `AssetInventory`, the microphone converted to `bestAvailableAudioFormat`, the names near the route as its `AnalysisContext`. On the device only, as before; no voice where English is not transcribed here. A question's end after a pause is still the app's rule: the analyzer settles words but never ends a question. Needs a device to confirm, with real radio audio |
+| Own ship's `CLLocationManager` delegate with its own accuracy and distance filter (`OwnShip`) | `CLLocationUpdate.liveUpdates`, `.airborne` while precise and the default on the ground (still until it moves), a `CLBackgroundActivitySession` while flying |
+| A `CLLocationManager` made just to read the permission (Ready to Fly, PermissionAsk) | `LocationPermission`, the one manager kept to read the status and ask, on iOS 14's `locationManagerDidChangeAuthorization` |
+| `ISO8601DateFormatter` in SharedFlightLink, the filing form and the receiver's reports (a Date written out and read back) | `AirportWords.date`, `.formatted(.iso8601)`, and the receiver's Date passed as it is |
+| Four "... ago" writers with their own steps ("14 min ago", "2 h 5 min ago") | `Format.ago`, the engine's `time_ago`, the one rule the web and Android write by ("14m ago", "2h 5m ago", "3d ago") |
+| The widgets' hand-written copies of the planner's and the gateway's JSON (`WidgetFetch`) | The generated PlannerAPI and GatewayAPI clients, the widget's snapshot read from their answers |
+
 The altitude is picked in the profile, ForeFlight's way (see
 [The profile](#the-profile-foreflights-way)): the system `Slider` turned
 upright beside the chart, the system `.popover` on a waypoint, and a

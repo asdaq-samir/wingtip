@@ -1090,7 +1090,7 @@ extension Engine {
         try Self.rule("isa_temp_c", EngineContract.IsaTempCInput(altitudeFt: altitudeFt))
     }
 
-    /// A kept answer's age, as the apps show it with no signal ("Fetched 42 min ago"), and whether it is past the freshness ready_to_fly holds it to: the briefing, the plan's nav log, the Go / No-Go and the weather loop for an hour (the app's choice, at AIM 7-1-28's hourly METAR), METARs and TAFs for the routine report's hour (AIM 7-1-28), the NOTAMs for an hour (14 CFR 91.103, AIM 5-1-3; the age the app's choice), and the airport cards and plates for the AIRAC cycle they came in (FAA 28 and 56 Day Product Schedule). A caution at worst: the answer is still shown.
+    /// A kept answer's age, as the apps show it with no signal ("Fetched 42m ago"), and whether it is past the freshness ready_to_fly holds it to: the briefing, the plan's nav log, the Go / No-Go and the weather loop for an hour (the app's choice, at AIM 7-1-28's hourly METAR), METARs and TAFs for the routine report's hour (AIM 7-1-28), the NOTAMs for an hour (14 CFR 91.103, AIM 5-1-3; the age the app's choice), and the airport cards and plates for the AIRAC cycle they came in (FAA 28 and 56 Day Product Schedule). A caution at worst: the answer is still shown.
     static func keptAge(now: Double, fetchedAt: Double, kind: String) throws -> EngineContract.KeptAgeAnswer {
         try Self.rule("kept_age", EngineContract.KeptAgeInput(now: now, fetchedAt: fetchedAt, kind: kind))
     }
@@ -1635,6 +1635,11 @@ extension Engine {
         try Self.rule("route_position", EngineContract.RoutePositionInput(at: at, line: line, points: points, legs: legs))
     }
 
+    /// The SIDs and STARs among a route's words as a pilot types or pastes one (a clearance's, a filed flight plan's, AIM Appendix 4 item 15: "KMSP BAEE1 BAE V191 OSH OSHH2 KATW"): a word of four or five letters and its number, which no airport's identifier (three or four characters, FAA JO 7350.9) and no fix's name (five letters) is. Each with the nearest point typed before it and after it that is not one: a departure's transition is the fix after it, an arrival's the fix before it (AIM 5-2-9, 5-4-1). Which field publishes it, and as which kind, is the caller's, from the field's procedures.
+    static func routeProcedures(words: [String]) throws -> [EngineContract.RouteProceduresAnswerItem] {
+        try Self.rule("route_procedures", EngineContract.RouteProceduresInput(words: words))
+    }
+
     /// A route typed as a pilot writes one, read back as item 15 of FAA Form 7233-4 has it (AIM Appendix 4), for the route's one field: split on spaces and commas, DCT (direct) taken out; a cruising speed and level group or a level alone before the first point the cruise's ("N0110A065": 110 kt true, 6,500 ft; "A" and hundreds of feet in three figures, "F" a flight level, 14 CFR 1.1 and 91.121(a)(2); "VFR" a VFR level, no figure; metric speeds and levels give no figure); a point with a group after its stroke ("LEXOR/N0467F380") the point, its level a change from there. The rest are the route's points, airways and procedures in order, upper case, as typed: which is which is the caller's.
     static func routeRead(text: String) throws -> EngineContract.RouteReadAnswer {
         try Self.rule("route_read", EngineContract.RouteReadInput(text: text))
@@ -1838,6 +1843,11 @@ extension Engine {
     /// At most `most` (4,000 where not given) of `points`, even steps through, the first and last kept; each point as it came.
     static func thinTrack(points: [OpenAPIValueContainer], most: Int? = nil) throws -> [OpenAPIValueContainer] {
         try Self.rule("thin_track", EngineContract.ThinTrackInput(points: points, most: most))
+    }
+
+    /// How long ago something was, in the words every app writes it in (a report's "Observed 40m ago", a kept answer's "Fetched 3h ago", a track's "2d ago"): "just now" under a minute (and for a time to come), whole minutes under an hour ("23m ago"), hours and minutes under two days ("2h 5m ago", "2h ago" on the hour), then whole days ("3d ago"), each counted down. The app's own wording, no aviation rule: the narrow duration the web writes (Intl.DurationFormat's narrow style, the owner's pick of 2026-10-28).
+    static func timeAgo(seconds: Double) throws -> String {
+        try Self.rule("time_ago", EngineContract.TimeAgoInput(seconds: seconds))
     }
 
     /// The FAA's capitals in title case, from text, or each of texts as a list (a null row answers "").

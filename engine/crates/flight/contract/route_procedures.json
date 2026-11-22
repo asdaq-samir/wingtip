@@ -1,0 +1,58 @@
+{
+  "x-call": "wingtip_flight::calls::filed",
+  "description": "The SIDs and STARs among a route's words as a pilot types or pastes one (a clearance's, a filed flight plan's, AIM Appendix 4 item 15: \"KMSP BAEE1 BAE V191 OSH OSHH2 KATW\"): a word of four or five letters and its number, which no airport's identifier (three or four characters, FAA JO 7350.9) and no fix's name (five letters) is. Each with the nearest point typed before it and after it that is not one: a departure's transition is the fix after it, an arrival's the fix before it (AIM 5-2-9, 5-4-1). Which field publishes it, and as which kind, is the caller's, from the field's procedures.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RouteProceduresInput",
+      "type": "object",
+      "properties": {
+        "words": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The route's words in order, upper case, as route_read gives its points."
+        }
+      },
+      "required": [
+        "words"
+      ]
+    },
+    "answer": {
+      "title": "RouteProceduresAnswer",
+      "type": "array",
+      "items": {
+        "title": "TypedProcedure",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "before": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "after": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "before",
+          "after"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

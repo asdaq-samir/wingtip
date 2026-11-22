@@ -11,6 +11,8 @@
  * planner opened (2026-10-10), the browser reading its date data. It
  * also wrote midnight "24:05" where hour12 was off in some browsers.
  */
+import { callEngine } from "../engine/engine";
+
 /** A count in two figures, "05": a clock's hours and minutes, a day of the month. */
 export const twoFigures = (n: number) => String(n).padStart(2, "0");
 
@@ -171,10 +173,10 @@ export function duration(minutes: number): string {
 }
 
 /** How long ago something was, from the milliseconds since: "just now"
- *  under a minute, "23m ago", "2h 5m ago". */
+ *  under a minute, "23m ago", "2h 5m ago", "3d ago" -- the engine's
+ *  `time_ago`, the one rule all three apps write it by. */
 export function ago(sinceMs: number): string {
-  const minutes = Math.floor(Math.max(0, sinceMs) / 60_000);
-  return minutes < 1 ? "just now" : `${duration(minutes)} ago`;
+  return callEngine("time_ago", { seconds: sinceMs / 1000 });
 }
 
 /** Minutes and seconds, as a stopwatch shows them, from seconds: "2:07".

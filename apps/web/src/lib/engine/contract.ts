@@ -936,6 +936,7 @@ export type RoutePositionAnswer = {
   burnt_gal: number;
   on_route: boolean;
 } | null;
+export type RouteProceduresAnswer = TypedProcedure[];
 export type RouteWayWarningAnswer = string | null;
 export type RunwayCalmAnswer = boolean;
 export type RunwayCrosswindAnswer = number;
@@ -1067,6 +1068,10 @@ export type TfrPoint = {
   lon: number;
 } | null;
 export type ThinTrackAnswer = unknown[];
+/**
+ * "23m ago", "just now".
+ */
+export type TimeAgoAnswer = string;
 export type TitleCaseAnswer = string | string[];
 export type TokensAnswer = HeardToken[];
 export type TrafficFreshAnswer = boolean[];
@@ -2664,7 +2669,7 @@ export interface EngineContract {
     answer: IsaTempCAnswer;
   };
   /**
-   * A kept answer's age, as the apps show it with no signal ("Fetched 42 min ago"), and whether it is past the freshness ready_to_fly holds it to: the briefing, the plan's nav log, the Go / No-Go and the weather loop for an hour (the app's choice, at AIM 7-1-28's hourly METAR), METARs and TAFs for the routine report's hour (AIM 7-1-28), the NOTAMs for an hour (14 CFR 91.103, AIM 5-1-3; the age the app's choice), and the airport cards and plates for the AIRAC cycle they came in (FAA 28 and 56 Day Product Schedule). A caution at worst: the answer is still shown.
+   * A kept answer's age, as the apps show it with no signal ("Fetched 42m ago"), and whether it is past the freshness ready_to_fly holds it to: the briefing, the plan's nav log, the Go / No-Go and the weather loop for an hour (the app's choice, at AIM 7-1-28's hourly METAR), METARs and TAFs for the routine report's hour (AIM 7-1-28), the NOTAMs for an hour (14 CFR 91.103, AIM 5-1-3; the age the app's choice), and the airport cards and plates for the AIRAC cycle they came in (FAA 28 and 56 Day Product Schedule). A caution at worst: the answer is still shown.
    */
   kept_age: {
     input: KeptAgeInput;
@@ -3427,6 +3432,13 @@ export interface EngineContract {
     answer: RoutePositionAnswer;
   };
   /**
+   * The SIDs and STARs among a route's words as a pilot types or pastes one (a clearance's, a filed flight plan's, AIM Appendix 4 item 15: "KMSP BAEE1 BAE V191 OSH OSHH2 KATW"): a word of four or five letters and its number, which no airport's identifier (three or four characters, FAA JO 7350.9) and no fix's name (five letters) is. Each with the nearest point typed before it and after it that is not one: a departure's transition is the fix after it, an arrival's the fix before it (AIM 5-2-9, 5-4-1). Which field publishes it, and as which kind, is the caller's, from the field's procedures.
+   */
+  route_procedures: {
+    input: RouteProceduresInput;
+    answer: RouteProceduresAnswer;
+  };
+  /**
    * A route typed as a pilot writes one, read back as item 15 of FAA Form 7233-4 has it (AIM Appendix 4), for the route's one field: split on spaces and commas, DCT (direct) taken out; a cruising speed and level group or a level alone before the first point the cruise's ("N0110A065": 110 kt true, 6,500 ft; "A" and hundreds of feet in three figures, "F" a flight level, 14 CFR 1.1 and 91.121(a)(2); "VFR" a VFR level, no figure; metric speeds and levels give no figure); a point with a group after its stroke ("LEXOR/N0467F380") the point, its level a change from there. The rest are the route's points, airways and procedures in order, upper case, as typed: which is which is the caller's.
    */
   route_read: {
@@ -3712,6 +3724,13 @@ export interface EngineContract {
   thin_track: {
     input: ThinTrackInput;
     answer: ThinTrackAnswer;
+  };
+  /**
+   * How long ago something was, in the words every app writes it in (a report's "Observed 40m ago", a kept answer's "Fetched 3h ago", a track's "2d ago"): "just now" under a minute (and for a time to come), whole minutes under an hour ("23m ago"), hours and minutes under two days ("2h 5m ago", "2h ago" on the hour), then whole days ("3d ago"), each counted down. The app's own wording, no aviation rule: the narrow duration the web writes (Intl.DurationFormat's narrow style, the owner's pick of 2026-10-28).
+   */
+  time_ago: {
+    input: TimeAgoInput;
+    answer: TimeAgoAnswer;
   };
   /**
    * The FAA's capitals in title case, from text, or each of texts as a list (a null row answers "").
@@ -9164,7 +9183,7 @@ export interface KeptAgeAnswer {
   kind: KeptKind;
   age_min: number;
   /**
-   * "Fetched 42 min ago".
+   * "Fetched 42m ago".
    */
   line: string;
   /**
@@ -12476,6 +12495,17 @@ export interface RoutePositionInput {
       }[]
     | null;
 }
+export interface RouteProceduresInput {
+  /**
+   * The route's words in order, upper case, as route_read gives its points.
+   */
+  words: string[];
+}
+export interface TypedProcedure {
+  name: string;
+  before: string | null;
+  after: string | null;
+}
 export interface RouteReadInput {
   /**
    * The route as typed or pasted: "KPWK DCT OBK V100 KLAS".
@@ -13357,6 +13387,12 @@ export interface TfrReadAnswer {
 export interface ThinTrackInput {
   points: unknown[];
   most?: number | null;
+}
+export interface TimeAgoInput {
+  /**
+   * Seconds since it happened: now less then.
+   */
+  seconds: number;
 }
 export interface TitleCaseInput {
   text?: string | null;

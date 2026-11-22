@@ -40,6 +40,7 @@ import app.wingtipmaps.android.route.fuelStopsIn
 import app.wingtipmaps.android.route.fuelStopsToAdd
 import app.wingtipmaps.android.route.noFuelStop
 import app.wingtipmaps.android.route.removeFuelStops
+import app.wingtipmaps.android.route.undoable
 import app.wingtipmaps.android.ui.sheet.WingtipSheet
 
 /** The gauges for the plan as planned now (PlanTanks.walk); none without

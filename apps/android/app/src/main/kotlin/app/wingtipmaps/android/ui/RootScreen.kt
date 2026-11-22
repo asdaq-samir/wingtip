@@ -24,7 +24,6 @@ import app.wingtipmaps.android.Links
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
-import app.wingtipmaps.android.about.PlanningAidNotice
 import app.wingtipmaps.android.airplane.AirplaneProfileHost
 import app.wingtipmaps.android.api.AskScreenModel
 import app.wingtipmaps.android.api.AssistantTurn
@@ -190,6 +189,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit, onLink: (
                 PlanPage(
                     plan, onClose = { pages.closePlan(); RouteHome.shared.backTo(planState.hasPoints)?.let(openField) }, onField = { pages.push(SheetPage.Airport(it)) },
                     onNavLog = { pages.show(SheetPage.NavLog) }, onFind = { search.askRouteEnd(plan) }, onAddStop = search::addStop, onAddStopAfter = search::addStopAfter,
+                    onPlate = { ident, procedure -> pages.push(SheetPage.Plate(ident, procedure)) },
                 )
             },
             card = cardView,
@@ -235,8 +235,6 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit, onLink: (
     AirplaneProfileHost(session)
     // A sign-in link, asked before it is followed.
     SignInDialog(session)
-    // The planning aid's words, once at first launch (PlanningAidNotice).
-    PlanningAidNotice()
     ReadyToFlyHost(plan, ownShipOn = ownShip.on, underway = underway, onSetRoute = if (stripLayout) null else showPlan)
     AutoLogbookHost(plan, session)
     NextFlightFeed(plan)

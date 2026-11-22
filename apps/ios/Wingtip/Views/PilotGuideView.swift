@@ -33,7 +33,7 @@ struct PilotGuideView: View {
                 .disabled(askedFirstFlight)
                 .accessibilityIdentifier("first-flight-again")
             }
-            Section("Checkpoint Colours") {
+            Section("Checkpoint Colors") {
                 ForEach(Self.buckets, id: \.score) { b in
                     Label {
                         Text(b.words)

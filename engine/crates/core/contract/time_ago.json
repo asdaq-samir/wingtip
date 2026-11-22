@@ -1,0 +1,30 @@
+{
+  "x-call": "wingtip_core::ago::call",
+  "description": "How long ago something was, in the words every app writes it in (a report's \"Observed 40m ago\", a kept answer's \"Fetched 3h ago\", a track's \"2d ago\"): \"just now\" under a minute (and for a time to come), whole minutes under an hour (\"23m ago\"), hours and minutes under two days (\"2h 5m ago\", \"2h ago\" on the hour), then whole days (\"3d ago\"), each counted down. The app's own wording, no aviation rule: the narrow duration the web writes (Intl.DurationFormat's narrow style, the owner's pick of 2026-10-28).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TimeAgoInput",
+      "type": "object",
+      "properties": {
+        "seconds": {
+          "type": "number",
+          "description": "Seconds since it happened: now less then."
+        }
+      },
+      "required": [
+        "seconds"
+      ]
+    },
+    "answer": {
+      "title": "TimeAgoAnswer",
+      "type": "string",
+      "description": "\"23m ago\", \"just now\"."
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -121,7 +121,7 @@ class RadioListener private constructor(private val context: Context) : AtcListe
     /** An on-device recognizer and the microphone allowed; said where not. */
     private fun ready(): Boolean {
         if (!canListen(context)) {
-            _error.value = "ATC: speech cannot be recognised on this phone"
+            _error.value = "ATC: speech cannot be recognized on this phone"
             return false
         }
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {

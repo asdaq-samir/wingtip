@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.route
 
+import app.wingtipmaps.android.plan.PlanProcedures
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -7,7 +8,8 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * The route as it was before the last edit that took something from it
  * or changed it -- a stop removed, moved or added, a Direct To, the route
- * replaced by Fly Here or cleared, a field's fuel set -- with the fuel the
+ * replaced by Fly Here or cleared, a field's fuel set, a procedure taken
+ * off a field -- with the fuel the
  * pilot set at its fields (PlanTanks), for the Undo of the edit's Snackbar
  * (RouteUndoSnackbar; the iPhone's PlanHistory) and the wide window's
  * toolbar. Only an edit that took something away -- a removal, Clear
@@ -34,6 +36,9 @@ class RouteUndo {
         val direct: String?,
         val was: RouteEdits.Route?,
         val tanks: Map<String, Int> = emptyMap(),
+        /** The procedures, runways and crossings picked on the line; null
+         *  in a note from before they were kept, which leaves them be. */
+        val procedures: PlanProcedures.State? = null,
     )
 
     private var count = 0L
@@ -44,9 +49,18 @@ class RouteUndo {
 
     /** A new edit: what it changed kept for Undo, and a Redo forgotten,
      *  since it would put back a route this edit has moved on from. */
-    fun took(kind: Kind, ident: String, route: RouteEdits.Route, holds: List<String>, direct: String?, was: RouteEdits.Route?, tanks: Map<String, Int> = emptyMap()) {
+    fun took(
+        kind: Kind,
+        ident: String,
+        route: RouteEdits.Route,
+        holds: List<String>,
+        direct: String?,
+        was: RouteEdits.Route?,
+        tanks: Map<String, Int> = emptyMap(),
+        procedures: PlanProcedures.State? = null,
+    ) {
         count += 1
-        _note.value = Note(count, kind, ident, route, holds, direct, was, tanks)
+        _note.value = Note(count, kind, ident, route, holds, direct, was, tanks, procedures)
         _redo.value = null
     }
 

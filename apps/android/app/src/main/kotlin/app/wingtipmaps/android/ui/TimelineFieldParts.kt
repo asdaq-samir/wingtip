@@ -135,15 +135,30 @@ private fun KindChip(ident: String, kind: String, list: ProcedureList, onChanged
  * menu wherever a kind is picked: the "+" chips and a picked one's head row.
  */
 @Composable
-fun ProcedureMenu(expanded: Boolean, onDismiss: () -> Unit, ident: String, kind: String, list: ProcedureList?, onChanged: () -> Unit) {
+fun ProcedureMenu(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    ident: String,
+    kind: String,
+    list: ProcedureList?,
+    onChanged: () -> Unit,
+    onRemove: (() -> Unit)? = null,
+    onLesson: ((dryRun: Boolean) -> Unit)? = null,
+    onPlate: (() -> Unit)? = null,
+) {
     var transitionsOf by remember(expanded) { mutableStateOf<ProcedureSummary?>(null) }
     val take = { procedure: ProcedureSummary?, transition: String? ->
         onDismiss()
-        PlanProcedures.pick(ident, kind, procedure?.let { PlanProcedures.Pick(ident.uppercase(), it.id, kind, it.name, transition) })
-        // An approach picked lands on its own runway, the field's landing
-        // kept in step with it, so the planner flies the same (the web's pick).
-        if (kind == "approach") LandingRunway.at(PlanProcedures.state.value, ident, list)?.runway?.let { PlanProcedures.setRunway(ident, it, takeoff = false) }
-        onChanged()
+        // None on a picked one's row takes it off with an Undo (onRemove).
+        if (procedure == null && onRemove != null) {
+            onRemove()
+        } else {
+            PlanProcedures.pick(ident, kind, procedure?.let { PlanProcedures.Pick(ident.uppercase(), it.id, kind, it.name, transition) })
+            // An approach picked lands on its own runway, the field's landing
+            // kept in step with it, so the planner flies the same (the web's pick).
+            if (kind == "approach") LandingRunway.at(PlanProcedures.state.value, ident, list)?.runway?.let { PlanProcedures.setRunway(ident, it, takeoff = false) }
+            onChanged()
+        }
     }
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
         val shown = transitionsOf
@@ -154,6 +169,14 @@ fun ProcedureMenu(expanded: Boolean, onDismiss: () -> Unit, ident: String, kind:
                     text = { Text(procedure.name) },
                     onClick = { if (procedure.transitions.isEmpty()) take(procedure, null) else transitionsOf = procedure },
                 )
+            }
+            // A picked approach's lesson and plate, as the iPhone's
+            // ApproachMenuItems: Approach Brief, Dry Run, Plate.
+            if (kind == "approach" && onLesson != null) {
+                HorizontalDivider()
+                DropdownMenuItem(text = { Text(stringResource(R.string.proc_approach_brief)) }, onClick = { onDismiss(); onLesson(false) })
+                DropdownMenuItem(text = { Text(stringResource(R.string.wording_dry_run)) }, onClick = { onDismiss(); onLesson(true) })
+                onPlate?.let { plate -> DropdownMenuItem(text = { Text(stringResource(R.string.proc_plate)) }, onClick = { onDismiss(); plate() }) }
             }
         } else {
             DropdownMenuItem(text = { Text(stringResource(R.string.proc_back)) }, onClick = { transitionsOf = null })

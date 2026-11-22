@@ -23,6 +23,8 @@ struct AppLoops: View {
             .frame(width: 0, height: 0)
             .accessibilityHidden(true)
             .task { if Self.first("ownShip") { ownShip.start() } }
+            // Whether this iPhone transcribes English on itself (SpeechSession).
+            .task { await SpeechSession.check() }
             .task { await session.refresh() }
             // The deletes an earlier launch held behind their Undo and
             // never sent, sent once the pilot is signed in (PendingDeletes).

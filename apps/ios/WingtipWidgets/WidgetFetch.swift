@@ -1,4 +1,9 @@
 import Foundation
+import GatewayAPI
+import HTTPTypes
+import OpenAPIRuntime
+import OpenAPIURLSession
+import PlannerAPI
 
 /// What the widgets ask for themselves, on their own timelines: a field's
 /// weather from the planner (Home Airport Weather, and a saved flight's
@@ -7,6 +12,11 @@ import Foundation
 /// with the app's cookies from the Keychain the two share (SessionCookies), so the
 /// currency is the signed-in pilot's. The last good answer is kept in the
 /// App Group and shown, with its time, while a new one cannot be had.
+/// Asked through the servers' generated clients (WingtipAPI's PlannerAPI
+/// and GatewayAPI, swift-openapi-generator), as the app asks them, where
+/// it decoded hand-written copies of their JSON (the stock audit,
+/// 2026-11-21); what is kept is the little each widget shows, read from
+/// the generated answer.
 enum WidgetFetch {
     private static let session: URLSession = {
         let config = URLSessionConfiguration.default
@@ -18,6 +28,10 @@ enum WidgetFetch {
         config.urlCache = nil
         return URLSession(configuration: config)
     }()
+
+    private static var transport: URLSessionTransport { URLSessionTransport(configuration: .init(session: session)) }
+    private static let planner = PlannerAPI.Client(serverURL: Config.gateway, transport: transport, middlewares: [WidgetPlannerPath()])
+    private static let gateway = GatewayAPI.Client(serverURL: Config.gateway, transport: transport)
 
     /// A field's weather as the planner's card has it (/api/airport/{ident},
     /// public): its name, its METAR as sent with the flight category the
@@ -45,6 +59,18 @@ enum WidgetFetch {
             var metar: Report
         }
 
+        init(ident: String, name: String, metar: Report? = nil, taf: String? = nil, nearbyMetar: Nearby? = nil, fetchedAt: Date? = nil) {
+            self.ident = ident; self.name = name; self.metar = metar; self.taf = taf; self.nearbyMetar = nearbyMetar; self.fetchedAt = fetchedAt
+        }
+
+        /// The planner's card (its generated AirportPlace), the few things shown.
+        init(_ place: PlannerAPI.Components.Schemas.AirportPlace, at: Date) {
+            func report(_ m: PlannerAPI.Components.Schemas.Metar) -> Report { Report(raw: m.raw, flightCategory: m.flightCategory, observedAt: m.observedAt) }
+            self.init(ident: place.ident, name: place.name, metar: place.metar.map(report), taf: place.taf,
+                      nearbyMetar: place.nearbyMetar.map { Nearby(ident: $0.ident, distanceNm: $0.distanceNm, near: $0.near, metar: report($0.metar)) },
+                      fetchedAt: at)
+        }
+
         /// The report said of the field: its own, else one near enough.
         var report: Report? { metar ?? (nearbyMetar?.near == true ? nearbyMetar?.metar : nil) }
         /// The station the report is from where it is not the field's own.
@@ -63,6 +89,22 @@ enum WidgetFetch {
         var flightReviewUntil: String?
         var medicalExpiresOn: String?
         var fetchedAt: Date?
+
+        init(dayPassengersUntil: String? = nil, nightPassengersUntil: String? = nil, instrumentCurrentUntil: String? = nil, instrumentCurrentFrom: String? = nil,
+             ipcNeededAfter: String? = nil, flightReviewUntil: String? = nil, medicalExpiresOn: String? = nil, fetchedAt: Date? = nil) {
+            self.dayPassengersUntil = dayPassengersUntil; self.nightPassengersUntil = nightPassengersUntil
+            self.instrumentCurrentUntil = instrumentCurrentUntil; self.instrumentCurrentFrom = instrumentCurrentFrom
+            self.ipcNeededAfter = ipcNeededAfter; self.flightReviewUntil = flightReviewUntil
+            self.medicalExpiresOn = medicalExpiresOn; self.fetchedAt = fetchedAt
+        }
+
+        /// The gateway's CurrencyDto (generated), the days shown.
+        init(_ dto: GatewayAPI.Components.Schemas.CurrencyDto, at: Date) {
+            self.init(dayPassengersUntil: dto.dayPassengersUntil, nightPassengersUntil: dto.nightPassengersUntil,
+                      instrumentCurrentUntil: dto.instrumentCurrentUntil, instrumentCurrentFrom: dto.instrumentCurrentFrom,
+                      ipcNeededAfter: dto.ipcNeededAfter, flightReviewUntil: dto.flightReviewUntil,
+                      medicalExpiresOn: dto.medicalExpiresOn, fetchedAt: at)
+        }
     }
 
     enum Answer<T: Sendable>: Sendable {
@@ -76,11 +118,8 @@ enum WidgetFetch {
 
     static func weather(_ ident: String) async -> Answer<FieldWeather> {
         let key = "widgetWeather.\(ident)"
-        let url = Config.gateway.appending(path: Config.plannerPath("/api/airport/\(ident)"))
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        if case .ok(let data) = await get(url), var weather = try? decoder.decode(FieldWeather.self, from: data) {
-            weather.fetchedAt = Date()
+        if let place = try? await planner.airportPlace(path: .init(ident: ident)).ok.body.json {
+            let weather = FieldWeather(place, at: Date())
             keep(weather, key)
             return .fresh(weather)
         }
@@ -89,33 +128,20 @@ enum WidgetFetch {
 
     static func currency() async -> Answer<Currency> {
         let key = WidgetStore.currencyKey
-        switch await get(Config.gateway.appending(path: "/api/logbook/currency")) {
-        case .ok(let data):
-            guard var currency = try? JSONDecoder().decode(Currency.self, from: data) else { break }
-            currency.fetchedAt = Date()
+        switch try? await gateway.currency() {
+        case .ok(let ok):
+            guard let dto = try? ok.body.json else { break }
+            let currency = Currency(dto, at: Date())
             keep(currency, key)
             return .fresh(currency)
-        case .signedOut:
+        case .undocumented(statusCode: let status, _) where status == 401 || status == 403:
             // Signed out: nothing of the last pilot's is shown.
             WidgetSnapshot.store?.removeObject(forKey: key)
             return .signedOut
-        case .failed:
+        default:
             break
         }
         return kept(Currency.self, key).map { .kept($0) } ?? .none
-    }
-
-    private enum Got { case ok(Data), signedOut, failed }
-
-    private static func get(_ url: URL) async -> Got {
-        var request = URLRequest(url: url)
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        guard let (data, response) = try? await session.data(for: request) else { return .failed }
-        switch (response as? HTTPURLResponse)?.statusCode ?? 0 {
-        case 200: return .ok(data)
-        case 401, 403: return .signedOut
-        default: return .failed
-        }
     }
 
     private static func keep(_ value: some Encodable, _ key: String) {
@@ -125,5 +151,16 @@ enum WidgetFetch {
 
     private static func kept<T: Decodable>(_ type: T.Type, _ key: String) -> T? {
         WidgetSnapshot.store?.data(forKey: key).flatMap { try? JSONDecoder().decode(type, from: $0) }
+    }
+}
+
+/// The planner's paths behind the gateway's proxy (Config.plannerPath), as
+/// the app's PlannerPath middleware sends them.
+private struct WidgetPlannerPath: ClientMiddleware {
+    func intercept(_ request: HTTPRequest, body: HTTPBody?, baseURL: URL, operationID: String,
+                   next: @Sendable (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)) async throws -> (HTTPResponse, HTTPBody?) {
+        var request = request
+        request.path = request.path.map(Config.plannerPath)
+        return try await next(request, body, baseURL)
     }
 }

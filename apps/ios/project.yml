@@ -340,9 +340,19 @@ targets:
       # The gateway's host, for the weather and currency widgets' own asks
       # (WidgetFetch), read from this extension's Info.plist (WingtipHost).
       - path: Wingtip/Config.swift
-    # The Keychain the session's cookies are read from (SessionCookies).
+    # The Keychain the session's cookies are read from (SessionCookies), and
+    # the servers' generated clients the weather and currency are asked
+    # through (WidgetFetch), as the app asks them.
     dependencies:
       - package: Valet
+      - target: PlannerAPI
+      - target: GatewayAPI
+      - package: swift-openapi-runtime
+        product: OpenAPIRuntime
+      - package: swift-http-types
+        product: HTTPTypes
+      - package: swift-openapi-urlsession
+        product: OpenAPIURLSession
     entitlements:
       path: WingtipWidgets/WingtipWidgets.entitlements
       properties:

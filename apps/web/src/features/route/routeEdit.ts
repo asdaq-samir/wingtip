@@ -1,6 +1,6 @@
 import { MAX_STOPS, isPosition, stopOf } from "../../lib/identSchema";
 import { callEngine } from "../../lib/engine/engine";
-import { sameField, TYPED_PROCEDURE, type TypedProcedure } from "../../lib/procedures";
+import { sameField, type TypedProcedure } from "../../lib/procedures";
 
 /** The route as the box changes it: either end may be missing (half a
  *  route, the other end still to be typed), and neither means none. */
@@ -155,8 +155,9 @@ export function withTyped(
  * the engine (`route_read`, AIM Appendix 4: DCT out, item 15's speed and
  * level group the cruise, "LEXOR/N0467F380" the point; decision 0045), then
  * the points among the words, each as a stop's ident, and the SIDs and
- * STARs typed among them ("KMSP BAEE1 BAE ... OSH OSHH2 KATW", lib/procedures'
- * TYPED_PROCEDURE), which are the route's procedures, not points -- each
+ * STARs typed among them ("KMSP BAEE1 BAE ... OSH OSHH2 KATW", the engine's
+ * `route_procedures`, as the iPhone's Type Route reads them), which are the
+ * route's procedures, not points -- each
  * with the points typed either side of it, to be picked once the route is
  * in. Procedures are read only where the box has somewhere to send them.
  * `words` are the words read, for what is held to come after them
@@ -168,22 +169,9 @@ export function readTyped(
   withProcedures: boolean,
 ): { fresh: string[]; procedures: TypedProcedure[]; words: string[]; cruiseFt: number | null; goesOn: boolean } {
   const { words, cruiseFt } = filedWords(typed.map((t) => t.trim().toUpperCase()).filter(Boolean));
-  const isProcedure = (word: string) => withProcedures && TYPED_PROCEDURE.test(word);
-  const procedures = words.flatMap((word, i) =>
-    isProcedure(word)
-      ? [
-          {
-            name: word,
-            before:
-              words
-                .slice(0, i)
-                .reverse()
-                .find((w) => !isProcedure(w)) ?? null,
-            after: words.slice(i + 1).find((w) => !isProcedure(w)) ?? null,
-          },
-        ]
-      : [],
-  );
+  const procedures: TypedProcedure[] = withProcedures ? typedProcedures(words) : [];
+  const names = new Set(procedures.map((p) => p.name));
+  const isProcedure = (word: string) => names.has(word);
   const fresh = words
     .filter((w) => !isProcedure(w))
     .map(stopOf)
@@ -191,6 +179,17 @@ export function readTyped(
   // Words that end in a procedure end before its field: the route goes
   // on past the last point (withTyped).
   return { fresh, procedures, words, cruiseFt, goesOn: !!words.length && isProcedure(words.at(-1)!) };
+}
+
+/** The SIDs and STARs among the words, with the points either side of
+ *  each (the engine's `route_procedures`); none where the engine is not
+ *  in yet, the words then all points. */
+function typedProcedures(words: string[]): TypedProcedure[] {
+  try {
+    return callEngine("route_procedures", { words });
+  } catch {
+    return [];
+  }
 }
 
 /** The words a route typed whole says, by the engine's reader, word by

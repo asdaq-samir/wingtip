@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ProcedureList } from "./api/types";
+import { callEngine } from "./engine/engine";
+import routeProcedures from "./fixtures/routeProcedures.json";
 import {
   altitudeLines,
   approachRunway,
@@ -7,7 +9,6 @@ import {
   proceduresParam,
   sameField,
   speedWords,
-  TYPED_PROCEDURE,
   typedProcedure,
 } from "./procedures";
 
@@ -110,9 +111,8 @@ describe("a SID or a STAR typed in the route", () => {
   const list = async (ident: string) => lists[ident] ?? Promise.reject(new Error("none"));
   const route = { dep: "C81", dest: "KATW" };
 
-  it("is told from an airport and a fix by its shape", () => {
-    expect(["BAEE1", "OSHH2", "KAYYS3"].every((w) => TYPED_PROCEDURE.test(w))).toBe(true);
-    expect(["C81", "KATW", "CORIR", "V191", "1C5"].some((w) => TYPED_PROCEDURE.test(w))).toBe(false);
+  it.each(routeProcedures.cases)("is told from an airport and a fix by the engine, as the iPhone tells it: $why", (c) => {
+    expect(callEngine("route_procedures", c.input)).toEqual(c.expected);
   });
 
   it("is the departure's, by the fix after it, or the destination's, by the fix before it", async () => {

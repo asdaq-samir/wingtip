@@ -12,5 +12,5 @@
     <string name="field_climb_tas">Climb TAS (kt)</string>
     <string name="field_equipment">Equipment (item 10a)</string>
     <string name="field_surveillance">Surveillance (item 10b)</string>
-    <string name="field_colour">Colour and Markings</string>
+    <string name="field_colour">Color and Markings</string>
 </resources>

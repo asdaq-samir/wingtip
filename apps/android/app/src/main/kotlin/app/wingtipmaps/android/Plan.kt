@@ -27,6 +27,7 @@ import app.wingtipmaps.android.plan.PlanTanks
 import app.wingtipmaps.android.route.RouteEdits
 import app.wingtipmaps.android.route.RouteUndo
 import app.wingtipmaps.android.route.replaceRoute
+import app.wingtipmaps.android.route.undoable
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -160,31 +161,13 @@ class Plan @Inject constructor(app: Application) : AndroidViewModel(app) {
         plan(s.dep, s.dest, stops!!)
     }
 
-    /** The last edit that changed the route, for its Undo (RouteUndoSnackbar). */
+    /** The last edit that changed the route, for its Undo (RouteUndoSnackbar;
+     *  taken and put back by route/PlanUndo). */
     val undo = RouteUndo()
 
-    internal fun undoable(kind: RouteUndo.Kind, ident: String) {
-        val s = _state.value
-        // No route before it: nothing to go back to.
-        if (!s.routed) return
-        undo.took(kind, ident, RouteEdits.Route(s.dep, s.stops, s.dest), s.holds, s.direct, s.was, PlanTanks.state.value.own)
-    }
-
-    /** Undo: the route, its holds and its Direct as they were before the
-     *  last edit, planned again; Redo puts that edit back (the wide
-     *  window's route toolbar). Each keeps the route it leaves for the other. */
-    fun undoEdit() { undo.take()?.let { n -> undo.keepRedo(asNow(n)); reapply(n) } }
-
-    fun redoEdit() { undo.takeRedo()?.let { n -> undo.keepUndo(asNow(n)); reapply(n) } }
-
-    private fun asNow(n: RouteUndo.Note) = _state.value.let { s -> n.copy(route = RouteEdits.Route(s.dep, s.stops, s.dest), holds = s.holds, direct = s.direct, was = s.was, tanks = PlanTanks.state.value.own) }
-
-    private fun reapply(n: RouteUndo.Note) {
-        _state.update { it.copy(holds = n.holds) }
-        PlanTanks.restore(n.tanks)
-        plan(n.route.dep, n.route.dest, n.route.stops)
-        _state.update { it.copy(direct = n.direct, was = n.was) }
-    }
+    /** The plan's state changed in place, for an Undo putting back what an
+     *  edit took (route/PlanUndo); no plan asked. */
+    internal fun put(change: (State) -> State) = _state.update(change)
 
     /** One of the planner's airplane types picked; the route planned again on its figures. */
     fun setAircraft(name: String) {
