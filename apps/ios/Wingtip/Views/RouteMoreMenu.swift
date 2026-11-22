@@ -9,17 +9,15 @@ import SwiftUI
 /// (ShareMenu); Clear is the route card's ✕; the map's choices are Map
 /// Settings'. Under them, what the web has no home for and the iPhone
 /// keeps as a page's view options in its ••• (HIG, "Pull-down buttons"):
-/// Undo, which the web's toast holds and shake still does, the saved
-/// flights, and how the route is shown.
+/// the saved flights and how the route is shown. Undo is the undo bar's
+/// after each change (UndoBar), and shake's and ⌘Z's.
 struct RouteMoreMenu: View {
     @Environment(Plan.self) private var plan
     @Environment(\.openURL) private var openURL
-    @Environment(\.undoManager) private var undoManager
     let open: (Screen) -> Void
 
     var body: some View {
-        _ = UndoWatch.shared.changes
-        return Menu {
+        Menu {
             Menu {
                 RouteWayPicker()
             } label: {
@@ -32,11 +30,6 @@ struct RouteMoreMenu: View {
             }
             .disabled(plan.legs.isEmpty)
             Divider()
-            if let undoManager, undoManager.canUndo {
-                Button { undoManager.undo() } label: {
-                    Label(undoManager.undoActionName.isEmpty ? "Undo" : "Undo \(undoManager.undoActionName)", systemImage: "arrow.uturn.backward")
-                }
-            }
             Button { open(.flights) } label: { Label("Saved Flights", systemImage: "tray.full") }
             ShowRouteAs()
         } label: {
