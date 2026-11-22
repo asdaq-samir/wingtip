@@ -881,6 +881,23 @@ export type ClearanceItem =
       number: string;
       transition: string | null;
     };
+export type ReadRouteFileAnswer =
+  | {
+      dep: string;
+      dest: string;
+      stops: string[];
+      /**
+       * The route's name in the file.
+       */
+      name: string | null;
+      /**
+       * Points left out: user waypoints and points with no identifier.
+       */
+      dropped: number;
+    }
+  | {
+      error: string;
+    };
 export type ReadTrackAnswer =
   | {
       points: {
@@ -3285,6 +3302,13 @@ export interface EngineContract {
   read_datis: {
     input: ReadDatisInput;
     answer: ReadDatisAnswer;
+  };
+  /**
+   * A route from another app's flight-plan file read: Garmin's FlightPlan XML (.fpl) or a GPX route, its ends and the points between that have an identifier, for the apps to preview; or the words for the pilot where it is not one.
+   */
+  read_route_file: {
+    input: ReadRouteFileInput;
+    answer: ReadRouteFileAnswer;
   };
   /**
    * A GPX or KML track read: its points in time order, or the words for the pilot where it has none to use.
@@ -11627,6 +11651,12 @@ export interface ReadDatisAnswer {
   };
   remarks: string[];
   raw: string;
+}
+export interface ReadRouteFileInput {
+  /**
+   * The file's text.
+   */
+  text: string;
 }
 export interface ReadTrackInput {
   text: string;

@@ -30,12 +30,32 @@
         }
       }
     },
+    "%@ %@ runway" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ runway"
+          }
+        }
+      }
+    },
     "%@ %@ → %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ %2$@ → %3$@"
+          }
+        }
+      }
+    },
+    "%@ %@%@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@%3$@%4$@"
           }
         }
       }
@@ -55,6 +75,16 @@
     },
     "%@ Fuel Flow" : {
 
+    },
+    "%@ RWY %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ RWY %2$@"
+          }
+        }
+      }
     },
     "%@ Squawks" : {
 
@@ -101,9 +131,6 @@
         }
       }
     },
-    "%@ fixes" : {
-
-    },
     "%@ flown of %@" : {
       "localizations" : {
         "en" : {
@@ -130,6 +157,9 @@
 
     },
     "%@ is outside the planner's legal altitudes; flown with its warnings." : {
+
+    },
+    "%@ isn't a PDF, so it wasn't added." : {
 
     },
     "%@ leaving %@" : {
@@ -313,6 +343,36 @@
         }
       }
     },
+    "%@%@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$@%3$@"
+          }
+        }
+      }
+    },
+    "%@%@: change it" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$@: change it"
+          }
+        }
+      }
+    },
+    "%@%@: more" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$@: more"
+          }
+        }
+      }
+    },
     "%@'s ATIS could not be fetched; check the connection." : {
 
     },
@@ -338,16 +398,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@, %2$@%3$@"
-          }
-        }
-      }
-    },
-    "%@, %@, %@%@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@, %2$@, %3$@%4$@"
           }
         }
       }
@@ -390,6 +440,9 @@
           }
         }
       }
+    },
+    "%@: more" : {
+
     },
     "%@T" : {
 
@@ -443,7 +496,13 @@
         }
       }
     },
+    "%lld found" : {
+
+    },
     "%lld ft wide" : {
+
+    },
+    "%lld kt" : {
 
     },
     "%lld more" : {
@@ -465,6 +524,16 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$lld of %2$lld shown"
+          }
+        }
+      }
+    },
+    "%lld of %lld%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld%3$@"
           }
         }
       }
@@ -496,6 +565,9 @@
       }
     },
     "%lld×" : {
+
+    },
+    "+ %@" : {
 
     },
     "+%lld" : {
@@ -570,6 +642,9 @@
     "ADS-B receiver: %@" : {
 
     },
+    "AI Apps" : {
+
+    },
     "ATC" : {
 
     },
@@ -603,6 +678,16 @@
     "Add ${approach} to the route" : {
 
     },
+    "Add %@ at %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add %1$@ at %2$@"
+          }
+        }
+      }
+    },
     "Add Airplane" : {
 
     },
@@ -624,10 +709,10 @@
     "Add Your Name" : {
 
     },
-    "Add a Segment" : {
+    "Add a PDF" : {
 
     },
-    "Add a Stop" : {
+    "Add a Segment" : {
 
     },
     "Add a note" : {
@@ -658,6 +743,9 @@
         }
       }
     },
+    "Adverse Conditions" : {
+
+    },
     "Aeronautical" : {
 
     },
@@ -680,9 +768,6 @@
 
     },
     "Airport" : {
-
-    },
-    "Airport Diagram" : {
 
     },
     "Airport Weather" : {
@@ -769,8 +854,21 @@
     "Approach" : {
 
     },
+    "Approach Brief" : {
+
+    },
     "Approach Plates" : {
 
+    },
+    "Arrives %@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Arrives %1$@%2$@"
+          }
+        }
+      }
     },
     "As Charted" : {
 
@@ -844,6 +942,9 @@
     "Avery B. Student" : {
 
     },
+    "Back" : {
+
+    },
     "Balance" : {
 
     },
@@ -856,10 +957,16 @@
     "Bearing Error" : {
 
     },
+    "Before You Go" : {
+
+    },
     "Best Fields" : {
 
     },
     "Best Fields · Glide About %@" : {
+
+    },
+    "Beyond Reserve" : {
 
     },
     "Blank where none was given" : {
@@ -869,6 +976,12 @@
 
     },
     "Book Figures" : {
+
+    },
+    "Bookmark This Page" : {
+
+    },
+    "Bookmark This Page puts the page here." : {
 
     },
     "Brief" : {
@@ -925,6 +1038,9 @@
     "Cancel Direct" : {
 
     },
+    "Cannot be picked: %@" : {
+
+    },
     "Caution ahead" : {
 
     },
@@ -947,6 +1063,12 @@
 
     },
     "Change Hold…" : {
+
+    },
+    "Change Stop…" : {
+
+    },
+    "Change…" : {
 
     },
     "Chart" : {
@@ -1043,6 +1165,9 @@
     "Clear Markup" : {
 
     },
+    "Clear Page's Markup" : {
+
+    },
     "Clear Route" : {
 
     },
@@ -1094,7 +1219,13 @@
     "Confirmed" : {
 
     },
+    "Connected Apps" : {
+
+    },
     "Contact" : {
+
+    },
+    "Contents" : {
 
     },
     "Copied" : {
@@ -1119,6 +1250,9 @@
 
     },
     "Could Not Read That" : {
+
+    },
+    "Couldn't keep it. Try again with a signal." : {
 
     },
     "Course" : {
@@ -1226,6 +1360,9 @@
     "Delete" : {
 
     },
+    "Delete %@" : {
+
+    },
     "Delete %@?" : {
 
     },
@@ -1233,6 +1370,9 @@
 
     },
     "Delete Airplane" : {
+
+    },
+    "Delete from iCloud" : {
 
     },
     "Delete the Track" : {
@@ -1257,6 +1397,12 @@
 
     },
     "Departure %@" : {
+
+    },
+    "Departure Time" : {
+
+    },
+    "Departure from %@" : {
 
     },
     "Departure hours" : {
@@ -1292,9 +1438,6 @@
     "Direct to ${place}" : {
 
     },
-    "Direct to %@" : {
-
-    },
     "Direct to %@." : {
 
     },
@@ -1320,6 +1463,12 @@
 
     },
     "Discard your changes?" : {
+
+    },
+    "Disconnect" : {
+
+    },
+    "Disconnect %@?" : {
 
     },
     "Dismiss" : {
@@ -1352,10 +1501,16 @@
     "Do" : {
 
     },
+    "Document" : {
+
+    },
     "Documents Filed" : {
 
     },
     "Done" : {
+
+    },
+    "Done Flying" : {
 
     },
     "Download %@" : {
@@ -1440,6 +1595,9 @@
 
     },
     "Empty Weight" : {
+
+    },
+    "En Route" : {
 
     },
     "En route" : {
@@ -1529,6 +1687,9 @@
     "Feet" : {
 
     },
+    "Fetching %@…" : {
+
+    },
     "Fetching earlier flights…" : {
 
     },
@@ -1550,6 +1711,9 @@
     "Fetching the airspace here…" : {
 
     },
+    "Fetching the approach…" : {
+
+    },
     "Fetching the destination's forecast…" : {
 
     },
@@ -1563,6 +1727,9 @@
 
     },
     "Fetching the hours…" : {
+
+    },
+    "Fetching the library…" : {
 
     },
     "Fetching the map…" : {
@@ -1625,10 +1792,16 @@
     "Find any airport, town or fix the way you would in Apple or Google Maps." : {
 
     },
+    "Find in Document" : {
+
+    },
     "Finding it…" : {
 
     },
     "Finding the fields round you…" : {
+
+    },
+    "Finding where you are…" : {
 
     },
     "Finding your position…" : {
@@ -1795,6 +1968,9 @@
     "Forget your checkpoint notes?" : {
 
     },
+    "Forward" : {
+
+    },
     "Found On" : {
 
     },
@@ -1846,7 +2022,7 @@
     "Fuel Required" : {
 
     },
-    "Fuel in the Tanks" : {
+    "Fuel Set" : {
 
     },
     "Fuel remarks" : {
@@ -1891,6 +2067,12 @@
     "Ground Speed" : {
 
     },
+    "Ground speed" : {
+
+    },
+    "Ground speed on the final" : {
+
+    },
     "Groundspeed" : {
 
     },
@@ -1916,6 +2098,9 @@
 
     },
     "Help & About" : {
+
+    },
+    "Help Improve Wingtip Maps" : {
 
     },
     "Here's the entry from your flight; check it and log it." : {
@@ -1978,9 +2163,6 @@
     "How the Altitude Was Chosen" : {
 
     },
-    "I Understand" : {
-
-    },
     "I cannot tell where you are, so here are the nearest airports." : {
 
     },
@@ -2018,6 +2200,9 @@
     "In Words" : {
 
     },
+    "In place of %@" : {
+
+    },
     "In still air: the winds there could not be read." : {
 
     },
@@ -2028,9 +2213,6 @@
 
     },
     "In the air" : {
-
-    },
-    "In words" : {
 
     },
     "Inbound" : {
@@ -2072,13 +2254,22 @@
     "Instrument Currency" : {
 
     },
-    "Instrument currency" : {
-
-    },
     "Into the Pattern · Within %@ ft" : {
 
     },
+    "Into the Wind" : {
+
+    },
+    "Into the Wind (%@)" : {
+
+    },
+    "Invert Colors" : {
+
+    },
     "Invert Plate Colors" : {
+
+    },
+    "It can no longer read your airplanes or flights or save one, until you connect it again." : {
 
     },
     "It goes from your airplanes and from the nav log's picker. This cannot be undone." : {
@@ -2111,6 +2302,9 @@
     "KDLH VOT" : {
 
     },
+    "KPWK DCT OBK V100 KLAS" : {
+
+    },
     "KXXX" : {
 
     },
@@ -2120,6 +2314,12 @@
     "Keep for the Air" : {
 
     },
+    "Keep for the Air, %@" : {
+
+    },
+    "Keep in iCloud" : {
+
+    },
     "Keep on This iPhone" : {
 
     },
@@ -2127,6 +2327,9 @@
 
     },
     "Keep the path this iPhone flew, or put in a GPX file." : {
+
+    },
+    "Keeping %@ for the Air" : {
 
     },
     "Keeping for the Air: %lld of %lld" : {
@@ -2152,6 +2355,9 @@
 
     },
     "Kept for the Air" : {
+
+    },
+    "Kept for the Air. Remove" : {
 
     },
     "Kept for the Air: %@" : {
@@ -2181,6 +2387,9 @@
     "Lands with %@" : {
 
     },
+    "Larger Map Labels" : {
+
+    },
     "Last Check" : {
 
     },
@@ -2197,6 +2406,9 @@
 
     },
     "Layers" : {
+
+    },
+    "Leaves" : {
 
     },
     "Leaving" : {
@@ -2242,10 +2454,16 @@
     "Legs · %@" : {
 
     },
+    "Lesson step" : {
+
+    },
     "Let's Go Flying" : {
 
     },
     "Level" : {
+
+    },
+    "Library Not Reached" : {
 
     },
     "Light" : {
@@ -2387,9 +2605,6 @@
     "Magnetic Heading" : {
 
     },
-    "Magnetic heading" : {
-
-    },
     "Magnetic heading %@" : {
 
     },
@@ -2400,9 +2615,6 @@
 
     },
     "Make and Model" : {
-
-    },
-    "Make and model" : {
 
     },
     "Map" : {
@@ -2449,6 +2661,9 @@
 
     },
     "More than the %lld gal the tanks hold" : {
+
+    },
+    "Most Headwind" : {
 
     },
     "My position" : {
@@ -2521,9 +2736,6 @@
         }
       }
     },
-    "Nearest airports" : {
-
-    },
     "Nearest for a Diversion" : {
 
     },
@@ -2558,6 +2770,9 @@
     "Next Lesson" : {
 
     },
+    "Next Match" : {
+
+    },
     "Next · %@" : {
 
     },
@@ -2582,10 +2797,16 @@
     "No Airports" : {
 
     },
+    "No Bookmarks" : {
+
+    },
     "No Briefing" : {
 
     },
     "No Checklist Yet" : {
+
+    },
+    "No Contents" : {
 
     },
     "No D-ATIS or report at %@. %@" : {
@@ -2646,6 +2867,9 @@
     "No answer from the planner." : {
 
     },
+    "No apps are connected." : {
+
+    },
     "No ceiling" : {
 
     },
@@ -2653,6 +2877,9 @@
 
     },
     "No codes yet" : {
+
+    },
+    "No connection." : {
 
     },
     "No fields near here" : {
@@ -2748,6 +2975,9 @@
     "Not Now" : {
 
     },
+    "Not Verified" : {
+
+    },
     "Not Yet" : {
 
     },
@@ -2763,10 +2993,16 @@
     "Not done" : {
 
     },
+    "Not found" : {
+
+    },
     "Not quite: %@" : {
 
     },
     "Not shown" : {
+
+    },
+    "Not verified" : {
 
     },
     "Notes" : {
@@ -2818,10 +3054,19 @@
     "On the Map" : {
 
     },
+    "On this device and in your iCloud." : {
+
+    },
+    "On this device only. Wingtip never sends them anywhere." : {
+
+    },
     "On to %@" : {
 
     },
     "Open" : {
+
+    },
+    "Open %@" : {
 
     },
     "Open %@'s Profile" : {
@@ -2935,13 +3180,13 @@
     "Ownership History" : {
 
     },
+    "Page %lld" : {
+
+    },
     "Passenger Briefing" : {
 
     },
     "Passengers at Night" : {
-
-    },
-    "Passengers at night" : {
 
     },
     "Passengers by Day" : {
@@ -3001,6 +3246,9 @@
     "Pick one for the time, fuel and groundspeed" : {
 
     },
+    "Picks another %@" : {
+
+    },
     "Pilot Details" : {
 
     },
@@ -3026,6 +3274,9 @@
 
     },
     "Plan a route first." : {
+
+    },
+    "Plan a route on FPL; its legs are listed here." : {
 
     },
     "Plan a trip to ${airport} leaving ${departure}" : {
@@ -3074,6 +3325,9 @@
     "Plans your route with an airplane, by its N-number." : {
 
     },
+    "Plate" : {
+
+    },
     "Plates" : {
 
     },
@@ -3099,6 +3353,9 @@
 
     },
     "Previews the airplane's own altitude" : {
+
+    },
+    "Previous Match" : {
 
     },
     "Print Nav Log" : {
@@ -3132,6 +3389,9 @@
 
     },
     "Put in the flight's track from a GPX file." : {
+
+    },
+    "Puts %@ in the route" : {
 
     },
     "Puts an approach on your route at its airport and opens the Brief." : {
@@ -3249,6 +3509,9 @@
     "Remove %@" : {
 
     },
+    "Remove Bookmark" : {
+
+    },
     "Remove Fuel Stops" : {
 
     },
@@ -3259,6 +3522,15 @@
 
     },
     "Remove from Favorites" : {
+
+    },
+    "Rename" : {
+
+    },
+    "Rename Bookmark" : {
+
+    },
+    "Rename Document" : {
 
     },
     "Replay time" : {
@@ -3321,6 +3593,16 @@
     },
     "Runway %@" : {
 
+    },
+    "Runway %@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Runway %1$@%2$@"
+          }
+        }
+      }
     },
     "Runway Visual Range, ft" : {
 
@@ -3394,10 +3676,16 @@
     "Search" : {
 
     },
+    "Search This Document" : {
+
+    },
     "Search for Your Airplane" : {
 
     },
     "Search, like Maps" : {
+
+    },
+    "Searching…" : {
 
     },
     "Section" : {
@@ -3431,6 +3719,9 @@
 
     },
     "Send to Your Passengers" : {
+
+    },
+    "Sends crashes and speed figures, with nothing of yours." : {
 
     },
     "Server" : {
@@ -3479,6 +3770,9 @@
 
     },
     "Share Link with %@" : {
+
+    },
+    "Share This Page" : {
 
     },
     "Shared Flight" : {
@@ -3689,6 +3983,16 @@
     "Steady" : {
 
     },
+    "Step %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Step %1$lld of %2$lld"
+          }
+        }
+      }
+    },
     "Stop" : {
 
     },
@@ -3716,6 +4020,9 @@
     "Stop instructing here?" : {
 
     },
+    "Stop keeping your documents in iCloud?" : {
+
+    },
     "Stop listening" : {
 
     },
@@ -3723,9 +4030,6 @@
 
     },
     "Stopped listening to the radio." : {
-
-    },
-    "Stops" : {
 
     },
     "Stops listening to the radio." : {
@@ -3797,21 +4101,11 @@
     "Terms of Use" : {
 
     },
-    "That file isn't a Wingtip flight or a GPX or KML track." : {
+    "That file isn't a Wingtip flight, a PDF or a GPX or KML track." : {
 
     },
     "That's Not Me" : {
 
-    },
-    "The %@ at %@ could not be briefed: %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "The %1$@ at %2$@ couldn't be briefed: %3$@"
-          }
-        }
-      }
     },
     "The %@ at %@. %@" : {
       "localizations" : {
@@ -3830,6 +4124,9 @@
 
     },
     "The FAA publishes no airport diagram for this field" : {
+
+    },
+    "The FAA's documents can't be listed now. Those you keep for the air are listed here with no signal." : {
 
     },
     "The FAA's registry has no record of this N-number." : {
@@ -3857,9 +4154,6 @@
 
     },
     "The NOTAMs in Words" : {
-
-    },
-    "The NOTAMs in words" : {
 
     },
     "The Route's Segments" : {
@@ -3926,7 +4220,7 @@
     "The figures are the engine's and the planner's; each answer shows what it read." : {
 
     },
-    "The flight in words" : {
+    "The first %lld found" : {
 
     },
     "The forecast along the run" : {
@@ -3942,6 +4236,9 @@
 
     },
     "The legs come in as the planner works them out." : {
+
+    },
+    "The library sent something that isn't a PDF." : {
 
     },
     "The limit is a fix an approach begins from" : {
@@ -3998,6 +4295,9 @@
     "The route, its stops and what was set on it go. Shake to undo." : {
 
     },
+    "The route, its stops and what was set on it go. Undo brings them back." : {
+
+    },
     "The route, nav log, profile and brief, one tap away on the FPL button." : {
 
     },
@@ -4013,22 +4313,34 @@
     "The track is with the saved flight too: its debrief is there in Flights." : {
 
     },
-    "The weather in words" : {
-
-    },
     "The weather service could not be reached." : {
 
     },
     "Theme" : {
 
     },
+    "They stay on this device. Their copies in your iCloud are deleted." : {
+
+    },
     "This Month" : {
+
+    },
+    "This PDF can't be opened. It may be damaged." : {
 
     },
     "This Page" : {
 
     },
     "This VOR is not in the regions kept on this phone, or not in this cycle's data." : {
+
+    },
+    "This document can't be had now. Keep it for the Air to read it with no signal." : {
+
+    },
+    "This document has no table of contents." : {
+
+    },
+    "This document is no longer on this device." : {
 
     },
     "This flight is no longer shared." : {
@@ -4056,9 +4368,6 @@
 
     },
     "Took Off" : {
-
-    },
-    "Took off" : {
 
     },
     "Top of Climb" : {
@@ -4100,6 +4409,9 @@
     "Training" : {
 
     },
+    "Training aid, fly the FAA plate" : {
+
+    },
     "Training and Endorsements" : {
 
     },
@@ -4121,9 +4433,6 @@
     "True Heading" : {
 
     },
-    "True course" : {
-
-    },
     "Try Again" : {
 
     },
@@ -4142,7 +4451,13 @@
     "Type" : {
 
     },
+    "Type Route" : {
+
+    },
     "Type of aircraft, as C172" : {
+
+    },
+    "Type or paste the whole route" : {
 
     },
     "Type or say a field, a town or a route in the search above. Wingtip plans from where you are: the route, the checkpoints you'll see from the air, the nav log and a weather brief, all on one strip." : {
@@ -4199,7 +4514,13 @@
     "Version" : {
 
     },
+    "Via %@" : {
+
+    },
     "View Full Screen" : {
+
+    },
+    "Visibility" : {
 
     },
     "Void It" : {
@@ -4331,10 +4652,10 @@
     "Wingtip Maps" : {
 
     },
-    "Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1‑800‑WX‑BRIEF), current FAA charts and publications, or the pilot in command’s judgment and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103)." : {
+    "Wingtip Maps Feedback" : {
 
     },
-    "Wingtip Maps Feedback" : {
+    "Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1‑800‑WX‑BRIEF), current FAA charts and publications, or the pilot in command’s judgment and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103)." : {
 
     },
     "Wingtip Maps wasn't listening to the radio." : {
@@ -4406,6 +4727,9 @@
     "Your Determination" : {
 
     },
+    "Your Documents" : {
+
+    },
     "Your ETA" : {
 
     },
@@ -4439,6 +4763,12 @@
     "Your airplanes, flights, logbook and endorsements go, and you are signed out on every device. This cannot be undone." : {
 
     },
+    "Your connected apps could not be read." : {
+
+    },
+    "Your documents in your own iCloud, on your other devices. Markup and bookmarks stay on each device." : {
+
+    },
     "Your endorsements and reviews are kept with your account." : {
 
     },
@@ -4454,10 +4784,10 @@
     "Your logbook could not be fetched." : {
 
     },
-    "Your name" : {
+    "Your markup" : {
 
     },
-    "Your place on the strip could not be worked out: %@" : {
+    "Your name" : {
 
     },
     "Your plan is made from the logbook kept with your account." : {
@@ -4508,6 +4838,9 @@
     "nm" : {
 
     },
+    "none picked" : {
+
+    },
     "not known" : {
 
     },
@@ -4518,6 +4851,9 @@
 
     },
     "turbulence %@" : {
+
+    },
+    "§ %@" : {
 
     },
     "°" : {
