@@ -14,7 +14,6 @@ struct LogbookEntriesModelTests {
         func delete(_ id: Int) { deletes.append(id) }
     }
 
-
     static func entry(_ id: Int, route: String? = "KDLH KHIB") -> LogbookEntry {
         LogbookEntry(aircraft: "N3429J", aircraftType: "P28A", airHours: 1.1, approaches: 0, crossCountryHours: 1.2, dayLandings: 2,
                      distanceNm: 62.4, dualHours: 0, flownOn: "2026-10-28", fromTrack: false, holding: false, id: id,

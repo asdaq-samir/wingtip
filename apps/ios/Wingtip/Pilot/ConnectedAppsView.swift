@@ -32,9 +32,8 @@ struct ConnectedAppsView: View {
         .confirmationDialog(
             "Disconnect \(model.asked?.app ?? "this app")?",
             isPresented: Binding(get: { model.asked != nil }, set: { if !$0 { model.asked = nil } }),
-            titleVisibility: .visible
-        ) {
-            Button("Disconnect", role: .destructive) { Task { await model.confirm() } }
+            titleVisibility: .visible) {
+                Button("Disconnect", role: .destructive) { Task { await model.confirm() } }
         } message: {
             Text("It can no longer read your airplanes or flights or save one, until you connect it again.")
         }

@@ -34,7 +34,6 @@ import me.saket.telephoto.zoomable.ZoomableState
 import me.saket.telephoto.zoomable.zoomable
 import kotlin.math.roundToInt
 
-
 /**
  * One page of a PDF, fitted to the reader and drawn at twice its width on
  * screen for a sharp zoom, inverted for the night where asked (a colour

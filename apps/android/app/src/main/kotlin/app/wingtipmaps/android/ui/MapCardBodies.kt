@@ -21,12 +21,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.library.Cited
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.engine.MapRules
 import app.wingtipmaps.android.flight.FlightModel
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.library.Cited
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapStyle
 

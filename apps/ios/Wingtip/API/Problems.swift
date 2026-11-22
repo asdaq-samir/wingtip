@@ -84,7 +84,7 @@ enum Problems {
         return trimmed.isEmpty ? nil : trimmed
     }
 
-    private static let clientErrors = 400 ... 499
+    private static let clientErrors = 400...499
 
     /// `what` as the start of a sentence: its first letter a capital and
     /// no full stop of its own.

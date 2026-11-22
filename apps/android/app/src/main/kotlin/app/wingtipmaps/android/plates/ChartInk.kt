@@ -18,9 +18,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.library.Mark
+import app.wingtipmaps.android.library.Marking
 import app.wingtipmaps.android.library.MarkupBar
 import app.wingtipmaps.android.library.MarkupStore
-import app.wingtipmaps.android.library.Marking
 import app.wingtipmaps.android.library.PageInk
 import app.wingtipmaps.android.library.Pen
 

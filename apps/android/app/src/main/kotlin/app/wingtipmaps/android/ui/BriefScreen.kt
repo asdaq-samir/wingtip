@@ -36,8 +36,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.library.Cited
-import app.wingtipmaps.android.library.rememberCiteActions
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.ai.AiSources
 import app.wingtipmaps.android.ai.AiTask
@@ -53,6 +51,8 @@ import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.design.rememberHaptics
+import app.wingtipmaps.android.library.Cited
+import app.wingtipmaps.android.library.rememberCiteActions
 import app.wingtipmaps.android.offline.KeptAgeLine
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.ready.ReadyToFlyRow

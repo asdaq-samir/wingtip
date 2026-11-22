@@ -23,9 +23,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.plan.ApproachLesson
 import app.wingtipmaps.android.plan.PlanProcedures
@@ -47,7 +47,7 @@ fun ApproachLessonSheet(pick: PlanProcedures.Pick, dryRun: Boolean, onClose: () 
     val state by lesson.state.collectAsStateWithLifecycle()
     var flying by rememberSaveable(pick.key) { mutableStateOf(dryRun) }
     WingtipSheet(title = state.name ?: pick.name, onClose = onClose) {
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
             Text(stringResource(R.string.lesson_training_aid), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 listOf(false to R.string.lesson_brief, true to R.string.wording_dry_run).forEachIndexed { i, (page, words) ->
@@ -88,7 +88,7 @@ private fun DryRunPage(state: ApproachLesson.State, lesson: ApproachLesson) {
     step.altitudeFt?.let { Text(Format.altitude(it), style = MaterialTheme.typography.bodyMedium) }
     Text(step.say, style = MaterialTheme.typography.bodyLarge)
     step.why?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         OutlinedButton(onClick = lesson::back, enabled = state.step > 0) { Text(stringResource(R.string.back)) }
         OutlinedButton(onClick = lesson::next, enabled = state.step < state.steps.size - 1) { Text(stringResource(R.string.lesson_next)) }
     }
