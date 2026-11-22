@@ -1542,6 +1542,24 @@ interface PlannerApi {
     suspend fun routeProfile(@Query("dep") dep: kotlin.String, @Query("dest") dest: kotlin.String, @Query("stops") stops: kotlin.String? = ""): Response<app.wingtipmaps.android.api.generated.RouteProfile>
 
     /**
+     * GET route-profile/weather
+     * Route Profile Weather
+     * The weather on the route&#39;s side view, along the same hops as /api/route-profile&#39;s ground: the TAFs&#39; cloud bases, the GFS&#39;s freezing level and the G-AIRMETs&#39; icing for a flight departing &#x60;depart&#x60; (now where not given; a naive time is UTC) and taking &#x60;ete_min&#x60;, each with its source and time (wingtip.profile_weather), from the weather store.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param dep
+     * @param dest
+     * @param stops  (optional, default to "")
+     * @param depart  (optional)
+     * @param eteMin  (optional, default to 0)
+     * @return [app.wingtipmaps.android.api.generated.RouteWeather]
+     */
+    @GET("route-profile/weather")
+    suspend fun routeProfileWeather(@Query("dep") dep: kotlin.String, @Query("dest") dest: kotlin.String, @Query("stops") stops: kotlin.String? = "", @Query("depart") depart: kotlin.String? = null, @Query("ete_min") eteMin: kotlin.Double? = 0.0): Response<app.wingtipmaps.android.api.generated.RouteWeather>
+
+    /**
      * GET live/rvr
      * Runway Rvr
      * An airport&#39;s runway visual range, runway end by runway end, as its RVR system reports it now (wingtip.rvr).

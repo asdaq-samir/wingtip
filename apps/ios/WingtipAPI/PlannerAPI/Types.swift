@@ -1110,6 +1110,17 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/route-profile`.
     /// - Remark: Generated from `#/paths//api/route-profile/get(route_profile)`.
     func routeProfile(_ input: Operations.RouteProfile.Input) async throws -> Operations.RouteProfile.Output
+    /// Route Profile Weather
+    ///
+    /// The weather on the route's side view, along the same hops as
+    /// /api/route-profile's ground: the TAFs' cloud bases, the GFS's freezing
+    /// level and the G-AIRMETs' icing for a flight departing `depart` (now
+    /// where not given; a naive time is UTC) and taking `ete_min`, each with
+    /// its source and time (wingtip.profile_weather), from the weather store.
+    ///
+    /// - Remark: HTTP `GET /api/route-profile/weather`.
+    /// - Remark: Generated from `#/paths//api/route-profile/weather/get(route_profile_weather)`.
+    func routeProfileWeather(_ input: Operations.RouteProfileWeather.Input) async throws -> Operations.RouteProfileWeather.Output
     /// Status
     ///
     /// One snapshot of the whole stack, for Settings' Dev tab. The
@@ -3223,6 +3234,25 @@ extension APIProtocol {
         headers: Operations.RouteProfile.Input.Headers = .init()
     ) async throws -> Operations.RouteProfile.Output {
         try await routeProfile(Operations.RouteProfile.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Route Profile Weather
+    ///
+    /// The weather on the route's side view, along the same hops as
+    /// /api/route-profile's ground: the TAFs' cloud bases, the GFS's freezing
+    /// level and the G-AIRMETs' icing for a flight departing `depart` (now
+    /// where not given; a naive time is UTC) and taking `ete_min`, each with
+    /// its source and time (wingtip.profile_weather), from the weather store.
+    ///
+    /// - Remark: HTTP `GET /api/route-profile/weather`.
+    /// - Remark: Generated from `#/paths//api/route-profile/weather/get(route_profile_weather)`.
+    public func routeProfileWeather(
+        query: Operations.RouteProfileWeather.Input.Query,
+        headers: Operations.RouteProfileWeather.Input.Headers = .init()
+    ) async throws -> Operations.RouteProfileWeather.Output {
+        try await routeProfileWeather(Operations.RouteProfileWeather.Input(
             query: query,
             headers: headers
         ))

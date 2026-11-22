@@ -10,7 +10,7 @@ from .altitude_plans import AltitudeFigure, AltitudeOption, AltitudeStep  # noqa
 from .common import AltitudeChoice, FlightRules, Loading
 from .plan_chart import ChartInfo, ChartLayer, ChartSheet  # noqa: F401  (the chart, its own file)
 from .plan_legs import AlternateLeg, Leg
-from .route_profile import ProfileAirspace, ProfileGround, ProfileObstacle, RouteProfile  # noqa: F401  (the side view, its own file)
+from .route_profile import ProfileAirspace, ProfileGround, ProfileObstacle, RouteProfile, RouteWeather  # noqa: F401  (the side view, its own file)
 from .winds_period import WindsPeriod
 
 

@@ -19039,6 +19039,65 @@
         "title": "ProfileAirspace",
         "type": "object"
       },
+      "ProfileCloud": {
+        "description": "A TAF station's forecast cloud base on the side view\n(wingtip.profile_weather): where along the route, its base MSL (the\nceiling over the flight above the field, plus its elevation), and when\nits TAF was issued.",
+        "properties": {
+          "along_nm": {
+            "title": "Along Nm",
+            "type": "number"
+          },
+          "base_ft": {
+            "title": "Base Ft",
+            "type": "number"
+          },
+          "issued": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issued"
+          },
+          "station": {
+            "title": "Station",
+            "type": "string"
+          }
+        },
+        "required": [
+          "station",
+          "along_nm",
+          "base_ft"
+        ],
+        "title": "ProfileCloud",
+        "type": "object"
+      },
+      "ProfileFreezing": {
+        "description": "The freezing level over a point of the route, ft MSL; at or below\nit where the forecast is freezing at its lowest level already.",
+        "properties": {
+          "along_nm": {
+            "title": "Along Nm",
+            "type": "number"
+          },
+          "at_or_below": {
+            "default": false,
+            "title": "At Or Below",
+            "type": "boolean"
+          },
+          "ft": {
+            "title": "Ft",
+            "type": "number"
+          }
+        },
+        "required": [
+          "along_nm",
+          "ft"
+        ],
+        "title": "ProfileFreezing",
+        "type": "object"
+      },
       "ProfileGround": {
         "properties": {
           "along_nm": {
@@ -19057,9 +19116,99 @@
         "title": "ProfileGround",
         "type": "object"
       },
-      "ProfileObstacle": {
-        "description": "An obstacle of the FAA's DOF near the route's line: where along it,\nand its top, feet MSL.",
+      "ProfileIcing": {
+        "description": "A G-AIRMET icing area the route crosses: from where to where along\nit, between which altitudes (ft MSL; the floor the freezing level\nwhere `from_freezing_level`), and when it is valid and was issued.",
         "properties": {
+          "from_freezing_level": {
+            "default": false,
+            "title": "From Freezing Level",
+            "type": "boolean"
+          },
+          "from_nm": {
+            "title": "From Nm",
+            "type": "number"
+          },
+          "high_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "High Ft"
+          },
+          "issued": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issued"
+          },
+          "low_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low Ft"
+          },
+          "severity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severity"
+          },
+          "to_nm": {
+            "title": "To Nm",
+            "type": "number"
+          },
+          "valid_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid At"
+          }
+        },
+        "required": [
+          "from_nm",
+          "to_nm"
+        ],
+        "title": "ProfileIcing",
+        "type": "object"
+      },
+      "ProfileObstacle": {
+        "description": "An obstacle of the FAA's DOF near the route's line: where along it,\nits top, feet MSL, and its height above the ground there, feet AGL\n(the DOF's AMSL and AGL columns).",
+        "properties": {
+          "agl_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agl Ft"
+          },
           "along_nm": {
             "title": "Along Nm",
             "type": "number"
@@ -19092,6 +19241,42 @@
           "alt_ft"
         ],
         "title": "ProfilePoint",
+        "type": "object"
+      },
+      "ProfileWeatherSource": {
+        "description": "Whose forecast a figure is and for when: its name, its run, ISO\nUTC, and the time it is read at.",
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "run": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run"
+          },
+          "valid_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid At"
+          }
+        },
+        "required": [
+          "label"
+        ],
+        "title": "ProfileWeatherSource",
         "type": "object"
       },
       "PyramidPass": {
@@ -20577,6 +20762,67 @@
           "active_now"
         ],
         "title": "RouteTfr",
+        "type": "object"
+      },
+      "RouteWeather": {
+        "description": "The weather on the route's side view (wingtip.profile_weather),\nalong the same hops as RouteProfile's ground: the cloud bases, the\nfreezing level and its source, the icing, and which of the three\ncould not be read (`unavailable`: \"clouds\", \"freezing\", \"icing\"),\nunknown rather than none.",
+        "properties": {
+          "clouds": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileCloud"
+            },
+            "title": "Clouds",
+            "type": "array"
+          },
+          "for_time": {
+            "title": "For Time",
+            "type": "string"
+          },
+          "freezing": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileFreezing"
+            },
+            "title": "Freezing",
+            "type": "array"
+          },
+          "freezing_source": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileWeatherSource"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "icing": {
+            "items": {
+              "$ref": "#/components/schemas/ProfileIcing"
+            },
+            "title": "Icing",
+            "type": "array"
+          },
+          "unavailable": {
+            "default": [],
+            "items": {
+              "enum": [
+                "clouds",
+                "freezing",
+                "icing"
+              ],
+              "type": "string"
+            },
+            "title": "Unavailable",
+            "type": "array"
+          }
+        },
+        "required": [
+          "clouds",
+          "freezing",
+          "icing",
+          "for_time"
+        ],
+        "title": "RouteWeather",
         "type": "object"
       },
       "RunAlert": {
@@ -32590,6 +32836,97 @@
           }
         },
         "summary": "Route Profile",
+        "x-gateway": {
+          "access": "public"
+        }
+      }
+    },
+    "/api/route-profile/weather": {
+      "get": {
+        "description": "The weather on the route's side view, along the same hops as\n/api/route-profile's ground: the TAFs' cloud bases, the GFS's freezing\nlevel and the G-AIRMETs' icing for a flight departing `depart` (now\nwhere not given; a naive time is UTC) and taking `ete_min`, each with\nits source and time (wingtip.profile_weather), from the weather store.",
+        "operationId": "route_profile_weather_api_route_profile_weather_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "dep",
+            "required": true,
+            "schema": {
+              "title": "Dep",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "dest",
+            "required": true,
+            "schema": {
+              "title": "Dest",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "stops",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Stops",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "depart",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Depart"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ete_min",
+            "required": false,
+            "schema": {
+              "default": 0.0,
+              "maximum": 1440,
+              "minimum": 0,
+              "title": "Ete Min",
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RouteWeather"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Route Profile Weather",
         "x-gateway": {
           "access": "public"
         }

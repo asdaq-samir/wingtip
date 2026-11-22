@@ -17090,6 +17090,78 @@ extension Components {
                 case toNm = "to_nm"
             }
         }
+        /// A TAF station's forecast cloud base on the side view
+        /// (wingtip.profile_weather): where along the route, its base MSL (the
+        /// ceiling over the flight above the field, plus its elevation), and when
+        /// its TAF was issued.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ProfileCloud`.
+        public struct ProfileCloud: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ProfileCloud/along_nm`.
+            public var alongNm: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/ProfileCloud/base_ft`.
+            public var baseFt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/ProfileCloud/issued`.
+            public var issued: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ProfileCloud/station`.
+            public var station: Swift.String
+            /// Creates a new `ProfileCloud`.
+            ///
+            /// - Parameters:
+            ///   - alongNm:
+            ///   - baseFt:
+            ///   - issued:
+            ///   - station:
+            public init(
+                alongNm: Swift.Double,
+                baseFt: Swift.Double,
+                issued: Swift.String? = nil,
+                station: Swift.String
+            ) {
+                self.alongNm = alongNm
+                self.baseFt = baseFt
+                self.issued = issued
+                self.station = station
+            }
+            public enum CodingKeys: String, CodingKey {
+                case alongNm = "along_nm"
+                case baseFt = "base_ft"
+                case issued
+                case station
+            }
+        }
+        /// The freezing level over a point of the route, ft MSL; at or below
+        /// it where the forecast is freezing at its lowest level already.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ProfileFreezing`.
+        public struct ProfileFreezing: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ProfileFreezing/along_nm`.
+            public var alongNm: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/ProfileFreezing/at_or_below`.
+            public var atOrBelow: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/ProfileFreezing/ft`.
+            public var ft: Swift.Double
+            /// Creates a new `ProfileFreezing`.
+            ///
+            /// - Parameters:
+            ///   - alongNm:
+            ///   - atOrBelow:
+            ///   - ft:
+            public init(
+                alongNm: Swift.Double,
+                atOrBelow: Swift.Bool? = nil,
+                ft: Swift.Double
+            ) {
+                self.alongNm = alongNm
+                self.atOrBelow = atOrBelow
+                self.ft = ft
+            }
+            public enum CodingKeys: String, CodingKey {
+                case alongNm = "along_nm"
+                case atOrBelow = "at_or_below"
+                case ft
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/ProfileGround`.
         public struct ProfileGround: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/ProfileGround/along_nm`.
@@ -17113,11 +17185,77 @@ extension Components {
                 case groundFt = "ground_ft"
             }
         }
+        /// A G-AIRMET icing area the route crosses: from where to where along
+        /// it, between which altitudes (ft MSL; the floor the freezing level
+        /// where `from_freezing_level`), and when it is valid and was issued.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ProfileIcing`.
+        public struct ProfileIcing: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/from_freezing_level`.
+            public var fromFreezingLevel: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/from_nm`.
+            public var fromNm: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/high_ft`.
+            public var highFt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/issued`.
+            public var issued: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/low_ft`.
+            public var lowFt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/severity`.
+            public var severity: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/to_nm`.
+            public var toNm: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/valid_at`.
+            public var validAt: Swift.String?
+            /// Creates a new `ProfileIcing`.
+            ///
+            /// - Parameters:
+            ///   - fromFreezingLevel:
+            ///   - fromNm:
+            ///   - highFt:
+            ///   - issued:
+            ///   - lowFt:
+            ///   - severity:
+            ///   - toNm:
+            ///   - validAt:
+            public init(
+                fromFreezingLevel: Swift.Bool? = nil,
+                fromNm: Swift.Double,
+                highFt: Swift.Double? = nil,
+                issued: Swift.String? = nil,
+                lowFt: Swift.Double? = nil,
+                severity: Swift.String? = nil,
+                toNm: Swift.Double,
+                validAt: Swift.String? = nil
+            ) {
+                self.fromFreezingLevel = fromFreezingLevel
+                self.fromNm = fromNm
+                self.highFt = highFt
+                self.issued = issued
+                self.lowFt = lowFt
+                self.severity = severity
+                self.toNm = toNm
+                self.validAt = validAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case fromFreezingLevel = "from_freezing_level"
+                case fromNm = "from_nm"
+                case highFt = "high_ft"
+                case issued
+                case lowFt = "low_ft"
+                case severity
+                case toNm = "to_nm"
+                case validAt = "valid_at"
+            }
+        }
         /// An obstacle of the FAA's DOF near the route's line: where along it,
-        /// and its top, feet MSL.
+        /// its top, feet MSL, and its height above the ground there, feet AGL
+        /// (the DOF's AMSL and AGL columns).
         ///
         /// - Remark: Generated from `#/components/schemas/ProfileObstacle`.
         public struct ProfileObstacle: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ProfileObstacle/agl_ft`.
+            public var aglFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/ProfileObstacle/along_nm`.
             public var alongNm: Swift.Double
             /// - Remark: Generated from `#/components/schemas/ProfileObstacle/amsl_ft`.
@@ -17125,16 +17263,20 @@ extension Components {
             /// Creates a new `ProfileObstacle`.
             ///
             /// - Parameters:
+            ///   - aglFt:
             ///   - alongNm:
             ///   - amslFt:
             public init(
+                aglFt: Swift.Double? = nil,
                 alongNm: Swift.Double,
                 amslFt: Swift.Double
             ) {
+                self.aglFt = aglFt
                 self.alongNm = alongNm
                 self.amslFt = amslFt
             }
             public enum CodingKeys: String, CodingKey {
+                case aglFt = "agl_ft"
                 case alongNm = "along_nm"
                 case amslFt = "amsl_ft"
             }
@@ -17160,6 +17302,38 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case alongNm = "along_nm"
                 case altFt = "alt_ft"
+            }
+        }
+        /// Whose forecast a figure is and for when: its name, its run, ISO
+        /// UTC, and the time it is read at.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ProfileWeatherSource`.
+        public struct ProfileWeatherSource: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ProfileWeatherSource/label`.
+            public var label: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ProfileWeatherSource/run`.
+            public var run: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ProfileWeatherSource/valid_at`.
+            public var validAt: Swift.String?
+            /// Creates a new `ProfileWeatherSource`.
+            ///
+            /// - Parameters:
+            ///   - label:
+            ///   - run:
+            ///   - validAt:
+            public init(
+                label: Swift.String,
+                run: Swift.String? = nil,
+                validAt: Swift.String? = nil
+            ) {
+                self.label = label
+                self.run = run
+                self.validAt = validAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case label
+                case run
+                case validAt = "valid_at"
             }
         }
         /// A pass of the charts job's `pyramid` under way: sheets done of
@@ -18457,6 +18631,59 @@ extension Components {
                 case rule
                 case state
                 case title
+            }
+        }
+        /// The weather on the route's side view (wingtip.profile_weather),
+        /// along the same hops as RouteProfile's ground: the cloud bases, the
+        /// freezing level and its source, the icing, and which of the three
+        /// could not be read (`unavailable`: "clouds", "freezing", "icing"),
+        /// unknown rather than none.
+        ///
+        /// - Remark: Generated from `#/components/schemas/RouteWeather`.
+        public struct RouteWeather: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/clouds`.
+            public var clouds: [Components.Schemas.ProfileCloud]
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/for_time`.
+            public var forTime: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/freezing`.
+            public var freezing: [Components.Schemas.ProfileFreezing]
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/freezing_source`.
+            public var freezingSource: Components.Schemas.ProfileWeatherSource?
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/icing`.
+            public var icing: [Components.Schemas.ProfileIcing]
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/unavailable`.
+            public var unavailable: [Swift.String]?
+            /// Creates a new `RouteWeather`.
+            ///
+            /// - Parameters:
+            ///   - clouds:
+            ///   - forTime:
+            ///   - freezing:
+            ///   - freezingSource:
+            ///   - icing:
+            ///   - unavailable:
+            public init(
+                clouds: [Components.Schemas.ProfileCloud],
+                forTime: Swift.String,
+                freezing: [Components.Schemas.ProfileFreezing],
+                freezingSource: Components.Schemas.ProfileWeatherSource? = nil,
+                icing: [Components.Schemas.ProfileIcing],
+                unavailable: [Swift.String]? = nil
+            ) {
+                self.clouds = clouds
+                self.forTime = forTime
+                self.freezing = freezing
+                self.freezingSource = freezingSource
+                self.icing = icing
+                self.unavailable = unavailable
+            }
+            public enum CodingKeys: String, CodingKey {
+                case clouds
+                case forTime = "for_time"
+                case freezing
+                case freezingSource = "freezing_source"
+                case icing
+                case unavailable
             }
         }
         /// What the run is warned of, when and where, its rule and product cited.

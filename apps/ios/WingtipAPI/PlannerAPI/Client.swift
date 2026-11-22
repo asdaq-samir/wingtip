@@ -9972,6 +9972,129 @@ public struct Client: APIProtocol {
             }
         )
     }
+    /// Route Profile Weather
+    ///
+    /// The weather on the route's side view, along the same hops as
+    /// /api/route-profile's ground: the TAFs' cloud bases, the GFS's freezing
+    /// level and the G-AIRMETs' icing for a flight departing `depart` (now
+    /// where not given; a naive time is UTC) and taking `ete_min`, each with
+    /// its source and time (wingtip.profile_weather), from the weather store.
+    ///
+    /// - Remark: HTTP `GET /api/route-profile/weather`.
+    /// - Remark: Generated from `#/paths//api/route-profile/weather/get(route_profile_weather)`.
+    public func routeProfileWeather(_ input: Operations.RouteProfileWeather.Input) async throws -> Operations.RouteProfileWeather.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.RouteProfileWeather.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/route-profile/weather",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "dep",
+                    value: input.query.dep
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "dest",
+                    value: input.query.dest
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "stops",
+                    value: input.query.stops
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "depart",
+                    value: input.query.depart
+                )
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "ete_min",
+                    value: input.query.eteMin
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.RouteProfileWeather.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.RouteWeather.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 422:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.RouteProfileWeather.Output.UnprocessableContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.HTTPValidationError.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unprocessableContent(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
     /// Status
     ///
     /// One snapshot of the whole stack, for Settings' Dev tab. The

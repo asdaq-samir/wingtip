@@ -452,6 +452,11 @@ async def route_profile(*, dep: str, dest: str, stops: str | None = None) -> Any
     return await _send('GET', '/api/route-profile', query={'dep': dep, 'dest': dest, 'stops': stops}, body=None, headers={})
 
 
+async def route_profile_weather(*, dep: str, dest: str, stops: str | None = None, depart: str | None = None, ete_min: float | None = None) -> Any:
+    """GET /api/route-profile/weather: Route Profile Weather"""
+    return await _send('GET', '/api/route-profile/weather', query={'dep': dep, 'dest': dest, 'stops': stops, 'depart': depart, 'ete_min': ete_min}, body=None, headers={})
+
+
 async def status() -> Any:
     """GET /api/status: Status"""
     return await _send('GET', '/api/status', query={}, body=None, headers={})
