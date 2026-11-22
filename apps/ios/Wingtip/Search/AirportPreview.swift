@@ -37,6 +37,10 @@ private struct AirportPreviewMenu: ViewModifier {
         } preview: {
             AirportCardPreview(ident: ident)
         }
+        // Dragged out as its identifier, on an iPad: onto the map's window
+        // into the one search (WindowHost), into another window, or into
+        // another app beside it, Notes or a message (HIG Drag and drop).
+        .draggable(ident)
     }
 }
 
