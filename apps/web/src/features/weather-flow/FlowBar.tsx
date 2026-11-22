@@ -60,7 +60,7 @@ export function FlowBar() {
   const observed = flow.field === "precip" && !!frame?.past && !!frame.radar_tiles;
   const ahead = !frame ? null : observed ? "Observed" : frame.past ? "Forecast" : `Forecast ${hourName(flow.frames, flow.shown)}`;
   return (
-    <div className="pointer-events-none absolute right-[calc(max(0.5rem,env(safe-area-inset-right))+3.25rem)] bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+0.75rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+3.25rem)] z-[1000] flex justify-center">
+    <div className="pointer-events-none absolute right-[calc(max(0.5rem,env(safe-area-inset-right))+var(--map-inset-right,0px)+3.25rem)] bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+0.75rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+3.25rem)] z-[1000] flex justify-center">
       {/* The stock Card in the map's glass; its content is the Base UI
           toolbar, so the bar keeps its one tab stop and its keys. */}
       <Card

@@ -53,7 +53,7 @@ test("Search to FPL by the toggle and back by FPL's Search button, the sheet's s
 test("on Search the toggle starts the first row and the account button ends it, on FPL its Search button starts it and the ✕ ends it, the bars one size", async ({
   page,
 }) => {
-  test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "the phone's sheet");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await grabberTo(page, "half");
@@ -143,7 +143,7 @@ test("on Search the toggle starts the first row and the account button ends it, 
 });
 
 test("the toggle and the account button are 44-point discs, and the grabber is one plain bar", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "the phone's sheet");
   await page.goto("/app/plan");
   await settle(page);
   await grabberTo(page, "half");
@@ -194,7 +194,7 @@ test("the toggle and the account button are 44-point discs, and the grabber is o
 });
 
 test("all the way up the toggle and the account button stay in the row, and the deep links still name the pages", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "the phone's sheet");
   await page.goto("/app/plan");
   await settle(page);
   await grabberTo(page, "full");
@@ -258,7 +258,7 @@ async function fingerDown(page: Page, x: number, y: number, dy: number) {
 }
 
 test("a drag up or down still sizes the sheet on either page", async ({ page, browserName }) => {
-  test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "the phone's sheet");
   test.skip(browserName !== "chromium", "a finger, by Chromium's CDP");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -311,7 +311,7 @@ test("a card open covers the row, its toggle and account button, and its close a
   // The toggle and the account button are the sheet's own row's (the
   // owner, 2026-11-20); the 3D's circle rides the front card's top, as the
   // map's buttons do.
-  const phone = page.viewportSize()!.width < 768;
+  const phone = page.viewportSize()!.width < 660;
   const openCards = page.locator("[data-sheet-card][data-open]");
   await page.goto("/app/plan");
   await settle(page);

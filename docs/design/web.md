@@ -166,14 +166,38 @@ These hold on every screen below and win over any reference app.
 
 - **Desktop** is a window at least 1024 px wide with a fine pointer
   (`hooks/use-desktop.ts`: `(min-width: 1024px) and (pointer: fine)`). The
-  panel is a side panel the window's height, beside the map. An iPad held
-  wide, all touch, keeps the phone's layout. It is in (its pill) or out:
+  panel is a side panel the window's height, beside the map. It is in (its pill) or out:
   half and full are the same box there, so a click on its grabber puts it
   in or out (`sheet/grabberSizes`' `SIDE_SIZES`), where cycling the phone's
   three sizes asked for full from half and nothing moved (the owner's Mac,
   2026-11-18). The arrow keys still step all three, full being what a
   link names (`?view=full`).
-- **Phone** (and touch tablets) is the map with one sheet over it, at three
+- **iPad and the regular width** (the owner, 2026-11-21: "Primary app
+  users are on iPad", then "Yes do it all for iPad"): from iPadOS's
+  regular width, 660 (design/tokens.json `size.regular`, Tailwind's `md`,
+  `useIsMobile`), the side panel, whatever the pointer: an iPad mini
+  upright (744), a 13-inch iPad's half of the screen (about 680), 2/3,
+  full screen either way and a Stage Manager window that wide. Below it
+  (Slide Over, a 1/3, an 11-inch iPad's 1/2, about 320 to 600) the
+  phone's sheet. The panel is the token's 384 narrowed to leave the map
+  22 rem in a narrow window, 448 from 1024; the map's room is measured
+  off the panel as drawn (`useSheetCover`'s width), where it was the
+  token's by the pointer and a 13-inch iPad's map was fitted 64 px under
+  the panel. From 1180 on a touch screen (`size.inspector`,
+  `useInspector`: an 11-inch iPad on its side and up) a card opens in an
+  inspector column at the map's right (`data-slot="map-inspector"`), the
+  plan staying in the side panel, as the iPad app's SplitLayout holds a
+  card in `.inspector`; the map's room, its buttons, the banners and the
+  chart's credit end at it (`--map-inset-right`). A desktop's cards keep
+  covering the side panel. On a kneeboard (index.css `kneeboard`: a
+  touch screen at the regular width both ways) the figures at the
+  panel's foot are the flying size, 26 on 31 with 15-point names. The
+  keyboard's shortcuts are on wherever there is a keyboard (an iPad's
+  Magic Keyboard too); their keys are shown on a desktop only. A PDF
+  dragged in from Files drops on Your Documents (`FileDrop`, React
+  Aria's DropZone). `e2e/ipad-layout.spec.ts` on the `webkit-ipad`
+  project measures every size.
+- **Phone** (and touch tablets in a compact window) is the map with one sheet over it, at three
   detents (pill, half, full), as decision 0018 sets. They are the stock
   Drawer's own snap points, fixed values in its own units, the same for
   the sheet and every card (`components/sheet/insets` `snapsOf`; the owner,
@@ -2125,12 +2149,12 @@ keeps its side panel, with the same search row at its top.
 
 | | Desktop (≥ 1024 px, fine pointer) | Phone and touch tablet |
 |---|---|---|
-| Panel | Side panel the window's height, beside the map; hideable | Sheet with pill, half and full detents |
-| Cards | Replace the panel's content; map stays usable | Cards in the one sheet (`ResponsivePopover`, `SheetCard`) |
+| Panel | Side panel the window's height, beside the map; hideable | Sheet with pill, half and full detents below 660; the side panel from 660 (an iPad) |
+| Cards | Replace the panel's content; map stays usable | Cards in the one sheet (`ResponsivePopover`, `SheetCard`); on an iPad from 1180, the inspector at the map's right |
 | Small pickers | Popover anchored to the button | Card in the sheet |
 | Search | The panel's field, and ⌘K as a dialog | The sheet's field |
 | Hover | Preview cards, row ↔ mark highlight, tooltips naming icons | None; the same content on tap |
-| Keys | Shortcuts shown with `Kbd`; switchable | None shown |
+| Keys | Shortcuts shown with `Kbd`; switchable | The same shortcuts with a hardware keyboard (an iPad's), none shown |
 | Tables | Dense tables with sticky headers (nav log, logbook) | Lists, the selected row expanded |
 | Context menu | Right-click (Base UI Context Menu) | The point card's actions; long press only as a shortcut |
 

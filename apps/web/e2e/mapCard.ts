@@ -33,7 +33,7 @@ export async function closeMapSettings(page: Page) {
  *  give way: the sheet lowered first. */
 export async function setMap3d(page: Page, on: boolean) {
   await page.goto("/app/plan");
-  if ((page.viewportSize()?.width ?? 0) < 768 && (await frontSheet(page).getAttribute("data-panel")) === "full")
+  if ((page.viewportSize()?.width ?? 0) < 660 && (await frontSheet(page).getAttribute("data-panel")) === "full")
     await grabberTo(page, "peek");
   const button = page.getByTestId("map-3d-button");
   if ((await button.textContent()) !== (on ? "2D" : "3D")) await button.click();

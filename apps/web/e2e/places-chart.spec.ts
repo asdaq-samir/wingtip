@@ -24,7 +24,7 @@ import { showPage } from "./oneSearch";
 test("an airport tapped on the chart while Setup is up puts Setup away and opens its card on Airport", async ({ page }) => {
   // The owner's notice: "When selecting airport marker while being on
   // setup tab doesn't open the [airport] tab."
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "Setup leaves the chart in sight on a phone");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "Setup leaves the chart in sight on a phone");
   await withPrivateFields(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -68,7 +68,7 @@ test("a tap on an airport on the chart opens its card, a tap elsewhere puts it a
   // A phone's sheet down to its pill, as Maps'; a desktop's side panel
   // back out as it was under the card, since it opens out (92e217114) and
   // a card's close goes back one level.
-  if ((page.viewportSize()?.width ?? 0) >= 768) await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
+  if ((page.viewportSize()?.width ?? 0) >= 660) await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   else await expectDrawerClosed(page);
   const arrow = page.locator("[data-map-controls]").getByTestId("my-position-button");
   await expect(arrow).toHaveAttribute("data-face", "route");
@@ -211,7 +211,7 @@ test("closer in, the airports that report wear their weather's colour, and a tap
   // 32 px (airportIcons' BOX) at no less than 0.7 of its size step
   // there, the farthest scale. Measured once they are in: the count of
   // none this asked for lost the race with their answer (CI, 2026-10-17).
-  if (page.viewportSize()!.width < 768) {
+  if (page.viewportSize()!.width < 660) {
     await mapStill(page);
     await expect.poll(() => chips.count(), { timeout: slow(20000) }).toBeGreaterThan(0);
     const at = (await airportMarks(page)).filter((m) => m.chip);

@@ -268,7 +268,7 @@ test("each picture opens full screen, where a pinch zooms it and the zoom stays,
 // closes it where it is: no drawer drawn anew, nothing shown and hidden and
 // shown, the map's buttons never off the screen.
 test("the airport's card opens once, its tabs turn in place, and its close closes it where it is", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's card");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's card");
   await installFrameRecorder(page);
   await page.goto("/app/plan");
   await settle(page);

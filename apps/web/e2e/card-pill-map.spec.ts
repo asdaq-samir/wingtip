@@ -23,7 +23,7 @@ const sheetUnder = (page: Page) =>
   });
 
 test("a card lowered to the pill after a picture was opened from it leaves the map in sight down to the card", async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's sheet");
   await withPrivateFields(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);

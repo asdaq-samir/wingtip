@@ -208,7 +208,7 @@ test("focused and typed in, the search leaves the sheet at its size; the suggest
   // what is typed moves the sheet (the owner, 2026-11-11: "Whenever I try
   // to type on search bar it takes the card to full screen"): the
   // keyboard sits over the page as the Drawer places it.
-  test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "the phone's sheet");
   await page.goto("/app/plan");
   await settle(page);
   // Half way, where a pilot reads the results: at the pill they are under

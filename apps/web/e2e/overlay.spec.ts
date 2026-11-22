@@ -146,7 +146,7 @@ test("Google's session refused says so in the settings; a kept session of anothe
 test("on a phone the map's settings card has the app's close, the way out besides a tap on the map", async ({ page }) => {
   // The commonality audit's C-4: the sheet was put away only by a tap on
   // the map under it. A card in the map's sheet now (SheetCard).
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's card");
+  test.skip((page.viewportSize()?.width ?? 0) >= 660, "a phone's card");
   await page.goto("/app/plan");
   await settle(page);
   await openMapSettings(page);

@@ -25,6 +25,9 @@ export interface MapInsets {
   top: number;
   bottom: number;
   left: number;
+  /** The inspector's column at the map's right while a card is in it
+   *  (MapPanel, a touch screen from size.inspector wide); none elsewhere. */
+  right?: number;
   /** Where the panel has settled: at rest (its capsule, or a desktop's
    *  corner) or out. The map follows a change of this (GlMapShell), not
    *  every change of the size -- a notice under the route, the head
@@ -56,6 +59,7 @@ export function setMapInsets(next: MapInsets) {
     prev.top === next.top &&
     prev.bottom === next.bottom &&
     prev.left === next.left &&
+    prev.right === next.right &&
     prev.out === next.out &&
     prev.up === next.up &&
     prev.card === next.card;
@@ -85,6 +89,7 @@ export function insetVars(el: HTMLElement | null) {
     el.style.setProperty("--map-inset-top", `${insets.top}px`);
     el.style.setProperty("--map-inset-bottom", `${insets.bottom}px`);
     el.style.setProperty("--map-inset-left", `${insets.left}px`);
+    el.style.setProperty("--map-inset-right", `${insets.right ?? 0}px`);
   };
   write(useMapInsets.getState());
   return useMapInsets.subscribe(write);

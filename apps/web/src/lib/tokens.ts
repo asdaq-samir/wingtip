@@ -364,7 +364,9 @@ export const SIZE = {
   glyphMap: 20,
   glyphCardAction: 20,
   tabBar: 64,
+  regular: 660,
   panel: 384,
   panelWide: 448,
+  inspector: 1180,
   desktop: 1024,
 } as const;

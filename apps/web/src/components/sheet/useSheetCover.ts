@@ -23,31 +23,35 @@ export function useSheetCover(
   front: PanelState,
   onPhone: boolean,
   fromBottom: boolean,
-): { cover: number; least: number; most: number } {
+): { cover: number; least: number; most: number; width: number } {
   // The sheet's height and, under a bottom sheet, the room its viewport
   // leaves at the foot: measured as they change. The cover is worked out
   // from them in the render the size changes in, so a card come or gone
   // and its room reach the map together (GlMapShell keeps the chart still
   // for that), never the room a render late, which the map eased to.
-  const [box, setBox] = useState({ height: 0, below: 0 });
+  // The side panel's width too, which the map's room starts beside: the
+  // CSS sets it (the token's, narrowed in a narrow window, the wide one
+  // from 1024), so it is read, never worked out again from the pointer.
+  const [box, setBox] = useState({ height: 0, below: 0, width: 0 });
   useLayoutEffect(() => {
     if (!sheet) return;
     const read = () => {
       const viewport = sheet.parentElement;
       const below = onPhone && fromBottom && viewport ? parseFloat(getComputedStyle(viewport).bottom) || 0 : 0;
       const height = sheet.offsetHeight;
-      setBox((was) => (was.height === height && was.below === below ? was : { height, below }));
+      const width = sheet.offsetWidth;
+      setBox((was) => (was.height === height && was.below === below && was.width === width ? was : { height, below, width }));
     };
     read();
     const resize = new ResizeObserver(read);
     resize.observe(sheet);
     return () => resize.disconnect();
   }, [sheet, onPhone, fromBottom]);
-  if (!onPhone) return { cover: Math.round(box.height), least: 0, most: 0 };
+  if (!onPhone) return { cover: Math.round(box.height), least: 0, most: 0, width: Math.round(box.width) };
   // Not yet laid out (hidden as the page opens): nothing to say yet.
-  if (!box.height) return { cover: 0, least: 0, most: 0 };
+  if (!box.height) return { cover: 0, least: 0, most: 0, width: 0 };
   const at = (size: PanelState) => Math.round(shownPx(size === "full" ? "half" : size, fromBottom, box.height) + box.below);
   // And the least and the most it covers, the pill's and half's, which the
   // map slides between as the sheet moves (GlMapShell's useSheetSlide).
-  return { cover: at(front), least: at("peek"), most: at("half") };
+  return { cover: at(front), least: at("peek"), most: at("half"), width: 0 };
 }

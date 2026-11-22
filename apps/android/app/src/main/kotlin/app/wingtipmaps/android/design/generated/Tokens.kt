@@ -1354,7 +1354,9 @@ object WingtipSize {
     val GlyphMap = 20.dp
     val GlyphCardAction = 20.dp
     val TabBar = 64.dp
+    val Regular = 660.dp
     val Panel = 384.dp
     val PanelWide = 448.dp
+    val Inspector = 1180.dp
     val Desktop = 1024.dp
 }

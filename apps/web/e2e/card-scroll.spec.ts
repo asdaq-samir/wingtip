@@ -50,7 +50,7 @@ const excused = (row: CardRow, check: Check) => row.not?.[check];
 for (const row of CARDS) {
   test.describe(`${row.name}`, () => {
     test.beforeEach(({ page }) => {
-      test.skip(page.viewportSize()!.width >= 768, "a phone's sheet; the desktop's side panel has no detents");
+      test.skip(page.viewportSize()!.width >= 660, "a phone's sheet; the desktop's side panel has no detents");
     });
 
     test("scrolled to its end, its name and ✕ are still in sight and take a tap", async ({ page }) => {
@@ -189,7 +189,7 @@ for (const row of CARDS) {
  */
 for (const edge of ["bottom", "top"] as const) {
   test(`opened from the pill (${edge} layout), scrolled to its end, its pinned head is at the sheet's content top`, async ({ page }) => {
-    test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+    test.skip(page.viewportSize()!.width >= 660, "a phone's sheet");
     if (edge === "top") {
       await page.addInitScript(() => {
         const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":7}');
@@ -233,7 +233,7 @@ for (const edge of ["bottom", "top"] as const) {
  * where this once asked for the place it was left at.
  */
 test("the airport card's tabs, the bar pinned, open each at its top and keep the bar in place", async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+  test.skip(page.viewportSize()!.width >= 660, "a phone's sheet");
   const row = CARDS.find((r) => r.name === "airport")!;
   await open(page, row);
   await grabberTo(page, "full");

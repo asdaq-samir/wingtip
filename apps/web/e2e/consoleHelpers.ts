@@ -60,7 +60,7 @@ export async function pickControl(page: Page, control: "theme-select" | "brand-s
  *  as Apple Maps' Choose Map card is. Escape puts it away. */
 export async function openMapSettings(page: Page) {
   // The map's buttons are under a phone's sheet all the way up: the pill.
-  if ((page.viewportSize()?.width ?? 0) < 768 && (await frontSheet(page).getAttribute("data-panel")) === "full")
+  if ((page.viewportSize()?.width ?? 0) < 660 && (await frontSheet(page).getAttribute("data-panel")) === "full")
     await grabberTo(page, "peek");
   await page.locator("[data-map-controls]").getByTestId("map-settings-button").click();
   await expect(page.getByTestId("map-settings")).toBeVisible();
@@ -72,7 +72,7 @@ export async function openMapSettings(page: Page) {
  *  every card is: its grabber brings it all the way, as a finger's drag
  *  does. From `md` up the side panel has one height, and this does nothing. */
 export async function expandConsole(page: Page) {
-  if (page.viewportSize()!.width >= 768) return;
+  if (page.viewportSize()!.width >= 660) return;
   await expect(page.getByTestId("console-sheet")).toBeVisible();
   await grabberTo(page, "full");
 }
