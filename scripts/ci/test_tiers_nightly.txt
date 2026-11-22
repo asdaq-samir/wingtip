@@ -12,6 +12,7 @@ airport-diagram.spec.ts
 airport-weather.spec.ts
 airspace-3d.spec.ts
 airspace-lines.spec.ts
+approach-activate.spec.ts
 approach-debrief.spec.ts
 approach-lesson.spec.ts
 auto-logbook.spec.ts

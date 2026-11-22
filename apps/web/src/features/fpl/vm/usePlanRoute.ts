@@ -29,7 +29,7 @@ import { usePreferences } from "../../../lib/preferences";
 import { addressParams, useAddress } from "../../../lib/address";
 import { usePlanHistory } from "../../../hooks/use-plan-history";
 import { picksOf } from "../../../lib/flightLink";
-import { proceduresOf, proceduresParam, sameField } from "../../../lib/procedures";
+import { flownPicks, proceduresOf, proceduresParam, sameField } from "../../../lib/procedures";
 import { procedureQuery } from "../../../lib/queryClient";
 import { drawnOnly } from "../../procedures";
 import { patternsOf } from "../../../lib/trafficPattern";
@@ -106,7 +106,9 @@ export function usePlanRoute() {
   const routeFields = `${planned.dep},${planned.stops},${planned.dest}`;
   const picksParam = address.procs;
   const routePicks = useMemo(
-    () => proceduresOf(picksParam).filter((p) => routeFields.split(",").includes(p.ident)),
+    // An approach only loaded is not flown (flownPicks): the route goes on
+    // to the field as though none were picked, until it is activated.
+    () => flownPicks(proceduresOf(picksParam)).filter((p) => routeFields.split(",").includes(p.ident)),
     [picksParam, routeFields],
   );
   const pickQueries = useMemo(() => routePicks.map(procedureQuery), [routePicks]);
@@ -124,12 +126,11 @@ export function usePlanRoute() {
   const procedures = useMemo(
     () =>
       proceduresParam(
-        drawnPickList.map((d) => ({
-          ident: d.airport,
-          id: d.id,
-          transition: d.transition ?? null,
-          direct: routePicks.find((p) => sameField(p.ident, d.airport) && p.id === d.id)?.direct ?? null,
-        })),
+        drawnPickList.map((d) => {
+          const own = routePicks.find((p) => sameField(p.ident, d.airport) && p.id === d.id);
+          // Unsuspended, its missed approach flown on (AIM 5-4-21).
+          return { ident: d.airport, id: d.id, transition: d.transition ?? null, direct: own?.direct ?? null, missed: !!own?.missed };
+        }),
       ),
     [drawnPickList, routePicks],
   );

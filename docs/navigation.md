@@ -115,6 +115,7 @@ The plan's own keys go beside it, and alone they open what they name:
 - `rules`: A shared plan's flight rules, vfr or ifr.
 - `tail`: A shared plan's N-number, only where its pilot chose to send it.
 - `tanks`: A shared plan's fuel as the airplane leaves a field, where its pilot set it on a gauge: idents and whole gallons, KOSH:30,KJVL:0 (the planner's tanks); none named, full.
+- `procs`: A shared plan's instrument procedures, as the address keeps them: each a field, a procedure, its transition and a fix flown direct to, colon-separated, and after a fifth colon L for an approach loaded and not flown or M for one flown on into its missed approach (KDLH:I27:::L), comma-separated (the engine's procedures_read).
 - `share`: A saved flight shared by its pilot, by its token (GET /api/shared-flights/{token}); read-only, until they stop sharing it.
 - `doc`: A document open in the reader and where in it: the library's by its name (aim, cfr-14-91, phak) or the pilot's own (own:<id>), after an @ a section, a paragraph or a page (aim@7-1-5, cfr-14-91@91.155, phak@p42).
 

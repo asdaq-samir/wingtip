@@ -124,7 +124,7 @@ fn a_holds_minutes() {
 // --- Procedures and runways ------------------------------------------------
 
 fn pick(ident: &str, id: &str, transition: Option<&str>, direct: Option<&str>) -> Pick {
-    Pick { ident: ident.into(), id: id.into(), transition: transition.map(Into::into), direct: direct.map(Into::into) }
+    Pick { ident: ident.into(), id: id.into(), transition: transition.map(Into::into), direct: direct.map(Into::into), ..Pick::default() }
 }
 
 #[test]
@@ -160,6 +160,25 @@ fn the_procedures_picked_are_written_back() {
     assert_eq!(picks::procedures_write(&direct), "KELD:I22::BXCMB,KDLH:R27:HIGHR:WIRSA");
     let written = ask("procedures_write", json!({ "picks": [{ "ident": "KBUR", "id": "I08-Y", "transition": null }] }));
     assert_eq!(written, "KBUR:I08-Y");
+}
+
+#[test]
+fn an_approach_loaded_or_flown_into_its_missed_approach_keeps_it_in_the_address() {
+    // Loaded ("L"), not flown; activated and unsuspended ("M"), its missed
+    // approach flown on (AIM 5-4-21); a transition and a direct kept.
+    let read = picks::procedures_read("KDLH:I27:::L,KDLH:I27:ANDOE::M,KELD:I22::BXCMB:m,KDLH:I27:::X");
+    let loaded = Pick { loaded: true, ..pick("KDLH", "I27", None, None) };
+    let missed = Pick { missed: true, ..pick("KDLH", "I27", Some("ANDOE"), None) };
+    assert_eq!(read[0].pick, Some(loaded.clone()));
+    assert_eq!(read[1].pick, Some(missed.clone()));
+    assert_eq!(read[2].pick, Some(Pick { missed: true, ..pick("KELD", "I22", None, Some("BXCMB")) }));
+    assert_eq!(read.iter().map(|r| r.exact).collect::<Vec<_>>(), [true, true, true, false]);
+    assert_eq!(picks::procedures_write(&[loaded, missed]), "KDLH:I27:::L,KDLH:I27:ANDOE::M");
+    // Loaded is never flown: loaded wins over a missed approach.
+    let both = Pick { loaded: true, missed: true, ..pick("KDLH", "I27", None, None) };
+    assert_eq!(picks::procedures_write(&[both]), "KDLH:I27:::L");
+    let written = ask("procedures_write", json!({ "picks": [{ "ident": "KDLH", "id": "I27", "missed": true }] }));
+    assert_eq!(written, "KDLH:I27:::M");
 }
 
 #[test]

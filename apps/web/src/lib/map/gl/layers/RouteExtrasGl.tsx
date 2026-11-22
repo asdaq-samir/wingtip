@@ -140,6 +140,14 @@ const PROCEDURE_RUN = (f: MapGeoJSONFeature) => {
   return { kind: kind.endsWith("hold") ? "hold" : kind, name };
 };
 
+/** A procedure as the map draws it: with an approach's missed approach
+ *  flown on (`missedFlown`, unsuspended on FPL's timeline). */
+export type MapProcedure = ProcedureDrawing & { missedFlown?: boolean };
+
+/** How much of its ink a missed approach is drawn in while suspended: the
+ *  route stops at the MAP, so its legs are there to see, not to fly. */
+const SUSPENDED_OPACITY = 0.45;
+
 /** The instrument procedures picked: their lines in the
  *  approach's ink on a white casing, the missed dashed, holds, and each
  *  fix a diamond with its altitudes and speed from zoom 9; a tap a fix's
@@ -151,7 +159,7 @@ export function ProceduresGl({
   plated = NONE_PLATED,
   onFix,
 }: {
-  drawings: ProcedureDrawing[];
+  drawings: MapProcedure[];
   crossings: Record<string, number>;
   directs: string;
   /** Whether an approach's plate tags its fixes (features/plates'
@@ -174,16 +182,21 @@ export function ProceduresGl({
       ]),
     [drawings],
   );
+  // The missed approach in the route's magenta once unsuspended, as the
+  // route flies it; dimmed in the procedure's ink while suspended at its MAP.
   const missed = useMemo<GlRun[]>(
     () =>
-      drawings.flatMap((d) => [
-        ...d.lines
-          .filter((l) => l.role === "missed")
-          .map((l, i) => ({ points: l.points as [number, number][], colour: inkOf(d), width: 3, name: runName(d, "missed", i) })),
-        ...d.holds
-          .filter((h) => h.missed)
-          .map((h, i) => ({ points: h.points as [number, number][], colour: inkOf(d), width: 2.5, name: runName(d, "missed-hold", i) })),
-      ]),
+      drawings.flatMap((d) => {
+        const look = d.missedFlown ? { colour: CHART.course } : { colour: inkOf(d), opacity: SUSPENDED_OPACITY };
+        return [
+          ...d.lines
+            .filter((l) => l.role === "missed")
+            .map((l, i) => ({ points: l.points as [number, number][], ...look, width: 3, name: runName(d, "missed", i) })),
+          ...d.holds
+            .filter((h) => h.missed)
+            .map((h, i) => ({ points: h.points as [number, number][], ...look, width: 2.5, name: runName(d, "missed-hold", i) })),
+        ];
+      }),
     [drawings],
   );
   useGlLines("procedures", "route", lines, { colour: CHART.casing, width: 7, opacity: 0.9 });

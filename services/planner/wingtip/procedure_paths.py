@@ -387,10 +387,12 @@ def flown(
         hits = [i for i, p in enumerate(path) if geo.distance_nm(*p, *map_point) < SAME_PLACE_NM]
         map_at = hits[-1] if hits else None
         missed = missed_path(approach, map_point)
+    # Unsuspended (`fly_missed`): from the MAP round the missed approach's hold, not to the runway (AIM 5-4-21).
+    flies_missed = app and approach.get("fly_missed") and missed and map_at is not None
     return {
         "path": [[round(p[0], 6), round(p[1], 6)] for p in path],
         "ft": ft,
-        "nm": length_nm(path),
+        "nm": length_nm(path[: map_at + 1]) + length_nm([path[map_at], *missed["points"]]) if flies_missed else length_nm(path),
         "landing": bool(star or app or circuit_in),
         "final_at": final_at,
         "map_at": map_at,

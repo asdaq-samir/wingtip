@@ -65,9 +65,10 @@ test("a field's approach is picked on its own page with its transition, drawn on
   await page.getByTestId("procedure-transition").filter({ hasText: "DLH" }).click();
   await expect.poll(() => asked, { timeout: slow(10000) }).toContain("/api/planner/airport/KDLH/procedures/I09?transition=DLH");
   await expect(page).not.toHaveURL(/[?&]procs=/);
-  // Add to Route: in the address, and the sheet put away.
+  // Add to Route: loaded in the address ("L", the owner's load-then-activate,
+  // 2026-11-22), and the sheet put away.
   await page.getByTestId("procedure-add").click();
-  await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
+  await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:){2}L(&|$)/);
   await expect(page.getByRole("heading", { name: "KDLH ILS RWY 09" })).toBeHidden();
 
   // On the map: the transition and the final, the missed approach dashed,
@@ -96,9 +97,9 @@ test("a field's approach is picked on its own page with its transition, drawn on
   // the address, and off the map once the sheet is put away.
   await openTab(page, "Nav Log");
   await openRoute(page);
-  // A procedure picked, its fixes on the route's line before the field's, its head row the button to pick another (the owner's option D, 2026-11-21).
-  await expect(kdlh.locator("[data-testid=procedure-rows][data-kind=approach]")).toContainText("ILS · RWY 09");
-  await kdlh.locator("[data-testid=procedure-rows] [data-testid=procedure-kind]").click();
+  // Loaded: its box off the route's line, its head row the button to pick another.
+  await expect(kdlh.getByTestId("approach-loaded")).toContainText("ILS · RWY 09");
+  await kdlh.locator("[data-testid=approach-loaded] [data-testid=procedure-kind]").click();
   await page.getByTestId("procedure-menu-all").click();
   const ils = page.getByTestId("procedure-option").filter({ hasText: "ILS RWY 09" });
   await expect(ils).toContainText("In the route, from DLH");
@@ -160,11 +161,14 @@ test("an approach puts its field's runway on its own, and another is let only wh
   const placed = (await menu.boundingBox())!;
   expect(placed.x + placed.width).toBeLessThanOrEqual(page.viewportSize()!.width);
   await page.getByTestId("procedure-menu-transition").filter({ hasText: "From DLH" }).click();
-  await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
+  await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(%3A|:){2}L(&|$)/);
   await expect(page).toHaveURL(/[?&]pattern=[^&]*KDLH(%3A|:)9(%2C|,|&|$)/);
   await settled(sideDrawer(page));
   await openTab(page, "Nav Log");
   await openRoute(page);
+  // Loaded, then activated onto the route's line, landed by it.
+  await kdlh.getByTestId("approach-activate").click();
+  await expect(page).toHaveURL(/[?&]procs=KDLH(%3A|:)I09(%3A|:)DLH(&|$)/);
   await expect(kdlh.getByRole("button", { name: /^Runway 9\b/ })).toHaveAttribute("aria-pressed", "true");
   await expect(kdlh.locator("[data-testid=procedure-rows][data-kind=approach]")).toContainText("ILS · RWY 09");
   // The field's arrival, a pull-down beside it once the list is in.

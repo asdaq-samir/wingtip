@@ -232,18 +232,22 @@ class PlanQuery:
             out.add(point_key(ident) + visit)
         return frozenset(out)
 
-    def procedure_picks(self) -> list[tuple[str, str, str | None, str | None]]:
+    def procedure_picks(self) -> list[tuple[str, str, str | None, str | None, bool]]:
         """`procedures`, each the field, the procedure, its transition
-        (None, an approach from vectors) and the fix flown direct to (None,
-        as charted); a 422 for one that is not
-        "FIELD:PROCEDURE[:TRANSITION[:DIRECT]]" -- the engine's reading
-        (wingtip_engine::route::picks), the web app's lib/procedures too."""
+        (None, an approach from vectors), the fix flown direct to (None,
+        as charted) and whether its missed approach is flown on from the
+        missed approach point ("M", AIM 5-4-21); an approach only loaded
+        ("L") is not in the route flown and is left out. A 422 for one
+        that is not "FIELD:PROCEDURE[:TRANSITION[:DIRECT[:STATE]]]" -- the
+        engine's reading (wingtip_engine::route::picks), the web app's
+        lib/procedures too."""
         out = []
         for read in engine("procedures_read", text=self.procedures):
             if not read["exact"]:
                 raise HTTPException(422, f"{read['part']!r} is not a procedure: a field, a procedure and a transition, as KDLH:I09:ANDOE.")
             pick = read["pick"]
-            out.append((pick["ident"], pick["id"], pick["transition"], pick["direct"]))
+            if not pick["loaded"]:
+                out.append((pick["ident"], pick["id"], pick["transition"], pick["direct"], pick["missed"]))
         return out
 
     def own_crossings(self) -> dict[str, float]:
@@ -298,7 +302,7 @@ class PlanQuery:
         the chart's window, for the descent and the path alike."""
         own = self.own_crossings()
         out = []
-        for ident, procedure, transition, direct in self.procedure_picks():
+        for ident, procedure, transition, direct, missed in self.procedure_picks():
             try:
                 drawn = procedures.procedure_drawing(ident, procedure, transition)
             except RuntimeError:
@@ -308,7 +312,9 @@ class PlanQuery:
                     {**f, "min_ft": own[f["ident"]], "max_ft": own[f["ident"]]} if f["ident"] in own and not f["missed"] else f
                     for f in drawn.get("fixes", [])
                 ]
-                drawn = {**drawn, "fixes": fixes_, **({"direct": direct} if direct else {})}
+                # Unsuspended, its missed approach flown on (procedure_paths.flown).
+                flies = {"fly_missed": True} if missed and drawn.get("kind") == "approach" else {}
+                drawn = {**drawn, "fixes": fixes_, **({"direct": direct} if direct else {}), **flies}
                 out.append((ident, drawn))
         return out
 

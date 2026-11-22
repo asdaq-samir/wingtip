@@ -77,6 +77,12 @@ interface ProcedurePicks {
     label: string;
     fixes?: BranchFix[];
     direct?: string | null;
+    /** Loaded, not flown; activated, its missed approach unsuspended; its
+     *  missed approach's fixes and the MAP it is suspended at (RouteProcedure). */
+    loaded?: boolean;
+    missed?: boolean;
+    missedFixes?: BranchFix[];
+    suspendAt?: string | null;
   }[];
   /** All of them as they are to be, and the one just picked, for the map
    *  to go to. */
@@ -84,6 +90,9 @@ interface ProcedurePicks {
   /** The procedure on its page, not yet added, for the map to draw and go
    *  to; null as the page is left. */
   onPreview: (procedure: PickedProcedure | null) => void;
+  /** An approach activated or loaded again, its missed approach
+   *  unsuspended or suspended (useProcedurePicks' setApproach). */
+  onApproach: (ident: string, id: string, change: { loaded?: boolean; missed?: boolean }) => void;
   /** The sheet's kind and field, null while it is put away. */
   at: ProceduresAt;
   onAt: (at: ProceduresAt) => void;

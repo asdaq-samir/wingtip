@@ -79,6 +79,8 @@ fn picks_in(name: &str, v: &Value) -> Result<Vec<Pick>, String> {
                 id: text(name, p, "id")?.to_owned(),
                 transition: opt_text(name, p, "transition")?.filter(|t| !t.is_empty()).map(str::to_owned),
                 direct: opt_text(name, p, "direct")?.filter(|d| !d.is_empty()).map(str::to_owned),
+                loaded: p.get("loaded").is_some_and(|b| *b == Value::Bool(true)),
+                missed: p.get("missed").is_some_and(|b| *b == Value::Bool(true)),
             })
         })
         .collect()
@@ -156,7 +158,7 @@ pub fn answer(name: &str, v: &Value) -> Result<String, String> {
                         opt_str_json(&mut out, p.transition.as_deref());
                         out.push_str(",\"direct\":");
                         opt_str_json(&mut out, p.direct.as_deref());
-                        out.push('}');
+                        out.push_str(&format!(",\"loaded\":{},\"missed\":{}}}", p.loaded, p.missed));
                     }
                 }
                 out.push_str(&format!(",\"exact\":{}}}", read.exact));

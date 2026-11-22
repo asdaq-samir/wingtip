@@ -611,7 +611,24 @@ off by default (the owner, 2026-11-13).
    44-point row a fix, its mark an indigo ring with "•••" in the marks'
    column, its menu (Direct To, its altitude and card), its name (a tap
    opens its card) with the parts it plays under it, and its altitude at
-   the right (`TimelineProcedureRows`);
+   the right (`TimelineProcedureRows`). An approach picked is loaded
+   first, as a GPS navigator loads one (the owner, 2026-11-22): one
+   grouped box (`ListGroup`) of its fixes after the field's line, off the
+   magenta, not in the route the planner and the nav log fly, with
+   Activate and Remove; Activate puts its fixes on the line as above,
+   with Deactivate (back to its box) and Remove at their foot; Remove
+   takes it out with the plan's Undo toast; a Direct To one of its fixes
+   activates it. Activated, its missed approach is its own part after
+   the field's line, suspended at the MAP ("SUSP at RW09") in a dimmed
+   box off the line, and dimmed on the map, until Unsuspend puts its
+   fixes on the line and its legs in the route, the nav log and the dry
+   run, magenta on the map; Suspend stops it at the MAP again (AIM
+   5-4-21; the engine's `procedure_missed` says which legs). Both are
+   kept with the pick in the address and a shared link (`procs`, "L"
+   loaded, "M" flown into its missed approach). Arrivals and departures
+   have no load step: picked, they are flown (`TimelineApproachParts`).
+   The buttons are stock, 36 tall, 44 to a finger by the base hit area,
+   at gap-2;
    the map centres
    it above the sheet and shows the route's points alone (the chart and
    the TFRs kept; lib/map/routeOnly). My Location and a waypoint open

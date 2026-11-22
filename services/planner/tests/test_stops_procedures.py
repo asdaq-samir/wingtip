@@ -133,9 +133,21 @@ def test_a_procedure_flown_direct_to_a_fix_is_read_from_its_fourth_part(monkeypa
 
     monkeypatch.setattr(plan_query.procedures, "procedure_drawing", drawing)
     q = plan_query.PlanQuery(dep="C81", dest="KDLH", procedures="KDLH:I09::ANDOE,KDLH:R27:HIGHR:WIRSA")
-    assert q.procedure_picks() == [("KDLH", "I09", None, "ANDOE"), ("KDLH", "R27", "HIGHR", "WIRSA")]
+    assert q.procedure_picks() == [("KDLH", "I09", None, "ANDOE", False), ("KDLH", "R27", "HIGHR", "WIRSA", False)]
     assert [d.get("direct") for _, d in q.drawn_procedures()] == ["ANDOE", "WIRSA"]
     assert asked == [("KDLH", "I09", None), ("KDLH", "R27", "HIGHR")]
+
+
+def test_a_loaded_approach_is_not_flown_and_an_unsuspended_one_flies_its_missed_approach(monkeypatch):
+    """The owner's load-then-activate (2026-11-22): an approach loaded
+    ("L") is left out of the route flown; activated and unsuspended ("M"),
+    its missed approach is flown on from the MAP (AIM 5-4-21)."""
+    from app import plan_query
+
+    monkeypatch.setattr(plan_query.procedures, "procedure_drawing", lambda *_a: {"kind": "approach", "fixes": []})
+    q = plan_query.PlanQuery(dep="C81", dest="KDLH", procedures="KMSN:I36:::L,KDLH:I27:::M")
+    assert q.procedure_picks() == [("KDLH", "I27", None, None, True)]
+    assert [d.get("fly_missed") for _, d in q.drawn_procedures()] == [True]
 
 
 def test_a_fix_given_an_altitude_to_cross_is_crossed_at_it_for_the_descent(monkeypatch):
