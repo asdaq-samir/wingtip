@@ -1859,7 +1859,7 @@ The words the three apps share, generated from `design/wording.json`:
 | `no_answer_in_time` | sentence | No answer in time. Try again in a moment. | A request that timed out (the web's describeError). |
 | `answer_garbled` | sentence | The planner's answer came back garbled. Try again in a moment. | An answer that was not the JSON asked for (the web's describeError). |
 | `planner_not_answering` | sentence | The planner is not answering. Try again in a moment. | The planner refused with a server error and no words of its own (the web's describeError). |
-| `nav_log_empty` | sentence | Plan a route on FPL; its legs are listed here. | The Nav Log with no route (owner rec 4). |
+| `nav_log_empty` | sentence | Plan a route on FPL; its legs are listed here. | The Nav Log with no route. |
 | `no_ceiling` | value | No ceiling | A report with no broken or overcast layer, a figure's value (14 CFR 1.1, "ceiling"). |
 | `remove_from_favorites` | label | Remove from Favorites | Takes the airport or airplane shown out of the favorites. |
 | `remove_from_account` | label | Remove from Account | Takes the thing shown out of the pilot's account. |
@@ -1883,7 +1883,6 @@ The words the three apps share, generated from `design/wording.json`:
 | `visibility` | label | Visibility | A visibility, a figure's name. |
 | `most_headwind` | label | Most Headwind | The strongest headwind on any leg (the engine's route_headwind), a figure's name. |
 | `finding_where_you_are` | progress | Finding where you are… | The first route's wait for the phone's position. |
-| `nav_log_empty` | sentence | Plan a route on FPL; its legs are listed here. | The Nav Log with no route. |
 | `done_flying` | label | Done Flying | Flying mode's way out for this flight. |
 | `larger_map_labels` | label | Larger Map Labels | The Map card's switch that lets the map's words follow the text size, up to 1.2 times. |
 

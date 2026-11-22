@@ -174,7 +174,7 @@
     <string name="wording_answer_garbled">The planner\'s answer came back garbled. Try again in a moment.</string>
     <!-- The planner refused with a server error and no words of its own (the web's describeError). -->
     <string name="wording_planner_not_answering">The planner is not answering. Try again in a moment.</string>
-    <!-- The Nav Log with no route (owner rec 4). -->
+    <!-- The Nav Log with no route. -->
     <string name="wording_nav_log_empty">Plan a route on FPL; its legs are listed here.</string>
     <!-- A report with no broken or overcast layer, a figure's value (14 CFR 1.1, "ceiling"). -->
     <string name="wording_no_ceiling">No ceiling</string>
@@ -222,8 +222,6 @@
     <string name="wording_most_headwind">Most Headwind</string>
     <!-- The first route's wait for the phone's position. -->
     <string name="wording_finding_where_you_are">Finding where you are…</string>
-    <!-- The Nav Log with no route. -->
-    <string name="wording_nav_log_empty">Plan a route on FPL; its legs are listed here.</string>
     <!-- Flying mode's way out for this flight. -->
     <string name="wording_done_flying">Done Flying</string>
     <!-- The Map card's switch that lets the map's words follow the text size, up to 1.2 times. -->

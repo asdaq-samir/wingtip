@@ -243,6 +243,24 @@
         "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "cruisePowerPct", "cruiseTasKt", "descentFuelBurnGph", "descentIasKt", "equipment", "figures", "fuelBurnGph", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal" ],
         "type" : "object"
       },
+      "AppVersionsDto" : {
+        "properties" : {
+          "faults" : {
+            "items" : {
+              "$ref" : "#/components/schemas/VersionFaultsDto"
+            },
+            "type" : "array"
+          },
+          "figures" : {
+            "items" : {
+              "$ref" : "#/components/schemas/VersionFigureDto"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "faults", "figures" ],
+        "type" : "object"
+      },
       "AppleNonceAnswer" : {
         "properties" : {
           "nonce" : {
@@ -477,6 +495,29 @@
           }
         },
         "required" : [ "access", "providers" ],
+        "type" : "object"
+      },
+      "ConnectionDto" : {
+        "properties" : {
+          "app" : {
+            "type" : "string"
+          },
+          "id" : {
+            "type" : "string"
+          },
+          "renewedAt" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "scopes" : {
+            "type" : [ "string", "null" ]
+          },
+          "until" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "app", "id", "renewedAt", "scopes", "until" ],
         "type" : "object"
       },
       "ConnectorGrantDto" : {
@@ -846,7 +887,7 @@
             "type" : [ "string", "null" ]
           },
           "title" : {
-            "example" : "Annual inspection",
+            "example" : "Annual Inspection",
             "type" : "string"
           },
           "what" : {
@@ -2609,6 +2650,9 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "instructorVerified" : {
+            "type" : "boolean"
+          },
           "signature" : {
             "type" : "string"
           },
@@ -2626,11 +2670,14 @@
             "format" : "date",
             "type" : [ "string", "null" ]
           },
+          "verification" : {
+            "type" : [ "string", "null" ]
+          },
           "voided" : {
             "type" : "boolean"
           }
         },
-        "required" : [ "code", "digest", "fields", "id", "signature", "signedOn", "studentName", "text", "until", "voided" ],
+        "required" : [ "code", "digest", "fields", "id", "instructorVerified", "signature", "signedOn", "studentName", "text", "until", "verification", "voided" ],
         "type" : "object"
       },
       "SignedIn" : {
@@ -2897,6 +2944,59 @@
           }
         },
         "required" : [ "name", "notes" ],
+        "type" : "object"
+      },
+      "VersionFaultsDto" : {
+        "properties" : {
+          "count" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "lastAt" : {
+            "type" : "string"
+          },
+          "platform" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "count", "kind", "lastAt", "platform", "version" ],
+        "type" : "object"
+      },
+      "VersionFigureDto" : {
+        "properties" : {
+          "count" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "metric" : {
+            "type" : "string"
+          },
+          "p50" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "p75" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "p95" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "source" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "count", "metric", "p50", "p75", "p95", "source", "version" ],
         "type" : "object"
       },
       "VorCheckDto" : {
@@ -3748,6 +3848,36 @@
           }
         },
         "summary" : "Report faults and speed from a pilot's device",
+        "tags" : [ "Diagnostics" ]
+      }
+    },
+    "/api/diagnostics/versions" : {
+      "get" : {
+        "description" : "Counted over the last few days (at most the 30 a fault is kept); the developer's.",
+        "operationId" : "byVersion",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "days",
+          "required" : false,
+          "schema" : {
+            "default" : 7,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AppVersionsDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "The apps' faults and speed figures by build",
         "tags" : [ "Diagnostics" ]
       }
     },
@@ -4972,6 +5102,70 @@
         },
         "summary" : "Forget the signed-in pilot's own checkpoint notes",
         "tags" : [ "pilot-controller" ]
+      }
+    },
+    "/api/me/connections" : {
+      "get" : {
+        "description" : "Each connection made through the connector, newest first: its id, the app's name, the scopes granted, when its token was last issued and until when it may be renewed.",
+        "operationId" : "connections",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ConnectionDto"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "Their connections"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ConnectionDto"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "No session"
+          }
+        },
+        "summary" : "The signed-in pilot's connected AI apps",
+        "tags" : [ "Pilot" ]
+      }
+    },
+    "/api/me/connections/{id}" : {
+      "delete" : {
+        "description" : "Its access and refresh tokens are revoked at once, so the app's next call is refused; the consent goes with the last connection through that app, so connecting again asks again.",
+        "operationId" : "disconnect",
+        "parameters" : [ {
+          "description" : "The connection's id, as listed",
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Disconnected"
+          },
+          "401" : {
+            "description" : "No session"
+          },
+          "404" : {
+            "description" : "No such connection of theirs"
+          }
+        },
+        "summary" : "Disconnect one connected AI app",
+        "tags" : [ "Pilot" ]
       }
     },
     "/api/me/contact" : {

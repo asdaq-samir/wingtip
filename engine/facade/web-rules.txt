@@ -25,7 +25,6 @@ approach_category
 approach_coaching
 approach_find
 approach_fix_tags
-approach_guidance
 approach_lesson_path
 approach_minimums
 approach_path_between
@@ -44,6 +43,7 @@ ceiling_visibility
 checklist_phases
 checklist_read
 checklist_section
+citations
 class_b_at_altitude
 cleared_route
 closest_approach
@@ -77,6 +77,8 @@ endorsements_in_force
 endurance
 faa_words
 field_hours
+field_names
+field_status
 field_taf
 filed_dof
 filed_level
@@ -105,6 +107,7 @@ gairmet_title
 glide_range
 glide_reaches
 glide_ring
+gonogo_adverse_rows
 gonogo_balance
 gonogo_brief
 gonogo_default_load
@@ -123,12 +126,12 @@ gonogo_runway_flown
 gonogo_runway_in_use
 gonogo_runway_number
 gonogo_self_checks
-gonogo_soft_surface
 gonogo_sua_when
 gonogo_tfr_when
 gonogo_under_minimums
 great_circles
 handbook_figures
+hazard_view
 hold_inbound_deg
 hold_length_read
 hold_length_write
@@ -141,6 +144,7 @@ ifr_alternate_not_required
 in_flight
 kept_age
 kneeboard_radio
+landing_runway
 least_crosswind
 live_feed_refresh
 logbook_csv_read
@@ -178,6 +182,7 @@ procedures_read
 procedures_write
 proficiency_plan
 profile_clearance
+profile_obstacles
 public_use
 radial_of
 radio_call_sign
@@ -189,7 +194,11 @@ read_track
 readback_check
 ready_to_fly
 registered_profile
+route_adiz
+route_headwind
+route_jurisdiction
 route_position
+route_procedures
 route_read
 route_way_warning
 runway_calm
@@ -203,14 +212,17 @@ short_airspace_name
 sigmet_hazard
 solo_standing
 solo_xc_determinations
+special_vfr
 squawk_meaning
 strip_fuel
 sua_altitudes
 sun_down
 surface_hours
+taf_validity
 terrain_view_bands
 tfr_read
 thin_track
+time_ago
 title_case
 tokens
 traffic_fresh

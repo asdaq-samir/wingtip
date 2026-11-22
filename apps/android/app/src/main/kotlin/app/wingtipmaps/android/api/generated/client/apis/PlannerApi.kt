@@ -1092,6 +1092,20 @@ interface PlannerApi {
     suspend fun inspections(@Body appWingtipmapsAndroidApiGeneratedInspectionsAsk: app.wingtipmaps.android.api.generated.InspectionsAsk): Response<app.wingtipmaps.android.api.generated.Inspections>
 
     /**
+     * POST aircraft/inspections-batch
+     * Inspections Batch
+     * Many airplanes&#39; inspections in one call, each as /api/aircraft/inspections answers it, in the order asked: a pilot&#39;s aircraft list and the daily reminders ask every airplane at once, at most MAX_BATCH.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param appWingtipmapsAndroidApiGeneratedInspectionsAsk
+     * @return [kotlin.collections.List<app.wingtipmaps.android.api.generated.Inspections>]
+     */
+    @POST("aircraft/inspections-batch")
+    suspend fun inspectionsBatch(@Body appWingtipmapsAndroidApiGeneratedInspectionsAsk: kotlin.collections.List<app.wingtipmaps.android.api.generated.InspectionsAsk>): Response<kotlin.collections.List<app.wingtipmaps.android.api.generated.Inspections>>
+
+    /**
      * GET pilot/instructor-records-since
      * Instructor Records Since
      * The first day an instructor&#39;s page lists what they signed: 3 years before &#x60;today&#x60;, as 14 CFR 61.189(c) has them keep the records (the engine&#39;s instructor_records_since).
@@ -1106,6 +1120,20 @@ interface PlannerApi {
     suspend fun instructorRecordsSince(@Query("today") today: kotlin.String): Response<Unit>
 
     /**
+     * POST pilot/instructor-verification
+     * Instructor Verification
+     * Whether the instructor about to sign is a flight instructor the FAA airmen registry bears out (the engine&#39;s instructor_verification, over the flight instructors of that last name ingest keeps, wingtip.airmen): an endorsement counts as signed only where it is (14 CFR 61.189(a)).
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param appWingtipmapsAndroidApiGeneratedInstructorVerificationAsk
+     * @return [app.wingtipmaps.android.api.generated.InstructorVerification]
+     */
+    @POST("pilot/instructor-verification")
+    suspend fun instructorVerification(@Body appWingtipmapsAndroidApiGeneratedInstructorVerificationAsk: app.wingtipmaps.android.api.generated.InstructorVerificationAsk): Response<app.wingtipmaps.android.api.generated.InstructorVerification>
+
+    /**
      * GET live/itws
      * Itws Alerts
      * The ITWS alerts in force at these airports (a route&#39;s departure, destination and alternates): microbursts, wind shear, gust fronts, tornadoes and storm cells near the field, as the tower&#39;s ITWS gives them its controllers (AIM 4-3-7).
@@ -1118,6 +1146,51 @@ interface PlannerApi {
      */
     @GET("live/itws")
     suspend fun itwsAlerts(@Query("airports") airports: kotlin.String): Response<app.wingtipmaps.android.api.generated.ItwsAlerts>
+
+    /**
+     * GET library/{doc}/{edition}.pdf
+     * Library Pdf
+     * A document&#39;s PDF in the edition kept.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 206: The byte range asked for (Range: bytes=a-b)
+     *  - 404: Not on the shelf, or not the edition kept
+     *  - 422: Validation Error
+     *
+     * @param doc
+     * @param edition
+     * @return [Unit]
+     */
+    @GET("library/{doc}/{edition}.pdf")
+    suspend fun libraryPdf(@Path("doc") doc: kotlin.String, @Path("edition") edition: kotlin.String): Response<Unit>
+
+    /**
+     * GET library
+     * Library Shelf
+     * Every document on the shelf, in its order: the FAA&#39;s books, the AIM, the circulars and the CFR parts, each with the edition kept and its date, or none yet where it has never been had.
+     * Responses:
+     *  - 200: Successful Response
+     *
+     * @return [app.wingtipmaps.android.api.generated.Library]
+     */
+    @GET("library")
+    suspend fun libraryShelf(): Response<app.wingtipmaps.android.api.generated.Library>
+
+    /**
+     * GET library/{doc}/{edition}/text
+     * Library Text
+     * A CFR part&#39;s text in the edition kept (the eCFR&#39;s issue date): its subparts and sections, each section&#39;s paragraphs.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 404: Not a CFR part on the shelf, or not the edition kept
+     *  - 422: Validation Error
+     *
+     * @param doc
+     * @param edition
+     * @return [app.wingtipmaps.android.api.generated.CfrText]
+     */
+    @GET("library/{doc}/{edition}/text")
+    suspend fun libraryText(@Path("doc") doc: kotlin.String, @Path("edition") edition: kotlin.String): Response<app.wingtipmaps.android.api.generated.CfrText>
 
     /**
      * GET local-flight
@@ -1271,7 +1344,7 @@ interface PlannerApi {
     /**
      * POST notams/ranked
      * Notams Ranked
-     * Every NOTAM the FAA&#39;s feed has sent for the fields the route lands at and every TFR near it, best first: in force while the flight is there, at its departure, stops or destination, on the runway in use, closing a field, its altitudes taking in the cruise altitude, on an airspace the route passes (14 CFR 91.103). &#x60;top&#x60; are said first; the rest are folded, never dropped. &#x60;coverage_since&#x60;, the day the feed was first heard (UTC).
+     * Every NOTAM the FAA&#39;s feed has sent for the fields the route lands at and every TFR near it, best first: in force while the flight is there, at its departure, stops or destination, on the runway in use, closing a field, its altitudes taking in the cruise altitude, on an airspace the route passes (14 CFR 91.103). &#x60;top&#x60; are said first; the rest are folded, never dropped. &#x60;coverage_since&#x60;, the day the feed was first heard (UTC); &#x60;full_set&#x60;, whether every NOTAM in force is held (NMS&#39;s load, decision 0059) or only those heard since.
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error
@@ -1490,6 +1563,20 @@ interface PlannerApi {
     suspend fun plateStates(): Response<app.wingtipmaps.android.api.generated.PlateStates>
 
     /**
+     * POST pilot/records-batch
+     * Records Batch
+     * Many students&#39; experience and endorsements in one call, each as /api/pilot/experience and /api/pilot/endorsements answer it, in the order asked: an instructor&#39;s page asks its students and the reviews waiting on them together (14 CFR 61.109(a), 61.87, 61.93(d)).
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param appWingtipmapsAndroidApiGeneratedRecordsBatchAsk
+     * @return [app.wingtipmaps.android.api.generated.RecordsBatch]
+     */
+    @POST("pilot/records-batch")
+    suspend fun recordsBatch(@Body appWingtipmapsAndroidApiGeneratedRecordsBatchAsk: app.wingtipmaps.android.api.generated.RecordsBatchAsk): Response<app.wingtipmaps.android.api.generated.RecordsBatch>
+
+    /**
      * POST charts/refresh
      * Refresh Charts
      * Fetch and render the FAA&#39;s current chart cycle now, and the overlay tiles where due: the charts job&#39;s container (services/jobs/ charts), started through the dev-services sidecar -- the same job the hourly check starts. &#x60;started&#x60; is False when it is already running; without the sidecar the answer says how to run it by hand.
@@ -1587,6 +1674,24 @@ interface PlannerApi {
      */
     @GET("route-profile")
     suspend fun routeProfile(@Query("dep") dep: kotlin.String, @Query("dest") dest: kotlin.String, @Query("stops") stops: kotlin.String? = ""): Response<app.wingtipmaps.android.api.generated.RouteProfile>
+
+    /**
+     * GET route-profile/weather
+     * Route Profile Weather
+     * The weather on the route&#39;s side view, along the same hops as /api/route-profile&#39;s ground: the TAFs&#39; cloud bases, the GFS&#39;s freezing level and the G-AIRMETs&#39; icing for a flight departing &#x60;depart&#x60; (now where not given; a naive time is UTC) and taking &#x60;ete_min&#x60;, each with its source and time (wingtip.profile_weather), from the weather store.
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param dep
+     * @param dest
+     * @param stops  (optional, default to "")
+     * @param depart  (optional)
+     * @param eteMin  (optional, default to 0)
+     * @return [app.wingtipmaps.android.api.generated.RouteWeather]
+     */
+    @GET("route-profile/weather")
+    suspend fun routeProfileWeather(@Query("dep") dep: kotlin.String, @Query("dest") dest: kotlin.String, @Query("stops") stops: kotlin.String? = "", @Query("depart") depart: kotlin.String? = null, @Query("ete_min") eteMin: kotlin.Double? = 0.0): Response<app.wingtipmaps.android.api.generated.RouteWeather>
 
     /**
      * GET live/rvr
@@ -1688,203 +1793,6 @@ interface PlannerApi {
      */
     @GET("stops/near")
     suspend fun stopsNear(@Query("lat") lat: kotlin.Double, @Query("lon") lon: kotlin.Double, @Query("nm") nm: kotlin.Double? = 25.0): Response<app.wingtipmaps.android.api.generated.StopFields>
-
-    /**
-     * GET studio/drafts/{draft_id}
-     * Studio Draft
-     * One draft, with its kit&#39;s captions where the kit is made.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param draftId
-     * @return [app.wingtipmaps.android.api.generated.StudioDraft]
-     */
-    @GET("studio/drafts/{draft_id}")
-    suspend fun studioDraft(@Path("draft_id") draftId: kotlin.String): Response<app.wingtipmaps.android.api.generated.StudioDraft>
-
-    /**
-     * POST studio/drafts/{draft_id}/dismiss
-     * Studio Draft Dismiss
-     * Set the draft aside: no film, no mail.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param draftId
-     * @return [app.wingtipmaps.android.api.generated.StudioDraft]
-     */
-    @POST("studio/drafts/{draft_id}/dismiss")
-    suspend fun studioDraftDismiss(@Path("draft_id") draftId: kotlin.String): Response<app.wingtipmaps.android.api.generated.StudioDraft>
-
-    /**
-     * POST studio/drafts/{draft_id}/identity
-     * Studio Draft Identity
-     * The developer&#39;s word: the identity is right (ready; with a new N-number, checked again by the job first), or it is not (the match forgotten, waiting for a person).
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param draftId
-     * @param appWingtipmapsAndroidApiGeneratedStudioDraftIdentityAsk
-     * @return [app.wingtipmaps.android.api.generated.StudioDraft]
-     */
-    @POST("studio/drafts/{draft_id}/identity")
-    suspend fun studioDraftIdentity(@Path("draft_id") draftId: kotlin.String, @Body appWingtipmapsAndroidApiGeneratedStudioDraftIdentityAsk: app.wingtipmaps.android.api.generated.StudioDraftIdentityAsk): Response<app.wingtipmaps.android.api.generated.StudioDraft>
-
-    /**
-     * POST studio/drafts/{draft_id}/noticed
-     * Studio Draft Noticed
-     * The developer mailed about the draft: not again.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param draftId
-     * @return [app.wingtipmaps.android.api.generated.StudioDraft]
-     */
-    @POST("studio/drafts/{draft_id}/noticed")
-    suspend fun studioDraftNoticed(@Path("draft_id") draftId: kotlin.String): Response<app.wingtipmaps.android.api.generated.StudioDraft>
-
-    /**
-     * POST studio/drafts/{draft_id}/rendered
-     * Studio Draft Rendered
-     * The Studio&#39;s film of a ready draft made (scripts/dev/studio-render.mjs, through the page). Publishing stays a person&#39;s.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param draftId
-     * @return [app.wingtipmaps.android.api.generated.StudioDraft]
-     */
-    @POST("studio/drafts/{draft_id}/rendered")
-    suspend fun studioDraftRendered(@Path("draft_id") draftId: kotlin.String): Response<app.wingtipmaps.android.api.generated.StudioDraft>
-
-    /**
-     * GET studio/drafts/{draft_id}/track
-     * Studio Draft Track
-     * The ADS-B track the draft&#39;s identity was confirmed on, as its kit keeps it: a same-day trace, kept before it rolled off. A 404 for a draft with none (\&quot;No ADS-B track\&quot;): never a guessed path.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param draftId
-     * @return [app.wingtipmaps.android.api.generated.StudioTrack]
-     */
-    @GET("studio/drafts/{draft_id}/track")
-    suspend fun studioDraftTrack(@Path("draft_id") draftId: kotlin.String): Response<app.wingtipmaps.android.api.generated.StudioTrack>
-
-    /**
-     * GET studio/drafts
-     * Studio Drafts
-     * Every crash draft, the newest event first.
-     * Responses:
-     *  - 200: Successful Response
-     *
-     * @return [kotlin.collections.List<app.wingtipmaps.android.api.generated.StudioDraft>]
-     */
-    @GET("studio/drafts")
-    suspend fun studioDrafts(): Response<kotlin.collections.List<app.wingtipmaps.android.api.generated.StudioDraft>>
-
-    /**
-     * GET studio/drafts-to-notice
-     * Studio Drafts To Notice
-     * The ready drafts with a kit the developer has not been mailed about.
-     * Responses:
-     *  - 200: Successful Response
-     *
-     * @return [kotlin.collections.List<app.wingtipmaps.android.api.generated.StudioDraft>]
-     */
-    @GET("studio/drafts-to-notice")
-    suspend fun studioDraftsToNotice(): Response<kotlin.collections.List<app.wingtipmaps.android.api.generated.StudioDraft>>
-
-    /**
-     * POST studio/ground
-     * Studio Ground
-     * The ground under a replayed track&#39;s points, ft MSL, for its profile strip (wingtip.elevation: the elevation tiles, then USGS&#39;s EPQS).
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param appWingtipmapsAndroidApiGeneratedStudioGroundAsk
-     * @return [app.wingtipmaps.android.api.generated.StudioGround]
-     */
-    @POST("studio/ground")
-    suspend fun studioGround(@Body appWingtipmapsAndroidApiGeneratedStudioGroundAsk: app.wingtipmaps.android.api.generated.StudioGroundAsk): Response<app.wingtipmaps.android.api.generated.StudioGround>
-
-    /**
-     * GET studio/notams
-     * Studio Notams
-     * The NOTAMs and TFRs in force at &#x60;at&#x60; inside the box, from that UTC day&#39;s archive (wingtip.history.notam_archive); &#x60;archived&#x60; false where none was kept that day.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param at The moment, s since 1970
-     * @param latMin
-     * @param latMax
-     * @param lonMin
-     * @param lonMax
-     * @return [app.wingtipmaps.android.api.generated.StudioNotams]
-     */
-    @GET("studio/notams")
-    suspend fun studioNotams(@Query("at") at: kotlin.Double, @Query("lat_min") latMin: kotlin.Double, @Query("lat_max") latMax: kotlin.Double, @Query("lon_min") lonMin: kotlin.Double, @Query("lon_max") lonMax: kotlin.Double): Response<app.wingtipmaps.android.api.generated.StudioNotams>
-
-    /**
-     * GET studio/ntsb
-     * Studio Ntsb
-     * The NTSB&#39;s cases of the airplane dated within a day either side (wingtip.history.ntsb); none where there are none, or the store is not built yet.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param registration The registration, N-number or other
-     * @param day The UTC day of the flight
-     * @return [kotlin.collections.List<app.wingtipmaps.android.api.generated.NtsbEvent>]
-     */
-    @GET("studio/ntsb")
-    suspend fun studioNtsb(@Query("registration") registration: kotlin.String, @Query("day") day: kotlin.String): Response<kotlin.collections.List<app.wingtipmaps.android.api.generated.NtsbEvent>>
-
-    /**
-     * GET studio/track
-     * Studio Track
-     * The airplane&#39;s reports on a UTC day (wingtip.traffic.day_tracks): a past day from the store, fetched from adsb.lol&#39;s history once where it is not there yet; today&#39;s from its recent trace. A 404 for a name the registry does not know, a 422 for a day to come, a 503 where adsb.lol cannot be read now.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param q N-number or ICAO address
-     * @param day The UTC day
-     * @return [app.wingtipmaps.android.api.generated.StudioTrack]
-     */
-    @GET("studio/track")
-    suspend fun studioTrack(@Query("q") q: kotlin.String, @Query("day") day: kotlin.String): Response<app.wingtipmaps.android.api.generated.StudioTrack>
-
-    /**
-     * GET studio/watched
-     * Studio Watched
-     * The airplanes followed here, with the UTC days their recorded reports fall on, newest first (wingtip.traffic.day_tracks.watched_days).
-     * Responses:
-     *  - 200: Successful Response
-     *
-     * @return [kotlin.collections.List<app.wingtipmaps.android.api.generated.StudioWatched>]
-     */
-    @GET("studio/watched")
-    suspend fun studioWatched(): Response<kotlin.collections.List<app.wingtipmaps.android.api.generated.StudioWatched>>
-
-    /**
-     * POST studio/weather
-     * Studio Weather
-     * The METARs, TAFs and radar frames over a replayed flight (wingtip.history.weather_then): a 422 for a span that ends before it starts or is longer than two days, a 503 where IEM cannot be read now.
-     * Responses:
-     *  - 200: Successful Response
-     *  - 422: Validation Error
-     *
-     * @param appWingtipmapsAndroidApiGeneratedStudioWeatherAsk
-     * @return [app.wingtipmaps.android.api.generated.StudioWeather]
-     */
-    @POST("studio/weather")
-    suspend fun studioWeather(@Body appWingtipmapsAndroidApiGeneratedStudioWeatherAsk: app.wingtipmaps.android.api.generated.StudioWeatherAsk): Response<app.wingtipmaps.android.api.generated.StudioWeather>
 
     /**
      * GET terrain-tile/{z}/{x}/{y}.png

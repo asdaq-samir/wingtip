@@ -1184,7 +1184,8 @@ data class AirspaceAt (
 /**
  * One class of airspace over a point, from `floor_ft` to
  * `ceiling_ft` MSL (wingtip.airspace_at): its name where it is a B, C or
- * D; the VFR minimums in it (None in A); what it takes to go in; the
+ * D, and its primary airport (`ident`); the VFR minimums in it (None in
+ * A); what it takes to go in; the
  * equipment it asks for; and the 91.117 speed limit there.
  */
 @Serializable
@@ -1201,6 +1202,7 @@ data class AirspaceBand (
     @SerialName("floor_ft")
     val floorFt: Double,
 
+    val ident: String? = null,
     val minimums: DayNightMinimums? = null,
     val name: String? = null,
 
@@ -4674,6 +4676,53 @@ data class VorCheckAsk (
 )
 
 /**
+ * Whether the FAA airmen registry bears the instructor out (the
+ * engine's instructor_verification).
+ */
+@Serializable
+data class InstructorVerification (
+    /**
+     * verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.
+     */
+    val reason: String,
+
+    /**
+     * The FAA's unique id of the record matched, where one was.
+     */
+    @SerialName("registry_id")
+    val registryId: String? = null,
+
+    val verified: Boolean,
+
+    /**
+     * The verdict as the pilot reads it.
+     */
+    val words: String
+)
+
+/**
+ * An instructor about to sign for a student: both names as on their
+ * certificates, the day, and the FAA records other accounts sign as.
+ */
+@Serializable
+data class InstructorVerificationAsk (
+    /**
+     * FAA unique ids another Wingtip account already signs as.
+     */
+    @SerialName("bound_elsewhere")
+    val boundElsewhere: List<String>? = null,
+
+    @SerialName("instructor_name")
+    val instructorName: String,
+
+    @SerialName("signed_on")
+    val signedOn: String,
+
+    @SerialName("student_name")
+    val studentName: String? = null
+)
+
+/**
  * The ITWS alerts in force at the airports asked for: none where no
  * ITWS site alerts for them (most airports have no ITWS).
  */
@@ -6465,47 +6514,6 @@ data class NotamsRankedAsk (
 
     val runways: Map<String, String>? = null,
     val stops: List<String>? = null
-)
-
-/**
- * One NTSB case of the airplane (wingtip.history.ntsb), its texts
- * verbatim: where and when (the local date), its phase of flight and
- * highest injury in the NTSB's words, its probable cause once the final
- * report is out, and its narrative (the final report's, else the
- * preliminary's factual one).
- */
-@Serializable
-data class NtsbEvent (
-    @SerialName("carol_url")
-    val carolUrl: String,
-
-    val city: String? = null,
-    val country: String? = null,
-    val date: String,
-
-    @SerialName("docket_url")
-    val docketUrl: String? = null,
-
-    @SerialName("ev_id")
-    val evId: String,
-
-    @SerialName("highest_injury")
-    val highestInjury: String? = null,
-
-    val narrative: String? = null,
-
-    @SerialName("narrative_kind")
-    val narrativeKind: String? = null,
-
-    @SerialName("ntsb_no")
-    val ntsbNo: String,
-
-    val phase: String? = null,
-
-    @SerialName("probable_cause")
-    val probableCause: String? = null,
-
-    val state: String? = null
 )
 
 /**
@@ -8428,320 +8436,6 @@ data class StopField (
     val powerplantRepair: String? = null,
 
     val training: List<NearbyPlace>? = null
-)
-
-/**
- * A crash draft: the event as reported (local date and time, place),
- * the airplane (N-number, its Mode S code where the registry gave one),
- * where it stands, and what the identity check found. `track` is "adsb",
- * or "none" for a draft of the place alone; `fatal` None where no source
- * says, which holds publishing as a fatal event does.
- */
-@Serializable
-data class StudioDraft (
-    val aircraft: String? = null,
-    val captions: StudioDraftCaptions? = null,
-    val city: String? = null,
-    val fatal: Boolean? = null,
-    val hex: String? = null,
-    val id: String,
-    val identity: StudioDraftIdentity? = null,
-
-    @SerialName("identity_by")
-    val identityBy: String? = null,
-
-    @SerialName("kit_at")
-    val kitAt: Double? = null,
-
-    val lat: Double? = null,
-
-    @SerialName("local_date")
-    val localDate: String,
-
-    @SerialName("local_time")
-    val localTime: String? = null,
-
-    val lon: Double? = null,
-
-    @SerialName("n_number")
-    val nNumber: String? = null,
-
-    @SerialName("noticed_at")
-    val noticedAt: Double? = null,
-
-    @SerialName("rendered_at")
-    val renderedAt: Double? = null,
-
-    val sources: List<StudioDraftSource>,
-    val state: String? = null,
-    val status: String,
-    val track: String? = null
-)
-
-/**
- * The film's words, facts only: a title, "Preliminary ...", "No ADS-B
- * track" where there is none, the sources' words quoted, the credits.
- */
-@Serializable
-data class StudioDraftCaptions (
-    val credits: List<String>,
-    val quotes: List<StudioDraftQuote>,
-    val status: String,
-    val title: String,
-    val track: String? = null
-)
-
-@Serializable
-data class StudioDraftQuote (
-    val source: String? = null,
-    val url: String? = null,
-    val words: String
-)
-
-/**
- * The engine's verdict on the draft's identity, each check made, the
- * window it read the track in and the report nearest the place.
- */
-@Serializable
-data class StudioDraftIdentity (
-    val checks: List<StudioDraftCheck>,
-    val nearest: StudioDraftNearest? = null,
-    val verdict: String,
-    val window: StudioDraftWindow? = null
-)
-
-/**
- * One of the identity check's checks (the engine's occurrence_identity).
- */
-@Serializable
-data class StudioDraftCheck (
-    val check: String,
-    val ok: Boolean,
-    val words: String
-)
-
-/**
- * The track's report in the window nearest the reported place.
- */
-@Serializable
-data class StudioDraftNearest (
-    @SerialName("distance_nm")
-    val distanceNm: Double,
-
-    val lat: Double,
-    val lon: Double,
-    val t: Double
-)
-
-/**
- * The time window the report gives, s since 1970 (UTC).
- */
-@Serializable
-data class StudioDraftWindow (
-    val end: Double,
-    val start: Double
-)
-
-/**
- * One source's word of the event, as it gave it: "faa_statement",
- * "faa_notice" or "ntsb"; its page (or the notice's file); its heading
- * and its words, unchanged, which a caption quotes.
- */
-@Serializable
-data class StudioDraftSource (
-    val heading: String? = null,
-    val source: String,
-    val text: String? = null,
-    val url: String? = null
-)
-
-/**
- * The developer's word on a draft's identity: right (`confirm`), or
- * not; with an N-number where the report gave none, which the job then
- * checks against the registry and the track as it checks its own.
- */
-@Serializable
-data class StudioDraftIdentityAsk (
-    val confirm: Boolean,
-
-    @SerialName("n_number")
-    val nNumber: String? = null
-)
-
-/**
- * The ground's height under each point asked, ft MSL, in order: the
- * elevation tiles (USGS 3DEP and SRTM, wingtip.elevation).
- */
-@Serializable
-data class StudioGround (
-    @SerialName("ground_ft")
-    val groundFt: List<Double>
-)
-
-/**
- * Points along a replayed track, [lat, lon] each, for the ground
- * under them: the Studio's profile strip.
- */
-@Serializable
-data class StudioGroundAsk (
-    val points: List<List<Double>>
-)
-
-/**
- * The NOTAMs and TFRs in force at a moment inside a box, from the day's
- * archive kept here (wingtip.history.notam_archive); `archived` False
- * where no archive covers that UTC day.
- */
-@Serializable
-data class StudioNotams (
-    val archived: Boolean,
-    val day: String,
-    val notams: List<StudioNotam>,
-    val tfrs: List<StudioTfr>
-)
-
-/**
- * A NOTAM in force then, as sent, at its field's position (None for
- * one at no field).
- */
-@Serializable
-data class StudioNotam (
-    val end: String? = null,
-    val id: String,
-    val lat: Double? = null,
-    val lon: Double? = null,
-    val start: String? = null,
-    val text: String
-)
-
-/**
- * A TFR in force then: its NOTAM's id, title, times and text, and its
- * areas (GeoJSON MultiPolygon, rounded to about 11 m).
- */
-@Serializable
-data class StudioTfr (
-    val end: String? = null,
-    val geometry: JsonObject? = null,
-    val id: String,
-    val name: String,
-    val start: String? = null,
-    val text: String? = null
-)
-
-/**
- * An airplane's reports on a UTC day, for the Studio's replay
- * (wingtip.traffic.day_tracks), with where they came from, which the
- * Studio shows (ODbL 1.0 asks for it).
- */
-@Serializable
-data class StudioTrack (
-    val altitude: String,
-    val day: String,
-    val hex: String,
-    val license: String,
-    val model: String? = null,
-    val points: List<StudioReport>,
-    val registration: String? = null,
-    val source: String,
-    val type: String? = null
-)
-
-/**
- * One report of the day: when (s since 1970), where, its altitude
- * (ft; the transponder's pressure altitude for adsb.lol's day, see
- * `altitude`; None on the ground), ground speed (kt), track (degrees
- * true), whether it was on the ground, and the altimeter setting.
- */
-@Serializable
-data class StudioReport (
-    @SerialName("alt_ft")
-    val altFt: Double? = null,
-
-    val ground: Boolean? = null,
-
-    @SerialName("gs_kt")
-    val gsKt: Double? = null,
-
-    val lat: Double,
-    val lon: Double,
-
-    @SerialName("qnh_hpa")
-    val qnhHpa: Double? = null,
-
-    val t: Double,
-
-    @SerialName("track_deg")
-    val trackDeg: Double? = null
-)
-
-/**
- * An airplane followed here (its card opened), whose reports are
- * recorded (wingtip.traffic.recorded): one the Studio can replay without
- * asking adsb.lol.
- */
-@Serializable
-data class StudioWatched (
-    val days: List<String>,
-    val hex: String,
-    val registration: String? = null
-)
-
-/**
- * The weather as it was over a replayed flight
- * (wingtip.history.weather_then): the METARs of the stations near its
- * track from an hour before to an hour after, the TAFs in force over it,
- * and the radar's frames, with where they came from.
- */
-@Serializable
-data class StudioWeather (
-    val credit: String,
-    val metars: List<StudioMetar>,
-    val radar: List<StudioRadarFrame>,
-    val source: String,
-    val tafs: List<StudioTaf>
-)
-
-/**
- * A station's METAR, as it sent it (IEM's archive).
- */
-@Serializable
-data class StudioMetar (
-    val lat: Double,
-    val lon: Double,
-    val raw: String,
-    val station: String,
-    val time: String
-)
-
-/**
- * The NEXRAD composite at one five-minute mosaic: its time and its
- * XYZ tile template on IEM's tile cache.
- */
-@Serializable
-data class StudioRadarFrame (
-    val tiles: String,
-    val valid: String
-)
-
-/**
- * A station's TAF, as the NWS issued it (IEM's archive).
- */
-@Serializable
-data class StudioTaf (
-    val issued: String,
-    val raw: String,
-    val station: String
-)
-
-/**
- * A replayed flight's span (s since 1970, UTC) and points along its
- * track, [lat, lon] each, for the weather as it was.
- */
-@Serializable
-data class StudioWeatherAsk (
-    val end: Double,
-    val points: List<List<Double>>,
-    val start: Double
 )
 
 @Serializable

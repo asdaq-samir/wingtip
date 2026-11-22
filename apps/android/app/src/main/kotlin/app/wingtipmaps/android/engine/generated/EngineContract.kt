@@ -268,7 +268,7 @@ object EngineContract {
     )
 
     /**
-     * A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.
+     * A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name and primary airport for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.
      */
     @Serializable
     data class AirspaceBand(
@@ -278,6 +278,10 @@ object EngineContract {
         val ceilingFt: Double,
         val `class`: String,
         val name: String? = null,
+        /**
+         * A B, C or D band's primary airport (NASR's IDENT), for its special VFR (14 CFR 91.157(a), part 91 Appendix D section 3).
+         */
+        val ident: String? = null,
         val minimums: EngineContract.AirspaceBandMinimums? = null,
         val entry: String,
         val equipment: String? = null,
@@ -335,6 +339,10 @@ object EngineContract {
     data class AirspaceColumnInputVolumesItem(
         val `class`: String,
         val name: String? = null,
+        /**
+         * The primary airport's identifier where NASR's Class Airspace file names one (IDENT), which special_vfr reads for part 91 Appendix D.
+         */
+        val ident: String? = null,
         @SerialName("floor_ft")
         val floorFt: Double,
         @SerialName("floor_ref")
@@ -2190,6 +2198,42 @@ object EngineContract {
     )
 
     @Serializable
+    data class CitationsAnswer(
+        val pieces: List<EngineContract.CitationsAnswerPiecesItem>,
+    )
+
+    @Serializable
+    data class CitationsAnswerPiecesItem(
+        val text: String,
+        val cite: EngineContract.CitationsAnswerPiecesItemCite? = null,
+    )
+
+    @Serializable
+    data class CitationsAnswerPiecesItemCite(
+        val kind: String,
+        /**
+         * The library's document: "cfr-14-91", "aim", "ac-61-65".
+         */
+        val doc: String,
+        /**
+         * The place in it: a CFR section ("91.155"), an AIM paragraph ("7-1-5"); null for a whole part or circular.
+         */
+        val at: String? = null,
+        /**
+         * A CFR section's paragraph as written, "(a)(1)".
+         */
+        val paragraph: String? = null,
+    )
+
+    @Serializable
+    data class CitationsInput(
+        /**
+         * The words as the app shows them: a finding's why, a rule's cite.
+         */
+        val text: String? = null,
+    )
+
+    @Serializable
     data class ClassBAtAltitudeInput(
         val bands: List<EngineContract.ClassBAtAltitudeInputBandsItem>,
         @SerialName("altitude_ft")
@@ -2761,8 +2805,16 @@ object EngineContract {
         val fields: List<EngineContract.CopilotField>,
         val rules: String? = null,
         val minimums: EngineContract.CopilotWatchInputMinimums? = null,
+        /**
+         * The fuel aboard, gallons: at takeoff where `started_s` is given (the engine takes the burn over the time since), else now.
+         */
         @SerialName("fuel_gal")
         val fuelGal: Double? = null,
+        /**
+         * When the flight began, s since 1970: with it the fuel aboard now is `fuel_gal` less `burn_gph` over the time from then to `now_s`, never below none (FAA-H-8083-25C ch. 16). Left out, `fuel_gal` is taken as the fuel aboard now.
+         */
+        @SerialName("started_s")
+        val startedS: Double? = null,
         @SerialName("burn_gph")
         val burnGph: Double? = null,
         @SerialName("tas_kt")
@@ -3734,6 +3786,10 @@ object EngineContract {
     data class EndorsementsInForceInputSignedItem(
         val code: String,
         val voided: Boolean? = null,
+        /**
+         * The instructor_verification verdict kept with the record; false is not signed, missing or null is not said.
+         */
+        val verified: Boolean? = null,
     )
 
     @Serializable
@@ -3921,6 +3977,13 @@ object EngineContract {
     )
 
     @Serializable
+    data class FieldNamesInput(
+        val ident: String,
+        @SerialName("icao_id")
+        val icaoId: String? = null,
+    )
+
+    @Serializable
     data class FieldsAlongAnswerItem(
         val ident: String,
         val name: String,
@@ -3961,6 +4024,10 @@ object EngineContract {
          * The site's kind in words, or null for an airport.
          */
         val words: String? = null,
+        /**
+         * Whether an airplane on wheels lands at a field of this kind: A, G and U, or no code.
+         */
+        val airplane: Boolean,
     )
 
     @Serializable
@@ -4363,7 +4430,7 @@ object EngineContract {
         @SerialName("visibility_sm")
         val visibilitySm: Double? = null,
         /**
-         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
          */
         val source: String? = null,
     )
@@ -4402,7 +4469,7 @@ object EngineContract {
         @SerialName("visibility_sm")
         val visibilitySm: Double? = null,
         /**
-         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+         * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
          */
         val source: String? = null,
         @SerialName("wind_dir_true_deg")
@@ -5474,10 +5541,15 @@ object EngineContract {
         @SerialName("fuel_max_gal")
         val fuelMaxGal: Double,
         /**
-         * 6 where not given, avgas's standard (FAA-H-8083-1B).
+         * The airplane's handbook's figure; where null or not given, its fuel_grade's standard weight: avgas 6, Jet A 6.8 lb a US gallon (FAA-H-8083-25, chapter 10), avgas where no grade is given.
          */
         @SerialName("fuel_lb_per_gal")
         val fuelLbPerGal: Double? = null,
+        /**
+         * The fuel the airplane burns, for its standard weight where its handbook gives none.
+         */
+        @SerialName("fuel_grade")
+        val fuelGrade: String? = null,
         @SerialName("start_taxi_fuel_lb")
         val startTaxiFuelLb: Double? = null,
         /**
@@ -5596,6 +5668,10 @@ object EngineContract {
          */
         @SerialName("night_passengers")
         val nightPassengers: Boolean? = null,
+        /**
+         * Whether any of the flight is in 14 CFR 91.209(a)'s period for lighted position lights, sunset to sunrise (lights_on_the_way), which begins before 1.1's night: an open squawk deferred for day flight grounds such a flight. Left out or null, `night` stands for it.
+         */
+        val lights: Boolean? = null,
         @SerialName("fuel_margin_gal")
         val fuelMarginGal: Double? = null,
         /**
@@ -7119,6 +7195,62 @@ object EngineContract {
     )
 
     @Serializable
+    data class InstructorVerificationAnswer(
+        val verified: Boolean,
+        @SerialName("registry_id")
+        val registryId: String? = null,
+        /**
+         * verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.
+         */
+        val reason: String,
+        val words: String,
+    )
+
+    @Serializable
+    data class InstructorVerificationInput(
+        /**
+         * The instructor's name as on their certificate.
+         */
+        @SerialName("instructor_name")
+        val instructorName: String,
+        /**
+         * The student's name as on their certificate.
+         */
+        @SerialName("student_name")
+        val studentName: String? = null,
+        /**
+         * YYYY-MM-DD.
+         */
+        @SerialName("signed_on")
+        val signedOn: String,
+        /**
+         * The releasable file's active flight instructor (type F) records of the instructor's last name; null where the file is not loaded.
+         */
+        val registry: List<EngineContract.InstructorVerificationInputRegistryItem>? = null,
+        /**
+         * Registry ids another Wingtip account already signs as.
+         */
+        @SerialName("bound_elsewhere")
+        val boundElsewhere: List<String>? = null,
+    )
+
+    @Serializable
+    data class InstructorVerificationInputRegistryItem(
+        /**
+         * The FAA's unique id, A or C and seven digits.
+         */
+        val id: String,
+        @SerialName("first_middle")
+        val firstMiddle: String,
+        @SerialName("last_suffix")
+        val lastSuffix: String,
+        /**
+         * YYYY-MM-DD, only for a certificate issued before 1 Dec 2024 (14 CFR 61.19(d)).
+         */
+        val expires: String? = null,
+    )
+
+    @Serializable
     data class IsaTempCInput(
         @SerialName("altitude_ft")
         val altitudeFt: Double,
@@ -7128,6 +7260,28 @@ object EngineContract {
     data class IsEastboundInput(
         @SerialName("magnetic_course_deg")
         val magneticCourseDeg: Double,
+    )
+
+    @Serializable
+    data class JurisdictionOfAnswer(
+        /**
+         * US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
+         */
+        val code: String,
+        /**
+         * The country's name as the warning starts, "Canada"; "Outside the US" for other.
+         */
+        val name: String,
+        /**
+         * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+         */
+        val caution: String? = null,
+    )
+
+    @Serializable
+    data class JurisdictionOfInput(
+        val lat: Double,
+        val lon: Double,
     )
 
     @Serializable
@@ -7338,6 +7492,26 @@ object EngineContract {
          * Its beacon's remarks as sent (BCN_LGT_SKED), whose sentence naming no light is the beacon's: "DUSK-DAWN."
          */
         val beacon: List<String>? = null,
+    )
+
+    @Serializable
+    data class LightsOnTheWayInput(
+        /**
+         * [lat, lon]
+         */
+        val start: List<Double>,
+        /**
+         * [lat, lon]
+         */
+        val end: List<Double>,
+        @SerialName("depart_s")
+        val departS: Double,
+        val minutes: Double,
+        /**
+         * In Alaska only, the reported visibility, statute miles; below 3 the lights are on whatever the sun (91.209(a)). Left out or null outside Alaska or where none is known.
+         */
+        @SerialName("alaska_visibility_sm")
+        val alaskaVisibilitySm: Double? = null,
     )
 
     @Serializable
@@ -10712,6 +10886,16 @@ object EngineContract {
     data class ReadyToFlyInputNotams(
         @SerialName("fetched_at")
         val fetchedAt: Double? = null,
+        /**
+         * Whether the NOTAMs are the full set in force (the planner's NotamsRanked.full_set); false, only those heard since heard_since, a caution (decision 0059).
+         */
+        @SerialName("full_set")
+        val fullSet: Boolean? = null,
+        /**
+         * The day the NOTAM feed was first heard, YYYY-MM-DD (NotamsRanked.coverage_since).
+         */
+        @SerialName("heard_since")
+        val heardSince: String? = null,
     )
 
     /**
@@ -10862,6 +11046,11 @@ object EngineContract {
          */
         @SerialName("vfom_m")
         val vfomM: Double? = null,
+        /**
+         * The Ownship Geometric Altitude's Vertical Warning (GDL 90 3.8): its height is not to be trusted.
+         */
+        @SerialName("vertical_warning")
+        val verticalWarning: Boolean,
     )
 
     /**
@@ -10869,7 +11058,7 @@ object EngineContract {
      */
     @Serializable
     data class ReceiverPicture(
-        val receiver: EngineContract.ReceiverPictureReceiver,
+        val receiver: EngineContract.ReceiverState,
         val ownship: EngineContract.ReceiverOwnship? = null,
         val targets: List<EngineContract.ReceiverTarget>,
         val texts: List<EngineContract.ReceiverText>,
@@ -10877,46 +11066,101 @@ object EngineContract {
     )
 
     @Serializable
-    data class ReceiverPictureReceiver(
+    data class ReceiverPositionAnswer(
         /**
-         * The name its ID message gives (Stratux, Sentry, SkyEcho).
+         * Whose fix own ship is.
          */
-        val name: String? = null,
-        @SerialName("long_name")
-        val longName: String? = null,
-        val stratux: Boolean,
-        @SerialName("heartbeat_at")
-        val heartbeatAt: Double? = null,
+        val source: String,
         /**
-         * A Heartbeat came in the last 5 s (one a second, GDL 90 3.1).
+         * The receiver's fix: good, or why it is not used (none heard, no GPS, stale, under 91.227's NIC and NACp).
          */
-        val live: Boolean,
+        val receiver: String,
         /**
-         * One line for the receiver's chip: "Stratux · 12 targets · GPS".
+         * The receiver's fix, where it is the source.
          */
-        val summary: String,
-        val gps: Boolean,
-        @SerialName("utc_ok")
-        val utcOk: Boolean,
-        @SerialName("battery_low")
-        val batteryLow: Boolean,
-        val maintenance: Boolean,
+        val fix: EngineContract.ReceiverPositionAnswerFix? = null,
+    )
+
+    @Serializable
+    data class ReceiverPositionAnswerFix(
+        val lat: Double,
+        val lon: Double,
         /**
-         * Its GPS heights are above MSL (ForeFlight's ID message), else the ellipsoid.
+         * GPS height MSL, ft, where the receiver gives MSL.
          */
-        val msl: Boolean,
-        val frames: Double,
+        @SerialName("altitude_ft")
+        val altitudeFt: Double? = null,
         /**
-         * Frames whose CRC did not match, dropped.
+         * GPS height above the WGS-84 ellipsoid, ft, where that is what the receiver gives.
          */
-        @SerialName("bad_frames")
-        val badFrames: Double,
-        @SerialName("station_lat")
-        val stationLat: Double? = null,
-        @SerialName("station_lon")
-        val stationLon: Double? = null,
-        @SerialName("station_at")
-        val stationAt: Double? = null,
+        @SerialName("ellipsoid_ft")
+        val ellipsoidFt: Double? = null,
+        /**
+         * Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4).
+         */
+        @SerialName("pressure_ft")
+        val pressureFt: Double? = null,
+        /**
+         * The pressure altitude as a flight level, at and above 18,000 ft only.
+         */
+        @SerialName("flight_level")
+        val flightLevel: Double? = null,
+        /**
+         * True track, degrees, where the report gives one.
+         */
+        @SerialName("track_deg")
+        val trackDeg: Double? = null,
+        @SerialName("groundspeed_kt")
+        val groundspeedKt: Double? = null,
+        @SerialName("vertical_fpm")
+        val verticalFpm: Double? = null,
+        /**
+         * The NACp's bound on the 95% horizontal error, m.
+         */
+        @SerialName("accuracy_m")
+        val accuracyM: Double,
+        val airborne: Boolean,
+        /**
+         * When the report was heard, Unix s.
+         */
+        val at: Double,
+    )
+
+    @Serializable
+    data class ReceiverPositionInput(
+        /**
+         * The picture's own ship.
+         */
+        val ownship: EngineContract.ReceiverOwnship? = null,
+        /**
+         * The picture's receiver.
+         */
+        val receiver: EngineContract.ReceiverState? = null,
+        /**
+         * The device's last fix, or null where it has none.
+         */
+        val device: EngineContract.ReceiverPositionInputDevice? = null,
+        /**
+         * The source the last answer gave (receiver, device or none).
+         */
+        val was: String? = null,
+        /**
+         * Now, Unix s.
+         */
+        val at: Double,
+    )
+
+    @Serializable
+    data class ReceiverPositionInputDevice(
+        /**
+         * The device's horizontal accuracy, m (a 68% radius).
+         */
+        @SerialName("accuracy_m")
+        val accuracyM: Double,
+        /**
+         * When the device's fix was taken, Unix s.
+         */
+        val at: Double,
     )
 
     @Serializable
@@ -10959,6 +11203,52 @@ object EngineContract {
          */
         val picture: EngineContract.ReceiverPicture? = null,
         val ident: String,
+    )
+
+    /**
+     * The receiver's own state, as its Heartbeat and ID message say.
+     */
+    @Serializable
+    data class ReceiverState(
+        /**
+         * The name its ID message gives (Stratux, Sentry, SkyEcho).
+         */
+        val name: String? = null,
+        @SerialName("long_name")
+        val longName: String? = null,
+        val stratux: Boolean,
+        @SerialName("heartbeat_at")
+        val heartbeatAt: Double? = null,
+        /**
+         * A Heartbeat came in the last 5 s (one a second, GDL 90 3.1).
+         */
+        val live: Boolean,
+        /**
+         * One line for the receiver's chip: "Stratux · 12 targets · GPS".
+         */
+        val summary: String,
+        val gps: Boolean,
+        @SerialName("utc_ok")
+        val utcOk: Boolean,
+        @SerialName("battery_low")
+        val batteryLow: Boolean,
+        val maintenance: Boolean,
+        /**
+         * Its GPS heights are above MSL (ForeFlight's ID message), else the ellipsoid.
+         */
+        val msl: Boolean,
+        val frames: Double,
+        /**
+         * Frames whose CRC did not match, dropped.
+         */
+        @SerialName("bad_frames")
+        val badFrames: Double,
+        @SerialName("station_lat")
+        val stationLat: Double? = null,
+        @SerialName("station_lon")
+        val stationLon: Double? = null,
+        @SerialName("station_at")
+        val stationAt: Double? = null,
     )
 
     /**
@@ -11232,6 +11522,58 @@ object EngineContract {
     )
 
     @Serializable
+    data class RouteAdizAnswer(
+        /**
+         * Each point's zone, null outside every one.
+         */
+        val points: List<String?>,
+        /**
+         * From each point to the next.
+         */
+        val legs: List<List<String>>,
+        /**
+         * Every zone the route meets, once each in order.
+         */
+        val zones: List<String>,
+        /**
+         * The Brief's line for the route, once; null where it meets no ADIZ.
+         */
+        val brief: EngineContract.RouteAdizAnswerBrief? = null,
+    )
+
+    @Serializable
+    data class RouteAdizAnswerBrief(
+        /**
+         * The finding alone, "Through the Alaska ADIZ".
+         */
+        val lead: String,
+        /**
+         * The finding and what part 99 asks, in one line.
+         */
+        val line: String,
+        /**
+         * What part 99 asks in the first zone met, its exceptions (99.1(b)) said.
+         */
+        val action: String,
+        val why: String,
+        val cite: String,
+    )
+
+    @Serializable
+    data class RouteAdizInput(
+        /**
+         * The route's points in order, as the nav log's rows: a leg from each to the next.
+         */
+        val points: List<EngineContract.RouteAdizInputPointsItem>,
+    )
+
+    @Serializable
+    data class RouteAdizInputPointsItem(
+        val lat: Double,
+        val lon: Double,
+    )
+
+    @Serializable
     data class RouteHeadwindAnswer(
         /**
          * The headwind on that leg's course, kt; negative a tailwind.
@@ -11325,6 +11667,79 @@ object EngineContract {
         val legNm: Double? = null,
         val turns: Double? = null,
         val minutes: Double? = null,
+    )
+
+    @Serializable
+    data class RouteJurisdictionAnswer(
+        /**
+         * Each point's, in order.
+         */
+        val points: List<EngineContract.RouteJurisdictionAnswerPointsItem>,
+        /**
+         * From each point to the next.
+         */
+        val legs: List<EngineContract.RouteJurisdictionAnswerLegsItem>,
+        /**
+         * Every country other than the United States the route meets, once each in order.
+         */
+        val outside: List<String>,
+        /**
+         * The Brief's line for the route, once; null where it is all in the United States.
+         */
+        val brief: EngineContract.RouteJurisdictionAnswerBrief? = null,
+    )
+
+    @Serializable
+    data class RouteJurisdictionAnswerBrief(
+        /**
+         * The finding alone.
+         */
+        val lead: String,
+        /**
+         * The finding and what to do, in one line.
+         */
+        val line: String,
+        val action: String,
+        val why: String,
+        val cite: String,
+    )
+
+    @Serializable
+    data class RouteJurisdictionAnswerLegsItem(
+        /**
+         * The countries other than the United States met along the leg, its ends included, in the order met.
+         */
+        val codes: List<String>,
+        /**
+         * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+         */
+        val caution: String? = null,
+    )
+
+    @Serializable
+    data class RouteJurisdictionAnswerPointsItem(
+        /**
+         * US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
+         */
+        val code: String,
+        /**
+         * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+         */
+        val caution: String? = null,
+    )
+
+    @Serializable
+    data class RouteJurisdictionInput(
+        /**
+         * The route's points in order, as the nav log's rows: a leg from each to the next.
+         */
+        val points: List<EngineContract.RouteJurisdictionInputPointsItem>,
+    )
+
+    @Serializable
+    data class RouteJurisdictionInputPointsItem(
+        val lat: Double,
+        val lon: Double,
     )
 
     /**
@@ -12537,6 +12952,109 @@ object EngineContract {
         val desc: String? = null,
     )
 
+    @Serializable
+    data class SpecialVfrAnswer(
+        /**
+         * Nothing known rules special VFR out.
+         */
+        val available: Boolean,
+        /**
+         * What rules it out, each with its rule.
+         */
+        val problems: List<EngineContract.SpecialVfrAnswerProblemsItem>,
+        /**
+         * What it asks, each with its rule.
+         */
+        val needs: List<EngineContract.SpecialVfrAnswerNeedsItem>,
+        /**
+         * The airport's entry in part 91 appendix D, section 3, "Chicago, IL (Chicago-O'Hare International Airport)"; null where it is not listed.
+         */
+        val listed: String? = null,
+        @SerialName("visibility_sm")
+        val visibilitySm: Double,
+        @SerialName("below_msl_ft")
+        val belowMslFt: Double,
+    )
+
+    @Serializable
+    data class SpecialVfrAnswerNeedsItem(
+        val words: String,
+        /**
+         * The rule, "14 CFR 91.157(b)(3)".
+         */
+        val source: String,
+    )
+
+    @Serializable
+    data class SpecialVfrAnswerProblemsItem(
+        val words: String,
+        /**
+         * The rule, "14 CFR 91.157(b)(3)".
+         */
+        val source: String,
+    )
+
+    @Serializable
+    data class SpecialVfrInput(
+        /**
+         * The class of the surface area the airplane is in (controlled airspace designated to the surface for an airport); null or G where it is in none.
+         */
+        @SerialName("surface_area")
+        val surfaceArea: String? = null,
+        /**
+         * The surface area's primary airport, FAA or ICAO ident, for appendix D, section 3.
+         */
+        val airport: String? = null,
+        /**
+         * Feet MSL; null where not known.
+         */
+        @SerialName("altitude_ft")
+        val altitudeFt: Double? = null,
+        /**
+         * Between sunset and sunrise; null where not known.
+         */
+        val night: Boolean? = null,
+        /**
+         * In Alaska, where 91.157(b)(4) reads the sun's elevation.
+         */
+        val alaska: Boolean? = null,
+        /**
+         * The sun's elevation, degrees (negative below the horizon); read in Alaska alone.
+         */
+        @SerialName("sun_elevation_deg")
+        val sunElevationDeg: Double? = null,
+        /**
+         * The pilot meets part 61's requirements for instrument flight (rated, and current under 61.57(c)).
+         */
+        @SerialName("instrument_current")
+        val instrumentCurrent: Boolean? = null,
+        /**
+         * The airplane is equipped as 91.205(d) asks for IFR.
+         */
+        @SerialName("ifr_equipped")
+        val ifrEquipped: Boolean? = null,
+        /**
+         * Statute miles.
+         */
+        @SerialName("flight_visibility_sm")
+        val flightVisibilitySm: Double? = null,
+        /**
+         * Statute miles, as reported at the airport; null where none is.
+         */
+        @SerialName("ground_visibility_sm")
+        val groundVisibilitySm: Double? = null,
+        /**
+         * Whether the flight can keep clear of clouds.
+         */
+        @SerialName("clear_of_clouds")
+        val clearOfClouds: Boolean? = null,
+        /**
+         * Taking off or landing under special VFR (91.157(c)).
+         */
+        @SerialName("takeoff_or_landing")
+        val takeoffOrLanding: Boolean? = null,
+    )
+
     /**
      * A place a clearance may name, as the planner or a phone's pack holds it: an airport, a navaid (NASR NAV_BASE, by its NAME) or a fix (no name).
      */
@@ -13536,6 +14054,49 @@ object EngineContract {
         override fun equals(other: Any?): Boolean = other is VfrBasicMinimumsInput
         override fun hashCode(): Int = 0
     }
+
+    @Serializable
+    data class VfrClassGNightPatternAnswer(
+        val applies: Boolean,
+        /**
+         * The least visibility it asks, 1 sm.
+         */
+        @SerialName("visibility_sm")
+        val visibilitySm: Double,
+        /**
+         * It is for a visibility under this, 3 sm.
+         */
+        @SerialName("under_visibility_sm")
+        val underVisibilitySm: Double,
+        /**
+         * 1,200 ft above the surface.
+         */
+        @SerialName("below_agl_ft")
+        val belowAglFt: Double,
+        val words: String,
+        val source: String,
+    )
+
+    @Serializable
+    data class VfrClassGNightPatternInput(
+        val `class`: String,
+        /**
+         * Feet above the surface.
+         */
+        @SerialName("agl_ft")
+        val aglFt: Double,
+        val night: Boolean? = null,
+        /**
+         * In an airport traffic pattern within 1/2 mile of the runway.
+         */
+        @SerialName("in_pattern")
+        val inPattern: Boolean? = null,
+        /**
+         * Statute miles; null where not known.
+         */
+        @SerialName("visibility_sm")
+        val visibilitySm: Double? = null,
+    )
 
     @Serializable
     data class VfrFloorsAnswerItem(

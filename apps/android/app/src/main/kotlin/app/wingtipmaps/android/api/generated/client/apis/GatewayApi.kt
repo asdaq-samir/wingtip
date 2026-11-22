@@ -241,6 +241,19 @@ interface GatewayApi {
     suspend fun confirm(@Query("token") token: kotlin.String): Response<Unit>
 
     /**
+     * GET api/me/connections
+     * The signed-in pilot&#39;s connected AI apps
+     * Each connection made through the connector, newest first: its id, the app&#39;s name, the scopes granted, when its token was last issued and until when it may be renewed.
+     * Responses:
+     *  - 200: Their connections
+     *  - 401: No session
+     *
+     * @return [kotlin.collections.List<app.wingtipmaps.android.api.generated.gateway.ConnectionDto>]
+     */
+    @GET("api/me/connections")
+    suspend fun connections(): Response<kotlin.collections.List<app.wingtipmaps.android.api.generated.gateway.ConnectionDto>>
+
+    /**
      * GET api/logbook/currency
      *
      *
@@ -308,6 +321,21 @@ interface GatewayApi {
     suspend fun deleteTrack(@Path("id") id: kotlin.Long): Response<Unit>
 
     /**
+     * DELETE api/me/connections/{id}
+     * Disconnect one connected AI app
+     * Its access and refresh tokens are revoked at once, so the app&#39;s next call is refused; the consent goes with the last connection through that app, so connecting again asks again.
+     * Responses:
+     *  - 204: Disconnected
+     *  - 401: No session
+     *  - 404: No such connection of theirs
+     *
+     * @param id The connection&#39;s id, as listed
+     * @return [Unit]
+     */
+    @DELETE("api/me/connections/{id}")
+    suspend fun disconnect(@Path("id") id: kotlin.String): Response<Unit>
+
+    /**
      * DELETE api/training/instructors/{id}
      *
      *
@@ -349,7 +377,7 @@ interface GatewayApi {
     /**
      * GET api/me/export
      * Everything kept for the signed-in pilot, as one JSON file
-     * The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar&#39;s photo as a data: URL; the pilot&#39;s own checkpoint notes, reminders, subscription and connected AI apps (never a token); sent as a download.
+     * The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the avatar&#39;s photo as a data: URL; the pilot&#39;s own checkpoint notes, reminders and connected AI apps (never a token); sent as a download.
      * Responses:
      *  - 200: The file
      *  - 401: No session
@@ -689,6 +717,7 @@ interface GatewayApi {
      */
     @GET("api/diagnostics")
     suspend fun recent(@Query("days") days: kotlin.Int? = 7): Response<kotlin.collections.List<app.wingtipmaps.android.api.generated.gateway.DiagnosticDto>>
+
     /**
      * GET api/logbook/reminders
      *
@@ -965,18 +994,6 @@ interface GatewayApi {
     suspend fun squawks(@Path("id") id: kotlin.Long): Response<kotlin.collections.List<app.wingtipmaps.android.api.generated.gateway.SquawkDto>>
 
     /**
-     * POST api/subscription/trial
-     * Start the free month
-     * Once an account: 409 once it has been started, even after it ended. On the website; in the iOS and Android apps the free month is the store&#39;s introductory offer.
-     * Responses:
-     *  - 200: OK
-     *
-     * @return [app.wingtipmaps.android.api.generated.gateway.SubscriptionDto]
-     */
-    @POST("api/subscription/trial")
-    suspend fun startTrial(): Response<app.wingtipmaps.android.api.generated.gateway.SubscriptionDto>
-
-    /**
      * GET api/flight-service
      *
      *
@@ -1000,18 +1017,6 @@ interface GatewayApi {
      */
     @GET("api/instructor/students/{studentId}/training")
     suspend fun student(@Path("studentId") studentId: kotlin.Long): Response<app.wingtipmaps.android.api.generated.gateway.TrainingDto>
-
-    /**
-     * GET api/subscription
-     * The pilot&#39;s subscription, with this month&#39;s uses against each cap
-     *
-     * Responses:
-     *  - 200: OK
-     *
-     * @return [app.wingtipmaps.android.api.generated.gateway.SubscriptionDto]
-     */
-    @GET("api/subscription")
-    suspend fun subscriptionGet(): Response<app.wingtipmaps.android.api.generated.gateway.SubscriptionDto>
 
     /**
      * GET api/flights/{id}/track

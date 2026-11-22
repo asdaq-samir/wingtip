@@ -174,7 +174,7 @@ export const WORDING = {
   answerGarbled: "The planner's answer came back garbled. Try again in a moment.",
   /** The planner refused with a server error and no words of its own (the web's describeError). */
   plannerNotAnswering: "The planner is not answering. Try again in a moment.",
-  /** The Nav Log with no route (owner rec 4). */
+  /** The Nav Log with no route. */
   navLogEmpty: "Plan a route on FPL; its legs are listed here.",
   /** A report with no broken or overcast layer, a figure's value (14 CFR 1.1, "ceiling"). */
   noCeiling: "No ceiling",
@@ -222,8 +222,6 @@ export const WORDING = {
   mostHeadwind: "Most Headwind",
   /** The first route's wait for the phone's position. */
   findingWhereYouAre: "Finding where you are…",
-  /** The Nav Log with no route. */
-  navLogEmpty: "Plan a route on FPL; its legs are listed here.",
   /** Flying mode's way out for this flight. */
   doneFlying: "Done Flying",
   /** The Map card's switch that lets the map's words follow the text size, up to 1.2 times. */

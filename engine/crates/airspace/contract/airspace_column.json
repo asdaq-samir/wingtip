@@ -40,6 +40,13 @@
                   "null"
                 ]
               },
+              "ident": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The primary airport's identifier where NASR's Class Airspace file names one (IDENT), which special_vfr reads for part 91 Appendix D."
+              },
               "floor_ft": {
                 "type": "number"
               },

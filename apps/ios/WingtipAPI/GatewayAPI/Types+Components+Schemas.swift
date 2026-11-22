@@ -109,23 +109,15 @@ extension Components {
         public struct AccountRecordsDto: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/AccountRecordsDto/remindersSent`.
             public var remindersSent: [Components.Schemas.SentReminder]
-            /// - Remark: Generated from `#/components/schemas/AccountRecordsDto/subscription`.
-            public var subscription: Components.Schemas.SubscriptionRow?
             /// Creates a new `AccountRecordsDto`.
             ///
             /// - Parameters:
             ///   - remindersSent:
-            ///   - subscription:
-            public init(
-                remindersSent: [Components.Schemas.SentReminder],
-                subscription: Components.Schemas.SubscriptionRow? = nil
-            ) {
+            public init(remindersSent: [Components.Schemas.SentReminder]) {
                 self.remindersSent = remindersSent
-                self.subscription = subscription
             }
             public enum CodingKeys: String, CodingKey {
                 case remindersSent
-                case subscription
             }
         }
         /// - Remark: Generated from `#/components/schemas/AircraftDto`.
@@ -773,29 +765,62 @@ extension Components {
             ///
             /// - Remark: Generated from `#/components/schemas/Capabilities/providers`.
             public var providers: [Swift.String]
-            /// Whether this deployment sells the subscription; where not, the page says nothing of one.
-            ///
-            /// - Remark: Generated from `#/components/schemas/Capabilities/subscriptions`.
-            public var subscriptions: Swift.Bool
             /// Creates a new `Capabilities`.
             ///
             /// - Parameters:
             ///   - access: SIGN_IN: a session can be had, and the developer's workspace needs the role. OPEN: nobody can sign in and everything is open (the local stack). CLOSED: nobody can sign in, and writes and the developer's workspace are refused.
             ///   - providers: The OIDC providers with real credentials, by registration id: the sign-in buttons to offer. Empty where only the emailed link signs in (the local stack).
-            ///   - subscriptions: Whether this deployment sells the subscription; where not, the page says nothing of one.
             public init(
                 access: Swift.String,
-                providers: [Swift.String],
-                subscriptions: Swift.Bool
+                providers: [Swift.String]
             ) {
                 self.access = access
                 self.providers = providers
-                self.subscriptions = subscriptions
             }
             public enum CodingKeys: String, CodingKey {
                 case access
                 case providers
-                case subscriptions
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ConnectionDto`.
+        public struct ConnectionDto: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ConnectionDto/app`.
+            public var app: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ConnectionDto/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ConnectionDto/renewedAt`.
+            public var renewedAt: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ConnectionDto/scopes`.
+            public var scopes: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ConnectionDto/until`.
+            public var until: Swift.String?
+            /// Creates a new `ConnectionDto`.
+            ///
+            /// - Parameters:
+            ///   - app:
+            ///   - id:
+            ///   - renewedAt:
+            ///   - scopes:
+            ///   - until:
+            public init(
+                app: Swift.String,
+                id: Swift.String,
+                renewedAt: Swift.String? = nil,
+                scopes: Swift.String? = nil,
+                until: Swift.String? = nil
+            ) {
+                self.app = app
+                self.id = id
+                self.renewedAt = renewedAt
+                self.scopes = scopes
+                self.until = until
+            }
+            public enum CodingKeys: String, CodingKey {
+                case app
+                case id
+                case renewedAt
+                case scopes
+                case until
             }
         }
         /// - Remark: Generated from `#/components/schemas/ConnectorGrantDto`.
@@ -4076,6 +4101,8 @@ extension Components {
             public var fields: Components.Schemas.SignedEndorsementDto.FieldsPayload
             /// - Remark: Generated from `#/components/schemas/SignedEndorsementDto/id`.
             public var id: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/SignedEndorsementDto/instructorVerified`.
+            public var instructorVerified: Swift.Bool
             /// - Remark: Generated from `#/components/schemas/SignedEndorsementDto/signature`.
             public var signature: Swift.String
             /// - Remark: Generated from `#/components/schemas/SignedEndorsementDto/signedOn`.
@@ -4086,6 +4113,8 @@ extension Components {
             public var text: Swift.String
             /// - Remark: Generated from `#/components/schemas/SignedEndorsementDto/until`.
             public var until: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SignedEndorsementDto/verification`.
+            public var verification: Swift.String?
             /// - Remark: Generated from `#/components/schemas/SignedEndorsementDto/voided`.
             public var voided: Swift.Bool
             /// Creates a new `SignedEndorsementDto`.
@@ -4095,33 +4124,39 @@ extension Components {
             ///   - digest:
             ///   - fields:
             ///   - id:
+            ///   - instructorVerified:
             ///   - signature:
             ///   - signedOn:
             ///   - studentName:
             ///   - text:
             ///   - until:
+            ///   - verification:
             ///   - voided:
             public init(
                 code: Swift.String,
                 digest: Swift.String,
                 fields: Components.Schemas.SignedEndorsementDto.FieldsPayload,
                 id: Swift.Int,
+                instructorVerified: Swift.Bool,
                 signature: Swift.String,
                 signedOn: Swift.String,
                 studentName: Swift.String,
                 text: Swift.String,
                 until: Swift.String? = nil,
+                verification: Swift.String? = nil,
                 voided: Swift.Bool
             ) {
                 self.code = code
                 self.digest = digest
                 self.fields = fields
                 self.id = id
+                self.instructorVerified = instructorVerified
                 self.signature = signature
                 self.signedOn = signedOn
                 self.studentName = studentName
                 self.text = text
                 self.until = until
+                self.verification = verification
                 self.voided = voided
             }
             public enum CodingKeys: String, CodingKey {
@@ -4129,11 +4164,13 @@ extension Components {
                 case digest
                 case fields
                 case id
+                case instructorVerified
                 case signature
                 case signedOn
                 case studentName
                 case text
                 case until
+                case verification
                 case voided
             }
         }
@@ -4382,128 +4419,6 @@ extension Components {
                 case reviewsWaiting
                 case soloUntil
                 case studentId
-            }
-        }
-        /// The signed-in pilot's subscription to the paid features
-        ///
-        /// - Remark: Generated from `#/components/schemas/SubscriptionDto`.
-        public struct SubscriptionDto: Codable, Hashable, Sendable {
-            /// Whether the paid features are theirs now
-            ///
-            /// - Remark: Generated from `#/components/schemas/SubscriptionDto/entitled`.
-            public var entitled: Swift.Bool
-            /// MONTHLY or YEARLY, when paid for
-            ///
-            /// - Remark: Generated from `#/components/schemas/SubscriptionDto/plan`.
-            public var plan: Swift.String?
-            /// FREE (none), TRIAL (the free month), SUBSCRIBED (paid for), or COMPED (given: a developer's, an instructor's)
-            ///
-            /// - Remark: Generated from `#/components/schemas/SubscriptionDto/state`.
-            public var state: Swift.String
-            /// Where it was bought, when paid for
-            ///
-            /// - Remark: Generated from `#/components/schemas/SubscriptionDto/store`.
-            public var store: Swift.String?
-            /// Whether the free month is still theirs to start: once an account
-            ///
-            /// - Remark: Generated from `#/components/schemas/SubscriptionDto/trialAvailable`.
-            public var trialAvailable: Swift.Bool
-            /// The free month's length, days
-            ///
-            /// - Remark: Generated from `#/components/schemas/SubscriptionDto/trialDays`.
-            public var trialDays: Swift.Int
-            /// When the free month or the paid time runs out; null for FREE and COMPED
-            ///
-            /// - Remark: Generated from `#/components/schemas/SubscriptionDto/until`.
-            public var until: Swift.String?
-            /// Creates a new `SubscriptionDto`.
-            ///
-            /// - Parameters:
-            ///   - entitled: Whether the paid features are theirs now
-            ///   - plan: MONTHLY or YEARLY, when paid for
-            ///   - state: FREE (none), TRIAL (the free month), SUBSCRIBED (paid for), or COMPED (given: a developer's, an instructor's)
-            ///   - store: Where it was bought, when paid for
-            ///   - trialAvailable: Whether the free month is still theirs to start: once an account
-            ///   - trialDays: The free month's length, days
-            ///   - until: When the free month or the paid time runs out; null for FREE and COMPED
-            public init(
-                entitled: Swift.Bool,
-                plan: Swift.String? = nil,
-                state: Swift.String,
-                store: Swift.String? = nil,
-                trialAvailable: Swift.Bool,
-                trialDays: Swift.Int,
-                until: Swift.String? = nil
-            ) {
-                self.entitled = entitled
-                self.plan = plan
-                self.state = state
-                self.store = store
-                self.trialAvailable = trialAvailable
-                self.trialDays = trialDays
-                self.until = until
-            }
-            public enum CodingKeys: String, CodingKey {
-                case entitled
-                case plan
-                case state
-                case store
-                case trialAvailable
-                case trialDays
-                case until
-            }
-        }
-        /// - Remark: Generated from `#/components/schemas/SubscriptionRow`.
-        public struct SubscriptionRow: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/SubscriptionRow/paidUntil`.
-            public var paidUntil: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/SubscriptionRow/plan`.
-            public var plan: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/SubscriptionRow/store`.
-            public var store: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/SubscriptionRow/storeRef`.
-            public var storeRef: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/SubscriptionRow/trialEndsAt`.
-            public var trialEndsAt: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/SubscriptionRow/trialStartedAt`.
-            public var trialStartedAt: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/SubscriptionRow/updatedAt`.
-            public var updatedAt: Swift.String
-            /// Creates a new `SubscriptionRow`.
-            ///
-            /// - Parameters:
-            ///   - paidUntil:
-            ///   - plan:
-            ///   - store:
-            ///   - storeRef:
-            ///   - trialEndsAt:
-            ///   - trialStartedAt:
-            ///   - updatedAt:
-            public init(
-                paidUntil: Swift.String? = nil,
-                plan: Swift.String? = nil,
-                store: Swift.String? = nil,
-                storeRef: Swift.String? = nil,
-                trialEndsAt: Swift.String? = nil,
-                trialStartedAt: Swift.String? = nil,
-                updatedAt: Swift.String
-            ) {
-                self.paidUntil = paidUntil
-                self.plan = plan
-                self.store = store
-                self.storeRef = storeRef
-                self.trialEndsAt = trialEndsAt
-                self.trialStartedAt = trialStartedAt
-                self.updatedAt = updatedAt
-            }
-            public enum CodingKeys: String, CodingKey {
-                case paidUntil
-                case plan
-                case store
-                case storeRef
-                case trialEndsAt
-                case trialStartedAt
-                case updatedAt
             }
         }
         /// - Remark: Generated from `#/components/schemas/TrackDto`.

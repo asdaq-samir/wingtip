@@ -2022,7 +2022,8 @@ extension Components {
         }
         /// One class of airspace over a point, from `floor_ft` to
         /// `ceiling_ft` MSL (wingtip.airspace_at): its name where it is a B, C or
-        /// D; the VFR minimums in it (None in A); what it takes to go in; the
+        /// D, and its primary airport (`ident`); the VFR minimums in it (None in
+        /// A); what it takes to go in; the
         /// equipment it asks for; and the 91.117 speed limit there.
         ///
         /// - Remark: Generated from `#/components/schemas/AirspaceBand`.
@@ -2037,6 +2038,8 @@ extension Components {
             public var equipment: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirspaceBand/floor_ft`.
             public var floorFt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/AirspaceBand/ident`.
+            public var ident: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirspaceBand/minimums`.
             public var minimums: Components.Schemas.DayNightMinimums?
             /// - Remark: Generated from `#/components/schemas/AirspaceBand/name`.
@@ -2051,6 +2054,7 @@ extension Components {
             ///   - entry:
             ///   - equipment:
             ///   - floorFt:
+            ///   - ident:
             ///   - minimums:
             ///   - name:
             ///   - speedKt:
@@ -2060,6 +2064,7 @@ extension Components {
                 entry: Swift.String,
                 equipment: Swift.String? = nil,
                 floorFt: Swift.Double,
+                ident: Swift.String? = nil,
                 minimums: Components.Schemas.DayNightMinimums? = nil,
                 name: Swift.String? = nil,
                 speedKt: Swift.Int? = nil
@@ -2069,6 +2074,7 @@ extension Components {
                 self.entry = entry
                 self.equipment = equipment
                 self.floorFt = floorFt
+                self.ident = ident
                 self.minimums = minimums
                 self.name = name
                 self.speedKt = speedKt
@@ -2079,6 +2085,7 @@ extension Components {
                 case entry
                 case equipment
                 case floorFt = "floor_ft"
+                case ident
                 case minimums
                 case name
                 case speedKt = "speed_kt"
@@ -3286,6 +3293,87 @@ extension Components {
                 case predictedScore = "predicted_score"
                 case selected
                 case waypoint
+            }
+        }
+        /// A subpart, or the sections before the first.
+        ///
+        /// - Remark: Generated from `#/components/schemas/CfrGroup`.
+        public struct CfrGroup: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/CfrGroup/head`.
+            public var head: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CfrGroup/sections`.
+            public var sections: [Components.Schemas.CfrSection]
+            /// Creates a new `CfrGroup`.
+            ///
+            /// - Parameters:
+            ///   - head:
+            ///   - sections:
+            public init(
+                head: Swift.String,
+                sections: [Components.Schemas.CfrSection]
+            ) {
+                self.head = head
+                self.sections = sections
+            }
+            public enum CodingKeys: String, CodingKey {
+                case head
+                case sections
+            }
+        }
+        /// A section, or an appendix or SFAR read as one.
+        ///
+        /// - Remark: Generated from `#/components/schemas/CfrSection`.
+        public struct CfrSection: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/CfrSection/head`.
+            public var head: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CfrSection/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CfrSection/paragraphs`.
+            public var paragraphs: [Swift.String]
+            /// Creates a new `CfrSection`.
+            ///
+            /// - Parameters:
+            ///   - head:
+            ///   - id:
+            ///   - paragraphs:
+            public init(
+                head: Swift.String,
+                id: Swift.String,
+                paragraphs: [Swift.String]
+            ) {
+                self.head = head
+                self.id = id
+                self.paragraphs = paragraphs
+            }
+            public enum CodingKeys: String, CodingKey {
+                case head
+                case id
+                case paragraphs
+            }
+        }
+        /// A CFR part's text in one edition (the eCFR's issue date).
+        ///
+        /// - Remark: Generated from `#/components/schemas/CfrText`.
+        public struct CfrText: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/CfrText/groups`.
+            public var groups: [Components.Schemas.CfrGroup]
+            /// - Remark: Generated from `#/components/schemas/CfrText/head`.
+            public var head: Swift.String
+            /// Creates a new `CfrText`.
+            ///
+            /// - Parameters:
+            ///   - groups:
+            ///   - head:
+            public init(
+                groups: [Components.Schemas.CfrGroup],
+                head: Swift.String
+            ) {
+                self.groups = groups
+                self.head = head
+            }
+            public enum CodingKeys: String, CodingKey {
+                case groups
+                case head
             }
         }
         /// A briefing read twice, as GET /api/briefing answered it then and
@@ -10000,8 +10088,12 @@ extension Components {
             public var departure: Swift.String
             /// - Remark: Generated from `#/components/schemas/FuelStopSuggestion/destination`.
             public var destination: Swift.String
+            /// - Remark: Generated from `#/components/schemas/FuelStopSuggestion/passes`.
+            public var passes: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/FuelStopSuggestion/reason`.
             public var reason: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/FuelStopSuggestion/short`.
+            public var short: Components.Schemas.ShortFlight?
             /// - Remark: Generated from `#/components/schemas/FuelStopSuggestion/stops`.
             public var stops: [Components.Schemas.FuelStop]
             /// - Remark: Generated from `#/components/schemas/FuelStopSuggestion/usable_gal`.
@@ -10012,21 +10104,27 @@ extension Components {
             ///   - choices:
             ///   - departure:
             ///   - destination:
+            ///   - passes:
             ///   - reason:
+            ///   - short:
             ///   - stops:
             ///   - usableGal:
             public init(
                 choices: [Components.Schemas.FuelStop]? = nil,
                 departure: Swift.String,
                 destination: Swift.String,
+                passes: Swift.Bool? = nil,
                 reason: Swift.String? = nil,
+                short: Components.Schemas.ShortFlight? = nil,
                 stops: [Components.Schemas.FuelStop],
                 usableGal: Swift.Double
             ) {
                 self.choices = choices
                 self.departure = departure
                 self.destination = destination
+                self.passes = passes
                 self.reason = reason
+                self.short = short
                 self.stops = stops
                 self.usableGal = usableGal
             }
@@ -10034,7 +10132,9 @@ extension Components {
                 case choices
                 case departure
                 case destination
+                case passes
                 case reason
+                case short
                 case stops
                 case usableGal = "usable_gal"
             }
@@ -11132,6 +11232,90 @@ extension Components {
                 case vorCheck
             }
         }
+        /// Whether the FAA airmen registry bears the instructor out (the
+        /// engine's instructor_verification).
+        ///
+        /// - Remark: Generated from `#/components/schemas/InstructorVerification`.
+        public struct InstructorVerification: Codable, Hashable, Sendable {
+            /// verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InstructorVerification/reason`.
+            public var reason: Swift.String
+            /// The FAA's unique id of the record matched, where one was.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InstructorVerification/registry_id`.
+            public var registryId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/InstructorVerification/verified`.
+            public var verified: Swift.Bool
+            /// The verdict as the pilot reads it.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InstructorVerification/words`.
+            public var words: Swift.String
+            /// Creates a new `InstructorVerification`.
+            ///
+            /// - Parameters:
+            ///   - reason: verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.
+            ///   - registryId: The FAA's unique id of the record matched, where one was.
+            ///   - verified:
+            ///   - words: The verdict as the pilot reads it.
+            public init(
+                reason: Swift.String,
+                registryId: Swift.String? = nil,
+                verified: Swift.Bool,
+                words: Swift.String
+            ) {
+                self.reason = reason
+                self.registryId = registryId
+                self.verified = verified
+                self.words = words
+            }
+            public enum CodingKeys: String, CodingKey {
+                case reason
+                case registryId = "registry_id"
+                case verified
+                case words
+            }
+        }
+        /// An instructor about to sign for a student: both names as on their
+        /// certificates, the day, and the FAA records other accounts sign as.
+        ///
+        /// - Remark: Generated from `#/components/schemas/InstructorVerificationAsk`.
+        public struct InstructorVerificationAsk: Codable, Hashable, Sendable {
+            /// FAA unique ids another Wingtip account already signs as.
+            ///
+            /// - Remark: Generated from `#/components/schemas/InstructorVerificationAsk/bound_elsewhere`.
+            public var boundElsewhere: [Swift.String]?
+            /// - Remark: Generated from `#/components/schemas/InstructorVerificationAsk/instructor_name`.
+            public var instructorName: Swift.String
+            /// - Remark: Generated from `#/components/schemas/InstructorVerificationAsk/signed_on`.
+            public var signedOn: Swift.String
+            /// - Remark: Generated from `#/components/schemas/InstructorVerificationAsk/student_name`.
+            public var studentName: Swift.String?
+            /// Creates a new `InstructorVerificationAsk`.
+            ///
+            /// - Parameters:
+            ///   - boundElsewhere: FAA unique ids another Wingtip account already signs as.
+            ///   - instructorName:
+            ///   - signedOn:
+            ///   - studentName:
+            public init(
+                boundElsewhere: [Swift.String]? = nil,
+                instructorName: Swift.String,
+                signedOn: Swift.String,
+                studentName: Swift.String? = nil
+            ) {
+                self.boundElsewhere = boundElsewhere
+                self.instructorName = instructorName
+                self.signedOn = signedOn
+                self.studentName = studentName
+            }
+            public enum CodingKeys: String, CodingKey {
+                case boundElsewhere = "bound_elsewhere"
+                case instructorName = "instructor_name"
+                case signedOn = "signed_on"
+                case studentName = "student_name"
+            }
+        }
         /// One ITWS alert (wingtip.itws): what (`alert`: microburst, wind
         /// shear, gust front, tornado, storm cell) and its words as a pilot is
         /// told them ("Runway 27L arrival microburst alert 40 kt, runway to 3
@@ -11798,6 +11982,85 @@ extension Components {
                 case path
             }
         }
+        /// The shelf in its order.
+        ///
+        /// - Remark: Generated from `#/components/schemas/Library`.
+        public struct Library: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Library/documents`.
+            public var documents: [Components.Schemas.LibraryDocument]
+            /// Creates a new `Library`.
+            ///
+            /// - Parameters:
+            ///   - documents:
+            public init(documents: [Components.Schemas.LibraryDocument]) {
+                self.documents = documents
+            }
+            public enum CodingKeys: String, CodingKey {
+                case documents
+            }
+        }
+        /// One document of the shelf, by the name the engine's citations give
+        /// it (cfr-14-91, aim, ac-61-65, phak).
+        ///
+        /// - Remark: Generated from `#/components/schemas/LibraryDocument`.
+        public struct LibraryDocument: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/LibraryDocument/bytes`.
+            public var bytes: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/LibraryDocument/date`.
+            public var date: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/LibraryDocument/edition`.
+            public var edition: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/LibraryDocument/group`.
+            public var group: Swift.String
+            /// - Remark: Generated from `#/components/schemas/LibraryDocument/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/LibraryDocument/kind`.
+            public var kind: Swift.String
+            /// - Remark: Generated from `#/components/schemas/LibraryDocument/label`.
+            public var label: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/LibraryDocument/title`.
+            public var title: Swift.String
+            /// Creates a new `LibraryDocument`.
+            ///
+            /// - Parameters:
+            ///   - bytes:
+            ///   - date:
+            ///   - edition:
+            ///   - group:
+            ///   - id:
+            ///   - kind:
+            ///   - label:
+            ///   - title:
+            public init(
+                bytes: Swift.Int? = nil,
+                date: Swift.String? = nil,
+                edition: Swift.String? = nil,
+                group: Swift.String,
+                id: Swift.String,
+                kind: Swift.String,
+                label: Swift.String? = nil,
+                title: Swift.String
+            ) {
+                self.bytes = bytes
+                self.date = date
+                self.edition = edition
+                self.group = group
+                self.id = id
+                self.kind = kind
+                self.label = label
+                self.title = title
+            }
+            public enum CodingKeys: String, CodingKey {
+                case bytes
+                case date
+                case edition
+                case group
+                case id
+                case kind
+                case label
+                case title
+            }
+        }
         /// A sentence of the remarks the engine could not read as systems: its
         /// contractions written out, every other word kept (`words`), and as
         /// sent (`as_written`).
@@ -12035,6 +12298,8 @@ extension Components {
             public var envelope: [[Swift.Double]]
             /// - Remark: Generated from `#/components/schemas/Loading/fuel_arm_in`.
             public var fuelArmIn: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/Loading/fuel_grade`.
+            public var fuelGrade: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Loading/fuel_lb_per_gal`.
             public var fuelLbPerGal: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/Loading/fuel_max_gal`.
@@ -12061,6 +12326,7 @@ extension Components {
             ///   - baggageCombinedMaxLb:
             ///   - envelope:
             ///   - fuelArmIn:
+            ///   - fuelGrade:
             ///   - fuelLbPerGal:
             ///   - fuelMaxGal:
             ///   - maxLandingLb:
@@ -12075,6 +12341,7 @@ extension Components {
                 baggageCombinedMaxLb: Swift.Double? = nil,
                 envelope: [[Swift.Double]],
                 fuelArmIn: Swift.Double,
+                fuelGrade: Swift.String? = nil,
                 fuelLbPerGal: Swift.Double? = nil,
                 fuelMaxGal: Swift.Double,
                 maxLandingLb: Swift.Double,
@@ -12089,6 +12356,7 @@ extension Components {
                 self.baggageCombinedMaxLb = baggageCombinedMaxLb
                 self.envelope = envelope
                 self.fuelArmIn = fuelArmIn
+                self.fuelGrade = fuelGrade
                 self.fuelLbPerGal = fuelLbPerGal
                 self.fuelMaxGal = fuelMaxGal
                 self.maxLandingLb = maxLandingLb
@@ -12104,6 +12372,7 @@ extension Components {
                 case baggageCombinedMaxLb = "baggage_combined_max_lb"
                 case envelope
                 case fuelArmIn = "fuel_arm_in"
+                case fuelGrade = "fuel_grade"
                 case fuelLbPerGal = "fuel_lb_per_gal"
                 case fuelMaxGal = "fuel_max_gal"
                 case maxLandingLb = "max_landing_lb"
@@ -13896,6 +14165,40 @@ extension Components {
                 case updatedAt = "updated_at"
             }
         }
+        /// A flight short of fuel the planner offers no stop on, and why: the
+        /// fuel on board at the start under its start, taxi and reserve already
+        /// (`on_board`, 14 CFR 91.151(a), 91.167(a)), or no field with fuel in
+        /// reach of the tanks.
+        ///
+        /// - Remark: Generated from `#/components/schemas/NoFuelStop`.
+        public struct NoFuelStop: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/NoFuelStop/departure`.
+            public var departure: Swift.String
+            /// - Remark: Generated from `#/components/schemas/NoFuelStop/destination`.
+            public var destination: Swift.String
+            /// - Remark: Generated from `#/components/schemas/NoFuelStop/on_board`.
+            public var onBoard: Swift.Bool?
+            /// Creates a new `NoFuelStop`.
+            ///
+            /// - Parameters:
+            ///   - departure:
+            ///   - destination:
+            ///   - onBoard:
+            public init(
+                departure: Swift.String,
+                destination: Swift.String,
+                onBoard: Swift.Bool? = nil
+            ) {
+                self.departure = departure
+                self.destination = destination
+                self.onBoard = onBoard
+            }
+            public enum CodingKeys: String, CodingKey {
+                case departure
+                case destination
+                case onBoard = "on_board"
+            }
+        }
         /// Why it bears on the flight, or does not, in the engine's words.
         ///
         /// - Remark: Generated from `#/components/schemas/NotamReason`.
@@ -13923,13 +14226,15 @@ extension Components {
         }
         /// The flight's NOTAMs best first, every one heard (`notams`), how many
         /// are said first (`top`), the day the NOTAM feed was first heard
-        /// (`coverage_since`: earlier NOTAMs never changed since are not held) and
-        /// what could not be checked ("tfrs").
+        /// (`coverage_since`), whether the planner holds every NOTAM in force
+        /// (`full_set`) and what could not be checked ("tfrs").
         ///
         /// - Remark: Generated from `#/components/schemas/NotamsRanked`.
         public struct NotamsRanked: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/NotamsRanked/coverage_since`.
             public var coverageSince: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/NotamsRanked/full_set`.
+            public var fullSet: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/NotamsRanked/notams`.
             public var notams: [Components.Schemas.RankedNotam]
             /// - Remark: Generated from `#/components/schemas/NotamsRanked/time_zone`.
@@ -13942,18 +14247,21 @@ extension Components {
             ///
             /// - Parameters:
             ///   - coverageSince:
+            ///   - fullSet:
             ///   - notams:
             ///   - timeZone:
             ///   - top:
             ///   - unchecked:
             public init(
                 coverageSince: Swift.String? = nil,
+                fullSet: Swift.Bool? = nil,
                 notams: [Components.Schemas.RankedNotam],
                 timeZone: Swift.String? = nil,
                 top: Swift.Int,
                 unchecked: [Swift.String]? = nil
             ) {
                 self.coverageSince = coverageSince
+                self.fullSet = fullSet
                 self.notams = notams
                 self.timeZone = timeZone
                 self.top = top
@@ -13961,6 +14269,7 @@ extension Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case coverageSince = "coverage_since"
+                case fullSet = "full_set"
                 case notams
                 case timeZone = "time_zone"
                 case top
@@ -14126,101 +14435,6 @@ extension Components {
                 case kind
                 case ntsbNo = "ntsb_no"
                 case phase
-                case state
-            }
-        }
-        /// One NTSB case of the airplane (wingtip.history.ntsb), its texts
-        /// verbatim: where and when (the local date), its phase of flight and
-        /// highest injury in the NTSB's words, its probable cause once the final
-        /// report is out, and its narrative (the final report's, else the
-        /// preliminary's factual one).
-        ///
-        /// - Remark: Generated from `#/components/schemas/NtsbEvent`.
-        public struct NtsbEvent: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/NtsbEvent/carol_url`.
-            public var carolUrl: Swift.String
-            /// - Remark: Generated from `#/components/schemas/NtsbEvent/city`.
-            public var city: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/NtsbEvent/country`.
-            public var country: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/NtsbEvent/date`.
-            public var date: Swift.String
-            /// - Remark: Generated from `#/components/schemas/NtsbEvent/docket_url`.
-            public var docketUrl: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/NtsbEvent/ev_id`.
-            public var evId: Swift.String
-            /// - Remark: Generated from `#/components/schemas/NtsbEvent/highest_injury`.
-            public var highestInjury: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/NtsbEvent/narrative`.
-            public var narrative: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/NtsbEvent/narrative_kind`.
-            public var narrativeKind: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/NtsbEvent/ntsb_no`.
-            public var ntsbNo: Swift.String
-            /// - Remark: Generated from `#/components/schemas/NtsbEvent/phase`.
-            public var phase: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/NtsbEvent/probable_cause`.
-            public var probableCause: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/NtsbEvent/state`.
-            public var state: Swift.String?
-            /// Creates a new `NtsbEvent`.
-            ///
-            /// - Parameters:
-            ///   - carolUrl:
-            ///   - city:
-            ///   - country:
-            ///   - date:
-            ///   - docketUrl:
-            ///   - evId:
-            ///   - highestInjury:
-            ///   - narrative:
-            ///   - narrativeKind:
-            ///   - ntsbNo:
-            ///   - phase:
-            ///   - probableCause:
-            ///   - state:
-            public init(
-                carolUrl: Swift.String,
-                city: Swift.String? = nil,
-                country: Swift.String? = nil,
-                date: Swift.String,
-                docketUrl: Swift.String? = nil,
-                evId: Swift.String,
-                highestInjury: Swift.String? = nil,
-                narrative: Swift.String? = nil,
-                narrativeKind: Swift.String? = nil,
-                ntsbNo: Swift.String,
-                phase: Swift.String? = nil,
-                probableCause: Swift.String? = nil,
-                state: Swift.String? = nil
-            ) {
-                self.carolUrl = carolUrl
-                self.city = city
-                self.country = country
-                self.date = date
-                self.docketUrl = docketUrl
-                self.evId = evId
-                self.highestInjury = highestInjury
-                self.narrative = narrative
-                self.narrativeKind = narrativeKind
-                self.ntsbNo = ntsbNo
-                self.phase = phase
-                self.probableCause = probableCause
-                self.state = state
-            }
-            public enum CodingKeys: String, CodingKey {
-                case carolUrl = "carol_url"
-                case city
-                case country
-                case date
-                case docketUrl = "docket_url"
-                case evId = "ev_id"
-                case highestInjury = "highest_injury"
-                case narrative
-                case narrativeKind = "narrative_kind"
-                case ntsbNo = "ntsb_no"
-                case phase
-                case probableCause = "probable_cause"
                 case state
             }
         }
@@ -17352,6 +17566,78 @@ extension Components {
                 case toNm = "to_nm"
             }
         }
+        /// A TAF station's forecast cloud base on the side view
+        /// (wingtip.profile_weather): where along the route, its base MSL (the
+        /// ceiling over the flight above the field, plus its elevation), and when
+        /// its TAF was issued.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ProfileCloud`.
+        public struct ProfileCloud: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ProfileCloud/along_nm`.
+            public var alongNm: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/ProfileCloud/base_ft`.
+            public var baseFt: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/ProfileCloud/issued`.
+            public var issued: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ProfileCloud/station`.
+            public var station: Swift.String
+            /// Creates a new `ProfileCloud`.
+            ///
+            /// - Parameters:
+            ///   - alongNm:
+            ///   - baseFt:
+            ///   - issued:
+            ///   - station:
+            public init(
+                alongNm: Swift.Double,
+                baseFt: Swift.Double,
+                issued: Swift.String? = nil,
+                station: Swift.String
+            ) {
+                self.alongNm = alongNm
+                self.baseFt = baseFt
+                self.issued = issued
+                self.station = station
+            }
+            public enum CodingKeys: String, CodingKey {
+                case alongNm = "along_nm"
+                case baseFt = "base_ft"
+                case issued
+                case station
+            }
+        }
+        /// The freezing level over a point of the route, ft MSL; at or below
+        /// it where the forecast is freezing at its lowest level already.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ProfileFreezing`.
+        public struct ProfileFreezing: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ProfileFreezing/along_nm`.
+            public var alongNm: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/ProfileFreezing/at_or_below`.
+            public var atOrBelow: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/ProfileFreezing/ft`.
+            public var ft: Swift.Double
+            /// Creates a new `ProfileFreezing`.
+            ///
+            /// - Parameters:
+            ///   - alongNm:
+            ///   - atOrBelow:
+            ///   - ft:
+            public init(
+                alongNm: Swift.Double,
+                atOrBelow: Swift.Bool? = nil,
+                ft: Swift.Double
+            ) {
+                self.alongNm = alongNm
+                self.atOrBelow = atOrBelow
+                self.ft = ft
+            }
+            public enum CodingKeys: String, CodingKey {
+                case alongNm = "along_nm"
+                case atOrBelow = "at_or_below"
+                case ft
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/ProfileGround`.
         public struct ProfileGround: Codable, Hashable, Sendable {
             /// - Remark: Generated from `#/components/schemas/ProfileGround/along_nm`.
@@ -17375,11 +17661,77 @@ extension Components {
                 case groundFt = "ground_ft"
             }
         }
+        /// A G-AIRMET icing area the route crosses: from where to where along
+        /// it, between which altitudes (ft MSL; the floor the freezing level
+        /// where `from_freezing_level`), and when it is valid and was issued.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ProfileIcing`.
+        public struct ProfileIcing: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/from_freezing_level`.
+            public var fromFreezingLevel: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/from_nm`.
+            public var fromNm: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/high_ft`.
+            public var highFt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/issued`.
+            public var issued: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/low_ft`.
+            public var lowFt: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/severity`.
+            public var severity: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/to_nm`.
+            public var toNm: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/ProfileIcing/valid_at`.
+            public var validAt: Swift.String?
+            /// Creates a new `ProfileIcing`.
+            ///
+            /// - Parameters:
+            ///   - fromFreezingLevel:
+            ///   - fromNm:
+            ///   - highFt:
+            ///   - issued:
+            ///   - lowFt:
+            ///   - severity:
+            ///   - toNm:
+            ///   - validAt:
+            public init(
+                fromFreezingLevel: Swift.Bool? = nil,
+                fromNm: Swift.Double,
+                highFt: Swift.Double? = nil,
+                issued: Swift.String? = nil,
+                lowFt: Swift.Double? = nil,
+                severity: Swift.String? = nil,
+                toNm: Swift.Double,
+                validAt: Swift.String? = nil
+            ) {
+                self.fromFreezingLevel = fromFreezingLevel
+                self.fromNm = fromNm
+                self.highFt = highFt
+                self.issued = issued
+                self.lowFt = lowFt
+                self.severity = severity
+                self.toNm = toNm
+                self.validAt = validAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case fromFreezingLevel = "from_freezing_level"
+                case fromNm = "from_nm"
+                case highFt = "high_ft"
+                case issued
+                case lowFt = "low_ft"
+                case severity
+                case toNm = "to_nm"
+                case validAt = "valid_at"
+            }
+        }
         /// An obstacle of the FAA's DOF near the route's line: where along it,
-        /// and its top, feet MSL.
+        /// its top, feet MSL, and its height above the ground there, feet AGL
+        /// (the DOF's AMSL and AGL columns).
         ///
         /// - Remark: Generated from `#/components/schemas/ProfileObstacle`.
         public struct ProfileObstacle: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ProfileObstacle/agl_ft`.
+            public var aglFt: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/ProfileObstacle/along_nm`.
             public var alongNm: Swift.Double
             /// - Remark: Generated from `#/components/schemas/ProfileObstacle/amsl_ft`.
@@ -17387,16 +17739,20 @@ extension Components {
             /// Creates a new `ProfileObstacle`.
             ///
             /// - Parameters:
+            ///   - aglFt:
             ///   - alongNm:
             ///   - amslFt:
             public init(
+                aglFt: Swift.Double? = nil,
                 alongNm: Swift.Double,
                 amslFt: Swift.Double
             ) {
+                self.aglFt = aglFt
                 self.alongNm = alongNm
                 self.amslFt = amslFt
             }
             public enum CodingKeys: String, CodingKey {
+                case aglFt = "agl_ft"
                 case alongNm = "along_nm"
                 case amslFt = "amsl_ft"
             }
@@ -17422,6 +17778,38 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case alongNm = "along_nm"
                 case altFt = "alt_ft"
+            }
+        }
+        /// Whose forecast a figure is and for when: its name, its run, ISO
+        /// UTC, and the time it is read at.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ProfileWeatherSource`.
+        public struct ProfileWeatherSource: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ProfileWeatherSource/label`.
+            public var label: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ProfileWeatherSource/run`.
+            public var run: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ProfileWeatherSource/valid_at`.
+            public var validAt: Swift.String?
+            /// Creates a new `ProfileWeatherSource`.
+            ///
+            /// - Parameters:
+            ///   - label:
+            ///   - run:
+            ///   - validAt:
+            public init(
+                label: Swift.String,
+                run: Swift.String? = nil,
+                validAt: Swift.String? = nil
+            ) {
+                self.label = label
+                self.run = run
+                self.validAt = validAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case label
+                case run
+                case validAt = "valid_at"
             }
         }
         /// Which edition of one of the FAA's publications a card's links are of
@@ -17724,6 +18112,60 @@ extension Components {
                 case method
                 case path
                 case status
+            }
+        }
+        /// The answers to a RecordsBatchAsk, each list in the order asked.
+        ///
+        /// - Remark: Generated from `#/components/schemas/RecordsBatch`.
+        public struct RecordsBatch: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RecordsBatch/endorsements`.
+            public var endorsements: [Components.Schemas.Endorsements]
+            /// - Remark: Generated from `#/components/schemas/RecordsBatch/experience`.
+            public var experience: [[Components.Schemas.ExperienceItem]]
+            /// Creates a new `RecordsBatch`.
+            ///
+            /// - Parameters:
+            ///   - endorsements:
+            ///   - experience:
+            public init(
+                endorsements: [Components.Schemas.Endorsements],
+                experience: [[Components.Schemas.ExperienceItem]]
+            ) {
+                self.endorsements = endorsements
+                self.experience = experience
+            }
+            public enum CodingKeys: String, CodingKey {
+                case endorsements
+                case experience
+            }
+        }
+        /// Many students' records asked at once, for an instructor's page:
+        /// each student's experience (ExperienceAsk) and every endorsements ask
+        /// (EndorsementsAsk: a student's solo day, a review's 61.93(d) checks,
+        /// a signed list's last good days), answered in the same order. One
+        /// round trip for the page rather than two a student and two a review.
+        ///
+        /// - Remark: Generated from `#/components/schemas/RecordsBatchAsk`.
+        public struct RecordsBatchAsk: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RecordsBatchAsk/endorsements`.
+            public var endorsements: [Components.Schemas.EndorsementsAsk]?
+            /// - Remark: Generated from `#/components/schemas/RecordsBatchAsk/experience`.
+            public var experience: [Components.Schemas.ExperienceAsk]?
+            /// Creates a new `RecordsBatchAsk`.
+            ///
+            /// - Parameters:
+            ///   - endorsements:
+            ///   - experience:
+            public init(
+                endorsements: [Components.Schemas.EndorsementsAsk]? = nil,
+                experience: [Components.Schemas.ExperienceAsk]? = nil
+            ) {
+                self.endorsements = endorsements
+                self.experience = experience
+            }
+            public enum CodingKeys: String, CodingKey {
+                case endorsements
+                case experience
             }
         }
         /// A document filed for recording against the N-number (DOCINDEX.txt,
@@ -18637,6 +19079,64 @@ extension Components {
                 case terrain
             }
         }
+        /// One route and method as the planner has answered it since it
+        /// started (app.route_metrics): calls, those of 500 or more, their share,
+        /// and the time at the 50th and 95th percentile in milliseconds (none
+        /// before a call).
+        ///
+        /// - Remark: Generated from `#/components/schemas/RouteStat`.
+        public struct RouteStat: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RouteStat/count`.
+            public var count: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/RouteStat/error_rate`.
+            public var errorRate: Swift.Double
+            /// - Remark: Generated from `#/components/schemas/RouteStat/errors`.
+            public var errors: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/RouteStat/method`.
+            public var method: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RouteStat/p50_ms`.
+            public var p50Ms: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/RouteStat/p95_ms`.
+            public var p95Ms: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/RouteStat/route`.
+            public var route: Swift.String
+            /// Creates a new `RouteStat`.
+            ///
+            /// - Parameters:
+            ///   - count:
+            ///   - errorRate:
+            ///   - errors:
+            ///   - method:
+            ///   - p50Ms:
+            ///   - p95Ms:
+            ///   - route:
+            public init(
+                count: Swift.Int,
+                errorRate: Swift.Double,
+                errors: Swift.Int,
+                method: Swift.String,
+                p50Ms: Swift.Double? = nil,
+                p95Ms: Swift.Double? = nil,
+                route: Swift.String
+            ) {
+                self.count = count
+                self.errorRate = errorRate
+                self.errors = errors
+                self.method = method
+                self.p50Ms = p50Ms
+                self.p95Ms = p95Ms
+                self.route = route
+            }
+            public enum CodingKeys: String, CodingKey {
+                case count
+                case errorRate = "error_rate"
+                case errors
+                case method
+                case p50Ms = "p50_ms"
+                case p95Ms = "p95_ms"
+                case route
+            }
+        }
         /// A TFR within a few miles of the route and in force at some time
         /// during the flight: how far along the route it is, whether the route
         /// goes through it, and whether it is in force now.
@@ -18746,6 +19246,59 @@ extension Components {
                 case rule
                 case state
                 case title
+            }
+        }
+        /// The weather on the route's side view (wingtip.profile_weather),
+        /// along the same hops as RouteProfile's ground: the cloud bases, the
+        /// freezing level and its source, the icing, and which of the three
+        /// could not be read (`unavailable`: "clouds", "freezing", "icing"),
+        /// unknown rather than none.
+        ///
+        /// - Remark: Generated from `#/components/schemas/RouteWeather`.
+        public struct RouteWeather: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/clouds`.
+            public var clouds: [Components.Schemas.ProfileCloud]
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/for_time`.
+            public var forTime: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/freezing`.
+            public var freezing: [Components.Schemas.ProfileFreezing]
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/freezing_source`.
+            public var freezingSource: Components.Schemas.ProfileWeatherSource?
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/icing`.
+            public var icing: [Components.Schemas.ProfileIcing]
+            /// - Remark: Generated from `#/components/schemas/RouteWeather/unavailable`.
+            public var unavailable: [Swift.String]?
+            /// Creates a new `RouteWeather`.
+            ///
+            /// - Parameters:
+            ///   - clouds:
+            ///   - forTime:
+            ///   - freezing:
+            ///   - freezingSource:
+            ///   - icing:
+            ///   - unavailable:
+            public init(
+                clouds: [Components.Schemas.ProfileCloud],
+                forTime: Swift.String,
+                freezing: [Components.Schemas.ProfileFreezing],
+                freezingSource: Components.Schemas.ProfileWeatherSource? = nil,
+                icing: [Components.Schemas.ProfileIcing],
+                unavailable: [Swift.String]? = nil
+            ) {
+                self.clouds = clouds
+                self.forTime = forTime
+                self.freezing = freezing
+                self.freezingSource = freezingSource
+                self.icing = icing
+                self.unavailable = unavailable
+            }
+            public enum CodingKeys: String, CodingKey {
+                case clouds
+                case forTime = "for_time"
+                case freezing
+                case freezingSource = "freezing_source"
+                case icing
+                case unavailable
             }
         }
         /// What the run is warned of, when and where, its rule and product cited.
@@ -19735,6 +20288,31 @@ extension Components {
                 case windSource = "wind_source"
             }
         }
+        /// A flight between two landings, by its two ends.
+        ///
+        /// - Remark: Generated from `#/components/schemas/ShortFlight`.
+        public struct ShortFlight: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ShortFlight/departure`.
+            public var departure: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ShortFlight/destination`.
+            public var destination: Swift.String
+            /// Creates a new `ShortFlight`.
+            ///
+            /// - Parameters:
+            ///   - departure:
+            ///   - destination:
+            public init(
+                departure: Swift.String,
+                destination: Swift.String
+            ) {
+                self.departure = departure
+                self.destination = destination
+            }
+            public enum CodingKeys: String, CodingKey {
+                case departure
+                case destination
+            }
+        }
         /// One special-use area, as the FAA publishes it.
         ///
         /// - Remark: Generated from `#/components/schemas/SpecialUse`.
@@ -20084,6 +20662,8 @@ extension Components {
             public var pipeline: Components.Schemas.PipelineStatus
             /// - Remark: Generated from `#/components/schemas/Status/recent_errors`.
             public var recentErrors: [Components.Schemas.RecentError]?
+            /// - Remark: Generated from `#/components/schemas/Status/routes`.
+            public var routes: [Components.Schemas.RouteStat]?
             /// - Remark: Generated from `#/components/schemas/Status/services`.
             public var services: Components.Schemas.Services
             /// - Remark: Generated from `#/components/schemas/Status/weather`.
@@ -20100,6 +20680,7 @@ extension Components {
             ///   - model:
             ///   - pipeline:
             ///   - recentErrors:
+            ///   - routes:
             ///   - services:
             ///   - weather:
             public init(
@@ -20112,6 +20693,7 @@ extension Components {
                 model: Components.Schemas.ModelRegistry,
                 pipeline: Components.Schemas.PipelineStatus,
                 recentErrors: [Components.Schemas.RecentError]? = nil,
+                routes: [Components.Schemas.RouteStat]? = nil,
                 services: Components.Schemas.Services,
                 weather: [Components.Schemas.WeatherDataset]
             ) {
@@ -20124,6 +20706,7 @@ extension Components {
                 self.model = model
                 self.pipeline = pipeline
                 self.recentErrors = recentErrors
+                self.routes = routes
                 self.services = services
                 self.weather = weather
             }
@@ -20137,6 +20720,7 @@ extension Components {
                 case model
                 case pipeline
                 case recentErrors = "recent_errors"
+                case routes
                 case services
                 case weather
             }
@@ -20309,950 +20893,6 @@ extension Components {
             public enum CodingKeys: String, CodingKey {
                 case fields
                 case pending
-            }
-        }
-        /// A crash draft: the event as reported (local date and time, place),
-        /// the airplane (N-number, its Mode S code where the registry gave one),
-        /// where it stands, and what the identity check found. `track` is "adsb",
-        /// or "none" for a draft of the place alone; `fatal` None where no source
-        /// says, which holds publishing as a fatal event does.
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioDraft`.
-        public struct StudioDraft: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/aircraft`.
-            public var aircraft: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/captions`.
-            public var captions: Components.Schemas.StudioDraftCaptions?
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/city`.
-            public var city: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/fatal`.
-            public var fatal: Swift.Bool?
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/hex`.
-            public var hex: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/id`.
-            public var id: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/identity`.
-            public var identity: Components.Schemas.StudioDraftIdentity?
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/identity_by`.
-            public var identityBy: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/kit_at`.
-            public var kitAt: Swift.Double?
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/lat`.
-            public var lat: Swift.Double?
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/local_date`.
-            public var localDate: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/local_time`.
-            public var localTime: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/lon`.
-            public var lon: Swift.Double?
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/n_number`.
-            public var nNumber: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/noticed_at`.
-            public var noticedAt: Swift.Double?
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/rendered_at`.
-            public var renderedAt: Swift.Double?
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/sources`.
-            public var sources: [Components.Schemas.StudioDraftSource]
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/state`.
-            public var state: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/status`.
-            public var status: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioDraft/track`.
-            public var track: Swift.String?
-            /// Creates a new `StudioDraft`.
-            ///
-            /// - Parameters:
-            ///   - aircraft:
-            ///   - captions:
-            ///   - city:
-            ///   - fatal:
-            ///   - hex:
-            ///   - id:
-            ///   - identity:
-            ///   - identityBy:
-            ///   - kitAt:
-            ///   - lat:
-            ///   - localDate:
-            ///   - localTime:
-            ///   - lon:
-            ///   - nNumber:
-            ///   - noticedAt:
-            ///   - renderedAt:
-            ///   - sources:
-            ///   - state:
-            ///   - status:
-            ///   - track:
-            public init(
-                aircraft: Swift.String? = nil,
-                captions: Components.Schemas.StudioDraftCaptions? = nil,
-                city: Swift.String? = nil,
-                fatal: Swift.Bool? = nil,
-                hex: Swift.String? = nil,
-                id: Swift.String,
-                identity: Components.Schemas.StudioDraftIdentity? = nil,
-                identityBy: Swift.String? = nil,
-                kitAt: Swift.Double? = nil,
-                lat: Swift.Double? = nil,
-                localDate: Swift.String,
-                localTime: Swift.String? = nil,
-                lon: Swift.Double? = nil,
-                nNumber: Swift.String? = nil,
-                noticedAt: Swift.Double? = nil,
-                renderedAt: Swift.Double? = nil,
-                sources: [Components.Schemas.StudioDraftSource],
-                state: Swift.String? = nil,
-                status: Swift.String,
-                track: Swift.String? = nil
-            ) {
-                self.aircraft = aircraft
-                self.captions = captions
-                self.city = city
-                self.fatal = fatal
-                self.hex = hex
-                self.id = id
-                self.identity = identity
-                self.identityBy = identityBy
-                self.kitAt = kitAt
-                self.lat = lat
-                self.localDate = localDate
-                self.localTime = localTime
-                self.lon = lon
-                self.nNumber = nNumber
-                self.noticedAt = noticedAt
-                self.renderedAt = renderedAt
-                self.sources = sources
-                self.state = state
-                self.status = status
-                self.track = track
-            }
-            public enum CodingKeys: String, CodingKey {
-                case aircraft
-                case captions
-                case city
-                case fatal
-                case hex
-                case id
-                case identity
-                case identityBy = "identity_by"
-                case kitAt = "kit_at"
-                case lat
-                case localDate = "local_date"
-                case localTime = "local_time"
-                case lon
-                case nNumber = "n_number"
-                case noticedAt = "noticed_at"
-                case renderedAt = "rendered_at"
-                case sources
-                case state
-                case status
-                case track
-            }
-        }
-        /// The film's words, facts only: a title, "Preliminary ...", "No ADS-B
-        /// track" where there is none, the sources' words quoted, the credits.
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioDraftCaptions`.
-        public struct StudioDraftCaptions: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioDraftCaptions/credits`.
-            public var credits: [Swift.String]
-            /// - Remark: Generated from `#/components/schemas/StudioDraftCaptions/quotes`.
-            public var quotes: [Components.Schemas.StudioDraftQuote]
-            /// - Remark: Generated from `#/components/schemas/StudioDraftCaptions/status`.
-            public var status: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioDraftCaptions/title`.
-            public var title: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioDraftCaptions/track`.
-            public var track: Swift.String?
-            /// Creates a new `StudioDraftCaptions`.
-            ///
-            /// - Parameters:
-            ///   - credits:
-            ///   - quotes:
-            ///   - status:
-            ///   - title:
-            ///   - track:
-            public init(
-                credits: [Swift.String],
-                quotes: [Components.Schemas.StudioDraftQuote],
-                status: Swift.String,
-                title: Swift.String,
-                track: Swift.String? = nil
-            ) {
-                self.credits = credits
-                self.quotes = quotes
-                self.status = status
-                self.title = title
-                self.track = track
-            }
-            public enum CodingKeys: String, CodingKey {
-                case credits
-                case quotes
-                case status
-                case title
-                case track
-            }
-        }
-        /// One of the identity check's checks (the engine's occurrence_identity).
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioDraftCheck`.
-        public struct StudioDraftCheck: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioDraftCheck/check`.
-            public var check: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioDraftCheck/ok`.
-            public var ok: Swift.Bool
-            /// - Remark: Generated from `#/components/schemas/StudioDraftCheck/words`.
-            public var words: Swift.String
-            /// Creates a new `StudioDraftCheck`.
-            ///
-            /// - Parameters:
-            ///   - check:
-            ///   - ok:
-            ///   - words:
-            public init(
-                check: Swift.String,
-                ok: Swift.Bool,
-                words: Swift.String
-            ) {
-                self.check = check
-                self.ok = ok
-                self.words = words
-            }
-            public enum CodingKeys: String, CodingKey {
-                case check
-                case ok
-                case words
-            }
-        }
-        /// The engine's verdict on the draft's identity, each check made, the
-        /// window it read the track in and the report nearest the place.
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioDraftIdentity`.
-        public struct StudioDraftIdentity: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioDraftIdentity/checks`.
-            public var checks: [Components.Schemas.StudioDraftCheck]
-            /// - Remark: Generated from `#/components/schemas/StudioDraftIdentity/nearest`.
-            public var nearest: Components.Schemas.StudioDraftNearest?
-            /// - Remark: Generated from `#/components/schemas/StudioDraftIdentity/verdict`.
-            public var verdict: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioDraftIdentity/window`.
-            public var window: Components.Schemas.StudioDraftWindow?
-            /// Creates a new `StudioDraftIdentity`.
-            ///
-            /// - Parameters:
-            ///   - checks:
-            ///   - nearest:
-            ///   - verdict:
-            ///   - window:
-            public init(
-                checks: [Components.Schemas.StudioDraftCheck],
-                nearest: Components.Schemas.StudioDraftNearest? = nil,
-                verdict: Swift.String,
-                window: Components.Schemas.StudioDraftWindow? = nil
-            ) {
-                self.checks = checks
-                self.nearest = nearest
-                self.verdict = verdict
-                self.window = window
-            }
-            public enum CodingKeys: String, CodingKey {
-                case checks
-                case nearest
-                case verdict
-                case window
-            }
-        }
-        /// The developer's word on a draft's identity: right (`confirm`), or
-        /// not; with an N-number where the report gave none, which the job then
-        /// checks against the registry and the track as it checks its own.
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioDraftIdentityAsk`.
-        public struct StudioDraftIdentityAsk: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioDraftIdentityAsk/confirm`.
-            public var confirm: Swift.Bool
-            /// - Remark: Generated from `#/components/schemas/StudioDraftIdentityAsk/n_number`.
-            public var nNumber: Swift.String?
-            /// Creates a new `StudioDraftIdentityAsk`.
-            ///
-            /// - Parameters:
-            ///   - confirm:
-            ///   - nNumber:
-            public init(
-                confirm: Swift.Bool,
-                nNumber: Swift.String? = nil
-            ) {
-                self.confirm = confirm
-                self.nNumber = nNumber
-            }
-            public enum CodingKeys: String, CodingKey {
-                case confirm
-                case nNumber = "n_number"
-            }
-        }
-        /// The track's report in the window nearest the reported place.
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioDraftNearest`.
-        public struct StudioDraftNearest: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioDraftNearest/distance_nm`.
-            public var distanceNm: Swift.Double
-            /// - Remark: Generated from `#/components/schemas/StudioDraftNearest/lat`.
-            public var lat: Swift.Double
-            /// - Remark: Generated from `#/components/schemas/StudioDraftNearest/lon`.
-            public var lon: Swift.Double
-            /// - Remark: Generated from `#/components/schemas/StudioDraftNearest/t`.
-            public var t: Swift.Double
-            /// Creates a new `StudioDraftNearest`.
-            ///
-            /// - Parameters:
-            ///   - distanceNm:
-            ///   - lat:
-            ///   - lon:
-            ///   - t:
-            public init(
-                distanceNm: Swift.Double,
-                lat: Swift.Double,
-                lon: Swift.Double,
-                t: Swift.Double
-            ) {
-                self.distanceNm = distanceNm
-                self.lat = lat
-                self.lon = lon
-                self.t = t
-            }
-            public enum CodingKeys: String, CodingKey {
-                case distanceNm = "distance_nm"
-                case lat
-                case lon
-                case t
-            }
-        }
-        /// - Remark: Generated from `#/components/schemas/StudioDraftQuote`.
-        public struct StudioDraftQuote: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioDraftQuote/source`.
-            public var source: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/StudioDraftQuote/url`.
-            public var url: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/StudioDraftQuote/words`.
-            public var words: Swift.String
-            /// Creates a new `StudioDraftQuote`.
-            ///
-            /// - Parameters:
-            ///   - source:
-            ///   - url:
-            ///   - words:
-            public init(
-                source: Swift.String? = nil,
-                url: Swift.String? = nil,
-                words: Swift.String
-            ) {
-                self.source = source
-                self.url = url
-                self.words = words
-            }
-            public enum CodingKeys: String, CodingKey {
-                case source
-                case url
-                case words
-            }
-        }
-        /// One source's word of the event, as it gave it: "faa_statement",
-        /// "faa_notice" or "ntsb"; its page (or the notice's file); its heading
-        /// and its words, unchanged, which a caption quotes.
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioDraftSource`.
-        public struct StudioDraftSource: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioDraftSource/heading`.
-            public var heading: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/StudioDraftSource/source`.
-            public var source: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioDraftSource/text`.
-            public var text: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/StudioDraftSource/url`.
-            public var url: Swift.String?
-            /// Creates a new `StudioDraftSource`.
-            ///
-            /// - Parameters:
-            ///   - heading:
-            ///   - source:
-            ///   - text:
-            ///   - url:
-            public init(
-                heading: Swift.String? = nil,
-                source: Swift.String,
-                text: Swift.String? = nil,
-                url: Swift.String? = nil
-            ) {
-                self.heading = heading
-                self.source = source
-                self.text = text
-                self.url = url
-            }
-            public enum CodingKeys: String, CodingKey {
-                case heading
-                case source
-                case text
-                case url
-            }
-        }
-        /// The time window the report gives, s since 1970 (UTC).
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioDraftWindow`.
-        public struct StudioDraftWindow: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioDraftWindow/end`.
-            public var end: Swift.Double
-            /// - Remark: Generated from `#/components/schemas/StudioDraftWindow/start`.
-            public var start: Swift.Double
-            /// Creates a new `StudioDraftWindow`.
-            ///
-            /// - Parameters:
-            ///   - end:
-            ///   - start:
-            public init(
-                end: Swift.Double,
-                start: Swift.Double
-            ) {
-                self.end = end
-                self.start = start
-            }
-            public enum CodingKeys: String, CodingKey {
-                case end
-                case start
-            }
-        }
-        /// The ground's height under each point asked, ft MSL, in order: the
-        /// elevation tiles (USGS 3DEP and SRTM, wingtip.elevation).
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioGround`.
-        public struct StudioGround: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioGround/ground_ft`.
-            public var groundFt: [Swift.Double]
-            /// Creates a new `StudioGround`.
-            ///
-            /// - Parameters:
-            ///   - groundFt:
-            public init(groundFt: [Swift.Double]) {
-                self.groundFt = groundFt
-            }
-            public enum CodingKeys: String, CodingKey {
-                case groundFt = "ground_ft"
-            }
-        }
-        /// Points along a replayed track, [lat, lon] each, for the ground
-        /// under them: the Studio's profile strip.
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioGroundAsk`.
-        public struct StudioGroundAsk: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioGroundAsk/points`.
-            public var points: [[Swift.Double]]
-            /// Creates a new `StudioGroundAsk`.
-            ///
-            /// - Parameters:
-            ///   - points:
-            public init(points: [[Swift.Double]]) {
-                self.points = points
-            }
-            public enum CodingKeys: String, CodingKey {
-                case points
-            }
-        }
-        /// A station's METAR, as it sent it (IEM's archive).
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioMetar`.
-        public struct StudioMetar: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioMetar/lat`.
-            public var lat: Swift.Double
-            /// - Remark: Generated from `#/components/schemas/StudioMetar/lon`.
-            public var lon: Swift.Double
-            /// - Remark: Generated from `#/components/schemas/StudioMetar/raw`.
-            public var raw: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioMetar/station`.
-            public var station: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioMetar/time`.
-            public var time: Swift.String
-            /// Creates a new `StudioMetar`.
-            ///
-            /// - Parameters:
-            ///   - lat:
-            ///   - lon:
-            ///   - raw:
-            ///   - station:
-            ///   - time:
-            public init(
-                lat: Swift.Double,
-                lon: Swift.Double,
-                raw: Swift.String,
-                station: Swift.String,
-                time: Swift.String
-            ) {
-                self.lat = lat
-                self.lon = lon
-                self.raw = raw
-                self.station = station
-                self.time = time
-            }
-            public enum CodingKeys: String, CodingKey {
-                case lat
-                case lon
-                case raw
-                case station
-                case time
-            }
-        }
-        /// A NOTAM in force then, as sent, at its field's position (None for
-        /// one at no field).
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioNotam`.
-        public struct StudioNotam: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioNotam/end`.
-            public var end: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/StudioNotam/id`.
-            public var id: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioNotam/lat`.
-            public var lat: Swift.Double?
-            /// - Remark: Generated from `#/components/schemas/StudioNotam/lon`.
-            public var lon: Swift.Double?
-            /// - Remark: Generated from `#/components/schemas/StudioNotam/start`.
-            public var start: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/StudioNotam/text`.
-            public var text: Swift.String
-            /// Creates a new `StudioNotam`.
-            ///
-            /// - Parameters:
-            ///   - end:
-            ///   - id:
-            ///   - lat:
-            ///   - lon:
-            ///   - start:
-            ///   - text:
-            public init(
-                end: Swift.String? = nil,
-                id: Swift.String,
-                lat: Swift.Double? = nil,
-                lon: Swift.Double? = nil,
-                start: Swift.String? = nil,
-                text: Swift.String
-            ) {
-                self.end = end
-                self.id = id
-                self.lat = lat
-                self.lon = lon
-                self.start = start
-                self.text = text
-            }
-            public enum CodingKeys: String, CodingKey {
-                case end
-                case id
-                case lat
-                case lon
-                case start
-                case text
-            }
-        }
-        /// The NOTAMs and TFRs in force at a moment inside a box, from the day's
-        /// archive kept here (wingtip.history.notam_archive); `archived` False
-        /// where no archive covers that UTC day.
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioNotams`.
-        public struct StudioNotams: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioNotams/archived`.
-            public var archived: Swift.Bool
-            /// - Remark: Generated from `#/components/schemas/StudioNotams/day`.
-            public var day: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioNotams/notams`.
-            public var notams: [Components.Schemas.StudioNotam]
-            /// - Remark: Generated from `#/components/schemas/StudioNotams/tfrs`.
-            public var tfrs: [Components.Schemas.StudioTfr]
-            /// Creates a new `StudioNotams`.
-            ///
-            /// - Parameters:
-            ///   - archived:
-            ///   - day:
-            ///   - notams:
-            ///   - tfrs:
-            public init(
-                archived: Swift.Bool,
-                day: Swift.String,
-                notams: [Components.Schemas.StudioNotam],
-                tfrs: [Components.Schemas.StudioTfr]
-            ) {
-                self.archived = archived
-                self.day = day
-                self.notams = notams
-                self.tfrs = tfrs
-            }
-            public enum CodingKeys: String, CodingKey {
-                case archived
-                case day
-                case notams
-                case tfrs
-            }
-        }
-        /// The NEXRAD composite at one five-minute mosaic: its time and its
-        /// XYZ tile template on IEM's tile cache.
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioRadarFrame`.
-        public struct StudioRadarFrame: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioRadarFrame/tiles`.
-            public var tiles: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioRadarFrame/valid`.
-            public var valid: Swift.String
-            /// Creates a new `StudioRadarFrame`.
-            ///
-            /// - Parameters:
-            ///   - tiles:
-            ///   - valid:
-            public init(
-                tiles: Swift.String,
-                valid: Swift.String
-            ) {
-                self.tiles = tiles
-                self.valid = valid
-            }
-            public enum CodingKeys: String, CodingKey {
-                case tiles
-                case valid
-            }
-        }
-        /// One report of the day: when (s since 1970), where, its altitude
-        /// (ft; the transponder's pressure altitude for adsb.lol's day, see
-        /// `altitude`; None on the ground), ground speed (kt), track (degrees
-        /// true), whether it was on the ground, and the altimeter setting.
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioReport`.
-        public struct StudioReport: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioReport/alt_ft`.
-            public var altFt: Swift.Double?
-            /// - Remark: Generated from `#/components/schemas/StudioReport/ground`.
-            public var ground: Swift.Bool?
-            /// - Remark: Generated from `#/components/schemas/StudioReport/gs_kt`.
-            public var gsKt: Swift.Double?
-            /// - Remark: Generated from `#/components/schemas/StudioReport/lat`.
-            public var lat: Swift.Double
-            /// - Remark: Generated from `#/components/schemas/StudioReport/lon`.
-            public var lon: Swift.Double
-            /// - Remark: Generated from `#/components/schemas/StudioReport/qnh_hpa`.
-            public var qnhHpa: Swift.Double?
-            /// - Remark: Generated from `#/components/schemas/StudioReport/t`.
-            public var t: Swift.Double
-            /// - Remark: Generated from `#/components/schemas/StudioReport/track_deg`.
-            public var trackDeg: Swift.Double?
-            /// Creates a new `StudioReport`.
-            ///
-            /// - Parameters:
-            ///   - altFt:
-            ///   - ground:
-            ///   - gsKt:
-            ///   - lat:
-            ///   - lon:
-            ///   - qnhHpa:
-            ///   - t:
-            ///   - trackDeg:
-            public init(
-                altFt: Swift.Double? = nil,
-                ground: Swift.Bool? = nil,
-                gsKt: Swift.Double? = nil,
-                lat: Swift.Double,
-                lon: Swift.Double,
-                qnhHpa: Swift.Double? = nil,
-                t: Swift.Double,
-                trackDeg: Swift.Double? = nil
-            ) {
-                self.altFt = altFt
-                self.ground = ground
-                self.gsKt = gsKt
-                self.lat = lat
-                self.lon = lon
-                self.qnhHpa = qnhHpa
-                self.t = t
-                self.trackDeg = trackDeg
-            }
-            public enum CodingKeys: String, CodingKey {
-                case altFt = "alt_ft"
-                case ground
-                case gsKt = "gs_kt"
-                case lat
-                case lon
-                case qnhHpa = "qnh_hpa"
-                case t
-                case trackDeg = "track_deg"
-            }
-        }
-        /// A station's TAF, as the NWS issued it (IEM's archive).
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioTaf`.
-        public struct StudioTaf: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioTaf/issued`.
-            public var issued: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioTaf/raw`.
-            public var raw: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioTaf/station`.
-            public var station: Swift.String
-            /// Creates a new `StudioTaf`.
-            ///
-            /// - Parameters:
-            ///   - issued:
-            ///   - raw:
-            ///   - station:
-            public init(
-                issued: Swift.String,
-                raw: Swift.String,
-                station: Swift.String
-            ) {
-                self.issued = issued
-                self.raw = raw
-                self.station = station
-            }
-            public enum CodingKeys: String, CodingKey {
-                case issued
-                case raw
-                case station
-            }
-        }
-        /// A TFR in force then: its NOTAM's id, title, times and text, and its
-        /// areas (GeoJSON MultiPolygon, rounded to about 11 m).
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioTfr`.
-        public struct StudioTfr: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioTfr/end`.
-            public var end: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/StudioTfr/geometry`.
-            public struct GeometryPayload: Codable, Hashable, Sendable {
-                /// A container of undocumented properties.
-                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
-                /// Creates a new `GeometryPayload`.
-                ///
-                /// - Parameters:
-                ///   - additionalProperties: A container of undocumented properties.
-                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
-                    self.additionalProperties = additionalProperties
-                }
-                public init(from decoder: any Swift.Decoder) throws {
-                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
-                }
-                public func encode(to encoder: any Swift.Encoder) throws {
-                    try encoder.encodeAdditionalProperties(additionalProperties)
-                }
-            }
-            /// - Remark: Generated from `#/components/schemas/StudioTfr/geometry`.
-            public var geometry: Components.Schemas.StudioTfr.GeometryPayload?
-            /// - Remark: Generated from `#/components/schemas/StudioTfr/id`.
-            public var id: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioTfr/name`.
-            public var name: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioTfr/start`.
-            public var start: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/StudioTfr/text`.
-            public var text: Swift.String?
-            /// Creates a new `StudioTfr`.
-            ///
-            /// - Parameters:
-            ///   - end:
-            ///   - geometry:
-            ///   - id:
-            ///   - name:
-            ///   - start:
-            ///   - text:
-            public init(
-                end: Swift.String? = nil,
-                geometry: Components.Schemas.StudioTfr.GeometryPayload? = nil,
-                id: Swift.String,
-                name: Swift.String,
-                start: Swift.String? = nil,
-                text: Swift.String? = nil
-            ) {
-                self.end = end
-                self.geometry = geometry
-                self.id = id
-                self.name = name
-                self.start = start
-                self.text = text
-            }
-            public enum CodingKeys: String, CodingKey {
-                case end
-                case geometry
-                case id
-                case name
-                case start
-                case text
-            }
-        }
-        /// An airplane's reports on a UTC day, for the Studio's replay
-        /// (wingtip.traffic.day_tracks), with where they came from, which the
-        /// Studio shows (ODbL 1.0 asks for it).
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioTrack`.
-        public struct StudioTrack: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioTrack/altitude`.
-            public var altitude: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioTrack/day`.
-            public var day: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioTrack/hex`.
-            public var hex: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioTrack/license`.
-            public var license: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioTrack/model`.
-            public var model: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/StudioTrack/points`.
-            public var points: [Components.Schemas.StudioReport]
-            /// - Remark: Generated from `#/components/schemas/StudioTrack/registration`.
-            public var registration: Swift.String?
-            /// - Remark: Generated from `#/components/schemas/StudioTrack/source`.
-            public var source: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioTrack/type`.
-            public var type: Swift.String?
-            /// Creates a new `StudioTrack`.
-            ///
-            /// - Parameters:
-            ///   - altitude:
-            ///   - day:
-            ///   - hex:
-            ///   - license:
-            ///   - model:
-            ///   - points:
-            ///   - registration:
-            ///   - source:
-            ///   - type:
-            public init(
-                altitude: Swift.String,
-                day: Swift.String,
-                hex: Swift.String,
-                license: Swift.String,
-                model: Swift.String? = nil,
-                points: [Components.Schemas.StudioReport],
-                registration: Swift.String? = nil,
-                source: Swift.String,
-                type: Swift.String? = nil
-            ) {
-                self.altitude = altitude
-                self.day = day
-                self.hex = hex
-                self.license = license
-                self.model = model
-                self.points = points
-                self.registration = registration
-                self.source = source
-                self.type = type
-            }
-            public enum CodingKeys: String, CodingKey {
-                case altitude
-                case day
-                case hex
-                case license
-                case model
-                case points
-                case registration
-                case source
-                case type
-            }
-        }
-        /// An airplane followed here (its card opened), whose reports are
-        /// recorded (wingtip.traffic.recorded): one the Studio can replay without
-        /// asking adsb.lol.
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioWatched`.
-        public struct StudioWatched: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioWatched/days`.
-            public var days: [Swift.String]
-            /// - Remark: Generated from `#/components/schemas/StudioWatched/hex`.
-            public var hex: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioWatched/registration`.
-            public var registration: Swift.String?
-            /// Creates a new `StudioWatched`.
-            ///
-            /// - Parameters:
-            ///   - days:
-            ///   - hex:
-            ///   - registration:
-            public init(
-                days: [Swift.String],
-                hex: Swift.String,
-                registration: Swift.String? = nil
-            ) {
-                self.days = days
-                self.hex = hex
-                self.registration = registration
-            }
-            public enum CodingKeys: String, CodingKey {
-                case days
-                case hex
-                case registration
-            }
-        }
-        /// The weather as it was over a replayed flight
-        /// (wingtip.history.weather_then): the METARs of the stations near its
-        /// track from an hour before to an hour after, the TAFs in force over it,
-        /// and the radar's frames, with where they came from.
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioWeather`.
-        public struct StudioWeather: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioWeather/credit`.
-            public var credit: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioWeather/metars`.
-            public var metars: [Components.Schemas.StudioMetar]
-            /// - Remark: Generated from `#/components/schemas/StudioWeather/radar`.
-            public var radar: [Components.Schemas.StudioRadarFrame]
-            /// - Remark: Generated from `#/components/schemas/StudioWeather/source`.
-            public var source: Swift.String
-            /// - Remark: Generated from `#/components/schemas/StudioWeather/tafs`.
-            public var tafs: [Components.Schemas.StudioTaf]
-            /// Creates a new `StudioWeather`.
-            ///
-            /// - Parameters:
-            ///   - credit:
-            ///   - metars:
-            ///   - radar:
-            ///   - source:
-            ///   - tafs:
-            public init(
-                credit: Swift.String,
-                metars: [Components.Schemas.StudioMetar],
-                radar: [Components.Schemas.StudioRadarFrame],
-                source: Swift.String,
-                tafs: [Components.Schemas.StudioTaf]
-            ) {
-                self.credit = credit
-                self.metars = metars
-                self.radar = radar
-                self.source = source
-                self.tafs = tafs
-            }
-            public enum CodingKeys: String, CodingKey {
-                case credit
-                case metars
-                case radar
-                case source
-                case tafs
-            }
-        }
-        /// A replayed flight's span (s since 1970, UTC) and points along its
-        /// track, [lat, lon] each, for the weather as it was.
-        ///
-        /// - Remark: Generated from `#/components/schemas/StudioWeatherAsk`.
-        public struct StudioWeatherAsk: Codable, Hashable, Sendable {
-            /// - Remark: Generated from `#/components/schemas/StudioWeatherAsk/end`.
-            public var end: Swift.Double
-            /// - Remark: Generated from `#/components/schemas/StudioWeatherAsk/points`.
-            public var points: [[Swift.Double]]
-            /// - Remark: Generated from `#/components/schemas/StudioWeatherAsk/start`.
-            public var start: Swift.Double
-            /// Creates a new `StudioWeatherAsk`.
-            ///
-            /// - Parameters:
-            ///   - end:
-            ///   - points:
-            ///   - start:
-            public init(
-                end: Swift.Double,
-                points: [[Swift.Double]],
-                start: Swift.Double
-            ) {
-                self.end = end
-                self.points = points
-                self.start = start
-            }
-            public enum CodingKeys: String, CodingKey {
-                case end
-                case points
-                case start
             }
         }
         /// The class of the airspace at a field's surface (the engine's
@@ -21940,10 +21580,14 @@ extension Components {
             public var hops: [Components.Schemas.HopTotals]?
             /// - Remark: Generated from `#/components/schemas/Totals/legs_without_wind`.
             public var legsWithoutWind: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/Totals/lights`.
+            public var lights: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/Totals/night`.
             public var night: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/Totals/night_passengers`.
             public var nightPassengers: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/Totals/no_fuel_stop`.
+            public var noFuelStop: [Components.Schemas.NoFuelStop]?
             /// - Remark: Generated from `#/components/schemas/Totals/on_board_gal`.
             public var onBoardGal: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/Totals/planned_at`.
@@ -21977,8 +21621,10 @@ extension Components {
             ///   - groundMin:
             ///   - hops:
             ///   - legsWithoutWind:
+            ///   - lights:
             ///   - night:
             ///   - nightPassengers:
+            ///   - noFuelStop:
             ///   - onBoardGal:
             ///   - plannedAt:
             ///   - procedureNm:
@@ -22000,8 +21646,10 @@ extension Components {
                 groundMin: Swift.Double? = nil,
                 hops: [Components.Schemas.HopTotals]? = nil,
                 legsWithoutWind: Swift.Int,
+                lights: Swift.Bool? = nil,
                 night: Swift.Bool? = nil,
                 nightPassengers: Swift.Bool? = nil,
+                noFuelStop: [Components.Schemas.NoFuelStop]? = nil,
                 onBoardGal: Swift.Double? = nil,
                 plannedAt: Swift.String? = nil,
                 procedureNm: Swift.Double? = nil,
@@ -22023,8 +21671,10 @@ extension Components {
                 self.groundMin = groundMin
                 self.hops = hops
                 self.legsWithoutWind = legsWithoutWind
+                self.lights = lights
                 self.night = night
                 self.nightPassengers = nightPassengers
+                self.noFuelStop = noFuelStop
                 self.onBoardGal = onBoardGal
                 self.plannedAt = plannedAt
                 self.procedureNm = procedureNm
@@ -22047,8 +21697,10 @@ extension Components {
                 case groundMin = "ground_min"
                 case hops
                 case legsWithoutWind = "legs_without_wind"
+                case lights
                 case night
                 case nightPassengers = "night_passengers"
+                case noFuelStop = "no_fuel_stop"
                 case onBoardGal = "on_board_gal"
                 case plannedAt = "planned_at"
                 case procedureNm = "procedure_nm"
@@ -23260,8 +22912,8 @@ extension Components {
         /// date) and what could not be checked ("tfrs"). The feed (SWIM's FNS)
         /// sends what is issued or changed once it is heard, so NOTAMs issued
         /// before that day and never changed are not in the store: the list is
-        /// what was heard since, not every NOTAM in force (the owner, 2026-11-09,
-        /// chose the feed alone over the FAA NOTAM API's full load).
+        /// what was heard since, not every NOTAM in force, until NMS's full set
+        /// is held (decision 0059, amending 0023).
         ///
         /// - Remark: Generated from `#/components/schemas/WordsSources`.
         public struct WordsSources: Codable, Hashable, Sendable {

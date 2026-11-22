@@ -226,12 +226,14 @@ enum EngineContract {
         var military: String?
     }
 
-    /// A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.
+    /// A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name and primary airport for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.
     struct AirspaceBand: Codable, Equatable, Sendable {
         var floorFt: Double
         var ceilingFt: Double
         var `class`: String
         var name: String?
+        /// A B, C or D band's primary airport (NASR's IDENT), for its special VFR (14 CFR 91.157(a), part 91 Appendix D section 3).
+        var ident: String?
         var minimums: EngineContract.AirspaceBandMinimums?
         var entry: String
         var equipment: String?
@@ -242,6 +244,7 @@ enum EngineContract {
             case ceilingFt = "ceiling_ft"
             case `class`
             case name
+            case ident
             case minimums
             case entry
             case equipment
@@ -302,6 +305,8 @@ enum EngineContract {
     struct AirspaceColumnInputVolumesItem: Codable, Equatable, Sendable {
         var `class`: String
         var name: String?
+        /// The primary airport's identifier where NASR's Class Airspace file names one (IDENT), which special_vfr reads for part 91 Appendix D.
+        var ident: String?
         var floorFt: Double
         var floorRef: String
         /// Feet MSL.
@@ -310,6 +315,7 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case `class`
             case name
+            case ident
             case floorFt = "floor_ft"
             case floorRef = "floor_ref"
             case ceilingFt = "ceiling_ft"
@@ -2185,6 +2191,30 @@ enum EngineContract {
         }
     }
 
+    struct CitationsAnswer: Codable, Equatable, Sendable {
+        var pieces: [EngineContract.CitationsAnswerPiecesItem]
+    }
+
+    struct CitationsAnswerPiecesItem: Codable, Equatable, Sendable {
+        var text: String
+        var cite: EngineContract.CitationsAnswerPiecesItemCite?
+    }
+
+    struct CitationsAnswerPiecesItemCite: Codable, Equatable, Sendable {
+        var kind: String
+        /// The library's document: "cfr-14-91", "aim", "ac-61-65".
+        var doc: String
+        /// The place in it: a CFR section ("91.155"), an AIM paragraph ("7-1-5"); null for a whole part or circular.
+        var at: String?
+        /// A CFR section's paragraph as written, "(a)(1)".
+        var paragraph: String?
+    }
+
+    struct CitationsInput: Codable, Equatable, Sendable {
+        /// The words as the app shows them: a finding's why, a rule's cite.
+        var text: String?
+    }
+
     struct ClassBAtAltitudeInput: Codable, Equatable, Sendable {
         var bands: [EngineContract.ClassBAtAltitudeInputBandsItem]
         var altitudeFt: Double
@@ -2735,7 +2765,10 @@ enum EngineContract {
         var fields: [EngineContract.CopilotField]
         var rules: String?
         var minimums: EngineContract.CopilotWatchInputMinimums?
+        /// The fuel aboard, gallons: at takeoff where `started_s` is given (the engine takes the burn over the time since), else now.
         var fuelGal: Double?
+        /// When the flight began, s since 1970: with it the fuel aboard now is `fuel_gal` less `burn_gph` over the time from then to `now_s`, never below none (FAA-H-8083-25C ch. 16). Left out, `fuel_gal` is taken as the fuel aboard now.
+        var startedS: Double?
         var burnGph: Double?
         var tasKt: Double?
         /// The destination's ident. Sent among `fields` with its `status`, a closed one (NASR ARPT_STATUS not O) is said in a "closed" warning with the best alternative; not among them at all, it is still watched for, its weather and position unknown and `remaining_nm` the host's.
@@ -2756,6 +2789,7 @@ enum EngineContract {
             case rules
             case minimums
             case fuelGal = "fuel_gal"
+            case startedS = "started_s"
             case burnGph = "burn_gph"
             case tasKt = "tas_kt"
             case dest
@@ -3728,6 +3762,8 @@ enum EngineContract {
     struct EndorsementsInForceInputSignedItem: Codable, Equatable, Sendable {
         var code: String
         var voided: Bool?
+        /// The instructor_verification verdict kept with the record; false is not signed, missing or null is not said.
+        var verified: Bool?
     }
 
     struct EnduranceAnswer: Codable, Equatable, Sendable {
@@ -3877,6 +3913,16 @@ enum EngineContract {
         var use: String?
     }
 
+    struct FieldNamesInput: Codable, Equatable, Sendable {
+        var ident: String
+        var icaoId: String?
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case icaoId = "icao_id"
+        }
+    }
+
     struct FieldsAlongAnswerItem: Codable, Equatable, Sendable {
         var ident: String
         var name: String
@@ -3922,6 +3968,8 @@ enum EngineContract {
     struct FieldSiteTypeAnswer: Codable, Equatable, Sendable {
         /// The site's kind in words, or null for an airport.
         var words: String?
+        /// Whether an airplane on wheels lands at a field of this kind: A, G and U, or no code.
+        var airplane: Bool
     }
 
     struct FieldSiteTypeInput: Codable, Equatable, Sendable {
@@ -4305,7 +4353,7 @@ enum EngineContract {
         var ceilingFt: Double?
         var ceilingUnknown: Bool
         var visibilitySm: Double?
-        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
         var source: String?
 
         enum CodingKeys: String, CodingKey {
@@ -4347,7 +4395,7 @@ enum EngineContract {
         var ceilingFt: Double?
         var ceilingUnknown: Bool
         var visibilitySm: Double?
-        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+        /// Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
         var source: String?
         var windDirTrueDeg: Double?
         var windSpeedKt: Double?
@@ -5375,8 +5423,10 @@ enum EngineContract {
         var baggageCombinedMaxLb: Double?
         var fuelArmIn: Double
         var fuelMaxGal: Double
-        /// 6 where not given, avgas's standard (FAA-H-8083-1B).
+        /// The airplane's handbook's figure; where null or not given, its fuel_grade's standard weight: avgas 6, Jet A 6.8 lb a US gallon (FAA-H-8083-25, chapter 10), avgas where no grade is given.
         var fuelLbPerGal: Double?
+        /// The fuel the airplane burns, for its standard weight where its handbook gives none.
+        var fuelGrade: String?
         var startTaxiFuelLb: Double?
         /// The CG envelope's points, [arm in, weight lb].
         var envelope: [[OpenAPIValueContainer]]?
@@ -5392,6 +5442,7 @@ enum EngineContract {
             case fuelArmIn = "fuel_arm_in"
             case fuelMaxGal = "fuel_max_gal"
             case fuelLbPerGal = "fuel_lb_per_gal"
+            case fuelGrade = "fuel_grade"
             case startTaxiFuelLb = "start_taxi_fuel_lb"
             case envelope
         }
@@ -5487,6 +5538,8 @@ enum EngineContract {
         var night: Bool?
         /// Whether any of the flight is in 14 CFR 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise (passenger_night_on_the_way), its own window rather than 1.1's night; left out or null, `night` stands for it.
         var nightPassengers: Bool?
+        /// Whether any of the flight is in 14 CFR 91.209(a)'s period for lighted position lights, sunset to sunrise (lights_on_the_way), which begins before 1.1's night: an open squawk deferred for day flight grounds such a flight. Left out or null, `night` stands for it.
+        var lights: Bool?
         var fuelMarginGal: Double?
         /// Read as JavaScript reads it: missing, null, false, 0 and "" are false.
         var ifr: Bool?
@@ -5507,6 +5560,7 @@ enum EngineContract {
             case hazards
             case night
             case nightPassengers = "night_passengers"
+            case lights
             case fuelMarginGal = "fuel_margin_gal"
             case ifr
             case vorCheck = "vor_check"
@@ -6990,6 +7044,58 @@ enum EngineContract {
         var today: String
     }
 
+    struct InstructorVerificationAnswer: Codable, Equatable, Sendable {
+        var verified: Bool
+        var registryId: String?
+        /// verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.
+        var reason: String
+        var words: String
+
+        enum CodingKeys: String, CodingKey {
+            case verified
+            case registryId = "registry_id"
+            case reason
+            case words
+        }
+    }
+
+    struct InstructorVerificationInput: Codable, Equatable, Sendable {
+        /// The instructor's name as on their certificate.
+        var instructorName: String
+        /// The student's name as on their certificate.
+        var studentName: String?
+        /// YYYY-MM-DD.
+        var signedOn: String
+        /// The releasable file's active flight instructor (type F) records of the instructor's last name; null where the file is not loaded.
+        var registry: [EngineContract.InstructorVerificationInputRegistryItem]?
+        /// Registry ids another Wingtip account already signs as.
+        var boundElsewhere: [String]?
+
+        enum CodingKeys: String, CodingKey {
+            case instructorName = "instructor_name"
+            case studentName = "student_name"
+            case signedOn = "signed_on"
+            case registry
+            case boundElsewhere = "bound_elsewhere"
+        }
+    }
+
+    struct InstructorVerificationInputRegistryItem: Codable, Equatable, Sendable {
+        /// The FAA's unique id, A or C and seven digits.
+        var id: String
+        var firstMiddle: String
+        var lastSuffix: String
+        /// YYYY-MM-DD, only for a certificate issued before 1 Dec 2024 (14 CFR 61.19(d)).
+        var expires: String?
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case firstMiddle = "first_middle"
+            case lastSuffix = "last_suffix"
+            case expires
+        }
+    }
+
     struct IsaTempCInput: Codable, Equatable, Sendable {
         var altitudeFt: Double
 
@@ -7004,6 +7110,20 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case magneticCourseDeg = "magnetic_course_deg"
         }
+    }
+
+    struct JurisdictionOfAnswer: Codable, Equatable, Sendable {
+        /// US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
+        var code: String
+        /// The country's name as the warning starts, "Canada"; "Outside the US" for other.
+        var name: String
+        /// The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+        var caution: String?
+    }
+
+    struct JurisdictionOfInput: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
     }
 
     struct KeptAgeAnswer: Codable, Equatable, Sendable {
@@ -7206,6 +7326,25 @@ enum EngineContract {
         var lighting: [String]
         /// Its beacon's remarks as sent (BCN_LGT_SKED), whose sentence naming no light is the beacon's: "DUSK-DAWN."
         var beacon: [String]?
+    }
+
+    struct LightsOnTheWayInput: Codable, Equatable, Sendable {
+        /// [lat, lon]
+        var start: [Double]
+        /// [lat, lon]
+        var end: [Double]
+        var departS: Double
+        var minutes: Double
+        /// In Alaska only, the reported visibility, statute miles; below 3 the lights are on whatever the sun (91.209(a)). Left out or null outside Alaska or where none is known.
+        var alaskaVisibilitySm: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case start
+            case end
+            case departS = "depart_s"
+            case minutes
+            case alaskaVisibilitySm = "alaska_visibility_sm"
+        }
     }
 
     struct LiveFeedRefreshAnswer: Codable, Equatable, Sendable {
@@ -10504,9 +10643,15 @@ enum EngineContract {
 
     struct ReadyToFlyInputNotams: Codable, Equatable, Sendable {
         var fetchedAt: Double?
+        /// Whether the NOTAMs are the full set in force (the planner's NotamsRanked.full_set); false, only those heard since heard_since, a caution (decision 0059).
+        var fullSet: Bool?
+        /// The day the NOTAM feed was first heard, YYYY-MM-DD (NotamsRanked.coverage_since).
+        var heardSince: String?
 
         enum CodingKeys: String, CodingKey {
             case fetchedAt = "fetched_at"
+            case fullSet = "full_set"
+            case heardSince = "heard_since"
         }
     }
 
@@ -10609,6 +10754,8 @@ enum EngineContract {
         var geometricFt: Double?
         /// Its Vertical Figure of Merit, m.
         var vfomM: Double?
+        /// The Ownship Geometric Altitude's Vertical Warning (GDL 90 3.8): its height is not to be trusted.
+        var verticalWarning: Bool
 
         enum CodingKeys: String, CodingKey {
             case hex
@@ -10634,19 +10781,120 @@ enum EngineContract {
             case at
             case geometricFt = "geometric_ft"
             case vfomM = "vfom_m"
+            case verticalWarning = "vertical_warning"
         }
     }
 
     /// What a receiver has said so far: hand it back with the next bytes.
     struct ReceiverPicture: Codable, Equatable, Sendable {
-        var receiver: EngineContract.ReceiverPictureReceiver
+        var receiver: EngineContract.ReceiverState
         var ownship: EngineContract.ReceiverOwnship?
         var targets: [EngineContract.ReceiverTarget]
         var texts: [EngineContract.ReceiverText]
         var nexrad: [EngineContract.ReceiverBlock]
     }
 
-    struct ReceiverPictureReceiver: Codable, Equatable, Sendable {
+    struct ReceiverPositionAnswer: Codable, Equatable, Sendable {
+        /// Whose fix own ship is.
+        var source: String
+        /// The receiver's fix: good, or why it is not used (none heard, no GPS, stale, under 91.227's NIC and NACp).
+        var receiver: String
+        /// The receiver's fix, where it is the source.
+        var fix: EngineContract.ReceiverPositionAnswerFix?
+    }
+
+    struct ReceiverPositionAnswerFix: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
+        /// GPS height MSL, ft, where the receiver gives MSL.
+        var altitudeFt: Double?
+        /// GPS height above the WGS-84 ellipsoid, ft, where that is what the receiver gives.
+        var ellipsoidFt: Double?
+        /// Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4).
+        var pressureFt: Double?
+        /// The pressure altitude as a flight level, at and above 18,000 ft only.
+        var flightLevel: Double?
+        /// True track, degrees, where the report gives one.
+        var trackDeg: Double?
+        var groundspeedKt: Double?
+        var verticalFpm: Double?
+        /// The NACp's bound on the 95% horizontal error, m.
+        var accuracyM: Double
+        var airborne: Bool
+        /// When the report was heard, Unix s.
+        var at: Double
+
+        enum CodingKeys: String, CodingKey {
+            case lat
+            case lon
+            case altitudeFt = "altitude_ft"
+            case ellipsoidFt = "ellipsoid_ft"
+            case pressureFt = "pressure_ft"
+            case flightLevel = "flight_level"
+            case trackDeg = "track_deg"
+            case groundspeedKt = "groundspeed_kt"
+            case verticalFpm = "vertical_fpm"
+            case accuracyM = "accuracy_m"
+            case airborne
+            case at
+        }
+    }
+
+    struct ReceiverPositionInput: Codable, Equatable, Sendable {
+        /// The picture's own ship.
+        var ownship: EngineContract.ReceiverOwnship?
+        /// The picture's receiver.
+        var receiver: EngineContract.ReceiverState?
+        /// The device's last fix, or null where it has none.
+        var device: EngineContract.ReceiverPositionInputDevice?
+        /// The source the last answer gave (receiver, device or none).
+        var was: String?
+        /// Now, Unix s.
+        var at: Double
+    }
+
+    struct ReceiverPositionInputDevice: Codable, Equatable, Sendable {
+        /// The device's horizontal accuracy, m (a 68% radius).
+        var accuracyM: Double
+        /// When the device's fix was taken, Unix s.
+        var at: Double
+
+        enum CodingKeys: String, CodingKey {
+            case accuracyM = "accuracy_m"
+            case at
+        }
+    }
+
+    struct ReceiverReadInput: Codable, Equatable, Sendable {
+        /// The bytes received since the last read (whole UDP datagrams), Base64 (RFC 4648).
+        var data: String?
+        /// Now, Unix s: when the bytes came.
+        var at: Double
+        /// The last answer, or null at first.
+        var picture: EngineContract.ReceiverPicture?
+    }
+
+    /// A field's report as FIS-B sent it: its kind (METAR, SPECI, TAF), its words as sent, the product's time HHMMZ and when it was last heard, Unix s.
+    struct ReceiverReport: Codable, Equatable, Sendable {
+        var kind: String
+        var text: String
+        var time: String
+        var at: Double
+    }
+
+    struct ReceiverReportsAnswer: Codable, Equatable, Sendable {
+        var metar: EngineContract.ReceiverReport?
+        var taf: EngineContract.ReceiverReport?
+    }
+
+    struct ReceiverReportsInput: Codable, Equatable, Sendable {
+        /// The last answer, or null at first.
+        var picture: EngineContract.ReceiverPicture?
+        var ident: String
+    }
+
+    /// The receiver's own state, as its Heartbeat and ID message say.
+    struct ReceiverState: Codable, Equatable, Sendable {
         /// The name its ID message gives (Stratux, Sentry, SkyEcho).
         var name: String?
         var longName: String?
@@ -10687,34 +10935,6 @@ enum EngineContract {
             case stationLon = "station_lon"
             case stationAt = "station_at"
         }
-    }
-
-    struct ReceiverReadInput: Codable, Equatable, Sendable {
-        /// The bytes received since the last read (whole UDP datagrams), Base64 (RFC 4648).
-        var data: String?
-        /// Now, Unix s: when the bytes came.
-        var at: Double
-        /// The last answer, or null at first.
-        var picture: EngineContract.ReceiverPicture?
-    }
-
-    /// A field's report as FIS-B sent it: its kind (METAR, SPECI, TAF), its words as sent, the product's time HHMMZ and when it was last heard, Unix s.
-    struct ReceiverReport: Codable, Equatable, Sendable {
-        var kind: String
-        var text: String
-        var time: String
-        var at: Double
-    }
-
-    struct ReceiverReportsAnswer: Codable, Equatable, Sendable {
-        var metar: EngineContract.ReceiverReport?
-        var taf: EngineContract.ReceiverReport?
-    }
-
-    struct ReceiverReportsInput: Codable, Equatable, Sendable {
-        /// The last answer, or null at first.
-        var picture: EngineContract.ReceiverPicture?
-        var ident: String
     }
 
     /// An airplane a receiver reports (GDL 90's Traffic or Ownship Report, 560-1058-00 Rev A 3.5.1), as heard.
@@ -10966,6 +11186,38 @@ enum EngineContract {
         var night: Bool?
     }
 
+    struct RouteAdizAnswer: Codable, Equatable, Sendable {
+        /// Each point's zone, null outside every one.
+        var points: [String?]
+        /// From each point to the next.
+        var legs: [[String]]
+        /// Every zone the route meets, once each in order.
+        var zones: [String]
+        /// The Brief's line for the route, once; null where it meets no ADIZ.
+        var brief: EngineContract.RouteAdizAnswerBrief?
+    }
+
+    struct RouteAdizAnswerBrief: Codable, Equatable, Sendable {
+        /// The finding alone, "Through the Alaska ADIZ".
+        var lead: String
+        /// The finding and what part 99 asks, in one line.
+        var line: String
+        /// What part 99 asks in the first zone met, its exceptions (99.1(b)) said.
+        var action: String
+        var why: String
+        var cite: String
+    }
+
+    struct RouteAdizInput: Codable, Equatable, Sendable {
+        /// The route's points in order, as the nav log's rows: a leg from each to the next.
+        var points: [EngineContract.RouteAdizInputPointsItem]
+    }
+
+    struct RouteAdizInputPointsItem: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
+    }
+
     struct RouteHeadwindAnswer: Codable, Equatable, Sendable {
         /// The headwind on that leg's course, kt; negative a tailwind.
         var headwindKt: Double
@@ -11060,6 +11312,51 @@ enum EngineContract {
             case turns
             case minutes
         }
+    }
+
+    struct RouteJurisdictionAnswer: Codable, Equatable, Sendable {
+        /// Each point's, in order.
+        var points: [EngineContract.RouteJurisdictionAnswerPointsItem]
+        /// From each point to the next.
+        var legs: [EngineContract.RouteJurisdictionAnswerLegsItem]
+        /// Every country other than the United States the route meets, once each in order.
+        var outside: [String]
+        /// The Brief's line for the route, once; null where it is all in the United States.
+        var brief: EngineContract.RouteJurisdictionAnswerBrief?
+    }
+
+    struct RouteJurisdictionAnswerBrief: Codable, Equatable, Sendable {
+        /// The finding alone.
+        var lead: String
+        /// The finding and what to do, in one line.
+        var line: String
+        var action: String
+        var why: String
+        var cite: String
+    }
+
+    struct RouteJurisdictionAnswerLegsItem: Codable, Equatable, Sendable {
+        /// The countries other than the United States met along the leg, its ends included, in the order met.
+        var codes: [String]
+        /// The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+        var caution: String?
+    }
+
+    struct RouteJurisdictionAnswerPointsItem: Codable, Equatable, Sendable {
+        /// US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
+        var code: String
+        /// The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+        var caution: String?
+    }
+
+    struct RouteJurisdictionInput: Codable, Equatable, Sendable {
+        /// The route's points in order, as the nav log's rows: a leg from each to the next.
+        var points: [EngineContract.RouteJurisdictionInputPointsItem]
+    }
+
+    struct RouteJurisdictionInputPointsItem: Codable, Equatable, Sendable {
+        var lat: Double
+        var lon: Double
     }
 
     /// One way: its kind and every kind it is the best of, its points between the ends (fixes, points of the pilot's own, fuel stops), the fuel stops among them and those with somewhere to eat, its path, distance, minutes in the air and on the ground (30 a landing), fuel, landings, the hazards it crosses and the marginal ones it passes (indices into hazards), and what it meets. With no airplane (a null profile) its minutes in the air and its fuel are null, and it has no fuel stops.
@@ -12301,6 +12598,82 @@ enum EngineContract {
         var desc: String?
     }
 
+    struct SpecialVfrAnswer: Codable, Equatable, Sendable {
+        /// Nothing known rules special VFR out.
+        var available: Bool
+        /// What rules it out, each with its rule.
+        var problems: [EngineContract.SpecialVfrAnswerProblemsItem]
+        /// What it asks, each with its rule.
+        var needs: [EngineContract.SpecialVfrAnswerNeedsItem]
+        /// The airport's entry in part 91 appendix D, section 3, "Chicago, IL (Chicago-O'Hare International Airport)"; null where it is not listed.
+        var listed: String?
+        var visibilitySm: Double
+        var belowMslFt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case available
+            case problems
+            case needs
+            case listed
+            case visibilitySm = "visibility_sm"
+            case belowMslFt = "below_msl_ft"
+        }
+    }
+
+    struct SpecialVfrAnswerNeedsItem: Codable, Equatable, Sendable {
+        var words: String
+        /// The rule, "14 CFR 91.157(b)(3)".
+        var source: String
+    }
+
+    struct SpecialVfrAnswerProblemsItem: Codable, Equatable, Sendable {
+        var words: String
+        /// The rule, "14 CFR 91.157(b)(3)".
+        var source: String
+    }
+
+    struct SpecialVfrInput: Codable, Equatable, Sendable {
+        /// The class of the surface area the airplane is in (controlled airspace designated to the surface for an airport); null or G where it is in none.
+        var surfaceArea: String?
+        /// The surface area's primary airport, FAA or ICAO ident, for appendix D, section 3.
+        var airport: String?
+        /// Feet MSL; null where not known.
+        var altitudeFt: Double?
+        /// Between sunset and sunrise; null where not known.
+        var night: Bool?
+        /// In Alaska, where 91.157(b)(4) reads the sun's elevation.
+        var alaska: Bool?
+        /// The sun's elevation, degrees (negative below the horizon); read in Alaska alone.
+        var sunElevationDeg: Double?
+        /// The pilot meets part 61's requirements for instrument flight (rated, and current under 61.57(c)).
+        var instrumentCurrent: Bool?
+        /// The airplane is equipped as 91.205(d) asks for IFR.
+        var ifrEquipped: Bool?
+        /// Statute miles.
+        var flightVisibilitySm: Double?
+        /// Statute miles, as reported at the airport; null where none is.
+        var groundVisibilitySm: Double?
+        /// Whether the flight can keep clear of clouds.
+        var clearOfClouds: Bool?
+        /// Taking off or landing under special VFR (91.157(c)).
+        var takeoffOrLanding: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case surfaceArea = "surface_area"
+            case airport
+            case altitudeFt = "altitude_ft"
+            case night
+            case alaska
+            case sunElevationDeg = "sun_elevation_deg"
+            case instrumentCurrent = "instrument_current"
+            case ifrEquipped = "ifr_equipped"
+            case flightVisibilitySm = "flight_visibility_sm"
+            case groundVisibilitySm = "ground_visibility_sm"
+            case clearOfClouds = "clear_of_clouds"
+            case takeoffOrLanding = "takeoff_or_landing"
+        }
+    }
+
     /// A place a clearance may name, as the planner or a phone's pack holds it: an airport, a navaid (NASR NAV_BASE, by its NAME) or a fix (no name).
     struct SpokenCandidate: Codable, Equatable, Sendable {
         var ident: String
@@ -13257,6 +13630,46 @@ enum EngineContract {
     }
 
     struct VfrBasicMinimumsInput: Codable, Equatable, Sendable {
+    }
+
+    struct VfrClassGNightPatternAnswer: Codable, Equatable, Sendable {
+        var applies: Bool
+        /// The least visibility it asks, 1 sm.
+        var visibilitySm: Double
+        /// It is for a visibility under this, 3 sm.
+        var underVisibilitySm: Double
+        /// 1,200 ft above the surface.
+        var belowAglFt: Double
+        var words: String
+        var source: String
+
+        enum CodingKeys: String, CodingKey {
+            case applies
+            case visibilitySm = "visibility_sm"
+            case underVisibilitySm = "under_visibility_sm"
+            case belowAglFt = "below_agl_ft"
+            case words
+            case source
+        }
+    }
+
+    struct VfrClassGNightPatternInput: Codable, Equatable, Sendable {
+        var `class`: String
+        /// Feet above the surface.
+        var aglFt: Double
+        var night: Bool?
+        /// In an airport traffic pattern within 1/2 mile of the runway.
+        var inPattern: Bool?
+        /// Statute miles; null where not known.
+        var visibilitySm: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case `class`
+            case aglFt = "agl_ft"
+            case night
+            case inPattern = "in_pattern"
+            case visibilitySm = "visibility_sm"
+        }
     }
 
     struct VfrFloorsAnswerItem: Codable, Equatable, Sendable {

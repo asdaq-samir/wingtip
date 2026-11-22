@@ -324,6 +324,7 @@ export type EndorsementsInForceAnswer = [string, number][];
 export type FaaIdsAnswer = string[];
 export type FaaWordsAnswer = string | string[];
 export type FieldHoursAnswer = FieldHour[];
+export type FieldNamesAnswer = string[];
 export type FiledDofAnswer = string | null;
 export type FiledDurationAnswer = string;
 export type FiledEnduranceAnswer = number | null;
@@ -695,6 +696,7 @@ export type LeastCrosswindAnswer = {
   crosswind_kt: number;
 } | null;
 export type LegalCruisingAltitudesAnswer = number[];
+export type LightsOnTheWayAnswer = boolean;
 export type LogbookCsvWriteAnswer = string;
 /**
  * The page's "total this page" row, where it has one.
@@ -1164,7 +1166,7 @@ export interface EngineContract {
     answer: AcsCodesAnswer;
   };
   /**
-   * Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground.
+   * Where the data for what is ahead of own ship is wanted (ahead.rs): the box round the five minutes' track, 1 nm wider, for the airspace, special-use areas and TFRs; the box round the next minute's, the swath and half a mile wider, for the FAA's Digital Obstacle File; and the swath's points (the track and 0.25 nm either side, every 2 s) for the ground. Near the antimeridian a box is read the short way round, so its west may be under -180 or its east over 180: the planner reads it as its two halves (wingtip.geo_boxes).
    */
   ahead_frame: {
     input: AheadFrameInput;
@@ -1479,7 +1481,7 @@ export interface EngineContract {
     answer: AviationGridBandsAnswer;
   };
   /**
-   * The Aviation Weather Center's national airsigmets cache file (XML) read into the shape the weather store keeps: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].
+   * The Aviation Weather Center's combined SIGMET cache file (sigmets.cache.xml, XML: the US convective and non-convective SIGMETs and the international ones, data API v4.34) read into the shape the weather store keeps, one advisory an area, a convective SIGMET's CONV hazard as CONVECTIVE: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].
    */
   awc_airsigmets_read: {
     input: AwcAirsigmetsReadInput;
@@ -1603,6 +1605,13 @@ export interface EngineContract {
   checkpoints_select: {
     input: CheckpointsSelectInput;
     answer: CheckpointsSelectAnswer;
+  };
+  /**
+   * A text cut into pieces, each cited rule among them named by the document that holds it and the place in it, for the documents library to open (docs/decisions/0057-documents-library.md): 14 CFR and 49 CFR sections with their paragraphs ("14 CFR 91.211(a)(1)", "49 CFR 830.5", a list after one, a bare section after a title or with its paragraph, never a bare figure such as 121.5), 14 CFR's parts ("Part 135"), AIM paragraphs ("AIM 7-1-5") and advisory circulars ("AC 61-65K", named without the edition's letter). A document is cfr-<title>-<part>, aim or ac-<number>; the pieces' texts joined are the text.
+   */
+  citations: {
+    input: CitationsInput;
+    answer: CitationsAnswer;
   };
   /**
    * Which Class B band along a route's profile holds an altitude (14 CFR 91.131(a)(1): an ATC clearance before entering Class B): the index of the first band of class B whose floor is at or under altitude_ft and whose ceiling is at or over it, both ft MSL as the FAA's Class Airspace shapefile publishes them; null where none does. A band with no ceiling given holds every altitude from its floor up, so a clearance is said to be needed rather than not (Class B tops run from 7,000 ft at KMSY to 12,500 ft at KDEN, so no one figure stands in for it).
@@ -1934,7 +1943,7 @@ export interface EngineContract {
     answer: EndorsementRenderAnswer;
   };
   /**
-   * The latest not voided of each code, as [code, index] into the record (newest first).
+   * The latest not voided of each code, as [code, index] into the record (newest first); one whose instructor the FAA airmen registry did not bear out (verified false, instructor_verification) is not signed and counts as voided.
    */
   endorsements_in_force: {
     input: EndorsementsInForceInput;
@@ -1983,7 +1992,14 @@ export interface EngineContract {
     answer: FieldMilitaryAnswer;
   };
   /**
-   * The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport.
+   * Every name a field may be filed under, in the order to try them: NASR's ICAO_ID where given, the K form of a three-letter ident (FAA JO 7350.9GG 4-1), the ident as asked and its FAA form.
+   */
+  field_names: {
+    input: FieldNamesInput;
+    answer: FieldNamesAnswer;
+  };
+  /**
+   * The words for a field's kind of landing site, from the FAA's NASR APT_BASE.csv SITE_TYPE_CODE (the NASR subscriber files' APT_BASE layout): B Balloonport, C Seaplane base, G Gliderport, H Heliport, U Ultralight, in sentence case as the app sets the FAA's own words; null for an airport (A), the plain kind that needs no word, and for no code or one NASR does not list. What the airport card says beside the field's use, so a heliport the map draws as an H is not read as an airport. `airplane`: whether an airplane on wheels lands there, an airport (A), a gliderport (G) or an ultralight park (U), each a strip of ground; not a heliport, a balloonport or a seaplane base, whose runways are water. What every list of fields to land at is held to (nearest, a stop, a glide's); true with no code, the host's own list then deciding.
    */
   field_site_type: {
     input: FieldSiteTypeInput;
@@ -2655,6 +2671,13 @@ export interface EngineContract {
     answer: InstructorRecordsSinceAnswer;
   };
   /**
+   * Whether the instructor signing an endorsement is a flight instructor the FAA's releasable airmen file bears out, by name (the file has no certificate numbers), not the student themselves and not a record another account signs as (14 CFR 61.1, 61.189(a); AC 61-65K).
+   */
+  instructor_verification: {
+    input: InstructorVerificationInput;
+    answer: InstructorVerificationAnswer;
+  };
+  /**
    * Whether a magnetic course is eastbound, 0 to 179 degrees (14 CFR 91.159(a)).
    */
   is_eastbound: {
@@ -2667,6 +2690,13 @@ export interface EngineContract {
   isa_temp_c: {
     input: IsaTempCInput;
     answer: IsaTempCAnswer;
+  };
+  /**
+   * Whose rules a point is under. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).
+   */
+  jurisdiction_of: {
+    input: JurisdictionOfInput;
+    answer: JurisdictionOfAnswer;
   };
   /**
    * A kept answer's age, as the apps show it with no signal ("Fetched 42m ago"), and whether it is past the freshness ready_to_fly holds it to: the briefing, the plan's nav log, the Go / No-Go and the weather loop for an hour (the app's choice, at AIM 7-1-28's hourly METAR), METARs and TAFs for the routine report's hour (AIM 7-1-28), the NOTAMs for an hour (14 CFR 91.103, AIM 5-1-3; the age the app's choice), and the airport cards and plates for the AIRAC cycle they came in (FAA 28 and 56 Day Product Schedule). A caution at worst: the answer is still shown.
@@ -2709,6 +2739,13 @@ export interface EngineContract {
   lighting_read: {
     input: LightingReadInput;
     answer: LightingReadAnswer;
+  };
+  /**
+   * Whether any of a flight from `start` to `end` of `minutes`, leaving at `depart_s`, falls in 14 CFR 91.209(a)'s period for lighted position lights, "from sunset to sunrise" (the sun's upper limb on the horizon, as sun_down), judged every half hour along the straight line as night_on_the_way judges the night. Not 1.1's night: twenty minutes after sunset the lights are needed though it is not yet night for 91.151 or 91.205(c). In Alaska the rule's period is the sun more than six degrees down or a prominent unlighted object not seen from 3 statute miles: sunset to sunrise is read there too, erring toward the lights, and `alaska_visibility_sm`, the reported visibility below 3 statute miles, puts the lights on all the way.
+   */
+  lights_on_the_way: {
+    input: LightsOnTheWayInput;
+    answer: LightsOnTheWayAnswer;
   };
   /**
    * How long an answer from one of the FAA's SWIM feeds (the planner's /api/live/*) is fresh and how often a screen showing it asks again: a runway's RVR each minute, as it is updated (AIM 7-1-13), the ITWS alerts and special activity airspace's SFDPS status as often (the app's choice), the Command Center's programs every five minutes, and the D-ATIS and a flight's tower departures fresh for five minutes and not polled (the app's choice).
@@ -3320,7 +3357,7 @@ export interface EngineContract {
     answer: ReadbackCheckAnswer;
   };
   /**
-   * Ready to fly: whether the device holds what the flight needs before it loses the signal -- the route's charts kept and of the 56-day edition in force, the cycle packs of the AIRAC cycle in force (FAA 28 and 56 Day Product Schedule; 14 CFR 91.103), a weather briefing under an hour old (the app's choice, at AIM 7-1-28's hourly METAR), each field's METAR in force and its TAF, the route's NOTAMs under an hour old (91.103, AIM 5-1-3; the age the app's choice), the plan's route, airplane and altitude (none assumed), what Keep for the Air holds for the route (its ages are kept_age's), the plan saved, location allowed, the battery at half or charging (the app's choice) and an ADS-B receiver where the pilot uses one. A caution at worst, never a stop; one line and at most three actions, the most pressing first.
+   * Ready to fly: whether the device holds what the flight needs before it loses the signal -- the route's charts kept and of the 56-day edition in force, the cycle packs of the AIRAC cycle in force (FAA 28 and 56 Day Product Schedule; 14 CFR 91.103), a weather briefing under an hour old (the app's choice, at AIM 7-1-28's hourly METAR), each field's METAR in force and its TAF, the route's NOTAMs under an hour old (91.103, AIM 5-1-3; the age the app's choice) and the full set in force, not only those heard since a day, the plan's route, airplane and altitude (none assumed), what Keep for the Air holds for the route (its ages are kept_age's), the plan saved, location allowed, the battery at half or charging (the app's choice) and an ADS-B receiver where the pilot uses one. A caution at worst, never a stop; one line and at most three actions, the most pressing first.
    */
   ready_to_fly: {
     input: ReadyToFlyInput;
@@ -3332,6 +3369,13 @@ export interface EngineContract {
   receiver_nexrad: {
     input: ReceiverNexradInput;
     answer: ReceiverNexradAnswer;
+  };
+  /**
+   * Own ship from the receiver's GPS or the device's (GDL 90 560-1058-00 Rev A 3.4, 3.5.1.6, 3.8). The receiver's Ownship Report is a fix only while the receiver is heard, its Heartbeat says GPS Pos Valid (3.1.1), the report is under 3 s old and not extrapolated (AC 120-76D 11.17.2.3's three seconds) and its NIC and NACp reach 14 CFR 91.227(c)(1)'s floor (NIC 7, under 0.2 nm; NACp 8, under 0.05 nm). It is used where the device has no fresh fix (a Wi-Fi iPad) or the receiver's is better by twice, the device's accuracy put on the EPU's 95%; the one in use is kept until the other is twice as good, and the device's is taken back the moment the receiver's goes. Height is the GPS's, MSL where the receiver says so (ForeFlight's ID message), else ellipsoid_ft alone for a geoid model; pressure altitude is a flight level only at and above 18,000 ft (14 CFR 91.121(a)(2), 1.1).
+   */
+  receiver_position: {
+    input: ReceiverPositionInput;
+    answer: ReceiverPositionAnswer;
   };
   /**
    * A portable ADS-B receiver's GDL 90 bytes (Garmin 560-1058-00 Rev A; ForeFlight's ID message) read into what it has said: its state, own ship, the traffic it hears (AIM 4-5-7, 4-5-8) and the FIS-B products it is sent (AIM 4-5-9), each dropped once it is no longer heard. Traffic is for seeing, not avoiding (AIM 4-5-7).
@@ -3404,11 +3448,25 @@ export interface EngineContract {
     answer: ReserveMinAnswer;
   };
   /**
+   * The Air Defense Identification Zones a route meets (14 CFR part 99, subpart B), each as the regulation draws it: the Contiguous U.S. ADIZ (99.43, its line along the U.S.-Mexico border taken as crossed by a leg from one country to the other), Alaska's (99.45), Guam's (99.47) and Hawaii's (99.49), great circles between their points and rhumb lines along a parallel (99.41). Each point, each leg checked every 2 nm along its geodesic, the zones met in order and the Brief's one line: a flight plan filed and open (99.11), a two-way radio and a listening watch (99.9), the transponder on (99.13) and a position report before crossing (99.15), with 99.1(b)'s exceptions said. Warn, never limit: any altitude or speed is taken as meeting the zone.
+   */
+  route_adiz: {
+    input: RouteAdizInput;
+    answer: RouteAdizAnswer;
+  };
+  /**
    * The route's strongest headwind: of the nav log's legs, the one whose wind aloft blows most against its true course, its headwind the wind's component along that course (the wind triangle, FAA-H-8083-25C ch. 16; the winds aloft forecast's direction is true, FAA-H-8083-28B 27.6), to a tenth of a knot, a tailwind negative, so with tailwinds all the way it is the least of them. The first such leg where two tie; a leg with no wind or no course is passed over; null where no leg has both. The Brief's glance shows it as the route's wind aloft.
    */
   route_headwind: {
     input?: RouteHeadwindInput;
     answer?: RouteHeadwindAnswer;
+  };
+  /**
+   * Which of a route's points and legs lie outside the United States, each leg checked every 2 nm along its geodesic, and the Brief's one line for them. Every rule the engine holds is the FAA's: part 91 governs flight within the United States and the waters within 3 nm of its coast, most of its flight rules on to 12 nm (14 CFR 91.1(a), (b)); outside it a U.S. airplane flies by the foreign country's rules, and by ICAO Annex 2 over the high seas (14 CFR 91.703(a)). From Natural Earth's admin-0 countries at 1:50m (public domain), the United States with its territories and Canada, Mexico and the Bahamas; a point on no country's land is its nearest country's within 12 nm of its outline, else other. Warn, never limit (decision 0053).
+   */
+  route_jurisdiction: {
+    input: RouteJurisdictionInput;
+    answer: RouteJurisdictionAnswer;
   };
   /**
    * The ways to fly a route (route/options.rs): the fastest, the best weather's, the fewest stops' and the one over land, each clear of thunderstorms by 20 nm (AIM 7-1-27), weather under the pilot's minimums and never under 14 CFR 91.155's, SIGMETs and IFR G-AIRMETs, prohibited areas (91.133), TFRs (91.137-91.145) and ground the airplane cannot top with 1,000 ft (91.119), with the fuel stops that land with 91.151's reserve; the pilot's own route, the most filed one and the one round the Class B it enters (14 CFR 91.131(a)(1)) with the stops they need; what the straight line, the ends and the pilot's route meet; the hazards; the sources not checked; and the fuel fields weighed whose places to eat were not read.
@@ -3614,6 +3672,13 @@ export interface EngineContract {
     answer: SpecialUseTabAnswer;
   };
   /**
+   * 14 CFR 91.157's special VFR for an airplane (eCFR, current on 2026-11-21): within the surface area of an airport's Class B, C, D or E airspace and below 10,000 ft MSL (91.157(a)), never at the airports of part 91 appendix D, section 3 (fixed-wing special VFR prohibited: O'Hare, LaGuardia and 31 more, by FAA or ICAO ident); with an ATC clearance, clear of clouds and at least 1 statute mile flight visibility (91.157(b)(1)-(3)); between sunset and sunrise (in Alaska, the sun more than 6 degrees below the horizon) only for a pilot meeting part 61's requirements for instrument flight in an airplane equipped as 91.205(d) asks (91.157(b)(4)); and to take off or land, at least 1 sm ground visibility, or flight visibility where none is reported (91.157(c)). `available` is false where anything known rules it out (each in `problems`); what is not given rules nothing out and stays in `needs`, never said to be met.
+   */
+  special_vfr: {
+    input: SpecialVfrInput;
+    answer: SpecialVfrAnswer;
+  };
+  /**
    * What a squawk says, where it says more than a code: 7500 unlawful interference (AIM 6-3-4), 7600 two-way radio failure (AIM 6-4-2), 7700 an emergency (AIM 6-2-2); null for any other.
    */
   squawk_meaning: {
@@ -3691,7 +3756,7 @@ export interface EngineContract {
     answer: TerrainViewBandsAnswer;
   };
   /**
-   * The way round high ground's frame: the grid's corner, cells and samples a cell's side the planner reads the ground at, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159, under Class A, 71.33), and the box the fields with fuel are wanted in.
+   * The way round high ground's frame: the grid's corner, cells and samples a cell's side the planner reads the ground at, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159, under Class A, 71.33), and the box the fields with fuel are wanted in. Across the antimeridian the end is read within 180 degrees of the start, so lon0 and the box may pass -180 or 180 (wingtip.terrain_detour reads them at their own longitudes).
    */
   terrain_way_frame: {
     input: TerrainWayFrameInput;
@@ -3829,6 +3894,13 @@ export interface EngineContract {
   vfr_basic_minimums: {
     input: VfrBasicMinimumsInput;
     answer: VfrBasicMinimumsAnswer;
+  };
+  /**
+   * 14 CFR 91.155(b)(2), Class G's one exception to 91.155(a) for an airplane (eCFR, current on 2026-11-21): below 1,200 ft above the surface (not at it: the table's low row is "1,200 feet or less"), at night, in an airport traffic pattern within 1/2 mile of the runway, with the visibility under 3 statute miles but not under 1, the airplane may fly clear of clouds. By day the table's low row already asks 1 sm and clear of clouds (91.155(a)); 91.155(b)(1) is the helicopter's. A visibility not given leaves the other conditions to decide.
+   */
+  vfr_class_g_night_pattern: {
+    input: VfrClassGNightPatternInput;
+    answer: VfrClassGNightPatternAnswer;
   };
   /**
    * The VFR floor of each piece of the route between consecutive breaks: the ground plus 1,000 ft, or a DOF obstacle's top plus 14 CFR 91.119's clearance where it stands (1,000 ft over a congested area, (b); 500 elsewhere, (c); 1,000 where the towns are not known), rounded up to the next 100 ft; with 91.119's own minimum under it.
@@ -4219,6 +4291,10 @@ export interface AirspaceColumnInput {
   volumes: {
     class: "B" | "C" | "D" | "E";
     name?: string | null;
+    /**
+     * The primary airport's identifier where NASR's Class Airspace file names one (IDENT), which special_vfr reads for part 91 Appendix D.
+     */
+    ident?: string | null;
     floor_ft: number;
     floor_ref: "SFC" | "AGL" | "MSL";
     /**
@@ -4228,7 +4304,7 @@ export interface AirspaceColumnInput {
   }[];
 }
 /**
- * A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.
+ * A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name and primary airport for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.
  *
  * This interface was referenced by `EngineContract`'s JSON-Schema
  * via the `definition` "AirspaceBand".
@@ -4238,6 +4314,10 @@ export interface AirspaceBand {
   ceiling_ft: number;
   class: "A" | "B" | "C" | "D" | "E" | "G";
   name: string | null;
+  /**
+   * A B, C or D band's primary airport (NASR's IDENT), for its special VFR (14 CFR 91.157(a), part 91 Appendix D section 3).
+   */
+  ident?: string | null;
   minimums: {
     day: {
       visibility_sm: number;
@@ -5619,6 +5699,33 @@ export interface CheckpointsSelectInput {
   min_score?: number | null;
   length_nm?: number | null;
 }
+export interface CitationsInput {
+  /**
+   * The words as the app shows them: a finding's why, a rule's cite.
+   */
+  text?: string | null;
+}
+export interface CitationsAnswer {
+  pieces: {
+    text: string;
+    cite: null | Citation;
+  }[];
+}
+export interface Citation {
+  kind: "cfr" | "aim" | "ac";
+  /**
+   * The library's document: "cfr-14-91", "aim", "ac-61-65".
+   */
+  doc: string;
+  /**
+   * The place in it: a CFR section ("91.155"), an AIM paragraph ("7-1-5"); null for a whole part or circular.
+   */
+  at: string | null;
+  /**
+   * A CFR section's paragraph as written, "(a)(1)".
+   */
+  paragraph: string | null;
+}
 export interface ClassBAtAltitudeInput {
   bands: {
     class: string;
@@ -5930,7 +6037,14 @@ export interface CopilotWatchInput {
   fields: CopilotField[];
   rules?: "VFR" | "IFR" | null;
   minimums?: CopilotMinimums;
+  /**
+   * The fuel aboard, gallons: at takeoff where `started_s` is given (the engine takes the burn over the time since), else now.
+   */
   fuel_gal?: number | null;
+  /**
+   * When the flight began, s since 1970: with it the fuel aboard now is `fuel_gal` less `burn_gph` over the time from then to `now_s`, never below none (FAA-H-8083-25C ch. 16). Left out, `fuel_gal` is taken as the fuel aboard now.
+   */
+  started_s?: number | null;
   burn_gph?: number | null;
   tas_kt?: number | null;
   /**
@@ -6347,6 +6461,10 @@ export interface GonogoRiskInput {
    * Whether any of the flight is in 14 CFR 61.57(b)'s period, 1 hour after sunset to 1 hour before sunrise (passenger_night_on_the_way), its own window rather than 1.1's night; left out or null, `night` stands for it.
    */
   night_passengers?: boolean | null;
+  /**
+   * Whether any of the flight is in 14 CFR 91.209(a)'s period for lighted position lights, sunset to sunrise (lights_on_the_way), which begins before 1.1's night: an open squawk deferred for day flight grounds such a flight. Left out or null, `night` stands for it.
+   */
+  lights?: boolean | null;
   fuel_margin_gal?: number | null;
   /**
    * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
@@ -7014,6 +7132,10 @@ export interface EndorsementsInForceInput {
   signed: {
     code: string;
     voided?: boolean | null;
+    /**
+     * The instructor_verification verdict kept with the record; false is not signed, missing or null is not said.
+     */
+    verified?: boolean | null;
   }[];
 }
 export interface EnduranceInput {
@@ -7151,6 +7273,10 @@ export interface FieldMilitaryAnswer {
    */
   military: "military" | "joint" | null;
 }
+export interface FieldNamesInput {
+  ident: string;
+  icao_id?: string | null;
+}
 export interface FieldSiteTypeInput {
   /**
    * NASR APT_BASE's SITE_TYPE_CODE (A, B, C, G, H, U); null where NASR has no record.
@@ -7162,6 +7288,10 @@ export interface FieldSiteTypeAnswer {
    * The site's kind in words, or null for an airport.
    */
   words: "Balloonport" | "Seaplane base" | "Gliderport" | "Heliport" | "Ultralight" | null;
+  /**
+   * Whether an airplane on wheels lands at a field of this kind: A, G and U, or no code.
+   */
+  airplane: boolean;
 }
 export interface FieldStatusInput {
   /**
@@ -7518,7 +7648,7 @@ export interface ForecastRunAnswer {
     ceiling_unknown: boolean;
     visibility_sm: number | null;
     /**
-     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
      */
     source: string | null;
     wind_dir_true_deg: number | null;
@@ -7553,7 +7683,7 @@ export interface ForecastRunAnswer {
     ceiling_unknown: boolean;
     visibility_sm: number | null;
     /**
-     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modelled for 1500Z".
+     * Whose forecast it is: "TAF KMSN", "TAF KMSN, 12 nm away" or "NWS Gridded LAMP, modeled for 1500Z".
      */
     source: string | null;
   }[];
@@ -7892,9 +8022,13 @@ export interface GonogoLoading {
   fuel_arm_in: number;
   fuel_max_gal: number;
   /**
-   * 6 where not given, avgas's standard (FAA-H-8083-1B).
+   * The airplane's handbook's figure; where null or not given, its fuel_grade's standard weight: avgas 6, Jet A 6.8 lb a US gallon (FAA-H-8083-25, chapter 10), avgas where no grade is given.
    */
   fuel_lb_per_gal?: number | null;
+  /**
+   * The fuel the airplane burns, for its standard weight where its handbook gives none.
+   */
+  fuel_grade?: "avgas" | "jet_a" | null;
   start_taxi_fuel_lb?: number | null;
   /**
    * The CG envelope's points, [arm in, weight lb].
@@ -9162,11 +9296,73 @@ export interface InstructorRecordsSinceInput {
    */
   today: string;
 }
+export interface InstructorVerificationInput {
+  /**
+   * The instructor's name as on their certificate.
+   */
+  instructor_name: string;
+  /**
+   * The student's name as on their certificate.
+   */
+  student_name?: string | null;
+  /**
+   * YYYY-MM-DD.
+   */
+  signed_on: string;
+  /**
+   * The releasable file's active flight instructor (type F) records of the instructor's last name; null where the file is not loaded.
+   */
+  registry?:
+    | {
+        /**
+         * The FAA's unique id, A or C and seven digits.
+         */
+        id: string;
+        first_middle: string;
+        last_suffix: string;
+        /**
+         * YYYY-MM-DD, only for a certificate issued before 1 Dec 2024 (14 CFR 61.19(d)).
+         */
+        expires?: string | null;
+      }[]
+    | null;
+  /**
+   * Registry ids another Wingtip account already signs as.
+   */
+  bound_elsewhere?: string[] | null;
+}
+export interface InstructorVerificationAnswer {
+  verified: boolean;
+  registry_id: string | null;
+  /**
+   * verified, same_person, registry_unavailable, no_match, ambiguous, claimed or expired.
+   */
+  reason: string;
+  words: string;
+}
 export interface IsEastboundInput {
   magnetic_course_deg: number;
 }
 export interface IsaTempCInput {
   altitude_ft: number;
+}
+export interface JurisdictionOfInput {
+  lat: number;
+  lon: number;
+}
+export interface JurisdictionOfAnswer {
+  /**
+   * US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
+   */
+  code: "US" | "CA" | "MX" | "BS" | "other";
+  /**
+   * The country's name as the warning starts, "Canada"; "Outside the US" for other.
+   */
+  name: string;
+  /**
+   * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+   */
+  caution: string | null;
 }
 export interface KeptAgeInput {
   /**
@@ -9315,6 +9511,28 @@ export interface LightingNote {
    */
   words: string;
   as_written: string;
+}
+export interface LightsOnTheWayInput {
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  start: [number, number];
+  /**
+   * [lat, lon]
+   *
+   * @minItems 2
+   * @maxItems 2
+   */
+  end: [number, number];
+  depart_s: number;
+  minutes: number;
+  /**
+   * In Alaska only, the reported visibility, statute miles; below 3 the lights are on whatever the sun (91.209(a)). Left out or null outside Alaska or where none is known.
+   */
+  alaska_visibility_sm?: number | null;
 }
 export interface LiveFeedRefreshInput {
   feed: "rvr" | "itws" | "saa" | "flow" | "atis" | "departures";
@@ -11688,6 +11906,14 @@ export interface ReadyToFlyInput {
   }[];
   notams?: {
     fetched_at?: number | null;
+    /**
+     * Whether the NOTAMs are the full set in force (the planner's NotamsRanked.full_set); false, only those heard since heard_since, a caution (decision 0059).
+     */
+    full_set?: boolean | null;
+    /**
+     * The day the NOTAM feed was first heard, YYYY-MM-DD (NotamsRanked.coverage_since).
+     */
+    heard_since?: string | null;
   } | null;
   /**
    * What Keep for the Air holds for the route beside its charts. Null leaves the item out.
@@ -11796,6 +12022,12 @@ export interface ReceiverPicture {
   texts: ReceiverText[];
   nexrad: ReceiverBlock[];
 }
+/**
+ * The receiver's own state, as its Heartbeat and ID message say.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ReceiverState".
+ */
 export interface ReceiverState {
   /**
    * The name its ID message gives (Stratux, Sentry, SkyEcho).
@@ -11898,6 +12130,10 @@ export interface ReceiverOwnship {
    * Its Vertical Figure of Merit, m.
    */
   vfom_m: number | null;
+  /**
+   * The Ownship Geometric Altitude's Vertical Warning (GDL 90 3.8): its height is not to be trusted.
+   */
+  vertical_warning: boolean;
 }
 /**
  * An airplane a receiver reports (GDL 90's Traffic or Ownship Report, 560-1058-00 Rev A 3.5.1), as heard.
@@ -12034,6 +12270,87 @@ export interface ReceiverNexradLevel {
    */
   level: number;
   rects: [number, number, number, number][];
+}
+export interface ReceiverPositionInput {
+  /**
+   * The picture's own ship.
+   */
+  ownship?: ReceiverOwnship | null;
+  /**
+   * The picture's receiver.
+   */
+  receiver?: ReceiverState | null;
+  /**
+   * The device's last fix, or null where it has none.
+   */
+  device?: ReceiverPositionDevice | null;
+  /**
+   * The source the last answer gave (receiver, device or none).
+   */
+  was?: string | null;
+  /**
+   * Now, Unix s.
+   */
+  at: number;
+}
+export interface ReceiverPositionDevice {
+  /**
+   * The device's horizontal accuracy, m (a 68% radius).
+   */
+  accuracy_m: number;
+  /**
+   * When the device's fix was taken, Unix s.
+   */
+  at: number;
+}
+export interface ReceiverPositionAnswer {
+  /**
+   * Whose fix own ship is.
+   */
+  source: "receiver" | "device" | "none";
+  /**
+   * The receiver's fix: good, or why it is not used (none heard, no GPS, stale, under 91.227's NIC and NACp).
+   */
+  receiver: "good" | "none" | "no_gps" | "stale" | "weak";
+  /**
+   * The receiver's fix, where it is the source.
+   */
+  fix: ReceiverFix | null;
+}
+export interface ReceiverFix {
+  lat: number;
+  lon: number;
+  /**
+   * GPS height MSL, ft, where the receiver gives MSL.
+   */
+  altitude_ft: number | null;
+  /**
+   * GPS height above the WGS-84 ellipsoid, ft, where that is what the receiver gives.
+   */
+  ellipsoid_ft: number | null;
+  /**
+   * Pressure altitude on 29.92 inHg, ft (GDL 90 3.5.1.4).
+   */
+  pressure_ft: number | null;
+  /**
+   * The pressure altitude as a flight level, at and above 18,000 ft only.
+   */
+  flight_level: number | null;
+  /**
+   * True track, degrees, where the report gives one.
+   */
+  track_deg: number | null;
+  groundspeed_kt: number | null;
+  vertical_fpm: number | null;
+  /**
+   * The NACp's bound on the 95% horizontal error, m.
+   */
+  accuracy_m: number;
+  airborne: boolean;
+  /**
+   * When the report was heard, Unix s.
+   */
+  at: number;
 }
 export interface ReceiverReadInput {
   /**
@@ -12208,6 +12525,50 @@ export interface ReserveMinInput {
   ifr?: boolean | null;
   night?: boolean | null;
 }
+export interface RouteAdizInput {
+  /**
+   * The route's points in order, as the nav log's rows: a leg from each to the next.
+   */
+  points: {
+    lat: number;
+    lon: number;
+  }[];
+}
+export interface RouteAdizAnswer {
+  /**
+   * Each point's zone, null outside every one.
+   */
+  points: (("contiguous" | "alaska" | "hawaii" | "guam") | null)[];
+  /**
+   * From each point to the next.
+   */
+  legs: ("contiguous" | "alaska" | "hawaii" | "guam")[][];
+  /**
+   * Every zone the route meets, once each in order.
+   *
+   * Items: 14 CFR part 99's zones: contiguous the Contiguous U.S. ADIZ (99.43), alaska (99.45), guam (99.47), hawaii (99.49).
+   */
+  zones: ("contiguous" | "alaska" | "hawaii" | "guam")[];
+  /**
+   * The Brief's line for the route, once; null where it meets no ADIZ.
+   */
+  brief: {
+    /**
+     * The finding alone, "Through the Alaska ADIZ".
+     */
+    lead: string;
+    /**
+     * The finding and what part 99 asks, in one line.
+     */
+    line: string;
+    /**
+     * What part 99 asks in the first zone met, its exceptions (99.1(b)) said.
+     */
+    action: string;
+    why: string;
+    cite: string;
+  } | null;
+}
 export interface RouteHeadwindInput {
   /**
    * The nav log's legs in order, as the planner gives them.
@@ -12221,6 +12582,67 @@ export interface RouteHeadwindInput {
       wind_speed_kt: number;
     } | null;
   }[];
+}
+export interface RouteJurisdictionInput {
+  /**
+   * The route's points in order, as the nav log's rows: a leg from each to the next.
+   */
+  points: {
+    lat: number;
+    lon: number;
+  }[];
+}
+export interface RouteJurisdictionAnswer {
+  /**
+   * Each point's, in order.
+   */
+  points: {
+    /**
+     * US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
+     */
+    code: "US" | "CA" | "MX" | "BS" | "other";
+    /**
+     * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+     */
+    caution: string | null;
+  }[];
+  /**
+   * From each point to the next.
+   */
+  legs: {
+    /**
+     * The countries other than the United States met along the leg, its ends included, in the order met.
+     *
+     * Items: US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
+     */
+    codes: ("US" | "CA" | "MX" | "BS" | "other")[];
+    /**
+     * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+     */
+    caution: string | null;
+  }[];
+  /**
+   * Every country other than the United States the route meets, once each in order.
+   *
+   * Items: US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
+   */
+  outside: ("US" | "CA" | "MX" | "BS" | "other")[];
+  /**
+   * The Brief's line for the route, once; null where it is all in the United States.
+   */
+  brief: {
+    /**
+     * The finding alone.
+     */
+    lead: string;
+    /**
+     * The finding and what to do, in one line.
+     */
+    line: string;
+    action: string;
+    why: string;
+    cite: string;
+  } | null;
 }
 /**
  * This interface was referenced by `EngineContract`'s JSON-Schema
@@ -13040,6 +13462,88 @@ export interface SpecialUseTabInput {
   ceiling?: SpecialUseTabLimit;
   excluded?: boolean | null;
 }
+export interface SpecialVfrInput {
+  /**
+   * The class of the surface area the airplane is in (controlled airspace designated to the surface for an airport); null or G where it is in none.
+   */
+  surface_area?: "A" | "B" | "C" | "D" | "E" | "G" | null;
+  /**
+   * The surface area's primary airport, FAA or ICAO ident, for appendix D, section 3.
+   */
+  airport?: string | null;
+  /**
+   * Feet MSL; null where not known.
+   */
+  altitude_ft?: number | null;
+  /**
+   * Between sunset and sunrise; null where not known.
+   */
+  night?: boolean | null;
+  /**
+   * In Alaska, where 91.157(b)(4) reads the sun's elevation.
+   */
+  alaska?: boolean | null;
+  /**
+   * The sun's elevation, degrees (negative below the horizon); read in Alaska alone.
+   */
+  sun_elevation_deg?: number | null;
+  /**
+   * The pilot meets part 61's requirements for instrument flight (rated, and current under 61.57(c)).
+   */
+  instrument_current?: boolean | null;
+  /**
+   * The airplane is equipped as 91.205(d) asks for IFR.
+   */
+  ifr_equipped?: boolean | null;
+  /**
+   * Statute miles.
+   */
+  flight_visibility_sm?: number | null;
+  /**
+   * Statute miles, as reported at the airport; null where none is.
+   */
+  ground_visibility_sm?: number | null;
+  /**
+   * Whether the flight can keep clear of clouds.
+   */
+  clear_of_clouds?: boolean | null;
+  /**
+   * Taking off or landing under special VFR (91.157(c)).
+   */
+  takeoff_or_landing?: boolean | null;
+}
+export interface SpecialVfrAnswer {
+  /**
+   * Nothing known rules special VFR out.
+   */
+  available: boolean;
+  /**
+   * What rules it out, each with its rule.
+   */
+  problems: {
+    words: string;
+    /**
+     * The rule, "14 CFR 91.157(b)(3)".
+     */
+    source: string;
+  }[];
+  /**
+   * What it asks, each with its rule.
+   */
+  needs: {
+    words: string;
+    /**
+     * The rule, "14 CFR 91.157(b)(3)".
+     */
+    source: string;
+  }[];
+  /**
+   * The airport's entry in part 91 appendix D, section 3, "Chicago, IL (Chicago-O'Hare International Airport)"; null where it is not listed.
+   */
+  listed: string | null;
+  visibility_sm: number;
+  below_msl_ft: number;
+}
 export interface SquawkMeaningInput {
   squawk?: string | null;
 }
@@ -13521,6 +14025,39 @@ export interface VfrBasicMinimumsInput {}
 export interface VfrBasicMinimumsAnswer {
   ceiling_ft: number;
   visibility_sm: number;
+}
+export interface VfrClassGNightPatternInput {
+  class: "A" | "B" | "C" | "D" | "E" | "G";
+  /**
+   * Feet above the surface.
+   */
+  agl_ft: number;
+  night?: boolean | null;
+  /**
+   * In an airport traffic pattern within 1/2 mile of the runway.
+   */
+  in_pattern?: boolean | null;
+  /**
+   * Statute miles; null where not known.
+   */
+  visibility_sm?: number | null;
+}
+export interface VfrClassGNightPatternAnswer {
+  applies: boolean;
+  /**
+   * The least visibility it asks, 1 sm.
+   */
+  visibility_sm: number;
+  /**
+   * It is for a visibility under this, 3 sm.
+   */
+  under_visibility_sm: number;
+  /**
+   * 1,200 ft above the surface.
+   */
+  below_agl_ft: number;
+  words: string;
+  source: string;
 }
 export interface VfrFloorsInput {
   /**

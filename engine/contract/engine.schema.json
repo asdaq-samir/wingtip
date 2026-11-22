@@ -830,6 +830,13 @@
                       "null"
                     ]
                   },
+                  "ident": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The primary airport's identifier where NASR's Class Airspace file names one (IDENT), which special_vfr reads for part 91 Appendix D."
+                  },
                   "floor_ft": {
                     "type": "number"
                   },
@@ -33989,7 +33996,7 @@
       }
     },
     "AirspaceBand": {
-      "description": "A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.",
+      "description": "A band of the airspace over a point, as the planner's AirspaceBand: its floor and ceiling in feet MSL, its class, the volume's name and primary airport for a B, C or D, 91.155(a)'s minimums by day and night (null in Class A), what it takes to go in, the equipment asked (91.215, 91.225) and the 91.117 speed limit.",
       "type": "object",
       "properties": {
         "floor_ft": {
@@ -34014,6 +34021,13 @@
             "string",
             "null"
           ]
+        },
+        "ident": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "A B, C or D band's primary airport (NASR's IDENT), for its special VFR (14 CFR 91.157(a), part 91 Appendix D section 3)."
         },
         "minimums": {
           "type": [

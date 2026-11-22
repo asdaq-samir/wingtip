@@ -177,7 +177,7 @@ enum Wording {
     static let answerGarbled = String(localized: "The planner's answer came back garbled. Try again in a moment.")
     /// The planner refused with a server error and no words of its own (the web's describeError).
     static let plannerNotAnswering = String(localized: "The planner is not answering. Try again in a moment.")
-    /// The Nav Log with no route (owner rec 4).
+    /// The Nav Log with no route.
     static let navLogEmpty = String(localized: "Plan a route on FPL; its legs are listed here.")
     /// A report with no broken or overcast layer, a figure's value (14 CFR 1.1, "ceiling").
     static let noCeiling = String(localized: "No ceiling")
@@ -225,8 +225,6 @@ enum Wording {
     static let mostHeadwind = String(localized: "Most Headwind")
     /// The first route's wait for the phone's position.
     static let findingWhereYouAre = String(localized: "Finding where you are…")
-    /// The Nav Log with no route.
-    static let navLogEmpty = String(localized: "Plan a route on FPL; its legs are listed here.")
     /// Flying mode's way out for this flight.
     static let doneFlying = String(localized: "Done Flying")
     /// The Map card's switch that lets the map's words follow the text size, up to 1.2 times.

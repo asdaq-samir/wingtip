@@ -59,6 +59,8 @@ pub fn volumes_at(pack: &Pack, lat: f64, lon: f64) -> Option<Vec<Volume>> {
     let Some(layer) = pack.layer("airspace") else { return Some(Vec::new()) };
     let records = pack.section("airspace.vol")?;
     let names = pack.section("airspace.names")?;
+    // Each volume's primary airport, where the pack keeps `airspace.attr`.
+    let attrs = crate::view::attrs_kept(pack);
     let mut out = Vec::new();
     for i in layer.holding(lon, lat)? {
         let r = records.get(32 * i..32 * i + 32)?;
@@ -72,6 +74,7 @@ pub fn volumes_at(pack: &Pack, lat: f64, lon: f64) -> Option<Vec<Volume>> {
             floor_ft: f64_at(r, 8)?,
             ceiling_ft: f64_at(r, 16)?,
             name: text_at(names, r, 24)?.to_owned(),
+            ident: attrs.get(i).and_then(|a| a.ident.clone()).filter(|ident| !ident.is_empty()),
         });
     }
     Some(out)

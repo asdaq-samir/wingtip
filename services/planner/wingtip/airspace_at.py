@@ -195,13 +195,15 @@ def volumes_at(lat: float, lon: float, shp_path) -> list[dict]:
 
 def column(lat: float, lon: float, ground_ft: float, volumes: list[dict], in_veil: bool = False) -> list[dict]:
     """The airspace over the point in bands, from the ground to FL600:
-    {"floor_ft", "ceiling_ft" (MSL), "class", "name", "minimums" (14 CFR
+    {"floor_ft", "ceiling_ft" (MSL), "class", "name", "ident" (a B, C or
+    D's primary airport, NASR's IDENT, for its special VFR: 14 CFR 91.157,
+    part 91 Appendix D section 3), "minimums" (14 CFR
     91.155(a)), "entry", "equipment" (91.215, 91.225), "speed_kt"
     (91.117)}. The rules -- which class holds each band, where the bands
     split, and what each asks -- are the engine's (rules.rs, its
     `airspace_column`), the phones' very ones; the volumes are this
     module's, read from the shapefile or the cycle pack (volumes_at)."""
-    asked = [{k: v[k] for k in ("class", "name", "floor_ft", "floor_ref", "ceiling_ft")} for v in volumes]
+    asked = [{k: v.get(k) for k in ("class", "name", "ident", "floor_ft", "floor_ref", "ceiling_ft")} for v in volumes]
     return json.loads(wingtip_native.call("airspace_column", json.dumps({"ground_ft": ground_ft, "volumes": asked, "in_veil": in_veil})))
 
 
