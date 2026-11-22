@@ -16,12 +16,11 @@ the profile's clearance colouring (the engine's profile_clearance).
 
 from itertools import pairwise
 
-from shapely.geometry import LineString
 
 from functools import lru_cache
 
 from . import airports as airports_module
-from . import elevation, faa_data, geo
+from . import elevation, faa_data, geo, geo_boxes
 from .airspace import load_controlled_airspace
 from .engine import ask as engine
 from .terrain import SAMPLE_INTERVAL_NM, _route_sample_points
@@ -38,7 +37,7 @@ PROFILE_OBSTACLE_NM = engine("ground_figures")["profile_obstacle_nm"]
 def _obstacles_along(start: tuple, end: tuple, length: float, offset: float, dof_path) -> list[dict]:
     """The DOF's obstacles within PROFILE_OBSTACLE_NM of one hop's line,
     where along the route each is and its height above sea level."""
-    found = faa_data.load_obstacles(dof_path, geo.corridor_bbox(start, end, buffer_nm=PROFILE_OBSTACLE_NM), min_agl_ft=0)
+    found = faa_data.load_obstacles(dof_path, geo_boxes.corridor_box(start, end, buffer_nm=PROFILE_OBSTACLE_NM), min_agl_ft=0)
     if not len(found):
         return []
     cross, along = geo.track_distances_nm(found["lat"].to_numpy(dtype=float), found["lon"].to_numpy(dtype=float), start, end)
@@ -93,8 +92,8 @@ def route_profile(path: list, shp_path, dof_path=None) -> dict:
             for i, p in enumerate(points)
             if not (terrain and i == 0)  # a stop's sample once, not twice
         )
-        line = LineString([(start[1], start[0]), (end[1], end[0])])
-        for polygon in load_controlled_airspace(shp_path, geo.corridor_bbox(start, end, buffer_nm=2.0)):
+        line = geo_boxes.line_across([start, end])
+        for polygon in load_controlled_airspace(shp_path, geo_boxes.corridor_box(start, end, buffer_nm=2.0)):
             crossing = line.intersection(polygon["geometry"])
             for part in getattr(crossing, "geoms", [crossing]):
                 if part.is_empty or part.geom_type != "LineString":

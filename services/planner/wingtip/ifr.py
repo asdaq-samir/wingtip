@@ -21,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 
-from . import elevation, faa_data, geo
+from . import elevation, faa_data, geo, geo_boxes
 from .engine import ask as engine
 from .retry import with_retries
 from .terrain import DEFAULT_FAA_CACHE_DIR
@@ -58,11 +58,17 @@ def _pixel_lat_lon(z: int, x: int, y: int, size: int) -> tuple[np.ndarray, np.nd
 
 
 def _tiles_over(bbox: tuple, z: int) -> list[tuple[int, int]]:
-    """The tiles at zoom z that cover (min_lat, min_lon, max_lat, max_lon)."""
-    min_lat, min_lon, max_lat, max_lon = bbox
-    x0, y0 = (int(v) for v in geo.tile_xy(max_lat, min_lon, z))
-    x1, y1 = (int(v) for v in geo.tile_xy(min_lat, max_lon, z))
-    return [(x, y) for x in range(x0, x1 + 1) for y in range(y0, y1 + 1)]
+    """The tiles at zoom z that cover (min_lat, min_lon, max_lat, max_lon),
+    read as its one or two halves either side of 180 (geo_boxes): a box past
+    180 asked for tile x 2**z, past the grid's edge, and one across it the
+    whole world's row of tiles."""
+    last = 2**z - 1
+    tiles = []
+    for min_lat, min_lon, max_lat, max_lon in geo_boxes.split_box(bbox):
+        x0, y0 = (int(v) for v in geo.tile_xy(max_lat, min_lon, z))
+        x1, y1 = (int(v) for v in geo.tile_xy(min_lat, max_lon, z))
+        tiles += [(x, y) for x in range(x0, min(x1, last) + 1) for y in range(y0, y1 + 1)]
+    return tiles
 
 
 def _from_course_nm(lat, lon, a: tuple, b: tuple):
@@ -86,7 +92,7 @@ def _pieces(a: tuple, b: tuple) -> list[tuple[tuple, tuple]]:
 def _tiles_beside(piece: tuple) -> list[tuple[int, int]]:
     """The tiles that hold the ground within OBSTACLE_RADIUS_NM of a piece."""
     # A mile past the radius, its longitude's at the box's poleward edge.
-    return _tiles_over(geo.corridor_bbox(*piece, OBSTACLE_RADIUS_NM + 1), TILE_ZOOM)
+    return _tiles_over(geo_boxes.corridor_box(*piece, OBSTACLE_RADIUS_NM + 1), TILE_ZOOM)
 
 
 def _highest_ground_ft(pieces: list, heights: dict) -> float:
@@ -144,8 +150,8 @@ def floor_profile(fixes: list, faa_cache_dir=DEFAULT_FAA_CACHE_DIR) -> list[dict
     # A degree of longitude is cos(latitude) of a degree of latitude: twice
     # the reach fell short of 91.177(a)(2)'s 4 nm above about 66 N (the
     # aviation check, 2026-10-27), so corridor_bbox scales it at the box's
-    # poleward edge.
-    bbox = geo.corridor_bbox((min(lats), min(lons)), (max(lats), max(lons)), OBSTACLE_RADIUS_NM + 1)
+    # poleward edge; the short way round 180 (geo_boxes).
+    bbox = geo_boxes.box_over(lats, lons, OBSTACLE_RADIUS_NM + 1)
     obstacles = faa_data.load_obstacles(faa_data.ensure_nasr_file("DOF.DAT", faa_cache_dir), bbox, min_agl_ft=0)
     obstacle_lat = obstacles["lat"].to_numpy(dtype=float)
     obstacle_lon = obstacles["lon"].to_numpy(dtype=float)

@@ -25,6 +25,7 @@
 use super::ask::Reader;
 use super::grid::{CELL_DEG, PER_CELL};
 use super::read::{highest_cruise_ft, COARSE_MARGIN_FT, TERRAIN_MARGIN_FT};
+use super::wrap;
 use crate::geo;
 use crate::json::{self, Value};
 use std::cmp::Ordering;
@@ -311,7 +312,13 @@ pub fn way_round(start: Point, end: Point, ceiling_ft: f64, heights_ft: &[f64], 
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let r = Reader { name };
     let point = |key: &str| -> Result<Point, String> { r.point(v.get(key).ok_or_else(|| format!("{name}: \"{key}\" is missing"))?) };
+    // The end read within 180 degrees of the start (wrap.rs), so a way
+    // across the antimeridian (Adak to Shemya) is framed the short way
+    // round: the frame's lon0 and data_box may pass -180 or 180, and the
+    // planner reads the samples and the fields at their own longitudes
+    // (wingtip.terrain_detour). The stones come back between -180 and 180.
     let (start, end) = (point("start")?, point("end")?);
+    let end = (end.0, wrap::near(end.1, start.1));
     let f = frame(start, end);
     if name == "terrain_way_frame" {
         let mut out = String::from("{\"lat0\":");
@@ -345,7 +352,10 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         .opt_list(v, "fields")?
         .unwrap_or(&[])
         .iter()
-        .map(|fd| Ok(Field { ident: r.text(fd, "ident")?, name: r.text(fd, "name")?, at: (r.num(fd, "lat")?, r.num(fd, "lon")?) }))
+        .map(|fd| {
+            let at = (r.num(fd, "lat")?, wrap::near(r.num(fd, "lon")?, start.1));
+            Ok(Field { ident: r.text(fd, "ident")?, name: r.text(fd, "name")?, at })
+        })
         .collect::<Result<_, String>>()?;
     let found = way_round(start, end, r.num(v, "ceiling_ft")?, &heights, &fields)?;
     let Some(stones) = found else { return Ok("null".to_owned()) };
@@ -361,7 +371,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         out.push_str(",\"lat\":");
         json::number(&mut out, s.at.0);
         out.push_str(",\"lon\":");
-        json::number(&mut out, s.at.1);
+        json::number(&mut out, if s.at.1.abs() > 180.0 { wrap::normal(s.at.1) } else { s.at.1 });
         out.push('}');
     }
     out.push(']');

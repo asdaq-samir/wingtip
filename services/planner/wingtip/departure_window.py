@@ -5,7 +5,7 @@ its TAF, never the METAR of now. Data only: what an hour comes to is the
 engine's (departure_window, wingtip_engine::gonogo::window)."""
 
 from . import weather
-from .geo import corridor_bbox
+from .geo_boxes import corridor_box, in_box
 
 #: The corridor TAF stations are looked for in, either side of the route:
 #: the one the briefing's forecast along the route reads
@@ -25,11 +25,12 @@ def taf_reach(path: list[tuple[float, float]]) -> float | None:
     the end of its last period as the AWC's cache file gives it (`timeTo`)
     -- or None where none is near: past it, an hour's weather is not
     known."""
-    s, w, n, e = corridor_bbox(path[0], path[-1], TAF_CORRIDOR_NM)
+    # The short way round 180 (geo_boxes: Adak to Shemya).
+    box = corridor_box(path[0], path[-1], TAF_CORRIDOR_NM)
     ends = [
         f.get("timeTo")
         for t in weather._dataset("tafs")
-        if s <= t["lat"] <= n and w <= t["lon"] <= e  # noqa: SLF001
+        if in_box(box, t["lat"], t["lon"])  # noqa: SLF001
         for f in t.get("fcsts") or []
     ]
     ends = [float(x) for x in ends if isinstance(x, (int, float))]

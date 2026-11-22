@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from .geo import cluster_points, cross_track_distance_nm, distance_nm
-from .osm import _bbox_area_m2, _post_overpass_query
+from .osm import _bbox_area_m2, _post_overpass_query, overpass_statement
 
 
 def _lerp_point(p1: tuple, p2: tuple, t: float) -> tuple:
@@ -106,11 +106,8 @@ def query_major_highways(bbox: tuple, retries: int = 3, timeout_s: int = 60) -> 
     elements (each with an ordered "nodes" id list), node_coords is a
     {node_id: (lat, lon)} dict for every node referenced by those ways.
     """
-    min_lat, min_lon, max_lat, max_lon = bbox
-    bbox_str = f"{min_lat},{min_lon},{max_lat},{max_lon}"
-    query = (
-        f'[out:json][timeout:{timeout_s}];\nway["highway"~"^(motorway|trunk|primary|secondary)$"]({bbox_str});\nout body;\n>;\nout skel qt;'
-    )
+    ways = overpass_statement('way["highway"~"^(motorway|trunk|primary|secondary)$"]', bbox)
+    query = f"[out:json][timeout:{timeout_s}];\n{ways}\nout body;\n>;\nout skel qt;"
     elements = _post_overpass_query(query, retries).get("elements", [])
     highway_ways = [el for el in elements if el["type"] == "way"]
     node_coords = {el["id"]: (el["lat"], el["lon"]) for el in elements if el["type"] == "node"}
@@ -204,9 +201,8 @@ def query_wind_turbines(bbox: tuple, retries: int = 3, timeout_s: int = 60) -> p
     (power=generator + generator:source=wind). Each turbine is its own
     OSM node; find_wind_farms clusters them into farm-level candidates.
     """
-    min_lat, min_lon, max_lat, max_lon = bbox
-    bbox_str = f"{min_lat},{min_lon},{max_lat},{max_lon}"
-    query = f'[out:json][timeout:{timeout_s}];\nnode["power"="generator"]["generator:source"="wind"]({bbox_str});\nout;'
+    turbines = overpass_statement('node["power"="generator"]["generator:source"="wind"]', bbox)
+    query = f"[out:json][timeout:{timeout_s}];\n{turbines}\nout;"
     elements = _post_overpass_query(query, retries).get("elements", [])
     rows = [
         {"osm_id": el["id"], "lat": el["lat"], "lon": el["lon"], "name": el.get("tags", {}).get("name")}

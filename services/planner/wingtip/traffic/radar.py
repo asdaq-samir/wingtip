@@ -9,6 +9,7 @@ import logging
 import math
 
 from ..geo import box_around, distance_nm
+from ..geo_boxes import split_box
 from . import store
 from .adsb_lol import NEAR_RADIUS_NM, REGION_DEG, WIDE_REGION_DEG, _region
 from .common import STALE_S, _NM_PER_DEG, _wall
@@ -120,9 +121,10 @@ def _elsewhere_near(lat: float, lon: float, radius_nm: float, have: set[str]) ->
     """The airplanes heard elsewhere in the last STALE_S within `radius_nm`
     that the region's answer left out."""
     now = _wall()
-    south, west, north, east = box_around(lat, lon, radius_nm)
     out = []
-    for p, at in store.radar_within(south, north, west, east, now - STALE_S):
+    # The box's one or two halves either side of 180 (geo_boxes).
+    heard = [r for s, w, n, e in split_box(box_around(lat, lon, radius_nm)) for r in store.radar_within(s, n, w, e, now - STALE_S)]
+    for p, at in heard:
         if p["hex"] in have:
             continue
         if distance_nm(lat, lon, p["lat"], p["lon"]) <= radius_nm:

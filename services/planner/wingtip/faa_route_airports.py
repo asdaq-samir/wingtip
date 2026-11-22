@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import field_status
+from . import field_status, geo_boxes
 from .faa_apt_base import _read_apt_base_cached
 from .single_flight import once
 
@@ -49,8 +49,8 @@ def load_route_airports(apt_csv_path, bbox: tuple, exclude_idents: tuple = ()) -
     taking off from one and landing at the other.
     """
     fields, lat, lon, ident, icao = _charted_open_airports(str(apt_csv_path), Path(apt_csv_path).stat().st_mtime)
-    min_lat, min_lon, max_lat, max_lon = bbox
-    inside = (lat >= min_lat) & (lat <= max_lat) & (lon >= min_lon) & (lon <= max_lon)
+    # The box read as its one or two halves either side of 180 (geo_boxes).
+    inside = geo_boxes.in_box(bbox, lat, lon)
 
     excluded = {i.strip().upper() for i in exclude_idents}
     if excluded:
@@ -108,9 +108,9 @@ def _charted_open_airports(path: str, _mtime: float) -> tuple:
 _SITE_TYPE_NAMES = {"A": "AIRPORT", "B": "BALLOONPORT", "C": "SEAPLANE BASE", "G": "GLIDERPORT", "H": "HELIPORT", "U": "ULTRALIGHT"}
 
 
-def _in_bbox(lat: pd.Series, lon: pd.Series, bbox: tuple) -> pd.Series:
-    min_lat, min_lon, max_lat, max_lon = bbox
-    return lat.between(min_lat, max_lat) & lon.between(min_lon, max_lon)
+def _in_bbox(lat: pd.Series, lon: pd.Series, bbox: tuple) -> np.ndarray:
+    """The box read as its one or two halves either side of 180 (geo_boxes)."""
+    return geo_boxes.in_box(bbox, lat.to_numpy(dtype=float), lon.to_numpy(dtype=float))
 
 
 @once(maxsize=4)
