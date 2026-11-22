@@ -15,7 +15,7 @@ struct GoNoGoTests {
       {"key":"weather","label":"Weather","finding":"caution","detail":"IFR G-AIRMET along the route","tab":"enroute","section":"Adverse Conditions"},
       {"key":"airspace","label":"TFRs & special use","finding":"ok","detail":"None on the route","tab":"preflight","section":"TFRs & Special Use"},
       {"key":"altitude","label":"Altitude","finding":"ok","detail":"5,500 ft · Lowest plan","tab":"enroute","section":"Cruise Altitude"},
-      {"key":"fuel","label":"Fuel","finding":"ok","detail":"Needs 30.2 gal with taxi and a 30 min reserve; 22.8 gal spare","tab":"preflight","section":"Fuel"},
+      {"key":"fuel","label":"Fuel","finding":"ok","detail":"Needs 30.2 gal with taxi and a 30 min reserve; 22.8 gal beyond reserve","tab":"preflight","section":"Fuel"},
       {"key":"runways","label":"Runways","finding":"unknown","detail":"Not worked out for this airplane","tab":"depart","section":"Takeoff"},
       {"key":"balance","label":"Weight & balance","finding":"stop","detail":"The baggage, 170 lb in all, is over its 120 lb","tab":"preflight","section":"Weight & Balance"},
       {"key":"risk","label":"Risk","finding":"caution","detail":"Raised · 8 points","tab":"preflight","section":"Risk Assessment"}],

@@ -110,7 +110,7 @@
             "tab": "preflight",
             "section": "Fuel",
             "finding": "ok",
-            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare"
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve"
           },
           {
             "key": "runways",
@@ -347,7 +347,7 @@
             "tab": "preflight",
             "section": "Fuel",
             "finding": "ok",
-            "detail": "Needs 27.6 gal with taxi and a 45 min reserve; 12.4 gal spare"
+            "detail": "Needs 27.6 gal with taxi and a 45 min reserve; 12.4 gal beyond reserve"
           },
           {
             "key": "runways",
@@ -477,7 +477,7 @@
             "tab": "preflight",
             "section": "Fuel",
             "finding": "ok",
-            "detail": "Needs 27.6 gal with taxi and a 45 min reserve; 12.4 gal spare"
+            "detail": "Needs 27.6 gal with taxi and a 45 min reserve; 12.4 gal beyond reserve"
           },
           {
             "key": "runways",
@@ -613,7 +613,7 @@
             "tab": "preflight",
             "section": "Fuel",
             "finding": "ok",
-            "detail": "Needs 27.6 gal with taxi and a 45 min reserve; 12.4 gal spare"
+            "detail": "Needs 27.6 gal with taxi and a 45 min reserve; 12.4 gal beyond reserve"
           },
           {
             "key": "runways",
@@ -747,7 +747,7 @@
             "tab": "preflight",
             "section": "Fuel",
             "finding": "ok",
-            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare"
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve"
           },
           {
             "key": "runways",
@@ -897,7 +897,7 @@
             "tab": "preflight",
             "section": "Fuel",
             "finding": "ok",
-            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare"
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve"
           },
           {
             "key": "runways",
@@ -1027,7 +1027,7 @@
             "tab": "preflight",
             "section": "Fuel",
             "finding": "ok",
-            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare"
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve"
           },
           {
             "key": "runways",
@@ -1238,7 +1238,7 @@
             "key": "fuel",
             "label": "Fuel",
             "finding": "ok",
-            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve",
             "tab": "preflight",
             "section": "x"
           },
@@ -1329,7 +1329,7 @@
               "key": "fuel",
               "label": "Fuel",
               "finding": "ok",
-              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve",
               "tab": "preflight",
               "section": "x"
             },
@@ -1393,7 +1393,7 @@
             "key": "fuel",
             "label": "Fuel",
             "finding": "ok",
-            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve",
             "tab": "preflight",
             "section": "x"
           },
@@ -1499,7 +1499,7 @@
               "key": "fuel",
               "label": "Fuel",
               "finding": "ok",
-              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve",
               "tab": "preflight",
               "section": "x"
             },
@@ -1555,7 +1555,7 @@
             "key": "fuel",
             "label": "Fuel",
             "finding": "ok",
-            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve",
             "tab": "preflight",
             "section": "x"
           },
@@ -1661,7 +1661,7 @@
               "key": "fuel",
               "label": "Fuel",
               "finding": "ok",
-              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve",
               "tab": "preflight",
               "section": "x"
             },
@@ -1890,7 +1890,7 @@
             "key": "fuel",
             "label": "Fuel",
             "finding": "ok",
-            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve",
             "tab": "preflight",
             "section": "x"
           },
@@ -2005,7 +2005,7 @@
               "key": "fuel",
               "label": "Fuel",
               "finding": "ok",
-              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve",
               "tab": "preflight",
               "section": "x"
             },
@@ -2191,7 +2191,7 @@
             "key": "fuel",
             "label": "Fuel",
             "finding": "ok",
-            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve",
             "tab": "preflight",
             "section": "x"
           },
@@ -2257,7 +2257,7 @@
               "key": "fuel",
               "label": "Fuel",
               "finding": "ok",
-              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve",
               "tab": "preflight",
               "section": "x"
             },
@@ -2456,7 +2456,7 @@
             "key": "fuel",
             "label": "Fuel",
             "finding": "ok",
-            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve",
             "tab": "preflight",
             "section": "x"
           },
@@ -2535,7 +2535,7 @@
               "key": "fuel",
               "label": "Fuel",
               "finding": "ok",
-              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve",
               "tab": "preflight",
               "section": "x"
             },
@@ -2591,7 +2591,7 @@
             "key": "fuel",
             "label": "Fuel",
             "finding": "ok",
-            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+            "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve",
             "tab": "preflight",
             "section": "x"
           },
@@ -2709,7 +2709,7 @@
               "key": "fuel",
               "label": "Fuel",
               "finding": "ok",
-              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare",
+              "detail": "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve",
               "tab": "preflight",
               "section": "x"
             },

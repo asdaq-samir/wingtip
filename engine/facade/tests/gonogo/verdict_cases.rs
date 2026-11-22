@@ -23,7 +23,7 @@ fn finds_nothing_against_a_quiet_day_every_row_saying_what_it_checked() {
     let items = verdict::verdict_items(&quiet());
     assert!(items.iter().all(|i| i.finding == "ok"));
     assert_eq!(items.len(), 7);
-    assert_eq!(finding(&quiet(), "fuel").detail, "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal spare");
+    assert_eq!(finding(&quiet(), "fuel").detail, "Needs 27.6 gal with taxi and a 30 min reserve; 12.4 gal beyond reserve");
     assert_eq!(verdict::verdict_line(&items), ("ok", s("Nothing found against this flight")));
 }
 
