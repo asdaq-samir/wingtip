@@ -97,9 +97,9 @@ export default function DueItemsGroup({ aircraft }: { aircraft: Aircraft }) {
   const problem = !draft
     ? null
     : !draft.title.trim()
-      ? "A title is needed"
+      ? "A title is needed."
       : hours != null && !(Number.isFinite(hours) && hours >= 0)
-        ? "Hours cannot be negative"
+        ? "Hours cannot be negative."
         : null;
   const set = (change: Partial<Draft>) => setOpen((o) => (o ? { ...o, draft: { ...o.draft, ...change } } : o));
   const field = (key: "title" | "reference" | "method", label: string, placeholder: string, max: number) => (
@@ -182,7 +182,7 @@ export default function DueItemsGroup({ aircraft }: { aircraft: Aircraft }) {
                 value={draft.dueAtHours === "" ? null : Number(draft.dueAtHours)}
                 onChange={(v) => set({ dueAtHours: v == null ? "" : String(v) })}
                 aria-label="Next due at hours of time in service"
-                isInvalid={problem === "Hours cannot be negative"}
+                isInvalid={problem === "Hours cannot be negative."}
               />
             </FieldHit>
           </ListRow>

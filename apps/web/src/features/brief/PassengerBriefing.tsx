@@ -1,6 +1,7 @@
 import AccordionSection from "../../components/AccordionSection";
 import { ListGroup, ListRow } from "../../components/GroupedList";
-import { cancelled, shareOrCopy, useCopied } from "../../lib/share";
+import { done as confirm } from "../../lib/doneNote";
+import { cancelled, shareOrCopy } from "../../lib/share";
 import { passengerItems } from "./passengers";
 import { usePreflight, useTicked } from "./preflight";
 import { showError } from "../../lib/problems";
@@ -16,10 +17,9 @@ import { describeError } from "../../lib/api/client";
 export default function PassengerBriefing({ flight, message }: { flight: string; message: string }) {
   const ticked = useTicked(flight);
   const tick = usePreflight((s) => s.tick);
-  const [copied, markCopied] = useCopied();
-  const send = async () => {
+  const send = async (row: Element) => {
     try {
-      if ((await shareOrCopy({ title: "Our flight", text: message })) === "copied") markCopied("message");
+      if ((await shareOrCopy({ title: "Our flight", text: message })) === "copied") confirm("Copied", { near: row });
     } catch (err) {
       if (!cancelled(err)) showError("Could Not Send the Flight", describeError(err));
     }
@@ -46,9 +46,9 @@ export default function PassengerBriefing({ flight, message }: { flight: string;
         {/* What is sent, under the row that sends it, where it was a footnote. */}
         <ListGroup>
           <ListRow
-            title={copied === "message" ? "Copied" : "Send the Flight to Your Passengers"}
+            title="Send the Flight to Your Passengers"
             description={message.split("\n").join(" ")}
-            onClick={() => void send()}
+            onClick={(event) => void send(event.currentTarget)}
             data-testid="passenger-send"
           />
         </ListGroup>

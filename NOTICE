@@ -1,0 +1,41 @@
+Wingtip Maps
+Copyright (c) 2026 Asdaq Samir
+
+The source code in this repository is licensed under the MIT License
+(LICENSE). The MIT License does not cover the brand art and the marks
+listed below: they are not "the Software" that licence grants, and no
+right to use, copy, modify or distribute them is given by it. They stay
+all rights reserved, so that a copy or a fork of the code is not
+mistaken for Wingtip Maps.
+
+Not covered by the MIT License, all rights reserved:
+
+- The names "Wingtip Maps" and "Wingtip" as the app's name, and its logo
+  and mark.
+- docs/brand/ (the app icons, the mark, the store art).
+- docs/store/play-icon-512.png, docs/store/play-feature-graphic.png and
+  the store screenshots and preview under docs/store/.
+- The app icons and launch art built from them:
+  apps/ios/Wingtip/Assets.xcassets/AppIcon.appiconset,
+  apps/ios/Wingtip/Assets.xcassets/LaunchMark.imageset,
+  apps/ios/WingtipWatch/Assets.xcassets/AppIcon.appiconset,
+  apps/android/app/src/main/res/mipmap-*,
+  apps/web/public/favicon.ico, apps/web/public/favicon.svg,
+  apps/web/public/apple-touch-icon.png, apps/web/public/icon-*.png,
+  apps/web/public/splash/, apps/site/assets/.
+
+A fork that ships an app of its own must use a name and art of its own.
+
+Others' marks and art in this repository are theirs, under their own
+terms, and not under the MIT License either:
+
+- Google's Google Maps logo
+  (apps/web/src/lib/map/gl/google/GoogleMaps_Logo_*.svg), from Google's
+  Map Tiles API attribution assets
+  (developers.google.com/maps/documentation/tile/policies), used
+  unaltered as the attribution those policies ask for while Google's
+  tiles are drawn.
+- The Apple and Google sign-in logos (apps/web/src/components/icons), used
+  as each company's sign-in guidelines ask.
+- The open-source parts the apps are built with keep their own licences,
+  listed in each app's notices (scripts/build/licences.sh).

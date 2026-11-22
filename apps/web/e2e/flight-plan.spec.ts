@@ -41,7 +41,7 @@ test("under VFR the flight plan flies direct, with no alternate, and says where 
   await expect(form.getByTestId("flight-plan-file")).toContainText("close it when you land");
   // The whole form, an item to a line.
   await form.getByTestId("flight-plan-copy").click();
-  await expect(form.getByTestId("flight-plan-copy")).toHaveText("Copied");
+  await expect(page.locator('[data-slot="toast"]').filter({ hasText: "Copied" })).toBeVisible();
   const text = await page.evaluate(() => navigator.clipboard.readText());
   expect(text.split("\n").slice(0, 2)).toEqual(["KMSN to KOSH", "Item 8  Flight Rules: VFR"]);
   expect(text).toContain("Item 15  Route: DCT");
@@ -130,7 +130,7 @@ test("items 10 and 19 come from the airplane's page, the pilot's and the persons
   const wx = await opened;
   await wx.waitForURL((url) => url.hostname === "www.1800wxbrief.com");
   await wx.close();
-  await expect(form.getByTestId("flight-plan-open-wx")).toContainText("Copied");
+  await expect(page.locator('[data-slot="toast"]').filter({ hasText: "Copied" })).toBeVisible();
   const text = await page.evaluate(() => navigator.clipboard.readText());
   expect(text).toContain("Item 10a  Equipment: SDFGRY");
   expect(text).toContain("Item 10b  Surveillance: B1");

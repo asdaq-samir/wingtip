@@ -31,7 +31,7 @@ import { WORDING } from "../lib/wording/generated/wording";
  * registers neither, both did.
  */
 /** What is said under the field for an address that can't be one. */
-const BAD_ADDRESS = "Enter an email address like you@example.com";
+const BAD_ADDRESS = "Enter an email address like you@example.com.";
 
 export default function SignInModal({
   hero = false,

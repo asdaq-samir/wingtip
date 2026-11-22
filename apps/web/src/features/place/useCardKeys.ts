@@ -1,6 +1,5 @@
-import { useEffect, useEffectEvent } from "react";
-import { typing } from "../../hooks/use-shortcuts";
-import { shortcutKey } from "../../lib/shortcutKeys";
+import { useHotkeys } from "react-hotkeys-hook";
+import { altKey, HEARD } from "../../hooks/use-shortcuts";
 
 /**
  * A card's actions by a letter each on a desktop (the owner, 2026-11-09:
@@ -8,23 +7,19 @@ import { shortcutKey } from "../../lib/shortcutKeys";
  * buttons), while `on` and the focus is in no field, menu or
  * dialog. Heard before the page's own letters (useShortcuts' Alt+D,
  * Direct To), in the capture phase, so the card's letter is the one that
- * runs. Pressed only with Alt (lib/shortcutKeys), never a letter alone.
+ * runs. Pressed only with Alt (lib/shortcutKeys), never a letter alone,
+ * and heard as the page's are (use-shortcuts' HEARD).
  */
 export function useCardKeys(on: boolean, keys: Partial<Record<string, () => void>>) {
-  const run = useEffectEvent((letter: string) => {
-    const action = keys[letter];
-    if (!action) return false;
-    action();
-    return true;
-  });
-  useEffect(() => {
-    if (!on) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || typing(event.target)) return;
-      const letter = shortcutKey(event);
-      if (letter && run(letter)) event.preventDefault();
-    };
-    document.addEventListener("keydown", onKey, true);
-    return () => document.removeEventListener("keydown", onKey, true);
-  }, [on]);
+  const letters = Object.keys(keys).filter((letter) => keys[letter]);
+  useHotkeys(
+    letters.map(altKey),
+    (event, hotkey) => {
+      const action = keys[hotkey.keys?.[0]?.toUpperCase() ?? ""];
+      if (!action) return;
+      event.preventDefault();
+      action();
+    },
+    { ...HEARD, enabled: on && letters.length > 0, eventListenerOptions: { capture: true } },
+  );
 }

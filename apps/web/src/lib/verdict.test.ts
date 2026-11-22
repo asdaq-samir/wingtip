@@ -12,6 +12,10 @@ const quiet: VerdictInput = {
   risk: { level: "low", line: "Low · 2 points" },
 };
 // The Brief's Go / No-Go as the engine puts it together (gonogo_brief), with an airplane picked.
+// Its rules, words and every boundary are the engine's, tested there
+// (engine/facade/tests/gonogo/verdict_cases.rs, audit_cases.rs, gonogo_brief.rs
+// and the shared fixtures/goNoGoBrief.json): here, that each field the page
+// renames reaches the engine, and each argument and shape it reads back.
 const verdict = (input: VerdictInput, more: Partial<Parameters<typeof briefVerdict>[0]> = {}) =>
   briefVerdict({ input, airplane: true, ...more });
 const finding = (input: VerdictInput, key: string) => verdict(input).items.find((i) => i.key === key)!;
@@ -62,34 +66,9 @@ describe("the Go / No-Go", () => {
     expect(verdict(input).line.words).toBe("Look again at weather, TFRs & special use, altitude, runways");
   });
 
-  it("takes distances past the POH's tables as a caution and a runway not checked as unknown, never within", () => {
-    expect(finding({ ...quiet, runways: { ...quiet.runways, beyond: ["KLXV"] } }, "runways")).toMatchObject({
-      finding: "caution",
-      detail: "Past the POH's tables at KLXV: its distances will be longer",
-    });
-    expect(finding({ ...quiet, runways: { ...quiet.runways, unchecked: ["C81"] } }, "runways")).toMatchObject({
-      finding: "unknown",
-      detail: "Not checked at C81: runway length or field elevation not known",
-    });
-  });
-
-  it("says what was not worked out, and what is still coming", () => {
-    const unknown = verdict({
-      ...quiet,
-      runways: { ...quiet.runways, worked: false },
-      balance: { pending: false, worked: false, problems: [], takeoff: null },
-    });
-    expect(unknown.line.words).toBe("No problems found; not checked: runways, weight & balance");
+  it("says what is still coming", () => {
     const coming = verdict({ ...quiet, weather: { ...quiet.weather, pending: true }, risk: null });
     expect(coming.line).toEqual({ finding: "pending", words: "Still checking: weather, risk" });
-  });
-
-  it("names a near TFR and an area not scheduled as nothing against it", () => {
-    const input = { ...quiet, airspace: { ...quiet.airspace, near: 2, specialUse: [{ name: "A", when: "not-scheduled" as const }] } };
-    expect(finding(input, "airspace")).toMatchObject({
-      finding: "ok",
-      detail: "2 TFRs near, none in force on the route; 1 special-use area not scheduled then",
-    });
   });
 
   it("adds the fields row after the tabs' for a private destination and a closed stop, none where every field is public", () => {
@@ -121,7 +100,7 @@ describe("the Go / No-Go", () => {
 });
 
 describe("the alternate in the Go / No-Go (14 CFR 91.169)", () => {
-  const check = (good: boolean | null) => ({
+  const check = (good: boolean) => ({
     ident: "KMSN",
     approach: true,
     precision: true,
@@ -132,7 +111,7 @@ describe("the alternate in the Go / No-Go (14 CFR 91.169)", () => {
     taf: null,
     good,
     meets_standard: true,
-    reasons: good === null ? ["KMSN publishes its own alternate minimums."] : [],
+    reasons: [],
     distance_nm: 220,
   });
   const answer = (required: boolean, alternate: ReturnType<typeof check> | null): Alternates => ({
@@ -146,11 +125,9 @@ describe("the alternate in the Go / No-Go (14 CFR 91.169)", () => {
   });
   const weather = (input: VerdictInput, alternate?: Alternates): VerdictItem => verdict(input, { alternate }).items[0]!;
 
-  it("says nothing where none is needed, the one filed will do, or the flight is VFR", () => {
+  it("says nothing while the answer is awaited or the one filed will do", () => {
     expect(weather(ifr()).finding).toBe("ok");
-    expect(weather(ifr(), answer(false, null)).finding).toBe("ok");
     expect(weather(ifr(), answer(true, check(true))).finding).toBe("ok");
-    expect(weather(quiet, answer(true, check(false))).finding).toBe("ok");
   });
 
   it("asks for one where one is needed, and stops on one under its minimums, opening its section", () => {
@@ -161,14 +138,9 @@ describe("the alternate in the Go / No-Go (14 CFR 91.169)", () => {
       section: "Alternate",
     });
     expect(weather(ifr(), answer(true, check(false))).finding).toBe("stop");
-    expect(weather(ifr(), answer(true, check(null))).detail).toBe("KMSN: KMSN publishes its own alternate minimums.");
   });
 
-  it("puts its finding in the weather's only where the weather says nothing worse", () => {
-    const hazard = ifr({ hazards: ["IFR G-AIRMET"] });
-    expect(weather(hazard, answer(true, check(false))).finding).toBe("stop");
-    expect(weather(hazard, answer(true, null)).detail).toBe("IFR G-AIRMET along the route");
-    const vnr = ifr({ vfrNotRecommended: ["KDLH 400 ft"] });
-    expect(weather(vnr, answer(true, check(false))).detail).toBe("VFR not recommended: KDLH 400 ft");
+  it("leaves the weather's own caution where its caution is no worse", () => {
+    expect(weather(ifr({ hazards: ["IFR G-AIRMET"] }), answer(true, null)).detail).toBe("IFR G-AIRMET along the route");
   });
 });

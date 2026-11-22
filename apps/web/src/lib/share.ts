@@ -1,5 +1,3 @@
-import { useEffect, useState } from "react";
-
 /**
  * Something sent from the app -- a route's address, the flight for the
  * passengers -- the one way it goes everywhere: the share sheet where the
@@ -18,7 +16,9 @@ export async function shareOrCopy(item: { title: string; text?: string; url?: st
  *  plan's form for Flight Service's own site, a frequency, a point's
  *  place): the one place the app writes to the clipboard. A browser with
  *  no clipboard to write to (a page not served over HTTPS) refuses, as one
- *  that says no does, so each Copy says so the same way. */
+ *  that says no does, so each Copy says so the same way. Copied, it is
+ *  said by lib/doneNote's `done("Copied")`, Base UI's anchored toast by
+ *  the control, the app's one confirmation (the owner's pick, 2026-11-21). */
 export async function copyText(text: string): Promise<void> {
   if (!navigator.clipboard) throw new Error("No clipboard to copy to.");
   await navigator.clipboard.writeText(text);
@@ -26,15 +26,3 @@ export async function copyText(text: string): Promise<void> {
 
 /** The pilot closed the share sheet: nothing went wrong. */
 export const cancelled = (err: unknown) => (err as Error | undefined)?.name === "AbortError";
-
-/** "Copied" on what was copied, for a moment, where it was tapped: the
- *  key of what was, and the way to say another was. */
-export function useCopied(): [string | null, (key: string) => void] {
-  const [copied, setCopied] = useState<string | null>(null);
-  useEffect(() => {
-    if (!copied) return;
-    const done = setTimeout(() => setCopied(null), 2000);
-    return () => clearTimeout(done);
-  }, [copied]);
-  return [copied, setCopied];
-}

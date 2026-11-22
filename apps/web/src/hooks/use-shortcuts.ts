@@ -1,8 +1,7 @@
-import { useEffect } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
 import { askSearch } from "../lib/oneSearch";
 import { wantScreen } from "../lib/navigation/wanted";
 import type { ScreenId } from "../lib/navigation/generated/screens";
-import { shortcutKey } from "../lib/shortcutKeys";
 
 /**
  * The keyboard's ways round the planner, as a desktop's web apps have
@@ -16,7 +15,9 @@ import { shortcutKey } from "../lib/shortcutKeys";
  * is the search field's own (OneSearchField), on every screen with a
  * keyboard. The letters and `/` are pressed only with Alt (Option on a
  * Mac; lib/shortcutKeys), never alone, so VoiceOver's quick nav and the
- * browser's find-as-you-type keep their keys.
+ * browser's find-as-you-type keep their keys. Heard by react-hotkeys-hook
+ * (MIT), the stock hook, rather than a keydown handler of our own (the
+ * stock-parts audit, 2026-11-21).
  */
 /** The letters for the screens a pilot opens most (lib/navigation). */
 export const SCREEN_KEYS: Partial<Record<ScreenId, string>> = { brief: "B", nearest: "N" };
@@ -57,42 +58,63 @@ export function backOne(doc: Document): boolean {
   return true;
 }
 
-/** The shortcuts' handler, for a document (and its test). */
-export function onShortcut(event: KeyboardEvent): void {
-  if (event.defaultPrevented) return;
-  const doc = (event.target as Node | null)?.ownerDocument ?? document;
-  if (event.key === "Escape" && !event.metaKey && !event.ctrlKey && !event.altKey) {
-    // In a field, its own Escape (a draft let go) comes first.
-    if (typing(event.target)) return;
-    if (backOne(doc)) event.preventDefault();
-    return;
-  }
-  if (typing(event.target)) return;
-  const letter = shortcutKey(event);
-  if (!letter) return;
-  if (letter === "/") {
-    if (focusSearch(doc)) event.preventDefault();
-    return;
-  }
-  const screen = (Object.keys(SCREEN_KEYS) as ScreenId[]).find((id) => SCREEN_KEYS[id] === letter);
-  if (screen || letter === DIRECT_KEY) {
-    event.preventDefault();
-    if (screen) wantScreen(screen);
-    else askSearch("direct");
-  }
-}
+/** How every shortcut is heard (react-hotkeys-hook): by the physical key
+ *  (`code`), as Option and a letter on a Mac types another character
+ *  (Option-B is ∫), with exactly the modifiers named, so Command, Control
+ *  or Shift held is the browser's and the system's own; and not while a
+ *  field, a menu or a dialog has the key ({@link typing}) or a handler
+ *  before has used it. The library's own form-tag rule is off: `typing`
+ *  is the one rule, the same for a card's letters (useCardKeys). */
+export const HEARD = {
+  enableOnFormTags: true,
+  ignoreEventWhen: (event: KeyboardEvent) => event.defaultPrevented || typing(event.target),
+} as const;
 
-/** ⌘K on a Mac, Ctrl K elsewhere: the one search, from a field too (it
- *  is never a typed letter); OneSearchField listens for it. The physical
- *  key (`code`), as the letters are read (lib/shortcutKeys). */
-export const isSearchKey = (event: KeyboardEvent): boolean =>
-  (event.metaKey || event.ctrlKey) && !event.altKey && !event.shiftKey && event.code === "KeyK";
+/** A letter's hotkey, as the library names it: Alt held (lib/shortcutKeys). */
+export const altKey = (letter: string) => `alt+${letter.toLowerCase()}`;
+
+/** The letter a hotkey was heard as, upper case, as SCREEN_KEYS has it. */
+const letterOf = (keys: readonly string[] | undefined) => keys?.[0]?.toUpperCase();
 
 /** The shortcuts on the page while `on` (a desktop's: useIsDesktop). */
 export function useShortcuts(on: boolean): void {
-  useEffect(() => {
-    if (!on) return;
-    document.addEventListener("keydown", onShortcut);
-    return () => document.removeEventListener("keydown", onShortcut);
-  }, [on]);
+  // Escape is not a character key: it goes back one level alone, no Alt.
+  useHotkeys(
+    "escape",
+    (event) => {
+      if (backOne(document)) event.preventDefault();
+    },
+    { ...HEARD, enabled: on },
+  );
+  useHotkeys(
+    "alt+slash",
+    (event) => {
+      if (focusSearch(document)) event.preventDefault();
+    },
+    { ...HEARD, enabled: on },
+  );
+  useHotkeys(
+    [...Object.values(SCREEN_KEYS).filter((key): key is string => !!key), DIRECT_KEY].map(altKey),
+    (event, hotkey) => {
+      const letter = letterOf(hotkey.keys);
+      const screen = (Object.keys(SCREEN_KEYS) as ScreenId[]).find((id) => SCREEN_KEYS[id] === letter);
+      event.preventDefault();
+      if (screen) wantScreen(screen);
+      else askSearch("direct");
+    },
+    { ...HEARD, enabled: on },
+  );
+}
+
+/** ⌘K on a Mac, Ctrl K elsewhere: the one search, from a field too (it
+ *  is never a typed letter); OneSearchField's, with `run`. */
+export function useSearchKey(run: () => void): void {
+  useHotkeys(
+    ["meta+k", "ctrl+k"],
+    (event) => {
+      event.preventDefault();
+      run();
+    },
+    { enableOnFormTags: true, enableOnContentEditable: true, ignoreEventWhen: (event) => event.defaultPrevented },
+  );
 }

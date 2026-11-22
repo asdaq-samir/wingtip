@@ -219,12 +219,14 @@ export function groundOf(value: string | null | undefined): Record<string, numbe
  *  ident: at the departure on board at engine start, at a stop what it is
  *  fuelled to, 0 none bought (the engine's fuel_in_tanks). Up to five
  *  figures, as the planner reads a point's figure; more than the tanks
- *  hold is the pilot's word, kept with a warning (warn, never limit). */
-export function tanksOf(value: string | null | undefined): Record<string, number> {
+ *  hold is the pilot's word, kept with a warning (warn, never limit).
+ *  `pointOf` reads an ident: the engine's stopOf, or a shared link's own
+ *  shape check, read before the engine has loaded (lib/sharedFlight). */
+export function tanksOf(value: string | null | undefined, pointOf: (ident: string | undefined) => string = stopOf): Record<string, number> {
   const out: Record<string, number> = {};
   for (const part of (value ?? "").split(",")) {
     const [ident, gallons] = part.split(":");
-    const point = stopOf(ident);
+    const point = pointOf(ident);
     if (point && /^\d{1,5}$/.test(gallons ?? "")) out[point] = Number(gallons);
   }
   return out;

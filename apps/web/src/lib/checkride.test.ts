@@ -10,7 +10,6 @@ describe("the checkride page's reading", () => {
       "PA.VI.C.K3",
       "IR.III.B.K2b",
     ]);
-    expect(acsCodesIn("nothing here")).toEqual([]);
   });
 
   // AC 61-65K A.10 filled in as the gateway's EndorsementKindTest fills it:

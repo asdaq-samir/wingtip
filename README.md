@@ -149,7 +149,8 @@ docs/        the docs below, and the architecture diagrams
 
 ## Licence and credits
 
-MIT ([LICENSE](LICENSE)). Charts, aeronautical data and live feeds from
+MIT ([LICENSE](LICENSE)) for the code; the name, the logo and the brand
+art are not under it ([NOTICE](NOTICE)). Charts, aeronautical data and live feeds from
 the FAA; weather from NOAA and aviationweather.gov; traffic from adsb.lol,
 ADS-B Exchange and adsb.fi; imagery from the USGS. Built with Rust,
 TypeScript and React, Swift, Kotlin, Python and Java, and the Claude API.

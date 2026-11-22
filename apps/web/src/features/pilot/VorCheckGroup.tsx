@@ -35,14 +35,14 @@ const VOR_CHECKS: { value: VorCheckRequest["kind"]; label: string }[] = [
 // a typing slip past that, not a reading; 91.171's own 4° and 6° are
 // the check's standing, said once it is recorded, never refused.
 const vorCheckSchema = z.object({
-  checkedOn: requiredPastDay("The day is required"),
+  checkedOn: requiredPastDay("The day is required."),
   kind: z.enum(["VOT", "REPAIR_STATION", "GROUND", "AIRBORNE", "RADIAL", "DUAL"]),
-  place: z.string().trim().max(80, "At most 80 characters"),
+  place: z.string().trim().max(80, "At most 80 characters."),
   errorDeg: z
     .string()
     .trim()
-    .min(1, "The error is required")
-    .refine((value) => Number.isFinite(Number(value)) && Math.abs(Number(value)) <= 30, "Within 30° either way"),
+    .min(1, "The error is required.")
+    .refine((value) => Number.isFinite(Number(value)) && Math.abs(Number(value)) <= 30, "Within 30° either way."),
 });
 type VorCheckValues = z.infer<typeof vorCheckSchema>;
 

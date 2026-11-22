@@ -96,7 +96,9 @@ test("Google's map or its satellite over the chart where the deployment has a ke
   await page.getByTestId("overlay-select").getByRole("button", { name: "Google Map" }).click();
   await expect.poll(() => asked.some((u) => u.includes("/v1/createSession?key=AIza-test")), { timeout: slow(15000) }).toBe(true);
   await expect.poll(() => asked.some((u) => /\/v1\/2dtiles\/\d+\/\d+\/\d+\?session=test-session&key=AIza-test/.test(u))).toBe(true);
-  await expect(page.locator(".maplibregl-ctrl-attrib", { hasText: "Google Maps · Map data ©2026 Google" })).toBeVisible();
+  // Google's own logo (its Map Tiles API policies), then the copyright.
+  const credit = page.locator(".maplibregl-ctrl-attrib", { hasText: "Map data ©2026 Google" });
+  await expect(credit.getByRole("img", { name: "Google Maps" }).filter({ visible: true })).toHaveCount(1);
   // Its satellite, its own picture beside it (the owner, 2026-11-13): a session of its own, with Google's roads over it.
   await page.getByTestId("overlay-select").getByRole("button", { name: "Google Satellite" }).click();
   await expect.poll(() => asked.filter((u) => u.includes("/v1/createSession")).length).toBe(2);

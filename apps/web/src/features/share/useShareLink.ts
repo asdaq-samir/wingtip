@@ -10,7 +10,7 @@ import { useAddressKey } from "../../lib/address";
 
 /**
  * The route's Share link (ShareMenu): the plan sent in the link itself --
- * route, altitude, departure time, airplane type and rules -- which opens
+ * route, altitude, departure time, airplane type, rules and fuel set -- which opens
  * as a preview on the receiver's phone or browser (features/shared-flight)
  * and stores nothing anywhere. The airplane's N-number goes with it
  * whenever there is one: the owner, 2026-11-11, "keep it default and no
