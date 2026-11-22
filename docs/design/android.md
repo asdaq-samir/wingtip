@@ -895,6 +895,12 @@ placement wins, and the difference is noted.
      filed with a tap and the route planned again. The Go / No-Go is asked
      with the alternate, so its 91.169 finding is the planner's.
   7. Detail folded under a tap (a `ListItem` that expands).
+  8. The FAA data out of cycle (`brief/DataCycles`, the web's
+     dataWarning): the planner's map ages' `data_cycles`, each judged
+     again on the phone's day by the engine's `data_cycle`, said in one
+     caution line ("FAA data out of date: charts and procedures"; 14 CFR
+     91.103). It joins the caution row once claude/parity3-android's
+     BriefGlance is merged.
 - **Ready to Fly** (`ready/`): a checklist of what is still missing,
   each a `ListItem` with a leading state glyph and a trailing "Fix"
   `TextButton` (`ReadyFixer`), at the top of the Brief when the plan is
@@ -1186,6 +1192,14 @@ a Material `Badge` at the top of the map, beside the receiver's, says
      connected `ToggleButton` group, never a slider (0017).
   5. Downloads (`offline/`), Minimums, Checklists and About as rows
      with chevrons.
+- **Connected Apps** (round 3, the web's ConnectedAppsPage; the deep
+  security review's N2): You's last row, signed in, opens a card
+  (`account/ConnectedApps`, one view model) listing each AI app connected
+  through the MCP connector, its name and when it was last used, with
+  Disconnect at its end in the error colour. Disconnect asks first in
+  Material's `AlertDialog`, then revokes that connection's tokens
+  (DELETE /api/me/connections/{id}); one already gone is simply no longer
+  listed, any other failure said in place (`ProblemLine`).
 - **Opened from** the account button beside the one search, by its tap
   alone (`account/AccountButton`), no menu between (the owner,
   2026-11-10). What its menu held is on this page: Sign In or Sign Out
@@ -1391,20 +1405,52 @@ terms; checked against Android's adaptive app quality guidelines
   another app opens as a tap on it does (a shared flight still
   previewed first); words dropped are typed into the one search; a
   sign-in link or another address is refused (Tier 1
-  Drag_Drop_Support).
-- **Not yet** (each its own piece): ink markup on a plate (the iPad's
-  PencilKit `PlateMarkup`; Android's `androidx.ink`), a second window of
-  the app (multi-instance; the iPad's `MainWindow`, here held back by the
-  single task the sign-in link needs), a plate in a window of its own,
-  dragging a field's row out, files (a flight, a GPX) dropped or opened
-  (the app opens none yet), resizable pane dividers (Tier 1 UI_Config),
-  and the tablet's store captures (docs/store/screenshots).
+  Drag_Drop_Support). A file dropped is taken as one opened with the
+  app is (below). Rows drag out (`ui/DragOut`, a long press, Compose's
+  `dragAndDropSource` with `DRAG_FLAG_GLOBAL`): a field's or a fix's
+  search result and a route point as its identifier with its card's
+  link, a nav log leg as its sentence (`LegWords`) with its end's link.
+- **Files** (`share/FlightFiles`, `MainActivity.take`): a Garmin flight
+  plan (`.fpl`) or a GPX route, opened with Wingtip from Files or a
+  mail, shared to it, or dropped on its window, is read by the engine's
+  `read_route_file` (the points with an identifier; a user waypoint is
+  left out and the pilot told how many) and opens in the shared flight's
+  preview, never planned unasked (the security review's N3), as the
+  iPad's WindowHost opens a flight or a track. A PDF goes to the pilot's
+  own documents (§3.20). Anything else, or a file the engine cannot
+  read, is said in Material's dialog over the map (`share/FileProblem`).
+- **Ink on charts** (`plates/PlateInk`, `plates/ChartInk`): Markup in a
+  plate's or the airport diagram's full-screen bar, Jetpack Ink's pen
+  and highlighter as the documents reader has them (§3.20,
+  `library/MarkLayer`, the reader's own Markup bar at the foot), the
+  page held still while marking. Kept on the device alone by the chart
+  and its d-TPP cycle (the cycle read from the plate's address), so the
+  next cycle's plate starts clean and the last cycle's ink is dropped as
+  it is first opened, as the iPad's PencilKit `PlateMarkup` keeps it.
+- **A plate in its own window** (`plates/PlateWindow`): on a medium or
+  wider window the plate viewer's Open in New Window opens it beside
+  the app (`FLAG_ACTIVITY_LAUNCH_ADJACENT`, a task of its own,
+  resizable), as the iPad's chart window; links and files still go to
+  the app's own window alone (the plate's activity has no intent
+  filter).
+- **Resizable panes** (`ui/PaneDivider`, `PaneRoom.paneWidth`): the
+  panel's and the card pane's divider with the map is Material's
+  `VerticalDragHandle`, dragged to widen or narrow the pane (TalkBack:
+  Widen Pane, Narrow Pane), from three quarters of a panel to what
+  leaves the map a panel's width, kept through a resize, a rotation
+  and a fold (Tier 1 UI_Config).
+- **Not yet** (each its own piece): a second window of the whole app
+  (multi-instance; the iPad's `MainWindow`, here held back by the
+  single task the sign-in link needs), a Wingtip flight file of its own
+  and GPX or KML tracks (Android has no track replay yet), and the
+  tablet's store captures (docs/store/screenshots).
 - **Tests**: `WidePanesTest` (the panes at 1280, 1024 and 700 dp on any
   emulator) and `TabletLayoutTest` (the whole app in an expanded
   window, skipped on a narrower one), both `@LargeScreen`, run on CI's
   Pixel Tablet emulator at night and in a wave's validation
-  (docs/CI.md); `PaneRoomTest`, `ShortcutTest` and `DroppedTest` on the
-  JVM.
+  (docs/CI.md); `PaneRoomTest`, `ShortcutTest`, `DroppedTest`,
+  `PlateInkTest` and `FlightFilesTest` on the JVM, and the engine's
+  `read_route_file` against apps/web/src/lib/fixtures/routeFile.json.
 - **Sources**:
   - https://developer.android.com/develop/ui/compose/layouts/adaptive/use-window-size-classes
   - https://developer.android.com/develop/ui/compose/layouts/adaptive/build-a-supporting-pane-layout
@@ -1437,6 +1483,21 @@ From the offline and store audits of 2026-11-10:
   silence (`voice/RecognizerErrors`).
 - **Every call** through the app's client ends after 10 s, a write after
   60 s; streams and downloads use `Gateway.streaming`.
+- **No connection said as such** (round 3, the web's NO_CONNECTION): a
+  failure for want of a network reads "No connection. The chart could not
+  be fetched." (`api/Problems`), and the model weather's bar says "No
+  connection." (design/wording.json's `no_connection`) instead of
+  "Fetching model weather…" for ever.
+- **Emergency in flying mode** has flying mode's 60-dp touch target
+  (`WingtipSize.FlyingTarget`, design/tokens.json's `flying-target`, as
+  the web's and the iPhone's), Material's text button drawn its own size
+  inside it (`LocalMinimumInteractiveComponentSize`).
+- **Traffic's heights** are marked against own ship's GPS height to the
+  nearest 10 ft (`Traffic.markedFt`), as the web and the iPhone mark
+  them, so the engine's 1,000 ft near band (`traffic_marks`, after 14 CFR
+  91.159's spacing) gives one airplane one answer on all three.
+- **Saved Flights' empty line** says where a flight is saved (the web or
+  the iPhone, with the account), since Android has no Save of its own.
 - **Sign-out and Delete Account** forget everything the phone kept of the
   pilot (`account/PhoneWipe`).
 
@@ -1538,8 +1599,10 @@ everything to phones and iPads and android tablets"; decision 0056).
   paragraph on the sheet's stack (`CardRequests`), over wherever the
   pilot is: "14 CFR 91.155" at § 91.155, "AIM 7-1-5" at its row of the
   outline or, without one, the first page its heading's words are on.
-  The Brief's finding row keeps its one spoken description, so TalkBack
-  reads the why but does not reach the link in it yet.
+  The Brief's finding row keeps its one spoken description, and each
+  cite in it is one of the row's TalkBack actions ("Open 14 CFR 91.155",
+  `rememberCiteActions`, round 3), so the actions menu opens the rule as
+  a tap on its link does.
 - **Links**: `?doc=` on the app's address (`aim@7-1-5`,
   `cfr-14-91@91.155`, `phak@p42`; `library/DocPlace`, the web's own
   format) opens the reader (`Links.Doc`).

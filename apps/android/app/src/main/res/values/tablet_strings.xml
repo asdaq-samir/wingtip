@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tablets' and desktop windows' own words (docs/design/android.md 3.17):
+     a plate's window, files opened or dropped, the panes' dividers. -->
+<resources>
+    <string name="plate_new_window">Open in New Window</string>
+    <string name="route_file_unreadable">That file isn\'t a Garmin flight plan, a GPX route or a PDF.</string>
+    <plurals name="route_file_dropped">
+        <item quantity="one">%1$d point with no identifier was left out.</item>
+        <item quantity="other">%1$d points with no identifier were left out.</item>
+    </plurals>
+    <string name="pane_divider">Pane Divider</string>
+    <string name="pane_divider_widen">Widen Pane</string>
+    <string name="pane_divider_narrow">Narrow Pane</string>
+</resources>

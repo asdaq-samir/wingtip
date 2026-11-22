@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -38,6 +39,8 @@ import androidx.compose.ui.window.DialogProperties
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.library.MarkLayer
+import app.wingtipmaps.android.library.PageInk
 import me.saket.telephoto.zoomable.ZoomSpec
 import me.saket.telephoto.zoomable.rememberZoomableState
 import me.saket.telephoto.zoomable.zoomable
@@ -45,16 +48,23 @@ import me.saket.telephoto.zoomable.zoomable
 /**
  * One of the FAA's pages full screen, the airport diagram's and an
  * approach plate's alike: a full-screen dialog, its title and ✕ at the
- * top, the page on white under them, and what goes under the page
- * (`footer`). Back closes it, the Dialog's own.
+ * top with the page's own `actions` before the ✕, the page on white
+ * under them, and what goes under the page (`footer`). Back closes it, the Dialog's own.
  */
 @Composable
-fun FullScreenPage(title: String, onClose: () -> Unit, footer: @Composable ColumnScope.() -> Unit = {}, page: @Composable BoxScope.() -> Unit) {
+fun FullScreenPage(
+    title: String,
+    onClose: () -> Unit,
+    actions: @Composable RowScope.() -> Unit = {},
+    footer: @Composable ColumnScope.() -> Unit = {},
+    page: @Composable BoxScope.() -> Unit,
+) {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Surface(Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize()) {
                 Row(Modifier.fillMaxWidth().padding(start = WingtipSpace.Lg, end = WingtipSpace.Xs), verticalAlignment = Alignment.CenterVertically) {
                     Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                    actions()
                     IconButton(onClick = onClose) { Icon(WingtipIcons.close, contentDescription = stringResource(R.string.close)) }
                 }
                 Box(Modifier.weight(1f).fillMaxWidth().background(Color.White), contentAlignment = Alignment.Center, content = page)
@@ -73,10 +83,11 @@ class PageMark(val x: Double, val y: Double, val turnDeg: Double?)
  * The page and the airplane on it, zoomed and panned together by
  * telephoto's Modifier.zoomable (pinch, double tap, fling, up to eight
  * times): the map's own ship, white-ringed, an arrow turned to `mark`'s
- * turn, or a circle without one.
+ * turn, or a circle without one. With `ink`, the pilot's marks over it
+ * (MarkLayer), the page held still while they mark.
  */
 @Composable
-fun ZoomablePage(page: Bitmap, description: String?, mark: PageMark?) {
+fun ZoomablePage(page: Bitmap, description: String?, mark: PageMark?, ink: PageInk? = null) {
     val zoom = rememberZoomableState(zoomSpec = ZoomSpec(maxZoomFactor = 8f))
     val image = remember(page) { page.asImageBitmap() }
     val you = stringResource(R.string.plate_you_are_here)
@@ -85,8 +96,11 @@ fun ZoomablePage(page: Bitmap, description: String?, mark: PageMark?) {
         val density = LocalDensity.current
         val w = with(density) { (page.width * k).toDp() }
         val h = with(density) { (page.height * k).toDp() }
-        Box(Modifier.size(w, h).zoomable(zoom)) {
+        // The page holds still while it is marked, the ink taking the touches.
+        val still = ink?.marking?.pen != null
+        Box(if (still) Modifier.size(w, h) else Modifier.size(w, h).zoomable(zoom)) {
             Image(image, contentDescription = description, modifier = Modifier.fillMaxSize())
+            if (ink != null) MarkLayer(ink.marks, 1, page.width * k, page.height * k, ink.marking, ink.onMarked)
             if (mark != null) {
                 Canvas(Modifier.fillMaxSize().semantics { contentDescription = you }) {
                     val centre = Offset((mark.x * size.width).toFloat(), (mark.y * size.height).toFloat())

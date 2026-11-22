@@ -115,6 +115,5 @@ class MarkupStore internal constructor(private val dir: File, private val doc: S
         /** The markup folder, for the phone's wipe. */
         fun dir(context: Context) = File(context.applicationContext.filesDir, "library/markup")
 
-        fun of(context: Context, doc: String) = MarkupStore(dir(context), doc)
-    }
+        fun of(context: Context, doc: String) = MarkupStore(dir(context), doc)    }
 }

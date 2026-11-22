@@ -122,6 +122,20 @@
                 <data android:scheme="content" />
                 <data android:mimeType="application/pdf" />
             </intent-filter>
+            <!-- A route from another app's flight-plan file, Garmin's .fpl or a
+                 GPX, opened with Wingtip or shared to it: read by the engine
+                 (read_route_file) and previewed as a shared flight is,
+                 never planned unasked (share/FlightFiles). An .fpl has no
+                 type of its own: Files and mail hand it over as XML. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/gpx+xml" />
+                <data android:mimeType="application/xml" />
+                <data android:mimeType="text/xml" />
+            </intent-filter>
             <!-- The app's shortcuts and App Actions' OPEN_APP_FEATURE, one
                  per screen (res/xml/shortcuts.xml, generated from
                  design/screens.json; docs/android-ai.md). -->
@@ -129,6 +143,17 @@
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity>
+
+        <!-- A plate in a window of its own beside the map, on a tablet, a
+             foldable or a desktop window (plates/PlateWindow): a task each,
+             resizable, laid out again by Compose as the window changes. No
+             intent filter: links and files go to MainActivity alone. -->
+        <activity
+            android:name=".plates.PlateWindowActivity"
+            android:theme="@style/Theme.WingtipMaps"
+            android:exported="false"
+            android:resizeableActivity="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize" />
 
         <!-- The app's actions and entities for Gemini and the system's
              agents (AppFunctions, Android 16 and later; ai/functions/):

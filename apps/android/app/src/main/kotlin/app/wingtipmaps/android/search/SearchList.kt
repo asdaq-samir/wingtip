@@ -40,8 +40,10 @@ import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.navigation.generated.Screen
+import app.wingtipmaps.android.ui.DragOut
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.WingtipIcons
+import app.wingtipmaps.android.ui.dragOut
 import app.wingtipmaps.android.ui.nearestRows
 
 /** The kinds of result a filter chip narrows the list to, as Google
@@ -94,7 +96,7 @@ fun LazyListScope.searchResults(
             val use = FieldMarks.use(a.use)?.let { stringResource(it) }
             ResultRow(
                 a.ident, a.name, listOfNotNull(use, where(a).ifEmpty { null }).joinToString(" · "), Icons.Filled.LocalAirport,
-                alert = a.closed?.ifBlank { null }, refused = refusal(a.ident, a.closed),
+                alert = a.closed?.ifBlank { null }, refused = refusal(a.ident, a.closed), dragsOut = true,
             ) {
                 onPick(SearchPick.Airport(a.ident, a.name, FieldMarks.closed(a.closed)))
             }
@@ -103,7 +105,7 @@ fun LazyListScope.searchResults(
     if (shows(ResultKind.WAYPOINTS)) {
         group("waypoints", R.string.group_waypoints, state.waypoints) { w ->
             val doing = stringResource(if (routed) R.string.waypoint_add else R.string.waypoint_direct).takeIf { routed || hasFix }
-            ResultRow(w.ident, w.name, listOfNotNull(w.region, doing).joinToString(" · "), Icons.Outlined.ChangeHistory) { onPick(SearchPick.Waypoint(w.ident)) }
+            ResultRow(w.ident, w.name, listOfNotNull(w.region, doing).joinToString(" · "), Icons.Outlined.ChangeHistory, dragsOut = true) { onPick(SearchPick.Waypoint(w.ident)) }
         }
     }
     if (shows(ResultKind.AIRPLANES)) group("airplanes", R.string.group_airplanes, state.airplanes) { hit -> AirplaneRow(hit, onPick) }
@@ -188,7 +190,9 @@ private fun Heading(title: Int) {
  *  titleMedium and its name after it at bodyMedium, a glyph at the start
  *  saying what it is, and what it is beside, under them. One a pick
  *  cannot take (`refused`) is greyed, disabled, its reason in its
- *  detail's place, which TalkBack reads with its name. */
+ *  detail's place, which TalkBack reads with its name. A field's or a
+ *  fix's row (`dragsOut`) drags out to another app as its identifier and
+ *  its card's link (DragOut). */
 @Composable
 private fun ResultRow(
     ident: String,
@@ -198,6 +202,7 @@ private fun ResultRow(
     tint: Boolean = false,
     alert: String? = null,
     refused: String? = null,
+    dragsOut: Boolean = false,
     onClick: () -> Unit,
 ) {
     val error = MaterialTheme.colorScheme.error
@@ -216,7 +221,7 @@ private fun ResultRow(
         leadingContent = glyph?.let { { Icon(it, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) } },
         supportingContent = under.takeIf { it.isNotEmpty() }?.let { { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = if (dragsOut) Modifier.fillMaxWidth().dragOut { DragOut.place(ident) } else Modifier.fillMaxWidth(),
         content = {
             Text(
                 buildAnnotatedString {

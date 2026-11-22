@@ -1,5 +1,9 @@
 package app.wingtipmaps.android.ui
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.net.Uri
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,7 +24,8 @@ import app.wingtipmaps.android.search.SearchControl
  * opens it, or words for the one search. Android's adaptive guidelines
  * (Tier 1, Drag_Drop_Support) ask an app to take a drop from another app
  * in split screen or a desktop window; the iPad takes a flight file, a
- * link or words the same way (WindowHost).
+ * link or words the same way (WindowHost). A file dropped is the
+ * activity's to take (FileTaker), as one opened with the app is.
  */
 sealed interface Dropped {
     data class Link(val link: Links.Link) : Dropped
@@ -61,7 +66,18 @@ fun rememberWindowDrop(onDrop: (Dropped) -> Unit): Modifier {
     val target = remember(context) {
         object : DragAndDropTarget {
             override fun onDrop(event: DragAndDropEvent): Boolean {
-                val clip = event.toAndroidDragEvent().clipData ?: return false
+                val drag = event.toAndroidDragEvent()
+                val clip = drag.clipData ?: return false
+                // A file from another app (Files, a mail beside it): read
+                // under the drop's own permission, as the app's window
+                // takes one opened with it (FileTaker, MainActivity).
+                val file = (0 until clip.itemCount).firstNotNullOfOrNull { clip.getItemAt(it).uri?.takeIf { u -> u.scheme == "content" } }
+                val activity = context.findActivity()
+                if (file != null && activity is FileTaker) {
+                    activity.requestDragAndDropPermissions(drag)
+                    activity.take(file, clip.description.takeIf { it.mimeTypeCount > 0 }?.getMimeType(0))
+                    return true
+                }
                 val text = (0 until clip.itemCount).firstNotNullOfOrNull { clip.getItemAt(it).coerceToText(context)?.takeIf(CharSequence::isNotBlank) }
                 val dropped = Dropped.of(text) ?: return false
                 latest(dropped)
@@ -69,8 +85,26 @@ fun rememberWindowDrop(onDrop: (Dropped) -> Unit): Modifier {
             }
         }
     }
-    // Plain text, a link, a list of addresses: every text/ type.
-    return remember(target) { Modifier.dragAndDropTarget(shouldStartDragAndDrop = { event -> event.mimeTypes().any { it.startsWith("text/") } }, target = target) }
+    // Plain text, a link, a list of addresses: every text/ type; and the
+    // files a window takes (FlightFiles: a flight plan, a GPX, a PDF).
+    return remember(target) { Modifier.dragAndDropTarget(shouldStartDragAndDrop = { event -> event.mimeTypes().any(::droppable) }, target = target) }
+}
+
+/** A drag's type the window takes: text, or a file it can read. */
+internal fun droppable(type: String): Boolean = type.startsWith("text/") || type in FILE_TYPES
+
+private val FILE_TYPES = setOf("application/pdf", "application/gpx+xml", "application/xml", "application/octet-stream")
+
+/** The activity that takes a file handed over, opened, shared or dropped
+ *  (MainActivity): what it is, by its type or name, decided there. */
+interface FileTaker {
+    fun take(uri: Uri, type: String?)
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
 
 /** The root's drop: a link opened as one sent to the app is (`onLink`),

@@ -103,7 +103,9 @@ private fun LegRow(leg: Leg, onOpen: () -> Unit, menu: @Composable () -> Unit) {
     val openLeg = stringResource(R.string.said_open_leg)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         // Material's clickable surface, clear, over the leg's figures.
-        Surface(onClick = onOpen, color = Color.Transparent, modifier = Modifier.weight(1f).semantics { onClick(label = openLeg, action = null) }) {
+        // A long press drags the leg out to another app beside this one,
+        // as its sentence and its end's link (DragOut).
+        Surface(onClick = onOpen, color = Color.Transparent, modifier = Modifier.weight(1f).semantics { onClick(label = openLeg, action = null) }.dragOut { DragOut.about(LegWords.row(leg), leg.to) }) {
             LegFigures(leg, Modifier.fillMaxWidth())
         }
         menu()

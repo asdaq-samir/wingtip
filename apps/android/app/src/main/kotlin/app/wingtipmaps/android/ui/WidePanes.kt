@@ -33,14 +33,17 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.navigation3.scene.SceneStrategy
 import androidx.window.core.layout.WindowSizeClass
 import app.wingtipmaps.android.Plan
@@ -59,6 +62,9 @@ import app.wingtipmaps.android.route.RouteToolbar
  *   and a thing's card in a supporting pane at the end, as the iPad's
  *   inspector and Material's supporting-pane layout hold it, the panel
  *   giving way while a card is up where the three do not fit.
+ *
+ * Each pane's divider with the map drags it wider or narrower
+ * (PaneDivider), its width kept through a resize (PaneRoom.paneWidth).
  *
  * The sheet's one back stack (MapViewModel) keeps the card in every
  * layout and across a resize, a rotation or a fold, and Back closes the
@@ -79,28 +85,47 @@ fun WidePanes(
     pages: @Composable (Modifier, List<SheetPage>, Boolean, SceneStrategy<SheetPage>?) -> Unit,
     map: @Composable () -> Unit,
 ) {
+    // The panes' widths as the pilot dragged them, kept through a resize,
+    // a rotation, a fold and the activity made again; each held to what
+    // the window has as it is drawn (PaneRoom.paneWidth).
+    var panelDp by rememberSaveable { mutableFloatStateOf(WingtipSize.Panel.value) }
+    var cardDp by rememberSaveable { mutableFloatStateOf(WingtipSize.Panel.value) }
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        if (PaneRoom.supportingPane(maxWidth)) {
-            SupportingPanes(sheet, searchAsks, maxWidth, pages, map)
+        val window = maxWidth
+        if (PaneRoom.supportingPane(window)) {
+            val widths = PaneWidths(PaneRoom.paneWidth(panelDp.dp, window, 2), PaneRoom.paneWidth(cardDp.dp, window, 2),
+                onPanel = { panelDp = PaneRoom.paneWidth(panelDp.dp + it, window, 2).value }, onCard = { cardDp = PaneRoom.paneWidth(cardDp.dp + it, window, 2).value })
+            SupportingPanes(sheet, searchAsks, window, widths, pages, map)
         } else {
-            OnePanel(sheet, pages, map)
+            val panel = PaneRoom.paneWidth(panelDp.dp, window, 1)
+            OnePanel(sheet, panel, { panelDp = PaneRoom.paneWidth(panelDp.dp + it, window, 1).value }, pages, map)
         }
     }
 }
 
+/** The panel's and the card pane's widths now, and their dividers' drags. */
+private class PaneWidths(val panel: Dp, val card: Dp, val onPanel: (Dp) -> Unit, val onCard: (Dp) -> Unit)
+
 /** Medium width: the list-detail scene in one panel at the start. */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-private fun OnePanel(sheet: SheetNav, pages: @Composable (Modifier, List<SheetPage>, Boolean, SceneStrategy<SheetPage>?) -> Unit, map: @Composable () -> Unit) {
+private fun OnePanel(
+    sheet: SheetNav,
+    panel: Dp,
+    onPanel: (Dp) -> Unit,
+    pages: @Composable (Modifier, List<SheetPage>, Boolean, SceneStrategy<SheetPage>?) -> Unit,
+    map: @Composable () -> Unit,
+) {
     // One pane whatever the window: the panel is this layout's width, not
     // the window's (a wider window has the supporting pane instead).
     val directive = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2()).copy(maxHorizontalPartitions = 1)
     // Back closes the card, not every pane change before it.
     val scenes = rememberListDetailSceneStrategy<SheetPage>(backNavigationBehavior = BackNavigationBehavior.PopUntilContentChange, directive = directive)
     Row(Modifier.fillMaxSize()) {
-        PanelSurface(Modifier.width(WingtipSize.Panel).testTag(PANEL_TAG), Edge.START) { modifier ->
+        PanelSurface(Modifier.width(panel).testTag(PANEL_TAG), Edge.START) { modifier ->
             pages(modifier, sheet.stack, true, scenes)
         }
+        PaneDivider(paneAtStart = true, onWiden = onPanel)
         Box(Modifier.weight(1f).fillMaxHeight()) { map() }
     }
 }
@@ -111,6 +136,7 @@ private fun SupportingPanes(
     sheet: SheetNav,
     searchAsks: Int,
     width: Dp,
+    widths: PaneWidths,
     pages: @Composable (Modifier, List<SheetPage>, Boolean, SceneStrategy<SheetPage>?) -> Unit,
     map: @Composable () -> Unit,
 ) {
@@ -136,14 +162,20 @@ private fun SupportingPanes(
     // the plan's foot in the panel.
     CompositionLocalProvider(LocalFiguresOnMap provides true) { Row(Modifier.fillMaxSize()) {
         AnimatedVisibility(PaneRoom.panelShown(top, width, askedOver), enter = expandHorizontally(), exit = shrinkHorizontally()) {
-            PanelSurface(Modifier.width(WingtipSize.Panel).testTag(PANEL_TAG), Edge.START) { modifier ->
-                pages(modifier, panelStack, !top.inspects, null)
+            Row {
+                PanelSurface(Modifier.width(widths.panel).testTag(PANEL_TAG), Edge.START) { modifier ->
+                    pages(modifier, panelStack, !top.inspects, null)
+                }
+                PaneDivider(paneAtStart = true, onWiden = widths.onPanel)
             }
         }
         Box(Modifier.weight(1f).fillMaxHeight()) { map() }
         AnimatedVisibility(cardStack.isNotEmpty(), enter = expandHorizontally(), exit = shrinkHorizontally()) {
-            PanelSurface(Modifier.width(WingtipSize.Panel).testTag(CARD_PANE_TAG), Edge.END) { modifier ->
-                if (shownCards.isNotEmpty()) pages(modifier, shownCards, top.inspects, null)
+            Row {
+                PaneDivider(paneAtStart = false, onWiden = widths.onCard)
+                PanelSurface(Modifier.width(widths.card).testTag(CARD_PANE_TAG), Edge.END) { modifier ->
+                    if (shownCards.isNotEmpty()) pages(modifier, shownCards, top.inspects, null)
+                }
             }
         }
     } }
