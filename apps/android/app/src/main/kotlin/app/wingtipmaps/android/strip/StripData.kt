@@ -142,7 +142,12 @@ object StripData {
     /** The clock some minutes after leaving, or null for a leg that
      *  cannot be flown. */
     fun timeAt(leaveMs: Long, minutes: Double?, zone: ZoneId = ZoneId.systemDefault()): String? =
-        minutes?.let { Format.clock(leaveMs + (it * 60_000).toLong(), zone) }
+        minutes?.let {
+            val at = leaveMs + (it * 60_000).toLong()
+            // Its day first where it is not the day the flight left (Format.arrivalDay).
+            val day = Format.arrivalDay(at, leaveMs, zone, zone)
+            (day?.let { d -> "$d " } ?: "") + Format.clock(at, zone)
+        }
 
     /** The route by its points, "C81 → KJVL → KDLH"; one airport to itself
      *  "KDLH local" (identSchema's routeName). */

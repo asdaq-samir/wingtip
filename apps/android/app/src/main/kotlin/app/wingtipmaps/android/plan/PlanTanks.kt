@@ -147,9 +147,10 @@ object PlanTanks {
         return if (added.isEmpty()) null else route to added
     }
 
-    /** "−12 gal": whole gallons rounded down, the minus past empty. */
+    /** "12 gal short" past empty, else "23 gal": whole gallons rounded
+     *  down, never fewer short (the web's gaugeWords). */
     fun words(gal: Double): String {
         val whole = kotlin.math.floor(gal).toLong()
-        return "${if (whole < 0) "−" else ""}${kotlin.math.abs(whole)} gal"
+        return if (whole < 0) "${-whole} gal short" else "$whole gal"
     }
 }

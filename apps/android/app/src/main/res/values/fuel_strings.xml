@@ -11,6 +11,7 @@
     <string name="fuel_on_board_at">Fuel on Board at %1$s</string>
     <string name="fuel_over">More than the %1$s the tanks hold</string>
     <string name="fuel_lands">Lands with %1$s</string>
+    <string name="fuel_lands_short">Lands %1$s</string>
     <string name="fuel_start_help">The fuel in the tanks at engine start: full, or the gallons.</string>
     <string name="add_fuel_stops">Add Fuel Stops</string>
     <string name="remove_fuel_stops">Remove Fuel Stops</string>

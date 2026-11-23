@@ -78,6 +78,33 @@ nonisolated enum Format {
         date.formatted(clockStyle(zone))
     }
 
+    /// The day an arrival is written with where it is not the day the
+    /// flight left, as the web's arrivalDay: "Tue" within the week, "11/30"
+    /// a week or more on, each day counted in its own zone (the arrival's
+    /// field's, the departure's; this phone's where one has none); nil on
+    /// the same day. A flight left at 14:27 and said "15:54", the next
+    /// day's, read as 87 minutes on for 2,700 nm (the owner's iPhone,
+    /// 2026-11-23).
+    static func arrivalDay(_ at: Date, left: Date, zone: TimeZone? = nil, leftZone: TimeZone? = nil) -> String? {
+        var there = Calendar(identifier: .gregorian)
+        there.timeZone = zone ?? .current
+        var home = Calendar(identifier: .gregorian)
+        home.timeZone = leftZone ?? .current
+        // Each end's calendar day as a UTC midnight, so the count is whole days.
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = .gmt
+        func midnight(_ date: Date, _ calendar: Calendar) -> Date {
+            utc.date(from: calendar.dateComponents([.year, .month, .day], from: date)) ?? date
+        }
+        let days = utc.dateComponents([.day], from: midnight(left, home), to: midnight(at, there)).day ?? 0
+        if days == 0 { return nil }
+        if days > 0 && days < 7 {
+            return at.formatted(Date.FormatStyle(locale: locale, calendar: there, timeZone: there.timeZone).weekday(.abbreviated))
+        }
+        let day = there.dateComponents([.month, .day], from: at)
+        return "\(day.month ?? 0)/\(day.day ?? 0)"
+    }
+
     /// Foundation's verbatim date styles: Sendable values with the
     /// pattern fixed, so no DateFormatter or calendar sums are kept here.
     private static let zuluStyle = Date.VerbatimFormatStyle(
@@ -130,12 +157,14 @@ nonisolated enum Format {
 
     /// The fuel in the tanks as FPL's gauge writes it, whole gallons
     /// rounded down, so never more in them than there are; past empty the
-    /// gallons short with a minus, "−12 gal" (the engine's fuel_in_tanks;
-    /// the owner, 2026-11-20: "Instead of showing 0 gal, can you show
-    /// negative gal"), rounded the same way down, never fewer short.
+    /// gallons short in words, "12 gal short" (the engine's fuel_in_tanks
+    /// below nought), rounded the same way down, never fewer short. It was
+    /// "−12 gal", which read as a figure gone wrong at a destination a leg
+    /// could not reach (the owner's iPhone, 2026-11-23, as the web's
+    /// gaugeWords).
     static func tankGallons(_ gal: Double) -> String {
         let whole = Int(gal.rounded(.down))
-        return "\(whole < 0 ? "\u{2212}" : "")\(abs(whole)) gal"
+        return whole < 0 ? "\(-whole) gal short" : "\(whole) gal"
     }
 
     /// A weight, grouped pounds: "2,450 lb".

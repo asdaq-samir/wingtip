@@ -71,6 +71,23 @@ object Format {
     fun clock(epochMs: Long, zone: ZoneId = ZoneId.systemDefault()): String =
         DateTimeFormatter.ofPattern("HH:mm", Locale.US).format(Instant.ofEpochMilli(epochMs).atZone(zone))
 
+    /**
+     * The day an arrival is written with where it is not the day the flight
+     * left, as the web's arrivalDay: "Tue" within the week, "11/30" a week or
+     * more on, each day counted in its own zone (the arrival's field's, the
+     * departure's; this phone's where one has none); null on the same day. A
+     * flight left at 14:27 and said "15:54", the next day's, read as 87
+     * minutes on for 2,700 nm (the owner's iPhone, 2026-11-23).
+     */
+    fun arrivalDay(atMs: Long, leftMs: Long, zone: ZoneId? = null, leftZone: ZoneId? = null): String? {
+        val there = Instant.ofEpochMilli(atMs).atZone(zone ?: ZoneId.systemDefault()).toLocalDate()
+        val home = Instant.ofEpochMilli(leftMs).atZone(leftZone ?: ZoneId.systemDefault()).toLocalDate()
+        val days = java.time.temporal.ChronoUnit.DAYS.between(home, there)
+        if (days == 0L) return null
+        return if (days in 1..6) there.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.US)
+        else "${there.monthValue}/${there.dayOfMonth}"
+    }
+
     /** A course, heading, track, radial or wind direction: three figures,
      *  whole degrees, north as 360 (FAA Order JO 7110.65, 2-4-17), "045°". */
     fun heading(deg: Double): String = headingFigures(deg) + "°"

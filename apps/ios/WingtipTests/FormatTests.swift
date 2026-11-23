@@ -70,6 +70,24 @@ import Testing
         }
     }
 
+    /// An arrival's day where it is not the day the flight left, counted in
+    /// each end's own zone (the web's time.test.ts arrivalDay cases).
+    @Test func anArrivalSaysItsDayOnlyWhereItIsNotTheDepartures() throws {
+        let chicago = try #require(TimeZone(identifier: "America/Chicago"))
+        let denver = try #require(TimeZone(identifier: "America/Denver"))
+        let iso = ISO8601DateFormatter()
+        func at(_ s: String) throws -> Date { try #require(iso.date(from: s)) }
+        // 14:27 CST on Monday 23 November 2026.
+        let left = try at("2026-11-23T20:27:00Z")
+        #expect(Format.arrivalDay(try at("2026-11-24T05:59:00Z"), left: left, zone: chicago, leftZone: chicago) == nil)
+        #expect(Format.arrivalDay(left.addingTimeInterval(1527 * 60), left: left, zone: chicago, leftZone: chicago) == "Tue")
+        // Chicago's midnight, 06:00Z, turns the day, not UTC's.
+        #expect(Format.arrivalDay(try at("2026-11-24T06:01:00Z"), left: left, zone: chicago, leftZone: chicago) == "Tue")
+        // 23:30 MST on the Monday is still Monday where it lands.
+        #expect(Format.arrivalDay(try at("2026-11-24T06:30:00Z"), left: left, zone: denver, leftZone: chicago) == nil)
+        #expect(Format.arrivalDay(try at("2026-11-30T20:00:00Z"), left: left, zone: chicago, leftZone: chicago) == "11/30")
+    }
+
     /// The forms the audit found written other ways on the iPhone.
     @Test func theAuditsFiguresAreTheTablesForms() {
         #expect(Format.cruiseAltitude(2500) == "FL-025")

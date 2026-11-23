@@ -81,17 +81,17 @@ fun TimelineMark(thread: TimelineThread, content: @Composable () -> Unit = {}) {
  * route crosses one (StopTimes).
  */
 @Composable
-fun PointTimes(at: StopTimes.At?, zone: ZoneId?, zonesSaid: Boolean, onLeave: ((Int, Int) -> Unit)?) {
+fun PointTimes(at: StopTimes.At?, zone: ZoneId?, zonesSaid: Boolean, left: StopTimes.Left, onLeave: ((Int, Int) -> Unit)?) {
     at ?: return
     var asking by rememberSaveable { mutableStateOf(false) }
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     Column(horizontalAlignment = Alignment.End) {
-        at.arriveMs?.let { Text(StopTimes.words(it, zone, zonesSaid), style = MaterialTheme.typography.bodyMedium, color = muted) }
+        at.arriveMs?.let { Text(StopTimes.words(it, zone, zonesSaid, left = left), style = MaterialTheme.typography.bodyMedium, color = muted) }
         val leave = at.leaveMs
         if (leave != null && onLeave != null) {
-            TextButton(onClick = { asking = true }) { Text(stringResource(R.string.leaves_at, StopTimes.words(leave, zone, zonesSaid))) }
+            TextButton(onClick = { asking = true }) { Text(stringResource(R.string.leaves_at, StopTimes.words(leave, zone, zonesSaid, left = left))) }
         } else if (leave != null && at.arriveMs == null) {
-            Text(StopTimes.words(leave, zone, zonesSaid), style = MaterialTheme.typography.bodyMedium, color = muted)
+            Text(StopTimes.words(leave, zone, zonesSaid, left = left), style = MaterialTheme.typography.bodyMedium, color = muted)
         }
     }
     val leave = at.leaveMs
