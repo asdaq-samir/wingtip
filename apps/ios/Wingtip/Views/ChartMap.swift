@@ -435,7 +435,6 @@ struct ChartMap: UIViewRepresentable {
         /// The map put where it opens, once it has its size, and again as
         /// the sheet's height changes until the map shows: the position is
         /// under the loading mark whatever the sheet did meanwhile.
-        @MainActor
         func open(_ map: MKMapView, bottomInset: CGFloat) {
             guard map.bounds.width > 0, !revealed, openedInset != bottomInset else { return }
             openedInset = bottomInset
@@ -444,7 +443,6 @@ struct ChartMap: UIViewRepresentable {
         }
 
         /// A point in the middle of what the sheet leaves, at the opening zoom.
-        @MainActor
         private func put(_ map: MKMapView, at: CLLocationCoordinate2D, animated: Bool) {
             guard map.bounds.width > 0 else { return }
             opening = at
@@ -468,7 +466,6 @@ struct ChartMap: UIViewRepresentable {
 
         /// A tile of the chart answered: once they stop coming for a moment
         /// the chart is drawn.
-        @MainActor
         func chartTile() {
             guard !revealed else { return }
             quiet?.cancel()
@@ -481,7 +478,6 @@ struct ChartMap: UIViewRepresentable {
         }
 
         /// No chart drawn (Chart None): the map does not wait for its tiles.
-        @MainActor
         func noChart() {
             guard !chartDrawn else { return }
             chartDrawn = true
@@ -489,25 +485,21 @@ struct ChartMap: UIViewRepresentable {
         }
 
         /// The airspace answered for the first time (ChartOverlays).
-        @MainActor
         func airspaceAnswered() {
             airspaceIn = true
             revealIfIn()
         }
 
         /// The fields drawn, as Setup's settings leave them, for their runways.
-        @MainActor
         var shownPins: [AirportPin] {
             AirportPin.shown(pins, military: fieldUse.military, privateFields: fieldUse.privateFields)
         }
 
-        @MainActor
         private func revealIfIn() {
             if chartDrawn, airportsIn, airspaceIn { reveal() }
         }
 
         /// The map shown, once: the loading mark fades over it.
-        @MainActor
         func reveal() {
             guard !revealed else { return }
             revealed = true
@@ -543,7 +535,9 @@ struct ChartMap: UIViewRepresentable {
             let scale = FieldMark.scale(zoom: zoom)
             if abs(scale - symbolScale) > 0.02 {
                 symbolScale = scale
-                for case let field as AirportAnnotation in mapView.annotations {
+                // The fields this coordinator drew, not every mark on the
+                // map (the traffic's among them).
+                for field in shown.values {
                     (mapView.view(for: field) as? AirportMarkView)?.scaleSymbol(scale)
                 }
             }
@@ -616,7 +610,6 @@ struct ChartMap: UIViewRepresentable {
 
         /// The airplanes moved to their new reports, the ones no longer
         /// heard taken off, the new ones added.
-        @MainActor
         func show(_ planes: [TrafficAircraft], ownFt: Double?, on map: MKMapView) {
             // The map's update runs at every fix; the traffic and own ship's
             // height as last drawn need no engine call (traffic_marks) again.
@@ -652,21 +645,18 @@ struct ChartMap: UIViewRepresentable {
             }
         }
 
-        @MainActor
         /// The fields in the view as the planner gave them, and which of
         /// them Setup draws.
         private var pins: [AirportPin] = []
         private var fieldUse = (military: false, privateFields: false)
 
         /// Setup's settings put to the marks already drawn, at once.
-        @MainActor
         func useFields(_ use: (military: Bool, privateFields: Bool), on map: MKMapView) {
             guard fieldUse.military != use.military || fieldUse.privateFields != use.privateFields else { return }
             fieldUse = use
             showFields(on: map)
         }
 
-        @MainActor
         private func showFields(on map: MKMapView) {
             let kept = AirportPin.shown(pins, military: fieldUse.military, privateFields: fieldUse.privateFields)
             show(kept.map { pin in
@@ -678,7 +668,6 @@ struct ChartMap: UIViewRepresentable {
 
         /// The marks drawn again as the route changes, for which stand on
         /// their own and which may give way (AirportAnnotation.onRoute).
-        @MainActor
         func refreshFields(on map: MKMapView) {
             guard !pins.isEmpty else { return }
             showFields(on: map)

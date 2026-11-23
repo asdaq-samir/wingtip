@@ -83,14 +83,14 @@ struct TilesTests {
         #expect(Config.plannerPath("/logout") == "/logout")
     }
 
-    @Test func theStoreKeepsATileByCycleKindAndPathAndDropsOtherEditions() throws {
+    @Test func theStoreKeepsATileByCycleKindAndPathAndDropsOtherEditions() async throws {
         let root = FileManager.default.temporaryDirectory.appending(path: "tiles-\(UUID().uuidString)")
         let store = TileStore(root: root)
         store.write(Data([1, 2, 3]), cycle: "09-03-2026", kind: "sec", z: 8, x: 62, y: 93)
         store.write(Data([4]), cycle: "07-10-2026", kind: "sec", z: 8, x: 62, y: 93)
         #expect(store.read(cycle: "09-03-2026", kind: "sec", z: 8, x: 62, y: 93) == Data([1, 2, 3]))
         #expect(store.bytes() == 4)
-        store.keepOnly(cycle: "09-03-2026")
+        await store.keepOnly(cycle: "09-03-2026")
         #expect(store.read(cycle: "07-10-2026", kind: "sec", z: 8, x: 62, y: 93) == nil)
         #expect(store.bytes() == 3)
         try? FileManager.default.removeItem(at: root)
