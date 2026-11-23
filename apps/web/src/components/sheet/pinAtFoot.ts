@@ -1,23 +1,30 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
 import { usePanelDragging } from "../../lib/mapChrome";
 import { prefersReducedMotion } from "../../lib/motion";
-import { SETTLE_MS, shownPx } from "./insets";
+import { SETTLE_MS, SHEET_SLIDE, shownPx } from "./insets";
+import { followSettle } from "./pinFollow";
+import { SWIPE_READER } from "./sheetFollow";
 
 /**
  * The row held by its CSS, as the sheet's foot is (sheet/insets'
  * HOLD_AT_EDGE): moved back up by as much as the sheet is slid past where
  * the row would sit on the foot's edge, and never down -- the sheet's
  * offset and the finger's movement against the row's room (--pin-room,
- * usePinAtFoot), on the sheet's own curve and held still under a finger.
- * So it moves with the sheet in the same frame however busy the page is,
- * where moved by script a frame at a time it fell a frame behind the
- * sheet's slide whenever the page was busy: the figures dipped and came
- * back as a pull down settled (the owner's screen recording, 2026-11-16:
- * "the pill takes a second to settle ... It's jumping"). The way an
+ * usePinAtFoot), exact under a finger, the finger's movement handed to it
+ * alone (SWIPE_READER, sheet/sheetFollow). Through a settle it is not
+ * eased by a transition, which went straight from end to end at a fixed
+ * share of the sheet's speed and slid the figures over the route above
+ * (the gestures audit of 2026-11-23, H3), but by an animation on the
+ * sheet's own curve that keeps the CSS's path, kink and all
+ * (sheet/pinFollow). So it moves with the sheet in the same frame however
+ * busy the page is, where moved by script a frame at a time it fell a
+ * frame behind the sheet's slide whenever the page was busy: the figures
+ * dipped and came back as a pull down settled (the owner's screen
+ * recording, 2026-11-16: "the pill takes a second to settle ... It's
+ * jumping"). The way an
  * airport card's tabs are held at its foot (CardTabBar's FloatingBar),
  * the owner's pointer ("how does airport card do it?"). The row is marked
- * data-pin-foot so that nothing stops its ease at the pill
- * (sheet/insets' PILL_BODY).
+ * data-pin-foot, where the browser tests find it.
  *
  * Of two places, the higher on the screen: where it rests on the sheet
  * (its place under the route, no lower than the foot's top), which goes
@@ -41,8 +48,7 @@ import { SETTLE_MS, shownPx } from "./insets";
  * sheet's offset there), as the bar makes way, so the figures come down
  * onto the foot's edge there as before.
  */
-export const PIN_AT_FOOT =
-  "[transform:translateY(min(var(--pin-cap,0px),calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-min(var(--pin-lift,0px),max(0px,calc(var(--pin-pill,0px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))),calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
+export const PIN_AT_FOOT = `[transform:translateY(min(var(--pin-cap,0px),calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-min(var(--pin-lift,0px),max(0px,calc(var(--pin-pill,0px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))),calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))] ${SWIPE_READER}`;
 
 /**
  * A row of a sheet's head that is its pill (PIN_AT_FOOT on it): held on
@@ -87,6 +93,13 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
   useLayoutEffect(() => {
     heldNow.current = held;
   }, [held]);
+  // Through each settle, its own animation on the sheet's curve (sheet/pinFollow).
+  useEffect(() => {
+    const row = ref.current;
+    if (!row || !on) return;
+    const px = (name: string) => parseFloat(row.style.getPropertyValue(name)) || 0;
+    return followSettle(row, (slid, atPill) => growAt(slid, px("--pin-half"), px("--pin-pill"), atPill));
+  }, [on, ref]);
   // The room, measured before the page is drawn, so the row is never seen
   // where it would be unheld; again as it is held or let go, when the bar
   // is drawn afresh (FlightFoot puts it away in another box at the pill)
@@ -119,11 +132,9 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       const natural = row.getBoundingClientRect().bottom - moved(row) - slid;
       const room = restingEdge(edge) - natural;
       const lift = liftOf(edge, sheet);
-      const offset = sheet ? getComputedStyle(sheet).getPropertyValue("--sheet-offset") : "";
-      const swiping = !!sheet?.hasAttribute("data-swiping");
       const bar = edge?.querySelector<HTMLElement>("[data-makes-way]");
       const barTop = bar ? restingTop(bar) : 0;
-      setRoom(row, `${room}px`, offset, swiping);
+      setRoom(row, `${room}px`);
       setVar(row, "--pin-lift", `${lift.lift}px`);
       setVar(row, "--pin-pill", `${lift.pill}px`);
       setVar(row, "--pin-half", `${lift.half}px`);
@@ -225,40 +236,19 @@ function setVar(el: HTMLElement, name: string, value: string) {
   if (el.style.getPropertyValue(name) !== value) el.style.setProperty(name, value);
 }
 
-/** The sheet's offset at each row's last measure (setRoom). */
-const offsetAtMeasure = new WeakMap<HTMLElement, string>();
-
 /**
- * The row's room set, eased only with the sheet. The row's ease is there
- * to follow the sheet's slide (PIN_AT_FOOT); a room changed with the sheet
- * where it was is the route above the row grown or shrunk (its timeline
- * come in, a stop added), and eased it threw the pill's figures down off
- * the screen's foot and slid them back up over the ease's time, as the
- * row's place in the page moved at once and its transform followed slowly
- * (brief-glance.spec: 193 points down at the pill as the route came in, a
- * layout shift of 0.017 under the opening Brief). So that change is set
- * with no ease, committed at once (the computed transform read), and the
- * ease put back for the sheet's next move. Not under a finger (`swiping`),
- * where nothing eases (PIN_AT_FOOT's transition-none) and Base UI holds the
- * offset still while the finger's own variable moves: every frame of a pull
- * read as "still", and the strip growing toward the pill changed its room
- * at each, so each frame wrote the transition twice and forced a style and
- * layout between, a share of the 250 layouts and 503 style recalcs of a
- * 24-step pull from half to the pill at CPU 4x, where half to full took 4
- * and 43 (the motion review of 2026-11-22).
+ * The row's room set. Set at once: nothing eases the row's transform but
+ * its settle's own animation (sheet/pinFollow), so a room changed with the
+ * sheet where it was -- the route above the row grown or shrunk, its
+ * timeline come in, a stop added -- moves the row at once with its place
+ * in the page, where an eased room threw the pill's figures down off the
+ * screen's foot and slid them back (brief-glance.spec: 193 points down at
+ * the pill as the route came in), and the trick that set it with no ease
+ * forced a style and layout twice a frame through a pull (the motion
+ * review of 2026-11-22).
  */
-function setRoom(row: HTMLElement, room: string, offset: string, swiping: boolean) {
-  const was = row.style.getPropertyValue("--pin-room");
-  const still = offsetAtMeasure.get(row) === offset;
-  offsetAtMeasure.set(row, offset);
-  if (!was || was === room || !still || swiping) {
-    row.style.setProperty("--pin-room", room);
-    return;
-  }
-  row.style.transition = "none";
-  row.style.setProperty("--pin-room", room);
-  void getComputedStyle(row).transform;
-  row.style.removeProperty("transition");
+function setRoom(row: HTMLElement, room: string) {
+  setVar(row, "--pin-room", room);
 }
 
 /** How far `el` is moved down by its own transform now. */
@@ -347,5 +337,4 @@ export function barRoom(barTop: number, rowBottom: number) {
  * drag up (the swipe below nothing) never moves it. At the pill it is put
  * away besides (RISEN_OVER, FlightFoot).
  */
-export const MAKES_WAY =
-  "[transform:translateY(max(0px,min(var(--sheet-swipe,0px),calc(var(--sheet-offset,0px)+var(--sheet-swipe,0px)-var(--pin-bar-room,9999px)))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
+export const MAKES_WAY = `[transform:translateY(max(0px,min(var(--sheet-swipe,0px),calc(var(--sheet-offset,0px)+var(--sheet-swipe,0px)-var(--pin-bar-room,9999px)))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none ${SWIPE_READER} ${SHEET_SLIDE}`;

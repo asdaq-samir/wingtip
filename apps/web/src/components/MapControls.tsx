@@ -17,6 +17,7 @@ import { FLYING_BUTTON, FLYING_STACK, GLASS, MAP_BUTTON_GLYPH, MAP_BUTTON_SIZE, 
 import { EngineGate } from "../lib/engine/engineGate";
 import { OnSheetTop } from "./sheet/sheetTop";
 import { TEXT } from "../lib/text";
+import { useWidenReveal } from "./useWidenReveal";
 
 /**
  * The map's buttons, in one group floating over the chart, as Maps
@@ -81,8 +82,10 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
   // "replace the radio button on the left with the fpl toggle but below
   // 3d").
   const onPhone = useIsMobile();
+  const micRef = useWidenReveal<HTMLDivElement>();
   // The circle is the pill too: tapped, it widens into the listening pill
-  // (RadioPill), easing through a grid column from 0fr to 1fr. In the
+  // (RadioPill), drawn at its width at once and uncovered by a clip
+  // (useWidenReveal), which the compositor draws. In the
   // column at the right edge it widens to the left, its mic staying where
   // it was. On a phone over the whole width less the
   // margins, above the group and the 3D and the toggle at the left (the
@@ -90,6 +93,7 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
   // clear of the side panel.
   const mic = !comms ? null : (
     <div
+      ref={micRef}
       data-map-food=""
       className={cn(
         "z-[1000] flex flex-row-reverse items-end rounded-4xl p-1",
@@ -109,18 +113,13 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
       >
         <RadioButton />
       </span>
-      <div
-        className="grid min-w-0 transition-[grid-template-columns] duration-(--motion-page) ease-(--motion-sheet-ease) motion-reduce:transition-none"
-        style={{ gridTemplateColumns: pill ? "1fr" : "0fr" }}
-      >
+      {pill && (
         <div className="min-w-0 overflow-hidden">
-          {pill && (
-            <Suspense fallback={null}>
-              <RadioPill />
-            </Suspense>
-          )}
+          <Suspense fallback={null}>
+            <RadioPill />
+          </Suspense>
         </div>
-      </div>
+      )}
     </div>
   );
   // The group of buttons, one soft card of glass.

@@ -83,7 +83,16 @@ function MapBannersDrawn({ map }: { map: GlMap | null }) {
     const el = column.current;
     const root = document.documentElement.style;
     if (!el || typeof ResizeObserver === "undefined") return;
-    const watch = new ResizeObserver(() => root.setProperty("--map-banners-h", `${el.offsetHeight}px`));
+    // On the page's root, as its reader, the weather's legend (FlowLegend), is drawn
+    // in another part of the map, and written only as
+    // the height changes:
+    // a variable changed on the root restyles every element on the page,
+    // and the observer is told of every resize, the same height too (the
+    // animation audit of 2026-11-23, M9).
+    const watch = new ResizeObserver(() => {
+      const height = `${el.offsetHeight}px`;
+      if (root.getPropertyValue("--map-banners-h") !== height) root.setProperty("--map-banners-h", height);
+    });
     watch.observe(el);
     return () => {
       watch.disconnect();
