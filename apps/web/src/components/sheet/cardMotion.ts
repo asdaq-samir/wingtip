@@ -53,6 +53,6 @@ export const RISE = cn(
  *  (the apple-design audit of 2026-11-23, H1). Opacity only under Reduce
  *  Motion. */
 export const SIDE_EASE =
-  "transition-[translate,opacity] duration-(--motion-drawer) ease-(--motion-drawer-ease) data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:translate-none";
+  "card-fade transition-[translate,opacity] duration-(--motion-drawer) ease-(--motion-drawer-ease) data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:translate-none";
 export const FROM_EDGE = "data-starting-style:translate-x-4 data-ending-style:translate-x-4";
 export const FROM_BELOW = "data-starting-style:translate-y-2 data-ending-style:translate-y-2";

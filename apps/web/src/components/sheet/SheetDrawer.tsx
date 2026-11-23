@@ -89,6 +89,12 @@ export function SheetDrawer({
   // The popup watched for its movement's few readers (sheet/sheetFollow).
   const relayed = useSwipeRelay(popupRef);
   const { shown, letGo } = useSnapFirst(snapPoint, snapped);
+  // The stock Drawer's own gaps, left to it, not drawn by hand (decision
+  // 0016): a sheet caught as it settles jumps to where it was going, it
+  // has no rubber band below the pill, and the 17 px before a swipe starts
+  // is never caught up. Drafted as Base UI issues for the owner to file
+  // (the r5-ui audit's L16, wingtip-audits/2026-11-23/base-ui-issues.md,
+  // 3 to 5).
   return (
     <Drawer.Root
       open

@@ -1,7 +1,7 @@
 import type { ExpressionSpecification, SymbolLayerSpecification } from "maplibre-gl";
 import { inkOn } from "../../scoreScale";
 import { CHART, MAP_LABEL } from "../../tokens";
-import { badgeLayer, chipLayer, pictureLayer } from "../gl/markLayers";
+import { badgeLayer, chipLayer, pictureLayer, type Layout } from "../gl/markLayers";
 import type { GlSymbol } from "../gl/useGlSymbols";
 import { ROUTE_PILL, ROUTE_POINT_PILL, dotPicture, fieldMarkPicture, turnDotPicture } from "./markPictures";
 import { outsideOfTurn, turnSide } from "./routeTurns";
@@ -52,14 +52,29 @@ type FieldSide = "left" | "bottom" | "right" | "top";
  *  are tried in from the first. */
 const CLOCKWISE: FieldSide[] = ["left", "top", "right", "bottom"];
 
-/** The sides in the order MapLibre tries them, the feature's `side` first,
- *  then its neighbours, the opposite last. */
-const FIELD_SIDES = [
-  "match",
-  ["get", "side"],
-  ...CLOCKWISE.flatMap((first, i) => [first, ["literal", [0, 1, 3, 2].flatMap((k) => SIDE[CLOCKWISE[(i + k) % 4]!])]]),
-  ["literal", CLOCKWISE.flatMap((k) => SIDE[k])],
-] as unknown as ExpressionSpecification;
+/** The sides in the order MapLibre tries them, the side outside the turn
+ *  first (the feature's `out`, degrees clockwise from north, as the screen
+ *  shows it with the map turned to `bearing`; fieldSide), then its
+ *  neighbours, the opposite last. Worked out north-up alone, with the map
+ *  track up in flight the side outside the turn could lie on the leg again
+ *  (the r5-ui audit's L14, 2026-11-23); RouteGl sets it again as the map
+ *  turns (useTurnedNames), as the route points' names are. */
+export function fieldSides(bearing: number): Pick<Layout, "text-variable-anchor-offset"> {
+  const turned = ["%", ["+", ["get", "out"], 720 - Math.round(bearing)], 360];
+  const quarter = ["%", ["round", ["/", turned, 90]], 4];
+  const order = (first: FieldSide) => {
+    const i = CLOCKWISE.indexOf(first);
+    return ["literal", [0, 1, 3, 2].flatMap((k) => SIDE[CLOCKWISE[(i + k) % 4]!])];
+  };
+  return {
+    "text-variable-anchor-offset": [
+      "match",
+      quarter,
+      ...[0, 1, 2, 3].flatMap((q) => [q, order(fieldSide(q * 90))]),
+      ["literal", CLOCKWISE.flatMap((k) => SIDE[k])],
+    ] as unknown as Layout["text-variable-anchor-offset"],
+  };
+}
 
 /** The side of a field its ident goes first: outside the course's turn
  *  there (outsideOfTurn, degrees clockwise from up on a north-up screen)
@@ -88,7 +103,7 @@ export const ROUTE_MARK_LAYERS: SymbolLayerSpecification[] = [
       "route-field-idents",
       ROUTE_MARKS,
       SORT,
-      { "icon-image": ROUTE_PILL.id, "text-variable-anchor-offset": FIELD_SIDES },
+      { "icon-image": ROUTE_PILL.id, ...fieldSides(0) },
       { "text-color": CHART.casing },
       "routeIdent",
     ),
@@ -100,6 +115,9 @@ export const ROUTE_MARK_LAYERS: SymbolLayerSpecification[] = [
 /** The route points' names, whose side RouteGl turns with the map
  *  (turnSide). */
 export const ROUTE_FIX_NAMES = "route-fixes";
+/** The route fields' idents, whose sides RouteGl turns with the map
+ *  (fieldSides). */
+export const ROUTE_FIELD_IDENTS = "route-field-idents";
 
 /** The lowest of the route's own layers, which the tops of climb and
  *  descent are drawn under, to give way to all of them. */
@@ -142,11 +160,7 @@ export function routeMarks(
       picture: e.fix ? turnDotPicture(ring) : fieldMarkPicture(e.space, e.colour),
       also: e.fix ? [ROUTE_POINT_PILL] : [ROUTE_PILL],
       // The destination's placed before every other.
-      props: {
-        kind: e.fix ? "fix" : "field",
-        sort: i === endpoints.length - 1 ? 0 : 1,
-        ...(e.fix ? { out: outsideOfTurn(line, e) } : { side: fieldSide(outsideOfTurn(line, e)) }),
-      },
+      props: { kind: e.fix ? "fix" : "field", sort: i === endpoints.length - 1 ? 0 : 1, out: outsideOfTurn(line, e) },
       onTap: e.select,
     })),
     ...checkpoints.map((c): GlSymbol => ({

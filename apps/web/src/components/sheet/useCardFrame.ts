@@ -103,24 +103,59 @@ export function useCardFrame(frame: CardFrame & { fullScreen?: boolean; title?: 
  * off, so nothing finds it twice; it goes with the drawer once the close
  * is done (dropCard). Put in after React's commit, and only once the
  * caller's own nodes are gone: an effect run again in place (React's
- * StrictMode) keeps them, and then nothing is copied. A canvas is copied
- * blank.
+ * StrictMode) keeps them, and then nothing is copied.
+ *
+ * A clone alone is not the face (the r5-ui audit's M1, 2026-11-23): it
+ * has no canvas's pixels (the airport diagram, a chart page went blank),
+ * no scroll (a tab's page, Nearest's strip or the hours jumped to their
+ * start), no typed value and its keyframes replayed. So each canvas's
+ * picture is drawn into its copy, each typed value set, each scroller put
+ * back where it was once the copy is in, and the copy's animations held
+ * (data-card-face, feel.css). The caller keeps no content past its own
+ * life, so a copy, not the real nodes, is what can stay.
  */
 function keepFace(host: HTMLElement) {
   if (!host.isConnected) return;
   const drawn = [...host.childNodes];
   const face = drawn.map((node) => node.cloneNode(true));
-  for (const node of face) {
-    if (!(node instanceof Element)) continue;
-    node.setAttribute("inert", "");
-    node.setAttribute("aria-hidden", "true");
-    for (const el of [node, ...node.querySelectorAll("[id], [data-testid]")]) {
+  const scrolled: [Element, number, number][] = [];
+  drawn.forEach((node, i) => {
+    const copy = face[i];
+    if (!(node instanceof Element) || !(copy instanceof Element)) return;
+    copy.setAttribute("inert", "");
+    copy.setAttribute("aria-hidden", "true");
+    copy.setAttribute("data-card-face", "");
+    for (const el of [copy, ...copy.querySelectorAll("[id], [data-testid]")]) {
       el.removeAttribute("id");
       el.removeAttribute("data-testid");
     }
-  }
+    // The same tree, so the nth of a kind in one is the nth in the other.
+    const canvases = copy.querySelectorAll("canvas");
+    node.querySelectorAll("canvas").forEach((canvas, k) => {
+      try {
+        canvases[k]?.getContext("2d")?.drawImage(canvas, 0, 0);
+      } catch {
+        // A canvas with nothing to give (a lost WebGL context) stays blank.
+      }
+    });
+    const fields = copy.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select");
+    node.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select").forEach((field, k) => {
+      const to = fields[k];
+      if (!to) return;
+      to.value = field.value;
+      if (field instanceof HTMLInputElement && to instanceof HTMLInputElement) to.checked = field.checked;
+    });
+    const all = copy.querySelectorAll("*");
+    node.querySelectorAll("*").forEach((el, k) => {
+      if ((el.scrollTop || el.scrollLeft) && all[k]) scrolled.push([all[k], el.scrollTop, el.scrollLeft]);
+    });
+  });
   queueMicrotask(() => {
     if (drawn.some((node) => node.parentNode === host)) return;
     host.append(...face);
+    for (const [el, top, left] of scrolled) {
+      el.scrollTop = top;
+      el.scrollLeft = left;
+    }
   });
 }

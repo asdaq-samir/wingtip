@@ -131,7 +131,7 @@ function CarouselContent({ className, wrapperClassName, ...props }: React.Compon
   const { carouselRef, orientation } = useCarousel();
 
   return (
-    <div ref={carouselRef} className={cn("overflow-hidden", wrapperClassName)} data-slot="carousel-content">
+    <div ref={carouselRef} className={cn("touch-pan-y touch-pinch-zoom overflow-hidden", wrapperClassName)} data-slot="carousel-content">
       <div className={cn("flex", orientation === "horizontal" ? "-ml-4" : "-mt-4 flex-col", className)} {...props} />
     </div>
   );

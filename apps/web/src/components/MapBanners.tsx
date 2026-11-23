@@ -81,9 +81,12 @@ function MapBannersDrawn({ map }: { map: GlMap | null }) {
   const column = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = column.current;
-    const root = document.documentElement.style;
     if (!el || typeof ResizeObserver === "undefined") return;
-    // On the page's root, as its reader, the weather's legend (FlowLegend), is drawn
+    // On the map's own element (MapPage's #content, insetVars' too), not
+    // the page's root, so a change restyles the map's part alone (the
+    // r5-ui audit's L9, 2026-11-23).
+    const root = (el.closest<HTMLElement>("#content") ?? document.documentElement).style;
+    // Over the map, as its reader, the weather's legend (FlowLegend), is drawn
     // in another part of the map, and written only as
     // the height changes:
     // a variable changed on the root restyles every element on the page,

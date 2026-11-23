@@ -16,9 +16,11 @@
    previews are: Tailwind's own hover asks only (hover: hover), which a
    touch screen that also reports hover (an Android tablet, a touch
    Chromebook) matches, and a row tapped there kept its hover fill until
-   the next tap elsewhere. A finger's feedback is the press (:active). */
+   the next tap elsewhere. A finger's feedback is the press (:active).
+   Any pointer, not the first alone: an iPad with a trackpad reports its
+   touch screen first, and its hover never showed (the r5-ui audit's L5). */
 @custom-variant hover {
-  @media (hover: hover) and (pointer: fine) {
+  @media (any-hover: hover) and (any-pointer: fine) {
     &:hover {
       @slot;
     }
@@ -694,6 +696,12 @@ body[data-map-sheet][data-map-panel="full"] [data-slot="toast"][data-type="loadi
      between sizes lost where the sheet went (the apple-design audit of
      2026-11-23, M5; the owner took the recommendation). */
   .sheet-slide {
+    transition-duration: var(--motion-drawer) !important;
+  }
+  /* And the iPad card's fade (cardMotion's SIDE_EASE), its move already
+     none under Reduce Motion: a fade is what iOS gives in a move's place
+     (the r5-ui audit's L6). */
+  .card-fade {
     transition-duration: var(--motion-drawer) !important;
   }
 }
