@@ -1,23 +1,19 @@
 package app.wingtipmaps.android.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.HorizontalFloatingToolbar
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SecondaryScrollableTabRow
-import androidx.compose.material3.Tab
+import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -49,63 +45,48 @@ fun platesNote(place: AirportPlace): PlatesNote? {
     }
 }
 
+/** The airport card's tab bar, for the UI tests. */
+const val AIRPORT_TAB_BAR_TAG = "airport-tab-bar"
+
 /**
- * The airport card's section tabs, right under its four actions where they
- * are in sight at half (the owner's T4, 2026-11-14; the web's PlaceTabBar):
- * Material's scrollable tab row, pinned under the bar as the card scrolls,
- * the picked tab filled in the theme's tint with the words on it in
- * `onPrimary`, the others in the surface's words. Weather carries the dot
- * of the field's own report's flight category (AIM 7-1-7's colours, the
- * tokens'), and none where the field has no report of its own; Charts
- * carries its count. Each tab's name says the hint, "Weather, MVFR" and
- * "Charts, 9", as the dot and the count are not words.
+ * The airport card's tabs in a bar floating at the card's foot, as the
+ * web's PlaceTabBar and the iPhone's CardTabBar float theirs (C1, the
+ * owner, 2026-11-14, after Apple Maps' place card), which took the place
+ * of T4's tab row under the actions: Material 3 Expressive's floating
+ * toolbar, the one FPL's actions ride (PlanFoot), holding the stock short
+ * navigation bar's items, each its glyph over its word (the web's tab bar
+ * since the owner's "similar size and see through", rules.md), the picked
+ * one in the stock indicator. Weather carries the dot of the field's own
+ * report's flight category (AIM 7-1-7's colours, the tokens'), none where
+ * the field has no report of its own, and Charts its count, each
+ * Material's badge on the glyph's corner; each tab's name says the hint,
+ * "Weather, MVFR" and "Charts, 9", as a dot and a count are not words.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AirportTabRow(section: Int, onPick: (Int) -> Unit, category: String?, charts: Int) {
-    SecondaryScrollableTabRow(
-        selectedTabIndex = section,
-        containerColor = BottomSheetDefaults.ContainerColor,
-        edgePadding = WingtipSpace.Lg,
-        // The fill marks the picked tab; no underline beside it.
-        indicator = {},
-        divider = {},
-    ) {
+fun AirportTabBar(section: AirportSection, onPick: (AirportSection) -> Unit, category: String?, charts: Int, modifier: Modifier = Modifier) {
+    HorizontalFloatingToolbar(expanded = true, modifier = modifier.padding(bottom = WingtipSpace.Xs).testTag(AIRPORT_TAB_BAR_TAG)) {
         AirportSection.entries.forEach { s ->
-            val picked = section == s.ordinal
             val title = stringResource(s.title)
             val hint = when (s) {
                 AirportSection.WEATHER -> category
-                AirportSection.APPROACHES -> charts.takeIf { it > 0 }?.toString()
+                AirportSection.CHARTS -> charts.takeIf { it > 0 }?.toString()
                 else -> null
             }
-            Tab(
-                selected = picked,
-                onClick = { onPick(s.ordinal) },
-                selectedContentColor = MaterialTheme.colorScheme.onPrimary,
-                unselectedContentColor = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier
-                    .padding(vertical = WingtipSpace.Xs)
-                    .clip(CircleShape)
-                    .background(if (picked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh)
-                    .semantics { contentDescription = hint?.let { "$title, $it" } ?: title },
-                text = {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
-                        if (s == AirportSection.WEATHER && category != null) {
-                            // Ringed in the picked tab's words, so it reads on the tint too.
-                            Box(
-                                Modifier.size(WingtipSpace.Md).clip(CircleShape)
-                                    .then(if (picked) Modifier.border(WingtipSpace.Xxs, MaterialTheme.colorScheme.onPrimary, CircleShape) else Modifier)
-                                    .padding(if (picked) WingtipSpace.Xxs else WingtipSpace.Xxs / 2)
-                                    .clip(CircleShape).background(FlightCategory.mark(category)),
-                            )
-                        }
-                        Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        if (s == AirportSection.APPROACHES && charts > 0) {
-                            Text(charts.toString(), style = MaterialTheme.typography.labelMedium)
-                        }
-                    }
+            ShortNavigationBarItem(
+                selected = section == s,
+                onClick = { onPick(s) },
+                icon = {
+                    BadgedBox(
+                        badge = {
+                            when {
+                                s == AirportSection.WEATHER && category != null -> Badge(containerColor = FlightCategory.mark(category))
+                                s == AirportSection.CHARTS && hint != null -> Badge { Text(hint) }
+                            }
+                        },
+                    ) { Icon(s.icon, contentDescription = null) }
                 },
+                label = { Text(title, maxLines = 1) },
+                modifier = Modifier.semantics { contentDescription = hint?.let { "$title, $it" } ?: title },
             )
         }
     }
