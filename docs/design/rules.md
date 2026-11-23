@@ -1676,9 +1676,8 @@ its figures are (decision
    not checked — figures use US rules", Mexico's, the Bahamas' or
    "Outside the US" by the same pattern, for a point or a leg (checked
    every 2 nm) outside the United States.
-2. **Under the point's row in FPL's timeline**, in the caution's ink, for
-   the point or the legs since the point before; a stop with it keeps the
-   stops listed, as one that cannot be flown to does.
+2. **Not in FPL's timeline**: the plan's space is limited, so the warning
+   lives in the Brief, not the plan (the owner, 2026-11-23).
 3. **On the nav log's rail**, once before the first row of each stretch
    outside, not on every row.
 4. **Once in the Brief**, a caution among its findings citing 14 CFR
@@ -1687,7 +1686,7 @@ its figures are (decision
 
 |       | Web                                                                                                                                                                                         | iPhone                                       | Android |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | ------- |
-| Where | `features/plan/jurisdiction` (`routeJurisdiction`, `rowCautions`) over the nav log's rows; RouteTimeline's `caution` (TimelineLine), NavLogList's rail line, the Brief's glance `outside` line | Not yet: on the owner's word (decision 0038) | Not yet |
+| Where | `features/plan/jurisdiction` (`routeJurisdiction`, `rowCautions`) over the nav log's rows; NavLogList's rail line, the Brief's glance `outside` line | Not yet: on the owner's word (decision 0038) | Not yet |
 | Tests | `engine/crates/flight/src/jurisdiction_tests.rs`, `engine/facade/tests/jurisdiction.rs` (`lib/fixtures/jurisdiction.json`); `features/plan/jurisdiction.test.ts`, `features/brief/GlanceLines.test.tsx`; `e2e/jurisdiction.spec.ts` (KDET to KBUF, across Ontario) | --                                           | --      |
 
 ## 16. Times, figures and the phone's region (the audit of 2026-11-21)

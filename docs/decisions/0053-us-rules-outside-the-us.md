@@ -38,14 +38,16 @@ say what it is.
    point or a leg lies outside the United States, the engine's words
    stand where the figures are, naming the place, the province in
    Canada, and whose rules: a field there, "CYQT is in Canada (Ontario):
-   Canadian rules not checked — figures use US rules", under its row in
-   FPL's timeline and before its row on the nav log's rail; a leg across
+   Canadian rules not checked — figures use US rules", before its row
+   on the nav log's rail; a leg across
    a country neither of its ends is in, "The leg to KBUF crosses Canada
-   (Ontario): …", on the leg, under the line it leaves from and on the
+   (Ontario): …", on the leg, on the
    rail before its first row, never as the US field's at its end (the
    owner's KUGN, KBUF, KPIT, 2026-11-23). The Brief lists it once among
    its findings, "Part of the route is in Canada (Ontario): …", a
-   caution citing 14 CFR 91.703(a).
+   caution citing 14 CFR 91.703(a). It is not in FPL's timeline: the
+   warning lives in the Brief, not the plan (owner, 2026-11-23: "we have
+   limited space").
 3. **Web first** (decision 0038): the iPhone and Android follow on the
    owner's word; their generated engine calls carry the two rules
    already.
