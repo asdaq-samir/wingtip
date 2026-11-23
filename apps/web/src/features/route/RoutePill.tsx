@@ -4,14 +4,9 @@ import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
 import { isPosition, pointName } from "../../lib/identSchema";
-import type { AirspaceClass } from "../../lib/preferences";
-import { useAirspace } from "../../lib/useAirspace";
-import { airportMarkSvg } from "../../lib/map/marks/airportMark";
-import { colourOf } from "../../lib/map/marks/flightCategory";
 import { feet, flightLevel } from "../../lib/format";
 import { airportQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
-import { CHART } from "../../lib/tokens";
 import { PointMenuItems } from "./PointControls";
 import { DROPDOWN, useAfterMenu } from "./pointMenu";
 import type { PointAltitude } from "./PointAltitudeDialog";
@@ -39,7 +34,7 @@ export interface PillActions {
 
 /**
  * One point of the route, as ForeFlight's route editor draws it (the
- * owner's screenshot, 2026-11-23): its ident in its airspace's look, a
+ * owner's screenshot, 2026-11-23): its ident in a plain filled pill, a
  * tap on it its menu -- the stock DropdownMenu, the same items as FPL's
  * timeline's "⋯" (PointMenuItems): Info, Insert Before and After, Show on
  * Map, Procedures, Change, Direct To, the altitude, Move, Remove (whose
@@ -54,8 +49,6 @@ export default function RoutePill({
   index,
   role,
   stopNumber,
-  airspaceOf,
-  metarColourOf,
   altitude,
   unknown = null,
   cautions = NO_CAUTIONS,
@@ -70,8 +63,6 @@ export default function RoutePill({
   unknown?: string | null;
   /** The plan's cautions at it: the altitude's, a flight short of fuel. */
   cautions?: string[];
-  airspaceOf: (ident: string) => AirspaceClass | undefined;
-  metarColourOf: (ident: string) => string | undefined;
   altitude: PointAltitude;
   actions: PillActions;
 }) {
@@ -83,24 +74,6 @@ export default function RoutePill({
   // of the FAA's charts it has, for Procedures.
   const card = useQuery({ ...airportQuery(ident), enabled: field, staleTime: 10 * 60_000 }).data;
   const closed = field ? (card?.closed ?? null) : null;
-  // An airport as the sectional draws its airspace (lib/useAirspace), its
-  // METAR's flight category in the middle; a waypoint the sectional's
-  // magenta diamond; a present position, none.
-  const known = airspaceOf(ident);
-  const space = useAirspace({ ident, name: ident, airspace: known }, field && !known);
-  const spaceClass = known ?? (space.name.startsWith("Class ") ? (space.name.slice(6) as AirspaceClass) : null);
-  const mark = isPosition(ident) ? null : waypoint ? (
-    <span aria-hidden="true" className="ml-0.5 size-2 shrink-0 rotate-45 rounded-[1px]" style={{ backgroundColor: CHART.waypoint }} />
-  ) : (
-    // 14 at a 16 px root, in rem, so it keeps its share of a larger text.
-    <span
-      aria-hidden="true"
-      className="block size-3.5 shrink-0"
-      dangerouslySetInnerHTML={{
-        __html: airportMarkSvg(spaceClass, metarColourOf(ident) ?? colourOf(null), null, "block size-full overflow-visible"),
-      }}
-    />
-  );
   // Procedures where the FAA publishes one of the kind the route flies
   // there (the d-TPP's codes: DP a departure, IAP an approach, STR an
   // arrival): a departure where the route leaves it, else an approach, or
@@ -137,17 +110,19 @@ export default function RoutePill({
             data-base-ui-swipe-ignore="x"
             // 28 tall, as the chips are, as wide as its ident; a finger's 44
             // round it, half the gap-2 wider each side so neighbours' areas
-            // meet (hit-x-1), laid against the pill (relative).
+            // meet (hit-x-1), laid against the pill (relative). A plain
+            // filled pill, the ident alone, in the N-number's and the
+            // altitude's fill (navlog/pillLook), with no airport or waypoint
+            // mark (the owner, 2026-11-23: "Keep it simple pills").
             className={cn(
-              "relative h-7 gap-1 rounded-full px-0.75 font-semibold uppercase hit-x-1 hit-y-2 touch-manipulation select-none [-webkit-touch-callout:none]",
+              "relative h-7 rounded-full px-2.5 font-semibold uppercase hit-x-1 hit-y-2 touch-manipulation select-none [-webkit-touch-callout:none]",
               TEXT.detail,
               isPosition(ident) && "normal-case",
-              red ? "bg-destructive/10 text-destructive hover:text-destructive" : "text-foreground",
+              red ? "bg-destructive/10 text-destructive hover:text-destructive" : "bg-foreground/8 text-foreground hover:bg-foreground/12",
             )}
           />
         }
       >
-        {mark}
         {pointName(ident)}
         {/* ForeFlight's red "!" at its top right; the words in the menu. */}
         {!red && cautions.length > 0 && (

@@ -5,7 +5,6 @@ import type { FuelStopSuggestion } from "../../lib/api/types";
 import { Button } from "../../components/ui/button";
 import { identOf, isPosition, pointName } from "../../lib/identSchema";
 import { askSearchPick } from "../../lib/oneSearch";
-import type { AirspaceClass } from "../../lib/preferences";
 import { sameField } from "../../lib/procedures";
 import type { PointAltitude } from "./PointAltitudeDialog";
 import { FuelStopChip, ProcedureChip, type RouteProcedure } from "./RouteChips";
@@ -34,8 +33,6 @@ interface TokenBox {
   onHideFuelStop?: (ident: string) => void;
   /** The flights short of fuel with no stop offered, by their ends. */
   shortFlights: ShortFlight[];
-  airspaceOf: (ident: string) => AirspaceClass | undefined;
-  metarColourOf: (ident: string) => string | undefined;
   altitudeAt: (ident: string, waypoint: boolean) => PointAltitude;
   /** The point the planner does not know, and why, in words. */
   unknown: string | null;
@@ -149,8 +146,6 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
         ident={point}
         waypoint={waypoint}
         index={i}
-        airspaceOf={box.airspaceOf}
-        metarColourOf={box.metarColourOf}
         role={role}
         stopNumber={i + (hasDep ? 0 : 1)}
         altitude={altitude}

@@ -36,7 +36,7 @@ export default function RouteEditor({
   const { selectPointAt } = vm.leg;
   const { panel, setPanel } = vm.view;
   const { addAt, addingChange, addingStop, clearRoute, foldRoute, routeOpen, setEditorFocused, waypointStops } = vm.routeList;
-  const { airspaceOf, altitudeAt, metarColour, searchNear } = vm.brief;
+  const { altitudeAt, searchNear } = vm.brief;
   // A stop asked for from a card (the profile's no-legal-altitude problem,
   // its Add a Stop): asked of the field once the card has gone. Under it the
   // sheet is inert (SheetParts, while a card is up), and the field's focus
@@ -97,8 +97,6 @@ export default function RouteEditor({
               stops={planned.stops}
               dest={planned.dest}
               waypoints={waypointStops}
-              airspaceOf={airspaceOf}
-              metarColourOf={metarColour}
               altitudeAt={altitudeAt}
               onAltitudeChange={setPointAltitude}
               onChange={setRoute}
