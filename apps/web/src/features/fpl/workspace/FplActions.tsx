@@ -119,7 +119,7 @@ export function FplRoute({
           where the first figure flush with the head's edge read "Dest" at
           12 (the iOS audit's margin, a local flight). */}
       <div className={cn("pt-2 pb-1", editing && "hidden")} data-pill-keeps="">
-        <div ref={figures} data-pin-foot="" className={cn(PIN_AT_FOOT, "px-1", PINNED)}>
+        <div ref={figures} data-pin-foot="" className={cn(PIN_AT_FOOT, "px-1", PINNED, FADE_OVER)}>
           {/* One thin line at half and all the way up, full size as the
               pill (the owner, 2026-11-22: "Maybe just make the figures
               strip very thin when fpl is half or full?"): one strip that
@@ -148,3 +148,20 @@ const SHEET_FOOT = '[data-testid="panel-foot"]';
  *  (usePinAtFoot's --pin-s, over --pin-h, their laid-out height). */
 const PINNED =
   "relative data-pinned:visible data-pill:[&_[data-pill-hides]]:invisible data-pinned:z-30 data-pinned:-mx-3 data-pinned:px-4 data-pinned:bg-(--sheet) data-pinned:after:absolute data-pinned:after:inset-x-0 data-pinned:after:-top-1.5 data-pinned:after:-bottom-10 data-pinned:after:-z-10 data-pinned:after:bg-(--sheet) data-pinned:after:translate-y-[calc((1-var(--pin-s,1))*var(--pin-h,0px))]";
+
+/**
+ * Where the route runs on under the figures held at the foot (data-pinned,
+ * their place in the page below where they are held), a short fade, 24
+ * points, from the route into the figures' own ground just over them, as
+ * a list fades under Apple Maps' floating bar, so the row cut there ("Add
+ * a Stop" halved at half, the owner's iPhone, 2026-11-23) reads as running
+ * on under the strip. A gradient over the content, not a mask on it: the
+ * figures are in the same scroller, and a mask there would fade them too.
+ * Drawn on the held strip, so it rides the strip's own transform on the
+ * compositor, nothing written a frame at a time; none where the route is
+ * short (the figures right under it, not held) and none at the pill
+ * (data-pill), where the map, not the route, is over them. Above the
+ * PINNED backing's 6 points and raised with it as the figures scale.
+ */
+const FADE_OVER =
+  "data-pinned:not-data-pill:before:pointer-events-none data-pinned:not-data-pill:before:absolute data-pinned:not-data-pill:before:inset-x-0 data-pinned:not-data-pill:before:bottom-[calc(100%+0.375rem)] data-pinned:not-data-pill:before:h-6 data-pinned:not-data-pill:before:bg-linear-to-b data-pinned:not-data-pill:before:from-transparent data-pinned:not-data-pill:before:to-(--sheet) data-pinned:not-data-pill:before:translate-y-[calc((1-var(--pin-s,1))*var(--pin-h,0px))]";
