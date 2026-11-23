@@ -109,7 +109,9 @@ a second or two and served at once, with no restart. Each build is
 written whole into `apps/web/.dist-next` and only then renamed into
 `dist`, index.html last (`VITE_PUBLISH_DIR`, `vite.config.ts`), so a page
 loading mid-build gets the old build or the new one, never half of one;
-the replaced builds' chunks stay an hour for pages already open. Both can live in
+the replaced builds' chunks stay a day for pages already open. The watch
+makes no `.br` or `.gz` (the compression plugin raced the publish and
+failed every rebuild after); the gateway gzips on the fly instead. Both can live in
 `.env` (`COMPOSE_PROFILES=web-dev` for the profile), as on the owner's
 Mac; for once:
 
