@@ -134,11 +134,13 @@ export function FuelSet({
       >
         {over
           ? `More than the ${usable} gal the tanks hold`
-          : kept
-            ? `Keeps the ${gaugeWords(tank.gal)} it lands with`
-            : stop
-              ? `Lands with ${gaugeWords(tank.gal)}`
-              : null}
+          : (kept || stop) && tank.gal < 0
+            ? `Lands ${words}`
+            : kept
+              ? `Keeps the ${words} it lands with`
+              : stop
+                ? `Lands with ${words}`
+                : null}
       </p>
       {!phone && (
         <div className="flex justify-end gap-2">

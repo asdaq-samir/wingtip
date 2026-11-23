@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import fixture from "../fixtures/timeAgo.json";
-import { ago, clockAndZulu, clockTime, duration, durationByHand, hm, instantOf, stopwatch, zoneName } from "./time";
+import { ago, arrivalDay, clockAndZulu, clockTime, duration, durationByHand, hm, instantOf, stopwatch, zoneName } from "./time";
 
 describe("a time en route as a paper nav log writes it", () => {
   it("pads the minutes, rounded first", () => {
@@ -63,5 +63,30 @@ describe("a feed's time", () => {
   it("writes a product's time with its zone and UTC beside it", () => {
     const at = new Date(Date.UTC(2026, 10, 21, 21));
     expect(clockAndZulu(at)).toBe(`${clockTime(at)} ${zoneName(at)} (2100Z)`);
+  });
+});
+
+describe("arrivalDay", () => {
+  // 14:27 CST on Monday 23 November 2026 (20:27Z), as the owner's iPhone left.
+  const left = new Date("2026-11-23T20:27:00Z");
+  const chicago = "America/Chicago";
+
+  it("says nothing on the day the flight left", () => {
+    expect(arrivalDay(new Date("2026-11-24T05:59:00Z"), left, chicago, chicago)).toBeNull();
+  });
+
+  it("says the weekday from the next day: 25 h 27 m on is Tuesday's 15:54", () => {
+    expect(arrivalDay(new Date(left.getTime() + 1527 * 60_000), left, chicago, chicago)).toBe("Tue");
+    // Midnight in Chicago, 06:00Z, is the day's turn, not UTC's.
+    expect(arrivalDay(new Date("2026-11-24T06:01:00Z"), left, chicago, chicago)).toBe("Tue");
+  });
+
+  it("counts each day in its own zone", () => {
+    // 23:30 MST on the Monday is 00:30 CST on the Tuesday: still Monday where it lands.
+    expect(arrivalDay(new Date("2026-11-24T06:30:00Z"), left, "America/Denver", chicago)).toBeNull();
+  });
+
+  it("writes the month and day a week or more on", () => {
+    expect(arrivalDay(new Date("2026-11-30T20:00:00Z"), left, chicago, chicago)).toBe("11/30");
   });
 });

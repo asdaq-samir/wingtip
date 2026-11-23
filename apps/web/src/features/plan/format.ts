@@ -1,6 +1,6 @@
 import type { AltitudeOption, Leg, Runway, Totals } from "../../lib/api/types";
 import { altFt, bearing, feet, flightLevel, gal, miles, one } from "../../lib/format";
-import { clockTime, duration, zuluTime } from "../../lib/format";
+import { arrivalDay, clockTime, duration, zuluTime } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
 import { calmOnRunway, isCalm } from "./wind";
 import { modelledWinds, windsSource } from "../../lib/windsAloft";
@@ -157,11 +157,15 @@ export const economicalWords = (plans: { kind: string }[]) =>
     : "no economical plan (no climb fuel flow)";
 
 /** When a leg ends: the departure instant plus the minutes flown to
- *  it -- "—" while the minutes are unknown (a leg not yet in, or one
+ *  it, its day said where not the departure's -- "—" while the minutes are unknown (a leg not yet in, or one
  *  that cannot be flown). */
 export function etaAt(departIso: string, minutes: number | null): string {
   if (minutes === null) return "—";
-  return clockTime(new Date(new Date(departIso).getTime() + minutes * 60_000));
+  const left = new Date(departIso);
+  const at = new Date(left.getTime() + minutes * 60_000);
+  // Its day where it is not the departure's: "Tue 15:54" (arrivalDay).
+  const day = arrivalDay(at, left);
+  return day ? `${day} ${clockTime(at)}` : clockTime(at);
 }
 
 const SURFACE_NAMES: Record<string, string> = {

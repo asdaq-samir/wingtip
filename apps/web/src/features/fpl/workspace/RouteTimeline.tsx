@@ -2,7 +2,7 @@ import { useQueries } from "@tanstack/react-query";
 import { useIsMobile } from "../../../hooks/use-mobile";
 import { plannerUnreachable, unknownWhy } from "../../../lib/api/client";
 import { leaveWhen } from "../../../lib/format/leaveWhen";
-import { clockElsewhere, clockIn } from "../../../lib/format";
+import { arrivalDay, clockElsewhere, clockIn } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";
 import { identOf, isPosition } from "../../../lib/identSchema";
 import { NO_CONNECTION, noConnection } from "../../../lib/problems";
@@ -112,7 +112,14 @@ export default function RouteTimeline({
       const arrival = arrivalAt(ident, role, visitAt(routePoints, index).seen);
       return !!arrival && !!clockElsewhere(arrival.at, cardOf(ident)?.data?.time_zone, departZone);
     });
-  const zoneOf = (at: Date, ident: string) => clockIn(at, fields.includes(ident) ? cardOf(ident)?.data?.time_zone : departZone);
+  // Its day too where it is not the day the flight left (arrivalDay):
+  // "Tue 15:54 CST" a day on, as etaAt writes the times with no zone.
+  const zoneOf = (at: Date, ident: string) => {
+    const zone = fields.includes(ident) ? cardOf(ident)?.data?.time_zone : departZone;
+    const there = clockIn(at, zone);
+    const day = arrivalDay(at, new Date(from), zone, departZone);
+    return there && day ? { ...there, time: `${day} ${there.time}` } : there;
+  };
   const timeOf = (ident: string, role: TimelinePoint["role"], seen: number) => {
     if (role === "Departure") {
       // Read, the departure's own clock and zone, as the stops'. Picked,

@@ -528,7 +528,7 @@ off by default (the owner, 2026-11-13).
    row greyed under a finger, a drag button shown while the keyboard has
    it, and Add a Stop saying "Up to 16 stops" when the route is full (the
    grouped box's audit, 2026-11-20); after a hairline inset to the
-   text its ident (a link to its card), the fuel in the tanks there (past empty the gallons short, "−12 gal", the owner, 2026-11-20) right
+   text its ident (a link to its card), the fuel in the tanks there (past empty the gallons short, "12 gal short" in the short's red, 2026-11-23; it was "−12 gal", the owner, 2026-11-20) right
    after it -- at the departure and at a stop the gauge is a button
    (the owner, 2026-11-21: "can we set the fuel tank by tapping on it?";
    `procedures/FuelSet`), named with its gallons ("36 gal, fuel on
@@ -1701,7 +1701,11 @@ On all three apps:
   airplane's own (the nav log's ETAs), and where that can be read as
   another clock it names its zone: the nav log's ETA column, the printed
   kneeboard and its head, the FPL timeline once the device keeps another
-  clock than the departure field's.
+  clock than the departure field's. An arrival on another day than the
+  flight left says its day, "Tue 15:54 CST", "11/30 09:10" a week or more
+  on (the web's `arrivalDay`, in `etaAt` and the timeline), each day in
+  its own field's zone: a bare "15:54" a day on read as 87 minutes after
+  a 14:27 departure (2026-11-23).
 - **A time from a feed with no zone is UTC** (the web's `instantOf`), and
   one that does not read is no bound, never "not in force".
 - **A day is the pilot's own.** A logbook's or a currency's date is

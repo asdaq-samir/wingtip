@@ -74,6 +74,34 @@ function wallIn(at: Date, timeZone: string): { time: string; zone: string } | nu
   return { time: `${parts.hour}:${parts.minute}`, zone: parts.timeZoneName ?? timeZone };
 }
 
+const DAY = { year: "numeric", month: "numeric", day: "numeric", weekday: "short" } as const;
+/** An instant's calendar day in a zone, this device's without one: a count
+ *  of days to tell two apart, its weekday ("Tue") and "11/24". */
+function dayIn(at: Date, timeZone: string | null | undefined) {
+  const format = formatIn(timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone, DAY);
+  const parts = format ? Object.fromEntries(format.formatToParts(at).map((p) => [p.type, p.value])) : null;
+  if (!parts) return { count: Math.floor((at.getTime() - at.getTimezoneOffset() * 60_000) / 86_400_000), weekday: "", monthDay: "" };
+  return {
+    count: Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)) / 86_400_000,
+    weekday: parts.weekday ?? "",
+    monthDay: `${parts.month}/${parts.day}`,
+  };
+}
+
+/** The day an arrival is written with where it is not the day the flight
+ *  left, as the departure picker writes a day not today (leaveWhen): "Tue"
+ *  within the week, "11/30" further on, each day in its own zone (the
+ *  arrival's field's, the departure's; this device's where one has none);
+ *  null on the same day. A flight Chicago to Las Vegas and back left at
+ *  14:27 and said "15:54" at KORD, the next day's, read as 87 minutes
+ *  later for 2,700 nm (the owner's iPhone, 2026-11-23). */
+export function arrivalDay(at: Date, left: Date, zone?: string | null, leftZone?: string | null): string | null {
+  const there = dayIn(at, zone);
+  const days = there.count - dayIn(left, leftZone).count;
+  if (days === 0) return null;
+  return (days > 0 && days < 7 ? there.weekday : there.monthDay) || null;
+}
+
 /** A clock time in a field's own zone (an IANA name, the planner's
  *  `time_zone`) and that zone's short name, "18:24" and "MST" -- or null
  *  where it keeps the departure's time at that instant (`from`, the

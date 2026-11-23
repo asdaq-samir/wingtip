@@ -24,15 +24,23 @@ const FIELD_UNDER_PIN: Layout = {
   "text-optional": true,
 };
 
+/** Pins placed in the route's order (`order`, the first stop's 0), so
+ *  where two would overlap the one flown to first keeps its place. */
+const PIN_ORDER = ["coalesce", ["get", "order"], 0] as ExpressionSpecification;
+
 /** A stop's field's mark and ident under its pins, its pins' tip on the
  *  field's middle (Tesla's trip map, the owner's screenshot, 2026-10-21).
- *  The pin and the mark always drawn; the ident given way where the
- *  route's own names or another mark's are (the owner's iPhone screenshot,
- *  2026-11-23: KPGA's over KLAS's at the country's zoom). */
+ *  The mark always drawn; the ident given way where the route's own names
+ *  or another mark's are (the owner's iPhone screenshot, 2026-11-23:
+ *  KPGA's over KLAS's at the country's zoom). A pin gives way too, to a
+ *  pin already placed: six suggested fuel stops along a 1,300 nm leg
+ *  stood piled on each other at the country's zoom (the owner's iPhone,
+ *  2026-11-23), so the later ones wait for the map to be zoomed in, their
+ *  fields' marks still drawn and a tap on one still its card. */
 function stopLayers(id: string): SymbolLayerSpecification[] {
   return [
     { ...labelledLayer(`${id}-fields`, id, { collide: true, sort: 0 }, FIELD_UNDER_PIN), filter: FIELD },
-    { ...pictureLayer(`${id}-pins`, id, {}, { ...PIN_PLACE, "icon-ignore-placement": false }), filter: PIN },
+    { ...pictureLayer(`${id}-pins`, id, { collide: true, sort: PIN_ORDER }, PIN_PLACE), filter: PIN },
   ];
 }
 const FUEL_STOPS = "fuel-stops";
@@ -66,7 +74,7 @@ export function FuelStopsGl({ stops, onSelect }: { stops: StopPin[]; onSelect: (
             lat: s.lat,
             lon: s.lon,
             picture: s.reason === "break" ? BREAK_PIN : FUEL_PIN,
-            props: { kind: "pin", title: `Suggested ${s.reason === "break" ? "stop" : "fuel stop"} ${s.ident}` },
+            props: { kind: "pin", order: i, title: `Suggested ${s.reason === "break" ? "stop" : "fuel stop"} ${s.ident}` },
             onTap: () => onSelect(s.ident),
           },
         ];
@@ -91,7 +99,7 @@ export function StopFieldsGl({
 }) {
   const marks = useMemo<GlSymbol[]>(
     () =>
-      fields.flatMap((f): GlSymbol[] => [
+      fields.flatMap((f, i): GlSymbol[] => [
         {
           key: `${f.ident}-field`,
           lat: f.lat,
@@ -106,7 +114,7 @@ export function StopFieldsGl({
           lat: f.lat,
           lon: f.lon,
           picture: stackedPin(f.kinds),
-          props: { kind: "pin", title: `${f.ident}: ${f.kinds.map((k) => STOP_KINDS[k].name).join(", ")}` },
+          props: { kind: "pin", order: i, title: `${f.ident}: ${f.kinds.map((k) => STOP_KINDS[k].name).join(", ")}` },
           onTap: () => onSelect(f.ident),
         },
       ]),
