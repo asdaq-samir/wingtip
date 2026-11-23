@@ -20,6 +20,13 @@ log = logging.getLogger(__name__)
 TIMEOUT_S = 10
 
 
+def _detail(resp: httpx2.Response) -> str:
+    try:
+        return str(resp.json().get("detail") or resp.text[:300])
+    except ValueError:
+        return resp.text[:300]
+
+
 async def _ask(method: str, path: str, pilot_id: str, body: dict | None = None):
     settings = get_settings()
     if not settings.mcp_internal_token:
@@ -34,6 +41,10 @@ async def _ask(method: str, path: str, pilot_id: str, body: dict | None = None):
         raise ToolError("Wingtip has no account for this sign-in any more: disconnect Wingtip and connect it again.")
     if resp.status_code == 400:
         raise ToolError(f"Wingtip refused the flight: {resp.text[:300]}")
+    if resp.status_code == 409:
+        # The gateway's refusal in its words (an RFC 9457 problem's
+        # detail): a flight put to an instructor keeps its route.
+        raise ToolError(f"Wingtip kept the flight as it was: {_detail(resp)}")
     if resp.status_code >= 400:
         raise ToolError(f"Wingtip's account service answered {resp.status_code}; try again in a minute.")
     return resp.json() if resp.content else None

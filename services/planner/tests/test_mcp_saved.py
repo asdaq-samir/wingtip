@@ -132,7 +132,7 @@ def test_the_view_is_the_web_s_build_served_as_an_mcp_app(gateway):
     content = read.contents[0]
     assert content.mime_type == "text/html;profile=mcp-app" and 'name="wingtip-view"' in content.text
     ui = content.meta["ui"]
-    assert ui["csp"] == {"resourceDomains": ["https://wingtip.test"], "connectDomains": ["https://wingtip.test"]}
+    assert ui["csp"] == {"resourceDomains": ["https://wingtip.test"]}
     assert ui["preferredDisplayMode"] == "fullscreen"
 
 
@@ -149,3 +149,12 @@ def test_every_flight_tool_opens_the_view_and_deleting_does_not():
     drawn = {name for name, t in tools.items() if (t.meta or {}).get("ui", {}).get("resourceUri") == view_resource.VIEW_URI}
     assert drawn >= {"show_flight", "add_stop", "change_approach", "save_flight_plan", "open_saved_flight"}
     assert "delete_saved_flight" not in drawn and "plan_route" not in drawn
+
+
+def test_deleting_is_the_models_to_call_and_never_the_views():
+    """The view's taps reach the account without the host's ask, so the
+    destructive delete is not offered to it (MCP Apps' visibility)."""
+    from .mcp_harness import listed
+
+    delete = next(t for t in listed() if t.name == "delete_saved_flight")
+    assert delete.meta["ui"] == {"visibility": ["model"]}

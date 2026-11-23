@@ -6,6 +6,8 @@ import anyio
 import httpx2
 import pytest
 
+from mcp.server.mcpserver.exceptions import ToolError
+
 from app.mcp import records
 from wingtip.config import get_settings
 
@@ -76,3 +78,16 @@ def test_without_the_secret_or_an_answer_no_connection_stands(monkeypatch):
     real = httpx2.AsyncClient
     monkeypatch.setattr(records.httpx2, "AsyncClient", lambda **kw: real(transport=httpx2.MockTransport(unreachable), **kw))
     assert anyio.run(records.connection_live, "42", "claude", "the-token") is False
+
+
+def test_a_flight_the_gateway_keeps_as_reviewed_is_said_in_its_words(monkeypatch):
+    """A 409 from the gateway (a flight put to an instructor keeps its
+    route, FlightService.replan) reaches the pilot as the gateway said it,
+    not as "try again in a minute"."""
+    monkeypatch.setenv("MCP_INTERNAL_TOKEN", "planner-secret")
+    said = {"status": 409, "detail": "its route stays as reviewed: save the new plan as a new flight."}
+    real = httpx2.AsyncClient
+    answer = httpx2.MockTransport(lambda request: httpx2.Response(409, json=said))
+    monkeypatch.setattr(records.httpx2, "AsyncClient", lambda **kw: real(transport=answer, **kw))
+    with pytest.raises(ToolError, match="kept the flight as it was: its route stays as reviewed"):
+        anyio.run(records.replan_flight, "42", 12, {"departureIdent": "C81"})

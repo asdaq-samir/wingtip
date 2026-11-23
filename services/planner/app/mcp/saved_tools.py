@@ -103,7 +103,12 @@ def register(server: MCPServer) -> None:
         description="Deletes one of the pilot's saved flights from their Wingtip account, with its nav log and any "
         "track. It cannot be undone from here.",
         annotations=destructive("Delete a saved flight"),
-        meta=WRITES,
+        # The model's alone, never the live view's (MCP Apps 2026-01-26,
+        # `_meta.ui.visibility`; both by default): the view offers no
+        # delete, and a call it made would reach the account without the
+        # host's ask, which a destructive tool is promised (the security
+        # review of 2026-11-22, L1).
+        meta={**WRITES, "ui": {"visibility": ["model"]}},
     )
     async def delete_saved_flight(flight_id: FlightId) -> dict[str, Any]:
         who = pilot(WRITE)

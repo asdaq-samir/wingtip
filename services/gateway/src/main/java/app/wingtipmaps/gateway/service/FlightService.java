@@ -11,12 +11,16 @@ import app.wingtipmaps.gateway.dto.TrackDto;
 import app.wingtipmaps.gateway.dto.TrackPointDto;
 import app.wingtipmaps.gateway.dto.UpdateFlightRequest;
 import app.wingtipmaps.gateway.repository.AircraftRepository;
+import app.wingtipmaps.gateway.repository.CrossCountryReviewRepository;
 import app.wingtipmaps.gateway.repository.FlightRepository;
 import app.wingtipmaps.gateway.repository.FlightTrackRepository;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.ErrorResponseException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
@@ -32,14 +36,20 @@ public class FlightService {
     private final FlightRepository flights;
     private final AircraftRepository aircraft;
     private final FlightTrackRepository tracks;
+    private final CrossCountryReviewRepository reviews;
     /** Boot's own, for a track's points kept as JSON. */
     private final JsonMapper json;
 
     public FlightService(
-            FlightRepository flights, AircraftRepository aircraft, FlightTrackRepository tracks, JsonMapper json) {
+            FlightRepository flights,
+            AircraftRepository aircraft,
+            FlightTrackRepository tracks,
+            CrossCountryReviewRepository reviews,
+            JsonMapper json) {
         this.flights = flights;
         this.aircraft = aircraft;
         this.tracks = tracks;
+        this.reviews = reviews;
         this.json = json;
     }
 
@@ -67,13 +77,28 @@ public class FlightService {
     /** This pilot's saved flight planned again as `request` has it: its
      *  route, airplane, altitudes, picks, time and nav log, its name, notes
      *  and share kept (the connector's update_saved_flight); empty where
-     *  the flight is not theirs. */
+     *  the flight is not theirs. A 409 where the flight was put to an
+     *  instructor for the solo cross-country review 14 CFR 61.93(c)(3)
+     *  asks: the review and the endorsement that answers it show the
+     *  flight's own row (CrossCountryReviewDto), so planning it again in
+     *  place would put a route the instructor never reviewed under their
+     *  signature (the security review of 2026-11-22, M1). The app never
+     *  changes a saved flight's route; the connector saves a new one. */
     @Transactional
     public Optional<Flight> replan(Pilot pilot, Long id, SaveFlightRequest request) {
         Aircraft flown = flownIn(pilot, request);
-        return get(pilot, id)
-                .map(f -> flights.save(
-                        filed(f.replanned(flown, request.departureIdent(), request.destinationIdent()), request)));
+        Optional<Flight> theirs = get(pilot, id);
+        if (theirs.isPresent() && reviews.existsByFlightId(id)) {
+            throw new ErrorResponseException(
+                    HttpStatus.CONFLICT,
+                    ProblemDetail.forStatusAndDetail(
+                            HttpStatus.CONFLICT,
+                            "This flight was put to an instructor for the solo cross-country review, so its route "
+                                    + "stays as reviewed: save the new plan as a new flight."),
+                    null);
+        }
+        return theirs.map(f ->
+                flights.save(filed(f.replanned(flown, request.departureIdent(), request.destinationIdent()), request)));
     }
 
     private Aircraft flownIn(Pilot pilot, SaveFlightRequest request) {

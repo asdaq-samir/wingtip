@@ -17,6 +17,9 @@ public interface CrossCountryReviewRepository extends JpaRepository<CrossCountry
     @EntityGraph(attributePaths = {"student", "instructor", "flight", "flight.aircraft", "endorsement"})
     List<CrossCountryReview> findByInstructorIdAndAnsweredAtIsNullOrderByAskedAt(Long instructorId);
 
+    /** Whether a flight was put to an instructor at all, answered or not. */
+    boolean existsByFlightId(Long flightId);
+
     /** Between one student and one instructor, newest first. */
     List<CrossCountryReview> findByStudentIdAndInstructorIdOrderByAskedAtDesc(Long studentId, Long instructorId);
 }
