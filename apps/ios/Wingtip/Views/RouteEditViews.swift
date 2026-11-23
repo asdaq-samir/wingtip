@@ -22,6 +22,10 @@ final class FlightUI {
     /// What the engine refused of a figure typed into one of the alerts,
     /// said in an alert of its own rather than the figure dropped unsaid.
     var problem: String?
+    /// FPL's route drawn as its box of pills (RouteBoxSection) rather
+    /// than its grouped list, turned by the round toggle at the card's
+    /// lower right (RouteBoxToggle), as the web's routeOpen.
+    var routeBox = false
 }
 
 /// The alerts that ask for one figure or two, as iOS asks: a fix off a

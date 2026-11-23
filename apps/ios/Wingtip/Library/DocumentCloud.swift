@@ -134,8 +134,8 @@ final class DocumentCloud {
     /// read from its record and written here off the main actor.
     func pull(into library: DocumentLibrary) async {
         guard on else { return }
-        let records = ((try? context().fetch(Self.listed())) ?? []).map { OwnDocument(id: $0.id, name: $0.name, bytes: 0, added: $0.added) }
-        for record in records {
+        let listed = ((try? context().fetch(Self.listed())) ?? []).map { OwnDocument(id: $0.id, name: $0.name, bytes: 0, added: $0.added) }
+        for record in listed {
             if let mine = library.own.first(where: { $0.id == record.id }) {
                 if mine.name != record.name, !record.name.isEmpty { try? library.store.renameOwn(mine.id, to: record.name) }
                 continue

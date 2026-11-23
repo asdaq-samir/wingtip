@@ -114,3 +114,33 @@ extension Plan {
         plan()
     }
 }
+
+extension Plan {
+    /// Words typed into FPL's route box after its last pill, read with the
+    /// route's own points before them, so a field typed there is the new
+    /// destination and the old one a stop on the way, as Maps' Add Stop
+    /// does and the web's box takes what is typed after the destination
+    /// (RouteBox); a whole route typed into an empty one is the route. A
+    /// SID or a STAR among them is looked up in its field's procedures
+    /// first. Planned, nil; else why not, to say under the box.
+    func typeRoute(_ typed: String) async -> String? {
+        let text = "\(TypedRoute.words(dep: dep, stops: stops, dest: dest)) \(typed)"
+        let read: TypedRoute.Read
+        do {
+            guard let typed = try TypedRoute.read(text) else {
+                return "A route needs two points at least: where it leaves from and where it lands."
+            }
+            read = typed
+        } catch {
+            return Problems.say("The route couldn't be read", error)
+        }
+        guard !read.procedures.isEmpty else {
+            useTypedRoute(read)
+            return nil
+        }
+        let found = await TypedRoute.picks(read) { try? await Planner.procedures($0) }
+        guard found.missed.isEmpty else { return TypedRoute.missedWords(found.missed, read: read) }
+        useTypedRoute(read, picks: found.picks)
+        return nil
+    }
+}

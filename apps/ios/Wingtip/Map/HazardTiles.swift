@@ -189,7 +189,7 @@ final nonisolated class HazardTileOverlay: MKTileOverlay, @unchecked Sendable {
                 // (The entry is in `running` already: it is set under the
                 // lock this waits on.)
                 if let made { kept.setObject(made, forKey: key as NSString, cost: made.metres.count * 4) }
-                running.withLock { $0[key] = nil }
+                self.running.withLock { $0[key] = nil }
                 return made
             }
             running[key] = task

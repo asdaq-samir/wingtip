@@ -485,12 +485,18 @@ opened. Typing "traffic" offers Show Traffic in Do.
      whose card could not be fetched, says why in red under it (decision
      0043; `RouteFieldCards` asks each field's card once). Stops swipe
      off and drag into another order (Edit at the header's right); Add a
-     Stop is the last row, Type Route at its end (`TypeRouteButton`, the
-     web's keyboard chip: the keyboard glyph in a small bordered capsule
-     opening a sheet whose text field holds the route as it is, to edit
-     or paste a whole one, "KPWK DCT OBK V100 KLAS", read by the engine's
-     `route_read` as item 15 has it, a level group its cruise;
-     `TypedRoute`), then Add (or Remove) Fuel Stops (one tap puts
+     Stop is the last row, the box's round toggle at its end
+     (`RouteBoxToggle`, the web's TypeRouteButton), which turns the list
+     into the route's box in the same place and back (`RouteBoxSection`,
+     the web's RouteBox, the owner's canvas A of 2026-11-23): each point
+     a plain filled pill, the ident alone, in the order flown and wrapped
+     over lines (`FlowLayout`), its menu the point's actions; a closed or
+     unknown point a red pill, a short flight's departure a "!"; a
+     flight's suggested fuel stops one "+N fuel stops" pill; the box as
+     tall as its pills. What is typed after the last pill is the new
+     destination, or a whole route, "KPWK DCT OBK V100 KLAS", read by the
+     engine's `route_read` as item 15 has it, a level group its cruise
+     (`Plan.typeRoute`, `TypedRoute`). Then Add (or Remove) Fuel Stops (one tap puts
      in every stop the planner's rounds found, already checked; a flight
      short with none offered says why in their place, "No fuel stop in
      reach on KMSN → KDLH"). Once a field's card says it is open, its

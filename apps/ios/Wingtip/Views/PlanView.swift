@@ -108,7 +108,13 @@ struct PlanView: View {
                 }
             }
             if plan.routed, focused == nil {
-                RouteTimelineSection(cards: cards, ask: ask, setFuel: { setting = $0 })
+                // The route as its grouped list or its box of pills, in the
+                // same place, turned by the toggle at its lower right.
+                if flightUI.routeBox {
+                    RouteBoxSection(cards: cards, ask: ask)
+                } else {
+                    RouteTimelineSection(cards: cards, ask: ask, setFuel: { setting = $0 })
+                }
             }
             // The route's own edits and the flight in the air.
             RouteExtrasSection()
@@ -155,19 +161,13 @@ struct PlanProblemView: View {
     @Environment(Plan.self) private var plan
     let problem: NavLogError
 
-    /// The route's point the planner names as not known ("No airport goes
-    /// by 'ZZZZ'."), where there is one.
-    private var unknown: String? {
-        plan.idents.first { problem.detail.contains("'\($0)'") || (problem.brief ?? "").contains("'\($0)'") }
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: WingtipSpace.xs) {
             ProblemLine(problem.brief ?? problem.detail)
             ForEach(problem.reasons ?? [], id: \.self) { ProblemLine($0) }
             if let advice = problem.advice { Text(advice).font(WingtipType.note).foregroundStyle(.secondary) }
             HStack(spacing: WingtipSpace.sm) {
-                if let unknown {
+                if let unknown = plan.unknownPoint {
                     Button("Remove", role: .destructive) { plan.remove(unknown) }
                 }
                 // The ways round the planner found: a Class B's waypoint,
@@ -187,6 +187,14 @@ struct PlanProblemView: View {
 }
 
 extension Plan {
+    /// The route's point the planner names as not known ("No airport goes
+    /// by 'ZZZZ'."), where there is one: Remove offered under the route,
+    /// and its pill red in the route's box.
+    var unknownPoint: String? {
+        guard let problem else { return nil }
+        return idents.first { problem.detail.contains("'\($0)'") || (problem.brief ?? "").contains("'\($0)'") }
+    }
+
     /// A point taken out of the route wherever it is: a stop removed, an
     /// end emptied for the pilot to type again. Undo brings it back.
     func remove(_ ident: String) {
