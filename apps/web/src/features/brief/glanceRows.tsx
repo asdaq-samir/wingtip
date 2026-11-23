@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import { ListRow } from "../../components/GroupedList";
 import FindingIcon from "../../components/FindingIcon";
-import { clockTime, duration, grouped, zoneName } from "../../lib/format";
+import { clockIn, duration, grouped } from "../../lib/format";
+import { airportQuery } from "../../lib/queryClient";
 import { FINDING_TONE, type Finding } from "../../lib/findings";
 import { mhzText } from "../../lib/frequencies";
 import { POSITION_NAME, isPosition } from "../../lib/identSchema";
@@ -17,8 +19,15 @@ const DASH = "—";
  *  field's CTAF, "Duluth ATIS" its ATIS. */
 const radioLabel = (to: string) => (/traffic$/i.test(to) ? "CTAF" : (to.split(" ").at(-1) ?? to));
 /** A clock time with its zone, "04:17 CST", as the nav log heads its ETAs:
- *  a bare "04:17" on the Depart row read as Z or local (WEB-9). */
-const time = (iso: string | null) => (iso ? `${clockTime(new Date(iso))} ${zoneName(new Date(iso))}` : undefined);
+ *  a bare "04:17" on the Depart row read as Z or local (WEB-9). In the
+ *  field's own zone (the planner's `time_zone`), as FPL's timeline gives
+ *  each point's: Denver's arrival "19:59 MST" there read "19:59 CST" here,
+ *  the same digits an hour apart (the HIG audit of 2026-11-23, H1); this
+ *  device's zone until the field's card is in. */
+function time(iso: string | null, timeZone: string | null | undefined) {
+  const there = iso ? clockIn(new Date(iso), timeZone) : null;
+  return there ? `${there.time} ${there.zone}` : undefined;
+}
 
 /** The route's strongest headwind in a few words: "18 kt", "None" where
  *  it is a tailwind all the way, a dash before the legs are in. */
@@ -30,7 +39,7 @@ const headwindText = (headwind: BriefGlance["enroute"]["headwind"] | undefined) 
 function Stat({ label, value, finding }: { label: string; value: ReactNode; finding?: Finding }) {
   return (
     <span className="flex min-w-0 flex-col">
-      <span className={cn("truncate text-muted-foreground", TEXT.note)}>{label}</span>
+      <span className={cn("break-words text-muted-foreground", TEXT.note)}>{label}</span>
       <span
         className={cn(
           "font-semibold break-words text-foreground tabular-nums",
@@ -144,6 +153,7 @@ export function FieldRow({
   onOpen: Open;
 }) {
   const here = isPosition(field.ident);
+  const timeZone = useQuery({ ...airportQuery(field.ident), enabled: !here }).data?.time_zone;
   const note =
     [field.runwayFt != null && `${grouped(field.runwayFt)} ft long`, field.wind && `wind ${field.wind}`].filter(Boolean).join(" · ") ||
     undefined;
@@ -155,7 +165,7 @@ export function FieldRow({
           ident={here ? POSITION_NAME : field.ident}
           category={field.category}
           finding={field.finding}
-          at={time(field.at)}
+          at={time(field.at, timeZone)}
         />
       }
       wide

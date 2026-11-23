@@ -146,7 +146,10 @@ const KNEEBOARD_PIN_NAME =
   "kneeboard:text-[length:calc(0.6875rem+(var(--type-detail)-0.6875rem)*var(--pin-p,1))] kneeboard:leading-[calc(0.75rem+0.5rem*var(--pin-p,1))]";
 export const PIN_FIGURE = {
   value: `[--fig:calc(0.8125rem+0.4375rem*var(--pin-p,1))] leading-[calc(1rem+0.5625rem*var(--pin-p,1))] ${KNEEBOARD_PIN}`,
-  unit: "text-[length:0.65em] leading-(--lead-note)",
+  // Never under a Caption 2's 11 points (Apple's floor; in rem, so it grows
+  // with the reader's text): 0.65 of the thin strip's 13 was 8.45 px, "nm"
+  // after Dist (the HIG audit of 2026-11-23, M2).
+  unit: "text-[length:max(0.6875rem,0.65em)] leading-(--lead-note)",
   name: `text-[length:calc(0.6875rem+0.125rem*var(--pin-p,1))] leading-[calc(0.75rem+0.375rem*var(--pin-p,1))] ${KNEEBOARD_PIN_NAME}`,
   unitScale: 0.65,
 };

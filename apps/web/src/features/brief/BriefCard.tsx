@@ -70,6 +70,12 @@ export default function BriefCard({
               <CardHead
                 name={name}
                 sub={line}
+                // The route, the altitude, when and the airplane wrap under
+                // "Brief" rather than run off the panel: at the owner's larger
+                // text a two-stop route lost its destination ("C81 → KGCT →
+                // KIML → KDE…") and an iPhone its time (the HIG audit of
+                // 2026-11-23, M1).
+                wrap
                 below={<VerdictPill />}
                 nameTestId="brief-name"
                 onClose={onClose}

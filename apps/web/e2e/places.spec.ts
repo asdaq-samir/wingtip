@@ -11,7 +11,7 @@ test("the departure's own card says no distance from itself while the pilot's po
   await settle(page);
   // No distance in the facts: no "here of C81", as the phones said no "From KMSN 0 nm" (PlaceCard's distanceOf).
   await expect(card(page).getByTestId("place-fact-elevation")).toBeVisible({ timeout: slow(15000) });
-  await expect(card(page).getByTestId("place-fact-distance")).toHaveText("Distance—");
+  await expect(card(page).getByTestId("place-fact-distance")).toHaveText("Dist.—");
 });
 
 test("an airport's card has the field's pictures across its top, its ident over them, how far it is, its actions, its tabs right under them and the weather there", async ({

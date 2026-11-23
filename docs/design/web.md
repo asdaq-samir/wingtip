@@ -220,7 +220,13 @@ These hold on every screen below and win over any reference app.
   card in `.inspector`; the map's room, its buttons, the banners and the
   chart's credit end at it (`--map-inset-right`), and a place picked is
   centred beside the column as its card opens (`roomAsCardOpens`), not in
-  the whole width while the card before it goes. A desktop's cards keep
+  the whole width while the card before it goes. The side panel keeps its
+  page under a card in the inspector: a result picked, the search's words
+  and results stay under its field, as Apple Maps' sidebar keeps its list
+  (PlanSidebar's `covered`; the HIG audit of 2026-11-23, M4). On the side
+  panel the floating bars (FPL's actions, a card's tabs) rest over the
+  grabber's 16-point box at its foot, never on it (SheetFoot's
+  `SIDE_FLOAT_ROOM`, CardTabBar's `GRABBER_ROOM`; M3). A desktop's cards keep
   covering the side panel. From the regular width up, an approach plate's
   card holds the plate itself (`PlateBeside`, usePlateCard's `beside`)
   with own ship on its plan view by its georeference: the map and the
@@ -1231,8 +1237,11 @@ Edit and Done.
    exact and at their full size, never shrunk to fit (the owner,
    2026-11-21: a long "1,320 nm" read smaller than a short "262 nm"): the
    grid's columns are as wide as their content (`max-content`, spread
-   between the first and last), and only past that cut with "…" -- CSS
-   alone, where from 2026-11-17 to 2026-11-21 they were set smaller together
+   between the first and last), and where they do not fit across at that
+   size they go two by two (`useFiguresFit`, a ResizeObserver summing what
+   each needs: the iPad's side panel at the owner's 19.65 px cut the ETE to
+   "2h 5…", the HIG audit of 2026-11-23, H2), cut with "…" only past even
+   that, where from 2026-11-17 to 2026-11-21 they were set smaller together
    to 0.7 (`FIT`, `figureRoom`, both gone) and before that measured in the
    page and the one too wide rounded ("13h 38m" read "13.6h"). In flight the head over
    the map gives the next checkpoint only while the engine's `in_flight`

@@ -23,8 +23,10 @@ import { airspaceWords, distanceWords, patternWords } from "./factWords";
  *  - Elev.: NASR's field elevation, feet MSL.
  *  - Pattern: the traffic pattern altitude, NASR's TPA or AIM 4-3-3a's
  *    (factWords patternWords; the Runways tab says which).
- *  - Distance: from the pilot, else from the route's departure, the
- *    engine's great circle, its figure alone ("12 nm").
+ *  - Dist.: from the pilot, else from the route's departure, the
+ *    engine's great circle, its figure alone ("12 nm"); short as Elev. is,
+ *    so the five keep one row at the owner's larger text on an iPhone,
+ *    where "Distance" went to a second (the HIG audit of 2026-11-23, L1).
  */
 export function PlaceFacts({
   place,
@@ -78,7 +80,7 @@ export function PlaceFacts({
       <Fact label="Pattern" testId="place-fact-pattern">
         {patternWords(place.pattern).value}
       </Fact>
-      <Fact label={away?.from ? `From ${away.from}` : "Distance"} testId="place-fact-distance">
+      <Fact label={away?.from ? `From ${away.from}` : "Dist."} testId="place-fact-distance">
         {distanceWords(away?.words)}
       </Fact>
     </CardFacts>

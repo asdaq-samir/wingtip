@@ -66,6 +66,7 @@ instrument-currency.spec.ts
 ios/audit.spec.ts
 ios/gestures.spec.ts
 ios/menus.spec.ts
+ipad-hig.spec.ts
 ipad-layout.spec.ts
 ipad-touch.spec.ts
 jurisdiction.spec.ts

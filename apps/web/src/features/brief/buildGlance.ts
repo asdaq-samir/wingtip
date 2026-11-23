@@ -16,9 +16,13 @@ interface GlanceInputs {
   landings: string[];
   dep: string;
   dest: string;
-  /** When the flight leaves, and how long it takes, for the arrival's time. */
+  /** When the flight leaves; the time in the air, En Route's figure. */
   leaving: Date;
   eteMin: number | null;
+  /** Minutes from leaving to landing at the destination, the stops' time
+   *  on the ground in (features/plan's arrivalMin): the Arrive row's time,
+   *  the one FPL's timeline gives the destination. */
+  arriveMin: number | null;
   checks: ReturnType<typeof runwayChecks>;
   picks: Parameters<typeof fieldPhases>[5];
   ownCallSign: Parameters<typeof fieldPhases>[4];
@@ -53,6 +57,7 @@ export function buildGlance({
   dest,
   leaving,
   eteMin,
+  arriveMin,
   checks,
   picks,
   ownCallSign,
@@ -105,7 +110,9 @@ export function buildGlance({
       line: items.find((i) => i.key === "weather")?.detail ?? null,
       finding: byKey(["weather", "altitude"]),
     },
-    arrive: course ? fieldAt(dest, "arrival", eteMin != null ? new Date(leaving.getTime() + eteMin * 60_000) : null) : null,
+    // Landed at the destination after the time in the air and the turnarounds
+    // at the stops, not the time in the air alone (the HIG audit, H1).
+    arrive: course ? fieldAt(dest, "arrival", arriveMin != null ? new Date(leaving.getTime() + arriveMin * 60_000) : null) : null,
     // The route's points and its legs between, every 2 nm (the engine's).
     outside: course ? (routeJurisdiction(navLogRows(course, [], legs))?.brief ?? null) : null,
     // And the ADIZs it meets on the way (14 CFR part 99).

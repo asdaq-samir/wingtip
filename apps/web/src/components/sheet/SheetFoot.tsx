@@ -10,11 +10,13 @@ const PILL_BELOW_GRABBER = "3.25rem";
 
 /** Beside the side panel the room under its foot is the panel's own
  *  padding (MapPanel's pb-4, a rem), not a bottom sheet's EDGE_ROOM, from
- *  which a floating bar's margin is reckoned (FplTabBar): the foot gives
- *  the difference back, so FPL's bar sits 4 points over the panel's foot
- *  as the airport card's does at every text size (tab-consistency.spec),
- *  where it stood 24 higher. */
-const SIDE_FLOAT_ROOM = `calc(${EDGE_ROOM} - 1rem)`;
+ *  which a floating bar's margin is reckoned (FplTabBar). That rem is the
+ *  grabber's (SheetGrabber's 16-point box at the panel's foot), so the bar
+ *  keeps out of it, its foot 4 points over the grabber's box, as the
+ *  airport card's does (CardTabBar's GRABBER_ROOM; tab-consistency.spec):
+ *  given back, the bar lay over the grabber, its pill on "Nav Log" and
+ *  "Routes" (the HIG audit of 2026-11-23, M3). */
+const SIDE_FLOAT_ROOM = EDGE_ROOM;
 
 /**
  * The sheet's foot, the route's figures pinned at it -- in the pill its one

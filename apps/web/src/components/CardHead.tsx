@@ -188,12 +188,15 @@ export function CardHead({
   onClose,
   onShare,
   closeTestId,
+  wrap = false,
 }: {
   name: ReactNode;
   /** A short line under the name in its pinned row, in sight at every size,
    *  the smallest too (the owner, 2026-11-11: the Nav Log's totals, the
    *  Profile's cruise and clearance, the Stops' count). */
   sub?: ReactNode;
+  /** The name and that line wrapped rather than cut short (CardHeadRow's). */
+  wrap?: boolean;
   /** Under that line, pinned with it (CardHeadRow's). */
   below?: ReactNode;
   /** Under the name; none where the caller sets it out itself (an
@@ -217,6 +220,7 @@ export function CardHead({
         sub={sub}
         below={below}
         nameTestId={nameTestId}
+        wrap={wrap}
         end={<CardClose onClose={onClose} onShare={onShare} testId={closeTestId} />}
       >
         <CardShareButton onShare={onShare} />
