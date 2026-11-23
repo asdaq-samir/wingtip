@@ -20,15 +20,19 @@
 # and the store shots are the night's alone. scripts/ci/test_tiers.py reads
 # the three lines below that choose, so every UI test class stays in a tier.
 #
-# A wave's validation (decision 0058) runs the iPad's whole suite in two
-# legs, each its own runner (LEG "iPad 1/2" and "iPad 2/2", which
-# native-ios.yml's simulator step sets): the first the UI classes in
-# IPAD_FIRST, the second every other test, unit tests included, by
-# skipping those. One list and its complement, so no class is in neither.
-# On the night of 2026-11-21 the iPad's UI classes took 1,309 s: the
-# accessibility audit 614, the card scroll and rule suites 210 and 196,
-# the sheet's page toggle 175, the rest under a minute each; the split is
-# about half each, so a leg is some 20 minutes with its build.
+# A wave's validation (decision 0058) runs the iPad's whole suite in four
+# legs, each its own runner (LEG "iPad 1/4" to "iPad 4/4", which
+# native-ios.yml's simulator step sets): the first three the UI classes
+# IPAD_LEG_1 to IPAD_LEG_3 name, the fourth every other test, unit tests
+# included, by skipping those, so no class is in none. Split by the
+# classes' measured times on a slow hosted runner (run 45136421052,
+# 2026-11-23), where two legs ran out of their 45 minutes: a leg spends
+# some 18 minutes before its first test (the build 7, the simulator's boot
+# 2 to 4, the runner's install and launch the rest), then the accessibility
+# audits about 11 (leg 1), the card rule's suite about 15 (leg 2), the card
+# scroll, page toggle, iPad layout and documents suites about 16 (leg 3),
+# and the unit tests about 9 with the rest (leg 4): each leg some 30 to 35
+# minutes.
 #
 # xcodebuild's output goes to $RUNNER_TEMP/xcodebuild.log, the build's and
 # then the tests' (the job uploads it on failure). Each step prints its
@@ -37,7 +41,7 @@
 #
 # Env: SIM (the simulator's id), RUNNER_TEMP, WINGTIP_URL and
 # WINGTIP_BUNDLE_ID (native-ios.yml's); UNIT_ONLY and FULL, "true" or not;
-# LEG, the matrix's device ("iPad 1/2" for a wave's first iPad leg).
+# LEG, the matrix's device ("iPad 1/4" for a wave's first iPad leg).
 # On the Mac, once build-xcframework.sh and xcodegen have run (as
 # scripts/dev/check.sh's ios area runs them), in a turn of
 # scripts/dev/one-at-a-time.sh:
@@ -51,7 +55,9 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 step=${1:?a step: build or test}
 UNIT_ONLY=${UNIT_ONLY:-false} FULL=${FULL:-false} LEG=${LEG:-}
-IPAD_FIRST="AccessibilityAuditTests LaunchTests MapButtonsTests PlateMapTests StoreShotsTests"
+IPAD_LEG_1="AccessibilityAuditTests LaunchTests MapButtonsTests PlateMapTests StoreShotsTests"
+IPAD_LEG_2="CardRuleTests"
+IPAD_LEG_3="CardScrollTests SheetPageToggleTests IPadLayoutTests DocumentsIPadTests"
 log=$RUNNER_TEMP/xcodebuild.log
 opts=(-destination "platform=iOS Simulator,id=$SIM" -derivedDataPath "$RUNNER_TEMP/derived")
 
@@ -92,8 +98,10 @@ only=(-only-testing:WingtipTests) scheme=WingtipUnit
 if [ "$UNIT_ONLY" != true ] && [ "$LEG" = iPad ]; then only+=(-only-testing:WingtipUITests/DocumentsIPadTests); fi
 [ "$FULL" = true ] && only=() scheme=Wingtip
 case "$LEG" in
-  *" 1/2") only=() scheme=Wingtip && for c in $IPAD_FIRST; do only+=("-only-testing:WingtipUITests/$c"); done ;;
-  *" 2/2") only=() scheme=Wingtip && for c in $IPAD_FIRST; do only+=("-skip-testing:WingtipUITests/$c"); done ;;
+  *" 1/4") only=() scheme=Wingtip && for c in $IPAD_LEG_1; do only+=("-only-testing:WingtipUITests/$c"); done ;;
+  *" 2/4") only=() scheme=Wingtip && for c in $IPAD_LEG_2; do only+=("-only-testing:WingtipUITests/$c"); done ;;
+  *" 3/4") only=() scheme=Wingtip && for c in $IPAD_LEG_3; do only+=("-only-testing:WingtipUITests/$c"); done ;;
+  *" 4/4") only=() scheme=Wingtip && for c in $IPAD_LEG_1 $IPAD_LEG_2 $IPAD_LEG_3; do only+=("-skip-testing:WingtipUITests/$c"); done ;;
 esac
 
 # This step's part of the log starts here: a verdict above it is another

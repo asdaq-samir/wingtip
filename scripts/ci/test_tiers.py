@@ -156,12 +156,17 @@ def ios() -> list[str]:
     for cls in sorted(pr):
         if not (ROOT / f"apps/ios/WingtipUITests/{cls}.swift").exists():
             errors.append(f"{IOS_TEST}: -only-testing names {cls}, which no file holds")
-    # A wave's first iPad leg runs IPAD_FIRST and the second skips it: a
-    # name no file holds would run nowhere in the first and change nothing.
-    first = re.search(r'^IPAD_FIRST="([^"]*)"', script, re.M)
-    for cls in first.group(1).split() if first else []:
-        if not (ROOT / f"apps/ios/WingtipUITests/{cls}.swift").exists():
-            errors.append(f"{IOS_TEST}: IPAD_FIRST names {cls}, which no file holds")
+    # A wave's first three iPad legs run IPAD_LEG_1 to 3 and the fourth skips
+    # them: a name no file holds would run nowhere, and a class in two legs
+    # would run twice.
+    named: list[str] = []
+    for leg, classes in re.findall(r'^(IPAD_LEG_\d)="([^"]*)"', script, re.M):
+        for cls in classes.split():
+            if not (ROOT / f"apps/ios/WingtipUITests/{cls}.swift").exists():
+                errors.append(f"{IOS_TEST}: {leg} names {cls}, which no file holds")
+            if cls in named:
+                errors.append(f"{IOS_TEST}: {leg} names {cls}, which another leg runs")
+            named.append(cls)
     # A pull request's run (unit_only) adds no UI test class.
     if not re.search(r'\[ "\$UNIT_ONLY" = true \] \|\| only\+=\(-only-testing:WingtipUITests/', script):
         errors.append(f"{IOS_TEST}: unit_only must leave out every UI test (`[ \"$UNIT_ONLY\" = true ] || only+=(...)`)")
