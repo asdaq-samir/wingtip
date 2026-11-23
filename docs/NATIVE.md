@@ -614,8 +614,11 @@ asks `OfflineStore.tile`), at the density asked for or else the other,
 then from the tiles it fetched as it went, then the network.
 `PMTilesReader` is the phone's own reader of the format (spec v3): the
 header once, each directory once as it is needed, then the tile's own
-bytes, by ranged reads of the file, never mapped whole (Alaska's
-sectional at 2x is 7 GB). When the planner has the next cycle, a kept
+bytes, by ranged reads of the file (`pread`, so no lock is held over
+the disk), never mapped whole (Alaska's sectional at 2x is 7 GB). Every
+offset and length is checked against the file: a damaged or truncated
+archive is a tile it does not have, never a crash
+(`PMTilesDamageTests`). When the planner has the next cycle, a kept
 region offers "Update to" it; on the day the old edition is replaced
 (0901Z on the next one's date, the engine's `data_cycle` asked at the
 minute) it is said to be expired and kept until
