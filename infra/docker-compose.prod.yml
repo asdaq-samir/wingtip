@@ -278,8 +278,9 @@ services:
       APP_HSTS: "true"
       # Caddy, on the server's own Docker network, is the only way in and
       # rewrites X-Forwarded-For to the viewer's address (infra/server/
-      # Caddyfile): believed from these private blocks only
-      # (SlidingWindowLimiter.clientOf).
+      # Caddyfile): believed from these private blocks only (Tomcat's
+      # RemoteIpValve, server.tomcat.remoteip.internal-proxies; read by
+      # SlidingWindowLimiter.clientOf).
       GATEWAY_TRUSTED_PROXIES: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
       APP_DEVELOPER_EMAILS: ${APP_DEVELOPER_EMAILS:-}
       # The AI connector (docs/design/mcp-connector.md): off, every one of

@@ -96,8 +96,11 @@ server cron, hourly ─▶ docker compose run --rm charts-overlays
   reads on the server. The `TileRateLimit` web ACL (AWS WAF, on the
   distribution) answers 429 to an address past 3,000 requests to
   `/api/planner/chart-tile/` and `/api/planner/terrain-tile/` in five
-  minutes, ten a second held; a pilot's session is some 200 tiles, and
-  the rest of the site is not limited by it. WAF's CloudFront scope
+  minutes, ten a second held; a pilot's session is some 200 tiles. A
+  second rule in it does the same for every other `/api/planner/` path
+  (a plan, a nav log, the FAA's PDFs, the overlay tiles), counted apart
+  from the tiles (the round 4 security review's M4). The rest of the
+  site is not limited by it. WAF's CloudFront scope
   exists only in us-east-1, where the stack is deployed. Its cost is in
   the table below; to raise or lower the limit, change its `Limit`.
 - **Only CloudFront reaches the server.** The security group admits
@@ -174,12 +177,12 @@ Prices in us-east-1, October 2026, at today's traffic:
 | The health check (HTTPS, every 30 s), the server's logs in CloudWatch, and its eight alarms and seven figures (`health.sh`, the gateway's alerts; within CloudWatch's free ten of each) | ~$1.60 |
 | ECR, CloudWatch logs, backups, the Fargate Spot refresh (under $1 a cycle) | ~$1.50 |
 | CloudFront | $0 within the always-free 1 TB and 10 million requests |
-| AWS WAF, the tiles' rate rule (`TileRateLimit`): $5 the web ACL, $1 the rule, $0.60 a million requests it sees (every request to the distribution, about 0.3 million) | ~$6.20 |
+| AWS WAF, the planner's two rate rules (`TileRateLimit`): $5 the web ACL, $1 each rule, $0.60 a million requests it sees (every request to the distribution, about 0.3 million) | ~$7.20 |
 | SES | $0.10 per 1,000 sign-in emails |
-| **Total** | **about $41** |
+| **Total** | **about $42** |
 
 With `ServerPricing=on-demand`, for a server AWS never takes back, it
-is about $77, or about $51 with a one-year Savings Plan. The template's
+is about $78, or about $52 with a one-year Savings Plan. The template's
 default is a t3a.large (8 GB) since 2026-11-21 (the owner, on the
 prelaunch audit): the services take about 3.5 GB, which a t3a.medium's
 4 GB barely holds. `InstanceType=t3a.medium` (and `SpareInstanceType=t3.medium`)
@@ -218,9 +221,9 @@ the launch size, and the template's default.
 | S3, three cycles of archives (~90 GB) | ~$2.10 | ~$2.10 | ~$2.10 |
 | CloudFront (data, requests) | $0 (8 GB, 0.3 M) | $0 (80 GB, 3 M) | ~$20 (800 GB free, 30 M requests) |
 | SES, Secrets Manager, Route 53, logs, ECR, the cycle's Fargate task | ~$5 | ~$5 | ~$9 |
-| AWS WAF, the tiles' rate rule ($6, and $0.60 a million requests) | ~$6.20 | ~$7.80 | ~$24 |
-| **Total, Spot (on demand)** | **~$41 ($77)** | **~$43 ($79)** | **~$107 ($177)** |
-| Per pilot | $0.41 | $0.043 | $0.011 |
+| AWS WAF, the planner's two rate rules ($7, and $0.60 a million requests) | ~$7.20 | ~$8.80 | ~$25 |
+| **Total, Spot (on demand)** | **~$42 ($78)** | **~$44 ($80)** | **~$108 ($178)** |
+| Per pilot | $0.42 | $0.044 | $0.011 |
 
 The server is the cost until some 10,000 pilots; the CDN's bill is its
 requests, not its bytes, and the always-free terabyte holds about 12,000

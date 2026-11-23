@@ -44,7 +44,15 @@ could not be read, it says so.
   `error="insufficient_scope"`. Wingtip does that for `wingtip:read`, which
   every call needs; a token without `wingtip:flights` reaches the server
   and its write tool answers a tool error inside a `200`, naming the
-  consent box to tick (`calls.pilot`).
+  consent box to tick (`calls.pilot`). The token goes back only to the
+  gateway that issued it, on its internal port, as an introspection (RFC
+  7662) would: on every call, whether it still stands
+  (`records.connection_live`), and on each flight write (save, re-plan,
+  delete) as `X-Connector-Token`, where the gateway checks for itself
+  that it was granted `wingtip:flights` and answers a `403` naming the
+  same box otherwise (`InternalRecordsController.changing`, the round 4
+  security review), which the tool hands the pilot in the gateway's words
+  (`records._ask`).
 - The `iss` parameter in the authorization response (RFC 9207) is a
   **should** for the authorization server, expected to become a **must**.
 
@@ -310,7 +318,13 @@ invisibly, C1 controls and the variation selectors) before it is handed on
 (`calls.as_data`). The five writes ask the `wingtip:flights` scope and are
 confirmed by the pilot in the host: the two saves add a flight, the
 replaces and the delete are destructive (the deep security review of
-2026-11-21, and of 2026-11-22).
+2026-11-21, and of 2026-11-22). The scope is checked twice: by the tool
+(`calls.pilot(WRITE)`) and by the gateway, which asks to see the pilot's
+own token on every flight write and refuses one not granted
+`wingtip:flights`, so a tool that forgot its check would still write
+nothing (the round 4 security review, 2026-11-23). A connection consented
+to before that scope had its name, as `wingtip:write`, is refused a save
+until the pilot connects again.
 
 ### 4b. The live view (decision 0061)
 

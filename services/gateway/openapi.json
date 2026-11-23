@@ -1528,6 +1528,7 @@
           "fullName" : {
             "maxLength" : 120,
             "minLength" : 0,
+            "pattern" : "[\\p{L}\\p{M} .,'’-]+",
             "type" : "string"
           }
         },
@@ -2480,7 +2481,7 @@
           "picks" : {
             "maxLength" : 1000,
             "minLength" : 0,
-            "pattern" : "^$|(?:altitude_ft|altitude_nearest|altitude_choice|pattern|takeoff|auto|procs|cross|ground|holds|alternate|local_min)=[A-Za-z0-9%._~+-]{0,400}(&(?:altitude_ft|altitude_nearest|altitude_choice|pattern|takeoff|auto|procs|cross|ground|holds|alternate|local_min)=[A-Za-z0-9%._~+-]{0,400})*",
+            "pattern" : "^$|(?:(?:altitude_ft|altitude_nearest|altitude_choice|pattern|takeoff|auto|procs|cross|ground|holds|alternate|local_min|fuel|tanks)=[A-Za-z0-9%._~+-]{0,400}|rules=(?:vfr|ifr|VFR|IFR))(&(?:(?:altitude_ft|altitude_nearest|altitude_choice|pattern|takeoff|auto|procs|cross|ground|holds|alternate|local_min|fuel|tanks)=[A-Za-z0-9%._~+-]{0,400}|rules=(?:vfr|ifr|VFR|IFR)))*",
             "type" : [ "string", "null" ]
           },
           "plannedFor" : {

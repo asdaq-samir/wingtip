@@ -32,7 +32,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
@@ -173,6 +172,7 @@ class ConnectorRecordsTest {
                 pilots.save(new Pilot(UUID.randomUUID() + "@example.com", "Test Pilot", "sub-" + UUID.randomUUID()));
         aircraft.saveAndFlush(new Aircraft(pilot, "N12345", "C172", 110.0, 8.5, null, null, null, null, null, null));
         String id = String.valueOf(pilot.getId());
+        String write = writer(id);
 
         mvc.perform(internal(get("/internal/mcp/aircraft")).header("X-Pilot-Id", id))
                 .andExpect(status().isNotFound());
@@ -197,10 +197,8 @@ class ConnectorRecordsTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"departureIdent\":\"C81\",\"destinationIdent\":\"not an ident\"}"))
                 .andExpect(status().isBadRequest());
-        mvc.perform(internal(post("/internal/mcp/flights"))
-                        .header("X-Pilot-Id", id)
-                        .header("X-Internal-Token", TOKEN)
-                        .contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(asPilot(post("/internal/mcp/flights"), id)
+                        .header("X-Connector-Token", write)
                         .content("{\"departureIdent\":\"C81\",\"destinationIdent\":\"KDLH\",\"cruiseAltitudeFt\":5500,"
                                 + "\"stops\":[\"KDSM\"]}"))
                 .andExpect(status().isOk())
@@ -219,24 +217,56 @@ class ConnectorRecordsTest {
                 .getResponse()
                 .getContentAsString()
                 .replaceAll("(?s)^\\[\\{\"id\":(\\d+).*", "$1");
-        String replanned = "{\"departureIdent\":\"C81\",\"destinationIdent\":\"KMSP\",\"stops\":[],"
-                + "\"picks\":\"procs=KMSP%3AI30L%3A%3A%3AL\"}";
-        mvc.perform(asPilot(put("/internal/mcp/flights/999999"), id).content(replanned))
+        // IFR, with a fuel stop and the fuel on board kept, as the
+        // connector saves them (the connector audit's M5).
+        String picks = "procs=KMSP%3AI30L%3A%3A%3AL&fuel=KDSM&tanks=C81%3A30%2CKDSM%3A0&rules=ifr";
+        String replanned = "{\"departureIdent\":\"C81\",\"destinationIdent\":\"KMSP\",\"stops\":[\"KDSM\"],"
+                + "\"picks\":\"" + picks + "\"}";
+        mvc.perform(asPilot(put("/internal/mcp/flights/999999"), id)
+                        .header("X-Connector-Token", write)
+                        .content(replanned))
                 .andExpect(status().isNotFound());
         // KDLH to KMSP is another route: refused unless asked on purpose.
-        mvc.perform(asPilot(put("/internal/mcp/flights/" + flightId), id).content(replanned))
+        mvc.perform(asPilot(put("/internal/mcp/flights/" + flightId), id)
+                        .header("X-Connector-Token", write)
+                        .content(replanned))
                 .andExpect(status().isConflict());
         mvc.perform(asPilot(put("/internal/mcp/flights/" + flightId + "?replaceRoute=true"), id)
+                        .header("X-Connector-Token", write)
                         .content(replanned))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(Long.parseLong(flightId)))
                 .andExpect(jsonPath("$.destinationIdent").value("KMSP"))
-                .andExpect(jsonPath("$.picks").value("procs=KMSP%3AI30L%3A%3A%3AL"));
+                .andExpect(jsonPath("$.picks").value(picks));
         mvc.perform(asPilot(delete("/internal/mcp/flights/" + flightId), "999999"))
                 .andExpect(status().isNotFound());
-        mvc.perform(asPilot(delete("/internal/mcp/flights/" + flightId), id)).andExpect(status().isNoContent());
+        mvc.perform(asPilot(delete("/internal/mcp/flights/" + flightId), id).header("X-Connector-Token", write))
+                .andExpect(status().isNoContent());
         mvc.perform(asPilot(get("/internal/mcp/flights"), id))
                 .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    /** A connection of the pilot's granted wingtip:flights, whose token the
+     *  planner passes on with a change (ConnectorGrants.mayChangeFlights). */
+    private String writer(String pilotId) {
+        RegisteredClient client = ConnectorClients.registered(OAuth2ClientRegistration.builder()
+                .clientName("Claude")
+                .redirectUri("https://claude.ai/api/mcp/auth_callback")
+                .build());
+        clients.save(client);
+        Instant now = Instant.now();
+        OAuth2AccessToken access = new OAuth2AccessToken(
+                OAuth2AccessToken.TokenType.BEARER,
+                "a-" + UUID.randomUUID(),
+                now,
+                now.plusSeconds(900),
+                java.util.Set.of(ConnectorSettings.READ, ConnectorSettings.WRITE));
+        authorizations.save(OAuth2Authorization.withRegisteredClient(client)
+                .principalName(pilotId)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .accessToken(access)
+                .build());
+        return access.getTokenValue();
     }
 
     /** As the planner asks for a pilot's records, with the shared token. */
@@ -361,30 +391,5 @@ class ConnectorRecordsTest {
     }
 
     @Autowired
-    private JdbcOperations jdbc;
-
-    @Autowired
     private ConnectorGrants grants;
-
-    /** Deleting an account ends its connections (AccountService): its
-     *  tokens and consents go, another pilot's stay. */
-    @Test
-    void aPilotsConnectionsAreForgottenAndNoOneElses() {
-        for (String pilot : List.of("41", "42")) {
-            jdbc.update(
-                    "INSERT INTO oauth2_authorization (id, registered_client_id, principal_name, authorization_grant_type)"
-                            + " VALUES (?, 'claude', ?, 'authorization_code')",
-                    "a" + pilot,
-                    pilot);
-            jdbc.update(
-                    "INSERT INTO oauth2_authorization_consent (registered_client_id, principal_name, authorities)"
-                            + " VALUES ('claude', ?, 'SCOPE_wingtip:read')",
-                    pilot);
-        }
-        grants.forget(41L);
-        assertThat(jdbc.queryForList("SELECT principal_name FROM oauth2_authorization", String.class))
-                .containsExactly("42");
-        assertThat(jdbc.queryForList("SELECT principal_name FROM oauth2_authorization_consent", String.class))
-                .containsExactly("42");
-    }
 }

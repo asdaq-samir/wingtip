@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.domain.Flight;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.FlightCheckpointDto;
@@ -34,10 +35,12 @@ public class FlightController {
 
     private final FlightService flightService;
     private final FlightShareService shares;
+    private final String publicBaseUrl;
 
-    public FlightController(FlightService flightService, FlightShareService shares) {
+    public FlightController(FlightService flightService, FlightShareService shares, AppProperties app) {
         this.flightService = flightService;
         this.shares = shares;
+        this.publicBaseUrl = app.publicBaseUrl();
     }
 
     /** The pilot's flights, each with its link where it is shared, so the
@@ -46,7 +49,7 @@ public class FlightController {
     public ResponseEntity<List<FlightSummaryDto>> list(Pilot pilot) {
         List<Flight> theirs = flightService.list(pilot);
         var shared = shares.sharesOf(theirs);
-        String origin = FlightShareController.origin();
+        String origin = FlightShareController.origin(publicBaseUrl);
         return ResponseEntity.ok(theirs.stream()
                 .map(f -> FlightSummaryDto.of(
                         f, shared.containsKey(f.getId()) ? FlightShareDto.of(shared.get(f.getId()), origin) : null))
@@ -75,7 +78,7 @@ public class FlightController {
                 .map(f -> FlightSummaryDto.of(
                         f,
                         shares.shareOf(f.getId())
-                                .map(s -> FlightShareDto.of(s, FlightShareController.origin()))
+                                .map(s -> FlightShareDto.of(s, FlightShareController.origin(publicBaseUrl)))
                                 .orElse(null))));
     }
 

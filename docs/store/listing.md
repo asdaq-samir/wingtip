@@ -250,7 +250,7 @@ app's sign-in is an emailed link (Android has no other) whose inbox a
 reviewer cannot read. The gateway has a review account for that
 (`ReviewSignIn`): with `REVIEW_SIGN_IN=true`, the one address in
 `REVIEW_SIGN_IN_EMAIL` may sign in with the fixed code in
-`REVIEW_SIGN_IN_CODE` (at least 20 characters) wherever a sign-in
+`REVIEW_SIGN_IN_CODE` (at least 32 letters, digits, `-` and `_`) wherever a sign-in
 link's token goes, so the link
 `https://wingtipmaps.app/api/auth/magic-link/verify?token=<code>` signs
 that account in, in the apps (which open sign-in links themselves) and

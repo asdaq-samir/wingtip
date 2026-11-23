@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { addressParams, loadAddress } from "./address";
 import { picksOf, planHrefOf } from "./flightLink";
 
 const flight = { departureIdent: "C81", destinationIdent: "KDLH", stops: ["KMSN"], cruiseAltitudeFt: 5500, altitudes: "VPBNG:4500" };
@@ -24,5 +25,19 @@ describe("a flight's picks", () => {
 
   it("fly a flight saved before its picks were kept at its altitude, as before", () => {
     expect(new URLSearchParams(planHrefOf(flight).split("?")[1]).get("altitude_ft")).toBe("5500");
+  });
+
+  it("keep a flight's fuel stops, fuel on board and rules, both ways", () => {
+    // Saved from the app: the address's fuel and tanks, and the rules setting.
+    const address = loadAddress("?dep=C81&dest=KDLH&stops=KMSN&fuel=KMSN&tanks=C81%3A30");
+    const picks = new URLSearchParams(picksOf(addressParams({ ...address, rules: "ifr" })));
+    expect(Object.fromEntries(picks)).toEqual({ fuel: "KMSN", tanks: "C81:30", rules: "ifr" });
+    // Opened again, as the connector saves them too (its rules in either case).
+    const href = planHrefOf({ ...flight, picks: "fuel=KMSN&tanks=C81%3A30&rules=IFR" });
+    const opened = loadAddress(href.slice(href.indexOf("?")));
+    expect([opened.fuel, opened.tanks, opened.rules]).toEqual(["KMSN", "C81:30", "ifr"]);
+    // None written is VFR, the connector's own reading, not the last flight's.
+    const none = planHrefOf({ ...flight, picks: "fuel=KMSN" });
+    expect(loadAddress(none.slice(none.indexOf("?"))).rules).toBe("vfr");
   });
 });

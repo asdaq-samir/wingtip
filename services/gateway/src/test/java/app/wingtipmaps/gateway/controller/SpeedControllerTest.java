@@ -65,7 +65,7 @@ class SpeedControllerTest {
     @Test
     void aBrowsersReportIsKeptWithNoSessionOrToken() throws Exception {
         mockMvc.perform(post("/api/speed/field")
-                        .header("X-Forwarded-For", "203.0.113.10")
+                        .with(from("203.0.113.10"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(FIELD))
                 .andExpect(status().isNoContent());
@@ -76,12 +76,12 @@ class SpeedControllerTest {
     @Test
     void aMetricThatIsNotAWebVitalIsRefused() throws Exception {
         mockMvc.perform(post("/api/speed/field")
-                        .header("X-Forwarded-For", "203.0.113.11")
+                        .with(from("203.0.113.11"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(FIELD.replace("\"CLS\"", "\"position\"")))
                 .andExpect(status().isBadRequest());
         mockMvc.perform(post("/api/speed/field")
-                        .header("X-Forwarded-For", "203.0.113.11")
+                        .with(from("203.0.113.11"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(FIELD.replace("1840.5", "-1")))
                 .andExpect(status().isBadRequest());
@@ -93,7 +93,7 @@ class SpeedControllerTest {
     void pastTheHoursAllowanceReportsAreDroppedQuietly() throws Exception {
         for (int i = 0; i < SpeedController.PER_HOUR + 5; i++) {
             mockMvc.perform(post("/api/speed/field")
-                            .header("X-Forwarded-For", "203.0.113.12")
+                            .with(from("203.0.113.12"))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(FIELD))
                     .andExpect(status().isNoContent());
@@ -181,6 +181,15 @@ class SpeedControllerTest {
             public String getVersion() {
                 return "4855639";
             }
+        };
+    }
+
+    /** A caller of its own, as Tomcat names it once its RemoteIpValve has
+     *  read a trusted proxy's X-Forwarded-For (application.yml). */
+    private static org.springframework.test.web.servlet.request.RequestPostProcessor from(String address) {
+        return request -> {
+            request.setRemoteAddr(address);
+            return request;
         };
     }
 }
