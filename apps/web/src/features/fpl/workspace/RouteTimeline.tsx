@@ -155,9 +155,6 @@ export default function RouteTimeline({
     const there = zoned ? zoneOf(arrival.at, ident) : null;
     return there ? <ZonedTime {...there} /> : etaAt(from, arrival.minutes);
   };
-  // Each point's warning where it lies outside the United States, and the
-  // leg's from it where that crosses a country neither end is in (the
-  // engine's route_jurisdiction, decision 0053): its nav log row's.
   const points: TimelinePoint[] = routePoints.map((ident, index) => {
     const role =
       index === 0 && ident === planned.dep

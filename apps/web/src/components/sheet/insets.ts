@@ -104,8 +104,9 @@ export const SHEET_SLIDE = "sheet-slide";
 
 /** Held at a sheet's free edge however far the sheet is slid: moved back by
  *  the Drawer's snap offset and the finger's movement, on its curve, held
- *  still under a finger -- the foot's figures and bar (SheetParts), a
- *  card's tabs (CardTabBar), sticky at its scroller's foot. Its offset read
+ *  still under a finger -- the foot in flight, in a dry run and on a top
+ *  sheet (SheetFoot; FPL's on the ground is sheet/FootBar, outside the
+ *  popup), a card's tabs (CardTabBar), sticky at its scroller's foot. Its offset read
  *  through the popup's own copy (--sheet-offset, SheetDrawer and
  *  CardStack), the finger's movement handed to it alone (SWIPE_READER,
  *  sheet/sheetFollow): Base UI registers its variables with `inherits:

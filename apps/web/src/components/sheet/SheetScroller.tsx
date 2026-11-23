@@ -87,8 +87,16 @@ export function SheetScroller(p: ScrollerProps) {
       // the search's row, a fixed height, where that is all the band holds
       // (a tab's lists); none over a card, which has the sheet to itself.
       // A row focused or brought into view stops under the search's row,
-      // not behind it (WCAG 2.4.11).
-      style={{ "--sheet-head": p.head, scrollPaddingTop: p.head } as CSSProperties}
+      // not behind it (WCAG 2.4.11); one tabbed to at the foot stops over
+      // the foot bar (--foot-bar), not under it, where the page has its end
+      // room for it (the r6 UI audit's M5).
+      style={
+        {
+          "--sheet-head": p.head,
+          scrollPaddingTop: p.head,
+          scrollPaddingBottom: p.endRoom ? "var(--foot-bar, 0px)" : undefined,
+        } as CSSProperties
+      }
       // Its scroll stops at its own end, not chained on to the drawer or the
       // page, so the head stays put as the rows stop (the owner,
       // 2026-11-22: "When I scroll up on the plan, it keeps scrolling up

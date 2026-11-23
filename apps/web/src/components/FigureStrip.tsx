@@ -73,6 +73,7 @@ export default function FigureStrip({
   testId,
   tap,
   still = false,
+  row = false,
 }: {
   figures: StripFigure[];
   size?: StripSize;
@@ -82,6 +83,9 @@ export default function FigureStrip({
    *  second, and a roll on each blurred them all the time (the motion
    *  review of 2026-11-22). */
   still?: boolean;
+  /** One row whatever the width, never two by two: a bar one row high
+   *  (FPL's pill), where a figure too wide is cut short with "…". */
+  row?: boolean;
 }) {
   const type = TYPE[size];
   const roll = still ? undefined : "figure-roll";
@@ -93,7 +97,8 @@ export default function FigureStrip({
   // (useFiguresFit), as below 16 rem: never one cut short (the HIG audit
   // of 2026-11-23, H2).
   const strip = useRef<HTMLDListElement>(null);
-  const fit = useFiguresFit(strip, figures.map((f) => `${f.label ?? f.name}${f.value}${f.unit ?? ""}`).join("|"));
+  const fits = useFiguresFit(strip, figures.map((f) => `${f.label ?? f.name}${f.value}${f.unit ?? ""}`).join("|"));
+  const fit = row || fits;
   return (
     <div className="@container/figures relative" data-slot="section-summary">
       <dl
@@ -101,7 +106,7 @@ export default function FigureStrip({
         className={cn(
           "grid justify-between gap-x-2 gap-y-3",
           "grid-cols-[repeat(var(--cols),minmax(0,max-content))]",
-          "@max-[16rem]/figures:grid-cols-2",
+          !row && "@max-[16rem]/figures:grid-cols-2",
           !fit && "grid-cols-2",
         )}
         style={cols}

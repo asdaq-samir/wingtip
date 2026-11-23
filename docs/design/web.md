@@ -245,7 +245,7 @@ These hold on every screen below and win over any reference app.
   Drawer's own snap points, fixed values in its own units, the same for
   the sheet and every card (`components/sheet/insets` `snapsOf`; the owner,
   2026-11-11, the detents felt buggy as px worked out from the window's
-  height, which Safari's toolbar changes): the pill `"4.75rem"` (the one
+  height, which Safari's toolbar changes): the pill `"4.25rem"` (the one
   search's band with the grabber over it; a top sheet's `"5.25rem"`, the
   band and the grabber's row under it), half `"23rem"`, all the way up `1`.
   Nothing is computed from the window, the visual viewport, the safe areas
@@ -254,7 +254,7 @@ These hold on every screen below and win over any reference app.
   popup, kept clear of the status bar in CSS. `snapPoint` is set from the
   same constants by size and a drag maps back by identity. The pill is one
   row: on FPL the route's figures (and while flying), FPL's bar and the
-  route's row under it from half up (SheetFoot's `figuresPill`, 3.25 rem under the grabber's room);
+  route's row under it from half up (`sheet/FootBar`, the fixed bar beside the popup, at least 3.25 rem under the grabber's room);
   on Search the search; the map's room is read from the Drawer's own
   `--drawer-snap-point-offset` (`useSheetCover`). The sheet is solid at
   every size (`GLASS_SHEET`, the look's `--sheet`), the desktop's side
