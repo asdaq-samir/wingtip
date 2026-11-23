@@ -7,7 +7,6 @@ import { RouteBox } from "../../route";
 import type { PlanSlices } from "../vm/planSlices";
 import { FlightFigures } from "./FlightFoot";
 import { TypeRouteButton } from "../../procedures/lazy";
-import { keptTimelineHeight } from "./routeEditing";
 import { FuelPill } from "./FuelPill";
 import { useFieldRise } from "./useFieldRise";
 import { coursePoints } from "../../../lib/course";
@@ -151,7 +150,6 @@ export default function RouteEditor({
               onClear={hasPoints && !routed ? clearRoute : undefined}
               // Turned from the grouped box by its toggle: its size and shape, the route wrapped in it.
               wrapped={inPlace}
-              height={inPlace ? keptTimelineHeight() : undefined}
               foot={toggleRow}
             />
           </SearchNear.Provider>

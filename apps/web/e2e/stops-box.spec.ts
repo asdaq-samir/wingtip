@@ -180,8 +180,8 @@ test("a long route turned from the grouped box wraps over its lines, nothing pas
   }));
   // Turned from the grouped box by its toggle, the route wraps over as
   // many lines as it takes, nothing past the box's side (the owner,
-  // 2026-11-22: "Route box should be as tall as the grouped box, same
-  // shape. So it can show everything including the approach pills etc.");
+  // 2026-11-22: "So it can show everything including the approach pills
+  // etc."), as tall as its lines (canvas A, 2026-11-23);
   // the one row that slides is the box's for half a route.
   expect(box.tops).toBeGreaterThan(1);
   expect(box.scrollWidth).toBeLessThanOrEqual(box.clientWidth + 1);

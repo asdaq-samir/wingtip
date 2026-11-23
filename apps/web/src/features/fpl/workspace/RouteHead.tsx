@@ -5,7 +5,7 @@ import { Button } from "../../../components/ui/button";
 import { TEXT } from "../../../lib/text";
 import { RouteEditor, RouteTimeline } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
-import { keepTimelineHeight, routeEditing, routeTyped } from "./routeEditing";
+import { routeEditing, routeTyped, turnedByToggle } from "./routeEditing";
 import { EmptyRoute } from "./RouteStart";
 import { useRouteListProps } from "./useRouteListProps";
 
@@ -33,10 +33,10 @@ export default function RouteHead({
   // timeline not drawn over it and no "Route" row or Done (the owner,
   // 2026-11-22).
   const typed = routeTyped(vm);
-  // The kept height let go once the field is folded (routeEditing).
+  // The toggle's turn let go once the field is folded (routeEditing).
   const { routeOpen } = vm.routeList;
   useEffect(() => {
-    if (!routeOpen) keepTimelineHeight(0);
+    if (!routeOpen) turnedByToggle(false);
   }, [routeOpen]);
   const props = useRouteListProps(vm);
   // Done keeps the focus on the timeline that is there after it and says
