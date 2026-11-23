@@ -34,12 +34,15 @@ import { pickAirplane } from "./startState";
  * (claude/w3-a's build, the mobile project). The wave after read
  * 3,431,166; the Brief's Checklists page waits for the Brief now
  * (brief/FlightChecklists), and the open reads 3,428,154 in 162 (claude/
- * w3-a's build, the mobile project). The figure
+ * w3-a's build, the mobile project). Keep for the Air's wait for the
+ * service worker to hold the page read 3,428,472; its fetching waits for
+ * a keep now (lib/map/route/keepFetch), and the open reads 3,426,569 in
+ * 162 (claude/w3-a's build, the mobile project). The figure
  * is written to the test's annotations each run; a change that brings it
  * down lowers the budget to the new figure, never the other way (the
  * measure-speed skill; CLAUDE.md, "The ratchet only goes down").
  */
-const ROUTE_LOAD_BUDGET = 3_428_154;
+const ROUTE_LOAD_BUDGET = 3_426_569;
 
 test.use({ serviceWorkers: "block" });
 

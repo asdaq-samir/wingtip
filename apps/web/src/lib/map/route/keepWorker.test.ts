@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { workerHolds } from "./keepRoute";
+import { workerHolds } from "./keepFetch";
 
 /** A page's service worker container: active when `ready` settles, the
  *  page's controller set by `claim` (clientsClaim), which fires
