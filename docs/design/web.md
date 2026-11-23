@@ -1837,7 +1837,11 @@ bottom with a Now button ([GFA help][gfa-help]).
 the foot, the run's bar (play/pause, the scrubber over the flight's time,
 the speed menu); in the panel, the point flying to and the figures the
 engine gives for that moment (`DryRunPanel`, `ForecastStrip`). The dry run
-flies on from a stop at once (memory: dry run, no ground wait).
+flies on from a stop at once (memory: dry run, no ground wait). Its Dry run
+button is dimmed until every leg of the nav log is in, and a run is flown
+again only from a log whole again: while the checkpoints' log streams in
+after the route as entered, the run already playing goes on
+(`useDryRun`), so the next checkpoint over the map never goes blank.
 
 **Stock parts.** As the radar loop's bar: Toggle, Base UI Slider, Menu
 for speed, Toolbar.

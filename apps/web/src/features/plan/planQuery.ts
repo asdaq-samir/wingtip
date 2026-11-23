@@ -1,6 +1,7 @@
 import { experimental_streamedQuery as streamedQuery } from "@tanstack/react-query";
 import { ApiError, api, isUnknownPlace } from "../../lib/api/client";
 import { inBatches, ended } from "../../lib/api/streams";
+import { retryDelay } from "../../lib/queryRetry";
 import type { AircraftChoice, AltitudeChoice, Briefing, Detour, NavLogMessage } from "../../lib/api/types";
 import type { FlightRules } from "../../lib/preferences";
 import { ownOf } from "../../lib/airplane/figures";
@@ -208,7 +209,17 @@ export function navlogQuery(plan: PlanParams, checkpointsToo: boolean, ahead = f
       initialValue: [] as NavLogMessage[],
     }),
     staleTime: Infinity,
-    retry: false, // a retry would plan the whole route again behind the lines drawn
+    // Not asked again once its lines have begun: a retry would plan the
+    // whole route again behind the lines drawn. But a 5xx is an answer
+    // before the first line (the stream's own failures come as a 200's
+    // last line, lib/api/streams), so it is asked again, as every other
+    // query is (lib/queryRetry): a planner that dropped its connections
+    // for a second left the nav log at "The planner did not answer" for
+    // good, FPL without legs and Dry Run dimmed until Try Again (the
+    // gateway's 502s at 10:08:30 in run 45152106014, its desktop emergency
+    // spec's retry held two minutes).
+    retry: (failures: number, error: unknown) => failures < 3 && error instanceof ApiError && error.status >= 500,
+    retryDelay,
     // No legal altitude is the page's to say, with what can be done about
     // it (PlanWorkspace): not the query client's plain toast.
     // Nor a point the planner does not know, the route box's (courseQuery).

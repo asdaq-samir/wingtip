@@ -14,7 +14,7 @@ import { NuqsTestingAdapter } from "nuqs/adapters/testing";
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vitest";
 import type { Address } from "../../../lib/address";
-import type { Airport, Leg } from "../../../lib/api/types";
+import type { Airport, Candidate, Leg } from "../../../lib/api/types";
 import { endSimulation, simulateFix } from "../../../lib/map/position/dryRun";
 import { useOwnFixShown } from "../../../lib/map/position/ownShip";
 import { DRY_RUN, usePastFlight, type PanelView } from "../../plan";
@@ -99,5 +99,40 @@ describe("a dry run with Nearest opened over it", () => {
     act(() => hook.result.current.cards.closeProfileCard());
     expect(usePastFlight.getState().hex).toBeNull();
     expect(hook.result.current.run.running).toBeNull();
+  });
+});
+
+describe("a dry run as the checkpoints' nav log streams in after the route as entered", () => {
+  // The route as entered comes first, point to point, one leg; then the
+  // checkpoints' log, its legs a few at a time (usePlan's pointToPoint).
+  const half = { ...leg, distance_nm: 30, ete_min: 18, fuel_gal: 2.5 } as Leg;
+  const checkpoint = { lat: 42.5, lon: -88, name: "Lake", category: "lake_or_pond", along_track_nm: 30 } as Candidate;
+  type Log = { selected: Candidate[]; legs: Leg[] };
+  const run = () =>
+    renderHook(({ selected, legs }: Log) => useDryRun({ course, selected, legs, depart: "", routed: true, profileOpen: true }), {
+      initialProps: { selected: [], legs: [leg] } as Log,
+      wrapper,
+    });
+
+  test("flies on the whole run it has, not the log part way in, and on the new one once every leg is in", () => {
+    const hook = run();
+    act(() => hook.result.current.start());
+    const asEntered = hook.result.current.running!;
+    expect(asEntered.rows).toHaveLength(2);
+    // The checkpoint's leg in, the destination's not yet: a run of it is
+    // long enough to fly, but has no time at the destination, so the
+    // next checkpoint over the map (FlyingHead) went (the desktop
+    // emergency spec, run 45152106014).
+    hook.rerender({ selected: [checkpoint], legs: [half] });
+    expect(hook.result.current.ready).toBe(false);
+    expect(hook.result.current.running).toBe(asEntered);
+    expect(usePastFlight.getState().points).toBe(asEntered.points);
+    // Every leg in: the checkpoints' run, its clock where it was.
+    hook.rerender({ selected: [checkpoint], legs: [half, half] });
+    expect(hook.result.current.ready).toBe(true);
+    const whole = hook.result.current.running!;
+    expect(whole.rows).toHaveLength(3);
+    expect(whole.rowT.every((t) => t !== null)).toBe(true);
+    expect(usePastFlight.getState().points).toBe(whole.points);
   });
 });
