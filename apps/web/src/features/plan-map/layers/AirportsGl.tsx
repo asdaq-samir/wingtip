@@ -6,9 +6,16 @@ import { api } from "../../../lib/api/client";
 import { airportsQuery } from "../airportsQuery";
 import { colourOf } from "../../../lib/map/marks/flightCategory";
 import { useGlData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
-import { AIRPORT_TILE_LAYERS, setAirportWeather, setOverlayExclusion, setSelectedAirport } from "../../../lib/map/gl/glOverlays";
+import {
+  AIRPORT_TILE_LAYERS,
+  OVERLAY_SOURCE,
+  setAirportWeather,
+  setOverlayExclusion,
+  setSelectedAirport,
+} from "../../../lib/map/gl/glOverlays";
 import { useGlView } from "../../../lib/map/gl/useGlView";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
+import { usePlacedFieldRings } from "../../../lib/map/gl/placedRings";
 import { TAP, labelHalo, labelText, selectionRing } from "../../../lib/map/gl/layers/common";
 import MapMarksList from "./MapMarksList";
 import AirportHover from "./AirportHover";
@@ -140,6 +147,13 @@ function TileAirports(props: Props) {
     setOverlayExclusion(map, "airports", othersKey ? othersKey.split(",") : []);
   }, [map, othersKey]);
   useEffect(() => () => setOverlayExclusion(map, "airports", []), [map]);
+  // The Class C and D rings drawn only round a field that is (placedRings).
+  usePlacedFieldRings(
+    map,
+    OVERLAY_SOURCE,
+    AIRPORT_TILE_LAYERS,
+    others.map((a) => a.ident),
+  );
   const selectedIdent = props.selected?.ident ?? null;
   useEffect(() => {
     setSelectedAirport(map, selectedIdent);
