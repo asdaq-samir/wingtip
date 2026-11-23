@@ -6,20 +6,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.input.TextFieldLineLimits
-import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,8 +27,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
@@ -56,7 +48,6 @@ import app.wingtipmaps.android.plan.FlightRules
 import app.wingtipmaps.android.ready.ReadyToFlyRow
 import app.wingtipmaps.android.route.ClearRouteAsk
 import app.wingtipmaps.android.route.hasPoints
-import app.wingtipmaps.android.route.replaceRoute
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
 import kotlinx.coroutines.launch
@@ -69,7 +60,7 @@ import kotlinx.coroutines.launch
  * clears the route once asked ("Clear Route?", ClearRouteAsk); under the
  * title the airplane's, the altitude's and the time's pills (PlanPills);
  * then the route's fields with Add a Stop (RouteStops), the fuel, Ready
- * to Fly, the route typed, the flight rules and the cruise altitude. At
+ * to Fly, the planning and the dry run, the flight rules and the cruise altitude. At
  * its foot, staying put while the route scrolls under it, the actions'
  * floating toolbar over the figure strip (PlanFoot). The nav log's legs
  * and totals are a card of their own, the Nav Log button's (NavLogCard;
@@ -103,6 +94,9 @@ fun PlanPage(
     val list = rememberLazyListState()
     val scope = rememberCoroutineScope()
     var clearing by rememberSaveable { mutableStateOf(false) }
+    // Which face the route shows: the grouped list, or the route box its
+    // round toggle turns it into in the same place (the web's routeOpen).
+    var typing by rememberSaveable { mutableStateOf(false) }
 
     // Search at the bar's start, back to the one search with the route
     // kept, where a card's ← would be; the ✕ asks before it clears the
@@ -125,13 +119,30 @@ fun PlanPage(
             item(key = "pills") {
                 Box(pad) { PlanPills(plan, state, onAltitude = { scope.launch { list.animateScrollToItem(altitudeIndex(state)) } }) }
             }
-            item(key = "stops") { Box(pad) { RouteStops(plan, state, onField = onField, onFind = onFind, onAddStop = onAddStop, onAddStopAfter = onAddStopAfter, onPlate = onPlate) } }
+            item(key = "stops") {
+                Box(pad) {
+                    // The faces are of different heights: the plan brought back
+                    // to the route's top as one turns, so the other is in sight.
+                    val turn = { to: Boolean ->
+                        typing = to
+                        if (list.firstVisibleItemIndex >= 1) scope.launch { list.scrollToItem(1) }
+                    }
+                    if (typing) {
+                        RouteBox(plan, state, onAddStopAfter = onAddStopAfter, onToggle = { turn(false) })
+                    } else {
+                        RouteStops(
+                            plan, state, onField = onField, onFind = onFind, onAddStop = onAddStop, onAddStopAfter = onAddStopAfter, onPlate = onPlate,
+                            toggle = { TypeRouteToggle(typing = false) { turn(true) } },
+                        )
+                    }
+                }
+            }
             // Add or Remove Fuel Stops by Add a Stop, then the fuel in the
             // tanks at each field, each a tap to set it (FuelTanks).
             item(key = "fuel-stops") { Box(pad) { FuelStopsRow(plan, state, index = 0, count = 1) } }
             item(key = "fuel") { Box(pad) { FuelTanks(plan, state) } }
             if (state.routed) item(key = "ready") { Box(pad) { ReadyToFlyRow(plan, onSetRoute = null) } }
-            item(key = "route") { Box(pad) { RouteFields(plan, state, dryRun) } }
+            item(key = "route") { Box(pad) { RouteFields(state, dryRun) } }
             item(key = "rules") { Box(pad) { FlightRulesRow(onChanged = { if (state.routed) plan.plan() }) } }
             // The cruise altitude, under the rules it is picked by: the
             // Profile and the Altitude Advisor (the altitude pill's tap).
@@ -152,51 +163,24 @@ fun PlanPage(
 }
 
 /** Where the Altitude Advisor sits in the plan's list: after the pills,
- *  the stops, the two fuel rows, Ready to Fly once routed, the route
- *  typed and the rules, as PlanPage lays them out. */
+ *  the stops, the two fuel rows, Ready to Fly once routed, the planning
+ *  and the rules, as PlanPage lays them out. */
 internal fun altitudeIndex(state: Plan.State): Int = ALTITUDE_AFTER + if (state.routed) 1 else 0
 
 private const val ALTITUDE_AFTER = 6
 
-/** The route typed and planned, as the FPL tab had it: the departure and
- *  the destination, the stops, Plan and the dry run (its Share is More's). */
+/** The route's planning under its fields: the planner's progress, and
+ *  the dry run once the nav log is in (its Share is More's). The route is
+ *  typed in the route box, the list's other face (RouteBox), which plans
+ *  at each change, so there is no field or Plan button here. */
 @Composable
-private fun RouteFields(plan: Plan, state: Plan.State, dryRun: DryRun) {
-    // The fields hold what is typed; the plan's own route comes back into
-    // them when it changes from elsewhere (a link, the kept plan, a card).
-    val depField = rememberSaveable(state.dep, saver = TextFieldState.Saver) { TextFieldState(state.dep) }
-    val destField = rememberSaveable(state.dest, saver = TextFieldState.Saver) { TextFieldState(state.dest) }
-    val stopsField = rememberSaveable(state.stops, saver = TextFieldState.Saver) { TextFieldState(state.stops.joinToString(", ")) }
-    val dep = depField.text.toString()
-    val dest = destField.text.toString()
-    val stops = stopsField.text.toString()
-    val idents = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Next)
-    Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-            OutlinedTextField(
-                state = depField, modifier = Modifier.weight(1f),
-                label = { Text(stringResource(R.string.departure)) }, lineLimits = TextFieldLineLimits.SingleLine, keyboardOptions = idents,
-            )
-            OutlinedTextField(
-                state = destField, modifier = Modifier.weight(1f),
-                label = { Text(stringResource(R.string.destination)) }, lineLimits = TextFieldLineLimits.SingleLine, keyboardOptions = idents,
-            )
-        }
-        OutlinedTextField(
-            state = stopsField, modifier = Modifier.fillMaxWidth(),
-            label = { Text(stringResource(R.string.stops)) }, supportingText = { Text(stringResource(R.string.stops_help)) }, lineLimits = TextFieldLineLimits.SingleLine,
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Done),
-        )
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
-            Button(
-                onClick = { plan.replaceRoute(dep, dest, stops.split(",")) },
-                enabled = dep.isNotBlank() && dest.isNotBlank() && !state.planning,
-            ) { Text(stringResource(R.string.plan)) }
-            // The plan flown on paper over the map, once the nav log is in.
-            if (state.totals != null && !state.planning) TextButton(onClick = { dryRun.start(state) }) { Text(stringResource(R.string.wording_dry_run)) }
-            if (state.planning) Loading(Modifier.size(WingtipSpace.Xl))
-            state.stage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-        }
+private fun RouteFields(state: Plan.State, dryRun: DryRun) {
+    if (state.totals == null && !state.planning && state.stage == null) return
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
+        // The plan flown on paper over the map, once the nav log is in.
+        if (state.totals != null && !state.planning) TextButton(onClick = { dryRun.start(state) }) { Text(stringResource(R.string.wording_dry_run)) }
+        if (state.planning) Loading(Modifier.size(WingtipSpace.Xl))
+        state.stage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
     }
 }
 

@@ -37,6 +37,9 @@ class RouteFieldFacts @Inject constructor() : ViewModel() {
         val open: Boolean = false,
         val ends: List<String> = emptyList(),
         val windEnd: String? = null,
+        /** Its card came and NASR lists it closed (decision 0043): its
+         *  pill in the route box red and said Closed. */
+        val closed: Boolean = false,
     )
 
     private val _facts = MutableStateFlow<Map<String, Facts>>(emptyMap())
@@ -52,7 +55,7 @@ class RouteFieldFacts @Inject constructor() : ViewModel() {
                     val card = Planner.place(ident)
                     val open = FieldMarks.closed(card.closed) == null
                     Facts(card.timeZone?.let { z -> runCatching { ZoneId.of(z) }.getOrNull() }, card.metar?.flightCategory,
-                        open = open, ends = if (open) AirportReads.runwayEnds(card) else emptyList(), windEnd = if (open) AirportReads.windEnd(card) else null)
+                        open = open, ends = if (open) AirportReads.runwayEnds(card) else emptyList(), windEnd = if (open) AirportReads.windEnd(card) else null, closed = !open)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The route box on the plan (ui/RouteBox), the grouped list's other face
+     by its round toggle: the web's RouteBox and TypeRouteButton words. -->
+<resources>
+    <!-- The toggle between the grouped list and the route box, read aloud. -->
+    <string name="route_box_toggle">Type the route</string>
+    <!-- The empty box's grey words, for a pilot going step by step and one typing a filed route alike. -->
+    <string name="route_box_hint">From, to, or a whole route</string>
+    <!-- The box's field read aloud: what is typed goes on at the route's end. -->
+    <string name="route_box_field">The route: type a point to go on to, or a whole route, as KPWK V100 KLAS</string>
+    <!-- A point the engine could not read as a route. -->
+    <string name="route_box_unread">“%1$s” could not be read as a route.</string>
+    <!-- A field NASR lists closed, on its pill (decision 0043). -->
+    <string name="route_box_closed">%1$s Closed</string>
+    <!-- A pill read aloud: its point and its menu; a caution said with it. -->
+    <string name="route_box_pill_said">%1$s, menu</string>
+    <string name="route_box_pill_caution">%1$s, with a caution, menu</string>
+    <!-- A flight's suggested fuel stops folded into one pill, a tap putting them in. -->
+    <plurals name="route_box_fuel_fold">
+        <item quantity="one">+%1$d fuel stop</item>
+        <item quantity="other">+%1$d fuel stops</item>
+    </plurals>
+    <string name="route_box_fuel_said">Add the suggested fuel stops %1$s</string>
+</resources>

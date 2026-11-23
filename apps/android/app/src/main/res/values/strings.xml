@@ -133,11 +133,6 @@
     <string name="ask_help">The figures are the app\'s; Gemini Nano puts them in words on this phone and shows what it read.</string>
 
     <!-- The flight plan. -->
-    <string name="departure">Departure</string>
-    <string name="destination">Destination</string>
-    <string name="stops">Stops</string>
-    <string name="stops_help">Idents, separated by commas</string>
-    <string name="plan">Plan</string>
     <string name="under_reserve">Under the reserve the planner holds the flight to. Fly it with a fuel stop.</string>
     <string name="under_reserve_on">Under the reserve the planner holds the flight to on %1$s. Fly it with a fuel stop.</string>
 

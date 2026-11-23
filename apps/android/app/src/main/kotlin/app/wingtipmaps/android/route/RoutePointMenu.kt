@@ -45,12 +45,22 @@ import app.wingtipmaps.android.ui.WingtipIcons
  * Hold Here, Add a Stop After…, Move Up and Down, and Remove in the error
  * colour, each in PointActions' order and the iPhone's words. Direct To
  * flies from the airplane while it is under way, else from the departure.
+ *
+ * @param anchor what opens it, where not the row's ⋮: the route box's
+ *   pill, a tap on which is its menu (RouteBox), drawn even where the
+ *   point has no action, its tap then doing nothing.
  */
 @Composable
-fun RoutePointMenu(ident: String, plan: Plan, onAddStopAfter: (String) -> Unit, flight: FlightModel = hiltViewModel()) {
+fun RoutePointMenu(
+    ident: String,
+    plan: Plan,
+    onAddStopAfter: (String) -> Unit,
+    flight: FlightModel = hiltViewModel(),
+    anchor: (@Composable (open: () -> Unit) -> Unit)? = null,
+) {
     val state by plan.state.collectAsStateWithLifecycle()
     val actions = PointActions.of(ident, state)
-    if (actions.isEmpty()) return
+    if (actions.isEmpty()) return anchor?.invoke {} ?: Unit
     val inFlight by flight.state.collectAsStateWithLifecycle()
     val haptics = rememberHaptics()
     var open by rememberSaveable(ident) { mutableStateOf(false) }
@@ -74,8 +84,12 @@ fun RoutePointMenu(ident: String, plan: Plan, onAddStopAfter: (String) -> Unit, 
         }
     }
     Box {
-        IconButton(onClick = { open = true }) {
-            Icon(WingtipIcons.more, contentDescription = stringResource(R.string.said_point_menu, ident), tint = MaterialTheme.colorScheme.primary)
+        if (anchor != null) {
+            anchor { open = true }
+        } else {
+            IconButton(onClick = { open = true }) {
+                Icon(WingtipIcons.more, contentDescription = stringResource(R.string.said_point_menu, ident), tint = MaterialTheme.colorScheme.primary)
+            }
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             Text(ident, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = WingtipSpace.Md, vertical = WingtipSpace.Sm))
