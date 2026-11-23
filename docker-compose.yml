@@ -682,8 +682,9 @@ services:
     # whole into apps/web/.dist-next and then renamed into dist file by
     # file, index.html last, so a page loading mid-build gets the old
     # build or the new one, never half of one; the replaced builds' files
-    # stay an hour for pages already open (2026-11-08, a phone's
-    # "Importing a module script failed").
+    # stay a day for pages already open (2026-11-08, a phone's
+    # "Importing a module script failed"). No .br or .gz here: the
+    # gateway's server.compression gzips on the fly.
     environment:
       VITE_PUBLISH_DIR: dist
     command: ["npx", "--no-install", "vite", "build", "--watch"]

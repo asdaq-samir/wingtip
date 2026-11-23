@@ -73,8 +73,15 @@ export default defineConfig({
     // takes (Accept-Encoding: gzip, deflate, br). The service worker's
     // globPatterns name no .br or .gz, so it keeps only the files themselves.
     // CI's build check serves nothing, so asks for none (WINGTIP_PRECOMPRESS=0:
-    // they took the build from about 30 s to 89, run 43735121847).
+    // they took the build from about 30 s to 89, run 43735121847). Nor the
+    // live stack's watch (publishDir set): the plugin's closeBundle stats
+    // every public file in STAGING while publish renames them away, its
+    // ENOENTs stay in the plugin's one task queue, never cleared, and every
+    // later rebuild then failed with them ("Compression failed in bundle
+    // compression with 98 error(s) ... stat '/w/.dist-next/splash/..."). The
+    // gateway's server.compression gzips the same types on the fly there.
     process.env.WINGTIP_PRECOMPRESS !== "0" &&
+      !publishDir &&
       compression({
         include: /\.(js|mjs|css|html|svg|json|webmanifest|wasm)$/,
         threshold: 1024,
