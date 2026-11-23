@@ -1,4 +1,4 @@
-import { MOTION } from "../../lib/tokens";
+import { timing } from "../../lib/motion";
 import { onSettle, slidOf, type Settle } from "./sheetFollow";
 
 /** The figures' own ease through a settle (followSettle), by its id. */
@@ -77,7 +77,7 @@ function ride(row: HTMLElement, s: Settle) {
   if (frames.length < 2 || frames.every((f) => Math.abs(f.y - from) < 0.5)) return;
   row.animate(
     frames.map((f) => ({ offset: f.u, transform: `translateY(${f.y}px)` })),
-    { id: FOLLOW, duration: MOTION.drawer * 1000, easing: `cubic-bezier(${MOTION.drawerEase.join(",")})` },
+    { id: FOLLOW, ...timing("drawer") },
   );
 }
 

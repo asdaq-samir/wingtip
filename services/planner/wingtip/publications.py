@@ -125,30 +125,40 @@ def _index(name: str, edition: str, url: str, parse) -> dict | None:
     """An index for one edition, from memory, from disk, or downloaded
     and parsed once; None when the FAA cannot be reached, told apart from
     an edition that lists nothing for a field. A failure is not asked
-    again for RETRY_S."""
+    again for RETRY_S. _LOCK guards only the dicts: the disk read and the
+    FAA's download run outside it, one at a time per edition
+    (single_flight's gate, as traffic.lookup's search), so a card whose
+    index is held never waits on another edition's 120 s fetch."""
     key = (name, edition)
+    path = CACHE_DIR / f"{name}-{edition}.json"
     with _LOCK:
         if key in _HELD:
             return _HELD[key]
-        path = CACHE_DIR / f"{name}-{edition}.json"
+    with one_at_a_time(("publication index", key)):
+        with _LOCK:
+            if key in _HELD:
+                return _HELD[key]
+            # By its file, so a failure is the one folder's.
+            if path in _FAILED and not path.exists():
+                return None
         if path.exists():
             index = json.loads(path.read_text())
         else:
-            # By its file, so a failure is the one folder's.
-            if path in _FAILED:
-                return None
             try:
                 resp = outside.get(url, headers=HEADERS, timeout=120)
                 resp.raise_for_status()
                 index = parse(resp.content)
             except (requests.RequestException, ET.ParseError) as err:
                 log.warning("No %s index for %s: %s", name, edition, err)
-                _FAILED[path] = True
+                with _LOCK:
+                    _FAILED[path] = True
                 return None
             with atomic_path(path) as partial:
                 partial.write_text(json.dumps(index))
-        _FAILED.pop(path, None)
-        _HELD[key] = index
+        # Stored before the gate is let go, so an asker after finds it.
+        with _LOCK:
+            _FAILED.pop(path, None)
+            _HELD[key] = index
         return index
 
 

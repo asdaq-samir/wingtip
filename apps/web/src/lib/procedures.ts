@@ -1,6 +1,8 @@
 import type { ProcedureFix, ProcedureList } from "./api/types";
-import { callEngine, engineLoaded } from "./engine/engine";
+import { callEngine } from "./engine/engine";
 import { altFt } from "./format";
+// The one same-field test, kept beside the idents (identSchema).
+export { sameField } from "./identSchema";
 
 /** An instrument procedure picked at a field of the route (the route's
  *  Procedures): the field, the procedure's coded identifier ("I08-Y"),
@@ -107,18 +109,6 @@ export async function typedProcedure(
     }
   }
   return null;
-}
-
-/** Whether two idents name one field: the CIFP names it by its ICAO ident
- *  (KBUR) where the route may have the FAA's (BUR), and a typed one may
- *  come with a space round it. The one test for the app, which the
- *  traffic's (fbo) had a second of. */
-export function sameField(a: string, b: string): boolean {
-  // Before the engine is in (a page's first draw can ask, a kept route's
-  // ways read on load): the idents alike as written, never a throw that
-  // takes the page down; the engine's answer, KBUR for BUR, once it is.
-  if (!engineLoaded()) return a.trim().toUpperCase() === b.trim().toUpperCase();
-  return callEngine("same_field", { a, b });
 }
 
 /** The picks the route flies: an approach only loaded left out (the

@@ -1,6 +1,5 @@
 import { useCallback } from "react";
-import { prefersReducedMotion } from "../lib/motion";
-import { MOTION } from "../lib/tokens";
+import { prefersReducedMotion, timing } from "../lib/motion";
 
 /**
  * A capsule that widens (the mic into its listening pill, MapControls)
@@ -28,10 +27,7 @@ export function useWidenReveal<T extends HTMLElement>() {
       // scaled down to fit), so the clip's edge is the capsule's own.
       const hidden = `inset(0 0 0 ${grown}px round 9999px)`;
       // No fill: at rest there is no clip, so the capsule's shadow is whole.
-      node.animate([{ clipPath: hidden }, { clipPath: "inset(0 round 9999px)" }], {
-        duration: MOTION.sheet * 1000,
-        easing: `cubic-bezier(${MOTION.sheetEase.join(",")})`,
-      });
+      node.animate([{ clipPath: hidden }, { clipPath: "inset(0 round 9999px)" }], timing("sheet"));
     });
     seen.observe(node);
     return () => seen.disconnect();

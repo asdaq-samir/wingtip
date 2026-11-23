@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useRef, useState, type PointerEvent, type ReactNode } from "react";
 import { animate, motion, useDragControls, useMotionValue, useMotionValueEvent, useTransform, type PanInfo } from "motion/react";
 import { cn } from "cn";
 import { Button } from "../ui/button";
@@ -83,15 +83,19 @@ export function SwipeRowImpl({ word, label, onRemove, children }: SwipeRowProps)
     row.style.height = "";
   };
 
-  // Open, any press elsewhere closes it, and the press goes on to what it was on.
+  // Open, any press elsewhere closes it, and the press goes on to what it
+  // was on: listened for only while open (the code audit of 2026-11-23's
+  // L8; the close an effect event, so a render while open does not listen
+  // again).
+  const closeAway = useEffectEvent(close);
   useEffect(() => {
     if (!open) return;
     const away = (event: globalThis.PointerEvent) => {
-      if (!box.current?.contains(event.target as Node)) close();
+      if (!box.current?.contains(event.target as Node)) closeAway();
     };
     document.addEventListener("pointerdown", away, true);
     return () => document.removeEventListener("pointerdown", away, true);
-  });
+  }, [open]);
 
   const start = (event: PointerEvent) => {
     dragged.current = false;

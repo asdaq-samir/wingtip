@@ -8,7 +8,7 @@ pilot never gave is said to be missing, never filled in."""
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 from typing import Annotated, Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -37,12 +37,14 @@ def zone_of(name: str | None) -> ZoneInfo | None:
         return None
 
 
-def today(lon: float, zone: ZoneInfo | None, now: datetime | None = None) -> date:
-    """The place's own date now, the date the engine reads (its local one,
-    at the longitude's mean noon): a US evening is already tomorrow in
-    UTC. Where no zone is known, the longitude's mean solar time."""
+def today(zone: ZoneInfo | None, now: datetime | None = None) -> date:
+    """The place's own date now, the date the engine reads (its local one):
+    a US evening is already tomorrow in UTC. tzfpy names a zone for every
+    point, the oceans' Etc/GMT ones included; where it names none the UTC
+    date is taken, rather than a mean solar time worked out here (the
+    engine owns the sun's maths)."""
     now = now or datetime.now(timezone.utc)
-    return now.astimezone(zone).date() if zone else (now + timedelta(hours=lon / 15)).date()
+    return now.astimezone(zone or timezone.utc).date()
 
 
 def _at(s: float | None, zone: ZoneInfo | None) -> dict | None:
@@ -96,7 +98,7 @@ def register(server: MCPServer) -> None:
             raise ToolError("Give an airport, or lat and lon.")
         zone_name = time_zone.at(lat, lon)
         zone = zone_of(zone_name)
-        day = on or today(lon, zone)
+        day = on or today(zone)
         sun = engine_ask("sun_times", lat=lat, lon=lon, date=day.isoformat())
         return {
             "airport": where,

@@ -13,7 +13,7 @@ from fastapi import APIRouter, Query, Response
 from wingtip import airports, fixes, geo, geo_boxes, procedures
 from wingtip.engine import ask as engine
 
-from ..router_basics import near_points
+from ..router_basics import points
 from ..schemas.clearance import ClearanceAsk, ClearancePlaces, ClearanceWords
 from ..gateway import PUBLIC, PUBLIC_READ_BY_POST
 
@@ -153,7 +153,7 @@ def clearance_places(ask: ClearanceAsk) -> ClearancePlaces:
     airport by its name, AIM 4-4-3 a), each phrase of its route as the
     points in it, and its SID and STAR among its fields' own. A place
     found by its sound alone is not `sure`; one not found has no ident."""
-    near = near_points(ask.near)
+    near = tuple(points(ask.near))
     places = _places(near)
     # The places anywhere spelled or named in what was said, besides those
     # near the route: the engine puts the nearer of two alike first, PYKLA
@@ -182,7 +182,7 @@ def clearance_words(response: Response, near: str = Query(default=""), dep: str 
     phone's recognizer to listen for: the departure's SIDs as said, the
     navaids' names, then the fixes' five letters as words, at most 100."""
     response.headers["Cache-Control"] = "private, max-age=3600"
-    places = _places(near_points(near))
+    places = _places(tuple(points(near)))
     names = _navaid_names(places)
     words: list[str] = []
     listed = procedures.procedures_at(dep) if dep else None

@@ -175,6 +175,13 @@ pub(super) fn runways(r: &Runways) -> (&'static str, String) {
 pub(super) fn balance(b: &Balance) -> (&'static str, String) {
     if b.pending {
         ("pending", "Waiting on the airplane's profile…".into())
+    } else if b.no_load {
+        // The weight and balance is this flight's load against the POH's
+        // limits (its section 6; 14 CFR 91.9(a) holds the pilot to them,
+        // 91.103 to all the flight's information): with no load given it
+        // is not known, and the POH's sample airplane is never said as
+        // the flight's (the owner's "no assumed airplane").
+        ("unknown", "Not worked out: give your load".into())
     } else if !b.worked {
         ("unknown", "Not worked out for this airplane".into())
     } else if let Some(first) = b.problems.first() {

@@ -58,7 +58,16 @@ export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
   const follow = useOwnShip((s) => s.follow);
   const recentred = useOwnShip((s) => s.recentred);
   const recentreZoom = useOwnShip((s) => s.recentreZoom);
-  const room = useMemo<GlSymbol[]>(() => (fix ? [{ key: ROOM, lat: fix.lat, lon: fix.lon, picture: ROOM_PICTURE }] : []), [fix]);
+  // The room moved a thousandth of a degree at a time (about 100 m: a
+  // few pixels at a flight's zooms, within the plane's own picture), so a
+  // fix that only jitters on the ground sets no new data (the code audit
+  // of 2026-11-23, R5-20).
+  const roomLat = fix ? Math.round(fix.lat * 1000) / 1000 : null;
+  const roomLon = fix ? Math.round(fix.lon * 1000) / 1000 : null;
+  const room = useMemo<GlSymbol[]>(
+    () => (roomLat === null || roomLon === null ? [] : [{ key: ROOM, lat: roomLat, lon: roomLon, picture: ROOM_PICTURE }]),
+    [roomLat, roomLon],
+  );
   useGlSymbols(ROOM, ROOM_LAYERS, room);
   const marker = useRef<Marker | null>(null);
   // The mark's HTML as last written (drawOwnShip).

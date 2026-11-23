@@ -131,9 +131,9 @@ def test_tonight_is_the_fields_own_date_not_utcs():
     """The mcp audit of 2026-11-23, M1: at 19:00 CST (01Z) "tonight" at
     KDLH is the 23rd, where the UTC date is already the 24th."""
     evening = datetime(2026, 11, 24, 1, 0, tzinfo=timezone.utc)
-    assert day_tools.today(-92.19, day_tools.zone_of("America/Chicago"), evening) == date(2026, 11, 23)
-    # No zone known: the longitude's mean solar time, still the 23rd.
-    assert day_tools.today(-92.19, None, evening) == date(2026, 11, 23)
+    assert day_tools.today(day_tools.zone_of("America/Chicago"), evening) == date(2026, 11, 23)
+    # No zone known (tzfpy names one everywhere): UTC's date.
+    assert day_tools.today(None, evening) == date(2026, 11, 24)
 
 
 def test_airplane_performance_is_the_pilots_airplane_or_none(monkeypatch):

@@ -136,6 +136,10 @@ pub struct Runways {
 pub struct Balance {
     pub pending: bool,
     pub worked: bool,
+    /// The airplane has a POH loading but the pilot gave no load: not
+    /// worked, and said so, never balanced at the POH's sample airplane
+    /// as if it were this flight's (14 CFR 91.9(a), 91.103).
+    pub no_load: bool,
     pub problems: Vec<String>,
     pub takeoff: Option<String>,
 }

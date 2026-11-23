@@ -14411,6 +14411,11 @@ object EngineContract {
          * Read as JavaScript reads it: missing, null, false, 0 and "" are false.
          */
         val worked: Boolean? = null,
+        /**
+         * The airplane has a POH loading but the pilot gave no load: the finding is unknown, 'give your load', never the POH's sample airplane as the flight's (14 CFR 91.9(a), 91.103). Read as JavaScript reads it.
+         */
+        @SerialName("no_load")
+        val noLoad: Boolean? = null,
         val problems: List<String>? = null,
         val takeoff: String? = null,
     )

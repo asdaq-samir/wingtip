@@ -13644,7 +13644,7 @@
         "type": "object"
       },
       "LoadBalance": {
-        "description": "The weight and balance for the load used: the pilot's, or the\nPOH's sample airplane where none was sent.",
+        "description": "The weight and balance for the pilot's own load (null where none\nwas sent: it is never balanced at the POH's sample airplane).",
         "properties": {
           "landing": {
             "$ref": "#/components/schemas/LoadCondition"

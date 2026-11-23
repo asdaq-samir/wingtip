@@ -45,22 +45,30 @@ export function zoneName(at: Date = new Date()): string {
   return name;
 }
 
-const fieldZones = new Map<string, Intl.DateTimeFormat | null>();
-/** A zone's wall clock and short name at an instant, or null where the
- *  browser does not know the zone. One formatter a zone, made the first
- *  time. */
-function wallIn(at: Date, timeZone: string): { time: string; zone: string } | null {
-  if (!fieldZones.has(timeZone)) {
+const zoneFormats = new Map<string, Intl.DateTimeFormat | null>();
+/** One Intl formatter for a zone and its options, made the first time it
+ *  is asked for and kept (making one is costly, the note above); null
+ *  where the browser does not know the zone. Every per-zone formatter in
+ *  the app is this one cache's (the code audit of 2026-11-23, R5-9). */
+export function formatIn(timeZone: string, options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat | null {
+  const key = `${timeZone} ${JSON.stringify(options)}`;
+  if (!zoneFormats.has(key)) {
+    let format: Intl.DateTimeFormat | null = null;
     try {
-      fieldZones.set(
-        timeZone,
-        new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", hour: "2-digit", minute: "2-digit", timeZoneName: "short" }),
-      );
+      format = new Intl.DateTimeFormat("en-US", { ...options, timeZone });
     } catch {
-      fieldZones.set(timeZone, null);
+      // RangeError: a zone this browser's time-zone data does not have.
     }
+    zoneFormats.set(key, format);
   }
-  const format = fieldZones.get(timeZone);
+  return zoneFormats.get(key) ?? null;
+}
+
+const WALL = { hourCycle: "h23", hour: "2-digit", minute: "2-digit", timeZoneName: "short" } as const;
+/** A zone's wall clock and short name at an instant, or null where the
+ *  browser does not know the zone. */
+function wallIn(at: Date, timeZone: string): { time: string; zone: string } | null {
+  const format = formatIn(timeZone, WALL);
   if (!format) return null;
   const parts = Object.fromEntries(format.formatToParts(at).map((p) => [p.type, p.value]));
   return { time: `${parts.hour}:${parts.minute}`, zone: parts.timeZoneName ?? timeZone };

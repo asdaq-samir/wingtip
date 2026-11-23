@@ -21,7 +21,7 @@ from .minimums import ceiling_unknown_at, under_minimums
 from .pass_times import pass_time, sua_when, tfr_when
 from .runways import runway_checks
 from .schemas import GoNoGoAsk
-from .weight_balance import balance, default_load
+from .weight_balance import balance
 from .words import PLAN_NAME, WEATHER_SOURCE_LABEL, alt_ft, ceiling_and_visibility, gairmet_title, sigmet_hazard
 from .. import route_briefing
 from ..plan_query import PlanQuery, named_checkpoints
@@ -290,21 +290,17 @@ def findings_for(
             risk_in["inspections"] = own.inspections.model_dump() if own.inspections else None
             risk_in["squawks"] = [s.model_dump() for s in own.squawks]
 
-    # The loading (lib/weightBalance): the pilot's, else the POH's sample
-    # airplane with the fuel aboard at engine start -- the pilot's own on
-    # FPL's gauge (the totals' on_board_gal), else the usable fuel.
-    # With no airplane (no `aircraft` asked) there is no loading to balance.
+    # The loading (lib/weightBalance) is balanced only with the pilot's own
+    # load: the weight and balance is this flight's load against the POH's
+    # limits (its section 6; 14 CFR 91.9(a), 91.103), so with none given
+    # it is not worked and said so ("give your load", the engine's
+    # no_load), never the POH's sample airplane answered as the flight's.
+    # The runways are then read at the POH table's heaviest weight, the
+    # longest distance. With no airplane there is no loading to balance.
     airplane = q.profile()
     profile = (nav or {}).get("aircraft") or ({"name": q.aircraft, **airplane} if airplane else {})
     loading = profile.get("loading")
-    # A pilot's 0 is their figure, not "unset": `or` took it for full tanks.
-    on_board = (totals or {}).get("on_board_gal")
-    usable = on_board if on_board is not None else profile.get("usable_fuel_gal")
-    load = (
-        ask.load.model_dump()
-        if ask.load
-        else (default_load(loading, usable if usable is not None else loading["fuel_max_gal"]) if loading else None)
-    )
+    load = ask.load.model_dump() if ask.load else None
     loaded = balance(loading, load, (totals or {}).get("fuel_gal")) if loading and load else None
     # The row's "2,407 lb at 41.2 in" is the engine's words (takeoff_words),
     # not written again here; the loading's answer goes on without them.
@@ -378,6 +374,7 @@ def findings_for(
         "balance": {
             "pending": not nav,
             "worked": bool(nav_loaded),
+            "no_load": bool(loading) and load is None,
             "problems": nav_loaded["problems"] if nav_loaded else [],
             "takeoff": takeoff_words if nav_loaded else None,
         },

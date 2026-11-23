@@ -39,7 +39,7 @@
 //! the instant.
 
 use crate::json;
-use crate::time::{self, civil_from_days, days_from_civil, days_in_month, DAY_S};
+use crate::time::{self, civil_from_days, days_from_civil, DAY_S};
 
 /// 0901Z, as seconds into the day: when an AIRAC or charting edition
 /// takes over ("Effective 0901 UTC", the Federal Register's amendments).
@@ -216,15 +216,11 @@ pub fn day_text(day: i64) -> String {
     format!("{y:04}-{m:02}-{d:02}")
 }
 
-/// A day from "YYYY-MM-DD"; None where it is no day.
+/// A day from "YYYY-MM-DD" (an instant's time after it, "T…" or a
+/// space, left off); None where it is no day. The date is core's reader's.
 pub fn day_of(text: &str) -> Option<i64> {
-    let mut parts = text.trim().splitn(3, '-');
-    let year: i64 = parts.next()?.parse().ok()?;
-    let month: u32 = parts.next()?.parse().ok()?;
-    let day: u32 = parts.next()?.get(..2)?.parse().ok()?;
-    if !(1..=12).contains(&month) || day < 1 || day > days_in_month(year, month) {
-        return None;
-    }
+    let date = text.trim().split(['T', ' ']).next()?;
+    let (year, month, day) = time::parse_date_loose(date)?;
     Some(days_from_civil(year, month, day))
 }
 

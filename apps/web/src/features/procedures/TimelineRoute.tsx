@@ -72,7 +72,7 @@ export default function TimelineRoute({
   head?: ReactNode;
   tail?: ReactNode;
   /** The card's last row where it is not Add a Stop: before the route is
-   *  whole, the route typed or pasted (TypeRouteRow). */
+   *  whole, RouteStart's row with the route box's toggle. */
   foot?: ReactNode;
   /** A control at Add a Stop's end (RouteTimeline's fuel stops' pill). */
   addTrailing?: ReactNode;

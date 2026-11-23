@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fieldNotamsQuery, type FieldNotams } from "../../lib/queryClient";
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
-import { instantOf, twoFigures, zuluTime } from "../../lib/format";
+import { formatIn, instantOf, twoFigures, zuluTime } from "../../lib/format";
 
 // The field's NOTAMs and their query are lib/queryClient's, which Keep
 // for the Air asks for each of the route's fields too.
@@ -142,30 +142,7 @@ export function windowOf(n: FieldNotam, read: NotamReading): Pick<FieldNotam, "i
   return { in_force: n.in_force, starts: n.starts ?? read.starts, ends: n.ends ?? read.ends };
 }
 
-/** One formatter per zone, made the first time it is asked for: an Intl
- *  formatter is costly to make (lib/format/time's note). Null where the
- *  browser does not know the zone. */
-const corners = new Map<string, Intl.DateTimeFormat | null>();
-function cornerIn(zone: string): Intl.DateTimeFormat | null {
-  if (!corners.has(zone)) {
-    let format: Intl.DateTimeFormat | null = null;
-    try {
-      format = new Intl.DateTimeFormat("en-US", {
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        year: "2-digit",
-        hourCycle: "h23",
-        timeZone: zone,
-      });
-    } catch {
-      // RangeError: a zone this browser's time-zone data does not have.
-    }
-    corners.set(zone, format);
-  }
-  return corners.get(zone) ?? null;
-}
+const CORNER = { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", year: "2-digit", hourCycle: "h23" } as const;
 
 const utcDay = (at: Date, year: boolean) =>
   `${twoFigures(at.getUTCMonth() + 1)}/${twoFigures(at.getUTCDate())}${year ? `/${twoFigures(at.getUTCFullYear() % 100)}` : ""}`;
@@ -181,7 +158,7 @@ const utcDay = (at: Date, year: boolean) =>
  *  figures after the day ("05/27/28"), as the app says a year that is not
  *  this one (tfrTimes; the owner, 2026-11-23). */
 export function corner(at: Date, zone: string | null, year = false): string {
-  const format = zone ? cornerIn(zone) : null;
+  const format = zone ? formatIn(zone, CORNER) : null;
   if (!format) return `${utcDay(at, year)} ${zuluTime(at)}`;
   const part = Object.fromEntries(format.formatToParts(at).map((p) => [p.type, p.value]));
   return `${part.month}/${part.day}${year ? `/${part.year}` : ""} ${part.hour}:${part.minute} local (${zuluTime(at)})`;

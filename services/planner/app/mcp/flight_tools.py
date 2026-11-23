@@ -75,15 +75,6 @@ def app_link(fields: dict) -> str | None:
     return f"{base}/app/plan?{urlencode(query)}"
 
 
-#: What flight_briefing says in place of a finding it could not work out
-#: for the pilot's own load, by the finding's key.
-NOT_WORKED = {
-    "balance": "Not worked: the pilot's load is not known. Give stations_lb (airplane_performance names the stations) "
-    "and fuel_gal; Wingtip never reports the POH's sample airplane as theirs.",
-    "runways": "Distances read at the POH's sample load, not the pilot's: give stations_lb for their own.",
-}
-
-
 async def _briefing_load(flown: dict | None, stations_lb, fuel_gal) -> tuple[dict | None, list[str]]:
     """The pilot's own load for /api/go-no-go, or what is missing for it
     (with no airplane, or none with a POH loading, nothing is balanced)."""
@@ -95,19 +86,6 @@ async def _briefing_load(flown: dict | None, stations_lb, fuel_gal) -> tuple[dic
     if fuel is None:
         return None, ["fuel_gal, the fuel at engine start: the airplane has no usable fuel on record"]
     return airplane.load(flown, loading, stations_lb, fuel)
-
-
-def _finding(item: dict, sampled: bool) -> dict:
-    """A finding as the model reads it. Where the airplane has a loading
-    but the pilot's load is not known (`sampled`), /api/go-no-go balanced
-    its default, the POH's sample airplane with a 170 lb pilot
-    (gonogo.schemas.GoNoGoAsk.load): that is never said as the pilot's."""
-    found = pick(item, ("key", "label", "finding", "detail"))
-    if sampled and item["key"] in NOT_WORKED:
-        if item["key"] == "balance":
-            return {**found, "finding": "unknown", "detail": NOT_WORKED["balance"]}
-        return {**found, "detail": f"{found.get('detail', '')} {NOT_WORKED[item['key']]}".strip()}
-    return found
 
 
 async def planned(fields: dict) -> dict:
@@ -188,7 +166,7 @@ def register(server: MCPServer) -> None:
         return {
             "airplane": airplane.label(flown) if flown else None,
             "line": verdict["line"],
-            "findings": [_finding(i, bool(missing)) for i in verdict["items"]],
+            "findings": [pick(i, ("key", "label", "finding", "detail")) for i in verdict["items"]],
             "missing": missing,
             "risk": verdict.get("risk"),
             "open_in_wingtip": app_link(fields),

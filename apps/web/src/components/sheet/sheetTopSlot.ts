@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { PanelState } from "../../lib/mapChrome";
 import { coverCard, useSheetCards } from "../../lib/sheetCards";
 import { shownPx } from "./insets";
-import { MOTION } from "../../lib/tokens";
+import { timing } from "../../lib/motion";
 
 /** The room over a phone's bottom sheet's top edge, while there is one:
  *  the riding buttons' one container (OnSheetTop's portal), put in the
@@ -143,8 +143,5 @@ function glideFrom(node: HTMLElement, was: Surface | null) {
   if (!height) return;
   const by = shownPx(now.at, true, height) - shownPx(was.at, true, height) + was.moved - now.moved + was.gliding;
   if (Math.abs(by) < 1) return;
-  node.animate([{ transform: `translateY(${by}px)` }, { transform: "none" }], {
-    duration: MOTION.drawer * 1000,
-    easing: `cubic-bezier(${MOTION.drawerEase.join(",")})`,
-  });
+  node.animate([{ transform: `translateY(${by}px)` }, { transform: "none" }], timing("drawer"));
 }

@@ -28,6 +28,7 @@ use super::js;
 use super::logbook_derived;
 use crate::json::{self, Value};
 use wingtip_core::sort::StableSort;
+use wingtip_core::time::parse_date;
 
 /// The columns written, ForeFlight's names where it has the field, each
 /// with the entry's member it is written from.
@@ -170,27 +171,15 @@ fn yes(v: Option<&str>) -> bool {
 }
 
 /// A date as ForeFlight writes it (2002-01-02), or as a spreadsheet may
-/// have turned it (1/2/2002); None for neither. The figures are not
-/// checked against the calendar: the gateway refuses a day that is none.
+/// have turned it (1/2/2002); None for neither, or for a day the calendar
+/// lacks (core's parse_date), which the row is then skipped for.
 fn date_of(v: Option<&str>) -> Option<String> {
     let s = js::trim(v.unwrap_or(""));
-    let b = s.as_bytes();
-    let digits = |r: &[u8]| !r.is_empty() && r.iter().all(u8::is_ascii_digit);
-    if b.len() == 10 && b[4] == b'-' && b[7] == b'-' && digits(&b[..4]) && digits(&b[5..7]) && digits(&b[8..]) {
-        return Some(s.to_owned());
-    }
-    let parts: Vec<&str> = s.split('/').collect();
-    if let [m, d, y] = parts[..]
-        && (1..=2).contains(&m.len())
-        && digits(m.as_bytes())
-        && (1..=2).contains(&d.len())
-        && digits(d.as_bytes())
-        && y.len() == 4
-        && digits(y.as_bytes())
-    {
-        return Some(format!("{y}-{m:0>2}-{d:0>2}"));
-    }
-    None
+    let iso = match s.split('/').collect::<Vec<_>>()[..] {
+        [m, d, y] if (1..=2).contains(&m.len()) && (1..=2).contains(&d.len()) => format!("{y}-{m:0>2}-{d:0>2}"),
+        _ => s.to_owned(),
+    };
+    parse_date(&iso).map(|_| iso)
 }
 
 /// The header row of a table: the first row from `from` with all of these.

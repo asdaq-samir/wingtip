@@ -59,6 +59,7 @@ pub(crate) fn verdict_input(i: In, v: &Value) -> R<verdict::Input> {
         balance: verdict::Balance {
             pending: truth(b, "pending"),
             worked: truth(b, "worked"),
+            no_load: truth(b, "no_load"),
             problems: i.strings(b, "problems")?,
             takeoff: i.opt_str(b, "takeoff")?,
         },
