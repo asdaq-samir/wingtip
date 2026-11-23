@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { Radio } from "lucide-react";
 import { cn } from "cn";
+import { useShallow } from "zustand/react/shallow";
 import CloseButton from "./CloseButton";
 import { bannerGlass } from "./bannerGlass";
 import Waveform from "./Waveform";
@@ -127,7 +128,10 @@ function RadioCall({ call }: { call: Transmission }) {
  * under them. A tap opens the log.
  */
 function RadioCaptions() {
-  const { listening, error, heard, input } = useAtcRadio();
+  // Only what the captions show, not the listen-once pill's words as they come.
+  const { listening, error, heard, input } = useAtcRadio(
+    useShallow(({ listening, error, heard, input }) => ({ listening, error, heard, input })),
+  );
   const lines = heard.slice(-2);
   const name = heardThrough(input);
   const chosen = chosenOutside(input);

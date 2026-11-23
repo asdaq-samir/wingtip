@@ -77,13 +77,13 @@ export interface TakenDoc {
 }
 
 export async function removeOwn(s: FileStore, id: string): Promise<TakenDoc | null> {
-  const list = await ownDocs(s);
+  // The three reads are independent, so asked at once; the list goes
+  // first, then the file and its marks together, so an interrupted remove
+  // leaves at worst an unlisted file, never a listed one with no file.
+  const [list, blob, marks] = await Promise.all([ownDocs(s), ownBlob(s, id), loadMarks(s, ownMarks(id))]);
   const index = list.findIndex((d) => d.id === id);
-  const blob = await ownBlob(s, id);
-  const marks = await loadMarks(s, ownMarks(id));
   await s.update<OwnDoc[]>(OWN, (old = []) => old.filter((d) => d.id !== id));
-  await s.del(`${OWN}/${id}`);
-  await s.del(ownMarks(id));
+  await Promise.all([s.del(`${OWN}/${id}`), s.del(ownMarks(id))]);
   return index >= 0 && blob ? { doc: list[index]!, blob, index, marks } : null;
 }
 
