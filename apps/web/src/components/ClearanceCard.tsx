@@ -19,7 +19,6 @@ import { heardThrough, useAtcRadio, useRadioActions } from "../lib/atcRadio";
 import { startRadio, stopRadio } from "../lib/atcListening";
 import { callPattern } from "../lib/heardCall";
 import { altitudeWords, clearanceParts, readbackCheck, readbackLines } from "../lib/readback";
-import { TEXT } from "../lib/text";
 import { useDebounced } from "../lib/useDebounced";
 import { useReadback } from "./useReadback";
 import { NotYet, Step, Verdict } from "./ClearanceSteps";
@@ -211,7 +210,9 @@ export default function ClearanceCard({
             placeholder={`${!mic ? "Type it as read: " : heardThrough(input) ? "Tap the microphone, or type it as read: " : "Tap the microphone and hold the phone to the speaker, or type it as read: "}${EXAMPLE}`}
             aria-label="The clearance as heard"
             data-testid="clearance-text"
-            className={cn(TEXT.detail, "resize-none font-mono")}
+            // The stock Textarea's size, 16 or more to a finger in every
+            // look: TEXT.detail's 14 or 15 made Safari zoom the page in on it.
+            className="resize-none font-mono"
           />
           {/* The clearance element by element as read, a polite live region
               so each new word is said without taking the focus; the one
@@ -277,7 +278,7 @@ export default function ClearanceCard({
             placeholder={`${mic ? "Tap the microphone, or type your read back as said: " : "Your read back as said: "}${EXAMPLE_READBACK}`}
             aria-label="Your read back, as said"
             data-testid="clearance-readback-text"
-            className={cn(TEXT.detail, "resize-none font-mono")}
+            className="resize-none font-mono"
           />
         </Step>
         <Step

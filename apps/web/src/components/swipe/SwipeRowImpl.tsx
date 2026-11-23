@@ -65,10 +65,15 @@ export function SwipeRowImpl({ word, label, onRemove, children }: SwipeRowProps)
     void settle(0);
   };
 
-  const remove = async () => {
+  // A fling past the line carries the row off at the speed it was thrown
+  // (`velocity`), not from rest; a finger that catches it on the way stops
+  // the removal, since the row is no longer where it was going.
+  const remove = async (velocity = 0) => {
     const row = box.current;
     if (!row) return;
-    await settle(-row.offsetWidth);
+    const gone = -row.offsetWidth;
+    await settle(gone, velocity);
+    if (Math.abs(x.get() - gone) > 1) return;
     // Its place closes up before it goes, as iOS's list closes over it.
     if (!prefersReducedMotion()) await animate(row, { height: 0 }, { duration: MOTION.fade });
     onRemove();
@@ -97,7 +102,7 @@ export function SwipeRowImpl({ word, label, onRemove, children }: SwipeRowProps)
     const row = box.current;
     const reveal = face.current?.offsetWidth ?? 0;
     const rest = swipeEnd(x.get(), info.velocity.x, row?.offsetWidth ?? 0, reveal);
-    if (rest === "remove") void remove();
+    if (rest === "remove") void remove(info.velocity.x);
     else if (rest === "open") {
       setOpen(true);
       void settle(-reveal, info.velocity.x);

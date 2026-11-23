@@ -1,4 +1,4 @@
-import { memo, useState, type PointerEvent } from "react";
+import { memo, useEffect, useRef, useState, type PointerEvent } from "react";
 import { cn } from "cn";
 import type { Stroke } from "./padStore";
 import { draws, pressureOf, strokePath } from "./ink";
@@ -28,29 +28,56 @@ const KeptInk = memo(function KeptInk({ strokes }: { strokes: Stroke[] }) {
  * on (`onStroke`) as it ends, in fractions of the page's width so it
  * draws the same at any width. Pointer Events, captured, so a stroke
  * that leaves the page still ends; the page takes no scroll or zoom from
- * a pointer (touch-action: none), the boxes above it scroll the page.
+ * a pointer (touch-action: none), the boxes above it scroll the page, and
+ * the sheet or card it sits in takes no drag from it
+ * (data-base-ui-swipe-ignore, both axes): the Drawer reads touch events,
+ * not the browser's pan, so without it every stroke also moved the card.
+ *
+ * The live stroke is kept out of React: a Pencil reports at 240 Hz, so
+ * each move takes every point the browser coalesced into it
+ * (getCoalescedEvents), and the path's outline is written straight to
+ * the DOM once a frame, not re-rendered per move.
  */
 export function InkPad({ strokes, onStroke, label }: { strokes: Stroke[]; onStroke: (stroke: Stroke) => void; label: string }) {
   const [penSeen, setPenSeen] = useState(false);
-  const [live, setLive] = useState<Stroke | null>(null);
-  const at = (e: PointerEvent<SVGSVGElement>): [number, number, number] => {
-    const r = e.currentTarget.getBoundingClientRect();
-    return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.width, pressureOf(e.pointerType, e.pressure)];
+  const live = useRef<Stroke | null>(null);
+  const path = useRef<SVGPathElement>(null);
+  const frame = useRef(0);
+  useEffect(() => () => cancelAnimationFrame(frame.current), []);
+  const draw = () => {
+    frame.current = 0;
+    const s = live.current;
+    path.current?.setAttribute("d", s ? strokePath(s, ACROSS, NIB) : "");
   };
+  const redraw = () => {
+    if (!frame.current) frame.current = requestAnimationFrame(draw);
+  };
+  const at = (e: globalThis.PointerEvent, r: DOMRect): [number, number, number] => [
+    (e.clientX - r.left) / r.width,
+    (e.clientY - r.top) / r.width,
+    pressureOf(e.pointerType, e.pressure),
+  ];
   const down = (e: PointerEvent<SVGSVGElement>) => {
     if (!draws(e.pointerType, penSeen, e.isPrimary)) return;
     if (e.pointerType === "pen") setPenSeen(true);
     e.currentTarget.setPointerCapture(e.pointerId);
-    setLive({ points: [at(e)], pen: e.pointerType === "pen" });
+    live.current = { points: [at(e.nativeEvent, e.currentTarget.getBoundingClientRect())], pen: e.pointerType === "pen" };
+    redraw();
   };
   const move = (e: PointerEvent<SVGSVGElement>) => {
-    if (!live || !e.currentTarget.hasPointerCapture(e.pointerId)) return;
-    const point = at(e);
-    setLive((s) => s && { ...s, points: [...s.points, point] });
+    const s = live.current;
+    if (!s || !e.currentTarget.hasPointerCapture(e.pointerId)) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const coalesced = e.nativeEvent.getCoalescedEvents?.() ?? [];
+    for (const p of coalesced.length > 0 ? coalesced : [e.nativeEvent]) s.points.push(at(p, r));
+    redraw();
   };
-  const up = () => {
-    if (live && live.points.length > 0) onStroke(live);
-    setLive(null);
+  const end = (keep: boolean) => {
+    const s = live.current;
+    live.current = null;
+    cancelAnimationFrame(frame.current);
+    draw();
+    if (keep && s && s.points.length > 0) onStroke(s);
   };
   return (
     <svg
@@ -59,14 +86,15 @@ export function InkPad({ strokes, onStroke, label }: { strokes: Stroke[]; onStro
       aria-label={label}
       data-testid="scratchpad-ink"
       data-strokes={strokes.length}
+      data-base-ui-swipe-ignore=""
       className={cn("block h-auto w-full touch-none rounded-xl bg-background text-foreground ring-1 ring-border select-none")}
       onPointerDown={down}
       onPointerMove={move}
-      onPointerUp={up}
-      onPointerCancel={() => setLive(null)}
+      onPointerUp={() => end(true)}
+      onPointerCancel={() => end(false)}
     >
       <KeptInk strokes={strokes} />
-      {live && <path d={strokePath(live, ACROSS, NIB)} fill="currentColor" />}
+      <path ref={path} fill="currentColor" data-testid="scratchpad-live" />
     </svg>
   );
 }

@@ -59,20 +59,30 @@ function readInsets(): string {
     probe.setAttribute("aria-hidden", "true");
     probe.style.cssText =
       "position:fixed;top:0;left:0;visibility:hidden;pointer-events:none;" +
-      "padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)";
+      "padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)";
     document.body.appendChild(probe);
   }
   const style = getComputedStyle(probe);
-  return `${style.paddingTop}|${style.paddingBottom}`;
+  return `${style.paddingTop}|${style.paddingBottom}|${style.paddingLeft}|${style.paddingRight}`;
 }
 
 const insets = held(readInsets, onResize);
 
-export function useSafeArea(): { top: number; bottom: number } {
-  const [top = 0, bottom = 0] = useSyncExternalStore(insets.subscribe, insets.get, () => "0px|0px")
+export function useSafeArea(): { top: number; bottom: number; left: number; right: number } {
+  const [top = 0, bottom = 0, left = 0, right = 0] = useSyncExternalStore(insets.subscribe, insets.get, () => "0px|0px|0px|0px")
     .split("|")
     .map((v) => parseFloat(v) || 0);
-  return { top, bottom };
+  return { top, bottom, left, right };
+}
+
+/** How far a popover or menu keeps from the window's edges: past the
+ *  status bar, the notch and the home indicator, then 8 more, where Base
+ *  UI's stock 5 from the very edge let a menu at the top of the installed
+ *  app (black-translucent status bar) sit under the clock (native audit
+ *  L1). */
+export function useEdgeRoom(): { top: number; bottom: number; left: number; right: number } {
+  const { top, bottom, left, right } = useSafeArea();
+  return { top: top + 8, bottom: bottom + 8, left: left + 8, right: right + 8 };
 }
 
 /** The visual viewport, which shrinks when the on-screen keyboard
