@@ -189,8 +189,12 @@ export default function SheetDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger render={trigger} />}
-      <DialogContent ref={sheet} data-testid={testId} initialFocus={focus}>
-        <DialogHeader>
+      {/* No taller than the window, its title and buttons held and what is
+          between them scrolled: a long form (the logbook's draft from a
+          track, its reasons under each figure) ran off the window's top and
+          foot, its Log out of reach of a click or a scroll. */}
+      <DialogContent ref={sheet} data-testid={testId} initialFocus={focus} className="flex max-h-[calc(100dvh-2rem)] flex-col">
+        <DialogHeader className="shrink-0">
           {/* The close at the title row's end, as a phone's sheet has it. */}
           <div className="flex items-center gap-2">
             <DialogTitle className="min-w-0 flex-1">{title}</DialogTitle>
@@ -198,11 +202,13 @@ export default function SheetDialog({
           </div>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
-        <div data-dialog-body="" className="contents">
-          {children}
-        </div>
+        {children && (
+          <div data-dialog-body="" className="-mx-6 grid min-h-0 gap-4 overflow-y-auto px-6">
+            {children}
+          </div>
+        )}
         {(more || cancel || action) && (
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <div className="flex shrink-0 flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             {more}
             {cancel && <DialogClose render={<Button type="button" variant="outline" />}>Cancel</DialogClose>}
             {actionButton()}
