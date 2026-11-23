@@ -4,12 +4,13 @@ alerts at the destination, in one answer for the apps, which ask the
 engine's copilot_watch with it and their own GPS. Its own schemas, here
 beside the route, as the copilot is a part of its own."""
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 from pydantic import BaseModel
 from wingtip import copilot
 
 from ..emergency.schemas import EmergencyField
 from ..gateway import PUBLIC
+from ..router_basics import points
 
 router = APIRouter()
 
@@ -58,15 +59,7 @@ class CopilotAround(BaseModel):
 
 def _path(text: str) -> list[tuple[float, float]]:
     """The rest of the route, "lat,lon;lat,lon;...", at most 60 points."""
-    if not text.strip():
-        return []
-    try:
-        points = [(float(a), float(b)) for a, b in (p.split(",") for p in text.split(";") if p.strip())]
-    except ValueError as err:
-        raise HTTPException(422, "path is latitude,longitude pairs separated by semicolons.") from err
-    if any(not (-90 <= la <= 90 and -180 <= lo <= 180) for la, lo in points):
-        raise HTTPException(422, "path has a point off the globe.")
-    return points[:60]
+    return points(text, "path is latitude,longitude pairs separated by semicolons.", "path has a point off the globe.")[:60]
 
 
 @router.get("/api/copilot/around", response_model=CopilotAround, openapi_extra=PUBLIC)

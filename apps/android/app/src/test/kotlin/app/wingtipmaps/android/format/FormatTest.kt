@@ -102,14 +102,10 @@ class FormatTest {
     fun anAltimeterAVisibilityAndATemperature() {
         assertEquals("29.92 inHg", Format.altimeter(29.92))
         assertEquals("30.10 inHg", Format.altimeter(30.1))
+        // The fractions are the engine's (visibility_reportable), held on
+        // the device (MagneticAndVisibilityEngineTest); whole miles here.
         assertEquals("10 sm", Format.visibility(10.0))
-        assertEquals("2½ sm", Format.visibility(2.5))
-        assertEquals("¾ sm", Format.visibility(0.75))
         assertEquals("0 sm", Format.visibility(0.0))
-        // Eighths as a METAR writes them, never rounded up: 5/8 was ".63 sm".
-        assertEquals("5/8 sm", Format.visibility(0.625))
-        assertEquals("1 3/8 sm", Format.visibility(1.375))
-        assertEquals(4 to null, Format.reportedVisibility(4.97))
         assertEquals("15 °C", Format.temperature(15.0))
         assertEquals("−3 °C", Format.temperature(-3.0))
     }

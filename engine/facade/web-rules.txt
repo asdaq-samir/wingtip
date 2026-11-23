@@ -59,7 +59,6 @@ datis_remarks
 debrief
 debrief_airborne
 departure_pattern
-departure_window
 destination
 diagram_fix_usable
 diagram_graticule
@@ -151,7 +150,6 @@ in_flight
 kept_age
 kneeboard_radio
 landing_runway
-least_crosswind
 live_feed_refresh
 logbook_csv_read
 logbook_csv_write
@@ -187,7 +185,6 @@ point_kind
 precip_intensity
 procedures_read
 procedures_write
-proficiency_plan
 profile_clearance
 profile_obstacles
 public_use

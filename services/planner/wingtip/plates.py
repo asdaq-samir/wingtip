@@ -26,7 +26,6 @@ import io
 import json
 import logging
 import re
-import threading
 from datetime import date
 from pathlib import Path
 
@@ -38,6 +37,7 @@ from PIL import Image
 from . import plate_page, procedures, publication_drawing, publications
 from .plate_view_box import _box_lines, corner_boxes, plan_view_box
 from .atomic import atomic_path
+from .single_flight import one_at_a_time
 
 log = logging.getLogger(__name__)
 
@@ -50,9 +50,6 @@ PLATE_SCALE = 4
 PLACING_VERSION = 3
 #: The projection parameters a plate's georeference must name.
 LCC_PARAMETERS = ("Latitude_Of_Origin", "Central_Meridian", "Standard_Parallel_1", "Standard_Parallel_2")
-
-_LOCK = threading.Lock()
-_MAKING: dict = {}
 
 
 def _runway(name: str) -> str | None:
@@ -276,9 +273,9 @@ def plate_overlay(ident: str, procedure: str, on: date | None = None) -> dict | 
     stem = f"{Path(source[2]).stem}-{summary['id']}"
     folder = publications.CACHE_DIR / "plates" / cycle
     meta, png, page_png = folder / f"{stem}.json", folder / f"{stem}.png", folder / f"{stem}-page.png"
-    with _LOCK:
-        lock = _MAKING.setdefault(meta, threading.Lock())
-    with lock:
+    # One maker per plate, its gate let go after (single_flight): a lock
+    # kept for every plate ever asked for was the CODE-24 leak.
+    with one_at_a_time(meta):
         # A plate kept as not placed is None, as when it was made: its
         # meta has no corners to answer with.
         if (kept := _kept(meta)) is not None:

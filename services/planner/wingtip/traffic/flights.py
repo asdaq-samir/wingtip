@@ -35,7 +35,7 @@ def _altitude_ft(point: list) -> float | None:
     return _number(geometric) if geometric is not None else _number(point[3])
 
 
-def flight(hex_id: str) -> dict:
+def flight(hex_id: str, pilot: str | None = None) -> dict:
     """An airplane's flight today, from its trace: {"hex", "faa" (its FAA
     registration, wingtip.registry.lookup; None for one registered abroad or
     while the registry is not yet read), "registration", "type",
@@ -43,11 +43,15 @@ def flight(hex_id: str) -> dict:
     "name", "at"} -- the field it took off from, where its trace shows it
     on the ground at one, else None), "trail" ([{"t", "lat", "lon",
     "alt_ft"}], this flight's track from its takeoff or the start of its
-    leg, at most TRAIL_POINTS)}."""
+    leg, at most TRAIL_POINTS)}. Followed from now on where a signed-in
+    `pilot` opened its card."""
     hex_id = hex_id.lower()
-    # Its card open: followed from now on, its flights recorded from the
-    # FAA's radar card open or not (heard_elsewhere).
-    follow(hex_id)
+    # Its card open by a pilot: followed from now on, its flights recorded
+    # from the FAA's radar card open or not (heard_elsewhere). Not on any
+    # anonymous ask: one walking the addresses 000000, 000001 and on put
+    # them all in the round adsb.lol is asked (security round 4, M5).
+    if pilot:
+        follow(hex_id)
     trace = _trace(hex_id) or {}
     # A point is [seconds, lat, lon, altitude, ground speed, track, flags,
     # ...]; one too short to hold them is not used.

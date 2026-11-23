@@ -74,14 +74,7 @@ pub fn utc(text: &str) -> Option<String> {
     let t = text.trim();
     let b = t.as_bytes();
     let digits = |r: std::ops::Range<usize>| r.clone().all(|i| b.get(i).is_some_and(u8::is_ascii_digit));
-    let date_ok = b.len() >= 10 && digits(0..4) && b[4] == b'-' && digits(5..7) && b[7] == b'-' && digits(8..10);
-    if !date_ok {
-        return None;
-    }
-    let (month, day): (u32, u32) = (t[5..7].parse().ok()?, t[8..10].parse().ok()?);
-    if !(1..=12).contains(&month) || day == 0 || day > 31 {
-        return None;
-    }
+    wingtip_core::time::parse_date(t.get(..10)?)?;
     if b.len() == 10 {
         return Some(format!("{t}T00:00:00Z"));
     }

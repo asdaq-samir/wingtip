@@ -29,6 +29,16 @@ class AirplaneClient(TestClient):
 
 
 @pytest.fixture(autouse=True)
+def _usage_days_of_its_own(tmp_path, monkeypatch):
+    """Each test's daily totals (app.usage_days) in a file of its own,
+    never the planner's data folder."""
+    from app import usage_days
+
+    monkeypatch.setattr(usage_days, "STORE", tmp_path / "usage.sqlite")
+    usage_days._PENDING.clear()
+
+
+@pytest.fixture(autouse=True)
 def _weather_store_of_its_own(tmp_path_factory, monkeypatch):
     """Each test's weather store an empty folder of its own: none reads the
     copies the weather service keeps in data/raw/weather, or leaves the

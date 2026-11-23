@@ -22094,6 +22094,66 @@ extension Components {
                 case usable
             }
         }
+        /// One route's calls on one finished UTC day (app.usage_days): its
+        /// template and method, the status answered, and how many. Nothing of a
+        /// pilot, a device or an address.
+        ///
+        /// - Remark: Generated from `#/components/schemas/UsageDay`.
+        public struct UsageDay: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/UsageDay/calls`.
+            public var calls: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/UsageDay/day`.
+            public var day: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UsageDay/method`.
+            public var method: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UsageDay/route`.
+            public var route: Swift.String
+            /// - Remark: Generated from `#/components/schemas/UsageDay/status`.
+            public var status: Swift.Int
+            /// Creates a new `UsageDay`.
+            ///
+            /// - Parameters:
+            ///   - calls:
+            ///   - day:
+            ///   - method:
+            ///   - route:
+            ///   - status:
+            public init(
+                calls: Swift.Int,
+                day: Swift.String,
+                method: Swift.String,
+                route: Swift.String,
+                status: Swift.Int
+            ) {
+                self.calls = calls
+                self.day = day
+                self.method = method
+                self.route = route
+                self.status = status
+            }
+            public enum CodingKeys: String, CodingKey {
+                case calls
+                case day
+                case method
+                case route
+                case status
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/UsageDays`.
+        public struct UsageDays: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/UsageDays/days`.
+            public var days: [Components.Schemas.UsageDay]
+            /// Creates a new `UsageDays`.
+            ///
+            /// - Parameters:
+            ///   - days:
+            public init(days: [Components.Schemas.UsageDay]) {
+                self.days = days
+            }
+            public enum CodingKeys: String, CodingKey {
+                case days
+            }
+        }
         /// Where the airplane is usually based, by the engine's `usual_base`
         /// over its flights ADS-B receivers heard: `field` None where they do not
         /// show one clearly; `count` of its `ends` (takeoffs and landings) at the

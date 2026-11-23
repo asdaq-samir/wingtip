@@ -8,7 +8,7 @@
  */
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, test } from "vitest";
-import { TooltipProvider } from "../ui/tooltip";
+import { TooltipProvider } from "../ui/tooltip-provider";
 import { IconTip } from "./IconTip";
 
 afterEach(cleanup);

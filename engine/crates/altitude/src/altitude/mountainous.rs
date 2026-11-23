@@ -15,6 +15,7 @@
 //! where 1,000 would do, never the other way.
 
 use super::track::Point;
+use wingtip_core::geo;
 use wingtip_core::sort::StableSort;
 
 const fn dms(deg: f64, minutes: f64) -> f64 {
@@ -154,36 +155,14 @@ const AREAS: &[(&[Point], &[&[Point]])] = &[
 /// Whether a point is inside a ring or on its edge, on the plane of
 /// longitude and latitude, as shapely takes the polygons.
 fn inside(ring: &[Point], p: Point) -> bool {
-    let (x, y) = (p.1, p.0);
-    let mut odd = false;
-    for i in 0..ring.len() {
-        let (a, b) = (ring[i], ring[(i + 1) % ring.len()]);
-        let (ax, ay, bx, by) = (a.1, a.0, b.1, b.0);
-        // On the edge counts as in (shapely's intersects).
-        let cross = (bx - ax) * (y - ay) - (by - ay) * (x - ax);
-        if cross.abs() < 1e-12 && x >= ax.min(bx) && x <= ax.max(bx) && y >= ay.min(by) && y <= ay.max(by) {
-            return true;
-        }
-        if (ay > y) != (by > y) && x < (bx - ax) * (y - ay) / (by - ay) + ax {
-            odd = !odd;
-        }
-    }
-    odd
+    // On the edge counts as in (shapely's intersects).
+    geo::on_ring_lat_lon(ring, p.0, p.1) || geo::ring_holds_lat_lon(ring, p.0, p.1)
 }
 
 /// Strictly inside a ring, its edge not counted: an exception's edge is
 /// still the area's.
 fn within(ring: &[Point], p: Point) -> bool {
-    inside(ring, p) && !on_edge(ring, p)
-}
-
-fn on_edge(ring: &[Point], p: Point) -> bool {
-    let (x, y) = (p.1, p.0);
-    (0..ring.len()).any(|i| {
-        let (a, b) = (ring[i], ring[(i + 1) % ring.len()]);
-        let cross = (b.1 - a.1) * (y - a.0) - (b.0 - a.0) * (x - a.1);
-        cross.abs() < 1e-12 && x >= a.1.min(b.1) && x <= a.1.max(b.1) && y >= a.0.min(b.0) && y <= a.0.max(b.0)
-    })
+    !geo::on_ring_lat_lon(ring, p.0, p.1) && geo::ring_holds_lat_lon(ring, p.0, p.1)
 }
 
 /// Whether a point is in a designated mountainous area.

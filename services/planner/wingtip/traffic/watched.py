@@ -92,7 +92,9 @@ def follow_round() -> int:
     round ends where adsb.lol is turning the planner away: the next
     round tries again. How many were heard."""
     heard = 0
-    for hex_id in sorted(followed()):
+    # The card opened latest first, so a round adsb.lol cuts short has
+    # asked for the airplanes pilots are looking at (security round 4, M5).
+    for hex_id in followed():
         if _heard_elsewhere_now(hex_id) is not None or not _follow_due(hex_id):
             continue
         planes = _recent(hex_id)

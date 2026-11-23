@@ -18,6 +18,7 @@ from wingtip import (
     geocode,
     nearby,
     places,
+    publication_prune,
     publications,
     registry,
     remarks,
@@ -135,6 +136,7 @@ def at_changeover() -> None:
     check_faa_editions()
     check_procedures()
     publications.preload()
+    publication_prune.prune()
     chart_serving.forget_serving()
 
 
@@ -266,6 +268,7 @@ def warm_reference_data(on: BaseScheduler) -> None:
     # (wingtip.publications), once per edition: a card only links them.
     try:
         publications.preload()
+        publication_prune.prune()
     except Exception:  # noqa: BLE001
         log.exception("publications warm-up failed")
     # And the towns Nearest can be asked from (wingtip.geocode), a megabyte

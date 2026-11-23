@@ -19,8 +19,6 @@ town are given here, not the street.
 from __future__ import annotations
 
 import contextlib
-import csv
-import io
 import json
 import logging
 import re
@@ -33,6 +31,7 @@ from pathlib import Path
 from . import outside, registry_history
 from . import registry_codes as codes
 from .atomic import atomic_path
+from .faa_data import zip_csv
 
 log = logging.getLogger(__name__)
 
@@ -61,16 +60,6 @@ _LOCK = threading.Lock()
 _BUILDING = threading.Event()
 
 
-def _rows(archive: zipfile.ZipFile, name: str):
-    """A file of the archive as rows of stripped fields by its header's
-    names (the FAA's files carry a byte-order mark and a trailing comma)."""
-    with archive.open(name) as raw:
-        reader = csv.reader(io.TextIOWrapper(raw, encoding="utf-8-sig", errors="replace"))
-        header = [h.strip() for h in next(reader)]
-        for row in reader:
-            yield dict(zip(header, (cell.strip() for cell in row)))
-
-
 _MODELS = """CREATE TABLE models (code TEXT PRIMARY KEY, manufacturer TEXT, model TEXT, aircraft_type TEXT,
     engine_type TEXT, category TEXT, builder_certification TEXT, engines INTEGER, seats INTEGER, weight_class TEXT,
     cruise_mph INTEGER, tc_data_sheet TEXT, tc_holder TEXT)"""
@@ -97,7 +86,7 @@ def _reference(archive: zipfile.ZipFile, db: sqlite3.Connection) -> tuple[dict, 
     db.execute(_ENGINES)
     models, engines = {}, {}
     rows = []
-    for r in _rows(archive, "ACFTREF.txt"):
+    for r in zip_csv(archive, "ACFTREF.txt"):
         models[r["CODE"]] = (r["MFR"], r["MODEL"], r["NO-ENG"], r["NO-SEATS"])
         rows.append(
             (
@@ -119,7 +108,7 @@ def _reference(archive: zipfile.ZipFile, db: sqlite3.Connection) -> tuple[dict, 
         )
     db.executemany(f"INSERT OR REPLACE INTO models VALUES ({','.join('?' * 13)})", rows)
     rows = []
-    for r in _rows(archive, "ENGINE.txt"):
+    for r in zip_csv(archive, "ENGINE.txt"):
         engines[r["CODE"]] = (r["MFR"], r["MODEL"], r["HORSEPOWER"], r["THRUST"])
         rows.append(
             (
@@ -193,7 +182,7 @@ def build(zip_path: Path, db_path: Path) -> int:
             db.execute(_AIRCRAFT)
             count = 0
             batch = []
-            for r in _rows(archive, "MASTER.txt"):
+            for r in zip_csv(archive, "MASTER.txt"):
                 if r.get("N-NUMBER"):
                     batch.append(_airplane(r, models, engines))
                 if len(batch) >= 5000:
@@ -204,7 +193,7 @@ def build(zip_path: Path, db_path: Path) -> int:
             count += len(batch)
             db.execute("CREATE INDEX aircraft_mode_s ON aircraft (mode_s_hex)")
             # DEREG, DOCINDEX and RESERVED, where the archive has them.
-            registry_history.build(archive, db, _rows)
+            registry_history.build(archive, db, zip_csv)
             db.execute(f"PRAGMA user_version = {SCHEMA}")
             db.commit()
         finally:

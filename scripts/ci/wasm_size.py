@@ -51,8 +51,16 @@ WASM = ROOT / "apps/web/src/lib/engine/wingtip-engine.wasm"
 # 575,000 when integration's module reached 1,248,403 bytes. 2026-11-14: the
 # module is 1,284,722 bytes and 559,841 gzipped on claude/integration (1,270,327
 # and 553,988 on main at b81400c15), 97% of the gzip budget.
-RAW_BUDGET = 1_320_000
-GZIP_BUDGET = 575_000
+# 2026-11-23 (round 4's make-room task): 1,205,318 bytes and 542,284
+# gzipped, from 1,266,898 and 570,167, by taking out the three rules only
+# the web's tests asked (proficiency_plan, departure_window,
+# least_crosswind: the engine's own tests hold them to the same fixtures)
+# and by wasm-opt's --converge and --low-memory-unused
+# (build-engine-wasm.sh). Both budgets lowered to just over what keeps the
+# module under WARN_AT, so the room freed (about 28 KB gzipped) is for the
+# next rules and the warning says when it is nearly gone.
+RAW_BUDGET = 1_270_000
+GZIP_BUDGET = 571_000
 # A warning, not a failure, from here: the budget is not raised, so the next
 # rule that grows the module should be looked at before it is the one that fails.
 WARN_AT = 0.95

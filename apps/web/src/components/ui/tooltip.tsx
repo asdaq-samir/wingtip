@@ -2,14 +2,6 @@ import { cn } from "cn";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { useEdgeRoom } from "../../hooks/use-viewport";
 
-// Base UI's own delay (600 ms), not shadcn's 0, for the first label: a
-// mouse crossing a row of buttons no longer pops each in turn over the
-// next. Once one is up, the provider opens its neighbours at once
-// (data-instant), as a Mac's toolbar does (main.tsx mounts it).
-function TooltipProvider(props: TooltipPrimitive.Provider.Props) {
-  return <TooltipPrimitive.Provider data-slot="tooltip-provider" {...props} />;
-}
-
 function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
   return <TooltipPrimitive.Root data-slot="tooltip" {...props} />;
 }
@@ -56,4 +48,4 @@ function TooltipContent({
   );
 }
 
-export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger };
+export { Tooltip, TooltipContent, TooltipTrigger };

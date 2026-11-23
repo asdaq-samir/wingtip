@@ -21,6 +21,12 @@
 # draw. The features it may use are the ones rustc 1.99 already emits for
 # wasm32-unknown-unknown (its defaults since 1.82 and 1.87), so the
 # optimised module asks no more of a browser than the unoptimised one.
+# --converge runs -Oz until it shrinks no more, and --low-memory-unused
+# lets it fold constant offsets into loads and stores: rustc lays the
+# module out stack first, the stack growing down from 1 MiB to 0 and the
+# data from 1 MiB on, so the low 1 KiB is touched only by a stack within
+# a kilobyte of overflowing. Together 3.5 KB off the gzipped module
+# (2026-11-23, twiggy and gzip -9 on the build of the day).
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")/../.." && pwd)
@@ -69,7 +75,7 @@ docker run --rm --platform linux/amd64 -m 3g \
     cargo build --locked -p wingtip-wasm --target wasm32-unknown-unknown --profile wasm 2>&1 | tail -3
     echo "$BINARYEN_SHA256  /tools/$TARBALL" | sha256sum -c - >/dev/null
     mkdir /tmp/binaryen && tar xzf "/tools/$TARBALL" -C /tmp/binaryen --strip-components=1
-    /tmp/binaryen/bin/wasm-opt -Oz --strip-debug --strip-producers \
+    /tmp/binaryen/bin/wasm-opt -Oz --converge --low-memory-unused --strip-debug --strip-producers \
       --enable-mutable-globals --enable-sign-ext --enable-reference-types --enable-multivalue \
       --enable-bulk-memory --enable-nontrapping-float-to-int \
       /tmp/target/wasm32-unknown-unknown/wasm/wingtip_wasm.wasm -o /out/wingtip-engine.wasm

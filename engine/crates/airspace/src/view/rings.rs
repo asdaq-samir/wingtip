@@ -122,7 +122,10 @@ pub(crate) fn reaches(polygons: &[Polygon], view: Bbox) -> bool {
         .any(|&c| polygons.iter().any(|p| geo::ring_holds(&p.shell, c.0, c.1) && !p.holes.iter().any(|h| geo::ring_holds(h, c.0, c.1))))
 }
 
-/// A point's distance from a segment, as GEOS's Distance::pointToSegment.
+/// A point's distance from a segment, as GEOS's Distance::pointToSegment,
+/// its rounding included: not core's flat::to_segment, since the
+/// simplification below picks the furthest point as GEOS does, and a tie
+/// that rounds the other way keeps a different point than shapely.
 pub(super) fn to_segment(p: Pt, a: Pt, b: Pt) -> f64 {
     if a == b {
         return ((p.0 - a.0).powi(2) + (p.1 - a.1).powi(2)).sqrt();

@@ -8532,6 +8532,25 @@ data class TrafficFound (
 )
 
 @Serializable
+data class UsageDays (
+    val days: List<UsageDay>
+)
+
+/**
+ * One route's calls on one finished UTC day (app.usage_days): its
+ * template and method, the status answered, and how many. Nothing of a
+ * pilot, a device or an address.
+ */
+@Serializable
+data class UsageDay (
+    val calls: Int,
+    val day: String,
+    val method: String,
+    val route: String,
+    val status: Int
+)
+
+@Serializable
 data class WaypointsInView (
     val waypoints: List<WaypointPin>
 )

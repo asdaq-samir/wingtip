@@ -16,6 +16,7 @@
 //! persons (a fair, a race), which is the pilot's to see.
 
 use crate::geo;
+use wingtip_core::flat::to_segment;
 use wingtip_core::units::FT_PER_NM;
 
 /// 14 CFR 91.119(b): "within a horizontal radius of 2,000 feet of the
@@ -54,13 +55,8 @@ pub fn edge_ft(area: &Area, lat: f64, lon: f64) -> f64 {
             if (y1.min(y2) - lat) > reach || (lat - y1.max(y2)) > reach {
                 continue;
             }
-            let (ax, ay) = ((x1 - lon) * scale, y1 - lat);
-            let (bx, by) = ((x2 - lon) * scale, y2 - lat);
-            let (dx, dy) = (bx - ax, by - ay);
-            let len2 = dx * dx + dy * dy;
-            let t = if len2 > 0.0 { (-(ax * dx + ay * dy) / len2).clamp(0.0, 1.0) } else { 0.0 };
-            let (px, py) = (ax + t * dx, ay + t * dy);
-            least = least.min((px * px + py * py).sqrt());
+            let (a, b) = (((x1 - lon) * scale, y1 - lat), ((x2 - lon) * scale, y2 - lat));
+            least = least.min(to_segment((0.0, 0.0), a, b));
         }
     }
     least * FT_PER_DEG_LAT

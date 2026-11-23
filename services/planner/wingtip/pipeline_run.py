@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
-from wingtip.atomic import atomic_path
+from wingtip.atomic import atomic_path, held
 
 from .pipeline_shared import InsufficientLabelsError
 from .pipeline_labels import training_readiness
@@ -125,7 +125,6 @@ def run(status_path: Path | None = None, branches: list | None = None) -> dict:
     (model_registry.RUN_STATUS_PATH), which the planner reads for the
     console's Training group.
     """
-    import fcntl
     import traceback
 
     from wingtip import model_registry
@@ -143,11 +142,9 @@ def run(status_path: Path | None = None, branches: list | None = None) -> dict:
     }
     by_name = {stage["name"]: stage for stage in status["stages"]}
     status_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(status_path.with_name(f".{status_path.name}.lock"), "w") as lock:
-        try:
-            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError as err:
-            raise RunGoing("A training run is going already.") from err
+    with held(status_path.with_name(f".{status_path.name}.lock"), wait=False) as got:
+        if not got:
+            raise RunGoing("A training run is going already.")
         for branch in branches:
             skipping = None
             for name, stage_fn in branch:
