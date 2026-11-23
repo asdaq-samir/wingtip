@@ -27,13 +27,13 @@ import { pickAirplane } from "./startState";
  * sixteen alike (claude/w2-route's build, the mobile project). The wave
  * after read 3,622,605 (the re-audit of 2026-11-22), the route list's drag
  * and drop with it; that waits for the list's first touch now
- * (procedures/RouteGrid), and the open reads 3,441,753 in 155 (claude/
+ * (procedures/RouteGrid), and the open reads 3,433,286 in 163 (claude/
  * reaudit-fix's build, the mobile project). The figure
  * is written to the test's annotations each run; a change that brings it
  * down lowers the budget to the new figure, never the other way (the
  * measure-speed skill; CLAUDE.md, "The ratchet only goes down").
  */
-const ROUTE_LOAD_BUDGET = 3_441_753;
+const ROUTE_LOAD_BUDGET = 3_433_286;
 
 test.use({ serviceWorkers: "block" });
 
