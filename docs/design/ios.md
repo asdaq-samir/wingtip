@@ -1805,8 +1805,8 @@ are written here as they arrive. Turned off (asked first), the copies
 in iCloud are deleted and the ones here stay. Markup, bookmarks and
 last pages stay on each device.
 
-**Keyboard** (`WingtipCommands`, `ReaderActions`): Flight > Search (⌘F)
-finds in the document while the reader is in front; Edit's Find in
+**Keyboard** (`WingtipCommands`, `ReaderActions`): ⌘F (the system's
+Edit > Find) finds in the document while the reader is in front; Edit's Find in
 Document, Back (⌘[) and Forward (⌘]); Escape closes the reader.
 
 **Avoid:** a hand-built page renderer or find; a document in a sheet over
@@ -2096,9 +2096,12 @@ window as Stage Manager puts it there, nothing of the app's own.
 
 **Menu bar and keyboard** (`WingtipCommands`, iPadOS 26's menu bar and
 the ⌘-held list): File > Open Flight or Track… (⌘O); View > Search (⌘1),
-FPL (⌘2), the system's sidebar and inspector items; Flight > Search (⌘F),
-Brief (⌘B), Nav Log (⌘L), Profile (⌥⌘P), Nearest (⇧⌘N), Checklists
+FPL (⌘2), the system's sidebar and inspector items; Edit > Find (⌘F),
+the one search, which Flight > Search opens too; Flight > Brief (⌘B), Nav Log (⌘L), Profile (⌥⌘P), Nearest (⇧⌘N), Checklists
 (⇧⌘K), Scratchpad (⇧⌘J), Saved Flights, Logbook, Your Airplanes, Emergency Assistant (⇧⌘E);
+iPadOS keeps ⌘F for its own Find, and a second ⌘F in a menu of the
+app's is a duplicate the menu bar refuses with that whole menu, so the
+app answers the system's Find (`find(_:)` on its delegate) instead;
 Wingtip Settings… under the app's Settings; with the documents reader in
 front, ⌘F finds in the document and Edit's Back (⌘[) and Forward (⌘])
 go through it (§13a). Escape closes a card

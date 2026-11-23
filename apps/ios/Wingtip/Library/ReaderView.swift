@@ -21,6 +21,8 @@ struct ReaderView: View {
     @State private var contents = false
     @State private var query = ""
     @State private var searching = false
+    /// Whether this reader's window is the one in front (the system's Find).
+    @Environment(\.appearsActive) private var front
 
     init(place: DocPlace, library: DocumentLibrary, inWindow: Bool = false) {
         _model = State(initialValue: ReaderModel(place: place, library: library))
@@ -51,6 +53,8 @@ struct ReaderView: View {
         // The menu bar's Find, Back and Forward for this reader
         // (WingtipCommands), the keys a hardware keyboard sends.
         .focusedSceneValue(\.readerActions, ReaderActions(find: { searching = true }, back: { model.pdf.back() }, forward: { model.pdf.forward() }))
+        // ⌘F, the system's Find, in this reader's window or over the map.
+        .onReceive(NotificationCenter.default.publisher(for: .systemFind)) { _ in if front { searching = true } }
         .onChange(of: scheme) { _, now in if model.places.inverted == nil { model.pdf.invert(now == .dark) } }
         .accessibilityIdentifier("reader")
     }

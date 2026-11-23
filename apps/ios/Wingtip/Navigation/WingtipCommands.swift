@@ -25,8 +25,9 @@ extension FocusedValues {
 /// own: File's Open Flight or Track, View's two plan pages ("consider
 /// adding each tab as a menu item in the View menu", with a key each), the
 /// system's sidebar and inspector items, and a Flight menu of the screens
-/// a pilot reaches for (⌘F, ⌘B and ⌘L as before). Each also has its way
-/// on the screen, as the HIG asks of a menu bar that is mostly hidden.
+/// a pilot reaches for (⌘B and ⌘L as before; ⌘F is Edit's Find). Each
+/// also has its way on the screen, as the HIG asks of a menu bar that is
+/// mostly hidden.
 /// The owner, 2026-11-21: "Yes do it all for iPad".
 struct WingtipCommands: Commands {
     @FocusedValue(\.windowActions) private var actions
@@ -51,9 +52,8 @@ struct WingtipCommands: Commands {
             item(Screen.fpl.title, key: "2") { $0.page(.fpl) }
             Divider()
         }
-        // ⌘F finds in the document while the reader is in front, else
-        // it is the one search; ⌘[ and ⌘] go back and forward in it, as
-        // Safari and Preview do (ReaderActions).
+        // ⌘[ and ⌘] go back and forward in the reader, as Safari and
+        // Preview do (ReaderActions).
         CommandGroup(after: .textEditing) {
             Button("Find in Document") { reader?.find() }
                 .disabled(reader == nil)
@@ -65,8 +65,11 @@ struct WingtipCommands: Commands {
                 .disabled(reader == nil)
         }
         CommandMenu("Flight") {
+            // ⌘F is the system's own Edit > Find, which comes to the same
+            // (OfflineAppDelegate.find): a second ⌘F here was a duplicate
+            // the menu bar's builder refused, and with it this whole menu,
+            // its every key dead (iPadOS 27.2, IPadLayoutTests).
             Button("Search") { if let reader { reader.find() } else { actions?.search() } }
-                .keyboardShortcut("f", modifiers: .command)
                 .disabled(actions == nil && reader == nil)
             Divider()
             screen(.brief, key: "b")
@@ -99,5 +102,20 @@ struct WingtipCommands: Commands {
         } else {
             button
         }
+    }
+}
+
+extension Notification.Name {
+    /// The system's Find (⌘F, Edit > Find) asked with nothing on the
+    /// screen finding by itself (OfflineAppDelegate.find).
+    static let systemFind = Notification.Name("app.wingtipmaps.systemFind")
+}
+
+/// The system's Find, the end of the responder chain's: iPadOS's menu bar
+/// keeps ⌘F for Edit > Find, so the app takes Find rather than a ⌘F of its
+/// own. Each window hears it and the one in front acts (WindowHost).
+extension OfflineAppDelegate {
+    override func find(_ sender: Any?) {
+        NotificationCenter.default.post(name: .systemFind, object: nil)
     }
 }

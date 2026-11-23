@@ -127,11 +127,12 @@ final class OfflineDownloads: NSObject, URLSessionDownloadDelegate, @unchecked S
     }
 }
 
-/// The app's delegate for the one thing SwiftUI's App has no hook for:
-/// iOS waking the app to hand over the downloads that finished while it
-/// was in the background.
+/// The app's delegate for what SwiftUI's App has no hook for: iOS waking
+/// the app to hand over the downloads that finished while it was in the
+/// background, and, as the responder chain's last link, the menu bar's
+/// Find (WingtipCommands).
 @MainActor
-final class OfflineAppDelegate: NSObject, UIApplicationDelegate {
+final class OfflineAppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String,
                      completionHandler: @escaping () -> Void) {
         guard identifier == OfflineDownloads.identifier else { return completionHandler() }
