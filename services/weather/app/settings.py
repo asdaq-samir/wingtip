@@ -71,6 +71,11 @@ class Settings(BaseSettings):
     #: the last hour and now (two HRRR files, about 21 MB an hour); 12
     #: the whole timeline (eight, about 84 MB an hour). The GFS beyond.
     flow_hrrr_ahead_h: int = 0
+    #: A recording to replay instead of fetching (app.replay): its products
+    #: written once at the start with their times moved to now, and never
+    #: fetched. The browser suite's stack sets it (infra/docker-compose.ci.yml),
+    #: so no spec depends on the day's weather; empty fetches everything.
+    replay: str = ""
 
 
 class SettingsError(ValueError):
