@@ -671,20 +671,30 @@ off by default (the owner, 2026-11-13).
    changes over miles and years, its track written in whole degrees), "—" with no position, no course
    or below flying speed (the engine's `underway`), a column always. The
    fuel stays on the timeline's tank gauges, the nav log and the Brief,
-   no longer on the strip, so the strip no longer opens its breakdown. At the sheet's very foot from
-   half up, the Apple way, the strip right under the plan's content and
-   held just over the bar only once the content reaches it, with no empty
-   band under a short route (the owner, 2026-11-23); where the route runs
-   on under the held strip, it fades into the strip's ground over its last
-   24 points, as a list fades under Apple Maps' floating bar, so the cut
-   row reads as going on under it (`FplActions`' `FADE_OVER`, a gradient on
-   the held strip, none on a short route or at the pill), and all the way
-   up the route scrolls fully clear above it, the strip in the page's flow
-   at its end; and sliding under
-   it to the pill as the sheet goes down (the owner, 2026-11-22), the strip one
-   thin line at half and full (each value a detail's 15 after its name in a
-   note's 13, the names dropping first where the line is short; "make the
-   figures strip very thin when fpl is half or full") and full size as the pill, a floating glass bar, the one floating bar the airport card's
+   no longer on the strip, so the strip no longer opens its breakdown. The
+   strip and FPL's tab bar are one fixed bar over the screen's foot, outside
+   the sliding sheet (`sheet/FootBar`, a sibling of the Drawer's popup on a
+   phone; the side panel's foot beside it): the sheet slides behind it and
+   nothing in it follows the sheet, iOS 26's tab bar with its bottom
+   accessory (the sheet-motion audit of 2026-11-23, option B, which the
+   owner took, after the strip held at the foot from inside the sliding
+   sheet led it, jumped into the route and cut the tabs out mid-slide).
+   Always in sight at the bottom (the owner's rule); at the pill the figures
+   alone at the pill's size in the pill's room under the grabber, the tabs
+   folded away (about 50 points of map), and at half and all the way up the
+   strip one thin line on the tab bar, one stack (each value a detail's 15
+   after its name in a note's 13, the names dropping first where the line
+   is short; the owner, 2026-11-22, "make the figures strip very thin when
+   fpl is half or full"). It changes between the two only once the sheet
+   has come to rest (`sheet/sheetMotion`, from Base UI's own data-swiping
+   and the popup's transform transition), with a 200 ms fade, never with
+   the finger. It is opaque on the sheet's ground with no fade or scrim
+   over the route above it (the owner, 2026-11-23: "the strip fades the
+   route buttons above it"); the page ends with room as tall as the bar
+   (`--foot-bar`, set as the bar is resized), so the route's last row
+   scrolls clear above it all the way up; the map's room is never less than
+   the bar. At the pill it takes no touch, so a drag on it is the sheet's and
+   a tap raises the sheet to half. The tab bar is a floating glass bar, the one floating bar the airport card's
    tabs are drawn in, the same height and width (`FloatingBar`, 2026-11-18),
    round Base UI's stock Toolbar (one tab stop, the arrows between them),
    of four buttons: Brief and Nav Log, each opening its card over FPL;
@@ -729,10 +739,8 @@ off by default (the owner, 2026-11-13).
    of sight, and comes into sight by CSS the moment a finger takes the
    sheet, nothing built or swapped while it moves (on a phone: the
    desktop's side panel has no detents, nothing is laid out out of sight
-   there, and its cards keep one height; the owner, 2026-11-19); where the pill's face
-   is not the sheet's top (FPL's figures at the foot), it fades out as
-   the risen face (the actions' bar) fades in, in the sheet's settle
-   time. A light tick as it settles where the browser has one. In flight the
+   there, and its cards keep one height; the owner, 2026-11-19); FPL's
+   figures stay in the foot bar beside the sheet meanwhile. A light tick as it settles where the browser has one. In flight the
    four are a row of tiles at the top of the flying drawer and the foot
    the figures, large, with Done flying. The Routes' chips are behind a
    button at the start of the first row, out above the stops while it is
@@ -813,8 +821,8 @@ off by default (the owner, 2026-11-13).
    the others' chips left out where
    they would overlap (the owner's pick of the routes canvas, board 5,
    2026-11-16); then the route in order, and
-   the actions' bar pinned at the foot, the figures at the pill, both
-   FPL's alone; the Brief, the Nav Log, the Profile and the Stops are cards over it. With
+   the figures and the actions' bar in the one foot bar, the figures alone
+   at the pill, both FPL's alone; the Brief, the Nav Log, the Profile and the Stops are cards over it. With
    no route, the route is open to edit, "Route" over the departure's and
    the destination's cards to fill and the route's field, and the bar keeps
    the airplane and the menu, with a Close that goes back to the card or Search it came from

@@ -1054,34 +1054,49 @@ the ••• the route's
 `ShareMenu` in its `look="bar"`, its menu's trigger rendering a
 `Toolbar.Button` (`"tile"` in flight's `FplActions`); the airport and
 airplane cards' bar stays the stock Tabs (`CardTabBar`), being tabs, not
-buttons; out of sight at the pill under the figures
-(sheet/insets' `RISEN_OVER`, in sight only while a finger has the
-sheet), the same bar at every size, its wrapper's classes alone changed
-(`FlightFoot`): a wrapper there at the pill alone built the bar afresh at
-each trip to the pill (the motion review of 2026-11-22). The strip's size
-between its thin line and the pill follows the sheet a frame at a time
-(`--pin-p`), and nothing in it eases its own size: the figures that are
-stock Buttons (Dist, ETE) eased their type 150 ms behind the sheet and
-were still shrinking after it stopped, until the stock Button named
-what it eases (its colours and its press, never its size; the design
-review of 2026-11-23; `e2e/fpl-strip-foot.spec.ts`). The figures under the route are FPL's pill too, one copy at
-every size: components/sheet/pinAtFoot's `usePinAtFoot` holds them on
-the foot's edge at the pill, and as the sheet goes down they stop there
-while the route slides on under them, the other way waiting there until
-their place comes up to them, by their transform alone, a frame at a
-time while a finger has the sheet or it settles (FplRoute's `PINNED`:
-in sight at the pill, the foot's sides, the sheet's solid colour under
-them); nothing is handed over at the pill, where two copies flickered. It measures the foot's edge only while the foot is in sight: with a card up the foot is put away, and a measure then held the figures as the pill once the card closed (the owner, 2026-11-17: "When I tap the fuel and close it, the strip becomes bigger hiding the departure"); it measures again as the foot comes back. The actions' bar is never an edge the figures stop at (the owner, 2026-11-18: "the main issue is tab bar is not allowing the figures to go past it"): off the pill they sit in their place under the route, and where that is below the foot their lowest place is the foot's top, over the bar, never behind it (`--pin-lift`, the foot's height, let go over the last stretch of a slide to the pill, `--pin-pill`, so they come down onto the foot's edge there; the owner's iPhone at 19.65 px, 2026-11-21: a long route at full and at half showed the figures' names past the capsule's ends and no values; `e2e/fpl-full-large-text.spec.ts`), and the bar makes way as the sheet goes down (`MAKES_WAY` on `FplTabBar`, marked `data-makes-way`): moved down off the sheet's foot, in CSS on Base UI's own offset and swipe, by as far as the sheet has slid past where the figures meet its top (`--pin-bar-room`, measured by `usePinAtFoot`) and never by more than the finger has pulled, so figures already waiting under it at rest (a short panel, an iPhone in landscape at half) come out from under it as the pull begins, and it is back in its place as the sheet settles at half again. The bar is see-through as the airport card's is, with no fade behind it (the owner, 2026-11-18): the page ends at the foot's top, so nothing scrolls under it, and the iOS 26 scroll-edge fade the HIG review put in the foot lay over the figures and dimmed them at half and full (the owner, 2026-11-22: "the figures are fainted at the bottom"). This is the order the owner asked back for on 2026-11-22 ("I want it the Apple way at the bottom and figures should pin at the bottom of the plan and the slide under the tabs to pin to the pill as the card becomes a pill"), undoing a3d429783, which had put the figures on the foot's edge with the bar lifted onto them. A Direct to's line over the figures is out of sight only at the pill (`data-pill`), not wherever they are held. Held over the bar's top instead (61666c15e), the figures covered a short panel's route, the departure's row alone in sight; held on the foot's edge under a bar that stayed, a slow pull down from half hid them under the bar and the fade it had then, which the foot (z-30, over the head band so the route never covers the bar) draws over them. A route too tall for its band to stick (`bandFits`) scrolls under FPL's head row, which sticks at the sheet's top (SheetParts' bar row), as iOS's large sheet keeps its header: scrolled to the route's end the Search, title, pills and ✕ went off the top (the owner, 2026-11-21). It measures again once a frame while the page scrolls and writes only what changed (the speed audit of 2026-11-21, finding 9), since the figures' place moves with it; their box is not sticky (perf-fix's `PIN_STICKS`, undone 2026-11-22), which held them at the page's foot from the first move, over the route's last rows, so they did not go down with the sheet until its top reached them (the owner: "Figures are overlapping the grouped box at the bottom and doesn't slide down with the plan, waits until it touches the grabber on top"): measured at the top alone, a long route scrolled at full carried them up through its middle, over the approach's fixes with rows below them (the owner's iPhone, 2026-11-21; `e2e/fpl-strip-foot.spec.ts`). Adding a stop leaves the sheet at the size the pilot left it (the owner, 2026-11-18: "When I add a stop it makes it full card"): at half the stops fold into one row and the tab bar is short enough that the figures stay above it, so nothing raises the sheet to show them. Not on a load or a link, nor in flight or a dry run (no pin then), nor once the pilot has moved the sheet since: a drag, or the sheet lowered by the grabber or a key, forgets the edit. Raised, then lowered to half by hand, the figures stay under the bar until the next edit. The stops never grow the route at half by a tap: below full, two stops or more are one row of the timeline's card between the ends (`StopsRow`, `listedPoints`), as tall as a point's, its mark the expand glyph on the tint's wash, "2 Stops" in the tint and their idents after it in grey, cut short where they do not fit, named "2 stops: KMSP, KEAU. Show all" to a screen reader; a tap takes the sheet all the way up, where every stop is its own row and there is no stops' row, and puts the focus on the first stop's line (the owner, 2026-11-18: "let's just show the stops as another row in between. And when the card is full, no need to show that because it expands to show all the stops"). One stop is its own row at any size, as a "1 Stop" row would take the same room; a stop whose line is open or that cannot be flown to (decision 0043), a point moved in among them (which takes the sheet up), the route read in flight or a dry run, a desktop's side panel (the window's height at half as at full), and the specs' fields open at first list them all. The pill on the hairline that unfolded them in place ("2 stops ⌄") is gone.
+buttons. The strip and the bar are one fixed bar over the screen's foot,
+outside the sliding sheet (`components/sheet/FootBar`, drawn by
+`SheetDrawer` beside the Drawer's popup in its viewport, as iOS 26 puts a
+tab bar's bottom accessory over its tab bar; beside the side panel, on a
+top sheet and in flight the foot is the sheet's own, `SheetFoot`), so the
+sheet slides behind it and nothing in it follows the sheet (the
+sheet-motion audit of 2026-11-23, option B, which the owner took). Before,
+the figures were held at the foot from inside the sliding popup
+(`pinAtFoot`, `pinFollow`, `MAKES_WAY`, `RISEN_OVER`): a CSS formula
+against the popup's slide, script measures, keyframes at each settle and
+React's state each kept a copy of where the strip was, and every
+transition showed a frame where two disagreed (the strip leading the
+sheet over the map, jumping into the route, the tabs cut out mid-slide;
+the owner's recording of 14:20 read frame by frame); 37 patches in 8 days
+had not converged. What the bar shows is the size the sheet rests at
+(`sheet/sheetMotion`'s `useRestSize`, from Base UI's own data-swiping and
+the popup's transform transitionrun/end/cancel, one store, no timer): at
+the pill the figures alone in the pill's room under the grabber
+(`FOOT_BAR_PILL`), the tabs folded away but kept laid out, so the bar is
+never built afresh (the motion review of 2026-11-22); at half and all the
+way up the thin strip on the tabs (`FlightFoot`'s `GroundFoot`;
+`--strip-full`, 0 or 1, lib/text's `PIN_FIGURE`), with a 200 ms fade as it
+changes. It is opaque, with no fade or scrim over the route above it (the
+owner, 2026-11-23: "the strip fades the route buttons above it", the held
+strip's `FADE_OVER` gone); FPL's page ends with room as tall as the bar
+(`--foot-bar`, set on the viewport by a ResizeObserver, never a frame at a
+time; SheetScroller's `data-foot-room`), so its last row scrolls clear
+above it; the map's room is never less than the bar (MapPanel). At the
+pill it takes no touch (pointer-events none), so a drag on it is the
+sheet's under it and a tap is the pill's row's, which raises the sheet to
+half; from half up it takes its own taps. Under a card and on Search's
+page it is out of sight and inert. `e2e/fpl-strip-foot.spec.ts` and
+`sheet-motion.spec.ts` hold it still through a pull and a scroll and its
+size changing only at rest. Adding a stop leaves the sheet at the size the pilot left it (the owner, 2026-11-18: "When I add a stop it makes it full card"): at half the stops fold into one row and the tab bar is short enough that the figures stay above it, so nothing raises the sheet to show them. Not on a load or a link, nor in flight or a dry run (no pin then), nor once the pilot has moved the sheet since: a drag, or the sheet lowered by the grabber or a key, forgets the edit. Raised, then lowered to half by hand, the figures stay under the bar until the next edit. The stops never grow the route at half by a tap: below full, two stops or more are one row of the timeline's card between the ends (`StopsRow`, `listedPoints`), as tall as a point's, its mark the expand glyph on the tint's wash, "2 Stops" in the tint and their idents after it in grey, cut short where they do not fit, named "2 stops: KMSP, KEAU. Show all" to a screen reader; a tap takes the sheet all the way up, where every stop is its own row and there is no stops' row, and puts the focus on the first stop's line (the owner, 2026-11-18: "let's just show the stops as another row in between. And when the card is full, no need to show that because it expands to show all the stops"). One stop is its own row at any size, as a "1 Stop" row would take the same room; a stop whose line is open or that cannot be flown to (decision 0043), a point moved in among them (which takes the sheet up), the route read in flight or a dry run, a desktop's side panel (the window's height at half as at full), and the specs' fields open at first list them all. The pill on the hairline that unfolded them in place ("2 stops ⌄") is gone.
 FPL's bar and route are laid out at the pill with `RISEN_FACE`
 (SheetParts' `rises`), in sight from the finger's first move by
 visibility alone, as the cards' bodies come into sight (`PILL_BODY`,
 nothing in it eased at the pill), on a phone only: the desktop's side
 panel has no detents and no finger takes it, so there they are not laid
-out at the pill, the figures alone its pill (SheetHead's `DESK_PILL`,
-FplRoute's `data-pill-keeps`), and the panel is as tall as what is in
+out at the pill, the foot's figures alone its pill, and the panel is as tall as what is in
 sight (503 px, mostly empty, before; the owner, 2026-11-19: desktop cards
-keep one height); a tap on the held figures raises the
-sheet to half as a tap on the foot does; `feel("detent")`
+keep one height); a tap on the pill's figures raises the
+sheet to half; `feel("detent")`
 as the sheet settles (MapPanel); in flight the tiles are `FplActions`
 at the top of the flying drawer. Under the folded route, `FplRoute`: the
 figures at their own size, the suggested routes' chips behind a button at the start of the first row, before the airplane's bar (now as wide as its pills), out above the stops while it is on (RoutesToggle; the owner, 2026-11-17: "Can suggested routes be a button on top right? Which shows route pills just above the stops", then "make the n-number and altitude container pill smaller and add the routes button on the top left"), the pills the stock ToggleGroup (single), and the ways on the map drawn only then (PlanMap, `routesOut`). Whether they are out is the plan's view model's (`useRoutesShown`, in usePlanRouteList), keyed by the route's two ends: another plan, a cleared route or its ways gone put them away, a pick among them does not; the button is not drawn while the route's field is open (`routesOffered`). The first row (FplBar) is a grid of three columns, `minmax(2.25rem,1fr) auto minmax(2.25rem,1fr)`: the routes' button's slot at the start (empty without it, so the bar does not jump), the bar centred and free to shrink (`min-w-0`, its airplane's pill giving way first, navlog's pillLook), the page toggle at the end, which a bar that could not shrink had pushed off the sheet on a local flight and at 320 points; open to edit, the figures go under the cards (`RouteEditor`) and
