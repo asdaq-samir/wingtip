@@ -325,6 +325,12 @@ for (const width of [375, 393])
           JSON.stringify({ card: [card.x, card.width], boxes: boxes.map((b) => [Math.round(b.x), Math.round(b.y), Math.round(b.width)]) }),
         );
         for (const b of boxes) expect(Math.abs(mid(b) - mid(boxes[0]!)), "one line").toBeLessThan(4);
+        // The rows' gap-2 between the pill and the toggle, so their 44-point
+        // areas meet and don't cross, and the toggle 8 in from the card's
+        // edge, never clipped by it (the owner's iPhone, 2026-11-22).
+        const [, chip, toggle] = boxes as [unknown, { x: number; width: number }, { x: number; width: number }];
+        expect(toggle.x - (chip.x + chip.width), "8 between the pill and the toggle").toBeGreaterThanOrEqual(7.5);
+        expect(card.x + card.width - (toggle.x + toggle.width), "the toggle 8 in from the card's edge").toBeGreaterThanOrEqual(7.5);
       };
       await oneLine();
       await inSheet(page, pill);
