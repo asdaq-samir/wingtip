@@ -11,7 +11,7 @@ import { GLASS_SHEET, PILL_RADIUS, useSlidingSheet, type MapInsets, type PanelSt
 import { feel } from "../lib/haptics";
 import { cardOpening, coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
-import { CARD, FLOAT_PX, insetsOf, letGo, snapsOf } from "./sheet/insets";
+import { CARD, FLOAT_PX, insetsOf, inspectorRoom, letGo, snapsOf } from "./sheet/insets";
 import { useSheetCover } from "./sheet/useSheetCover";
 import { useDrawn } from "./sheet/useDrawn";
 import { SheetParts, type PartsProps } from "./sheet/SheetParts";
@@ -164,9 +164,13 @@ export default function MapPanel(props: Props) {
   // phone's bottom sheet with no card over it.
   const slides = bottomSheet && !cardsUp && !!sheetNode && most > 0;
   useEffect(() => {
-    useSlidingSheet.setState({ sheet: slides && sheetNode ? { node: sheetNode, least, most } : null, half: bottomSheet ? most : 0 });
-  }, [slides, sheetNode, least, most, bottomSheet]);
-  useEffect(() => () => useSlidingSheet.setState({ sheet: null, half: 0 }), []);
+    useSlidingSheet.setState({
+      sheet: slides && sheetNode ? { node: sheetNode, least, most } : null,
+      half: bottomSheet ? most : 0,
+      side: inspector ? inspectorRoom(CARD) : 0,
+    });
+  }, [slides, sheetNode, least, most, bottomSheet, inspector]);
+  useEffect(() => () => useSlidingSheet.setState({ sheet: null, half: 0, side: 0 }), []);
   // The pages, drawn whenever the workspace has them and is not flying: a
   // card alone over them (`layer` "card") is drawn from inside one, the
   // Brief from FPL's (PlanPage), so put away with them it never opened.

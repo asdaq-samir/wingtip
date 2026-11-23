@@ -112,6 +112,11 @@ for (const [how, start] of [
 }
 
 test("You opened again opens at half, not at the size it was put away at", async ({ page }) => {
+  // From 1180 wide on a touch screen (size.inspector; the desktop project's
+  // 1280 with this file's finger), You opens in the inspector at the map's
+  // right, the column's height with no grabber and no size to put it away
+  // at (decision 0058, the owner's "Yes do it all for iPad", 2026-11-21).
+  test.skip(page.viewportSize()!.width >= 1180, "a wide iPad's inspector holds its card at one size");
   await page.goto("/app/plan");
   await settle(page);
   await showPage(page, 0);

@@ -212,7 +212,9 @@ These hold on every screen below and win over any reference app.
   inspector column at the map's right (`data-slot="map-inspector"`), the
   plan staying in the side panel, as the iPad app's SplitLayout holds a
   card in `.inspector`; the map's room, its buttons, the banners and the
-  chart's credit end at it (`--map-inset-right`). A desktop's cards keep
+  chart's credit end at it (`--map-inset-right`), and a place picked is
+  centred beside the column as its card opens (`roomAsCardOpens`), not in
+  the whole width while the card before it goes. A desktop's cards keep
   covering the side panel. From the regular width up, an approach plate's
   card holds the plate itself (`PlateBeside`, usePlateCard's `beside`)
   with own ship on its plan view by its georeference: the map and the
