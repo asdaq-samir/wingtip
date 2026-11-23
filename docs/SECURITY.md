@@ -144,3 +144,13 @@ each way in is held:
 | A flight handed back with a map of any size | `Flight.fuel_on_board` is bounded as the stops are (`MAX_STOPS + 2` fields, each an identifier). |
 | Another pilot's saved flight replaced or deleted | The gateway's `PUT` and `DELETE /internal/mcp/flights/{id}` find the flight by id and the pilot's own id together (`FlightService.get`), a 404 otherwise, on the internal port with the planner's secret alone. |
 | What a connected app may do is hidden from the pilot | You's Connected Apps says it under each app, in the consent page's own words (`ConnectionDto.can`, `ConnectorSettings.SCOPE_WORDS`). |
+
+## Round 4, the planner (claude/r4-planner, 2026-11-23)
+
+| Found | Now |
+|---|---|
+| M2: anyone could make the planner fetch and keep terrain tiles for the whole world | Past the sectionals' sheets (`chart_coverage`) a tile is the sea's surface, drawn once in memory; nothing is fetched or kept (`terrain_view._charted`). |
+| M3: any FAA PDF name of the right shape was fetched, kept and drawn under the one drawing lock; past editions were kept for good; `_ABSENT` was wiped whole at 1,000 | Only a PDF the edition's own index names is fetched (`publications.listed`, in `_pdf_of`), names matched whole (`fullmatch`); past editions' PDFs, pages, diagrams and plates go at each changeover (`publication_prune`); the misses are an LRU of 1,000. |
+| M5: any hex id fetched once was followed for 30 days, and made-up ids sorted first starved the real ones | Followed only for a signed-in pilot (`X-Pilot-Id`, the gateway's), at most 500, the card opened latest asked first; an id no source has heard a day after is dropped (`FOLLOW_UNHEARD_S`). |
+| L10: the nav log's stream sent the raw exception | Its kind and the request's id; the text stays in the log. |
+| L12: off-grid chart tiles made a folder and a `.none` each | No tile outside `[0, 2^z)`, before anything is kept. |

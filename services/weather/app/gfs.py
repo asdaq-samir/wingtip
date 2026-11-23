@@ -39,6 +39,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 import numpy as np
+from cachetools import TTLCache
 import wingtip_native
 from wingtip import utc, weather_store
 
@@ -242,8 +243,10 @@ class ModelWindsUnavailable(RuntimeError):
     """NOMADS did not give a GFS run."""
 
 
-#: (run, step) -> when NOMADS last said it was not posted yet.
-_NOT_UP: dict = {}
+#: The (run, step)s NOMADS said were not posted yet, each kept
+#: NOT_UP_RETRY_S and then asked again: entries go by themselves, where a
+#: dict gained one for every run and step for as long as the process lived.
+_NOT_UP: TTLCache = TTLCache(maxsize=256, ttl=NOT_UP_RETRY_S)
 
 
 def fetch_period(fcst_hr: str) -> None:
@@ -302,13 +305,13 @@ def _fetch(fcst_hr: str, now: datetime, held: tuple | None = None) -> tuple[dict
         run = latest - timedelta(hours=6 * n)
         step = forecast_step(run, target)
         key = (run, step)
-        if time.time() - _NOT_UP.get(key, 0) < NOT_UP_RETRY_S:
+        if key in _NOT_UP:
             continue
         if held == (utc.iso(run), step):
             return None
         body = _download(run, step)
         if body is None:
-            _NOT_UP[key] = time.time()
+            _NOT_UP[key] = True
             continue
         try:
             return _read_grib(body), run, step

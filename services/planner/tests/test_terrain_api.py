@@ -43,6 +43,15 @@ def test_no_terrain_tile_past_the_built_zoom_or_off_the_grid(monkeypatch):
     assert client.get("/api/terrain-tile/2/4/0.png").status_code == 404
 
 
+def test_a_tile_past_the_charts_is_the_sea_and_never_fetched_or_kept(monkeypatch, tmp_path):
+    # 11/1100/700 is over central Asia, which no sectional covers.
+    monkeypatch.setattr(elevation, "terrain_tile_png", lambda z, x, y: pytest.fail("fetched"))
+    got = client.get("/api/terrain-tile/11/1100/700.png")
+    assert got.status_code == 200
+    assert got.content.startswith(b"\x89PNG")
+    assert not (tmp_path / "cleaned").exists()
+
+
 def test_a_zoom_13_tile_is_the_one_built_ahead(monkeypatch):
     monkeypatch.setattr(terrain_fine, "fine_tile_png", lambda x, y: b"\x89PNG fine %d %d" % (x, y))
     got = client.get("/api/terrain-tile/13/1707/3108.png")

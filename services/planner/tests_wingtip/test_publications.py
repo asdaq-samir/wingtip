@@ -2,6 +2,7 @@
 
 import ctypes
 import io
+import json
 from datetime import date
 
 import pypdfium2
@@ -10,7 +11,7 @@ import pytest
 import requests
 from PIL import Image
 
-from wingtip import diagram_crops, publication_drawing, publication_pages, publications, single_flight
+from wingtip import diagram_crops, publication_drawing, publication_pages, publication_prune, publications, single_flight
 
 #: KDLH's charts in a kept index, by either ident.
 DLH_CHARTS = (
@@ -181,9 +182,17 @@ def _pdf_with(pages: list) -> bytes:
     return out.getvalue()
 
 
+def _listing(monkeypatch, tmp_path, *pdfs):
+    """Cycle 2610's d-TPP index kept in `tmp_path`, naming `pdfs` (MSN's):
+    the PDFs the planner may fetch (publications.listed)."""
+    monkeypatch.setattr(publications, "CACHE_DIR", tmp_path)
+    monkeypatch.setattr(publications, "_HELD", {})
+    (tmp_path / "dtpp-charts-2610.json").write_text(json.dumps({"MSN": [["IAP", "", pdf] for pdf in pdfs]}))
+
+
 def test_a_booklets_pages_are_the_ones_naming_the_field_and_a_charts_its_own(monkeypatch, tmp_path):
     publication_pages._read.cache_clear()
-    monkeypatch.setattr(publications, "CACHE_DIR", tmp_path)
+    _listing(monkeypatch, tmp_path, "EC3TO.PDF", "00245IL18.PDF", "00245IL19.PDF")
     booklet = _pdf_with(["KENOSHA (ENW)", "MADISON DANE COUNTY RGNL/TRUAX FLD (MSN)", "MSN CONTINUED (MSN)", "MILWAUKEE (MKE)"])
     approach = _pdf_with(["ILS OR LOC RWY 18"])
     answers = {"EC3TO.PDF": booklet, "00245IL18.PDF": approach}
@@ -238,8 +247,8 @@ def test_only_the_faas_charts_in_force_are_read(monkeypatch, tmp_path):
 
 def test_the_faa_not_answering_is_told_from_a_chart_it_does_not_have(monkeypatch, tmp_path):
     publication_pages._read.cache_clear()
-    monkeypatch.setattr(publications, "CACHE_DIR", tmp_path)
-    monkeypatch.setattr(publications, "_ABSENT", set())
+    _listing(monkeypatch, tmp_path, "00245IL19.PDF", "GONE.PDF")
+    monkeypatch.setattr(publications, "_ABSENT", {})
     on = date(2026, 10, 3)
     asked = []
 
@@ -259,6 +268,30 @@ def test_the_faa_not_answering_is_told_from_a_chart_it_does_not_have(monkeypatch
     assert publication_pages.chart_pages(gone, "KMSN", on) is None
     assert publication_pages.chart_pages(gone, "KMSN", on) is None
     assert asked.count(gone) == 1
+
+
+def test_a_pdf_its_editions_index_does_not_name_is_never_fetched_kept_or_drawn(monkeypatch, tmp_path):
+    """The security review of 2026-11-23 (M3): a name of the right shape
+    that the index does not list asks nothing of the FAA."""
+    _listing(monkeypatch, tmp_path, "00245IL19.PDF")
+    monkeypatch.setattr(publications.outside, "get", lambda url, **kw: pytest.fail(f"asked for {url}"))
+    on = date(2026, 10, 3)
+    for name in ("00245IL20.PDF", "MADEUP.PDF", "00245IL19.PDF\n"):
+        assert publication_pages.chart_pages(f"https://aeronav.faa.gov/d-tpp/2610/{name}", "KMSN", on) is None
+        assert publication_pages.chart_page_png("dtpp", "2610", name, 1, on) is None
+    assert not (tmp_path / "pdf").exists()
+
+
+def test_past_editions_charts_are_let_go_and_the_ones_shown_kept(monkeypatch, tmp_path):
+    monkeypatch.setattr(publications, "CACHE_DIR", tmp_path)
+    on = date(2026, 10, 3)  # 2610 and 03Sep2026 in force
+    kept = [tmp_path / "pdf" / "dtpp" / "2610", tmp_path / "pages" / "dcs" / "03Sep2026", tmp_path / "diagrams" / "2611"]
+    past = [tmp_path / "pdf" / "dtpp" / "2608", tmp_path / "pages" / "dcs" / "09Jul2026", tmp_path / "plates" / "2609"]
+    for folder in kept + past:
+        folder.mkdir(parents=True)
+    (tmp_path / "dtpp-charts-2610.json").write_text("{}")
+    assert sorted(publication_prune.prune(on)) == sorted(past)
+    assert all(folder.exists() for folder in kept)
 
 
 def test_a_diagram_is_cropped_to_its_runways_placed_by_its_own_labels():

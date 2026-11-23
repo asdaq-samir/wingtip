@@ -13,10 +13,10 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from fastapi import HTTPException
-from wingtip import airports, airspace, alternates, altitude, geo, pattern, publications, runway_wind, tfr, weather
+from wingtip import airports, airspace, alternates, altitude, geo, pattern, publications, runway_wind, tfr, utc, weather
 
 from . import exposure
-from .router_basics import load_route
+from .router_basics import load_route, points
 from .schemas.common import Briefing
 from .schemas.briefing import Alternates
 
@@ -77,7 +77,7 @@ def _at_each_place(forecast: dict, path: list, start: float, ete_s: float) -> di
         placed.append(
             {
                 **{k: v for k, v in station.items() if k != "eta_s"},
-                "eta": datetime.fromtimestamp(round(station["eta_s"]), timezone.utc).isoformat().replace("+00:00", "Z"),
+                "eta": utc.iso(round(station["eta_s"])),
                 "eta_ceiling_ft": at.get("ceiling_ft"),
                 "eta_ceiling_unknown": bool(at.get("ceiling_unknown")),
                 "eta_visibility_sm": at.get("visibility_sm"),
@@ -107,15 +107,8 @@ def read_numbers(text: str, name: str) -> list[float] | None:
 def read_fixes(text: str) -> list[tuple[float, float]] | None:
     """The nav log's fixes, "lat,lon;lat,lon;...", None where none or
     fewer than two were sent."""
-    if not text.strip():
-        return None
-    try:
-        points = [(float(a), float(b)) for a, b in (p.split(",") for p in text.split(";"))]
-    except ValueError as err:
-        raise HTTPException(422, "fixes is latitude,longitude pairs separated by semicolons.") from err
-    if any(not (-90 <= lat <= 90 and -180 <= lon <= 180) for lat, lon in points):
-        raise HTTPException(422, "A fix is off the globe.")
-    return points if len(points) >= 2 else None
+    found = points(text, "fixes is latitude,longitude pairs separated by semicolons.", "A fix is off the globe.")
+    return found if len(found) >= 2 else None
 
 
 def briefing(

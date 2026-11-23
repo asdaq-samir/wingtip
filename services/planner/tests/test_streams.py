@@ -72,6 +72,22 @@ def test_a_chart_that_would_not_read_is_reported_inside_the_navlog_stream(monkey
     }
 
 
+def test_an_unexpected_failure_mid_navlog_says_no_path_or_statement(monkeypatch, altitude, messages):
+    """The security review of 2026-11-23 (Low 10): the exception's own text
+    stays in the log; the pilot is told its kind and the request's id."""
+    monkeypatch.setattr(checkpoint_scoring, "score", lambda dep, dest: [])
+    monkeypatch.setattr(altitude_module, "select_cruise_altitude", select_cruise_altitude_stub(altitude))
+
+    def broken(*args, **kwargs):
+        raise OSError("/srv/wingtip/data/raw/weather/secret.sqlite: SELECT * FROM winds")
+
+    monkeypatch.setattr(navlog, "air_at", broken)
+    resp = client.get("/api/navlog", params={"dep": "C81", "dest": "KDLH"}, headers={"X-Request-Id": "r-123"})
+    detail = messages(resp)[-1]["detail"]
+    assert "secret" not in detail and "SELECT" not in detail
+    assert "OSError" in detail and "r-123" in detail
+
+
 def test_a_failed_corridor_read_ends_the_detect_stream_with_an_error(monkeypatch, messages):
     failed_job = {"blocks": [], "done": True, "error": "RuntimeError: tile fetch failed", "at": 0.0, "cond": threading.Condition()}
     monkeypatch.setattr(chart, "detect_job", lambda key, start, end, half_width_nm: failed_job)
@@ -83,7 +99,8 @@ def test_a_failed_corridor_read_ends_the_detect_stream_with_an_error(monkeypatch
     assert resp.status_code == 200
     lines = messages(resp)
     assert [m["type"] for m in lines] == ["start", "block", "error"]
-    assert "tile fetch failed" in lines[-1]["detail"]
+    # Its kind said, its own text kept for the log (security round 4, Low 10).
+    assert "RuntimeError" in lines[-1]["detail"] and "tile fetch failed" not in lines[-1]["detail"]
 
 
 def test_a_stuck_altitude_selection_ends_the_navlog_stream_saying_what_it_waits_on(monkeypatch, altitude, messages):

@@ -66,7 +66,7 @@ def test_a_followed_airplane_is_asked_of_adsb_lol_in_the_background_and_stays_fo
     traffic.follow("a128b9")
     # A restart: the store opened again, the airplane still followed.
     store.reset()
-    assert traffic.followed() == {"a128b9"}
+    assert traffic.followed() == ["a128b9"]
     stand_in(monkeypatch, "_recent_trace", lambda hex_id: adsb_lol.UNREAD)
     asked = []
     stand_in(monkeypatch, "_paced", lambda url: asked.append(url) or {"ac": [CESSNA]})
@@ -226,9 +226,9 @@ def test_an_address_that_is_not_six_hex_digits_is_neither_followed_nor_recorded(
     cannot grow the store; a TIS-B one's "~" and its case are set aside."""
     traffic.follow("../../escaped")
     recorded._record("../../escaped", {"lat": 1.0, "lon": 1.0})
-    assert traffic.followed() == set() and recorded._recorded("../../escaped") == []
+    assert traffic.followed() == [] and recorded._recorded("../../escaped") == []
     traffic.follow("~A1B2C3")
-    assert traffic.followed() == {"a1b2c3"}
+    assert traffic.followed() == ["a1b2c3"]
 
 
 def test_a_radar_messages_tracks_are_kept_in_one_write_and_its_followed_ones_recorded(clock, monkeypatch):

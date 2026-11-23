@@ -179,16 +179,24 @@ def looked(since: float) -> list[tuple[float, float, float]]:
 # The followed airplanes and their recorded tracks.
 
 
-def follow(hex_id: str, at: float) -> None:
+def follow(hex_id: str, at: float, most: int) -> None:
     """An airplane followed from now on, or still: `since` is when its card
-    was last opened, which its expiry counts from."""
+    was last opened, which its expiry counts from. At most `most` are
+    followed: past that, the ones whose card was opened longest ago go."""
     _write("INSERT INTO followed (hex, since) VALUES (?, ?) ON CONFLICT (hex) DO UPDATE SET since = excluded.since", (hex_id, at))
+    _write("DELETE FROM followed WHERE hex IN (SELECT hex FROM followed ORDER BY since DESC LIMIT -1 OFFSET ?)", (most,))
 
 
 def unfollow_before(before: float) -> int:
     """The airplanes whose card has not been opened since `before` followed
     no more; how many. Their tracks age out on their own (forget_points)."""
     return _write("DELETE FROM followed WHERE since < ?", (before,))
+
+
+def unfollow_unheard(before: float) -> int:
+    """The airplanes followed since before `before` that no source has
+    been heard from at all, followed no more; how many."""
+    return _write("DELETE FROM followed WHERE since < ? AND NOT EXISTS (SELECT 1 FROM points WHERE points.hex = followed.hex)", (before,))
 
 
 def forget_points(before: float) -> int:
@@ -202,8 +210,9 @@ def is_followed(hex_id: str) -> bool:
     return bool(_query("SELECT 1 FROM followed WHERE hex = ?", (hex_id,)))
 
 
-def followed() -> set[str]:
-    return {row[0] for row in _query("SELECT hex FROM followed")}
+def followed() -> list[str]:
+    """The followed airplanes' addresses, the card opened latest first."""
+    return [row[0] for row in _query("SELECT hex FROM followed ORDER BY since DESC, hex")]
 
 
 def record(hex_id: str, point: dict, oldest: float) -> bool:

@@ -1,21 +1,15 @@
 """What every router starts from: the route's idents, the airports
 behind them, and the on-disk paths a corridor's data lives at."""
 
-import logging
 import re
 from dataclasses import dataclass
 from itertools import pairwise
 
 from fastapi import HTTPException
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
-from wingtip import airports, airways, fixes, geo, places, weather
+from wingtip import airports, airways, fixes, geo, places
 from wingtip.config import PROCESSED_DIR  # noqa: F401  (re-exported for the routers)
 from wingtip.config import corridor_paths as paths  # noqa: F401  (the routers' name for it)
 
-from wingtip.planning import StillComputing
-
-log = logging.getLogger(__name__)
 
 #: How many stops a route may make between its ends: each is a flight of
 #: its own to read the chart along and plan. Sixteen, where it was eight:
@@ -65,6 +59,22 @@ def near_points(near: str) -> tuple:
             continue
         points.append((lat, lon))
     return tuple(points)
+
+
+def points(text: str, on_bad: str, off_globe: str) -> list[tuple[float, float]]:
+    """ "lat,lon;lat,lon;..." as its points, [] where none was sent (empty
+    pieces between semicolons are passed over). A piece that is not a pair
+    of numbers is a 422 saying `on_bad`, and a point off the globe one
+    saying `off_globe`: each route words its own."""
+    if not text.strip():
+        return []
+    try:
+        found = [(float(a), float(b)) for a, b in (p.split(",") for p in text.split(";") if p.strip())]
+    except ValueError as err:
+        raise HTTPException(422, on_bad) from err
+    if any(not (-90 <= lat <= 90 and -180 <= lon <= 180) for lat, lon in found):
+        raise HTTPException(422, off_globe)
+    return found
 
 
 def route_key(dep: str, dest: str) -> tuple:
@@ -360,40 +370,3 @@ def _published(segment: "airways.Segment") -> dict:
         "moca_ft": segment.moca_ft,
         "maa_ft": segment.maa_ft,
     }
-
-
-def line(message: BaseModel) -> str:
-    """One NDJSON line, serialised through the message's own model so
-    the stream can only ever carry the shapes app.schemas declares."""
-    return message.model_dump_json(by_alias=True) + "\n"
-
-
-def ndjson(lines, on_error) -> StreamingResponse:
-    """One JSON object per line, sent as each is produced. The headers keep
-    any proxy in between (nginx, the Spring gateway) from buffering lines
-    until the stream ends, which would defeat streaming entirely.
-
-    `on_error` builds the stream's "error" message. Once the first line
-    is out the status is fixed at 200, so a failure after that -- a
-    weather fetch, the corridor read -- cannot become a
-    502 any more; left alone it would simply truncate the body, which a
-    browser cannot tell from a stream still loading. It becomes the last
-    line instead, and the page ends with a message rather than a spinner.
-    """
-    return StreamingResponse(
-        _ending_in_an_error_line(lines, on_error),
-        media_type="application/x-ndjson",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
-
-
-def _ending_in_an_error_line(lines, on_error):
-    try:
-        yield from lines
-    except HTTPException as err:
-        yield line(on_error(detail=str(err.detail)))
-    except (weather.WeatherServiceError, StillComputing) as err:
-        yield line(on_error(detail=str(err)))
-    except Exception as err:  # noqa: BLE001 -- the stream is committed; the client gets the line, the log gets the trace
-        log.exception("stream failed after the response had started")
-        yield line(on_error(detail=f"{type(err).__name__}: {err}"))

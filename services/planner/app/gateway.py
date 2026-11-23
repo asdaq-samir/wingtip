@@ -61,6 +61,11 @@ def gateway(
     return {"x-gateway": spec}
 
 
+#: Set by the gateway's proxy from the signed-in pilot (a route marked
+#: ``pilot``), and stripped from anything a browser sent
+#: (PlannerProxyController). Absent where nobody is signed in.
+PILOT_HEADER = "X-Pilot-Id"
+
 #: Anyone may ask: reading the planner needs no account.
 PUBLIC = gateway("public")
 #: Anyone may ask, and the answer is kept by the browser and the CDN for

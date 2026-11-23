@@ -81,3 +81,36 @@ def test_the_planners_figures_are_served_at_metrics():
     text = client.get("/metrics/").text
     assert "planner_requests_total" in text
     assert "planner_request_seconds_bucket" in text
+
+
+def test_a_call_that_raised_is_counted_a_500_and_held_for_the_dev_console():
+    """Both middlewares in the plain ASGI form (react-perf round 4, L2): an
+    exception no handler caught is a 500 in the figures and in the failures
+    held, and a streamed answer is timed to its last line."""
+    from fastapi.responses import StreamingResponse
+
+    from app import errors
+
+    errors._HELD.clear()
+    metrics = RouteMetrics(CollectorRegistry())
+    app = _app(metrics)
+    app.add_middleware(errors.RecordFailures)
+
+    @app.get("/api/raises/{ident}")
+    def raises(ident: str):
+        raise RuntimeError("no such table")
+
+    @app.get("/api/stream")
+    def stream():
+        return StreamingResponse(iter([b"a\n", b"b\n"]), media_type="application/x-ndjson")
+
+    client = TestClient(app, raise_server_exceptions=False)
+    assert client.get("/api/raises/KMSN?x=1").status_code == 500
+    assert client.get("/api/stream").text == "a\nb\n"
+    assert client.get("/api/broken").status_code == 503
+    rows = {r.route: r for r in metrics.snapshot()}
+    assert (rows["/api/raises/{ident}"].count, rows["/api/raises/{ident}"].errors) == (1, 1)
+    assert (rows["/api/stream"].count, rows["/api/stream"].errors) == (1, 0)
+    held = errors.recent()
+    assert [(e["path"], e["status"]) for e in held] == [("/api/broken", 503), ("/api/raises/KMSN?x=1", 500)]
+    assert held[1]["detail"] == "RuntimeError: no such table"

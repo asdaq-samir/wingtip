@@ -554,9 +554,9 @@ async def traffic_find(*, q: str) -> Any:
     return await _send('GET', '/api/traffic/find', query={'q': q}, body=None, headers={})
 
 
-async def traffic_flight(*, hex_id: str) -> Any:
+async def traffic_flight(*, hex_id: str, x_pilot_id: str | None = None) -> Any:
     """GET /api/traffic/flight/{hex_id}: Traffic Flight"""
-    return await _send('GET', f"/api/traffic/flight/{_seg(hex_id)}", query={}, body=None, headers={})
+    return await _send('GET', f"/api/traffic/flight/{_seg(hex_id)}", query={}, body=None, headers={'X-Pilot-Id': x_pilot_id})
 
 
 async def traffic_history(*, hex_id: str, until: str | None = None, before: float | None = None) -> Any:
@@ -582,6 +582,11 @@ async def traffic_registered(*, q: str) -> Any:
 async def traffic_route(*, callsign: str, lat: float | None = None, lon: float | None = None) -> Any:
     """GET /api/traffic/route: Traffic Route"""
     return await _send('GET', '/api/traffic/route', query={'callsign': callsign, 'lat': lat, 'lon': lon}, body=None, headers={})
+
+
+async def usage_daily(*, since: str) -> Any:
+    """GET /api/usage/daily: Usage Daily"""
+    return await _send('GET', '/api/usage/daily', query={'since': since}, body=None, headers={})
 
 
 async def waypoints_in_view(*, south: float, west: float, north: float, east: float, limit: int | None = None) -> Any:
