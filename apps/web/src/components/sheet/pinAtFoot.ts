@@ -188,14 +188,29 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       // The figures' size, followed a frame at a time as the sheet goes (FIXED by the pill, thin above it).
       setVar(row, "--pin-p", `${growAt(slid, px("--pin-half"), px("--pin-pill"), held)}`);
     };
+    // A frame at a time for the settle's time, and on while the sheet is
+    // still moving after it, and once more as its slide ends: on a slow
+    // runner the slide began late and ended after SETTLE_MS, the last frame
+    // read the sheet short of half, and the strip rested there part grown
+    // (--pin-p 0.2, 35 points tall at half where it is 32; CI's
+    // fpl-strip-foot, run 45107108914).
+    const sheet = row.closest(SHEET);
     let frame = 0;
+    let was = Number.NaN;
     const until = dragging ? Infinity : performance.now() + SETTLE_MS;
     const step = () => {
       check();
-      if (performance.now() < until) frame = requestAnimationFrame(step);
+      const slid = moved(sheet);
+      const moving = slid !== was;
+      was = slid;
+      if (performance.now() < until || moving) frame = requestAnimationFrame(step);
     };
     step();
-    return () => cancelAnimationFrame(frame);
+    sheet?.addEventListener("transitionend", check);
+    return () => {
+      cancelAnimationFrame(frame);
+      sheet?.removeEventListener("transitionend", check);
+    };
   }, [dragging, held, on, ref]);
 }
 
