@@ -17,25 +17,40 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.web.authentication.AuthenticationConverter;
 
 /**
- * A public client's refresh: the token request that carries a
- * refresh_token and the client's id, and no secret (it has none).
+ * A public client's refresh, and its revocation of its own tokens: the
+ * token request that carries a refresh_token and the client's id, and
+ * the /oauth2/revoke request that carries a token and the client's id,
+ * each with no secret (it has none).
  *
  * <p>Spring authenticates a public client only on the code exchange, by
- * its PKCE verifier (PublicClientAuthenticationConverter); a refresh from
- * one is an invalid_client. The refresh token is what proves this client
- * here: it was issued to this client id, which Spring's refresh provider
- * checks, and is spent by its use ({@link ConnectorTokens#refreshTokens}).
+ * its PKCE verifier (PublicClientAuthenticationConverter); a refresh or a
+ * revoke from one is an invalid_client. The token is what proves this
+ * client here: a refresh token was issued to this client id, which
+ * Spring's refresh provider checks, and is spent by its use ({@link
+ * ConnectorTokens#refreshTokens}); a token revoked must have been issued
+ * to it too, which Spring's revocation provider checks, so a client can
+ * end only its own connections. Every connector client is public, so
+ * removing Wingtip in Claude left the grant live for 30 days until round
+ * 4's security review (L1). Introspection is not admitted: any client
+ * may introspect any token there.
  */
 final class PublicRefresh {
+
+    /** Spring's default revocation endpoint, which AuthorizationServerSettings keeps. */
+    static final String REVOKE = "/oauth2/revoke";
 
     private PublicRefresh() {}
 
     /** Reads such a request into a public client's authentication. */
     static AuthenticationConverter converter() {
         return (HttpServletRequest request) -> {
-            if (!AuthorizationGrantType.REFRESH_TOKEN
-                            .getValue()
-                            .equals(request.getParameter(OAuth2ParameterNames.GRANT_TYPE))
+            boolean revoking = REVOKE.equals(request.getRequestURI())
+                    && request.getParameter(OAuth2ParameterNames.GRANT_TYPE) == null
+                    && request.getParameter(OAuth2ParameterNames.TOKEN) != null;
+            boolean refreshing = AuthorizationGrantType.REFRESH_TOKEN
+                    .getValue()
+                    .equals(request.getParameter(OAuth2ParameterNames.GRANT_TYPE));
+            if (!(revoking || refreshing)
                     || request.getParameter(OAuth2ParameterNames.CLIENT_SECRET) != null
                     || request.getHeader(HttpHeaders.AUTHORIZATION) != null) {
                 return null;
@@ -57,16 +72,22 @@ final class PublicRefresh {
     }
 
     /** Admits the client of such a request when it is a registered public
-     *  client allowed the refresh grant. */
+     *  client allowed the refresh grant. A revoke is told from Spring's
+     *  own public-client authentication, the code exchange, by having no
+     *  grant_type but a token: only the converter above makes one. */
     static AuthenticationProvider provider(RegisteredClientRepository clients) {
         return new AuthenticationProvider() {
             @Override
             public Authentication authenticate(Authentication authentication) {
                 OAuth2ClientAuthenticationToken asked = (OAuth2ClientAuthenticationToken) authentication;
+                Map<String, Object> parameters = asked.getAdditionalParameters();
+                Object grant = parameters.get(OAuth2ParameterNames.GRANT_TYPE);
+                boolean revoking = grant == null && parameters.get(OAuth2ParameterNames.TOKEN) != null;
                 if (!ClientAuthenticationMethod.NONE.equals(asked.getClientAuthenticationMethod())
-                        || !AuthorizationGrantType.REFRESH_TOKEN
-                                .getValue()
-                                .equals(asked.getAdditionalParameters().get(OAuth2ParameterNames.GRANT_TYPE))) {
+                        || !(revoking
+                                || AuthorizationGrantType.REFRESH_TOKEN
+                                        .getValue()
+                                        .equals(grant))) {
                     return null;
                 }
                 RegisteredClient client = clients.findByClientId(String.valueOf(asked.getPrincipal()));

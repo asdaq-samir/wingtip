@@ -71,7 +71,6 @@ def clock_fixture(monkeypatch, tmp_path):
     stand_in(monkeypatch, "_STATE", {"next_ask": 0.0, "last_ask": -1e9, "search_at": -1e9, "blocked_until": -1e9})
     stand_in(monkeypatch, "_FLIGHTS", {})
     stand_in(monkeypatch, "_FOUND", TTLCache(maxsize=256, ttl=traffic.FOUND_TTL_S, timer=clock))
-    stand_in(monkeypatch, "_FIND_GATES", {})
     stand_in(monkeypatch, "_RECENT", TTLCache(maxsize=256, ttl=traffic.RECENT_TTL_S, timer=clock))
     # The FAA's registry, wherever a copy is on disk, is not this module's.
     monkeypatch.setattr(registry, "lookup", lambda **kwargs: None)

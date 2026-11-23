@@ -1344,7 +1344,8 @@ public protocol APIProtocol: Sendable {
     ///
     /// An airplane being tracked: what it is, the field it took off from
     /// and its track today (wingtip.traffic.flight); no track where its trace
-    /// cannot be had.
+    /// cannot be had. Followed from now on, its flights recorded, only where
+    /// a signed-in pilot opened it (X-Pilot-Id, set by the gateway).
     ///
     /// - Remark: HTTP `GET /api/traffic/flight/{hex_id}`.
     /// - Remark: Generated from `#/paths//api/traffic/flight/{hex_id}/get(traffic_flight)`.
@@ -1404,6 +1405,15 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `GET /api/traffic/route`.
     /// - Remark: Generated from `#/paths//api/traffic/route/get(traffic_route)`.
     func trafficRoute(_ input: Operations.TrafficRoute.Input) async throws -> Operations.TrafficRoute.Output
+    /// Usage Daily
+    ///
+    /// Every route's calls on each finished UTC day from `since` on, today
+    /// left out until it is over: totals by route template, method and status,
+    /// tied to no pilot (docs/privacy-inventory.md).
+    ///
+    /// - Remark: HTTP `GET /api/usage/daily`.
+    /// - Remark: Generated from `#/paths//api/usage/daily/get(usage_daily)`.
+    func usageDaily(_ input: Operations.UsageDaily.Input) async throws -> Operations.UsageDaily.Output
     /// Waypoints In View
     ///
     /// The VFR waypoints inside the map's view (wingtip.fixes), at most
@@ -3611,7 +3621,8 @@ extension APIProtocol {
     ///
     /// An airplane being tracked: what it is, the field it took off from
     /// and its track today (wingtip.traffic.flight); no track where its trace
-    /// cannot be had.
+    /// cannot be had. Followed from now on, its flights recorded, only where
+    /// a signed-in pilot opened it (X-Pilot-Id, set by the gateway).
     ///
     /// - Remark: HTTP `GET /api/traffic/flight/{hex_id}`.
     /// - Remark: Generated from `#/paths//api/traffic/flight/{hex_id}/get(traffic_flight)`.
@@ -3717,6 +3728,23 @@ extension APIProtocol {
         headers: Operations.TrafficRoute.Input.Headers = .init()
     ) async throws -> Operations.TrafficRoute.Output {
         try await trafficRoute(Operations.TrafficRoute.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Usage Daily
+    ///
+    /// Every route's calls on each finished UTC day from `since` on, today
+    /// left out until it is over: totals by route template, method and status,
+    /// tied to no pilot (docs/privacy-inventory.md).
+    ///
+    /// - Remark: HTTP `GET /api/usage/daily`.
+    /// - Remark: Generated from `#/paths//api/usage/daily/get(usage_daily)`.
+    public func usageDaily(
+        query: Operations.UsageDaily.Input.Query,
+        headers: Operations.UsageDaily.Input.Headers = .init()
+    ) async throws -> Operations.UsageDaily.Output {
+        try await usageDaily(Operations.UsageDaily.Input(
             query: query,
             headers: headers
         ))

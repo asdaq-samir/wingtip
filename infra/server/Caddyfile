@@ -60,8 +60,9 @@
 		# The pilot's address is the last one in X-Forwarded-For: CloudFront
 		# appends the viewer's to whatever the request came with, and only
 		# CloudFront reaches this server. The gateway's per-client limits
-		# (SlidingWindowLimiter) read the last entry, so it is passed on
-		# alone -- appended to, it would be CloudFront's own address.
+		# (SlidingWindowLimiter, through Tomcat's RemoteIpValve) take it from
+		# here, so it is passed on alone -- appended to, the valve would
+		# have CloudFront's own address as the last untrusted hop.
 		map {http.request.header.X-Forwarded-For} {viewer_ip} {
 			~(?:^|,\s*)([^,\s]+)\s*$ "${1}"
 			default {remote_host}
@@ -73,14 +74,17 @@
 			# not this origin's.
 			header_up X-Forwarded-Host {$PUBLIC_HOST}
 			header_up -X-Origin-Secret
-			# Spring reads RFC 7239's Forwarded ahead of X-Forwarded-Host
-			# (forward-headers-strategy: framework), and X-Forwarded-Prefix
-			# beside it: sent by a viewer, CloudFront passes them on, and
-			# they would change the host and path of every link the gateway
-			# builds (the share page's, the sign-in redirects'). Only the
-			# X-Forwarded-* set above reaches it (the security audit's L2).
+			# Sent by a viewer, CloudFront passes on RFC 7239's Forwarded,
+			# X-Forwarded-Prefix, -Port and -Ssl, which would change the host,
+			# path or port of the links the gateway builds (the share page's,
+			# the sign-in redirects', an OAuth redirect_uri). The gateway's
+			# RemoteIpValve reads none of them (application.yml), and they
+			# are dropped here too, so only the X-Forwarded-* set above
+			# reaches it (the security audit's L2; round 4's L13).
 			header_up -Forwarded
 			header_up -X-Forwarded-Prefix
+			header_up -X-Forwarded-Port
+			header_up -X-Forwarded-Ssl
 		}
 	}
 

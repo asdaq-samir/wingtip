@@ -264,7 +264,10 @@ longer than it takes to answer the request.
 - **No tracking**, in Apple's sense: no advertising, no analytics SDK, no
   data broker, nothing joined with others' data. App Store Connect:
   "Data Not Used to Track You".
-- **No analytics**: no count of what a pilot uses is kept. The month's
+- **No analytics tied to anyone**: the only counts kept are counts per day
+  of each kind of request, not tied to any pilot or device (below, "The
+  planner counts its own calls"; the owner took the product audit's
+  recommendation, 2026-11-23). No SDK sends them anywhere. The month's
   count of each Claude-written feature went with those features
   (2026-11-12, decision 0041).
 - **No purchases**: the app is free and sells nothing (decision 0022);
@@ -368,12 +371,16 @@ on `wingtip.schedule` started in `app.main`), whether or not ingest runs:
   the pilot's position while the map follows the airplane. Dropped a
   minute after the last ask (`LOOKED_S`), so ingest reads the FAA's radar
   only where someone is looking.
-- **Followed airplanes** (`followed`): an airplane whose card any pilot
-  opens is followed (another airplane's Follow, past flights and history
+- **Followed airplanes** (`followed`): an airplane whose card a signed-in
+  pilot opens is followed (another airplane's Follow, past flights and history
   are parked in the apps, off unless Settings › Extras › Other Airplanes
   is on; the pilot's own keep them), its ICAO address and when its card was last opened;
   dropped 30 days after that (`FOLLOW_KEEP_S`). Opening its card again
-  starts the 30 days again.
+  starts the 30 days again. A card opened with nobody signed in follows
+  nothing; one no source has heard a day after it was followed is dropped
+  (`FOLLOW_UNHEARD_S`), and at most 500 are followed, the card opened
+  longest ago going first (`FOLLOW_MOST`). Which pilot opened a card is not
+  kept.
 - **Other airplanes' tracks** (`points`): a followed airplane's public
   ADS-B and radar positions, recorded from adsb.lol, ADS-B Exchange
   (while a card is open) and the FAA's radar, card open or not, so its card can show its
@@ -387,7 +394,15 @@ The planner counts its own calls, for the owner's status page
 (`/api/airport/{ident}`, never the address asked), the method, the
 status, and how long it took, in memory from its start, gone when it
 restarts; served at `/metrics` on its own port, which the gateway does
-not forward. No point, ident, query or pilot is in them. The status page
+not forward. No point, ident, query or pilot is in them. The same counts,
+without the times, are kept per UTC day on the planner's disk
+(`app.usage_days`, `data/raw/usage/usage.sqlite`, 90 days): a day's row is
+the day, the route's template, the method, the status and how many calls,
+nothing else. Each finished day is served at `/api/usage/daily`, on the
+stack's own network only, for the gateway's nightly rollup into Postgres
+(`UsageRollup`, 04:20 UTC, into `usage_days`: the same five fields, kept
+as the owner's totals), so the totals outlive a server replaced: counts per day of each kind of
+request, not tied to any pilot or device. The status page
 reads the apps' faults and speed figures by build from the rows above
 (`AppHealthController`), keeping nothing more.
 

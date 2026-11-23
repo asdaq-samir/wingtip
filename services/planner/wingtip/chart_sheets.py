@@ -11,12 +11,12 @@ from __future__ import annotations
 
 import contextlib
 import json
-import threading
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from .atomic import atomic_path
+from .atomic import atomic_path, held
+from .single_flight import one_at_a_time
 from . import config
 from .chart_kinds import Box, ChartKind, KINDS
 
@@ -51,17 +51,14 @@ class Chart:
 READY = "ready.json"
 
 
-_locks: dict = {}
-_locks_guard = threading.Lock()
-
-
 def chart_dir(cycle: str, kind: ChartKind, name: str) -> Path:
     return config.CHARTS_DIR / cycle / kind.key / name
 
 
-def lock_for(key: tuple) -> threading.Lock:
-    with _locks_guard:
-        return _locks.setdefault(key, threading.Lock())
+def lock_for(key: tuple) -> contextlib.AbstractContextManager[None]:
+    """Held while one sheet, by (kind, name), is prepared or drawn again in
+    this process (single_flight's gate, let go after)."""
+    return one_at_a_time(("chart sheet", key))
 
 
 def load_ready(directory: Path, kind: ChartKind, name: str, cycle: str) -> Chart | None:
@@ -130,15 +127,8 @@ def directory_lock(directory: Path):
     container can want the same sheet at the same moment, and two
     extractions plus two overview builds on one TIFF is a corrupt
     TIFF. The second one waits, then finds the sheet ready."""
-    import fcntl
-
-    directory.mkdir(parents=True, exist_ok=True)
-    with (directory / ".lock").open("w") as handle:
-        fcntl.flock(handle, fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            fcntl.flock(handle, fcntl.LOCK_UN)
+    with held(directory / ".lock"):
+        yield
 
 
 _OVERVIEW_LEVELS = [2, 4, 8, 16, 32, 64]

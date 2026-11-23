@@ -46,7 +46,7 @@ import org.springframework.test.web.servlet.ResultActions;
 class MagicLinkReviewTest {
 
     static final String REVIEWER = "review@wingtipmaps.app";
-    static final String CODE = "review-code-0123456789-abcdef";
+    static final String CODE = "review-code-0123456789-abcdef-ghijk";
 
     @Autowired
     private MockMvc mockMvc;

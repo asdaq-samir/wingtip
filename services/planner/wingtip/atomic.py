@@ -11,11 +11,34 @@ failure -- which is all a library would add (the audit turned down
 
 from __future__ import annotations
 
+import fcntl
 import os
 import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+
+
+@contextmanager
+def held(path: str | os.PathLike, *, wait: bool = True) -> Iterator[bool]:
+    """An advisory lock on `path` (made, with its folder, if it is not
+    there), held across processes until the block ends; the kernel lets it
+    go when the process does, however it ends. It waits for another holder
+    by default; with wait=False it does not and yields False, the block
+    running without the lock, where a caller would rather skip than queue.
+    Yields True once it holds it."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a") as handle:
+        try:
+            fcntl.flock(handle, fcntl.LOCK_EX if wait else fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            yield False
+            return
+        try:
+            yield True
+        finally:
+            fcntl.flock(handle, fcntl.LOCK_UN)
 
 
 @contextmanager

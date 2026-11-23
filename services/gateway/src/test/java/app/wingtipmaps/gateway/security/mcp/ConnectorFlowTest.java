@@ -9,7 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import app.wingtipmaps.gateway.domain.Pilot;
-import app.wingtipmaps.gateway.security.MagicLinkAuthenticationToken;
 import app.wingtipmaps.gateway.security.SignInLanding;
 import app.wingtipmaps.gateway.service.PilotService;
 import com.jayway.jsonpath.JsonPath;
@@ -21,9 +20,8 @@ import jakarta.servlet.http.Cookie;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.util.Base64;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -31,9 +29,6 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.savedrequest.DefaultSavedRequest;
 import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.session.Session;
@@ -65,8 +60,8 @@ class ConnectorFlowTest {
     @ServiceConnection
     static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18");
 
-    static final String CLAUDE = "https://claude.ai/api/mcp/auth_callback";
-    static final String RESOURCE = "http://localhost/mcp";
+    static final String CLAUDE = ConnectorFlowSteps.CLAUDE;
+    static final String RESOURCE = ConnectorFlowSteps.RESOURCE;
 
     @Autowired
     private MockMvc mvc;
@@ -76,6 +71,13 @@ class ConnectorFlowTest {
 
     @Autowired
     private FindByIndexNameSessionRepository<? extends Session> sessions;
+
+    private ConnectorFlowSteps steps;
+
+    @BeforeEach
+    void steps() {
+        steps = new ConnectorFlowSteps(mvc, pilots, sessions);
+    }
 
     @Test
     void theMetadataSaysWhatAClientNeeds() throws Exception {
@@ -99,16 +101,17 @@ class ConnectorFlowTest {
     void aCallbackOffTheListIsRefused() throws Exception {
         mvc.perform(post("/oauth2/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(registration("Stranger", "https://evil.example/callback")))
+                        .content(ConnectorFlowSteps.registration("Stranger", "https://evil.example/callback")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("invalid_redirect_uri"));
     }
 
     @Test
     void aPilotConnectsClaude() throws Exception {
-        String clientId = register("Claude", CLAUDE);
+        String clientId = steps.register("Claude", CLAUDE);
         String verifier = UUID.randomUUID() + "-" + UUID.randomUUID();
-        String authorize = authorizeUrl(clientId, CLAUDE, challenge(verifier), RESOURCE);
+        String authorize =
+                ConnectorFlowSteps.authorizeUrl(clientId, CLAUDE, ConnectorFlowSteps.challenge(verifier), RESOURCE);
 
         // Not signed in: kept, and sent to sign in.
         MvcResult kept = mvc.perform(get(URI.create(authorize)))
@@ -126,7 +129,7 @@ class ConnectorFlowTest {
         assertThat(page).contains("Sign In to Connect Claude").contains("name=\"_csrf\"");
 
         // Signed in: the waiting request is carried on, once.
-        Pilot pilot = signIn(session, UUID.randomUUID() + "@example.com");
+        Pilot pilot = steps.signIn(session, UUID.randomUUID() + "@example.com");
         page = mvc.perform(get("/connect/continue").cookie(session))
                 .andExpect(status().isOk())
                 .andReturn()
@@ -233,10 +236,13 @@ class ConnectorFlowTest {
 
     @Test
     void aTokenForAnotherServerIsRefused() throws Exception {
-        String clientId = register("Claude", CLAUDE);
-        Cookie session = signedIn();
-        String answer = mvc.perform(get(URI.create(
-                                authorizeUrl(clientId, CLAUDE, challenge("v".repeat(50)), "https://other.example/mcp")))
+        String clientId = steps.register("Claude", CLAUDE);
+        Cookie session = steps.signedIn();
+        String answer = mvc.perform(get(URI.create(ConnectorFlowSteps.authorizeUrl(
+                                clientId,
+                                CLAUDE,
+                                ConnectorFlowSteps.challenge("v".repeat(50)),
+                                "https://other.example/mcp")))
                         .cookie(session))
                 .andExpect(status().isFound())
                 .andReturn()
@@ -274,87 +280,25 @@ class ConnectorFlowTest {
      *  port it has that day. */
     @Test
     void localhostIsMatchedOnAnyPort() throws Exception {
-        String clientId = register("Claude Code", "http://localhost/callback");
-        Cookie session = signedIn();
-        String answer = mvc.perform(get(URI.create(authorizeUrl(
-                                clientId, "http://localhost:53682/callback", challenge("w".repeat(50)), RESOURCE)))
+        String clientId = steps.register("Claude Code", "http://localhost/callback");
+        Cookie session = steps.signedIn();
+        String answer = mvc.perform(get(URI.create(ConnectorFlowSteps.authorizeUrl(
+                                clientId,
+                                "http://localhost:53682/callback",
+                                ConnectorFlowSteps.challenge("w".repeat(50)),
+                                RESOURCE)))
                         .cookie(session))
                 .andExpect(status().isFound())
                 .andReturn()
                 .getResponse()
                 .getRedirectedUrl();
         assertThat(answer).contains("/oauth2/consent");
-        mvc.perform(get(URI.create(authorizeUrl(
-                                clientId, "http://localhost:53682/other", challenge("w".repeat(50)), RESOURCE)))
+        mvc.perform(get(URI.create(ConnectorFlowSteps.authorizeUrl(
+                                clientId,
+                                "http://localhost:53682/other",
+                                ConnectorFlowSteps.challenge("w".repeat(50)),
+                                RESOURCE)))
                         .cookie(session))
                 .andExpect(status().isBadRequest());
-    }
-
-    /** A session of its own, signed in by an emailed link. */
-    private Cookie signedIn() {
-        String id = put(sessions, null, null);
-        Cookie cookie = new Cookie("SESSION", Base64.getEncoder().encodeToString(id.getBytes(StandardCharsets.UTF_8)));
-        signIn(cookie, UUID.randomUUID() + "@example.com");
-        return cookie;
-    }
-
-    /** Signs the session in as the emailed link does: its security
-     *  context, in the session Postgres keeps. */
-    private Pilot signIn(Cookie session, String email) {
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(new MagicLinkAuthenticationToken(email));
-        String id = new String(Base64.getDecoder().decode(session.getValue()), StandardCharsets.UTF_8);
-        put(sessions, id, context);
-        return pilots.fromVerifiedEmail(email);
-    }
-
-    private static <S extends Session> String put(
-            FindByIndexNameSessionRepository<S> repository, String id, SecurityContext context) {
-        S session = id == null ? repository.createSession() : repository.findById(id);
-        if (context != null) {
-            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-        }
-        repository.save(session);
-        return session.getId();
-    }
-
-    private String register(String name, String redirect) throws Exception {
-        String answer = mvc.perform(post("/oauth2/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(registration(name, redirect)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.token_endpoint_auth_method").value("none"))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-        assertThat(answer).doesNotContain("\"client_secret\"");
-        return JsonPath.read(answer, "$.client_id");
-    }
-
-    private static String registration(String name, String redirect) {
-        return """
-                {"client_name": "%s", "redirect_uris": ["%s"],
-                 "grant_types": ["authorization_code", "refresh_token"], "response_types": ["code"],
-                 "token_endpoint_auth_method": "none"}""".formatted(name, redirect);
-    }
-
-    private static String authorizeUrl(String clientId, String redirect, String challenge, String resource) {
-        return UriComponentsBuilder.fromPath("/oauth2/authorize")
-                .queryParam("response_type", "code")
-                .queryParam("client_id", clientId)
-                .queryParam("redirect_uri", redirect)
-                .queryParam("scope", ConnectorSettings.READ + " " + ConnectorSettings.WRITE)
-                .queryParam("state", "s-" + UUID.randomUUID())
-                .queryParam("code_challenge", challenge)
-                .queryParam("code_challenge_method", "S256")
-                .queryParam("resource", resource)
-                .encode()
-                .build()
-                .toUriString();
-    }
-
-    private static String challenge(String verifier) throws Exception {
-        byte[] digest = MessageDigest.getInstance("SHA-256").digest(verifier.getBytes(StandardCharsets.US_ASCII));
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(digest);
     }
 }

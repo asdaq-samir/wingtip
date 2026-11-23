@@ -18,12 +18,11 @@ both files would eventually stop being equal.
 from __future__ import annotations
 
 import csv
-import fcntl
 import threading
 from contextlib import contextmanager
 from pathlib import Path
 
-from .atomic import atomic_path
+from .atomic import atomic_path, held
 from .geo import distance_nm
 
 #: Two rows closer than this on the same route are the same place, not
@@ -70,13 +69,8 @@ def locked(path: Path):
     path = Path(path)
     with _THREAD_LOCKS_GUARD:
         lock = _THREAD_LOCKS.setdefault(str(path.resolve()), threading.Lock())
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with lock, open(path.with_name(path.name + ".lock"), "w") as handle:
-        fcntl.flock(handle, fcntl.LOCK_EX)
-        try:
-            yield
-        finally:
-            fcntl.flock(handle, fcntl.LOCK_UN)
+    with lock, held(path.with_name(path.name + ".lock")):
+        yield
 
 
 def write_rows(path: Path, columns: list, rows) -> None:

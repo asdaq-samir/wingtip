@@ -11,8 +11,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.stereotype.Component;
 
 /**
@@ -86,6 +88,32 @@ public class ConnectorGrants {
         }
         kept.live(pilotId, clientId, accessToken, expiry.get(), seen);
         return true;
+    }
+
+    /**
+     * Whether this access token, the pilot's own and still active, was
+     * granted wingtip:flights: asked before the connector saves, plans
+     * again or deletes a saved flight. The planner checks the scope too
+     * (app/mcp/calls.pilot), but the internal writes trusted its word
+     * alone, so a planner tool that forgot to ask would write freely
+     * (round 4's security review, the old L4's defence in depth). The
+     * token's own scopes, not the connection's: a connection consented to
+     * before V53 renamed the scope refreshes to wingtip:read and the old
+     * wingtip:write, which grants nothing now.
+     */
+    public boolean mayChangeFlights(long pilotId, String accessToken) {
+        if (accessToken == null || accessToken.isBlank()) {
+            return false;
+        }
+        OAuth2Authorization connection = authorizations.findByToken(accessToken, OAuth2TokenType.ACCESS_TOKEN);
+        if (connection == null || !Long.toString(pilotId).equals(connection.getPrincipalName())) {
+            return false;
+        }
+        OAuth2Authorization.Token<OAuth2AccessToken> token = connection.getAccessToken();
+        return token != null
+                && token.isActive()
+                && MessageDigest.isEqual(bytes(token.getToken().getTokenValue()), bytes(accessToken))
+                && token.getToken().getScopes().contains(ConnectorSettings.WRITE);
     }
 
     private static byte[] bytes(String value) {

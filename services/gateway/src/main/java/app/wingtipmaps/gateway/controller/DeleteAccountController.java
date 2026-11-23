@@ -15,6 +15,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,18 +111,26 @@ public class DeleteAccountController {
     public ResponseEntity<Void> ask(@RequestParam String email, HttpServletRequest request) {
         Instant now = Instant.now();
         String address = email.trim();
-        if (!recent.allow("email:" + address.toLowerCase(), perAddressPerHour, now)
-                || !recent.allow("client:" + SlidingWindowLimiter.clientOf(request), perClientPerHour, now)) {
+        // Counted as the sign-in link is, the caller first: the address's
+        // own five were charged first, for every caller, so anyone could
+        // keep a pilot from deleting their account (round 4's security
+        // review, L3).
+        if (!recent.allowLink(
+                "email:" + address.toLowerCase(Locale.ROOT),
+                SlidingWindowLimiter.clientOf(request),
+                perClientPerHour,
+                perAddressPerHour,
+                MagicLinkController.ADDRESS_CALLERS,
+                now)) {
             return seeOther("/delete-account?throttled=1");
         }
-        Optional<Pilot> pilot = address.length() <= 254 ? pilots.findByEmail(address) : Optional.empty();
-        if (pilot.isPresent()) {
-            links.deleteExpiredBefore(now.minus(Duration.ofDays(1)));
-            String token = token();
-            links.save(new MagicLink(
-                    pilot.get().getEmail(), MagicLinkController.hash(PURPOSE + token), now.plus(LIFETIME)));
-            send(pilot.get().getEmail(), base(request) + "/delete-account/confirm?token=" + token);
-        }
+        // The look-up, the link's row and the mail all off the request's
+        // thread: the row was written only for an address with an account,
+        // so the time the page took still told which addresses have one
+        // (round 4's L3), as the mail alone did before (the deep security
+        // review of 2026-11-21).
+        String base = base(request);
+        Thread.ofVirtual().name("deletion-link").start(() -> sendLinkIfAccount(address, base, now));
         return seeOther("/delete-account?sent=1");
     }
 
@@ -167,6 +176,23 @@ public class DeleteAccountController {
         return "delete-account/deleted";
     }
 
+    private void sendLinkIfAccount(String address, String base, Instant now) {
+        try {
+            Optional<Pilot> pilot = address.length() <= 254 ? pilots.findByEmail(address) : Optional.empty();
+            if (pilot.isPresent()) {
+                links.deleteExpiredBefore(now.minus(Duration.ofDays(1)));
+                String token = token();
+                links.save(new MagicLink(
+                        pilot.get().getEmail(), MagicLinkController.hash(PURPOSE + token), now.plus(LIFETIME)));
+                send(pilot.get().getEmail(), base + "/delete-account/confirm?token=" + token);
+            }
+        } catch (RuntimeException failed) {
+            log.warn(
+                    "A deletion link not sent (no address logged): {}",
+                    failed.getClass().getSimpleName());
+        }
+    }
+
     private void send(String to, String url) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);
@@ -174,20 +200,7 @@ public class DeleteAccountController {
         message.setText("Someone asked to delete the Wingtip Maps account for this address. To delete it, "
                 + "open this link within 15 minutes and press Delete Account. If it was not you, ignore this "
                 + "email: nothing is deleted.\n\n" + url);
-        // Sent off the request's thread: the SMTP round trip, 100 ms to a
-        // second, was spent only for an address with an account, so the
-        // page's time to answer told anyone which addresses have one,
-        // though its words are the same either way (the deep security
-        // review of 2026-11-21).
-        Thread.ofVirtual().name("deletion-link").start(() -> {
-            try {
-                mailer.send(message);
-            } catch (RuntimeException failed) {
-                log.warn(
-                        "A deletion link not sent (no address logged): {}",
-                        failed.getClass().getSimpleName());
-            }
-        });
+        mailer.send(message);
     }
 
     /** As MagicLinkController builds its link: the configured address, else (a machine that mails nothing) the request's. */

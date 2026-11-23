@@ -14,7 +14,7 @@ from wingtip import geo
 from ..router_basics import load_route
 from ..schemas.notes import CheckpointNote, CheckpointNoteSaved, PilotNotes, PilotNotesForgotten, RouteNote, RouteNotes
 from ..checkpoint_scoring import route_checkpoints
-from ..gateway import gateway
+from ..gateway import PILOT_HEADER, gateway
 
 router = APIRouter()
 
@@ -49,10 +49,8 @@ def _hop_of(r, lat: float, lon: float):
     return min(r.hops, key=lambda hop: abs(geo.cross_track_distance_nm(lat, lon, hop.start, hop.end)))
 
 
-#: Set by the gateway's proxy from the signed-in pilot, and stripped from
-#: anything a browser sent (PlannerProxyController). Absent where nobody
-#: can sign in, which makes an edit the shared note -- one user, locally.
-PILOT_HEADER = "X-Pilot-Id"
+# PILOT_HEADER is absent where nobody can sign in, which makes an edit the
+# shared note -- one user, locally.
 
 
 # A POST that changes nothing (the route rides in its body), so no CSRF

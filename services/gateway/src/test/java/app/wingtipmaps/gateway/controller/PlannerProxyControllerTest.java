@@ -15,9 +15,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
 import app.wingtipmaps.gateway.domain.Pilot;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -255,6 +258,26 @@ class PlannerProxyControllerTest extends PlannerProxyTestBase {
                 .andReturn());
 
         assertThat(received).contains("pilot=42").doesNotContain("pilot=7");
+    }
+
+    /** Signed in with no pilot to be found (an account deleted under its
+     *  session): the note is not written as the single-user stack's,
+     *  everyone's (round 4's security review, L9). */
+    @Test
+    void aSignedInNoteWithNoPilotIsRefused() throws Exception {
+        given(pilotService.current(any())).willReturn(Optional.empty());
+        // Signed in as the session would have it (no filters run here).
+        SecurityContextHolder.getContext()
+                .setAuthentication(UsernamePasswordAuthenticationToken.authenticated("gone", null, List.of()));
+        try {
+            mockMvc.perform(post("/api/planner/checkpoint-notes")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{}"))
+                    .andExpect(status().isUnauthorized());
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+        assertThat(received).isEmpty();
     }
 
     @Test

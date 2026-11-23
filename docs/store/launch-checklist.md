@@ -205,7 +205,7 @@ check:
 - [ ] Sign in once with an address used for nothing else (review@ on the
       domain), and give the account an airplane and a saved flight.
 - [ ] For each review: `REVIEW_SIGN_IN` true, `REVIEW_SIGN_IN_EMAIL` and
-      a fresh `REVIEW_SIGN_IN_CODE` (`openssl rand -base64 24`) in the
+      a fresh `REVIEW_SIGN_IN_CODE` (`openssl rand -base64 24 | tr '+/' '-_'`) in the
       AppSecret (`infra/server/env.example`), deploy.sh, and the address
       and code in both consoles (listing.md, "Review access"). It is off
       by default.

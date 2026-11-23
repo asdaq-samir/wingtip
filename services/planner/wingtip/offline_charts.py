@@ -34,6 +34,7 @@ from . import chart_archives, chart_cycle, chart_grid, chart_kinds, chart_servin
 from .atomic import atomic_path
 from .geo import tile_xy
 from .offline_regions import Region
+from .single_flight import one_at_a_time
 
 log = logging.getLogger(__name__)
 
@@ -43,9 +44,6 @@ _CYCLE = re.compile(r"\d{2}-\d{2}-\d{4}")
 #: gzipped. The estimate adds it to the tiles' own bytes.
 _DIRECTORY_BYTES_PER_TILE = 3
 _ESTIMATES = "estimates.json"
-
-_locks: dict[str, threading.Lock] = {}
-_locks_lock = threading.Lock()
 
 
 def parse_archive(name: str) -> tuple[chart_kinds.ChartKind, int] | None:
@@ -129,11 +127,6 @@ def _folder(cycle: str, region: Region) -> Path:
     return config.CHART_TILE_CACHE_DIR / cycle / "offline" / region.id
 
 
-def _lock(key: str) -> threading.Lock:
-    with _locks_lock:
-        return _locks.setdefault(key, threading.Lock())
-
-
 def estimate(cycle: str, region: Region, archive: str) -> dict | None:
     """How many tiles and about how many bytes the region's cut of one
     archive holds, from the source's directory alone; kept per cycle.
@@ -152,6 +145,7 @@ def estimate(cycle: str, region: Region, archive: str) -> dict | None:
 
 
 _warming: set = set()
+_warming_lock = threading.Lock()
 
 
 def known_sizes(cycle: str, region: Region) -> dict[str, int]:
@@ -166,7 +160,7 @@ def warm(cycle: str, regions: list[Region]) -> None:
     """Every region's every archive estimated in the background, once a
     cycle, so the list has its sizes by the next look (about a minute for
     the 108 regions and the cycle's archives, Alaska the longest)."""
-    with _locks_lock:
+    with _warming_lock:
         if cycle in _warming:
             return
         _warming.add(cycle)
@@ -222,7 +216,7 @@ def _estimates(cycle: str, key: str | None = None):
 def _remember(cycle: str, key: str, value: dict) -> dict:
     """One estimate kept in the cycle's file, the file written whole."""
     path = _estimates_file(cycle)
-    with _lock(str(path)):
+    with one_at_a_time(path):
         kept = _estimates(cycle)
         kept[key] = value
         with atomic_path(path) as part:
@@ -240,7 +234,7 @@ def cut(cycle: str, region: Region, archive: str) -> Path | None:
     if source is None:
         return None
     path = _folder(cycle, region) / f"{archive}.pmtiles"
-    with _lock(str(path)):
+    with one_at_a_time(path):
         if path.is_file():
             return path
         kind, scale = parsed

@@ -63,12 +63,34 @@ def test_a_followed_airplane_expires_30_days_after_its_card_was_last_opened(wall
     wall["t"] += traffic.FOLLOW_KEEP_S - 86400
     # Opened again the day before it would have gone: another 30 days.
     traffic.follow("a3c858")
+    store.record("a3c858", {"t": wall["t"], "lat": 42.0, "lon": -88.0}, wall["t"] - traffic.RECORD_KEEP_S)
     wall["t"] += 2 * 86400
     assert traffic.prune()["followed"] == 0
-    assert traffic.followed() == {"a3c858"}
+    assert traffic.followed() == ["a3c858"]
     wall["t"] += traffic.FOLLOW_KEEP_S
     assert traffic.prune()["followed"] == 1
-    assert traffic.followed() == set()
+    assert traffic.followed() == []
+
+
+def test_an_airplane_no_source_has_heard_is_followed_no_more_after_a_day(wall):
+    """The security review of 2026-11-23 (M5): a made-up address is not
+    asked of adsb.lol for 30 days."""
+    traffic.follow("000001")
+    traffic.follow("a3c858")
+    store.record("a3c858", {"t": wall["t"], "lat": 42.0, "lon": -88.0}, wall["t"] - traffic.RECORD_KEEP_S)
+    wall["t"] += recorded.FOLLOW_UNHEARD_S - 1
+    assert traffic.prune()["followed"] == 0
+    wall["t"] += 2
+    assert traffic.prune()["followed"] == 1
+    assert traffic.followed() == ["a3c858"]
+
+
+def test_the_followed_are_capped_and_the_card_opened_latest_is_asked_first(wall, monkeypatch):
+    monkeypatch.setattr(recorded, "FOLLOW_MOST", 3)
+    for hex_id in ("a00001", "a00002", "a00003", "a00004"):
+        wall["t"] += 1
+        traffic.follow(hex_id)
+    assert traffic.followed() == ["a00004", "a00003", "a00002"]
 
 
 def test_track_points_go_after_30_days_though_the_airplane_is_never_heard_again(wall):

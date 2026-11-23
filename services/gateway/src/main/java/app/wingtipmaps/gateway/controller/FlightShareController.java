@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.FlightShareDto;
 import app.wingtipmaps.gateway.dto.ShareFlightRequest;
@@ -28,18 +29,26 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 public class FlightShareController {
 
     private final FlightShareService shares;
+    private final String publicBaseUrl;
 
-    public FlightShareController(FlightShareService shares) {
+    public FlightShareController(FlightShareService shares, AppProperties app) {
         this.shares = shares;
+        this.publicBaseUrl = app.publicBaseUrl();
     }
 
-    /** The site's own address, as the pilot's browser or phone reaches it
-     *  (the forwarded host behind CloudFront and Caddy), for a link to send. */
-    static String origin() {
-        return ServletUriComponentsBuilder.fromCurrentContextPath()
-                .replacePath(null)
-                .replaceQuery(null)
-                .toUriString();
+    /** The site's own address, for a link to send: APP_PUBLIC_BASE_URL,
+     *  which every deployment that mails sets, as the emailed links are
+     *  built from it; else (a machine that sends nothing) the request's
+     *  own, whose host Tomcat takes from X-Forwarded-Host only from a
+     *  trusted proxy (application.yml). It followed X-Forwarded-Host from
+     *  any caller until round 4's reuse audit (M2). */
+    static String origin(String publicBaseUrl) {
+        return publicBaseUrl.isBlank()
+                ? ServletUriComponentsBuilder.fromCurrentContextPath()
+                        .replacePath(null)
+                        .replaceQuery(null)
+                        .toUriString()
+                : publicBaseUrl.replaceAll("/+$", "");
     }
 
     /** Shares one of the pilot's flights by link, or changes whether its
@@ -49,7 +58,8 @@ public class FlightShareController {
     public ResponseEntity<FlightShareDto> share(
             Pilot pilot, @PathVariable Long id, @RequestBody(required = false) ShareFlightRequest request) {
         boolean includeTail = request != null && request.includeTail();
-        return ResponseEntity.of(shares.share(pilot, id, includeTail).map(s -> FlightShareDto.of(s, origin())));
+        return ResponseEntity.of(
+                shares.share(pilot, id, includeTail).map(s -> FlightShareDto.of(s, origin(publicBaseUrl))));
     }
 
     /** Stops sharing one of the pilot's flights: its link answers 404 from

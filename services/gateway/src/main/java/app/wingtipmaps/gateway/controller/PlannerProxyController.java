@@ -1,6 +1,7 @@
 package app.wingtipmaps.gateway.controller;
 
 import app.wingtipmaps.gateway.config.AppProperties;
+import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.service.PilotService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,10 +14,13 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -167,8 +171,18 @@ public class PlannerProxyController {
         // planner is told whose it is. Only where the route asks: looking
         // the pilot up is a database call, and a tile request has no use for it.
         if (route.pilot()) {
-            pilots.current(SecurityContextHolder.getContext().getAuthentication())
-                    .ifPresent(pilot -> upstreamBuilder.header(PILOT_HEADER, String.valueOf(pilot.getId())));
+            Authentication who = SecurityContextHolder.getContext().getAuthentication();
+            Optional<Pilot> pilot = pilots.current(who);
+            pilot.ifPresent(p -> upstreamBuilder.header(PILOT_HEADER, String.valueOf(p.getId())));
+            // Signed in, but no pilot to be found (an account deleted
+            // under a session): a write without the header is the planner's
+            // single-user note, everyone's, so it is refused here. Signed
+            // out, the access rules have already said whether a write may
+            // go (APP_OPEN_WRITES' one-user stack). Round 4's L9.
+            boolean signedIn = who != null && who.isAuthenticated() && !(who instanceof AnonymousAuthenticationToken);
+            if (pilot.isEmpty() && signedIn && !"GET".equals(method)) {
+                throw StreamingProxy.problem(401, "sign in again to change your own notes");
+            }
         }
         // ForeFlight's downloader asks for the pack in byte ranges, and the
         // map for the overlay tiles' archive.

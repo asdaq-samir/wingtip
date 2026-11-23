@@ -6,6 +6,7 @@ from __future__ import annotations
 import threading
 import time
 
+from ..figure import number as _number
 from ..units import NM_PER_DEG_LAT
 
 HEADERS = {"User-Agent": "wingtip-maps/0.1 (VFR flight planner; traffic for pilots' situational awareness)"}
@@ -52,13 +53,6 @@ _LOCK = threading.Lock()
 
 class TrafficUnavailable(RuntimeError):
     """adsb.lol has not answered for a while."""
-
-
-def _number(value) -> float | None:
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return None
 
 
 def _aircraft(entry: dict) -> dict | None:

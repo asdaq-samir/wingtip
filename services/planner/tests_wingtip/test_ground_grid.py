@@ -144,3 +144,38 @@ def test_a_pixel_far_off_the_ground_round_it_is_no_height():
     assert np.isnan(heights[2, 2])
     assert heights[0, 4] == 252.0
     assert np.nansum(np.isnan(heights)) == 1
+
+
+def test_a_hole_takes_the_highest_and_lowest_round_it_ring_by_ring():
+    """The speed audit of 2026-11-23 (M1): a cell no pixel reached sent the
+    whole leg to the tiles. Filled from round it, conservatively."""
+    none = ground_grid.NONE
+    high = np.array([[1000, 1200, 1100, 1000], [900, none, none, 1000], [1000, 1000, 1500, 1000]], dtype=np.int16)
+    low = np.where(high == none, none, high - 100).astype(np.int16)
+    assert ground_grid.fill_holes(high, low) == 2
+    # Each the highest of its eight neighbours that were reached, and the lowest of their lowest.
+    assert high[1, 1] == 1500 and high[1, 2] == 1500
+    assert low[1, 1] == 800 and low[1, 2] == 900
+    assert ground_grid.fill_holes(high, low) == 0
+
+
+def test_a_built_grid_is_filled_without_a_tile_fetched(monkeypatch, tmp_path):
+    for name in ("HIGH_PATH", "LOW_PATH", "DONE_PATH"):
+        monkeypatch.setattr(ground_grid, name, tmp_path / f"{name}.npy")
+    monkeypatch.setattr(ground_grid, "DIR", tmp_path)
+    monkeypatch.setattr(ground_grid, "_fetch", lambda *a: pytest.fail("fetched a tile"))
+    high = np.full((3, 3), 500, dtype=np.int16)
+    high[1, 1] = ground_grid.NONE
+    np.save(ground_grid.HIGH_PATH, high)
+    np.save(ground_grid.LOW_PATH, high)
+    ground_grid.build(workers=1)
+    assert np.load(ground_grid.HIGH_PATH)[1, 1] == 500
+
+
+def test_the_built_lower_48_has_no_holes():
+    """On a machine that has built the grid (the owner's, a server): every
+    cell reached or filled, so no leg over the lower 48 reads the tiles."""
+    found = ground_grid.holes()
+    if found is None:
+        pytest.skip("no ground grid built here")
+    assert found == 0

@@ -122,12 +122,28 @@ server:
       timeout: 30d
       cookie:
         max-age: 30d
-  # Trusts X-Forwarded-Proto/-Host/-Port from the ALB doing TLS
-  # termination, so the app sees itself as HTTPS -- without this,
-  # Spring Security's HSTS header writer (only fires on a request it
-  # considers secure) would silently never send HSTS in production. A
-  # no-op locally: nothing sends those headers without a proxy in front.
-  forward-headers-strategy: framework
+  # Tomcat's RemoteIpValve: X-Forwarded-For, -Proto and -Host are
+  # believed only from the proxies named here (Caddy in production, on the
+  # server's own Docker network), so the app sees itself as HTTPS behind
+  # them -- without which Spring Security's HSTS writer, which fires only
+  # on a request it considers secure, would never send HSTS -- and
+  # getRemoteAddr() is the caller the per-client limits count
+  # (SlidingWindowLimiter.clientOf). `framework` believed them from anyone
+  # and made the remote address the first, caller-written hop (round 4's
+  # reuse audit, M2). Loopback alone where GATEWAY_TRUSTED_PROXIES is
+  # unset: Tomcat's own default trusts every private block, which would
+  # let a phone-mode LAN client name its own address. Forwarded,
+  # X-Forwarded-Prefix, -Port and -Ssl are read from nobody.
+  forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      internal-proxies: ${GATEWAY_TRUSTED_PROXIES:127.0.0.0/8, ::1/128}
+      remote-ip-header: X-Forwarded-For
+      protocol-header: X-Forwarded-Proto
+      host-header: X-Forwarded-Host
+      # None: a port follows from the protocol (443 for https), never from
+      # a header (round 4's security review, L13).
+      port-header: ""
   # gzip for the text the browser downloads: the front-end bundle is
   # 930 KB of JavaScript and 145 KB after gzip, the difference between
   # a second and a fraction of one on a phone. Only these types -- the

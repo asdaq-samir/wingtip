@@ -5,23 +5,33 @@ stages on AWS (or a tile on disk), and its Elevation Point Query Service
 
 from __future__ import annotations
 
+import functools
 import math
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import requests
 
+from . import outside
 from .config import REQUEST_HEADERS
 from .retry import with_retries
 
 EPQS_URL = "https://epqs.nationalmap.gov/v1/json"
 
 
+@functools.cache
+def _session() -> requests.Session:
+    """One pooled connection set to the EPQS for the process (its lookups
+    run on threads; urllib3's pools are thread-safe). No retries of its
+    own: fetch_elevation_m's with_retries is the one that backs off."""
+    return outside.session(retries=False)
+
+
 def fetch_elevation_m(lat: float, lon: float, retries: int = 3) -> float:
     params = {"x": lon, "y": lat, "units": "Meters", "wkid": 4326, "includeDate": "false"}
 
     def attempt() -> float:
-        resp = requests.get(EPQS_URL, params=params, headers=REQUEST_HEADERS, timeout=30)
+        resp = _session().get(EPQS_URL, params=params, headers=REQUEST_HEADERS, timeout=30)
         resp.raise_for_status()
         return float(resp.json()["value"])
 

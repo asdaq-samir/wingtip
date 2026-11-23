@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import re
-import threading
 
 from cachetools import TTLCache
 
 from .. import registry
+from ..single_flight import one_at_a_time
 from .common import TrafficUnavailable, _LOCK, _aircraft
 from .adsb_lol import ADSB_LOL_SOURCE, FIND_URL, _heard, _paced, _recent
 from .adsbx import ADSBX_SOURCE, _adsbx
@@ -19,7 +19,6 @@ _N_NUMBER = re.compile(r"^N[1-9][0-9A-Z]{0,4}$")
 #: A search's answer from adsb.lol is given again this long, s.
 FOUND_TTL_S = 15
 _FOUND: TTLCache = TTLCache(maxsize=256, ttl=FOUND_TTL_S)
-_FIND_GATES: dict[str, threading.Lock] = {}
 
 
 def find(query: str) -> list[dict]:
@@ -50,36 +49,32 @@ def find_credited(query: str) -> tuple[list[dict], dict]:
             return heard, ADSB_LOL_SOURCE
         if text in _FOUND:
             return _FOUND[text]
-        gate = _FIND_GATES.setdefault(text, threading.Lock())
-    # One search for a name at a time: the rest wait and are given its answer.
-    with gate:
+    # One search for a name at a time: the rest wait and are given its
+    # answer (single_flight's gate, let go once the last asker is done).
+    with one_at_a_time(("traffic search", text)):
         with _LOCK:
             if text in _FOUND:
                 return _FOUND[text]
-        try:
-            looked = _looked_up(text)
-            if looked is not None:
-                answer = (looked, ADSBX_SOURCE)
-            else:
-                hex_id = _address_of(text)
-                recent = _recent(hex_id) if hex_id else None
-                # The API only where the trace could not be read: a search
-                # there waits its turn behind the map's regions and any
-                # refusal's back-off, which is what kept the owner's
-                # searches waiting (2026-10-12). A trace read (a 404 is
-                # "none heard") settles it, as the API reads the same
-                # data; ADS-B Exchange's "none" alone does not, since its
-                # receivers are not adsb.lol's and an airplane heard only
-                # by adsb.lol's would be missed in the air. The FAA's
-                # record never waits on this: /api/traffic/registered.
-                answer = (recent, ADSB_LOL_SOURCE) if recent is not None else _asked(text, adsbx_tried=True)
-            # The answer is stored in the same lock section the gate is
-            # dropped in, so a search arriving between finds one or the other.
-            with _LOCK:
-                _FOUND[text] = answer
-        finally:
-            with _LOCK:
-                _FIND_GATES.pop(text, None)
+        looked = _looked_up(text)
+        if looked is not None:
+            answer = (looked, ADSBX_SOURCE)
+        else:
+            hex_id = _address_of(text)
+            recent = _recent(hex_id) if hex_id else None
+            # The API only where the trace could not be read: a search
+            # there waits its turn behind the map's regions and any
+            # refusal's back-off, which is what kept the owner's
+            # searches waiting (2026-10-12). A trace read (a 404 is
+            # "none heard") settles it, as the API reads the same
+            # data; ADS-B Exchange's "none" alone does not, since its
+            # receivers are not adsb.lol's and an airplane heard only
+            # by adsb.lol's would be missed in the air. The FAA's
+            # record never waits on this: /api/traffic/registered.
+            answer = (recent, ADSB_LOL_SOURCE) if recent is not None else _asked(text, adsbx_tried=True)
+        # Stored before the gate is let go, so a search arriving after
+        # finds it.
+        with _LOCK:
+            _FOUND[text] = answer
         return answer
 
 

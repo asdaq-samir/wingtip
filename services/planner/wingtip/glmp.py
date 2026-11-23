@@ -132,7 +132,7 @@ def at(lat: float, lon: float, now: datetime | None = None) -> dict | None:
         "ceiling_ft": None if ceiling_ft is None else round(ceiling_ft, -2),
         "visibility_sm": round(visibility_sm, 1),
         "flight_category": flight_category(ceiling_ft, visibility_sm),
-        "valid_at": ceiling_grid.valid.isoformat().replace("+00:00", "Z"),
+        "valid_at": utc.iso(ceiling_grid.valid),
     }
 
 

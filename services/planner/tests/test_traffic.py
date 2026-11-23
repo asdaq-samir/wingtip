@@ -49,7 +49,7 @@ def test_an_airplane_named_is_found_and_its_flight_given(monkeypatch):
     monkeypatch.setattr(
         traffic,
         "flight",
-        lambda hex_id: {
+        lambda hex_id, pilot: {
             "hex": hex_id,
             "registration": "N14511",
             "departed": None,
@@ -58,6 +58,12 @@ def test_an_airplane_named_is_found_and_its_flight_given(monkeypatch):
     )
     body = client.get("/api/traffic/flight/a0b7d8").json()
     assert body["registration"] == "N14511" and body["trail"][0]["alt_ft"] is None
+    # Followed only for the signed-in pilot the gateway names (security round 4, M5).
+    asked = []
+    monkeypatch.setattr(traffic, "flight", lambda hex_id, pilot: asked.append(pilot) or {"hex": hex_id, "trail": []})
+    client.get("/api/traffic/flight/a0b7d8")
+    client.get("/api/traffic/flight/a0b7d8", headers={"X-Pilot-Id": "p1"})
+    assert asked == [None, "p1"]
     # Not an ICAO address: refused, nothing asked of adsb.lol.
     assert client.get("/api/traffic/flight/nothex").status_code == 422
 
@@ -74,7 +80,7 @@ def test_a_flights_faa_registration_and_its_flight_numbers_route(monkeypatch):
         "status": "Valid",
         "standing": "valid",
     }
-    monkeypatch.setattr(traffic, "flight", lambda hex_id: {"hex": hex_id, "faa": faa, "registration": "N14511", "trail": []})
+    monkeypatch.setattr(traffic, "flight", lambda hex_id, pilot: {"hex": hex_id, "faa": faa, "registration": "N14511", "trail": []})
     body = client.get("/api/traffic/flight/a0b7d8").json()
     assert body["faa"]["owner"] == "United Airlines Inc" and body["faa"]["standing"] == "valid" and body["faa"]["co_owners"] == 0
     monkeypatch.setattr(

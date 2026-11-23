@@ -15,9 +15,6 @@ import org.springframework.http.MediaType;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
-import org.springframework.web.filter.ForwardedHeaderFilter;
 
 /**
  * Asking for sign-in links is throttled, with the real limits: nobody
@@ -83,51 +80,6 @@ class MagicLinkThrottleTest {
             ask("inbox@example.com", "203.0.113." + (i / 5), 202);
         }
         ask("inbox@example.com", "203.0.113.200", 429);
-    }
-
-    @Autowired
-    private WebApplicationContext context;
-
-    @org.junit.jupiter.api.BeforeEach
-    void theBalancerIsATrustedProxy() {
-        SlidingWindowLimiter.trustProxies("10.0.0.0/8");
-    }
-
-    @org.junit.jupiter.api.AfterEach
-    void defaultProxies() {
-        SlidingWindowLimiter.trustProxies(null);
-    }
-
-    /** Through the filter `forward-headers-strategy: framework` installs,
-     *  as the deployed app is -- which makes getRemoteAddr() the first
-     *  X-Forwarded-For entry. False: the balancer's X-Forwarded-* headers,
-     *  not the standard Forwarded one (Framework 7.1 makes it a choice). */
-    private void askThrough(String email, String forwardedFor, int expected) throws Exception {
-        MockMvc behindTheBalancer = MockMvcBuilders.webAppContextSetup(context)
-                .addFilters(new ForwardedHeaderFilter(false))
-                .build();
-        behindTheBalancer
-                .perform(post("/api/auth/magic-link")
-                        .with(request -> {
-                            request.setRemoteAddr("10.0.1.5");
-                            return request;
-                        }) // the load balancer
-                        .header("X-Forwarded-For", forwardedFor)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"email\":\"" + email + "\"}"))
-                .andExpect(status().is(expected));
-    }
-
-    @Test
-    void aForwardedForTheCallerWritesDoesNotMakeANewCaller() throws Exception {
-        // The first entry is whatever the caller sent; the load balancer
-        // appends the address it was connected from. Keyed on the first,
-        // a new one per request dodged the limit.
-        for (int i = 0; i < 20; i++) {
-            askThrough("spray" + i + "@example.com", "203.0.113." + i + ", 198.51.100.7", 202);
-        }
-        askThrough("spray-last@example.com", "203.0.113.99, 198.51.100.7", 429);
-        askThrough("someone@example.com", "198.51.100.8", 202);
     }
 
     @Test

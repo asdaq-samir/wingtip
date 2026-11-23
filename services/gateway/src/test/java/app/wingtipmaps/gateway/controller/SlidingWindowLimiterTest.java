@@ -1,41 +1,54 @@
 package app.wingtipmaps.gateway.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Duration;
 import java.time.Instant;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
-/** X-Forwarded-For is believed only from a configured proxy: the phone
- *  mode's gateway faces the LAN, where a client writes the header. */
+/** Who a caller is counted as, and the window itself. Which address
+ *  Tomcat hands over (X-Forwarded-For from a trusted proxy alone) is
+ *  RemoteIpTest's. */
 class SlidingWindowLimiterTest {
 
-    @AfterEach
-    void defaults() {
-        SlidingWindowLimiter.trustProxies(null);
-    }
-
-    private static MockHttpServletRequest from(String remote, String forwardedFor) {
+    private static MockHttpServletRequest from(String remote) {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRemoteAddr(remote);
-        request.addHeader("X-Forwarded-For", forwardedFor);
+        request.addHeader("X-Forwarded-For", "203.0.113.9");
         return request;
     }
 
     @Test
-    void aLanClientsOwnHeaderIsIgnoredWhereNoProxyIsConfigured() {
-        assertEquals("192.168.1.50", SlidingWindowLimiter.clientOf(from("192.168.1.50", "203.0.113.9")));
+    void theCallerIsTheConnectionsAddress_neverAHeaderItWrote() {
+        assertEquals("192.168.1.50", SlidingWindowLimiter.clientOf(from("192.168.1.50")));
+    }
+
+    /** Round 4's security review, M1: one /64 is 2^64 addresses. */
+    @Test
+    void anIpv6CallerIsCountedByItsSlash64() {
+        String one = SlidingWindowLimiter.clientOf(from("2001:db8:1:2:aaaa:bbbb:cccc:dddd"));
+        String other = SlidingWindowLimiter.clientOf(from("2001:0db8:0001:0002:0:0:0:1"));
+        assertEquals("2001:db8:1:2:0:0:0:0/64", one);
+        assertEquals(one, other);
+        assertNotEquals(one, SlidingWindowLimiter.clientOf(from("2001:db8:1:3::1")));
+        // An IPv4 caller as it is, mapped into IPv6 or not.
+        assertEquals("192.0.2.1", SlidingWindowLimiter.clientOf(from("::ffff:192.0.2.1")));
+        assertEquals("192.0.2.1", SlidingWindowLimiter.clientOf(from("192.0.2.1")));
     }
 
     @Test
-    void theLastHopIsBelievedFromAConfiguredProxyBlock() {
-        SlidingWindowLimiter.trustProxies("10.0.0.0/8, 172.16.0.0/12");
-        assertEquals("203.0.113.9", SlidingWindowLimiter.clientOf(from("172.18.0.4", "1.1.1.1, 203.0.113.9")));
-        assertEquals("10.0.1.5", SlidingWindowLimiter.clientOf(from("10.0.1.5", "")));
-        assertEquals("198.51.100.2", SlidingWindowLimiter.clientOf(from("198.51.100.2", "203.0.113.9")));
+    void anIpv6SprayFromOneSlash64IsOneCaller() {
+        SlidingWindowLimiter limiter = new SlidingWindowLimiter(Duration.ofHours(1));
+        Instant now = Instant.parse("2026-11-23T12:00:00Z");
+        for (int i = 0; i < 20; i++) {
+            assertTrue(limiter.allow(
+                    SlidingWindowLimiter.clientOf(from("2001:db8::" + Integer.toHexString(i + 1))), 20, now));
+        }
+        assertFalse(limiter.allow(SlidingWindowLimiter.clientOf(from("2001:db8::ffff")), 20, now));
     }
 
     @Test

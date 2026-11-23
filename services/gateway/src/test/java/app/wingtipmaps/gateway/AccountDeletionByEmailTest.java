@@ -3,9 +3,9 @@ package app.wingtipmaps.gateway;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -106,7 +106,8 @@ class AccountDeletionByEmailTest extends AccountTestBase {
     @Test
     void anUnknownAddressIsAnsweredTheSameAndEmailedNothing() throws Exception {
         ask("nobody-" + System.nanoTime() + "@example.com");
-        verify(mail, never()).send(any(SimpleMailMessage.class));
+        // Looked up off the request's thread, as a known address is.
+        verify(mail, after(1_000).never()).send(any(SimpleMailMessage.class));
     }
 
     @Test
