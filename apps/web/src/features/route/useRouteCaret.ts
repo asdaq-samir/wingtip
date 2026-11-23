@@ -68,7 +68,7 @@ export function useRouteCaret({
       setTokenFieldSelection(field.current, new TokenFieldValue.SelectedRange(caretBefore(valueNow.current, startAt)), true);
   };
 
-  // A tap on the box's empty room -- not a pill, an arrow or the field --
+  // A tap on the box's empty room -- not a pill, a chip or the field --
   // puts the caret after the last point, as a tap past a text field's
   // words puts it at their end, at the pilot's ask: what was typed among
   // the points put in first, as a tap away from it would. Pressed, the

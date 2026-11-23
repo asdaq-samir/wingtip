@@ -1,4 +1,3 @@
-import type { FuelStopSuggestion } from "../../lib/api/types";
 import { sameField } from "../../lib/procedures";
 
 /**
@@ -10,10 +9,15 @@ import { sameField } from "../../lib/procedures";
  * once: a field departed from twice (C81 to KLAS, back to C81, on to KBUF)
  * has each flight's own stops after each, where matching the departure
  * alone put the first flight's after the first and none after the second.
- * A waypoint leaves no flight of its own.
+ * A waypoint leaves no flight of its own. Any of the planner's per-flight
+ * findings named by their ends the same (the totals' no_fuel_stop too).
  */
-export function fuelStopsAt(points: string[], waypoints: Set<string>, suggested: FuelStopSuggestion[]): (FuelStopSuggestion | null)[] {
-  const used = new Set<FuelStopSuggestion>();
+export function fuelStopsAt<F extends { departure: string; destination: string }>(
+  points: string[],
+  waypoints: Set<string>,
+  suggested: readonly F[],
+): (F | null)[] {
+  const used = new Set<F>();
   const last = points.length - 1;
   return points.map((point, i) => {
     if (i === last || waypoints.has(point)) return null;

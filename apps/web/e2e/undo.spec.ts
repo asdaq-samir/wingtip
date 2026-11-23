@@ -89,12 +89,12 @@ test("a stop taken out comes back from the Undo toast that names it", async ({ p
   await pastSettling(page);
 
   const lines = sideDrawer(page).getByTestId("route-slide");
-  await lines.getByRole("group", { name: "Stop 2 KMSN" }).focus();
+  await lines.getByRole("button", { name: "Stop 2 KMSN" }).focus();
   await page.keyboard.press("Delete");
   await expect(page).toHaveURL(stopsAre("KRYV"));
   const bar = undoToast(page, "KMSN Removed");
   await expect(bar).toBeVisible();
   await bar.getByRole("button", { name: "Undo" }).click();
   await expect(page).toHaveURL(stopsAre("KRYV,KMSN"));
-  await expect(lines.getByRole("group", { name: "Stop 2 KMSN" })).toBeVisible();
+  await expect(lines.getByRole("button", { name: "Stop 2 KMSN" })).toBeVisible();
 });

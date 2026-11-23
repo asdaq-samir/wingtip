@@ -238,7 +238,7 @@ test("a point's menu has its altitude before Remove: an airport's pattern in fee
   const item = page.getByTestId("pill-menu-altitude");
 
   // Duluth's pattern, from the course: its field and the pattern over it.
-  await lines.getByRole("group", { name: "Destination KDLH" }).click({ button: "right" });
+  await lines.getByRole("button", { name: "Destination KDLH" }).click();
   await expect(item).toContainText("Set Altitude…");
   await expect(item).toContainText(/\d,\d00 ft/, { timeout: slow(15000) });
   await item.click();
@@ -250,14 +250,14 @@ test("a point's menu has its altitude before Remove: an airport's pattern in fee
   await expect(page).toHaveURL(/[?&]altitudes=KDLH%3A2600(&|$)|[?&]altitudes=KDLH:2600(&|$)/);
 
   // The waypoint's, a flight level over its dashes.
-  await lines.getByRole("group", { name: /VPBNG/ }).click({ button: "right" });
+  await lines.getByRole("button", { name: /VPBNG/ }).click();
   await expect(item).toContainText("Set Altitude…");
   await expect(page.getByTestId("pill-menu-direct")).toContainText("Direct To");
   await item.click();
   await page.getByLabel("Altitude at VPBNG, flight level").fill("055");
   await page.getByTestId("point-altitude-set").click();
   await expect(page).toHaveURL(/KDLH(%3A|:)2600(%2C|,)VPBNG(%3A|:)5500(&|$)/);
-  await lines.getByRole("group", { name: /VPBNG/ }).click({ button: "right" });
+  await lines.getByRole("button", { name: /VPBNG/ }).click();
   await expect(item).toContainText("FL-055");
   // Its Escape once the menu has the focus: pressed as it opened, the key
   // went to the pill, still focused in the route's field, which keeps it.
@@ -266,13 +266,13 @@ test("a point's menu has its altitude before Remove: an airport's pattern in fee
   await expect(item).toHaveCount(0);
 
   // Given back to the plan: Duluth's own is gone from the address.
-  await lines.getByRole("group", { name: "Destination KDLH" }).click({ button: "right" });
+  await lines.getByRole("button", { name: "Destination KDLH" }).click();
   await expect(item).toContainText("2,600 ft");
   await item.click();
   await page.getByTestId("point-altitude-reset").click();
   await expect(page).toHaveURL(/[?&]altitudes=VPBNG(%3A|:)5500(&|$)/);
   // And a point taken out takes its altitude with it.
-  await lines.getByRole("group", { name: /VPBNG/ }).focus();
+  await lines.getByRole("button", { name: /VPBNG/ }).focus();
   await page.keyboard.press("Delete");
   await expect(page).not.toHaveURL(/[?&]altitudes=/);
 });

@@ -164,7 +164,11 @@ test("an ident the planner does not know is said on its pill, not the map's line
   await typeRoute(page);
   const said = page.getByTestId("route-unknown");
   await expect(said).toContainText("KZZZ isn't an airport or waypoint we know", { timeout: 20000 });
-  await expect(page.getByTestId("route-dest").locator("[aria-invalid=true]")).toHaveCount(1);
+  // Red in place, its menu saying why (RoutePill).
+  await expect(page.getByTestId("route-dest")).toHaveAttribute("aria-invalid", "true");
+  await page.getByTestId("route-dest").click();
+  await expect(page.getByTestId("pill-menu-note")).toContainText("KZZZ isn't an airport or waypoint we know");
+  await page.keyboard.press("Escape");
   await expect(banner(page)).toHaveCount(0);
   // The figures' To says it too, in red with its mark, the pill's face at
   // rest; nothing to brief, as nothing to log (the UI audit's B8, 2026-11-17).

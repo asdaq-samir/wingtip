@@ -39,17 +39,26 @@ export interface RouteBoxProps extends RouteParts {
    *  the airport changed from the pill's menu instead. A waypoint's tap
    *  is still its search: it has no card. */
   onOpenAirport?: (ident: string) => void;
+  /** A field's Procedures of a kind, from its pill's menu (where the FAA
+   *  publishes one of that kind there). */
+  onOpenProcedures?: (ident: string, kind: RouteProcedure["kind"]) => void;
+  /** The map brought to a point and ringed, from its pill's Show on Map. */
+  onShowOnMap?: (ident: string) => void;
+  /** The flights short of fuel the planner offers no stop on, by their
+   *  ends (useSuggestedStops' noFuelStop): a "!" on the pill they leave. */
+  shortFlights?: { name: string; onBoard: boolean; departure: string; destination: string }[];
   /** The point flown direct to, and Direct to one or (null) the route as
    *  it was (PlanWorkspace's directToPoint): the pill's menu's, as FPL's. */
   directTo?: string | null;
   onDirectTo?: (ident: string | null) => void;
   /** The fuel stops the planner suggests for a flight too long for its
    *  tanks (the totals' fuel_stops), dashed after the flight's departure
-   *  until added; a tap adds them, as FPL's Add fuel stop does. */
+   *  until added; a tap adds them there, after the point at that place in
+   *  the route (`after`, 0 the departure), as FPL's Add fuel stop does. */
   fuelStops?: FuelStopSuggestion[];
-  onKeepFuelStops?: (after: string, idents: string[]) => void;
-  /** A suggested fuel stop taken out of the box, the pilot not wanting it
-   *  (its menu's Remove); the route's menu or FPL's Routes put it back. */
+  onKeepFuelStops?: (after: number, idents: string[]) => void;
+  /** A suggested fuel stop dismissed for this plan, the pilot not wanting
+   *  it (a swipe to the left, or its menu's Dismiss); FPL's Routes put it back. */
   onHideFuelStop?: (ident: string) => void;
   /** Where a stop asked for (`adding`) is typed in, before the point at
    *  this place: FPL's list's Add a Stop and Add a Stop After, while the
@@ -71,7 +80,7 @@ export interface RouteBoxProps extends RouteParts {
   onClear?: () => void;
   /** The route's whole line wrapped over as many lines as it takes, in a
    *  box `height` tall at the least, growing to hold them all, each pill
-   *  whole on its line with the arrow into it (RouteToken): the grouped
+   *  whole on its line (RouteToken): the grouped
    *  box turned into the route's field by its toggle (TypeRouteButton), its
    *  size and shape kept (the owner, 2026-11-22: "Route box should be as
    *  tall as the grouped box, same shape. So it can show everything

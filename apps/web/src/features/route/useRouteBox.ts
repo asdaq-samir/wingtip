@@ -216,19 +216,21 @@ export function useRouteBox({
     commit();
   };
 
-  // A point's menu (its pill's ContextMenu) from the keyboard, as a hold
-  // or a right-click opens it: at the pill's foot.
-  const openMenu = (pill: HTMLElement) => {
-    const r = pill.getBoundingClientRect();
-    pill.dispatchEvent(new window.MouseEvent("contextmenu", { bubbles: true, cancelable: true, clientX: r.left, clientY: r.bottom }));
-  };
+  // A point's menu (its pill's DropdownMenu, RoutePill) from the keyboard,
+  // as a tap opens it: the pill is the menu's trigger.
+  const openMenu = (pill: HTMLElement) => pill.click();
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const pill = (e.target as HTMLElement).closest<HTMLElement>("[data-point]");
     // Delete (or Backspace) on a focused pill takes it out, as its menu
-    // does; Enter opens its menu.
+    // does; Enter opens its menu; the arrows go from pill to pill in the
+    // route's order, as a toolbar's buttons do (WAI-ARIA's roving focus).
     if (pill && (e.key === "Delete" || e.key === "Backspace")) {
       e.preventDefault();
       remove(Number(pill.dataset.point));
+    } else if (pill && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+      e.preventDefault();
+      const pills = [...(field.current?.querySelectorAll<HTMLElement>("[data-point]") ?? [])];
+      pills[pills.indexOf(pill) + (e.key === "ArrowLeft" ? -1 : 1)]?.focus();
     } else if (e.key === "Enter") {
       // A point selected in the field (Shift and an arrow, or a tap on its
       // token by a reader), or its pill focused: its menu, not Return's.
@@ -270,10 +272,11 @@ export function useRouteBox({
     via,
   });
 
-  // An arrow between two points: the one search asked for a stop there
+  // A point's Insert Before or After (its pill's menu), or the missing
+  // departure's word: the one search asked for a point there
   // (useStopAsked); the caret there where none is drawn.
   const { oneSearch, askAt } = useStopAsked({ points, hasDep, hasDest, isEnd, change });
-  const arrowAt = (before: number) => (oneSearch ? askAt(before) : focusAt(before));
+  const insertAt = (before: number) => (oneSearch ? askAt(before) : focusAt(before));
 
   const clearTyped = () => setValue(routeValue(points, "", typed.at, value));
 
@@ -302,7 +305,7 @@ export function useRouteBox({
     slideRow,
     toEnd,
     isRoom,
-    arrowAt,
+    insertAt,
     suggestions: { open, rows: text ? rows : [], answered: !text || answered, via: !text ? (via ?? []) : [], ownPoint, pick },
     dismiss: () => {
       setDismissed(text);

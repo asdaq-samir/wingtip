@@ -71,7 +71,7 @@ test.describe("on the owner's phone's width, to a finger", () => {
     // same shape"): the field past KRFD ends on KRFD's own line, not one
     // of its own under it.
     const end = (await box.getByTestId("route-type").boundingBox())!;
-    const last = (await box.getByRole("group", { name: "Destination KRFD" }).boundingBox())!;
+    const last = (await box.getByRole("button", { name: "Destination KRFD" }).boundingBox())!;
     expect(end.y + end.height).toBeLessThanOrEqual(last.y + last.height + 4);
   });
 });

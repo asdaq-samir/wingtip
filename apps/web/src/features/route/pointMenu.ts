@@ -1,12 +1,5 @@
 import { useRef, type ComponentType, type ReactNode } from "react";
 import {
-  ContextMenuGroup,
-  ContextMenuItem,
-  ContextMenuLabel,
-  ContextMenuSeparator,
-  ContextMenuShortcut,
-} from "../../components/ui/context-menu";
-import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -14,8 +7,8 @@ import {
   DropdownMenuShortcut,
 } from "../../components/ui/dropdown-menu";
 
-/** The menu's own parts, a DropdownMenu's or a ContextMenu's (shadcn's,
- *  the same shape). */
+/** The menu's own parts, a DropdownMenu's (shadcn's): FPL's timeline's
+ *  "⋯" and the route box's pill (RoutePill) alike. */
 export interface MenuKit {
   Item: ComponentType<{ onClick?: () => void; variant?: "default" | "destructive"; "data-testid"?: string; children?: ReactNode }>;
   /** Round a Label and what it names, as Base UI asks. */
@@ -31,13 +24,6 @@ export const DROPDOWN: MenuKit = {
   Label: DropdownMenuLabel,
   Separator: DropdownMenuSeparator,
   Shortcut: DropdownMenuShortcut,
-};
-export const CONTEXT_MENU: MenuKit = {
-  Item: ContextMenuItem,
-  Group: ContextMenuGroup,
-  Label: ContextMenuLabel,
-  Separator: ContextMenuSeparator,
-  Shortcut: ContextMenuShortcut,
 };
 
 /**

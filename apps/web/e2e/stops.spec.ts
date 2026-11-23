@@ -49,9 +49,10 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   await openPanel(page);
   await typeRoute(page);
 
-  // The arrow between the two asks the one search for the stop (the one
-  // card rule, 2026-11-10), the airports that answer offered under it.
-  await sideDrawer(page).getByRole("button", { name: "Add a stop between C81 and KDLH" }).click();
+  // The destination pill's Insert Before asks the one search for the stop
+  // (the one card rule, 2026-11-10), the airports that answer offered under it.
+  await sideDrawer(page).getByTestId("route-dest").click();
+  await page.getByTestId("pill-menu-add-before").click();
   await page.getByTestId("search-airports").fill("KMSN");
   await page.getByTestId("airport-result").filter({ hasText: "KMSN" }).first().click();
   await expect(page).toHaveURL(stopsAre("KMSN"));
@@ -107,21 +108,20 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   await grabberTo(page, "half");
   await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+/);
 
-  // Taken off again from its menu -- a right-click with a mouse, a press
-  // and hold on a phone: the route as it was, opened again to edit (at half
-  // it folds).
+  // Taken off again from its menu, a tap on its pill (RoutePill): the
+  // route as it was, opened again to edit (at half it folds).
   await openPanel(page);
   await typeRoute(page);
   // The route's field, still open from the stop's adding at half, runs
   // on past the sheet's edge there: the sheet raised to its pill.
   await inSheet(page, stop);
-  await stop.click({ button: "right" });
+  await stop.click();
   await page.getByRole("menuitem", { name: "Remove", exact: true }).click();
   await expect(page).not.toHaveURL(/[?&]stops=/);
   await expect(sideDrawer(page).getByTestId("stop")).toHaveCount(0);
 });
 
-test("the route's box reads its points with an arrow between each two, a tap on one a stop typed there, what is typed after the last the new destination with the old a stop; any point comes out from a hold, a right-click or Delete", async ({
+test("the route's box reads its points in order with no arrows, a pill's tap its menu, what is typed after the last the new destination with the old a stop; any point comes out from its menu or Delete", async ({
   page,
 }) => {
   await page.route(
@@ -133,13 +133,14 @@ test("the route's box reads its points with an arrow between each two, a tap on 
   await openPanel(page);
   await typeRoute(page);
   const lines = sideDrawer(page).getByTestId("route-slide");
-  // In that order, each a token of the route's field, no cross on any pill.
+  // In that order, each a token of the route's field, no arrow between
+  // them and no cross on any pill (ForeFlight's, the owner, 2026-11-23).
   const order = await lines.evaluate((el) =>
-    [...el.querySelectorAll("[role=group], [data-testid=route-type], [data-testid=route-arrow]")].map(
+    [...el.querySelectorAll("[data-point], [data-testid=route-type], [data-testid=route-arrow]")].map(
       (n) => n.getAttribute("data-testid") ?? "",
     ),
   );
-  expect(order).toEqual(["route-type", "route-dep", "route-arrow", "stop", "route-arrow", "stop", "route-arrow", "route-dest"]);
+  expect(order).toEqual(["route-type", "route-dep", "stop", "stop", "route-dest"]);
   expect(await lines.getByRole("button", { name: /^Remove/ }).count()).toBe(0);
 
   // What is typed after the last point is the new destination, the old
@@ -150,39 +151,32 @@ test("the route's box reads its points with an arrow between each two, a tap on 
   await expect(page).toHaveURL(/[?&]dest=KMSP(&|$)/);
   await expect(page).toHaveURL(stopsAre("KRYV,KMSN,KDLH"));
   // Taken back out: the route as it was but for the new destination.
-  await lines.getByRole("group", { name: "Stop 3 KDLH" }).focus();
+  await lines.getByRole("button", { name: "Stop 3 KDLH" }).focus();
   await page.keyboard.press("Delete");
   await expect(page).toHaveURL(stopsAre("KRYV,KMSN"));
 
-  // A finger held on a pill: its menu.
-  const kmsn = lines.getByRole("group", { name: "Stop 2 KMSN" });
-  const box = (await kmsn.boundingBox())!;
-  const at = { clientX: box.x + 12, clientY: box.y + box.height / 2, pointerType: "touch", pointerId: 7, isPrimary: true, bubbles: true };
-  await kmsn.dispatchEvent("pointerdown", at);
-  // The stock ContextMenu's own long press is timed from the touch's start.
-  await kmsn.dispatchEvent("touchstart", { touches: [{ identifier: 7, clientX: at.clientX, clientY: at.clientY }] });
-  // Its menu after the hold (the page under it is then hidden from a
-  // reader, the pill with it, so the finger is not lifted here).
+  // A tap on a pill: its menu, Remove last (its Undo the plan's toast).
+  await lines.getByRole("button", { name: "Stop 2 KMSN" }).click();
   await page.getByRole("menuitem", { name: "Remove", exact: true }).click();
   await expect(page).toHaveURL(stopsAre("KRYV"));
 
-  // The departure taken out with a right-click: the next airport along is
-  // the departure.
-  await lines.getByRole("group", { name: "Departure C81" }).click({ button: "right" });
+  // The departure taken out from its menu: the next airport along is the
+  // departure.
+  await lines.getByRole("button", { name: "Departure C81" }).click();
   await page.getByRole("menuitem", { name: "Remove", exact: true }).click();
   await expect(page).toHaveURL(/[?&]dep=KRYV(&|$)/);
   await expect(page).not.toHaveURL(/[?&]stops=/);
 
   // Of two, Delete on the destination: half a route, the departure kept,
   // the destination still to be typed.
-  await lines.getByRole("group", { name: "Destination KMSP" }).focus();
+  await lines.getByRole("button", { name: "Destination KMSP" }).focus();
   await page.keyboard.press("Delete");
   await expect(page).not.toHaveURL(/[?&]dest=/);
   await expect(page).toHaveURL(/[?&]dep=KRYV(&|$)/);
   await expect(sideDrawer(page).getByTestId("route-type")).toHaveAttribute("data-placeholder", "Destination");
   // And the last: no route, the empty route's card to start another, its
   // field folded behind the box's toggle at the Destination's end.
-  await lines.getByRole("group", { name: "Departure KRYV" }).focus();
+  await lines.getByRole("button", { name: "Departure KRYV" }).focus();
   await page.keyboard.press("Delete");
   await expect(page).not.toHaveURL(/[?&]dep=/);
   await showTabs(page);
@@ -197,16 +191,15 @@ test("a cleared route's box takes the departure first, then asks for the destina
   await settle(page);
   await openPanel(page);
   await typeRoute(page);
-  // Taken after the destination, the field has an arrow on from it: what
-  // is typed there is the new destination.
+  // No arrow and no "Destination" word after the last point, the field
+  // taken or not (the owner, 2026-11-23; the r6 audit's L1): what is typed
+  // there is the new destination all the same.
   await expect(sideDrawer(page).getByTestId("route-arrow-on")).toHaveCount(0);
-  // Tapped past the last point, as a pilot taps after a field's words: with
-  // a suggested fuel stop's pill on the line the field's middle is the
-  // arrow into the destination, Add a Stop's, and that tap asks for a stop.
   const typeHere = sideDrawer(page).getByTestId("route-type");
   const fieldBox = (await typeHere.boundingBox())!;
   await typeHere.click({ position: { x: fieldBox.width - 8, y: fieldBox.height / 2 } });
-  await expect(sideDrawer(page).getByTestId("route-arrow-on")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("route-arrow-on")).toHaveCount(0);
+  await expect(sideDrawer(page).getByTestId("route-slide")).not.toContainText("Destination");
   await clearTheRoute(page);
   await expect(page).not.toHaveURL(/[?&]dep=/);
   await sideDrawer(page).getByTestId("route-type-open").click();
@@ -240,7 +233,7 @@ test("a link with a stop opens on the route through it", { tag: "@smoke" }, asyn
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KMSN");
   await openPanel(page);
   await typeRoute(page);
-  await expect(sideDrawer(page).getByRole("group", { name: "Stop 1 KMSN" })).toBeVisible({ timeout: slow(15000) });
+  await expect(sideDrawer(page).getByRole("button", { name: "Stop 1 KMSN" })).toBeVisible({ timeout: slow(15000) });
   // Its airport on the map, as the route's two ends are.
   await expect.poll(markWith(page, "route-marks", "KMSN"), { timeout: slow(15000) }).not.toBeNull();
 });

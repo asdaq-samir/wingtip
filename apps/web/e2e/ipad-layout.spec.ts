@@ -188,7 +188,7 @@ test("on an iPad the map's buttons take a finger 44 points across, and a trackpa
   // TypeRouteButton; the owner, 2026-11-22), as airport-search.spec has it.
   await openPanel(page);
   await typeRoute(page);
-  await page.getByLabel(/^(\S+, )?Destination$/).click({ button: "right" });
+  await page.getByTestId("route-dest").click();
   await expect(page.getByTestId("pill-menu-change")).toBeVisible();
 });
 

@@ -73,6 +73,16 @@ describe("Add Fuel Stops", () => {
     const hook = renderHook(() =>
       useSuggestedStops({ totals, local: false, planned: { dep: POS, stops: ["KLAS"], dest: "KPWK" }, setStops: vi.fn() }),
     );
-    expect(hook.result.current.noFuelStop).toEqual([{ name: "KLAS → KPWK", onBoard: true }]);
+    expect(hook.result.current.noFuelStop).toEqual([{ name: "KLAS → KPWK", onBoard: true, departure: "KLAS", destination: "KPWK" }]);
+  });
+
+  it("keeps a suggestion on the flight it was drawn on, by the point's place, where the route leaves a field twice", () => {
+    const setStops = vi.fn();
+    const hook = renderHook(() =>
+      useSuggestedStops({ totals: null, local: false, planned: { dep: "C81", stops: ["KLAS", "C81"], dest: "KBUF" }, setStops }),
+    );
+    // C81 at its second place (2): the flight on to KBUF, not the first.
+    hook.result.current.keepFuelStops(2, ["KKNB"]);
+    expect(setStops).toHaveBeenCalledWith(["KLAS", "C81", "KKNB"], ["KKNB"]);
   });
 });

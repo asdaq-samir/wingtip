@@ -83,10 +83,11 @@ test("the route's box is round, one line tall for a short route and the panel's 
   await expect(end).toHaveAccessibleName("Add stop, the new destination");
   await expect(end).toBeFocused();
 
-  // An arrow asks the one search for a stop there, no field of the box's
-  // own (the one card rule, 2026-11-10): a town's name, its field offered
-  // first, and Enter takes it, as a stop.
-  await sideDrawer(page).getByRole("button", { name: "Add a stop between C81 and KDLH" }).click();
+  // The destination's Insert Before asks the one search for a stop there,
+  // no field of the box's own (the one card rule, 2026-11-10): a town's
+  // name, its field offered first, and Enter takes it, as a stop.
+  await sideDrawer(page).getByTestId("route-dest").click();
+  await page.getByTestId("pill-menu-add-before").click();
   await expect(sideDrawer(page).getByTestId("route-type")).not.toHaveAccessibleName("A stop here");
   const field = page.getByTestId("search-airports");
   await expect(field).toHaveAccessibleName("Search airports and waypoints");
@@ -231,7 +232,7 @@ test("the route's airports are marked by their airspace's ring and their weather
   );
   // Each point of the route's title led by its field's chart mark (the
   // polish pass, 2026-10-26): Duluth's Class D ring.
-  const mark = () => sideDrawer(page).getByRole("group", { name: "Destination KDLH" }).locator("[data-airport-mark]");
+  const mark = () => sideDrawer(page).getByRole("button", { name: "Destination KDLH" }).locator("[data-airport-mark]");
   const weather = () => mark().locator("[data-weather]").getAttribute("fill");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);

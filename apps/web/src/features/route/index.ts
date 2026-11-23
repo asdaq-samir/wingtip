@@ -5,6 +5,7 @@
  */
 
 export { default as DirectStrip } from "./DirectStrip";
+export { fuelStopsAt } from "./fuelStopsAt";
 export type { EditedPoint, PointAltitude } from "./PointAltitudeDialog";
 export type { RouteParts, RouteProcedure } from "./RouteBox";
 export { RouteBox } from "./routeBoxChunk";
