@@ -4,6 +4,7 @@ import Foundation
 /// (SaveFlightRequest.PICK, the web's lib/address PICK_KEYS): its fuel
 /// stops (`fuel`, the stops Add Fuel Stops put in), the fuel on board as
 /// it leaves each field (`tanks`, the planner's own "KJVL:0,KMSN:20") and
+/// its IFR alternate filed (`alternate`, 14 CFR 91.169), and
 /// its flight rules (`rules`, VFR or IFR), which set its cruising
 /// altitudes (14 CFR 91.159, 91.179) and its fuel (91.151, 91.167). A saved
 /// IFR flight came back VFR, with plain stops and full tanks, before.
@@ -14,6 +15,7 @@ enum SavedPicks {
     struct Read: Equatable {
         var fuel: [String] = []
         var tanks: [String: Int] = [:]
+        var alternate: String?
         var rules: FlightRules?
     }
 
@@ -23,11 +25,12 @@ enum SavedPicks {
 
     /// The picks to save: only those set, the fuel stops still stops; nil
     /// for none.
-    static func write(fuelStops: [String], stops: [String], tanks: [String: Int], rules: FlightRules) -> String? {
+    static func write(fuelStops: [String], stops: [String], tanks: [String: Int], alternate: String?, rules: FlightRules) -> String? {
         var parts: [(String, String)] = []
         let fuel = fuelStops.filter { stop in stops.contains { $0.uppercased() == stop.uppercased() } }
         if !fuel.isEmpty { parts.append(("fuel", fuel.joined(separator: ","))) }
         if let tanks = RouteExtras.pairs(tanks) { parts.append(("tanks", tanks)) }
+        if let alternate, !alternate.isEmpty { parts.append(("alternate", alternate)) }
         parts.append(("rules", rules.rawValue))
         let written = parts.compactMap { part in
             part.1.addingPercentEncoding(withAllowedCharacters: kept).map { "\(part.0)=\($0)" }
@@ -50,6 +53,9 @@ enum SavedPicks {
                     stops.contains { $0.uppercased() == fuel.uppercased() }
                 }
             case "tanks": out.tanks = SharedPlan.tanks(value)
+            // An ident as a link's are read (Links.ident); one that is not
+            // is left out, never guessed.
+            case "alternate": out.alternate = Links.ident(value)
             case "rules": out.rules = FlightRules(rawValue: value.lowercased())
             default: continue
             }
