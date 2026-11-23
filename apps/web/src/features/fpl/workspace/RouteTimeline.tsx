@@ -10,7 +10,7 @@ import { sameField } from "../../../lib/procedures";
 import { airportQuery } from "../../../lib/queryClient";
 import { DepartPicker } from "../../navlog/lazy";
 import { TimelineRoute, visitAt, visitRow, type TimelinePoint } from "../../procedures/lazy";
-import { etaAt, rowCautions } from "../../plan";
+import { etaAt } from "../../plan";
 import type { PlanSlices } from "../vm/planSlices";
 import type { ProceduresRouteProps } from "../../procedures/lazy";
 import { BoxToggle, MissingEnd } from "./RouteStart";
@@ -151,7 +151,6 @@ export default function RouteTimeline({
   // Each point's warning where it lies outside the United States, and the
   // leg's from it where that crosses a country neither end is in (the
   // engine's route_jurisdiction, decision 0053): its nav log row's.
-  const cautions = rowCautions(routeRows);
   const points: TimelinePoint[] = routePoints.map((ident, index) => {
     const role =
       index === 0 && ident === planned.dep
@@ -172,19 +171,11 @@ export default function RouteTimeline({
       time: timeOf(ident, role, seen),
       category: unknown || !field ? null : metarCategory(ident),
       problem: unknown ?? (status.closed ? `${status.closed}. Pick another field.` : status.failed),
-      caution: null,
-      legCaution: null,
       checking: status.checking,
       fuelStop: role === "Stop" && fuel.some((f) => sameField(f, ident)),
       field,
     };
   });
-  for (const point of points) {
-    const row = visitRow(routeRows, point.role, point.ident, point.seen);
-    const said = row ? cautions[routeRows.indexOf(row)] : undefined;
-    point.caution = said?.at ?? null;
-    point.legCaution = said?.leaving ?? null;
-  }
   // Half a route, open to edit: the end it lacks in its place, and the
   // box's toggle in its last row where Add a Stop is on a whole one.
   const half = !read && !wholeRoute;
