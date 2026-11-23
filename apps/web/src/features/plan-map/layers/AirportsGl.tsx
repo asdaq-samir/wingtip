@@ -6,7 +6,7 @@ import { api } from "../../../lib/api/client";
 import { airportsQuery } from "../airportsQuery";
 import { colourOf } from "../../../lib/map/marks/flightCategory";
 import { useGlData, useGlLayer, useGlMap, useGlTap } from "../../../lib/map/gl/glLayer";
-import { setAirportWeather, setOverlayExclusion, setSelectedAirport } from "../../../lib/map/gl/glOverlays";
+import { AIRPORT_TILE_LAYERS, setAirportWeather, setOverlayExclusion, setSelectedAirport } from "../../../lib/map/gl/glOverlays";
 import { useGlView } from "../../../lib/map/gl/useGlView";
 import { useGlProbe } from "../../../lib/map/gl/useGlProbe";
 import { TAP, labelHalo, labelText, selectionRing } from "../../../lib/map/gl/layers/common";
@@ -125,8 +125,8 @@ function useAirportTaps(
   );
   useGlData(SELECTED, ring);
   useGlProbe("selected-airport", ["airport-selected"], () => ({ ring: true }));
-  useGlProbe("airport-marks", ["airports"], fields);
-  useGlTap(["airports"], TAP.mark, TAP.rank.mark, (feature) => onSelect(String(feature.properties.ident)));
+  useGlProbe("airport-marks", AIRPORT_TILE_LAYERS, fields);
+  useGlTap(AIRPORT_TILE_LAYERS, TAP.mark, TAP.rank.mark, (feature) => onSelect(String(feature.properties.ident)));
 }
 
 /** The overlay tiles' airports: the settings' filters and the route's

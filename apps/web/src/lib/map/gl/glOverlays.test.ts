@@ -70,6 +70,7 @@ describe("the overlay tiles' layers", () => {
       "navaids",
       "navaids-idents",
       "airports",
+      "airports-kept",
     ]);
     // Each class from its own zoom (AIRSPACE_FROM).
     const from = Object.fromEntries(layers.lines!.map((l) => [l.id, l.minzoom]));
@@ -117,6 +118,11 @@ describe("the overlay tiles' layers", () => {
       ["get", "ident"],
     ]);
     expect(airports.layout!["icon-padding"]).toBe(2);
+    // No bare mark: a field's mark and ident are placed together; a Class B's and the open card's keep the mark.
+    expect(airports.layout!["text-optional"]).toBe(false);
+    const kept = overlayStyle(TILES, ORIGIN).layers.marks!.find((l) => l.id === "airports-kept") as SymbolLayerSpecification;
+    expect(kept.layout!["text-optional"]).toBe(true);
+    expect(kept.layout!["icon-allow-overlap"]).toBe(true);
     expect(airports.layout!["symbol-sort-key"]).toEqual(["get", "rank"]);
   });
 
