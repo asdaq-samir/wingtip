@@ -6,6 +6,8 @@ import { TAP } from "../../lib/map/gl/layers/common";
 import { useGlLayer, useGlMap, useGlPaint, useGlTap } from "../../lib/map/gl/glLayer";
 import { useGlLines, type GlRun } from "../../lib/map/gl/useGlLines";
 import { pictureLayer } from "../../lib/map/gl/markLayers";
+import { glZoom } from "../../lib/map/gl/glStyle";
+import { PROCEDURE_WORDS_FROM_ZOOM } from "../../lib/map/marks/procedureMarks";
 import { useGlSymbols, type GlSymbol } from "../../lib/map/gl/useGlSymbols";
 import { usePreferences } from "../../lib/preferences";
 import { plateQuery } from "../../lib/queryClient";
@@ -164,7 +166,13 @@ function PlateTagsGl({ drawing }: { drawing: ProcedureDrawing }) {
     [answer, drawing],
   );
   const source = `plate-tags-${drawing.airport}-${drawing.id}`;
-  const layers = useMemo(() => [pictureLayer(source, source, {}, PLATE_TAG_PLACE)], [source]);
+  // From the procedures' words' zoom, as the procedure's own tags: farther
+  // out every tag of an approach piled on its field, over the fields round
+  // it (the owner's iPhone screenshot, 2026-11-23: KLAS's over KSLC).
+  const layers = useMemo(
+    () => [{ ...pictureLayer(source, source, {}, PLATE_TAG_PLACE), minzoom: glZoom(PROCEDURE_WORDS_FROM_ZOOM) }],
+    [source],
+  );
   useGlSymbols(source, layers, marks);
   return null;
 }

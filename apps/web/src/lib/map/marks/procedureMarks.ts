@@ -4,7 +4,7 @@ import { altFt } from "../../format";
 import { BADGE } from "../../rowBadges";
 import { drawTag, type TagLine } from "../gl/drawTag";
 import { svgPicture, type GlPicture } from "../gl/useGlSymbols";
-import { CHART, MAP_LABEL } from "../../tokens";
+import { CHART, MAP_LABEL, MAP_ZOOM } from "../../tokens";
 
 /** A fix's tag's type, map.label.kind.fix-tag. */
 const TAG_SIZE = MAP_LABEL.kind.fixTag.size;
@@ -29,9 +29,10 @@ export const PROCEDURE_INK = BADGE.approach;
 /** A procedure of an old cycle: grey, not the approaches' indigo. */
 export const STALE_INK = CHART.fieldUnknown;
 
-/** From this zoom in, the fixes' names and altitudes: further out an
- *  approach is a short line by its field, and its words would cover it. */
-export const PROCEDURE_WORDS_FROM_ZOOM = 9;
+/** From this zoom in, the fixes' names and altitudes (map.zoom.procedure-words):
+ *  further out an approach is a short line by its field, and its words
+ *  would cover it. */
+export const PROCEDURE_WORDS_FROM_ZOOM = MAP_ZOOM.procedureWords;
 
 /** A fix's marks: its diamond, and from PROCEDURE_WORDS_FROM_ZOOM its tag
  *  beside it -- its name, its part, the altitudes with the chart's bars,

@@ -1040,6 +1040,12 @@ nonisolated enum WingtipMapZoom {
     static let vor: Double = 8
     /// The VFR waypoints and the low enroute chart's fixes. The app's alone: the charts job's tiles hold every fix from its own zooms (overlay_layers).
     static let fix: Double = 10
+    /// The Class B fields' weather marks at their full size and named from this zoom; farther out, over the whole country, each a small mark with no ident that gives way to the route's own, so only the route's ends and stops are named there (the owner's iPhone screenshot, 2026-11-23).
+    static let classBNamed: Double = 5
+    /// The route's tags beyond its fields and stops, its tops of climb and descent, from this zoom, where a leg is long enough on a phone to read them; farther out the route is its line, its ends and its stops.
+    static let routeTags: Double = 6
+    /// A procedure's fixes' tags and an approach plate's fix tags from this zoom; farther out an approach is a short line by its field, and its words would cover it and the fields round it.
+    static let procedureWords: Double = 9
 }
 
 /// The map's words (design/tokens.json's map.label): the size scale (px), the halo, and each kind's size, weight and halo.

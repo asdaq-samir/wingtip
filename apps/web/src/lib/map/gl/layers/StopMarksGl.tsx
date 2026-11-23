@@ -7,18 +7,32 @@ import { STOP_KINDS, type StopKind } from "../../../stopKinds";
 import { colourOf } from "../../marks/flightCategory";
 import { fieldMarkPicture } from "../../marks/markPictures";
 import { BREAK_PIN, FUEL_PIN, PIN_PLACE, stackedPin, type StopPin } from "../../marks/stopPins";
-import { labelledLayer, pictureLayer } from "../markLayers";
+import { ROUTE_MARKS_LOWEST } from "../../marks/routeMarks";
+import { labelledLayer, pictureLayer, type Layout } from "../markLayers";
 import { useGlSymbols, type GlSymbol } from "../useGlSymbols";
 
 const PIN = ["==", ["get", "kind"], "pin"] as ExpressionSpecification;
 const FIELD = ["==", ["get", "kind"], "field"] as ExpressionSpecification;
 
+/** A stop's field: its mark always drawn, under its pin (which takes the
+ *  room, so the marks placed after it -- a Class B's field, the chart's
+ *  fields and their idents -- give way to the pin), its ident giving way. */
+const FIELD_UNDER_PIN: Layout = {
+  "icon-allow-overlap": true,
+  "icon-ignore-placement": true,
+  "text-allow-overlap": false,
+  "text-optional": true,
+};
+
 /** A stop's field's mark and ident under its pins, its pins' tip on the
- *  field's middle (Tesla's trip map, the owner's screenshot, 2026-10-21). */
+ *  field's middle (Tesla's trip map, the owner's screenshot, 2026-10-21).
+ *  The pin and the mark always drawn; the ident given way where the
+ *  route's own names or another mark's are (the owner's iPhone screenshot,
+ *  2026-11-23: KPGA's over KLAS's at the country's zoom). */
 function stopLayers(id: string): SymbolLayerSpecification[] {
   return [
-    { ...labelledLayer(`${id}-fields`, id), filter: FIELD },
-    { ...pictureLayer(`${id}-pins`, id, {}, PIN_PLACE), filter: PIN },
+    { ...labelledLayer(`${id}-fields`, id, { collide: true, sort: 0 }, FIELD_UNDER_PIN), filter: FIELD },
+    { ...pictureLayer(`${id}-pins`, id, {}, { ...PIN_PLACE, "icon-ignore-placement": false }), filter: PIN },
   ];
 }
 const FUEL_STOPS = "fuel-stops";
@@ -60,7 +74,9 @@ export function FuelStopsGl({ stops, onSelect }: { stops: StopPin[]; onSelect: (
       }),
     [stops, places, onSelect],
   );
-  useGlSymbols(FUEL_STOPS, FUEL_STOP_LAYERS, marks);
+  // Under the route's own marks, which are placed first: the route's ends
+  // keep their names and the pin is drawn under them, not over.
+  useGlSymbols(FUEL_STOPS, FUEL_STOP_LAYERS, marks, { under: ROUTE_MARKS_LOWEST });
   return null;
 }
 

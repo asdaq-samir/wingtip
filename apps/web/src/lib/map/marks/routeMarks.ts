@@ -33,6 +33,40 @@ const KIND = (kind: string) => ["==", ["get", "kind"], kind] as ExpressionSpecif
 const SORT = { collide: true as const, sort: ["get", "sort"] as ExpressionSpecification };
 /** A route field's ident's size (map.label.kind.route-ident), for its offset in ems. */
 const ROUTE_IDENT_SIZE = MAP_LABEL.kind.routeIdent.size;
+/** How far a route field's ident is from the field's middle, in its ems:
+ *  20 points beside it, past the 26-point mark and the pill's 5 of edge;
+ *  16 over or under it, past the mark and the pill's 3. */
+const AWAY = 20 / ROUTE_IDENT_SIZE;
+const AWAY_UP = 16 / ROUTE_IDENT_SIZE;
+
+/** Each side a route field's ident can take: its anchor (its side facing
+ *  the field) and its offset. */
+const SIDE: Record<FieldSide, [string, [number, number]]> = {
+  left: ["left", [AWAY, 0]],
+  bottom: ["bottom", [0, -AWAY_UP]],
+  right: ["right", [-AWAY, 0]],
+  top: ["top", [0, AWAY_UP]],
+};
+type FieldSide = "left" | "bottom" | "right" | "top";
+/** Clockwise from east (the pill right of the field), the order the sides
+ *  are tried in from the first. */
+const CLOCKWISE: FieldSide[] = ["left", "top", "right", "bottom"];
+
+/** The sides in the order MapLibre tries them, the feature's `side` first,
+ *  then its neighbours, the opposite last. */
+const FIELD_SIDES = [
+  "match",
+  ["get", "side"],
+  ...CLOCKWISE.flatMap((first, i) => [first, ["literal", [0, 1, 3, 2].flatMap((k) => SIDE[CLOCKWISE[(i + k) % 4]!])]]),
+  ["literal", CLOCKWISE.flatMap((k) => SIDE[k])],
+] as unknown as ExpressionSpecification;
+
+/** The side of a field its ident goes first: outside the course's turn
+ *  there (outsideOfTurn, degrees clockwise from up on a north-up screen)
+ *  to the nearest of four. */
+export function fieldSide(outDeg: number): FieldSide {
+  return (["bottom", "left", "top", "right"] as const)[Math.round((((outDeg % 360) + 360) % 360) / 90) % 4]!;
+}
 
 /** Bottom to top: the layers above are placed first. */
 export const ROUTE_MARK_LAYERS: SymbolLayerSpecification[] = [
@@ -42,13 +76,19 @@ export const ROUTE_MARK_LAYERS: SymbolLayerSpecification[] = [
   { ...pictureLayer("route-fix-dots", ROUTE_MARKS), filter: KIND("fix") },
   { ...chipLayer("route-fixes", ROUTE_MARKS, SORT, { "icon-image": ROUTE_POINT_PILL.id, ...turnSide(0) }), filter: KIND("fix") },
   {
-    // The ident 15 points right of the field's middle, past its mark, on
-    // its pill: 5 points in from the pill's left.
+    // The ident 15 points from the field's middle, past its mark, on its
+    // pill, first on the side outside the course's turn there (`side`),
+    // off the line: east of the field it lay along the leg west of it and
+    // hid it (the owner's screenshot, KAHQ's over the leg from KUGN). Where that side is taken
+    // (a stop's pin, own ship, another of the route's fields), the left,
+    // then over and under the mark, before it gives way: a destination
+    // beside a fuel stop's pin kept its name (the owner's iPhone
+    // screenshot, 2026-11-23: KLAS under KPGA's pin at the country's zoom).
     ...chipLayer(
       "route-field-idents",
       ROUTE_MARKS,
       SORT,
-      { "icon-image": ROUTE_PILL.id, "text-anchor": "left", "text-offset": [20 / ROUTE_IDENT_SIZE, 0] },
+      { "icon-image": ROUTE_PILL.id, "text-variable-anchor-offset": FIELD_SIDES },
       { "text-color": CHART.casing },
       "routeIdent",
     ),
@@ -102,7 +142,11 @@ export function routeMarks(
       picture: e.fix ? turnDotPicture(ring) : fieldMarkPicture(e.space, e.colour),
       also: e.fix ? [ROUTE_POINT_PILL] : [ROUTE_PILL],
       // The destination's placed before every other.
-      props: { kind: e.fix ? "fix" : "field", sort: i === endpoints.length - 1 ? 0 : 1, ...(e.fix && { out: outsideOfTurn(line, e) }) },
+      props: {
+        kind: e.fix ? "fix" : "field",
+        sort: i === endpoints.length - 1 ? 0 : 1,
+        ...(e.fix ? { out: outsideOfTurn(line, e) } : { side: fieldSide(outsideOfTurn(line, e)) }),
+      },
       onTap: e.select,
     })),
     ...checkpoints.map((c): GlSymbol => ({

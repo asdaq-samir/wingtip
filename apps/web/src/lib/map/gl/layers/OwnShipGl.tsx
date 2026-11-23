@@ -1,5 +1,5 @@
 import type { MapGeoJSONFeature, Marker } from "maplibre-gl";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { SHEET_SECONDS } from "../../../mapChrome";
 import { underway } from "../../position/glide";
 import { ownShipHtml } from "../../marks/icons";
@@ -10,6 +10,18 @@ import { useGlMap } from "../glLayer";
 import { glZoom } from "../glStyle";
 import { cameraOf } from "../camera";
 import { TAP } from "./common";
+import { pictureLayer } from "../markLayers";
+import { svgPicture, useGlSymbols, type GlSymbol } from "../useGlSymbols";
+
+/** Own ship's room on the chart, an empty picture the size of its plane
+ *  and a little round it, which MapLibre's collision keeps clear: the
+ *  marker is HTML over the canvas, which the collision does not see, so
+ *  KORD's ident was drawn under the arrow (the owner's iPhone screenshot,
+ *  2026-11-23). Always drawn, and placed first, the top of the marks, so
+ *  every label gives way round it (rules.md, "Where words collide"). */
+const ROOM = "own-ship-room";
+const ROOM_PICTURE = svgPicture(ROOM, () => '<svg width="40" height="40"></svg>');
+const ROOM_LAYERS = [pictureLayer(ROOM, ROOM, {}, { "icon-ignore-placement": false })];
 
 /** The location arrow's close-in, in the app's levels. */
 const LOCAL_ZOOM = 9;
@@ -46,6 +58,8 @@ export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
   const follow = useOwnShip((s) => s.follow);
   const recentred = useOwnShip((s) => s.recentred);
   const recentreZoom = useOwnShip((s) => s.recentreZoom);
+  const room = useMemo<GlSymbol[]>(() => (fix ? [{ key: ROOM, lat: fix.lat, lon: fix.lon, picture: ROOM_PICTURE }] : []), [fix]);
+  useGlSymbols(ROOM, ROOM_LAYERS, room);
   const marker = useRef<Marker | null>(null);
   // The mark's HTML as last written (drawOwnShip).
   const drawn = useRef("");
