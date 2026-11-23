@@ -1,11 +1,9 @@
-import { Suspense, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { CardAction as Action } from "../../../components/CardAction";
 import { ICON } from "../../../lib/icons";
-import { RouteLine } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
 import RouteHead from "./RouteHead";
 import { FlightFigures } from "./FlightFoot";
-import { routesOut } from "./routeEditing";
 
 /**
  * FPL's actions in flight, one row of four tiles at the top of the flying
@@ -63,9 +61,10 @@ export function FplActions({ vm, more }: { vm: PlanSlices<"brief" | "flight" | "
 /** FPL's route row (the page's `route`, PlanWorkspace), a column the
  *  row's width, as the sheet lays the route in a row (MapPage's
  *  routeRowOf), where a grid alone had no width. The route's timeline
- *  (the one layout, decision 0047, where it is read and edited) and the
- *  suggested routes' chips over it while the tab bar's Routes has them out
- *  (the owner, 2026-11-17). On the ground the flight's figures are not
+ *  (the one layout, decision 0047, where it is read and edited). The
+ *  suggested routes' chips are not here but in the foot, in the figures'
+ *  place while the tab bar's Routes has them out (FlightFoot's GroundFoot;
+ *  the owner, 2026-11-23). On the ground the flight's figures are not
  *  here but in FPL's foot, over its tab bar (FlightFoot's GroundFoot, the
  *  foot bar beside the sheet on a phone: sheet/FootBar); in a dry run they
  *  are under the route, the foot counting down. */
@@ -75,21 +74,8 @@ export function FplRoute({
   vm: PlanSlices<"brief" | "cards" | "flight" | "leg" | "picks" | "plan" | "route" | "routeList" | "stops" | "view">;
 }) {
   const { dryRunning } = vm.flight;
-  const { routeLine } = vm.routeList;
-  const routesShown = routesOut(vm);
   return (
     <div className="flex w-full min-w-0 flex-1 flex-col">
-      {/* The suggested routes' pills just above the stops, out while the
-          tab bar's Routes is on (the owner, 2026-11-17: "Which shows route
-          pills just above the stops"), where they were a section under the
-          figures. */}
-      {routesShown && routeLine && (
-        <section aria-label="Suggested routes" className="pb-(--space-group)" data-testid="route-group">
-          <Suspense fallback={<div className="h-11" />}>
-            <RouteLine line={routeLine} grouped />
-          </Suspense>
-        </section>
-      )}
       <RouteHead vm={vm} />
       {dryRunning && (
         <div className="px-1 pt-2 pb-1">

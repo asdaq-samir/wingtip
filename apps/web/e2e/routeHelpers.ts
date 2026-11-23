@@ -105,8 +105,8 @@ export async function routeOptionsItem(page: Page): Promise<Locator> {
   return sideDrawer(page).getByTestId("routes-toggle");
 }
 
-/** The suggested routes' chips, put out above the route by the bar's
- *  Routes where they are not out already. */
+/** The suggested routes' chips, put out in the foot's figures' place by
+ *  the bar's Routes where they are not out already. */
 export async function suggestedRoutes(page: Page): Promise<Locator> {
   await expect(async () => {
     const item = await routeOptionsItem(page);

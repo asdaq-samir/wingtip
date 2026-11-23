@@ -126,7 +126,7 @@ test.describe("/app/plan", () => {
     for (const line of await timeline.getByTestId("timeline-line").all()) expect((await line.boundingBox())!.height).toBeLessThan(46);
     await expect(timeline.getByTestId("timeline-add-stop")).toBeVisible();
     await expect(drawer.getByTestId("flight-line")).toBeVisible();
-    // The suggested routes behind the bar's Routes, out above the stops.
+    // The suggested routes behind the bar's Routes, out in the figures' place.
     await expect(drawer.getByTestId("route-group")).toHaveCount(0);
     await (await suggestedRoutes(page)).first().waitFor();
     await expect(drawer.getByTestId("route-group")).toBeVisible();

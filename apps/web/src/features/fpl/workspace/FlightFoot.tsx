@@ -8,10 +8,10 @@ import { EngineGate } from "../../../lib/engine/engineGate";
 import { TEXT } from "../../../lib/text";
 import { TripFigures } from "../../navlog";
 import { DirectStrip } from "../../route";
-import { DryRunFigures } from "../routePanelParts";
+import { DryRunFigures, RouteLine } from "../routePanelParts";
 import type { PlanSlices } from "../vm/planSlices";
 import { FplTabBar, type RouteOptions } from "./FplTabBar";
-import { figuresAway } from "./routeEditing";
+import { figuresAway, routesOut } from "./routeEditing";
 
 /** The flight's figures (TripFigures, on the one FigureStrip) in every
  *  state, and over them a Direct to's strip: on the ground FPL's foot over
@@ -141,7 +141,12 @@ export default function FlightFoot({
  * of glass) each time the sheet reached or left the pill (the motion
  * review of 2026-11-22). The figures go while the route's field is open
  * (figuresAway). One size knob (--strip-full, lib/text's PIN_FIGURE), set
- * once a size.
+ * once a size. While the tab bar's Routes is pressed the suggested routes'
+ * chips take the figures' place, at the pill too (the owner, 2026-11-23:
+ * "When routes is tapped, show the routes instead of the figures strip"):
+ * one slot, so neither the tabs nor the route above move, and a chip
+ * tapped flies that way with the chips kept out to compare; Routes again,
+ * Brief or Nav Log bring the figures back (FplTabBar).
  */
 function GroundFoot({
   vm,
@@ -157,6 +162,7 @@ function GroundFoot({
   routes?: RouteOptions;
 }) {
   const pill = useFootRest() === "peek";
+  const line = routesOut(vm) ? vm.routeList.routeLine : null;
   return (
     <div className="flex w-full flex-col" style={{ "--strip-full": pill ? 1 : 0 } as CSSProperties}>
       {!figuresAway(vm) && (
@@ -171,7 +177,18 @@ function GroundFoot({
           className={cn("flex flex-col px-1", pill ? "justify-center" : "pt-2")}
           style={pill ? { minHeight: `calc(${FOOT_BAR_PILL} - ${EDGE_ROOM})` } : undefined}
         >
-          <FlightFigures vm={vm} grow={false} thin pill={pill} />
+          {line ? (
+            // The chips take touches at every size, the pill too, where the
+            // bar's ground passes them to the sheet (sheet/FootBar), so a
+            // chip is picked and the row swiped where it is drawn.
+            <section aria-label="Suggested routes" className="pointer-events-auto" data-testid="route-group">
+              <Suspense fallback={<div className="h-11" />}>
+                <RouteLine line={line} grouped />
+              </Suspense>
+            </section>
+          ) : (
+            <FlightFigures vm={vm} grow={false} thin pill={pill} />
+          )}
         </div>
       )}
       <div className={cn(pill && "hidden")}>
