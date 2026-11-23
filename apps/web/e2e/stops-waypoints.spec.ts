@@ -26,10 +26,11 @@ test("a stop may be a VFR waypoint, offered after the airports as it is typed an
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  // The route box's arrows are in its field (typeRoute), not the timeline.
+  // The route box's pills are in its field (typeRoute), not the timeline.
   await typeRoute(page);
 
-  await sideDrawer(page).getByRole("button", { name: "Add a stop between C81 and KDLH" }).click();
+  await sideDrawer(page).getByTestId("route-dest").click();
+  await page.getByTestId("pill-menu-add-before").click();
   await page.getByTestId("search-airports").fill("VPBNG");
   const waypoint = page.getByTestId("search-waypoint").filter({ hasText: "VPBNG" }).first();
   await expect(waypoint).toBeVisible({ timeout: slow(10000) });

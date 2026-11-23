@@ -100,9 +100,11 @@ test("a stop suggested on a flight from a present position is dashed in the rout
   await expect.poll(() => pinned(page)).toBe(1);
 });
 
-test("a suggested fuel stop can be taken out of the route box and put back, or added from its menu", async ({ page }) => {
+test("a suggested fuel stop is dismissed from its menu or by Delete and comes back, and one tap puts it in the route", async ({ page }) => {
   // The owner's ask (2026-10-24): "Fuel stops should also have a way to
-  // delete them and add them back as pleased".
+  // delete them and add them back as pleased"; one tap adds it, no menu
+  // between, and a swipe to the left (a finger's; SwipeRow) or its held or
+  // right-clicked menu's Dismiss takes it out (2026-11-23).
   await suggested(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -110,19 +112,26 @@ test("a suggested fuel stop can be taken out of the route box and put back, or a
   await typeRoute(page);
   const chip = sideDrawer(page).getByTestId("route-fuel-stop");
   await expect(chip).toHaveText("KRPD", { timeout: slow(60_000) });
-  // Its menu's Remove takes it out of the box.
-  await chip.click();
+  // Its menu's Dismiss takes it out of the box.
+  await chip.click({ button: "right" });
   await page.getByTestId("route-fuel-stop-remove").click();
   await expect(chip).toHaveCount(0);
-  // Planned again, it is back.
+  // Planned again, it is back; Delete on it takes it out the same.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
   await typeRoute(page);
   await expect(chip).toHaveText("KRPD", { timeout: slow(60_000) });
-  // And its menu's Add to Route makes it a stop of the route.
+  await chip.focus();
+  await page.keyboard.press("Delete");
+  await expect(chip).toHaveCount(0);
+  // And again, one tap makes it a stop of the route, where it was drawn.
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  await typeRoute(page);
+  await expect(chip).toHaveText("KRPD", { timeout: slow(60_000) });
   await chip.click();
-  await page.getByTestId("route-fuel-stop-add").click();
   await expect(page).toHaveURL(stopsAre("KRPD"));
 });
 
@@ -220,9 +229,8 @@ test("a long flight the tanks hold is offered a break about half way, kept as th
   await openPanel(page);
   await typeRoute(page);
   const chip = sideDrawer(page).getByTestId("route-fuel-stop");
-  await expect(chip).toHaveAccessibleName("Suggested stop KRPD", { timeout: slow(60_000) });
+  await expect(chip).toHaveAccessibleName("Suggested stop KRPD: add it to the route", { timeout: slow(60_000) });
   await chip.click();
-  await page.getByTestId("route-fuel-stop-add").click();
   await expect(page).toHaveURL(stopsAre("KRPD"));
   await expect(page).not.toHaveURL(/[?&]fuel=/);
 });

@@ -22,7 +22,7 @@ async function changeDestination(page: Page) {
   // turned into it by its toggle (Type the route, TypeRouteButton; the
   // owner, 2026-11-22), where openRoute leaves the timeline.
   await typeRoute(page);
-  await page.getByLabel(/^(\S+, )?Destination$/).click({ button: "right" });
+  await page.getByTestId("route-dest").click();
   await page.getByTestId("pill-menu-change").click();
 }
 
@@ -97,16 +97,19 @@ const rowLook = (row: Locator) =>
     };
   });
 
-test("a stop at the route box's arrow and the route's ends are picked in the one search, scoped to them", async ({ page }, info) => {
-  // One search field (the one card rule, 2026-11-10): the route box's arrow
-  // between two points asks the one search for a stop there, as the
-  // airport picker asks it for an end, where it opened a field of its own.
+test("a stop from a route pill's Insert Before and the route's ends are picked in the one search, scoped to them", async ({
+  page,
+}, info) => {
+  // One search field (the one card rule, 2026-11-10): a pill's Insert
+  // Before asks the one search for a stop there, as Change asks it for an
+  // end, where it opened a field of its own.
   test.skip(info.project.name !== "mobile", "judged as a phone");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await openPanel(page);
-  // The route box's arrows are in its field (typeRoute), not the timeline.
+  // The route box's pills are in its field (typeRoute), not the timeline.
   await typeRoute(page);
-  await sideDrawer(page).getByRole("button", { name: "Add a stop between C81 and KDLH" }).click();
+  await sideDrawer(page).getByTestId("route-dest").click();
+  await page.getByTestId("pill-menu-add-before").click();
   const field = page.getByTestId("search-airports");
   await expect(field).toHaveAccessibleName("Search airports and waypoints");
   await expect(field).toBeFocused();
