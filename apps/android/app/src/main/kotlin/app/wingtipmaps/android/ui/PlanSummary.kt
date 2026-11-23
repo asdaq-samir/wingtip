@@ -95,7 +95,7 @@ fun RouteStops(
     val replan = { plan.plan() }
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(gap)) {
         var index = 0
-        fun point(at: Int) = Point(at, idents[at + 1], facts[idents[at + 1].uppercase()]?.category, times[at], zones[at], said)
+        fun point(at: Int) = Point(at, idents[at + 1], facts[idents[at + 1].uppercase()]?.category, times[at], zones[at], said, StopTimes.Left(departMs, zones[-1]))
 
         @Composable
         fun picked(list: List<PlanProcedures.Pick>) = list.forEach { pick ->
@@ -131,7 +131,7 @@ fun RouteStops(
 
 /** A point of the route as its row shows it: where it is in the route
  *  (-1 the departure), its ident, its mark's category, its times. */
-private class Point(val at: Int, val ident: String, val category: String?, val times: StopTimes.At?, val zone: java.time.ZoneId?, val zonesSaid: Boolean)
+private class Point(val at: Int, val ident: String, val category: String?, val times: StopTimes.At?, val zone: java.time.ZoneId?, val zonesSaid: Boolean, val left: StopTimes.Left)
 
 @Composable
 private fun StopRow(
@@ -165,7 +165,7 @@ private fun StopRow(
         trailingContent = if (!given) null else ({
             PointEnd(
                 times = {
-                    PointTimes(point.times, point.zone, point.zonesSaid, onLeave = if (stop) ({ h, m ->
+                    PointTimes(point.times, point.zone, point.zonesSaid, point.left, onLeave = if (stop) ({ h, m ->
                         point.times.arriveMs?.let { landed -> PlanGround.set(ident, StopTimes.groundFor(landed, h, m)) }
                         plan.plan()
                     }) else null)

@@ -36,7 +36,7 @@ struct RouteTanksTests {
         let tanks = try RouteTanks.walk(legs: long, dep: "C81", stops: [], refuels: [], figures: figures, own: [:])
         let end = try #require(tanks[.destination])
         #expect(end.gal < 0 && end.low)
-        #expect(Format.tankGallons(end.gal).hasPrefix("\u{2212}"))
+        #expect(Format.tankGallons(end.gal).== "\(-Int(end.gal.rounded(.down))) gal short")
     }
 
     @Test func aStopNoLegEndsAtShowsNoGaugesRatherThanWrongOnes() throws {
@@ -47,8 +47,9 @@ struct RouteTanksTests {
 
     @Test func theGaugesWords() {
         #expect(Format.tankGallons(23.9) == "23 gal")
-        #expect(Format.tankGallons(-11.2) == "\u{2212}12 gal")
+        #expect(Format.tankGallons(-11.2) == "12 gal short")
         #expect(Format.tankGallons(0) == "0 gal")
+        #expect(!Format.tankGallons(-30.5).contains("\u{2212}"))
     }
 
     @Test func everyFlightsFuelStopsGoInAfterItsOwnDeparture() throws {
