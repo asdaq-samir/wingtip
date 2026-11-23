@@ -1,4 +1,3 @@
-import { Fragment } from "react";
 import { ArrowRight } from "lucide-react";
 import { cn } from "cn";
 import { TEXT } from "../../lib/text";
@@ -51,6 +50,10 @@ interface TokenBox {
 // The route's arrows that are no button, the glyph the arrows' buttons
 // draw (20), laid in the 12 they had (-mx-1), so the line lays out as it did.
 const ARROW = "-mx-1 size-5 shrink-0 text-muted-foreground";
+// One piece of a token, kept whole on its line: the arrow into a pill or a
+// chip and that pill or chip, `gap-2` apart, as the token's were, and 8
+// from the piece before (ms-2) where the token's own gap was.
+const PIECE = "inline-flex items-center gap-x-2 align-middle whitespace-nowrap";
 // A missing end's word, where its field was: in the field's grey, at the
 // field's size, a row's (TEXT.row: 16 at the least, so as not to be
 // smaller than what is typed beside it, 17 to a finger).
@@ -94,89 +97,96 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
     // reaching half way across the gap to meet its neighbour's, not under
     // it: the arrow between C81 and KDLH was a 16 by 20 control whose area
     // the pills on both sides took (the audit's WEB-4).
-    <span className="inline-flex items-center gap-x-2 align-middle font-sans leading-normal whitespace-nowrap normal-case">
-      {/* Before the first point an arrow only with no departure yet: the
+    // Inline, not one block: its pieces wrap as words do, each whole, where
+    // one unbroken token -- a point and its fuel stops -- ran past the
+    // wrapped box's edge and was cut there (the owner's iPhone, 2026-11-23).
+    // Each piece is the arrow into it and what it leads to (PIECE), so no
+    // arrow is left alone at a line's end.
+    <span className="font-sans leading-normal normal-case">
+      <span className={PIECE}>
+        {/* Before the first point an arrow only with no departure yet: the
           departure is asked for there, the word for it in the same button,
           as a field's placeholder takes the tap that fills it -- a tap on
           the word put the caret at the route's end (the owner's
           screenshot, 2026-11-13). */}
-      {(i > 0 || !hasDep) && (
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          disabled={box.full && !(i === 0 && !hasDep)}
-          onClick={() => box.arrowAt(i)}
-          data-testid="route-arrow"
-          aria-label={i === 0 ? "Add the departure" : `Add a stop between ${points[i - 1]} and ${point}`}
-          // The stock Button in the grey, tinted under a pointer. Alone, the
-          // app's one icon button, 36 round a 20 glyph (the iOS audit's P18,
-          // the owner's "make all buttons same size as Apple Maps",
-          // 2026-11-20), where it was 16 by 20 round a 12, about a row's own
-          // "→": its box seen by nothing (no fill, its corner under half its
-          // side) and laid in the arrow's 16 by 20 alone (-mx-2.5, -my-2), so
-          // the line lays out as it did, 8 from the pill before it (which
-          // ends the token before), its area index.css's 44 round the box.
-          // With "Departure" after it, its words' width, its area a
-          // pseudo-element 44 tall and half the gap wider each side.
-          className={cn(
-            "text-muted-foreground hover:bg-transparent hover:text-tint native:text-muted-foreground disabled:opacity-40",
-            asking ? "relative h-5 w-auto rounded-full hit-x-1 hit-y-3" : "-mx-2.5 -my-2 size-9 rounded-md [&_svg]:size-5!",
-            i > 0 && "-ml-0.5",
-          )}
-        >
-          {asking && <span className={ASKING}>Departure</span>}
-          <ArrowRight className="size-3" />
-        </Button>
-      )}
-      {procs
-        .filter((p) => p.kind !== "departure")
-        .sort((a, b) => (a.kind === "arrival" ? 0 : 1) - (b.kind === "arrival" ? 0 : 1))
-        .map((p) => (
-          <ProcedureChip
-            key={`${p.kind}-${p.label}`}
-            procedure={p}
-            before
-            onOpen={box.onProcedures ? () => box.onProcedures!(p) : undefined}
-          />
-        ))}
-      <RoutePill
-        // A place earlier or later: the two neighbours swapped, offered
-        // only where each point may go there (placeAllowed: My Location
-        // never a stop, no point beside the same).
-        onStep={(by) => box.change(stepped(by))}
-        canStep={(by) => i + by >= 0 && i + by < points.length && box.canChange(stepped(by))}
-        last={last}
-        ident={point}
-        waypoint={waypoint}
-        index={i}
-        airspaceOf={box.airspaceOf}
-        metarColourOf={box.metarColourOf}
-        role={box.roleOf(i)}
-        stopNumber={i + (hasDep ? 0 : 1)}
-        onChange={(ident) => box.change(points.map((p, j) => (j === i ? ident : p)))}
-        altitude={box.altitudeAt(point, waypoint)}
-        onEditAltitude={() => box.editAltitude(point)}
-        onRemove={() => box.remove(i)}
-        unknown={unknown}
-        onOpen={box.onOpenAirport && !waypoint && identOf(point) && !unknown ? () => box.onOpenAirport!(identOf(point)) : undefined}
-        // Flown to: a stop or the destination, not where it starts.
-        direct={box.directTo !== null && sameField(box.directTo, point)}
-        onDirect={
-          box.onDirectTo && i > 0 && hasDep
-            ? () => box.onDirectTo!(box.directTo !== null && sameField(box.directTo, point) ? null : point)
-            : undefined
-        }
-      />
-      {procs
-        .filter((p) => p.kind === "departure")
-        .map((p) => (
-          <ProcedureChip key={`${p.kind}-${p.label}`} procedure={p} onOpen={box.onProcedures ? () => box.onProcedures!(p) : undefined} />
-        ))}
+        {(i > 0 || !hasDep) && (
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            disabled={box.full && !(i === 0 && !hasDep)}
+            onClick={() => box.arrowAt(i)}
+            data-testid="route-arrow"
+            aria-label={i === 0 ? "Add the departure" : `Add a stop between ${points[i - 1]} and ${point}`}
+            // The stock Button in the grey, tinted under a pointer. Alone, the
+            // app's one icon button, 36 round a 20 glyph (the iOS audit's P18,
+            // the owner's "make all buttons same size as Apple Maps",
+            // 2026-11-20), where it was 16 by 20 round a 12, about a row's own
+            // "→": its box seen by nothing (no fill, its corner under half its
+            // side) and laid in the arrow's 16 by 20 alone (-mx-2.5, -my-2), so
+            // the line lays out as it did, 8 from the pill before it (which
+            // ends the token before), its area index.css's 44 round the box.
+            // With "Departure" after it, its words' width, its area a
+            // pseudo-element 44 tall and half the gap wider each side.
+            className={cn(
+              "text-muted-foreground hover:bg-transparent hover:text-tint native:text-muted-foreground disabled:opacity-40",
+              asking ? "relative h-5 w-auto rounded-full hit-x-1 hit-y-3" : "-mx-2.5 -my-2 size-9 rounded-md [&_svg]:size-5!",
+              i > 0 && "-ml-0.5",
+            )}
+          >
+            {asking && <span className={ASKING}>Departure</span>}
+            <ArrowRight className="size-3" />
+          </Button>
+        )}
+        {procs
+          .filter((p) => p.kind !== "departure")
+          .sort((a, b) => (a.kind === "arrival" ? 0 : 1) - (b.kind === "arrival" ? 0 : 1))
+          .map((p) => (
+            <ProcedureChip
+              key={`${p.kind}-${p.label}`}
+              procedure={p}
+              before
+              onOpen={box.onProcedures ? () => box.onProcedures!(p) : undefined}
+            />
+          ))}
+        <RoutePill
+          // A place earlier or later: the two neighbours swapped, offered
+          // only where each point may go there (placeAllowed: My Location
+          // never a stop, no point beside the same).
+          onStep={(by) => box.change(stepped(by))}
+          canStep={(by) => i + by >= 0 && i + by < points.length && box.canChange(stepped(by))}
+          last={last}
+          ident={point}
+          waypoint={waypoint}
+          index={i}
+          airspaceOf={box.airspaceOf}
+          metarColourOf={box.metarColourOf}
+          role={box.roleOf(i)}
+          stopNumber={i + (hasDep ? 0 : 1)}
+          onChange={(ident) => box.change(points.map((p, j) => (j === i ? ident : p)))}
+          altitude={box.altitudeAt(point, waypoint)}
+          onEditAltitude={() => box.editAltitude(point)}
+          onRemove={() => box.remove(i)}
+          unknown={unknown}
+          onOpen={box.onOpenAirport && !waypoint && identOf(point) && !unknown ? () => box.onOpenAirport!(identOf(point)) : undefined}
+          // Flown to: a stop or the destination, not where it starts.
+          direct={box.directTo !== null && sameField(box.directTo, point)}
+          onDirect={
+            box.onDirectTo && i > 0 && hasDep
+              ? () => box.onDirectTo!(box.directTo !== null && sameField(box.directTo, point) ? null : point)
+              : undefined
+          }
+        />
+        {procs
+          .filter((p) => p.kind === "departure")
+          .map((p) => (
+            <ProcedureChip key={`${p.kind}-${p.label}`} procedure={p} onOpen={box.onProcedures ? () => box.onProcedures!(p) : undefined} />
+          ))}
+      </span>
       {/* The fuel stops suggested for the flight that leaves this point,
           dashed after it as the route goes on to them (FuelStopChip). */}
       {fuel.flatMap((f) =>
         f.stops.map((stop) => (
-          <Fragment key={`fuel-${stop.ident}`}>
+          <span key={`fuel-${stop.ident}`} className={cn(PIECE, "ms-2")}>
             <ArrowRight className={ARROW} aria-hidden="true" />
             <FuelStopChip
               ident={stop.ident}
@@ -192,7 +202,7 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
               }
               onHide={box.onHideFuelStop ? () => box.onHideFuelStop!(stop.ident) : undefined}
             />
-          </Fragment>
+          </span>
         )),
       )}
       {/* After the last point: with no destination yet, an arrow on to it;
@@ -200,16 +210,18 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
           pilot's ask -- what is typed there is the new destination, the old
           one a stop. */}
       {last && (!hasDest || box.focused || box.typedAtEnd) && (
-        <ArrowRight className={ARROW} aria-hidden="true" data-testid="route-arrow-on" />
-      )}
-      {/* The word for what is asked, only while the box is not typed in:
-          drawn in the last point's token, the caret came after it, and
-          "C81 → Destination|" read as if the word were typed (the owner,
-          2026-11-18: "Why the word Destination before the cursor?"); the
-          timeline's own Destination row says what is missing. */}
-      {last && !hasDest && !box.typedAtEnd && !box.focused && (
-        <span aria-hidden="true" className={ASKING}>
-          Destination
+        <span className={cn(PIECE, "ms-2")}>
+          <ArrowRight className={ARROW} aria-hidden="true" data-testid="route-arrow-on" />
+          {/* The word for what is asked, only while the box is not typed in:
+              drawn in the last point's token, the caret came after it, and
+              "C81 → Destination|" read as if the word were typed (the owner,
+              2026-11-18: "Why the word Destination before the cursor?"); the
+              timeline's own Destination row says what is missing. */}
+          {!hasDest && !box.typedAtEnd && !box.focused && (
+            <span aria-hidden="true" className={ASKING}>
+              Destination
+            </span>
+          )}
         </span>
       )}
     </span>

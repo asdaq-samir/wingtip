@@ -70,7 +70,8 @@ export interface RouteBoxProps extends RouteParts {
    *  route, as FPL's ✕ is after. None where it does not apply. */
   onClear?: () => void;
   /** The route's whole line wrapped over as many lines as it takes, in a
-   *  box `height` tall at the least, scrolling inside past it: the grouped
+   *  box `height` tall at the least, growing to hold them all, each pill
+   *  whole on its line with the arrow into it (RouteToken): the grouped
    *  box turned into the route's field by its toggle (TypeRouteButton), its
    *  size and shape kept (the owner, 2026-11-22: "Route box should be as
    *  tall as the grouped box, same shape. So it can show everything

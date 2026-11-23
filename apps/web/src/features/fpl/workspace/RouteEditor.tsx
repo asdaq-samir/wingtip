@@ -107,8 +107,9 @@ export default function RouteEditor({
           folds with it in (the plan's Undo as ever); the focus kept on the
           toggle there. On an empty, half or whole route opened by it. */}
       {routeOpen && (
-        // At the box's bottom right, where it is on the timeline's face, over
-        // the box's last line (z-10), its 44-point area whole.
+        // At the box's bottom right, where it is on the timeline's face, in the
+        // row of room the wrapped box keeps under its last line (RouteBox's
+        // pb-11), never over a pill (z-10 over the box), its 44-point area whole.
         // As far in from the right as on the rows' face (TIMELINE_END), the
         // fuel stops' pill before it 8 apart as there, so a whole route's
         // pair sits in one place on both faces (FuelPill).

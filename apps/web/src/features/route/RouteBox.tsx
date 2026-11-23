@@ -210,10 +210,14 @@ export default function RouteBox({
               // words left-aligned at the box's own 16 of padding, and its
               // controls as far in from the right (TIMELINE_END), so nothing
               // moves as the face turns (the owner's iPhone, 2026-11-23).
-              wrapped ? "rounded-(--radius-card) pr-4 pl-4" : "rounded-(--radius-banner) pr-1.5 pl-1",
+              // Wrapped, a toggle's row of room under its last line (h-11): the
+              // fuel stops' pill and the toggle sit there (RouteEditor), under the
+              // pills, never over them (the owner's iPhone, 2026-11-23).
+              wrapped ? "rounded-(--radius-card) pr-4 pb-11 pl-4" : "rounded-(--radius-banner) pr-1.5 pl-1",
               PANEL_FIELD,
             )}
-            style={wrapped && height ? { height } : undefined}
+            // Wrapped, the grouped box's height at the least, growing with the lines.
+            style={wrapped && height ? { minHeight: height } : undefined}
             data-wrapped={wrapped || undefined}
             data-testid="route-box"
           >
@@ -226,10 +230,9 @@ export default function RouteBox({
                 ref={slide}
                 // Out of the tab order; a drag up or down is the sheet's.
                 tabIndex={-1}
-                // Its lines inside the box's height less its 8 of padding, scrolling past it.
-                style={
-                  wrapped ? { overflowX: "hidden", overflowY: "auto", maxHeight: height ? height - 8 : undefined } : { overflowY: "hidden" }
-                }
+                // Wrapped, every line in sight, the box grown to hold them: nothing
+                // scrolls or is cut, a pill whole on its line.
+                style={wrapped ? { overflow: "visible" } : { overflowY: "hidden" }}
                 className={cn(
                   wrapped ? "overscroll-y-contain" : "overscroll-x-contain",
                   "data-overflow-x-end:[mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)]",
@@ -274,7 +277,9 @@ export default function RouteBox({
                       )}
                     >
                       {(segment) => (
-                        <Token className="inline-block align-middle">
+                        // Inline, so its pieces wrap whole (RouteToken), not
+                        // one block cut at the box's edge.
+                        <Token className="inline">
                           <RouteToken i={segment.value ?? 0} box={tokenBox} />
                         </Token>
                       )}
