@@ -204,7 +204,7 @@ script can check, and the rest are for whoever writes a test or a job.
     since its last pass before its push (`scripts/dev/branch-specs.sh`),
     and a spec red here alone is run on `scripts/dev/ci-stack.sh`, a copy
     of this job's stack; the whole reached set is this job's. *Guard:*
-    `test_tiers.py` (`specs`, `e2e-images` and `e2e` are tier 1 and in
+    `test_tiers.py` (`specs`, `e2e-page`, `e2e-page-push`, `e2e-images` and `e2e` are tier 1 and in
     the gate, and `e2e` runs what `specs` chose).
 19. **No job waits for what it does not use** (decision 0044). The
     guards' three legs waited about a minute each for the engine's wheel
@@ -262,7 +262,7 @@ they are what the budgets allow, to be lowered once runs show them:
 | `api-compat`, `dependency-review`, `infra` | An API document's breaking changes; a manifest's or lock's new advisories; the production files | under 1 min |
 | `android` | `native-android.yml`: the engine (cached), compiled, `testDebugUnitTest lintDebug` with Gradle's caches | 4-5 min |
 | `ios` | `native-ios.yml` with `unit_only`: XcodeGen, the build, the string catalog held to what the Swift says, then the unit tests (`WingtipTests`) on the newest iPhone simulator (`scripts/ci/ios_test.sh`), DerivedData restored from main | 4-6 min |
-| `specs`, `e2e-images`, `e2e` | On a change to the web app or an API document: the browser specs it reaches (rule 18), against the stack built from the commit, on the phone project, three a shard, dealt to the shards by their time | 6-15 min |
+| `specs`, `e2e-page`, `e2e-page-push`, `e2e-images`, `e2e` | On a change to the web app or an API document: the browser specs it reaches (rule 18), against the stack built from the commit, on the phone project, three a shard, dealt to the shards by their time | 6-15 min |
 
 A pull request that leaves the web app alone is about 3 minutes in all: `changes`, then the wheel from
 its cache, then `guards` beside the tests. One that changes the engine
@@ -276,7 +276,7 @@ under a minute.
 
 | What | Expected |
 |---|---|
-| `e2e-images`: the browser suite's images and page, each built once per key (on a pull request too, for its specs) | 1-3 min |
+| `e2e-images`: the browser suite's images, each built once per key (on a pull request too, for its specs); the page is built by `e2e-page` with a read-only token and pushed by `e2e-page-push`, which runs nothing of the branch (security review 2026-11-23, H2) | 1-3 min |
 | `e2e` (3 shards): the `@smoke` and `@flight-critical` browser tests on the phone project and on `webkit-ipad` (Safari's engine on an 11-inch iPad Pro upright, touch: the iPad is the primary device, decision 0058; its project runs only that set, at night too), and `sheet-webkit.spec.ts` on `webkit-phone`, against the whole stack, in a slim copy of the Playwright image (`.github/ci-images.hcl`: no full Chrome or Firefox; WebKit kept, keyed on the recipe too by `scripts/ci/playwright_slim_key.sh`) | 5-8 min |
 | `build-images`: every service image whose inputs changed, pushed as `:sha-<commit>` for Promote | 1-4 min |
 | Native iOS's own run: the unit tests, the `CardSmokeTests` UI smoke and `IPadLayoutTests` on the iPhone and the iPad, and `DocumentsIPadTests` on the iPad alone, each its own runner (`test`, `test (iPad)`: the iPad is the primary users', the owner 2026-11-21), then TestFlight and, once Apple has processed the build, the beta group (`testflight_beta.py`, up to 20 min more; docs/store/beta.md) | 6-8 min, then up to 20 |
@@ -289,11 +289,20 @@ one issue, "Main CI failed (after merge)", labelled `ready`
 Promote publishes only a commit whose whole run on main passed.
 
 **Tier 3, every night** (CI at 09:17 UTC, Native iOS at 09:37, Native
-Android at 09:47), or by hand (Run workflow), unchanged:
+Android at 09:47, as asked: GitHub has started them 7 to 9 hours late), or
+by hand (Run workflow), unchanged. While a wave is open the three run on
+`claude/integration` too (`night-integration`, `night_integration.sh`),
+its reds in an issue of their own, "Nightly CI failed (claude/integration)"
+(the owner took the CI audit's H4, 2026-11-23). Playwright stops itself at
+28 minutes, under the shard's `timeout 1800`, so a long shard still
+writes its report, and each shard names every red test in one annotation
+(`e2e_summary.py`) past GitHub's ten a step; a failed iOS or Android test
+or lint error is an annotation of its own (`ios_failures.py`,
+`android_failures.py`).
 
 | What | Expected |
 |---|---|
-| CI: every unit suite in full, every browser test on the phone, desktop, the iPhones and the iPad, the whole iOS audit (WebKit), WCAG 2.2 and Lighthouse, over ten shards; the API reference, Javadoc and wingtip's pdoc; the flake hunt | ~15 min |
+| CI: every unit suite in full, every browser test on the phone, desktop, the iPhones and the iPad dealt by time over twelve shards, the whole iOS audit (WebKit, every device) on four of its own (over ten by `--shard`, six to eight shards a night met the 1800 s wrapper; CI audit 2026-11-23, H1), WCAG 2.2 and Lighthouse; the API reference, Javadoc and wingtip's pdoc; the flake hunt | ~15 min |
 | Native iOS, `full`: the whole suite (launch, flow and accessibility tests, the store shots, `CardRuleTests`, `CardScrollTests`) and the device's first screen, on the iPhone, the iPad and iPhone Duo, each its own runner (`test`, `test (iPad)`, `test (iPhone Duo)`): the three on one runner took over 80 minutes and were cancelled at the limit twice (#572) | ~30 min each |
 | Native Android: the build, a debug APK, then the instrumented tests on an API 35 emulator, `device (phone)` every test and `device (tablet)` (a Pixel Tablet, 1280 x 800 dp) the `@LargeScreen` ones, each its own runner; a wave's validation runs both too, a pull request neither | ~15 min |
 
@@ -408,7 +417,7 @@ longest leg's tests (the card rule's suite alone some 15). Before the
 build was shared and the shards dealt by time it was 33 (run
 45127491141, 2026-11-23: each iPad leg's own build 13 minutes before its
 first test, the slowest of sixteen shards 20 and the Android devices
-starting at minute 14); the night's ten shards take half an hour. GitHub runs 20 jobs at once on
+starting at minute 14). GitHub runs 20 jobs at once on
 a free account, so the sixteen shards and the short jobs share them.
 `CI passed` is the verdict; `budget` holds the run to the night's budgets
 and names each failure with its narrow command (`failure_summary.py`),
@@ -554,6 +563,13 @@ starts no workflow and the pull request would sit with no checks; the
 owner's token's merge commit starts CI like the owner's push. One that
 main does not merge into cleanly gets the label `needs-merge`, taken off
 once its branch is current again: merge main into it by hand.
+
+Each night and after each push to main, `tidy-branches.yml` deletes the
+`claude/` branches on GitHub whose work is on main, by
+`scripts/dev/tidy-branches.sh --github` (the Mac's rules without its
+worktrees: a branch with a commit in the last six hours or an open pull
+request stays), in one push, with a bundle of what it deleted in the
+run's artifact for 90 days.
 
 GitHub starts no pull-request workflow on a branch that conflicts with
 its base, so a conflicted pull request shows no failing check: #579 sat
@@ -742,7 +758,7 @@ agents' edit-time hook (`scripts/dev/simplicity_hook.py`, a Claude Code
 | Stock components on the web: no raw `<button>`, `<details>` or `role="alert"` outside `components/ui` | ESLint's `no-restricted-syntax` | `apps/web/eslint-suppressions.json` |
 | The web's feature layers | dependency-cruiser | none |
 | The phones' dead code; no HTTP library outside Android's `api/` (`scripts/ci/phone_lint.sh`, on a phone change) | SwiftLint, detekt | `scripts/ci/phones/` |
-| The simplicity ratchet: the audit's counts (`scripts/ci/simplicity_ratchet.py`; `--report` adds the median files a change touches, not gated) | the standard library | `scripts/ci/simplicity_baseline.json` |
+| The simplicity ratchet: the audit's counts (`scripts/ci/simplicity_ratchet.py`; `--report` adds the median files a commit touches, merges left out, not gated), and the route link's JavaScript budget (`e2e/route-load.spec.ts`), the wave's start figure: never raised, lowered only on `claude/integration` at the wave's end | the standard library | `scripts/ci/simplicity_baseline.json` |
 
 ## API compatibility
 

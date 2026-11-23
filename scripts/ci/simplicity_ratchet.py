@@ -14,6 +14,13 @@ lower of the two, and a metric is added only with `--seed`.
 The median files a change touches (the audit's change amplification) is
 reported with `--report`, not gated: one commit's size is not a fault.
 
+The route link's JavaScript budget (apps/web/e2e/route-load.spec.ts) is
+the wave's start figure: the spec fails only on growth past it, and with
+`--base` this never lets it rise, and lets it fall only on the wave's own
+branch (claude/integration, or its validation), at the wave's end, to the
+figure measured then (simplicity audit 2026-11-23, O1: lowered at every
+merge, it left no room, and wave 3 spent five commits trimming to it).
+
 The standard library only, for the Mac's python3 (3.9); a second or two.
 
   python3 scripts/ci/simplicity_ratchet.py             check
@@ -25,6 +32,7 @@ The standard library only, for the Mac's python3 (3.9); a second or two.
 from __future__ import annotations
 
 import json
+import os
 import re
 import statistics
 import subprocess
@@ -36,6 +44,9 @@ from source_literals import ENGINE_UNIT, HAVERSINE, HAVERSINE_HOMES, MERCATOR, M
 from source_literals import DEGREE_MARGIN, DEGREE_MARGIN_HOMES, EVERY_SOURCE, code_of, rust_code, text
 
 ROOT = Path(__file__).resolve().parents[2]
+ROUTE_LOAD = "apps/web/e2e/route-load.spec.ts"
+ROUTE_LOAD_BUDGET = re.compile(r"^const ROUTE_LOAD_BUDGET = ([\d_]+);", re.M)
+WAVE_BRANCH = re.compile(r"^claude/(integration|validate-.+|wave[\w.-]*)$")
 BASELINE = ROOT / "scripts/ci/simplicity_baseline.json"
 # Tests, fixtures and what a generator writes, as the audit leaves them out.
 SKIP = re.compile(
@@ -262,11 +273,41 @@ def measure() -> dict[str, int]:
     return {name: int(count()) for name, (count, _why) in METRICS.items()}
 
 
+def route_load_budget(source: str) -> int | None:
+    found = ROUTE_LOAD_BUDGET.search(source)
+    return int(found.group(1).replace("_", "")) if found else None
+
+
+def branch() -> str:
+    named = os.environ.get("GITHUB_HEAD_REF") or os.environ.get("GITHUB_REF_NAME")
+    if named:
+        return named
+    return subprocess.run(["git", "-C", str(ROOT), "branch", "--show-current"], capture_output=True, text=True).stdout.strip()
+
+
+def route_load_moved(ref: str) -> str | None:
+    """Why the route-load budget may not change as it has against `ref`, or None."""
+    shown = subprocess.run(["git", "-C", str(ROOT), "show", f"{ref}:{ROUTE_LOAD}"], capture_output=True, text=True)
+    before, now = route_load_budget(shown.stdout), route_load_budget(text(ROUTE_LOAD))
+    if before is None or now is None or now == before:
+        return None
+    if now > before:
+        return f"ROUTE_LOAD_BUDGET rose from {before} to {now}: it only goes down; take the bytes out instead"
+    if not WAVE_BRANCH.match(branch()):
+        return (
+            f"ROUTE_LOAD_BUDGET lowered from {before} to {now} on {branch() or 'a detached HEAD'}: it is the wave's start "
+            "figure, lowered once at the wave's end on claude/integration, so the wave's savings stay its room"
+        )
+    return None
+
+
 # The audit's file filter and module rule (scratchpad amp.py of 2026-11-12):
-# a module is apps/<x>, services/<x> or a top-level folder.
+# a module is apps/<x>, services/<x> or a top-level folder; merges are not changes.
 def change_median(commits: int = 60) -> tuple[float, float]:
     log = subprocess.run(
-        ["git", "-C", str(ROOT), "log", "--first-parent", "-m", f"-{commits}", "--name-only", "--format=format:@@"],
+        # Each commit's own files, merges left out: on main a wave's merge
+        # counted every file of the wave as one change (3,372 on 2026-11-23).
+        ["git", "-C", str(ROOT), "log", "--no-merges", f"-{commits}", "--name-only", "--format=format:@@"],
         capture_output=True,
         text=True,
     ).stdout
@@ -298,6 +339,10 @@ def main(argv: list[str]) -> int:
     for line in changed.raised(ref, "scripts/ci/simplicity_baseline.json", base):
         failed = True
         print(f"::error file=scripts/ci/simplicity_baseline.json::raised against the base ({line}): it only goes down")
+    why = route_load_moved(ref) if ref else None
+    if why:
+        failed = True
+        print(f"::error file={ROUTE_LOAD},title=Route-load budget::{why} (simplicity_ratchet.py)")
     for name, n in now.items():
         if name not in base:
             print(f"{name}: {n}, not in the baseline (add it with --write --seed)")

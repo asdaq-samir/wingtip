@@ -1,22 +1,10 @@
 name: Auto-merge agents
 
-# Pull requests merge into main by themselves once CI passes: every
-# claude/ branch's (each agent session's).
-# Dependabot opens none any more (the owner, 2026-11-09): dependencies are
-# updated in each wave's end pass, and its alerts still flag advisories.
-# Main's ruleset requires the "CI passed" check (ci.yml's tier 1, about
-# three minutes; the browser smoke and the images run after the merge,
-# docs/CI.md "The tiers"), so nothing merges red.
-#
-# Claude's have auto-merge turned on as they open (or leave draft), not
-# after Claude's review: the owner decided on 2026-11-06 ("Ok to not
-# having review") that no review gates a merge, and claude-review.yml now
-# reviews only a pull request given the "review" label. Until then they
-# waited for the review, since #81 merged on its first green CI while the
-# review's fixes were still being made. The gate is unchanged: main's
-# ruleset requires "CI passed", so a pull request still merges only green,
-# and an agent runs the checks that cover its change, and the
-# aviation-check skill, before it pushes.
+# Every claude/ pull request merges into main by itself once "CI passed"
+# (main's ruleset; ci.yml's tier 1, docs/CI.md "The tiers"), so nothing
+# merges red. Auto-merge goes on as it opens, not after a review: no review
+# gates a merge (the owner, 2026-11-06). Dependabot opens none (2026-11-09).
+# A review's own fix turns it off again (claude-review.yml's approve job).
 
 on:
   pull_request:
@@ -32,7 +20,7 @@ jobs:
       !github.event.pull_request.draft &&
       startsWith(github.event.pull_request.head.ref, 'claude/') &&
       github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     steps:
       - name: Merge once CI passes
         env:

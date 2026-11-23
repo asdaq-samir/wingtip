@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """What ci.yml's e2e job runs, and on how many shards (decision 0048).
 
-At night or by hand, every spec on every project, over ten shards. In
+At night or by hand, the wave's set dealt by time over WAVE_SHARDS less
+AUDIT_SHARDS, and the iOS audit's device projects (IOS_AUDIT=1) on
+AUDIT_SHARDS of their own, by project: over ten shards by --shard, six to
+eight of them met the 1800 s wrapper every night (CI audit 2026-11-23, H1). In
 a wave's validation (EVENT "wave", validate-wave.yml; decision 0054),
 every spec on the phone, desktop and WebKit phone projects, and the
 smoke set and the ipad-* specs on the iPad's WebKit, over WAVE_SHARDS: minutes, where the
@@ -54,6 +57,15 @@ SPECS_A_SHARD = 3
 # A known red with no retry: at worst six of CI's two-minute timeouts over two workers, six minutes.
 REDS_A_SHARD = 6
 MAX_SHARDS = 10
+# The night's iOS audit (playwright.config.ts's iosDevices, with IOS_AUDIT=1):
+# each project runs only e2e/ios, so they are dealt by project, WebKit alone.
+AUDIT_PROJECTS = [
+    ["iphone-se", "iphone-16-pro", "iphone-16-pro-max", "iphone-landscape"],
+    ["ipad-slide-over", "ipad-mini", "ipad-pro-13", "ipad-pro-13-landscape"],
+    ["iphone-duo-folded", "iphone-duo-open", "iphone-duo-open-landscape"],
+    ["webkit-iphone"],
+]
+AUDIT_SHARDS = len(AUDIT_PROJECTS)
 # Wide, as a wave waits on it; GitHub runs 20 jobs at once for a free
 # account, and the rest of the run's jobs need a few of them.
 WAVE_SHARDS = 16
@@ -90,14 +102,20 @@ def reached(base: str) -> list[str]:
     return [s for s in found.stdout.split() if PLAIN.match(s)]
 
 
-def wide(specs: list[str], extra: str = "") -> list[str]:
+def wide(specs: list[str], extra: str = "", most_shards: int = WAVE_SHARDS) -> list[str]:
     """Specs on the wave's projects, dealt by their seconds on those projects, three a shard on each."""
     if not specs:
         return []
     figures = [load(os.environ.get("SPEC_SECONDS"), p) for p in re.findall(r"--project=(\S+)", WAVE_PROJECTS)]
     timed = {s: v for s in specs if (v := sum(f.get(s, 0.0) for f in figures))}
-    n = min(WAVE_SHARDS, math.ceil(2 * len(specs) / SPECS_A_SHARD))
+    n = min(most_shards, math.ceil(2 * len(specs) / SPECS_A_SHARD))
     return [f"{WAVE_PROJECTS}{extra} " + " ".join(g) for g in deal(specs, n, timed) if g]
+
+
+def every_spec() -> list[str]:
+    """Every spec a shell can take, but the iOS audit's (e2e/ios), which only its device projects run."""
+    found = sorted(p.relative_to("apps/web").as_posix() for p in Path("apps/web/e2e").rglob("*.spec.ts"))
+    return [s for s in found if PLAIN.match(s) and not s.startswith("e2e/ios/")]
 
 
 def most(specs: list[str]) -> bool:
@@ -169,13 +187,16 @@ def plan(event: str) -> dict[str, str]:
             print(f"{event}: {len(groups)} shard(s)", file=sys.stderr)
             return timed(groups)
     if event in ("schedule", "workflow_dispatch"):
-        return {"run": "true", "args": "", "shards": shards(MAX_SHARDS), "groups": ""}
+        groups = wide(every_spec(), most_shards=WAVE_SHARDS - AUDIT_SHARDS)
+        groups += [" ".join(f"--project={p}" for p in projects) for projects in AUDIT_PROJECTS]
+        print(f"night: the wave's set over {len(groups) - AUDIT_SHARDS} shards by time, the iOS audit on {AUDIT_SHARDS}", file=sys.stderr)
+        return timed(groups)
     if event == "wave":
         # Dealt by time where a run timed them (spec_seconds.py), slowest first to the least loaded shard; else
         # Playwright's --shard, an equal count of tests a shard.
         if load(os.environ.get("SPEC_SECONDS"), "mobile"):
-            every = sorted(p.relative_to("apps/web").as_posix() for p in Path("apps/web/e2e").rglob("*.spec.ts"))
-            groups = wide([s for s in every if PLAIN.match(s)])
+            every = every_spec()
+            groups = wide(every)
             print(f"wave: {len(every)} specs dealt by time over {len(groups)} shards", file=sys.stderr)
             return timed(groups)
         return {"run": "true", "args": WAVE_PROJECTS, "shards": shards(WAVE_SHARDS), "groups": ""}

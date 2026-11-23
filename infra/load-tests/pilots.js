@@ -124,6 +124,14 @@ function thresholds() {
 }
 
 export const options = {
+  // A pilot signs in once and stays signed in: k6 empties each VU's cookie
+  // jar between iterations unless told not to, so from the second round on
+  // the saved flights were asked with no session (/api/me 204, /api/flights
+  // 401), the flat ~3% of errors at every load in the stress run of
+  // 2026-11-23 (its summary's checks: "me answered" and "flights answered"
+  // failed 11,001 times each, every other check passed; the other 500
+  // failures were each pilot's first /api/me, below).
+  noCookiesReset: true,
   scenarios: {
     pilots: {
       executor: "ramping-vus",
@@ -169,7 +177,8 @@ let signedIn = false;
 function signIn() {
   const email = `pilot-${exec.vu.idInTest}-${RUN}@load.wingtip.invalid`;
   const started = Date.now();
-  http.get(`${BASE}/api/me`, { tags: { name: "me" }, responseCallback: http.expectedStatuses(200, 401) });
+  // Signed out, /api/me answers 204 (it was 401 once): not an error, one a pilot.
+  http.get(`${BASE}/api/me`, { tags: { name: "me" }, responseCallback: http.expectedStatuses(200, 204, 401) });
   const asked = http.post(`${BASE}/api/auth/magic-link`, JSON.stringify({ email }), {
     headers: { "Content-Type": "application/json", "X-XSRF-TOKEN": xsrf() },
     tags: { name: "sign-in link" },

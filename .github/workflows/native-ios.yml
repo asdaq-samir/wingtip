@@ -66,16 +66,16 @@ jobs:
   test:
     # GitHub's xcode-27 image, the one hosted image with .tool-versions'
     # Xcode 27.2 (actions/runner-images, images/macos/xcode-27-arm64-Readme.md).
-    runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
-    # A pull request runs the iPhone; main's push the iPad too (the primary device,
-    # decision 0058), a wave the iPad's whole suite in four legs; the night iPhone Duo
-    # too, each its own runner (three on one ran over 80 minutes, #572). The iPhone's
-    # leg builds, the others boot and wait for its build (scripts/ci/ios_products.py).
-    name: ${{ matrix.device == 'iPhone' && 'test' || format('test ({0})', matrix.device) }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.MAC_RUNNER || 'xcode-27' }}
+    # A pull request runs the iPhone, building it itself; main's push the iPad too (decision 0058),
+    # a wave the iPad's suite in four legs, the night iPhone Duo too, each on its own runner. There the
+    # build leg builds once and every device boots and waits for it (scripts/ci/ios_products.py): one
+    # leg building and testing ran past main's 25 minutes (run 45171956202; CI audit 2026-11-23, H5).
+    name: ${{ matrix.device == 'build' && 'build' || matrix.device == 'iPhone' && 'test' || format('test ({0})', matrix.device) }}
     strategy:
       fail-fast: false
       matrix:
-        device: ${{ fromJSON((inputs.full || github.event_name == 'schedule') && '["iPhone", "iPad", "iPhone Duo"]' || inputs.unit_only && '["iPhone"]' || github.workflow == 'Validate wave' && '["iPhone", "iPad 1/4", "iPad 2/4", "iPad 3/4", "iPad 4/4"]' || '["iPhone", "iPad"]') }}
+        device: ${{ fromJSON((inputs.full || github.event_name == 'schedule') && '["build", "iPhone", "iPad", "iPhone Duo"]' || inputs.unit_only && '["iPhone"]' || github.workflow == 'Validate wave' && '["build", "iPhone", "iPad 1/4", "iPad 2/4", "iPad 3/4", "iPad 4/4"]' || '["build", "iPhone", "iPad"]') }}
     # A pull request's set is a few minutes; a wave's quarter of the iPad's suite some thirty with its build, a night's device thirty.
     timeout-minutes: ${{ (inputs.full || github.event_name == 'schedule') && 100 || contains(matrix.device, '/') && 45 || 25 }}
     # actions: read, for the other legs to find the iPhone's build.
@@ -83,7 +83,7 @@ jobs:
       actions: read
       contents: read
     env:
-      BUILDS: ${{ matrix.device == 'iPhone' }}
+      BUILDS: ${{ matrix.device == 'build' || inputs.unit_only == true }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -144,7 +144,9 @@ jobs:
         id: sim
         env:
           DEVICE: ${{ matrix.device }}
-        run: echo "id=$(xcrun simctl list devices available -j | python3 scripts/dev/newest_simulator.py "${DEVICE%% [0-9]*}")" >> "$GITHUB_OUTPUT" && echo "LEG=$DEVICE" >> "$GITHUB_ENV"
+        run: |
+          d=${DEVICE/#build/iPhone}
+          echo "id=$(xcrun simctl list devices available -j | python3 scripts/dev/newest_simulator.py "${d%% [0-9]*}")" >> "$GITHUB_OUTPUT" && echo "LEG=$DEVICE" >> "$GITHUB_ENV"
       # Built, then the string catalog's check, then the tests (ios_test.sh picks them), so a stale catalog fails first.
       - name: Built for the simulator
         if: env.BUILDS == 'true'
@@ -160,7 +162,7 @@ jobs:
       - name: The acknowledgements are the packages' licences
         if: env.BUILDS == 'true'
         run: scripts/build/licences.sh ios --check "$RUNNER_TEMP/derived/SourcePackages"
-      # The build, for the other legs to test (a day: they take it within the run).
+      # The build, for the device legs (three days: a leg run again alone still finds it).
       - if: env.BUILDS == 'true' && env.UNIT_ONLY != 'true'
         run: python3 scripts/ci/ios_products.py pack
       - if: env.BUILDS == 'true' && env.UNIT_ONLY != 'true'
@@ -170,7 +172,7 @@ jobs:
           path: ${{ runner.temp }}/ios-products.tar
           compression-level: 1
           overwrite: true
-          retention-days: 1
+          retention-days: 3
       - name: The iPhone's build, once it is there
         if: env.BUILDS != 'true'
         env:
@@ -178,11 +180,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python3 scripts/ci/ios_products.py fetch
       - name: Tested on the simulator
+        if: matrix.device != 'build'
         env:
           SIM: ${{ steps.sim.outputs.id }}
         run: scripts/ci/ios_test.sh test
       - name: DerivedData, kept
-        if: always() && matrix.device == 'iPhone' && steps.derived.outputs.cache-hit != 'true' && (github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
+        if: always() && env.BUILDS == 'true' && steps.derived.outputs.cache-hit != 'true' && (github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
         continue-on-error: true
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
@@ -191,14 +194,14 @@ jobs:
             !${{ runner.temp }}/derived/Logs
           key: ${{ steps.derived.outputs.cache-primary-key }}
       - name: Each device's first screen
-        if: env.FULL == 'true'
+        if: env.FULL == 'true' && matrix.device != 'build'
         continue-on-error: true
         env:
           SIM: ${{ steps.sim.outputs.id }}
           DEVICE: ${{ matrix.device }}
         run: scripts/ci/ios_screens.sh
       - name: The screens
-        if: always() && env.FULL == 'true'
+        if: always() && env.FULL == 'true' && matrix.device != 'build'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: native-ios-screens-${{ strategy.job-index }}
@@ -223,7 +226,7 @@ jobs:
     # This workflow's own push to main (or a run by hand there), once the
     # App Store Connect key is set; never a call from CI, nor a night.
     if: github.workflow == 'Native iOS' && github.ref == 'refs/heads/main' && github.event_name != 'schedule' && vars.APP_STORE_KEY_ID != ''
-    runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.MAC_RUNNER || 'xcode-27' }}
     timeout-minutes: 45
     env:
       TEAM: ${{ vars.APPLE_TEAM_ID }}

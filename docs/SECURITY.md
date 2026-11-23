@@ -40,8 +40,10 @@ the apps' own work; the gateway half of M1 is here.
   time. When a fixed deepmerge is released, `npm update` takes it
   ([versions.md](versions.md)).
 - **CI runners.** While the repository is public, no self-hosted runner
-  (`vars.LINUX_RUNNER`): a fork's pull request would run on the Mac mini.
-  Keep "Require approval for all outside collaborators" on regardless.
+  (`vars.LINUX_RUNNER`, `vars.MAC_RUNNER`): a fork's pull request would run
+  on the Mac mini. Every `runs-on` naming one now puts a fork on GitHub's
+  runner regardless (`workflow_rules.py` holds it). Keep "Require approval
+  for all outside collaborators" on regardless.
 
 ## What only the owner can do
 
@@ -144,3 +146,22 @@ each way in is held:
 | A flight handed back with a map of any size | `Flight.fuel_on_board` is bounded as the stops are (`MAX_STOPS + 2` fields, each an identifier). |
 | Another pilot's saved flight replaced or deleted | The gateway's `PUT` and `DELETE /internal/mcp/flights/{id}` find the flight by id and the pilot's own id together (`FlightService.get`), a 404 otherwise, on the internal port with the planner's secret alone. |
 | What a connected app may do is hidden from the pilot | You's Connected Apps says it under each app, in the consent page's own words (`ConnectionDto.can`, `ConnectorSettings.SCOPE_WORDS`). |
+
+## CI, round 4 (2026-11-23)
+
+The round-4 review (wingtip-audits/2026-11-23/security.md) found the deep
+review's class twice more: a write or owner token on a machine that had
+run a branch's npm code. What changed:
+
+| Finding | Now |
+|---|---|
+| H1: the review's address job ran `npm ci` (install scripts on) and Claude with `npm`, `node` and `pip`, then approved the fix's held checks with `MERGE_TOKEN` in the same job, where a fake `gh` or `git` left on `$GITHUB_PATH` would get it | The approval is its own job, `approve`, on GitHub's runner, with only main's `scripts/ci` checked out (`review_fix_approve.sh`); `MERGE_TOKEN` is only there. The address job runs `npm ci --ignore-scripts` and checks out without keeping the job's token in `.git/config` (the action sets its own for Claude's push). |
+| H2: a pull request's `build (e2e)` held `packages: write` while it ran the branch's `npm ci` and `vite build`, and Promote's ECR copy fell back to GHCR's `:latest` for any image a commit did not rebuild | The page is built by `page (e2e)` with `packages: read` and handed on as an artifact; `build (e2e page)` makes and pushes its image without running anything of the branch. The images' own builds run inside BuildKit, which never sees the registry login. Promote's `push-ecr` falls back to ECR's own `latest`, which only it writes, never GHCR's. |
+| M6: a page the review fetched could steer the address job's fix, which then merged by itself | The fix's own push turns the pull request's auto-merge off and says so in a comment: the owner looks before it merges (`gh pr merge <n> --auto --merge` turns it on again). |
+| L14: `vars.LINUX_RUNNER` and `vars.MAC_RUNNER` were one-variable cliffs | Each `runs-on` naming one is `github.event.pull_request.head.repo.fork != true && vars.…`, and `workflow_rules.py` refuses one without it. |
+
+Left for the owner (GitHub settings, no code): fork approval to "all
+outside collaborators" (M7), `sha_pinning_required` on, workflow tokens
+not allowed to approve pull requests, and `PLAYWRIGHT_IMAGE` by digest
+(L15; the scripts tag the slim copy by that name, so a digest needs them
+changed too).

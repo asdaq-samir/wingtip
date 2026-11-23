@@ -11,7 +11,8 @@ set -e
 cat > /tmp/e2e-out/stack.sh <<'EOF'
 mark() { echo "$(($(date +%s) - T0)) $*" >> /tmp/e2e-out/timeline; }
 there() { docker buildx imagetools inspect --raw "$1" > /dev/null 2>&1; }
-# Until e2e-images has pushed $1. After a minute, ask after that
+# Until the job named $2 (e2e-images' "build (e2e)", or e2e-page-push's
+# "build (e2e page)") has pushed $1. After a minute, ask after that
 # job every twenty seconds: once it has ended, it never will. By the end
 # of its name, as a wave's validation puts "CI / " before it.
 await() {
@@ -19,10 +20,10 @@ await() {
   until there "$1"; do
     sleep 2
     if [ "$SECONDS" -ge 60 ]; then
-      built=$(gh api "repos/$REPOSITORY/actions/runs/$RUN_ID/jobs?per_page=100" \
-        --jq '.jobs[] | select(.name | endswith("build (e2e)")) | .conclusion // "running"')
+      built=$(gh api --paginate "repos/$REPOSITORY/actions/runs/$RUN_ID/jobs?per_page=100" \
+        --jq ".jobs[] | select(.name | endswith(\"$2\")) | .conclusion // \"running\"")
       if [ "$built" != running ] && [ -n "$built" ] && ! there "$1"; then
-        echo "no $1, and build (e2e) ended: $built"
+        echo "no $1, and $2 ended: $built"
         return 1
       fi
       sleep 18
@@ -38,17 +39,17 @@ fetch() {
   small
   if [ -z "$built" ]; then
     docker pull -q "$ref:e2e" > /dev/null 2>&1
-    await "$ref:e2e-$2" || return 1
+    await "$ref:e2e-$2" "build (e2e)" || return 1
   fi
   docker pull -q "$ref:e2e-$2" > /dev/null || return 1
   docker tag "$ref:e2e-$2" "wingtip-$1:ci"
   mark "$1 pulled"
 }
-# The page, for its key, $1: copied out of the image e2e-images
+# The page, for its key, $1: copied out of the image e2e-page-push
 # made of it into apps/web/dist, which the gateway serves.
 page() {
   local ref=$REGISTRY/gateway:e2e-page-$1
-  await "$ref" || return 1
+  await "$ref" "build (e2e page)" || return 1
   docker pull -q "$ref" > /dev/null || return 1
   docker create --name e2e-page "$ref" none > /dev/null || return 1
   docker cp e2e-page:/page/. apps/web/dist/ > /dev/null || return 1

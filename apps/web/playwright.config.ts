@@ -104,16 +104,23 @@ export default defineConfig({
   // suite in 4.0 minutes against 4.6 at the default half, with no more
   // flakes); two in CI, where the four-core runner is the stack's too.
   workers: ci ? 2 : "75%",
-  // A whole run that is not done in half an hour is a stack that is
-  // not answering, and the report of what did and did not pass is
-  // worth more than the job's own time limit cutting it off unsaid.
-  globalTimeout: ci ? 30 * 60_000 : undefined,
+  // A whole run that is not done in 28 minutes is a stack that is not
+  // answering, and the report of what did and did not pass is worth more
+  // than a limit cutting it off unsaid: two minutes under ci.yml's
+  // `timeout 1800`, so Playwright ends first and still writes its summary,
+  // JSON and flaky list (at 30 the wrapper killed six to eight shards a
+  // night first, and nothing was written; CI audit 2026-11-23, H1).
+  globalTimeout: ci ? 28 * 60_000 : undefined,
   fullyParallel: true,
   // In CI, the github reporter too: each failure and each flaky test an
   // annotation on the commit's checks. (The e2e job names its reporters
   // on the command line, with a JSON one for the flake hunt.)
   reporter: ci ? [["list"], ["github"]] : "list",
   use: {
+    // A click on a control that never becomes enabled fails in 30 s with
+    // its own words, not at the test's two minutes (the desktop emergency
+    // flow spent 1,380 s so; CI audit 2026-11-23, M1). As `expect` waits.
+    actionTimeout: ci ? 30_000 : 15_000,
     baseURL: process.env.BASE_URL ?? "http://localhost:8080",
     // The app registers a service worker that answers API calls itself
     // (vite.config.ts) and takes over an open page as soon as it is

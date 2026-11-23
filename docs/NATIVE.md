@@ -922,11 +922,14 @@ SDK), so a build or a test runs there through `scripts/dev/one-at-a-time.sh`
   (`IPAD_LEG_1` to `IPAD_LEG_3` in `scripts/ci/ios_test.sh` and the
   rest), where the night's one leg takes 34 to 48 minutes;
 - on every run with more than the iPhone's leg (main's push, a wave, the
-  night), the app and its tests are built once: the iPhone's leg runs
-  `build-for-testing` and uploads its `Build/Products` (the `.xctestrun`
-  and what it names, as a tar that keeps the binaries executable) as the
-  run's `ios-products` artifact, and each other leg, started at the same
-  time, boots its simulator, waits for that artifact and runs
+  night), the app and its tests are built once, by a leg of their own,
+  `build` (one leg building and testing ran past main's 25 minutes, run
+  45171956202): it runs `build-for-testing` and uploads its
+  `Build/Products` (the `.xctestrun` and what it names, as a tar that
+  keeps the binaries executable) as the run's `ios-products` artifact,
+  kept three days so one leg run again still finds it, and each device's
+  leg, started at the same time, boots its simulator, waits for that
+  artifact (asking every 30 s, an API error waited out) and runs
   `test-without-building -xctestrun` with its own `-only-testing`
   (`scripts/ci/ios_products.py`). The build keeps every device's
   resources (`ENABLE_ONLY_ACTIVE_RESOURCES=NO`), so one build serves the

@@ -1,0 +1,34 @@
+name: Tidy branches
+
+# The claude/ branches on GitHub whose work is on main, deleted each night
+# and after each push to main in one push by scripts/dev/tidy-branches.sh
+# --github (its rules; no worktrees here), kept as a bundle in the artifact.
+on:
+  schedule:
+    - cron: "41 4 * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tidy-branches
+  cancel-in-progress: false
+
+jobs:
+  tidy:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    # Write to delete branches; read, for the open pull requests and runs it keeps.
+    permissions: { contents: write, pull-requests: read, actions: read }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with: { fetch-depth: 0, persist-credentials: false }
+      - name: The landed claude/ branches, deleted in one push
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/dev/tidy-branches.sh --github
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with: { name: deleted-branches, path: "${{ runner.temp }}/branch-archive", if-no-files-found: ignore, retention-days: 90 }

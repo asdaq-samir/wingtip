@@ -129,6 +129,9 @@
     "eslint-plugin-jsx-a11y-x": {
       "minimatch": "11.0.6"
     },
+    "license-checker-rseidelsohn": {
+      "minimatch": "11.0.6"
+    },
     "workbox-build": {
       "glob": "^14.0.4"
     }
