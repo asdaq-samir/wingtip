@@ -62,6 +62,12 @@ export interface FlightView {
   airplane: string | null;
   chart: Pick<ChartInfo, "chart_cycle" | "chart_revision" | "chart_tiles_base" | "chart_layers" | "max_zoom" | "min_zoom">;
   open_in_wingtip: string | null;
+  /** The pilot's views' channel, made by the server (supersede). */
+  channel: string;
+  /** The saved flight it came from, from the pilot's own records: its
+   *  ends, and whether this plan still goes between them (the gateway
+   *  replaces it only then, from the view). */
+  saved: { id: number; departure: string; destination: string; same_route: boolean } | null;
 }
 
 export interface Answer {
@@ -136,14 +142,24 @@ export function approachChanges(a: ViewApproach): (Change & { label: string })[]
   ];
 }
 
-/** Saving: over the saved flight it came from, or as a new one. */
-export function saveChange(flight: Flight): Change & { label: string } {
-  return flight.saved_flight_id
+/** Saving: over the saved flight it came from, named by its route as the
+ *  pilot's records have it ("Update KMSN–KDLH"), where the plan still goes
+ *  between its airports; otherwise as a new one. Another route over a
+ *  saved flight is the model's to ask, with the host's confirmation
+ *  (update_saved_flight's replace_route), never a tap here. */
+export function saveChange(view: FlightView): Change & { label: string } {
+  const saved = view.saved;
+  return saved?.same_route
     ? {
-        tool: "update_saved_flight",
+        tool: "update_saved_flight_from_view",
         args: {},
-        label: "Update Saved",
-        said: `saved the changes over saved flight ${flight.saved_flight_id}`,
+        label: `Update ${saved.departure}–${saved.destination}`,
+        said: `saved the changes over saved flight ${saved.id} (${saved.departure}–${saved.destination})`,
       }
-    : { tool: "save_flight_plan", args: {}, label: "Save", said: "saved the flight to their Wingtip account" };
+    : {
+        tool: "save_flight_plan",
+        args: {},
+        label: saved ? "Save as New" : "Save",
+        said: "saved the flight to their Wingtip account as a new flight",
+      };
 }

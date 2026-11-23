@@ -13,8 +13,8 @@ import { useClaudeView, type ClaudeViewModel } from "./useClaudeView";
 import { ViewRoute } from "./ViewRoute";
 
 function Head({ answer, vm }: { answer: Answer; vm: ClaudeViewModel }) {
-  const { flight, view } = answer;
-  const save = saveChange(flight);
+  const { view } = answer;
+  const save = saveChange(view);
   const blocked = vm.busy !== null || vm.superseded;
   return (
     <CardHeadRow

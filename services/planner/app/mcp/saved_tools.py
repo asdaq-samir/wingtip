@@ -75,22 +75,54 @@ def register_view(apps: Apps) -> None:
         kept = flight.model_copy(update={"saved_flight_id": saved["id"]})
         return await answer(kept, who, f"Saved as flight {saved['id']} in Wingtip's Flights.")
 
+    async def _replace(flight: Flight, replace_route: bool) -> CallToolResult:
+        who = pilot(WRITE)
+        if flight.saved_flight_id is None:
+            raise ToolError("This flight is not from a saved flight: save it with save_flight_plan, or open one with open_saved_flight.")
+        saved = await _theirs(who, flight.saved_flight_id)
+        await records.replan_flight(who, flight.saved_flight_id, await _request(flight, who), replace_route)
+        # The share link follows the row (Flight.replanned keeps it), so
+        # the pilot is told whoever holds it now sees this route.
+        shared = " Its share link now shows this route to whoever holds it." if saved.get("share") else ""
+        return await answer(flight, who, f"Saved flight {flight.saved_flight_id} replaced with this plan.{shared}")
+
     @apps.tool(
         resource_uri=VIEW_URI,
         name="update_saved_flight",
         title="Replace a saved flight",
         description="Replaces the saved flight this flight came from (its saved_flight_id) with the flight as now "
-        "planned: its route, altitude, procedures, airplane, time and nav log. Its name and notes are kept.",
+        "planned: its route, altitude, procedures, airplane, time and nav log. Its name, notes and share link are kept, "
+        "so whoever holds the link sees the new plan. A plan between other airports than the saved flight's is refused "
+        "unless replace_route is true, which is for when the pilot has said to put this route over that flight.",
         annotations=destructive("Replace a saved flight"),
+        # The model's alone: replace_route is a choice the pilot makes
+        # through the host's ask, which a call from the view would skip
+        # (the security review of 2026-11-22, L5); the view's button is
+        # update_saved_flight_from_view, which cannot set it.
+        visibility=["model"],
         meta=WRITES,
     )
-    async def update_saved_flight(flight: FlightIn) -> CallToolResult:
-        who = pilot(WRITE)
-        if flight.saved_flight_id is None:
-            raise ToolError("This flight is not from a saved flight: save it with save_flight_plan, or open one with open_saved_flight.")
-        await _theirs(who, flight.saved_flight_id)
-        await records.replan_flight(who, flight.saved_flight_id, await _request(flight, who))
-        return await answer(flight, who, f"Saved flight {flight.saved_flight_id} replaced with this plan.")
+    async def update_saved_flight(
+        flight: FlightIn,
+        replace_route: Annotated[
+            bool, Field(description="True only when the pilot asked to put a route between other airports over the saved flight.")
+        ] = False,
+    ) -> CallToolResult:
+        return await _replace(flight, replace_route)
+
+    @apps.tool(
+        resource_uri=VIEW_URI,
+        name="update_saved_flight_from_view",
+        title="Update a saved flight from the view",
+        description="The live view's Update button: replaces the saved flight this flight came from with it, between "
+        "the same airports only.",
+        annotations=destructive("Update a saved flight from the view"),
+        # The view's alone: the model has update_saved_flight.
+        visibility=["app"],
+        meta=WRITES,
+    )
+    async def update_saved_flight_from_view(flight: FlightIn) -> CallToolResult:
+        return await _replace(flight, False)
 
 
 def register(server: MCPServer) -> None:

@@ -75,9 +75,9 @@ describe("the connector's live view", () => {
   it("says where a change failed, and opens the flight in Wingtip", async () => {
     render(<ClaudeView />);
     pushed(fixture);
-    host.callServerTool.mockResolvedValueOnce({ isError: true, content: [{ type: "text", text: "Not allowed wingtip:write" }] });
+    host.callServerTool.mockResolvedValueOnce({ isError: true, content: [{ type: "text", text: "Not allowed wingtip:flights" }] });
     fireEvent.click(screen.getByTestId("view-save"));
-    expect((await screen.findByTestId("view-problem")).textContent).toContain("Not allowed wingtip:write");
+    expect((await screen.findByTestId("view-problem")).textContent).toContain("Not allowed wingtip:flights");
     fireEvent.click(screen.getByTestId("view-open"));
     expect(host.openLink).toHaveBeenCalledWith({ url: fixture.view.open_in_wingtip });
   });

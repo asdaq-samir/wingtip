@@ -17,10 +17,19 @@ public class ConnectorSettings {
 
     /** What a pilot may grant: their records read and planned with, and
      *  their saved flights saved, changed and deleted. Nothing else is
-     *  ever issued. */
+     *  ever issued. The write is wingtip:flights, not the wingtip:write
+     *  a pilot once consented to as "Save flights" alone: a consent is
+     *  kept and not asked again, so the wider grant needs a name of its
+     *  own (V53, the security review of 2026-11-22, L4). */
     public static final String READ = "wingtip:read";
 
-    public static final String WRITE = "wingtip:write";
+    public static final String WRITE = "wingtip:flights";
+
+    /** The shortest MCP_INTERNAL_TOKEN taken: it alone lets a caller on
+     *  the internal port read and change any pilot's records, so it is a
+     *  key, not a word (dev.sh doctor writes 64 hex characters). */
+    static final int MIN_INTERNAL_TOKEN = 32;
+
     public static final List<String> SCOPES = List.of(READ, WRITE);
 
     /** What each scope lets the AI app do, in the pilot's words: the
@@ -29,7 +38,7 @@ public class ConnectorSettings {
             READ, "Read your airplanes and saved flights, and plan with them",
             WRITE, "Save, change and delete your saved flights");
 
-    /** A connection's granted scopes ("wingtip:read wingtip:write") in those words. */
+    /** A connection's granted scopes ("wingtip:read wingtip:flights") in those words. */
     public static List<String> wordsOf(String scopes) {
         return scopes == null
                 ? List.of()
@@ -83,6 +92,12 @@ public class ConnectorSettings {
                     + "not set: the planner's connector reads pilots' records with it. Set the same long random "
                     + "value on the gateway and the planner (scripts/dev/dev.sh doctor writes one into .env), "
                     + "or turn the connector off.");
+        }
+        if (enabled && internalToken.strip().length() < MIN_INTERNAL_TOKEN) {
+            throw new IllegalStateException("MCP_INTERNAL_TOKEN (app.mcp.internal-token) is shorter than "
+                    + MIN_INTERNAL_TOKEN + " characters: it is the key to every pilot's records on the internal "
+                    + "port. Set a long random value on the gateway and the planner (scripts/dev/dev.sh doctor "
+                    + "writes one into .env).");
         }
     }
 

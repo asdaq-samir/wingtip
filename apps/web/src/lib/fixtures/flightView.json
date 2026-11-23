@@ -32,11 +32,6 @@
       "current": "2026-10-29",
       "edition": "2026-10-29",
       "source": "FAA procedures"
-    },
-    {
-      "current": "2026-09-29",
-      "edition": null,
-      "source": "FAA obstacles"
     }
   ],
   "view": {
@@ -55,6 +50,7 @@
         "transition": null
       }
     ],
+    "channel": "00000000000000000000000000000000",
     "chart": {
       "chart_cycle": "10-29-2026",
       "chart_layers": [
@@ -511,6 +507,7 @@
         "role": "destination"
       }
     ],
+    "saved": null,
     "seq": 1,
     "strip_fuel": {
       "required_gal": 12.3,
