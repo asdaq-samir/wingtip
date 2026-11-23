@@ -17,17 +17,23 @@
  * scroller's content, so all of it went up with the scroll, FPL's head
  * 40 points off the sheet's top all the way up at the default text size
  * (the HIG review, 2026-11-21). Measured as a tall one, only its first row
- * sticks.
+ * sticks. So too the page's end room under FPL's foot bar (sheet/FootBar,
+ * SheetScroller's data-foot-room), which the scroller runs on under: a
+ * long route's field all the way up stuck with its last row, the Add
+ * Stops pill and the toggle back, under the bar, out of a finger's reach
+ * (the owner's iPhone, 2026-11-23).
  */
 export function bandFits(band: HTMLElement | null) {
   const scroller = band?.parentElement;
   if (!band || !scroller) return;
+  const room = scroller.querySelector<HTMLElement>(":scope > [data-foot-room]");
   const check = () => {
-    const foot = parseFloat(getComputedStyle(scroller).paddingBottom) || 0;
+    const foot = (parseFloat(getComputedStyle(scroller).paddingBottom) || 0) + (room?.offsetHeight ?? 0);
     band.toggleAttribute("data-band-tall", band.offsetHeight > scroller.clientHeight - foot);
   };
   const watch = new ResizeObserver(check);
   watch.observe(band);
   watch.observe(scroller);
+  if (room) watch.observe(room);
   return () => watch.disconnect();
 }
