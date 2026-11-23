@@ -1,3 +1,5 @@
+import { TEXT } from "../../lib/text";
+import { cn } from "cn";
 import { altFt, zuluTime } from "../../lib/format";
 import type { RouteWeather } from "../../lib/api/types";
 import { CHART, WEATHER } from "../../lib/tokens";
@@ -178,7 +180,7 @@ export function WeatherKey({ weather }: { weather: RouteWeather | undefined }) {
     });
   if (!parts.length) return null;
   return (
-    <ul className="flex flex-col gap-0.5 pt-1" data-testid="profile-weather-key">
+    <ul className={cn("flex flex-col gap-0.5 px-2 pt-1 text-muted-foreground", TEXT.caption)} data-testid="profile-weather-key">
       {parts.map((p) => (
         <li key={p.key} className="flex items-center gap-1.5">
           <span aria-hidden="true" className="h-0.5 w-3 shrink-0 rounded" style={{ background: p.colour }} />

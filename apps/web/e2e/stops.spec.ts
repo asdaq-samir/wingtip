@@ -83,11 +83,15 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   const folded = leave.locator("[data-folded]");
   await expect(async () => {
     if (await folded.count()) await folded.click();
-    await takeoff
+    const chip = takeoff
       .getByTestId("procedure-pattern")
       .filter({ hasText: new RegExp(`^${name}$`) })
-      .first()
-      .click({ timeout: 2000 });
+      .first();
+    // Under the half sheet's edge, below FPL's pinned figures, the card
+    // pulled up to it first, as a finger does: at half its body does not
+    // scroll (rules.md's "Grow, then scroll").
+    await inSheet(page, chip);
+    await chip.click({ timeout: 2000 });
     await expect(page).toHaveURL(new RegExp(`[?&]takeoff=[^&]*KMSN(%3A|:)${name}(%2C|,|&|$)`), { timeout: 2000 });
   }).toPass({ timeout: slow(20000) });
   // The figures to the next landing, KMSN, its time that flight's; a tap on To, the destination and the whole route's distance.

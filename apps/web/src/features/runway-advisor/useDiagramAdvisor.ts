@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
 import { api } from "../../lib/api/client";
-import { engineLoaded } from "../../lib/engine/engine";
+import { useEngineReady } from "../../lib/engine/useEngineReady";
 import { useOwnShip } from "../../lib/map/position/ownShip";
 import { usePreferences } from "../../lib/preferences";
 import { airportQuery } from "../../lib/queryClient";
@@ -37,12 +37,17 @@ export function useDiagramAdvisor(ident: string, url: string | null | undefined)
     meta: { silent: true },
   });
   const page = text.data ?? null;
-  const graticule = useMemo(() => (page && engineLoaded() ? graticuleOf(page) : null), [page]);
+  // The engine's answers worked out again once it is in (useEngineReady):
+  // read with engineLoaded() inside the memo, a diagram whose words came
+  // before the engine kept no graticule for good, and own ship was never
+  // drawn on it (runway-advisor.spec, the validation run of 2026-11-22).
+  const engine = useEngineReady();
+  const graticule = useMemo(() => (page && engine ? graticuleOf(page) : null), [page, engine]);
   const spots = useMemo(() => (page && graticule ? hotSpotsOf(page, graticule) : []), [page, graticule]);
   const fix = useOwnShip((s) => (s.enabled ? s.fix : null));
   const now = useClock(EVERY_MS, !!fix);
-  const mark = page && engineLoaded() ? markOf(fix, page, graticule, now) : null;
-  const advice = place && engineLoaded() ? adviceOf(fix, place, spots, now) : null;
+  const mark = page && engine ? markOf(fix, page, graticule, now) : null;
+  const advice = place && engine ? adviceOf(fix, place, spots, now) : null;
   const speakOn = usePreferences((s) => s.speakAlerts);
   const said = useRef("");
   useEffect(() => {

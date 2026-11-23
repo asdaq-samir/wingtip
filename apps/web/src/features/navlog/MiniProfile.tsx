@@ -126,9 +126,7 @@ export default memo(function MiniProfile({
   // end is still the landing.
   const procedureNm = legs.reduce((nm, l) => nm + (l.procedure?.more_nm ?? 0), 0);
   const look = cn(
-    "grid h-24 w-full shrink-0 overflow-hidden",
-    ruler ? "grid-rows-[1fr_auto_auto]" : "grid-rows-[1fr_auto]",
-    " rounded-xl bg-background/70 px-2 pt-1.5 pb-1",
+    "grid h-24 w-full shrink-0 grid-rows-[1fr_auto] overflow-hidden rounded-xl bg-background/70 px-2 pt-1.5 pb-1",
     "text-muted-foreground tabular-nums",
     TEXT.caption,
   );
@@ -321,17 +319,27 @@ export default memo(function MiniProfile({
         <span>{miles(profile.length_nm / 2)}</span>
         <span>{wholeNm(profile.length_nm + procedureNm)}</span>
       </span>
-      {/* Whose the weather drawn is and for when, in the Profile card's. */}
-      {ruler && <WeatherKey weather={weather} />}
     </>
   );
   // A picture, named; but a group where the Profile card's altitude slider
   // is laid on it (`wheelSlot`): an image holds no control, and the slider
   // in one was axe's nested-interactive (WCAG 4.1.2; the iOS audit's
   // "altitude on the profile").
-  return (
+  const box = (
     <div role={wheelSlot ? "group" : "img"} data-testid="mini-profile" aria-label={label} className={look}>
       {chart}
     </div>
+  );
+  // Whose the weather drawn is and for when, in the Profile card's, under
+  // the box rather than a row of its fixed height: there its lines took the
+  // plot's room, and the altitude slider's knob, laid on the plot's scale,
+  // sat 14 to 34 points off the cruise's tag (plan-cards-heads.spec).
+  return ruler ? (
+    <>
+      {box}
+      <WeatherKey weather={weather} />
+    </>
+  ) : (
+    box
   );
 });
