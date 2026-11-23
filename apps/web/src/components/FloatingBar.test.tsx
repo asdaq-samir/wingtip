@@ -16,7 +16,7 @@ import { TEXT } from "../lib/text";
 afterEach(cleanup);
 
 /** The classes that make an item's height and pill, and the capsule's width. */
-const ITEM = ["min-h-12", "rounded-full", "flex-col", "data-active:bg-background/80"];
+const ITEM = ["min-h-12", "rounded-full", "flex-col", "aria-expanded:bg-background/80"];
 const WIDTH = ["w-fit", "max-w-full"];
 
 function cardBar() {
@@ -67,6 +67,8 @@ describe("the floating bar", () => {
     for (const c of ITEM) expect(tab.classList).toContain(c);
     expect(tab.getAttribute("role")).toBe("tab");
     expect(tab.textContent).toBe("Info");
+    // The picked tab's pill the stock indicator under the tabs, which slides.
+    expect(document.querySelector("[data-slot=tabs-indicator]")?.classList).toContain("bg-background/80");
     cleanup();
     fplBar();
     for (const id of ["route-brief", "route-more"]) {

@@ -1,5 +1,6 @@
 import { cn } from "cn";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
+import { useEdgeRoom } from "../../hooks/use-viewport";
 
 // Base UI's own delay (600 ms), not shadcn's 0, for the first label: a
 // mouse crossing a row of buttons no longer pops each in turn over the
@@ -26,9 +27,19 @@ function TooltipContent({
   children,
   ...props
 }: TooltipPrimitive.Popup.Props & Pick<TooltipPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset">) {
+  // Clear of the status bar, the notch and the home indicator, 8 past
+  // them (useEdgeRoom), not Base UI's 5 from the very edge.
+  const edgeRoom = useEdgeRoom();
   return (
     <TooltipPrimitive.Portal>
-      <TooltipPrimitive.Positioner align={align} alignOffset={alignOffset} side={side} sideOffset={sideOffset} className="isolate z-50">
+      <TooltipPrimitive.Positioner
+        collisionPadding={edgeRoom}
+        align={align}
+        alignOffset={alignOffset}
+        side={side}
+        sideOffset={sideOffset}
+        className="isolate z-50"
+      >
         <TooltipPrimitive.Popup
           data-slot="tooltip-content"
           className={cn(

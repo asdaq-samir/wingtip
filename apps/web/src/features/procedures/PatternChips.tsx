@@ -204,11 +204,7 @@ export function PatternChips({
             // stopped at the chip and the tray's 44-point square, 47 across,
             // lost its two corners there above and below (the iOS audit's
             // P1, on KDLH's folded runway, 2026-11-06), over index.css's rule.
-            className={cn(
-              CHIP,
-              "inline-flex items-center gap-0.5 whitespace-nowrap after:left-0 after:-right-[3px]",
-              c.ring,
-            )}
+            className={cn(CHIP, "inline-flex items-center gap-0.5 whitespace-nowrap after:left-0 after:-right-[3px]", c.ring)}
             aria-label={`${c.words}${note ? `, ${note}` : ""}, picked: tap for the other runways`}
             data-testid="procedure-pattern"
             data-folded=""
@@ -274,11 +270,7 @@ export function PatternChips({
               flushStart
               tray
               trailingRef={after}
-              enter={
-                chosen !== null
-                  ? "appear-slide [--appear-from:-0.75rem_0]"
-                  : undefined
-              }
+              enter={chosen !== null ? "appear-slide [--appear-from:-0.75rem_0]" : undefined}
             >
               {ends.map(({ runway, end }) => {
                 const c = chip(runway, end);

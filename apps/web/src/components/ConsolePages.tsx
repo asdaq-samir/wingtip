@@ -111,53 +111,53 @@ export function ConsolePages({
     // stays still (the owner: "It's flickering the icons"), and Reduce
     // Motion stills both (index.css).
     <ViewTransition update={PAGE_STEP} enter="none" exit="none" default="none">
-    <div ref={top}>
-      {page ? (
-        // A page of a page --
-        // Personal's Flights, then a flight -- goes
-        // back to the page under it, as iOS's navigation does one level
-        // at a time: this page's head steps aside while one is open in it.
-        <div
-          key={open}
-          data-slot="console-page"
-          data-testid="console-page"
-          className="space-y-4 [&:has([data-slot=console-page])>[data-slot=page-head]]:hidden"
-        >
-          {/* Its name and close pinned at the top, every card's one head row
-              (CardHeadRow), its slot the one a page over it hides. */}
-          <CardHeadRow
-            name={page.title}
-            level="h3"
-            nameRef={title}
-            slot="page-head"
-            end={
-              <CloseButton
-                label={direct && leave ? "Back to the map" : `Back to ${back}`}
-                onClick={shut}
-                data-testid="console-page-close"
-              />
-            }
-          />
-          {page.content}
-        </div>
-      ) : (
-        <div>
-          <Pages.Provider
-            value={{
-              open: (p) =>
-                pageStep(true, () => {
-                  setFrom(p);
-                  setOpen(p);
-                  setDirect(false);
-                }),
-              from,
-            }}
+      <div ref={top}>
+        {page ? (
+          // A page of a page --
+          // Personal's Flights, then a flight -- goes
+          // back to the page under it, as iOS's navigation does one level
+          // at a time: this page's head steps aside while one is open in it.
+          <div
+            key={open}
+            data-slot="console-page"
+            data-testid="console-page"
+            className="space-y-4 [&:has([data-slot=console-page])>[data-slot=page-head]]:hidden"
           >
-            {children}
-          </Pages.Provider>
-        </div>
-      )}
-    </div>
+            {/* Its name and close pinned at the top, every card's one head row
+              (CardHeadRow), its slot the one a page over it hides. */}
+            <CardHeadRow
+              name={page.title}
+              level="h3"
+              nameRef={title}
+              slot="page-head"
+              end={
+                <CloseButton
+                  label={direct && leave ? "Back to the map" : `Back to ${back}`}
+                  onClick={shut}
+                  data-testid="console-page-close"
+                />
+              }
+            />
+            {page.content}
+          </div>
+        ) : (
+          <div>
+            <Pages.Provider
+              value={{
+                open: (p) =>
+                  pageStep(true, () => {
+                    setFrom(p);
+                    setOpen(p);
+                    setDirect(false);
+                  }),
+                from,
+              }}
+            >
+              {children}
+            </Pages.Provider>
+          </div>
+        )}
+      </div>
     </ViewTransition>
   );
 }
