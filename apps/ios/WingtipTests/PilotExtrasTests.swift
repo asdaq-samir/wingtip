@@ -100,7 +100,7 @@ struct PaperworkTests {
         let json = #"{"annualOn":null,"annualGoodThrough":null,"forHire":true}"#
         let i = try JSONDecoder().decode(Inspections.self, from: Data(json.utf8))
         #expect(InspectionsRequest(i).forHire == true)
-        #expect(InspectionsRequest(nil).forHire == false)
+        #expect(InspectionsRequest(nil).forHire == nil)
     }
 }
 

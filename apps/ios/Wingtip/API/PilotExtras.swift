@@ -29,7 +29,7 @@ typealias InspectionsRequest = GWInspectionsRequest
 
 extension InspectionsRequest {
     init(_ i: Inspections?) {
-        self.init(annualOn: i?.annualOn, eltBatteryDueOn: i?.eltBatteryDueOn, eltInspectedOn: i?.eltInspectedOn, forHire: i?.forHire ?? false,
+        self.init(annualOn: i?.annualOn, eltBatteryDueOn: i?.eltBatteryDueOn, eltInspectedOn: i?.eltInspectedOn, forHire: i?.forHire,
                   hoursNow: i?.hoursNow, hundredHourAtHours: i?.hundredHourAtHours, staticCheckOn: i?.staticCheckOn,
                   transponderCheckOn: i?.transponderCheckOn)
     }
