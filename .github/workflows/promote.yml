@@ -1,14 +1,9 @@
 name: Promote
 
-# What a green CI run on main publishes: each image it built becomes
-# `:latest`, and, once the AWS variables are set, the images the stack
-# deploys go to ECR. It was CI's last job, and every run's last seven to
-# nine seconds; CI is how long it takes to learn whether a commit is
-# good, and this is what happens once it is. So it follows CI rather
-# than ending it -- only after a run that succeeded, and only for a push
-# to main (a pull request builds its images without pushing them).
-#
-# Actions are pinned as in ci.yml (its opening comment says why).
+# What a green CI run on main's push publishes: each image it built
+# becomes `:latest`, and, once the AWS variables are set, the images the
+# stack deploys go to ECR. It follows CI rather than ending it, so CI's
+# time is only how long it takes to learn whether a commit is good.
 on:
   workflow_run:
     workflows: [CI]
@@ -25,16 +20,11 @@ permissions:
   contents: read
 
 jobs:
-  # Each image the run built is under the commit's tag (`:sha-<commit>`,
-  # ci.yml's build-images); it becomes `:latest` by a copy of its
-  # manifest, which takes seconds -- the build is not repeated. Which
-  # images those are is what the registry has under the tag: every image
-  # of .github/images.hcl is asked after, and the ones the commit did not
-  # rebuild have none. All at once, three tries each, with the
-  # registry's answer on the checks page when all three fail -- a job's
-  # log takes admin rights to read. A promotion that failed stays
-  # failed: the next CI run builds only what changed after this commit
-  # (its last green one), so re-run this one.
+  # Each image of .github/images.hcl the run built (`:sha-<commit>`,
+  # ci.yml's build-images) becomes `:latest` by a copy of its manifest,
+  # all at once, three tries each, the registry's answer on the checks
+  # page when all fail. A failed promotion stays failed: re-run it, as the
+  # next run builds only what changed after this commit.
   promote:
     # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): it
     # builds and pushes images for AWS's x86 machines.
@@ -81,21 +71,14 @@ jobs:
           exit "$failed"
 
   # Copies every image the production server runs
-  # (infra/docker-compose.prod.yml; the stack's ECR repositories in
-  # infra/cloudformation/template.yaml) from GHCR to ECR, as
-  # `sha-<commit>` and `latest`: the very images CI tested, by a copy of
-  # their manifests and layers, not a second build that only hoped to hit
-  # the cache. An image this commit did not rebuild has no `sha-` tag in
-  # GHCR (build-images builds what changed), so ECR's own `latest`, which
-  # only this job writes, in commit order, is tagged for the commit: never
-  # GHCR's `latest`, which a pull request's packages: write token could
-  # once overwrite (security review 2026-11-23, H2). Authenticates via OIDC (no
-  # long-lived AWS keys stored as secrets) -- activates once
-  # AWS_ROLE_ARN/AWS_REGION are set as repo variables (Settings ->
-  # Secrets and variables -> Actions -> Variables; the stack's
-  # DeployRoleArn output); skipped entirely until then. The role trusts
-  # only jobs in the `production` environment (template.yaml's
-  # DeployRole), which only main may deploy to (docs/README-AWS.md).
+  # (infra/docker-compose.prod.yml) from GHCR to ECR as `sha-<commit>` and
+  # `latest`: the very images CI tested, not a second build. An image this
+  # commit did not rebuild has no `sha-` tag, so ECR's own `latest`, which
+  # only this job writes, is tagged for the commit: never GHCR's, which a
+  # pull request's packages: write token could once overwrite (security
+  # review 2026-11-23, H2). OIDC, no stored AWS keys; skipped until
+  # AWS_ROLE_ARN/AWS_REGION are set (the stack's DeployRoleArn). The role
+  # trusts only the `production` environment, which only main may deploy to.
   push-ecr:
     # GitHub's runner, not LINUX_RUNNER (the Mac mini): AWS's machines
     # are x86, and so is everything this job touches.

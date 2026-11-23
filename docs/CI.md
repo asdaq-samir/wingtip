@@ -555,6 +555,13 @@ owner's token's merge commit starts CI like the owner's push. One that
 main does not merge into cleanly gets the label `needs-merge`, taken off
 once its branch is current again: merge main into it by hand.
 
+Each night and after each push to main, `tidy-branches.yml` deletes the
+`claude/` branches on GitHub whose work is on main, by
+`scripts/dev/tidy-branches.sh --github` (the Mac's rules without its
+worktrees: a branch with a commit in the last six hours or an open pull
+request stays), in one push, with a bundle of what it deleted in the
+run's artifact for 90 days.
+
 GitHub starts no pull-request workflow on a branch that conflicts with
 its base, so a conflicted pull request shows no failing check: #579 sat
 a day that way (2026-11-14/15). Every open one therefore carries one

@@ -38,7 +38,6 @@ fi
 # merged worktrees left untouched for six hours, with their build outputs
 # (the owner's efficiency rules, 2026-11-12).
 "$(dirname "$0")/tidy-local.sh" || true
-"$(dirname "$0")/tidy-branches.sh" || true
 # No branch named: the wave's integration branch, or main once the wave
 # has merged and that branch is gone (as it is between waves).
 if [ -z "$branch" ]; then
@@ -154,3 +153,6 @@ fi
 docker compose -p wingtip ps --format '{{.Service}}: {{.Status}}'
 host=$(grep -E '^PHONE_BASE_URL=' .env 2>/dev/null | cut -d= -f2-)
 echo "go-live: live at ${host:-https://localhost:8443}/app"
+# Last, the branches and worktrees whose work has landed, here and on
+# GitHub (the owner, 2026-11-23: "Make git cleanups faster").
+"$live/scripts/dev/tidy-branches.sh" || echo "go-live: tidy-branches failed; the stack is live regardless" >&2

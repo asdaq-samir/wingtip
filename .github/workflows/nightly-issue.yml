@@ -1,21 +1,13 @@
 name: Nightly issue
 
-# A red night opens or updates one issue the same morning, "Nightly CI
-# failed", and a red run on main after a merge (tier 2: the browser smoke,
-# the images, the iPhone's UI smoke, which no pull request waits for) one
-# issue of its own, "Main CI failed (after merge)"; each labelled ready for
-# agents and fixed before new feature work (docs/CI.md, "Rules" and "The
-# tiers"; decision 0034). Each such run of CI, Native iOS and Native
-# Android, once it completes, writes its section of its issue: at most one
-# GitHub write a run (scripts/ci/nightly_issue.py).
-# A CI run on main's push also lists the browser tests that passed only on
-# their retry in the standing "Flaky tests (nightly)" issue, that hour
-# (scripts/ci/flaky_tests.py --after-merge); the night's own are its
-# flake-report job's. Here rather than in each workflow, since a job asking for issues: write
-# inside a reusable workflow would need its caller, ci.yml on every pull
-# request, to grant it too.
-#
-# Actions are pinned as in ci.yml (its opening comment says why).
+# A red night opens or updates "Nightly CI failed", and a red run on main
+# after a merge (tier 2) "Main CI failed (after merge)": each labelled
+# ready and fixed before new work (docs/CI.md; decision 0034), each run of
+# CI, Native iOS and Native Android writing its section, one GitHub write
+# a run (scripts/ci/nightly_issue.py). Main's push also lists the browser
+# tests passed only on retry in "Flaky tests (nightly)"
+# (flaky_tests.py --after-merge). Here, not in each workflow, so that
+# ci.yml on every pull request need not grant issues: write.
 
 on:
   workflow_run:

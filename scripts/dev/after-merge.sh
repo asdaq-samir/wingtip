@@ -118,3 +118,5 @@ stack_down
 report
 [ -n "$only" ] || date -u +%FT%TZ > "$OUT/finished"
 say "report: $OUT/report.md"
+# The wave is merged: its landed branches and worktrees go, here and on GitHub.
+"$here/tidy-branches.sh" || say "tidy-branches failed; the report stands"
