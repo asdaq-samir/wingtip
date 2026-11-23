@@ -7,7 +7,8 @@ import { usePlanUndo } from "../../../lib/planUndo";
 import { TEXT } from "../../../lib/text";
 import { fromChunk } from "../../../lib/fromChunk";
 import { afterRouteDrawn } from "../../../lib/routeDrawn";
-import { EndRow, OpenRouteFileRow, TIMELINE_CARD, TypeRouteRow } from "../../procedures";
+import { EndRow, OpenRouteFileRow, TIMELINE_CARD, TypeRouteButton, TypeRouteRow } from "../../procedures";
+import { keepTimelineHeight } from "./routeEditing";
 import type { PlanSlices } from "../vm/planSlices";
 
 type StartSlices = PlanSlices<"route" | "routeList">;
@@ -31,7 +32,7 @@ export function TypeRow({ vm }: { vm: StartSlices }) {
     flushSync(() => setRouteOpen(true));
     document.querySelector<HTMLElement>('[data-testid="route-type"]')?.focus();
   };
-  const trailing =
+  const field =
     hasPoints && !routed ? (
       <FieldClearButton aria-label="Clear the route" onClick={clearRoute} data-testid="route-box-clear" />
     ) : !hasPoints && routeUndo ? (
@@ -45,7 +46,29 @@ export function TypeRow({ vm }: { vm: StartSlices }) {
         Undo
       </Button>
     ) : undefined;
-  return <TypeRouteRow onType={type} trailing={trailing} />;
+  // The route box's toggle at the row's end, as on a whole route's Add a
+  // Stop (the owner, 2026-11-22: "it should be there even on empty"): the
+  // card it is in turns into the route's field, at the card's height.
+  const toggle = (
+    <TypeRouteButton
+      pressed={false}
+      onToggle={() => {
+        keepTimelineHeight(document.querySelector('[data-testid="route-empty"], [data-testid="route-summary"]')?.getBoundingClientRect().height ?? 0);
+        type();
+      }}
+    />
+  );
+  return (
+    <TypeRouteRow
+      onType={type}
+      trailing={
+        <>
+          {field}
+          {toggle}
+        </>
+      }
+    />
+  );
 }
 
 /** Half a route's end still to pick, before or after the one it has: its

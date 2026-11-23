@@ -50,6 +50,15 @@ describe("the empty route", () => {
 });
 
 describe("Type or Paste a Route", () => {
+  test("has the route box's toggle at its end, even on an empty route, opening the field", () => {
+    const { vm, routeList } = slices();
+    render(<EmptyRoute vm={vm} />);
+    const toggle = screen.getByRole("button", { name: "Type the route" });
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(toggle);
+    expect(routeList.setRouteOpen).toHaveBeenCalledWith(true);
+  });
+
   test("opens the route's field and puts the focus in it", () => {
     const { vm, routeList } = slices();
     const field = document.createElement("input");
