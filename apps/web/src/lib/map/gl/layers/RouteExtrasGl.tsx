@@ -19,7 +19,7 @@ import { useGlSymbols, type GlSymbol } from "../useGlSymbols";
 import { useGlView } from "../useGlView";
 import { TAP, selectionRing } from "./common";
 import { useMapRing } from "../../mapPick";
-import { CHART, MAP_ZOOM } from "../../../tokens";
+import { CHART, MAP, MAP_ZOOM } from "../../../tokens";
 import { glZoom } from "../glStyle";
 
 /** The level the map is at, the app's, as the camera comes to rest: what
@@ -75,10 +75,8 @@ const LEG_POINT_LAYERS: SymbolLayerSpecification[] = [
 ].map((layer) => ({ ...layer, minzoom: LEG_POINTS_FROM }));
 
 /** How near either end of its leg a top of climb or descent is not drawn,
- *  in nautical miles: there it sits on the field, or on the airplane where
- *  the leg starts at My Location, and the field's own mark says as much. A
- *  mark's room on the map, not a figure of flight. */
-const OFF_THE_ENDS_NM = 2;
+ *  in nautical miles: one token for all three apps (map.route-tag-off-ends-nm). */
+const OFF_THE_ENDS_NM = MAP.routeTagOffEndsNm;
 
 const pair = (p: LatLon): [number, number] => [p.lat, p.lon];
 const along = (a: LatLon, b: LatLon, f: number): LatLon => ({ lat: a.lat + (b.lat - a.lat) * f, lon: a.lon + (b.lon - a.lon) * f });

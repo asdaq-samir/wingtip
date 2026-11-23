@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { raiseCard, setCard, useSheetCards, type CardFrame, type CardState } from "../../lib/sheetCards";
 import { useShown } from "../../lib/shown";
+import { drawnFace } from "../../lib/map/gl/glFace";
 
 /**
  * A card's own nested Drawer over the map's sheet (CardStack), held while
@@ -111,9 +112,19 @@ export function useCardFrame(frame: CardFrame & { fullScreen?: boolean; title?: 
  * start), no typed value and its keyframes replayed. So each canvas's
  * picture is drawn into its copy, each typed value set, each scroller put
  * back where it was once the copy is in, and the copy's animations held
- * (data-card-face, feel.css). The caller keeps no content past its own
- * life, so a copy, not the real nodes, is what can stay.
+ * (data-card-face, feel.css). A MapLibre map's canvas is drawn again as
+ * it is read (glFace): WebGL keeps no frame once it is on the screen, and
+ * the diagram, the plate and a chart's pages still closed blank (the
+ * r6-ui audit's M3). Only what can scroll is asked where it is scrolled
+ * to: asking every node was a layout read each, thousands on a long Brief
+ * on the close's first frame (L14). The caller keeps no content past its
+ * own life, so a copy, not the real nodes, is what can stay.
  */
+/** What can be scrolled: an overflow class (Tailwind's overflow-auto,
+ *  -x-, -y-, -scroll, -hidden; a script scrolls a hidden one too) or an
+ *  inline overflow. */
+const SCROLLERS = '[class*="overflow-"], [style*="overflow"]';
+
 function keepFace(host: HTMLElement) {
   if (!host.isConnected) return;
   const drawn = [...host.childNodes];
@@ -133,7 +144,7 @@ function keepFace(host: HTMLElement) {
     const canvases = copy.querySelectorAll("canvas");
     node.querySelectorAll("canvas").forEach((canvas, k) => {
       try {
-        canvases[k]?.getContext("2d")?.drawImage(canvas, 0, 0);
+        canvases[k]?.getContext("2d")?.drawImage(drawnFace(canvas), 0, 0);
       } catch {
         // A canvas with nothing to give (a lost WebGL context) stays blank.
       }
@@ -145,8 +156,8 @@ function keepFace(host: HTMLElement) {
       to.value = field.value;
       if (field instanceof HTMLInputElement && to instanceof HTMLInputElement) to.checked = field.checked;
     });
-    const all = copy.querySelectorAll("*");
-    node.querySelectorAll("*").forEach((el, k) => {
+    const all = copy.querySelectorAll(SCROLLERS);
+    node.querySelectorAll(SCROLLERS).forEach((el, k) => {
       if ((el.scrollTop || el.scrollLeft) && all[k]) scrolled.push([all[k], el.scrollTop, el.scrollLeft]);
     });
   });

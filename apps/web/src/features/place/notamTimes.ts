@@ -1,9 +1,10 @@
 import { corner, dateOf, windowOf, type FieldNotam, type NotamReading } from "./fieldNotams";
-import { MONTHS, formatIn, twoFigures, zuluTime } from "../../lib/format";
+import { twoFigures } from "../../lib/format";
 
 /** One labelled line of a NOTAM's times: "Since", "Starts", "Ends",
- *  "Duration". */
-export type TimeLine = { label: string; value: string };
+ *  "Duration"; `soon` how long until it ("in 18d"), which the
+ *  line drops where it would not fit on one line (NotamTimeLines). */
+export type TimeLine = { label: string; value: string; soon?: string };
 
 const MINUTE = 60_000;
 
@@ -18,88 +19,36 @@ export function span(ms: number): string {
 }
 
 /**
- * A NOTAM's times on lines of their own, labelled, in the field's own
- * time (`zone`, the planner's) with "local" on each and UTC beside it
- * (corner; once alone, Since read as UTC beside Ends' local: UI audit
- * C11, 2026-11-17), as ForeFlight's NOTAM list gives them
- * (the owner's screenshots, 2026-11-11): one in force "Since" its start and
- * "Ends" with how long is left ("· in 18d"); one to come "Starts" with how
- * soon, "Ends", and how long it lasts. An estimated end ", estimated",
- * PERM "Permanent" (JO 7930.2 4-2-1: EST after an end is an estimate).
- * The year is said on both lines where either is not this year's
- * ("05/27/28"), as tfrTimes says it (the owner, 2026-11-23, FDC 6/3373's
- * end two years on). The times are the planner's, else the NOTAM's own
+ * A NOTAM's times, a line each, on its row and on its own card alike, in
+ * the field's own time (`zone`, the planner's) with its zone's short name,
+ * UTC where it is not known (corner): "Since 05/27/26 13:43 CDT", "Ends
+ * 05/27/28 13:43 CDT" (the owner, 2026-11-23: "no need to say the word
+ * local or Z time, just say the time zone"; "one line each"), as
+ * ForeFlight's NOTAM list gives them (the owner's screenshots,
+ * 2026-11-11): one in force "Since" its start and "Ends" with how long is
+ * left; one to come "Starts" with how soon, "Ends", and how long it
+ * lasts. An end the NOTAM marks EST (JO 7930.2 4-2-1) is said as its time
+ * alone (the owner, 2026-11-23: "no need for the word estimated"). Where
+ * the engine's notam_card says it runs until the charts are updated
+ * (`untilCharts`, its until_charts: a permanent condition with an EST end,
+ * or none), its end is "Permanent" (the owner, 2026-11-23: "for a
+ * permanent, just say permanent"), as is a PERM end. The year on
+ * both lines only where either is not this year's ("05/27/28"), as
+ * tfrTimes says it. The times are the planner's, else the NOTAM's own
  * (windowOf).
  */
-export function timeLines(n: FieldNotam, read: NotamReading, zone: string | null, now = Date.now()): TimeLine[] {
+export function timeLines(n: FieldNotam, read: NotamReading, untilCharts: boolean, zone: string | null, now = Date.now()): TimeLine[] {
   const window = windowOf(n, read);
   const [starts, ends] = [dateOf(window.starts), dateOf(window.ends)];
   const active = n.in_force !== false;
   const year = new Date(now).getUTCFullYear();
   const withYear = [starts, ends].some((d) => d && d.getUTCFullYear() !== year);
   const when = (at: Date) => corner(at, zone, withYear);
-  const soon = (at: Date) => (at.getTime() > now ? ` · in ${span(at.getTime() - now)}` : "");
+  const soon = (at: Date) => (at.getTime() > now ? { soon: `in ${span(at.getTime() - now)}` } : {});
   const lines: TimeLine[] = [];
-  if (starts) lines.push({ label: active ? "Since" : "Starts", value: `${when(starts)}${active ? "" : soon(starts)}` });
-  if (ends) lines.push({ label: "Ends", value: `${when(ends)}${read.estimated ? ", estimated" : ""}${soon(ends)}` });
-  else if (read.permanent) lines.push({ label: "Ends", value: "Permanent" });
-  if (!active && starts && ends) lines.push({ label: "Duration", value: span(ends.getTime() - starts.getTime()) });
-  return lines;
-}
-
-/** A NOTAM card's day and clock with the zone's own short name ("27 May
- *  2026, 13:43 CDT"). */
-const CARD = {
-  day: "numeric",
-  month: "short",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23",
-  timeZoneName: "short",
-} as const;
-
-/** "27 May 2026, 13:43 CDT" in the field's own time (the planner's
- *  zone), the year only where `year`; UTC where the zone is not known
- *  ("27 May 2026, 1843Z"), never the device's own time called the
- *  field's. `clock` false says the day alone. */
-function cardWhen(at: Date, zone: string | null, year: boolean, clock = true): string {
-  const format = zone ? formatIn(zone, CARD) : null;
-  const p: Record<string, string | undefined> = format
-    ? Object.fromEntries(format.formatToParts(at).map((x) => [x.type, x.value]))
-    : { day: String(at.getUTCDate()), month: MONTHS[at.getUTCMonth()], year: String(at.getUTCFullYear()) };
-  const day = `${p.day} ${p.month}${year ? ` ${p.year}` : ""}`;
-  if (!clock) return day;
-  return format ? `${day}, ${p.hour}:${p.minute} ${p.timeZoneName}` : `${day}, ${zuluTime(at)}`;
-}
-
-/**
- * A NOTAM's times on its own card, in words (the owner, 2026-11-23, of
- * FDC 6/3373): "In effect since 27 May 2026, 13:43 CDT", or "Starts ... ·
- * in 5h45m"; its end "Until ...", estimated where EST says so (JO 7930.2
- * 4-2-1), with how long is left. A permanent condition (`permanent`, the
- * engine's notam_card: PERM, or PERMANENTLY in its words) stays until the
- * charts show it, its EST end the estimate of when: "Until charts are
- * updated (est. 27 May 2028)". The year where either end is not this
- * year's, as tfrTimes says it.
- */
-export function cardTimes(n: FieldNotam, read: NotamReading, permanent: boolean, zone: string | null, now = Date.now()): string[] {
-  const window = windowOf(n, read);
-  const [starts, ends] = [dateOf(window.starts), dateOf(window.ends)];
-  const year = new Date(now).getUTCFullYear();
-  const withYear = [starts, ends].some((d) => d && d.getUTCFullYear() !== year);
-  const soon = (at: Date) => (at.getTime() > now ? ` · in ${span(at.getTime() - now)}` : "");
-  const lines: string[] = [];
-  if (starts)
-    lines.push(
-      n.in_force !== false
-        ? `In effect since ${cardWhen(starts, zone, withYear)}`
-        : `Starts ${cardWhen(starts, zone, withYear)}${soon(starts)}`,
-    );
-  if (permanent && (read.estimated || !ends)) {
-    lines.push(ends ? `Until charts are updated (est. ${cardWhen(ends, zone, withYear, false)})` : "Until charts are updated");
-  } else if (ends) {
-    lines.push(`Until ${cardWhen(ends, zone, withYear)}${read.estimated ? ", estimated" : ""}${soon(ends)}`);
-  }
+  if (starts) lines.push({ label: active ? "Since" : "Starts", value: when(starts), ...(active ? {} : soon(starts)) });
+  if (untilCharts || (!ends && read.permanent)) lines.push({ label: "Ends", value: "Permanent" });
+  else if (ends) lines.push({ label: "Ends", value: when(ends), ...soon(ends) });
+  if (!active && starts && ends && !untilCharts) lines.push({ label: "Duration", value: span(ends.getTime() - starts.getTime()) });
   return lines;
 }

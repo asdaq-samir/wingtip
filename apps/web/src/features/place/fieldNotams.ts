@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fieldNotamsQuery, type FieldNotams } from "../../lib/queryClient";
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
-import { formatIn, instantOf, twoFigures, zuluTime } from "../../lib/format";
+import { formatIn, instantOf, twoFigures } from "../../lib/format";
 
 // The field's NOTAMs and their query are lib/queryClient's, which Keep
 // for the Air asks for each of the route's fields too.
@@ -70,9 +70,11 @@ export function readNotam(n: FieldNotam, ident: string): NotamReading {
 
 /** The NOTAM's card read by the engine from its parts (notam_card): what
  *  happened, its category, one sentence of its effect, the procedures it
- *  takes away, whether it is permanent. Drawn inside an EngineGate. */
+ *  takes away, whether it is permanent and so runs until the charts are
+ *  updated (the feed's end given, so a firm one is said as its time).
+ *  Drawn inside an EngineGate. */
 export function cardOf(n: FieldNotam, ident: string): NotamCardReading {
-  return callEngine("notam_card", { text: n.raw, idents: identsOf(ident) });
+  return callEngine("notam_card", { text: n.raw, idents: identsOf(ident), ends: n.ends ?? null });
 }
 
 /** A TFR read by the engine (tfr_read) from what tfr.faa.gov gives of it
@@ -142,24 +144,30 @@ export function windowOf(n: FieldNotam, read: NotamReading): Pick<FieldNotam, "i
   return { in_force: n.in_force, starts: n.starts ?? read.starts, ends: n.ends ?? read.ends };
 }
 
-const CORNER = { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", year: "2-digit", hourCycle: "h23" } as const;
+const CORNER = {
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  year: "2-digit",
+  hourCycle: "h23",
+  timeZoneName: "short",
+} as const;
 
 const utcDay = (at: Date, year: boolean) =>
   `${twoFigures(at.getUTCMonth() + 1)}/${twoFigures(at.getUTCDate())}${year ? `/${twoFigures(at.getUTCFullYear() % 100)}` : ""}`;
 
-/** "11/10 06:00 local (1200Z)": month/day and the
- *  24-hour clock in the field's own time zone (the planner's, `zone`), as
- *  a pilot writes it on a kneeboard, the zone not named (the owner,
- *  2026-11-11: "No need to mention time zone, just say local"), and UTC
- *  beside it, the time the NOTAM gives (FAA JO 7930.2 3-3-2; the owner,
- *  2026-11-12: "airport's local time with UTC beside"). Where the field's
- *  zone is not known, UTC alone with its day ("11/10 1200Z"): never the
+/** "11/10 06:00 CST": month/day and the 24-hour clock in the field's own
+ *  time zone (the planner's, `zone`), named by its short name as a pilot
+ *  says it, "CST" at O'Hare (the owner, 2026-11-23: "no need to say the
+ *  word local or Z time, just say the time zone"). Where the field's zone
+ *  is not known, the same in UTC, said so ("11/10 12:00 UTC"): never the
  *  device's own time called the field's. With `year`, the year's two
  *  figures after the day ("05/27/28"), as the app says a year that is not
  *  this one (tfrTimes; the owner, 2026-11-23). */
 export function corner(at: Date, zone: string | null, year = false): string {
   const format = zone ? formatIn(zone, CORNER) : null;
-  if (!format) return `${utcDay(at, year)} ${zuluTime(at)}`;
+  if (!format) return `${utcDay(at, year)} ${twoFigures(at.getUTCHours())}:${twoFigures(at.getUTCMinutes())} UTC`;
   const part = Object.fromEntries(format.formatToParts(at).map((p) => [p.type, p.value]));
-  return `${part.month}/${part.day}${year ? `/${part.year}` : ""} ${part.hour}:${part.minute} local (${zuluTime(at)})`;
+  return `${part.month}/${part.day}${year ? `/${part.year}` : ""} ${part.hour}:${part.minute} ${part.timeZoneName}`;
 }

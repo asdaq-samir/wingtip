@@ -10837,6 +10837,10 @@ export interface NotamCardAnswer {
      * An RNAV procedure, "(RNAV)" on its title.
      */
     rnav: boolean;
+    /**
+     * A departure procedure (SID, ODP; DEPARTURE in its title, 7-1-3), which a field's departures use; false for an arrival (STAR), which its arrivals use.
+     */
+    departure: boolean;
   }[];
 }
 export interface NotamReadInput {

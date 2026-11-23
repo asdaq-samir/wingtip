@@ -24,7 +24,7 @@ export function useCopilotPublish({
   totals: Totals | null | undefined;
   aircraft: AircraftProfile | null | undefined;
 }) {
-  const { loading, load } = useLoad(aircraft, totals?.fuel_gal ?? null);
+  const { loading, saved: load } = useLoad(aircraft, totals?.fuel_gal ?? null);
   const startGal = load?.fuelGal ?? totals?.usable_fuel_gal ?? aircraft?.usable_fuel_gal ?? null;
   const taxiGal = totals?.taxi_gal ?? null;
   const distanceNm = totals?.distance_nm ?? null;

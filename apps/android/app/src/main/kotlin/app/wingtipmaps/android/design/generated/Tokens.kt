@@ -1237,6 +1237,7 @@ object WingtipMap {
     const val AIRSPACE_FADED = 0.35
     const val AIRSPACE_HELD = 1.8
     const val AIRSPACE_LABEL_FADED = 0.6
+    const val ROUTE_TAG_OFF_ENDS_NM = 2
 }
 
 /** From which zoom each kind of airport, airspace and navaid is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1. */

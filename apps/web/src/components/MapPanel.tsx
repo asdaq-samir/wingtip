@@ -6,7 +6,7 @@ import { useIsDesktop } from "../hooks/use-desktop";
 import { useInspector } from "../hooks/use-inspector";
 import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
-import { useSafeArea } from "../hooks/use-viewport";
+import { useKeyboardInset, useSafeArea } from "../hooks/use-viewport";
 import { GLASS_SHEET, PILL_RADIUS, useSlidingSheet, type MapInsets, type PanelState } from "../lib/mapChrome";
 import { cardOpening, coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
@@ -131,8 +131,11 @@ export default function MapPanel(props: Props) {
   // sliding behind it (sheet/FootBar); in flight, a dry run, a top sheet
   // and the side panel the foot is the sheet's own (SheetFoot).
   const footBar = bottomSheet && !!foot && !flying && !!props.pages?.floats;
-  // In sight on FPL's page alone, as its foot was (SheetPages), and not under a card.
-  const footBarUp = footBar && footShown && props.pages?.at === 1;
+  // In sight on FPL's page alone, as its foot was (SheetPages), and not
+  // under a card; put away while the keyboard is up, as iOS puts a tab bar
+  // away, so the field typed in keeps the screen (the r6 UI audit's M1).
+  const keyboard = useKeyboardInset();
+  const footBarUp = footBar && footShown && props.pages?.at === 1 && keyboard === 0;
   // A card or a page open is the whole sheet, its own head and ✕ at the top
   // (one card rule, 2026-11-10); closed, the search is back -- kept with the keyboard up, as it is typed in.
   const barShown = !!bar && !flying && !covering && layer === "tab";
@@ -162,8 +165,9 @@ export default function MapPanel(props: Props) {
   const { most, width } = sheetCover;
   // Never less than the foot bar, which stands over the sheet's foot: it
   // sits inside what the sheet covers at every size (the pill's room under
-  // the grabber is its height), but at a large text size its figures may
-  // stand taller than that, and the map's room ends at its top.
+  // the grabber is its least height), but at a large text size it grows
+  // taller than that (FlightFoot's min-height), its measured height here,
+  // and the map's room ends at its top.
   const barHeight = useFootBarHeight((b) => b.height);
   const barRoom = footBarUp ? barHeight : 0;
   const cover = Math.max(sheetCover.cover, barRoom);

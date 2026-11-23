@@ -278,7 +278,7 @@ pub fn card_with_end(text: &str, idents: &[String], known_end: bool) -> Card {
 
 /// `notam_card`: `{"text", "idents"?, "ends"?}` to `{"account",
 /// "category", "title", "effect", "permanent", "until_charts",
-/// "procedures": [{"name", "rnav"}]}`.
+/// "procedures": [{"name", "rnav", "departure"}]}`.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     if name != "notam_card" {
         return Err(format!("{name}: not a rule of notam_card"));
@@ -302,7 +302,8 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
     for (i, p) in c.procedures.iter().enumerate() {
         out.push_str(if i == 0 { "{\"name\":" } else { ",{\"name\":" });
         json::string(&mut out, &p.name);
-        out.push_str(if p.rnav { ",\"rnav\":true}" } else { ",\"rnav\":false}" });
+        out.push_str(if p.rnav { ",\"rnav\":true" } else { ",\"rnav\":false" });
+        out.push_str(if p.departure { ",\"departure\":true}" } else { ",\"departure\":false}" });
     }
     out.push_str("]}");
     Ok(out)

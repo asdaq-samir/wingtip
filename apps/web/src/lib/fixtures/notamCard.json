@@ -12,12 +12,12 @@
         "permanent": true,
         "until_charts": true,
         "procedures": [
-          { "name": "ADELL 8", "rnav": true },
-          { "name": "BLOKR 8", "rnav": true },
-          { "name": "CARYN 8", "rnav": true },
-          { "name": "DARCY 8", "rnav": true },
-          { "name": "ELANR 9", "rnav": true },
-          { "name": "OBENE 3", "rnav": true }
+          { "name": "ADELL 8", "rnav": true, "departure": true },
+          { "name": "BLOKR 8", "rnav": true, "departure": true },
+          { "name": "CARYN 8", "rnav": true, "departure": true },
+          { "name": "DARCY 8", "rnav": true, "departure": true },
+          { "name": "ELANR 9", "rnav": true, "departure": true },
+          { "name": "OBENE 3", "rnav": true, "departure": true }
         ]
       }
     },
@@ -70,7 +70,7 @@
         "effect": "The BENKY 6 arrival is not authorized.",
         "permanent": false,
         "until_charts": false,
-        "procedures": [{ "name": "BENKY 6", "rnav": false }]
+        "procedures": [{ "name": "BENKY 6", "rnav": false, "departure": false }]
       }
     },
     {

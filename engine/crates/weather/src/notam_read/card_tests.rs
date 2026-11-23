@@ -131,3 +131,12 @@ fn a_permanent_condition_with_an_estimated_end_or_none_runs_until_the_charts() {
         call("notam_card", &crate::json::parse(&format!(r#"{{"text":"{bare}","ends":"2028-05-27T18:43:00Z"}}"#)).unwrap()).unwrap();
     assert!(answer.contains("\"until_charts\":false"));
 }
+
+#[test]
+fn each_procedure_says_whether_it_is_a_departure() {
+    // The card's "Affects your ..." chip matches it to the field's role.
+    let json = |text: &str| call("notam_card", &crate::json::parse(&format!("{{\"text\":{text:?}}}")).unwrap()).unwrap();
+    assert!(json(FDC_6_3373).contains("{\"name\":\"ADELL 8\",\"rnav\":true,\"departure\":true}"));
+    let star = json("!FDC 6/1 ORD STAR CHICAGO O'HARE INTL, CHICAGO, IL. BENKY SIX ARRIVAL NA. 2611010000-2612010000");
+    assert!(star.contains("{\"name\":\"BENKY 6\",\"rnav\":false,\"departure\":false}"), "{star}");
+}

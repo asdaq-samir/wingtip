@@ -21732,11 +21732,16 @@
                   "rnav": {
                     "type": "boolean",
                     "description": "An RNAV procedure, \"(RNAV)\" on its title."
+                  },
+                  "departure": {
+                    "type": "boolean",
+                    "description": "A departure procedure (SID, ODP; DEPARTURE in its title, 7-1-3), which a field's departures use; false for an arrival (STAR), which its arrivals use."
                   }
                 },
                 "required": [
                   "name",
-                  "rnav"
+                  "rnav",
+                  "departure"
                 ],
                 "additionalProperties": false
               }

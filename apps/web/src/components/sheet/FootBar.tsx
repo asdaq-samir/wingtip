@@ -31,22 +31,28 @@ export const FOOT_BAR_PILL = "3.25rem";
  * What it shows changes only once the sheet has come to rest
  * (useRestSize): at the pill the figures alone, the pill's size, the tabs
  * folded away, about 50 points of map; at half and all the way up the thin
- * strip on the tab bar, one stack. A short fade as it changes, nothing
- * eased with the finger. Opaque on the sheet's own ground, with no fade
- * or scrim over the content above it: the held strip's fade (FADE_OVER)
- * dimmed the Add a Stop row, its pill and the toggle just over it (the
- * owner, 2026-11-23: "the strip fades the route buttons above it"). The
- * page's end room, the bar's height (SheetScroller), lets its last row
- * scroll clear above it.
+ * strip on the tab bar, one stack. A short fade of what it holds as it
+ * changes, nothing eased with the finger; its ground never fades, so the
+ * route behind it never shows through (the r6 UI audit's M6). Opaque on
+ * the sheet's own ground, with no fade or scrim over the content above
+ * it: the held strip's fade (FADE_OVER) dimmed the Add a Stop row, its
+ * pill and the toggle just over it (the owner, 2026-11-23: "the strip
+ * fades the route buttons above it"). The page's end room and its scroll
+ * padding, the bar's height (SheetScroller), let its last row scroll, and
+ * a focused row stop, clear above it.
  *
- * At the pill it takes no touch: a drag on it is the sheet's under it
- * (the Drawer starts a swipe only on its own popup), which raises it, and
- * a tap the pill's row's (SheetScroller's band), which raises it to half.
- * From half up it takes its own taps, so none reaches a row under it.
- * Its height is set on the viewport (--foot-bar) for the page's end room
- * (SheetScroller), on a resize only, never a frame at a time, and kept
- * for the map's room (useFootBarHeight). Out of sight, and out of the
- * way, under a card or on Search's page (`shown`).
+ * Its ground takes no touch at any size, its buttons alone do: a drag on
+ * it is the sheet's under it (the Drawer starts a swipe only where what is
+ * under the finger is its popup), as Apple Maps' sheet moves from any
+ * point that is not a control (the r6 UI audit's M2). At the pill a tap is
+ * the pill's row's (SheetScroller's band), which raises it to half; from
+ * half up a tap on its ground is swallowed, so none reaches a row hidden
+ * under it. Its height is set on the viewport (--foot-bar) for the page's
+ * end room (SheetScroller), on a resize only, never a frame at a time,
+ * and kept for the map's room (useFootBarHeight). Out of sight at once,
+ * no fade, under a card (before the card rises, so none slides up under
+ * it; the r6 UI audit's M7), on Search's page (a page turn moves nothing)
+ * and while the keyboard is up (MapPanel; `shown`).
  */
 export function FootBar({ size, shown, children }: { size: PanelState; shown: boolean; children: ReactNode }) {
   const rest = useRestSize(size);
@@ -68,10 +74,30 @@ export function FootBar({ size, shown, children }: { size: PanelState; shown: bo
       useFootBarHeight.setState({ height: 0 });
     };
   }, []);
-  // A short fade as it changes at rest, on the compositor; none the first time.
-  const was = useRef(rest);
+  // From half up, a tap on its ground, which falls through to the popup,
+  // goes no further: the row it lands on is hidden under the bar. Only
+  // the click is stopped; the press still reaches the Drawer, for a drag.
   useEffect(() => {
     const el = bar.current;
+    const host = el?.parentElement;
+    if (!el || !host || pill || !shown) return;
+    const guard = (event: MouseEvent) => {
+      if (!(event.target instanceof Node) || el.contains(event.target)) return;
+      const box = el.getBoundingClientRect();
+      if (event.clientY < box.top || event.clientY > box.bottom) return;
+      event.preventDefault();
+      event.stopPropagation();
+    };
+    host.addEventListener("click", guard, true);
+    return () => host.removeEventListener("click", guard, true);
+  }, [pill, shown]);
+  // A short fade of what it holds as it changes at rest, on the
+  // compositor; none the first time. Not of the bar itself, whose ground
+  // would let the route through.
+  const face = useRef<HTMLDivElement>(null);
+  const was = useRef(rest);
+  useEffect(() => {
+    const el = face.current;
     if (was.current === rest || !el) return;
     was.current = rest;
     if (prefersReducedMotion() || typeof el.animate !== "function") return;
@@ -84,14 +110,15 @@ export function FootBar({ size, shown, children }: { size: PanelState; shown: bo
       data-at={rest}
       inert={!shown}
       className={cn(
-        "absolute inset-x-0 bottom-0 z-10 bg-(--sheet) px-4 text-foreground print:hidden",
-        "transition-[opacity,visibility] duration-(--motion-drawer) ease-(--motion-drawer-ease) motion-reduce:transition-none",
-        !shown && "invisible opacity-0",
-        pill ? "pointer-events-none [&_[data-pill-hides]]:hidden" : "pointer-events-auto",
+        "pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-(--sheet) px-4 text-foreground print:hidden",
+        !shown && "invisible",
+        pill ? "[&_[data-pill-hides]]:hidden" : "[&_:is(button,a,[role=button])]:pointer-events-auto",
       )}
       style={{ paddingBottom: EDGE_ROOM }}
     >
-      <FootRest.Provider value={rest}>{children}</FootRest.Provider>
+      <div ref={face}>
+        <FootRest.Provider value={rest}>{children}</FootRest.Provider>
+      </div>
     </div>
   );
 }

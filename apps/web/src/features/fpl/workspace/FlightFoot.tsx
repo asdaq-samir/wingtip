@@ -27,12 +27,15 @@ export function FlightFigures({
   grow,
   foot = false,
   thin = false,
+  pill = false,
 }: {
   vm: PlanSlices<"brief" | "flight" | "plan" | "route" | "stops">;
   grow: boolean;
   foot?: boolean;
   /** One thin line (TripFigures' `thin`). */
   thin?: boolean;
+  /** The pill's one row (TripFigures' `pill`). */
+  pill?: boolean;
 }) {
   const { depart, directParam, planned } = vm.route;
   const { directToPoint, s } = vm.plan;
@@ -57,7 +60,14 @@ export function FlightFigures({
         </div>
       )}
       <div data-testid="flight-line">
-        <TripFigures {...line} grow={grow} thin={thin} unknown={s.unknownPlace} legCourseDeg={s.legs[0]?.magnetic_course_deg ?? null} />
+        <TripFigures
+          {...line}
+          grow={grow}
+          thin={thin}
+          pill={pill}
+          unknown={s.unknownPlace}
+          legCourseDeg={s.legs[0]?.magnetic_course_deg ?? null}
+        />
       </div>
     </EngineGate>
   );
@@ -153,12 +163,15 @@ function GroundFoot({
         <div
           data-foot-strip=""
           // At the pill the figures fill the pill's room under the grabber,
-          // centred, as the sheet's own face did; from half up a thin line
-          // just over the tabs.
+          // centred, as the sheet's own face did, one row of at most four
+          // (TripFigures' `pill`); the room its least, so a larger text
+          // size grows the bar rather than spilling over the map, and the
+          // bar's measured height, the map's room, follows (the r6 UI
+          // audit's H1). From half up a thin line just over the tabs.
           className={cn("flex flex-col px-1", pill ? "justify-center" : "pt-1.5")}
-          style={pill ? { height: `calc(${FOOT_BAR_PILL} - ${EDGE_ROOM})` } : undefined}
+          style={pill ? { minHeight: `calc(${FOOT_BAR_PILL} - ${EDGE_ROOM})` } : undefined}
         >
-          <FlightFigures vm={vm} grow={false} thin />
+          <FlightFigures vm={vm} grow={false} thin pill={pill} />
         </div>
       )}
       <div className={cn(pill && "hidden")}>
