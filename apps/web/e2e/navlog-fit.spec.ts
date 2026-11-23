@@ -176,6 +176,10 @@ test("each row's miles over its groundspeed come to its minutes, a pattern's mil
   await openNavLog(page);
   const log = navLogSheet(page).getByTestId("navlog-list");
   await expect(log.locator('[role="row"][data-kind="destination"]')).toBeVisible();
+  // Each row's figures in, as a pilot reads them: the rows are drawn as the
+  // plan's legs stream in, each "Working out" till its own comes (FigureWait),
+  // and read before then a row said no miles at all (CI's desktop project).
+  await expect(log.getByTestId("figure-wait")).toHaveCount(0, { timeout: slow(60_000) });
   const rows = await log
     .locator('[role="row"][data-kind]:not([data-kind="departure"])')
     .evaluateAll((els) =>

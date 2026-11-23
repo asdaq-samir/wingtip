@@ -15,7 +15,7 @@ import { useGlance, type BriefGlance } from "./glance";
 import { shortName } from "../../lib/aircraftChoice";
 import type { FiledProcedure } from "./flightPlanForm";
 import { planFormsOf } from "./planForms";
-import { useAlternate } from "./useAlternate";
+import { useAlternate, useAlternateWhere } from "./useAlternate";
 import { useRouteFields } from "./useRouteFields";
 import { flowQuery, itwsQuery } from "../../lib/liveReports";
 import { icingFindings } from "./icing";
@@ -167,7 +167,7 @@ export function useFlightBriefing({
   const checks = runwayChecks(nav?.aircraft, briefing, course, loaded?.takeoff.weightLb ?? null, loaded?.landing.weightLb ?? null, picks);
   // Under IFR, the alternate (AlternateSection): its ETA the nav log's.
   const etaIso = totals?.ete_min != null ? new Date(new Date(depart || opened).getTime() + totals.ete_min * 60_000).toISOString() : null;
-  const alternateWhere = { dest, eta: ifr ? etaIso : null, tasKt: nav?.aircraft?.cruise_tas_kt ?? null };
+  const alternateWhere = useAlternateWhere(dest, ifr ? etaIso : null, nav?.aircraft?.cruise_tas_kt ?? null);
   const alternateCheck = useAlternate(alternateWhere);
   // The fields the route lands at, for the Go / No-Go's fields row and the flight plan's ZZZZ.
   const fields = useRouteFields(dep, stops, dest, totals?.alternate?.ident ?? null);

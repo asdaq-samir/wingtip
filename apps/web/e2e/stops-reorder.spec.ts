@@ -1,6 +1,24 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator, type Page } from "@playwright/test";
 import { inSheet, openPanel, openRoute, settle, sideDrawer, timelineLine } from "./helpers";
 import { stopsAre } from "./stopsParam";
+
+/** FPL's list once its drag and drop is in: the rows are drawn at once and
+ *  turned into React Aria's GridList when its chunk has come, two seconds
+ *  after the route has drawn or at the list's first touch (RouteGrid), as
+ *  a pilot's list is by the time a finger or the keyboard picks a point
+ *  up. A drag begun on the plain rows is no drag. */
+const draggable = (page: Page) =>
+  expect(sideDrawer(page).locator("[data-drag-ready] [data-testid=procedures]")).toBeVisible({ timeout: 30_000 });
+
+/** The keyboard on a point's grip, once the list has settled to it: a
+ *  focus given as the list was drawn anew went to its last row instead
+ *  (CI's desktop project), and Enter there picked nothing up. */
+async function onGrip(grip: Locator) {
+  await expect(async () => {
+    await grip.focus();
+    await expect(grip).toBeFocused({ timeout: 500 });
+  }).toPass();
+}
 
 /**
  * The route's points moved, by a mouse or the keyboard in FPL's list
@@ -35,6 +53,7 @@ test("a point's grip in FPL's list moves it anywhere, by a mouse or the keyboard
       .filter({ has: page.locator(`[data-ident="${ident}"]`) })
       .first();
   const grip = (ident: string) => list.locator(`[data-testid=route-grip][data-ident="${ident}"]`);
+  await draggable(page);
 
   // KDLH's grip let go at the top of C81's row: before it, the departure.
   // Its row under half's edge, reached by pulling the sheet up, as a
@@ -71,7 +90,7 @@ test("a point's grip in FPL's list moves it anywhere, by a mouse or the keyboard
 
   // KDLH, the departure now, picked up by the keyboard and put down after
   // the destination, KMSN.
-  await grip("KDLH").focus();
+  await onGrip(grip("KDLH"));
   await page.keyboard.press("Enter");
   const at = () => page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? "");
   for (let i = 0; i < 12 && !/after .*KMSN/i.test(await at()); i++) await page.keyboard.press("ArrowDown");
@@ -97,8 +116,9 @@ test("My Location put down in the middle of the route stays where it was, and it
   await openRoute(page);
   const list = sideDrawer(page).getByTestId("procedures");
   const grip = list.getByTestId("route-grip").first();
+  await draggable(page);
   await expect(list.getByTestId("timeline-ident").first()).toHaveText("My Location");
-  await grip.focus();
+  await onGrip(grip);
   await page.keyboard.press("Enter");
   const at = () => page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? "");
   for (let i = 0; i < 12 && !/between .*KMSN.* and .*KDLH/i.test(await at()); i++) await page.keyboard.press("ArrowDown");

@@ -32,24 +32,40 @@ const AFTER_MS = 2000;
  * FPL's route list (RouteGridList, where its reading is): drawn at once
  * as plain rows of the same look and roles, and as React Aria's GridList,
  * with its drag and drop, once its chunk is in. The plain rows are put
- * away only while nothing in them has the focus, so a field a pilot is
- * typing in keeps it; a hold that began on a plain row is the one lift
- * that may need asking again.
+ * away only while nothing in them is typed in, so a field a pilot is
+ * typing in keeps its caret; a control of theirs that has the focus has it
+ * again in the list drawn anew; a hold that began on a plain row is the one
+ * lift that may need asking again.
  */
 export function RouteGrid(props: RouteGridProps) {
   "use no memo"; // The list drawn is a component from its module.
   const [List, setList] = useState<List | null>(() => loaded);
   const box = useRef<HTMLDivElement>(null);
+  // The control that had the focus as the rows were put away, by its test
+  // id and ident, to have it again in the list drawn anew.
+  const refocus = useRef<string | null>(null);
   useEffect(() => {
     if (List) return;
-    // Nor while a menu opened from them is open: its focus is in its popup,
-    // outside the rows, and the swap took its trigger away, so a point's
-    // menu tapped as the chunk came in shut under the finger before its
-    // Change or Hold could be had (route-fields.spec, procedures-route.spec).
-    const busy = (rows: HTMLElement) => rows.contains(document.activeElement) || !!rows.querySelector("[aria-expanded=true]");
+    // Not while a field in them is typed in, nor while a menu opened from
+    // them is open: its focus is in its popup, outside the rows, and the
+    // swap took its trigger away, so a point's menu tapped as the chunk
+    // came in shut under the finger before its Change or Hold could be had
+    // (route-fields.spec, procedures-route.spec); a field's line held open
+    // (a Collapsible's aria-expanded, no popup) is no menu. Nor where the
+    // focused control cannot be found again.
+    const held = (rows: HTMLElement) => {
+      const at = document.activeElement;
+      if (rows.querySelector("[aria-haspopup][aria-expanded=true]")) return null;
+      if (!(at instanceof HTMLElement) || !rows.contains(at)) return "";
+      if (at.matches("input, textarea, [contenteditable]") || !at.dataset.testid) return null;
+      return `[data-testid="${at.dataset.testid}"]${at.dataset.ident ? `[data-ident="${CSS.escape(at.dataset.ident)}"]` : ""}`;
+    };
     const take = () => {
       const list = loaded;
-      if (list && box.current && !busy(box.current)) setList(() => list);
+      const at = list && box.current ? held(box.current) : null;
+      if (at === null) return;
+      refocus.current = at || null;
+      setList(() => list);
     };
     const rows = box.current;
     // The focus gone from the rows, or moved anywhere once a menu of
@@ -67,7 +83,19 @@ export function RouteGrid(props: RouteGridProps) {
       later();
     };
   }, [List]);
-  if (List) return <List {...props} />;
+  // The keyboard's place kept across the swap: a grip focused to pick a
+  // point up (Enter) is the list's own grip once it is drawn.
+  useEffect(() => {
+    const at = refocus.current;
+    refocus.current = null;
+    if (List && at) box.current?.querySelector<HTMLElement>(at)?.focus();
+  }, [List]);
+  if (List)
+    return (
+      <div ref={box} data-drag-ready="">
+        <List {...props} />
+      </div>
+    );
   const wake = () => void fetchList().catch(() => {});
   return (
     <div ref={box} onPointerDownCapture={wake} onFocusCapture={wake} onKeyDownCapture={wake}>
