@@ -132,8 +132,8 @@ export default function FlightFoot({
  * beside the sliding sheet (sheet/FootBar), beside the side panel its foot.
  * Always the figures, the owner's rule (2026-11-16: "calculations should
  * sit at the bottom ... and then just stay there"); what they look like is
- * the size the sheet rests at (useFootRest), changed only once it is
- * still: at the pill the figures alone at the pill's size, the tabs folded
+ * the size the sheet is going to (useFootRest), changed once as a drag
+ * is let go or a tap sets it, never with the finger: at the pill the figures alone at the pill's size, the tabs folded
  * away; at half and all the way up the thin line (the owner, 2026-11-22:
  * "make the figures strip very thin when fpl is half or full") over the
  * tabs. The tabs are kept laid out while folded, not built again at each
@@ -141,7 +141,7 @@ export default function FlightFoot({
  * of glass) each time the sheet reached or left the pill (the motion
  * review of 2026-11-22). The figures go while the route's field is open
  * (figuresAway). One size knob (--strip-full, lib/text's PIN_FIGURE), set
- * once at rest.
+ * once a size.
  */
 function GroundFoot({
   vm,

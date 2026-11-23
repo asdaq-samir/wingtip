@@ -15,6 +15,13 @@ export function FootRestOf({ size, children }: { size: PanelState; children: Rea
  *  sheet's own face did. */
 export const FOOT_BAR_PILL = "3.25rem";
 
+/** Its height folded at the pill and in sight, else none: out of sight
+ *  (the keyboard up, the route's field open) it may be folded without its
+ *  figures, too short for the pill. */
+function foldedHeight(el: HTMLElement): number | undefined {
+  return el.dataset.at === "peek" && !el.inert ? Math.round(el.offsetHeight) || undefined : undefined;
+}
+
 /**
  * FPL's foot on a phone's bottom sheet: the figures strip over the tab bar
  * (Brief, Nav Log, Routes, More), ONE fixed bar over the screen's foot,
@@ -28,12 +35,20 @@ export const FOOT_BAR_PILL = "3.25rem";
  * transition showed a frame where two disagreed: the strip led the sheet
  * over the map, jumped into the route, cut the tab bar out mid-slide.
  *
- * What it shows changes only once the sheet has come to rest
- * (useRestSize): at the pill the figures alone, the pill's size, the tabs
- * folded away, about 50 points of map; at half and all the way up the thin
- * strip on the tab bar, one stack. A short fade of what it holds as it
- * changes, nothing eased with the finger; its ground never fades, so the
- * route behind it never shows through (the r6 UI audit's M6). Opaque on
+ * What it shows is the size the sheet is going to, the page's, which a
+ * let-go sets from the Drawer's onSnapPointChange (SheetDrawer's
+ * useSnapFirst) and a tap sets at once: at the pill the figures alone, the
+ * pill's size, the tabs folded away, about 50 points of map; at half and
+ * all the way up the thin strip on the tab bar, one stack. So it changes
+ * once, as the finger lifts, never with the finger, and the sheet slides
+ * behind what it will rest under: held until the slide had ended, the
+ * tabs and the thin strip floated over the bare map as the sheet went
+ * down behind them, then snapped to the pill (the owner's recording,
+ * 2026-11-23). A short fade of what it holds as it changes; its ground
+ * never fades, so the route behind it never shows through (the r6 UI
+ * audit's M6). Folded, its height is the pill's (useFootBarHeight's
+ * `pill`, sheet/insets' footPillPx), so at the pill the sheet stands
+ * wholly behind it, its grabber alone over it. Opaque on
  * the sheet's own ground, with no fade or scrim over the content above
  * it: the held strip's fade (FADE_OVER) dimmed the Add a Stop row, its
  * pill and the toggle just over it (the owner, 2026-11-23: "the strip
@@ -55,8 +70,7 @@ export const FOOT_BAR_PILL = "3.25rem";
  * and while the keyboard is up (MapPanel; `shown`).
  */
 export function FootBar({ size, shown, children }: { size: PanelState; shown: boolean; children: ReactNode }) {
-  const rest = useRestSize(size);
-  const pill = rest === "peek";
+  const pill = size === "peek";
   const bar = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const el = bar.current;
@@ -65,15 +79,21 @@ export function FootBar({ size, shown, children }: { size: PanelState; shown: bo
     const watch = new ResizeObserver(([entry]) => {
       const height = Math.round(entry?.borderBoxSize[0]?.blockSize ?? el.offsetHeight);
       host.style.setProperty("--foot-bar", `${height}px`);
-      useFootBarHeight.setState({ height });
+      useFootBarHeight.setState((was) => ({ height, pill: foldedHeight(el) ?? was.pill }));
     });
     watch.observe(el);
     return () => {
       watch.disconnect();
       host.style.removeProperty("--foot-bar");
-      useFootBarHeight.setState({ height: 0 });
+      useFootBarHeight.setState({ height: 0, pill: 0 });
     };
   }, []);
+  // And as it comes into sight folded, which need not resize it (FPL's
+  // page turned to at the pill).
+  useLayoutEffect(() => {
+    const height = bar.current && foldedHeight(bar.current);
+    if (height) useFootBarHeight.setState({ pill: height });
+  }, [pill, shown]);
   // From half up, a tap on its ground, which falls through to the popup,
   // goes no further: the row it lands on is hidden under the bar. Only
   // the click is stopped; the press still reaches the Drawer, for a drag.
@@ -91,23 +111,23 @@ export function FootBar({ size, shown, children }: { size: PanelState; shown: bo
     host.addEventListener("click", guard, true);
     return () => host.removeEventListener("click", guard, true);
   }, [pill, shown]);
-  // A short fade of what it holds as it changes at rest, on the
-  // compositor; none the first time. Not of the bar itself, whose ground
-  // would let the route through.
+  // A short fade of what it holds as it changes, on the compositor; none
+  // the first time. Not of the bar itself, whose ground would let the
+  // route through.
   const face = useRef<HTMLDivElement>(null);
-  const was = useRef(rest);
+  const was = useRef(size);
   useEffect(() => {
     const el = face.current;
-    if (was.current === rest || !el) return;
-    was.current = rest;
+    if (was.current === size || !el) return;
+    was.current = size;
     if (prefersReducedMotion() || typeof el.animate !== "function") return;
     el.animate([{ opacity: 0.4 }, { opacity: 1 }], { duration: 200, easing: "ease-out" });
-  }, [rest]);
+  }, [size]);
   return (
     <div
       ref={bar}
       data-testid="foot-bar"
-      data-at={rest}
+      data-at={size}
       inert={!shown}
       className={cn(
         "pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-(--sheet) px-4 text-foreground print:hidden",
@@ -117,7 +137,7 @@ export function FootBar({ size, shown, children }: { size: PanelState; shown: bo
       style={{ paddingBottom: EDGE_ROOM }}
     >
       <div ref={face}>
-        <FootRest.Provider value={rest}>{children}</FootRest.Provider>
+        <FootRest.Provider value={size}>{children}</FootRest.Provider>
       </div>
     </div>
   );

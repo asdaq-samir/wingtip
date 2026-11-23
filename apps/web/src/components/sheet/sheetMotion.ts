@@ -81,7 +81,8 @@ export function useRestSize(size: PanelState): PanelState {
 
 /** The size the sheet rests at, for what the foot shows (FPL's figures,
  *  thin or the pill's size, and its tab bar in or folded away): told by
- *  sheet/FootBar, or SheetFoot's FootRestOf. */
+ *  SheetFoot's FootRestOf, or by sheet/FootBar the size the sheet is
+ *  going to, from the let-go. */
 export const FootRest = createContext<PanelState>("half");
 
 /** The size the sheet has come to rest at, as the foot it is read in was told it. */
@@ -90,5 +91,8 @@ export function useFootRest(): PanelState {
 }
 
 /** The foot bar's height, px, while there is one (0 without): the map's
- *  room under a phone's bottom sheet is never less (MapPanel). */
-export const useFootBarHeight = create<{ height: number }>(() => ({ height: 0 }));
+ *  room under a phone's bottom sheet is never less (MapPanel). And
+ *  `pill`, its height last measured folded at the pill, which with the
+ *  grabber's room is FPL's pill snap point (sheet/insets' footPillPx):
+ *  kept while it is unfolded, so the pill is not moved by the tabs. */
+export const useFootBarHeight = create<{ height: number; pill: number }>(() => ({ height: 0, pill: 0 }));

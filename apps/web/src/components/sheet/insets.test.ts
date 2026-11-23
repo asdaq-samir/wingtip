@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { CARD, FLOAT_PX, insetsOf, letGo, shownPx, sizeAt, snapsOf } from "./insets";
+import { CARD, FLOAT_PX, footPillPx, insetsOf, letGo, shownPx, sizeAt, snapsOf } from "./insets";
 
 describe("insetsOf", () => {
   it("leaves a phone's map the strip the sheet in sight covers", () => {
@@ -51,6 +51,19 @@ describe("the snap points", () => {
     expect(sizeAt(true, "23rem")).toBe("half");
     expect(sizeAt(false, 1)).toBe("full");
     expect(sizeAt(true, 0.5)).toBeUndefined();
+  });
+
+  it("make FPL's pill the foot bar folded and the grabber's rem, in px", () => {
+    // The bar's 3.25 rem at 16 px, and at a larger text size, taller than its least.
+    expect(footPillPx(52, 16)).toBe(68);
+    expect(footPillPx(70.4, 17.88)).toBe(88);
+    expect(footPillPx(0, 16)).toBe(0);
+    expect(snapsOf(true, 88).points).toBe(snapsOf(true, 88).points);
+    expect(snapsOf(true, 88).points).toEqual(["88px", "23rem", 1]);
+    expect(snapsOf(true, 0).points).toBe(snapsOf(true).points);
+    expect(shownPx("peek", true, 780, 20, 88)).toBe(88);
+    expect(sizeAt(true, "88px", 88)).toBe("peek");
+    expect(sizeAt(true, "4.25rem", 88)).toBeUndefined();
   });
 });
 

@@ -117,15 +117,48 @@ export const SHEET_SLIDE = "sheet-slide";
  *  the side panel. */
 export const HOLD_AT_EDGE = `[transform:translateY(calc(-1*(var(--sheet-offset,0px)+var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none ${SWIPE_READER} ${SHEET_SLIDE}`;
 
-/** A sheet's snap points and each size's, one constant per edge. */
-export function snapsOf(fromBottom: boolean) {
-  return fromBottom ? { at: BOTTOM_SNAPS, points: BOTTOM_POINTS } : { at: TOP_SNAPS, points: TOP_POINTS };
+type Snaps = { at: Readonly<Record<PanelState, Drawer.Root.SnapPoint>>; points: Drawer.Root.SnapPoint[] };
+/** The last FPL pill's snap points, kept so a render hands the Drawer the same array. */
+let footPillSnaps: { px: number; snaps: Snaps } | null = null;
+
+/**
+ * A sheet's snap points and each size's, one constant per edge -- but for
+ * FPL's pill on a phone's bottom sheet (`pillPx`, footPillPx), whose
+ * height is the foot bar's own at the pill and the grabber's room, so the
+ * sheet stands behind the bar there with its grabber alone over it.
+ */
+export function snapsOf(fromBottom: boolean, pillPx = 0): Snaps {
+  if (!fromBottom) return { at: TOP_SNAPS, points: TOP_POINTS };
+  if (pillPx <= 0) return { at: BOTTOM_SNAPS, points: BOTTOM_POINTS };
+  if (footPillSnaps?.px !== pillPx) {
+    const at = { ...BOTTOM_SNAPS, peek: `${pillPx}px` };
+    footPillSnaps = { px: pillPx, snaps: { at, points: [at.peek, at.half, at.full] } };
+  }
+  return footPillSnaps.snaps;
+}
+
+/**
+ * FPL's pill, px, from the foot bar's height folded at the pill (`barPx`,
+ * sheet/FootBar, 0 until measured): the bar and the grabber's 1 rem room
+ * over it, so the pill shows the bar's strip and the grabber, nothing of
+ * the sheet's head. A rem pill was the bar's 3.25 rem and the grabber's 1
+ * only while the Drawer's root size was the page's: Base UI 1.9.0 reads
+ * the root's font size only when its viewport is resized
+ * (useDrawerSnapPoints), where lib's Dynamic Type sets it again as the page
+ * comes back from the background, and a larger text size grows the bar
+ * past 3.25 rem (FlightFoot's min-height); the owner's iPhone rested at
+ * the pill once with the head half over the bar and once without (its
+ * recording, 2026-11-23). In px from the bar measured, its own resize
+ * tells the Drawer anew.
+ */
+export function footPillPx(barPx: number, rem = rootRem()): number {
+  return barPx > 0 ? Math.round(barPx + rem) : 0;
 }
 
 /** The size the Drawer let go at: its snap point is one of ours, by
  *  identity, so no measure is matched to the nearest. */
-export function sizeAt(fromBottom: boolean, point: Drawer.Root.SnapPoint): PanelState | undefined {
-  const { at } = snapsOf(fromBottom);
+export function sizeAt(fromBottom: boolean, point: Drawer.Root.SnapPoint, pillPx = 0): PanelState | undefined {
+  const { at } = snapsOf(fromBottom, pillPx);
   return SIZES.find((size) => Object.is(at[size], point));
 }
 
@@ -144,7 +177,7 @@ export function sizeAt(fromBottom: boolean, point: Drawer.Root.SnapPoint): Panel
 export function letGo(
   point: Drawer.Root.SnapPoint | null,
   details: Pick<Drawer.Root.SnapPointChangeEventDetails, "cancel">,
-  s: { fromBottom: boolean; at: PanelState; ask: (size: PanelState) => void; park: PanelState; close?: () => void },
+  s: { fromBottom: boolean; pillPx?: number; at: PanelState; ask: (size: PanelState) => void; park: PanelState; close?: () => void },
 ) {
   // A light tick as a swipe lands the sheet or a card at another size, as
   // iOS's sheet gives one (lib/haptics: Chrome on Android; Safari has
@@ -159,7 +192,7 @@ export function letGo(
     }
     return;
   }
-  const target = sizeAt(s.fromBottom, point);
+  const target = sizeAt(s.fromBottom, point, s.pillPx);
   if (!target || target === s.at) return;
   feel("detent");
   if (s.close && REACH[target] < REACH[s.at]) s.close();
@@ -169,16 +202,17 @@ export function letGo(
 /**
  * How much of a sheet or a card is in sight at rest at `size`, px, as the
  * stock Drawer resolves its snap point (useDrawerSnapPoints, @base-ui/react
- * 1.9.0: a rem value at the page's root font size, a fraction of its
+ * 1.9.0: a px value as it is, a rem value at the page's root font size, a fraction of its
  * viewport, either no taller than the popup; the viewport is never shorter
  * than the popup here, MapPanel's height). Worked out from the size the
  * page holds, not read off a popup: Base UI writes its offset as 0 until it
  * has measured, which read as the whole card in sight for a frame as one
  * opened (the flicker audit, 2026-11-14, FL-4).
  */
-export function shownPx(size: PanelState, fromBottom: boolean, popupHeight: number, rem = rootRem()) {
-  const point = snapsOf(fromBottom).at[size];
-  return typeof point === "number" ? popupHeight : Math.min(parseFloat(point) * rem, popupHeight);
+export function shownPx(size: PanelState, fromBottom: boolean, popupHeight: number, rem = rootRem(), pillPx = 0) {
+  const point = snapsOf(fromBottom, pillPx).at[size];
+  if (typeof point === "number") return popupHeight;
+  return Math.min(parseFloat(point) * (point.endsWith("px") ? 1 : rem), popupHeight);
 }
 
 /** The page's root font size, px, which the Drawer's rem snap points use. */
