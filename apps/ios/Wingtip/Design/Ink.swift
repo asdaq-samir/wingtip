@@ -15,6 +15,11 @@ enum WingtipInk {
     static let inactiveFill = Color(dynamic(\.muted))
     /// What is fine.
     static let go = Color(dynamic(\.goInk))
+    /// A quiet name in the tokens' muted text colour (color.theme's
+    /// mutedForeground), 4.5:1 and more on the sheet's own ground in every
+    /// look, where the system's secondary label is not: about 3.3:1 on the
+    /// sheet's #f2f2f7 by day (WCAG 2.2 1.4.3; the figure strip's names).
+    static let muted = Color(dynamic(\.mutedForeground))
     /// The brand's tint, Sectional Blue, by day and at night: for the
     /// widgets, which have no accent colour of their own to take it from.
     static let tint = Color(dynamic(\.tint))
