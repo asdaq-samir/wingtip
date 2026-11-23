@@ -26,7 +26,7 @@ extension Planner {
     @concurrent nonisolated static func libraryPdf(doc: String, edition: String, to file: URL, progress: @escaping @MainActor (Int) -> Void) async throws {
         let partial = file.appendingPathExtension("part")
         try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-        FileManager.default.createFile(atPath: partial.path(), contents: nil)
+        FileManager.default.createFile(atPath: partial.path(percentEncoded: false), contents: nil)
         defer { try? FileManager.default.removeItem(at: partial) }
         let handle = try FileHandle(forWritingTo: partial)
         var written = 0
