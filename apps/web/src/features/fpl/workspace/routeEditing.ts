@@ -12,28 +12,28 @@ export function routeEditing(vm: PlanSlices<"flight" | "routeList">): boolean {
   return !vm.routeList.routeFolded;
 }
 
-/** Whether the route's field (RouteEditor) is open under the timeline:
- *  the route open to edit and the field asked for (usePlanRouteList's
- *  `boxOpen`). A new plan and half a route have it folded into their
- *  timeline's the route box's toggle till it is asked for. */
+/** Whether the route's field (RouteEditor) is open: the route open to
+ *  edit and the field asked for (usePlanRouteList's `boxOpen`). A new plan
+ *  and half a route have it folded till their box's toggle asks for it. */
 export function routeBoxOpen(vm: PlanSlices<"flight" | "routeList">): boolean {
   return routeEditing(vm) && vm.routeList.boxOpen;
 }
 
-/** Whether the box's toggle has turned a whole route's grouped box into
- *  the route's field (TypeRouteButton): drawn then in the timeline's own
- *  place (RouteHead), not under the page, so the box stays where it was
- *  (the owner, 2026-11-22: "Route box moves down when toggled"). */
-export function routeTyped(vm: PlanSlices<"flight" | "route" | "routeList">): boolean {
-  return routeEditing(vm) && vm.route.wholeRoute && vm.routeList.routeOpen && timelineHeight > 0;
+/** Whether the box's toggle has turned the grouped box into the route's
+ *  field (TypeRouteButton), on an empty, half or whole route alike: drawn
+ *  then in the timeline's own place (RouteHead), not under the page, so
+ *  the box stays where it was (the owner, 2026-11-22: "Route box moves
+ *  down when toggled"; 2026-11-23: "the same area"). */
+export function routeTyped(vm: PlanSlices<"flight" | "routeList">): boolean {
+  return routeEditing(vm) && vm.routeList.routeOpen && timelineHeight > 0;
 }
 
 /** The timeline's grouped box's height as its toggle turned it into the
  *  route's field (TypeRouteButton), so the field keeps its size and shape
  *  and nothing under it jumps (the owner, 2026-11-22); none (0) once the
  *  field is folded again, and none for a field opened some other way (a
- *  route typed into the empty box, which stays where it is as it becomes
- *  whole: moved then, it was built again and lost what was still typed). */
+ *  stop being typed, under the card). A route typed in whole stays in the
+ *  same place as it becomes whole, so what is still typed is kept. */
 let timelineHeight = 0;
 export const keepTimelineHeight = (px: number) => {
   timelineHeight = px;

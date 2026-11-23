@@ -181,7 +181,7 @@ test("the route's box reads its points with an arrow between each two, a tap on 
   await expect(page).toHaveURL(/[?&]dep=KRYV(&|$)/);
   await expect(sideDrawer(page).getByTestId("route-type")).toHaveAttribute("data-placeholder", "Destination");
   // And the last: no route, the empty route's card to start another, its
-  // field folded into the route box's toggle.
+  // field folded behind the box's toggle at the Destination's end.
   await lines.getByRole("group", { name: "Departure KRYV" }).focus();
   await page.keyboard.press("Delete");
   await expect(page).not.toHaveURL(/[?&]dep=/);

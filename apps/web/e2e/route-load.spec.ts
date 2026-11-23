@@ -29,7 +29,7 @@ import { pickAirplane } from "./startState";
  * and drop with it; that waits for the list's first touch now
  * (procedures/RouteGrid), and the open reads 3,433,286 in 163 (claude/
  * reaudit-fix's build, the mobile project). The wave read 3,434,352 with
- * the route box's toggle; the solo cross-country review's form waits for
+ * the box's toggle; the solo cross-country review's form waits for
  * its sheet now (brief/SaveFlight), and the open reads 3,429,641 in 163
  * (claude/w3-a's build, the mobile project). The wave after read
  * 3,431,166; the Brief's Checklists page waits for the Brief now

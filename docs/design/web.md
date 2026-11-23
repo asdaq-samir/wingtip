@@ -1103,7 +1103,7 @@ the route's field (`RouteBox`) and the figures. Before the route is
 whole there is no head: the timeline's own card (`RouteStart`'s
 `EmptyRoute`, half a route's in `RouteTimeline`), the ends still to pick
 as rows of it (the owner, 2026-11-18: "the empty fpl page looks a bit
-different than filled one"), and the field folded away, the route box's toggle at the card's end opening it (no "Type or Paste a Route" row, 2026-11-23). On a phone the sheet's height drives it
+different than filled one"), and the field folded away behind the box's toggle in the card's last row (no row of its own, 2026-11-23). On a phone the sheet's height drives it
 (usePlanRouteList): open at the full snap point, folded at half and the
 pill, never while the field has the focus (`editorFocused`); the line's
 tap sets the full snap point (`openRoute`) and Done sets half
@@ -1210,13 +1210,19 @@ Edit and Done.
    Change does. The end it has is its own row as on a whole route.
 3. The route string field (typed or pasted, Enter to compute), as
    SkyVector's, under the rows, and the figures under it. Before the
-   route is whole it is folded away and the route box's toggle
-   (`TypeRouteButton`, `route-type-open`, the stock Toggle with a keyboard
-   glyph, as it comes) sits at the card's end; a tap opens the
-   field under the card, focused in the tap so a phone's keyboard comes
-   up (`routeBoxOpen`). On a whole route the same toggle is at Add a Stop's end
-   (it is no longer an item of More, e401f646d). The "Type or Paste a
-   Route" row is gone (the owner, 2026-11-23: "the toggle is enough").
+   route is whole it is folded away behind the box's toggle
+   (`TypeRouteButton`, `route-type-open`, the stock Toggle's `tint`
+   variant: the keyboard glyph in the tint on its wash, a circle the head's
+   round buttons' size, filled in the tint while pressed), at the box's
+   own bottom right in its last row: the empty route's Destination, half
+   a route's last row, a whole route's Add a Stop (`RouteStart`'s
+   `BoxToggle`). A tap turns the box into the field in the same place and
+   height (`routeTyped`, `RouteEditor` inPlace), focused in the tap so a
+   phone's keyboard comes up, the toggle pressed where it was; a tap on
+   it turns it back. No row of its own, and no Undo beside it: the
+   toast's Undo and Cmd-Z give a cleared route back (the owner,
+   2026-11-23: "the same area and not a separate entry row", "No undo
+   needed next to toggle").
    The empty route has no "Open a Route File" row and takes no dropped
    .fpl or .gpx (removed, the owner, 2026-11-23: "No need for open a
    route file"); `route_file_read` stays in the engine for Android.

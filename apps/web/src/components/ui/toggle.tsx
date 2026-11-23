@@ -16,12 +16,19 @@ const toggleVariants = cva(
         // on. On data-pressed, Base UI's own state attribute, so a look
         // of its own for "on" (GLASS_PICKED, a chip picked) given after
         // it takes its place.
+        // The app's own, as iOS draws a tappable glyph on its own: the
+        // glyph in the tint on the tint's light wash, and on, filled in the
+        // tint with the glyph in its foreground. Only theme tokens.
+        tint: "bg-tint/12 text-tint hover:bg-tint/20 hover:text-tint data-pressed:bg-tint data-pressed:text-primary-foreground hover:data-pressed:bg-tint/90 hover:data-pressed:text-primary-foreground",
         glass: cn(GLASS_BUTTON, "data-pressed:bg-tint data-pressed:text-white hover:data-pressed:bg-tint/90 hover:data-pressed:text-white"),
       },
       size: {
         default: "h-9 min-w-9 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         sm: "h-8 min-w-8 px-2.5 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5",
         lg: "h-10 min-w-10 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+        // A circle the size of the sheet head's round buttons (its search
+        // and ✕, button's icon-round; size.round-button).
+        round: "size-(--size-round-button) rounded-full",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

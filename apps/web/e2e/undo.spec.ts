@@ -50,7 +50,7 @@ test("a cleared route comes back from the toast's Undo, and again from the keybo
   await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
 });
 
-test("a cleared route comes back from the empty route's Undo, which goes once a new route is started", async ({ page }) => {
+test("a cleared route comes back from the toast's Undo, the empty route's card no Undo of its own", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
@@ -60,25 +60,24 @@ test("a cleared route comes back from the empty route's Undo, which goes once a 
   await clearTheRoute(page);
   await expect(page).not.toHaveURL(/[?&]dep=/);
   await expect(sideDrawer(page).getByTestId("route-strip").getByTestId("share-route")).toHaveCount(0);
-  const undo = sideDrawer(page).getByTestId("route-undo");
-  await undo.click();
+  // No Undo beside the box's toggle (the owner, 2026-11-23: "No undo
+  // needed next to toggle"): the toast's, as every edit's.
+  await expect(sideDrawer(page).getByTestId("route-undo")).toHaveCount(0);
+  await page.locator("[data-slot=toast]").getByRole("button", { name: "Undo" }).click();
   await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
   await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
 
-  // Cleared again and a new route started in the field the route box's toggle
-  // opens, focused: no Undo then. Past the route's settling once it
-  // is put back (its runway and pattern picked again), which the history
-  // takes in as part of the Undo (SETTLE_MS): a clear inside it was taken
-  // in too, and left nothing to undo.
+  // Cleared again and a new route started in the field the box's toggle
+  // turns the card into, focused, the toggle pressed in the same place.
   await pastSettling(page);
   await clearTheRoute(page);
-  await expect(undo).toBeVisible();
   await sideDrawer(page).getByTestId("route-type-open").click();
   await expect(sideDrawer(page).getByTestId("route-type")).toBeFocused();
+  await expect(sideDrawer(page).locator('[data-testid="route-type-open"][aria-pressed="true"]')).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("route-undo")).toHaveCount(0);
   await page.keyboard.insertText("KMSN");
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/[?&](dep|dest)=KMSN(&|$)/);
-  await expect(undo).toHaveCount(0);
 });
 
 test("a stop taken out comes back from the Undo toast that names it", async ({ page }) => {
