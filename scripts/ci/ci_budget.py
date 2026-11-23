@@ -60,10 +60,11 @@ BUDGETS = [
     ("test-flight", 2, 2),
     ("test-sim", 3, 4),
     ("Native Android / build", 5, 10),
-    # A wave's two legs of the iPad's whole suite (decision 0058), never on a
-    # pull request: half of the night's iPad leg (34-48 min, 2026-11-19 to 21)
-    # with its build. Before the next row, which would match them too.
-    ("Native iOS / test (iPad ?/2)", 3, 30),
+    # A wave's four legs of the iPad's whole suite (decision 0058), never on a
+    # pull request: a quarter of its tests each, with the build and the
+    # simulator's boot (some 18 minutes on a slow hosted runner, run
+    # 45136421052). Before the next row, which would match them too.
+    ("Native iOS / test (iPad ?/4)", 3, 30),
     # Each device's leg: the iPhone's "test", main's push's "test (iPad)".
     ("Native iOS / test*", 6, 70),
     ("CI passed", 1, 1),

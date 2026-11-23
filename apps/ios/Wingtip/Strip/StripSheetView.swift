@@ -168,7 +168,8 @@ struct StripSheetView: View {
                 case .airport(let text): path.append(.airport(text))
                 case .instructing: _ = open(.instructor)
                 case .notams: path.append(.brief)
-                case .practice, .training, .contact, .leg, .flight: _ = open(.setup)
+                case .practice, .training, .contact, .leg, .flight,
+                     .pilotDetails, .trainingHome, .connectedApps, .alerts, .atc, .help, .sources: _ = open(.setup)
                 // A thing's card over the strip, as over the plan (Navigator).
                 case .traffic, .tail, .hold, .flown, .ask, .mapSettings, .settings, .plate, .clearance, .sharedFlight, .flightLogged, .emergency, .tfr, .navaid, .scratchpad:
                     nav.open(page)

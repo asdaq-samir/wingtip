@@ -193,10 +193,20 @@ enum CardTests {
     /// most twelve times.
     @MainActor
     static func scrollTo(_ element: XCUIElement, in app: XCUIApplication) {
+        // On the iPad the list is the sidebar's, at the left: a swipe up the
+        // screen's middle went to the map, and the row never came.
+        let surface = split ? sidebarList(app) : app
         for _ in 0..<12 where !(element.exists && element.isHittable) {
-            app.swipeUp()
+            surface.swipeUp()
         }
         XCTAssertTrue(element.isHittable, "\(element) could not be scrolled into view")
+    }
+
+    /// The iPad's sidebar list, the leftmost list no wider than half the
+    /// screen, else the app.
+    @MainActor
+    static func sidebarList(_ app: XCUIApplication) -> XCUIElement {
+        app.collectionViews.allElementsBoundByIndex.first { $0.frame.minX < 1 && $0.frame.width < app.frame.width / 2 } ?? app
     }
 
     /// Until the element exists and can be tapped, or `timeout` runs out:

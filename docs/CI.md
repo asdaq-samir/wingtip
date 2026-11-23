@@ -395,7 +395,7 @@ the flake hunt and the issue, and with CI's usual retry:
 | `guards` (three legs), `test-web` (three), `test-engine` (every crate), `test-python` (every suite), `test-gateway`, `test-sim`, `infra` | one runner each | 1-5 min |
 | `build-images`: every service image, built, not pushed | 1 | 2-6 min |
 | `e2e`: every spec on `mobile`, `desktop` and `webkit-phone`, and on `webkit-ipad` the smoke set and the `ipad-*` specs (`browser_specs.py`'s `WAVE_SHARDS`), after `e2e-images` | 16 | ~15-20 min |
-| `ios`: `native-ios.yml` without `unit_only`: on the newest iPhone the build, `WingtipTests` and `CardSmokeTests`, as main's push runs them; on the newest iPad its whole suite, as the night runs it, in two legs (`test (iPad 1/2)`, the UI classes `ios_test.sh`'s `IPAD_FIRST` names, and `test (iPad 2/2)`, every other test; decision 0058), on macOS | 3 | 6-10 min (iPhone), ~20-25 min (each iPad leg) |
+| `ios`: `native-ios.yml` without `unit_only`: on the newest iPhone the build, `WingtipTests` and `CardSmokeTests`, as main's push runs them; on the newest iPad its whole suite, as the night runs it, in four legs (`test (iPad 1/4)` to `test (iPad 3/4)`, the UI classes `ios_test.sh`'s `IPAD_LEG_1` to `IPAD_LEG_3` name, and `test (iPad 4/4)`, every other test; decision 0058), on macOS | 3 | 6-10 min (iPhone), ~30-35 min (each iPad leg) |
 | `android`: `native-android.yml`, `testDebugUnitTest lintDebug assembleDebug` (the APK kept with the run) | 1 | 4-6 min |
 
 About 30 to 35 minutes from the push, the iPad's legs and the browser

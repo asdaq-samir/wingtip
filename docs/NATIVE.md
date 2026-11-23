@@ -918,9 +918,10 @@ SDK), so a build or a test runs there through `scripts/dev/one-at-a-time.sh`
   on the newest iPhone and the newest iPad, each its own runner, the iPad
   being the device most pilots fly with (decision 0058);
 - a wave's validation (`validate-wave.yml`): the iPhone's set as on
-  `main`, and the iPad's whole suite in two legs on two runners
-  (`IPAD_FIRST` in `scripts/ci/ios_test.sh` and the rest), about 20
-  minutes each where the night's one leg takes 34 to 48;
+  `main`, and the iPad's whole suite in four legs on four runners
+  (`IPAD_LEG_1` to `IPAD_LEG_3` in `scripts/ci/ios_test.sh` and the
+  rest), some 30 to 35 minutes each with the build on a slow hosted
+  runner, where the night's one leg takes 34 to 48;
 - every night (`native-ios.yml`, `full`): the whole suite (the launch,
   flow and accessibility tests, the store shots and the card rule's full
   suites, `CardRuleTests` and `CardScrollTests`) on the iPhone, the iPad

@@ -31,37 +31,37 @@ struct YouView: View {
                 ProblemLine(session.problem)
             }
             Section {
-                NavigationLink { PilotDetailsView() } label: {
+                NavigationLink(value: SheetPage.pilotDetails) {
                     YouRowLabel(title: "Pilot Details", systemImage: "person.text.rectangle", colour: WingtipColor.Badge.tower,
                                 value: session.pilot?.homeBase)
                 }
                 .disabled(!session.signedIn)
                 .accessibilityIdentifier("pilot-details-row")
-                NavigationLink { OwnAircraftListView() } label: {
+                NavigationLink(value: SheetPage.screen(.airplanes)) {
                     YouRowLabel(title: "Airplanes", systemImage: WingtipIcon.airplane, colour: WingtipColor.Badge.approach,
                                 value: plan.airplaneName)
                 }
                 .accessibilityIdentifier("airplanes-row")
-                NavigationLink { FlightsView() } label: {
+                NavigationLink(value: SheetPage.screen(.flights)) {
                     YouRowLabel(title: "Flights", systemImage: "tray.full", colour: WingtipColor.Badge.weather)
                 }
-                NavigationLink { LogbookView() } label: {
+                NavigationLink(value: SheetPage.screen(.logbook)) {
                     YouRowLabel(title: Screen.logbook.title, systemImage: "book", colour: WingtipColor.Badge.fuel)
                 }
                 .disabled(!session.signedIn)
                 .accessibilityIdentifier("logbook-row")
                 // The weather the pilot will not take off or land in, kept
                 // on this phone: the Brief's Go / No-Go holds it to them.
-                NavigationLink { MinimumsView() } label: {
+                NavigationLink(value: SheetPage.screen(.minimums)) {
                     YouRowLabel(title: "Minimums", systemImage: "cloud.sun", colour: WingtipColor.Badge.ground)
                 }
                 // The documents library: the FAA's, kept current, and the
                 // pilot's own PDFs on this device (DocumentsPage).
-                NavigationLink { DocumentsPage() } label: {
+                NavigationLink(value: SheetPage.screen(.documents)) {
                     YouRowLabel(title: Screen.documents.title, systemImage: "books.vertical", colour: WingtipColor.Badge.chart)
                 }
                 .accessibilityIdentifier("documents-row")
-                NavigationLink { TrainingPage() } label: {
+                NavigationLink(value: SheetPage.trainingHome) {
                     YouRowLabel(title: "Training", systemImage: "graduationcap", colour: WingtipColor.Badge.lodging)
                 }
                 .accessibilityIdentifier("training-row")
@@ -69,7 +69,7 @@ struct YouView: View {
                 // The AI apps connected through the connector, each ended
                 // from here (the deep security review of 2026-11-21, N2):
                 // the account's, greyed signed out as the others are.
-                NavigationLink { ConnectedAppsView() } label: {
+                NavigationLink(value: SheetPage.connectedApps) {
                     YouRowLabel(title: "Connected Apps", systemImage: "powerplug", colour: WingtipColor.Badge.approach)
                 }
                 .disabled(!session.signedIn)
@@ -164,21 +164,21 @@ struct TrainingPage: View {
         List {
             // What needs an account is there but disabled signed out, with
             // no words of its own: You's head is the one Sign In.
-            NavigationLink { CoachView() } label: {
+            NavigationLink(value: SheetPage.screen(.coach)) {
                 SettingsLabel(Screen.coach.title, systemImage: "target", colour: WingtipColor.Badge.food)
             }
             .disabled(!session.signedIn)
             if trainingTools {
-                NavigationLink { PracticeView() } label: {
+                NavigationLink(value: SheetPage.practice) {
                     SettingsLabel("Practice", systemImage: "figure.walk.motion", colour: WingtipColor.Badge.traffic)
                 }
                 .accessibilityIdentifier("practice-row")
             }
             Group {
-                NavigationLink { TrainingView() } label: {
+                NavigationLink(value: SheetPage.training) {
                     SettingsLabel("Lessons and Endorsements", systemImage: "graduationcap", colour: WingtipColor.Badge.lodging)
                 }
-                NavigationLink { InstructorView() } label: {
+                NavigationLink(value: SheetPage.instructing) {
                     SettingsLabel("Instructing", systemImage: "person.2", colour: WingtipColor.Badge.ground)
                 }
             }

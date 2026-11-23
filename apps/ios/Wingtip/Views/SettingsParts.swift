@@ -89,7 +89,7 @@ struct PilotDetailsView: View {
                             .accessibilityIdentifier("pilot-name")
                     }
                     LabeledContent("Email", value: pilot.email)
-                    NavigationLink { ContactView() } label: {
+                    NavigationLink(value: SheetPage.contact) {
                         LabeledContent("Contact") { if let home = pilot.homeBase { Text(home) } }
                     }
                 } footer: {

@@ -37,9 +37,9 @@ struct SettingsView: View {
                 }
                 .id(SettingsView.mapGroup)
                 Section("In Flight") {
-                    NavigationLink { AlertsPage() } label: { Text("Alerts") }
+                    NavigationLink(value: SheetPage.alerts) { Text("Alerts") }
                         .accessibilityIdentifier("alerts-row")
-                    NavigationLink { AtcPage() } label: { Text("ATC") }
+                    NavigationLink(value: SheetPage.atc) { Text("ATC") }
                         .accessibilityIdentifier("atc-row")
                 }
                 // The parked features' switches, after In Flight (Extra).
@@ -49,7 +49,7 @@ struct SettingsView: View {
                     // flying with no signal (KeepForAir, FPL's button), and
                     // whole regions' charts (Downloads).
                     LabeledContent("Kept for the Air", value: ByteCountFormatter.string(fromByteCount: keptBytes, countStyle: .file))
-                    NavigationLink { DownloadsView() } label: { Text(Screen.downloads.title) }
+                    NavigationLink(value: SheetPage.screen(.downloads)) { Text(Screen.downloads.title) }
                     // A Stratux, Sentry or the like on the cockpit's Wi-Fi:
                     // its traffic and FIS-B weather with no internet; parked
                     // until its switch in Extras is on (Extra).
@@ -57,7 +57,7 @@ struct SettingsView: View {
                     ForgetNotesButton()
                 }
                 Section {
-                    NavigationLink { HelpPage() } label: { Text("Help & About") }
+                    NavigationLink(value: SheetPage.help) { Text("Help & About") }
                         .accessibilityIdentifier("help-row")
                 }
             }
@@ -121,11 +121,11 @@ struct HelpPage: View {
     var body: some View {
         List {
             Section {
-                NavigationLink { PilotGuideView() } label: { Text(Screen.guide.title) }
+                NavigationLink(value: SheetPage.screen(.guide)) { Text(Screen.guide.title) }
                     .accessibilityIdentifier("guide-link")
-                NavigationLink { AboutView() } label: { Text(Screen.about.title) }
+                NavigationLink(value: SheetPage.screen(.about)) { Text(Screen.about.title) }
                     .accessibilityIdentifier("about-link")
-                NavigationLink { SourcesPage() } label: { Text("Sources") }
+                NavigationLink(value: SheetPage.sources) { Text("Sources") }
                     .accessibilityIdentifier("sources-row")
             }
             HelpImproveToggle()
@@ -136,7 +136,7 @@ struct HelpPage: View {
             Section {
                 Link("Privacy", destination: AboutModel.page("privacy"))
                 Link("Terms", destination: AboutModel.page("terms"))
-                NavigationLink { AboutView() } label: { Text("Legal") }
+                NavigationLink(value: SheetPage.screen(.about)) { Text("Legal") }
             }
         }
         .listStyle(.insetGrouped)

@@ -37,12 +37,14 @@ found the next morning at the earliest.
      phone's alone; Native iOS's unit tests and `CardSmokeTests` run on
      the newest iPad as well as the iPhone, each on its own runner.
    - **A wave's validation** (`validate-wave.yml`) runs the iPad's whole
-     native suite, as the night does, split over two runners so the wave
-     stays near 20 to 25 minutes: `test (iPad 1/2)` runs the UI classes
-     `scripts/ci/ios_test.sh`'s `IPAD_FIRST` names (the accessibility audit
-     among them, 614 of the iPad's 1,309 s of UI tests on 2026-11-21's
-     night), `test (iPad 2/2)` every other test by skipping those, so no
-     class falls between. The iPhone keeps main's smoke set (unit tests
+     native suite, as the night does, split over four runners (two until
+     2026-11-23, when a slow hosted runner took one past its 45 minutes):
+     `test (iPad 1/4)` to `test (iPad 3/4)` run the UI classes
+     `scripts/ci/ios_test.sh`'s `IPAD_LEG_1` to `IPAD_LEG_3` name (the
+     accessibility audits; the card rule's suite; the card scroll, page
+     toggle, iPad layout and documents suites), `test (iPad 4/4)` every
+     other test by skipping those, so no class falls between; each leg
+     some 30 to 35 minutes with its build on a slow runner. The iPhone keeps main's smoke set (unit tests
      and `CardSmokeTests`). The browser smoke runs on `webkit-ipad` beside
      every spec on the other projects. A wave runs off the pull-request
      tier, on free minutes and in parallel (the coordinator's
