@@ -51,7 +51,7 @@ const numberOf = (rows: NavLogRow[], index: number) => rows.slice(1, index + 1).
 export default function FlyingHead({ run, rows, line }: { run: DryRun | null; rows: NavLogRow[]; line: CourseLine }) {
   const key = usePastFlight((s) => {
     if (!run || s.hex !== DRY_RUN || s.at === null) return "";
-    const index = dryRunNext(run, rows, s.at);
+    const index = dryRunNext(run, s.at);
     const at = dryRunAt(run, s.at);
     if (index === null || !at || !run.bends[index] || run.rowT[index] == null) return "";
     const along = run.alongNm.at(-1)! - at.leftNm;
@@ -83,10 +83,12 @@ export default function FlyingHead({ run, rows, line }: { run: DryRun | null; ro
     );
   const [i, nm, min, at] = words.split(" ");
   const index = Number(i);
+  // The dry run's index is into its own rows (DryRun.rows), the GPS's into the page's.
+  const list = key && run ? run.rows : rows;
   const next: Next = {
     index,
-    number: numberOf(rows, index),
-    name: rowPoint(rows[index]!).name,
+    number: numberOf(list, index),
+    name: rowPoint(list[index]!).name,
     nm: Number(nm),
     min: min === "" ? null : Number(min),
     at: at === "" ? null : Number(at),

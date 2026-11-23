@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { drawn, openPanel, settle, sideDrawer, slow, suggestedRoutes } from "./helpers";
+import { recordedDirect } from "./recordedStops";
 import { stopsAre } from "./stopsParam";
 import { pickAirplane } from "./startState";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
@@ -108,6 +109,9 @@ test.afterEach(async ({ page }) => {
 
 test("FPL's Routes are one row of chips, As typed at first, and a chip tapped is the route at once", async ({ page }) => {
   await ways(page);
+  // The plan under them from its recording: the Routes wait for it, and
+  // planned cold on CI it took over their minute (recordedDirect).
+  await recordedDirect(page);
   const planned: string[] = [];
   page.on("request", (request) => {
     if (new URL(request.url()).pathname.endsWith("/navlog")) planned.push(new URL(request.url()).searchParams.get("stops") ?? "");
@@ -155,6 +159,7 @@ test("FPL's Routes are one row of chips, As typed at first, and a chip tapped is
 
 test("the routes' chips and their ways stay, whichever is picked", async ({ page }) => {
   await ways(page);
+  await recordedDirect(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);

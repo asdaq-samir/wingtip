@@ -43,6 +43,14 @@ test("the Map settings open as a card in the map's sheet, and its close goes bac
   const panel = sideDrawer(page);
   await settled(panel);
   await expect(panel).toHaveAttribute("data-panel", "peek");
+  // The plan in, its time on the pill, before the card's opening is
+  // measured: opened over the pill while the plan was still coming, the
+  // pill's estimated figures were taken off under the card, a layout
+  // shift of 0.017 that was the plan's late landing, not the card's (CI's
+  // mobile, run 45127491141; the nav log held 3.5 s here gives the same
+  // 0.017 from the same three boxes).
+  // (Its first leg's course, Crs, where the estimate's Trk had none.)
+  await expect(page.locator("[data-pin-foot]").first().locator("dt").last()).toContainText("Crs", { timeout: slow(30_000) });
 
   // From the pill: the card half way up over it, the panel left at the pill.
   await expectDrawnOnce(page, () => openMapSettings(page), { card: "map-settings", maxMoves: 0 });
