@@ -7,7 +7,7 @@
 # checkout, and the compose project is the same (wingtip), so the
 # phone's address and the saved data don't change.
 #
-#   scripts/dev/go-live.sh [--up]          claude/integration
+#   scripts/dev/go-live.sh [--up]          claude/integration, else main
 #   scripts/dev/go-live.sh [--up] <branch> another branch
 #
 # By default the live tree moves to the branch and the stack stays down:
@@ -19,7 +19,7 @@
 set -euo pipefail
 up=${GO_LIVE_UP:-0}
 if [ "${1:-}" = --up ]; then up=1; shift; fi
-branch=${1:-claude/integration}
+branch=${1:-}
 # The main checkout: from the script's own repo, or the current
 # directory's when the script is run from a copy.
 main=$(git -C "$(dirname "$0")/../.." rev-parse --path-format=absolute --git-common-dir 2>/dev/null \
@@ -39,6 +39,15 @@ fi
 # (the owner's efficiency rules, 2026-11-12).
 "$(dirname "$0")/tidy-local.sh" || true
 "$(dirname "$0")/tidy-branches.sh" || true
+# No branch named: the wave's integration branch, or main once the wave
+# has merged and that branch is gone (as it is between waves).
+if [ -z "$branch" ]; then
+  branch=claude/integration
+  if [ -z "$(git -C "$main" ls-remote --heads origin "$branch")" ]; then
+    echo "go-live: no origin/$branch (the wave has merged), so main"
+    branch=main
+  fi
+fi
 git -C "$main" fetch -q origin "$branch"
 if [ ! -d "$live" ]; then
   git -C "$main" worktree add -q --detach "$live" "origin/$branch"

@@ -111,16 +111,18 @@ sample_loop() {
 
 # What a pilot sees, every PROBE_S (5 s): the status, time and the first
 # words of each answer a pilot's screen is drawn from, through the gateway.
+# The page is /app/plan (the gateway serves no page at /: always 404), and
+# traffic is asked around a point, as the app asks it (a box was always 422).
 probe_loop() {
   local file=$1 q="dep=C81&dest=KDLH" name url code
   local -a asks=(
     "health http://localhost:8080/actuator/health"
-    "web http://localhost:8080/"
+    "web http://localhost:8080/app/plan"
     "chart http://localhost:8080/api/planner/chart"
     "tile http://localhost:8084/api/chart-tile/sec/9/130/189.png"
     "navlog http://localhost:8080/api/planner/navlog?$q"
     "brief http://localhost:8080/api/planner/briefing?$q"
-    "traffic http://localhost:8080/api/planner/traffic?south=41.5&west=-88.5&north=42.5&east=-87.5"
+    "traffic http://localhost:8080/api/planner/traffic?lat=42&lon=-88&radius=30"
     "feeds http://localhost:8084/api/status/feeds"
   )
   while :; do

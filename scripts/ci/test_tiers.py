@@ -62,7 +62,7 @@ MAX_RETRIES = 1
 # them, after #585 merged with three red. The smoke set and the whole suite
 # are never a pull request's.
 AFTER_MERGE = {"build-images"}
-BROWSER = ("specs", "e2e-images", "e2e")
+BROWSER = ("specs", "e2e-page", "e2e-page-push", "e2e-images", "e2e")
 # ci.yml's jobs about the run rather than in a tier.
 META = {"passed", "budget", "halt"}
 # The script ci.yml's test-web runs the tests and the build through.

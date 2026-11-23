@@ -41,7 +41,7 @@ import os
 import re
 import sys
 
-from ci_budget import api, bare
+from ci_budget import api, bare, every
 from failure_summary import hard_reds
 
 RERUN = "claude/validate-failed/"
@@ -65,6 +65,8 @@ AREAS = [
     ("Native iOS*", ["ios-app"]),
     ("e2e (*)", ["e2e"]),
     ("build (e2e)", ["e2e"]),
+    ("page (e2e)", ["e2e"]),
+    ("build (e2e page)", ["e2e"]),
     ("Browser specs reached", ["e2e"]),
     ("Guards*", []),
     ("CI passed", []),
@@ -121,7 +123,7 @@ def browser(repo: str, token: str, run: dict, jobs: list[dict]) -> dict:
             plan["all"] = True
         if not fnmatch.fnmatchcase(name, "e2e (*)"):
             continue
-        notes = api(job["check_run_url"].split("api.github.com/", 1)[1] + "/annotations?per_page=100", token)
+        notes = every(job["check_run_url"].split("api.github.com/", 1)[1] + "/annotations?per_page=100", token)
         red, _flaky = hard_reds(notes)
         summary = next((n.get("message") or "" for n in notes if "Playwright Run Summary" in (n.get("title") or "")), None)
         tests = [re.match(r"\[([\w-]+)\] › (\S+)", t) for t in red]
@@ -181,7 +183,7 @@ def github(repo: str, token: str, ref: str, sha: str) -> dict[str, str]:
         return {**out, "sha": base, "failed": "[]", "rerun": json.dumps({"reds": [], "lost": [], "all": False})}
     run_id = rerun_of(ref)
     run = api(f"repos/{repo}/actions/runs/{run_id}", token)
-    listed = api(f"repos/{repo}/actions/runs/{run_id}/jobs?per_page=100&filter=latest", token)["jobs"]
+    listed = every(f"repos/{repo}/actions/runs/{run_id}/jobs?per_page=100&filter=latest", token, "jobs")
     red = [j for j in listed if j.get("conclusion") in ("failure", "cancelled", "timed_out")]
     names = sorted({bare(j["name"]) for j in red})
     plan = browser(repo, token, run, red)

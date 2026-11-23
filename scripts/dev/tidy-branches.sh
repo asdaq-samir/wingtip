@@ -28,14 +28,20 @@ dry=""
 if [ "${1:-}" = "--dry-run" ]; then dry=1; shift; fi
 pattern=${1:-worktree-agent-*}
 
-git fetch -q origin main claude/integration
+# The integration branch only while a wave has one: after the wave merges
+# it is gone, and a fetch naming it failed the whole tidy.
+git fetch -q --prune origin main
+if [ -n "$(git ls-remote --heads origin claude/integration)" ]; then
+  git fetch -q origin claude/integration
+fi
 
 # --- the merged worktrees ----------------------------------------------------
 dev=${WINGTIP_DEV_DIR:-$HOME/Developer}
 keep_dirs=("$dev/wingtip" "${WINGTIP_LIVE_DIR:-$dev/wingtip-live}")
 landed() {   # is commit $1 on origin/main or origin/claude/integration?
   git merge-base --is-ancestor "$1" origin/main 2>/dev/null \
-    || git merge-base --is-ancestor "$1" origin/claude/integration 2>/dev/null
+    || { git rev-parse -q --verify origin/claude/integration > /dev/null \
+      && git merge-base --is-ancestor "$1" origin/claude/integration 2>/dev/null; }
 }
 # Minutes since the worktree's git state (its HEAD, index, reflog) last
 # changed, from its admin folder in the main repository.

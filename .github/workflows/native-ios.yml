@@ -66,7 +66,7 @@ jobs:
   test:
     # GitHub's xcode-27 image, the one hosted image with .tool-versions'
     # Xcode 27.2 (actions/runner-images, images/macos/xcode-27-arm64-Readme.md).
-    runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.MAC_RUNNER || 'xcode-27' }}
     # A pull request runs the iPhone; main's push the iPad too (the primary device,
     # decision 0058), a wave the iPad's whole suite in four legs; the night iPhone Duo
     # too, each its own runner (three on one ran over 80 minutes, #572). The iPhone's
@@ -223,7 +223,7 @@ jobs:
     # This workflow's own push to main (or a run by hand there), once the
     # App Store Connect key is set; never a call from CI, nor a night.
     if: github.workflow == 'Native iOS' && github.ref == 'refs/heads/main' && github.event_name != 'schedule' && vars.APP_STORE_KEY_ID != ''
-    runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.MAC_RUNNER || 'xcode-27' }}
     timeout-minutes: 45
     env:
       TEAM: ${{ vars.APPLE_TEAM_ID }}

@@ -79,11 +79,17 @@ rules:
       exclude:
         - "apps/ios/Wingtip/API/"
         - "apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/"
+        # The one home of the planner's prefix (Config.plannerPath).
+        - "apps/ios/Wingtip/Config.swift"
+        - "apps/android/app/src/main/kotlin/app/wingtipmaps/android/Config.kt"
+    # Any string that is an /api/ path, or a host and then one (Kotlin's
+    # "${Config.gateway}/api/…", Swift's "\(base)/api/…"), wherever it goes:
+    # inside URL(...) alone missed Swift's gateway.appending(path: "/api/…")
+    # and Kotlin's paths handed to a tile set, a template or Planner.get
+    # (round 4, 2026-11-23). Not in a comment, and not a sign-in link's
+    # path compared as it comes in (==, !=, endsWith).
     patterns:
-      - pattern-either:
-          - pattern-inside: URL(...)
-          - pattern-inside: URLRequest(...)
-          - pattern-inside: $B.url(...)
-          - pattern-inside: $S.toHttpUrl()
-          - pattern-inside: $C.appendingPathComponent(...)
-      - pattern-regex: '"[^"\n]*/api/'
+      - pattern-regex: '"(\$\{[^}\n]*\}|\\\([^)\n]*\))?/api/'
+      - pattern-not-regex: '(?m)^[ \t]*(//|\*|/\*).*$'
+      - pattern-not-regex: '(==|!=)[ \t]*"/api/[^"\n]*"'
+      - pattern-not-regex: '\.(endsWith|hasSuffix)\("/api/[^"\n]*"\)'

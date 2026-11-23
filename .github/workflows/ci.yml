@@ -52,7 +52,7 @@ jobs:
   # crate. The committed WebAssembly is what engine/ builds, where its
   # inputs changed. The engine's lint and layout are the guards job's.
   test-engine:
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: needs.changes.outputs.test-engine == 'true'
     steps:
@@ -113,7 +113,7 @@ jobs:
   # screens, icons). Its tsc, ESLint, Prettier and knip are the guards job's.
   test-web:
     name: test-web (${{ matrix.part }})
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: needs.changes.outputs.test-web == 'true'
     strategy:
@@ -159,7 +159,7 @@ jobs:
   # The gateway's JUnit suite, Testcontainers' Postgres on the runner's
   # Docker.
   test-gateway:
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: needs.changes.outputs.test-gateway == 'true'
     steps:
@@ -195,7 +195,7 @@ jobs:
   # unchanged, seconds; built only when it changed.
   engine-wheel:
     name: Engine wheel
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     # Every change but words alone: flight-critical imports it (test-python's
     # `flight` leg, or the planner's own suite when that runs).
@@ -215,7 +215,7 @@ jobs:
   # None to run skips the job, which counts as passed.
   test-python:
     name: test-${{ matrix.service }}
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes, engine-wheel]
     if: needs.changes.outputs.python != '[]'
     strategy:
@@ -271,7 +271,7 @@ jobs:
   # The test flight's ruff and unit tests (scripts/ci/sim_suite.sh, in
   # Docker), when tools/sim-flight or what its tests read changed.
   test-sim:
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: needs.changes.outputs.sim == 'true'
     timeout-minutes: 10
@@ -286,7 +286,7 @@ jobs:
   # everything since the last green commit (a failed run publishes nothing,
   # so the next one builds what it did not); by hand or first, everything.
   changes:
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     # pull-requests: read for paths-filter; actions and checks: read for the last green run, or a rerun's red one.
     permissions:
       contents: read
@@ -636,7 +636,7 @@ jobs:
   # seconds of its last whole validation (actions: read, spec_seconds.py latest) where the night's are not cached.
   specs:
     name: Browser specs reached
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: needs.changes.outputs.e2e == 'true'
     permissions:
@@ -981,21 +981,19 @@ jobs:
 
   # The browser suite's images (.github/ci-images.hcl: gateway, planner,
   # weather), the page, and the slim Playwright copy, each built once per key
-  # (.github/e2e-keys.sh) and pushed as `e2e-<key>` and `e2e`; never
-  # `latest`, which only Promote gives. Most commits change no key, so this
-  # is a checkout and a few lookups.
-  e2e-images:
-    name: build (e2e)
-    # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
-    # images go to AWS's x86 machines, and e2e tests the same images.
+  # (.github/e2e-keys.sh) and pushed as `e2e-<key>` and `e2e`; never `latest`.
+  # Most commits change no key, so this is a checkout and a few lookups. No
+  # job holding packages: write runs the branch's npm code on its machine
+  # (security review 2026-11-23, H2): BuildKit builds the images in its own
+  # sandbox, and the page is built by e2e-page, read-only, and pushed by e2e-page-push.
+  e2e-page:
+    name: page (e2e)
     runs-on: ubuntu-26.04
-    # With e2e (above): after merge, at night, and for a pull request that
-    # changes the web app or an API document.
     needs: [changes]
     if: needs.changes.outputs.e2e == 'true'
-    permissions:
-      contents: read
-      packages: write
+    permissions: { contents: read, packages: read }
+    outputs:
+      page: ${{ steps.keys.outputs.page }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -1020,19 +1018,63 @@ jobs:
         if: steps.keys.outputs.page != ''
         with:
           node-version-file: .tool-versions
-      # Before setup-buildx, whose builder would otherwise be the one
-      # `docker build` uses, and would leave the image out of Docker.
-      - name: The page, built and pushed
+      - name: The page, built
         if: steps.keys.outputs.page != ''
         working-directory: apps/web
-        env:
-          PAGE: ${{ steps.keys.outputs.page }}
         run: |
           [ -d node_modules ] || npm ci --no-audit --no-fund
           npm run types
           npx vite build --outDir dist --emptyOutDir
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        if: steps.keys.outputs.page != ''
+        with: { name: e2e-page, path: apps/web/dist, retention-days: 1 }
+
+  # Its files into an image and pushed: nothing of the branch runs here.
+  e2e-page-push:
+    name: build (e2e page)
+    runs-on: ubuntu-26.04
+    needs: [e2e-page]
+    if: needs.e2e-page.outputs.page != ''
+    permissions: { contents: read, packages: write }
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+        with: { name: e2e-page, path: dist }
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550  # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: The page, pushed
+        env:
+          PAGE: ${{ needs.e2e-page.outputs.page }}
+        run: |
           printf 'FROM scratch\nCOPY . /page/\n' | docker build -q -t "$PAGE" -f - dist
           docker push -q "$PAGE"
+
+  e2e-images:
+    name: build (e2e)
+    # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
+    # images go to AWS's x86 machines, and e2e tests the same images.
+    runs-on: ubuntu-26.04
+    needs: [changes]
+    if: needs.changes.outputs.e2e == 'true'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550  # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: The keys nothing has been built for yet
+        id: keys
+        env:
+          REGISTRY: ghcr.io/${{ github.repository }}
+        run: scripts/ci/e2e_missing_keys.sh
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4.4.1
         if: steps.keys.outputs.missing != '' || steps.keys.outputs.playwright != ''
         # Docker Hub through Google's mirror first (Hub's pull limit failed
@@ -1113,7 +1155,7 @@ jobs:
     needs: [changes]
     # Needs Advanced Security on a private repository.
     if: github.event_name == 'pull_request' && !github.event.repository.private && needs.changes.outputs.deps == 'true'
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     permissions:
       contents: read
       pull-requests: write
@@ -1137,7 +1179,7 @@ jobs:
   # test-python's, which has the engine's wheel, so no leg waits for it.
   guards:
     name: Guards (${{ matrix.part }})
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     timeout-minutes: 15
     strategy:
@@ -1205,7 +1247,7 @@ jobs:
   # docs (pdoc imports every module, so one that no longer imports fails
   # here).
   docs:
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes, engine-wheel]
     if: needs.changes.outputs.docs == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     steps:
@@ -1260,7 +1302,7 @@ jobs:
   # else runs them before a deploy; their shell scripts are the guards
   # job's, with every other one (scripts/ci/shellcheck.sh).
   infra:
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: needs.changes.outputs.infra == 'true'
     steps:
@@ -1318,7 +1360,7 @@ jobs:
   # .github/api-breaks.txt (docs/CI.md). Pull requests that change one.
   api-compat:
     name: API compatibility
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: github.event_name == 'pull_request' && needs.changes.outputs.api == 'true'
     env:
@@ -1359,7 +1401,7 @@ jobs:
     name: Standards
     needs: [e2e]
     if: always() && (github.event_name == 'schedule' || inputs.standards)
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     permissions:
       contents: read
       issues: write
@@ -1431,7 +1473,7 @@ jobs:
     name: Flake hunt (${{ matrix.suite }})
     needs: [engine-wheel]
     if: github.event_name == 'schedule'
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 45
     strategy:
       fail-fast: false
@@ -1487,7 +1529,7 @@ jobs:
   flake-hunt-web:
     name: Flake hunt (web)
     if: github.event_name == 'schedule'
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 30
     defaults:
       run:
@@ -1523,7 +1565,7 @@ jobs:
     name: Flake report
     needs: [flake-hunt-python, flake-hunt-web, e2e]
     if: always() && github.event_name == 'schedule'
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     permissions:
       contents: read
       issues: write
@@ -1569,7 +1611,7 @@ jobs:
   sources:
     name: Sources still answer
     if: github.event_name == 'schedule'
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -1583,7 +1625,7 @@ jobs:
   backup-restore:
     name: Backup restores
     if: github.event_name == 'schedule'
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -1596,9 +1638,9 @@ jobs:
   # (ci_budget.py): last, never failing, and on a run `halt` cancelled too.
   budget:
     name: CI budget
-    needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, test-sim, specs, e2e, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, backup-restore, halt, passed]
+    needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, test-sim, specs, e2e, e2e-page, e2e-page-push, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, backup-restore, halt, passed]
     if: always()
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 3
     continue-on-error: true
     # The run's jobs and their annotations, read with the run's own token.
@@ -1622,8 +1664,8 @@ jobs:
   # the run is cancelled, so "CI passed" fails at once. Pull requests only.
   halt:
     name: Stop on red
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review, specs, e2e-images, e2e]
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review, specs, e2e-page, e2e-page-push, e2e-images, e2e]
     if: ${{ failure() && github.event_name == 'pull_request' }}
     timeout-minutes: 2
     # actions: write, to cancel this run and nothing else.
@@ -1647,8 +1689,8 @@ jobs:
   # list to the tiers.
   passed:
     name: CI passed
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review, specs, e2e-images, e2e, android, ios]
+    runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-sim, test-gateway, infra, api-compat, dependency-review, specs, e2e-page, e2e-page-push, e2e-images, e2e, android, ios]
     if: always()
     steps:
       - name: Every job passed or was not needed

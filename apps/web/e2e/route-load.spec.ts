@@ -42,9 +42,12 @@ import { pickAirplane } from "./startState";
  * for the Brief's Share menu now (brief/lazy's SaveFlight parts), and the
  * open reads 3,422,781 in 162 (claude/w3-a's build, the mobile project).
  * The figure
- * is written to the test's annotations each run; a change that brings it
- * down lowers the budget to the new figure, never the other way (the
- * measure-speed skill; CLAUDE.md, "The ratchet only goes down").
+ * is written to the test's annotations each run. The budget is the wave's
+ * start figure: a merge fails only on growth past it, and the bytes a wave
+ * saves stay its room. It is lowered once, at the wave's end, on
+ * claude/integration, to the figure measured then, never raised;
+ * simplicity_ratchet.py refuses either elsewhere (simplicity audit
+ * 2026-11-23, O1: lowered at each merge, wave 3 spent five commits trimming).
  */
 const ROUTE_LOAD_BUDGET = 3_422_781;
 

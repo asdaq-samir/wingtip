@@ -86,9 +86,10 @@ jobs:
   # `sha-<commit>` and `latest`: the very images CI tested, by a copy of
   # their manifests and layers, not a second build that only hoped to hit
   # the cache. An image this commit did not rebuild has no `sha-` tag in
-  # GHCR (build-images builds what changed), so its `latest` there, which
-  # the promote job above moves in commit order, is the one copied: the
-  # image of the last commit that changed it. Authenticates via OIDC (no
+  # GHCR (build-images builds what changed), so ECR's own `latest`, which
+  # only this job writes, in commit order, is tagged for the commit: never
+  # GHCR's `latest`, which a pull request's packages: write token could
+  # once overwrite (security review 2026-11-23, H2). Authenticates via OIDC (no
   # long-lived AWS keys stored as secrets) -- activates once
   # AWS_ROLE_ARN/AWS_REGION are set as repo variables (Settings ->
   # Secrets and variables -> Actions -> Variables; the stack's
@@ -131,7 +132,7 @@ jobs:
           for service in gateway planner ingest weather charts; do
             source="$GHCR/$service:sha-$SHA"
             if ! docker buildx imagetools inspect --raw "$source" > /dev/null 2>&1; then
-              source="$GHCR/$service:latest"
+              source="$ECR/$service:latest"
             fi
             echo "$service: $source"
             docker buildx imagetools create --tag "$ECR/$service:sha-$SHA" --tag "$ECR/$service:latest" "$source"

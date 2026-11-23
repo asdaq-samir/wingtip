@@ -16,6 +16,10 @@ the file and line, and how to put it right:
   `uses:` outside this repository is pinned to a full commit; no
   `pull_request_target` (it runs a fork's pull request with this
   repository's secrets).
+- **No fork on our machines.** A `runs-on` naming a runner variable
+  (LINUX_RUNNER, MAC_RUNNER: a self-hosted machine once set) puts a fork's
+  pull request there only behind `github.event.pull_request.head.repo.fork
+  != true &&` (security review 2026-11-23, L14).
 - **Mac minutes are scarce.** A job on macOS (`macos-*`, `xcode-*` or the
   MAC_RUNNER variable) is one of MAC_JOBS: the iOS tests, and TestFlight
   on main. Everything else runs on Linux.
@@ -44,6 +48,8 @@ ALLOW = workflows.ROOT / "scripts/ci/workflow_rules_allow.txt"
 LONG_RUN = 15
 MAC_JOBS = {("native-ios.yml", "test"), ("native-ios.yml", "testflight")}
 MAC = re.compile(r"macos|xcode-|MAC_RUNNER", re.I)
+RUNNER_VAR = re.compile(r"vars\.\w*RUNNER\b")
+FORK_GUARD = "github.event.pull_request.head.repo.fork != true &&"
 PINNED = re.compile(r"^[\w.-]+/[\w./-]+@[0-9a-f]{40}$")
 # A command that is a check, as the command before `|| true` starts.
 CHECK = re.compile(
@@ -157,6 +163,9 @@ def main() -> int:
             if m and not m.group(1).startswith("./") and not PINNED.match(m.group(1)):
                 errors.append(f"{wf.name}:{n}: {m.group(1)} is not pinned to a full commit (pin it, its release in a comment)")
         for job in wf.jobs:
+            runs_on = job.keys.get("runs-on", "")
+            if RUNNER_VAR.search(runs_on) and FORK_GUARD not in runs_on:
+                errors.append(f"{wf.name}: job {job.id}'s runs-on names a runner variable without `{FORK_GUARD}` before it")
             if MAC.search(job.keys.get("runs-on", "")) and (wf.name, job.id) not in MAC_JOBS:
                 errors.append(f"{wf.name}: job {job.id} runs on macOS; only the iOS test runs there, the rest on Linux")
             for run in job.runs:

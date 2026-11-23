@@ -29,6 +29,7 @@ import datetime
 import fnmatch
 import json
 import os
+import re
 import sys
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -75,6 +76,9 @@ BUDGETS = [
     # pull request, on main a third of the smoke set.
     ("Browser specs reached", 2, 1),
     ("build (e2e)", 4, 6),
+    # The page built with no write token, then pushed by a job of its own.
+    ("page (e2e)", 4, 6),
+    ("build (e2e page)", 1, 1),
     ("e2e (*/*)", 12, 15),
     # Tier 2: after merge, on main's push.
     ("build (*)", 4, 6),
@@ -91,7 +95,7 @@ BUDGETS = [
 # the phones' builds, which a pull request waits for only when it touches
 # what the app builds from.
 TIER1 = 3
-TIER1_LONG = {"Native Android / build", "Native iOS / test*", "build (e2e)", "e2e (*/*)"}
+TIER1_LONG = {"Native Android / build", "Native iOS / test*", "build (e2e)", "page (e2e)", "e2e (*/*)"}
 # The whole run, first job's start to last job's end, by event: a pull
 # request is tier 1; main's push adds tier 2; the night is everything.
 # A run is given at least its longest job's budget (a phone's build), as
@@ -104,13 +108,31 @@ WAVE_CALLER = "CI / "
 STORE_WARN_GB = 9
 
 
-def api(path: str, token: str) -> dict:
+def _get(url: str, token: str) -> tuple[object, str | None]:
+    """One page's JSON and the next page's address (its Link header's rel="next")."""
     request = urllib.request.Request(
-        f"https://api.github.com/{path}",
-        headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"},
+        url, headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
     )
     with urllib.request.urlopen(request, timeout=20) as response:
-        return json.load(response)
+        following = re.search(r'<([^>]+)>;\s*rel="next"', response.headers.get("Link") or "")
+        return json.load(response), following.group(1) if following else None
+
+
+def api(path: str, token: str) -> dict:
+    return _get(f"https://api.github.com/{path}", token)[0]  # type: ignore[return-value]
+
+
+def every(path: str, token: str, key: str | None = None) -> list:
+    """Every item of a list the API pages (100 at most a page): a run of more
+    than 100 jobs, or a job of more than 100 annotations, was cut short
+    silently (reuse audit 2026-11-23, M7). `key` names the list in an
+    object answer (`jobs`, `check_runs`); a bare list answer has none."""
+    items: list = []
+    url: str | None = f"https://api.github.com/{path}"
+    while url:
+        page, url = _get(url, token)
+        items += page[key] if key else page  # type: ignore[index,operator]
+    return items
 
 
 def when(stamp: str | None) -> datetime.datetime | None:
@@ -133,11 +155,11 @@ def budget(name: str, nightly: bool) -> int | None:
 
 def misses(repo: str, suite: int, token: str) -> list[tuple[str, str]]:
     """(job, cache) for each Cache miss notice this run's jobs left."""
-    runs = api(f"repos/{repo}/check-suites/{suite}/check-runs?per_page=100", token)["check_runs"]
+    runs = every(f"repos/{repo}/check-suites/{suite}/check-runs?per_page=100", token, "check_runs")
     noted = [r for r in runs if r.get("output", {}).get("annotations_count") and bare(r["name"]) != SELF]
 
     def notes(run: dict) -> list[tuple[str, str]]:
-        found = api(f"repos/{repo}/check-runs/{run['id']}/annotations?per_page=50", token)
+        found = every(f"repos/{repo}/check-runs/{run['id']}/annotations?per_page=100", token)
         return [(run["name"], a["message"]) for a in found if a.get("title") == "Cache miss"]
 
     with ThreadPoolExecutor(8) as pool:
@@ -152,7 +174,7 @@ def report(repo: str, run_id: str, token: str) -> list[str]:
     wave = run["head_branch"].startswith(("claude/validate-", "claude/check-"))
     nightly = run["event"] in ("schedule", "workflow_dispatch") or wave
     on_main = run["head_branch"] == "main" and run["event"] != "pull_request"
-    jobs = api(f"repos/{repo}/actions/runs/{run_id}/jobs?per_page=100&filter=latest", token)["jobs"]
+    jobs = every(f"repos/{repo}/actions/runs/{run_id}/jobs?per_page=100&filter=latest", token, "jobs")
     rows, warnings, starts, ends = [], [], [], []
     for job in jobs:
         start, end = when(job.get("started_at")), when(job.get("completed_at"))

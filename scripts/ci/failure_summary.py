@@ -30,7 +30,7 @@ import re
 import sys
 from typing import NamedTuple
 
-from ci_budget import api, bare
+from ci_budget import api, bare, every
 
 # The jobs about the run itself, which fail or stop because another did.
 META = {"CI passed", "CI budget", "Stop on red"}
@@ -153,6 +153,7 @@ TABLE = [
     Row("changes", "", "git diff --name-only origin/main HEAD | python3 scripts/areas.py filters", note="Then scripts/dev/preflight.sh."),
     Row("Browser specs reached", "", "python3 scripts/ci/browser_specs.py --list origin/main", note=HOST_NODE),
     Row("build (e2e)", "", "docker buildx bake -f .github/ci-images.hcl <gateway|planner|weather|playwright>", note=IMAGE_NOTE),
+    Row("page (e2e)", "", "cd apps/web && npm run types && npx vite build --outDir dist --emptyOutDir", area="web"),
     Row("build (images)", "", "docker buildx bake -f .github/images.hcl <service>", note=IMAGE_NOTE),
     # oasdiff's annotations are at the document, as its container saw it.
     Row("API compatibility", "", OASDIFF, r"/head/(services/\w+/openapi\.json)", "<services/.../openapi.json>", sep="\n"),
@@ -296,7 +297,7 @@ def block(job: dict, annotations: list[dict], base: str) -> tuple[list[str], lis
 def report(repo: str, run_id: str, token: str) -> list[str]:
     """Writes the summary; returns the workflow commands to print in CI."""
     run = api(f"repos/{repo}/actions/runs/{run_id}", token)
-    listed = api(f"repos/{repo}/actions/runs/{run_id}/jobs?per_page=100&filter=latest", token)["jobs"]
+    listed = every(f"repos/{repo}/actions/runs/{run_id}/jobs?per_page=100&filter=latest", token, "jobs")
     jobs = [j for j in listed if bare(j["name"]) not in META]
     failed = [j for j in jobs if j.get("conclusion") == "failure"]
     cancelled = sum(j.get("conclusion") == "cancelled" for j in jobs)
@@ -306,7 +307,7 @@ def report(repo: str, run_id: str, token: str) -> list[str]:
     lines += [INTRO, ""] if failed else []
     notices = []
     for job in failed:
-        found = api(job["check_run_url"].split("api.github.com/", 1)[1] + "/annotations?per_page=100", token)
+        found = every(job["check_run_url"].split("api.github.com/", 1)[1] + "/annotations?per_page=100", token)
         text, said = block(job, found, base)
         lines += text
         level = "warning" if said == [UNKNOWN] else "notice"
