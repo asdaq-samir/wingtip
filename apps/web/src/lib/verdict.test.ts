@@ -94,6 +94,11 @@ describe("the Go / No-Go", () => {
     expect(line.finding).toBe("caution");
   });
 
+  it("asks for the pilot's load where the airplane has a loading but none is set, never balancing the POH's sample", () => {
+    const item = finding({ ...quiet, balance: { pending: false, worked: false, noLoad: true, problems: [], takeoff: null } }, "balance");
+    expect(item).toMatchObject({ finding: "unknown", detail: "Not worked out: give your load" });
+  });
+
   it("leaves out the fuel, the runways and the weight and balance with no airplane picked", () => {
     expect(briefVerdict({ input: quiet, airplane: false }).items.map((i) => i.key)).toEqual(["weather", "airspace", "altitude", "risk"]);
   });

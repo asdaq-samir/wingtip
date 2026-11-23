@@ -1002,6 +1002,7 @@ nonisolated enum WingtipMap {
     static let airspaceFaded: Double = 0.35
     static let airspaceHeld: Double = 1.8
     static let airspaceLabelFaded: Double = 0.6
+    static let routeTagOffEndsNm: Double = 2
 }
 
 /// From which zoom each kind of airport, airspace and navaid is drawn (design/tokens.json's map.zoom), in the app's levels, MapLibre's + 1.
