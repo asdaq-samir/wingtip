@@ -84,24 +84,51 @@ struct NotamWhatText: View {
     var body: some View { Text(Self.marked(what)) }
 }
 
-/// Its times, labelled, a line each (FieldNotamWords.timeLines), and where it is
-/// only where that is not obvious.
+/// A NOTAM's times (FieldNotamWords.timeLines), labelled, one line each and
+/// never wrapped, on its row and on its own card (the owner, 2026-11-23:
+/// "one line each", at 390 pt and the owner's larger text): where how long
+/// until it ("· in 551d") would not fit beside the time, the line drops
+/// it, so the time stays whole (the web's NotamTimeLines).
+struct NotamTimeLinesView: View {
+    let lines: [FieldNotamWords.TimeLine]
+
+    var body: some View {
+        if !lines.isEmpty { column }
+    }
+
+    private var column: some View {
+        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+            ForEach(lines, id: \.label) { line in
+                ViewThatFits(in: .horizontal) {
+                    if let soon = line.soon { text(line, "\(line.value) · \(soon)") }
+                    text(line, line.value)
+                }
+            }
+        }
+        .monospacedDigit()
+        .accessibilityIdentifier("place-notam-when")
+    }
+
+    /// Its label in the secondary ink before it, as ForeFlight's list gives them.
+    private func text(_ line: FieldNotamWords.TimeLine, _ value: String) -> some View {
+        Text("\(Text(line.label).foregroundStyle(.secondary)) \(value)").lineLimit(1)
+    }
+}
+
+/// Its times, a line each (NotamTimeLinesView), and where it is only where
+/// that is not obvious.
 struct NotamLinesView: View {
     let notams: FieldNotams
     let notam: APIRankedNotam
 
     var body: some View {
-        let times = notams.times(notam)
         VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-            // A line each, its label in the secondary ink before it, as
-            // ForeFlight's list gives them; a line too long wraps whole.
-            ForEach(times, id: \.label) { line in
-                Text("\(Text(line.label).foregroundStyle(.secondary)) \(line.value)").monospacedDigit()
+            NotamTimeLinesView(lines: notams.times(notam))
+            if let place = notams.place(notam) {
+                Text(place).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
-            if let place = notams.place(notam) { Text(place).foregroundStyle(.secondary) }
         }
         .font(WingtipType.detail)
-        .fixedSize(horizontal: false, vertical: true)
     }
 }
 

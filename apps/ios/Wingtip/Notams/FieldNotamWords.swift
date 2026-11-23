@@ -79,10 +79,13 @@ enum FieldNotamWords {
         return prior
     }
 
-    /// One labelled line of a NOTAM's times: "Since", "Starts", "Ends", "Duration".
+    /// One labelled line of a NOTAM's times: "Since", "Starts", "Ends",
+    /// "Duration"; `soon` how long until it ("in 18d"), which the line
+    /// drops where it would not fit on one line (NotamTimeLinesView).
     struct TimeLine: Equatable {
         let label: String
         let value: String
+        var soon: String?
     }
 
     /// "05/27/26 13:43 CDT": month/day, the year only where `year`, and
@@ -102,17 +105,18 @@ enum FieldNotamWords {
         guard clock else { return at.formatted(day) }
         let time = Date.VerbatimFormatStyle(format: "\(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased)):\(minute: .twoDigits)",
                                             locale: locale, timeZone: tz, calendar: calendar)
-        let name = zone.flatMap { $0.abbreviation(for: at) } ?? "UTC"
-        return "\(at.formatted(day)) \(at.formatted(time)) \(zone == nil ? "UTC" : name)"
+        return "\(at.formatted(day)) \(at.formatted(time)) \(zone.map { Format.zoneName($0, at: at) } ?? "UTC")"
     }
 
     /// Whether a NOTAM's times say their year: where either end is not
-    /// this year's (the owner, 2026-11-23, FDC 6/3373's end two years on).
-    static func withYear(_ dates: [Date?], now: Date) -> Bool {
-        var utc = Calendar(identifier: .gregorian)
-        utc.timeZone = .gmt
-        let thisYear = utc.component(.year, from: now)
-        return dates.contains { $0.map { utc.component(.year, from: $0) != thisYear } ?? false }
+    /// this year's (the owner, 2026-11-23, FDC 6/3373's end two years on),
+    /// the years counted in the zone the dates are shown in (`when`), so a
+    /// date near New Year is never shown without the year it needs.
+    static func withYear(_ dates: [Date?], now: Date, zone: TimeZone? = nil) -> Bool {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = zone ?? .gmt
+        let thisYear = calendar.component(.year, from: now)
+        return dates.contains { $0.map { calendar.component(.year, from: $0) != thisYear } ?? false }
     }
 
     /// How long, as ForeFlight writes it: "5m" under an hour, "5h05m" under
@@ -131,65 +135,35 @@ enum FieldNotamWords {
         return (try? Date(text, strategy: .iso8601)) ?? (try? Date(text + "Z", strategy: .iso8601))
     }
 
-    /// A NOTAM's times on lines of their own, labelled, in the field's own
-    /// time with its zone (`when`), as ForeFlight's NOTAM list gives them
-    /// (the owner's screenshots, 2026-11-11): one in force "Since" its
-    /// start and "Ends" with how long is left ("(in 18d)"); one to come
-    /// "Starts" with how soon, "Ends", and how long it lasts. An EST end is
-    /// said as its time alone (the owner, 2026-11-23: "no need for the word
-    /// estimated"), PERM with none "Permanent" (JO 7930.2 4-2-1). The times
-    /// are the planner's, else the NOTAM's own as the engine read them.
-    static func timeLines(_ notam: APIRankedNotam, read: EngineContract.NotamReadAnswer?, now: Date = .now,
-                          zone: TimeZone?) -> [TimeLine] {
+    /// A NOTAM's times, a line each, on its row and on its own card alike
+    /// (the web's one timeLines), in the field's own time with its zone
+    /// (`when`), as ForeFlight's NOTAM list gives them (the owner's
+    /// screenshots, 2026-11-11): one in force "Since" its start and "Ends"
+    /// with how long is left; one to come "Starts" with how soon, "Ends",
+    /// and how long it lasts. An EST end is said as its time alone (the
+    /// owner, 2026-11-23: "no need for the word estimated"). Where the
+    /// engine's notam_card says it runs until the charts are updated
+    /// (`untilCharts`: PERM with an EST end or none, JO 7930.2 4-2-1), its
+    /// end is "Permanent" (the owner, 2026-11-23: "For a permanent, just say
+    /// permanent"), as is a PERM end. The times are the planner's, else the
+    /// NOTAM's own as the engine read them.
+    static func timeLines(_ notam: APIRankedNotam, read: EngineContract.NotamReadAnswer?, untilCharts: Bool, zone: TimeZone?,
+                          now: Date = .now) -> [TimeLine] {
         let starts = date(notam.starts ?? read?.starts), ends = date(notam.ends ?? read?.ends)
         let active = notam.inForce != false
-        let year = withYear([starts, ends], now: now)
-        func soon(_ at: Date) -> String { at > now ? " (in \(span(at.timeIntervalSince(now))))" : "" }
+        let year = withYear([starts, ends], now: now, zone: zone)
+        func soon(_ at: Date) -> String? { at > now ? "in \(span(at.timeIntervalSince(now)))" : nil }
         var lines: [TimeLine] = []
         if let starts {
-            lines.append(TimeLine(label: active ? "Since" : "Starts", value: when(starts, zone: zone, year: year) + (active ? "" : soon(starts))))
+            lines.append(TimeLine(label: active ? "Since" : "Starts", value: when(starts, zone: zone, year: year), soon: active ? nil : soon(starts)))
         }
-        if let ends {
-            lines.append(TimeLine(label: "Ends", value: when(ends, zone: zone, year: year) + soon(ends)))
-        } else if read?.permanent == true {
+        if untilCharts || (ends == nil && read?.permanent == true) {
             lines.append(TimeLine(label: "Ends", value: "Permanent"))
-        }
-        if !active, let starts, let ends { lines.append(TimeLine(label: "Duration", value: span(ends.timeIntervalSince(starts)))) }
-        return lines
-    }
-
-    /// A NOTAM's times on its own card, in words (the owner, 2026-11-23, of
-    /// FDC 6/3373; the web's cardTimes): "In effect since 05/27 13:43 CDT",
-    /// or "Starts ... · in 5h45m"; its end "Until ..." with how long is
-    /// left, an EST end as its time alone (the owner: "no need for the word
-    /// estimated"). Where the engine's notam_card says the condition runs
-    /// until the charts show it (`untilCharts`: PERM with an EST end or
-    /// none, JO 7930.2 4-2-1), just "Permanent" (the owner, 2026-11-23:
-    /// "For a permanent, just say permanent"). Each line is its
-    /// forms from the fullest to the shortest, for the card to draw the
-    /// first that fits one line (the owner, 2026-11-23: "one line each"):
-    /// a this year's date loses its year first, then the time to go.
-    static func cardTimes(_ notam: APIRankedNotam, read: EngineContract.NotamReadAnswer?, untilCharts: Bool, zone: TimeZone?,
-                          now: Date = .now) -> [[String]] {
-        let starts = date(notam.starts ?? read?.starts), ends = date(notam.ends ?? read?.ends)
-        let year = withYear([starts, ends], now: now)
-        let thisYear = { (at: Date) in !withYear([at], now: now) }
-        func forms(_ lead: String, _ at: Date, soon: Bool) -> [String] {
-            let left = soon && at > now ? " · in \(span(at.timeIntervalSince(now)))" : ""
-            let short = year && thisYear(at) ? when(at, zone: zone, year: false) : when(at, zone: zone, year: year)
-            var out: [String] = []
-            for form in ["\(lead) \(when(at, zone: zone, year: year))\(left)", "\(lead) \(short)\(left)", "\(lead) \(short)"]
-            where !out.contains(form) { out.append(form) }
-            return out
-        }
-        var lines: [[String]] = []
-        if let starts {
-            lines.append(notam.inForce != false ? forms("In effect since", starts, soon: false) : forms("Starts", starts, soon: true))
-        }
-        if untilCharts {
-            lines.append(["Permanent"])
         } else if let ends {
-            lines.append(forms("Until", ends, soon: true))
+            lines.append(TimeLine(label: "Ends", value: when(ends, zone: zone, year: year), soon: soon(ends)))
+        }
+        if !active, !untilCharts, let starts, let ends {
+            lines.append(TimeLine(label: "Duration", value: span(ends.timeIntervalSince(starts))))
         }
         return lines
     }

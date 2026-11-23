@@ -212,8 +212,8 @@ struct TimelineDepartPicker: View {
                 .labelsHidden()
                 .environment(\.timeZone, zone)
                 .accessibilityIdentifier("timeline-depart")
-            if clock.zoned, let name = zone.abbreviation(for: clock.leaves) {
-                Text(name).font(WingtipType.badge).foregroundStyle(.secondary)
+            if clock.zoned {
+                Text(Format.zoneName(zone, at: clock.leaves)).font(WingtipType.badge).foregroundStyle(.secondary)
             }
         }
     }
