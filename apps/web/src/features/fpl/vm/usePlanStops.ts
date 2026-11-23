@@ -2,7 +2,7 @@ import { useEffect, useEffectEvent } from "react";
 import { airportQuery, checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
 import { navlogQuery, suggestedStopAt } from "../../plan";
 import { useSuggestedStops } from "../../stops";
-import { fuelStopsAt, useMapActions } from "../../route";
+import { fuelStopsAt, useMapActions, waypointStopsOf } from "../../route";
 import { sameField } from "../../../lib/procedures";
 import type { PlanRoute } from "./usePlanRoute";
 import type { PlanAnswerModel } from "./usePlanAnswer";
@@ -48,11 +48,11 @@ export function usePlanStops(route: PlanRoute, answer: PlanAnswerModel, { place 
   // figures at the card's top, and Add Stop keeps it at its place
   // (PlaceCard's `stop`) -- after the point its flight leaves, by that
   // point's place in the route (fuelStopsAt, by both the flight's ends; the
-  // stops the course calls fixes flown through), so a field the route
-  // leaves twice takes it on the right flight.
+  // stops flown through the box's own waypointStopsOf, airways too), so a
+  // field the route leaves twice takes it on the right flight.
   const at = suggestedStopAt(place, fuelStops);
   const points = [planned.dep, ...planned.stops, planned.dest];
-  const fixes = new Set(planned.stops.filter((stop) => course?.stops?.some((a) => a.ident === stop && a.kind === "fix")));
+  const fixes = waypointStopsOf(planned.stops, course);
   const flightAt = at
     ? fuelStopsAt(points, fixes, fuelStops).findIndex(
         (f) => !!f && [...f.stops, ...(f.choices ?? [])].some((c) => sameField(c.ident, place!)),

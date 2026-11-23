@@ -12,7 +12,7 @@ export { RouteBox } from "./routeBoxChunk";
 export { useMapActions } from "./useMapActions";
 export { useRouteEdits } from "./useRouteEdits";
 export { useRouteLine } from "./useRouteLine";
-export { useRouteListEdit } from "./useRouteListEdit";
+export { useRouteListEdit, waypointStopsOf } from "./useRouteListEdit";
 export { useRouteTidy } from "./useRouteTidy";
 
 /** PointAltitudeDialog, on a chunk of its own, as its importer loads it. */

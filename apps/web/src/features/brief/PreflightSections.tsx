@@ -10,7 +10,8 @@ import { runwayChecks, type RunwayDistance } from "./runwayCheck";
 import { useRunwayPicks, phasesOf, type Phase } from "../plan/lazy";
 import { FINDING_TONE } from "../../lib/findings";
 import FindingIcon from "../../components/FindingIcon";
-import { windOnRunway, useLoad } from "../plan";
+import { windOnRunway } from "../plan";
+import { useLoadEditor } from "./useLoadEditor";
 import { TEXT } from "../../lib/text";
 import { altFt, feet, pounds } from "../../lib/format";
 import { armText, fuelGrades, type FuelGrade } from "../../lib/weightBalance";
@@ -84,9 +85,9 @@ export function WeightBalanceSection({
   aircraft: AircraftProfile | null | undefined;
   tripFuelGal: number | null;
 }) {
-  // The editor starts from the POH's sample airplane (useLoad's draft),
-  // but only a load the pilot set is this flight's (14 CFR 91.9(a)).
-  const { loading, load, draft: result, saved, setLoad } = useLoad(aircraft, tripFuelGal);
+  // Until the pilot uses a load, a labelled sample (useLoadEditor): only a
+  // load the pilot set is this flight's (14 CFR 91.9(a)).
+  const { loading, load, result, saved, ownEmpty, change: setLoad, accept } = useLoadEditor(aircraft, tripFuelGal);
   const missing = useNotInProfileSummary();
   const summary = !result
     ? missing
@@ -109,6 +110,17 @@ export function WeightBalanceSection({
         <AskFigure figure="weight_balance" what="The weight and balance" tables={aircraft} testId="wb-not-in-profile" />
       ) : (
         <div className="space-y-4" data-testid="weight-balance">
+          {!saved && (
+            // The sample is said to be one, and is the pilot's only once used.
+            <ListGroup title="Sample">
+              <ListRow
+                title={ownEmpty ? "Your airplane's empty weight" : "The POH's sample airplane"}
+                description={`${ownEmpty ? "With" : "Not yours, with"} a sample pilot and full tanks: change what differs, then use it.`}
+                data-testid="wb-sample"
+              />
+              <ListRow title="Use This Load" onClick={accept} data-testid="wb-use-load" />
+            </ListGroup>
+          )}
           {/* From its own weight and balance record; the POH's sample airplane until set. */}
           <ListGroup title="The Airplane" action={<AirplaneLink focus="empty_weight_lb" testId="wb-airplane-profile" />}>
             <ListRow title={WORDING.emptyWeight}>
@@ -164,7 +176,7 @@ export function WeightBalanceSection({
             </ListRow>
           </ListGroup>
           {/* The loading's source (its POH); the start and taxi's fuel off at takeoff, the trip's at landing. */}
-          <ListGroup title="Balance">
+          <ListGroup title={saved ? "Balance" : "Balance of the Sample"}>
             <ListRow title="Takeoff" value={`${pounds(result.takeoff.weightLb)} · ${armText(result.takeoff)}`} />
             <ListRow title="Landing" value={`${pounds(result.landing.weightLb)} · ${armText(result.landing)}`} />
             {result.problems.length === 0 ? (

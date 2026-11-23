@@ -78,8 +78,11 @@ export interface FormInput {
   /** The pilot in command, item 19 C/: their name as their certificate
    *  gives it, their telephone number and home base, where they said. */
   pilot?: { name: string | null; phone: string | null; homeBase: string | null } | null;
-  /** The fuel aboard at the first departure, where Weight & Balance says
-   *  it; the tanks' usable fuel otherwise, and at every stop. */
+  /** The fuel aboard at the first departure, from the load the pilot
+   *  saved in Weight & Balance; null where none is saved, and item 19's
+   *  endurance is then left for the pilot to fill, never full tanks
+   *  assumed (owner, "No assumed airplane"). At a stop the tanks' usable
+   *  fuel: the plan fills them there. */
   fuelGal: number | null;
   /** Under IFR, the alternate filed, for the last flight. */
   alternate: string | null;
@@ -223,7 +226,7 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
     // Item 16's total EET rounded up and item 19's endurance at the cruise
     // burn rounded down (the engine's `filed_times`, AIM Appendix 4): the
     // burn of the legs flown at cruise, never the climb's or the descent's.
-    const fuel = i === 0 ? (input.fuelGal ?? totals?.usable_fuel_gal ?? null) : (totals?.usable_fuel_gal ?? null);
+    const fuel = i === 0 ? input.fuelGal : (totals?.usable_fuel_gal ?? null);
     const times = callEngine("filed_times", {
       ete_min: totals?.ete_min ?? null,
       fuel_gal: fuel,
@@ -246,7 +249,11 @@ export function flightPlanForms(input: FormInput): FlightPlanForm[] {
       "endurance",
       "Endurance",
       times.endurance,
-      fuel != null && burn != null ? `${Math.round(fuel * 10) / 10} gal at ${Math.round(burn * 10) / 10} gph.` : undefined,
+      fuel == null
+        ? "Not filled: no fuel aboard is set. Set your load in Weight & Balance, or write your own endurance."
+        : burn != null
+          ? `${Math.round(fuel * 10) / 10} gal at ${Math.round(burn * 10) / 10} gph.`
+          : undefined,
     );
 
     // Item 19's persons on board (P/), the pilot's to type in the Brief

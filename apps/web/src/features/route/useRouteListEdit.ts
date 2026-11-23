@@ -70,6 +70,23 @@ export function endedRoute(parts: RouteParts, role: "Departure" | "Destination",
   return role === "Departure" ? { ...parts, dep: ident } : { ...parts, dest: ident };
 }
 
+/** The stops flown through rather than landed at: the course's own word
+ *  for each, and before it answers, any ident too long for an airport. An
+ *  airway (V100) is flown through too, fix by fix, unless the course says
+ *  the stop is an airport whose identifier has an airway's form. The one
+ *  reading the route's box and the card's Add Stop share (the r7 audit's
+ *  W-L2). */
+export function waypointStopsOf(stops: string[], course: PlanCourse | null): Set<string> {
+  return new Set(
+    stops.filter(
+      (stop) =>
+        course?.stops?.some((a) => a.ident === stop && a.kind === "fix") ||
+        !identOf(stop) ||
+        (isAirwayToken(stop) && !course?.stops?.some((a) => a.ident === stop)),
+    ),
+  );
+}
+
 /**
  * FPL's list of the route's points changed in place (usePlanWorkspace),
  * while the route is open to edit (the one layout's expanded list; the
@@ -95,22 +112,7 @@ export function useRouteListEdit({
   routePoints: string[];
   setRoute: (parts: RouteParts) => void;
 }) {
-  // The stops flown through rather than landed at: the course's own word
-  // for each, and before it answers, any ident too long for an airport.
-  // An airway (V100) is flown through too, fix by fix, unless the course
-  // says the stop is an airport whose identifier has an airway's form.
-  const waypointStops = useMemo(
-    () =>
-      new Set(
-        stops.filter(
-          (stop) =>
-            course?.stops?.some((a) => a.ident === stop && a.kind === "fix") ||
-            !identOf(stop) ||
-            (isAirwayToken(stop) && !course?.stops?.some((a) => a.ident === stop)),
-        ),
-      ),
-    [stops, course],
-  );
+  const waypointStops = useMemo(() => waypointStopsOf(stops, course), [stops, course]);
   // The route's field open over the timeline (RouteEditor) till its Done;
   // and where a stop typed into it goes (RouteBox's `addAt`).
   const [routeOpen, setRouteOpen] = useState(false);

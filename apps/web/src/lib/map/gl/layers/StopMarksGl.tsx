@@ -14,16 +14,24 @@ import { useGlSymbols, type GlSymbol } from "../useGlSymbols";
 const PIN = ["==", ["get", "kind"], "pin"] as ExpressionSpecification;
 const FIELD = ["==", ["get", "kind"], "field"] as ExpressionSpecification;
 
-/** A stop's field: its mark always drawn, under its pin (which takes the
- *  room, so the marks placed after it -- a Class B's field, the chart's
- *  fields and their idents -- give way to the pin), its ident giving way.
- *  The mark takes its room too, so no chart ident is drawn half under it
- *  where the pin has given way to another. */
+/** A stop's field: its mark and its ident together or not at all, never
+ *  a bare mark (the owner's "no bare map marks"; the r7 audit's W-L5,
+ *  suggested stops 2 to 6 at the country's zoom). The mark may lie under
+ *  its own pin (which takes the room first, so the marks placed after it
+ *  -- a Class B's field, the chart's fields and their idents -- give way
+ *  to the pin), and it takes its room too, so no chart ident is drawn half
+ *  under it. Its ident under the mark, clear of its pin, which stands up
+ *  and to the right of the field (PIN_PLACE): beside the mark the ident
+ *  met its own pin and would have hidden every field under one. */
 const FIELD_UNDER_PIN: Layout = {
   "icon-allow-overlap": true,
   "icon-ignore-placement": false,
   "text-allow-overlap": false,
-  "text-optional": true,
+  "text-optional": false,
+  "icon-optional": false,
+  "text-anchor": "top",
+  // Just clear of the field's 26-point mark, under it.
+  "text-offset": [0, 1.3],
 };
 
 /** Pins placed in the route's order (`order`, the first stop's 0), so
@@ -32,13 +40,13 @@ const PIN_ORDER = ["coalesce", ["get", "order"], 0] as ExpressionSpecification;
 
 /** A stop's field's mark and ident under its pins, its pins' tip on the
  *  field's middle (Tesla's trip map, the owner's screenshot, 2026-10-21).
- *  The mark always drawn; the ident given way where the route's own names
+ *  The mark and its ident give way together where the route's own names
  *  or another mark's are (the owner's iPhone screenshot, 2026-11-23:
  *  KPGA's over KLAS's at the country's zoom). A pin gives way too, to a
  *  pin already placed: six suggested fuel stops along a 1,300 nm leg
  *  stood piled on each other at the country's zoom (the owner's iPhone,
  *  2026-11-23), so the later ones wait for the map to be zoomed in, their
- *  fields' marks still drawn and a tap on one still its card. */
+ *  fields drawn whole, mark and ident, where there is room. */
 function stopLayers(id: string): SymbolLayerSpecification[] {
   return [
     { ...labelledLayer(`${id}-fields`, id, { collide: true, sort: 0 }, FIELD_UNDER_PIN), filter: FIELD },

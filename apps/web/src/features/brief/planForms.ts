@@ -19,7 +19,7 @@ interface PlanFormsInputs {
   flying: Pick<AircraftChoice, "aircraftId" | "label">;
   nav: NavLogAltitude | null;
   own: ReturnType<typeof useOwnAircraft>;
-  load: ReturnType<typeof useLoad>["load"];
+  load: ReturnType<typeof useLoad>["saved"];
   icaoIds: Parameters<typeof flightPlanForms>[0]["icaoIds"];
   procedures: { departure: FiledProcedure | null; arrival: FiledProcedure | null } | undefined;
 }

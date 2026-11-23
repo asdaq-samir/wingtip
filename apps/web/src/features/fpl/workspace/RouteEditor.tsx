@@ -43,6 +43,34 @@ export default function RouteEditor({
   // sheet is inert (SheetParts, while a card is up), and the field's focus
   // as it was asked went nowhere (plans.spec, "no legal altitude").
   const covered = useSheetCards((c) => !!coverCard(c.stack));
+  // The toggle back to the timeline, in the box's bottom right where it
+  // was on the timeline's face (TypeRouteButton): what is typed is read as
+  // the field is left, the tap's own blur, so the route folds with it in
+  // (the plan's Undo as ever); the focus kept on the toggle there. On an
+  // empty, half or whole route opened by it. The box draws it right under
+  // itself, before its red message (RouteBox's foot), so the message and
+  // its Remove are never under it.
+  const toggleRow = routeOpen && (
+    // At the box's bottom right, where it is on the timeline's face, in the
+    // row of room the wrapped box keeps under its last line (RouteBox's
+    // pb-11), never over a pill (z-10 over the box), its 44-point area whole.
+    // As far in from the right as on the rows' face (TIMELINE_END), the
+    // fuel stops' pill before it 8 apart as there, so a whole route's
+    // pair sits in one place on both faces (FuelPill).
+    // The row itself takes no tap: the box's last line under it is the
+    // field's, a tap there putting the caret at the route's end (the r6
+    // audit's M8); only its two controls take theirs.
+    <div className="pointer-events-none relative z-10 -mt-11 flex h-11 items-center justify-end gap-2 pr-4 *:pointer-events-auto">
+      {wholeRoute && !vm.flight.flying && !vm.flight.dryRunning && <FuelPill vm={vm} />}
+      <TypeRouteButton
+        pressed
+        onToggle={() => {
+          foldRoute();
+          requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-testid="route-type-open"]')?.focus());
+        }}
+      />
+    </div>
+  );
   // Too long for the room above FPL's foot bar, the sheet raised all the way up, once.
   const field = useRef<HTMLDivElement>(null);
   useFieldRise(field, inPlace, setPanel);
@@ -122,36 +150,11 @@ export default function RouteEditor({
               // Turned from the grouped box by its toggle: its size and shape, the route wrapped in it.
               wrapped={inPlace}
               height={inPlace ? keptTimelineHeight() : undefined}
+              foot={toggleRow}
             />
           </SearchNear.Provider>
         </Suspense>
       </div>
-      {/* The toggle back to the timeline, in the box's bottom right where it
-          was on the timeline's face (TypeRouteButton): what is typed is
-          read as the field is left, the tap's own blur, so the route
-          folds with it in (the plan's Undo as ever); the focus kept on the
-          toggle there. On an empty, half or whole route opened by it. */}
-      {routeOpen && (
-        // At the box's bottom right, where it is on the timeline's face, in the
-        // row of room the wrapped box keeps under its last line (RouteBox's
-        // pb-11), never over a pill (z-10 over the box), its 44-point area whole.
-        // As far in from the right as on the rows' face (TIMELINE_END), the
-        // fuel stops' pill before it 8 apart as there, so a whole route's
-        // pair sits in one place on both faces (FuelPill).
-        // The row itself takes no tap: the box's last line under it is the
-        // field's, a tap there putting the caret at the route's end (the r6
-        // audit's M8); only its two controls take theirs.
-        <div className="pointer-events-none relative z-10 -mt-11 flex h-11 items-center justify-end gap-2 pr-4 *:pointer-events-auto">
-          {wholeRoute && !vm.flight.flying && !vm.flight.dryRunning && <FuelPill vm={vm} />}
-          <TypeRouteButton
-            pressed
-            onToggle={() => {
-              foldRoute();
-              requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-testid="route-type-open"]')?.focus());
-            }}
-          />
-        </div>
-      )}
       {/* The figures under the cards while they are edited, so each change
           is read as it is made (the canvas's "Tap the route to expand"). */}
       {wholeRoute && !inPlace && (

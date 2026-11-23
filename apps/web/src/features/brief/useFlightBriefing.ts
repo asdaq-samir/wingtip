@@ -72,7 +72,7 @@ export function useFlightBriefing({
   problem = null,
 }: FlightBriefingInputs) {
   // The load's weights, for the takeoff and landing distances.
-  const { loading, load, result: loaded } = useLoad(nav?.aircraft, totals?.fuel_gal ?? null);
+  const { loading, saved, result: loaded } = useLoad(nav?.aircraft, totals?.fuel_gal ?? null);
   // The runways the pilot picked in FPL, checked for length (runwayFlown).
   const picks = useRunwayPicks();
   // Every airport the flight lands at, each once: a round trip's
@@ -257,7 +257,9 @@ export function useFlightBriefing({
           flying,
           nav,
           own,
-          load,
+          // The load the pilot saved, never the editor's sample airplane:
+          // with none, item 19's endurance is left for them to fill.
+          load: saved,
           icaoIds: fields.icaoIds,
           procedures,
         })

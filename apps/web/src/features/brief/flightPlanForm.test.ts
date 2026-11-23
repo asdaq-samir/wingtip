@@ -132,6 +132,13 @@ describe("the FAA flight plan form, filled in from a plan", () => {
     expect(value(hop!, "endurance")).toBe("0400");
   });
 
+  it("no load saved: item 19's endurance is left blank and says why, never full tanks assumed", () => {
+    const [form] = flightPlanForms({ ...BASE, fuelGal: null });
+    expect(value(form!, "endurance")).toBeNull();
+    expect(form!.items.find((f) => f.key === "endurance")!.note).toContain("no fuel aboard is set");
+    expect(form!.filing).toBeNull();
+  });
+
   it("ZZZZ by NASR's ICAO_ID where the field's card had it (AIM Appendix 4)", () => {
     // IL11 lists none: ZZZZ though its ident has a figure; KDLH lists KDLH;
     // C81 not had, read by its ident.

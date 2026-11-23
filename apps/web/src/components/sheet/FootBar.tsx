@@ -15,11 +15,14 @@ export function FootRestOf({ size, children }: { size: PanelState; children: Rea
  *  sheet's own face did. */
 export const FOOT_BAR_PILL = "3.25rem";
 
-/** Its height folded at the pill and in sight, else none: out of sight
- *  (the keyboard up, the route's field open) it may be folded without its
- *  figures, too short for the pill. */
+/** Its height folded at the pill, in sight and holding its figures, else
+ *  none: out of sight (the keyboard up, the route's field open), or in
+ *  sight with its figures put away (a stop typed under a card, FlightFoot's
+ *  figuresAway), it is too short for the pill, which shrank to the edge's
+ *  room and hid the sheet's head (the r7 audit's W-L3). */
 function foldedHeight(el: HTMLElement): number | undefined {
-  return el.dataset.at === "peek" && !el.inert ? Math.round(el.offsetHeight) || undefined : undefined;
+  const folded = el.dataset.at === "peek" && !el.inert && !!el.querySelector("[data-foot-strip]");
+  return folded ? Math.round(el.offsetHeight) || undefined : undefined;
 }
 
 /**

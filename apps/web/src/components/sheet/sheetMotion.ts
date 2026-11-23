@@ -25,6 +25,11 @@ export function watchSheetMotion(popup: HTMLElement): () => void {
   };
   const swiped = new MutationObserver(() => {
     swiping = popup.hasAttribute("data-swiping");
+    // A new swipe ends any slide before it: one cut off with neither
+    // transitionend nor transitioncancel (the popup detached, its display
+    // changed) would leave `settling` on and useRestSize frozen till the
+    // next slide (the r7 audit's W-L4).
+    if (swiping) settling = false;
     tell();
   });
   swiped.observe(popup, { attributes: true, attributeFilter: ["data-swiping"] });
