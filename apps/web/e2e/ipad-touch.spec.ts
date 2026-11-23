@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-import { library, openConsole, consoleSheet, roleMenu, settle } from "./helpers";
+import { library, openConsole, consoleSheet, roleMenu, settle, openPanel, grabberTo } from "./helpers";
+import { extrasOn } from "./extras";
 
 /**
  * What makes the page feel installed under a finger in Safari's engine,
@@ -53,6 +54,31 @@ test("a field is 16 or more to a finger in every look, so Safari never zooms the
   await tail.evaluate((el) => el.setAttribute("data-testid", "probe-tail"));
   for (const [look, size] of Object.entries(await sizesInEachLook(page, "probe-tail")))
     expect(size, `Tail Number, ${look}`).toBeGreaterThanOrEqual(16);
+});
+
+test("the clearance card's two boxes are 16 or more to a finger in every look", async ({ page }) => {
+  await extrasOn(page, "atcCopilot");
+  // No recognizer, so the comms button opens the card to type in (clearance.spec).
+  await page.addInitScript(() => {
+    const w = window as unknown as Record<string, unknown>;
+    delete w.SpeechRecognition;
+    delete w.webkitSpeechRecognition;
+  });
+  await page.goto("/app/plan");
+  await settle(page);
+  // The comms button in sight over the phone's sheet; beside the iPad's panel already.
+  if ((page.viewportSize()?.width ?? 0) < 768) {
+    await openPanel(page);
+    await grabberTo(page, "half");
+  }
+  await page.getByTestId("radio-button").click();
+  await expect(page.getByTestId("clearance-text")).toBeVisible();
+  for (const [look, size] of Object.entries(await sizesInEachLook(page, "clearance-text")))
+    expect(size, `the clearance as heard, ${look}`).toBeGreaterThanOrEqual(16);
+  await page.getByTestId("clearance-row-readback").click();
+  await expect(page.getByTestId("clearance-readback-text")).toBeVisible();
+  for (const [look, size] of Object.entries(await sizesInEachLook(page, "clearance-readback-text")))
+    expect(size, `your read back, ${look}`).toBeGreaterThanOrEqual(16);
 });
 
 test("a control takes a tap at once and a long press selects none of its words, and a hover look needs a fine pointer", async ({

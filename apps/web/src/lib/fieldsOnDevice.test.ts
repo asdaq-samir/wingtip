@@ -39,6 +39,21 @@ describe("the fields round a point from the browser's index", () => {
   });
 });
 
+describe("the nearest few, kept as the index is walked", () => {
+  test("are the same fields, in the same order, as a sort of them all", () => {
+    // A grid of fields round the point, some at equal distances.
+    const rows: [string, string, string, string, number, number, number][] = [];
+    for (let i = 0; i < 15; i++)
+      for (let j = 0; j < 15; j++) rows.push([`F${i}-${j}`, "Field", "Town", "WI", 2, 42 + i * 0.1, -89 + j * 0.1]);
+    const grid = indexOf(rows, {});
+    const p = { lat: 42.73, lon: -88.32 };
+    const all = fieldsNear(grid, p, rows.length).map((f) => f.ident);
+    expect(all).toHaveLength(rows.length);
+    for (const limit of [1, 5, 12]) expect(fieldsNear(grid, p, limit).map((f) => f.ident)).toEqual(all.slice(0, limit));
+    expect(fieldsNear(grid, p, 0)).toEqual([]);
+  });
+});
+
 describe("who may use a field the browser offers", () => {
   const owned = indexOf(
     [

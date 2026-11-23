@@ -76,7 +76,10 @@ function Toasts({ position }: { position: "top" | "bottom" }) {
       key={toast.id}
       toast={toast}
       // Base UI's own swipe to put it away, followed by the finger
-      // (its --toast-swipe-movement variables).
+      // (its --toast-swipe-movement variables): up at the top, as an iOS
+      // banner goes, where the stock down sent it over the map (gestures
+      // audit M4); down at the foot; and to the right in either.
+      swipeDirection={position === "top" ? ["up", "right"] : ["down", "right"]}
       data-slot="toast"
       // One with an Undo takes a tap (index.css); the rest let it through
       // to the map under them.

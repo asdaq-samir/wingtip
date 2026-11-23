@@ -211,8 +211,11 @@ export function DryRunControls({
             const nm = Array.isArray(v) ? v[0] : v;
             if (nm !== undefined) seekNm(nm);
           }}
-          // Across, its own; up and down, still the stock sheet's.
-          data-base-ui-swipe-ignore="x"
+          // Both axes its own, as the upright altitude slider's: the slider
+          // takes the pointer as it is pressed, so a near-upright drag given
+          // to the sheet as well moved the run and the sheet at once. The
+          // sheet still moves from its head and the rest of its body.
+          data-base-ui-swipe-ignore=""
           onPointerDown={grab}
           onPointerUp={letGo}
           onPointerCancel={letGo}

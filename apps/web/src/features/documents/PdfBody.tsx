@@ -159,8 +159,14 @@ export default function PdfBody(props: BodyProps) {
       const viewer = parts.current?.viewer;
       if (viewer && factor !== 1) viewer.updateScale({ scaleFactor: factor, origin, drawingDelay: DRAWING_DELAY_MS });
     };
+    // The move listener that can cancel is on only while two fingers are
+    // down: held all the time it made every one-finger scroll wait on the
+    // main thread, where pdf.js paints (react-perf L4). One finger's pan is
+    // the browser's, touch-action already keeping its own pinch off.
     const touchStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) before = spread(e.touches[0]!, e.touches[1]!).distance;
+      if (e.touches.length !== 2) return;
+      before = spread(e.touches[0]!, e.touches[1]!).distance;
+      el.addEventListener("touchmove", touchMove, { passive: false });
     };
     const touchMove = (e: TouchEvent) => {
       if (e.touches.length !== 2 || !before) return;
@@ -169,8 +175,10 @@ export default function PdfBody(props: BodyProps) {
       zoom(pinchStep(before, distance), origin);
       before = distance;
     };
-    const touchEnd = () => {
+    const touchEnd = (e: TouchEvent) => {
+      if (e.touches.length >= 2) return;
       before = 0;
+      el.removeEventListener("touchmove", touchMove);
     };
     const wheel = (e: WheelEvent) => {
       if (!e.ctrlKey) return;
@@ -178,13 +186,14 @@ export default function PdfBody(props: BodyProps) {
       zoom(pinchStep(1, Math.exp(-e.deltaY / 100)), [e.clientX, e.clientY]);
     };
     el.addEventListener("touchstart", touchStart, { passive: true });
-    el.addEventListener("touchmove", touchMove, { passive: false });
     el.addEventListener("touchend", touchEnd);
+    el.addEventListener("touchcancel", touchEnd);
     el.addEventListener("wheel", wheel, { passive: false });
     return () => {
       el.removeEventListener("touchstart", touchStart);
       el.removeEventListener("touchmove", touchMove);
       el.removeEventListener("touchend", touchEnd);
+      el.removeEventListener("touchcancel", touchEnd);
       el.removeEventListener("wheel", wheel);
     };
   }, []);

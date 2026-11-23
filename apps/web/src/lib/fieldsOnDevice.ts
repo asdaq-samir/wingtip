@@ -29,17 +29,26 @@ const LANDING_SIZE_MAX = 2;
  *  latitude's cosine): only the order the engine is then given, never a
  *  figure shown. */
 export function fieldsNear(index: AirportIndex, at: LatLon, limit: number): DeviceField[] {
+  if (limit <= 0) return [];
   const shrink = lonScale(at.lat);
+  // Only the nearest `limit` kept, in order, as the index is walked: a
+  // sort of every landing field in the US at each GPS fix, to keep a few,
+  // was the work Emergency did once a second offline (react-perf L1).
   const near: [number, number][] = [];
   for (let row = 0; row < index.rows.length; row++) {
     const lat = index.lat[row]!;
     // Never a field NASR lists as closed (decision 0043).
     if (Number.isNaN(lat) || index.rows[row]![4] > LANDING_SIZE_MAX || index.closed[row]) continue;
     // Across the antimeridian too (lonNear): Shemya is Adak's neighbour.
-    near.push([(lat - at.lat) ** 2 + ((lonNear(index.lon[row]!, at.lon) - at.lon) * shrink) ** 2, row]);
+    const d = (lat - at.lat) ** 2 + ((lonNear(index.lon[row]!, at.lon) - at.lon) * shrink) ** 2;
+    if (near.length >= limit && d >= near[near.length - 1]![0]) continue;
+    // After any as near, so equal ones keep the index's order.
+    let i = near.length;
+    while (i > 0 && near[i - 1]![0] > d) i--;
+    near.splice(i, 0, [d, row]);
+    if (near.length > limit) near.pop();
   }
-  near.sort((a, b) => a[0] - b[0]);
-  return near.slice(0, limit).map(([, row]) => {
+  return near.map(([, row]) => {
     const [ident, name, town, , size] = index.rows[row]!;
     const use = index.use[row];
     return {

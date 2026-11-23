@@ -109,16 +109,21 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       // owner's "When I tap the fuel and close it, the strip becomes bigger
       // hiding the departure" (2026-11-17). Measured again as it comes back.
       if (edge && edge.getClientRects().length === 0) return;
+      // Every read before the first write: a custom property written on
+      // the row and then a transform or a rect read made the browser work
+      // out the style and layout again within the frame, up to twice a
+      // scroll frame (react-perf L3). The row's own variables move only the
+      // row, so the sheet's and the bar's places read first are the same.
       const sheet = row.closest(SHEET);
-      const natural = row.getBoundingClientRect().bottom - moved(row) - moved(sheet);
+      const slid = moved(sheet);
+      const natural = row.getBoundingClientRect().bottom - moved(row) - slid;
       const room = restingEdge(edge) - natural;
       const lift = liftOf(edge, sheet);
-      setRoom(
-        row,
-        `${room}px`,
-        sheet ? getComputedStyle(sheet).getPropertyValue("--sheet-offset") : "",
-        !!sheet?.hasAttribute("data-swiping"),
-      );
+      const offset = sheet ? getComputedStyle(sheet).getPropertyValue("--sheet-offset") : "";
+      const swiping = !!sheet?.hasAttribute("data-swiping");
+      const bar = edge?.querySelector<HTMLElement>("[data-makes-way]");
+      const barTop = bar ? restingTop(bar) : 0;
+      setRoom(row, `${room}px`, offset, swiping);
       setVar(row, "--pin-lift", `${lift.lift}px`);
       setVar(row, "--pin-pill", `${lift.pill}px`);
       setVar(row, "--pin-half", `${lift.half}px`);
@@ -128,13 +133,11 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       // the bar (the owner, 2026-11-22: "Route box figures strip is not
       // pinning to the bottom"); beside the side panel in their place.
       setVar(row, "--pin-cap", lift.lift > 0 ? "9999px" : "0px");
-      setVar(row, "--pin-p", `${growAt(moved(sheet), lift.half, lift.pill, heldNow.current)}`);
-      const slid = moved(sheet);
+      setVar(row, "--pin-p", `${growAt(slid, lift.half, lift.pill, heldNow.current)}`);
       row.toggleAttribute("data-pinned", pinnedNow(heldNow.current, slid, room, liftAt(slid, lift.lift, lift.pill)));
       // At the pill, where its face is the figures alone (FplRoute's PINNED).
       row.toggleAttribute("data-pill", heldNow.current);
-      const bar = edge?.querySelector<HTMLElement>("[data-makes-way]");
-      if (bar) setVar(bar, "--pin-bar-room", `${barRoom(restingTop(bar), natural)}px`);
+      if (bar) setVar(bar, "--pin-bar-room", `${barRoom(barTop, natural)}px`);
     };
     measure();
     const resized = new ResizeObserver(measure);

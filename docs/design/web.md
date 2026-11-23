@@ -448,7 +448,11 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   Safari's `-webkit-user-select`); content stays selectable. A field is
   never under 16 to a finger, the Native look and an iPad included
   (`md:pointer-fine:text-sm` on the stock Input, Textarea and number
-  field), or iOS zooms the page in on focus and leaves it there.
+  field; a box sets no smaller type over it, as the clearance card's
+  once did), or iOS zooms the page in on focus and leaves it there. A
+  popover keeps clear of the status bar and the notch (`useEdgeRoom`:
+  the safe area and 8 more, not Base UI's 5 from the edge), and the
+  centred dialog of both the status bar and the home indicator.
 - The keyboard: `Drawer.VirtualKeyboardProvider` on the sheet, each card
   and each question (`PhoneSheet`), its `--drawer-keyboard-inset` the
   viewport's bottom, in place of a `visualViewport` reading.
@@ -2326,7 +2330,12 @@ sheet scrolls one way on a phone:
   and the route's pills carry `data-base-ui-swipe-ignore="x"`
   (an up or down drag the sheet's), and every native sideways row
   `overscroll-x-contain`. The upright altitude Slider and the sortable
-  rows' grips keep `""`: their own drag is up and down. A row made to
+  rows' grips keep `""`: their own drag is up and down, as do the
+  dry run's scrubber over its chart and the scratchpad's ink (round 4's
+  gestures audit: the Drawer reads touch events, not the browser's pan,
+  so `touch-none` alone left every stroke moving the card). A pill takes
+  `touch-manipulation`, never `touch-pan-y`, which forbade the row's
+  sideways slide from a pill (the owner: "ids can slide"). A row made to
   slide says so (`data-slides`: the pill strips, `PillStrip`, as the
   hours' and runways' strips), so the iPhone audit's P18 reads its tiles
   past the edge as the design.
