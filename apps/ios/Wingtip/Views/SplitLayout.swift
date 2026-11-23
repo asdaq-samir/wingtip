@@ -50,6 +50,13 @@ enum SplitRoom {
     static let inspector: CGFloat = 375
     static let leastMap: CGFloat = 375
 
+    /// What the sidebar's room is worked out from: the window's width
+    /// and whether a card is up.
+    struct Need: Equatable {
+        let width: CGFloat
+        let cardUp: Bool
+    }
+
     static func cardFitsBesideSidebar(width: CGFloat) -> Bool {
         width >= sidebar + inspector + leastMap
     }
@@ -106,9 +113,6 @@ struct SplitLayout<Map: View>: View {
             .animation(MapMotion.animated ? .default : nil, value: nav.beside)
         }
         .navigationSplitViewStyle(.balanced)
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
-        .onChange(of: nav.card != nil) { _, up in fit(cardUp: up) }
-        .onChange(of: width) { _, _ in fit(cardUp: nav.card != nil) }
         // The one search asked for (⌘F, a link, the microphone) with the
         // sidebar put away: the sidebar, where the search is, comes back.
         .onChange(of: search.presented) { _, up in if up, columns == .detailOnly { columns = .all } }
@@ -127,6 +131,18 @@ struct SplitLayout<Map: View>: View {
                 .background(Color(.systemGroupedBackground))
                 .inspectorColumnWidth(min: 320, ideal: SplitRoom.inspector, max: 440)
         }
+        // The window's width, measured round the inspector too: inside it,
+        // the split view's own width lost the card's 375 points, so an
+        // iPad Pro 13-inch held sideways (1,376) read 1,001 with a card up
+        // and put the sidebar away though all three fit, and one upright
+        // with a card up at launch (657) had the system lay the sidebar
+        // over the map rather than beside it.
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        // The sidebar's room worked out from the window's width and the
+        // card at every change of either, the first layout included: a
+        // card already up when the layout first measured (a link, a kept
+        // scene) left the sidebar beside it with no room for the map.
+        .onChange(of: SplitRoom.Need(width: width, cardUp: nav.card != nil), initial: true) { _, need in fit(need) }
         .environment(\.splitLayout, true)
         // A card's action done in the inspector (Fly Here, Fly This
         // Airplane): the card put away and the plan in the sidebar shown.
@@ -174,8 +190,10 @@ struct SplitLayout<Map: View>: View {
     /// time. Without it the 744-point iPad mini upright had 375 points of
     /// sidebar and 375 of card, and no map between (the iPad audit,
     /// 2026-11-21).
-    private func fit(cardUp: Bool) {
-        if cardUp, !SplitRoom.cardFitsBesideSidebar(width: width) {
+    private func fit(_ need: SplitRoom.Need) {
+        // Not yet measured: nothing to work out from.
+        guard need.width > 0 else { return }
+        if need.cardUp, !SplitRoom.cardFitsBesideSidebar(width: need.width) {
             if columns != .detailOnly {
                 columns = .detailOnly
                 hidForCard = true
