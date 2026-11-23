@@ -26,6 +26,20 @@ enum FieldNotamWords {
                                   field: t?.field.map { .init(lat: $0.lat, lon: $0.lon) }, edge: t?.edge.map { .init(lat: $0.lat, lon: $0.lon) })
     }
 
+    /// Whether each NOTAM of a list runs until the charts are updated, the
+    /// engine's notam_card (PERM with an EST end or none, JO 7930.2 4-2-1),
+    /// worked out once for the list, off the main actor, as FieldNotams
+    /// reads its cards. A NOTAM the engine could not read, or a TFR, has no
+    /// entry: its row then never says a firm end (NotamRows.when).
+    @concurrent
+    nonisolated static func untilCharts(_ notams: [APIRankedNotam]) async -> [String: Bool] {
+        var out: [String: Bool] = [:]
+        for notam in notams where notam.kind != "tfr" {
+            if let card = try? Engine.notamCard(text: notam.raw, ends: notam.ends) { out[notam.id] = card.untilCharts }
+        }
+        return out
+    }
+
     /// A TFR from tfr.faa.gov's list read by the engine (tfr_read), for
     /// its card (TfrCard): its altitudes and where, and the rule it is
     /// under; nil where the engine cannot read it.

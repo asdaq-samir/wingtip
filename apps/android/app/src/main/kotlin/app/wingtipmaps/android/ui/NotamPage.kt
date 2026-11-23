@@ -63,10 +63,10 @@ import app.wingtipmaps.android.ui.sheet.CardPage
  * its kind, the field and its number under it ("KARR Aurora Municipal ·
  * FDC 6/3373"). `name` is the field's, `zone` the planner's time zone for
  * it, and `roles` what the field is to the planned flight (planRoles),
- * from which each NOTAM's chip (roleChip).
+ * from which the engine says each NOTAM's chip (FieldNotams.affects).
  */
 @Composable
-fun NotamPage(notams: List<FieldNotams.Said>, ident: String, exit: CardExit, name: String? = null, zone: String? = null, roles: List<PlanRole> = emptyList()) {
+fun NotamPage(notams: List<FieldNotams.Said>, ident: String, exit: CardExit, name: String? = null, zone: String? = null, roles: List<String> = emptyList()) {
     var one by remember(notams) { mutableStateOf(notams.singleOrNull()) }
     val shown = one
     if (shown != null) {
@@ -80,7 +80,7 @@ fun NotamPage(notams: List<FieldNotams.Said>, ident: String, exit: CardExit, nam
         ) { padding ->
             Box(Modifier.padding(padding)) {
                 Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl)) {
-                    NotamFull(shown, zone, roles)
+                    NotamFull(shown, ident, zone, roles)
                 }
             }
         }
@@ -93,39 +93,26 @@ fun NotamPage(notams: List<FieldNotams.Said>, ident: String, exit: CardExit, nam
     }
 }
 
-/** A part the NOTAM's field plays in the planned flight: the chip's
- *  words, and whether the flight leaves from it (a departure procedure's)
- *  or lands there (an arrival's). */
-data class PlanRole(val words: Int, val leaves: Boolean, val lands: Boolean)
-
-/** The chip on one NOTAM: its words, and whether it takes away a procedure
- *  its role flies (red) or is only the field's (neutral). */
-data class RoleChip(val words: Int, val taken: Boolean)
-
 /** Which of the planned flight's fields this NOTAM's field is, by any of
- *  its idents (field_names), in the order the chip names them: the
+ *  its idents (field_names), as notam_affects names the roles: the
  *  departure, a stop, the destination, the alternate filed. */
-fun planRoles(idents: List<String>, dep: String, stops: List<String>, dest: String, alternate: String?): List<PlanRole> {
+fun planRoles(idents: List<String>, dep: String, stops: List<String>, dest: String, alternate: String?): List<String> {
     fun isIt(field: String?) = !field.isNullOrBlank() && idents.any { it.equals(field, ignoreCase = true) }
     return listOfNotNull(
-        PlanRole(R.string.notam_affects_departure, leaves = true, lands = false).takeIf { isIt(dep) },
-        PlanRole(R.string.notam_affects_stop, leaves = true, lands = true).takeIf { stops.any(::isIt) },
-        PlanRole(R.string.notam_affects_arrival, leaves = false, lands = true).takeIf { isIt(dest) },
-        PlanRole(R.string.notam_affects_alternate, leaves = false, lands = true).takeIf { isIt(alternate) },
+        "departure".takeIf { isIt(dep) },
+        "stop".takeIf { stops.any(::isIt) },
+        "arrival".takeIf { isIt(dest) },
+        "alternate".takeIf { isIt(alternate) },
     )
 }
 
-/** The chip a NOTAM wears (the web's usePlanRole), null where its field is
- *  none of the flight's or it only takes away what the field is not used
- *  for. A procedure taken away affects only the role that flies it: a SID
- *  or an ODP the departure and each stop left from, a STAR the
- *  destination, each stop and the alternate (AIM 5-2-9, 5-4-1; the
- *  engine's notam_card says which each is), and is red; a NOTAM taking
- *  none (a runway closed, a light out) is the field's, the neutral chip. */
-fun roleChip(roles: List<PlanRole>, procedures: List<EngineContract.NotamCardAnswerProceduresItem>): RoleChip? {
-    if (procedures.isEmpty()) return roles.firstOrNull()?.let { RoleChip(it.words, taken = false) }
-    val flown = roles.firstOrNull { r -> procedures.any { if (it.departure) r.leaves else r.lands } }
-    return flown?.let { RoleChip(it.words, taken = true) }
+/** The chip's words for a role the engine names. */
+private fun roleWords(role: String): Int? = when (role) {
+    "departure" -> R.string.notam_affects_departure
+    "stop" -> R.string.notam_affects_stop
+    "arrival" -> R.string.notam_affects_arrival
+    "alternate" -> R.string.notam_affects_alternate
+    else -> null
 }
 
 /** Its number as a briefer reads it: an FDC NOTAM's with its
@@ -151,23 +138,25 @@ private fun numberLine(s: FieldNotams.Said, ident: String): String {
  * instructions and whom to call (TfrDetails).
  */
 @Composable
-private fun NotamFull(s: FieldNotams.Said, zone: String?, roles: List<PlanRole>) {
+private fun NotamFull(s: FieldNotams.Said, ident: String, zone: String?, roles: List<String>) {
     val tfr = FieldNotams.isTfr(s.notam)
     val active = FieldNotams.active(s.notam)
     val card = s.card
     val scheme = MaterialTheme.colorScheme
     val permanent = !tfr && (card?.permanent ?: (s.read?.permanent == true))
-    val role = roleChip(roles, card?.procedures.orEmpty())
+    // The engine's (notam_affects), once for the NOTAM and the plan's roles.
+    val role = remember(s.notam, ident, roles) { FieldNotams.affects(s.notam, ident, roles) }
+    val words = role?.let { roleWords(it.role) }
     Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
         if (card?.title != null) card.category?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = scheme.onSurfaceVariant) }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
             NotamState(s.notam)
             if (permanent) Badge(containerColor = scheme.secondaryContainer, contentColor = scheme.onSecondaryContainer) { Text(stringResource(R.string.notam_permanent)) }
-            if (role != null && active) {
+            if (role != null && words != null) {
                 Badge(
                     containerColor = if (role.taken) scheme.error else scheme.secondaryContainer,
                     contentColor = if (role.taken) scheme.onError else scheme.onSecondaryContainer,
-                ) { Text(stringResource(role.words)) }
+                ) { Text(stringResource(words)) }
             }
         }
         val ink = if (active) Color.Unspecified else scheme.onSurfaceVariant

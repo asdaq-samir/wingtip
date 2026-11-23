@@ -4,6 +4,7 @@ import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.fieldNames
+import app.wingtipmaps.android.engine.generated.notamAffects
 import app.wingtipmaps.android.engine.generated.notamCard
 import app.wingtipmaps.android.engine.generated.notamRead
 import app.wingtipmaps.android.engine.generated.tfrRead
@@ -48,6 +49,15 @@ object FieldNotams {
      *  the NOTAM's words (notam_read). */
     fun card(n: RankedNotam, ident: String): EngineContract.NotamCardAnswer? =
         if (isTfr(n)) null else Engine.notamCard(n.raw, identsOf(ident), n.ends).getOrNull()
+
+    /** Which part of the planned flight a NOTAM affects, its chip: the
+     *  engine's `notam_affects` over the roles its field plays in the plan
+     *  (planRoles), the first it names, with whether it takes a procedure
+     *  that role flies (red) or is the field's (neutral). Only one in force
+     *  affects the flight; null for a TFR, where it reaches none of them,
+     *  or where the engine cannot say. */
+    fun affects(n: RankedNotam, ident: String, roles: List<String>): EngineContract.NotamAffectsAnswerAffectsItem? =
+        if (isTfr(n) || !active(n) || roles.isEmpty()) null else Engine.notamAffects(n.raw, identsOf(ident), roles).getOrNull()?.affects?.firstOrNull()
 
     /** A TFR read by the engine (tfr_read): its kind as a heading, its
      *  kind and rule, its levels and where it is from the field, its place. */

@@ -9112,6 +9112,39 @@ object EngineContract {
     )
 
     @Serializable
+    data class NotamAffectsAnswer(
+        /**
+         * Each role it reaches, those it takes a procedure from first, then departure, stop, arrival, alternate; the chip is the first. Empty where it reaches none.
+         */
+        val affects: List<EngineContract.NotamAffectsAnswerAffectsItem>,
+    )
+
+    @Serializable
+    data class NotamAffectsAnswerAffectsItem(
+        val role: String,
+        /**
+         * It takes away a procedure this role flies: the red chip; false, the field's own, the neutral one.
+         */
+        val taken: Boolean,
+    )
+
+    @Serializable
+    data class NotamAffectsInput(
+        /**
+         * The NOTAM as sent, domestic or ICAO form.
+         */
+        val text: String,
+        /**
+         * The field's idents (OSH, KOSH), as notam_card takes them.
+         */
+        val idents: List<String>? = null,
+        /**
+         * The roles the NOTAM's field plays in the planned flight, any order; empty where it plays none.
+         */
+        val roles: List<String>,
+    )
+
+    @Serializable
     data class NotamCardAnswer(
         /**
          * The domestic form's accountability ("FDC", "OSH"); null in the ICAO form.

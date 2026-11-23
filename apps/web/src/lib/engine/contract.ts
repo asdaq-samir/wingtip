@@ -3067,6 +3067,13 @@ export interface EngineContract {
     answer: NoAltitudeAnswer;
   };
   /**
+   * Which part of the planned flight a NOTAM affects, the chip on its card: of the roles its field plays in the plan (the departure, a stop, the destination, the alternate filed), each it reaches, and whether it takes away a procedure that role flies (taken, the red chip) or is only the field's (the neutral one). Read from its card's own parts (notam_card), never its words: a departure procedure taken away (SID, ODP, DVA; AIM 5-2-9) reaches the departure and each stop, an arrival (STAR, AIM 5-4-1) or an approach (AIM 5-4-5) the destination, each stop and the alternate (14 CFR 91.169); what happened to the field itself (a runway closed, a light out, or a procedure NOTAM's own sentence closing a surface, FDC 6/3373's "RWY 18/36 PERMANENTLY CLSD") reaches every role there. A procedure NOTAM whose procedures it cannot name reaches the roles that fly its kind (JO 7930.2 1-2-1), neutral.
+   */
+  notam_affects: {
+    input: NotamAffectsInput;
+    answer: NotamAffectsAnswer;
+  };
+  /**
    * A NOTAM's own card, read from its parts (FAA Order JO 7930.2): its accountability (4-2-1, "FDC"); its category, a procedure NOTAM's by what the procedures are for (SID, ODP and DVA departures, STAR arrivals, IAP approaches; 1-2-1), the rest its heading; its title, what happened ("Runway 18/36 closed"): notam_read's what, else a surface its words close (RWY, TWY; 3-3-5, 3-3-6; CLSD, JO 7340.2), else the procedures not authorized (NA); one plain sentence of its effect ("Runway 18/36 is permanently closed, so its RNAV departures are not authorized."); whether the condition is permanent (PERM, 4-2-1, or its words' PERMANENTLY), and whether it then runs until the charts are updated (an EST end, or none); and the procedures it takes away, each by its charted name and number (7-1-3: "ADELL EIGHT DEPARTURE (RNAV)" is "ADELL 8", RNAV). Each null or empty where the NOTAM's parts do not say all of it: the card then says its words written out (notam_read), never a guess.
    */
   notam_card: {
@@ -10785,6 +10792,32 @@ export interface NoAltitudeAnswer {
   reasons: string[];
   advice: string;
   detail: string;
+}
+export interface NotamAffectsInput {
+  /**
+   * The NOTAM as sent, domestic or ICAO form.
+   */
+  text: string;
+  /**
+   * The field's idents (OSH, KOSH), as notam_card takes them.
+   */
+  idents?: string[];
+  /**
+   * The roles the NOTAM's field plays in the planned flight, any order; empty where it plays none.
+   */
+  roles: ("departure" | "stop" | "arrival" | "alternate")[];
+}
+export interface NotamAffectsAnswer {
+  /**
+   * Each role it reaches, those it takes a procedure from first, then departure, stop, arrival, alternate; the chip is the first. Empty where it reaches none.
+   */
+  affects: {
+    role: "departure" | "stop" | "arrival" | "alternate";
+    /**
+     * It takes away a procedure this role flies: the red chip; false, the field's own, the neutral one.
+     */
+    taken: boolean;
+  }[];
 }
 export interface NotamCardInput {
   /**

@@ -123,7 +123,8 @@ struct NotamLinesView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-            NotamTimeLinesView(lines: notams.times(notam))
+            // On the minute, so "in 18d" moves on as Android's rows do.
+            TimelineView(.everyMinute) { context in NotamTimeLinesView(lines: notams.times(notam, now: context.date)) }
             if let place = notams.place(notam) {
                 Text(place).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
