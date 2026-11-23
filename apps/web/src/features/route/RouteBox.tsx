@@ -319,7 +319,10 @@ export default function RouteBox({
             align="start"
             sideOffset={6}
             anchor={boxEl}
-            className="w-(--anchor-width) max-w-[calc(100vw-16px)] gap-0 p-2"
+            // At once, with no zoom: typing opens, closes and opens it
+            // again as the box empties and fills, and a typed action is
+            // not animated (the design review of 2026-11-23, N5).
+            className="w-(--anchor-width) max-w-[calc(100vw-16px)] gap-0 p-2 data-closed:animate-none data-open:animate-none"
             style={keyboard > 0 ? { paddingBottom: keyboard } : undefined}
             // The typing stays in the box.
             initialFocus={false}

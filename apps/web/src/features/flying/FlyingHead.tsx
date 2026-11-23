@@ -166,8 +166,9 @@ function Head({ off = false, children }: { off?: boolean; children: ReactNode })
         // 2026-11-06); on a phone's bottom sheet both are 0.
         "pointer-events-none absolute right-3 top-[calc(max(0.75rem,env(safe-area-inset-top))+var(--map-inset-top,0px))] z-[1000] flex items-center gap-3.5 rounded-(--radius-card) px-4 py-3",
         off ? "w-fit" : "left-[calc(0.75rem+var(--map-inset-left,0px))]",
-        // In as the flight starts; not where the pilot asks for less motion.
-        "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-4 motion-safe:duration-300",
+        // In from the top as the flight starts, on the app's own arrival
+        // (feel.css's appear-slide); not where the pilot asks for less motion.
+        "appear-slide [--appear-from:0_-1rem]",
       )}
     >
       {children}

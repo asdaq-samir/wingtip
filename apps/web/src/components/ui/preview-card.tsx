@@ -1,6 +1,7 @@
 import { PreviewCard as PreviewCardPrimitive } from "@base-ui/react/preview-card";
 import { cn } from "cn";
 import { MENU_CONTENT } from "./menuLook";
+import { useEdgeRoom } from "../../hooks/use-viewport";
 
 /**
  * shadcn's Hover Card on Base UI's Preview Card: a card of what a link or
@@ -23,9 +24,19 @@ function PreviewCardContent({
   anchor,
   ...props
 }: PreviewCardPrimitive.Popup.Props & Pick<PreviewCardPrimitive.Positioner.Props, "side" | "sideOffset" | "align" | "anchor">) {
+  // Clear of the status bar, the notch and the home indicator, 8 past
+  // them (useEdgeRoom), not Base UI's 5 from the very edge.
+  const edgeRoom = useEdgeRoom();
   return (
     <PreviewCardPrimitive.Portal>
-      <PreviewCardPrimitive.Positioner className="isolate z-50" side={side} sideOffset={sideOffset} align={align} anchor={anchor}>
+      <PreviewCardPrimitive.Positioner
+        collisionPadding={edgeRoom}
+        className="isolate z-50"
+        side={side}
+        sideOffset={sideOffset}
+        align={align}
+        anchor={anchor}
+      >
         <PreviewCardPrimitive.Popup
           data-slot="preview-card-content"
           className={cn(

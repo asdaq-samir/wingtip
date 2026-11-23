@@ -4,6 +4,7 @@ import { anchorHiddenRender } from "./anchorHidden";
 import { MENU_CHECK, MENU_CHECK_ITEM, MENU_CONTENT, MENU_ITEM, MENU_LABEL, MENU_SEPARATOR } from "./menuLook";
 import { Menu as DropdownMenuPrimitive } from "@base-ui/react/menu";
 import { CheckIcon, ChevronRightIcon } from "lucide-react";
+import { useEdgeRoom } from "../../hooks/use-viewport";
 
 function DropdownMenu({ ...props }: DropdownMenuPrimitive.Root.Props) {
   return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
@@ -32,6 +33,9 @@ function DropdownMenuContent({
     /** Its trigger out of sight while it is open. */
     onAnchorHidden?: () => void;
   }) {
+  // Clear of the status bar, the notch and the home indicator, 8 past
+  // them (useEdgeRoom), not Base UI's 5 from the very edge.
+  const edgeRoom = useEdgeRoom();
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Positioner
@@ -40,7 +44,7 @@ function DropdownMenuContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        collisionPadding={collisionPadding}
+        collisionPadding={collisionPadding ?? edgeRoom}
         anchor={anchor}
         render={anchorHiddenRender(onAnchorHidden)}
       >

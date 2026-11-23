@@ -215,7 +215,7 @@ button,
    whole page at every change of the attributes it named. */
 [data-map-controls],
 [data-map-food] {
-  transition: opacity var(--motion-fade);
+  transition: opacity var(--motion-fade) var(--motion-sheet-ease);
 }
 body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-food]) {
   opacity: 0;

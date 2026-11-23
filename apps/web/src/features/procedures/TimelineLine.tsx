@@ -125,8 +125,10 @@ export function TimelineLine({
                   data-testid="timeline-toggle"
                   aria-label={`${point.ident}: runways and procedures`}
                   // Greyed under a finger as iOS's rows are, under the line's words
-                  // (the grouped box's audit, 2026-11-20).
-                  className="absolute inset-0 rounded-lg outline-none hover:bg-transparent aria-expanded:bg-transparent dark:hover:bg-transparent pointer-coarse:active:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                  // (the grouped box's audit, 2026-11-20), and under a mouse's
+                  // press, lighter as it points, as every other row answers a
+                  // pointer (the design review of 2026-11-23, M5).
+                  className="absolute inset-0 rounded-lg outline-none hover:bg-muted/50 aria-expanded:bg-transparent dark:hover:bg-muted/50 active:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
                 />
               }
             />
@@ -167,7 +169,12 @@ export function TimelineLine({
         </div>
         <LineNotes point={point} refused={refused} />
         {opens && (
-          <CollapsibleContent className="space-y-2 pb-2" data-testid="timeline-details">
+          <CollapsibleContent
+            // Base UI's own panel animation: the lines under it move down as
+            // it opens rather than jumping (none with Reduce Motion, index.css).
+            className="h-(--collapsible-panel-height) space-y-2 overflow-hidden pb-2 transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0"
+            data-testid="timeline-details"
+          >
             {/* The elevation under the time (the owner, 2026-11-17: "the
                 elevation should be under the time"). */}
             <div className="flex min-h-6 items-center justify-between gap-2">

@@ -43,7 +43,7 @@ export function CardHeadMiddle({
         id={nameId}
         tabIndex={-1}
         className={cn(
-          "max-w-full font-bold tracking-tight text-foreground outline-none",
+          "max-w-full font-bold text-foreground outline-none",
           wrap ? "break-words" : "truncate",
           nameSize === "heading" ? TEXT.heading : TEXT.card,
           nameClassName,

@@ -98,7 +98,9 @@ function TimelineAction({
       <Button
         variant="ghost"
         {...button}
-        // Greyed under a finger as iOS's rows are (the grouped box's audit).
+        // Greyed under a finger as iOS's rows are (the grouped box's audit),
+        // and under a mouse's press too, a lighter grey as it points (hover
+        // is a fine pointer's alone, index.css).
         // As wide as its words at the least, the controls after it going
         // under it where the two do not fit on one line.
         className={cn(
@@ -107,7 +109,7 @@ function TimelineAction({
           // line on a 375-point iPhone (the owner, 2026-11-22: "can you
           // adjust the spacing so they fit in the same line as add a stop?").
           trailing ? "flex-none" : "flex-auto",
-          "h-11 justify-start rounded-none px-0 font-normal hover:bg-transparent pointer-coarse:active:bg-muted pointer-coarse:active:opacity-100 dark:hover:bg-transparent",
+          "h-11 justify-start rounded-none px-0 font-normal hover:bg-muted/50 active:bg-muted pointer-coarse:active:opacity-100 dark:hover:bg-muted/50",
           TIMELINE_GAP,
           TEXT.row,
         )}

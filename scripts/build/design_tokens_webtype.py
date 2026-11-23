@@ -65,6 +65,10 @@ def web_class(name, role):
         out += ["uppercase", "native:normal-case"]
     if "letterSpacing" in v:
         out += ["tracking-[%gem]" % v["letterSpacing"], "native:tracking-normal"]
+    # The web's tracking by size (`web.tracking`, em), where the phones'
+    # system faces track by size of themselves.
+    if "tracking" in web:
+        out += ["tracking-[%gem]" % web["tracking"], "native:tracking-normal"]
     if v.get("tabular"):
         out.append("tabular-nums")
     return " ".join(out)

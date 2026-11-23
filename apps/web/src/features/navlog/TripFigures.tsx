@@ -54,7 +54,9 @@ const SHORT: Record<string, string> = { Dist: "Dist", Track: "Trk", Course: "Crs
  *  en route, the arrival, the fuel required. */
 const EXPLAIN: Record<string, ExplainedTerm> = { ETE: "ETE", ETA: "ETA" };
 
-const AREA = "relative max-w-full hit-x-2 hit-y-3";
+// A pointer's answer a figure's own: a little dimmer, as a tap's, where
+// the link variant underlined it, which iOS never does to a number.
+const AREA = "relative max-w-full hit-x-2 hit-y-3 hover:no-underline hover:opacity-80";
 
 /** A figure an airplane makes (the time, the fuel), with none picked: a
  *  dash, said as what it waits for. */

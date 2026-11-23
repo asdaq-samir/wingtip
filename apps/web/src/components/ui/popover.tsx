@@ -2,6 +2,7 @@ import * as React from "react";
 import { cn } from "cn";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { anchorHiddenRender } from "./anchorHidden";
+import { useEdgeRoom } from "../../hooks/use-viewport";
 
 function Popover({ ...props }: PopoverPrimitive.Root.Props) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
@@ -36,6 +37,9 @@ function PopoverContent({
     /** Its anchor out of sight while it is open (anchorHidden). */
     onAnchorHidden?: () => void;
   }) {
+  // Clear of the status bar, the notch and the home indicator, 8 past
+  // them (useEdgeRoom), not Base UI's 5 from the very edge.
+  const edgeRoom = useEdgeRoom();
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
@@ -43,7 +47,7 @@ function PopoverContent({
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
-        collisionPadding={collisionPadding}
+        collisionPadding={collisionPadding ?? edgeRoom}
         anchor={anchor}
         render={anchorHiddenRender(onAnchorHidden)}
         className="isolate z-50"
