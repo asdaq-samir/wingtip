@@ -38,6 +38,13 @@ import { SWIPE_READER } from "./sheetFollow";
  * 2026-11-22: "doesn't slide down with the plan, waits until it touches
  * the grabber on top").
  *
+ * Never lower than its own place: where the plan is short the figures sit
+ * right under it, and are held on the foot only once the plan reaches
+ * the foot (the owner's iPhone, 2026-11-23: a short route at half, an
+ * empty band of 40 points between the route and the figures held down on
+ * the foot, where --pin-cap had held them down as well as up since
+ * 2026-11-22).
+ *
  * Off the pill its lowest place is the foot's top, not its edge
  * (--pin-lift, the foot's height; usePinAtFoot), so the figures sit over
  * the floating bar, never under it: a route longer than the sheet held
@@ -49,7 +56,7 @@ import { SWIPE_READER } from "./sheetFollow";
  * sheet's offset there), as the bar makes way, so the figures come down
  * onto the foot's edge there as before.
  */
-export const PIN_AT_FOOT = `[transform:translateY(min(var(--pin-cap,0px),calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-min(var(--pin-lift,0px),max(0px,calc(var(--pin-pill,0px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))),calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))] ${SWIPE_READER}`;
+export const PIN_AT_FOOT = `[transform:translateY(min(0px,calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-min(var(--pin-lift,0px),max(0px,calc(var(--pin-pill,0px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))),calc(var(--pin-room,9999px)-var(--sheet-offset,0px)-var(--sheet-swipe,0px))))] ${SWIPE_READER}`;
 
 /**
  * A row of a sheet's head that is its pill (PIN_AT_FOOT on it): held on
@@ -109,7 +116,7 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
     if (!row) return;
     const barOf = () => document.querySelector<HTMLElement>(foot)?.querySelector<HTMLElement>("[data-makes-way]");
     if (!on) {
-      for (const name of ["--pin-room", "--pin-lift", "--pin-pill", "--pin-half", "--pin-p", "--pin-s", "--pin-h", "--pin-cap"])
+      for (const name of ["--pin-room", "--pin-lift", "--pin-pill", "--pin-half", "--pin-p", "--pin-s", "--pin-h"])
         row.style.removeProperty(name);
       barOf()?.style.removeProperty("--pin-bar-room");
       return;
@@ -140,12 +147,6 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       setVar(row, "--pin-lift", `${lift.lift}px`);
       setVar(row, "--pin-pill", `${lift.pill}px`);
       setVar(row, "--pin-half", `${lift.half}px`);
-      // On a phone's bottom sheet held on the foot's top at every size, down
-      // to it too where the plan is short (the route's field by its toggle,
-      // a short route all the way up): the figures at the plan's bottom over
-      // the bar (the owner, 2026-11-22: "Route box figures strip is not
-      // pinning to the bottom"); beside the side panel in their place.
-      setVar(row, "--pin-cap", lift.lift > 0 ? "9999px" : "0px");
       // Its height laid out, for its backing to grow with its scale (FplActions' PINNED).
       setVar(row, "--pin-h", `${box.height}px`);
       growTo(row, growAt(slid, lift.half, lift.pill, heldNow.current), true);
