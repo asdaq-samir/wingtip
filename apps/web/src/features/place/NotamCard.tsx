@@ -4,6 +4,7 @@ import { SheetCard } from "../../components/SheetCard";
 import StatusBadge from "../../components/StatusBadge";
 import { NotamAsSent } from "../../components/NotamAsSent";
 import { useAddressKey } from "../../lib/address";
+import { stopsOf } from "../../lib/identSchema";
 import { TEXT } from "../../lib/text";
 import { useMinuteClock } from "../../lib/useMinuteClock";
 import { instantOf } from "../../lib/format";
@@ -22,20 +23,33 @@ import {
 import { cardTimes } from "./notamTimes";
 import { TfrDetails } from "./TfrDetails";
 
-/** Which of the planned flight's fields this NOTAM's field is, as the
- *  chip says it: the departure, the destination or the alternate filed
- *  (the address's dep, dest, alternate). A procedure the NOTAM takes away
- *  is the field's own, so the field's place in the plan says it too. */
-function usePlanRole(ident: string): string | null {
+/** What the NOTAM's field is to the planned flight, as the chip says it
+ *  (the address's dep, stops, dest and alternate filed), or null where it
+ *  is none of them or only takes away what the field is not used for.
+ *  A procedure taken away affects only the role that flies it: a SID or
+ *  an ODP the departure and each stop left from, a STAR the destination,
+ *  each stop and the alternate (AIM 5-2-9, 5-4-1; the engine's notam_card
+ *  says which each is). `taken` is whether it takes away one the role
+ *  flies, the red chip; a NOTAM taking none (a runway closed, a light
+ *  out) is the field's, the neutral chip (the r6-ui audit's M4). */
+function usePlanRole(ident: string, card: NotamCardReading): { words: string; taken: boolean } | null {
   const [dep] = useAddressKey("dep");
   const [dest] = useAddressKey("dest");
   const [alternate] = useAddressKey("alternate");
-  const idents = identsOf(ident);
+  const [stops] = useAddressKey("stops");
+  const idents = identsOf(ident).map((i) => i.toUpperCase());
   const is = (field: string | null) => !!field && idents.includes(field.toUpperCase());
-  if (is(dep)) return "Affects your departure";
-  if (is(dest)) return "Affects your arrival";
-  if (is(alternate)) return "Affects your alternate";
-  return null;
+  // Each role, in the order the chip names them, and whether it leaves
+  // from the field (a departure procedure's) or lands there (an arrival's).
+  const roles = [
+    { words: "Affects your departure", here: is(dep), leaves: true, lands: false },
+    { words: "Affects your stop", here: stopsOf(stops).some(is), leaves: true, lands: true },
+    { words: "Affects your arrival", here: is(dest), leaves: false, lands: true },
+    { words: "Affects your alternate", here: is(alternate), leaves: false, lands: true },
+  ].filter((r) => r.here);
+  if (card.procedures.length === 0) return roles[0] ? { words: roles[0].words, taken: false } : null;
+  const flown = roles.find((r) => card.procedures.some((p) => (p.departure ? r.leaves : r.lands)));
+  return flown ? { words: flown.words, taken: true } : null;
 }
 
 /** Whether it is in force now, the shared StatusBadge (the owner,
@@ -87,7 +101,7 @@ function NotamFull({ n, ident, card, read }: { n: FieldNotam; ident: string; car
   // (the r5-ui audit's M6, 2026-11-23). Red only where it takes a
   // procedure away; a crane's light at the field is the neutral chip.
   const active = n.in_force !== false;
-  const role = usePlanRole(ident);
+  const role = usePlanRole(ident, card);
   // On the minute clock NotamState keeps, so "in 18d" moves on with it.
   const times = cardTimes(n, read, card.permanent, useFieldZone(ident), useMinuteClock());
   const where = whereOf(n, read);
@@ -109,12 +123,8 @@ function NotamFull({ n, ident, card, read }: { n: FieldNotam; ident: string; car
           </Badge>
         )}
         {role && active && (
-          <Badge
-            variant={card.procedures.length > 0 ? "destructive" : "secondary"}
-            className={TEXT.badge}
-            data-testid="place-notam-affects"
-          >
-            {role}
+          <Badge variant={role.taken ? "destructive" : "secondary"} className={TEXT.badge} data-testid="place-notam-affects">
+            {role.words}
           </Badge>
         )}
       </div>
