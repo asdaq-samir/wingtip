@@ -156,3 +156,25 @@ fn a_domestic_notam_ending_in_a_case_number_is_still_domestic() {
     assert_eq!((r.form, r.keyword.as_deref()), ("domestic", Some("IAP")));
     assert!(r.words.starts_with("Chicago O'Hare International"), "{}", r.words);
 }
+
+#[test]
+fn a_sid_notam_keeps_each_procedure_by_its_charted_name() {
+    // The owner's iPhone, 2026-11-23: FDC 6/3373's procedures, each by the
+    // title the d-TPP charts ("BLOKR EIGHT DEPARTURE (RNAV)"), its name in
+    // capitals and its number a word, every one of the list alike.
+    let r = read(
+        "!FDC 6/3373 ARR SID AURORA MUNI, CHICAGO/AURORA, IL. ADELL EIGHT DEPARTURE (RNAV)... BLOKR EIGHT DEPARTURE (RNAV)... CARYN EIGHT DEPARTURE (RNAV)... DARCY EIGHT DEPARTURE (RNAV)... ELANR NINE DEPARTURE (RNAV)... OBENE THREE DEPARTURE (RNAV)... RWY 18/36 PROCEDURES NA. RWY 18/36 PERMANENTLY CLSD. 2605271843-2805271843EST",
+        &[],
+    );
+    assert_eq!(
+        r.words,
+        "Aurora Municipal, Chicago/Aurora, IL. ADELL Eight departure (RNAV)... BLOKR Eight departure (RNAV)... CARYN Eight departure (RNAV)... DARCY Eight departure (RNAV)... ELANR Nine departure (RNAV)... OBENE Three departure (RNAV)... runway 18/36 procedures not authorized. Runway 18/36 permanently closed."
+    );
+    assert_eq!((r.ends.as_deref(), r.estimated), (Some("2028-05-27T18:43:00Z"), true));
+    // A STAR the same, and a number word with no procedure after it is a word.
+    assert_eq!(
+        words("!FDC 6/1 ORD STAR CHICAGO O'HARE INTL, CHICAGO, IL. BENKY SIX ARRIVAL NA."),
+        "Chicago O'Hare International, Chicago, IL. BENKY Six arrival not authorized."
+    );
+    assert_eq!(words("!OSH 11/1 OSH TWY A CLSD ONE HOUR"), "Taxiway A closed one hour.");
+}

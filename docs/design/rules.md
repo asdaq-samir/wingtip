@@ -1929,6 +1929,44 @@ The words the three apps share, generated from `design/wording.json`:
 | Words | `lib/wording/generated/wording.ts` (`WORDING`) | `Design/Generated/Wording.swift` (`Wording`), kept by `Localizable.xcstrings` | `res/values/wording_strings.xml` (`R.string.wording_*`) |
 | Tests | `lib/wording/wording.test.ts` | `WingtipTests/WordingTests.swift` | `WordingTest` |
 
+## 19. A NOTAM's own card (the owner, 2026-11-23)
+
+The owner, of FDC 6/3373 at KARR on his iPhone: the card said "SID" and
+lowercased the departures' names. A NOTAM's own card now says, top to
+bottom (web first, `features/place/NotamCard.tsx`; the phones on the
+owner's word):
+
+1. **Its title is what happened**, "Runway 18/36 closed", not its
+   keyword; under it the field and its number, "KARR Aurora Municipal ·
+   FDC 6/3373" (an FDC NOTAM with its accountability, JO 7930.2 4-2-1).
+2. **Its category is a small label** ("Departure procedures", "Arrival
+   procedures", "Instrument approaches", else Runway, Taxiway, Navaid,
+   Airspace ...).
+3. **Chips**: Active (or Later, Inactive), Permanent where the condition
+   is (PERM, or PERMANENTLY in its words), and "Affects your departure"
+   (arrival, alternate) where the field is the planned flight's. Stock
+   Badge and StatusBadge.
+4. **One plain sentence of its effect**: "Runway 18/36 is permanently
+   closed, so its RNAV departures are not authorized."
+5. **What it takes away**, under "Not authorized", by the procedures'
+   charted names in capitals and their numbers: "ADELL 8 · BLOKR 8 ·
+   CARYN 8 · DARCY 8 · ELANR 9 · OBENE 3 (RNAV)".
+6. **Its times in words**, in the field's own time with its zone: "In
+   effect since 27 May 2026, 13:43 CDT"; a permanent condition with an
+   estimated end "Until charts are updated (est. 27 May 2028)"; otherwise
+   "Until ...", estimated where EST says so, "· in 18d". The year where
+   either end is not this year's.
+7. **As sent**, folded (the stock Collapsible), never rewritten.
+
+Title, category, effect, the list and permanence are the engine's
+(`notam_card`, read from the NOTAM's parts); where it cannot structure a
+NOTAM they are null and the card says its words written out
+(`notam_read`) under its heading, as before. In those words a
+procedure's name keeps its capitals and its number is a word ("BLOKR
+Eight departure (RNAV)"), every one of a list alike. The list's rows say
+the same title, with Since and Ends lines ("05/27/28 13:43 local
+(1843Z), estimated · in 550d").
+
 ## Changing a rule
 
 A rule here changes only when the owner says so (the `owner` label). Then

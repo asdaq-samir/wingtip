@@ -209,6 +209,25 @@
         "estimated": false,
         "permanent": false
       }
+    },
+    {
+      "about": "A SID NOTAM (SID, 1-2-1; 7-1-3), the owner's FDC 6/3373 (2026-11-23): each procedure by its charted title, its name in capitals and its number a word, an estimated end (4-2-1)",
+      "text": "!FDC 6/3373 ARR SID AURORA MUNI, CHICAGO/AURORA, IL. ADELL EIGHT DEPARTURE (RNAV)... BLOKR EIGHT DEPARTURE (RNAV)... CARYN EIGHT DEPARTURE (RNAV)... DARCY EIGHT DEPARTURE (RNAV)... ELANR NINE DEPARTURE (RNAV)... OBENE THREE DEPARTURE (RNAV)... RWY 18/36 PROCEDURES NA. RWY 18/36 PERMANENTLY CLSD. 2605271843-2805271843EST",
+      "answer": {
+        "form": "domestic",
+        "number": "6/3373",
+        "location": "ARR",
+        "keyword": "SID",
+        "heading": "SID",
+        "title": null,
+        "what": null,
+        "where": null,
+        "words": "Aurora Municipal, Chicago/Aurora, IL. ADELL Eight departure (RNAV)... BLOKR Eight departure (RNAV)... CARYN Eight departure (RNAV)... DARCY Eight departure (RNAV)... ELANR Nine departure (RNAV)... OBENE Three departure (RNAV)... runway 18/36 procedures not authorized. Runway 18/36 permanently closed.",
+        "starts": "2026-05-27T18:43:00Z",
+        "ends": "2028-05-27T18:43:00Z",
+        "estimated": true,
+        "permanent": false
+      }
     }
   ]
 }

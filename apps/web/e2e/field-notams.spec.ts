@@ -68,7 +68,7 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   await inSheet(page, runway);
   await runway.click();
   const opened = page.getByTestId("place-notam-full");
-  await expect(opened).toContainText("Runway 09/27 closed.");
+  await expect(opened.getByTestId("place-notam-effect")).toHaveText("Runway 09/27 is closed.");
   await page.getByTestId("place-notam-card").getByTestId("sheet-card-close").click();
   await expect(opened).toHaveCount(0);
 
@@ -283,7 +283,7 @@ test("a TFR near the field is its kind, rule, levels and place, its instructions
   await one.click();
   const cardOf = page.getByTestId("place-notam-card");
   await expect(cardOf.getByText("Security TFR", { exact: true })).toBeVisible();
-  await expect(cardOf).toContainText("NOTAM 6/2478");
+  await expect(cardOf).toContainText("FDC 6/2478");
   const full = page.getByTestId("place-notam-full");
   await expect(full.getByTestId("place-tfr-place")).toHaveText("San Angelo, TX");
   await expect(full.getByTestId("place-tfr-instructions")).toContainText("squawking the discrete code");
@@ -293,4 +293,64 @@ test("a TFR near the field is its kind, rule, levels and place, its instructions
   await inSheet(page, sent);
   await sent.click();
   await expect(full.locator("pre")).toHaveText(text);
+});
+
+/**
+ * A NOTAM's own card says what happened, not its keyword (the owner,
+ * 2026-11-23, of FDC 6/3373 at KARR on his iPhone): titled "Runway 18/36
+ * closed", the field and the FDC number under it, "Departure procedures"
+ * a small label; Active, Permanent and that it affects the planned
+ * departure as chips; one sentence of its effect, the departures it takes
+ * away by their charted names in capitals, its times in words, and its
+ * text as sent folded. All the engine's (notam_card). Served as Duluth's
+ * here, the field every spec of this file opens.
+ */
+test("a NOTAM's card says what happened, its effect, the procedures it takes and its times in words", async ({ page }) => {
+  const raw =
+    "!FDC 6/3373 ARR SID AURORA MUNI, CHICAGO/AURORA, IL. ADELL EIGHT DEPARTURE (RNAV)... BLOKR EIGHT DEPARTURE (RNAV)... CARYN EIGHT DEPARTURE (RNAV)... DARCY EIGHT DEPARTURE (RNAV)... ELANR NINE DEPARTURE (RNAV)... OBENE THREE DEPARTURE (RNAV)... RWY 18/36 PROCEDURES NA. RWY 18/36 PERMANENTLY CLSD. 2605271843-2805271843EST";
+  await page.route(
+    (url) => url.pathname === "/api/planner/airport/KDLH/notams",
+    (route) =>
+      route.fulfill({
+        json: {
+          coverage_since: "2026-11-10T06:00:00Z",
+          top: 1,
+          unchecked: [],
+          time_zone: "America/Chicago",
+          notams: [{ ...ranked(1, raw), id: "FDC 6/3373", starts: "2026-05-27T18:43:00Z", ends: "2028-05-27T18:43:00Z" }],
+        },
+      }),
+  );
+  await page.goto("/app/plan?dep=KDLH&place=KDLH");
+  await settle(page);
+  await card(page).getByRole("tab", { name: "Info" }).click();
+  const one = card(page).getByTestId("place-notams").getByTestId("place-notam");
+  await expect(one.getByTestId("place-notam-heading")).toHaveText("Runway 18/36 closed");
+  await inSheet(page, one);
+  await one.click();
+  const opened = page.getByTestId("place-notam-card");
+  await expect(opened.getByText("Runway 18/36 closed", { exact: true })).toBeVisible();
+  await expect(opened).toContainText("FDC 6/3373");
+  const full = page.getByTestId("place-notam-full");
+  await expect(full.getByTestId("place-notam-category")).toHaveText("Departure procedures");
+  await expect(full.getByTestId("place-notam-chips")).toHaveText("ActivePermanentAffects your departure");
+  await expect(full.getByTestId("place-notam-effect")).toHaveText(
+    "Runway 18/36 is permanently closed, so its RNAV departures are not authorized.",
+  );
+  await expect(full.getByTestId("place-notam-not-authorized")).toHaveText(
+    "Not authorizedADELL 8 · BLOKR 8 · CARYN 8 · DARCY 8 · ELANR 9 · OBENE 3 (RNAV)",
+  );
+  // Aurora keeps Central Daylight Time in May, UTC-5; the end is an estimate.
+  await expect(full.getByTestId("place-notam-when")).toHaveText(
+    "In effect since 27 May 2026, 13:43 CDTUntil charts are updated (est. 27 May 2028)",
+  );
+  // As sent, folded until asked for, and never rewritten.
+  await expect(full.locator("pre")).toHaveCount(0);
+  const sent = full.getByRole("button", { name: "As Sent" });
+  await inSheet(page, sent);
+  await sent.click();
+  await expect(full.locator("pre")).toHaveText(raw);
+  // Nothing spills past an iPhone's width.
+  const width = await full.evaluate((el) => el.scrollWidth - el.clientWidth);
+  expect(width).toBeLessThanOrEqual(0);
 });

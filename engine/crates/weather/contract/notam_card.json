@@ -1,0 +1,100 @@
+{
+  "x-call": "wingtip_weather::notam_read::card::call",
+  "description": "A NOTAM's own card, read from its parts (FAA Order JO 7930.2): its accountability (4-2-1, \"FDC\"); its category, a procedure NOTAM's by what the procedures are for (SID, ODP and DVA departures, STAR arrivals, IAP approaches; 1-2-1), the rest its heading; its title, what happened (\"Runway 18/36 closed\"): notam_read's what, else a surface its words close (RWY, TWY; 3-3-5, 3-3-6; CLSD, JO 7340.2), else the procedures not authorized (NA); one plain sentence of its effect (\"Runway 18/36 is permanently closed, so its RNAV departures are not authorized.\"); whether the condition is permanent (PERM, 4-2-1, or its words' PERMANENTLY); and the procedures it takes away, each by its charted name and number (7-1-3: \"ADELL EIGHT DEPARTURE (RNAV)\" is \"ADELL 8\", RNAV). Each null or empty where the NOTAM's parts do not say all of it: the card then says its words written out (notam_read), never a guess.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NotamCardInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "The NOTAM as sent, domestic or ICAO form."
+        },
+        "idents": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The field's idents (OSH, KOSH), kept as written."
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "NotamCardAnswer",
+      "type": "object",
+      "properties": {
+        "account": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The domestic form's accountability (\"FDC\", \"OSH\"); null in the ICAO form."
+        },
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "What kind of thing it is about, a small label: \"Departure procedures\", \"Arrival procedures\", \"Instrument approaches\", else notam_read's heading (Runway, Taxiway, Navaid, Airspace ...)."
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "What happened, the card's title: \"Runway 18/36 closed\"; null where its parts do not say it."
+        },
+        "effect": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "One plain sentence of what it means: \"Runway 18/36 is permanently closed, so its RNAV departures are not authorized.\"; null where its parts do not say it."
+        },
+        "permanent": {
+          "type": "boolean",
+          "description": "The condition is permanent: PERM as its end, or PERMANENTLY in its words (it stays until the charts show it)."
+        },
+        "procedures": {
+          "type": "array",
+          "description": "The procedures it takes away (NA), in its order; empty where it takes none.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Its charted name and number: \"ADELL 8\"."
+              },
+              "rnav": {
+                "type": "boolean",
+                "description": "An RNAV procedure, \"(RNAV)\" on its title."
+              }
+            },
+            "required": [
+              "name",
+              "rnav"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "account",
+        "category",
+        "title",
+        "effect",
+        "permanent",
+        "procedures"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

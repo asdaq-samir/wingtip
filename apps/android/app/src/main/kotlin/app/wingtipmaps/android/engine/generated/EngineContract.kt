@@ -9108,6 +9108,58 @@ object EngineContract {
     )
 
     @Serializable
+    data class NotamCardAnswer(
+        /**
+         * The domestic form's accountability ("FDC", "OSH"); null in the ICAO form.
+         */
+        val account: String? = null,
+        /**
+         * What kind of thing it is about, a small label: "Departure procedures", "Arrival procedures", "Instrument approaches", else notam_read's heading (Runway, Taxiway, Navaid, Airspace ...).
+         */
+        val category: String? = null,
+        /**
+         * What happened, the card's title: "Runway 18/36 closed"; null where its parts do not say it.
+         */
+        val title: String? = null,
+        /**
+         * One plain sentence of what it means: "Runway 18/36 is permanently closed, so its RNAV departures are not authorized."; null where its parts do not say it.
+         */
+        val effect: String? = null,
+        /**
+         * The condition is permanent: PERM as its end, or PERMANENTLY in its words (it stays until the charts show it).
+         */
+        val permanent: Boolean,
+        /**
+         * The procedures it takes away (NA), in its order; empty where it takes none.
+         */
+        val procedures: List<EngineContract.NotamCardAnswerProceduresItem>,
+    )
+
+    @Serializable
+    data class NotamCardAnswerProceduresItem(
+        /**
+         * Its charted name and number: "ADELL 8".
+         */
+        val name: String,
+        /**
+         * An RNAV procedure, "(RNAV)" on its title.
+         */
+        val rnav: Boolean,
+    )
+
+    @Serializable
+    data class NotamCardInput(
+        /**
+         * The NOTAM as sent, domestic or ICAO form.
+         */
+        val text: String,
+        /**
+         * The field's idents (OSH, KOSH), kept as written.
+         */
+        val idents: List<String>? = null,
+    )
+
+    @Serializable
     data class NotamReadAnswer(
         /**
          * The form it was read in; text where it is in neither, its words then as sent.

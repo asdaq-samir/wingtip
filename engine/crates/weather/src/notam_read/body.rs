@@ -22,13 +22,12 @@
 //! - a schedule's times, UTC unless stated (3-3-2: "DLY 1200-2000"), with
 //!   their Z, and its days and SR-SS ("sunrise to sunset").
 //!
-//! Anything else is kept: a code, an ident or designator (three letters or
-//! fewer, or one the caller names), a word with a figure in it (91.137,
-//! 122.8), a fix's name before its kind ("CHERN LOM"); a longer word in
-//! capitals is set in lower case, as faa_words sets the FAA's capitals,
-//! and never changed into another word. Text with any lower case in it is
-//! someone's own writing and is left as written.
+//! Anything else is kept: a code, an ident or designator (three letters or fewer, or one the caller
+//! names), a word with a figure in it (91.137, 122.8), a fix's name before its kind ("CHERN LOM"), a
+//! procedure's name ("BLOKR Eight departure", card); a longer word in capitals is set in lower case,
+//! as faa_words sets them, never changed into another word. Text with any lower case is left as written.
 
+use super::card::procedure_word;
 use crate::contractions::{compass, is_code, listed, lookup, written};
 
 /// The short words of plain English a NOTAM uses, set in lower case (any
@@ -177,7 +176,7 @@ fn fix_radial_distance(core: &str) -> Option<String> {
 /// A runway as designated: "18/36", "01L/19R", "09L", or by the compass
 /// as a pair where it has no number ("NE/SW", 3-3-5): a lone "E" after a
 /// runway is its east part ("RWY 10/28 E 3800FT").
-fn is_runway(core: &str) -> bool {
+pub(super) fn is_runway(core: &str) -> bool {
     let pair = core.contains('/');
     core.split('/').all(|end| {
         let digits = end.trim_end_matches(['L', 'R', 'C']);
@@ -219,13 +218,13 @@ pub(super) fn rewrite(words: &[&str], cx: &Context) -> String {
         let w = split(raw);
         let next = words.get(i + 1).map(|n| split(n));
         let next_core = next.as_ref().map_or("", |n| n.core);
-        let next_is_compass = compass(next_core).is_some();
+        let (next_is_compass, after) = (compass(next_core).is_some(), words.get(i + 2).map_or("", |a| split(a).core));
         let core = w.core;
         let mut distance = false;
         let is_designator = designator.is_some_and(|test| test(core));
         let said: String = if is_designator {
             core.to_owned()
-        } else if let Some(s) = span(core, next_core == "AGL") {
+        } else if let Some(s) = procedure_word(core, next_core, after).or_else(|| span(core, next_core == "AGL")) {
             s
         } else if let Some((n, unit)) = figure(core) {
             distance = matches!(unit, "nm" | "ft") && next_is_compass;
