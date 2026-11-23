@@ -66,7 +66,11 @@ interface ShortFlight {
 // departure picked is never one run wider than the box (the r6 audit's
 // M9); a chip keeps to its pill at a gap of 4, the next point 8 on (gap-2),
 // as ForeFlight's pills read, in order with no arrows (the owner, 2026-11-23).
-const PIECE = "inline-flex max-w-full items-center align-middle whitespace-nowrap";
+// Each piece's middle on the middle of the capitals typed beside it, not of
+// their x-height, where `align-middle` alone puts it: the ident being typed
+// after the last pill sat higher than the pills (the owner's iPhone,
+// 2026-11-23), so the piece is raised by half what a capital stands over an x.
+const PIECE = "relative top-[calc(0.5ex_-_0.5cap)] inline-flex max-w-full items-center align-middle whitespace-nowrap";
 // A missing departure's word, where its field was: in the field's grey, at
 // the field's size, a row's (TEXT.row: 16 at the least, 17 to a finger).
 const ASKING = cn("px-1 font-sans normal-case text-muted-foreground", TEXT.row);

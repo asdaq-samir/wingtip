@@ -101,16 +101,45 @@ const onVisual = (onChange: () => void) => {
   };
 };
 
-const keyboardInset = held(() => {
+/** The window's tallest height seen at its present width: a turn of the
+ *  phone starts it again. */
+let tallest = { width: 0, height: 0 };
+/** Less than this short of the tallest is Safari's bars folding, not a
+ *  keyboard: its toolbar and address bar are under 100 points together. */
+const KEYBOARD_PX = 150;
+
+const keyboard = held(() => {
   const visual = window.visualViewport;
-  return visual ? Math.max(0, Math.round(window.innerHeight - visual.height - visual.offsetTop)) : 0;
+  if (!visual) return "0|0";
+  const inset = Math.max(0, Math.round(window.innerHeight - visual.height - visual.offsetTop));
+  if (tallest.width !== window.innerWidth) tallest = { width: window.innerWidth, height: 0 };
+  tallest.height = Math.max(tallest.height, window.innerHeight, visual.height);
+  // Up when the visible part is well short of the window's tallest. iOS
+  // 26's Safari shrinks the window itself with the keyboard, as Chrome on
+  // Android does, so the window and the visual viewport agree and the
+  // inset is 0 while the keyboard is up: the tab bar stayed over it (the
+  // owner's iPhone, 2026-11-23). Only under a finger: a desktop's window
+  // made shorter by hand is no keyboard.
+  const touch = window.matchMedia("(any-pointer: coarse)").matches;
+  const up = inset > 0 || (touch && tallest.height - visual.height > KEYBOARD_PX);
+  return `${inset}|${up ? 1 : 0}`;
 }, onVisual);
+const useKeyboardReading = () => useSyncExternalStore(keyboard.subscribe, keyboard.get, () => "0|0").split("|");
+
 /** How much of the bottom of the window the on-screen keyboard covers:
  *  0 with no keyboard, and where the browser shrinks the window for one
- *  instead (Chrome on Android), since the window's own height says it.
- *  For what is not in a sheet's Drawer (the route's suggestions, a
- *  popover put on the page's body): what is in one takes the stock
- *  Drawer's own (VirtualKeyboardProvider's --drawer-keyboard-inset). */
+ *  instead (Chrome on Android, iOS 26's Safari), since the window's own
+ *  height says it. For what is not in a sheet's Drawer (the route's
+ *  suggestions, a popover put on the page's body): what is in one takes
+ *  the stock Drawer's own (VirtualKeyboardProvider's
+ *  --drawer-keyboard-inset). */
 export function useKeyboardInset(): number {
-  return useSyncExternalStore(keyboardInset.subscribe, keyboardInset.get, () => 0);
+  return Number(useKeyboardReading()[0]) || 0;
+}
+
+/** Whether the on-screen keyboard is up, by the same reading: covering
+ *  the window's foot, or the window shrunk for it. What is put away while
+ *  it is up, as iOS puts a tab bar away (MapPanel's foot bar), asks this. */
+export function useKeyboardUp(): boolean {
+  return useKeyboardReading()[1] === "1";
 }

@@ -6,7 +6,7 @@ import { useIsDesktop } from "../hooks/use-desktop";
 import { useInspector } from "../hooks/use-inspector";
 import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
-import { useKeyboardInset, useSafeArea } from "../hooks/use-viewport";
+import { useKeyboardUp, useSafeArea } from "../hooks/use-viewport";
 import { GLASS_SHEET, PILL_RADIUS, useSlidingSheet, type MapInsets, type PanelState } from "../lib/mapChrome";
 import { cardOpening, coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
@@ -134,8 +134,8 @@ export default function MapPanel(props: Props) {
   // In sight on FPL's page alone, as its foot was (SheetPages), and not
   // under a card; put away while the keyboard is up, as iOS puts a tab bar
   // away, so the field typed in keeps the screen (the r6 UI audit's M1).
-  const keyboard = useKeyboardInset();
-  const footBarUp = footBar && footShown && props.pages?.at === 1 && keyboard === 0;
+  const keyboard = useKeyboardUp();
+  const footBarUp = footBar && footShown && props.pages?.at === 1 && !keyboard;
   // A card or a page open is the whole sheet, its own head and ✕ at the top
   // (one card rule, 2026-11-10); closed, the search is back -- kept with the keyboard up, as it is typed in.
   const barShown = !!bar && !flying && !covering && layer === "tab";
