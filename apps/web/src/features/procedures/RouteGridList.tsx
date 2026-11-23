@@ -1,7 +1,8 @@
 import { useRef, type DragEvent, type ReactNode } from "react";
-import { DropIndicator, GridList, GridListItem, useDragAndDrop, type Key } from "react-aria-components";
+import { GridList, GridListItem, useDragAndDrop, type Key } from "react-aria-components";
 import { cn } from "cn";
 import { feel } from "../../lib/haptics";
+import { dropLine } from "../../components/dropLine";
 
 /** One row of FPL's route list: a point, a hold, a field's block, a stop
  *  being added. `point`, a typed point's place among the route's, where
@@ -93,12 +94,7 @@ export default function RouteGridList({ items, onMove, canMove }: RouteGridProps
       if (from !== undefined && to !== null && to !== from) onMove?.(from, to);
     },
     // The stock line between the rows where it will go.
-    renderDropIndicator: (target) => (
-      <DropIndicator
-        target={target}
-        className={({ isDropTarget }) => cn("-my-px h-0.5 rounded-full outline-none", isDropTarget ? "bg-tint" : "bg-transparent")}
-      />
-    ),
+    renderDropIndicator: dropLine,
   });
   // A drag begun on a row that is no point (no data-point): the browser's
   // own turned down before React Aria's row hears of it.

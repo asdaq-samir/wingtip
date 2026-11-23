@@ -6,6 +6,7 @@ import { cn } from "cn";
 import type { PopoverContent, PopoverTrigger } from "./ui/popover";
 import { loadPopups, usePopups } from "./popupsChunk";
 import { useIsMobile } from "../hooks/use-mobile";
+import { useEdgeRoom } from "../hooks/use-viewport";
 import { SheetCard } from "./SheetCard";
 import { TEXT } from "../lib/text";
 
@@ -195,6 +196,7 @@ export function ResponsivePopoverContent({
   const phone = useContext(OnPhone);
   const desk = useContext(Desk);
   const anchor = useContext(Anchor);
+  const edgeRoom = useEdgeRoom();
   if (!phone) {
     if (!desk?.popups) return null;
     return (
@@ -208,7 +210,8 @@ export function ResponsivePopoverContent({
         side={side}
         sideOffset={sideOffset ?? 8}
         alignOffset={alignOffset}
-        collisionPadding={collisionPadding}
+        // Clear of the status bar and the notch, not Base UI's 5 from the edge.
+        collisionPadding={collisionPadding ?? edgeRoom}
         {...props}
       >
         {action !== undefined && (

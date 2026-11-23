@@ -101,7 +101,16 @@ export function RouteGrid(props: RouteGridProps) {
     <div ref={box} onPointerDownCapture={wake} onFocusCapture={wake} onKeyDownCapture={wake}>
       <div role="grid" aria-label="The route" className="outline-none" data-testid="procedures">
         {props.items.map((item) => (
-          <div key={item.id} role="row" tabIndex={-1} className="relative outline-none" data-point={item.point}>
+          // A point's row takes no word selection or iOS callout from a hold,
+          // as the list's own draggable rows do: a hold that began before the
+          // drag chunk came selected the ident instead (native audit L3).
+          <div
+            key={item.id}
+            role="row"
+            tabIndex={-1}
+            className="relative outline-none data-point:select-none data-point:[-webkit-touch-callout:none] [&_input]:select-text"
+            data-point={item.point}
+          >
             <div role="gridcell" style={{ display: "contents" }}>
               {item.node}
             </div>

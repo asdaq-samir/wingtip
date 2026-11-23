@@ -112,7 +112,14 @@ export default function TextBody({ source, startPage, startAt, find, goto, onOut
         <div key={gi}>
           {g.head && <h4 className={cn("pt-5 pb-1 font-semibold text-muted-foreground", TEXT.row)}>{g.head}</h4>}
           {g.sections.map((s) => (
-            <section key={s.id} id={sectionAnchor(s.id)} className="scroll-mt-2 pt-4">
+            // Each section laid out only near the screen (content-visibility),
+            // its height guessed till then and kept once seen: Part 91 drew
+            // every paragraph before the cite scrolled in (react-perf L6).
+            <section
+              key={s.id}
+              id={sectionAnchor(s.id)}
+              className="scroll-mt-2 pt-4 [contain-intrinsic-size:auto_400px] [content-visibility:auto]"
+            >
               <h4 className={cn("pb-1 font-semibold", TEXT.row)}>{s.head}</h4>
               {s.paragraphs.map((p, pi) => (
                 <p key={pi} className={cn("pb-2", TEXT.prose)}>
