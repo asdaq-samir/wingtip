@@ -34,13 +34,13 @@
 
 @layer base {
   /* Type set as a reader's app sets it: grey-scale smoothing on a Mac's
-     screen, a face's optical sizes where it has them (Inter's), and
-     headings balanced over their lines and prose without a lone last
-     word. */
+     screen, and headings balanced over their lines and prose without a
+     lone last word. No optical sizes: Barlow has none, and the Inter
+     loaded is its weight axis alone; what size does to the type is the
+     roles' tracking (design/tokens.json, web.tracking). */
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-optical-sizing: auto;
     text-rendering: optimizeLegibility;
   }
   :where(h1, h2, h3, h4, [data-slot$="-title"]) {
@@ -101,6 +101,25 @@
       @starting-style {
         opacity: 0;
         translate: 0 0.25rem;
+      }
+    }
+  }
+}
+
+/* The same arrival from a side of its own (--appear-from, an x and a
+   y): a runway line unfolding from its head, the folded chip from its
+   end, the flying head from the top. A page's time, on the sheet's
+   curve, and a transition, so a quick second tap turns it back from
+   where it is rather than starting it again, as keyframes did. */
+@utility appear-slide {
+  @media (prefers-reduced-motion: no-preference) {
+    @variant branded {
+      transition:
+        opacity var(--motion-page) var(--motion-sheet-ease),
+        translate var(--motion-page) var(--motion-sheet-ease);
+      @starting-style {
+        opacity: 0;
+        translate: var(--appear-from);
       }
     }
   }

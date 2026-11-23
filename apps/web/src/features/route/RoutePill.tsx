@@ -128,8 +128,9 @@ export default function RoutePill({
       // A swipe that starts on the pill slides the row sideways (the owner: "ids can slide"),
       // up or down scrolls the lines or moves the sheet (swipe-ignore "x", the one scrolling
       // rule); a hold, its menu. touch-manipulation keeps both pans, which pan-y did not.
-      // No iOS callout over the hold.
-      className="inline-flex shrink-0 items-center rounded-full touch-manipulation select-none [-webkit-touch-callout:none]"
+      // No iOS callout over the hold. The app's focus ring on a keyboard's
+      // Tab, not the browser's outline.
+      className="inline-flex shrink-0 items-center rounded-full outline-none touch-manipulation select-none [-webkit-touch-callout:none] focus-visible:ring-2 focus-visible:ring-ring"
       data-testid={role === "stop" ? "stop" : `route-${role}`}
       onPointerDown={(e) => guard.down(e.pointerType === "touch")}
       onTouchEnd={(e) => {

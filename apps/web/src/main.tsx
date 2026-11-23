@@ -28,6 +28,7 @@ import { prefetchRouteMap } from "./features/plan-map/routeMapChunk";
 import { prefetchRouteBox } from "./features/route/routeBoxChunk";
 import { prefetchShareMenu } from "./features/share/shareMenuChunk";
 import { loadPopups } from "./components/popupsChunk";
+import { TooltipProvider } from "./components/ui/tooltip";
 import "./index.css";
 // Inter, the text face, here rather than in index.css, which the
 // connector's live view shares (claude-view.html): its host's sandbox
@@ -277,11 +278,13 @@ const render = () =>
         (and what the Toaster below already reads). */}
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey={THEME_KEY} disableTransitionOnChange>
         <QueryClientProvider client={queryClient}>
-          {/* No tooltip provider: each tooltip opens at once (its trigger's
-          delay 0, popups/IconTip), as the provider's did, and the
-          provider would bring Base UI's tooltips into the first load
-          (popupsChunk). */}
-          <>
+          {/* Base UI's tooltip provider: the first label waits its 600 ms,
+          and once one is up the next opens at once, with no entrance
+          (ui/tooltip's data-instant), so a pointer sweeping the map's
+          buttons reads each label as it passes (the design review of
+          2026-11-23, M1). Only the provider's context is on the first
+          load; the tooltips themselves stay in the popups' chunk. */}
+          <TooltipProvider>
             {/* The address's keys read and written by nuqs (lib/address),
             by its plain React adapter, from the browser's address itself
             (useSyncExternalStore): React Router's adapter kept its own copy
@@ -294,7 +297,7 @@ const render = () =>
             <ErrorAlert />
             <BrandLook />
             <SafariEdges />
-          </>
+          </TooltipProvider>
         </QueryClientProvider>
       </ThemeProvider>
     </React.StrictMode>,

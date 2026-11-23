@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Eraser, Hand, Highlighter, ImageDown, PenLine, Redo2, StickyNote, Undo2 } from "lucide-react";
 import { cn } from "cn";
+import { Toolbar } from "@base-ui/react/toolbar";
 import IconButton from "../../components/IconButton";
 import PullDown from "../../components/PullDown";
 import { Button } from "../../components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../../components/ui/popover";
 import { Textarea } from "../../components/ui/textarea";
+import { Toggle } from "../../components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
 import { TEXT } from "../../lib/text";
 import type { Tool } from "./markup";
@@ -31,7 +33,10 @@ const TOOL = "relative size-10 rounded-full hit-0.5 [&_svg]:size-5";
  * highlighter, the pen and the eraser; the ink, a pull-down (discrete
  * settings are menus); Undo (and Redo where there is room, as iPadOS has
  * both and the iPhone's Notes keeps Undo); a picked highlight's note;
- * and the page shared with its marks.
+ * and the page shared with its marks. Base UI's Toolbar round them, as
+ * the playback bar's (PlaybackBar): one tab stop and the arrows between
+ * its controls, the APG toolbar its role promises, where every button
+ * was a tab stop of its own (the reuse audit of 2026-11-23, M3).
  */
 export function MarkupBar({ vm, page, at }: { vm: MarkupModel; page: number | null; at: "head" | "foot" }) {
   const head = at === "head";
@@ -42,8 +47,7 @@ export function MarkupBar({ vm, page, at }: { vm: MarkupModel; page: number | nu
         head ? "shrink-0 pb-2" : "pointer-events-none absolute inset-x-0 bottom-0 pb-[max(1rem,env(safe-area-inset-bottom))]",
       )}
     >
-      <div
-        role="toolbar"
+      <Toolbar.Root
         aria-label="Markup"
         data-testid="document-markup-bar"
         data-at={at}
@@ -54,9 +58,13 @@ export function MarkupBar({ vm, page, at }: { vm: MarkupModel; page: number | nu
       >
         <ToggleGroup value={vm.tool ? [vm.tool] : []} onValueChange={(v) => v[0] && vm.take(v[0] as Tool)} aria-label="Tool" spacing={1}>
           {TOOLS.map(({ value, label, icon: Icon }) => (
-            <ToggleGroupItem key={value} value={value} aria-label={label} className={TOOL} data-testid={`document-tool-${value}`}>
+            <Toolbar.Button
+              key={value}
+              render={<ToggleGroupItem value={value} aria-label={label} className={TOOL} />}
+              data-testid={`document-tool-${value}`}
+            >
               <Icon aria-hidden="true" />
-            </ToggleGroupItem>
+            </Toolbar.Button>
           ))}
         </ToggleGroup>
         {vm.ink && (
@@ -77,14 +85,18 @@ export function MarkupBar({ vm, page, at }: { vm: MarkupModel; page: number | nu
             onChange={vm.setInk}
             testId="document-ink"
             trigger={
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label={`Ink: ${vm.inkChoices.find((c) => c.value === vm.ink)?.label ?? ""}`}
-                className={TOOL}
+              <Toolbar.Button
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Ink: ${vm.inkChoices.find((c) => c.value === vm.ink)?.label ?? ""}`}
+                    className={TOOL}
+                  />
+                }
               >
                 <Swatch ink={vm.ink} />
-              </Button>
+              </Toolbar.Button>
             }
           />
         )}
@@ -97,33 +109,48 @@ export function MarkupBar({ vm, page, at }: { vm: MarkupModel; page: number | nu
             onSave={vm.setNote}
           />
         )}
-        <IconButton label="Undo" disabled={!vm.canUndo} onClick={vm.undo} className={TOOL} data-testid="document-undo-mark">
+        {/* Greyed and out of the arrows' way while there is nothing to
+            undo, redo or share, the stock Button's own disabled look. */}
+        <Toolbar.Button
+          render={<IconButton label="Undo" onClick={vm.undo} className={TOOL} />}
+          disabled={!vm.canUndo}
+          focusableWhenDisabled={false}
+          data-testid="document-undo-mark"
+        >
           <Undo2 />
-        </IconButton>
-        <IconButton label="Redo" disabled={!vm.canRedo} onClick={vm.redo} className={cn(TOOL, !head && "max-sm:hidden")}>
+        </Toolbar.Button>
+        <Toolbar.Button
+          render={<IconButton label="Redo" onClick={vm.redo} className={cn(TOOL, !head && "max-sm:hidden")} />}
+          disabled={!vm.canRedo}
+          focusableWhenDisabled={false}
+        >
           <Redo2 />
-        </IconButton>
+        </Toolbar.Button>
+        {/* On or off, so the stock Toggle (aria-pressed its own). */}
         {vm.pencilOnly !== null && (
-          <IconButton
-            label="Draw with Finger"
-            aria-pressed={!vm.pencilOnly}
-            onClick={() => vm.setPencilOnly(!vm.pencilOnly)}
-            className={TOOL}
+          <Toolbar.Button
+            render={
+              <Toggle
+                aria-label="Draw with Finger"
+                pressed={!vm.pencilOnly}
+                onPressedChange={(on) => vm.setPencilOnly(!on)}
+                className={TOOL}
+              />
+            }
             data-testid="document-finger-draws"
           >
             <Hand />
-          </IconButton>
+          </Toolbar.Button>
         )}
-        <IconButton
-          label="Share Marked-Up Page"
+        <Toolbar.Button
+          render={<IconButton label="Share Marked-Up Page" onClick={() => page && void vm.sharePage(page)} className={TOOL} />}
           disabled={!page || vm.sharing}
-          onClick={() => page && void vm.sharePage(page)}
-          className={TOOL}
+          focusableWhenDisabled={false}
           data-testid="document-share-marked"
         >
           <ImageDown />
-        </IconButton>
-      </div>
+        </Toolbar.Button>
+      </Toolbar.Root>
     </div>
   );
 }
@@ -158,14 +185,18 @@ function NoteButton({
     >
       <PopoverTrigger
         render={
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={note ? "Edit Note" : "Add Note"}
-            className={TOOL}
-            // The focus left on the page, so pdf.js keeps the highlight picked.
-            onPointerDown={(e) => e.preventDefault()}
-            data-testid="document-note-button"
+          <Toolbar.Button
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={note ? "Edit Note" : "Add Note"}
+                className={TOOL}
+                // The focus left on the page, so pdf.js keeps the highlight picked.
+                onPointerDown={(e) => e.preventDefault()}
+                data-testid="document-note-button"
+              />
+            }
           />
         }
       >

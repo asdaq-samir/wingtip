@@ -110,7 +110,7 @@ export default function SignInModal({
           <Button
             variant="link"
             data-testid="sign-in"
-            className={cn("relative h-auto p-0 font-bold tracking-tight text-tint hit-y-2 after:inset-x-0", TEXT.hero)}
+            className={cn("relative h-auto p-0 font-bold text-tint hit-y-2 after:inset-x-0", TEXT.hero)}
           >
             Sign In
           </Button>

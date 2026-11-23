@@ -49,7 +49,13 @@ These hold on every screen below and win over any reference app.
   Vercel's interface guidelines ask the same, 24 px at least and 44 px on
   mobile ([Vercel guidelines][vercel-guidelines]).
 - **Brand tokens from `design/tokens.json` only**: the tint for what is
-  tapped, the chart's own colours on the map, `lib/text` for type sizes.
+  tapped, the chart's own colours on the map, `lib/text` for type sizes
+  and their tracking: each role's `web.tracking` (em) in
+  design/tokens.json, tighter as the type grows (hero -0.02, card -0.015,
+  heading and figure -0.01) and a little looser under 14 (note 0.005,
+  badge and caption 0.01), as Apple's tracking tables run; no
+  `tracking-tight` of a component's own (the Apple design review of
+  2026-11-23, M4). Native keeps the stock tracking.
   The looks are Wingtip (the default), Glass Cockpit, Chart ink and
   Native. Native is the components as they come out of the box (the
   owner, 2026-11-10): shadcn's stock theme for base-vega on neutral, its
@@ -325,6 +331,9 @@ is picked on the map at a time, in one yellow (rules.md, 14;
 ### Hover (desktop only)
 
 - Base UI's Tooltip is disabled on touch devices and opens after 600 ms;
+  its Provider round the app (main.tsx) opens the next one at once while
+  one is up, with no entrance (`data-instant:animate-none`), so a pointer
+  sweeping the map's buttons reads each label as it passes;
   its docs point to a Popover with `openOnHover` for touch
   ([Base UI Tooltip][bui-tooltip]). Use a tooltip only to name an icon
   button; Vercel prefers inline help to tooltips
@@ -472,6 +481,20 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   ([web.dev reduced motion][webdev-reduced-motion]). Vercel adds: CSS
   first, transform and opacity only, never `transition: all`, animations
   interruptible and never autoplaying ([Vercel guidelines][vercel-guidelines]).
+  The stock parts name what they ease too (`components/ui`: the Button's
+  colours, ring, dim and press give; Progress its width): shadcn's
+  `transition-all` eased a size, a padding or `visibility` set from a
+  class, so a figure's type trailed the sheet and a hidden ••• lingered
+  (the design review of 2026-11-23, H1). What the app brings in of its
+  own is a transition on `@starting-style`, which a second tap turns back,
+  not keyframes: `appear` (a line fading up into a page) and
+  `appear-slide` from a side of its own (`--appear-from`: a runway line
+  unfolding, the flying head), over `--motion-page`, both in
+  styles/feel.css. Settings' pages push and pop through the page step
+  (`lib/viewTransition`), the Brief's own, so back slides out the way the
+  page came in. The airport and airplane cards' tab bar slides its pill
+  to the picked tab (the stock `Tabs.Indicator`, `FLOATING_BAR_PICKED`),
+  and a timeline line's details open with the stock Collapsible's height.
 - `prefers-contrast` and `forced-colors` are Baseline widely available
   ([MDN prefers-contrast][mdn-prefers-contrast],
   [MDN forced-colors][mdn-forced-colors]): the glass falls back to a solid
@@ -964,8 +987,9 @@ between search and fpl") in each page's first row: at the start of
 Search's, the account button at its end (the owner, 2026-11-20), where a
 tab bar under the sheet, and before it a sideways pager and a split
 grabber, were; FPL's page has none (95fd57f19). It is
-the app's shadcn Toggle on Base UI's, never pressed (`aria-pressed="false"`:
-a tap goes somewhere, it turns nothing on), its name where it goes:
+the stock Button, not a Toggle (a tap goes somewhere, it turns nothing
+on: a Toggle held unpressed was said "toggle button, not pressed", the
+design review of 2026-11-23), its name where it goes:
 `components/PageToggle`. It shows the page a tap goes to, as Apple Maps'
 2D/3D button does -- the word FPL on Search ("FPL, show flight plan"; the badge's type role, in the text's colour); FPL's page has none,
 its head's Search button going back to Search's resting page, the route kept (the field not focused) and its ✕ clearing the route
@@ -1011,9 +1035,9 @@ each trip to the pill (the motion review of 2026-11-22). The strip's size
 between its thin line and the pill follows the sheet a frame at a time
 (`--pin-p`), and nothing in it eases its own size: the figures that are
 stock Buttons (Dist, ETE) eased their type 150 ms behind the sheet and
-were still shrinking after it stopped, so in the strip they ease only
-their colours and their press (`FigureStrip`'s `SIZE_FOLLOWS`;
-`e2e/fpl-strip-foot.spec.ts`). The figures under the route are FPL's pill too, one copy at
+were still shrinking after it stopped, until the stock Button named
+what it eases (its colours and its press, never its size; the design
+review of 2026-11-23; `e2e/fpl-strip-foot.spec.ts`). The figures under the route are FPL's pill too, one copy at
 every size: components/sheet/pinAtFoot's `usePinAtFoot` holds them on
 the foot's edge at the pill, and as the sheet goes down they stop there
 while the route slides on under them, the other way waiting there until

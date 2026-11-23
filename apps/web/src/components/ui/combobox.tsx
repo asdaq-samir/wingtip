@@ -8,6 +8,7 @@ import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { MENU_CHECK, MENU_CHECK_ITEM, MENU_CONTENT, MENU_LABEL, MENU_SEPARATOR } from "./menuLook";
+import { useEdgeRoom } from "../../hooks/use-viewport";
 
 /*
  * shadcn's Combobox on Base UI's (base-vega), as the other ui/ parts were
@@ -104,6 +105,9 @@ function ComboboxContent({
   anchor,
   ...props
 }: ComboboxPrimitive.Popup.Props & Pick<ComboboxPrimitive.Positioner.Props, "side" | "align" | "sideOffset" | "alignOffset" | "anchor">) {
+  // Clear of the status bar, the notch and the home indicator, 8 past
+  // them (useEdgeRoom), not Base UI's 5 from the very edge.
+  const edgeRoom = useEdgeRoom();
   return (
     <ComboboxPrimitive.Portal>
       <ComboboxPrimitive.Positioner
@@ -112,6 +116,7 @@ function ComboboxContent({
         align={align}
         alignOffset={alignOffset}
         anchor={anchor}
+        collisionPadding={edgeRoom}
         className="isolate z-50"
       >
         <ComboboxPrimitive.Popup

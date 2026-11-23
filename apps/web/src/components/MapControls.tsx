@@ -110,7 +110,7 @@ function MapControlsDrawn({ map }: { map: GlMap | null }) {
         <RadioButton />
       </span>
       <div
-        className="grid min-w-0 transition-[grid-template-columns] duration-300 ease-out motion-reduce:transition-none"
+        className="grid min-w-0 transition-[grid-template-columns] duration-(--motion-page) ease-(--motion-sheet-ease) motion-reduce:transition-none"
         style={{ gridTemplateColumns: pill ? "1fr" : "0fr" }}
       >
         <div className="min-w-0 overflow-hidden">

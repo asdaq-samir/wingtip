@@ -58,7 +58,7 @@ export function MapCard({
               // 13 under it), so every card's head is the same height at the
               // pill (the selection audit, 2026-11-18: these were 15 and
               // wrapped).
-              className={cn("truncate text-center font-bold tracking-tight text-foreground outline-none", TEXT.card)}
+              className={cn("truncate text-center font-bold text-foreground outline-none", TEXT.card)}
             >
               {title}
             </h2>

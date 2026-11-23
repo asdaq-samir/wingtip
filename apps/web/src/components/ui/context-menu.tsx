@@ -31,7 +31,7 @@ function ContextMenuRadioGroup({ ...props }: ContextMenuPrimitive.RadioGroup.Pro
 function ContextMenuContent({
   className,
   align = "start",
-  alignOffset = 4,
+  alignOffset = 8,
   side = "right",
   sideOffset = 0,
   ...props
@@ -47,13 +47,17 @@ function ContextMenuContent({
       >
         <ContextMenuPrimitive.Popup
           data-slot="context-menu-content"
-          // Eight under the pointer (mt-2): the menu's rows run edge to
-          // edge (menuLook), so at the pointer itself the first row took
-          // the right button's own release as a pick -- a held row's
-          // Delete fired as the menu opened (under Radix).
+          // Eight under the pointer (alignOffset, beside it on the right and
+          // aligned at its start, so the offset is down): the menu's rows
+          // run edge to edge (menuLook), so at the pointer itself the first
+          // row took the right button's own release as a pick -- a held
+          // row's Delete fired as the menu opened (under Radix). The
+          // Positioner's offset, not a margin: flipped up near the sheet's
+          // foot, Base UI mirrors it away from the finger, where mt-2 still
+          // pushed the menu down toward it, and --available-height counts it.
           className={cn(
             MENU_CONTENT,
-            "mt-2 z-50 max-h-(--available-height) origin-(--transform-origin) overflow-x-hidden overflow-y-auto text-popover-foreground duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            "z-50 max-h-(--available-height) origin-(--transform-origin) overflow-x-hidden overflow-y-auto text-popover-foreground duration-100 outline-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
             className,
           )}
           {...props}
