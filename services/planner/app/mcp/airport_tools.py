@@ -29,6 +29,8 @@ WEATHER = ("metar", "nearby_metar", "modelled_weather", "taf", "weather_unavaila
 
 #: The furthest search_airports pages, its offset's most.
 SEARCH_REACH = 500
+#: More than every US airport the search holds (some 32,600), to count them all.
+EVERY_MATCH = 100_000
 
 
 def register(server: MCPServer) -> None:
@@ -64,14 +66,17 @@ def register(server: MCPServer) -> None:
         # The search pages no further than SEARCH_REACH: past it the last
         # page says so, never a next_offset the tool would refuse (the
         # round 6 audit, P4; MCP's pagination, a null next page at the end).
-        # Its total is then the matches paged, as every last page's is,
-        # never null beside a has_more of false (the round 7 audit, P-L2).
+        # Its total is then the number that matched, counted once on this
+        # rare page, never null beside a has_more of false (the round 7
+        # audit, P-L2) nor only the matches paged, which read as the full
+        # count (the round 8 audit's nit).
         if page["next_offset"] is not None and page["next_offset"] > SEARCH_REACH:
             reach = page["next_offset"]
+            every = await anyio.to_thread.run_sync(lambda: airports.search_airports(query, limit=EVERY_MATCH))
             page |= {
                 "has_more": False,
                 "next_offset": None,
-                "total": reach,
+                "total": len(every),
                 "note": f"Only the first {reach} matches are paged: give more of the name.",
             }
         return {"airports": found[offset : offset + limit], **page, "sources": editions("nasr")}

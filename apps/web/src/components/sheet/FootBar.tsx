@@ -130,6 +130,7 @@ export function FootBar({ size, shown, children }: { size: PanelState; shown: bo
     <div
       ref={bar}
       data-testid="foot-bar"
+      data-foot-bar=""
       data-at={size}
       inert={!shown}
       className={cn(
