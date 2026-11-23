@@ -42,7 +42,14 @@ fetch() {
   dir=$cache/$name-$want
   if [ ! -d "$dir" ]; then
     tmp=$(mktemp -d)
-    curl -fsSL -o "$tmp/archive" "$url"
+    # Again a few times on a network error, which a hosted runner has now
+    # and then (the iPad's 2/2 leg of run 45132823358: "Could not resolve
+    # host: github.com"), and said as the network's where it never came.
+    if ! curl -fsSL --retry 4 --retry-all-errors --retry-delay 5 -o "$tmp/archive" "$url"; then
+      echo "licences.sh: $name $want could not be downloaded from $url (the network); not used" >&2
+      rm -rf "$tmp"
+      return 1
+    fi
     if [ "$(sha256 "$tmp/archive")" != "$sum" ]; then
       echo "licences.sh: $name $want's download is not the pinned sum; not used" >&2
       rm -rf "$tmp"
@@ -71,7 +78,7 @@ cargo_about() {
   esac
   sum=$(printf '%s\n' "${CARGO_ABOUT_SUMS#* }" | tr ' ' '\n' | sed -n "s/^$triple://p")
   dir=$(fetch cargo-about "$want" "${CARGO_ABOUT_SUMS%% *}" \
-    "https://github.com/EmbarkStudios/cargo-about/releases/download/$want/cargo-about-$want-$triple.tar.gz" "$sum")
+    "https://github.com/EmbarkStudios/cargo-about/releases/download/$want/cargo-about-$want-$triple.tar.gz" "$sum") || return 1
   echo "$dir/cargo-about-$want-$triple/cargo-about"
 }
 
@@ -80,7 +87,7 @@ license_plist() {
   want=$(version license-plist)
   [ "$(uname -s)" = Darwin ] || { echo "licences.sh: LicensePlist runs on macOS only" >&2; return 3; }
   dir=$(fetch license-plist "$want" "${LICENSE_PLIST_SUM%% *}" \
-    "https://github.com/mono0926/LicensePlist/releases/download/$want/portable_licenseplist.zip" "${LICENSE_PLIST_SUM#* }")
+    "https://github.com/mono0926/LicensePlist/releases/download/$want/portable_licenseplist.zip" "${LICENSE_PLIST_SUM#* }") || return 1
   echo "$dir/license-plist"
 }
 
@@ -109,7 +116,10 @@ trap 'rm -rf "$out"' EXIT
 
 case $area in
   engine)
-    tool=$(cargo_about)
+    # A tool not had stops here, said by its fetch: a command substitution
+    # does not stop the script by itself, and the next line ran a path of
+    # nothing ("/license-plist: No such file or directory").
+    tool=$(cargo_about) || exit 1
     # The crates' sources, where their licence files are; then read
     # offline, so the answer is the same on every machine.
     cargo fetch --locked --manifest-path "$here/engine/Cargo.toml" > /dev/null
@@ -137,7 +147,7 @@ EOF
     ;;
   ios)
     sources=${1:?usage: licences.sh ios [--check] <SourcePackages folder of a build>}
-    tool=$(license_plist)
+    tool=$(license_plist) || exit 1
     project=$here/apps/ios/Wingtip.xcodeproj
     [ -d "$project" ] || { echo "licences.sh: no $project; run xcodegen in apps/ios first" >&2; exit 1; }
     # The NOTICE files license_plist.yml carries, still the checkouts' own.
