@@ -211,10 +211,15 @@ export const FLOAT_PX = 16;
  * where a fit put KOSH at y = 38 under it (the FPL audit's A11). A sheet
  * from the top covers it.
  */
+/** What the inspector's column, `column` wide, covers at the map's right:
+ *  the column and its float at the window's edge, the map's room ending at
+ *  the column's edge as it begins at the side panel's (ipad-layout.spec). */
+export const inspectorRoom = (column: number) => column + FLOAT_PX;
+
 export function insetsOf(s: PanelState, cover: number, onPhone: boolean, fromBottom: boolean, safeTop = 0, side = 0, right = 0): MapInsets {
   const up = s === "full";
   if (!onPhone) {
-    const inspector = right ? { right: right + FLOAT_PX } : {};
+    const inspector = right ? { right: inspectorRoom(right) } : {};
     if (s !== "peek") return { top: safeTop, bottom: 0, left: FLOAT_PX + (side || CARD), out: true, up, ...inspector };
     return { top: cover + SHEET_MARGIN + FLOAT_PX, bottom: 0, left: 0, out: false, up, ...inspector };
   }

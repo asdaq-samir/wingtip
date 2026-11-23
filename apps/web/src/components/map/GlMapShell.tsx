@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import MapControls from "../MapControls";
 import MapBanners from "../MapBanners";
 import MapLoading from "../MapLoading";
-import { SHEET_SECONDS, useMapInsets, useSlidingSheet, type MapInsets } from "../../lib/mapChrome";
+import { SHEET_SECONDS, roomAsCardOpens, useMapInsets, type MapInsets } from "../../lib/mapChrome";
 import { SheetCard } from "../SheetCard";
 import { DRAWER_MS } from "../sheet/insets";
 import { drawerEasing } from "./drawerEasing";
@@ -315,7 +315,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   // card starts up, in the commit that opens it: one move, centre and
   // padding together, on the sheet's curve and time (the owner,
   // 2026-11-17: "It should be instant"). The room is the detent the card
-  // opens at (half, cardOpening; useSlidingSheet's `half`), known as it
+  // opens at (half, cardOpening; or the inspector's column), known as it
   // opens, not measured once it is up, as it was: the map waited for the
   // card to settle and moved after it, 820 ms after the tap on a phone's
   // CPU. One rule for every kind (the selection audit, 2026-11-18; rules.md
@@ -329,8 +329,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       if (!map || !point) return;
       const at: [number, number] = [point.lon, point.lat];
       const tapped = takeTap();
-      const half = useSlidingSheet.getState().half;
-      const pad = { ...padOf(insetsRef.current), ...(half ? { bottom: half } : {}) };
+      const pad = roomAsCardOpens(padOf(insetsRef.current));
       const p = map.project(at),
         box = map.getContainer();
       const near = !!tapped || (p.x >= 0 && p.y >= 0 && p.x <= box.clientWidth && p.y <= box.clientHeight);

@@ -72,14 +72,29 @@ export function setMapInsets(next: MapInsets) {
  *  fitted to what half leaves). Null for a side panel, a top sheet, or with
  *  a card up, whose room the map takes as it settles. And `half`, what a
  *  phone's bottom sheet or a card covers at half, the detent a card opens
- *  at (cardOpening), for a place picked to be centred above its card as it
- *  opens (GlMapShell); 0 where there is none. */
+ *  at (cardOpening), and `side`, what the inspector's column covers at the
+ *  map's right with a card in it, for a place picked to be centred beside
+ *  its card as it opens (roomAsCardOpens); 0 where there is none. */
 export interface SlidingSheet {
   node: HTMLElement;
   least: number;
   most: number;
 }
-export const useSlidingSheet = create<{ sheet: SlidingSheet | null; half: number }>(() => ({ sheet: null, half: 0 }));
+export const useSlidingSheet = create<{ sheet: SlidingSheet | null; half: number; side: number }>(() => ({
+  sheet: null,
+  half: 0,
+  side: 0,
+}));
+
+/** The room `pad` leaves once the card a pick opens is up: above it at
+ *  half on a phone, beside the inspector's column on a wide iPad. Known as
+ *  the card opens, not once it is up: a field picked on a wide iPad with
+ *  You open was centred in the whole width while You went and its card
+ *  came, then eased again beside the card (card-once.spec's desktop run). */
+export function roomAsCardOpens<P extends { bottom: number; right: number }>(pad: P): P {
+  const { half, side } = useSlidingSheet.getState();
+  return { ...pad, ...(half ? { bottom: half } : {}), ...(side ? { right: side } : {}) };
+}
 
 /** The insets as the map's element's CSS variables, for the chart credit
  *  (index.css): a ref, written now and at each change, never by a render. */
