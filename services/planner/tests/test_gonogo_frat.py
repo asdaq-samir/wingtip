@@ -131,6 +131,17 @@ def test_the_static_test_only_under_ifr_the_transponder_and_the_100_hour_as_caut
     assert inspection_keys({**GOOD, "hours_now": 1300.4}) == []
 
 
+def test_the_100_hour_is_weighed_only_for_an_airplane_flown_for_hire():
+    # 91.409(b): owed only for hire, the owner's word passed through the
+    # planner's schema as /api/go-no-go reads it.
+    from app.gonogo.schemas import AirplaneInspections
+
+    due = {**GOOD, "hours_now": 1300.5}
+    assert inspection_keys(AirplaneInspections(**due, for_hire=False).model_dump()) == []
+    assert inspection_keys(AirplaneInspections(**due, for_hire=True).model_dump()) == ["hundredHour"]
+    assert inspection_keys(AirplaneInspections(**due).model_dump()) == ["hundredHour"]
+
+
 def squawk(**over) -> dict:
     return {"text": "Landing light out", "inoperative": True, "deferred_for": None, **over}
 

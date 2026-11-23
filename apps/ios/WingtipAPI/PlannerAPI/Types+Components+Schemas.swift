@@ -1014,6 +1014,10 @@ extension Components {
             public var eltBatteryDueOn: Swift.String?
             /// - Remark: Generated from `#/components/schemas/AirplaneInspections/elt_inspection_good_through`.
             public var eltInspectionGoodThrough: Swift.String?
+            /// The owner's word that the airplane carries anyone for hire or gives flight instruction for hire: only then is the 100-hour owed (14 CFR 91.409(b)). False leaves hundred_hour_due_at_hours unweighed; null weighs a due given.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AirplaneInspections/for_hire`.
+            public var forHire: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/AirplaneInspections/hours_now`.
             public var hoursNow: Swift.Double?
             /// - Remark: Generated from `#/components/schemas/AirplaneInspections/hundred_hour_due_at_hours`.
@@ -1028,6 +1032,7 @@ extension Components {
             ///   - annualGoodThrough:
             ///   - eltBatteryDueOn:
             ///   - eltInspectionGoodThrough:
+            ///   - forHire: The owner's word that the airplane carries anyone for hire or gives flight instruction for hire: only then is the 100-hour owed (14 CFR 91.409(b)). False leaves hundred_hour_due_at_hours unweighed; null weighs a due given.
             ///   - hoursNow:
             ///   - hundredHourDueAtHours:
             ///   - staticCheckGoodThrough:
@@ -1036,6 +1041,7 @@ extension Components {
                 annualGoodThrough: Swift.String? = nil,
                 eltBatteryDueOn: Swift.String? = nil,
                 eltInspectionGoodThrough: Swift.String? = nil,
+                forHire: Swift.Bool? = nil,
                 hoursNow: Swift.Double? = nil,
                 hundredHourDueAtHours: Swift.Double? = nil,
                 staticCheckGoodThrough: Swift.String? = nil,
@@ -1044,6 +1050,7 @@ extension Components {
                 self.annualGoodThrough = annualGoodThrough
                 self.eltBatteryDueOn = eltBatteryDueOn
                 self.eltInspectionGoodThrough = eltInspectionGoodThrough
+                self.forHire = forHire
                 self.hoursNow = hoursNow
                 self.hundredHourDueAtHours = hundredHourDueAtHours
                 self.staticCheckGoodThrough = staticCheckGoodThrough
@@ -1053,6 +1060,7 @@ extension Components {
                 case annualGoodThrough = "annual_good_through"
                 case eltBatteryDueOn = "elt_battery_due_on"
                 case eltInspectionGoodThrough = "elt_inspection_good_through"
+                case forHire = "for_hire"
                 case hoursNow = "hours_now"
                 case hundredHourDueAtHours = "hundred_hour_due_at_hours"
                 case staticCheckGoodThrough = "static_check_good_through"

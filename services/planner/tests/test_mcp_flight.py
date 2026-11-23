@@ -131,8 +131,9 @@ def test_the_briefing_balances_the_pilots_own_load_and_weighs_the_airplanes_reco
     assert brief["missing"] == [] and brief["findings"][0]["detail"].endswith("within limits")
     own = asked[0]["own_airplane"]
     assert own["vor_check"] == {"good_through": "2026-11-30", "within_limit": True}
-    # Not flown for hire: the 100-hour is not owed (14 CFR 91.409(b)).
-    assert own["inspections"]["annual_good_through"] == "2027-03-31" and own["inspections"]["hundred_hour_due_at_hours"] is None
+    # Not flown for hire: the engine leaves the 100-hour unweighed (14 CFR 91.409(b)).
+    assert own["inspections"]["annual_good_through"] == "2027-03-31" and own["inspections"]["hundred_hour_due_at_hours"] == 1500.0
+    assert own["inspections"]["for_hire"] is False
     assert own["squawks"] == [{"text": "Nav light out", "inoperative": True, "deferred_for": "VFR_DAY"}]
 
 

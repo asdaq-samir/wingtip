@@ -3177,6 +3177,14 @@ data class AirplaneInspections (
     @SerialName("elt_inspection_good_through")
     val eltInspectionGoodThrough: String? = null,
 
+    /**
+     * The owner's word that the airplane carries anyone for hire or gives flight instruction
+     * for hire: only then is the 100-hour owed (14 CFR 91.409(b)). False leaves
+     * hundred_hour_due_at_hours unweighed; null weighs a due given.
+     */
+    @SerialName("for_hire")
+    val forHire: Boolean? = null,
+
     @SerialName("hours_now")
     val hoursNow: Double? = null,
 
