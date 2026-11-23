@@ -84,6 +84,19 @@ struct ReaderFindingTests {
         #expect(ReaderFinding.section(part, at: "91.157") == "91.157")
         #expect(ReaderFinding.section(part, at: "91.999") == nil)
     }
+
+    /// A find's match is taken only where it is the words looked for, so a
+    /// match a cancelled find had queued ("ILS") is not highlighted for
+    /// the next ("ILS RWY").
+    @Test(arguments: [
+        ("ILS RWY", "ils rwy", true),
+        ("ILS\nRWY", "ILS RWY", true),
+        ("ILS", "ILS RWY", false),
+        (nil, "ILS", false),
+    ] as [(String?, String, Bool)])
+    func aMatchIsTheWordsLookedFor(_ text: String?, _ words: String, _ same: Bool) {
+        #expect(PDFReaderController.same(text, words) == same)
+    }
 }
 
 /// The engine's citations, as CitedText asks it, held to the shared cases
