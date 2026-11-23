@@ -27,4 +27,12 @@ struct CfiWarnTests {
         #expect(words?.hasPrefix("Your certificate expired on 30 Nov 2025: 14 CFR 61.197(e)") == true)
         #expect(Endorsing.signatureLine(jo("2025-11-30", "EXP"), signedOn: "2026-10-25") == "/s/ 10-25-2026 J. J. Jones 987654321CFI Exp. 11-30-2025")
     }
+
+    /// An A.13 at an appendix D section 4 airport warns, never refuses
+    /// (14 CFR 91.131(b)(2)); one under a Class B but not listed does not.
+    @Test func aSoloAtAnAirportNoStudentMayUse() throws {
+        let ord = try Endorsing.warnings("class-b-airport", fields: ["airport": "Chicago O'Hare (KORD)"])
+        #expect(ord.count == 1 && ord[0].contains("91.131(b)(2)"))
+        #expect(try Endorsing.warnings("class-b-airport", fields: ["airport": "Chicago Midway (KMDW)"]).isEmpty)
+    }
 }

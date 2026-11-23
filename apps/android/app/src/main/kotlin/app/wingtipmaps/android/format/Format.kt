@@ -1,5 +1,7 @@
 package app.wingtipmaps.android.format
 
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.visibilityReportable
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -151,13 +153,16 @@ object Format {
     }
 
     /** A visibility as a whole and a fraction of a statute mile, as a METAR
-     *  writes it: 1.625 is (1, "5/8"), 10 is (10, null). To the sixteenth
-     *  below 3 sm (the finest a US report gives, "1/16SM") and the whole
-     *  mile from 3, always down, as the web's reportedVisibility: 5/8 was
-     *  written ".63", rounded up. */
+     *  writes it: 1.625 is (1, "5/8"), 10 is (10, null). The value is the
+     *  engine's visibility_reportable, the reportable one at or below it
+     *  (FMH-1 Table 6-1), as the web's reportedVisibility asks it: 5/8 was
+     *  written ".63", rounded up, and no report writes 11/16. Should the
+     *  engine not answer, the whole mile below, never more. */
     fun reportedVisibility(sm: Double): Pair<Int, String?> {
-        val whole = kotlin.math.floor(sm + 1e-9).toInt()
-        val sixteenths = if (sm >= 3) 0 else kotlin.math.floor((sm + 1e-9 - whole) * 16).toInt()
+        val reported = Engine.visibilityReportable(sm).getOrNull() ?: kotlin.math.floor(sm + 1e-9)
+        val whole = kotlin.math.floor(reported + 1e-9).toInt()
+        // Every reportable value under 3 is a whole number of sixteenths.
+        val sixteenths = ((reported - whole) * 16).roundToInt()
         if (sixteenths == 0) return whole to null
         var n = sixteenths
         var d = 16

@@ -11,7 +11,7 @@ apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/MapStyle.kt 753
 apps/ios/Wingtip/Views/ChartMap.swift 696
 apps/ios/Wingtip/Views/ChartOverlays.swift 712
 apps/ios/Wingtip/Views/InFlightViews.swift 418
-apps/ios/Wingtip/Views/InstructorView.swift 407
+apps/ios/Wingtip/Views/InstructorView.swift 406
 apps/ios/Wingtip/Views/PlannerFiguresViews.swift 464
 scripts/build/design_tokens.py 551
 scripts/build/engine-contract-apps.mjs 435

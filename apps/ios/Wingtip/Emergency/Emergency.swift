@@ -196,12 +196,12 @@ final class Emergency {
         return "\(Int(nearest.distanceNm.rounded())) nm \(AirportWords.compassPoint(nearest.bearingDeg + 180)) of \(nearest.name)"
     }
 
-    /// The airplane's track, magnetic: the true less an easterly variation
-    /// ("east is least", FAA-H-8083-25C, chapter 16).
+    /// The airplane's track, magnetic: the engine's magnetic_of, the true
+    /// less an easterly variation ("east is least", FAA-H-8083-25C,
+    /// chapter 16). None where either is unknown.
     static func magnetic(_ trueDeg: Double?, variationDeg: Double?) -> Double? {
         guard let trueDeg, let variationDeg else { return nil }
-        let deg = (trueDeg - variationDeg).truncatingRemainder(dividingBy: 360)
-        return deg < 0 ? deg + 360 : deg
+        return try? Engine.magneticOf(trueDeg: trueDeg, variationDeg: variationDeg)
     }
 
     /// The call, filled from what the screen knows; a part not known is

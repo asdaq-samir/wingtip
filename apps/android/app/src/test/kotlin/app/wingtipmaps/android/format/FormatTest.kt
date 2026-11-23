@@ -109,7 +109,8 @@ class FormatTest {
         // Eighths as a METAR writes them, never rounded up: 5/8 was ".63 sm".
         assertEquals("5/8 sm", Format.visibility(0.625))
         assertEquals("1 3/8 sm", Format.visibility(1.375))
-        assertEquals(0 to "11/16", Format.reportedVisibility(0.7456))
+        // Snapped down to FMH-1 Table 6-1 by the engine: no report writes 11/16.
+        assertEquals(0 to "5/8", Format.reportedVisibility(0.7456))
         assertEquals(4 to null, Format.reportedVisibility(4.97))
         assertEquals("15 °C", Format.temperature(15.0))
         assertEquals("−3 °C", Format.temperature(-3.0))

@@ -321,10 +321,11 @@ struct SignView: View {
         let rendered = Result { try Endorsing.render(kind.template, student: studentName, fields: fields) }
         let text = (try? rendered.get()) ?? ""
         let missing = kind.fields.filter { $0.required && (fields[$0.key] ?? "").trimmingCharacters(in: .whitespaces).isEmpty }
-        // A date passed warns and never stops the signature
-        // (Endorsing.lapseWarning); the gateway signs either way.
+        // A date passed warns and never stops the signature, nor does an
+        // airport no endorsement opens to a solo student (91.131(b)(2)).
         let lapse = Result { try Endorsing.lapseWarning(instructor, signedOn: signedOn) }
-        let lapsed = (try? lapse.get()) ?? nil
+        let warned = Result { try Endorsing.warnings(kind.code, fields: fields) }
+        let cautions = [(try? lapse.get()) ?? nil].compactMap { $0 } + ((try? warned.get()) ?? [])
         let crossCountry = kind.code == "solo-xc-flight"
         let determinations = (try? Endorsing.determinations.get()) ?? []
         let ready = (try? rendered.get()) != nil && missing.isEmpty
@@ -354,6 +355,7 @@ struct SignView: View {
                 Text(text)
                 ProblemLine(rendered, "The endorsement's words")
                 ProblemLine(lapse, "Whether your certificate's date has passed")
+                ProblemLine(warned, "Whether this airport is open to a solo student")
                 Text(Endorsing.signatureLine(instructor, signedOn: signedOn)).font(.footnote.monospaced()).foregroundStyle(.secondary)
                 Button(signing ? "Signing…" : "Sign as \(instructor.fullName ?? "")") {
                     signing = true
@@ -365,10 +367,7 @@ struct SignView: View {
                     }
                 }
                 .disabled(!ready || signing)
-                if let lapsed {
-                    Label(lapsed, systemImage: "exclamationmark.triangle.fill")
-                        .font(.footnote).foregroundStyle(WingtipInk.caution)
-                }
+                ForEach(cautions, id: \.self) { Label($0, systemImage: "exclamationmark.triangle.fill").font(.footnote).foregroundStyle(WingtipInk.caution) }
                 if !missing.isEmpty {
                     Text("Fill in \(missing.map { $0.label.lowercased() }.joined(separator: ", "))").font(.footnote).foregroundStyle(.secondary)
                 }
