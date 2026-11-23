@@ -24,7 +24,7 @@ import design_tokens_stock as stock
 import design_tokens_system as system
 import design_tokens_typography as typography
 import design_tokens_zoom as zoom
-from design_tokens_webtype import fixed, rem, size_css, web_class
+from design_tokens_webtype import fixed, rem, size_css, web_class, web_value
 from design_tokens_colour import hex6, rgba
 from design_tokens_formats import gen_formats
 
@@ -167,12 +167,6 @@ def css_block(selector, decls):
 
 def font_stack(tree, path):
     return ", ".join(f if f in ("sans-serif", "serif", "monospace", "system-ui") else "'%s'" % f for f in lookup(tree, path)["$value"])
-
-
-def web_value(t):
-    """A token's value on the web: its `web` override where it has one
-    ($extensions["app.wingtipmaps"].web), else the one every app reads."""
-    return t.get("$extensions", {}).get(EXT, {}).get("web", t["$value"])
 
 
 def gen_css(tree):

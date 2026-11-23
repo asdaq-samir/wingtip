@@ -172,8 +172,7 @@ def test_the_forecast_along_the_route_reads_each_nearby_stations_current_period(
     _serve("tafs", TAFS)
     with patch("wingtip.weather.time.time", return_value=T0200Z):
         forecast = ceiling_visibility_along_route(C81, KDLH)
-    # Where each station is and how high its field: a ceiling is above
-    # the field, and wingtip.altitude keeps a leg under the clouds in MSL.
+    # Each station, its field's height (wingtip.altitude's MSL) and its TAF's issue.
     assert forecast["stations"] == [
         {
             "icaoId": "KDLH",
@@ -183,7 +182,6 @@ def test_the_forecast_along_the_route_reads_each_nearby_stations_current_period(
             "ceiling_ft": 1500,
             "ceiling_unknown": False,
             "visibility_sm": 3.0,
-            # The TAF's issue, for the profile's key to say whose and when.
             "issued": "2026-09-20T00:00:00.000Z",
         }
     ]

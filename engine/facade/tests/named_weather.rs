@@ -147,9 +147,9 @@ fn the_worst_taf_along_a_route_counts_its_tempo_groups() {
         "min_ceiling_ft": 800, "min_visibility_sm": 2, "ceiling_unknown_at": ["KBBB"],
         "stations": [
             {"icaoId": "KAAA", "lat": 42.5, "lon": -88.1, "elevation_ft": 700,
-             "ceiling_ft": 800, "ceiling_unknown": false, "visibility_sm": 2},
+             "ceiling_ft": 800, "ceiling_unknown": false, "visibility_sm": 2, "issued": null},
             {"icaoId": "KBBB", "lat": 42.8, "lon": -87.9, "elevation_ft": null,
-             "ceiling_ft": null, "ceiling_unknown": true, "visibility_sm": 5}
+             "ceiling_ft": null, "ceiling_unknown": true, "visibility_sm": 5, "issued": null}
         ]
     });
     // KCCC's TAF ends as the window's hour begins, saying nothing of it;

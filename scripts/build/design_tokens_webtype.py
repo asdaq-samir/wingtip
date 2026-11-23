@@ -68,3 +68,9 @@ def web_class(name, role):
     if v.get("tabular"):
         out.append("tabular-nums")
     return " ".join(out)
+
+
+def web_value(t):
+    """A token's value on the web: its `web` override where it has one
+    ($extensions["app.wingtipmaps"].web), else the one every app reads."""
+    return t.get("$extensions", {}).get("app.wingtipmaps", {}).get("web", t["$value"])
