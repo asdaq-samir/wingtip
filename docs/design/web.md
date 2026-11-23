@@ -1219,8 +1219,8 @@ Edit and Done.
    own bottom right in its last row: the empty route's Destination, half
    a route's last row, a whole route's Add a Stop (`RouteStart`'s
    `BoxToggle`). A tap turns the box into the field in the same place and
-   height (`routeTyped`, `RouteEditor` inPlace), its words starting where
-   the rows' words do, with no figures under it before the route is
+   height (`routeTyped`, `RouteEditor` inPlace), its words left-aligned at the box's own
+   padding (16) with no ghost "Destination" after the last point, with no figures under it before the route is
    whole (the toggle changes nothing outside the box), focused in the tap so a
    phone's keyboard comes up, the toggle pressed where it was; a tap on
    it turns it back. No row of its own, and no Undo beside it: the
