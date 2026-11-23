@@ -108,7 +108,15 @@ export interface VerdictInput {
      *  or the field's elevation not known. */
     unchecked: string[];
   };
-  balance: { pending: boolean; worked: boolean; problems: string[]; takeoff: string | null };
+  balance: {
+    pending: boolean;
+    worked: boolean;
+    /** The airplane has a POH loading but the pilot set no load: the
+     *  engine's no_load, "give your load" (14 CFR 91.9(a), 91.103). */
+    noLoad?: boolean;
+    problems: string[];
+    takeoff: string | null;
+  };
   risk: { level: "low" | "caution" | "high"; line: string } | null;
 }
 
@@ -152,7 +160,13 @@ function engineInput({ weather, airspace, altitude, fuel, runways, balance, risk
       ifr: fuel.ifr ?? false,
     },
     runways,
-    balance,
+    balance: {
+      pending: balance.pending,
+      worked: balance.worked,
+      no_load: balance.noLoad ?? false,
+      problems: balance.problems,
+      takeoff: balance.takeoff,
+    },
     risk,
   };
 }
