@@ -68,8 +68,8 @@ interface ScrollerProps {
   head: string;
   /** The figures pinned at its foot, so its body is cut off there. */
   cut: boolean;
-  /** FPL's page, its figures held over a floating bar: room at its end for
-   *  the sheet's offset below full (data-page-end). */
+  /** FPL's page under its foot bar (sheet/FootBar): room at its end as
+   *  tall as the bar, so its last row scrolls clear above it. */
   endRoom?: boolean;
   /** Its band risen with the sheet from the pill (FPL's), frosted as at half from the finger's first move. */
   rises?: boolean;
@@ -139,13 +139,12 @@ export function SheetScroller(p: ScrollerProps) {
             is in sight (lib/shown). */}
         <TabKept away={false}>{p.body}</TabKept>
       </PointerTapDiv>
-      {/* Below full the sheet is laid out at its full height and slid down
-          (HOLD_AT_EDGE), so the page's end lies under the screen's foot by
-          the sheet's offset: room for that at its end, so the route's last
-          rows scroll up clear of the figures and the bar at half too (the
-          owner, 2026-11-22: "Figures are overlapping the grouped box at
-          the bottom"). FPL's page only, where the figures are pinned. */}
-      {onPhone && fromBottom && p.endRoom && <div aria-hidden="true" className="shrink-0 h-(--sheet-offset)" data-page-end="" />}
+      {/* The page's end room under FPL's foot bar, which stands over the
+          sheet's foot outside it (sheet/FootBar): the bar's height, set on
+          the viewport as the bar is laid out (--foot-bar), so the route's
+          last row scrolls up clear of the figures and the tabs all the way
+          up, as a list ends clear of iOS's tab bar. */}
+      {p.endRoom && <div aria-hidden="true" className="h-(--foot-bar,0px) shrink-0" data-foot-room="" />}
     </div>
   );
 }

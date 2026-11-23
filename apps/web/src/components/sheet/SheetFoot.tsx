@@ -2,11 +2,8 @@ import type { CSSProperties, ReactNode } from "react";
 import { cn } from "cn";
 import { EDGE_ROOM, HOLD_AT_EDGE } from "./insets";
 import { PointerTapDiv } from "./PointerTapDiv";
+import { FOOT_BAR_PILL, FootRestOf } from "./FootBar";
 import { ROW_PAD, SHEET_BELOW, type SheetLayout } from "./sheetLayout";
-
-/** A bottom sheet's pill under its grabber's 1 rem room: the 4.25 rem
- *  snap point's rest (sheet/insets), where the figures sit at the pill. */
-const PILL_BELOW_GRABBER = "3.25rem";
 
 /** Beside the side panel the room under its foot is the panel's own
  *  padding (MapPanel's pb-4, a rem), not a bottom sheet's EDGE_ROOM, from
@@ -20,7 +17,11 @@ const SIDE_FLOAT_ROOM = EDGE_ROOM;
 
 /**
  * The sheet's foot, the route's figures pinned at it -- in the pill its one
- * row; FPL's at its page's, put away with it under Search.
+ * row; FPL's at its page's, put away with it under Search. On a phone's
+ * bottom sheet FPL's foot on the ground is a bar beside the sheet instead
+ * (sheet/FootBar); here it is the side panel's foot, a top sheet's and
+ * the flying one's. What it holds is told the size the sheet rests at
+ * (FootRestOf), as the bar's is.
  */
 export function SheetFoot(p: {
   foot: ReactNode;
@@ -74,25 +75,21 @@ export function SheetFoot(p: {
         pillFoot ? "border-transparent [&_[data-pill-hides]]:hidden [&>*]:flex-none" : cn("border-border/60", SHEET_BELOW),
         // No hairline over a bar that floats (FPL's actions' glass bar on
         // the ground), as none is over a card's tabs (the owner, 2026-11-16:
-        // "Why do I see a separator above the tabs bar?"). No fade under it:
-        // the page ends at the foot's top, the figures held there over the
-        // bar, so nothing scrolls under it, and the fade drawn here lay
-        // over the figures held under the bar and dimmed them at half and
-        // full (the owner, 2026-11-22: "the figures are fainted at the bottom").
+        // "Why do I see a separator above the tabs bar?").
         floats && "border-transparent",
       )}
       style={
         {
           "--sheet-progress": size === "half" && !p.layout.desktop ? "0" : "1",
           ...(p.layout.toEdge && fromBottom && !pillFoot ? { paddingBottom: "10px" } : {}),
-          ...(figuresPill ? { height: `calc(${PILL_BELOW_GRABBER} - ${EDGE_ROOM})` } : {}),
+          ...(figuresPill ? { height: `calc(${FOOT_BAR_PILL} - ${EDGE_ROOM})` } : {}),
           ...(floats && !fromBottom && !pillFoot ? { marginBottom: SIDE_FLOAT_ROOM } : {}),
         } as CSSProperties
       }
       // In the pill a tap on it opens it half way.
       onClick={pillFoot ? p.onFootTap : undefined}
     >
-      {p.foot}
+      <FootRestOf size={size}>{p.foot}</FootRestOf>
     </PointerTapDiv>
   );
 }

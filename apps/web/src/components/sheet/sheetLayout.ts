@@ -29,6 +29,9 @@ export interface SheetLayout {
   onPhone: boolean;
   desktop: boolean;
   footShown: boolean;
+  /** The foot is FPL's fixed bar beside the Drawer's popup (sheet/FootBar),
+   *  not drawn in the sheet. */
+  footBar: boolean;
   cardsUp: boolean;
   barShown: boolean;
   toEdge: boolean;

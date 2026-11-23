@@ -40,6 +40,19 @@ export const keepTimelineHeight = (px: number) => {
 };
 export const keptTimelineHeight = () => timelineHeight;
 
+/**
+ * Whether the flight's figures are put away: the route's field open
+ * under the page (its own under it), or no whole route yet. The grouped
+ * box turned into the field by its toggle does not put them away (the
+ * owner, 2026-11-22: "Route box still shows figures full size"); before
+ * the route is whole there are no figures on either face (the owner's
+ * iPhone, 2026-11-23, an empty route's field showed Dest, Dist, ETE, Trk
+ * and GPS under it).
+ */
+export function figuresAway(vm: PlanSlices<"flight" | "route" | "routeList">): boolean {
+  return routeEditing(vm) && !(routeTyped(vm) && vm.route.wholeRoute);
+}
+
 /** Whether FPL offers its suggested routes (ShareMenu's Route Options): there are ways
  *  to suggest, on the ground, not in a dry run, and the route's field not
  *  open -- the ways change the route rather than edit it, so the toggle
