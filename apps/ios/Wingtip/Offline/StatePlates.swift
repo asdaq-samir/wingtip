@@ -168,20 +168,20 @@ final class StatePlates {
     /// left; and the lists with them. Read off the main actor, as a
     /// state's thousands of charts are a file each to read.
     private func forget(_ lists: [(String, String)]) async {
-        let keep = kept.map { ($0.cycle, $0.id) }
-        let folder = folder, keptFolder = keptFolder
-        let gone = lists
-        await Task.detached {
-            // A route kept for the air holds its plates too (its manifest's files).
-            let held = Set(keep.flatMap { Self.files(cycle: $0.0, id: $0.1, in: folder, keptIn: keptFolder) }.map(\.standardizedFileURL))
-                .union(KeptForAir.manifestFiles(in: keptFolder))
-            for (cycle, id) in gone {
-                for file in Self.files(cycle: cycle, id: id, in: folder, keptIn: keptFolder) where !held.contains(file.standardizedFileURL) {
-                    try? FileManager.default.removeItem(at: file)
-                }
-                try? FileManager.default.removeItem(at: Self.listFile(cycle, id, in: folder))
+        await Self.erase(lists, keeping: kept.map { ($0.cycle, $0.id) }, in: folder, keptIn: keptFolder)
+    }
+
+    @concurrent
+    private nonisolated static func erase(_ gone: [(String, String)], keeping keep: [(String, String)], in folder: URL, keptIn keptFolder: URL) async {
+        // A route kept for the air holds its plates too (its manifest's files).
+        let held = Set(keep.flatMap { files(cycle: $0.0, id: $0.1, in: folder, keptIn: keptFolder) }.map(\.standardizedFileURL))
+            .union(KeptForAir.manifestFiles(in: keptFolder))
+        for (cycle, id) in gone {
+            for file in files(cycle: cycle, id: id, in: folder, keptIn: keptFolder) where !held.contains(file.standardizedFileURL) {
+                try? FileManager.default.removeItem(at: file)
             }
-        }.value
+            try? FileManager.default.removeItem(at: listFile(cycle, id, in: folder))
+        }
     }
 
     private nonisolated static func write(_ list: APIPlateStateCharts, in folder: URL) {
