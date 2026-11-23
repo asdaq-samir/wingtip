@@ -24,7 +24,8 @@ import type { AirspaceClass } from "../../preferences";
  * destination's ident first, the route's other fields next, then the
  * checkpoints in flight order (the earlier of two that meet kept), and
  * the tops of climb and descent last (LegPointsGl, a layer under these);
- * a field's mark and a turn's dot themselves stay wherever they are.
+ * a field's mark and a turn's dot themselves stay wherever they are,
+ * under the names, and keep the labels placed after them off them.
  */
 
 export const ROUTE_MARKS = "route-marks";
@@ -86,9 +87,13 @@ export function fieldSide(outDeg: number): FieldSide {
 /** Bottom to top: the layers above are placed first. */
 export const ROUTE_MARK_LAYERS: SymbolLayerSpecification[] = [
   { ...badgeLayer("route-checkpoints", ROUTE_MARKS, SORT), filter: KIND("checkpoint") },
-  // The dot on the point, always drawn and taking no room from the names;
-  // the name beside it gives way as the others do.
-  { ...pictureLayer("route-fix-dots", ROUTE_MARKS), filter: KIND("fix") },
+  // The dot on the point and the field's mark, always drawn and under the
+  // route's names, which are placed before them (a name's pill reaches
+  // within the mark's box, which would push it off its own field): the
+  // marks keep their room from the chart's labels and the other marks
+  // placed after them, so none is drawn half under one.
+  { ...pictureLayer("route-fix-dots", ROUTE_MARKS, { room: true }), filter: KIND("fix") },
+  { ...pictureLayer("route-field-marks", ROUTE_MARKS, { room: true }), filter: KIND("field") },
   { ...chipLayer("route-fixes", ROUTE_MARKS, SORT, { "icon-image": ROUTE_POINT_PILL.id, ...turnSide(0) }), filter: KIND("fix") },
   {
     // The ident 15 points from the field's middle, past its mark, on its
@@ -109,7 +114,6 @@ export const ROUTE_MARK_LAYERS: SymbolLayerSpecification[] = [
     ),
     filter: KIND("field"),
   },
-  { ...pictureLayer("route-field-marks", ROUTE_MARKS), filter: KIND("field") },
 ];
 
 /** The route points' names, whose side RouteGl turns with the map

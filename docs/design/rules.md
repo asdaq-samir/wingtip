@@ -972,8 +972,14 @@ At each airport the chart already shows, from the map's own
   outside the course's turn there, off the line, then round the field
   before it gives way; a stop's pin and its field are drawn under the
   route's names, its ident giving way to them; own ship's room is kept
-  clear by an empty symbol under the HTML arrow, so no label is drawn
-  under it.
+  clear by an empty symbol the airplane's size under the HTML arrow, so
+  no label is drawn under it. A label shows whole or not at all (the
+  owner's iPhone screenshot, 2026-11-23: a chart field's "KLW…" clipped
+  against KBUF's mark, a lone "W" by own ship): every mark that is always
+  drawn (a route field's mark, a turn's dot, a stop's field, a Class B's
+  field, own ship's room) still takes its room in MapLibre's collision,
+  and the route's names are placed before everything and drawn on top,
+  the route's marks under them.
   No chart field is drawn bare (the owner's iPhone screenshot,
   2026-11-23, the Great Lakes at 6): a field's mark and its ident are
   placed together, so one whose ident has no room, or isn't named yet at
