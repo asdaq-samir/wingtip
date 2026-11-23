@@ -236,7 +236,7 @@ export function PointMenu({
               // but 6 on the words' side (7 from inside that edge), where
               // the name's area begins in the line's 16 (TimelineRows'
               // TIMELINE_GAP).
-              className="relative shrink-0 rounded-full p-0 hover:bg-transparent aria-expanded:bg-transparent after:absolute after:-inset-y-2 after:-left-2 after:-right-[7px] after:content-['']"
+              className="relative shrink-0 rounded-full p-0 hover:bg-transparent aria-expanded:bg-transparent hit-y-2 after:-left-2 after:-right-[7px]"
             >
               {face}
             </Button>

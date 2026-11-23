@@ -6,6 +6,7 @@ import { useConsoleOpen, type PanelState } from "../../../lib/mapChrome";
 import { SCREEN_LINK, screenOf, type ScreenId } from "../../../lib/navigation/generated/screens";
 import { stale, takeScreen, useWanted, wantScreen } from "../../../lib/navigation/wanted";
 import { tailOf } from "../../../lib/aircraftChoice";
+import { useEngineReady } from "../../../lib/engine/useEngineReady";
 import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
 import { usePreferences } from "../../../lib/preferences";
 import { type PanelView, riseToSee, useTabAsk } from "../../plan";
@@ -73,8 +74,11 @@ export function useOpenScreen({
   }, [linked, setAddress]);
 
   const wanted = useWanted((s) => s.screen);
+  // The airplane's screen opens on its N-number, the engine's to tell
+  // (tailOf): a link to it waits for the engine.
+  const engine = useEngineReady();
   useEffect(() => {
-    if (!wanted) return;
+    if (!wanted || (wanted === "airplane" && !engine)) return;
     // A link with the route in it is planned first: the Brief waits for it.
     if (OVER_ROUTE.has(wanted) && !routed && !stale()) return;
     const screen = takeScreen();
@@ -162,5 +166,5 @@ export function useOpenScreen({
       default:
         screen satisfies never;
     }
-  }, [wanted, routed, setAddress, setViewPick, setPanel, openBrief, openNavLogCard, openProfileCard, openNearest]);
+  }, [wanted, engine, routed, setAddress, setViewPick, setPanel, openBrief, openNavLogCard, openProfileCard, openNearest]);
 }

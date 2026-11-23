@@ -107,7 +107,7 @@ function Toasts({ position }: { position: "top" | "bottom" }) {
         <Toast.Description className="text-muted-foreground" />
       </Toast.Content>
       {/* The tint's word at the end, its 44 points by a pseudo-element. */}
-      <Toast.Action className="relative -mr-1 shrink-0 rounded-full px-2 font-semibold text-tint outline-none after:absolute after:-inset-2 focus-visible:ring-2 focus-visible:ring-ring" />
+      <Toast.Action className="relative -mr-1 shrink-0 rounded-full px-2 font-semibold text-tint outline-none hit-2 focus-visible:ring-2 focus-visible:ring-ring" />
     </Toast.Root>
   ));
 }

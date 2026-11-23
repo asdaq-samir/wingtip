@@ -531,7 +531,7 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
    rounded corners included; its month buttons get the 44 round them. A
    desktop keeps the tighter targets. The map's markers are placed by
    their own size and are left alone. In the base layer, under Tailwind's
-   utilities, so a control's own area (`after:-inset-1.5`, a chip's six
+   utilities, so a control's own area (`hit-1.5`, a chip's six
    round it to meet its neighbours') wins over the default: outside any
    layer it beat every utility, and each control's own was ignored on a
    phone (the hand-built audit's row 6, 2026-11-12). The button is

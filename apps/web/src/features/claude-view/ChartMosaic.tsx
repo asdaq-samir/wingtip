@@ -84,7 +84,7 @@ export function ChartMosaic({
             aria-label={`${point.ident}, show its row`}
             aria-pressed={picked === point.ident}
             className={cn(
-              "absolute -translate-x-1/2 -translate-y-1/2 rounded-full p-0 after:absolute after:-inset-1.5",
+              "absolute -translate-x-1/2 -translate-y-1/2 rounded-full p-0 hit-1.5",
               picked === point.ident && "ring-2 ring-ring",
             )}
             style={{ left: at.left, top: at.top }}

@@ -48,7 +48,10 @@ export function usePlanRoute() {
   const [address, setAddress] = useAddress();
   // A route in the address is read by the engine, so waited for behind
   // MapPage's boot map; with none (a fresh open) the page draws at once.
-  const engine = useEngineWhen(namesRoute(address));
+  // The altitude, tanks, pattern and takeoff are read by its rules too
+  // (flightLevel, tanksOf, patternsOf), so a link with one waits as well.
+  const readsEngine = namesRoute(address) || [address.altitude_ft, address.tanks, address.pattern, address.takeoff].some((v) => v != null);
+  const engine = useEngineWhen(readsEngine);
   // Every change of the plan can be taken back (Undo, Cmd-Z), whichever
   // button made it, in place of asking first.
   usePlanHistory(address, setAddress);

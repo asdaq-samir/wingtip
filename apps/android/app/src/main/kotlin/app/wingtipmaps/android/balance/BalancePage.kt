@@ -94,7 +94,7 @@ private fun Loads(state: BalanceModel.State, loading: EngineContract.GonogoLoadi
             ) { model.setStation(i, it) }
         }
     }
-    if (state.grades.size > 1) GradePicker(state, model)
+    if (state.grades.isNotEmpty()) GradePicker(state, model)
     Figure(
         label = stringResource(R.string.balance_fuel), value = state.fuel, suffix = "gal",
         most = String.format(Locale.US, "Most %,.0f gal", loading.fuelMaxGal), last = true,
@@ -102,16 +102,18 @@ private fun Loads(state: BalanceModel.State, loading: EngineContract.GonogoLoadi
 }
 
 /** The fuel's grade, as Material's segmented buttons (a discrete
- *  setting): its weight a gallon is the engine's (fuel_grades). */
+ *  setting): the POH's own figure first, as on the web and the iPhone,
+ *  then each grade, its weight a gallon the engine's (fuel_grades). */
 @Composable
 private fun GradePicker(state: BalanceModel.State, model: BalanceModel) {
+    val choices = listOf<Pair<String?, String>>(null to stringResource(R.string.balance_fuel_poh)) + state.grades.map { it.grade to it.name }
     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-        state.grades.forEachIndexed { i, g ->
+        choices.forEachIndexed { i, (grade, name) ->
             SegmentedButton(
-                selected = g.grade == state.grade,
-                onClick = { model.setGrade(g.grade) },
-                shape = SegmentedButtonDefaults.itemShape(i, state.grades.size),
-                label = { Text(g.name) },
+                selected = grade == state.grade,
+                onClick = { model.setGrade(grade) },
+                shape = SegmentedButtonDefaults.itemShape(i, choices.size),
+                label = { Text(name) },
             )
         }
     }

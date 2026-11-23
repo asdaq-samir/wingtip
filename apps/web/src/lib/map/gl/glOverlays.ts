@@ -169,10 +169,11 @@ function navaidMarks(
   ];
 }
 
-/** The navaids' zooms, in the app's levels: the VORs from a region's, the fixes
- *  and the VFR waypoints from 10 (NavaidCards, WaypointCard). */
-const VOR_ZOOM = 8;
-const FIX_ZOOM = 10;
+/** The navaids' zooms, in the app's levels (design/tokens.json's map.zoom,
+ *  every app's): the VORs from a region's, the fixes and the VFR waypoints
+ *  closer in (NavaidCards, WaypointCard). */
+const VOR_ZOOM = MAP_ZOOM.vor;
+const FIX_ZOOM = MAP_ZOOM.fix;
 /** The VORs a pilot tunes (wingtip.fixes.VOR_KINDS, NASR NAV_TYPE). */
 const VOR_KINDS = ["VORTAC", "VOR/DME", "VOR"];
 

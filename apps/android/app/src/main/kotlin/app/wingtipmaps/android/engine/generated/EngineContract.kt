@@ -5583,6 +5583,11 @@ object EngineContract {
         val stationsLb: List<Double?>,
         @SerialName("fuel_gal")
         val fuelGal: Double,
+        /**
+         * The grade the pilot picked for the fuel aboard: its standard weight a gallon (fuel_grades) comes before the loading's fuel_lb_per_gal and its own fuel_grade. Null or not given, the loading's.
+         */
+        @SerialName("fuel_grade")
+        val fuelGrade: String? = null,
     )
 
     /**
@@ -5608,7 +5613,7 @@ object EngineContract {
         @SerialName("fuel_max_gal")
         val fuelMaxGal: Double,
         /**
-         * The airplane's handbook's figure; where null or not given, its fuel_grade's standard weight: avgas 6, Jet A 6.8 lb a US gallon (FAA-H-8083-25, chapter 10), avgas where no grade is given.
+         * The airplane's handbook's figure; where null or not given, its fuel_grade's standard weight: avgas 6, Jet A 6.8 lb a US gallon (FAA-H-8083-25, chapter 10), avgas where no grade is given. A grade the load picks (GonogoLoad's fuel_grade) comes first.
          */
         @SerialName("fuel_lb_per_gal")
         val fuelLbPerGal: Double? = null,

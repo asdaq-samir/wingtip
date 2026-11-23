@@ -7,7 +7,7 @@ import { TimelineMark } from "../procedures/lazy";
 import { approachChanges, minutesTo, type Answer, type Change, type ViewApproach } from "./flightView";
 import { markOf } from "./rows";
 
-const ROW_BUTTON = cn("relative after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row);
+const ROW_BUTTON = cn("relative hit-y-2 after:inset-x-0", TEXT.row);
 
 function ApproachRow({ approach, disabled, onChange }: { approach: ViewApproach; disabled: boolean; onChange: (c: Change) => void }) {
   return (

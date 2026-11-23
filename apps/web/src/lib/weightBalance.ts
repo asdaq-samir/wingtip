@@ -17,8 +17,9 @@ export interface Load {
   emptyArmIn: number;
   stationsLb: number[];
   fuelGal: number;
-  /** The fuel's grade as the pilot picked it, its standard weight a
-   *  gallon the engine's (fuel_grades); none, the POH's own figure. */
+  /** The fuel's grade as the pilot picked it: the engine weighs the fuel
+   *  at its standard weight a gallon, before the POH's own figure
+   *  (gonogo_balance's `fuel_grade`); none, the POH's. */
   fuelGrade?: FuelGrade | null;
 }
 
@@ -27,15 +28,6 @@ export type FuelGrade = FuelGradesAnswer[number]["grade"];
 /** The fuels by grade and a gallon's standard weight of each, the
  *  engine's (FAA-H-8083-1B: avgas 6, Jet A 6.8). */
 export const fuelGrades = (): FuelGradesAnswer => callEngine("fuel_grades", {});
-
-/** A gallon's weight the balance is worked at: the grade picked, else the
- *  airplane's own loading's (its POH's), which wins until one is; none
- *  given, the engine's own (gonogo_balance). */
-export function lbPerGal(loading: Loading, grade: FuelGrade | null | undefined): number | undefined {
-  const picked = grade ? fuelGrades().find((g) => g.grade === grade) : undefined;
-  // A loading with no figure of its own (null) leaves it to the engine.
-  return picked?.lb_per_gal ?? loading.fuel_lb_per_gal ?? undefined;
-}
 
 export interface Condition {
   weightLb: number;
@@ -70,8 +62,14 @@ export function defaultLoad(loading: Loading, fuelGal: number): Load {
  */
 export function balance(loading: Loading, load: Load, tripFuelGal: number | null): Balance {
   const b = callEngine("gonogo_balance", {
-    loading: { ...loading, fuel_lb_per_gal: lbPerGal(loading, load.fuelGrade) },
-    load: { empty_weight_lb: load.emptyWeightLb, empty_arm_in: load.emptyArmIn, stations_lb: load.stationsLb, fuel_gal: load.fuelGal },
+    loading,
+    load: {
+      empty_weight_lb: load.emptyWeightLb,
+      empty_arm_in: load.emptyArmIn,
+      stations_lb: load.stationsLb,
+      fuel_gal: load.fuelGal,
+      fuel_grade: load.fuelGrade ?? null,
+    },
     trip_fuel_gal: tripFuelGal,
   });
   // The engine's arm is null where the weight is zero (no centre of

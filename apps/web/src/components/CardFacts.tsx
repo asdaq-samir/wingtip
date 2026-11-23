@@ -33,7 +33,7 @@ export function CardFact({
           <Button
             variant="link"
             size="inline"
-            className="relative font-semibold no-underline after:absolute after:-inset-x-2 after:-inset-y-5"
+            className="relative font-semibold no-underline hit-x-2 hit-y-5"
             onClick={onPick}
             data-testid={`${testId}-open`}
           >

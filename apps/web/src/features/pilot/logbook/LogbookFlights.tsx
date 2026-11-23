@@ -99,7 +99,7 @@ export default function LogbookFlights({ aircraft }: { aircraft?: string }) {
             }}
           >
             <ResponsivePopoverTrigger asChild>
-              <Button size="sm" className="relative after:absolute after:-inset-y-1.5 after:inset-x-0" data-testid="logbook-add">
+              <Button size="sm" className="relative hit-y-1.5 after:inset-x-0" data-testid="logbook-add">
                 <Plus aria-hidden="true" />
                 Add Entry
               </Button>
