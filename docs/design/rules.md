@@ -1396,8 +1396,10 @@ less cluttered". Decision [0045](../decisions/0045-fpl-for-every-pilot.md).
    the empty field says what it takes ("From, to, or a whole route").
    On the web the route's box has two faces, the grouped rows and the
    field, swapped in the same place by one toggle (a stock Toggle in the
-   tint: the keyboard glyph on the tint's wash in a round head button's
+   tint: the keyboard glyph on the tint's wash in a chip's 32-point
    circle, filled while the field is the face) at the box's bottom right,
+   inset by the box's own padding, the field's words starting where the
+   rows' do, nothing outside the box changing as it turns,
    inside its last row on every face (the empty route's Destination, half
    a route's last row, a whole route's Add a Stop, the field's last line),
    never a row of its own and with no Undo beside it (the owner,

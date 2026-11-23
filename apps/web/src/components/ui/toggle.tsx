@@ -26,9 +26,10 @@ const toggleVariants = cva(
         default: "h-9 min-w-9 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         sm: "h-8 min-w-8 px-2.5 has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5",
         lg: "h-10 min-w-10 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        // A circle the size of the sheet head's round buttons (its search
-        // and ✕, button's icon-round; size.round-button).
-        round: "size-(--size-round-button) rounded-full",
+        // A circle a row's chip's size (size.chip, 32), centred in its
+        // 44-point row with room over and under it, as a row's other
+        // controls are; its 44-point area the caller's pseudo-element.
+        round: "size-(--size-chip) min-w-(--size-chip) rounded-full",
       },
     },
     defaultVariants: { variant: "default", size: "default" },

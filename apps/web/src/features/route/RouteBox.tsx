@@ -204,9 +204,14 @@ export default function RouteBox({
             // buttons are the sheet's first row's strip over it (FplBar;
             // the owner, 2026-11-14), not a footer of its own.
             className={cn(
-              "h-auto flex-wrap items-start border-0 pt-1 pr-1.5 pb-1 pl-1 shadow-none",
-              // Turned from the grouped box: the timeline card's corners.
-              wrapped ? "rounded-(--radius-card)" : "rounded-(--radius-banner)",
+              "h-auto flex-wrap items-start border-0 pt-1 pb-1 shadow-none",
+              // Turned from the grouped box: the timeline card's corners, and
+              // its words where the rows' words start (the card's 16, a
+              // mark's 32 and the 16 after it: TIMELINE_CARD, TIMELINE_GAP)
+              // and its controls as far in from the right as the rows' are
+              // (TIMELINE_END), so nothing moves as the face turns (the
+              // owner's iPhone, 2026-11-23).
+              wrapped ? "rounded-(--radius-card) pr-4 pl-16" : "rounded-(--radius-banner) pr-1.5 pl-1",
               PANEL_FIELD,
             )}
             style={wrapped && height ? { height } : undefined}

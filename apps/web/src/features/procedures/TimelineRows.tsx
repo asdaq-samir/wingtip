@@ -138,7 +138,10 @@ function TimelineAction({
           (flex-wrap), never past the card's edge, which clips them (the
           owner's iPhone, 2026-11-22: the toggle cut off, the two chips'
           areas crossing at 2 apart). */}
-      {trailing && <span className="ml-auto flex h-11 items-center gap-2 pr-2">{trailing}</span>}
+      {/* As far in from the card's right edge as its words are from its
+          left (the card's pl-4; the owner's iPhone, 2026-11-23: the toggle
+          touched the box's edge). */}
+      {trailing && <span className={cn("ml-auto flex h-11 items-center gap-2", TIMELINE_END)}>{trailing}</span>}
     </div>
   );
 }
@@ -258,7 +261,7 @@ const ROW_CHIP = cn("gap-0.5 px-1 font-medium", TEXT.note);
  *  separate row and done etc."; 2026-11-23: "the toggle is enough", and
  *  "doesn't look standard"). The stock Toggle in its tint variant: the
  *  keyboard glyph in the tint on its wash in a circle the head's round
- *  buttons' size, filled in the tint while the field is the face (the
+ *  chip's size (32), filled in the tint while the field is the face (the
  *  owner, 2026-11-23: "is the toggle standard?"); its 44-point area a
  *  pseudo-element, so it grows not. */
 export function TypeRouteButton({ pressed, onToggle }: { pressed: boolean; onToggle: () => void }) {

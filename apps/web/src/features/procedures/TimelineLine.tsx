@@ -55,8 +55,9 @@ export function TimelineLine({
   last: boolean;
   open: boolean;
   onOpen: (open: boolean) => void;
-  /** At the line's end, over its tap: half a route's box's toggle, 8 from
-   *  the card's edge as every row's last control is (TimelineAction). */
+  /** At the line's end, over its tap: half a route's box's toggle, inside
+   *  the line's own right inset (TIMELINE_END), as every row's last
+   *  control is (TimelineAction). */
   trailing?: ReactNode;
 }) {
   const { opens, refused, tank, fuelSet, reported, parts, before, after, missedOn, onPast } = lineModel(vm, point, row, field, last);
@@ -170,7 +171,7 @@ export function TimelineLine({
           {/* No chevron at its end (the owner, 2026-11-19: "Also remove
               the chevrons"): the line itself is the tap that opens it. */}
           {end.grip}
-          {trailing && <span className="relative z-10 -mr-2 flex h-11 shrink-0 items-center">{trailing}</span>}
+          {trailing && <span className="relative z-10 flex h-11 shrink-0 items-center">{trailing}</span>}
         </div>
         <LineNotes point={point} refused={refused} />
         {opens && (
