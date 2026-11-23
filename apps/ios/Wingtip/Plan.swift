@@ -138,6 +138,11 @@ final class Plan {
     /// The route cleared, asked first by the route card's ✕: the undo bar,
     /// shake or the Edit menu brings it back (PlanHistory).
     func clear() {
+        // The route as it stands is what Clear takes away, From and To typed
+        // but not yet planned too: the fields set the ends without a step,
+        // so the step taken was still the empty route, and Clear Route
+        // offered no Undo though its question says Undo brings it back.
+        if remembering { lastState = routeState }
         dep = ""; dest = ""; stops = []
         ownAltitudeFt = nil; ownAltitudeLegal = false; altitudeChoice = nil; procedures = []
         extras = RouteExtras()
