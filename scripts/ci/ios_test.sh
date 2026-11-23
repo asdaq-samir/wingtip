@@ -124,11 +124,14 @@ said() { tail -n "+$from" "$log"; }
 # said, runs 45113706296 and 45127491141) shows where it was and what the
 # runner had left.
 ( while sleep 60; do
-    echo "ios_test: $(date -u +%H:%M:%S) $(memory_pressure 2>/dev/null | grep -o 'free percentage: [0-9]*%' || true), swap $(sysctl -n vm.swapusage 2>/dev/null | awk '{print $6}'), $(pgrep -f launchd_sim | wc -l | tr -d ' ') simulators running"
+    echo "ios_test: $(date -u +%H:%M:%S) $(memory_pressure 2>/dev/null | grep -o 'free percentage: [0-9]*%' || true), swap $(sysctl -n vm.swapusage 2>/dev/null | awk '{print $6}'), disk free $(df -h "$RUNNER_TEMP" 2>/dev/null | awk 'NR==2 {print $4}'), $(pgrep -f launchd_sim | wc -l | tr -d ' ') simulators running, load $(sysctl -n vm.loadavg 2>/dev/null | awk '{print $2}')"
   done ) &
 watch=$!
 trap 'kill "$watch" 2>/dev/null || true' EXIT
-xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme "$scheme" -configuration Debug "${opts[@]}" ${only[@]+"${only[@]}"} \
+# NSUnbufferedIO: xcodebuild writes each line as it comes, where into a
+# pipe it held them in its buffer, and a leg stopped part way had shown
+# none of its tests (run 45152106014).
+NSUnbufferedIO=YES xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme "$scheme" -configuration Debug "${opts[@]}" ${only[@]+"${only[@]}"} \
   CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= COMPILER_INDEX_STORE_ENABLE=NO \
   ENABLE_DEBUG_DYLIB=NO \
   WINGTIP_HOST="$host" WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID" "$action" 2>&1 \
