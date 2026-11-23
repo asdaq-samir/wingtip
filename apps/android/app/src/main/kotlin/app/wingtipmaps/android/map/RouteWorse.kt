@@ -9,9 +9,9 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.AlternateLeg
 import app.wingtipmaps.android.api.generated.Briefing
 import app.wingtipmaps.android.api.routeBriefing
-import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
-import app.wingtipmaps.android.engine.generated.sameField
+import app.wingtipmaps.android.route.RoutePoints
+import app.wingtipmaps.android.route.SameField
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -101,12 +101,16 @@ class RouteWorse @Inject constructor() : ViewModel() {
         /** Each field's METAR now, and its own TAF's worst by its ETA (the
          *  station whose ICAO id is the field's, or K and its three
          *  letters), for the fields that have both. */
-        fun readings(fields: List<String>, briefing: Briefing): Pair<List<EngineContract.WorseField>, List<EngineContract.WorseField>> {
+        fun readings(
+            fields: List<String>,
+            briefing: Briefing,
+            same: SameField = RoutePoints::same,
+        ): Pair<List<EngineContract.WorseField>, List<EngineContract.WorseField>> {
             val then = mutableListOf<EngineContract.WorseField>()
             val atEta = mutableListOf<EngineContract.WorseField>()
             for (ident in fields.distinct()) {
                 val metar = briefing.metars[ident] ?: continue
-                val taf = briefing.forecast.stations.firstOrNull { Engine.sameField(it.icaoId, ident).getOrNull() == true && it.eta != null } ?: continue
+                val taf = briefing.forecast.stations.firstOrNull { same(it.icaoId, ident) && it.eta != null } ?: continue
                 then += EngineContract.WorseField(ident, metar.ceilingFt, metar.visibilitySm, metar.ceilingUnknown)
                 atEta += EngineContract.WorseField(ident, taf.etaCeilingFt, taf.etaVisibilitySm, taf.etaCeilingUnknown)
             }

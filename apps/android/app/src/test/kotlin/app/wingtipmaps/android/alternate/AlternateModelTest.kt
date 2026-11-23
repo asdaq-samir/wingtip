@@ -9,7 +9,6 @@ import app.wingtipmaps.android.api.generated.Alternates
 import app.wingtipmaps.android.api.generated.DestinationCheck
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -56,8 +55,8 @@ class AlternateModelTest {
     fun aFailureIsSaid() {
         val model = AlternateModel(ask = { _, _, _, _ -> throw java.io.IOException("down") })
         model.check(AlternateModel.where(ifr, 120.0, null))
-        assertNotNull(model.state.value.problem)
-        assertTrue(model.state.value.problem!!.startsWith("The alternate could not be checked"))
+        // No connection said first, as the web's lib/problems and the iPhone say it (Problems).
+        assertEquals("No connection. The alternate could not be checked.", model.state.value.problem)
     }
 
     @Test

@@ -16,7 +16,9 @@ class PaperworkTest {
             """{"what":"flight-review","title":"Flight Review","rule":"14 CFR 61.56(c)","aircraftId":null,"tailNumber":null,"itemId":null,"dueOn":"2026-11-05","daysLeft":-3,"dueAtHours":null,"hoursLeft":null},""" +
             """{"what":"hundred-hour","title":"100-Hour Inspection","rule":"14 CFR 91.409(b)","aircraftId":7,"tailNumber":"N3429J","itemId":null,"dueOn":null,"daysLeft":null,"dueAtHours":2450.0,"hoursLeft":19.5}]}"""
         val list = Gateway.json.decodeFromString<PaperworkDto>(body)
-        assertEquals(listOf("N3429J · ELT battery", "Flight Review", "N3429J · 100-hour inspection"), list.items.map(Paperwork::named))
+        // The engine's labels in Title Case (design/wording.json's rule for a
+        // row's name), the tail before an airplane's own.
+        assertEquals(listOf("N3429J · ELT Battery", "Flight Review", "N3429J · 100-Hour Inspection"), list.items.map(Paperwork::named))
         assertEquals(listOf("In 7 days", "3 days past", "19.5 h to go"), list.items.map(Paperwork::whenWords))
         // The tone is the engine's `due_tone` (EngineFixturesTest holds it
         // to records.json); here, its words taken as the row's tone, by
