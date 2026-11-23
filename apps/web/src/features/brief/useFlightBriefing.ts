@@ -2,7 +2,7 @@ import { useAirplaneChosen } from "../../lib/preferences";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Briefing, Course, Leg, NavLogAltitude, Totals } from "../../lib/api/types";
-import { type BriefingState, useLoad, callSign, type BriefingPart } from "../plan";
+import { arrivalMin, type BriefingState, useLoad, callSign, type BriefingPart } from "../plan";
 import { localDay } from "../../lib/format";
 import { underMinimums } from "../../lib/minimums";
 import { usePreferences } from "../../lib/preferences";
@@ -222,6 +222,7 @@ export function useFlightBriefing({
         dest,
         leaving: new Date(depart || opened),
         eteMin: totals?.ete_min ?? null,
+        arriveMin: arrivalMin(totals),
         checks,
         picks,
         ownCallSign,

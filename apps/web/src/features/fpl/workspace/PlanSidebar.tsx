@@ -4,6 +4,8 @@ import { loadAccountPanels } from "../../pilot";
 import type { LatLon } from "../../../lib/geo";
 import { MAX_STOPS } from "../../../lib/identSchema";
 import { sameField } from "../../../lib/procedures";
+import { arrivalMin } from "../../plan";
+import { useInspector } from "../../../hooks/use-inspector";
 import { AircraftRecentRows, usePrefetchAircraftTiles, loadAircraftFavoriteGroups } from "../../aircraft-pick";
 import type { OneSearchModel } from "../search/useOneSearch";
 import TabKept from "../../../components/TabKept";
@@ -90,6 +92,13 @@ export default function PlanSidebar({
     setApproachesOf,
     setNearFrom,
   } = vm.cards;
+  // A card in the inspector at the map's right (an iPad on its side) is
+  // beside the sheet, not over it: the search stays under its field, its
+  // results with it, as Apple Maps keeps its list in the sidebar while a
+  // place's card shows (the HIG audit of 2026-11-23, M4, the owner taking
+  // its recommendation), where the sheet went blank under "KOSH".
+  const inspector = useInspector();
+  const covered = cardUp && !inspector;
   const { flyHere, measuredFrom } = vm.map;
   const { keepFuelStops, suggestedAt } = vm.stops;
   const { dropIntoRoute } = vm.routeList;
@@ -176,7 +185,7 @@ export default function PlanSidebar({
         // stops (Totals.ground_min) after it leaves, as the figures' ETA -- for its forecast's hour.
         arrival={
           !s.local && s.totals?.ete_min != null && sameField(place, `${planned.dest}`)
-            ? { depart: depart || null, minutes: s.totals.ete_min + (s.totals.ground_min ?? 0) }
+            ? { depart: depart || null, minutes: arrivalMin(s.totals)! }
             : undefined
         }
         startOn={approachesOf === place ? "approaches" : undefined}
@@ -216,7 +225,7 @@ export default function PlanSidebar({
       )}
       {/* Always built, the sheet's first page (Search, PageToggle):
           kept while FPL is up, as it was left. */}
-      <TabKept away={cardUp || nearOpen}>
+      <TabKept away={covered || nearOpen}>
         {/* A picker's field, over whatever answers it: one field, kept as
             the body under it turns from the lists to the results. */}
         {askField && <div className="flex shrink-0 px-4 pt-2">{askField}</div>}

@@ -13,7 +13,7 @@ export type { BriefingPart } from "./briefSections";
 export { briefingLegs } from "./briefingLegs";
 export { type DryRun, type Flown, dryRunAt, dryRunFlown, dryRunOf, dryRunRow, runNmAt } from "./dryRun";
 export { FIELD_LIST_KEYS, fieldListParams, fieldListsOf, prunedFieldLists } from "./fieldLists";
-export { figuresLine, nextLanding, tripFigures } from "./figures";
+export { arrivalMin, figuresLine, nextLanding, tripFigures } from "./figures";
 export { type CourseLine, dryRunNext, gpsAhead, useFlyingTo } from "./flyingTo";
 export {
   PLAN_NAME,

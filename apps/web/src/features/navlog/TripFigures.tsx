@@ -1,5 +1,5 @@
 import { useAirplaneChosen } from "../../lib/preferences";
-import { useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { zoneName } from "../../lib/format";
 import { cn } from "cn";
 import type { ExplainedTerm } from "../../lib/explain";
@@ -55,8 +55,15 @@ const SHORT: Record<string, string> = { Dist: "Dist", Track: "Trk", Course: "Crs
 const EXPLAIN: Record<string, ExplainedTerm> = { ETE: "ETE", ETA: "ETA" };
 
 // A pointer's answer a figure's own: a little dimmer, as a tap's, where
-// the link variant underlined it, which iOS never does to a number.
-const AREA = "relative max-w-full hit-x-2 hit-y-3 hover:no-underline hover:opacity-80";
+// the link variant underlined it, which iOS never does to a number. Over
+// the strip's neighbours (z-10), so its area's foot is not under the next
+// box down.
+const AREA = "relative z-10 max-w-full hit-x-2 hover:no-underline hover:opacity-80";
+// Its area 44 points tall whatever the figure's size, as the timeline's
+// chips' (TimelineRows' CHIP_44): a band of 12 over and under a figure of
+// 16 to 25 made 40 to 49, under 44 on the thin strip (the HIG audit of
+// 2026-11-23, M5). The figure itself never grows.
+const AREA_44 = { "--hit-y": "calc((100% - 44px) / 2)" } as CSSProperties;
 
 /** A figure an airplane makes (the time, the fuel), with none picked: a
  *  dash, said as what it waits for. */
@@ -183,6 +190,7 @@ export default function TripFigures({
           data-testid="strip-pick-airplane"
           aria-label={said}
           className={AREA}
+          style={AREA_44}
         >
           {face}
         </Button>
@@ -196,6 +204,7 @@ export default function TripFigures({
           data-testid="to-toggle"
           aria-label={`${toLabel}, ${said}: show the ${toDestination ? "next stop" : "destination"}`}
           className={AREA}
+          style={AREA_44}
         >
           {face}
         </Button>
@@ -212,6 +221,7 @@ export default function TripFigures({
           data-testid="dist-unit"
           aria-label={`${seen(f)}, ${said}: show in ${statute ? "nautical" : "statute"} miles`}
           className={cn(AREA, "items-baseline")}
+          style={AREA_44}
         >
           {face}
         </Button>
@@ -225,6 +235,7 @@ export default function TripFigures({
           data-testid="ete-eta-toggle"
           aria-label={`${seen(f)}, ${said}: show the ${f.name === "ETE" ? "arrival" : "time en route"}`}
           className={AREA}
+          style={AREA_44}
         >
           {face}
         </Button>

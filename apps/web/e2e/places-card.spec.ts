@@ -225,7 +225,7 @@ test("a Favorite's card names it and the map goes to it before the card's answer
   expect(Math.abs((await card(page).getByTestId("fly-here").boundingBox())!.y - actionsBefore.y)).toBeLessThan(2);
   // Nothing to measure from: no line under the name, the facts' Distance a dash.
   await expect(card(page).getByTestId("place-line")).toHaveCount(0);
-  await expect(card(page).getByTestId("place-fact-distance")).toHaveText("Distance—");
+  await expect(card(page).getByTestId("place-fact-distance")).toHaveText("Dist.—");
 });
 
 // A planner out of reach for a moment (restarted, say) is not an airport

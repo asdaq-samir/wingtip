@@ -26,6 +26,11 @@ export default function ProblemBanner() {
       icon={CircleAlert}
       tone="warning"
       title={title}
+      // The line is the message: two lines before it is cut, so "Part of
+      // the map could not be drawn" reads whole beside Try Again at the
+      // owner's larger text on an iPad held upright, where it lost 75
+      // points (the HIG audit of 2026-11-23's re-measure).
+      lines={2}
       titleTestId="problem-banner-title"
       more={
         problems.length > 1 && (

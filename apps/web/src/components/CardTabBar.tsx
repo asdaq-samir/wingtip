@@ -1,10 +1,14 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "cn";
 import { TabsIndicator, TabsList, TabsTrigger } from "./ui/tabs";
 import { CARD_FOOT_ROOM, HOLD_AT_EDGE } from "./sheet/insets";
 import { FloatingBar, FloatingBarFace } from "./FloatingBar";
 import { FLOATING_BAR_COLUMNS, FLOATING_BAR_FOOT_ROOM, FLOATING_BAR_ITEM, FLOATING_BAR_PICKED, FLOATING_BAR_ROOM } from "./floatingBarLook";
+
+/** The grabber's 16-point box (a rem) under the bar where the card's
+ *  grabber is at its foot: the side panel, md up (useIsMobile's width). */
+const GRABBER_ROOM = "md:pb-[calc(var(--bar-foot)+1rem)]";
 
 /** One tab of the bar: its value, its word and its icon (required, so none
  *  is bare), and why to open it where there is a reason -- `hint` said in
@@ -61,9 +65,13 @@ export function CardTabBar<T extends string>({
     // Over the card's own room under its content (CARD_FOOT_ROOM): at the
     // pages' end the bar rests where it rests pinned, where it rose by that
     // room as the last page was scrolled to its end (card-scroll.spec).
+    // From the side panel's width up (md, the regular width) the card's
+    // grabber is at its foot, 16 points tall (SheetGrabber): the bar rests
+    // over it (GRABBER_ROOM), as FPL's does (SheetFoot), where it lay on the
+    // grabber's pill (the HIG audit of 2026-11-23, M3).
     <div
-      className={cn("pointer-events-none sticky bottom-0 z-10 pt-3", FLOATING_BAR_ROOM, HOLD_AT_EDGE)}
-      style={{ paddingBottom: FLOATING_BAR_FOOT_ROOM, marginBottom: `calc(-1 * ${CARD_FOOT_ROOM})` }}
+      className={cn("pointer-events-none sticky bottom-0 z-10 pt-3 pb-(--bar-foot)", GRABBER_ROOM, FLOATING_BAR_ROOM, HOLD_AT_EDGE)}
+      style={{ "--bar-foot": FLOATING_BAR_FOOT_ROOM, marginBottom: `calc(-1 * ${CARD_FOOT_ROOM})` } as CSSProperties}
       data-testid={testId}
     >
       {/* The capsule of glass round the stock list, the list itself clear on it. */}

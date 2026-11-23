@@ -106,8 +106,12 @@ export default function SearchBox({
         className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
       />
       {/* Base UI's own clear: shown while something is typed, the
-          words cleared through the root's onValueChange, the focus kept. */}
-      <CommandClear aria-label="Clear the search" data-testid="search-clear" />
+          words cleared through the root's onValueChange, the focus kept.
+          Its 44-point area (12 round its 20) meets the mic's (4 round its
+          36) rather than overlapping it: 16 apart, where the row's gap of
+          8 let a tap just right of the ✕ start the mic (the HIG audit of
+          2026-11-23, L4). */}
+      <CommandClear aria-label="Clear the search" data-testid="search-clear" className="mr-2" />
       {!model.typed && desktop && !using && <Kbd aria-hidden="true">{searchKeys()}</Kbd>}
       {/* The microphone, the field's trailing button: on-device speech
           only (lib/speechLocal), so none where the browser has no

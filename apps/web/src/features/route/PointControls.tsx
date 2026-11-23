@@ -230,13 +230,15 @@ export function PointMenu({
               aria-label={`${actions.ident}: more`}
               data-testid={testId}
               data-point-mark=""
-              // Its area 8 past its 32 (the stock button's clear 1-point
+              // Its area 44 round its 32 (the stock button's clear 1-point
               // edge is inside its box and the after is laid from inside it,
-              // so 6 past made 42; the iOS audit's P1, "C81: more" 32×32),
-              // but 6 on the words' side (7 from inside that edge), where
-              // the name's area begins in the line's 16 (TimelineRows'
-              // TIMELINE_GAP).
-              className="relative shrink-0 rounded-full p-0 hover:bg-transparent aria-expanded:bg-transparent hit-y-2 after:-left-2 after:-right-[7px]"
+              // so 6 past made 42; the iOS audit's P1, "C81: more" 32×32):
+              // 7 over and under, so the marks of two lines 12 apart meet
+              // and do not overlap, where 8 took a point or two of the next
+              // mark's (the HIG audit of 2026-11-23, L6); 8 across, but 6 on
+              // the words' side (7 from inside that edge), where the name's
+              // area begins in the line's 16 (TimelineRows' TIMELINE_GAP).
+              className="relative shrink-0 rounded-full p-0 hover:bg-transparent aria-expanded:bg-transparent hit-y-[7px] after:-left-2 after:-right-[7px]"
             >
               {face}
             </Button>

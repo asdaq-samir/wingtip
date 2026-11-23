@@ -7,6 +7,16 @@ import { callEngine } from "../../lib/engine/engine";
 import { pointName } from "../../lib/identSchema";
 import { sameField } from "../../lib/procedures";
 
+/** Minutes from the departure to the landing at the destination, the
+ *  planner's own figure: the time in the air (Totals.ete_min) and the time
+ *  on the ground at the stops (Totals.ground_min, "the destination's arrival
+ *  is ete_min and this after the departure"). FPL's timeline, the place
+ *  card's forecast hour and the Brief's Arrive all read it, so the three
+ *  say one time (the HIG audit of 2026-11-23, H1: the Brief left the
+ *  turnarounds out and read about an hour early on a two-stop flight). */
+export const arrivalMin = (totals: Pick<Totals, "ete_min" | "ground_min"> | null | undefined): number | null =>
+  totals?.ete_min == null ? null : totals.ete_min + (totals.ground_min ?? 0);
+
 /** One of the flight's figures: its name over it, its unit after it. */
 interface Figure {
   name: string;
