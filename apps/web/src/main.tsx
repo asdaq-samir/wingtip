@@ -28,7 +28,7 @@ import { prefetchRouteMap } from "./features/plan-map/routeMapChunk";
 import { prefetchRouteBox } from "./features/route/routeBoxChunk";
 import { prefetchShareMenu } from "./features/share/shareMenuChunk";
 import { loadPopups } from "./components/popupsChunk";
-import { TooltipProvider } from "./components/ui/tooltip";
+import { TooltipProvider } from "./components/ui/tooltip-provider";
 import "./index.css";
 // Inter, the text face, here rather than in index.css, which the
 // connector's live view shares (claude-view.html): its host's sandbox
