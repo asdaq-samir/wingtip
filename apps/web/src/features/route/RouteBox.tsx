@@ -130,12 +130,12 @@ export default function RouteBox({
   // reading, as the popover is on the body, out of the Drawer's viewport.
   const keyboard = useKeyboardInset();
   const at = typed.at;
-  // Empty, the route, from its departure; then each end it lacks, said in
-  // its token where its field was. After a whole route's destination no
-  // words, at the pilot's ask ("Add stop" said it): what is typed there is
+  // Empty, the route, from its departure; a lacking departure said in its
+  // token where its field was, no ghost word after the last point (the owner,
+  // 2026-11-23). After a whole route's destination no words, at the pilot's ask ("Add stop" said it): what is typed there is
   // the new destination, the old one a stop on the way, as Maps' Add Stop
   // does, and a reader is told so (its label).
-  const placeholder = !points.length ? "Route" : at === null ? (hasDest ? "" : "Destination") : at === 0 && !hasDep ? "Departure" : "";
+  const placeholder = !points.length ? "Route" : at === null ? "" : at === 0 && !hasDep ? "Departure" : "";
   const label = !points.length
     ? "The route: its departure and destination, or a whole route typed, as KPWK V100 KLAS"
     : at === null
@@ -205,13 +205,11 @@ export default function RouteBox({
             // the owner, 2026-11-14), not a footer of its own.
             className={cn(
               "h-auto flex-wrap items-start border-0 pt-1 pb-1 shadow-none",
-              // Turned from the grouped box: the timeline card's corners, and
-              // its words where the rows' words start (the card's 16, a
-              // mark's 32 and the 16 after it: TIMELINE_CARD, TIMELINE_GAP)
-              // and its controls as far in from the right as the rows' are
-              // (TIMELINE_END), so nothing moves as the face turns (the
-              // owner's iPhone, 2026-11-23).
-              wrapped ? "rounded-(--radius-card) pr-4 pl-16" : "rounded-(--radius-banner) pr-1.5 pl-1",
+              // Turned from the grouped box: the timeline card's corners, its
+              // words left-aligned at the box's own 16 of padding, and its
+              // controls as far in from the right (TIMELINE_END), so nothing
+              // moves as the face turns (the owner's iPhone, 2026-11-23).
+              wrapped ? "rounded-(--radius-card) pr-4 pl-4" : "rounded-(--radius-banner) pr-1.5 pl-1",
               PANEL_FIELD,
             )}
             style={wrapped && height ? { height } : undefined}
