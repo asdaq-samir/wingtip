@@ -45,7 +45,9 @@ import app.wingtipmaps.android.route.removeProcedure
  * A field open by its card has its runways and the kinds of procedure
  * not picked under it (TimelineFieldParts), and a procedure picked there
  * its fixes as rows of the line, an arrival's and an approach's before
- * the field, a departure's after it (TimelineProcedureRows).
+ * the field, a departure's after it (TimelineProcedureRows). Add a Stop's
+ * end holds `toggle`, the round toggle to the route box (RouteBox), in the
+ * group itself, not a row of its own (the owner, 2026-11-23).
  */
 @Composable
 fun RouteStops(
@@ -58,6 +60,7 @@ fun RouteStops(
     onPlate: (ident: String, procedure: String) -> Unit = { _, _ -> },
     model: RouteFieldFacts = hiltViewModel(),
     procedures: RouteProcedures = hiltViewModel(),
+    toggle: (@Composable () -> Unit)? = null,
 ) {
     val course = state.course
     // Under IFR, the alternate after the destination (PlanAlternate).
@@ -121,6 +124,7 @@ fun RouteStops(
             enabled = state.routed,
             shapes = ListItemDefaults.segmentedShapes(index = index++, count = count),
             leadingContent = { TimelineMark(thread) { Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary) } },
+            trailingContent = toggle,
             modifier = Modifier.fillMaxWidth().timelineThread(thread, first = false, last = false, dot = null, gap = gap),
             content = { Text(stringResource(R.string.wording_add_stop), color = if (state.routed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
         )

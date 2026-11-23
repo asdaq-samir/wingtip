@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.FlightLand
 import androidx.compose.material.icons.filled.FlightTakeoff
 import androidx.compose.material.icons.filled.FormatListNumbered
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.LocalGasStation
 import androidx.compose.material.icons.filled.MoreVert
@@ -103,6 +104,8 @@ object WingtipIcons {
     val holdHere = Icons.Filled.Sync
     val undo = Icons.AutoMirrored.Filled.Undo
     val fuel = Icons.Filled.LocalGasStation
+    /** The route box's toggle, the web's keyboard glyph (TypeRouteButton). */
+    val typeRoute = Icons.Filled.Keyboard
     val redo = Icons.AutoMirrored.Filled.Redo
     val call = Icons.Filled.Call
     val address = Icons.Filled.Place
