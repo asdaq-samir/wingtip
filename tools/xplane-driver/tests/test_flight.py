@@ -72,6 +72,10 @@ def feed():
 
 
 def lines(sock):
+    """What has come in on the feed so far. Read as the flight goes, as the
+    Mac's feed reads it: a socket left unread until the end keeps only what
+    its receive buffer holds (Linux's default, 212,992 bytes, held 166 of
+    the flight's 219 lines and dropped the rest, the last among them)."""
     out = []
     while True:
         try:
@@ -93,16 +97,17 @@ def fly(fake_xp, tmp_path, feed, kind="path"):
 def test_the_airplane_is_placed_on_the_path_and_its_state_sent_each_second(fake_xp, tmp_path, feed):
     run = fly(fake_xp, tmp_path, feed)
     assert fake_xp.data[PLANEPATH] == [1]
-    heights = []
+    heights, sent = [], []
     for _ in range(10_000):
         if run.done:
             break
         run.frame(0.5)
         heights.append(fake_xp.data[POS + "local_y"])
+        sent += lines(feed)
     assert run.done
     assert fake_xp.data[PLANEPATH] == [0]
-    sent = lines(feed)
     assert [s["seq"] for s in sent] == list(range(1, len(sent) + 1))
+    assert len(sent) == run.out.seq  # every line sent came in
     assert sent[0]["phase"] == "takeoff" and sent[0]["on_ground"] is True
     assert heights[0] == pytest.approx(1.2)  # on the stub's ground, at the wheels
     assert max(s["alt_m"] for s in sent) == pytest.approx(600.0, abs=1.0)
@@ -115,11 +120,12 @@ def test_the_airplane_is_placed_on_the_path_and_its_state_sent_each_second(fake_
 
 def test_the_scripted_traffic_comes_after_its_point_and_goes(fake_xp, tmp_path, feed):
     run = fly(fake_xp, tmp_path, feed)
+    sent = []
     for _ in range(10_000):
         if run.done:
             break
         run.frame(0.5)
-    sent = lines(feed)
+        sent += lines(feed)
     with_traffic = [s for s in sent if s["traffic"]]
     assert with_traffic, "the traffic was never sent"
     first = with_traffic[0]
