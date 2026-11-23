@@ -77,13 +77,34 @@ const AIRPORT_IDENT_FAR: ExpressionSpecification = [
   ["get", "ident"],
 ];
 
-/** The airports' one symbol layer, from either source: the mark (airportIcons), its ident beside it in bold in the field's
+/** A field's mark at the zooms its ident is named at (AIRPORT_IDENT_FAR), so no field is drawn bare. */
+const AIRPORT_ICON_NAMED: ExpressionSpecification = [
+  "step",
+  ["zoom"],
+  ["case", ["any", ["==", ["get", "towered"], true], ["==", ["get", "size"], "largest"]], TILE_AIRPORT_ICON, ""],
+  glZoom(MAP_ZOOM.airportPublic),
+  TILE_AIRPORT_ICON,
+];
+
+/** The fields that are drawn whatever their name: a Class B's (field_mark_rank's largest; the owner, 2026-11-17,
+ *  "all the class B airports show even when zoomed out") and the one whose card is open (AirportsGl rings it). */
+function keptField(): ExpressionSpecification {
+  return ["any", ["==", ["get", "size"], "largest"], ["==", ["get", "ident"], ["coalesce", ["global-state", SELECTED_AIRPORT], ""]]];
+}
+
+/** The tile airports' two layers, for the taps and probes that read them. */
+export const AIRPORT_TILE_LAYERS = ["airports", "airports-kept"];
+
+/** The airports' symbol layers, from either source: the mark (airportIcons), its ident beside it in bold in the field's
  *  ink (the sectional sets an airport's name in its symbol's colour, Chart User's Guide, Airports), kept apart by MapLibre's
  *  collision in `rank` order, the engine's field_mark_rank: lowest placed first and winning, so a Class B's field
- *  (O'Hare), then a Class C's, then each tier by its longest hard runway. */
-function airportMarksLayer(from: { source: string; "source-layer"?: string }): SymbolLayerSpecification {
-  return {
-    id: "airports",
+ *  (O'Hare), then a Class C's, then each tier by its longest hard runway. A field whose ident has no room is not drawn
+ *  at all at that zoom, mark and name placed together (the owner's iPhone screenshot, 2026-11-23: the Great Lakes at
+ *  zoom 6 strewn with unnamed marks); a Class B's field and the open card's keep their mark, only the name giving way
+ *  (`airports-kept`, above, so placed first). The route's own fields and stops wear their own marks (RouteGl, StopMarksGl). */
+function airportMarksLayers(from: { source: string; "source-layer"?: string }): SymbolLayerSpecification[] {
+  const layer = (id: string, kept: boolean): SymbolLayerSpecification => ({
+    id,
     type: "symbol",
     ...from,
     minzoom: glZoom(AIRPORTS_FARTHEST_ZOOM),
@@ -95,12 +116,13 @@ function airportMarksLayer(from: { source: string; "source-layer"?: string }): S
       ["any", ["boolean", ["global-state", SHOW_MILITARY], false], ["!=", ["get", "military"], "military"]],
       ["any", ["boolean", ["global-state", SHOW_PRIVATE], false], ["!=", ["get", "use"], "private"]],
       notOwn(ROUTE_AIRPORTS),
+      kept ? keptField() : ["!", keptField()],
     ],
     layout: {
-      "icon-image": TILE_AIRPORT_ICON,
+      "icon-image": kept ? TILE_AIRPORT_ICON : AIRPORT_ICON_NAMED,
       // Each field at its own size step, the biggest largest (airportIconSize).
       "icon-size": airportIconSize(glZoom(AIRPORTS_FARTHEST_ZOOM), glZoom(10), glZoom(13)),
-      "icon-allow-overlap": false,
+      "icon-allow-overlap": kept,
       // Two px round each mark at every zoom: out at a few states the towered fields then stand side by side in rank
       // order, as ForeFlight's do, where 27 px round each (to the app's zoom 7) left one field a metro (2026-11-21).
       "icon-padding": 2,
@@ -109,12 +131,14 @@ function airportMarksLayer(from: { source: string; "source-layer"?: string }): S
       ...labelText("airportIdent"),
       "text-anchor": "left",
       "text-offset": [1.15, 0],
-      // The ident gives way, the mark stays: a busy area keeps its fields.
-      "text-optional": true,
+      // A kept field's ident gives way and its mark stays; any other field's mark and ident go together.
+      "icon-optional": false,
+      "text-optional": kept,
       "text-padding": 1,
     },
     paint: { "text-color": labelInk(AIRPORT_IDENT_INK), ...labelHalo("airportIdent"), "text-opacity": SELECTED_HIDDEN },
-  };
+  });
+  return [layer("airports", false), layer("airports-kept", true)];
 }
 
 /** The mark, its ident beside it on whichever side is clear: MapLibre's
@@ -240,7 +264,7 @@ export const AIRSPACE_TILE_LAYERS = [
 const NAVAID_TILE_LAYERS = ["navaids", "navaids-idents", "fixes", "fixes-idents"];
 /** What the route's points alone leave out besides (lib/map/routeOnly):
  *  every airport and VFR waypoint of the tiles. */
-const ROUTE_ONLY_HIDDEN = ["airports", "vfr-waypoints", "vfr-waypoints-idents"];
+const ROUTE_ONLY_HIDDEN = [...AIRPORT_TILE_LAYERS, "vfr-waypoints", "vfr-waypoints-idents"];
 
 /** The overlay tiles' source and layers, by the slot each is drawn under
  *  (glLayer's SLOTS), for the map's first style. Every archive is built
@@ -276,7 +300,7 @@ export function overlayStyle(
       filter: ["in", ["get", "kind"], ["literal", VOR_KINDS]],
       minzoom: glZoom(VOR_ZOOM),
     }),
-    airportMarksLayer(from("airports")),
+    ...airportMarksLayers(from("airports")),
   ];
   return { source: overlaySource(tiles, origin), layers: { lines, marks } };
 }
