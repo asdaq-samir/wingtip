@@ -24,8 +24,7 @@ import { SWIPE_READER } from "./sheetFollow";
  * jumping"). The way an
  * airport card's tabs are held at its foot (CardTabBar's FloatingBar),
  * the owner's pointer ("how does airport card do it?"). The row is marked
- * data-pin-foot so that nothing stops its ease at the pill
- * (sheet/insets' PILL_BODY).
+ * data-pin-foot, where the browser tests find it.
  *
  * Of two places, the higher on the screen: where it rests on the sheet
  * (its place under the route, no lower than the foot's top), which goes
@@ -94,13 +93,6 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
   useLayoutEffect(() => {
     heldNow.current = held;
   }, [held]);
-  // While the frame loop below runs (a finger on the sheet, a settle), a
-  // resize of the page is measured at the loop's next frame, before its
-  // own writes, not by the observer: the strip growing a frame at a time
-  // resized the page each frame, and the observer, which runs after the
-  // frame's layout, read and wrote again and made a second layout in
-  // every frame of a pull (the animation audit of 2026-11-23, H2).
-  const loop = useRef<{ on: boolean; stale: boolean; measure: (() => void) | null }>({ on: false, stale: false, measure: null });
   // Through each settle, its own animation on the sheet's curve (sheet/pinFollow).
   useEffect(() => {
     const row = ref.current;
@@ -159,12 +151,7 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       if (bar) setVar(bar, "--pin-bar-room", `${barRoom(barTop, natural)}px`);
     };
     measure();
-    const state = loop.current;
-    state.measure = measure;
-    const resized = new ResizeObserver(() => {
-      if (state.on) state.stale = true;
-      else measure();
-    });
+    const resized = new ResizeObserver(measure);
     const page = row.closest("[data-sheet-scroll]");
     if (page) resized.observe(page.firstElementChild ?? page);
     // The row's place moves with the page as it scrolls, so its room does:
@@ -196,7 +183,6 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       page?.removeEventListener("scroll", onScroll);
       removeEventListener("resize", measure);
       barOf()?.style.removeProperty("--pin-bar-room");
-      state.measure = null;
     };
   }, [on, foot, ref, held]);
   // Whether it is held now.
@@ -226,33 +212,17 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
     let frame = 0;
     let was = Number.NaN;
     const until = dragging ? Infinity : performance.now() + SETTLE_MS;
-    const state = loop.current;
     const step = () => {
-      state.on = true;
-      if (state.stale) {
-        state.stale = false;
-        state.measure?.();
-      }
       check();
       const slid = moved(sheet);
       const moving = slid !== was;
       was = slid;
       if (performance.now() < until || moving) frame = requestAnimationFrame(step);
-      else done();
-    };
-    // Stopped, a resize seen meanwhile measured now.
-    const done = () => {
-      state.on = false;
-      if (state.stale) {
-        state.stale = false;
-        state.measure?.();
-      }
     };
     step();
     sheet?.addEventListener("transitionend", check);
     return () => {
       cancelAnimationFrame(frame);
-      done();
       sheet?.removeEventListener("transitionend", check);
     };
   }, [dragging, held, on, ref]);

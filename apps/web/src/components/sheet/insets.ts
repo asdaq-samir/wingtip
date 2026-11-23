@@ -60,17 +60,13 @@ const SIZES: PanelState[] = ["peek", "half", "full"];
  * iPhone, 2026-11-12, KORD's card; in WebKit at 390x844 none of its 23
  * parts in sight painted at any step of the drag). `visibility` keeps it
  * laid out and its pictures loaded, so there is nothing to build mid-drag.
- * Nothing in it is eased while the sheet is at the pill: a stock Button
- * eases all its properties (transition-all), visibility too, so hidden at
- * the settle it stayed in sight for its transition's time, FPL's ••• over
- * the pill's figures (the owner's screen recording, 2026-11-16: "Better
- * but just a bit left at the end"). Up from the pill the class is gone and
- * its controls ease as they do. Not a row parked at the foot (data-pin-foot,
- * sheet/pinAtFoot's PIN_AT_FOOT): its ease is what holds it still as the
- * sheet slides, and stopped at the pill it rode the sheet's last stretch
- * down and came back up (the owner's screen recording, 2026-11-16).
+ * Nothing in it eases its visibility: the stock Button lists what it eases
+ * (no longer shadcn's transition-all, which eased visibility too and kept
+ * FPL's ••• over the pill's figures for its transition's time, the owner's
+ * screen recording of 2026-11-16), so no rule here stops its children's
+ * transitions any more.
  */
-export const PILL_BODY = "invisible group-data-swiping/sheet:visible [&_*:not([data-pin-foot])]:transition-none";
+export const PILL_BODY = "invisible group-data-swiping/sheet:visible";
 /** And a body that is the pill's one surface: its title row kept in sight,
  *  and only the row: what a head shows under its name (CardHead's `below`,
  *  the Brief's verdict) is not laid out there, as it made the head taller
