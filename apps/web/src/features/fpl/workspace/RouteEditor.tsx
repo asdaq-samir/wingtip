@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, useRef } from "react";
 import { SearchNear } from "../../../lib/useAirportSearch";
 import { coverCard, useSheetCards } from "../../../lib/sheetCards";
 // The route's field, on a chunk of its own, asked for beside the first
@@ -9,6 +9,7 @@ import { FlightFigures } from "./FlightFoot";
 import { TypeRouteButton } from "../../procedures/lazy";
 import { keptTimelineHeight } from "./routeEditing";
 import { FuelPill } from "./FuelPill";
+import { useFieldRise } from "./useFieldRise";
 import { coursePoints } from "../../../lib/course";
 import { sameField } from "../../../lib/procedures";
 
@@ -42,8 +43,12 @@ export default function RouteEditor({
   // sheet is inert (SheetParts, while a card is up), and the field's focus
   // as it was asked went nowhere (plans.spec, "no legal altitude").
   const covered = useSheetCards((c) => !!coverCard(c.stack));
+  // Too long for the room above FPL's foot bar, the sheet raised all the way up, once.
+  const field = useRef<HTMLDivElement>(null);
+  useFieldRise(field, inPlace, setPanel);
   return (
     <div
+      ref={field}
       // In the timeline's own place (RouteHead), none of its own room round it.
       className={inPlace ? "flex flex-col" : "flex flex-col px-4 pb-2"}
       data-testid="route-editor"
