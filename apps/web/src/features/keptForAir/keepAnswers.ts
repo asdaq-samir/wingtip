@@ -27,8 +27,8 @@ import { courseFields } from "../../lib/course";
  */
 
 /** Keeps the route's briefing, METARs and TAFs, NOTAMs, airport cards,
- *  plates (the flight's, keepPlates), plan, Go / No-Go and weather loop;
- *  the record of what is now on board. */
+ *  plan, Go / No-Go and weather loop; the record of what is now on board.
+ *  The plates come after the chart tiles (keepRoutePlates). */
 export async function keepRouteAnswers(
   client: QueryClient,
   course: Course,
@@ -41,7 +41,6 @@ export async function keepRouteAnswers(
   const onBoard = new Set<KeptKind>();
   const missing = new Set<KeptKind>();
   let bytes = 0;
-  let plates: string[] = [];
   const mark = (kind: KeptKind, ok: boolean) => (ok ? onBoard : missing).add(kind);
 
   // The briefing the page asks for this route, asked again so the worker
@@ -92,19 +91,6 @@ export async function keepRouteAnswers(
     "airports",
     cards.every((c) => c.status === "fulfilled"),
   );
-  // The plates a flight may need (keepPlates): the departure's, the
-  // destination's, each stop's, the alternate's and those of the fields
-  // within the airplane's diversion range.
-  try {
-    const wanted = await client.fetchQuery({ ...flightPlatesQuery(course, alternate), staleTime: 0 });
-    const kept = await keepFlightPlates(client, wanted, signal);
-    plates = wanted.fields.flatMap((f) => f.charts.map((c) => chartKey(c.url)));
-    bytes += kept.bytes;
-    if (kept.charts > 0 || kept.failed) mark("plates", !kept.failed);
-  } catch {
-    mark("plates", false);
-  }
-
   // The weather loop's newest frame list, of the pick in the Map menu.
   const loop = useWeatherLayers.getState().loop;
   // With its newest radar picture over the route (keepFlightPath), so the
@@ -125,8 +111,46 @@ export async function keepRouteAnswers(
     onBoard: [...onBoard],
     missing: [...missing].filter((k) => !onBoard.has(k)),
     bytes,
-    plates,
   };
   keptRecordStore().setState({ value: record });
   return record;
+}
+
+/**
+ * The plates a flight may need (keepPlates): the departure's, the
+ * destination's, each stop's, the alternate's and those of the fields
+ * within the airplane's diversion range, added to the record the answers
+ * wrote (keepRouteAnswers). Kept after the chart tiles (keepForAir): tens
+ * of megabytes of pages, a few minutes on a slow line, which held the
+ * tiles and their "Saving Charts Offline" back until they were all in
+ * (flight-critical.spec, 2026-11-22).
+ */
+export async function keepRoutePlates(client: QueryClient, course: Course, alternate: string | null, signal?: AbortSignal): Promise<void> {
+  let kept: { bytes: number; charts: number; failed: boolean } | null = null;
+  let plates: string[] = [];
+  try {
+    const wanted = await client.fetchQuery({ ...flightPlatesQuery(course, alternate), staleTime: 0 });
+    kept = await keepFlightPlates(client, wanted, signal);
+    plates = wanted.fields.flatMap((f) => f.charts.map((c) => chartKey(c.url)));
+  } catch {
+    // Not had: said missing below (kept stays null).
+  }
+  const route = keptRoute(
+    courseFields(course).map((a) => a.ident),
+    alternate,
+  );
+  const record = keptRecordStore().getState().value;
+  // Only onto this route's record: another keep since has its own.
+  if (!record || record.route !== route) return;
+  const ok = kept !== null && !kept.failed;
+  const said = kept === null || kept.charts > 0 || kept.failed;
+  keptRecordStore().setState({
+    value: {
+      ...record,
+      bytes: record.bytes + (kept?.bytes ?? 0),
+      plates,
+      onBoard: said && ok ? [...new Set([...record.onBoard, "plates" as const])] : record.onBoard,
+      missing: said && !ok ? [...new Set([...record.missing, "plates" as const])] : record.missing,
+    },
+  });
 }

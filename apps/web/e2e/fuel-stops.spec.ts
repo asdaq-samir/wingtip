@@ -236,13 +236,13 @@ test("FPL's Add a Stop row has the fuel glyph's Add Stops, and once they are in,
   await openPanel(page);
   const pill = sideDrawer(page).getByTestId("timeline-add-stop").locator("..").getByTestId("timeline-fuel-stops");
   await expect(pill).toHaveText("Add Stops", { timeout: slow(60_000) });
-  await expect(pill).toHaveAccessibleName("Add fuel stops");
+  await expect(pill).toHaveAccessibleName("Add Stops for fuel");
   await inSheet(page, pill);
   await page.screenshot({ path: "test-results/fuel-pill-add.png" });
   await pill.click();
   await expect.poll(() => new URL(page.url()).searchParams.get("fuel")).toBe("KRPD");
   await expect(pill).toHaveText("Remove Stops", { timeout: slow(60_000) });
-  await expect(pill).toHaveAccessibleName("Remove fuel stops");
+  await expect(pill).toHaveAccessibleName("Remove Stops for fuel");
   await inSheet(page, pill);
   await page.screenshot({ path: "test-results/fuel-pill-remove.png" });
   await pill.click();

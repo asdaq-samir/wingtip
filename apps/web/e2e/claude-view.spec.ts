@@ -53,19 +53,29 @@ async function openHost(page: Page, origin: string) {
       approaches: [{ ...fixture.view.approaches[0], loaded: false, state: "active, missed approach suspended" }],
     },
   };
-  await page.goto(`${origin}/app/licences.txt`);
-  await page.setContent(HOST);
+  // The host's page on the app's origin, so the view's asks of Wingtip are
+  // its own origin's, but served here, not by the gateway: the gateway's
+  // content security policy (no inline script) would hold the host's
+  // script and the view's inlined one, which a host's sandbox does not.
+  await page.route(`${origin}/claude-host.html`, (route) => route.fulfill({ contentType: "text/html", body: HOST }));
+  await page.goto(`${origin}/claude-host.html`);
   await page.evaluate(
     ([answer, next]) => Object.assign(window, { answer, next }),
     [{ ...fixture, view: { ...fixture.view, origin } }, active],
   );
-  await page.locator("#view").evaluate((f: HTMLIFrameElement, src) => (f.src = src), `${origin}/app/claude-view.html`);
+  // The page as the host has it: the ui:// resource's HTML, which the
+  // planner reads from the gateway's /app/claude-view.html
+  // (app/mcp/view_resource), drawn in the host's own frame. Not the
+  // gateway's address in the frame: the gateway refuses to be framed
+  // (X-Frame-Options DENY, frame-ancestors 'none'), as it should.
+  const html = await (await page.request.get(`${origin}/app/claude-view.html`)).text();
+  await page.locator("#view").evaluate((f: HTMLIFrameElement, doc) => (f.srcdoc = doc), html);
   return page.frameLocator("#view");
 }
 
 test("the live view draws the flight Claude plans and a tap changes it", { tag: "@smoke" }, async ({ page, baseURL }) => {
   const view = await openHost(page, baseURL!);
-  await expect(view.getByRole("heading", { level: 1 })).toHaveText("C81 → KMSN → KDLH");
+  await expect(view.getByRole("heading", { level: 2 })).toHaveText("C81 → KMSN → KDLH");
   await expect(view.getByTestId("view-figures")).toContainText("12.3");
   // The chart's tiles come from Wingtip itself, framing the route.
   await expect(view.getByTestId("view-chart").locator("img").first()).toHaveAttribute("src", /\/api\/planner\/chart-tile\/sec\//);

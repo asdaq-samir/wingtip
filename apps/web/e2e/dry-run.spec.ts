@@ -148,8 +148,12 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
         return (shown.textContent ?? "").trim();
       }),
     );
+  // FPL's pinned strip at half, thin, its names in the FAA's short forms
+  // (TripFigures' SHORT; the owner, 2026-11-22: "Show the labels even for
+  // thin strip"), and on the ground the leg's magnetic Course where the
+  // Track is once the airplane flies (TripFigures' legCourseDeg).
   const planned = await names(line);
-  expect(planned).toEqual(["Dest", "Distance", "ETE", "Track"]);
+  expect(planned).toEqual(["Dest", "Dist", "ETE", "Crs"]);
   // The figures once the plan has settled: the runways picked into the
   // wind as the route comes in plan it again with their patterns flown
   // (with_procedures), a few miles more.
@@ -170,7 +174,8 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
 
   await pressDryRunStart(page, start);
   const figures = sideDrawer(page).getByTestId("dry-run-figures");
-  await expect.poll(async () => (await names(figures)).slice(0, 3)).toEqual(planned.slice(1));
+  // The same figures from where the airplane is, flying: its Track.
+  await expect.poll(async () => (await names(figures)).slice(0, 3)).toEqual(["Distance", "ETE", "Track"]);
   await expect(figures.getByTestId("navlog-to")).toHaveCount(0);
   await expect(figures.getByTestId("ete-eta-toggle")).toBeVisible();
   const leftNm = async () => parseFloat((await figures.locator("dd").nth(0).innerText()).replace(/,/g, ""));

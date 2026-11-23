@@ -117,7 +117,9 @@ export function FplTabBar({
           <BarAction
             icon={<ICON.flightPlan />}
             label="Routes"
-            spoken={routes.offered ? "Route Options" : "No route options"}
+            // Its name starts with its word, "Routes" (WCAG 2.5.3, Label in
+            // Name): "Route Options" and "No route options" did not hold it.
+            spoken={routes.offered ? "Routes, route options" : "Routes, no route options"}
             aria-pressed={routes.offered && routes.shown}
             disabled={!routes.offered}
             onClick={() => routes.onShown(!routes.shown)}

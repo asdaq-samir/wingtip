@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { clearTheRoute, openPanel, settle, sideDrawer, openRoute } from "./helpers";
+import { clearTheRoute, openPanel, settle, sideDrawer, typeRoute } from "./helpers";
 import { pastSettling } from "./planHelpers";
 import { stopsAre } from "./stopsParam";
 
@@ -85,7 +85,8 @@ test("a stop taken out comes back from the Undo toast that names it", async ({ p
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KRYV,KMSN");
   await settle(page);
   await openPanel(page);
-  await openRoute(page);
+  // The route's pills, in the field the timeline's toggle turns its box into.
+  await typeRoute(page);
   await pastSettling(page);
 
   const lines = sideDrawer(page).getByTestId("route-slide");

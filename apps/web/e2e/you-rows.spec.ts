@@ -62,9 +62,21 @@ test("You is a card over the sheet as every card is: the avatar over one list, t
   // 2026-11-13: "make everything a nested drawer except the welcome one").
   expect(await sheet.evaluate((el) => !!el.closest('[data-slot="map-panel"] [data-sheet-card]'))).toBe(true);
   // One list of rows in order, each opening its page; Pilot Details is a
-  // tap on the avatar and name, not a row (the owner, 2026-11-20).
+  // tap on the avatar and name, not a row (the owner, 2026-11-20). The
+  // Scratchpad beside the Documents (gap-ipad-cockpit) and Connected Apps
+  // last (the AI apps through the connector, round2-security).
   const rows = sheet.getByTestId("library-section").getByRole("button");
-  await expect(rows).toHaveText([/^Airplanes/, /^Flights/, /^Logbook/, /^Minimums/, /^Documents/, /^Training/, /^Emergency/]);
+  await expect(rows).toHaveText([
+    /^Airplanes/,
+    /^Flights/,
+    /^Logbook/,
+    /^Minimums/,
+    /^Documents/,
+    /^Scratchpad/,
+    /^Training/,
+    /^Emergency/,
+    /^Connected Apps/,
+  ]);
   await expect(sheet.getByTestId("library-section").getByRole("group")).toHaveCount(1);
   // Signed out: Sign In said once, the head's large line, no "You" and no
   // "Sign In to Use" on the greyed rows (the owner, 2026-11-13: "Instead

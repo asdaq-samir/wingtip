@@ -1,11 +1,12 @@
 import { flushSync } from "react-dom";
-import { Suspense, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { Button } from "../../../components/ui/button";
 import { FieldClearButton } from "../../../components/ui/field-clear";
 import { usePlanUndo } from "../../../lib/planUndo";
 import { TEXT } from "../../../lib/text";
 import { fromChunk } from "../../../lib/fromChunk";
+import { afterRouteDrawn } from "../../../lib/routeDrawn";
 import { EndRow, OpenRouteFileRow, TIMELINE_CARD, TypeRouteRow } from "../../procedures";
 import type { PlanSlices } from "../vm/planSlices";
 
@@ -78,6 +79,13 @@ export function EmptyRoute({ vm }: { vm: StartSlices }) {
       {openRow}
     </div>
   );
+  // Asked for once the route the page opened on has drawn (lib/routeDrawn):
+  // a route link shows this card for a moment before its route is read,
+  // and fetching the file parts then put React Aria's drag code in every
+  // route link's load (route-load.spec, 17 KB over its budget).
+  const [fileParts, setFileParts] = useState(false);
+  useEffect(() => afterRouteDrawn(() => setFileParts(true), 0), []);
+  if (!fileParts) return card(<OpenRouteFileRow />);
   return (
     <Suspense fallback={card(<OpenRouteFileRow />)}>
       <RouteFileDrop>{card(<OpenFileRow />)}</RouteFileDrop>

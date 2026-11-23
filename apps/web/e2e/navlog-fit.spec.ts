@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { controlsInSight, settle, sideDrawer, slow, openNavLog, navLogSheet, navLogScroller, closeNavLog } from "./helpers";
+import { controlsInSight, settle, sideDrawer, slow, openNavLog, navLogSheet, navLogScroller, closeNavLog, grabberTo } from "./helpers";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -125,6 +125,11 @@ test("a long trip's figures keep their full size on one line in the strip, exact
   // (TripFigures): whole miles with their thousands' comma, as every
   // summary writes them (the owner's list, 2026-11-17).
   await expect(figures.filter({ hasText: /\snm$/ }).first()).toHaveText(/^1,\d{3}\snm$/);
+  // At the pill, where the pinned strip is its full size: above it, at half
+  // and all the way up, FPL's strip is thin, its figures smaller by design
+  // (owner-bugs' thin strip, the owner, 2026-11-22: "thin figures strip at
+  // half and full", growing to the pill's as the sheet comes down).
+  await grabberTo(page, "peek");
   // At the default text size and the two above it, as an iPhone sets the
   // root from Settings' text size (features/shell/dynamicType, which a test browser
   // does not run): a 19-point Body, 17.88 px; a 21-point one, held to the

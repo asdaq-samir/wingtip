@@ -40,7 +40,7 @@ test("a quiet day is low, what the pilot ticks raises it, and Save files it with
       body: JSON.stringify({
         id: 1,
         departureIdent: "C81",
-        destinationIdent: "KDLH",
+        destinationIdent: "KMSN",
         stops: [],
         aircraftTailNumber: null,
         cruiseAltitudeFt: null,
@@ -55,7 +55,10 @@ test("a quiet day is low, what the pilot ticks raises it, and Save files it with
     });
   });
 
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
+  // A short flight, well within a 172's tanks: C81 to KDLH, 290 nm, is
+  // short of fuel and its reserve on a day of headwinds (the tanks'
+  // shortfall a no-go, 91.151), which is not the quiet day this means.
+  await page.goto("/app/plan?dep=C81&dest=KMSN&view=full");
   await settle(page);
   await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   const drawer = sideDrawer(page);

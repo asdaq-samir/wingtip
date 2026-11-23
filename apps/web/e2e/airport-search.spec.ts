@@ -1,5 +1,5 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { openPanel, sideDrawer, slow, openRoute } from "./helpers";
+import { openPanel, sideDrawer, slow, typeRoute } from "./helpers";
 import { stopsAre } from "./stopsParam";
 
 /**
@@ -18,7 +18,10 @@ const airport = (ident: string, name: string) => ({ ident, name, municipality: n
  *  opening the airport's card (RouteBox), in the route's field opened from
  *  the route's ••• (Type the Route; decision 0047). */
 async function changeDestination(page: Page) {
-  await openRoute(page);
+  // The field with the route's pills: on a whole route the timeline's box
+  // turned into it by its toggle (Type the route, TypeRouteButton; the
+  // owner, 2026-11-22), where openRoute leaves the timeline.
+  await typeRoute(page);
   await page.getByLabel(/^(\S+, )?Destination$/).click({ button: "right" });
   await page.getByTestId("pill-menu-change").click();
 }
@@ -101,7 +104,8 @@ test("a stop at the route box's arrow and the route's ends are picked in the one
   test.skip(info.project.name !== "mobile", "judged as a phone");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await openPanel(page);
-  await openRoute(page);
+  // The route box's arrows are in its field (typeRoute), not the timeline.
+  await typeRoute(page);
   await sideDrawer(page).getByRole("button", { name: "Add a stop between C81 and KDLH" }).click();
   const field = page.getByTestId("search-airports");
   await expect(field).toHaveAccessibleName("Search airports and waypoints");

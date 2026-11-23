@@ -18,7 +18,9 @@ test("plan page: Class B is always planned through, said with its clearance, wit
     },
   );
   await page.route(
-    (url) => url.pathname.includes("/planner/route-profile"),
+    // The side view's own answer, not its weather's (/route-profile/weather,
+    // which has no airspace to add to).
+    (url) => url.pathname.endsWith("/planner/route-profile"),
     async (route) => {
       const response = await route.fetch();
       const profile = await response.json();

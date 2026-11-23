@@ -22,8 +22,24 @@ vi.mock("../notamRanking", () => ({ notamRankingQuery: () => ({ queryKey: ["nota
 vi.mock("../../lib/briefPlan", () => ({ useBriefPlan: { getState: () => ({ routed: true }) } }));
 vi.mock("../../lib/map/sources/weatherLayers", () => ({ useWeatherLayers: { getState: () => ({ loop: "radar" }) } }));
 vi.mock("../../lib/api/client", () => ({ api: { weatherLoop: async () => ({ frames: [] }) } }));
+// The flight's plates: two charts of one field, kept.
+vi.mock("./keepPlates", () => ({
+  flightPlatesQuery: () => ({
+    queryKey: ["flightPlates"],
+    queryFn: async () => ({
+      fields: [
+        {
+          ident: "KDLH",
+          charts: [{ url: "https://aeronav.faa.gov/d-tpp/2611/A.PDF" }, { url: "https://aeronav.faa.gov/d-tpp/2611/B.PDF" }],
+        },
+      ],
+    }),
+  }),
+  keepFlightPlates: async () => ({ bytes: 5_000_000, charts: 2, failed: false }),
+}));
 
-import { keepRouteAnswers } from "./keepAnswers";
+import { keepRouteAnswers, keepRoutePlates } from "./keepAnswers";
+import { keptRecordStore } from "./keptRecord";
 
 const field = (ident: string) => ({ ident, kind: "airport", lat: 0, lon: 0 });
 const course = { departure: field("C81"), stops: [field("KMSN")], destination: field("KDLH") } as unknown as Course;
@@ -46,5 +62,25 @@ describe("Keep for the Air's NOTAMs", () => {
     const kept = await keepRouteAnswers(new QueryClient(), course, null);
     expect(kept.missing).toContain("notams");
     expect(kept.onBoard).not.toContain("notams");
+  });
+});
+
+describe("Keep for the Air's plates, after the chart tiles", () => {
+  test("are added to the route's record: their size, their charts and on board", async () => {
+    const answers = await keepRouteAnswers(new QueryClient(), course, null);
+    expect(answers.onBoard).not.toContain("plates");
+    await keepRoutePlates(new QueryClient(), course, null);
+    const record = keptRecordStore().getState().value!;
+    expect(record.bytes).toBe(answers.bytes + 5_000_000);
+    expect(record.plates).toHaveLength(2);
+    expect(record.onBoard).toContain("plates");
+  });
+
+  test("leave another route's record as it is", async () => {
+    await keepRouteAnswers(new QueryClient(), course, null);
+    const other = { ...course, destination: field("KMSP") } as unknown as Course;
+    const before = keptRecordStore().getState().value;
+    await keepRoutePlates(new QueryClient(), other, null);
+    expect(keptRecordStore().getState().value).toEqual(before);
   });
 });

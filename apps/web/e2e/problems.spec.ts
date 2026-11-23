@@ -187,7 +187,7 @@ test("an ident only a field abroad goes by is no destination: no distance, no wa
   await expect(page.getByRole("menuitem").first()).toBeVisible();
   // Routes stays in the bar, greyed and named why (the owner, 2026-11-22).
   await expect(page.getByTestId("routes-toggle")).toBeDisabled();
-  await expect(page.getByTestId("routes-toggle")).toHaveAccessibleName("No route options");
+  await expect(page.getByTestId("routes-toggle")).toHaveAccessibleName("Routes, no route options");
   await page.keyboard.press("Escape");
   await openRoute(page);
   const said = page.getByTestId("route-unknown");

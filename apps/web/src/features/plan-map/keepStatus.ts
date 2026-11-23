@@ -72,7 +72,9 @@ export function useKeepRouteToast() {
           title: "Charts Saved Offline",
           type: "success",
           timeout: 2000,
-          description: answers ? `With the briefing, NOTAMs and plates: ${megabytes(answers.bytes)}` : undefined,
+          // The plates come after the tiles (keepForAir's keepRoutePlates),
+          // said on Ready to fly's row once they are in.
+          description: answers ? `With the briefing and NOTAMs: ${megabytes(answers.bytes)}` : undefined,
         });
         // The tiles that could not be fetched are a problem, said where
         // problems are (lib/problems) and kept until the next keep, not a

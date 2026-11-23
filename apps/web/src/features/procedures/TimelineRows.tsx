@@ -201,8 +201,9 @@ export function FuelStopsChip({ added, onClick }: { added: boolean; onClick: () 
       // Stops" and the row stays one line at the owner's 19.65-px text on a
       // 375- or 393-point iPhone (the owner, 2026-11-22: "Remove fuel stops
       // goes to the next line"; "So icon with add/remove stops"); said in
-      // full to a screen reader.
-      aria-label={added ? "Remove fuel stops" : "Add fuel stops"}
+      // full to a screen reader, its name starting with the words seen
+      // (WCAG 2.5.3, Label in Name: axe's label-content-name-mismatch).
+      aria-label={added ? "Remove Stops for fuel" : "Add Stops for fuel"}
       data-testid="timeline-fuel-stops"
       style={CHIP_44}
       data-look={added ? "remove" : "add"}
