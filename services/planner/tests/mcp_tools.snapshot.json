@@ -378,6 +378,139 @@
       "idempotentHint": true,
       "openWorldHint": false,
       "readOnlyHint": true,
+      "title": "Airplane performance"
+    },
+    "description": "The pilot's own airplane at a field: its weight and balance at takeoff and landing against its POH's limits and envelope (14 CFR 91.9), and its short-field takeoff and landing distances on the runway the wind favours, from the field's pressure and density altitude and reported wind, against the runway's length (91.103(b)). Needs one of the pilot's airplanes (my_airplanes); says which figures are missing.",
+    "inputSchema": {
+      "properties": {
+        "airplane_tail": {
+          "anyOf": [
+            {
+              "maxLength": 8,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The pilot's airplane by tail number.",
+          "title": "Airplane Tail"
+        },
+        "airport": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Airport",
+          "type": "string"
+        },
+        "empty_moment_lb_in": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Basic empty moment; the record's when omitted.",
+          "title": "Empty Moment Lb In"
+        },
+        "empty_weight_lb": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 20000,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Basic empty weight; the record's when omitted.",
+          "title": "Empty Weight Lb"
+        },
+        "fuel_gal": {
+          "anyOf": [
+            {
+              "maximum": 2000,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Fuel at engine start, gal; full usable when omitted.",
+          "title": "Fuel Gal"
+        },
+        "stations_lb": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 12,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Pounds at each loading station, in the POH's order.",
+          "title": "Stations Lb"
+        },
+        "trip_fuel_gal": {
+          "anyOf": [
+            {
+              "maximum": 2000,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Fuel burnt before landing, gal.",
+          "title": "Trip Fuel Gal"
+        }
+      },
+      "required": [
+        "airport"
+      ],
+      "title": "airplane_performanceArguments",
+      "type": "object"
+    },
+    "name": "airplane_performance",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "airplane_performanceDictOutput",
+      "type": "object"
+    },
+    "title": "Airplane performance"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
       "title": "Airport facts"
     },
     "description": "One US airport's facts as Wingtip's airport card shows them: elevation, the class of airspace at its surface, whether it is towered, runways (length, width, surface, lighting), frequencies, traffic pattern, lighting remarks, contact, and links to the FAA airport diagram and Chart Supplement page.",
@@ -2009,6 +2142,262 @@
       "securitySchemes": [
         {
           "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Airspace on a route"
+    },
+    "description": "The airspace a route crosses at its cruise: Class B, C and D with each one's floor and its entry rules (14 CFR 91.129-91.131), prohibited and restricted areas, MOAs and the like with their altitudes and times of use, and the TFRs near it (whether it goes through each, its altitudes and hours); the ADIZs it meets (14 CFR part 99), special VFR at each field in a surface area (91.157), and any field on it that is closed, private or military.",
+    "inputSchema": {
+      "properties": {
+        "airplane_tail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The pilot's own airplane by tail number (my_airplanes lists them). Without one, no times or fuel.",
+          "title": "Airplane Tail"
+        },
+        "cruise_altitude_ft": {
+          "anyOf": [
+            {
+              "maximum": 45000,
+              "minimum": 500,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cruise altitude, feet MSL; Wingtip picks the legal fastest when omitted.",
+          "title": "Cruise Altitude Ft"
+        },
+        "depart_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Departure time, ISO 8601 (UTC when no offset); now when omitted.",
+          "title": "Depart At"
+        },
+        "departure": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Departure",
+          "type": "string"
+        },
+        "destination": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Destination",
+          "type": "string"
+        },
+        "limit": {
+          "default": 20,
+          "description": "How many to answer, 1 to 50.",
+          "maximum": 50,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "offset": {
+          "default": 0,
+          "description": "How many to skip, for the next page: the last answer's next_offset.",
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        },
+        "rules": {
+          "default": "vfr",
+          "description": "VFR or IFR.",
+          "enum": [
+            "vfr",
+            "ifr"
+          ],
+          "title": "Rules",
+          "type": "string"
+        },
+        "stops": {
+          "default": [],
+          "description": "Airports or waypoints landed at or flown by, in order.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Stops",
+          "type": "array"
+        }
+      },
+      "required": [
+        "departure",
+        "destination"
+      ],
+      "title": "route_airspaceArguments",
+      "type": "object"
+    },
+    "name": "route_airspace",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "route_airspaceDictOutput",
+      "type": "object"
+    },
+    "title": "Airspace on a route"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Hazards on a route"
+    },
+    "description": "The weather hazards along a route for the flight's time: SIGMETs and Convective SIGMETs, AIRMETs (Alaska's) and G-AIRMETs, and pilot reports, each with its altitudes beside the cruise flown, where along the route and when the flight meets it, and its text as sent; and the Brief's Adverse Conditions rows over them (AIM 7-1-5(b)(1)), TFRs crossed among them. Route_airspace lists the TFRs in full.",
+    "inputSchema": {
+      "properties": {
+        "airplane_tail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The pilot's own airplane by tail number (my_airplanes lists them). Without one, no times or fuel.",
+          "title": "Airplane Tail"
+        },
+        "cruise_altitude_ft": {
+          "anyOf": [
+            {
+              "maximum": 45000,
+              "minimum": 500,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cruise altitude, feet MSL; Wingtip picks the legal fastest when omitted.",
+          "title": "Cruise Altitude Ft"
+        },
+        "depart_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Departure time, ISO 8601 (UTC when no offset); now when omitted.",
+          "title": "Depart At"
+        },
+        "departure": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Departure",
+          "type": "string"
+        },
+        "destination": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Destination",
+          "type": "string"
+        },
+        "limit": {
+          "default": 20,
+          "description": "How many to answer, 1 to 50.",
+          "maximum": 50,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "offset": {
+          "default": 0,
+          "description": "How many to skip, for the next page: the last answer's next_offset.",
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        },
+        "rules": {
+          "default": "vfr",
+          "description": "VFR or IFR.",
+          "enum": [
+            "vfr",
+            "ifr"
+          ],
+          "title": "Rules",
+          "type": "string"
+        },
+        "stops": {
+          "default": [],
+          "description": "Airports or waypoints landed at or flown by, in order.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Stops",
+          "type": "array"
+        }
+      },
+      "required": [
+        "departure",
+        "destination"
+      ],
+      "title": "route_hazardsArguments",
+      "type": "object"
+    },
+    "name": "route_hazards",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "route_hazardsDictOutput",
+      "type": "object"
+    },
+    "title": "Hazards on a route"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
             "wingtip:read",
             "wingtip:write"
           ],
@@ -3083,6 +3472,97 @@
       "securitySchemes": [
         {
           "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Sun and night"
+    },
+    "description": "Sunrise, sunset and civil twilight at an airport or a place on a date (UTC times), and when night begins and ends from that evening by each rule that reads it: 14 CFR 1.1's night (civil twilight; the VFR night reserve), 61.57(b)'s period an hour after sunset to an hour before sunrise (night currency and passengers) and 91.209(a)'s position lights from sunset. Where the sun does not set or rise, says so.",
+    "inputSchema": {
+      "properties": {
+        "airport": {
+          "anyOf": [
+            {
+              "maxLength": 7,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The field: KDLH, C81.",
+          "title": "Airport"
+        },
+        "lat": {
+          "anyOf": [
+            {
+              "maximum": 90,
+              "minimum": -90,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Or a place's latitude, degrees north.",
+          "title": "Lat"
+        },
+        "lon": {
+          "anyOf": [
+            {
+              "maximum": 180,
+              "minimum": -180,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "And longitude, degrees east (west negative).",
+          "title": "Lon"
+        },
+        "on": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The local date, yyyy-mm-dd; today (UTC) when omitted.",
+          "title": "On"
+        }
+      },
+      "title": "sun_timesArguments",
+      "type": "object"
+    },
+    "name": "sun_times",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "sun_timesDictOutput",
+      "type": "object"
+    },
+    "title": "Sun and night"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
             "wingtip:read",
             "wingtip:write"
           ],
@@ -3248,5 +3728,162 @@
     },
     "name": "update_saved_flight",
     "title": "Replace a saved flight"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Winds aloft"
+    },
+    "description": "The wind and temperature aloft, from the forecast Wingtip's nav log flies, with its valid time: at a place (an airport, or lat and lon) and altitude, or along a route at its cruise (give departure and destination instead), each leg at the time the airplane flies it. Not observed winds.",
+    "inputSchema": {
+      "properties": {
+        "airplane_tail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The pilot's own airplane by tail number (my_airplanes lists them). Without one, no times or fuel.",
+          "title": "Airplane Tail"
+        },
+        "airport": {
+          "anyOf": [
+            {
+              "maxLength": 7,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A place by airport: KDLH, C81.",
+          "title": "Airport"
+        },
+        "altitude_ft": {
+          "anyOf": [
+            {
+              "maximum": 45000,
+              "minimum": 500,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cruise altitude, feet MSL; Wingtip picks the legal fastest when omitted.",
+          "title": "Altitude Ft"
+        },
+        "at_time": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Departure time, ISO 8601 (UTC when no offset); now when omitted.",
+          "title": "At Time"
+        },
+        "departure": {
+          "anyOf": [
+            {
+              "maxLength": 7,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "For a route: its departure airport (KDLH, C81).",
+          "title": "Departure"
+        },
+        "destination": {
+          "anyOf": [
+            {
+              "maxLength": 7,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "For a route: its destination airport.",
+          "title": "Destination"
+        },
+        "lat": {
+          "anyOf": [
+            {
+              "maximum": 90,
+              "minimum": -90,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Or a place by latitude, degrees north.",
+          "title": "Lat"
+        },
+        "lon": {
+          "anyOf": [
+            {
+              "maximum": 180,
+              "minimum": -180,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "And longitude, degrees east (west negative).",
+          "title": "Lon"
+        },
+        "stops": {
+          "default": [],
+          "description": "Airports or waypoints landed at or flown by, in order.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Stops",
+          "type": "array"
+        }
+      },
+      "title": "winds_aloft_toolArguments",
+      "type": "object"
+    },
+    "name": "winds_aloft",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "winds_aloft_toolDictOutput",
+      "type": "object"
+    },
+    "title": "Winds aloft"
   }
 ]

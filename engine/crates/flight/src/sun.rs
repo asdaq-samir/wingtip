@@ -45,7 +45,7 @@ pub const PASSENGER_NIGHT_MARGIN_S: f64 = 3600.0;
 
 use wingtip_core::geo::{destination, distance_and_bearing};
 
-const DAY_S: f64 = 86_400.0;
+pub(crate) const DAY_S: f64 = 86_400.0;
 
 /// The sun's declination and the equation of time at an instant: NOAA's
 /// spreadsheet (Julian century from J2000.0, Meeus ch. 25's low-precision
@@ -94,7 +94,7 @@ fn twilight_hour_angle(lat: f64, declination: f64, depression: f64) -> Result<f6
 
 /// The instant of solar noon at a longitude (east positive) nearest to
 /// `near_s`, UNIX seconds.
-fn solar_noon(lon: f64, near_s: f64) -> f64 {
+pub(crate) fn solar_noon(lon: f64, near_s: f64) -> f64 {
     // The day's 00:00 UTC, then noon there: 720 minutes less four a degree
     // of east longitude, less the equation of time (NOAA's).
     let mut noon = (near_s / DAY_S).floor() * DAY_S + (720.0 - 4.0 * lon) * 60.0;
@@ -117,7 +117,7 @@ fn civil_day(lat: f64, lon: f64, noon_s: f64) -> Result<(f64, f64), bool> {
 /// The two instants round the solar noon `noon_s` when the sun's centre is
 /// `depression` degrees below the horizon (civil twilight's ends at six,
 /// sunrise and sunset at 0.833), or Err as twilight_hour_angle says.
-fn sun_day(lat: f64, lon: f64, noon_s: f64, depression: f64) -> Result<(f64, f64), bool> {
+pub(crate) fn sun_day(lat: f64, lon: f64, noon_s: f64, depression: f64) -> Result<(f64, f64), bool> {
     // Each end worked out at the sun's place at that end, twice over: the
     // declination moves up to a third of a degree in the half day.
     let end = |sign: f64| -> Result<f64, bool> {

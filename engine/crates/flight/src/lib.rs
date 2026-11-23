@@ -22,7 +22,8 @@
 //! - route_read: a route typed as item 15's words, read back (DCT, the
 //!   speed and level groups);
 //! - sun: night and civil twilight (14 CFR 1.1), NOAA's solar calculation,
-//!   and 61.57(b)'s night-passenger period;
+//!   and 61.57(b)'s night-passenger period; sun_times: a day's sunrise,
+//!   sunset and civil twilight as times, and the periods read from them;
 //! - vfr: 91.155's basic VFR weather minimums, and 91.155(b)(2)'s night
 //!   pattern exception in Class G;
 //! - special_vfr: 91.157's special VFR, and the airports of part 91
@@ -60,5 +61,6 @@ pub mod route_read;
 pub mod special_vfr;
 pub mod special_vfr_airports;
 pub mod sun;
+pub mod sun_times;
 pub mod typed;
 pub mod vfr;

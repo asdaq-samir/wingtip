@@ -59,3 +59,8 @@ fn the_go_no_go_rules_hold_to_their_sources() {
 fn the_approach_glide_fuel_and_altitude_rules_hold_to_their_sources() {
     holds("rules/flight.json");
 }
+
+#[test]
+fn the_suns_times_and_the_nights_are_the_naval_observatorys() {
+    holds("rules/sun.json");
+}

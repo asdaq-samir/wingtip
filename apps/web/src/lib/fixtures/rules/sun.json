@@ -1,0 +1,217 @@
+{
+  "_note": "The sun's times of a day and the periods 14 CFR 1.1, 61.57(b) and 91.209(a) read from them, written down from the U.S. Naval Observatory's tables, never from the code; each tolerance the tables' minute and the solar calculation's accuracy (engine/crates/flight/src/sun.rs's note), wider where the sun grazes the line. Shape and checks as engine/facade/tests/common/cases.rs says; asked by engine/facade/tests/rule_cases.rs.",
+  "cases": [
+    {
+      "name": "Chicago on the 2026 March equinox: the times of its local day",
+      "rule": "sun_times",
+      "input": {
+        "lat": 41.88,
+        "lon": -87.63,
+        "date": "2026-03-20"
+      },
+      "expect": [
+        {
+          "path": "sunrise_s",
+          "value": 1774007640,
+          "tolerance": 120
+        },
+        {
+          "path": "sunset_s",
+          "value": 1774051380,
+          "tolerance": 120
+        },
+        {
+          "path": "civil_dawn_s",
+          "value": 1774005960,
+          "tolerance": 120
+        },
+        {
+          "path": "civil_dusk_s",
+          "value": 1774053060,
+          "tolerance": 120
+        },
+        {
+          "path": "sun",
+          "equals": "both"
+        },
+        {
+          "path": "civil_twilight",
+          "equals": "both"
+        }
+      ],
+      "source": "U.S. Naval Observatory, Astronomical Applications, one-day sun data (aa.usno.navy.mil/api/rstt/oneday, tz=0), to the minute: 41.88 N 87.63 W, 2026-03-20 begin civil twilight 11:26, rise 11:54; 2026-03-21 set 00:03, end civil twilight 00:31 (the evening of the 20th, local). Sunrise and sunset the upper limb on the horizon, civil twilight the centre 6 degrees down."
+    },
+    {
+      "name": "Chicago's night, passenger night and lights from the evening of 2026-03-20",
+      "rule": "sun_times",
+      "input": {
+        "lat": 41.88,
+        "lon": -87.63,
+        "date": "2026-03-20"
+      },
+      "expect": [
+        {
+          "path": "night.from_s",
+          "value": 1774053060,
+          "tolerance": 120
+        },
+        {
+          "path": "night.until_s",
+          "value": 1774092240,
+          "tolerance": 120
+        },
+        {
+          "path": "passenger_night.from_s",
+          "value": 1774054980,
+          "tolerance": 120
+        },
+        {
+          "path": "passenger_night.until_s",
+          "value": 1774090320,
+          "tolerance": 120
+        },
+        {
+          "path": "lights.from_s",
+          "value": 1774051380,
+          "tolerance": 120
+        },
+        {
+          "path": "lights.until_s",
+          "value": 1774093920,
+          "tolerance": 120
+        }
+      ],
+      "source": "14 CFR 1.1 night: end of evening civil twilight to beginning of morning civil twilight; 61.57(b): \"the period beginning 1 hour after sunset and ending 1 hour before sunrise\"; 91.209(a): \"from sunset to sunrise\". U.S. Naval Observatory, Astronomical Applications, one-day sun data (aa.usno.navy.mil/api/rstt/oneday, tz=0), to the minute: 2026-03-21 end civil twilight 00:31, set 00:03, begin civil twilight 11:24, rise 11:52."
+    },
+    {
+      "name": "Anchorage at the June solstice: no 1.1 night, but 61.57(b)'s period still runs",
+      "rule": "sun_times",
+      "input": {
+        "lat": 61.17,
+        "lon": -150.0,
+        "date": "2026-06-21"
+      },
+      "expect": [
+        {
+          "path": "sunrise_s",
+          "value": 1782044460,
+          "tolerance": 240
+        },
+        {
+          "path": "sunset_s",
+          "value": 1782114120,
+          "tolerance": 240
+        },
+        {
+          "path": "civil_twilight",
+          "equals": "never_down"
+        },
+        {
+          "path": "civil_dusk_s",
+          "equals": null
+        },
+        {
+          "path": "night.from_s",
+          "equals": null
+        },
+        {
+          "path": "night.until_s",
+          "equals": null
+        },
+        {
+          "path": "night.all_day",
+          "equals": false
+        },
+        {
+          "path": "passenger_night.from_s",
+          "value": 1782117720,
+          "tolerance": 240
+        },
+        {
+          "path": "passenger_night.until_s",
+          "value": 1782127320,
+          "tolerance": 240
+        }
+      ],
+      "source": "U.S. Naval Observatory, Astronomical Applications, one-day sun data (aa.usno.navy.mil/api/rstt/oneday, tz=0), to the minute: 61.17 N 150.00 W, 2026-06-21 rise 12:21; 2026-06-22 set 07:42 (the evening of the 21st, local), rise 12:22, \"Object continuously above the Twilight Limit\". 14 CFR 1.1's night needs civil twilight to end; 61.57(b) reads sunset and sunrise."
+    },
+    {
+      "name": "Utqiagvik at the December solstice: the sun never rises, so lights all day, and a short civil day",
+      "rule": "sun_times",
+      "input": {
+        "lat": 71.29,
+        "lon": -156.79,
+        "date": "2026-12-21"
+      },
+      "expect": [
+        {
+          "path": "sun",
+          "equals": "never_up"
+        },
+        {
+          "path": "sunrise_s",
+          "equals": null
+        },
+        {
+          "path": "lights.all_day",
+          "equals": true
+        },
+        {
+          "path": "passenger_night.all_day",
+          "equals": true
+        },
+        {
+          "path": "civil_twilight",
+          "equals": "both"
+        },
+        {
+          "path": "civil_dawn_s",
+          "value": 1797886560,
+          "tolerance": 300
+        },
+        {
+          "path": "civil_dusk_s",
+          "value": 1797897300,
+          "tolerance": 300
+        }
+      ],
+      "source": "U.S. Naval Observatory, Astronomical Applications, one-day sun data (aa.usno.navy.mil/api/rstt/oneday, tz=0), to the minute: 71.29 N 156.79 W, 2026-12-21 \"Object continuously below the Horizon\", begin civil twilight 20:56, end civil twilight 23:55. 91.209(a): sunset to sunrise."
+    },
+    {
+      "name": "Utqiagvik at the June solstice: the sun never sets, so no night and no lights",
+      "rule": "sun_times",
+      "input": {
+        "lat": 71.29,
+        "lon": -156.79,
+        "date": "2026-06-21"
+      },
+      "expect": [
+        {
+          "path": "sun",
+          "equals": "never_down"
+        },
+        {
+          "path": "civil_twilight",
+          "equals": "never_down"
+        },
+        {
+          "path": "sunset_s",
+          "equals": null
+        },
+        {
+          "path": "lights.from_s",
+          "equals": null
+        },
+        {
+          "path": "night.from_s",
+          "equals": null
+        },
+        {
+          "path": "passenger_night.from_s",
+          "equals": null
+        }
+      ],
+      "source": "U.S. Naval Observatory, Astronomical Applications, one-day sun data (aa.usno.navy.mil/api/rstt/oneday, tz=0), to the minute: 71.29 N 156.79 W, 2026-06-21 \"Object continuously above the Horizon\", \"Object continuously above the Twilight Limit\"."
+    }
+  ]
+}

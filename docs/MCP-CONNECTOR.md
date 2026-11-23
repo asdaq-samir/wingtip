@@ -55,7 +55,16 @@ async def main(token):
     async with Client(streamable_http_client("http://localhost:8080/mcp", http_client=http)) as c:
         print([t.name for t in (await c.list_tools()).tools])
         print((await c.call_tool("airport_weather", {"ident": "KMSN"})).structured_content)
+        print((await c.call_tool("sun_times", {"airport": "KMSN", "on": "2026-12-21"})).structured_content)
 ```
+
+Questions that reach the route and field tools, once connected: "Winds
+at 9,000 over KMSN this afternoon?" (`winds_aloft`), "Anything nasty
+between KMSN and KDLH at 6,500 tomorrow at 14Z?" (`route_hazards`), "What
+airspace and TFRs does that route cross?" (`route_airspace`), "When does
+night start at KDLH tonight for my passenger currency?" (`sun_times`), and
+"Takeoff distance and CG for my N123AB at KDLH with 340 lb up front?"
+(`airplane_performance`, which names any figure it is missing).
 
 ## The MCP Inspector
 
