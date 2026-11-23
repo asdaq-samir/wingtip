@@ -122,13 +122,13 @@ export function SwipeRowImpl({ word, label, onRemove, children, chip = false }: 
   return (
     <div
       ref={box}
-      className={cn("relative overflow-hidden", chip && "-my-1.5 rounded-full py-1.5")}
+      className={cn("relative overflow-hidden", chip && "-my-2 rounded-full py-2")}
       data-base-ui-swipe-ignore="x"
       data-swipe-row=""
     >
       {/* As wide as the row has gone, so it is never under the row. */}
       <motion.div
-        className={cn("absolute right-0 flex overflow-hidden bg-destructive", chip ? "inset-y-1.5 rounded-full" : "inset-y-0")}
+        className={cn("absolute right-0 flex overflow-hidden bg-destructive", chip ? "inset-y-2 rounded-full" : "inset-y-0")}
         style={{ width }}
         // Out of reach until uncovered: the row's menu says Remove to a
         // keyboard and to VoiceOver.

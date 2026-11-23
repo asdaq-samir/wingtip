@@ -67,13 +67,17 @@ export function FuelStopChip({
   // A break on a long flight the tanks hold wears a cup, not the pump.
   const Glyph = reason === "break" ? Coffee : Fuel;
   const words = `Suggested ${reason === "break" ? "stop" : "fuel stop"} ${ident}`;
-  // The stock small Button (the owner, 2026-11-10), outlined dashed in the
-  // caution's colour with the pump: suggested, not yet in the route. A
-  // finger's 44 round it by a pseudo-element, the button not grown.
+  // The stock Button (the owner, 2026-11-10), at the pills' size: 28 tall,
+  // round, the detail's type in their weight, so the line reads as one row
+  // of pills (RoutePill). One dashed border on the button itself, in the
+  // fuel's amber (the caution token, design/tokens.json's badge.fuel in the
+  // light look): the outline variant's 10-point corners under SwipeRow's
+  // round clip showed the dashes only along the top and bottom, the sides
+  // cut to a stray ":" (the owner's iPhone, 2026-11-23). A finger's 44
+  // round it by a pseudo-element, the button not grown.
   const chip = (
     <Button
-      variant="outline"
-      size="sm"
+      variant="ghost"
       onClick={onAdd}
       disabled={!onAdd}
       onKeyDown={(e) => {
@@ -86,9 +90,12 @@ export function FuelStopChip({
       data-testid="route-fuel-stop"
       aria-label={`${words}: add it to the route`}
       aria-keyshortcuts={onHide ? "Delete" : undefined}
-      className="relative border-dashed border-caution text-caution-ink hit-y-1.5 after:inset-x-0"
+      className={cn(
+        "relative h-7 gap-1 rounded-full border-dashed border-caution px-1.5 font-semibold text-caution-ink hit-y-2 after:inset-x-0 hover:text-caution-ink native:text-caution-ink",
+        TEXT.detail,
+      )}
     >
-      <Glyph aria-hidden="true" data-icon="inline-start" />
+      <Glyph aria-hidden="true" className="size-3.5" />
       {ident}
     </Button>
   );

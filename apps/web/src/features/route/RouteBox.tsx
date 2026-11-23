@@ -265,9 +265,9 @@ export default function RouteBox({
                     onBlur={onBlur}
                     className="relative min-w-full"
                   >
-                    {/* The field, one line that runs on sideways (the row slides): 16 at the least below md, as every
-                        field is -- under 16 iOS zooms the page in on it (checkpoints.spec checks every field); 17 to a
-                        finger, a row's, and 14 from md up. Idents in capitals, as they go in. */}
+                    {/* The field, one line that runs on sideways (the row slides): 16 at the least below md -- under 16 iOS zooms in
+                        (checkpoints.spec checks every field); 17 to a finger, 14 from md up. Capitals in the pills' semibold
+                        sans on their 28 line, so what is typed sits level with them (the owner's iPhone, 2026-11-23). */}
                     <TokenInput
                       ref={field}
                       // The group's control, so the stock InputGroup draws its
@@ -281,9 +281,10 @@ export default function RouteBox({
                       data-placeholder={placeholder}
                       data-typed={typed.text}
                       className={cn(
-                        "min-h-7 min-w-full font-mono leading-7 uppercase outline-none",
+                        "min-h-7 min-w-full font-sans font-semibold uppercase outline-none",
                         wrapped ? "w-full whitespace-pre-wrap! break-words" : "w-max whitespace-pre!",
                         TEXT.row,
+                        "leading-7 pointer-coarse:leading-7",
                       )}
                     >
                       {(segment) => (
