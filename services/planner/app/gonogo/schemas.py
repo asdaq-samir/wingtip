@@ -69,6 +69,12 @@ class AirplaneInspections(BaseModel):
     static_check_good_through: str | None = None
     transponder_check_good_through: str | None = None
     hundred_hour_due_at_hours: float | None = None
+    for_hire: bool | None = Field(
+        None,
+        description="The owner's word that the airplane carries anyone for hire or gives flight instruction for hire: "
+        "only then is the 100-hour owed (14 CFR 91.409(b)). False leaves hundred_hour_due_at_hours unweighed; "
+        "null weighs a due given.",
+    )
     hours_now: float | None = None
 
 

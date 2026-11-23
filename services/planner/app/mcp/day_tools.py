@@ -28,14 +28,6 @@ from .tool_meta import READS, read_only
 
 SUN_SOURCE = {"source": "Wingtip engine: NOAA's solar calculation, sunrise and sunset as the Naval Observatory defines them"}
 POH_SOURCE = {"source": "The airplane's POH loading and short-field tables (its Wingtip profile), and its weight and balance record"}
-#: What each period is, as the rules read it.
-PERIODS = {
-    "night": "14 CFR 1.1's night: end of evening civil twilight to beginning of morning civil twilight "
-    "(91.151(a)(2)'s 45-minute VFR reserve, 91.205(c)'s equipment, night flight time)",
-    "passenger_night": "14 CFR 61.57(b): 1 hour after sunset to 1 hour before sunrise; carrying passengers in it "
-    "needs three takeoffs and landings to a full stop made in it in the preceding 90 days",
-    "lights": "14 CFR 91.209(a): position lights on from sunset to sunrise",
-}
 
 
 def zone_of(name: str | None) -> ZoneInfo | None:
@@ -63,8 +55,9 @@ def _at(s: float | None, zone: ZoneInfo | None) -> dict | None:
     return {"utc": utc.iso(s), "local": local}
 
 
-def _period(p: dict, what: str, zone: ZoneInfo | None) -> dict:
-    return {"from": _at(p["from_s"], zone), "until": _at(p["until_s"], zone), "all_day": p["all_day"], "rule": PERIODS[what]}
+def _period(p: dict, zone: ZoneInfo | None) -> dict:
+    """A period's times in both clocks and its rule, the engine's words."""
+    return {"from": _at(p["from_s"], zone), "until": _at(p["until_s"], zone), "all_day": p["all_day"], "rule": p["rule"]}
 
 
 def field_status(ident: str) -> dict:
@@ -118,7 +111,7 @@ def register(server: MCPServer) -> None:
             "sunset": _at(sun["sunset_s"], zone),
             "civil_dawn": _at(sun["civil_dawn_s"], zone),
             "civil_dusk": _at(sun["civil_dusk_s"], zone),
-            **{what: _period(sun[what], what, zone) for what in PERIODS},
+            **{what: _period(sun[what], zone) for what in ("night", "passenger_night", "lights")},
             "sources": [SUN_SOURCE],
         }
 

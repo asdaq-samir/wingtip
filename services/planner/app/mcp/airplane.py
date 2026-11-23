@@ -104,9 +104,10 @@ def _inspections(i: dict) -> dict:
         "elt_battery_due_on": i.get("eltBatteryDueOn"),
         "static_check_good_through": i.get("staticCheckGoodThrough"),
         "transponder_check_good_through": i.get("transponderCheckGoodThrough"),
-        # The 100-hour is owed only by an airplane flown for hire (14 CFR
-        # 91.409(b)), as its owner says: not one, not weighed.
-        "hundred_hour_due_at_hours": i.get("hundredHourDueAtHours") if i.get("forHire") else None,
+        # The engine weighs the 100-hour only where the owner says the
+        # airplane is flown for hire (14 CFR 91.409(b)).
+        "hundred_hour_due_at_hours": i.get("hundredHourDueAtHours"),
+        "for_hire": i.get("forHire"),
         "hours_now": i.get("hoursNow"),
     }
 
