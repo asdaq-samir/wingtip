@@ -978,7 +978,9 @@ At each airport the chart already shows, from the map's own
   2026-11-23, the Great Lakes at 6): a field's mark and its ident are
   placed together, so one whose ident has no room, or isn't named yet at
   that zoom, is not drawn there, the bigger field winning
-  (`symbol-sort-key`, the engine's `field_mark_rank`). A Class B's field
+  (`symbol-sort-key`, the engine's `field_mark_rank`, which orders only
+  within a tile, so a Class C's fields are placed first in a layer of
+  their own and their rings don't stand bare). A Class B's field
   and the one whose card is open always keep their mark, only the ident
   giving way; the route's fields and stops wear their own marks.
 - **Station model from zoom 10 in** (the matching span on the iPhone):
