@@ -5,6 +5,7 @@ import {
   closeProfile,
   frontSheet,
   grabberTo,
+  mapStill,
   navLogSheet,
   openNavLog,
   openProfile,
@@ -220,6 +221,11 @@ test("the Map card's gear opens Settings on top of it, and its close goes back t
  *  opens it: by the chart's list of its marks (MapMarksList), the same
  *  select, which needs no WebGL to find where it is drawn. */
 async function otherField(page: Page, not: string) {
+  // The chart at rest first, as a pilot picks a field they can see: a
+  // place opened by its link comes up while the map is still flying there
+  // from where it opened, and a row read on the way was another by the
+  // time it was focused (KEED read over Kansas, KLWC focused at Waukegan).
+  await mapStill(page);
   const marks = page.getByRole("navigation", { name: "Airports on the map" }).getByRole("button");
   const field = marks.filter({ hasNotText: new RegExp(`^${not},`) }).first();
   await expect(field).toBeAttached({ timeout: slow(30_000) });
