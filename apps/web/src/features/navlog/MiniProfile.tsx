@@ -1,4 +1,5 @@
 import { memo, useId, useMemo, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { AIRSPACE, ceilingOverFloor, nameFits, namedPieces, sideViewTop } from "./profile";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
@@ -75,6 +76,7 @@ export default memo(function MiniProfile({
   cruise: cruiseFt = null,
   top: topFt = null,
   wheelSlot,
+  keySlot = null,
   ruler = false,
 }: {
   ends: RouteEnds;
@@ -99,6 +101,9 @@ export default memo(function MiniProfile({
   /** Where the Profile card puts its slider: down the plot's left, its
    *  height the plot's, so a step is the feet the ruler says. */
   wheelSlot?: (el: HTMLElement | null) => void;
+  /** Where the Profile card puts the weather's key: under its graph, in
+   *  the card's flow, not inside the graph's fixed height (AltitudeProfile). */
+  keySlot?: HTMLElement | null;
 }) {
   // An id a url(#…) takes as it is: React's has colons in it.
   const tintId = `tint${useId().replace(/[^A-Za-z0-9_-]/g, "")}`;
@@ -333,11 +338,13 @@ export default memo(function MiniProfile({
   // Whose the weather drawn is and for when, in the Profile card's, under
   // the box rather than a row of its fixed height: there its lines took the
   // plot's room, and the altitude slider's knob, laid on the plot's scale,
-  // sat 14 to 34 points off the cruise's tag (plan-cards-heads.spec).
-  return ruler ? (
+  // sat 14 to 34 points off the cruise's tag (plan-cards-heads.spec). In
+  // the card's slot under the graph, not after the box inside the graph's
+  // fixed 224, which it ran out of over the Set row (plans.spec).
+  return ruler && keySlot ? (
     <>
       {box}
-      <WeatherKey weather={weather} />
+      {createPortal(<WeatherKey weather={weather} />, keySlot)}
     </>
   ) : (
     box
