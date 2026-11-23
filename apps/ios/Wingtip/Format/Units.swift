@@ -13,8 +13,8 @@ nonisolated enum Units {
     /// Metres in a nautical mile, the international nautical mile (NIST SP
     /// 811 B.9).
     static let mPerNm = 1852.0
-    /// Feet in a statute mile (NIST SP 811 B.9): 91.155(a)'s "1 statute
-    /// mile" from clouds, which the planner sends in feet.
+    /// Feet in a statute mile (NIST SP 811 B.9), which the planner's
+    /// distances in statute miles are sent in.
     static let ftPerSm = 5280.0
     /// Knots in a metre a second: 3,600 s an hour over 1,852 m a mile,
     /// 1.943844492.... Not UnitSpeed.knots, whose metre a second is the

@@ -291,6 +291,7 @@ nonisolated enum AirportWords {
     static func minimumsLine(_ m: VfrMinimums) -> String {
         if m.clearOfClouds { return "\(plain(m.visibilitySm)) sm, clear of clouds" }
         func ft(_ x: Double?) -> String { x.map(Format.grouped) ?? Format.none }
+        // 91.155(a)'s "1 statute mile" from clouds, sent in feet, said as it is written.
         let horizontal = m.horizontalFt == Units.ftPerSm ? "1 sm" : ft(m.horizontalFt)
         return "\(plain(m.visibilitySm)) sm, \(ft(m.belowFt)) below, \(ft(m.aboveFt)) above, \(horizontal) horizontal"
     }

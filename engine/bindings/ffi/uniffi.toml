@@ -13,3 +13,7 @@ ffi_module_filename = "WingtipEngineFFI"
 [bindings.kotlin]
 package_name = "app.wingtipmaps.android.engine.ffi"
 cdylib_name = "wingtip_ffi"
+# The engine's objects (the receiver's held picture, HeldPicture) are freed
+# by JNA's own cleaner: UniFFI's default, java.lang.ref.Cleaner, is Android
+# API 33's, and the app runs from API 26 (minSdk), which lint refuses.
+disable_java_cleaner = true

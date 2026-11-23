@@ -53,7 +53,9 @@ export function TypeRow({ vm }: { vm: StartSlices }) {
     <TypeRouteButton
       pressed={false}
       onToggle={() => {
-        keepTimelineHeight(document.querySelector('[data-testid="route-empty"], [data-testid="route-summary"]')?.getBoundingClientRect().height ?? 0);
+        keepTimelineHeight(
+          document.querySelector('[data-testid="route-empty"], [data-testid="route-summary"]')?.getBoundingClientRect().height ?? 0,
+        );
         type();
       }}
     />
