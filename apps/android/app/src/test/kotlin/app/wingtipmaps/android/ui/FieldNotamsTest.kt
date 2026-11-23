@@ -32,11 +32,11 @@ class FieldNotamsTest {
     @Test
     fun inForceSaysSinceAndEndsWithHowLongIsLeft() {
         // In the field's zone with its short name; never "local" or a Z.
-        val lines = FieldNotams.timeLines(notam(inForce = true, starts = "2026-11-02T13:46:00Z", ends = "2026-11-11T17:59:00Z"), read(), "America/Chicago", now)
+        val lines = NotamTimes.timeLines(notam(inForce = true, starts = "2026-11-02T13:46:00Z", ends = "2026-11-11T17:59:00Z"), read(), false, "America/Chicago", now)
         assertEquals(
             listOf(
-                FieldNotams.TimeLine(FieldNotams.Label.SINCE, "11/02 07:46 CST"),
-                FieldNotams.TimeLine(FieldNotams.Label.ENDS, "11/11 11:59 CST", soon = "5m"),
+                NotamTimes.TimeLine(NotamTimes.Label.SINCE, "11/02 07:46 CST"),
+                NotamTimes.TimeLine(NotamTimes.Label.ENDS, "11/11 11:59 CST", soon = "5m"),
             ),
             lines,
         )
@@ -44,30 +44,42 @@ class FieldNotamsTest {
 
     @Test
     fun toComeSaysStartsEndsAndDuration() {
-        val lines = FieldNotams.timeLines(notam(inForce = false, starts = "2026-11-12T12:00:00", ends = "2026-11-12T20:00:00"), read(estimated = true), null, now)
-        assertEquals(FieldNotams.Label.STARTS, lines[0].label)
+        val lines = NotamTimes.timeLines(notam(inForce = false, starts = "2026-11-12T12:00:00", ends = "2026-11-12T20:00:00"), read(estimated = true), false, null, now)
+        assertEquals(NotamTimes.Label.STARTS, lines[0].label)
         assertEquals("18h06m", lines[0].soon)
         // An EST end is its time alone; no zone known, UTC said so.
-        assertEquals(FieldNotams.TimeLine(FieldNotams.Label.ENDS, "11/12 20:00 UTC", soon = "1d2h"), lines[1])
-        assertEquals(FieldNotams.TimeLine(FieldNotams.Label.DURATION, "8h00m"), lines[2])
+        assertEquals(NotamTimes.TimeLine(NotamTimes.Label.ENDS, "11/12 20:00 UTC", soon = "1d2h"), lines[1])
+        assertEquals(NotamTimes.TimeLine(NotamTimes.Label.DURATION, "8h00m"), lines[2])
     }
 
     @Test
     fun permanentAndTheNotamsOwnTimesWhereTheFeedHasNone() {
-        val lines = FieldNotams.timeLines(notam(), read(permanent = true, starts = "2026-11-01T00:00:00Z"), null, now)
-        assertEquals(listOf(FieldNotams.TimeLine(FieldNotams.Label.SINCE, "11/01 00:00 UTC"), FieldNotams.TimeLine(FieldNotams.Label.ENDS, permanent = true)), lines)
+        val lines = NotamTimes.timeLines(notam(), read(permanent = true, starts = "2026-11-01T00:00:00Z"), false, null, now)
+        assertEquals(listOf(NotamTimes.TimeLine(NotamTimes.Label.SINCE, "11/01 00:00 UTC"), NotamTimes.TimeLine(NotamTimes.Label.ENDS, permanent = true)), lines)
     }
 
-    /** The card's lines: the year where an end is not this year's, a this
-     *  year's date without it as the shorter form, how soon; a permanent
-     *  one until the charts just Permanent. */
+    /** FDC 6/3373 (the r7 audit's A-H1): a permanent condition with an
+     *  EST end the engine reads as until the charts are updated ends
+     *  "Permanent" on its row as on its card, never the EST date; the year
+     *  where an end is not this year's. */
     @Test
-    fun theCardsLinesAndTheirShorterForms() {
-        val lines = NotamCardTimes.lines(notam(inForce = false, starts = "2026-12-01T00:00:00Z", ends = "2028-05-27T18:43:00Z"), read(estimated = true), false, "America/Chicago", now)
-        assertEquals(NotamCardTimes.Line(NotamCardTimes.Kind.STARTS, "11/30/26 18:00 CST", "11/30 18:00 CST", "19d"), lines[0])
-        assertEquals(NotamCardTimes.Line(NotamCardTimes.Kind.UNTIL, "05/27/28 13:43 CDT", "05/27/28 13:43 CDT", "563d"), lines[1])
-        val permanent = NotamCardTimes.lines(notam(starts = "2026-05-27T18:43:00Z", ends = "2028-05-27T18:43:00Z"), read(estimated = true), true, null, now)
-        assertEquals(NotamCardTimes.Line(NotamCardTimes.Kind.PERMANENT), permanent[1])
+    fun untilTheChartsEndsPermanentNotItsEstimate() {
+        val lines = NotamTimes.timeLines(notam(inForce = false, starts = "2026-12-01T00:00:00Z", ends = "2028-05-27T18:43:00Z"), read(estimated = true), false, "America/Chicago", now)
+        assertEquals(NotamTimes.TimeLine(NotamTimes.Label.STARTS, "11/30/26 18:00 CST", soon = "19d"), lines[0])
+        assertEquals(NotamTimes.TimeLine(NotamTimes.Label.ENDS, "05/27/28 13:43 CDT", soon = "563d"), lines[1])
+        val permanent = NotamTimes.timeLines(notam(starts = "2026-05-27T18:43:00Z", ends = "2028-05-27T18:43:00Z"), read(estimated = true, permanent = true), true, null, now)
+        assertEquals(listOf(NotamTimes.TimeLine(NotamTimes.Label.SINCE, "05/27 18:43 UTC"), NotamTimes.TimeLine(NotamTimes.Label.ENDS, permanent = true)), permanent)
+    }
+
+    /** The year is counted in the zone the date is shown in: 23:30 on 12/31
+     *  in Chicago is 05:30 UTC the next day, still this year's there. */
+    @Test
+    fun theYearIsCountedInTheShownZone() {
+        val chicago = java.time.ZoneId.of("America/Chicago")
+        val nye = Instant.parse("2026-12-31T12:00:00Z")
+        val late = Instant.parse("2027-01-01T05:30:00Z")
+        assertEquals(false, NotamTimes.withYear(listOf(late), nye, chicago))
+        assertEquals(true, NotamTimes.withYear(listOf(late), nye))
     }
 
     @Test

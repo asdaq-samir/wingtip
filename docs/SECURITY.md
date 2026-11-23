@@ -196,3 +196,9 @@ changed too).
 | M5: any hex id fetched once was followed for 30 days, and made-up ids sorted first starved the real ones | Followed only for a signed-in pilot (`X-Pilot-Id`, the gateway's), at most 500, the card opened latest asked first; an id no source has heard a day after is dropped (`FOLLOW_UNHEARD_S`). |
 | L10: the nav log's stream sent the raw exception | Its kind and the request's id; the text stays in the log. |
 | L12: off-grid chart tiles made a folder and a `.none` each | No tile outside `[0, 2^z)`, before anything is kept. |
+
+## Round 7, the planner (claude/r7-backend, 2026-11-23)
+
+| Found | Now |
+|---|---|
+| P-M1: the follow share key was made into the live store, beside the shares it hashes, so whoever read the store could test guessed pilot ids | `FOLLOW_SHARE_KEY` from the environment: production's from the stack's `FollowShareKeySecret` (deploy.sh), and compose and the planner both refuse to start without it; the development stack makes one once into the planner's own secrets volume (`FOLLOW_SHARE_KEY_FILE`). A store that kept the key loses it, and the pilots' follows hashed with it, when first opened (P-L1). |

@@ -9,9 +9,12 @@ from __future__ import annotations
 import functools
 import hashlib
 import hmac
+import os
 import re
+import secrets
+from pathlib import Path
 
-from ..config import get_settings
+from ..config import MIN_INTERNAL_TOKEN, get_settings
 from . import store
 from .common import _wall
 
@@ -59,11 +62,58 @@ def followed() -> list[str]:
     return store.followed()
 
 
+class ShareKeyMissing(RuntimeError):
+    """No key to hash the pilots' shares with: the planner does not start."""
+
+
+def _key_file(path: Path) -> bytes:
+    """The development stack's key, made once at random into `path` (the
+    planner's own secrets volume, docker-compose.yml) and read back from
+    then on, so every restart hashes a pilot alike. Written beside and
+    linked into place, so a second process never reads it half written;
+    one shorter than a key should be is refused, never used."""
+    if not path.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fresh = path.with_name(f".{path.name}.{os.getpid()}")
+        fd = os.open(fresh, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "w") as out:
+            out.write(secrets.token_hex(32))
+        try:
+            os.link(fresh, path)
+        except FileExistsError:
+            pass
+        finally:
+            fresh.unlink()
+    key = path.read_text().strip()
+    if len(key) < MIN_INTERNAL_TOKEN:
+        raise ShareKeyMissing(
+            f"FOLLOW_SHARE_KEY_FILE ({path}) holds fewer than {MIN_INTERNAL_TOKEN} characters: delete it to have one made"
+        )
+    return key.encode()
+
+
 @functools.cache
 def _share_key() -> bytes:
-    """FOLLOW_SHARE_KEY where the settings give it, else the store's own."""
-    key = get_settings().follow_share_key
-    return key.encode() if key else store.share_key()
+    """FOLLOW_SHARE_KEY, else the development stack's FOLLOW_SHARE_KEY_FILE;
+    neither is an error, never a key of the store's own. The key is kept
+    apart from the shares it hashes: one kept in the live store beside
+    them let whoever read the store test guessed ids (the round 7 audit,
+    P-M1)."""
+    settings = get_settings()
+    if settings.follow_share_key:
+        return settings.follow_share_key.encode()
+    if settings.follow_share_key_file:
+        return _key_file(settings.follow_share_key_file)
+    raise ShareKeyMissing(
+        "FOLLOW_SHARE_KEY is not set: the key the followed airplanes' shares are hashed with "
+        "(openssl rand -hex 32; production's deploy.sh writes it from the stack's FollowShareKeySecret)"
+    )
+
+
+def require_share_key() -> None:
+    """The planner's start: no key, no start (app.main), rather than a
+    first card opened failing."""
+    _share_key()
 
 
 def share_of(pilot: str) -> str:

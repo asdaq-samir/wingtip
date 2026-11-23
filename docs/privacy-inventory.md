@@ -384,8 +384,13 @@ on `wingtip.schedule` started in `app.main`), whether or not ingest runs:
   nor a group of them can push out a pilot who follows fewer. Which pilot
   opened a card is not kept: each follow is counted in a share named by a
   short keyed hash of the pilot's id (`share_of`, HMAC-SHA-256 with
-  `FOLLOW_SHARE_KEY`, else a random key kept in the live store), never the
-  id, and not one that can be worked out from a guessed id.
+  `FOLLOW_SHARE_KEY`), never the id, and not one that can be worked out
+  from a guessed id. The key is never kept in the live store beside the
+  shares: production's comes from the stack's `FollowShareKeySecret` in
+  Secrets Manager, and the planner does not start without it; the
+  development stack makes one at random into the planner's own secrets
+  volume (`FOLLOW_SHARE_KEY_FILE`). A store that once kept the key loses
+  it, and the pilots' follows hashed with it, the first time it is opened.
 - **Other airplanes' tracks** (`points`): a followed airplane's public
   ADS-B and radar positions, recorded from adsb.lol, ADS-B Exchange
   (while a card is open) and the FAA's radar, card open or not, so its card can show its

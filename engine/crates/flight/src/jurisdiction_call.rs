@@ -4,7 +4,7 @@
 //! FAA's rules for a place outside the United States, and the Brief says
 //! it once.
 
-use crate::jurisdiction::{country_name, jurisdiction_of, leg_outside, province_of, Outside};
+use crate::jurisdiction::{country_name, jurisdiction_of, leg_outside, outlines_read, province_of, Outside};
 use wingtip_core::ask::{num_in, opt_str_in, strings, Ask};
 use wingtip_core::json::{self, Value};
 
@@ -41,6 +41,7 @@ pub(crate) fn brief_line(out: &mut String, lead: &str, act: &str, why: &str, cit
 }
 
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
+    outlines_read().map_err(|e| format!("{name}: {e}"))?;
     let ask = Ask::new(name, v);
     let mut out = String::new();
     if name == "jurisdiction_of" {

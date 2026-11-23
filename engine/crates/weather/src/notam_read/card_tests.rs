@@ -107,9 +107,17 @@ fn a_decimal_point_ends_no_sentence() {
 #[test]
 fn a_what_is_said_at_its_first_condition_in_the_words() {
     assert_eq!(
-        sentence_of("Taxiway A unusable between taxiway B and the ramp closed", false).as_deref(),
-        Some("Taxiway A is unusable between taxiway B and the ramp closed.")
+        sentence_of("Taxiway A closed between taxiway B and the ramp", false).as_deref(),
+        Some("Taxiway A is closed between taxiway B and the ramp.")
     );
+    assert_eq!(sentence_of("ILS runway 36: not authorized", false).as_deref(), Some("ILS runway 36 is not authorized."));
+}
+
+#[test]
+fn a_second_condition_makes_no_sentence_so_the_notams_own_words_stand() {
+    // The round 7 audit, E-L2: "... unusable between taxiway B and the
+    // ramp closed." was garbled.
+    assert_eq!(sentence_of("Taxiway A unusable between taxiway B and the ramp closed", false), None);
 }
 
 #[test]
@@ -139,4 +147,15 @@ fn each_procedure_says_whether_it_is_a_departure() {
     assert!(json(FDC_6_3373).contains("{\"name\":\"ADELL 8\",\"rnav\":true,\"departure\":true}"));
     let star = json("!FDC 6/1 ORD STAR CHICAGO O'HARE INTL, CHICAGO, IL. BENKY SIX ARRIVAL NA. 2611010000-2612010000");
     assert!(star.contains("{\"name\":\"BENKY 6\",\"rnav\":false,\"departure\":false}"), "{star}");
+}
+
+#[test]
+fn a_permanent_closure_beside_a_part_not_authorized_still_runs_until_the_charts() {
+    // The round 7 audit, E-L1: the card that shows the NOTAM's own words
+    // (a procedure NA at night only) read "permanent" from the end alone.
+    let c = card(
+        "!FDC 6/10 ARR SID AURORA MUNI, CHICAGO/AURORA, IL. ADELL EIGHT DEPARTURE (RNAV) NA AT NIGHT. RWY 18/36 PERMANENTLY CLSD. 2605271843-2805271843EST",
+        &[],
+    );
+    assert!(c.title.is_none() && c.permanent && c.until_charts);
 }

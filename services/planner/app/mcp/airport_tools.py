@@ -64,9 +64,16 @@ def register(server: MCPServer) -> None:
         # The search pages no further than SEARCH_REACH: past it the last
         # page says so, never a next_offset the tool would refuse (the
         # round 6 audit, P4; MCP's pagination, a null next page at the end).
+        # Its total is then the matches paged, as every last page's is,
+        # never null beside a has_more of false (the round 7 audit, P-L2).
         if page["next_offset"] is not None and page["next_offset"] > SEARCH_REACH:
             reach = page["next_offset"]
-            page |= {"has_more": False, "next_offset": None, "note": f"Only the first {reach} matches are paged: give more of the name."}
+            page |= {
+                "has_more": False,
+                "next_offset": None,
+                "total": reach,
+                "note": f"Only the first {reach} matches are paged: give more of the name.",
+            }
         return {"airports": found[offset : offset + limit], **page, "sources": editions("nasr")}
 
     @server.tool(

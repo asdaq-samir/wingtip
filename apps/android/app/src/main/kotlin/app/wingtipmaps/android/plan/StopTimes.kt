@@ -64,8 +64,11 @@ object StopTimes {
         val pattern = if (said) "HH:mm zzz" else "HH:mm"
         val shownIn = if (said) zone ?: device else device
         val clock = DateTimeFormatter.ofPattern(pattern, Locale.US).format(Instant.ofEpochMilli(ms).atZone(shownIn))
-        // Its day too where it is not the day the flight left: "Tue 15:54 CST".
-        val day = left?.let { Format.arrivalDay(ms, it.ms, shownIn, it.zone) }
+        // Its day too where it is not the day the flight left: "Tue 15:54 CST",
+        // the day it left counted in the zone its clock is read in: the
+        // departure's once zones are said, else this phone's, as the bare
+        // clock is (iOS's TimelineClock), so the two never disagree.
+        val day = left?.let { Format.arrivalDay(ms, it.ms, shownIn, if (said) it.zone else device) }
         return if (day == null) clock else "$day $clock"
     }
 

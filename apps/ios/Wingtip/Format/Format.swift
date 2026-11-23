@@ -72,6 +72,15 @@ nonisolated enum Format {
     /// A UTC clock time as reports and flight plans give it: "1432Z".
     static func zulu(_ date: Date) -> String { date.formatted(zuluStyle) }
 
+    /// A zone's short name at a time, "CDT", in en_US as the FAA writes it:
+    /// TimeZone.abbreviation(for:) follows the phone's own locale, which
+    /// outside the US can give "GMT-5" for Chicago.
+    static func zoneName(_ zone: TimeZone, at date: Date) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = zone
+        return date.formatted(Date.VerbatimFormatStyle(format: "\(timeZone: .specificName(.short))", locale: locale, timeZone: zone, calendar: calendar))
+    }
+
     /// A clock time, 24-hour, in a zone (the phone's own by default),
     /// "09:05", as the web app's clockTime writes it.
     static func clock(_ date: Date, in zone: TimeZone = .current) -> String {

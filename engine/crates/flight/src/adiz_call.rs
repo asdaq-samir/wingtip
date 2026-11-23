@@ -45,6 +45,8 @@ fn lead(zones: &[&str]) -> Option<String> {
 
 #[cfg_attr(target_arch = "wasm32", inline(always))]
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
+    // The ADIZ along the Mexican border asks whose land a leg crosses.
+    crate::jurisdiction::outlines_read().map_err(|e| format!("{name}: {e}"))?;
     let ask = Ask::new(name, v);
     let points =
         ask.list("points")?.iter().map(|p| Ok((num_in(name, p, "lat")?, num_in(name, p, "lon")?))).collect::<Result<Vec<_>, String>>()?;

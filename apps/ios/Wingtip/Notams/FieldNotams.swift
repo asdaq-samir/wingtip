@@ -148,9 +148,11 @@ final class FieldNotams {
         notam.kind == "tfr" ? (tfr(notam)?.heading ?? "TFR") : (reading(notam)?.heading ?? "NOTAM")
     }
 
-    /// Its time lines (FieldNotamWords.timeLines), now.
+    /// Its time lines (FieldNotamWords.timeLines), now, on its row and on
+    /// its own card alike: its end "Permanent" where the engine's
+    /// notam_card says it runs until the charts are updated.
     func times(_ notam: APIRankedNotam, now: Date = .now) -> [FieldNotamWords.TimeLine] {
-        FieldNotamWords.timeLines(notam, read: reading(notam), now: now, zone: zone)
+        FieldNotamWords.timeLines(notam, read: reading(notam), untilCharts: card(notam)?.untilCharts ?? false, zone: zone, now: now)
     }
 
     /// The NOTAMs by what they are about, the engine's heading (Runway,

@@ -277,7 +277,17 @@ services:
       # between the planner and ingest, which the Mac's file sharing into
       # Docker does not give, and ingest's writes hung (2026-11-08).
       - live-store:/live
+      # The planner's own secrets, apart from the live store ingest also
+      # mounts: the follow share key, made once (FOLLOW_SHARE_KEY_FILE).
+      - planner-secrets:/secrets
     environment:
+      # The key the followed airplanes' shares are hashed with, made at
+      # random into the planner's secrets volume on its first start and
+      # never into the live store beside the shares (the round 7 audit,
+      # P-M1; wingtip.traffic.recorded). FOLLOW_SHARE_KEY in .env, where
+      # set, is used instead; production sets it (infra/server/deploy.sh).
+      FOLLOW_SHARE_KEY: ${FOLLOW_SHARE_KEY:-}
+      FOLLOW_SHARE_KEY_FILE: /secrets/follow_share.key
       # The stores ingest writes, on the volume above (wingtip/stores.py);
       # each takes the file it had on data/raw the first time.
       LIVE_STORE: /live/live.sqlite
@@ -705,6 +715,8 @@ networks:
 volumes:
   # The planner's and ingest's shared live store (see their mounts).
   live-store:
+  # The planner's own secrets (its mount above).
+  planner-secrets:
   pgdata_pg18:
   # gateway's JVM class-data archive -- see JAVA_TOOL_OPTIONS on gateway.
   gateway-cds:

@@ -132,16 +132,24 @@ enum NotamRows {
     /// "In effect now", "From 11/09 14:00 UTC", or the span, from the
     /// NOTAM's own times; the engine says whether it is in force. The
     /// route's list knows no field's zone, so UTC, said so, never a bare Z
-    /// (the owner, 2026-11-23; FieldNotamWords.when).
+    /// (the owner, 2026-11-23; FieldNotamWords.when). Where the engine's
+    /// notam_card says it runs until the charts are updated (until_charts:
+    /// PERM with an EST end or none, JO 7930.2 4-2-1), its end is
+    /// "permanent", never the EST date (the owner, 2026-11-23: "For a
+    /// permanent, just say permanent"), as on the field's list.
     static func when(_ notam: APIRankedNotam, now: Date = .now) -> String {
         let (s, e) = (notam.starts.flatMap(date), notam.ends.flatMap(date))
-        let year = FieldNotamWords.withYear([s, e], now: now)
+        let permanent = notam.kind != "tfr" && (try? Engine.notamCard(text: notam.raw, ends: notam.ends))?.untilCharts == true
+        let year = FieldNotamWords.withYear([s, permanent ? nil : e], now: now)
         let starts = s.map { FieldNotamWords.when($0, zone: nil, year: year) }
-        let ends = e.map { FieldNotamWords.when($0, zone: nil, year: year) }
-        let span = [starts, ends].compactMap { $0 }.joined(separator: "–")
-        if notam.inForce == true { return ends.map { "In effect now, until \($0)" } ?? "In effect now" }
-        if let starts { return ends == nil ? "From \(starts)" : span }
-        return span
+        let ends = permanent ? nil : e.map { FieldNotamWords.when($0, zone: nil, year: year) }
+        if notam.inForce == true {
+            if permanent { return "In effect now, permanent" }
+            return ends.map { "In effect now, until \($0)" } ?? "In effect now"
+        }
+        if permanent { return starts.map { "From \($0), permanent" } ?? "Permanent" }
+        if let starts { return ends.map { "\(starts)–\($0)" } ?? "From \(starts)" }
+        return ends.map { "Until \($0)" } ?? ""
     }
 
     private static func date(_ text: String) -> Date? {

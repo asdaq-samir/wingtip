@@ -146,3 +146,64 @@ def test_the_live_store_is_pruned_every_minute_by_a_job_on_the_scheduler():
     job = on.get_job("live-store-prune")
     assert job.func is radar.prune
     assert job.trigger.interval.total_seconds() == 60.0
+
+
+@pytest.fixture
+def share_key_cleared():
+    recorded._share_key.cache_clear()
+    yield
+    recorded._share_key.cache_clear()
+
+
+def test_no_share_key_stops_the_planner_and_none_is_kept_in_the_store(monkeypatch, share_key_cleared):
+    """The round 7 audit, P-M1: the key is never the store's own, where
+    whoever reads the store would hold it beside the hashes."""
+    monkeypatch.delenv("FOLLOW_SHARE_KEY", raising=False)
+    monkeypatch.delenv("FOLLOW_SHARE_KEY_FILE", raising=False)
+    with pytest.raises(recorded.ShareKeyMissing, match="FOLLOW_SHARE_KEY is not set"):
+        recorded.require_share_key()
+    assert recorded.share_of("") == ""
+    store.followed()
+    assert not _rows_of_master("keys")
+
+
+def test_the_development_key_is_made_once_into_its_own_file(tmp_path, monkeypatch, share_key_cleared):
+    path = tmp_path / "secrets" / "follow_share.key"
+    monkeypatch.delenv("FOLLOW_SHARE_KEY", raising=False)
+    monkeypatch.setenv("FOLLOW_SHARE_KEY_FILE", str(path))
+    first = recorded.share_of("pilot-a")
+    assert path.stat().st_mode & 0o777 == 0o600 and len(path.read_text()) == 64
+    recorded._share_key.cache_clear()
+    assert recorded.share_of("pilot-a") == first
+    path.write_text("short")
+    recorded._share_key.cache_clear()
+    with pytest.raises(recorded.ShareKeyMissing, match="fewer than 32"):
+        recorded.share_of("pilot-a")
+
+
+def test_a_store_that_kept_the_key_loses_it_and_the_pilots_follows_once(wall):
+    """The round 7 audit, P-L1: the shares hashed with the store's key are
+    orphaned by the new one, so they go with it; ingest's own stay."""
+    store.reset()
+    store.STORE.parent.mkdir(parents=True, exist_ok=True)
+    db = sqlite3.connect(store.STORE)
+    db.executescript(
+        "CREATE TABLE IF NOT EXISTS following (who TEXT, hex TEXT, since REAL, PRIMARY KEY (who, hex));"
+        "CREATE TABLE keys (name TEXT PRIMARY KEY, value BLOB);"
+        "INSERT INTO keys VALUES ('follow_share', x'00');"
+        "INSERT INTO following VALUES ('abc123def456', 'a00001', 1.0), ('', 'a00002', 1.0);"
+    )
+    db.close()
+    assert store.followed() == ["a00002"]
+    assert not _rows_of_master("keys")
+    traffic.follow("a00003", "pilot-a")
+    store.reset()
+    assert set(store.followed()) == {"a00002", "a00003"}
+
+
+def _rows_of_master(name: str) -> list[tuple]:
+    db = sqlite3.connect(store.STORE)
+    try:
+        return db.execute("SELECT 1 FROM sqlite_master WHERE name = ?", (name,)).fetchall()
+    finally:
+        db.close()

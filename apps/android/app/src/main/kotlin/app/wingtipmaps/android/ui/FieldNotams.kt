@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.ui
 
-import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -125,49 +124,6 @@ object FieldNotams {
             d >= 1 -> if (h > 0) "${d}d${h}h" else "${d}d"
             h > 0 -> String.format(Locale.US, "%dh%02dm", h, m)
             else -> "${m}m"
-        }
-    }
-
-    /** One labelled line of a NOTAM's times. */
-    enum class Label { SINCE, STARTS, ENDS, DURATION }
-
-    /** A time line: its label, its time ("11/10 06:00 CST") or how long,
-     *  how soon ("in 18d"), or Permanent. */
-    data class TimeLine(
-        val label: Label,
-        val value: String? = null,
-        val soon: String? = null,
-        val permanent: Boolean = false,
-    )
-
-    /**
-     * A NOTAM's times on lines of their own, as ForeFlight's NOTAM list
-     * gives them (the owner's screenshots, 2026-11-11): one in force
-     * "Since" its start and "Ends" with how long is left; one to come
-     * "Starts" with how soon, "Ends", and how long it lasts. Each time in
-     * the field's own zone with its short name, else UTC said so
-     * (NotamCardTimes.whenOf; the owner, 2026-11-23: "no need to say the
-     * word local or Z time"), the year where either is not this year's; an
-     * EST end its time alone (the owner: "no need for the word
-     * estimated"), PERM with none "Permanent" (JO 7930.2 4-2-1). The times
-     * are the planner's, else the NOTAM's own as the engine reads them.
-     */
-    fun timeLines(n: RankedNotam, read: EngineContract.NotamReadAnswer?, zone: String?, now: Instant = AppClock.javaNow()): List<TimeLine> {
-        val starts = instantOf(n.starts ?: read?.starts)
-        val ends = instantOf(n.ends ?: read?.ends)
-        val active = active(n)
-        val field = NotamCardTimes.zoneOf(zone)
-        val year = NotamCardTimes.withYear(listOfNotNull(starts, ends), now)
-        fun at(t: Instant) = NotamCardTimes.whenOf(t, field, year)
-        fun soon(at: Instant) = if (at.isAfter(now)) span(at.toEpochMilli() - now.toEpochMilli()) else null
-        return buildList {
-            if (starts != null) add(TimeLine(if (active) Label.SINCE else Label.STARTS, at(starts), soon = if (active) null else soon(starts)))
-            if (ends != null) {
-                add(TimeLine(Label.ENDS, at(ends), soon = soon(ends)))
-            } else if (read?.permanent == true) {
-                add(TimeLine(Label.ENDS, permanent = true))
-            }
-            if (!active && starts != null && ends != null) add(TimeLine(Label.DURATION, span(ends.toEpochMilli() - starts.toEpochMilli())))
         }
     }
 
