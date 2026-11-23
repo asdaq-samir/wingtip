@@ -1,5 +1,5 @@
 import { test, expect, type Locator } from "@playwright/test";
-import { grabberTo, settle, slow, typeRoute } from "./helpers";
+import { frontSheet, grabberTo, settle, settled, slow, typeRoute } from "./helpers";
 import { pickAirplane } from "./startState";
 
 test.use({ viewport: { width: 393, height: 852 }, hasTouch: true, isMobile: true });
@@ -44,29 +44,33 @@ test("a long route scrolled at full: the figures stay at the sheet's foot, no ro
   const foot = (await page.getByTestId("panel-foot").boundingBox())!;
   for (const at of [0, 0.5, 1]) {
     await scroller.evaluate((el, y) => el.scrollTo(0, y), Math.round(room * at));
-    await page.waitForTimeout(400);
-    const box = (await strip.boundingBox())!;
-    // Held on the foot's top (within its own 4-point foot room), just over the tab bar at the sheet's very
-    // foot (the owner, 2026-11-22: "the Apple way at the bottom and figures
-    // should pin at the bottom of the plan"): never half way up, never
-    // under the bar.
-    // At the page's end the strip sits in its place under the route's
-    // last row, a little over the foot's top: never under the bar, never half way up.
-    expect(box.y + box.height, `strip's bottom at scroll ${at}`).toBeLessThanOrEqual(foot.y + 6);
-    expect(box.y + box.height, `strip's bottom at scroll ${at}`).toBeGreaterThan(foot.y - 40);
-    const bar = (await page.getByTestId("fpl-actions").boundingBox())!;
-    expect(bar.y, "the bar under the figures").toBeGreaterThanOrEqual(box.y + box.height - 1);
-    // And no list row drawn below it.
-    const below = await scroller.evaluate((el, edge) => {
-      return [...el.querySelectorAll("[data-pin-foot] ~ *, [data-pill-row] > *")].filter(
-        (n) =>
-          !n.querySelector("[data-pin-foot]") &&
-          !n.matches("[data-pin-foot]") &&
-          n.getBoundingClientRect().top > edge &&
-          n.getBoundingClientRect().height > 0,
-      ).length;
-    }, box.y + box.height);
-    expect(below).toBe(0);
+    // Measured once the strip has followed the scroll (usePinAtFoot measures
+    // at each scroll event), as often as it takes: a time slept before one
+    // measure was short on a loaded runner (CI audit 2026-11-23, M5).
+    await expect(async () => {
+      const box = (await strip.boundingBox())!;
+      // Held on the foot's top (within its own 4-point foot room), just over the tab bar at the sheet's very
+      // foot (the owner, 2026-11-22: "the Apple way at the bottom and figures
+      // should pin at the bottom of the plan"): never half way up, never
+      // under the bar.
+      // At the page's end the strip sits in its place under the route's
+      // last row, a little over the foot's top: never under the bar, never half way up.
+      expect(box.y + box.height, `strip's bottom at scroll ${at}`).toBeLessThanOrEqual(foot.y + 6);
+      expect(box.y + box.height, `strip's bottom at scroll ${at}`).toBeGreaterThan(foot.y - 40);
+      const bar = (await page.getByTestId("fpl-actions").boundingBox())!;
+      expect(bar.y, "the bar under the figures").toBeGreaterThanOrEqual(box.y + box.height - 1);
+      // And no list row drawn below it.
+      const below = await scroller.evaluate((el, edge) => {
+        return [...el.querySelectorAll("[data-pin-foot] ~ *, [data-pill-row] > *")].filter(
+          (n) =>
+            !n.querySelector("[data-pin-foot]") &&
+            !n.matches("[data-pin-foot]") &&
+            n.getBoundingClientRect().top > edge &&
+            n.getBoundingClientRect().height > 0,
+        ).length;
+      }, box.y + box.height);
+      expect(below).toBe(0);
+    }).toPass({ timeout: slow(10_000) });
   }
 });
 
@@ -92,16 +96,21 @@ test("the tab bar is at the sheet's foot, the figures over it, and they slide un
   const names = (await strip.locator("dt").allInnerTexts()).join(" ");
   for (const short of ["Dist", "ETE"]) expect(names).toContain(short);
   // At the pill the figures are its face, full size, on the screen's foot, the bar put away.
+  // Each size's figure read as often as it takes to come, not once after
+  // a time slept (CI audit 2026-11-23, M5): grabberTo waits for the sheet
+  // at rest, and the strip's own easing ends with it.
+  const height = async () => (await strip.boundingBox())?.height ?? 0;
   await grabberTo(page, "peek");
-  await page.waitForTimeout(600);
-  const pill = (await strip.boundingBox())!;
-  expect(pill.height, "full size as the pill").toBeGreaterThan(40);
+  await expect.poll(height, { message: "full size as the pill" }).toBeGreaterThan(40);
   await grabberTo(page, "full");
-  await page.waitForTimeout(600);
-  expect((await strip.boundingBox())!.height, "thin all the way up").toBeLessThanOrEqual(32);
+  await expect.poll(height, { message: "thin all the way up" }).toBeLessThanOrEqual(32);
   await grabberTo(page, "peek");
-  await page.waitForTimeout(600);
-  expect(pill.y + pill.height).toBeGreaterThan(page.viewportSize()!.height - 60);
+  await expect
+    .poll(async () => {
+      const pill = (await strip.boundingBox())!;
+      return pill.y + pill.height;
+    })
+    .toBeGreaterThan(page.viewportSize()!.height - 60);
   await expect(bar).toBeHidden();
 });
 
@@ -119,10 +128,12 @@ for (const size of ["half", "full"] as const)
       .filter({ has: page.locator("[data-pin-foot]") })
       .first();
     await scroller.evaluate((el) => el.scrollTo(0, el.scrollHeight));
-    await page.waitForTimeout(400);
-    const last = (await page.getByTestId("timeline-add-stop").boundingBox())!;
-    const s = (await strip.boundingBox())!;
-    expect(last.y + last.height, "the last row clear of the figures").toBeLessThanOrEqual(s.y + 1);
+    // Read as often as it takes the scroll and the strip to come to rest.
+    await expect(async () => {
+      const last = (await page.getByTestId("timeline-add-stop").boundingBox())!;
+      const s = (await strip.boundingBox())!;
+      expect(last.y + last.height, "the last row clear of the figures").toBeLessThanOrEqual(s.y + 1);
+    }).toPass({ timeout: slow(10_000) });
   });
 
 test("pulled slowly down to the pill, the figures go down with the plan, frame by frame, never held up and then jumping", async ({
@@ -171,8 +182,9 @@ test("pulled slowly down to the pill, the figures go down with the plan, frame b
   }
   const pulled = (await sample()).height;
   await page.mouse.up();
-  // Let go short of the pill's room it settles there, full size, with no snap past it.
-  await page.waitForTimeout(800);
+  // Let go short of the pill's room it settles there, full size, with no
+  // snap past it: read once the sheet is at rest, not after a time slept.
+  await settled(frontSheet(page));
   expect((await sample()).height).toBeGreaterThanOrEqual(pulled - 1);
 });
 
@@ -188,7 +200,6 @@ test("stepped from the pill to half, the strip lands thin as the sheet lands, an
   await planIn(page.locator("[data-pin-foot]").first());
   await page.evaluate(() => document.querySelector('[data-testid="fpl-actions"]')!.setAttribute("data-probe", ""));
   await grabberTo(page, "peek");
-  await page.waitForTimeout(800);
   // Each frame after it is drawn: the sheet's top and the strip's height.
   const frames = page.evaluate(
     () =>
@@ -235,14 +246,15 @@ test("with the box turned into the route's field, typed in, the figures stay pin
   await expect(field).toBeFocused();
   for (const size of ["half", "full"] as const) {
     await grabberTo(page, size);
-    await page.waitForTimeout(500);
     await expect(strip.getByTestId("navlog-ete")).toBeVisible();
-    const box = (await strip.boundingBox())!;
-    expect(box.height, `thin at ${size}`).toBeLessThanOrEqual(32);
-    // Pinned at the plan's bottom, on the tab bar (the owner, 2026-11-22:
-    // "Route box figures strip is not pinning to the bottom").
-    const bar = (await page.getByTestId("fpl-actions").boundingBox())!;
-    expect(Math.abs(box.y + box.height - bar.y), `on the bar at ${size}`).toBeLessThanOrEqual(12);
+    await expect(async () => {
+      const box = (await strip.boundingBox())!;
+      expect(box.height, `thin at ${size}`).toBeLessThanOrEqual(32);
+      // Pinned at the plan's bottom, on the tab bar (the owner, 2026-11-22:
+      // "Route box figures strip is not pinning to the bottom").
+      const bar = (await page.getByTestId("fpl-actions").boundingBox())!;
+      expect(Math.abs(box.y + box.height - bar.y), `on the bar at ${size}`).toBeLessThanOrEqual(12);
+    }).toPass({ timeout: slow(10_000) });
   }
 });
 

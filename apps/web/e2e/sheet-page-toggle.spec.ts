@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { consoleSheet, grabberTo, settle, settled, sideDrawer, frontSheet } from "./helpers";
 import { expectPage, expectSearchInUse, expectShown, openAirport, showPage, toggle } from "./sheetPages";
 import { extrasOn } from "./extras";
+import { hold } from "./pacing";
 // The parked features it exercises, on (Settings' Extras, src/lib/extras).
 test.beforeEach(({ page }) => extrasOn(page, "threeD"));
 
@@ -255,7 +256,7 @@ async function fingerDown(page: Page, x: number, y: number, dy: number) {
   await touch("touchStart", { x, y });
   for (let i = 1; i <= 12; i++) {
     await touch("touchMove", { x, y: y + (dy * i) / 12 });
-    await page.waitForTimeout(16);
+    await hold(page, 16);
   }
   await touch("touchEnd");
   await cdp.detach();

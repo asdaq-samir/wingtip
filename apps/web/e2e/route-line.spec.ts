@@ -4,6 +4,7 @@ import { recordedDirect } from "./recordedStops";
 import { stopsAre } from "./stopsParam";
 import { pickAirplane } from "./startState";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
+import { watchFor } from "./pacing";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -170,7 +171,7 @@ test("the routes' chips and their ways stay, whichever is picked", async ({ page
     .click({ timeout: slow(30_000) });
   // Left alone, they stay, their ways on the chart (the owner, 2026-10-28:
   // "Keep the routes and runway opened until folded"; they fold no more).
-  await page.waitForTimeout(3000);
+  await watchFor(page, 3000);
   await expect(line.getByTestId("route-line-chip")).toHaveCount(3);
   await expect(line.getByTestId("route-line-chip").filter({ hasText: "Fastest" })).toHaveAttribute("data-pressed", "");
   await expect.poll(async () => (await drawn(page, "route-way-chips")).length).toBeGreaterThan(0);

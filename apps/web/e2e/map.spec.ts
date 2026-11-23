@@ -18,6 +18,7 @@ import { routeMenuSwitch } from "./mapCard";
 import { drawnMarks, markWith, tapMark } from "./marks";
 import { mapZoom } from "./mapZoom";
 import { pickAirplane } from "./startState";
+import { hold } from "./pacing";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -77,7 +78,7 @@ test("plan page: every popup the map opens dismisses the same way", async ({ pag
   await page.mouse.move(map.x + map.width / 2, map.y + map.height / 3);
   for (let i = 0; i < 4; i++) {
     await page.mouse.wheel(0, 300);
-    await page.waitForTimeout(400);
+    await hold(page, 400);
   }
 
   await expect.poll(markWith(page, "class-b-fields", "KORD"), { timeout: slow(25000) }).not.toBeNull();
@@ -161,7 +162,7 @@ test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks
   // were all it took.
   for (let i = 0; i < 8 && !((await zoomOfTiles()) <= 5); i++) {
     await page.mouse.wheel(0, 300);
-    await page.waitForTimeout(400);
+    await hold(page, 400);
     await mapStill(page);
   }
   await expect.poll(zoomOfTiles, { timeout: slow(10000) }).toBeLessThanOrEqual(5);
@@ -245,7 +246,7 @@ test("the chart's airports keep coming in under a finger's pan, before it lets g
   await page.mouse.down();
   for (let i = 1; i <= 30; i++) {
     await page.mouse.move(left + (run * i) / 30, y);
-    await page.waitForTimeout(40);
+    await hold(page, 40);
   }
   // Still held: fields drawn that were not in sight before.
   await expect.poll(async () => [...(await idents())].some((i) => !before.has(i)), { timeout: slow(10_000) }).toBe(true);

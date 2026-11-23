@@ -1,6 +1,7 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
 import { drawn, settle, slow } from "./helpers";
 import { closeMapSettings, openSettingsPage } from "./mapCard";
+import { watchFor } from "./pacing";
 
 /**
  * What is ahead of own ship in the air (lib/map/position/ahead), said over the map
@@ -159,7 +160,8 @@ test("on the ground nothing is asked, and nothing is said", async ({ page }) => 
   await page.goto("/app/plan");
   await settle(page);
   await expect(page.locator('[data-own-ship="on"]')).toBeVisible({ timeout: slow(10_000) });
-  await page.waitForTimeout(1500);
+  // A few fixes on, where an ask would have been made.
+  await watchFor(page, 1500);
   expect(asks).toHaveLength(0);
   await expect(banner(page)).toHaveCount(0);
 });
@@ -174,7 +176,8 @@ test("switched off in the map's settings, nothing is asked", async ({ page }) =>
   await page.goto("/app/plan");
   await settle(page);
   await expect(page.locator('[data-own-ship="on"]')).toBeVisible({ timeout: slow(10_000) });
-  await page.waitForTimeout(1500);
+  // A few fixes on, where an ask would have been made.
+  await watchFor(page, 1500);
   expect(asks).toHaveLength(0);
   await expect(banner(page)).toHaveCount(0);
 });
@@ -223,8 +226,11 @@ test("spoken, each alert ahead is said once as it comes, and turned on it says s
 });
 
 test("a position that is the phone's approximate one, Precise Location off, is said so, once, and a GPS's is not", async ({ page }) => {
-  await ahead(page, (route) => route.fulfill({ json: [] }));
+  await ahead(page, (route) => route.fulfill({ json: { alerts: [], unavailable: [] } }));
   await flying(page, 120, 3000);
+  // The page's own clock, run ahead past the fixes that would say it again
+  // rather than seconds of real time slept (CI audit 2026-11-23, M5).
+  await page.clock.install();
   await page.goto("/app/plan");
   await settle(page);
   const alert = page.getByTestId("error-alert");
@@ -232,16 +238,20 @@ test("a position that is the phone's approximate one, Precise Location off, is s
   await expect(alert).toContainText("Precise Location is off");
   // OK from md up; on a phone the sheet's close in its title row.
   await alert.getByRole("button", { name: /^(OK|Close)$/ }).click();
-  // Not again at each second's fix.
-  await page.waitForTimeout(2500);
+  // Not again at each second's fix: five more of them.
+  await page.clock.runFor(5_000);
   await expect(alert).toHaveCount(0);
 });
 
 test("a GPS's position says nothing of its accuracy", async ({ page }) => {
-  await ahead(page, (route) => route.fulfill({ json: [] }));
+  await ahead(page, (route) => route.fulfill({ json: { alerts: [], unavailable: [] } }));
   await flying(page);
   await page.goto("/app/plan");
   await settle(page);
-  await page.waitForTimeout(2500);
+  // Flying, and asked what is ahead, as the app is: the planner's answer
+  // is its own shape, not a bare list, which put the page in its "did not
+  // load" screen and this test passed on a page with no map at all.
+  await expect(page.locator('[data-own-ship="on"]')).toBeVisible({ timeout: slow(10_000) });
+  await watchFor(page, 2500);
   await expect(page.getByTestId("error-alert")).toHaveCount(0);
 });

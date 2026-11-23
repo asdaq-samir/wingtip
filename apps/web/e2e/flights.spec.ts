@@ -17,6 +17,7 @@ import { openSettingsPage } from "./mapCard";
 import { closeBrief } from "./routeHelpers";
 import { pickAirplane } from "./startState";
 import { showPage } from "./sheetPages";
+import { steady } from "./pacing";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -48,16 +49,7 @@ async function signedIn(page: Page, filed: Record<string, unknown>[], list: obje
  *  one after (CI and locally, the first test of a fresh worker). The
  *  address the same for two seconds is the plan the page keeps. */
 async function planSettled(page: Page) {
-  await expect
-    .poll(
-      async () => {
-        const was = page.url();
-        await page.waitForTimeout(2000);
-        return was === page.url();
-      },
-      { timeout: 30_000 },
-    )
-    .toBe(true);
+  await steady(async () => page.url(), { gap: 2000, timeout: 30_000 });
 }
 
 test("a flight is filed once, whole, and a new plan is offered for saving again", { tag: "@smoke" }, async ({ page }) => {

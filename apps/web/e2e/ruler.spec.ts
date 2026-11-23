@@ -1,5 +1,6 @@
 import { test, expect, type CDPSession, type Page } from "@playwright/test";
 import { chartZoom, mapStill, settle, slow } from "./helpers";
+import { hold, watchFor } from "./pacing";
 
 /**
  * The map's ruler (MapRuler), as ForeFlight's: two fingers held still on
@@ -50,7 +51,7 @@ test("two fingers held on the chart bring up the ruler, with its course magnetic
   ];
   await touch("touchStart", at);
   // Held, a finger wandering a little as one at rest does.
-  await page.waitForTimeout(150);
+  await hold(page, 150);
   await touch("touchMove", [{ x: at[0].x + 2, y: at[0].y + 1 }, at[1]]);
   const ruler = page.getByTestId("map-ruler");
   await expect(ruler).toBeVisible({ timeout: slow(3000) });
@@ -98,6 +99,6 @@ test("a pinch that moves at once still zooms the chart, with no ruler", async ({
   await touch("touchEnd");
   await expect.poll(() => tileLevel(page), { timeout: slow(10000) }).toBeLessThan(before);
   // Past the ruler's hold, still none: the pinch was the map's.
-  await page.waitForTimeout(500);
+  await watchFor(page, 500);
   await expect(page.getByTestId("map-ruler")).toHaveCount(0);
 });

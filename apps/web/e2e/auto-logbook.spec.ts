@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
 import { openPanel, openProfile, pressDryRunStart, settle, sideDrawer, slow } from "./helpers";
 import { pickAirplane } from "./startState";
+import { watchFor } from "./pacing";
 
 /**
  * The automatic logbook (features/logbook-auto): own ship's GPS records
@@ -131,7 +132,7 @@ test("the GPS's fixes are recorded, and a dry run's never are", async ({ page })
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
   const before = await keptPoints(page);
   // Twelve seconds of the run, two of the recorder's beats: nothing added.
-  await page.waitForTimeout(12_000);
+  await watchFor(page, 12_000);
   expect(await keptPoints(page)).toBe(before);
   // And no flight offered for the logbook from it.
   await expect(page.getByRole("dialog", { name: "Flight Logged" })).toHaveCount(0);

@@ -2,6 +2,7 @@ import { test, expect, type Locator } from "@playwright/test";
 import { chartZoom, frontSheet, grabberTo, openPanel, openProfile, pressDryRunStart, settle, settled, sideDrawer, slow } from "./helpers";
 import { pickAirplane } from "./startState";
 import { middleOfFront, shipAt } from "./ownShipProbes";
+import { steady } from "./pacing";
 
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -160,16 +161,7 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
   // Read from the page, not as drawn: FPL's strip is under the Profile's
   // card, out of sight (SheetParts' cardsUp), where innerText reads nothing.
   const distNow = async () => ((await line.locator("dd").nth(1).textContent()) ?? "").replace(/,/g, "");
-  await expect
-    .poll(
-      async () => {
-        const was = await distNow();
-        await page.waitForTimeout(1500);
-        return was === (await distNow());
-      },
-      { timeout: slow(30_000) },
-    )
-    .toBe(true);
+  await steady(distNow, { gap: 1500, timeout: slow(30_000) });
   const plannedNm = parseFloat(await distNow());
 
   await pressDryRunStart(page, start);

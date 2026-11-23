@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { grabberTo, openMapSettings, settle, slow, tapTheChart } from "./helpers";
 import { extrasOn } from "./extras";
+import { watchFor } from "./pacing";
 // The parked features it exercises, on (Settings' Extras, src/lib/extras).
 test.beforeEach(({ page }) => extrasOn(page, "modelWeather"));
 
@@ -269,6 +270,6 @@ test("under Reduce Motion the timeline does not play by itself", async ({ page }
   await settle(page);
   await expect(page.getByTestId("weather-flow-legend")).toBeVisible({ timeout: slow(15000) });
   await expect(page.getByTestId("weather-flow-play")).toHaveAttribute("aria-pressed", "false");
-  await page.waitForTimeout(1500);
+  await watchFor(page, 1500);
   await expect(page.getByTestId("weather-flow-play")).toHaveAttribute("aria-pressed", "false");
 });

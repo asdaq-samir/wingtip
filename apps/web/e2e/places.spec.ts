@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { closeCard, firstRow, grabberTo, settle, sideDrawer, slow, frontSheet } from "./helpers";
 import { card, cardWeather, tafFromNow } from "./placeCard";
 import { pickAirplane } from "./startState";
+import { steady } from "./pacing";
 
 /** Airports as places, as Maps has them: a tap on one on the chart opens its card in the panel -- its name, what kind of field it is, the
  *  weather there as pilots read it -- with Fly Here, Weather and Frequencies; the card is the address's (?place=) and puts itself away. */
@@ -281,20 +282,7 @@ test("an airport's card keeps one layout whatever the field: a long name in two 
       );
       return { tiles: Math.round(tiles.y - head.y), whereFoot: Math.round(where.y + where.height - head.y), head: Math.round(head.height) };
     };
-    let last = await measure();
-    await expect
-      .poll(
-        async () => {
-          await page.waitForTimeout(300);
-          const now = await measure();
-          const still = JSON.stringify(now) === JSON.stringify(last);
-          last = now;
-          return still;
-        },
-        { timeout: slow(10000) },
-      )
-      .toBe(true);
-    return last;
+    return steady(measure);
   };
   const short = await layout("C81");
   // A name long enough to need two lines.

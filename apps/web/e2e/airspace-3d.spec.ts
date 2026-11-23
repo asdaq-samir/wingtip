@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { settle, slow } from "./helpers";
 import { setMap3d } from "./mapCard";
 import { extrasOn } from "./extras";
+import { watchFor } from "./pacing";
 // The parked features it exercises, on (Settings' Extras, src/lib/extras).
 test.beforeEach(({ page }) => extrasOn(page, "threeD"));
 
@@ -80,7 +81,7 @@ test("in 3D the airspace stands between its floors and ceilings, and flat again 
   await page.mouse.up();
   for (let i = 0; i < 10; i++) {
     expect(Number(await map(page).getAttribute("data-airspace3d"))).toBe(standing);
-    await page.waitForTimeout(200);
+    await watchFor(page, 200);
   }
 
   await setMap3d(page, false);

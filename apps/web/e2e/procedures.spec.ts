@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { openTab, settle, slow, openRoute } from "./helpers";
 import { pickAirplane } from "./startState";
 import { circuitsOf, openRunways } from "./procedureStubs";
+import { watchFor } from "./pacing";
 
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -57,7 +58,7 @@ test("a runway line opened stays open until folded, and folds with its field", a
     .first()
     .click();
   await destination.locator("[data-folded]").click();
-  await page.waitForTimeout(3000);
+  await watchFor(page, 3000);
   await expect(destination.locator("[data-folded]")).toHaveCount(0);
   await expect(destination.getByRole("button", { name: /^Runway / }).nth(1)).toBeVisible();
   // The field's line folded and opened again by a tap on it: its runways

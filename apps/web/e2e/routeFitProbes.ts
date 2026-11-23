@@ -2,6 +2,7 @@ import { expect, type Locator, type Page } from "@playwright/test";
 import { airportMark, mapStill, sideDrawer, slow } from "./helpers";
 import { courseBox } from "./mapProbes";
 import { middleOfMap, shipAt } from "./ownShipProbes";
+import { steady } from "./pacing";
 
 // Geolocation is a secure origin's only: the suite's address must be one
 // (CI's is localhost; locally, a localhost port forwarded to the stack).
@@ -80,14 +81,7 @@ export async function drag(page: Page, dx: number, dy: number) {
   await page.mouse.move(from.x + dx, from.y + dy, { steps: 10 });
   await page.mouse.up();
   // Until the map has stopped: it carries a drag on a little.
-  let was = "";
-  await expect(async () => {
-    const now = await mapAt(page);
-    const still = now === was;
-    was = now;
-    await page.waitForTimeout(250);
-    expect(still).toBe(true);
-  }).toPass({ timeout: 5_000 });
+  await steady(() => mapAt(page), { gap: 250, timeout: 5_000 });
 }
 
 /** Counts the page's asks for the position, on window.__asks. */

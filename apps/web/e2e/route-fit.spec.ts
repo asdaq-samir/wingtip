@@ -27,6 +27,7 @@ import {
   countAsks,
   fieldClearOfCard,
 } from "./routeFitProbes";
+import { watchFor } from "./pacing";
 
 /**
  * The map and the sheet move together, as in Maps: opened fresh, the map
@@ -113,7 +114,7 @@ test("reloaded where it was, the map opens on the position in the middle of what
   await shipInTheMiddle(page);
   // Watched for a while from the frame the map is shown, which comes with its tiles in, after the pill and the ship are placed.
   await expect(page.getByTestId("gl-map")).toHaveAttribute("data-revealed", "", { timeout: slow(10_000) });
-  await page.waitForTimeout(1500);
+  await watchFor(page, 1500);
   // Made there, and never moved: the first fix was put, not panned to. The
   // fix a few metres from the kept one may set the map a fraction of a
   // point over (MapLibre's offset to a tenth), which no eye sees as a slide.
@@ -303,7 +304,7 @@ test("an airport's card keeps its field in sight: the next position the GPS give
 
   // The GPS moves on: the map stays on the field, as Maps' does once a place is picked, until the location arrow is tapped.
   await context.setGeolocation({ latitude: 42.33, longitude: -88.08 });
-  await page.waitForTimeout(2000);
+  await watchFor(page, 2000);
   await fieldClearOfCard(page, "KMSN");
 });
 

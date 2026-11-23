@@ -4,6 +4,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { drawn, settle } from "../helpers";
 import { pickAirplane } from "../startState";
 import { installProbes, pushFix, readWake, readWork, type SimState } from "./simProbes";
+import { hold, watchFor } from "../pacing";
 
 /**
  * The test flight (docs/SIM-FLIGHT.md): a simulator flies the flight
@@ -139,7 +140,7 @@ test("the test flight, flown by the simulator", async ({ page }) => {
   while (Date.now() < deadline) {
     const { state } = await getJson<{ state: SimState | null }>("/state");
     if (!state || state.seq === lastSeq) {
-      await page.waitForTimeout(200);
+      await hold(page, 200);
       continue;
     }
     // The work since the last fix is that fix's: read before the next.
@@ -193,7 +194,7 @@ test("the test flight, flown by the simulator", async ({ page }) => {
       : "";
   const landings = Number((await field("Day")) || 0) + Number((await field("Night, Full Stop")) || 0);
   const route = await field("Route");
-  await page.waitForTimeout(65_000); // flying mode ends a minute on the ground
+  await watchFor(page, 65_000); // flying mode ends a minute on the ground
   const wakeAfter = await readWake(page);
 
   const ex = scenario.expect;

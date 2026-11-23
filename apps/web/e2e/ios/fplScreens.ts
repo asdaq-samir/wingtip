@@ -184,20 +184,22 @@ export const FPL_SCREENS: Screen[] = [
     // reasons and the ways round the high ground.
     name: "no legal altitude, opened",
     ready: async (page) => {
-      await page.route("**/api/planner/navlog**", (route) =>
-        route.fulfill({
-          status: 200,
-          contentType: "application/x-ndjson",
-          body:
-            JSON.stringify({
-              type: "error",
-              retry: false,
-              detail: "No legal VFR cruising altitude 1-15 nm along the route",
-              reasons: ["The terrain and obstacles there need 10,600 ft."],
-              advice: "Route around the high ground.",
-              detours: [{ ident: "BEPKE", kind: "GPS waypoint", added_nm: 5.9, stop_index: 0, via: ["BEPKE"] }],
-            }) + "\n",
-        }),
+      await page.route(
+        (url) => url.pathname.startsWith("/api/planner/navlog"),
+        (route) =>
+          route.fulfill({
+            status: 200,
+            contentType: "application/x-ndjson",
+            body:
+              JSON.stringify({
+                type: "error",
+                retry: false,
+                detail: "No legal VFR cruising altitude 1-15 nm along the route",
+                reasons: ["The terrain and obstacles there need 10,600 ft."],
+                advice: "Route around the high ground.",
+                detours: [{ ident: "BEPKE", kind: "GPS waypoint", added_nm: 5.9, stop_index: 0, via: ["BEPKE"] }],
+              }) + "\n",
+          }),
       );
       await page.goto(`/app/plan?${ROUTE}&view=full`);
       await controlsInSight(page);

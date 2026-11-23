@@ -1,6 +1,7 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { firstRow, frontSheet, grabberTo, openBrief, panelTabs, settle, settled, sideDrawer } from "./helpers";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
+import { hold } from "./pacing";
 
 /**
  * The map's panel is Base UI's stock Drawer on a phone (MapPanel): a
@@ -15,18 +16,18 @@ test.use({ hasTouch: true });
  *  frame a move, as a finger's moves come: slowly enough that the sheet
  *  comes to rest where it was let go, past half way to the next height
  *  rather than thrown there. */
-async function fingerDrag(page: Page, at: { x: number; y: number }, dy: number, hold = 0) {
+async function fingerDrag(page: Page, at: { x: number; y: number }, dy: number, heldMs = 0) {
   const cdp = await page.context().newCDPSession(page);
   const touch = (type: string, p?: { x: number; y: number }) =>
     cdp.send("Input.dispatchTouchEvent", { type, touchPoints: p ? [{ ...p, id: 1 }] : [] });
   await touch("touchStart", at);
   for (let i = 1; i <= 20; i++) {
     await touch("touchMove", { x: at.x, y: at.y + (dy * i) / 20 });
-    await page.waitForTimeout(16);
+    await hold(page, 16);
   }
   // A finger held still sends no moves: what it was doing before it
   // stopped is not how it lets go.
-  if (hold) await page.waitForTimeout(hold);
+  if (heldMs) await hold(page, heldMs);
   await touch("touchEnd");
   await cdp.detach();
 }
@@ -209,7 +210,7 @@ test("a touch on the sheet that does not move leaves it where it is", async ({ p
   const cdp = await page.context().newCDPSession(page);
   const at = { x: 20, y: before + 30, id: 1 };
   await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [at] });
-  await page.waitForTimeout(150);
+  await hold(page, 150);
   expect(Math.abs((await panel.boundingBox())!.y - before)).toBeLessThanOrEqual(1);
   await cdp.send("Input.dispatchTouchEvent", { type: "touchCancel", touchPoints: [] });
   await cdp.detach();

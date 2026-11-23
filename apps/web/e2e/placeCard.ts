@@ -2,6 +2,7 @@ import { expect, type Page } from "@playwright/test";
 import { airportMarks, mapStill, settle, sideDrawer, slow } from "./helpers";
 import { mapZoom, wheelIn } from "./mapZoom";
 import { appMarks, markWith } from "./marks";
+import { hold, steady } from "./pacing";
 
 /* The airport card's specs' own parts (places.spec): the card, its answer
  * stubbed with the weather a test gives, a TAF made for the hour, the
@@ -79,7 +80,7 @@ export async function airportToTap(page: Page) {
   await page.mouse.move(box.x, box.y);
   for (let i = 0; i < 4; i++) {
     await page.mouse.wheel(0, -60);
-    await page.waitForTimeout(400);
+    await hold(page, 400);
   }
   // Its chip, or this close in, its grey one for no report; further out
   // the field's place on the chart, which a tap opens all the same (the
@@ -87,14 +88,7 @@ export async function airportToTap(page: Page) {
   await expect.poll(async () => (await airportMarks(page)).length, { timeout: slow(20000) }).toBeGreaterThan(1);
   // And until they have all come: the view's own answer redraws them, and
   // a tap as it does lands on the chart.
-  let drawn = -1;
-  await expect(async () => {
-    const now = (await airportMarks(page)).length;
-    const still = now === drawn;
-    drawn = now;
-    await page.waitForTimeout(500);
-    expect(still).toBe(true);
-  }).toPass({ timeout: slow(15_000) });
+  await steady(async () => (await airportMarks(page)).length, { gap: 500, timeout: slow(15_000) });
   // One whose middle nothing else covers -- the chart itself under it, no
   // marker, control or route mark -- asked again while the map draws.
   const find = async () => {

@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { frontSheet, grabberTo, searchAirports, settle, slow } from "./helpers";
 import { expectPage, expectSearchInUse, showPage, toggle } from "./sheetPages";
+import { watchFor } from "./pacing";
 
 /**
  * The first flight (FirstFlight, useFirstFlight; the owner's option A,
@@ -134,13 +135,15 @@ test("a new pilot is welcomed, Later leaves the one search ready, the pick is pl
   await expect(tip).toHaveCount(0);
 
   // Seen, both: neither offered again on this device, even with no route.
+  // Each looked for over the time it took to come the first time: what is
+  // claimed is that it does not, which only a window of time shows.
   await page.goto("/app/plan");
   await settle(page);
-  await page.waitForTimeout(1500);
+  await watchFor(page, 1500);
   await expect(welcome).toHaveCount(0);
   await page.goto("/app/plan?dep=C81&dest=KMSN");
   await settle(page);
-  await page.waitForTimeout(1500);
+  await watchFor(page, 1500);
   await expect(tip).toHaveCount(0);
 });
 
@@ -168,7 +171,7 @@ test("the FPL tip stays off the sheet all the way up, and once the toggle has be
   await expectPage(page, 1);
   await showPage(page, 0);
   await expectPage(page, 0);
-  await page.waitForTimeout(1000);
+  await watchFor(page, 1000);
   await expect(tip).toHaveCount(0);
 });
 
