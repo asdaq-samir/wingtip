@@ -61,7 +61,11 @@ test(
     // Opened as the one search alone on a phone, at the owner's ask
     // (MapPanel); a desktop's side panel out from the start, the search
     // and the plan in it (the one-search design's Desktop, 2026-11-09).
-    const opened = page.viewportSize()!.width < 660 ? "peek" : "half";
+    // An iPad, touch alone at any width, starts as the pill too: only a
+    // desktop (1024 and up, with a mouse or a trackpad) opens it at half
+    // (MapPage, isDesktopNow).
+    const desktop = await page.evaluate(() => matchMedia("(min-width: 1024px) and (pointer: fine)").matches);
+    const opened = desktop ? "half" : "peek";
     await expect(page.locator('[data-slot="map-panel"]')).toHaveAttribute("data-panel", opened);
     expect(await consoleSheet(page).count()).toBe(0);
 

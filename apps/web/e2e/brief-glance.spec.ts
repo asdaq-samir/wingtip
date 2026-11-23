@@ -60,7 +60,10 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
       weather_unavailable: [],
     });
   });
-  await page.goto("/app/plan?dep=C81&dest=KDLH&view=full");
+  // A short flight, well within a 172's tanks: C81 to KDLH, 290 nm, is
+  // short of fuel and its reserve on a day of headwinds (a no-go, 91.151),
+  // and the verdict then names the stops alone, not the runways' caution.
+  await page.goto("/app/plan?dep=C81&dest=KMSN&view=full");
   await settle(page);
   await expect(page.getByTestId("navlog-ete")).toBeVisible({ timeout: slow(120000) });
   await openBrief(page);
@@ -121,7 +124,7 @@ test("the Brief opens on the verdict and at most three one-sentence lines, each 
   // lowest ceiling forecast along the route, the route's strongest
   // headwind, and the fuel beyond the reserve, where a C172 is picked.
   const enroute = glance.getByTestId("brief-glance-enroute");
-  await expect(enroute).toContainText("Lowest ceiling");
+  await expect(enroute).toContainText("Lowest Ceiling");
   await expect(enroute).toContainText("Most Headwind");
   await expect(enroute).not.toContainText("Wind aloft");
   await expect(glance.getByTestId("brief-glance-preflight")).toContainText("Beyond Reserve");
