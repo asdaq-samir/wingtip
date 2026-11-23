@@ -3,7 +3,7 @@ import { tailTyped } from "../../../lib/aircraftChoice";
 import { riseToSee } from "../../plan";
 import { usePreferences } from "../../../lib/preferences";
 import { useRadioActions } from "../../../lib/atcRadio";
-import { useSearchPick } from "../../../lib/oneSearch";
+import { pickInUse, useSearchPick } from "../../../lib/oneSearch";
 import { usePickScope } from "./usePickScope";
 import { pickRefusal } from "../../../lib/pickRefusal";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
@@ -41,11 +41,13 @@ export function useOneSearch(vm: PlanSlices<"cards" | "map" | "plan" | "route" |
   const sent = useSearchResults((s) => s.sent);
   const [direct, setDirect] = useState(false);
   // A picker's ask: airports only (the waypoints too for a stop), its pick.
-  const { pick, from: pickFrom } = usePickScope(vm.view.view); // pickIdent: its airport, picked or typed
+  const { pick: asked, from: pickFrom } = usePickScope(vm.view.view); // pickIdent: its airport, picked or typed
+  const [focused, setFocused] = useState(false);
+  // A waiting ask (the first flight's) takes no tap until the field is used.
+  const pick = pickInUse(asked, focused || typed.length > 0);
   // Read while a picker asks too, for the closed fields it refuses (pickIdent).
   const index = useAirportIndex(true, typed.length > 0 || !!pick);
   const [problem, setProblem] = useState<string | null>(null);
-  const [focused, setFocused] = useState(false);
   const directTo = useRadioActions((s) => s.directTo);
 
   // An N-number is the engine's to tell (tailTyped): none until it is there.

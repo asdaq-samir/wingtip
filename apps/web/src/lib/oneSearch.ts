@@ -56,6 +56,19 @@ export interface SearchPick {
 }
 export const useSearchPick = create<{ pick: SearchPick | null; fields: number }>(() => ({ pick: null, fields: 0 }));
 
+/**
+ * The ask the search's taps answer: a waiting one (the first flight's
+ * destination) only once the pilot has used the field -- tapped it or
+ * typed in it. Before that the search is at rest, and a tap on Nearest, a
+ * Favorite or a Recent opens the airport's card, as outside a pick
+ * (rules.md, the one search). It took the tap as the destination, and the
+ * pilot's first tap is most often the nearest field, where he is: the
+ * first flight then asked for the destination again (dep === dest), a
+ * "Destination" picker out of nowhere (the owner's iPhone, 2026-11-23: "I
+ * see this when I tap nearest airport after fresh load").
+ */
+export const pickInUse = (pick: SearchPick | null, used: boolean): SearchPick | null => (pick && (!pick.waiting || used) ? pick : null);
+
 /** The one search asked to pick an airport for a picker. */
 export function askSearchPick(pick: SearchPick) {
   useSearchPick.setState({ pick });
