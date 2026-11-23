@@ -32,8 +32,6 @@ const box = (over: Partial<RouteBoxProps>) => (
         stops={[]}
         dest=""
         waypoints={new Set()}
-        airspaceOf={() => undefined}
-        metarColourOf={() => undefined}
         altitudeAt={() => ({ feet: 0, from: "plan" }) as unknown as ReturnType<RouteBoxProps["altitudeAt"]>}
         onAltitudeChange={() => {}}
         onChange={() => {}}

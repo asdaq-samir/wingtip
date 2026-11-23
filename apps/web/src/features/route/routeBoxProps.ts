@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import type { UnknownPlace } from "../../lib/api/client";
 import type { Detour, FuelStopSuggestion } from "../../lib/api/types";
-import type { AirspaceClass } from "../../lib/preferences";
 import type { TypedProcedure } from "../../lib/procedures";
 import type { PointAltitude } from "./PointAltitudeDialog";
 import type { RouteProcedure } from "./RouteChips";
@@ -12,10 +11,6 @@ import type { RouteParts } from "./routeEdit";
 export interface RouteBoxProps extends RouteParts {
   /** Which points are waypoints, flown through: in the sectional's magenta. */
   waypoints: Set<string>;
-  /** An airport's airspace class, as the course came with it. */
-  airspaceOf: (ident: string) => AirspaceClass | undefined;
-  /** An airport's METAR colour, for the pills coloured by the weather. */
-  metarColourOf: (ident: string) => string | undefined;
   /** The altitude at a point, which its menu offers to change: a
    *  waypoint's cruise there, an airport's pattern. */
   altitudeAt: (ident: string, waypoint: boolean) => PointAltitude;
