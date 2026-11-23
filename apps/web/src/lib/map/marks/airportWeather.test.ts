@@ -20,10 +20,6 @@ const pin = (w: Partial<PinWeather>): PinWeather => ({
 
 // The rules the map calls, from the fixture the engine and the phones read.
 describe("the airport weather marks, as the shared fixture says", () => {
-  it("least_crosswind", () => {
-    for (const c of fixture.leastCrosswind) expect(callEngine("least_crosswind", c.input as never), c.why).toEqual(c.answer);
-  });
-
   it("the barb drawn zoomed out or not, red or not", () => {
     for (const c of fixture.windArrow) {
       const marks = weatherMarksOf(

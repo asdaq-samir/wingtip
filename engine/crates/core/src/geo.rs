@@ -303,13 +303,25 @@ pub fn box_over(points: &[(f64, f64)], pad_nm: f64) -> Option<(f64, f64, f64, f6
 /// degrees) holds the point (x, y), by the even-odd rule: a ray east of
 /// the point crosses its edges an odd number of times. A point on an
 /// edge may read either way. The one copy for the airspace ahead, the
-/// map's overlays in view and 91.119(b)'s congested areas; fewer than
-/// three points hold nothing.
+/// map's overlays in view, 91.119(b)'s congested areas, the route options'
+/// areas and 91.177's mountainous ones; fewer than three points hold
+/// nothing.
 pub fn ring_holds(ring: &[(f64, f64)], x: f64, y: f64) -> bool {
-    let Some(&last) = ring.last() else { return false };
+    crossings(ring, |&p| p, x, y)
+}
+
+/// ring_holds for a ring of (lat, lon) points, as the FAA's areas keep
+/// theirs: the same ray east, so a point reads as it does there.
+pub fn ring_holds_lat_lon(ring: &[(f64, f64)], lat: f64, lon: f64) -> bool {
+    crossings(ring, |&(lat, lon)| (lon, lat), lon, lat)
+}
+
+fn crossings<P>(ring: &[P], xy: impl Fn(&P) -> (f64, f64), x: f64, y: f64) -> bool {
+    let Some(last) = ring.last().filter(|_| ring.len() >= 3) else { return false };
     let mut inside = false;
-    let mut prev = last;
-    for &cur in ring {
+    let mut prev = xy(last);
+    for p in ring {
+        let cur = xy(p);
         let ((xi, yi), (xj, yj)) = (cur, prev);
         if (yi > y) != (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi {
             inside = !inside;
@@ -317,6 +329,18 @@ pub fn ring_holds(ring: &[(f64, f64)], x: f64, y: f64) -> bool {
         prev = cur;
     }
     inside
+}
+
+/// Whether (lat, lon) lies on an edge of a ring of (lat, lon) points (to
+/// within 1e-12 of the cross product, in square degrees), for an area
+/// whose edge counts as in, as shapely's intersects counts it.
+pub fn on_ring_lat_lon(ring: &[(f64, f64)], lat: f64, lon: f64) -> bool {
+    let (x, y) = (lon, lat);
+    (0..ring.len()).any(|i| {
+        let (a, b) = (ring[i], ring[(i + 1) % ring.len()]);
+        let cross = (b.1 - a.1) * (y - a.0) - (b.0 - a.0) * (x - a.1);
+        cross.abs() < 1e-12 && x >= a.1.min(b.1) && x <= a.1.max(b.1) && y >= a.0.min(b.0) && y <= a.0.max(b.0)
+    })
 }
 
 /// Whether a path of (lat, lon) points crosses or lies in a polygon given
@@ -330,20 +354,7 @@ pub fn path_meets_polygon(path: &[(f64, f64)], ring: &[(f64, f64)]) -> bool {
         return false;
     }
     let n = ring.len();
-    let inside = |p: (f64, f64)| {
-        let mut holds = false;
-        for i in 0..n {
-            let (a, b) = (ring[i], ring[(i + 1) % n]);
-            if (a.0 > p.0) != (b.0 > p.0) {
-                let lon = a.1 + (p.0 - a.0) / (b.0 - a.0) * (b.1 - a.1);
-                if p.1 < lon {
-                    holds = !holds;
-                }
-            }
-        }
-        holds
-    };
-    if path.iter().any(|&p| inside(p)) {
+    if path.iter().any(|&(lat, lon)| ring_holds_lat_lon(ring, lat, lon)) {
         return true;
     }
     type P = (f64, f64);

@@ -45,16 +45,7 @@ pub const CROSS_COUNTRY_NM: f64 = 50.0;
 
 /// A day as (year, month, day); Err where `iso` is no such day.
 pub(crate) fn day(name: &str, iso: &str) -> Result<(i64, u32, u32), String> {
-    let bad = || format!("{name}: {iso:?} is not a day (YYYY-MM-DD)");
-    let b = iso.as_bytes();
-    if b.len() != 10 || b[4] != b'-' || b[7] != b'-' || ![0, 1, 2, 3, 5, 6, 8, 9].iter().all(|&i| b[i].is_ascii_digit()) {
-        return Err(bad());
-    }
-    let (y, m, d) = (iso[..4].parse().map_err(|_| bad())?, iso[5..7].parse().map_err(|_| bad())?, iso[8..].parse().map_err(|_| bad())?);
-    if !(1..=12).contains(&m) || d < 1 || d > days_in_month(y, m) {
-        return Err(bad());
-    }
-    Ok((y, m, d))
+    crate::time::parse_date(iso).ok_or_else(|| format!("{name}: {iso:?} is not a day (YYYY-MM-DD)"))
 }
 
 /// A calendar month as a count of months, so months add and compare.

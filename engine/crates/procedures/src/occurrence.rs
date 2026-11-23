@@ -47,7 +47,7 @@
 
 use wingtip_core::geo::distance_nm;
 use wingtip_core::json::{self, Value};
-use wingtip_core::time::{days_from_civil, days_in_month, DAY_S};
+use wingtip_core::time::{days_from_civil, parse_date_loose, DAY_S};
 
 /// The window opens this long before the time the report gives, minutes.
 pub const WINDOW_BEFORE_MIN: f64 = 60.0;
@@ -232,9 +232,7 @@ fn text<'a>(v: &'a Value, key: &str) -> Option<&'a str> {
 
 /// "2026-11-08" as days since 1970; None for a day its month lacks ("2026-02-30").
 fn day_of(text: &str) -> Option<i64> {
-    let mut parts = text.trim().split('-');
-    let (y, m, d) = (parts.next()?.parse().ok()?, parts.next()?.parse().ok()?, parts.next()?.parse().ok()?);
-    (parts.next().is_none() && (1..=12).contains(&m) && (1..=days_in_month(y, m)).contains(&d)).then(|| days_from_civil(y, m, d))
+    parse_date_loose(text).map(|(y, m, d)| days_from_civil(y, m, d))
 }
 
 /// "14:25" as minutes after midnight.

@@ -1,8 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { callEngine, type EngineInput } from "../../lib/engine/engine";
 import { zoneName } from "../../lib/format";
 import type { DepartureWindowRun, WindowHour } from "../../lib/api/types";
-import fixture from "../../lib/fixtures/departureWindow.json";
 import { HOUR_FINDING, bestLine, clock, dayOf, hourFigures, hourLabel } from "./hourWords";
 
 // On this device's clock, whatever its zone: 10 November 2026, 04:30, and
@@ -20,14 +18,6 @@ const hour = (over: Partial<WindowHour> = {}): WindowHour => ({
   night_passengers: false,
   margin: 1.2,
   ...over,
-});
-
-// The engine's rule as the web's build of it answers the shared cases
-// (engine/facade/tests/departure_window.rs), the planner asking the same.
-describe("the engine's departure_window", () => {
-  test.each(fixture.cases)("$name", ({ input, answer }) => {
-    expect(callEngine("departure_window", input as unknown as EngineInput<"departure_window">)).toEqual(answer);
-  });
 });
 
 describe("an hour as the strip writes it", () => {

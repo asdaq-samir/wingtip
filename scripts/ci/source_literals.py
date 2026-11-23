@@ -19,7 +19,10 @@ def text(path: str) -> str:
         return ""
 
 
-UNIT = r"\b(0\.3048|3\.2808\d*|6076(\.\d+)?|1852(\.0)?|1\.9438\d*)\b"
+# With the metres in a degree, 111,320 (and 111.32 km), in the forms its
+# copies took (simplicity round 4's L3): its homes are wingtip/units.py and
+# the web's lib/geo.ts.
+UNIT = r"\b(0\.3048|3\.2808\d*|6076(\.\d+)?|1852(\.0)?|1\.9438\d*|111_?320(\.0*)?|111\.32\d*)\b"
 # The engine's unit literals, set or used inline: the foot, the nautical
 # and statute miles, their rounded ratios (nautical miles in a statute
 # mile, 0.8689...; statute in a nautical, 1.1507...; knots in a metre a

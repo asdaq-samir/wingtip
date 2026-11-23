@@ -57,6 +57,37 @@ pub fn nearest_day(near: i64, day: u32, hour: u32, minute: u32) -> Option<i64> {
     best
 }
 
+/// A day of the calendar written "YYYY-MM-DD", exactly ten characters
+/// (ISO 8601's calendar date, as the gateway, a logbook and the FAA's
+/// XNOTAMs write one), as (year, month, day); None for anything else, a
+/// day its month lacks ("2026-02-30") included. The engine's one strict
+/// reader of a date.
+pub fn parse_date(text: &str) -> Option<(i64, u32, u32)> {
+    let b = text.as_bytes();
+    if b.len() != 10 || b[4] != b'-' || b[7] != b'-' || ![0, 1, 2, 3, 5, 6, 8, 9].iter().all(|&i| b[i].is_ascii_digit()) {
+        return None;
+    }
+    let (y, m, d) = (text[..4].parse().ok()?, text[5..7].parse().ok()?, text[8..].parse().ok()?);
+    real_day(y, m, d)
+}
+
+/// parse_date as an app's own field may send one: spaces round it, and a
+/// month or day of one digit ("2026-3-7"). None for a day its month lacks.
+pub fn parse_date_loose(text: &str) -> Option<(i64, u32, u32)> {
+    let mut parts = text.trim().split('-');
+    let (y, m, d) = (parts.next()?.parse().ok()?, parts.next()?.parse().ok()?, parts.next()?.parse().ok()?);
+    if parts.next().is_some() {
+        return None;
+    }
+    real_day(y, m, d)
+}
+
+/// (year, month, day) where the calendar has that day; the month is
+/// checked before its length is asked.
+fn real_day(y: i64, m: u32, d: u32) -> Option<(i64, u32, u32)> {
+    ((1..=12).contains(&m) && d >= 1 && d <= days_in_month(y, m)).then_some((y, m, d))
+}
+
 /// Unix seconds as ISO 8601 UTC, "2026-11-02T14:00:00Z".
 pub fn iso(t: i64) -> String {
     let (y, m, d) = civil_from_days(t.div_euclid(DAY_S));
@@ -73,11 +104,7 @@ pub fn parse_iso(text: &str) -> Option<i64> {
     let t = text.trim();
     let body = t.strip_suffix('Z').or_else(|| t.strip_suffix("+00:00")).unwrap_or(t);
     let (date, clock) = body.split_once('T').or_else(|| body.split_once(' '))?;
-    let mut d = date.split('-');
-    let (y, m, day) = (d.next()?.parse::<i64>().ok()?, d.next()?.parse::<u32>().ok()?, d.next()?.parse::<u32>().ok()?);
-    if d.next().is_some() || !(1..=12).contains(&m) || day == 0 || day > days_in_month(y, m) {
-        return None;
-    }
+    let (y, m, day) = parse_date_loose(date)?;
     let whole = clock.split('.').next()?;
     let mut c = whole.split(':');
     let (h, mi) = (c.next()?.parse::<i64>().ok()?, c.next()?.parse::<i64>().ok()?);
@@ -104,6 +131,22 @@ mod tests {
         assert_eq!(parse_iso("2026-09-20T01:41:00-05:00"), None);
         assert_eq!(parse_iso("2026-02-30T01:41:00Z"), None);
         assert_eq!(parse_iso(""), None);
+    }
+
+    #[test]
+    fn reads_a_date_strictly_and_loosely() {
+        assert_eq!(parse_date("2028-02-29"), Some((2028, 2, 29)));
+        assert_eq!(parse_date("2026-02-29"), None);
+        assert_eq!(parse_date("2026-13-01"), None);
+        assert_eq!(parse_date("2026-3-07"), None);
+        assert_eq!(parse_date(" 2026-03-07"), None);
+        assert_eq!(parse_date("2026-03-07T00:00"), None);
+        assert_eq!(parse_date("2026/03/07"), None);
+        assert_eq!(parse_date("2026-03-é7"), None);
+        assert_eq!(parse_date_loose(" 2026-3-7 "), Some((2026, 3, 7)));
+        assert_eq!(parse_date_loose("2026-04-31"), None);
+        assert_eq!(parse_date_loose("2026-04-01-02"), None);
+        assert_eq!(parse_date_loose("2026-04"), None);
     }
 
     #[test]
