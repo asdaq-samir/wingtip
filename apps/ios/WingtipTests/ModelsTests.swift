@@ -172,7 +172,7 @@ struct TrainingTests {
         let json = """
         {"fullName":"Sam Pilot","lessons":[],"kinds":[],"knowledgeTestCodes":[],"endorsements":[],
          "instructors":[{"id":3,"email":"cfi@example.com","name":"Ann CFI","certificate":"1234567CFI","accepted":true,"askedAt":"2026-10-13T10:00:00Z"}],
-         "signed":[{"id":9,"code":"A.6","text":"I certify that…","signedOn":"2026-10-14","until":"2026-11-13","voided":false,"digest":"x","signature":"y","studentName":"Sam Pilot","fields":{}}],
+         "signed":[{"id":9,"code":"A.6","text":"I certify that…","signedOn":"2026-10-14","until":"2026-11-13","voided":false,"instructorVerified":true,"digest":"x","signature":"y","studentName":"Sam Pilot","fields":{}}],
          "reviews":[{"id":1,"flightOn":"2026-10-20","makeModel":"PA-28-140","checks":[{"label":"Route","detail":"KRZL to KLAF","rule":"61.93(c)(3)","met":true}],
                      "answeredAt":null,"askedAt":"2026-10-19T10:00:00Z","declinedNote":null,"instructorName":"Ann CFI","note":null,"studentId":null,"studentName":"Sam Pilot","endorsement":null,"flight":{"id":40,"departureIdent":"KRZL","destinationIdent":"KLAF","stops":[],"createdAt":"2026-10-19T09:00:00Z"}}],
          "experience":[{"key":"xc","label":"Cross-country solo","rule":"61.109(a)(5)","unit":"h","have":2.5,"need":5,"met":false}]}
