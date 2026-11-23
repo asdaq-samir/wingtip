@@ -133,7 +133,7 @@ recommendation):
 |---|---|
 | M1: every per-caller limit was per IPv6 address, and one /64 holds 2^64 | `SlidingWindowLimiter.clientOf` counts an IPv6 caller by its /64: the sign-in and deletion links, connector registrations, Apple nonces, the account look-up, diagnostics, speed samples, instructor invites and link checks. AWS WAF's rate rules still count per address; WAF has no prefix key. |
 | M4: anonymous planner routes had no limit beyond the two tile paths | A second rule in `TileRateLimit`: 3,000 requests to any other `/api/planner/` path per address per five minutes, then 429. |
-| The old L4's defence in depth: the internal flight writes trusted the planner's word on the scope | `POST`, `PUT` and `DELETE /internal/mcp/flights` need the pilot's own access token (`X-Connector-Token`), active and granted `wingtip:flights` (`ConnectorGrants.mayChangeFlights`); a 403 otherwise. A connection consented to before V53 refreshes to the old `wingtip:write` and is refused a save (`ConnectorGrantsTest`). The planner passes the token it was sent on those three calls (app/mcp/records.py, the connector's half). |
+| The old L4's defence in depth: the internal flight writes trusted the planner's word on the scope | `POST`, `PUT` and `DELETE /internal/mcp/flights` need the pilot's own access token (`X-Connector-Token`), active and granted `wingtip:flights` (`ConnectorGrants.mayChangeFlights`); a 403 otherwise. A connection consented to before V53 refreshes to the old `wingtip:write` and is refused a save (`ConnectorGrantsTest`). The planner passes the token it was sent on those three calls and hands the pilot the 403's own words (app/mcp/records.py, the connector's half). |
 | L1: `/oauth2/revoke` refused every connector client, all public | `PublicRefresh` admits a public client there by its id, and Spring's provider revokes only a token issued to it; the metadata lists `none` for revocation. |
 | L2: an authorization left on the consent page was never deleted | `created_at` (V54); one with no token is let go a day on. |
 | L3: anyone could block a pilot's web account deletion for an hour | Counted as the sign-in link is, the caller first (`allowLink`); the look-up and the row off the request's thread. |
@@ -142,6 +142,7 @@ recommendation):
 | L7: the review code needed only 20 characters, and verifying had no limit | 32 or more base64url characters; every verify counted per caller (`APP_MAGIC_LINK_PER_CLIENT_PER_HOUR`). |
 | L8: Google's and Apple's tokens stayed in Boot's in-memory store | Let go of at sign-in, once Apple's refresh token is kept. |
 | L9 (the gateway's half): a signed-in write with no pilot reached the planner without `X-Pilot-Id` | A 401. |
+| L9 (the planner's half): a checkpoint note written without `X-Pilot-Id` became everyone's shared note | A 401 unless the stack is the one-user one (`APP_OPEN_WRITES`, the gateway's `app.open-writes`): `app/routers/notes.py`. |
 | L13: `X-Forwarded-Port` and `-Ssl` reached Spring | See L2 above. |
 | Reuse M2: the client's address worked out by hand, and X-Forwarded-Host believed from anyone | The RemoteIpValve as in L2; a share link is built from `APP_PUBLIC_BASE_URL` wherever it is set (`FlightShareController.origin`). |
 

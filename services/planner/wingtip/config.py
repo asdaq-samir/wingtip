@@ -217,6 +217,11 @@ class Settings(BaseSettings):
     mcp_resource_url: str | None = None
     #: The secret the gateway's /internal/mcp records ask for (MCP_INTERNAL_TOKEN).
     mcp_internal_token: str | None = None
+    #: The one-user stack (APP_OPEN_WRITES, the gateway's app.open-writes,
+    #: "true" there too): nobody signs in, so a checkpoint note written
+    #: with no pilot named is the shared one. Off, such a write is refused
+    #: (app.routers.notes, the security review of 2026-11-23, L9).
+    app_open_writes: bool = False
     #: Tool calls one pilot's connector may make a minute and a day (app.mcp.limits).
     mcp_calls_per_minute: int = 30
     mcp_calls_per_day: int = 600
