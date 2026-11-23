@@ -12,8 +12,9 @@ import SwiftUI
 /// red under it (decision 0043). Stops are swiped off and dragged into
 /// another order with the system's list edits (Edit at the header's
 /// right); the ends are changed, never removed. Add a Stop is the last
-/// row, Type Route at its end (the route typed or pasted whole), the fuel
-/// stops' button after it.
+/// row, the round toggle at its end that turns the list into the route's
+/// box of pills in the same place (RouteBoxToggle, RouteBoxSection), the
+/// fuel stops' button after it.
 struct RouteTimelineSection: View {
     @Environment(Plan.self) private var plan
     let cards: RouteFieldCards
@@ -36,13 +37,14 @@ struct RouteTimelineSection: View {
             }
             .onDelete { plan.removeTimeline(at: $0) }
             .onMove { plan.moveTimeline(from: $0, to: $1) }
-            // Type Route at Add a Stop's end, as the web's keyboard chip.
+            // The box's toggle at Add a Stop's end, the card's lower right,
+            // where the box's own is once it is turned (the web's BoxToggle).
             HStack {
                 Button { ask(.addStop) } label: { Label(Wording.addStop, systemImage: "plus") }
                     .buttonStyle(.borderless)
                     .accessibilityIdentifier("timeline-add-stop")
                 Spacer(minLength: WingtipSpace.sm)
-                TypeRouteButton()
+                RouteBoxToggle()
             }
             FuelStopsButton()
         } header: {
@@ -98,7 +100,7 @@ struct TimelinePointRow: View {
         let category = point.field ? cards.place(point.ident)?.metar?.flightCategory : nil
         return TimelineColumns(top: point.index > 0 || before, bottom: !last || after, hairline: before) {
             Menu {
-                RoutePointActions(ident: point.ident, role: role, change: change)
+                RoutePointActions(ident: point.ident, role: point.actionRole, change: change)
             } label: {
                 TimelineMark(point: point, problem: problem != nil, category: category).hitArea()
             }
@@ -134,14 +136,6 @@ struct TimelinePointRow: View {
                     TimelineFieldParts(point: point, cards: cards, clock: clock).padding(.bottom, WingtipSpace.sm)
                 }
             }
-        }
-    }
-
-    private var role: RoutePointActions.Role {
-        switch point.role {
-        case .departure: .departure
-        case .stop: .stop
-        case .destination: .destination
         }
     }
 
