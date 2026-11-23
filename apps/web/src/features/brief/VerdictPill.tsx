@@ -17,7 +17,8 @@ const WASH: Partial<Record<Finding, string>> = { stop: "bg-destructive/10", caut
  * said again over Preflight's checks. No live region on it, as it is there
  * when the Brief opens; its arrival is said once (useAnnounce), not again
  * while the pilot reads (docs/design/web.md §5). The same width from the
- * first frame while checking, so the head does not jump (FL-21).
+ * first frame while checking, and one line
+ * while still checking, so the head does not jump (FL-21).
  */
 export default function VerdictPill() {
   const items = useVerdict((v) => v.items);
@@ -36,7 +37,17 @@ export default function VerdictPill() {
       data-finding={verdict?.finding}
     >
       <FindingIcon finding={verdict?.finding ?? "pending"} className="size-4" />
-      {verdict ? <span className="min-w-0 text-balance">{verdict.words}</span> : <SkeletonLine className="w-40" />}
+      {/* Kept to one line while still checking (the findings' rest row says
+          what is left): "Still checking: Weather, TFRs & special use, Risk"
+          took two lines at a phone's width and the verdict that followed
+          one, and the head and the whole Brief under it moved up a line as
+          it came (0.017 of layout shift on opening, the r4-specs run of
+          2026-11-23; FL-21's fix, lost when the verdict became this pill). */}
+      {verdict ? (
+        <span className={cn("min-w-0", verdict.finding === "pending" ? "truncate" : "text-balance")}>{verdict.words}</span>
+      ) : (
+        <SkeletonLine className="w-40" />
+      )}
     </p>
   );
 }
