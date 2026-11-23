@@ -20,7 +20,9 @@ enum SavedPicks {
     }
 
     /// The characters a value keeps as they are; every other one is
-    /// percent-encoded (a comma %2C, a colon %3A).
+    /// percent-encoded (a comma %2C, a colon %3A). A "+", which the
+    /// gateway allows, is encoded too, as the web's URLSearchParams does,
+    /// since a query reads a bare "+" as a space.
     private static let kept = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._~-")
 
     /// The picks to save: only those set, the fuel stops still stops; nil

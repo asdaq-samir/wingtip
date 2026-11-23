@@ -89,7 +89,9 @@ final class FieldNotams {
                 tfrs[notam.id] = try? FieldNotamWords.readTfr(notam)
             } else {
                 readings[notam.id] = try? Engine.notamRead(text: notam.raw, idents: idents)
-                cards[notam.id] = try? Engine.notamCard(text: notam.raw, idents: idents)
+                // The feed's end too: a firm one keeps a permanent NOTAM from
+                // reading "until the charts are updated" (notam_card).
+                cards[notam.id] = try? Engine.notamCard(text: notam.raw, idents: idents, ends: notam.ends)
             }
         }
         return (readings, tfrs, cards)
@@ -148,7 +150,7 @@ final class FieldNotams {
 
     /// Its time lines (FieldNotamWords.timeLines), now.
     func times(_ notam: APIRankedNotam, now: Date = .now) -> [FieldNotamWords.TimeLine] {
-        FieldNotamWords.timeLines(notam, read: reading(notam), now: now)
+        FieldNotamWords.timeLines(notam, read: reading(notam), now: now, zone: zone)
     }
 
     /// The NOTAMs by what they are about, the engine's heading (Runway,

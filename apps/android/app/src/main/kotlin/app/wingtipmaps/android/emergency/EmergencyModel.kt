@@ -179,7 +179,7 @@ class EmergencyModel(
         // Each field's reported visibility beside the engine's weather line
         // (EmergencyMetar's visibility_sm and visibility_plus, as the web's
         // Emergency rows say it); none where the report has no visibility.
-        val visibility = got?.fields.orEmpty().mapNotNull { f -> f.metar?.visibilitySm?.let { f.ident to Format.visibility(it, f.metar.visibilityPlus == true) } }.toMap()
+        val visibility = got?.fields.orEmpty().mapNotNull { f -> f.metar?.visibilitySm?.let { Format.visibility(it, f.metar.visibilityPlus == true) }?.let { f.ident to it } }.toMap()
         _state.update { it.copy(ranked = ranked ?: it.ranked, picked = picked ?: it.picked, phone = field?.phone, metar = field?.metar?.raw, visibility = visibility) }
         refill()
     }

@@ -97,7 +97,7 @@ private struct NotamCardBody: View {
     let role: String?
 
     var body: some View {
-        let times = FieldNotamWords.cardTimes(notam, read: notams.reading(notam), permanent: card.permanent, zone: notams.zone)
+        let times = FieldNotamWords.cardTimes(notam, read: notams.reading(notam), untilCharts: card.untilCharts, zone: notams.zone)
         VStack(alignment: .leading, spacing: WingtipSpace.md) {
             // The category is a label only where the title says what
             // happened; otherwise it is the title already.
@@ -113,11 +113,16 @@ private struct NotamCardBody: View {
                 .accessibilityIdentifier("place-notam-effect")
             if !card.procedures.isEmpty { notAuthorized }
             if !times.isEmpty {
+                // Each line on one line, its shortest form where the
+                // fullest does not fit (FieldNotamWords.cardTimes).
                 VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                    ForEach(times, id: \.self) { Text($0) }
+                    ForEach(times, id: \.self) { forms in
+                        ViewThatFits(in: .horizontal) {
+                            ForEach(forms, id: \.self) { Text($0).lineLimit(1) }
+                        }
+                    }
                 }
                 .font(WingtipType.prose).monospacedDigit()
-                .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("place-notam-when")
             }
             if let place = notams.place(notam) {

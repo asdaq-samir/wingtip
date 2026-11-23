@@ -186,8 +186,9 @@ class StationMarksTest {
 
     @Test
     fun theLinesAreTheMetarsVisibilityAndCeiling() {
-        assertEquals("2 sm BR", StationLines.visibility(2.0, "BR"))
-        assertEquals("10 sm", StationLines.visibility(10.0, null))
+        // The miles are the engine's, held on the device
+        // (MagneticAndVisibilityEngineTest); the weather alone here.
+        assertEquals("BR", StationLines.visibility(null, "BR"))
         assertEquals("CIG 008", StationLines.ceiling(800.0, false))
         assertEquals("CIG ///", StationLines.ceiling(null, true))
         assertNull(StationLines.ceiling(null, false))

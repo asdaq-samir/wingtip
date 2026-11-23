@@ -29,10 +29,14 @@ import Testing
         #expect(FieldNotamWords.span(18 * 86400 + 3600) == "18d")
     }
 
-    @Test func aCornerIsMonthDayAnd24HourClock() throws {
-        let at = try #require(FieldNotamWords.date("2026-11-10T06:00:00Z"))
-        #expect(FieldNotamWords.corner(at, local: false, in: utc) == "11/10 06:00")
-        #expect(FieldNotamWords.corner(at, local: true, in: utc) == "11/10 06:00 local")
+    @Test func aTimeIsMonthDayClockAndTheFieldsZone() throws {
+        let at = try #require(FieldNotamWords.date("2026-05-27T18:43:00Z"))
+        let chicago = try #require(TimeZone(identifier: "America/Chicago"))
+        #expect(FieldNotamWords.when(at, zone: chicago, year: true) == "05/27/26 13:43 CDT")
+        #expect(FieldNotamWords.when(at, zone: chicago, year: false) == "05/27 13:43 CDT")
+        // No zone known: UTC, said so, never "local" or a Z.
+        #expect(FieldNotamWords.when(at, zone: nil, year: false) == "05/27 18:43 UTC")
+        #expect(FieldNotamWords.when(at, zone: chicago, year: true, clock: false) == "05/27/26")
         // A feed's time with no zone is UTC.
         #expect(FieldNotamWords.date("2026-11-10T06:00:00") == at)
     }
@@ -40,21 +44,36 @@ import Testing
     @Test func oneInForceSaysSinceAndEndsWithHowLongIsLeft() throws {
         let now = try #require(FieldNotamWords.date("2026-11-11T06:00:00Z"))
         let lines = FieldNotamWords.timeLines(notam("x", starts: "2026-11-10T06:00:00Z", ends: "2026-11-11T06:05:00Z"), read: reading(estimated: true),
-                                              now: now, in: utc)
-        #expect(lines == [.init(label: "Since", value: "11/10 06:00"), .init(label: "Ends", value: "11/11 06:05 local (est.) (in 5m)")])
+                                              now: now, zone: nil)
+        // An EST end is its time alone.
+        #expect(lines == [.init(label: "Since", value: "11/10 06:00 UTC"), .init(label: "Ends", value: "11/11 06:05 UTC (in 5m)")])
     }
 
     @Test func oneToComeSaysStartsHowSoonAndHowLong() throws {
         let now = try #require(FieldNotamWords.date("2026-11-10T00:00:00Z"))
         let lines = FieldNotamWords.timeLines(notam("x", inForce: false, starts: "2026-11-10T06:00:00Z", ends: "2026-11-10T11:45:00Z"), read: reading(),
-                                              now: now, in: utc)
-        #expect(lines == [.init(label: "Starts", value: "11/10 06:00 (in 6h00m)"), .init(label: "Ends", value: "11/10 11:45 local (in 11h45m)"),
+                                              now: now, zone: nil)
+        #expect(lines == [.init(label: "Starts", value: "11/10 06:00 UTC (in 6h00m)"), .init(label: "Ends", value: "11/10 11:45 UTC (in 11h45m)"),
                           .init(label: "Duration", value: "5h45m")])
     }
 
     @Test func aPermanentOneEndsPermanent() throws {
-        let lines = FieldNotamWords.timeLines(notam("x", starts: "2026-01-01T00:00:00Z"), read: reading(permanent: true), now: .now, in: utc)
-        #expect(lines == [.init(label: "Since", value: "01/01 00:00 local"), .init(label: "Ends", value: "Permanent")])
+        let lines = FieldNotamWords.timeLines(notam("x", starts: "2026-01-01T00:00:00Z"), read: reading(permanent: true),
+                                              now: try #require(FieldNotamWords.date("2026-06-01T00:00:00Z")), zone: nil)
+        #expect(lines == [.init(label: "Since", value: "01/01 00:00 UTC"), .init(label: "Ends", value: "Permanent")])
+    }
+
+    /// The card's lines, each its forms for one line: this year's year
+    /// dropped first, then the time to go; one until the charts Permanent.
+    @Test func theCardsLinesShortenRatherThanWrap() throws {
+        let now = try #require(FieldNotamWords.date("2026-11-23T00:00:00Z"))
+        let lines = FieldNotamWords.cardTimes(notam("x", inForce: false, starts: "2026-12-01T00:00:00Z", ends: "2028-05-27T18:43:00Z"),
+                                              read: reading(estimated: true), untilCharts: false, zone: nil, now: now)
+        #expect(lines[0] == ["Starts 12/01/26 00:00 UTC · in 8d", "Starts 12/01 00:00 UTC · in 8d", "Starts 12/01 00:00 UTC"])
+        #expect(lines[1] == ["Until 05/27/28 18:43 UTC · in 551d", "Until 05/27/28 18:43 UTC"])
+        let charts = FieldNotamWords.cardTimes(notam("x", starts: "2026-05-27T18:43:00Z", ends: "2028-05-27T18:43:00Z"),
+                                               read: reading(estimated: true), untilCharts: true, zone: nil, now: now)
+        #expect(charts[1] == ["Permanent"])
     }
 
     @Test func theNumberLosesTheFieldsOwnName() throws {

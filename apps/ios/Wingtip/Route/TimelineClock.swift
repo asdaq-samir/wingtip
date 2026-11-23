@@ -47,11 +47,12 @@ struct TimelineClock: Equatable, Sendable {
     /// A time as a point's line says it: the bare clock, or once zoned the
     /// point's own clock and its zone's short name.
     /// Its day too where it is not the day the flight left, "Tue 15:54"
-    /// (Format.arrivalDay).
+    /// (Format.arrivalDay), its day counted in the zone its clock is read
+    /// in: this iPhone's for the bare clock, so the two never disagree.
     func words(_ date: Date, at point: TimelinePoint) -> (time: String, zone: String?) {
-        let there = zoned ? zone(point) : departZone
-        let day = Format.arrivalDay(date, left: leaves, zone: there, leftZone: departZone).map { "\($0) " } ?? ""
-        guard zoned, let there else { return (day + Format.time(date), nil) }
+        let there = zoned ? zone(point) : TimeZone.current
+        let day = Format.arrivalDay(date, left: leaves, zone: there, leftZone: zoned ? departZone : .current).map { "\($0) " } ?? ""
+        guard zoned else { return (day + Format.time(date), nil) }
         return (day + date.formatted(Date.FormatStyle(date: .omitted, time: .shortened, timeZone: there)), there.abbreviation(for: date))
     }
 

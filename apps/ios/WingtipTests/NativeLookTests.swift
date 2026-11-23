@@ -29,8 +29,9 @@ struct NativeLookTests {
         #expect(places.first?.notams.map(\.id) == ["a", "c"])
     }
 
-    @Test func aRowSaysWhenInZuluAndDropsTheHead() {
-        #expect(NotamRows.when(notam("a", rank: 1, starts: "2026-11-09T14:00:00Z")) == "From 1400Z")
+    @Test func aRowSaysWhenInUtcAndDropsTheHead() throws {
+        #expect(NotamRows.when(notam("a", rank: 1, starts: "2026-11-09T14:00:00Z"), now: try #require(FieldNotamWords.date("2026-11-10T00:00:00Z")))
+                == "From 11/09 14:00 UTC")
         #expect(NotamRows.when(notam("a", rank: 1, inForce: true)) == "In effect now")
         #expect(!NotamRows.summary(notam("a", rank: 1)).hasPrefix("!OSH"))
         #expect(NotamRows.kind(notam("t", rank: 1, kind: "tfr")) == "TFR")

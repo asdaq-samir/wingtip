@@ -154,11 +154,12 @@ object Format {
     /** A visibility in statute miles as said, quarters as fractions (the
      *  web's lib/atis visibilityWords): "10 sm", "2½ sm", "¾ sm"; a
      *  report's "more than" (P6SM, FAA JO 7900.5; the planner's
-     *  visibility_plus) "6+ sm", as the web's miles(sm, plus). */
-    fun visibility(sm: Double, plus: Boolean): String = visibility(sm).let { if (plus) it.removeSuffix(" sm") + "+ sm" else it }
+     *  visibility_plus) "6+ sm", as the web's miles(sm, plus). None where
+     *  the engine does not answer, as reportedVisibility says. */
+    fun visibility(sm: Double, plus: Boolean): String? = visibility(sm)?.let { if (plus) it.removeSuffix(" sm") + "+ sm" else it }
 
-    fun visibility(sm: Double): String {
-        val (whole, fraction) = reportedVisibility(sm)
+    fun visibility(sm: Double): String? {
+        val (whole, fraction) = reportedVisibility(sm) ?: return null
         val part = when (fraction) {
             null -> ""
             "1/4" -> "¼"
@@ -173,10 +174,11 @@ object Format {
      *  writes it: 1.625 is (1, "5/8"), 10 is (10, null). The value is the
      *  engine's visibility_reportable, the reportable one at or below it
      *  (FMH-1 Table 6-1), as the web's reportedVisibility asks it: 5/8 was
-     *  written ".63", rounded up, and no report writes 11/16. Should the
-     *  engine not answer, the whole mile below, never more. */
-    fun reportedVisibility(sm: Double): Pair<Int, String?> {
-        val reported = Engine.visibilityReportable(sm).getOrNull() ?: kotlin.math.floor(sm + 1e-9)
+     *  written ".63", rounded up, and no report writes 11/16. The engine is
+     *  built in: a refusal is logged (Engine.rule) and gives none, never a
+     *  figure of our own, as iOS's reportedVisibility throws. */
+    fun reportedVisibility(sm: Double): Pair<Int, String?>? {
+        val reported = Engine.visibilityReportable(sm).getOrNull() ?: return null
         val whole = kotlin.math.floor(reported + 1e-9).toInt()
         // Every reportable value under 3 is a whole number of sixteenths.
         val sixteenths = ((reported - whole) * 16).roundToInt()

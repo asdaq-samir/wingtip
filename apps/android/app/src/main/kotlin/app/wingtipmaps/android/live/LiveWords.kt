@@ -100,7 +100,7 @@ object LiveWords {
             r.timeZ != null -> add(LiveRow("Observed", r.timeZ))
         }
         r.wind?.let { add(LiveRow("Wind", windWords(it, calm))) }
-        r.visibilitySm?.let { add(LiveRow("Visibility", Format.visibility(it))) }
+        r.visibilitySm?.let(Format::visibility)?.let { add(LiveRow("Visibility", it)) }
         if (r.sky.isNotEmpty()) add(LiveRow("Sky", skyWords(r.sky, ceilingFt)))
         r.tempC?.let { t -> add(LiveRow("Temperature", Format.temperature(t.toDouble()) + (r.dewpointC?.let { ", dew point ${Format.temperature(it.toDouble())}" } ?: ""))) }
         r.altimeterInhg?.let { add(LiveRow("Altimeter", Format.altimeter(it))) }

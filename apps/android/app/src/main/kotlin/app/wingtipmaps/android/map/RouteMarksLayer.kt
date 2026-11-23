@@ -8,6 +8,7 @@ import androidx.core.graphics.createBitmap
 import androidx.core.graphics.toColorInt
 import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.design.generated.WingtipMap
 import app.wingtipmaps.android.design.generated.WingtipMapLabel
 import app.wingtipmaps.android.design.generated.WingtipMapZoom
 import app.wingtipmaps.android.flight.OwnShip
@@ -48,7 +49,7 @@ import org.maplibre.android.style.sources.GeoJsonSource
  *   field on whichever side is free (variable anchors), so a Class B's
  *   or a chart field's ident gives way to it, never it to them.
  * - The tops of climb and descent from map.zoom.route-tags, a small
- *   diamond named on its white pill, none within OFF_THE_ENDS_NM of its
+ *   diamond named on its white pill, none within map.route-tag-off-ends-nm of its
  *   leg's ends (the field's own ident is there), giving way to the
  *   route's idents.
  * - Own ship's room: MapLibre's LocationComponent is drawn without a
@@ -81,19 +82,15 @@ object RouteMarksLayer {
     /** Own ship's fix, or none. */
     fun room(fix: OwnShip.Fix?) = shown.update { it.copy(ship = fix?.let { f -> f.lat to f.lon }) }
 
-    /** How near either end of its leg a top of climb or descent is not
-     *  drawn, nautical miles: there it sits on the field, whose own mark
-     *  says as much (the web's OFF_THE_ENDS_NM). A mark's room on the map,
-     *  not a figure of flight. */
-    private const val OFF_THE_ENDS_NM = 2.0
-
     /** Every leg's tops, not the first alone (the owner, 2026-11-20: "toc/tod
-     *  on every leg if possible"), off its ends. */
+     *  on every leg if possible"), off its ends by the token
+     *  map.route-tag-off-ends-nm: there it sits on the field, whose own
+     *  mark says as much; a mark's room on the map, not a figure of flight. */
     fun topsOf(legs: List<Leg>): List<Top> = legs.flatMap { leg ->
         listOfNotNull(
             leg.toc?.let { Triple("TOC", it.alongNm, it.lat to it.lon) },
             leg.tod?.let { Triple("TOD", it.alongNm, it.lat to it.lon) },
-        ).filter { (_, along, _) -> along >= OFF_THE_ENDS_NM && leg.distanceNm - along >= OFF_THE_ENDS_NM }
+        ).filter { (_, along, _) -> along >= WingtipMap.ROUTE_TAG_OFF_ENDS_NM && leg.distanceNm - along >= WingtipMap.ROUTE_TAG_OFF_ENDS_NM }
             .map { (words, _, at) -> Top(words, at.first, at.second) }
     }
 

@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.flight.StripTrack
 import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.map.StationLines
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -47,5 +48,14 @@ class MagneticAndVisibilityEngineTest {
         assertEquals(15 to null, Format.reportedVisibility(15.0))
         assertEquals(15 to null, Format.reportedVisibility(19.9))
         assertEquals(20 to null, Format.reportedVisibility(22.0))
+        // Whole miles, a report's "more than" (P6SM) and a station's
+        // line, the JVM tests' until the engine's refusal gave none there.
+        assertEquals("10 sm", Format.visibility(10.0))
+        assertEquals("0 sm", Format.visibility(0.0))
+        assertEquals("10+ sm", Format.visibility(10.0, plus = true))
+        assertEquals("2 sm BR", StationLines.visibility(2.0, "BR"))
+        assertEquals("10 sm", StationLines.visibility(10.0, null))
+        assertEquals("1,200 ft · 3 sm", Format.ceilingAndVisibility(1200.0, 3.0))
+        assertEquals("no ceiling · 6 sm", Format.ceilingAndVisibility(null, 6.0))
     }
 }
