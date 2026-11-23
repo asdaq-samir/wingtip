@@ -50,7 +50,9 @@ class Flight(BaseModel):
         description="Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
     )
     airplane_tail: str | None = Field(default=None, max_length=8, description="The pilot's own airplane, by tail number.")
-    rules: Literal["vfr", "ifr"] = "vfr"
+    rules: Literal["vfr", "ifr"] = Field(
+        default="vfr", description="VFR or IFR: the cruising altitudes (14 CFR 91.159 or 91.179) and the reserve (91.151 or 91.167)."
+    )
     saved_flight_id: int | None = Field(default=None, description="The saved flight this came from, if any.")
 
     @field_validator("departure", "destination", "airplane_tail")
@@ -117,28 +119,46 @@ def link_of(flight: Flight) -> str | None:
     return f"{base}/app/plan?{urlencode(address_of(flight))}" if base else None
 
 
+def _tanks(text: str) -> dict[str, float]:
+    """The address's `tanks` ("KOSH:30,KJVL:0") as the flight's fuel on board."""
+    pairs = (part.partition(":") for part in text.split(",") if ":" in part)
+    return {ident: float(gal) for ident, _, gal in pairs if ident and gal}
+
+
 def from_saved(saved: dict) -> Flight:
     """A saved flight (the gateway's FlightSummaryDto) as the flight to edit:
-    its route, its altitude and the procedures it was saved with (its
-    picks, as the address writes them), its airplane and its time."""
+    its route, its altitude, the procedures, the fuel stops, the fuel on
+    board and the rules it was saved with (its picks, as the address
+    writes them), its airplane and its time."""
     picks = {k: v[0] for k, v in parse_qs(saved.get("picks") or "").items()}
     altitude = picks.get("altitude_ft") or saved.get("cruiseAltitudeFt")
     return Flight(
         departure=saved["departureIdent"],
         destination=saved["destinationIdent"],
         stops=saved.get("stops") or [],
+        fuel_stops=[f for f in picks.get("fuel", "").split(",") if f],
         cruise_altitude_ft=int(altitude) if altitude and "altitude_ft" in picks else None,
         depart_at=saved.get("plannedFor"),
         procedures=picks.get("procs", ""),
+        fuel_on_board=_tanks(picks.get("tanks", "")),
         airplane_tail=saved.get("aircraftTailNumber"),
+        rules="ifr" if picks.get("rules") == "ifr" else "vfr",
         saved_flight_id=saved.get("id"),
     )
 
 
 def picks_of(flight: Flight) -> str | None:
     """What a saved flight keeps besides its route (the gateway's
-    SaveFlightRequest.picks, the address's PICK_KEYS): the altitude asked
-    and the procedures."""
-    picks = {"altitude_ft": flight.cruise_altitude_ft, "procs": flight.procedures}
+    SaveFlightRequest.picks, the address's PICK_KEYS): the altitude asked,
+    the procedures, the fuel stops (`fuel`), the fuel on board (`tanks`)
+    and IFR (`rules`; VFR is the default and not written), so a flight
+    opened again plans as it was saved (mcp audit 2026-11-23, M5)."""
+    picks = {
+        "altitude_ft": flight.cruise_altitude_ft,
+        "procs": flight.procedures,
+        "fuel": ",".join(flight.fuel_stops),
+        "tanks": tanks_text(flight),
+        "rules": "ifr" if flight.rules == "ifr" else None,
+    }
     text = urlencode({k: v for k, v in picks.items() if v not in (None, "")})
     return text or None

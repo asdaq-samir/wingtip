@@ -101,7 +101,7 @@ the AWS template and CI. Nothing critical. The outside test's brief is
 | L: the Apple nonce route made a 30-day session per call, for anyone | 30 an hour a client. |
 | L: the delete-account page's time told which addresses have an account (the mail sent on the request's thread) | Sent on a thread of its own. |
 | L: a provider's email change left magic-link sessions under the old, now free, address | They end with the change. |
-| L: NOTAM, METAR and remark text reached the pilot's AI app with nothing saying it is data, hidden Unicode included | The server's instructions say it is data; `calls.as_data` takes out control and format characters. |
+| L: NOTAM, METAR and remark text reached the pilot's AI app with nothing saying it is data, hidden Unicode included | The server's instructions say it is data; `calls.as_data` takes out control characters (C0 and C1), format characters and the variation selectors (round 4, Low 11). |
 | L: the batch routes took any number of asks | 500 a call. |
 | L: deleting an account on the web, or a session lapsing, kept the planner's answers at the pilot's points, the tracks and the trail; Android's sign-out kept OkHttp's cache | Forgotten as Log Out forgets them (`forgetWhereTheyFlew`); Android's wipe empties the cache. |
 | L: Android closed on a link with a bad escape (`wingtipmaps://plan?x=%`) | The part is left out. |

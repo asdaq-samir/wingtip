@@ -66,6 +66,10 @@ def _no_fuel_stop_said(totals: dict, suggested: bool, full: bool) -> str:
             "No fuel stop put in: the fields offered for fuel are on the route already, and it is still short: "
             "change the route or the fuel on board."
         )
+    margins = [totals.get("fuel_margin_gal"), *((h.get("totals") or {}).get("fuel_margin_gal") for h in totals.get("hops") or [])]
+    if any(m is not None and m < 0 for m in margins):
+        # Short with no stop offered and none said why: never "none needed".
+        return "No fuel stop put in, and the flight is short of fuel: change the route or the fuel on board."
     return "No fuel stops are needed: the tanks reach each landing with the reserve."
 
 
@@ -157,6 +161,16 @@ def register(apps: Apps) -> None:
             raise ToolError("Fuel stops need the airplane's fuel figures: pick one with pick_airplane (my_airplanes lists them).")
         p, _ = await flight_view.planned(flight, who)
         totals = p["totals"]
+        # No usable fuel or no margin is a fuel check the planner could not
+        # make: an own type's record may give only its speed and burn, and
+        # the planner offers no stop where the usable fuel is not known
+        # (wingtip.flight_legs.fuel_stops_of), a stop filling the tanks to
+        # it. Never "none needed" then (the mcp audit of 2026-11-23, H1).
+        if totals.get("usable_fuel_gal") is None or totals.get("fuel_margin_gal") is None:
+            raise ToolError(
+                f"Fuel stops need {flight.airplane_tail}'s usable fuel, which Wingtip does not have: add it to "
+                f"{flight.airplane_tail} in Wingtip's Setup, Airplanes, then ask again."
+            )
         suggested = [f for f in totals.get("fuel_stops", []) if f.get("reason", "fuel") == "fuel" and f.get("stops")]
         made = with_fuel_stops(flight.departure, flight.stops, suggested, MAX_STOPS)
         if not made:

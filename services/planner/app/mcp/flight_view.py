@@ -27,7 +27,7 @@ from wingtip.engine import ask as engine
 from ..generated.planner_calls import plan
 from ..settings import get_settings
 from . import airplane, records
-from .calls import ENGINE_SOURCE, WINDS_SOURCE, editions
+from .calls import ENGINE_SOURCE, editions, winds_source
 from .flight_state import Flight, link_of, query_of, same
 from .procedure_picks import approaches_of
 
@@ -167,9 +167,43 @@ async def view_of(flight: Flight, p: dict, flown: dict | None, saved: dict | Non
     }
 
 
+def _gal(value) -> str:
+    return f"{value:.1f} gal"
+
+
+def fuel_line(view: dict) -> str:
+    """The plan's fuel check in words, for the model, which reads no view
+    (design doc 4b): what is required with the reserve (14 CFR 91.151, or
+    91.167 under IFR), the margin over what is on board, and each flight
+    the tanks fall short on (the engine's strip_fuel) or with no field in
+    reach for fuel. Said not worked where the usable fuel is not known,
+    never "enough"."""
+    if not view["airplane"]:
+        return ""
+    t = view["totals"]
+    if t.get("fuel_margin_gal") is None:
+        return (
+            "Fuel check: not worked, the airplane's usable fuel is not known; add it in Wingtip's Setup, Airplanes, "
+            "or give the fuel on board with set_fuel_on_board."
+        )
+    figures = []
+    if t.get("fuel_required_gal") is not None:
+        reserve = f" with the {t['reserve_min']:.0f}-minute reserve" if t.get("reserve_min") is not None else ""
+        figures.append(f"{_gal(t['fuel_required_gal'])} required{reserve}")
+    if t.get("reserve_gal") is not None:
+        figures.append(f"reserve {_gal(t['reserve_gal'])}")
+    on_board = t.get("on_board_gal") if t.get("on_board_gal") is not None else t.get("usable_fuel_gal")
+    if on_board is not None:
+        figures.append(f"{_gal(on_board)} on board")
+    figures.append(f"margin {t['fuel_margin_gal']:+.1f} gal")
+    short = [f"{s['name'] or 'the route'} short by {_gal(s['short_gal'])}" for s in view["strip_fuel"]["short"]]
+    short += [f"{s['departure']}-{s['destination']} has no field with fuel in reach" for s in t.get("no_fuel_stop") or []]
+    return f"Fuel: {', '.join(figures)}." + (f" Short of fuel: {'; '.join(short)}." if short else "")
+
+
 def summary(flight: Flight, view: dict, said: str = "") -> str:
-    """The model's line: what changed, the route's figures, the flight to
-    hand to the next tool, and its link."""
+    """The model's line: what changed, the route's figures and rules, its
+    fuel check, the flight to hand to the next tool, and its link."""
     t = view["totals"]
     figures = [f"{t['distance_nm']:.1f} nm"]
     if t.get("ete_min") is not None:
@@ -180,9 +214,10 @@ def summary(flight: Flight, view: dict, said: str = "") -> str:
     head = f"{said} " if said else ""
     approaches = "; ".join(f"{a['name']} at {a['airport']} {a['state']}" for a in view["approaches"])
     lines = [
-        f"{head}{route} at {view['altitude_ft']:.0f} ft: {', '.join(figures)}.",
+        f"{head}{route} at {view['altitude_ft']:.0f} ft, {flight.rules.upper()}: {', '.join(figures)}.",
         f"Approaches: {approaches}." if approaches else "",
         f"Airplane: {view['airplane']}." if view["airplane"] else "No airplane picked: no times or fuel.",
+        fuel_line(view),
         "Altitude cautions: "
         + "; ".join(f"{c['from_ident']}-{c['to_ident']}: {', '.join(c['reasons'])}" for c in view["altitude_cautions"])
         if view["altitude_cautions"]
@@ -201,7 +236,7 @@ async def answer(flight: Flight, pilot_id: str, said: str = "") -> CallToolResul
     content = {
         "flight": flight.model_dump(mode="json"),
         "view": view,
-        "sources": [ENGINE_SOURCE, WINDS_SOURCE, *editions("nasr", "dof", "charts", "cifp")],
+        "sources": [ENGINE_SOURCE, winds_source(p.get("winds")), *editions("nasr", "dof", "charts", "cifp")],
     }
     return CallToolResult(content=[TextContent(type="text", text=summary(flight, view, said))], structured_content=content)
 

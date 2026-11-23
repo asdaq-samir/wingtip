@@ -62,9 +62,13 @@ Questions that reach the route and field tools, once connected: "Winds
 at 9,000 over KMSN this afternoon?" (`winds_aloft`), "Anything nasty
 between KMSN and KDLH at 6,500 tomorrow at 14Z?" (`route_hazards`), "What
 airspace and TFRs does that route cross?" (`route_airspace`), "When does
-night start at KDLH tonight for my passenger currency?" (`sun_times`), and
-"Takeoff distance and CG for my N123AB at KDLH with 340 lb up front?"
-(`airplane_performance`, which names any figure it is missing).
+night start at KDLH tonight for my passenger currency?" (`sun_times`, which
+reads "tonight" on the field's own date and gives each time in its zone as
+well as UTC), "Takeoff distance and CG for my N123AB at KDLH with 340 lb up
+front?" (`airplane_performance`, which names any figure it is missing), and
+"Go / No-Go for N123AB, KMSN to KDLH, me 190 and 170 up front, 40 lb of
+bags?" (`flight_briefing` with `stations_lb`; without it the weight and
+balance is said not worked, never the POH's sample airplane's).
 
 ## The MCP Inspector
 

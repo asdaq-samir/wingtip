@@ -37,10 +37,14 @@ async def _ask(method: str, path: str, pilot_id: str, body: dict | None = None):
             resp = await client.request(method, f"/internal/mcp{path}", json=body, headers=headers)
     except httpx2.HTTPError as err:
         raise ToolError(f"Wingtip's account service did not answer ({type(err).__name__}); try again in a minute.") from err
+    if resp.status_code == 404 and path.startswith("/flights/"):
+        # One flight gone (deleted since my_flights listed it), not the
+        # account: reconnecting would not bring it back.
+        raise ToolError("That saved flight is no longer in the pilot's Wingtip: my_flights lists theirs, or save it as a new one.")
     if resp.status_code == 404:
         raise ToolError("Wingtip has no account for this sign-in any more: disconnect Wingtip and connect it again.")
     if resp.status_code == 400:
-        raise ToolError(f"Wingtip refused the flight: {resp.text[:300]}")
+        raise ToolError(f"Wingtip refused the flight: {_detail(resp)}. Change what it names and try again.")
     if resp.status_code == 409:
         # The gateway's refusal in its words (an RFC 9457 problem's
         # detail): a flight put to an instructor keeps its route.

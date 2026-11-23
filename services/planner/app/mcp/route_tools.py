@@ -22,7 +22,7 @@ from ..gonogo.words import gairmet_title, sigmet_hazard
 from ..route_briefing import DEFAULT_ETE_MIN
 from . import airplane
 from .airport_tools import Ident
-from .calls import ENGINE_SOURCE, NOTAM_SOURCE, editions, ident as ident_of, paged, pick, pilot, rounded
+from .calls import ENGINE_SOURCE, NOTAM_SOURCE, editions, ident as ident_of, paged, pick, pilot, rounded, winds_source
 from .flight_tools import Altitude, Depart, Rules, Stops, Tail, planned, route_fields, route_of
 from .tool_meta import READS, read_only
 
@@ -31,10 +31,12 @@ Offset = Annotated[int, Field(ge=0, description="How many to skip, for the next 
 Departure = Annotated[str | None, Field(max_length=7, description="For a route: its departure airport (KDLH, C81).")]
 Destination = Annotated[str | None, Field(max_length=7, description="For a route: its destination airport.")]
 
-AIR_SOURCE = {
-    "source": "Aviation Weather Center GFA winds aloft and NOAA GFS temperatures (the map's Model Weather), "
-    "as Wingtip's nav log flies them; the GFS's FB stations past the grid's twelve hours"
-}
+#: winds_aloft's altitude: at a place it is needed, along a route the
+#: cruise flown (the legal fastest for the rules when omitted).
+WindAltitude = Annotated[
+    int | None,
+    Field(ge=500, le=45000, description="Feet MSL. Needed at a place; along a route, the cruise (the legal fastest when omitted)."),
+]
 HAZARD_SOURCE = {
     "source": "NWS Aviation Weather Center SIGMETs, Convective SIGMETs, AIRMETs (Alaska), G-AIRMETs and PIREPs, as sent; "
     "where and when the flight meets each, Wingtip's"
@@ -122,7 +124,8 @@ def register(server: MCPServer) -> None:
         name="winds_aloft",
         description="The wind and temperature aloft, from the forecast Wingtip's nav log flies, with its valid time: "
         "at a place (an airport, or lat and lon) and altitude, or along a route at its cruise (give departure and "
-        "destination instead), each leg at the time the airplane flies it. Not observed winds.",
+        "destination instead, and rules: an IFR cruise is not a VFR one), each leg at the time the airplane flies "
+        "it. Not observed winds.",
         title="Winds aloft",
         annotations=read_only("Winds aloft"),
         meta=READS,
@@ -131,15 +134,16 @@ def register(server: MCPServer) -> None:
         airport: Annotated[str | None, Field(max_length=7, description="A place by airport: KDLH, C81.")] = None,
         lat: Annotated[float | None, Field(ge=-90, le=90, description="Or a place by latitude, degrees north.")] = None,
         lon: Annotated[float | None, Field(ge=-180, le=180, description="And longitude, degrees east (west negative).")] = None,
-        altitude_ft: Altitude = None,
+        altitude_ft: WindAltitude = None,
         departure: Departure = None,
         destination: Destination = None,
         stops: Stops = [],  # noqa: B006 -- pydantic copies a default
         airplane_tail: Tail = None,
         at_time: Depart = None,
+        rules: Rules = "vfr",
     ) -> dict[str, Any]:
         if departure or destination:
-            _, p, flown = await _route(departure, destination, stops, altitude_ft, airplane_tail, at_time, "vfr")
+            _, p, flown = await _route(departure, destination, stops, altitude_ft, airplane_tail, at_time, rules)
             legs = [pick(leg, ("from", "to", "altitude_ft", "wind", "oat_c", "density_altitude_ft")) for leg in p["legs"]]
             return {
                 "route": route_of(p),
@@ -147,7 +151,7 @@ def register(server: MCPServer) -> None:
                 "legs": rounded(legs),
                 "legs_without_wind": p["totals"].get("legs_without_wind"),
                 "forecast": p.get("winds"),
-                "sources": [AIR_SOURCE],
+                "sources": [winds_source(p.get("winds"))],
             }
         pilot()
         if airport:
@@ -175,7 +179,7 @@ def register(server: MCPServer) -> None:
             # its grid), never a calm.
             "no_wind_known": air["wind"] is None,
             "forecast": period,
-            "sources": [AIR_SOURCE],
+            "sources": [winds_source(period)],
         }
 
     @server.tool(

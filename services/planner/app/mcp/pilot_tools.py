@@ -1,11 +1,13 @@
 """The connector's tools over the pilot's own account: their airplanes and
-saved flights (read), and saving a planned flight so it is in the app
-(the one write: additive, asked of the pilot by the AI app before each
-call, docs/design/mcp-connector.md)."""
+saved flights (read), and saving a route so it is in the app (save_flight:
+additive, asked of the pilot by the AI app before each call; the other
+writes, over the live view's flight, are saved_tools',
+docs/design/mcp-connector.md)."""
 
 from __future__ import annotations
 
 from typing import Annotated, Any
+from urllib.parse import urlencode
 
 from mcp.server.mcpserver import MCPServer
 from pydantic import Field
@@ -129,9 +131,9 @@ def register(server: MCPServer) -> None:
         name="save_flight",
         description="Saves a route, given by its airports, altitude, airplane and time, to the signed-in pilot's "
         "Wingtip account, so it is in the app's Flights to open, brief and fly. It plans the route first, as "
-        "plan_route does, and saves that plan. Adds a new flight; changes nothing already saved. A flight shown or "
-        "changed with show_flight and the edit tools (its fuel stops, approaches, fuel on board) is saved whole by "
-        "save_flight_plan instead.",
+        "plan_route does, and saves that plan with its altitude, VFR or IFR and time. Adds a new flight; changes "
+        "nothing already saved. A flight shown or changed with show_flight and the edit tools is saved by "
+        "save_flight_plan instead, which keeps its procedures, fuel stops and fuel on board too.",
         title="Save flight to Wingtip",
         annotations=additive("Save flight to Wingtip"),
         meta=WRITES,
@@ -150,11 +152,13 @@ def register(server: MCPServer) -> None:
         p = await planned(fields)
         # The altitude asked, kept as the app's own address keeps it
         # (lib/flightLink PICK_KEYS), so it opens at that altitude.
-        picks = (
-            f"altitude_ft={cruise_altitude_ft}"
-            if cruise_altitude_ft is not None
-            else (f"altitude_choice={p['altitude_choice']}" if p.get("altitude_choice") else None)
-        )
+        kept = {
+            "altitude_ft": cruise_altitude_ft,
+            "altitude_choice": p.get("altitude_choice") if cruise_altitude_ft is None else None,
+            # IFR kept as save_flight_plan keeps it (flight_state.picks_of).
+            "rules": "ifr" if rules == "ifr" else None,
+        }
+        picks = urlencode({k: v for k, v in kept.items() if v}) or None
         request = save_request(p, flown, depart_at.isoformat() if depart_at else None, picks)
         saved = await records.save_flight(who, request)
         return {
