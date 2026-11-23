@@ -93,10 +93,9 @@ extension OwnAirplaneAsk {
         self.init(
             inspections: APIAirplaneInspections(
                 annualGoodThrough: i.annualGoodThrough, eltBatteryDueOn: i.eltBatteryDueOn, eltInspectionGoodThrough: i.eltInspectionGoodThrough,
-                hoursNow: i.hoursNow,
-                // The 100-hour is owed only flown for hire (14 CFR 91.409(b)),
-                // as the owner says: not one, not weighed (the web's lib/airworthiness).
-                hundredHourDueAtHours: i.forHire ? i.hundredHourDueAtHours : nil,
+                forHire: i.forHire, hoursNow: i.hoursNow,
+                // The engine owes the 100-hour only for hire (14 CFR 91.409(b)).
+                hundredHourDueAtHours: i.hundredHourDueAtHours,
                 staticCheckGoodThrough: i.staticCheckGoodThrough, transponderCheckGoodThrough: i.transponderCheckGoodThrough),
             // Only the squawks still open: a fixed one grounds nothing.
             squawks: record.openSquawks.filter { $0.fixedOn == nil }.map {

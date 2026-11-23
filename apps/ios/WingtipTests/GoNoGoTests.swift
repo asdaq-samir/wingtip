@@ -149,10 +149,14 @@ struct OwnAirplaneAskTests {
         let squawks = body["squawks"] as! [[String: Any]]
         #expect(squawks.count == 1 && squawks[0]["deferred_for"] as? String == "91.213(d)")
         #expect((body["vor_check"] as! [String: Any])["within_limit"] as? Bool == true)
-        // Not flown for hire, the 100-hour is not owed (14 CFR 91.409(b)).
+        #expect(inspections["for_hire"] as? Bool == true)
+        // Not for hire: the due date still goes, with for_hire false; the engine
+        // decides the 100-hour is not owed (14 CFR 91.409(b)).
         var notForHire = record
         notForHire.inspections.forHire = false
         let plain = try JSONSerialization.jsonObject(with: Planner.snakeEncoder.encode(OwnAirplaneAsk(notForHire))) as! [String: Any]
-        #expect((plain["inspections"] as! [String: Any])["hundred_hour_due_at_hours"] == nil)
+        let plainInspections = plain["inspections"] as! [String: Any]
+        #expect(plainInspections["for_hire"] as? Bool == false)
+        #expect(plainInspections["hundred_hour_due_at_hours"] as? Double == 4280)
     }
 }
