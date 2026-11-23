@@ -12,6 +12,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from wingtip import geo
+from wingtip.figure import number as _number
 from wingtip.units import M_PER_FT, M_PER_NM
 
 from .overlay_layers import CHARTED_FIX_MIN_ZOOM, FIX_MIN_ZOOM, NAVAID_MIN_ZOOM, RUNWAY_MIN_ZOOM, VOR_MIN_ZOOM, _feature, _meets
@@ -20,13 +21,6 @@ from .overlay_layers import CHARTED_FIX_MIN_ZOOM, FIX_MIN_ZOOM, NAVAID_MIN_ZOOM,
 def _rows(path: Path):
     with open(path, newline="", encoding="utf-8", errors="replace") as f:
         yield from csv.DictReader(f)
-
-
-def _number(text) -> float | None:
-    try:
-        return float((text or "").strip())
-    except ValueError:
-        return None
 
 
 @lru_cache(maxsize=256)

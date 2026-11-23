@@ -13,7 +13,7 @@ from wingtip import flight_plan as fp
 
 from .. import fuel_replan
 from ..route_way import load_way
-from ..router_basics import line, ndjson
+from ..streams import line, ndjson
 from ..schemas.nav_log import NavLogAltitude, NavLogDone, NavLogError, NavLogLeg, NavLogStage
 from ..checkpoint_scoring import route_checkpoints
 from ..plan_query import PlanQuery

@@ -12,7 +12,8 @@ from wingtip import chart_kinds, chart_serving, chart_tiles, chartlabels, chartv
 from .. import chart_model
 from ..chart_model import TRAINING_HALF_WIDTH_NM
 from ..chart_summary import chart_summary
-from ..router_basics import CHART_CACHE, line, load_route, ndjson, route_key
+from ..router_basics import CHART_CACHE, load_route, route_key
+from ..streams import line, ndjson
 from ..detection import detect_job, faa_airports
 from ..schemas.plan import ChartInfo
 from ..schemas.chart import Classification, DetectBlock, DetectDone, DetectError, Detection, DetectStart, PickDeleted, PickSaved

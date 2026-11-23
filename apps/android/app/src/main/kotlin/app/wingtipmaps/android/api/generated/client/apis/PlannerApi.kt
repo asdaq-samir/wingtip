@@ -1886,16 +1886,17 @@ interface PlannerApi {
     /**
      * GET traffic/flight/{hex_id}
      * Traffic Flight
-     * An airplane being tracked: what it is, the field it took off from and its track today (wingtip.traffic.flight); no track where its trace cannot be had.
+     * An airplane being tracked: what it is, the field it took off from and its track today (wingtip.traffic.flight); no track where its trace cannot be had. Followed from now on, its flights recorded, only where a signed-in pilot opened it (X-Pilot-Id, set by the gateway).
      * Responses:
      *  - 200: Successful Response
      *  - 422: Validation Error
      *
      * @param hexId
+     * @param xPilotId  (optional)
      * @return [app.wingtipmaps.android.api.generated.FlightDetail]
      */
     @GET("traffic/flight/{hex_id}")
-    suspend fun trafficFlight(@Path("hex_id") hexId: kotlin.String): Response<app.wingtipmaps.android.api.generated.FlightDetail>
+    suspend fun trafficFlight(@Path("hex_id") hexId: kotlin.String, @Header("X-Pilot-Id") xPilotId: kotlin.String? = null): Response<app.wingtipmaps.android.api.generated.FlightDetail>
 
     /**
      * GET traffic/flight/{hex_id}/history
@@ -1987,6 +1988,20 @@ interface PlannerApi {
      */
     @GET("traffic/flight/{hex_id}/status")
     suspend fun trafficStatus(@Path("hex_id") hexId: kotlin.String): Response<app.wingtipmaps.android.api.generated.FlightStatus>
+
+    /**
+     * GET usage/daily
+     * Usage Daily
+     * Every route&#39;s calls on each finished UTC day from &#x60;since&#x60; on, today left out until it is over: totals by route template, method and status, tied to no pilot (docs/privacy-inventory.md).
+     * Responses:
+     *  - 200: Successful Response
+     *  - 422: Validation Error
+     *
+     * @param since The first UTC day wanted, YYYY-MM-DD
+     * @return [app.wingtipmaps.android.api.generated.UsageDays]
+     */
+    @GET("usage/daily")
+    suspend fun usageDaily(@Query("since") since: kotlin.String): Response<app.wingtipmaps.android.api.generated.UsageDays>
 
     /**
      * GET waypoints/in-view

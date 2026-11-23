@@ -34,11 +34,10 @@ import re
 import sqlite3
 import threading
 import time
-from datetime import datetime, timezone
 
 import wingtip_native
 
-from . import stores
+from . import stores, utc
 from .config import Settings, get_settings
 from .engine import ask as engine
 
@@ -167,7 +166,7 @@ def reset() -> None:
 
 def _stamp(now: float) -> str:
     """A moment as the store's times are written, to compare with them."""
-    return datetime.fromtimestamp(int(now), timezone.utc).isoformat().replace("+00:00", "Z")
+    return utc.iso(now)
 
 
 def notams(xml: str) -> list[dict]:

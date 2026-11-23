@@ -28,7 +28,7 @@ from datetime import datetime, timedelta, timezone
 
 import gribberish
 import numpy as np
-from wingtip import weather_store
+from wingtip import utc, weather_store
 
 from . import nomads
 
@@ -94,7 +94,7 @@ def read_grid(message: bytes) -> tuple[dict, np.ndarray]:
         "nx": int(nx),
         "ny": int(ny),
         "proj": str(meta.proj),
-        "valid": meta.forecast_date.isoformat().replace("+00:00", "Z"),
+        "valid": utc.iso(meta.forecast_date),
     }
     return grid, np.asarray(parsed.data(), dtype=np.float32).reshape(ny, nx)
 

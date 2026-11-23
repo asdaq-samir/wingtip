@@ -175,6 +175,10 @@ def test_tile_bytes_caches_the_render_and_remembers_empty_tiles(tmp_path, monkey
     assert len(calls) == 2
 
     assert chart_tiles.tile_bytes(65, 94, 20, "sec") is None  # past the chart's own zoom range
+    # Off its zoom's grid: no tile, and no folder or .none file kept for it.
+    assert chart_tiles.tile_bytes(256, 94, 8, "sec") is None
+    assert chart_tiles.tile_bytes(65, -1, 8, "sec") is None
+    assert len(calls) == 2 and not (tmp_path / "tiles" / "09-03-2026" / "sec" / "8" / "256").exists()
 
     image = chart_tiles.tile_image(65, 94, 8, "sec")
     assert image is not None and image.mode == "RGB"

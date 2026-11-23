@@ -29,12 +29,12 @@ shown, not averaged away. The levels' heights are MSL (the files' own
 from __future__ import annotations
 
 import logging
-import time
 from datetime import datetime, timedelta
 
 import gribberish
 import numpy as np
 import requests
+from cachetools import TTLCache
 from wingtip import outside, utc
 from wingtip.config import REQUEST_HEADERS as HEADERS
 from wingtip.units import M_PER_FT
@@ -50,10 +50,10 @@ TURBULENCE_VAR = "EDPARM"
 TURBULENCE_MAX = ("MXEDPRM", "entire atmosphere")
 LAST_STEP = 18
 CYCLES_TRIED = 3
-#: (product, cycle, step) -> when its .idx was last missing: not asked
+#: The (product, cycle, step)s whose .idx was missing: not asked
 #: again for NOT_UP_RETRY_S.
-_NOT_UP: dict = {}
 NOT_UP_RETRY_S = 300
+_NOT_UP: TTLCache = TTLCache(maxsize=256, ttl=NOT_UP_RETRY_S)
 
 
 class DafsUnavailable(RuntimeError):
@@ -68,11 +68,11 @@ def _index(product: str, cycle: datetime, step: int) -> list[tuple[int, int | No
     """A file's records, (start, end or None for the last, variable,
     level); None where it is not posted yet."""
     key = (product, cycle, step)
-    if time.time() - _NOT_UP.get(key, 0) < NOT_UP_RETRY_S:
+    if key in _NOT_UP:
         return None
     body = nomads.get(_url(product, cycle, step) + ".idx", error=DafsUnavailable, grib=False)
     if body is None:
-        _NOT_UP[key] = time.time()
+        _NOT_UP[key] = True
         return None
     return parse_index(body.decode("utf-8", "replace"))
 

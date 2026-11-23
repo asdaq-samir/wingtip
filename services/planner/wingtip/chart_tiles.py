@@ -95,6 +95,10 @@ def tile_bytes(x: int, y: int, zoom: int, kind: str = "sec", scale: int = 1) -> 
     x, y, zoom, scale = int(x), int(y), int(zoom), int(scale)
     if not (chart_kind.min_zoom <= zoom <= chart_kind.max_zoom) or scale not in chart_grid.TILE_SCALES:
         return None
+    # Off its zoom's grid is no tile, answered before anything is drawn
+    # or kept: each such ask made a folder and a .none file of its own.
+    if not (0 <= x < 2**zoom and 0 <= y < 2**zoom):
+        return None
     cycle = chart_serving.serving_cycle_of(kind)
     archive = _archive(kind, cycle, scale)
     if archive is not None:
