@@ -110,6 +110,16 @@ struct SplitLayout<Map: View>: View {
                 }
             }
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { detailWidth = $0 }
+            // The map's least room, an iPhone's width. Without it UIKit
+            // took the detail to need more than an upright iPad's window
+            // has while the app is still opening (752 points then, 1,032
+            // a moment later), laid the sidebar over the map, and kept it
+            // so: the map under a dimmed scrim, whose first tap, on the
+            // page toggle or any map button, only put the sidebar away
+            // (UISplitViewController's displayMode oneOverSecondary and
+            // splitBehavior overlay though tile was asked, in the app's
+            // log, on 3 of 8 launches of SheetPageToggleTests).
+            .navigationSplitViewColumnWidth(min: SplitRoom.leastMap, ideal: SplitRoom.leastMap * 2)
             .animation(MapMotion.animated ? .default : nil, value: nav.beside)
         }
         .navigationSplitViewStyle(.balanced)

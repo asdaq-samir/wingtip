@@ -243,15 +243,21 @@ final class SheetPageToggleTests: XCTestCase {
         to.typeText("KOSH")
         // Planned, the fields put away: the route is its timeline.
         app.buttons["plan-button"].tap()
+        // The timeline's last row: on the iPhone's sheet it is below the
+        // fold, and the list makes a row only once it is scrolled to, so
+        // it is scrolled to first, as a pilot would.
         let add = app.buttons["timeline-add-stop"]
-        XCTAssertTrue(add.waitForExistence(timeout: 10), "no Add Stop on the timeline")
         CardTests.scrollTo(add, in: app)
+        XCTAssertTrue(add.waitForExistence(timeout: 10), "no Add Stop on the timeline")
         add.tap()
         let title = app.staticTexts["point-ask-title"]
         XCTAssertTrue(title.waitForExistence(timeout: 10), "Add Stop did not ask the search")
         XCTAssertEqual(title.label, "Add Stop")
         XCTAssertEqual(toggle(app).label, "Show flight plan", "the ask is not on the Search page")
-        app.buttons["Cancel"].firstMatch.tap()
+        // The field's own button on the iPhone, Cancel up to iOS 26 and
+        // Close (an ✕) on iOS 27, as testLeavingSearchPutsTheKeyboardAway
+        // finds it; the ask's own Cancel on the iPad (PointAskHead).
+        app.buttons.matching(NSPredicate(format: "label == 'Cancel' OR (identifier == '' AND label == 'Close')")).firstMatch.tap()
         XCTAssertTrue(title.waitForNonExistence(timeout: 10), "Cancel left the ask up")
         XCTAssertEqual(toggle(app).label, "Show search", "Cancel did not go back to the plan")
     }
