@@ -1,6 +1,7 @@
 import { Button as BaseButton } from "@base-ui/react/button";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useShallow } from "zustand/react/shallow";
 import { Mic, Square } from "lucide-react";
 import { cn } from "cn";
 import IconButton from "./IconButton";
@@ -56,7 +57,11 @@ export default function ClearanceCard({
   /** The card put away, the route entered. */
   onDone: () => void;
 }) {
-  const { listening, error, heard, tail, near, mode, input } = useAtcRadio();
+  // Only the fields the card reads: the store also carries the listen-once
+  // pill, whose words change as each is heard, and the card need not draw again for them.
+  const { listening, error, heard, tail, near, mode, input } = useAtcRadio(
+    useShallow(({ listening, error, heard, tail, near, mode, input }) => ({ listening, error, heard, tail, near, mode, input })),
+  );
   const route = useRadioActions((s) => s.route);
   const enter = useRadioActions((s) => s.enter);
   const typed = useAtcRadio((s) => s.cardText) ?? "";
