@@ -16,10 +16,12 @@ const FIELD = ["==", ["get", "kind"], "field"] as ExpressionSpecification;
 
 /** A stop's field: its mark always drawn, under its pin (which takes the
  *  room, so the marks placed after it -- a Class B's field, the chart's
- *  fields and their idents -- give way to the pin), its ident giving way. */
+ *  fields and their idents -- give way to the pin), its ident giving way.
+ *  The mark takes its room too, so no chart ident is drawn half under it
+ *  where the pin has given way to another. */
 const FIELD_UNDER_PIN: Layout = {
   "icon-allow-overlap": true,
-  "icon-ignore-placement": true,
+  "icon-ignore-placement": false,
   "text-allow-overlap": false,
   "text-optional": true,
 };
