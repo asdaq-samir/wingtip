@@ -27,6 +27,12 @@ test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setu
 // The worker keeps the charts: the suite blocks it, so mocks always apply
 // (playwright.config.ts), and this journey has none.
 test.use({ serviceWorkers: "allow" });
+// One after the other, in one worker: each keeps the route's 1,392 chart
+// tiles, and run side by side on CI's two workers the two keeps shared the
+// runner and the shard's planner, each 662 of 1,392 at the test's two
+// minutes on webkit-ipad (validate-wave3, run 45100051622), where alone
+// one keeps them in 28 s and the next finds the planner's tiles warm.
+test.describe.configure({ mode: "default" });
 
 test(
   "a planned flight's nav log and emergency keep working offline once its charts are kept",
