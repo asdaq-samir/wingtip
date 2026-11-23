@@ -77,6 +77,7 @@ emergency_guidance
 emitter_category
 endorsement_lapse
 endorsement_render
+endorsement_warnings
 endorsements_in_force
 endurance
 faa_words
@@ -156,6 +157,7 @@ logbook_csv_read
 logbook_csv_write
 logbook_from_track
 lost_comms
+magnetic_of
 magnetic_variation
 mayday_call
 model_weather_bands
@@ -239,6 +241,7 @@ turbulence_category
 underway
 vfr_at_hours
 vfr_basic_minimums
+visibility_reportable
 vor_check_limit_deg
 weather_in_force
 weather_worse

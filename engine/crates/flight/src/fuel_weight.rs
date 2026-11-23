@@ -1,15 +1,13 @@
 //! A US gallon of fuel in pounds, where the airplane's own handbook gives
 //! no figure: the FAA's standard weights, which "should not be used if
-//! actual weights are available" (FAA-H-8083-25, Pilot's Handbook of
+//! actual weights are available" (FAA-H-8083-25C, Pilot's Handbook of
 //! Aeronautical Knowledge, chapter 10, "Standard weights": gasoline 6
-//! lb/US gal, Jet A and Jet A-1 6.8 lb/US gal). The Aircraft Weight and
-//! Balance Handbook (FAA-H-8083-1B, figure 3-4) gives the same fuels by
-//! temperature, avgas 6.01 and Jet A 6.68 at 59 °F, 6.14 and 6.75 at
-//! 32 °F: the pilot's standard figures are the handbook's own round ones,
-//! and a POH's figure (the loading's `fuel_lb_per_gal`) comes before them,
-//! but after a grade the pilot picks for the fuel aboard (`weighed_at`).
-//! One copy for every crate: the weight and balance (wingtip_brief) and a
-//! fuel burn read in pounds an hour (wingtip_pilot's documents).
+//! lb/US gal, Jet A and Jet A-1 6.8 lb/US gal). A POH's figure (the
+//! loading's `fuel_lb_per_gal`) comes before them, but after a grade the
+//! pilot picks for the fuel aboard (`weighed_at`).
+//! One copy for every crate: the weight and balance (wingtip_brief), a
+//! fuel burn read in pounds an hour (wingtip_pilot's documents) and the
+//! grades the apps pick from (flight::FUEL_GRADES).
 
 /// Avgas (100LL, UL94 and the other aviation gasolines): 6 lb a US gallon.
 pub const AVGAS_LB_PER_GAL: f64 = 6.0;

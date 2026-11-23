@@ -1,0 +1,29 @@
+{
+  "x-call": "wingtip_weather::calls::call",
+  "description": "A visibility in statute miles as a report writes it: the reportable value at or below it, never above, from the Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, \"Reportable Visibility Values\" (0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, then eighths to 2, quarters to 3, whole miles to 15, every 5 past that), as FAA JO 7900.5E carries it.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "VisibilityReportableInput",
+      "type": "object",
+      "properties": {
+        "sm": {
+          "type": "number",
+          "description": "The visibility, statute miles."
+        }
+      },
+      "required": [
+        "sm"
+      ]
+    },
+    "answer": {
+      "title": "VisibilityReportableAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

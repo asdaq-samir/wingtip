@@ -42,6 +42,15 @@ export function lapseWarning(instructor: Instructor, signedOn: string): string |
   });
 }
 
+/** What the instructor is warned of before signing an endorsement with
+ *  these fields, never a block: an AC 61-65K A.13 naming an airport of
+ *  part 91 appendix D, section 4, where no student, sport or recreational
+ *  pilot may take off or land solo (14 CFR 91.131(b)(2)). The engine's
+ *  (endorsement_warnings, engine/crates/pilot). */
+export function signingWarnings(code: string, fields: Record<string, string>): string[] {
+  return callEngine("endorsement_warnings", { code, fields });
+}
+
 /** A solo cross-country's airports in order: "KUGN KRFD KUGN". */
 export const reviewRoute = (r: CrossCountryReview) => [r.flight.departureIdent, ...r.flight.stops, r.flight.destinationIdent].join(" ");
 

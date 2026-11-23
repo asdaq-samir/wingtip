@@ -282,9 +282,13 @@ export type GonogoInspections = {
    */
   transponder_check_good_through?: string | null;
   /**
-   * 91.409(b).
+   * 91.409(b): weighed only where for_hire is not false.
    */
   hundred_hour_due_at_hours?: number | null;
+  /**
+   * Whether the airplane carries anyone for hire or gives flight instruction for hire in an airplane the instructor provides, its owner's word: only then is the 100-hour owed (14 CFR 91.409(b)). False leaves hundred_hour_due_at_hours unweighed; null or left out weighs a due given, as the caller judged it.
+   */
+  for_hire?: boolean | null;
   hours_now?: number | null;
 } | null;
 export type DestinationAnswer = {
@@ -329,6 +333,7 @@ export type EndorsementFillAnswer = EndorsementFilled | null;
 export type EndorsementKindsAnswer = EndorsementKind[];
 export type EndorsementLapseAnswer = string | null;
 export type EndorsementRenderAnswer = string;
+export type EndorsementWarningsAnswer = string[];
 export type EndorsementsInForceAnswer = [string, number][];
 export type FaaIdsAnswer = string[];
 export type FaaWordsAnswer = string | string[];
@@ -727,6 +732,7 @@ export type LogbookPageTotals = {
   night_landings?: number | null;
   approaches?: number | null;
 } | null;
+export type MagneticOfAnswer = number;
 export type MagneticVariationAnswer = number;
 export type ModeCVeilAnswer = {
   ident: string;
@@ -1139,6 +1145,7 @@ export type VfrMinimumsAnswer = {
   night: VfrMinimumsRule;
 } | null;
 export type VfrNotRecommendedReasonsAnswer = string[];
+export type VisibilityReportableAnswer = number;
 export type VorCheckLimitDegAnswer = number;
 export type WeatherExpiresAtAnswer = number | null;
 export type WeatherHeldUntilAnswer = number | null;
@@ -1996,6 +2003,13 @@ export interface EngineContract {
     answer: EndorsementRenderAnswer;
   };
   /**
+   * What an instructor is warned of before signing an endorsement with these fields, never a refusal: for AC 61-65K A.13 (solo at an airport in Class B airspace, 14 CFR 61.95(b)), an airport of 14 CFR part 91 appendix D, section 4, named by its FAA or ICAO ident, where 14 CFR 91.131(b)(2) has no student, sport or recreational pilot take off or land solo. Empty where there is nothing to warn of.
+   */
+  endorsement_warnings: {
+    input: EndorsementWarningsInput;
+    answer: EndorsementWarningsAnswer;
+  };
+  /**
    * The latest not voided of each code, as [code, index] into the record (newest first); one whose instructor the FAA airmen registry did not bear out (verified false, instructor_verification) is not signed and counts as voided.
    */
   endorsements_in_force: {
@@ -2283,7 +2297,7 @@ export interface EngineContract {
     answer: FuelGradesAnswer;
   };
   /**
-   * The fuel in the tanks at each point of the route and whether it is under the reserve of the flight it is on (each flight's own: 30 minutes by day, 14 CFR 91.151(a)(1); 45 at night, 91.151(a)(2), or under IFR, 91.167(a)(3); by that flight's own times and rules): at the departure the fuel on board at engine start (full, the usable fuel, unless the pilot set their own; more than usable kept as set), the start, taxi and takeoff allowance and each leg's burn taken from them after; at each field landed at the fuel on landing, the tanks then fuelled for the next flight (full unless the pilot set what to; a figure under what is left keeps it, 0 no fuel bought) and its start and taxi taken again, as the planner checks each flight; the departure low where what is on board, less the start and taxi, is under its flight's reserve, and the destination held to the IFR alternate's fuel too (91.167(a)(2)); negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill.
+   * The fuel in the tanks at each point of the route and whether it is under the reserve of the flight it is on (each flight's own: 30 minutes by day, 14 CFR 91.151(a)(1); 45 at night, 91.151(a)(2), or under IFR, 91.167(a)(3); by that flight's own times and rules): at the departure the fuel on board at engine start (full, the usable fuel, unless the pilot set their own; more than usable kept as set), the start, taxi and takeoff allowance and each leg's burn taken from them after; at each field landed at the fuel on landing, the tanks then fuelled for the next flight (full unless the pilot set what to; a figure under what is left keeps it, 0 no fuel bought) and its start and taxi taken again, as the planner checks each flight; the departure low where what is on board, less the start and taxi, is under its flight's reserve, and the destination held to the IFR alternate's fuel too (91.167(a)(2)); negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill, and at every point where no flight's reserve is given.
    */
   fuel_in_tanks: {
     input: FuelInTanksInput;
@@ -2857,6 +2871,13 @@ export interface EngineContract {
     answer: LostCommsAnswer;
   };
   /**
+   * A true direction as a magnetic one, degrees from 0 up to 360: "east is least, west is best", an east variation taken off and a west one added (FAA-H-8083-25C, chapter 16). The variation is magnetic_variation's, degrees east, west negative.
+   */
+  magnetic_of: {
+    input: MagneticOfInput;
+    answer: MagneticOfAnswer;
+  };
+  /**
    * Magnetic variation, degrees east (west negative), the World Magnetic Model's (WMM) at a place and day, as wingtip.magnetic works it out.
    */
   magnetic_variation: {
@@ -2941,7 +2962,7 @@ export interface EngineContract {
     answer: NavLogFuelPlanAnswer;
   };
   /**
-   * What a flight's fuel stops are looked for by (route options' fuel_stops): null where its fuel check passes or a figure it needs is not known (no airplane, an unflyable leg); else the worst burn a mile over a tankful's stretch of its legs and its minutes a mile, each times the route's miles for each straight one, the usable fuel, the start and taxi allowance, and the reserve -- 14 CFR 91.151(a)(2)'s 45 minutes for (a)(1)'s 30 where any of a VFR trip, its stops' turnarounds counted, is at night; 91.167(a)(3)'s under IFR as given, with the fuel on to the alternate (91.167(a)(2)) the last stretch keeps; and whether the fuel on board is under the reserve already, no field in its reach.
+   * What a flight's fuel stops are looked for by (route options' fuel_stops): null where its fuel check passes or a figure it needs is not known (no airplane, an unflyable leg); else the worst burn a mile over a tankful's stretch of its legs and its minutes a mile, each times the route's miles for each straight one, the usable fuel, the start and taxi allowance, and the reserve -- 14 CFR 91.151(a)(2)'s 45 minutes for (a)(1)'s 30 where any of a VFR trip, its stops' turnarounds counted, is at night; 91.167(a)(3)'s under IFR as given; 45 minutes at the trip's own burn where the totals give no reserve, with the fuel on to the alternate (91.167(a)(2)) the last stretch keeps; and whether the fuel on board is under the reserve already, no field in its reach.
    */
   navlog_fuel_stop_need: {
     input: NavLogFuelStopNeedInput;
@@ -4017,6 +4038,13 @@ export interface EngineContract {
   vfr_not_recommended_reasons: {
     input: VfrNotRecommendedReasonsInput;
     answer: VfrNotRecommendedReasonsAnswer;
+  };
+  /**
+   * A visibility in statute miles as a report writes it: the reportable value at or below it, never above, from the Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, "Reportable Visibility Values" (0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, then eighths to 2, quarters to 3, whole miles to 15, every 5 past that), as FAA JO 7900.5E carries it.
+   */
+  visibility_reportable: {
+    input: VisibilityReportableInput;
+    answer: VisibilityReportableAnswer;
   };
   /**
    * The largest bearing error 14 CFR 91.171 allows for a kind of VOR check: 4 degrees for a test signal (VOT or a repair station's, (b)(1)), a surface checkpoint ((b)(2)) and one receiver against the other ((c)); 6 for an airborne checkpoint ((b)(3)) and a radial along an airway ((b)(4)).
@@ -7250,6 +7278,12 @@ export interface EndorsementRenderInput {
     [k: string]: string;
   } | null;
 }
+export interface EndorsementWarningsInput {
+  code: string;
+  fields?: {
+    [k: string]: string;
+  } | null;
+}
 export interface EndorsementsInForceInput {
   signed: {
     code: string;
@@ -7949,7 +7983,7 @@ export interface FuelInTanksInput {
   usable_gal: number;
   taxi_gal: number;
   /**
-   * Each flight's own reserve, gallons, in order: the first the departure's flight, the next the one from the first field landed at (refuel), as the planner's totals give each flight's reserve_gal. A point is low against the reserve of the flight that lands at or passes it; a flight with none given (null, or past the list's end) is held to the strictest given.
+   * Each flight's own reserve, gallons, in order: the first the departure's flight, the next the one from the first field landed at (refuel), as the planner's totals give each flight's reserve_gal. A point is low against the reserve of the flight that lands at or passes it; a flight with none given (null, or past the list's end) is held to the strictest given; with none given at all, every point is null, not known.
    */
   reserves_gal: (number | null)[];
   /**
@@ -10051,6 +10085,16 @@ export interface LostCommsAnswer {
     words: string;
   }[];
   leave: string;
+}
+export interface MagneticOfInput {
+  /**
+   * The direction, degrees true.
+   */
+  true_deg: number;
+  /**
+   * The magnetic variation there, degrees east (west negative), as magnetic_variation answers it.
+   */
+  variation_deg: number;
 }
 export interface MagneticVariationInput {
   lat: number;
@@ -13961,6 +14005,10 @@ export interface SunTimesAnswer {
      * The sun never comes above that line this day: the whole day is in the period.
      */
     all_day: boolean;
+    /**
+     * What the period is, as the rule reads it, with its 14 CFR section: the words a host says beside the times.
+     */
+    rule: string;
   };
   /**
    * 14 CFR 61.57(b)'s period from this evening: 1 hour after sunset to 1 hour before sunrise.
@@ -13978,6 +14026,10 @@ export interface SunTimesAnswer {
      * The sun never comes above that line this day: the whole day is in the period.
      */
     all_day: boolean;
+    /**
+     * What the period is, as the rule reads it, with its 14 CFR section: the words a host says beside the times.
+     */
+    rule: string;
   };
   /**
    * 14 CFR 91.209(a)'s position lights from this evening: sunset to sunrise.
@@ -13995,6 +14047,10 @@ export interface SunTimesAnswer {
      * The sun never comes above that line this day: the whole day is in the period.
      */
     all_day: boolean;
+    /**
+     * What the period is, as the rule reads it, with its 14 CFR section: the words a host says beside the times.
+     */
+    rule: string;
   };
 }
 export interface SurfaceAirspaceInput {
@@ -14506,6 +14562,12 @@ export interface VfrNotRecommendedReasonsInput {
   idents?: string[];
   metars?: {} | null;
   forecast?: {} | null;
+}
+export interface VisibilityReportableInput {
+  /**
+   * The visibility, statute miles.
+   */
+  sm: number;
 }
 export interface VorCheckLimitDegInput {
   kind: "VOT" | "REPAIR_STATION" | "GROUND" | "AIRBORNE" | "RADIAL" | "DUAL";

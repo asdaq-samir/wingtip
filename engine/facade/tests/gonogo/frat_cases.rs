@@ -123,6 +123,7 @@ pub(super) fn good() -> Inspections {
         annual_good_through: Some(s("2026-10-31")),
         hours_now: Some(1250.0),
         hundred_hour_due_at_hours: Some(1300.5),
+        for_hire: None,
         static_check_good_through: Some(s("2027-01-31")),
         transponder_check_good_through: Some(s("2027-01-31")),
         elt_inspection_good_through: Some(s("2027-02-28")),
@@ -163,6 +164,10 @@ fn the_static_test_only_under_ifr_the_transponder_and_the_100_hour_as_cautions()
         frat::inspection_factors(&Inspections { transponder_check_good_through: Some(s("2026-09-30")), ..good() }, DAY, false);
     assert_eq!((transponder[0].key.as_str(), transponder[0].points, transponder.len()), ("transponder", 3, 1));
     assert_eq!(inspection_keys(&Inspections { hours_now: Some(1300.5), ..good() }, false), ["hundredHour"]);
+    // 91.409(b): owed only for hire; the owner's "not for hire" leaves a
+    // due 100-hour unweighed, and their "for hire" weighs it.
+    assert!(inspection_keys(&Inspections { hours_now: Some(1300.5), for_hire: Some(false), ..good() }, false).is_empty());
+    assert_eq!(inspection_keys(&Inspections { hours_now: Some(1300.5), for_hire: Some(true), ..good() }, false), ["hundredHour"]);
     assert!(inspection_keys(&Inspections { hours_now: Some(1300.4), ..good() }, false).is_empty());
 }
 

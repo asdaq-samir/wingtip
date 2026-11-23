@@ -29,7 +29,10 @@ describe("figures written as the FAA writes them", () => {
     expect(reportedVisibility(0.625)).toEqual([0, "5/8"]);
     expect(reportedVisibility(0.0625)).toEqual([0, "1/16"]);
     expect(reportedVisibility(1.5)).toEqual([1, "1/2"]);
-    expect(reportedVisibility(0.7456)).toEqual([0, "11/16"]);
+    // FMH-1 Table 6-1: no 11/16; 0.7456 is reported 5/8, 2.3 is 2 1/4.
+    expect(reportedVisibility(0.7456)).toEqual([0, "5/8"]);
+    expect(reportedVisibility(0.4375)).toEqual([0, "3/8"]);
+    expect(reportedVisibility(2.3)).toEqual([2, "1/4"]);
     expect(reportedVisibility(4.97)).toEqual([4, null]);
     expect(reportedVisibility(10)).toEqual([10, null]);
   });

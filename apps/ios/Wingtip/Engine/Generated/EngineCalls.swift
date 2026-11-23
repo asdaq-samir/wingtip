@@ -585,6 +585,11 @@ nonisolated extension Engine {
         try Self.rule("endorsement_render", EngineContract.EndorsementRenderInput(template: template, student: student, fields: fields))
     }
 
+    /// What an instructor is warned of before signing an endorsement with these fields, never a refusal: for AC 61-65K A.13 (solo at an airport in Class B airspace, 14 CFR 61.95(b)), an airport of 14 CFR part 91 appendix D, section 4, named by its FAA or ICAO ident, where 14 CFR 91.131(b)(2) has no student, sport or recreational pilot take off or land solo. Empty where there is nothing to warn of.
+    static func endorsementWarnings(code: String, fields: [String: String]? = nil) throws -> [String] {
+        try Self.rule("endorsement_warnings", EngineContract.EndorsementWarningsInput(code: code, fields: fields))
+    }
+
     /// The latest not voided of each code, as [code, index] into the record (newest first); one whose instructor the FAA airmen registry did not bear out (verified false, instructor_verification) is not signed and counts as voided.
     static func endorsementsInForce(signed: [EngineContract.EndorsementsInForceInputSignedItem]) throws -> [[OpenAPIValueContainer]] {
         try Self.rule("endorsements_in_force", EngineContract.EndorsementsInForceInput(signed: signed))
@@ -790,7 +795,7 @@ nonisolated extension Engine {
         try Self.rule("fuel_grades", EngineContract.FuelGradesInput())
     }
 
-    /// The fuel in the tanks at each point of the route and whether it is under the reserve of the flight it is on (each flight's own: 30 minutes by day, 14 CFR 91.151(a)(1); 45 at night, 91.151(a)(2), or under IFR, 91.167(a)(3); by that flight's own times and rules): at the departure the fuel on board at engine start (full, the usable fuel, unless the pilot set their own; more than usable kept as set), the start, taxi and takeoff allowance and each leg's burn taken from them after; at each field landed at the fuel on landing, the tanks then fuelled for the next flight (full unless the pilot set what to; a figure under what is left keeps it, 0 no fuel bought) and its start and taxi taken again, as the planner checks each flight; the departure low where what is on board, less the start and taxi, is under its flight's reserve, and the destination held to the IFR alternate's fuel too (91.167(a)(2)); negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill.
+    /// The fuel in the tanks at each point of the route and whether it is under the reserve of the flight it is on (each flight's own: 30 minutes by day, 14 CFR 91.151(a)(1); 45 at night, 91.151(a)(2), or under IFR, 91.167(a)(3); by that flight's own times and rules): at the departure the fuel on board at engine start (full, the usable fuel, unless the pilot set their own; more than usable kept as set), the start, taxi and takeoff allowance and each leg's burn taken from them after; at each field landed at the fuel on landing, the tanks then fuelled for the next flight (full unless the pilot set what to; a figure under what is left keeps it, 0 no fuel bought) and its start and taxi taken again, as the planner checks each flight; the departure low where what is on board, less the start and taxi, is under its flight's reserve, and the destination held to the IFR alternate's fuel too (91.167(a)(2)); negative past empty, the gallons short; null at a point past a leg whose burn is not known, until the next fill, and at every point where no flight's reserve is given.
     static func fuelInTanks(points: [EngineContract.FuelInTanksInputPointsItem], usableGal: Double, taxiGal: Double, reservesGal: [Double?], alternateGal: Double? = nil) throws -> [EngineContract.FuelInTanksAnswerItem?] {
         try Self.rule("fuel_in_tanks", EngineContract.FuelInTanksInput(points: points, usableGal: usableGal, taxiGal: taxiGal, reservesGal: reservesGal, alternateGal: alternateGal))
     }
@@ -1200,6 +1205,11 @@ nonisolated extension Engine {
         try Self.rule("lost_comms", EngineContract.LostCommsInput(segments: segments, assignedFt: assignedFt, expectedFt: expectedFt, expectedFrom: expectedFrom, approachFix: approachFix, efc: efc, eta: eta))
     }
 
+    /// A true direction as a magnetic one, degrees from 0 up to 360: "east is least, west is best", an east variation taken off and a west one added (FAA-H-8083-25C, chapter 16). The variation is magnetic_variation's, degrees east, west negative.
+    static func magneticOf(trueDeg: Double, variationDeg: Double) throws -> Double {
+        try Self.rule("magnetic_of", EngineContract.MagneticOfInput(trueDeg: trueDeg, variationDeg: variationDeg))
+    }
+
     /// Magnetic variation, degrees east (west negative), the World Magnetic Model's (WMM) at a place and day, as wingtip.magnetic works it out.
     static func magneticVariation(lat: Double, lon: Double, date: String? = nil, year: Double? = nil) throws -> Double {
         try Self.rule("magnetic_variation", EngineContract.MagneticVariationInput(lat: lat, lon: lon, date: date, year: year))
@@ -1260,7 +1270,7 @@ nonisolated extension Engine {
         try Self.rule("navlog_fuel_plan", EngineContract.NavlogFuelPlanInput(totalFuelGal: totalFuelGal, profile: profile, night: night, rules: rules, alternateGal: alternateGal, fillGal: fillGal, leftGal: leftGal))
     }
 
-    /// What a flight's fuel stops are looked for by (route options' fuel_stops): null where its fuel check passes or a figure it needs is not known (no airplane, an unflyable leg); else the worst burn a mile over a tankful's stretch of its legs and its minutes a mile, each times the route's miles for each straight one, the usable fuel, the start and taxi allowance, and the reserve -- 14 CFR 91.151(a)(2)'s 45 minutes for (a)(1)'s 30 where any of a VFR trip, its stops' turnarounds counted, is at night; 91.167(a)(3)'s under IFR as given, with the fuel on to the alternate (91.167(a)(2)) the last stretch keeps; and whether the fuel on board is under the reserve already, no field in its reach.
+    /// What a flight's fuel stops are looked for by (route options' fuel_stops): null where its fuel check passes or a figure it needs is not known (no airplane, an unflyable leg); else the worst burn a mile over a tankful's stretch of its legs and its minutes a mile, each times the route's miles for each straight one, the usable fuel, the start and taxi allowance, and the reserve -- 14 CFR 91.151(a)(2)'s 45 minutes for (a)(1)'s 30 where any of a VFR trip, its stops' turnarounds counted, is at night; 91.167(a)(3)'s under IFR as given; 45 minutes at the trip's own burn where the totals give no reserve, with the fuel on to the alternate (91.167(a)(2)) the last stretch keeps; and whether the fuel on board is under the reserve already, no field in its reach.
     static func navlogFuelStopNeed(totals: EngineContract.NavlogFuelStopNeedInputTotals, legs: [EngineContract.NavlogFuelStopNeedInputLegsItem], start: EngineContract.NavlogFuelStopNeedInputStart, end: EngineContract.NavlogFuelStopNeedInputEnd, departS: Double) throws -> EngineContract.NavlogFuelStopNeedAnswer? {
         try Self.rule("navlog_fuel_stop_need", EngineContract.NavlogFuelStopNeedInput(totals: totals, legs: legs, start: start, end: end, departS: departS))
     }
@@ -2028,6 +2038,11 @@ nonisolated extension Engine {
     /// "VFR flight not recommended" (AIM 7-1-5) as its reasons, in briefing order: either end reporting IFR or LIFR or a ceiling of unknown height, then the forecast along the route under 14 CFR 91.155(c), (d)'s basic minimums or of unknown height.
     static func vfrNotRecommendedReasons(idents: [String]? = nil, metars: [String: OpenAPIValueContainer]? = nil, forecast: [String: OpenAPIValueContainer]? = nil) throws -> [String] {
         try Self.rule("vfr_not_recommended_reasons", EngineContract.VfrNotRecommendedReasonsInput(idents: idents, metars: metars, forecast: forecast))
+    }
+
+    /// A visibility in statute miles as a report writes it: the reportable value at or below it, never above, from the Federal Meteorological Handbook No. 1 (FCM-H1-2019), Table 6-1, "Reportable Visibility Values" (0, 1/16, 1/8, 3/16, 1/4, 5/16, 3/8, 1/2, 5/8, 3/4, 7/8, 1, then eighths to 2, quarters to 3, whole miles to 15, every 5 past that), as FAA JO 7900.5E carries it.
+    static func visibilityReportable(sm: Double) throws -> Double {
+        try Self.rule("visibility_reportable", EngineContract.VisibilityReportableInput(sm: sm))
     }
 
     /// The largest bearing error 14 CFR 91.171 allows for a kind of VOR check: 4 degrees for a test signal (VOT or a repair station's, (b)(1)), a surface checkpoint ((b)(2)) and one receiver against the other ((c)); 6 for an airborne checkpoint ((b)(3)) and a radial along an airway ((b)(4)).

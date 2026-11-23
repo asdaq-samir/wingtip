@@ -83,6 +83,7 @@ pub(super) fn inspections(i: In, v: Option<&Value>) -> R<Option<Inspections>> {
         static_check_good_through: date("static_check_good_through")?,
         transponder_check_good_through: date("transponder_check_good_through")?,
         hundred_hour_due_at_hours: i.opt_num(x, "hundred_hour_due_at_hours")?,
+        for_hire: i.opt_bool(x, "for_hire")?,
         hours_now: i.opt_num(x, "hours_now")?,
     }))
 }

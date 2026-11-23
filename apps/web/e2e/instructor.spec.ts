@@ -143,6 +143,17 @@ test("a student asks an instructor in, and the instructor endorses their solo cr
   await form.getByTestId("sign-endorsement").click();
   await expect(desk.getByTestId("review")).toHaveCount(0);
 
+  // A.13 at O'Hare: warned, never stopped, as no student may take off or
+  // land solo there (14 CFR 91.131(b)(2), part 91 appendix D section 4);
+  // Midway, under the same Class B, is not.
+  await desk.getByTestId("sign-class-b-airport").click();
+  const a13 = desk.getByTestId("sign-form");
+  await a13.getByTestId("sign-field-airport").fill("Chicago O'Hare (KORD)");
+  await expect(a13.getByTestId("sign-warning")).toContainText("14 CFR 91.131(b)(2)");
+  await a13.getByTestId("sign-field-airport").fill("Chicago Midway (KMDW)");
+  await expect(a13.getByTestId("sign-warning")).toHaveCount(0);
+  await a13.getByRole("button", { name: "Cancel" }).click();
+
   // The student holds it, its words and signature as signed.
   const record = (await (await page.request.get("/api/training")).json()) as {
     signed: { code: string; text: string; signature: string }[];

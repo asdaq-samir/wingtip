@@ -275,12 +275,28 @@ pub fn declination(lat: f64, lon: f64, year: f64) -> f64 {
     by.atan2(bx).to_degrees()
 }
 
+/// A true direction as a magnetic one, degrees [0, 360), for a variation
+/// east positive (as `declination` gives it): "east is least, west is
+/// best" -- an east variation taken off, a west one added (FAA-H-8083-25C,
+/// chapter 16, "magnetic variation"). The one copy: the nav log's legs,
+/// the diversion drill, the strip's track, the ruler and an emergency's
+/// heading all turn a true figure magnetic through it (`magnetic_of`).
+pub fn magnetic_of(true_deg: f64, variation_east_deg: f64) -> f64 {
+    crate::geo::py_mod(true_deg - variation_east_deg, 360.0)
+}
+
 /// `magnetic_variation`: the variation at `lat`, `lon` for `year` (a
 /// decimal year, as the planner's test against pygeomag asks at any
-/// instant), else for the day `date`, YYYY-MM-DD.
+/// instant), else for the day `date`, YYYY-MM-DD; `magnetic_of`: a true
+/// direction turned magnetic by a variation (magnetic_of).
 pub fn call(name: &str, v: &crate::json::Value) -> Result<String, String> {
     use crate::time;
     let ask = crate::ask::Ask::new(name, v);
+    if name == "magnetic_of" {
+        let mut out = String::new();
+        crate::json::number(&mut out, magnetic_of(ask.num("true_deg")?, ask.num("variation_deg")?));
+        return Ok(out);
+    }
     let decimal = match ask.opt_num("year")? {
         Some(year) => year,
         None => {
@@ -305,6 +321,17 @@ pub fn call(name: &str, v: &crate::json::Value) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn east_is_least_west_is_best() {
+        // FAA-H-8083-25C ch. 16: an east variation off, a west one on,
+        // wrapped round north either way.
+        assert_eq!(magnetic_of(90.0, 10.0), 80.0);
+        assert_eq!(magnetic_of(90.0, -4.0), 94.0);
+        assert_eq!(magnetic_of(5.0, 10.0), 355.0);
+        assert_eq!(magnetic_of(358.0, -4.0), 2.0);
+        assert_eq!(magnetic_of(360.0, 0.0), 0.0);
+    }
 
     #[test]
     fn the_space_needle_as_pygeomag_documents_it() {

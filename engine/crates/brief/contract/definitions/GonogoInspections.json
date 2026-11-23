@@ -44,7 +44,14 @@
             "number",
             "null"
           ],
-          "description": "91.409(b)."
+          "description": "91.409(b): weighed only where for_hire is not false."
+        },
+        "for_hire": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "Whether the airplane carries anyone for hire or gives flight instruction for hire in an airplane the instructor provides, its owner's word: only then is the 100-hour owed (14 CFR 91.409(b)). False leaves hundred_hour_due_at_hours unweighed; null or left out weighs a due given, as the caller judged it."
         },
         "hours_now": {
           "type": [

@@ -3814,6 +3814,11 @@ nonisolated enum EngineContract {
         var verified: Bool?
     }
 
+    nonisolated struct EndorsementWarningsInput: Codable, Equatable, Sendable {
+        var code: String
+        var fields: [String: String]?
+    }
+
     nonisolated struct EnduranceAnswer: Codable, Equatable, Sendable {
         var minutes: Double?
         var reserveMin: Double
@@ -4761,7 +4766,7 @@ nonisolated enum EngineContract {
         var points: [EngineContract.FuelInTanksInputPointsItem]
         var usableGal: Double
         var taxiGal: Double
-        /// Each flight's own reserve, gallons, in order: the first the departure's flight, the next the one from the first field landed at (refuel), as the planner's totals give each flight's reserve_gal. A point is low against the reserve of the flight that lands at or passes it; a flight with none given (null, or past the list's end) is held to the strictest given.
+        /// Each flight's own reserve, gallons, in order: the first the departure's flight, the next the one from the first field landed at (refuel), as the planner's totals give each flight's reserve_gal. A point is low against the reserve of the flight that lands at or passes it; a flight with none given (null, or past the list's end) is held to the strictest given; with none given at all, every point is null, not known.
         var reservesGal: [Double?]
         /// Under IFR with an alternate filed, the fuel on to it from the destination, gallons (14 CFR 91.167(a)(2)): the route's last point is held to its flight's reserve and this; null or 0 under VFR.
         var alternateGal: Double?
@@ -5425,8 +5430,10 @@ nonisolated enum EngineContract {
         var staticCheckGoodThrough: String?
         /// yyyy-mm-dd, 91.413(a).
         var transponderCheckGoodThrough: String?
-        /// 91.409(b).
+        /// 91.409(b): weighed only where for_hire is not false.
         var hundredHourDueAtHours: Double?
+        /// Whether the airplane carries anyone for hire or gives flight instruction for hire in an airplane the instructor provides, its owner's word: only then is the 100-hour owed (14 CFR 91.409(b)). False leaves hundred_hour_due_at_hours unweighed; null or left out weighs a due given, as the caller judged it.
+        var forHire: Bool?
         var hoursNow: Double?
 
         enum CodingKeys: String, CodingKey {
@@ -5436,6 +5443,7 @@ nonisolated enum EngineContract {
             case staticCheckGoodThrough = "static_check_good_through"
             case transponderCheckGoodThrough = "transponder_check_good_through"
             case hundredHourDueAtHours = "hundred_hour_due_at_hours"
+            case forHire = "for_hire"
             case hoursNow = "hours_now"
         }
     }
@@ -7910,6 +7918,18 @@ nonisolated enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case name
             case minimumFt = "minimum_ft"
+        }
+    }
+
+    nonisolated struct MagneticOfInput: Codable, Equatable, Sendable {
+        /// The direction, degrees true.
+        var trueDeg: Double
+        /// The magnetic variation there, degrees east (west negative), as magnetic_variation answers it.
+        var variationDeg: Double
+
+        enum CodingKeys: String, CodingKey {
+            case trueDeg = "true_deg"
+            case variationDeg = "variation_deg"
         }
     }
 
@@ -13067,11 +13087,14 @@ nonisolated enum EngineContract {
         var untilS: Double?
         /// The sun never comes above that line this day: the whole day is in the period.
         var allDay: Bool
+        /// What the period is, as the rule reads it, with its 14 CFR section: the words a host says beside the times.
+        var rule: String
 
         enum CodingKeys: String, CodingKey {
             case fromS = "from_s"
             case untilS = "until_s"
             case allDay = "all_day"
+            case rule
         }
     }
 
@@ -13083,11 +13106,14 @@ nonisolated enum EngineContract {
         var untilS: Double?
         /// The sun never comes above that line this day: the whole day is in the period.
         var allDay: Bool
+        /// What the period is, as the rule reads it, with its 14 CFR section: the words a host says beside the times.
+        var rule: String
 
         enum CodingKeys: String, CodingKey {
             case fromS = "from_s"
             case untilS = "until_s"
             case allDay = "all_day"
+            case rule
         }
     }
 
@@ -13099,11 +13125,14 @@ nonisolated enum EngineContract {
         var untilS: Double?
         /// The sun never comes above that line this day: the whole day is in the period.
         var allDay: Bool
+        /// What the period is, as the rule reads it, with its 14 CFR section: the words a host says beside the times.
+        var rule: String
 
         enum CodingKeys: String, CodingKey {
             case fromS = "from_s"
             case untilS = "until_s"
             case allDay = "all_day"
+            case rule
         }
     }
 
@@ -14120,6 +14149,11 @@ nonisolated enum EngineContract {
         var idents: [String]?
         var metars: [String: OpenAPIValueContainer]?
         var forecast: [String: OpenAPIValueContainer]?
+    }
+
+    nonisolated struct VisibilityReportableInput: Codable, Equatable, Sendable {
+        /// The visibility, statute miles.
+        var sm: Double
     }
 
     nonisolated struct VorCheckLimitDegInput: Codable, Equatable, Sendable {

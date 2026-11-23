@@ -3,7 +3,8 @@
 //! file, ForeFlight's export among them (csv, logbook), a handbook's
 //! specifications page read off a photo (handbook), and endorsements --
 //! which are in force, an instructor's lapsed date, the words signed, the
-//! ACS codes of a knowledge test report (endorsements), and AC 61-65K's
+//! ACS codes of a knowledge test report (endorsements), an instructor's
+//! warnings before signing one (endorsement_warnings), and AC 61-65K's
 //! catalogue of them with its words (kinds) -- and what the
 //! logbook says of the pilot: currency under 14 CFR 61.56 and 61.57 and a
 //! student's 61.109(a) experience (currency, from the gateway's
@@ -22,6 +23,7 @@ pub mod checklist;
 pub mod csv;
 pub mod currency;
 pub mod due_tone;
+pub mod endorsement_warnings;
 pub mod endorsements;
 pub mod handbook;
 pub mod instructor_check;

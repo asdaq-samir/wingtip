@@ -3846,6 +3846,12 @@ object EngineContract {
     )
 
     @Serializable
+    data class EndorsementWarningsInput(
+        val code: String,
+        val fields: Map<String, String>? = null,
+    )
+
+    @Serializable
     data class EnduranceAnswer(
         val minutes: Double? = null,
         @SerialName("reserve_min")
@@ -4823,7 +4829,7 @@ object EngineContract {
         @SerialName("taxi_gal")
         val taxiGal: Double,
         /**
-         * Each flight's own reserve, gallons, in order: the first the departure's flight, the next the one from the first field landed at (refuel), as the planner's totals give each flight's reserve_gal. A point is low against the reserve of the flight that lands at or passes it; a flight with none given (null, or past the list's end) is held to the strictest given.
+         * Each flight's own reserve, gallons, in order: the first the departure's flight, the next the one from the first field landed at (refuel), as the planner's totals give each flight's reserve_gal. A point is low against the reserve of the flight that lands at or passes it; a flight with none given (null, or past the list's end) is held to the strictest given; with none given at all, every point is null, not known.
          */
         @SerialName("reserves_gal")
         val reservesGal: List<Double?>,
@@ -5528,10 +5534,15 @@ object EngineContract {
         @SerialName("transponder_check_good_through")
         val transponderCheckGoodThrough: String? = null,
         /**
-         * 91.409(b).
+         * 91.409(b): weighed only where for_hire is not false.
          */
         @SerialName("hundred_hour_due_at_hours")
         val hundredHourDueAtHours: Double? = null,
+        /**
+         * Whether the airplane carries anyone for hire or gives flight instruction for hire in an airplane the instructor provides, its owner's word: only then is the 100-hour owed (14 CFR 91.409(b)). False leaves hundred_hour_due_at_hours unweighed; null or left out weighs a due given, as the caller judged it.
+         */
+        @SerialName("for_hire")
+        val forHire: Boolean? = null,
         @SerialName("hours_now")
         val hoursNow: Double? = null,
     )
@@ -8120,6 +8131,20 @@ object EngineContract {
         val name: String? = null,
         @SerialName("minimum_ft")
         val minimumFt: Double? = null,
+    )
+
+    @Serializable
+    data class MagneticOfInput(
+        /**
+         * The direction, degrees true.
+         */
+        @SerialName("true_deg")
+        val trueDeg: Double,
+        /**
+         * The magnetic variation there, degrees east (west negative), as magnetic_variation answers it.
+         */
+        @SerialName("variation_deg")
+        val variationDeg: Double,
     )
 
     @Serializable
@@ -13510,6 +13535,10 @@ object EngineContract {
          */
         @SerialName("all_day")
         val allDay: Boolean,
+        /**
+         * What the period is, as the rule reads it, with its 14 CFR section: the words a host says beside the times.
+         */
+        val rule: String,
     )
 
     /**
@@ -13532,6 +13561,10 @@ object EngineContract {
          */
         @SerialName("all_day")
         val allDay: Boolean,
+        /**
+         * What the period is, as the rule reads it, with its 14 CFR section: the words a host says beside the times.
+         */
+        val rule: String,
     )
 
     /**
@@ -13554,6 +13587,10 @@ object EngineContract {
          */
         @SerialName("all_day")
         val allDay: Boolean,
+        /**
+         * What the period is, as the rule reads it, with its 14 CFR section: the words a host says beside the times.
+         */
+        val rule: String,
     )
 
     @Serializable
@@ -14608,6 +14645,14 @@ object EngineContract {
         val idents: List<String>? = null,
         val metars: Map<String, JsonElement>? = null,
         val forecast: Map<String, JsonElement>? = null,
+    )
+
+    @Serializable
+    data class VisibilityReportableInput(
+        /**
+         * The visibility, statute miles.
+         */
+        val sm: Double,
     )
 
     @Serializable

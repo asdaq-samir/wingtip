@@ -101,6 +101,10 @@ pub struct Inspections {
     pub static_check_good_through: Option<String>,
     pub transponder_check_good_through: Option<String>,
     pub hundred_hour_due_at_hours: Option<f64>,
+    /// Flown for hire or for instruction for hire (91.409(b)), the owner's
+    /// word: Some(false) leaves the 100-hour unweighed; None weighs a due
+    /// given, the caller having judged it.
+    pub for_hire: Option<bool>,
     pub hours_now: Option<f64>,
 }
 
@@ -147,7 +151,7 @@ pub fn inspection_factors(i: &Inspections, day: &str, ifr: bool) -> Vec<Factor> 
             "transponder", "The transponder test is past due: stay out of the airspace that needs one", "91.413(a), 91.215(b)", 3, false,
         ));
     }
-    if let (Some(due), Some(now)) = (i.hundred_hour_due_at_hours, i.hours_now)
+    if let (Some(due), Some(now)) = (i.hundred_hour_due_at_hours.filter(|_| i.for_hire != Some(false)), i.hours_now)
         && now >= due
     {
         factors.push(factor(

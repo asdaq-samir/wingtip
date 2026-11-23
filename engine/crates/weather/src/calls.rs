@@ -35,6 +35,9 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
             let (ceiling, _) = metar::sky_ceiling_of(layers, ask.opt_num("vert_vis_ft")?);
             json::opt_number(&mut out, ceiling);
         }
+        // A visibility as a report writes it: FMH-1 Table 6-1's value at or
+        // below (metar::statute_miles_down), for the apps' METAR words.
+        "visibility_reportable" => json::number(&mut out, metar::statute_miles_down(ask.num("sm")?)),
         // Whether a ceiling or a visibility is under 91.155(c), (d)'s basic
         // VFR minimums (1,000 ft, 3 sm): a missing figure is not below
         // anything, the caller saying it is unknown.
