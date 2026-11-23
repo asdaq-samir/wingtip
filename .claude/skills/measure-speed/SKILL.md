@@ -5,7 +5,20 @@ description: Find and prove speed problems in the planner the way they show up o
 
 # Measure speed
 
-Profile before guessing. Every speed claim needs a before number, an after number and the method behind both.
+Every speed claim needs a before number, an after number and the method behind both.
+
+The general method is in user-level skills in `~/.claude/skills`, so it is not repeated here:
+- `animation-performance`: when an animation drops frames. It covers composite-only properties, keeping motion off the main thread and finding the cause of a dropped frame.
+- `performance-optimization` (Addy Osmani): the measure, identify, fix, re-measure loop. It also covers Core Web Vitals and backend latency, and why a neutral result is a revert.
+
+This skill keeps what is Wingtip's own:
+- the CPU-throttled before and after method on the production build;
+- the bundle gate;
+- tap-to-route timing;
+- the planner's latency;
+- the costs already found here.
+
+Where those skills differ from this one, this skill wins. For example, its 1.10 MB first-load gate, not their generic budgets.
 
 ## Method
 - **Measure the production build,** not vite's dev server. The web-dev setup (`WEB_DIST_MOUNT`, docker-compose.yml) serves `apps/web/dist`, which `web-build` keeps current.

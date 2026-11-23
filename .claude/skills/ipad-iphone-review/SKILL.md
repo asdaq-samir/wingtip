@@ -19,6 +19,19 @@ this order:
 5. iPhone landscape.
 6. Desktop, last.
 
+The general craft is in two user-level skills in `~/.claude/skills`, so it
+is not repeated here. Read them alongside this one:
+- `apple-design`: the HIG's foundations, motion, materials and type.
+- `mobile-native`: making the web feel native on a phone, such as sticky
+  hover, tap highlights, the 100vh bug, inputs that zoom, safe areas and
+  overscroll.
+
+This skill keeps what is Wingtip's own: the tokens, the 44-pt pseudo hit
+areas, the owner's layout decisions, the iPad widths and the measured
+probes. Where those skills differ from it, this skill and CLAUDE.md win.
+Examples: stock components with their own motion over a hand-built spring,
+a token over a raw value, and a panel left where the owner put it.
+
 ## 1. Measure
 - **Run the iOS audit** (`apps/web/e2e/ios`; how to run it is in the `checks` skill). Each rule there is a measurement on iOS's own geometries with a touch pointer. Every run takes four devices, the 13-inch iPad both ways up among them; `IOS_AUDIT=1` adds Slide Over and the iPad mini. A new screen or state gets an entry in `e2e/ios/screens.ts`.
 - **The iPad in Safari's engine:** `--project=webkit-ipad` runs the smoke set on an 11-inch iPad Pro with touch, as main's push and a wave's validation do.
@@ -125,11 +138,9 @@ need a panel or a control moved to pass, that is a finding for the owner
 5. **Discrete settings are a menu or a segmented control,** never a slider.
 6. **Errors show where they happen,** through `apps/web/src/lib/problems`, not in a toast.
 7. **Use stock components first** (shadcn on Base UI and React Aria, SwiftUI), and delete a hand-rolled one once nothing uses it.
-8. **Fit:**
-   - safe-area insets respected;
-   - nothing scrolls sideways (`scrollWidth > clientWidth` on any container is a failure);
-   - text contrast at least 4.5:1;
-   - Reduce Motion honoured;
+8. **Fit,** measured by the audit. The general phone-web fixes, such as safe areas, Reduce Motion and overscroll, are in `mobile-native`. This skill keeps the pass marks:
+   - nothing scrolls sideways (P11: `scrollWidth > clientWidth` on any container fails);
+   - text contrast is at least 4.5:1 (P15);
    - every icon-only button has a name VoiceOver can read.
 9. **Words:** "airplane", the FAA's own word. FAA capitals go to sentence case with their codes kept (`faaWords` in `apps/web/src/lib/advisories`). Raw reports (METAR, TAF, NOTAM) stay exactly as sent.
 10. **Safari:**
