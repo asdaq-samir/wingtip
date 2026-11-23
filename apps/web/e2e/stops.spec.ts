@@ -181,12 +181,12 @@ test("the route's box reads its points with an arrow between each two, a tap on 
   await expect(page).toHaveURL(/[?&]dep=KRYV(&|$)/);
   await expect(sideDrawer(page).getByTestId("route-type")).toHaveAttribute("data-placeholder", "Destination");
   // And the last: no route, the empty route's card to start another, its
-  // field folded into Type or Paste a Route.
+  // field folded into the route box's toggle.
   await lines.getByRole("group", { name: "Departure KRYV" }).focus();
   await page.keyboard.press("Delete");
   await expect(page).not.toHaveURL(/[?&]dep=/);
   await showTabs(page);
-  await expect(sideDrawer(page).getByTestId("timeline-type-route")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("route-type-open")).toBeVisible();
 });
 
 // The route cleared, its box asks for the route, at the pilot's ask: the
@@ -209,7 +209,7 @@ test("a cleared route's box takes the departure first, then asks for the destina
   await expect(sideDrawer(page).getByTestId("route-arrow-on")).toBeVisible();
   await clearTheRoute(page);
   await expect(page).not.toHaveURL(/[?&]dep=/);
-  await sideDrawer(page).getByTestId("timeline-type-route").click();
+  await sideDrawer(page).getByTestId("route-type-open").click();
   const field = sideDrawer(page).getByTestId("route-type");
   await expect(field).toHaveAttribute("data-placeholder", "Route");
   await field.fill("KMSN");

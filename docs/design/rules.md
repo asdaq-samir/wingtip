@@ -1394,11 +1394,13 @@ less cluttered". Decision [0045](../decisions/0045-fpl-for-every-pilot.md).
    route typed whole ("KPWK V100 KLAS", "N0110A065 KPWK DCT OBK V100
    KLAS"), the engine reading the words (`route_read`, AIM Appendix 4);
    the empty field says what it takes ("From, to, or a whole route").
-   On the web, before the route is whole, the field is folded into the
-   route's card's last row, "Type or Paste a Route", the ends still to
-   pick rows of the same card (the owner, 2026-11-18); and a route file
-   (.fpl, .gpx) opened from the row under it or dropped on the card,
-   previewed as a shared flight is before it is used.
+   On the web, before the route is whole, the field is folded away
+   and the route box's toggle (a stock Toggle with a keyboard glyph) sits
+   at the card's end, the ends still to pick rows of the same card (the
+   owner, 2026-11-18; the "Type or Paste a Route" row removed, 2026-11-23:
+   "the toggle is enough"). The web opens no
+   route file (the owner, 2026-11-23: "No need for open a route file");
+   the Android app keeps its own (`FlightFiles`).
 3. **Explain on tap.** An abbreviation (MH, MC, ETE, TOC, TOD, FL, the VFR
    and IFR levels ...) is a tap on the word itself, in the tint, which
    opens one plain sentence with its source in the stock Popover; nothing

@@ -215,7 +215,7 @@ export default function RouteTimeline({
   // Type the Route, where More's item was (the owner, 2026-11-21: More keeps
   // three items): a keyboard glyph at Add a Stop's end on a whole route
   // whose field is folded, opening the route's field to type or paste it in
-  // whole (RouteEditor), as Type or Paste a Route does before it is whole.
+  // whole (RouteEditor), as the route box's toggle does before it is whole.
   const typeFuel =
     wholeRoute && vm.routeList.routeFolded ? (
       <>

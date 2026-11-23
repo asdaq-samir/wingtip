@@ -270,14 +270,14 @@ test.describe("/app/plan", () => {
     await expect(empty).toBeVisible();
     await expect(empty.getByRole("button", { name: "Pick the departure" })).toBeVisible();
     await expect(empty.getByRole("button", { name: "Pick the destination" })).toBeVisible();
-    await expect(empty.getByTestId("timeline-type-route")).toHaveText("Type or Paste a Route");
+    await expect(empty.getByTestId("route-type-open")).toBeVisible();
     await expect(drawer.getByTestId("route-head")).toHaveCount(0);
     await expect(drawer.getByTestId("route-done")).toHaveCount(0);
     await expect(drawer.getByTestId("route-type")).toHaveCount(0);
 
-    // Its Type or Paste a Route opens the field, focused; a whole route
+    // Its the route box's toggle opens the field, focused; a whole route
     // pasted into it keeps it open, the pilot still at it, till the toggle turns it back.
-    await empty.getByTestId("timeline-type-route").click();
+    await empty.getByTestId("route-type-open").click();
     await expect(drawer.getByTestId("route-type")).toBeFocused();
     await page.keyboard.insertText("KORD KOMA KDEN");
     await page.keyboard.press("Enter");

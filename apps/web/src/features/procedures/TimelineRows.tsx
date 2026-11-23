@@ -1,7 +1,8 @@
 import type { ComponentProps, ReactNode, CSSProperties } from "react";
-import { ChevronsUpDown, FileUp, Fuel, Keyboard, Plus } from "lucide-react";
+import { ChevronsUpDown, Fuel, Keyboard, Plus } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
+import { Toggle } from "../../components/ui/toggle";
 import { TEXT } from "../../lib/text";
 import { MAX_STOPS } from "../../lib/identSchema";
 import { stopsNames, stopsTitle } from "./stopsRow";
@@ -247,35 +248,28 @@ const CHIP_44 = { "--hit-y": "calc((100% - 44px) / 2)" } as CSSProperties;
  *  hit-1.5), overlapping where the chips are closer than 12. */
 const ROW_CHIP = cn("gap-0.5 px-1 font-medium", TEXT.note);
 
-/** Type the Route on a whole route, at the grouped box's bottom right, after Add
- *  a Stop and the fuel stops' pill: a toggle between the two faces of the same box, the
- *  timeline and the route's field (RouteEditor) to type or paste the route
- *  in whole, with no row or Done of its own (the owner, 2026-11-22: "It
- *  should make the same grouped box into route box and the other way. No
- *  need for a separate row and done etc."). The keyboard glyph alone in the
- *  fuel stops' chip's shape, its wash, and its 44-point area (chipLook),
- *  pressed (aria-pressed, the tint filled) while the field is the face. */
+/** Type the Route, at the grouped box's bottom right, after Add a Stop and
+ *  the fuel stops' pill, and at the empty or half route's card's end: a
+ *  toggle between the two faces of the same box, the timeline and the
+ *  route's field (RouteEditor) to type or paste the route in whole, with
+ *  no row or Done of its own (the owner, 2026-11-22: "It should make the
+ *  same grouped box into route box and the other way. No need for a
+ *  separate row and done etc."; 2026-11-23: "the toggle is enough", and
+ *  "doesn't look standard"). The stock Toggle as it comes (its own size,
+ *  pressed state and focus ring) with the keyboard glyph, pressed while the
+ *  field is the face; its 44-point area a pseudo-element, so it grows not. */
 export function TypeRouteButton({ pressed, onToggle }: { pressed: boolean; onToggle: () => void }) {
   return (
-    <Button
-      variant="ghost"
-      type="button"
-      onClick={onToggle}
+    <Toggle
+      size="sm"
+      pressed={pressed}
+      onPressedChange={onToggle}
       aria-label="Type the route"
-      aria-pressed={pressed}
       data-testid="route-type-open"
-      // 44 across as well, the glyph's chip 27 wide at its tightest.
-      style={{ ...CHIP_44, "--hit-x": "calc((100% - 44px) / 2)" } as CSSProperties}
-      className={cn(
-        chipLook(true),
-        ROW_CHIP,
-        // The glyph alone, its room round it the least of the row's.
-        "px-0.5",
-        pressed ? "bg-tint text-primary-foreground hover:bg-tint/90!" : "bg-tint/12 hover:bg-tint/20! dark:hover:bg-tint/20!",
-      )}
+      className="relative hit-1.5"
     >
-      <Keyboard className="size-4" aria-hidden="true" />
-    </Button>
+      <Keyboard aria-hidden="true" />
+    </Toggle>
   );
 }
 
@@ -308,41 +302,6 @@ export function EndRow({
       data-testid={end === "Departure" ? "timeline-pick-dep" : "timeline-pick-dest"}
     >
       {end}
-    </TimelineAction>
-  );
-}
-
-/** The route typed or pasted whole, the last row of the timeline before
- *  the route is whole, where Add a Stop is after: a tap opens the route's
- *  field (RouteBox), as the keyboard button at Add a Stop's end does on a
- *  whole route (TypeRouteButton), with its glyph. `trailing`, the field's own ✕ or Undo while it
- *  is folded away. */
-export function TypeRouteRow({ onType, trailing }: { onType: () => void; trailing?: ReactNode }) {
-  return (
-    <TimelineAction
-      mark={<RowMark filled glyph={<Keyboard className="size-4" strokeWidth={2.4} aria-hidden />} />}
-      onClick={onType}
-      trailing={trailing}
-      data-testid="timeline-type-route"
-    >
-      Type or Paste a Route
-    </TimelineAction>
-  );
-}
-
-/** A route file opened, under Type or Paste a Route: the device's file
- *  picker for a flight plan's .fpl or a GPX route (RouteStart's), which
- *  is previewed before it is used, as a shared flight is. */
-export function OpenRouteFileRow(button: Omit<ComponentProps<typeof Button>, "children">) {
-  return (
-    <TimelineAction
-      mark={<RowMark filled glyph={<FileUp className="size-4" strokeWidth={2.4} aria-hidden />} />}
-      // Its press and ref from what holds it (RouteStart's FileTrigger,
-      // through React Aria's Pressable), which opens the device's picker.
-      {...button}
-      data-testid="timeline-open-route-file"
-    >
-      Open a Route File
     </TimelineAction>
   );
 }

@@ -3,7 +3,7 @@ import { SearchNear } from "../../../lib/useAirportSearch";
 import { usePlanUndo } from "../../../lib/planUndo";
 import { coverCard, useSheetCards } from "../../../lib/sheetCards";
 // The route's field, on a chunk of its own, asked for beside the first
-// script (main.tsx) so it is in hand at the first Type or Paste a Route.
+// script (main.tsx) so it is in hand at the first the route box's toggle.
 import { RouteBox } from "../../route";
 import type { PlanSlices } from "../vm/planSlices";
 import { FlightFigures } from "./FlightFoot";
@@ -12,7 +12,7 @@ import { keptTimelineHeight } from "./routeEditing";
 
 /**
  * FPL's route's field, open under its timeline (RouteHead) once asked for
- * (routeBoxOpen; decision 0047): the timeline's Type or Paste a Route
+ * (routeBoxOpen; decision 0047): the timeline's the route box's toggle
  * before the route is whole, the keyboard button at Add a Stop's end after. The route's
  * field to type or paste a whole route in, read by the engine's route_read
  * as it always was (RouteBox); and once the route is whole its figures

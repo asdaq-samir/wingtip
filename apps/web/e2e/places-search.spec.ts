@@ -118,11 +118,11 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await expect(sideDrawer(page).getByTestId("route-summary")).toContainText("C81");
   await clearTheRoute(page);
   await expect(page).not.toHaveURL(/dep=/);
-  await expect(sideDrawer(page).getByTestId("timeline-type-route")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("route-type-open")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("aircraft-select")).toBeEnabled();
   // With no route there is no route's menu at all (the owner,
   // 2026-11-18): the first row is the airplane's strip alone, and the
-  // empty route's Type or Paste a Route offers the route just cleared back.
+  // empty route's the route box's toggle offers the route just cleared back.
   await expect(sideDrawer(page).getByTestId("share-route")).toHaveCount(0);
   await expect(sideDrawer(page).getByTestId("route-undo")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("panel-tab-enroute")).toBeHidden();

@@ -77,7 +77,7 @@ describe("routeBoxOpen", () => {
     expect(routeBoxOpen(vm({ folded: false, boxOpen: true }))).toBe(true);
   });
 
-  test("folded into its Type or Paste a Route row till then, a new plan's or half a route's", () => {
+  test("folded into its the route box's toggle row till then, a new plan's or half a route's", () => {
     expect(routeBoxOpen(vm({ folded: false }))).toBe(false);
   });
 
