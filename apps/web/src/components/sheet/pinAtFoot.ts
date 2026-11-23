@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
 import { usePanelDragging } from "../../lib/mapChrome";
 import { prefersReducedMotion } from "../../lib/motion";
+import { pinScaleAt } from "../../lib/text";
 import { SETTLE_MS, SHEET_SLIDE, shownPx } from "./insets";
 import { followSettle } from "./pinFollow";
 import { SWIPE_READER } from "./sheetFollow";
@@ -97,8 +98,7 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
   useEffect(() => {
     const row = ref.current;
     if (!row || !on) return;
-    const px = (name: string) => parseFloat(row.style.getPropertyValue(name)) || 0;
-    return followSettle(row, (slid, atPill) => growAt(slid, px("--pin-half"), px("--pin-pill"), atPill));
+    return followSettle(row);
   }, [on, ref]);
   // The room, measured before the page is drawn, so the row is never seen
   // where it would be unheld; again as it is held or let go, when the bar
@@ -109,7 +109,8 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
     if (!row) return;
     const barOf = () => document.querySelector<HTMLElement>(foot)?.querySelector<HTMLElement>("[data-makes-way]");
     if (!on) {
-      for (const name of ["--pin-room", "--pin-lift", "--pin-pill", "--pin-half", "--pin-p", "--pin-cap"]) row.style.removeProperty(name);
+      for (const name of ["--pin-room", "--pin-lift", "--pin-pill", "--pin-half", "--pin-p", "--pin-s", "--pin-h", "--pin-cap"])
+        row.style.removeProperty(name);
       barOf()?.style.removeProperty("--pin-bar-room");
       return;
     }
@@ -129,7 +130,8 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       // row, so the sheet's and the bar's places read first are the same.
       const sheet = row.closest(SHEET);
       const slid = moved(sheet);
-      const natural = row.getBoundingClientRect().bottom - moved(row) - slid;
+      const box = row.getBoundingClientRect();
+      const natural = box.bottom - moved(row) - slid;
       const room = restingEdge(edge) - natural;
       const lift = liftOf(edge, sheet);
       const bar = edge?.querySelector<HTMLElement>("[data-makes-way]");
@@ -144,7 +146,9 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       // the bar (the owner, 2026-11-22: "Route box figures strip is not
       // pinning to the bottom"); beside the side panel in their place.
       setVar(row, "--pin-cap", lift.lift > 0 ? "9999px" : "0px");
-      setVar(row, "--pin-p", `${growAt(slid, lift.half, lift.pill, heldNow.current)}`);
+      // Its height laid out, for its backing to grow with its scale (FplActions' PINNED).
+      setVar(row, "--pin-h", `${box.height}px`);
+      growTo(row, growAt(slid, lift.half, lift.pill, heldNow.current), true);
       row.toggleAttribute("data-pinned", pinnedNow(heldNow.current, slid, room, liftAt(slid, lift.lift, lift.pill)));
       // At the pill, where its face is the figures alone (FplRoute's PINNED).
       row.toggleAttribute("data-pill", heldNow.current);
@@ -154,6 +158,8 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
     const resized = new ResizeObserver(measure);
     const page = row.closest("[data-sheet-scroll]");
     if (page) resized.observe(page.firstElementChild ?? page);
+    // Its own size too, set as the sheet rests (growTo), the room measured with it.
+    resized.observe(row);
     // The row's place moves with the page as it scrolls, so its room does:
     // measured at the top alone, the translation kept as the page scrolled
     // on and carried the figures up through the route, to its middle (the
@@ -194,13 +200,16 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
       row.removeAttribute("data-pill");
       return;
     }
-    const check = () => {
+    // `slid` read before any write here, so nothing written is read back
+    // within the frame (the animation audit of 2026-11-23, M2).
+    const check = (slid: number, settled: boolean) => {
       const px = (name: string) => parseFloat(row.style.getPropertyValue(name)) || 0;
-      const slid = moved(row.closest(SHEET));
       row.toggleAttribute("data-pinned", pinnedNow(held, slid, px("--pin-room"), liftAt(slid, px("--pin-lift"), px("--pin-pill"))));
       row.toggleAttribute("data-pill", held);
-      // The figures' size, followed a frame at a time as the sheet goes (FIXED by the pill, thin above it).
-      setVar(row, "--pin-p", `${growAt(slid, px("--pin-half"), px("--pin-pill"), held)}`);
+      // The figures' size, followed a frame at a time as the sheet goes
+      // (FIXED by the pill, thin above it): by a scale while it moves, laid
+      // out once it rests (growTo).
+      growTo(row, growAt(slid, px("--pin-half"), px("--pin-pill"), held), settled);
     };
     // A frame at a time for the settle's time, and on while the sheet is
     // still moving after it, and once more as its slide ends: on a slow
@@ -213,17 +222,19 @@ export function usePinAtFoot(ref: RefObject<HTMLElement | null>, foot: string, {
     let was = Number.NaN;
     const until = dragging ? Infinity : performance.now() + SETTLE_MS;
     const step = () => {
-      check();
       const slid = moved(sheet);
       const moving = slid !== was;
       was = slid;
-      if (performance.now() < until || moving) frame = requestAnimationFrame(step);
+      const going = performance.now() < until || moving;
+      check(slid, !going);
+      if (going) frame = requestAnimationFrame(step);
     };
     step();
-    sheet?.addEventListener("transitionend", check);
+    const ended = () => check(moved(sheet), true);
+    sheet?.addEventListener("transitionend", ended);
     return () => {
       cancelAnimationFrame(frame);
-      sheet?.removeEventListener("transitionend", check);
+      sheet?.removeEventListener("transitionend", ended);
     };
   }, [dragging, held, on, ref]);
 }
@@ -234,6 +245,24 @@ const SHEET = ".group\\/sheet";
  *  again at every scroll asked the row's style to be worked out again. */
 function setVar(el: HTMLElement, name: string, value: string) {
   if (el.style.getPropertyValue(name) !== value) el.style.setProperty(name, value);
+}
+
+/**
+ * The figures grown to `p` (growAt): laid out at that size once the sheet
+ * rests (`settled`), the scale back to none; while it moves, drawn at it by
+ * a scale of their laid-out size (lib/text's PIN_FIGURE cell), which
+ * changes no layout, where their font size grown each frame laid the strip
+ * out twice a finger move and the map's slide read it straight after (the
+ * animation audit of 2026-11-23, M2). Not laid out yet, laid out at once.
+ */
+function growTo(row: HTMLElement, p: number, settled: boolean) {
+  const laid = parseFloat(row.style.getPropertyValue("--pin-p"));
+  if (settled || Number.isNaN(laid)) {
+    setVar(row, "--pin-p", `${p}`);
+    setVar(row, "--pin-s", "1");
+    return;
+  }
+  setVar(row, "--pin-s", `${pinScaleAt(p, laid)}`);
 }
 
 /**
@@ -335,6 +364,9 @@ export function barRoom(barTop: number, rowBottom: number) {
  * again. Base UI's own offsets in CSS, on its curve, held still under a
  * finger, as PIN_AT_FOOT is: nothing mirrored, nothing a frame behind. A
  * drag up (the swipe below nothing) never moves it. At the pill it is put
- * away besides (RISEN_OVER, FlightFoot).
+ * away besides (RISEN_OVER, FlightFoot), so a settle to the pill (the
+ * popup's data-panel "peek") takes it straight to its rest unseen: eased,
+ * it ran 243 px back up against the sheet's way, over the map, through
+ * every drop to the pill (the animation audit of 2026-11-23, L2).
  */
-export const MAKES_WAY = `[transform:translateY(max(0px,min(var(--sheet-swipe,0px),calc(var(--sheet-offset,0px)+var(--sheet-swipe,0px)-var(--pin-bar-room,9999px)))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none ${SWIPE_READER} ${SHEET_SLIDE}`;
+export const MAKES_WAY = `[transform:translateY(max(0px,min(var(--sheet-swipe,0px),calc(var(--sheet-offset,0px)+var(--sheet-swipe,0px)-var(--pin-bar-room,9999px)))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none group-data-[panel=peek]/sheet:transition-none ${SWIPE_READER} ${SHEET_SLIDE}`;

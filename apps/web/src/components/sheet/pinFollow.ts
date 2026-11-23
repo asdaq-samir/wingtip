@@ -1,4 +1,3 @@
-import { prefersReducedMotion } from "../../lib/motion";
 import { MOTION } from "../../lib/tokens";
 import { onSettle, slidOf, type Settle } from "./sheetFollow";
 
@@ -26,16 +25,16 @@ const FOLLOW = "pin-follow";
  * it runs beside the sheet's on the compositor, never a frame behind a
  * busy page as a row moved by script was.
  *
- * Where it rests is read off its own CSS once the new offset is in (the
- * room less what its growth to the end size adds to its height, so its
- * foot stays on the foot's edge as it grows); where it was, off the same
- * CSS with the offset and movement it had. Neither piece fits (a drag
+ * Where it rests is read off its own CSS once the new offset is in; where
+ * it was, off the same CSS with the offset and movement it had. Its height
+ * is the same at both ends: through the settle the figures grow by a
+ * scale (usePinAtFoot's --pin-s), not by their laid-out size, which is set
+ * once the sheet rests, the room measured again with it. Neither piece fits (a drag
  * that ends going the other way, the figures put away), it eases straight,
  * as before. A finger on the sheet stops it: under a finger the CSS is
- * exact. `grow` is the figures' size at a slide (pinAtFoot's growAt).
- * Answers its removal.
+ * exact. Answers its removal.
  */
-export function followSettle(row: HTMLElement, grow: (slid: number, held: boolean) => number): () => void {
+export function followSettle(row: HTMLElement): () => void {
   const stop = () => {
     for (const a of row.getAnimations()) if (a.id === FOLLOW) a.cancel();
   };
@@ -44,7 +43,7 @@ export function followSettle(row: HTMLElement, grow: (slid: number, held: boolea
     swiped: stop,
     settle: (s) => {
       if (!s.eased || typeof row.animate !== "function" || !row.isConnected) return stop();
-      ride(row, s, grow);
+      ride(row, s);
     },
   });
   return () => {
@@ -53,7 +52,7 @@ export function followSettle(row: HTMLElement, grow: (slid: number, held: boolea
   };
 }
 
-function ride(row: HTMLElement, s: Settle, grow: (slid: number, held: boolean) => number) {
+function ride(row: HTMLElement, s: Settle) {
   const style = row.style;
   const running = row.getAnimations().some((a) => a.id === FOLLOW);
   // Where it is drawn now: mid-ease, the ease's own place; else its CSS
@@ -69,24 +68,12 @@ function ride(row: HTMLElement, s: Settle, grow: (slid: number, held: boolean) =
     style.setProperty("--sheet-swipe", swipe);
   }
   for (const a of row.getAnimations()) if (a.id === FOLLOW) a.cancel();
-  // Its height now and at the settle's end, the figures grown to the size
-  // the sheet's place there gives them (none under Reduce Motion, where
-  // they take their end size as the sheet rests).
-  const h0 = row.offsetHeight;
-  const px = (name: string) => parseFloat(style.getPropertyValue(name)) || 0;
-  const p = style.getPropertyValue("--pin-p");
-  const end = grow(s.to, s.to >= px("--pin-pill") - 0.5);
-  let h1 = h0;
-  if (!prefersReducedMotion() && p) {
-    style.setProperty("--pin-p", `${end}`);
-    h1 = row.offsetHeight;
-    style.setProperty("--pin-p", p);
-  }
-  const room = style.getPropertyValue("--pin-room");
-  if (room) style.setProperty("--pin-room", `${px("--pin-room") - (h1 - h0)}px`);
+  // Its height, the same at both ends (no style written and read back
+  // here: trying the end size on the row forced two layouts as the settle
+  // began, in the let-go's own frame; the animation audit of 2026-11-23, M2).
+  const h = row.offsetHeight;
   const to = slidOf(row);
-  if (room) style.setProperty("--pin-room", room);
-  const frames = path({ sheetFrom: s.from, sheetTo: s.to, from, to, h0, h1 });
+  const frames = path({ sheetFrom: s.from, sheetTo: s.to, from, to, h0: h, h1: h });
   if (frames.length < 2 || frames.every((f) => Math.abs(f.y - from) < 0.5)) return;
   row.animate(
     frames.map((f) => ({ offset: f.u, transform: `translateY(${f.y}px)` })),

@@ -1,4 +1,4 @@
-import { useEffect, type ComponentProps, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, usePanelDragging } from "../../lib/mapChrome";
@@ -88,6 +88,7 @@ export function SheetDrawer({
 }) {
   // The popup watched for its movement's few readers (sheet/sheetFollow).
   const relayed = useSwipeRelay(popupRef);
+  const { shown, letGo } = useSnapFirst(snapPoint, snapped);
   return (
     <Drawer.Root
       open
@@ -97,8 +98,8 @@ export function SheetDrawer({
       snapPoints={snapPoints}
       // One size per swipe however fast, the Drawer's own option for it (the owner, 2026-11-11).
       snapToSequentialPoints
-      snapPoint={snapPoint}
-      onSnapPointChange={snapped}
+      snapPoint={shown}
+      onSnapPointChange={letGo}
       // Never closed. Its Escape, with no card over it (the card's own
       // drawer takes that), lowers it; taken, so a device's Back
       // (lib/backNavigation) goes no further.
@@ -236,4 +237,45 @@ function Told({ swiping, ...own }: ComponentProps<"div"> & { swiping: boolean })
   }, [swiping]);
   const risen = usePanelDragging((d) => d.dragging);
   return <div {...own} data-risen={risen ? "" : undefined} />;
+}
+
+type Snapped = (point: Drawer.Root.SnapPoint | null, details: Drawer.Root.SnapPointChangeEventDetails) => void;
+
+/**
+ * A drag let go, the sheet's slide begun before the page hears of it: the
+ * snap point the finger picked held here at once, a render of the Drawer
+ * alone, and the page told (`snapped`, MapPanel's letGo, whose new size
+ * re-renders the whole workspace) once the slide's first frame is drawn
+ * (a frame, then a task). Told within the let-go, that render held the
+ * sheet still where the finger left it for 164 ms and it then set off with
+ * a 17.5 px step (the animation audit of 2026-11-23, M1). The pick is held
+ * only while the page's own snap point is the one it had when picked, so
+ * the page's answer rules as soon as it comes; let go past the pill (no
+ * snap point) the page is told at once, as it refuses the close there.
+ */
+function useSnapFirst(snapPoint: Drawer.Root.SnapPoint, snapped: Snapped) {
+  const [chosen, choose] = useState<{ point: Drawer.Root.SnapPoint; from: Drawer.Root.SnapPoint } | null>(null);
+  const later = useRef({ frame: 0, task: 0 });
+  useEffect(() => {
+    const pending = later.current;
+    return () => {
+      cancelAnimationFrame(pending.frame);
+      clearTimeout(pending.task);
+    };
+  }, []);
+  const letGo: Snapped = (point, details) => {
+    if (point === null) return snapped(point, details);
+    cancelAnimationFrame(later.current.frame);
+    clearTimeout(later.current.task);
+    choose({ point, from: snapPoint });
+    later.current.frame = requestAnimationFrame(() => {
+      later.current.task = window.setTimeout(() => {
+        snapped(point, details);
+        // Let go once the page has answered, in a task of its own.
+        later.current.task = window.setTimeout(() => choose(null), 0);
+      }, 0);
+    });
+  };
+  const shown = chosen && chosen.from === snapPoint ? chosen.point : snapPoint;
+  return { shown, letGo };
 }

@@ -152,7 +152,23 @@ export const PIN_FIGURE = {
   unit: "text-[length:max(0.6875rem,0.65em)] leading-(--lead-note)",
   name: `text-[length:calc(0.6875rem+0.125rem*var(--pin-p,1))] leading-[calc(0.75rem+0.375rem*var(--pin-p,1))] ${KNEEBOARD_PIN_NAME}`,
   unitScale: 0.65,
+  // Each figure scaled from its foot while the sheet moves (--pin-s,
+  // pinScaleAt), its laid-out size set once the sheet rests: grown by its
+  // font size a frame at a time, the strip was laid out twice a finger move
+  // (the animation audit of 2026-11-23, M2). The ends from their own edge.
+  cell: "[scale:var(--pin-s,1)] origin-bottom",
+  start: "@min-[16rem]/figures:origin-bottom-left",
+  end: "@min-[16rem]/figures:origin-bottom-right",
 };
+
+/** How much larger a figure of the pinned strip is drawn at growth `p`
+ *  than it is laid out at growth `laid` (both --pin-p, 0 to 1): the ratio
+ *  of its two lines' heights at each, PIN_FIGURE's value and name leadings
+ *  summed (1rem + 0.5625rem·p and 0.75rem + 0.375rem·p). */
+export function pinScaleAt(p: number, laid: number) {
+  const lines = (g: number) => 1.75 + 0.9375 * g;
+  return Math.round((lines(p) / lines(laid)) * 1000) / 1000;
+}
 
 /** The strip's value at its own size (`--fig`), never shrunk to fit a
  *  column: the columns are as wide as their content (FigureStrip; the owner,
