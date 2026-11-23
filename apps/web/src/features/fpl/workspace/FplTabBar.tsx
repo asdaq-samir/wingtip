@@ -49,8 +49,8 @@ export function FplTabBar({
   more: ReactNode;
   fileable?: boolean;
   onFile?: () => void;
-  /** The suggested routes out above the route and on the map, or put
-   *  away; greyed while there are no ways to offer (routesOffered). */
+  /** The suggested routes out in the figures' place and on the map, or
+   *  put away; greyed while there are no ways to offer (routesOffered). */
   routes?: RouteOptions;
 }) {
   const { course } = vm.plan;
@@ -89,19 +89,35 @@ export function FplTabBar({
           badge={briefMark && found > 0 && <TabCount count={found} mark={briefMark} testId="route-brief-count" />}
           label="Brief"
           spoken={briefMark && found > 0 ? `Brief, ${found} ${found === 1 ? "finding" : "findings"} to look at` : undefined}
-          onClick={openBrief}
+          onClick={() => {
+            // Its card over FPL, and the figures back in the foot for when
+            // it closes (FlightFoot's GroundFoot).
+            routes?.onShown(false);
+            openBrief();
+          }}
           // Nothing to brief while a point of the route is not known, as
           // the Nav Log and the Profile have nothing (the UI audit's B8).
           disabled={!!vm.plan.s.unknownPlace}
           testId="route-brief"
           data-finding={briefMark ?? undefined}
         />
-        <BarAction icon={<ICON.navLog />} label="Nav Log" onClick={openNavLogCard} disabled={!course} testId="route-navlog" />
+        <BarAction
+          icon={<ICON.navLog />}
+          label="Nav Log"
+          onClick={() => {
+            routes?.onShown(false);
+            openNavLogCard();
+          }}
+          disabled={!course}
+          testId="route-navlog"
+        />
         {/* Route Options, a tab of the bar's own beside Nav Log, in the
             route glyph FPL's button had before it read "FPL" (the owner,
             2026-11-22: "route option can show in the tab bar instead with
             the previous fpl icon we used"), where it was More's first item;
-            pressed while the suggested routes are out. */}
+            pressed while the suggested routes are out, their chips then in
+            the figures' place over the bar (FlightFoot's GroundFoot; the
+            owner, 2026-11-23). */}
         {/* Always there, so the bar never shifts; greyed, and named why,
             with no ways to suggest (the owner, 2026-11-22: "Routes should
             always show in the tab bar, just disabled if no routes"). */}

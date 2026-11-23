@@ -647,7 +647,7 @@ off by default (the owner, 2026-11-13).
    with no "Route" row and no Done (the owner, 2026-11-22: "It should make
    the same grouped box into route box and the other way"), what is typed
    read as the field is left, the plan's Undo as ever; the
-   figures under it and the Routes' chips put away. **The route box's
+   figures under it and the Routes' chips put away (Routes not offered). **The route box's
    pills** are ForeFlight's route editor's (the owner's screenshot,
    2026-11-23): in the order flown, left to right with no arrows, `gap-2`
    between two (each one's 44-point area half the gap wider each side),
@@ -745,7 +745,12 @@ off by default (the owner, 2026-11-13).
    round Base UI's stock Toolbar (one tab stop, the arrows between them),
    of four buttons: Brief and Nav Log, each opening its card over FPL;
    Routes, the route glyph FPL's button had before it read "FPL", pressed
-   while the suggested routes are out (Route Options, More's first item
+   while the suggested routes are out, their chips then in the figures'
+   place in the foot bar, at the pill too, the same slot over the tabs so
+   nothing else moves; a chip tapped is flown and the chips stay out to
+   compare; Routes again, Brief or Nav Log bring the figures back (the
+   owner, 2026-11-23: "When routes is tapped, show the routes instead of
+   the figures strip") (Route Options, More's first item
    until the owner's 2026-11-22: "route option can show in the tab bar
    instead with the previous fpl icon we used"), always in the bar and
    greyed, named "No route options", while there are no ways to suggest
@@ -788,11 +793,11 @@ off by default (the owner, 2026-11-13).
    there, and its cards keep one height; the owner, 2026-11-19); FPL's
    figures stay in the foot bar beside the sheet meanwhile. A light tick as it settles where the browser has one. In flight the
    four are a row of tiles at the top of the flying drawer and the foot
-   the figures, large, with Done flying. The Routes' chips are behind a
-   button at the start of the first row, out above the stops while it is
-   on (RoutesToggle; the owner, 2026-11-17), their ways drawn on the map
-   only then; put away as the route's ends change or its ways go, and
-   the button not offered while the route's field is open. The first
+   the figures, large, with Done flying. The Routes' chips are behind the
+   tab bar's Routes, out in the figures' place in the foot while it is
+   pressed (they were a row above the stops until 2026-11-23), their ways
+   drawn on the map only then; put away as the route's ends change or its
+   ways go, and Routes greyed while the route's field is open. The first
    row is three columns, the airplane's bar centred between the routes'
    button's slot (kept empty without it) and the page toggle, giving way
    in a narrow row, its airplane's pill first. What the Brief found

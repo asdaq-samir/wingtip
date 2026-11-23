@@ -177,6 +177,39 @@ test("the routes' chips and their ways stay, whichever is picked", async ({ page
   await expect.poll(async () => (await drawn(page, "route-way-chips")).length).toBeGreaterThan(0);
 });
 
+test.describe("on a phone", () => {
+  test.use({ viewport: { width: 393, height: 852 }, hasTouch: true, isMobile: true });
+  test("Routes swaps the foot's figures for the routes' chips in the same place, and back", async ({ page }) => {
+    // The owner, 2026-11-23: "When routes is tapped, show the routes instead
+    // of the figures strip." One slot over the tab bar (FlightFoot's
+    // GroundFoot): the tabs do not move, a chip picked keeps them out.
+    await ways(page);
+    await recordedDirect(page);
+    await page.goto("/app/plan?dep=C81&dest=KDLH");
+    await settle(page);
+    await openPanel(page);
+    const foot = page.getByTestId("foot-bar");
+    const tabs = page.getByTestId("fpl-actions");
+    await expect(foot.getByTestId("flight-line")).toBeVisible({ timeout: slow(30_000) });
+    const before = (await tabs.boundingBox())!;
+    const line = await suggestedRoutes(page);
+    await expect(foot.getByTestId("route-line")).toBeVisible();
+    await expect(foot.getByTestId("flight-line")).toHaveCount(0);
+    expect((await tabs.boundingBox())!.y, "the tabs stay put").toBeCloseTo(before.y, 0);
+    const strip = (await foot.locator("[data-foot-strip]").boundingBox())!;
+    expect(strip.y + strip.height, "the chips over the tabs").toBeLessThanOrEqual(before.y + 1);
+    await line
+      .getByTestId("route-line-chip")
+      .filter({ hasText: "Fastest" })
+      .click({ timeout: slow(30_000) });
+    await expect(line.getByTestId("route-line-chip").filter({ hasText: "Fastest" })).toHaveAttribute("data-pressed", "");
+    await expect(page.getByTestId("routes-toggle")).toHaveAttribute("aria-pressed", "true");
+    await page.getByTestId("routes-toggle").click();
+    await expect(foot.getByTestId("route-line")).toHaveCount(0);
+    await expect(foot.getByTestId("flight-line")).toBeVisible();
+  });
+});
+
 test("another airplane picked keeps the Routes row in its place, dimmed, till its own ways come", async ({ page }) => {
   // The first airplane's ways at once, the next one's a second late, as the
   // planner's grid is for an airplane it has not planned.
