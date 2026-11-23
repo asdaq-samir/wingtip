@@ -4,8 +4,8 @@
 //! FAA's rules for a place outside the United States, and the Brief says
 //! it once.
 
-use crate::jurisdiction::{caution, country_name, jurisdiction_of, leg_codes};
-use wingtip_core::ask::{num_in, strings, Ask};
+use crate::jurisdiction::{country_name, jurisdiction_of, leg_codes, leg_outside, province_of, Outside};
+use wingtip_core::ask::{num_in, opt_str_in, strings, Ask};
 use wingtip_core::json::{self, Value};
 
 /// Why it matters, as the Brief's line says under its tap: 14 CFR 91.703(a).
@@ -15,7 +15,7 @@ const CITE: &str = "14 CFR 91.703(a)";
 /// What to do first: Canada's own rules by their names (the Canadian
 /// Aviation Regulations, SOR/96-433, and Transport Canada's AIM), else the
 /// country's.
-fn action(codes: &[&str]) -> &'static str {
+fn action(codes: &[&'static str]) -> &'static str {
     match codes {
         ["CA"] => "Check Canada's rules (the CARs and the TC AIM) before you go.",
         _ => "Check that country's rules before you go.",
@@ -44,60 +44,72 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let ask = Ask::new(name, v);
     let mut out = String::new();
     if name == "jurisdiction_of" {
-        let code = jurisdiction_of(ask.num("lat")?, ask.num("lon")?);
+        let (lat, lon) = (ask.num("lat")?, ask.num("lon")?);
+        let code = jurisdiction_of(lat, lon);
         out.push_str("{\"code\":");
         json::string(&mut out, code);
         out.push_str(",\"name\":");
         json::string(&mut out, country_name(code));
+        out.push_str(",\"province\":");
+        json::opt_string(&mut out, province_of(lat, lon));
         out.push_str(",\"caution\":");
-        json::opt_string(&mut out, caution(&[code]).as_deref());
+        json::opt_string(&mut out, Outside::at(lat, lon).caution("This point is in").as_deref());
         out.push('}');
         return Ok(out);
     }
-    let points =
-        ask.list("points")?.iter().map(|p| Ok((num_in(name, p, "lat")?, num_in(name, p, "lon")?))).collect::<Result<Vec<_>, String>>()?;
-    let codes: Vec<&str> = points.iter().map(|&(lat, lon)| jurisdiction_of(lat, lon)).collect();
-    // Every country met, each once in the order met, the legs' too.
-    let mut met: Vec<&str> = Vec::new();
+    let list = ask.list("points")?;
+    let points = list.iter().map(|p| Ok((num_in(name, p, "lat")?, num_in(name, p, "lon")?))).collect::<Result<Vec<_>, String>>()?;
+    let names = list.iter().map(|p| opt_str_in(name, p, "name")).collect::<Result<Vec<_>, String>>()?;
+    let at: Vec<Outside> = points.iter().map(|&(lat, lon)| Outside::at(lat, lon)).collect();
+    // Everywhere outside the US the route meets, its points' and legs', in
+    // the order met.
+    let mut route = Outside::default();
     out.push_str("{\"points\":[");
-    for (i, code) in codes.iter().enumerate() {
+    for (i, &(lat, lon)) in points.iter().enumerate() {
         if i > 0 {
             out.push(',');
         }
         out.push_str("{\"code\":");
-        json::string(&mut out, code);
+        json::string(&mut out, jurisdiction_of(lat, lon));
+        // A field in Canada is said to be: "CYQT is in Canada (Ontario): …".
+        let subject = names[i].map_or_else(|| "This point is in".to_string(), |n| format!("{n} is in"));
         out.push_str(",\"caution\":");
-        json::opt_string(&mut out, caution(&[code]).as_deref());
+        json::opt_string(&mut out, at[i].caution(&subject).as_deref());
         out.push('}');
     }
     out.push_str("],\"legs\":[");
     for (i, pair) in points.windows(2).enumerate() {
         let leg: Vec<&str> = leg_codes(pair[0], pair[1]).into_iter().filter(|c| *c != "US").collect();
+        let outside = leg_outside(pair[0], pair[1]);
         if i > 0 {
             out.push(',');
         }
         out.push_str("{\"codes\":");
         strings(&mut out, &leg.iter().map(|c| c.to_string()).collect::<Vec<_>>());
+        // The leg's own warning only where it meets a country neither end
+        // is in, as KUGN to KBUF across southern Ontario: a leg into a field
+        // in Canada is said at the field, not again on the leg. It is the
+        // leg's, named by where it goes, never the field's at its end.
+        let ends: Vec<&str> = at[i].countries.iter().chain(&at[i + 1].countries).copied().collect();
+        let subject = names[i + 1].map_or_else(|| "The leg crosses".to_string(), |n| format!("The leg to {n} crosses"));
+        let crosses = leg.iter().any(|c| !ends.contains(c));
         out.push_str(",\"caution\":");
-        json::opt_string(&mut out, caution(&leg).as_deref());
+        json::opt_string(&mut out, if crosses { outside.caution(&subject) } else { None }.as_deref());
         out.push('}');
-        met.extend(leg);
+        route.add(&at[i]);
+        route.add(&outside);
     }
-    met.extend(codes.iter().filter(|c| **c != "US"));
-    let mut outside: Vec<&str> = Vec::new();
-    for code in met {
-        if !outside.contains(&code) {
-            outside.push(code);
-        }
+    if let Some(last) = at.last() {
+        route.add(last);
     }
     out.push_str("],\"outside\":");
-    strings(&mut out, &outside.iter().map(|c| c.to_string()).collect::<Vec<_>>());
+    strings(&mut out, &route.countries.iter().map(|c| c.to_string()).collect::<Vec<_>>());
     // The Brief's one line for the whole route, as gonogo_glance_lines
     // words its own: the finding, what to do, why, and the rule.
     out.push_str(",\"brief\":");
-    match caution(&outside) {
+    match route.caution("Part of the route is in") {
         None => out.push_str("null"),
-        Some(lead) => brief_line(&mut out, &lead, action(&outside), WHY, CITE),
+        Some(lead) => brief_line(&mut out, &lead, action(&route.countries), WHY, CITE),
     }
     out.push('}');
     Ok(out)

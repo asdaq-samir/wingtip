@@ -24,9 +24,13 @@ export interface TimelinePoint {
    *  not know, a field NASR lists as closed (decision 0043), or a field
    *  whose card could not be had to say. */
   problem: string | null;
-  /** Where it, or the leg to it, lies outside the United States: the
-   *  engine's warning that its figures are by US rules (decision 0053). */
+  /** Where it lies outside the United States: the engine's warning that
+   *  its figures are by US rules (decision 0053), "CYQT is in Canada …". */
   caution: string | null;
+  /** Where the leg from it to the next point crosses a country neither is
+   *  in: the engine's warning, "The leg to KBUF crosses Canada (Ontario):
+   *  …", said under this line, on the route's line to the next. */
+  legCaution: string | null;
   /** A field whose card has not said yet whether it is open: its line
    *  does not open to its runways and procedures till it has (0043). */
   checking: boolean;

@@ -96,8 +96,11 @@ export default function TimelineRoute({
   const stops = points.slice(1, -1);
   // A pilot's one open stop keeps them listed; the specs' fields, each
   // open at first (openAtFirst), list them all as they work on them; a
-  // stop that cannot be flown to keeps its why in sight (decision 0043).
-  const all = allStops || vm.openAtFirst || stops.some((p) => p.problem || p.caution || openKey === keyOf(p));
+  // stop that cannot be flown to keeps its why in sight (decision 0043),
+  // and a leg across another country its warning, on the line to the
+  // point it names (decision 0053).
+  const all =
+    allStops || vm.openAtFirst || stops.some((p) => p.problem || p.caution || openKey === keyOf(p)) || points.some((p) => p.legCaution);
   const shown = listedPoints(points, all);
   const folded = shown.includes(null);
   // A point moved, from its menu or by a drop beside an end, in among

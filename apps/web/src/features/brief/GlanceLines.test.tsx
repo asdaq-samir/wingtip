@@ -21,5 +21,7 @@ test("a route into Canada is one caution line among the Brief's findings", () =>
     </Accordion>,
   );
   expect(screen.getByTestId("brief-line-jurisdiction").getAttribute("data-finding")).toBe("caution");
-  expect(screen.getByTestId("brief-line-words").textContent).toBe("Canada: rules not checked — figures use US rules");
+  expect(screen.getByTestId("brief-line-words").textContent).toBe(
+    "Part of the route is in Canada (Ontario): Canadian rules not checked — figures use US rules",
+  );
 });

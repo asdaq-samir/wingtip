@@ -135,6 +135,13 @@ export function LineNotes({ point, refused }: { point: TimelinePoint; refused: s
           {point.caution}
         </p>
       )}
+      {/* The leg from it crossing another country: said on the route's
+          line down to the next point, as the leg's, not the next field's. */}
+      {point.legCaution && (
+        <p className={cn("pb-2 text-caution-ink", TEXT.note)} data-testid="timeline-leg-caution">
+          {point.legCaution}
+        </p>
+      )}
       {/* A move of it the route cannot take, said where it was tried
           (lib/problems: in place, no toast); polite, as a screen
           reader's drop is said. */}

@@ -7191,7 +7191,9 @@ nonisolated enum EngineContract {
         var code: String
         /// The country's name as the warning starts, "Canada"; "Outside the US" for other.
         var name: String
-        /// The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+        /// In Canada, its province or territory, "Ontario" (Natural Earth's admin-1 at 1:50m); null elsewhere.
+        var province: String?
+        /// The warning at the point, "This point is in Canada (Ontario): Canadian rules not checked — figures use US rules"; null in the United States.
         var caution: String?
     }
 
@@ -11507,7 +11509,7 @@ nonisolated enum EngineContract {
     }
 
     nonisolated struct RouteJurisdictionAnswerBrief: Codable, Equatable, Sendable {
-        /// The finding alone.
+        /// The finding alone, "Part of the route is in Canada (Ontario): Canadian rules not checked — figures use US rules".
         var lead: String
         /// The finding and what to do, in one line.
         var line: String
@@ -11519,25 +11521,27 @@ nonisolated enum EngineContract {
     nonisolated struct RouteJurisdictionAnswerLegsItem: Codable, Equatable, Sendable {
         /// The countries other than the United States met along the leg, its ends included, in the order met.
         var codes: [String]
-        /// The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+        /// The leg's own warning where it meets a country neither of its ends is in, named by where it goes and where it crosses, "The leg to KBUF crosses Canada (Ontario): Canadian rules not checked — figures use US rules"; null otherwise (a leg into a field in Canada is said at the field).
         var caution: String?
     }
 
     nonisolated struct RouteJurisdictionAnswerPointsItem: Codable, Equatable, Sendable {
         /// US: the United States with its territories (14 CFR 1.1); CA Canada, MX Mexico, BS the Bahamas; other anywhere else, the high seas among it.
         var code: String
-        /// The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+        /// The warning at a point outside the United States, "CYQT is in Canada (Ontario): Canadian rules not checked — figures use US rules"; null in the United States.
         var caution: String?
     }
 
     nonisolated struct RouteJurisdictionInput: Codable, Equatable, Sendable {
-        /// The route's points in order, as the nav log's rows: a leg from each to the next.
+        /// The route's points in order, the nav log's departure, stops and destination: a leg from each to the next.
         var points: [EngineContract.RouteJurisdictionInputPointsItem]
     }
 
     nonisolated struct RouteJurisdictionInputPointsItem: Codable, Equatable, Sendable {
         var lat: Double
         var lon: Double
+        /// Its name as the pilot reads it, "KBUF": the warnings name the point and the leg to it by it; "This point" and "The leg" without one.
+        var name: String?
     }
 
     /// One way: its kind and every kind it is the best of, its points between the ends (fixes, points of the pilot's own, fuel stops), the fuel stops among them and those with somewhere to eat, its path, distance, minutes in the air and on the ground (30 a landing), fuel, landings, the hazards it crosses and the marginal ones it passes (indices into hazards), and what it meets. With no airplane (a null profile) its minutes in the air and its fuel are null, and it has no fuel stops.

@@ -9532,7 +9532,11 @@ export interface JurisdictionOfAnswer {
    */
   name: string;
   /**
-   * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+   * In Canada, its province or territory, "Ontario" (Natural Earth's admin-1 at 1:50m); null elsewhere.
+   */
+  province: string | null;
+  /**
+   * The warning at the point, "This point is in Canada (Ontario): Canadian rules not checked — figures use US rules"; null in the United States.
    */
   caution: string | null;
 }
@@ -12889,11 +12893,15 @@ export interface RouteHeadwindInput {
 }
 export interface RouteJurisdictionInput {
   /**
-   * The route's points in order, as the nav log's rows: a leg from each to the next.
+   * The route's points in order, the nav log's departure, stops and destination: a leg from each to the next.
    */
   points: {
     lat: number;
     lon: number;
+    /**
+     * Its name as the pilot reads it, "KBUF": the warnings name the point and the leg to it by it; "This point" and "The leg" without one.
+     */
+    name?: string | null;
   }[];
 }
 export interface RouteJurisdictionAnswer {
@@ -12906,7 +12914,7 @@ export interface RouteJurisdictionAnswer {
      */
     code: "US" | "CA" | "MX" | "BS" | "other";
     /**
-     * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+     * The warning at a point outside the United States, "CYQT is in Canada (Ontario): Canadian rules not checked — figures use US rules"; null in the United States.
      */
     caution: string | null;
   }[];
@@ -12921,7 +12929,7 @@ export interface RouteJurisdictionAnswer {
      */
     codes: ("US" | "CA" | "MX" | "BS" | "other")[];
     /**
-     * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+     * The leg's own warning where it meets a country neither of its ends is in, named by where it goes and where it crosses, "The leg to KBUF crosses Canada (Ontario): Canadian rules not checked — figures use US rules"; null otherwise (a leg into a field in Canada is said at the field).
      */
     caution: string | null;
   }[];
@@ -12936,7 +12944,7 @@ export interface RouteJurisdictionAnswer {
    */
   brief: {
     /**
-     * The finding alone.
+     * The finding alone, "Part of the route is in Canada (Ontario): Canadian rules not checked — figures use US rules".
      */
     lead: string;
     /**

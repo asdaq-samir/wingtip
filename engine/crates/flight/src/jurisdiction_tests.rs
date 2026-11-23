@@ -4,7 +4,7 @@
 //! points (the FAA's NASR APT_BASE for the US ones, each country's AIP for
 //! the rest), to a few hundredths of a degree.
 
-use crate::jurisdiction::{caution, jurisdiction_of, leg_codes};
+use crate::jurisdiction::{jurisdiction_of, leg_codes, province_of, Outside};
 use crate::jurisdiction_call::call;
 use wingtip_core::json;
 
@@ -90,30 +90,80 @@ fn a_leg_into_canada_meets_it() {
 }
 
 #[test]
-fn the_warning_names_the_country() {
-    assert_eq!(caution(&["US"]), None);
-    assert_eq!(caution(&["CA"]).unwrap(), "Canada: rules not checked — figures use US rules");
-    assert_eq!(caution(&["US", "CA", "MX"]).unwrap(), "Canada and Mexico: rules not checked — figures use US rules");
-    assert_eq!(caution(&["other"]).unwrap(), "Outside the US: rules not checked — figures use US rules");
-    assert_eq!(caution(&["BS", "other"]).unwrap(), "The Bahamas and outside the US: rules not checked — figures use US rules");
+fn a_point_in_canada_is_in_its_province() {
+    assert_eq!(province_of(43.6772, -79.6306), Some("Ontario")); // CYYZ
+    assert_eq!(province_of(49.1947, -123.1792), Some("British Columbia")); // CYVR
+    assert_eq!(province_of(45.4706, -73.7408), Some("Quebec")); // CYUL
+    assert_eq!(province_of(42.2756, -82.9556), Some("Ontario")); // CYQG
+                                                                 // Lake Erie's Canadian half, off Point Pelee.
+    assert_eq!(province_of(41.85, -82.5), Some("Ontario"));
+    // Detroit City is in no province.
+    assert_eq!(province_of(42.4092, -83.0099), None);
 }
 
 #[test]
-fn a_route_says_its_points_legs_and_the_brief_once() {
-    let ask =
-        json::parse(r#"{"points":[{"lat":42.3246,"lon":-88.0741},{"lat":46.842,"lon":-92.1936},{"lat":48.3719,"lon":-89.3239}]}"#).unwrap();
-    let answer = json::parse(&call("route_jurisdiction", &ask).unwrap()).unwrap();
-    let codes: Vec<&str> =
-        answer.get("points").unwrap().as_array().unwrap().iter().map(|p| p.get("code").unwrap().as_str().unwrap()).collect();
-    assert_eq!(codes, vec!["US", "US", "CA"]);
+fn the_warning_names_the_place_and_whose_rules() {
+    let words = |o: Outside, subject: &str| o.caution(subject);
+    assert_eq!(words(Outside::at(42.4092, -83.0099), "KDET is in"), None);
+    assert_eq!(
+        words(Outside::at(43.6772, -79.6306), "CYYZ is in").unwrap(),
+        "CYYZ is in Canada (Ontario): Canadian rules not checked — figures use US rules"
+    );
+    assert_eq!(
+        words(Outside::at(25.0, -90.0), "This point is in").unwrap(),
+        "This point is in airspace outside the US: foreign and ICAO rules not checked — figures use US rules"
+    );
+    let mut both = Outside::at(32.5411, -116.97); // MMTJ
+    both.add(&Outside::at(25.039, -77.4662)); // MYNN
+    assert_eq!(
+        words(both, "Part of the route is in").unwrap(),
+        "Part of the route is in Mexico and the Bahamas: Mexican and Bahamian rules not checked — figures use US rules"
+    );
+}
+
+fn route(points: &str) -> json::Value {
+    json::parse(&call("route_jurisdiction", &json::parse(&format!(r#"{{"points":{points}}}"#)).unwrap()).unwrap()).unwrap()
+}
+
+fn caution(v: Option<&json::Value>) -> Option<&str> {
+    v.and_then(|c| c.get("caution")).and_then(|c| c.as_str())
+}
+
+#[test]
+fn a_leg_between_us_fields_across_ontario_is_said_on_the_leg() {
+    // The owner's KUGN, KBUF, KPIT (2026-11-23): Buffalo is in New York,
+    // the leg to it from Waukegan crosses southern Ontario.
+    let answer = route(
+        r#"[{"lat":42.4222,"lon":-87.8679,"name":"KUGN"},{"lat":42.9405,"lon":-78.7322,"name":"KBUF"},{"lat":40.4915,"lon":-80.2329,"name":"KPIT"}]"#,
+    );
+    let points = answer.get("points").unwrap().as_array().unwrap();
+    assert!(points.iter().all(|p| caution(Some(p)).is_none()));
     let legs = answer.get("legs").unwrap().as_array().unwrap();
-    assert!(legs[0].get("caution").unwrap().as_str().is_none());
-    assert_eq!(legs[1].get("caution").unwrap().as_str(), Some("Canada: rules not checked — figures use US rules"));
+    assert_eq!(caution(legs.first()), Some("The leg to KBUF crosses Canada (Ontario): Canadian rules not checked — figures use US rules"));
+    assert_eq!(caution(legs.get(1)), None);
     let brief = answer.get("brief").unwrap();
     assert_eq!(brief.get("cite").unwrap().as_str(), Some("14 CFR 91.703(a)"));
-    assert!(brief.get("line").unwrap().as_str().unwrap().starts_with("Canada: rules not checked"));
+    assert_eq!(
+        brief.get("lead").unwrap().as_str(),
+        Some("Part of the route is in Canada (Ontario): Canadian rules not checked — figures use US rules")
+    );
+    assert!(brief.get("line").unwrap().as_str().unwrap().ends_with("Check Canada's rules (the CARs and the TC AIM) before you go."));
+}
+
+#[test]
+fn a_field_in_canada_is_said_at_the_field_not_again_on_its_leg() {
+    // C81 to Thunder Bay by Duluth.
+    let answer = route(
+        r#"[{"lat":42.3246,"lon":-88.0741,"name":"C81"},{"lat":46.842,"lon":-92.1936,"name":"KDLH"},{"lat":48.3719,"lon":-89.3239,"name":"CYQT"}]"#,
+    );
+    let points = answer.get("points").unwrap().as_array().unwrap();
+    assert_eq!(caution(points.get(2)), Some("CYQT is in Canada (Ontario): Canadian rules not checked — figures use US rules"));
+    let legs = answer.get("legs").unwrap().as_array().unwrap();
+    assert!(legs.iter().all(|l| caution(Some(l)).is_none()));
+    // Unnamed, the point is "This point".
+    let answer = route(r#"[{"lat":46.842,"lon":-92.1936},{"lat":48.3719,"lon":-89.3239}]"#);
+    assert!(caution(answer.get("points").unwrap().as_array().unwrap().get(1)).unwrap().starts_with("This point is in Canada (Ontario)"));
     // All in the US: no Brief line.
-    let home = json::parse(r#"{"points":[{"lat":42.3246,"lon":-88.0741},{"lat":46.842,"lon":-92.1936}]}"#).unwrap();
-    let answer = json::parse(&call("route_jurisdiction", &home).unwrap()).unwrap();
-    assert!(answer.get("brief").unwrap().as_str().is_none() && answer.get("outside").unwrap().as_array().unwrap().is_empty());
+    let home = route(r#"[{"lat":42.3246,"lon":-88.0741},{"lat":46.842,"lon":-92.1936}]"#);
+    assert!(home.get("brief").unwrap().as_str().is_none() && home.get("outside").unwrap().as_array().unwrap().is_empty());
 }

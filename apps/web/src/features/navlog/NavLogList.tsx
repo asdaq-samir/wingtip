@@ -195,16 +195,25 @@ export function NavLogList({
                     </span>
                   </div>
                 )}
-                {/* Where the route leaves the United States, before the first
-                    row there: its figures are by US rules (warn, never limit). */}
-                {cautions[at] && cautions[at] !== cautions[at - 1] && (
-                  <div role="row" className="relative flex min-h-7 items-center py-1 pl-12.5" data-testid="navlog-jurisdiction">
-                    <span aria-hidden="true" className={cn("absolute inset-y-0 w-0.5 -translate-x-1/2 bg-border", RAIL)} />
-                    <span role="cell" aria-colspan={7} className={cn("font-semibold text-caution-ink", TEXT.note)}>
-                      {cautions[at]}
-                    </span>
-                  </div>
-                )}
+                {/* Outside the United States, its figures by US rules (warn,
+                    never limit): a leg across another country before its
+                    first row, the leg's own words ("The leg to KBUF crosses
+                    Canada (Ontario)"), and a field there before its row. */}
+                {[at > 0 ? cautions[at - 1]!.leaving : null, cautions[at]!.at]
+                  .filter((words): words is string => !!words)
+                  .map((words) => (
+                    <div
+                      key={words}
+                      role="row"
+                      className="relative flex min-h-7 items-center py-1 pl-12.5"
+                      data-testid="navlog-jurisdiction"
+                    >
+                      <span aria-hidden="true" className={cn("absolute inset-y-0 w-0.5 -translate-x-1/2 bg-border", RAIL)} />
+                      <span role="cell" aria-colspan={7} className={cn("font-semibold text-caution-ink", TEXT.note)}>
+                        {words}
+                      </span>
+                    </div>
+                  ))}
                 {airway && (
                   // Under IFR along an airway, where it is joined or its
                   // altitudes change: the route column of a paper IFR log.

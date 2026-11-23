@@ -33,6 +33,8 @@ fn each_route_says_its_points_legs_and_the_brief_once() {
         let legs: Vec<&Value> = answer["legs"].as_array().unwrap().iter().map(|l| &l["codes"]).collect();
         assert_eq!(json!(legs), r["legs"], "{}", r["why"]);
         assert_eq!(answer["outside"], r["outside"], "{}", r["why"]);
+        let said: Vec<&Value> = answer["legs"].as_array().unwrap().iter().map(|l| &l["caution"]).collect();
+        assert_eq!(json!(said), r["legCautions"], "{}", r["why"]);
         assert_eq!(answer["brief"].get("lead").unwrap_or(&Value::Null), &r["caution"], "{}", r["why"]);
     }
 }
