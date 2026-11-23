@@ -20,11 +20,20 @@ struct WindowHost: ViewModifier {
     let run: @MainActor (AppCommand) async -> Void
     @State private var importing = false
     @State private var problem: String?
+    @Environment(Navigator.self) private var nav
+    /// Whether this window is the one in front, which the system's Find is for.
+    @Environment(\.appearsActive) private var front
 
     func body(content: Content) -> some View {
         content
             .focusedSceneValue(\.windowActions, WindowActions(
                 search: { search.presented = true }, open: open, page: page, openFile: { importing = true }))
+            // ⌘F, Edit > Find (WingtipCommands): the one search, but while
+            // the reader is up over the map, which finds in its document
+            // (ReaderView).
+            .onReceive(NotificationCenter.default.publisher(for: .systemFind)) { _ in
+                if front, nav.reading == nil { search.presented = true }
+            }
             .fileImporter(isPresented: $importing, allowedContentTypes: WindowFiles.types) { result in
                 if case .success(let url) = result { take(WindowFiles.copy(url)) }
             }
