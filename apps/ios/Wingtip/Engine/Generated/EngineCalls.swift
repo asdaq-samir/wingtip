@@ -8,7 +8,7 @@ import OpenAPIRuntime
 /// parameters and its answer as the contract's type. Each throws
 /// Engine.Refused (or the decoder's error) where the engine refused the
 /// input or answered in a shape the contract does not give, and logs it.
-extension Engine {
+nonisolated extension Engine {
 
     /// The ACS codes in pasted text, each once.
     static func acsCodes(text: String) throws -> [String] {

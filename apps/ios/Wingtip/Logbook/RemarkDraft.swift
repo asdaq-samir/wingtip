@@ -12,7 +12,7 @@ import Foundation
 /// NumberGuard): a remark cannot carry a time or a count the entry does
 /// not have. The draft goes into the Remarks field for the pilot to keep,
 /// change or clear; nothing is saved until they Save or Log.
-enum RemarkDraft {
+nonisolated enum RemarkDraft {
     /// The remark is the Remarks column: at most this many sentences.
     static let most = 2
 

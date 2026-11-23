@@ -8,10 +8,10 @@ import Foundation
 /// of the next), and "IPC needed" more than six calendar months past it
 /// (61.57(d)). Every day is the gateway's, worked out by the engine
 /// (pilot_currency); this only compares them with today's (Day.current).
-enum CurrencyWords {
-    enum Standing: Equatable, Sendable { case current, notYet, lapsed }
+nonisolated enum CurrencyWords {
+    nonisolated enum Standing: Equatable, Sendable { case current, notYet, lapsed }
 
-    struct Line: Equatable, Sendable {
+    nonisolated struct Line: Equatable, Sendable {
         var words: String
         var standing: Standing
     }

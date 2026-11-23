@@ -260,7 +260,7 @@ final class AirportMarkView: MKAnnotationView {
 /// the dark edge holds on every part of the chart, by day and dimmed at
 /// night. Drawn outside the mark's frame, so it does not change what
 /// MapKit collides.
-final class SelectedHalo: CALayer {
+final nonisolated class SelectedHalo: CALayer {
     static let radius: CGFloat = 20
 
     override init() {

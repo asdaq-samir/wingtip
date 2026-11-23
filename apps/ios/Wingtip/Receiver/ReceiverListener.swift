@@ -6,18 +6,19 @@ import Synchronization
 /// port 4000 (Garmin's GDL 90 Data Interface Specification, as Stratux,
 /// Sentry, uAvionix's SkyEcho and a Stratus in open mode send it to the
 /// phones that join them). The bytes are only gathered here; the engine
-/// reads them (`receiver_read`, Receiver). A receiver that sends to the
+/// reads them (`receiver_delta`, Receiver). A receiver that sends to the
 /// network's broadcast address, not to the phone, is heard only with
 /// Apple's multicast entitlement, which this app does not yet hold.
 ///
 /// Everything that changes is in one `State` behind one mutex, so the
 /// compiler refuses a read or write that does not take it (the listener's
-/// handlers run on its own queue, the reads on the main actor).
-final class ReceiverListener: Sendable {
+/// handlers run on its own queue, the reads on the main actor), and the
+/// class is nonisolated: Network.framework calls it on that queue.
+final nonisolated class ReceiverListener: Sendable {
     /// GDL 90's port over Wi-Fi, as the receivers and ForeFlight use it.
     static let port: NWEndpoint.Port = 4000
 
-    private struct State {
+    private nonisolated struct State {
         var listener: NWListener?
         /// Every sender accepted, cancelled with the listener.
         var connections: [ObjectIdentifier: NWConnection] = [:]

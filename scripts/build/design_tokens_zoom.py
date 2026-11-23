@@ -45,7 +45,7 @@ def ts(tree):
 
 
 def swift(tree):
-    out = ["/// %s" % HEAD, "enum WingtipMapZoom {"]
+    out = ["/// %s" % HEAD, "nonisolated enum WingtipMapZoom {"]
     for k, t in _zooms(tree).items():
         out += ["    /// %s" % t["$description"], "    static let %s: Double = %g" % (_camel(k), t["$value"])]
     return "\n".join(out + ["}"])

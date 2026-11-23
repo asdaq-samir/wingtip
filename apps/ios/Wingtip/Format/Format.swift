@@ -11,7 +11,7 @@ import Foundation
 ///
 /// The locale is fixed to en_US on purpose: figures are written as the FAA
 /// prints them ("10,162 ft", "12.3 nm") whatever the phone's region.
-enum Format {
+nonisolated enum Format {
     /// The locale every figure is written in.
     static let locale = Locale(identifier: "en_US")
     /// What is written for a figure not known, which is not zero.
@@ -208,7 +208,7 @@ enum Format {
     static func day(_ date: Date) -> String { date.formatted(date: .abbreviated, time: .omitted) }
 }
 
-extension String {
+nonisolated extension String {
     /// Padded with zeros on the left to a width, "7" to "007".
     func leftPadded(to width: Int) -> String {
         count >= width ? self : String(repeating: "0", count: width - count) + self

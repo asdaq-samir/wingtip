@@ -5,9 +5,9 @@ import Foundation
 /// does through the service worker: every tile a corridor round the
 /// course line needs at the zooms a pilot flies at, fetched into the
 /// store ahead of the flight, so the chart is there with no connection.
-enum KeepRoute {
+nonisolated enum KeepRoute {
     /// A tile's column and row at a zoom, the web map's own arithmetic.
-    struct Tile: Hashable, Sendable {
+    nonisolated struct Tile: Hashable, Sendable {
         let z: Int
         let x: Int
         let y: Int

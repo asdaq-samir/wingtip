@@ -4,7 +4,7 @@ import UIKit
 
 /// One NEXRAD level's rectangles as one shape, so the map draws seven
 /// overlays however many bins the receiver was sent.
-final class NexradLevelOverlay: MKMultiPolygon {
+final nonisolated class NexradLevelOverlay: MKMultiPolygon {
     var level = 1
 }
 

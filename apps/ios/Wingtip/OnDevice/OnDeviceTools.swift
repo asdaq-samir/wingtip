@@ -8,7 +8,10 @@ import FoundationModels
 /// What the model is handed is logged (FigureLog), and the answer's
 /// sentences may cite only those (OnDeviceAsk). Five, not more: the
 /// on-device model's context is small, and each tool's schema is in it.
-enum OnDeviceTools {
+/// Nonisolated, as the figures they hand over are (FieldFigures,
+/// FlightFigures, EngineWords): the model calls its tools on its own
+/// threads, each with a Sendable snapshot of the flight (OnDeviceFacts).
+nonisolated enum OnDeviceTools {
     static func all(_ facts: OnDeviceFacts, log: FigureLog) -> [any Tool] {
         [
             FieldWeatherTool(facts: facts, log: log), RunwayWindTool(facts: facts, log: log), FuelTool(facts: facts, log: log),
@@ -30,14 +33,14 @@ enum OnDeviceTools {
     }
 }
 
-struct FieldWeatherTool: Tool {
+nonisolated struct FieldWeatherTool: Tool {
     let name = "fieldWeather"
     let description = "The METAR and TAF this iPhone holds for an airport on the route, as sent, and its density altitude."
     let facts: OnDeviceFacts
     let log: FigureLog
 
     @Generable
-    struct Arguments {
+    nonisolated struct Arguments {
         @Guide(description: "The airport's ICAO ident, such as KMSN; empty for the destination.")
         var ident: String
     }
@@ -52,14 +55,14 @@ struct FieldWeatherTool: Tool {
     }
 }
 
-struct RunwayWindTool: Tool {
+nonisolated struct RunwayWindTool: Tool {
     let name = "runwayWind"
     let description = "The reported wind's headwind and crosswind on an airport's runways, from the METAR this iPhone holds."
     let facts: OnDeviceFacts
     let log: FigureLog
 
     @Generable
-    struct Arguments {
+    nonisolated struct Arguments {
         @Guide(description: "The airport's ICAO ident, such as KMSN; empty for the destination.")
         var ident: String
         @Guide(description: "The runway the pilot names, such as 36 or 18L; empty for every runway.")
@@ -71,14 +74,14 @@ struct RunwayWindTool: Tool {
     }
 }
 
-struct FuelTool: Tool {
+nonisolated struct FuelTool: Tool {
     let name = "fuel"
     let description = "The plan's fuel, the fuel the plan leaves at the destination from here, and the endurance of the fuel on board."
     let facts: OnDeviceFacts
     let log: FigureLog
 
     @Generable
-    struct Arguments {
+    nonisolated struct Arguments {
         @Guide(description: "The gallons on board if the pilot says them; 0 when not said.")
         var onBoardGal: Double
     }
@@ -88,14 +91,14 @@ struct FuelTool: Tool {
     }
 }
 
-struct GlideTool: Tool {
+nonisolated struct GlideTool: Tool {
     let name = "glide"
     let description = "How far the airplane glides in still air from its GPS altitude."
     let facts: OnDeviceFacts
     let log: FigureLog
 
     @Generable
-    struct Arguments {
+    nonisolated struct Arguments {
         @Guide(description: "Leave empty.")
         var note: String
     }
@@ -105,7 +108,7 @@ struct GlideTool: Tool {
     }
 }
 
-struct NearestFieldsTool: Tool {
+nonisolated struct NearestFieldsTool: Tool {
     let name = "nearestFields"
     let description = "The airports nearest the airplane, with their distance and course, from the FAA data kept on this iPhone."
     let facts: OnDeviceFacts
@@ -113,7 +116,7 @@ struct NearestFieldsTool: Tool {
     var pins: FlightFigures.Pins = FlightFigures.packPins
 
     @Generable
-    struct Arguments {
+    nonisolated struct Arguments {
         @Guide(description: "Leave empty.")
         var note: String
     }

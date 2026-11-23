@@ -45,7 +45,7 @@ final class OfflineProgress {
 /// The session is made once, here in `init`: two sessions with the same
 /// background identifier are undefined (Apple's URLSessionConfiguration
 /// .background), events going to one and the other's tasks lost.
-final class OfflineDownloads: Sendable {
+final nonisolated class OfflineDownloads: Sendable {
     static let shared = OfflineDownloads()
     static let identifier = "app.wingtipmaps.ios.offline-charts"
 
@@ -102,7 +102,7 @@ final class OfflineDownloads: Sendable {
     /// The session's delegate: lands each file in the store and passes
     /// progress to the list, at most every `every` per task (a fast link
     /// calls back hundreds of times a second).
-    private final class Delegate: NSObject, URLSessionDownloadDelegate, Sendable {
+    private final nonisolated class Delegate: NSObject, URLSessionDownloadDelegate, Sendable {
         private let store: OfflineStore
         private let told = Mutex<[Int: ContinuousClock.Instant]>([:])
         static let every: Duration = .milliseconds(250)

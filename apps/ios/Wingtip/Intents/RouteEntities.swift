@@ -145,6 +145,6 @@ struct OpenFlightIntent: OpenIntent, CommandIntent {
     }
 }
 
-extension Array {
+nonisolated extension Array {
     subscript(safe index: Int) -> Element? { indices.contains(index) ? self[index] : nil }
 }

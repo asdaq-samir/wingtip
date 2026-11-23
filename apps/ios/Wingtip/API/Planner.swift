@@ -22,11 +22,13 @@ extension Course {
 enum Planner {
     /// The planner's JSON for its generated types, which name their own
     /// snake-case keys.
-    static let json = JSONDecoder()
+    /// The coders are Sendable and read off the main actor (the engine's
+    /// answers, the middleware), so they are nonisolated.
+    nonisolated static let json = JSONDecoder()
 
     /// The app's own types of the planner's JSON, named in camel case:
     /// "flight_category" read as flightCategory.
-    static let snakeCase: JSONDecoder = {
+    nonisolated static let snakeCase: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         return decoder
@@ -34,14 +36,14 @@ enum Planner {
 
     /// Bodies the planner reads, in its snake case; keys sorted, so the
     /// same question is the same bytes (the Go / No-Go's key).
-    static let snakeEncoder: JSONEncoder = {
+    nonisolated static let snakeEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase
         encoder.outputFormatting = .sortedKeys
         return encoder
     }()
 
-    struct Failure: Error, LocalizedError {
+    nonisolated struct Failure: Error, LocalizedError {
         let status: Int
         let detail: String?
         var errorDescription: String? { detail ?? "The planner answered \(status)." }
@@ -76,7 +78,7 @@ enum Planner {
     }
 
     /// FastAPI's `{"detail": "…"}`, where an answer carries one.
-    static func detail(of data: Data) -> String? {
+    nonisolated static func detail(of data: Data) -> String? {
         (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["detail"] as? String
     }
 

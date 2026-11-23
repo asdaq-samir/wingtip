@@ -9,7 +9,7 @@ import os
 /// loop knows when the frames have loaded (LoopTiles).
 /// Unchecked: MKTileOverlay is not Sendable, and MapKit loads its tiles
 /// on its own threads; it changes nothing after it is set up.
-final class LoopTileOverlay: MKTileOverlay, @unchecked Sendable {
+final nonisolated class LoopTileOverlay: MKTileOverlay, @unchecked Sendable {
     let key: String
     let radar: Bool
 
@@ -48,7 +48,7 @@ final class LoopTileOverlay: MKTileOverlay, @unchecked Sendable {
 
 /// How many of the loop's tiles are in flight, and how many have come
 /// since the frames were last put on the map.
-final class LoopTiles: Sendable {
+final nonisolated class LoopTiles: Sendable {
     static let shared = LoopTiles()
     private let state = OSAllocatedUnfairLock(initialState: (pending: 0, done: 0))
 

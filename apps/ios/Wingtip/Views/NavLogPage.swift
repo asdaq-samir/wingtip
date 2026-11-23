@@ -162,7 +162,8 @@ struct NavLogTable: View {
     let legs: [Leg]
     @State private var order = [KeyPathComparator(\NavLogTable.Row.number)]
 
-    struct Row: Identifiable {
+    /// Nonisolated: the Table sorts by key paths into it, which are Sendable.
+    nonisolated struct Row: Identifiable {
         let number: Int
         let leg: Leg
         var id: String { leg.id + "#\(number)" }

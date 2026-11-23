@@ -48,7 +48,7 @@ enum ReadyFacts {
     /// A chart cycle as the engine takes it, YYYY-MM-DD: the planner names
     /// the chart's edition as the FAA's page does, MM-DD-YYYY
     /// (wingtip.charts current_cycle). Nil where it is neither.
-    static func isoDay(_ cycle: String?) -> String? {
+    nonisolated static func isoDay(_ cycle: String?) -> String? {
         guard let cycle else { return nil }
         let parts = cycle.split(separator: "-").map(String.init)
         guard parts.count == 3, parts.allSatisfy({ Int($0) != nil }) else { return nil }
@@ -123,7 +123,7 @@ enum ReadyFacts {
 
 /// Where the chart and the packs for a route stand on the phone: worked
 /// out off the main thread, as it reads a few hundred files.
-struct ReadyStore: Equatable, Sendable {
+nonisolated struct ReadyStore: Equatable, Sendable {
     var chartsKept: Bool
     var chartEdition: String?
     var packEdition: String?

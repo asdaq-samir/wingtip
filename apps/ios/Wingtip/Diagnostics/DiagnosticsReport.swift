@@ -10,7 +10,7 @@ import Foundation
 /// days. Built from plain values, so the rules of the body are tested
 /// without MetricKit's payloads, which a test cannot make
 /// (DiagnosticsReporter reads those).
-extension GWDiagnosticsReport {
+nonisolated extension GWDiagnosticsReport {
     /// The report for this build on this kind of device, from the app as
     /// a whole (the gateway's page "app").
     init(version: String, os: String, tablet: Bool) {
@@ -85,7 +85,7 @@ extension GWDiagnosticsReport {
 
 /// The app's version as Settings > General > About and a crash report
 /// write it: the marketing version and the build, "1.0 (1)".
-struct AppVersion: Equatable, Sendable {
+nonisolated struct AppVersion: Equatable, Sendable {
     let short: String
     let build: String
 

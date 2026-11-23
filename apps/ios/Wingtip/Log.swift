@@ -13,7 +13,8 @@ import os
 /// identifier (an airport, a tail number, a rule's name) is `.public`,
 /// a position, a route or a transcript is `.private`, which the system
 /// redacts off the device unless the phone is in a debugger.
-enum Log {
+/// Nonisolated: every thread logs, and a Logger is safe from any.
+nonisolated enum Log {
     static let subsystem = "app.wingtipmaps.ios"
 
     /// The app's own life: launch, the session, the scene.

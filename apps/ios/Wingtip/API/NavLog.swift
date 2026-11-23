@@ -10,7 +10,7 @@ import PlannerAPI
 /// NavLogError), generated as the rest are; only the choice among them by
 /// `type` is made here, as the document's NavLogMessage is every line's
 /// members at once.
-enum NavLogMessage: Equatable, Sendable {
+nonisolated enum NavLogMessage: Equatable, Sendable {
     case stage(String)
     case altitude(NavLogAltitude)
     case leg(Leg)
@@ -26,7 +26,7 @@ typealias NavLogAltitude = APINavLogAltitude
 /// One of the planner's four plans (AltitudeOption).
 typealias AltitudeOption = APIAltitudeOption
 
-extension AltitudeOption: @retroactive Identifiable {
+nonisolated extension AltitudeOption: @retroactive Identifiable {
     public var id: String { kind }
     /// The plan's highest altitude, the figure its row shows.
     var altitudeFt: Double? { steps.map(\.altitudeFt).max() }
@@ -58,7 +58,7 @@ typealias AltitudeSelection = APIAltitudeBreakdown
 /// stop landed at the minutes on the ground there (ground_min).
 typealias Leg = APILeg
 
-extension Leg: @retroactive Identifiable {
+nonisolated extension Leg: @retroactive Identifiable {
     public var id: String { "\(from)-\(to)" }
 }
 
@@ -106,8 +106,9 @@ extension NavLogError {
 
 enum NavLog {
     /// One line of the stream, or nil for a line of a kind the app has no
-    /// use for yet.
-    static func decode(line: Data, decoder: JSONDecoder = Planner.json) throws -> NavLogMessage? {
+    /// use for yet. Nonisolated: read as the stream's lines come in, on
+    /// the network's threads (Planner.lines).
+    nonisolated static func decode(line: Data, decoder: JSONDecoder = Planner.json) throws -> NavLogMessage? {
         // Every line's `type`, the member the document's NavLogMessage
         // tells its lines apart by; each line is then read as its own.
         struct Kind: Decodable { let type: String }

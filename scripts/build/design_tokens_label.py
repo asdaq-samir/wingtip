@@ -107,10 +107,10 @@ def swift(tree):
     g, scale = _group(tree), _scale(tree)
     out = [
         "/// %s" % HEAD,
-        "enum WingtipMapLabel {",
-        "    enum Halo { case light, dark, none }",
+        "nonisolated enum WingtipMapLabel {",
+        "    nonisolated enum Halo { case light, dark, none }",
         "    /// A kind's look: its size by zoom (the app's levels; one stop is a fixed size), its weight and its halo.",
-        "    struct Kind {",
+        "    nonisolated struct Kind {",
         "        let size: [(zoom: Double, px: Double)]",
         "        let bold: Bool",
         "        let halo: Halo",

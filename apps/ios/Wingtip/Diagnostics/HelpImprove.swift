@@ -7,10 +7,10 @@ import SwiftUI
 /// turns it off, as on the web and Android; off, nothing more is sent.
 /// Kept on the phone, not with the account: a report is no one's.
 enum HelpImprove {
-    static let key = "diagnostics.helpImprove"
+    nonisolated static let key = "diagnostics.helpImprove"
 
     /// Whether a report may go now; on where nothing was ever set.
-    static func allows(_ defaults: UserDefaults = .standard) -> Bool {
+    nonisolated static func allows(_ defaults: UserDefaults = .standard) -> Bool {
         defaults.object(forKey: key) as? Bool ?? true
     }
 }

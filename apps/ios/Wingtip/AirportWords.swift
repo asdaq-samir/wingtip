@@ -6,7 +6,7 @@ import Foundation
 /// worked out here, only written. The FAA's wording and the runway rules
 /// are the shared engine's (crate::wording, crate::runway), one copy with
 /// the web app; the formatting is the app's.
-enum AirportWords {
+nonisolated enum AirportWords {
     /// A figure as sent, without a ".0" it does not have: 3 and 1.5.
     static func plain(_ x: Double) -> String {
         x == x.rounded() && abs(x) < 1e9 ? String(Int(x)) : String(x)
@@ -231,7 +231,7 @@ enum AirportWords {
 
     // MARK: Radio
 
-    enum FrequencyKind: String, Decodable { case tower, ground, weather, approach, traffic, other }
+    nonisolated enum FrequencyKind: String, Decodable { case tower, ground, weather, approach, traffic, other }
 
     /// A frequency named in words (TWR is "Tower"), its kind for the
     /// row's glyph, and what OurAirports says of it in sentence case where

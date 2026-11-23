@@ -8,7 +8,7 @@ import Testing
 /// its sentences end with their stop and its progress lines with "…".
 struct WordingTests {
     /// Wording's names (the table's kind "label"), each in Apple's title style.
-    static let labels = [
+    nonisolated static let labels = [
         Wording.planningAidTitle, Wording.planningAidNoticeTitle, Wording.tryAgain, Wording.signIn, Wording.addStop,
         Wording.addToRoute, Wording.addToFavorites, Wording.addAirplane, Wording.editAirplane, Wording.deleteAirplane,
         Wording.pickAnAirplane, Wording.flyThisAirplane, Wording.clearRoute, Wording.clearRouteQuestion, Wording.directTo,
@@ -23,7 +23,7 @@ struct WordingTests {
     ]
 
     /// Its sentences (kind "sentence").
-    static let sentences = [
+    nonisolated static let sentences = [
         Wording.planningAid, Wording.planningAidKneeboard, Wording.deleteAccountQuestion, Wording.discardChangesQuestion,
         Wording.plannerNotReached, Wording.notamsNotFetched, Wording.tfrsNotChecked, Wording.tfrListNotRead,
         Wording.tfrsNotLoaded, Wording.specialUseNoAnswer, Wording.airspaceNotRead, Wording.weatherNotReached,
@@ -33,7 +33,7 @@ struct WordingTests {
     ]
 
     /// Its progress lines (kind "progress").
-    static let progress = [
+    nonisolated static let progress = [
         Wording.fetchingNearestFields, Wording.fetchingNotams, Wording.fetchingModelWeather, Wording.fetchingLogbook,
         Wording.fetchingServices, Wording.readingThePage, Wording.listeningToTheRadio,
     ]

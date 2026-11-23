@@ -19,7 +19,7 @@ enum FieldNotamWords {
     }
 
     /// A TFR read by the engine (tfr_read) from what tfr.faa.gov gives of it.
-    static func readTfr(_ notam: APIRankedNotam) throws -> EngineContract.TfrReadAnswer {
+    nonisolated static func readTfr(_ notam: APIRankedNotam) throws -> EngineContract.TfrReadAnswer {
         let t = notam.tfr
         return try Engine.tfrRead(kind: t?.kind, rule: t?.rule, title: t?.title, floorFt: t?.floorFt, floorRef: t?.floorRef,
                                   ceilingFt: t?.ceilingFt, ceilingRef: t?.ceilingRef, overField: t?.overField,

@@ -22,7 +22,7 @@ enum KeepRadar {
     static let most = 300
 
     /// A tile's key in the kept pictures, by its address.
-    static func key(_ url: URL) -> String { "radar:\(url.absoluteString)" }
+    nonisolated static func key(_ url: URL) -> String { "radar:\(url.absoluteString)" }
 
     /// The tiles kept for a route's line, coarsest first, within the cap.
     static func tiles(along line: [CLLocationCoordinate2D]) throws -> [KeepRoute.Tile] {

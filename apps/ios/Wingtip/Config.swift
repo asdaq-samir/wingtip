@@ -4,8 +4,9 @@ import Foundation
 /// WingtipHost, from the WINGTIP_HOST build setting), the gateway at its
 /// root and the planner behind the gateway's proxy, as the website has
 /// them (PlannerProxyController: `/api/planner/course` upstream is
-/// `/api/course`).
-enum Config {
+/// `/api/course`). Nonisolated: the servers' middleware reads it on the
+/// network's threads.
+nonisolated enum Config {
     static let host: String = {
         let fromPlist = Bundle.main.object(forInfoDictionaryKey: "WingtipHost") as? String
         let host = fromPlist?.trimmingCharacters(in: .whitespaces) ?? ""

@@ -8,7 +8,7 @@ import XCTest
 /// fails here before a phone feels it (the owner's ask, 2026-11-03: a
 /// fast app, measured). XCTest's own measure, not Swift Testing's, since
 /// only XCTest keeps metrics and baselines.
-final class PerformanceTests: XCTestCase {
+final nonisolated class PerformanceTests: XCTestCase {
     private var clearances: [String] = []
 
     override func setUpWithError() throws {

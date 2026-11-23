@@ -1,6 +1,6 @@
 import Foundation
 
-extension Format {
+nonisolated extension Format {
     /// How long ago something was: "just now" under a minute, "23m ago",
     /// "2h 5m ago", "3d ago" -- the engine's `time_ago`, the one rule the
     /// web and Android write it by too (timeAgo.json). It was four writers

@@ -1,4 +1,5 @@
 import MapKit
+import Synchronization
 import UIKit
 
 /// Where a plate's whole page lies on the chart: its four corners, the
@@ -7,7 +8,7 @@ import UIKit
 /// (wingtip.plates). Only the plan view is to the ground's scale; the
 /// briefing strip, the profile and the minimums run on round it at the
 /// same scale and turn, as ForeFlight lays a plate on its map.
-struct PlatePlacement: Equatable {
+nonisolated struct PlatePlacement: Equatable {
     /// Top left, top right, bottom right, bottom left.
     let corners: [CLLocationCoordinate2D]
 
@@ -85,7 +86,7 @@ struct PlatePlacement: Equatable {
 /// An approach plate's whole page on the chart where the planner places it,
 /// under the route and the procedure's lines and over the chart: a sketch
 /// to fly the dry run against, not the chart to navigate by.
-final class PlateMapOverlay: NSObject, MKOverlay {
+final nonisolated class PlateMapOverlay: NSObject, MKOverlay {
     let key: String
     /// The plate's name as the FAA writes it, for its card.
     let name: String
@@ -106,11 +107,14 @@ final class PlateMapOverlay: NSObject, MKOverlay {
 
 /// Draws the page white under its picture, at the card's opacity, its
 /// colours turned white on black when the card asks (Invert Plate Colors).
-final class PlateRenderer: MKOverlayRenderer {
-    private(set) var look = PlateLook()
+/// Nonisolated: MapKit draws on its own queues while the card sets the
+/// look on the main actor, so the look is held in a Mutex.
+final nonisolated class PlateRenderer: MKOverlayRenderer {
+    private let held: Mutex<PlateLook>
+    var look: PlateLook { held.withLock { $0 } }
 
     init(overlay: PlateMapOverlay, look: PlateLook) {
-        self.look = look
+        held = Mutex(look)
         super.init(overlay: overlay)
         alpha = CGFloat(look.opacity)
     }
@@ -118,8 +122,10 @@ final class PlateRenderer: MKOverlayRenderer {
     /// The card's settings changed: drawn again only where they change the
     /// page (the tags are the map's marks, not the page's).
     func show(_ next: PlateLook) {
-        let was = look
-        look = next
+        let was = held.withLock { look in
+            defer { look = next }
+            return look
+        }
         if was.opacity != next.opacity { alpha = CGFloat(next.opacity) }
         if was.inverted != next.inverted { setNeedsDisplay() }
     }

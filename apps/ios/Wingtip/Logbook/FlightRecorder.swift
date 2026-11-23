@@ -35,7 +35,7 @@ final class FlightRecorder {
     nonisolated static let groundWriteEveryS = 5 * 60.0
 
     /// What is kept on the phone between launches.
-    struct Kept: Codable, Equatable, Sendable {
+    nonisolated struct Kept: Codable, Equatable, Sendable {
         var points: [Point] = []
         /// The end of the flight time last offered (the engine's block.to),
         /// so a draft let go is not offered again until a later landing.

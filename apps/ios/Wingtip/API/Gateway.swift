@@ -35,8 +35,9 @@ enum Gateway {
 
     static let session = URLSession(configuration: configuration())
 
-    /// The gateway's CSRF token, from the cookie it sets on every answer.
-    static var csrfToken: String? {
+    /// The gateway's CSRF token, from the cookie it sets on every answer;
+    /// read by the CSRF middleware on the network's threads.
+    nonisolated static var csrfToken: String? {
         SessionCookies.jar.cookies(for: Config.gateway)?.first { $0.name == "XSRF-TOKEN" }?.value
     }
 
@@ -117,7 +118,7 @@ enum Gateway {
 /// where it has no detail. The old ErrorResponse's `error` and `details`
 /// are read too, until the planner's and the assistant's refusals are
 /// checked for the same shape.
-struct GatewayRefusal: Error, LocalizedError, Equatable {
+nonisolated struct GatewayRefusal: Error, LocalizedError, Equatable {
     let status: Int
     let words: String?
     var errorDescription: String? { words ?? "The server answered \(status)." }

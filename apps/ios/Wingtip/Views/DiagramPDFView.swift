@@ -139,7 +139,7 @@ final class DiagramPDFHandle {
 /// the system's symbol in the map's blue, a circle where there is no track
 /// or the north arrow turned to it (AC 120-76D 11.17.2.2), as the map's
 /// own ship is drawn. Nothing in it is tapped.
-final class OwnShipAnnotation: PDFAnnotation {
+final nonisolated class OwnShipAnnotation: PDFAnnotation {
     private let turnDeg: Double
     /// Made on the main actor as it is put on the page; PDFKit may draw
     /// the page off it.

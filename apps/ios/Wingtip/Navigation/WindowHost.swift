@@ -78,7 +78,7 @@ enum WindowFiles {
     /// handing is done (a drop's file lasts only while its handler runs; a
     /// picked file only inside its security scope), its name kept, as the
     /// file's kind is read by its extension (Links.command).
-    static func copy(_ url: URL) -> URL? {
+    nonisolated static func copy(_ url: URL) -> URL? {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         let folder = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString, directoryHint: .isDirectory)
@@ -94,7 +94,7 @@ enum WindowFiles {
 
     /// Dropped words as the one search takes them: on one line, trimmed,
     /// and none for an empty drop or a page of text no search is for.
-    static func searchWords(_ text: String) -> String? {
+    nonisolated static func searchWords(_ text: String) -> String? {
         let words = text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
         return words.isEmpty || words.count > 200 ? nil : words
     }

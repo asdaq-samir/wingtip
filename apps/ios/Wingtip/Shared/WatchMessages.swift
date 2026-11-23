@@ -6,18 +6,19 @@ import Foundation
 // bytes under one key of the session's dictionary (WatchMessageKey).
 // Compiled into both apps, which must see one and the same type; the
 // watch links no engine and no API, so nothing here depends on either.
+// Nonisolated: WatchConnectivity hands messages over on its own queue.
 
 /// The keys of the WCSession dictionaries. The application context
 /// carries `context`; a request from the watch carries `nearest` and is
 /// answered with `nearest` too.
-enum WatchMessageKey {
+nonisolated enum WatchMessageKey {
     static let context = "context"
     static let nearest = "nearest"
 }
 
 /// The coder both sides use: dates as ISO 8601, so a message read on
 /// either is the one written.
-enum WatchCoding {
+nonisolated enum WatchCoding {
     static let encoder: JSONEncoder = {
         let e = JSONEncoder()
         e.dateEncodingStrategy = .iso8601
@@ -33,7 +34,7 @@ enum WatchCoding {
 
 /// The pilot's fix as the phone reads it (OwnShip.Fix), the figures the
 /// watch shows or asks the nearest airports from.
-struct WatchFix: Codable, Equatable, Sendable {
+nonisolated struct WatchFix: Codable, Equatable, Sendable {
     var lat: Double
     var lon: Double
     var altitudeFt: Double?
@@ -46,16 +47,16 @@ struct WatchFix: Codable, Equatable, Sendable {
 /// `title` and `items`, each `challenge` and `response`), so the phone
 /// encodes the Checklist it has read and the watch reads these from the
 /// same bytes.
-struct WatchChecklist: Codable, Equatable, Sendable {
+nonisolated struct WatchChecklist: Codable, Equatable, Sendable {
     var sections: [WatchChecklistSection]
 }
 
-struct WatchChecklistSection: Codable, Equatable, Sendable {
+nonisolated struct WatchChecklistSection: Codable, Equatable, Sendable {
     var title: String
     var items: [WatchChecklistItem]
 }
 
-struct WatchChecklistItem: Codable, Equatable, Sendable {
+nonisolated struct WatchChecklistItem: Codable, Equatable, Sendable {
     var challenge: String
     var response: String?
 }
@@ -63,7 +64,7 @@ struct WatchChecklistItem: Codable, Equatable, Sendable {
 /// What the watch keeps of the phone (the application context, which
 /// WatchConnectivity delivers once the watch wakes, latest wins): the
 /// airplane picked and its checklist, and the phone's last fix.
-struct WatchContext: Codable, Equatable, Sendable {
+nonisolated struct WatchContext: Codable, Equatable, Sendable {
     var tail: String?
     var checklist: WatchChecklist?
     var fix: WatchFix?
@@ -72,7 +73,7 @@ struct WatchContext: Codable, Equatable, Sendable {
 
 /// The watch's question: the fields nearest a point, from its own
 /// location or the phone's fix.
-struct NearestRequest: Codable, Equatable, Sendable {
+nonisolated struct NearestRequest: Codable, Equatable, Sendable {
     var lat: Double
     var lon: Double
     var limit: Int = 8
@@ -80,14 +81,14 @@ struct NearestRequest: Codable, Equatable, Sendable {
 
 /// The phone's answer, from the planner (/api/airports/nearest, nearest
 /// first); `problem` says why there are none when there are none.
-struct NearestReply: Codable, Equatable, Sendable {
+nonisolated struct NearestReply: Codable, Equatable, Sendable {
     var airports: [WatchAirport]
     var problem: String?
 }
 
 /// A field near a point: its distance and bearing from there, worked out
 /// by the planner (NearestAirport, the properties the wrist shows).
-struct WatchAirport: Codable, Equatable, Sendable, Identifiable {
+nonisolated struct WatchAirport: Codable, Equatable, Sendable, Identifiable {
     var ident: String
     var name: String
     var lat: Double

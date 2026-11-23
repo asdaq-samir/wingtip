@@ -21,7 +21,10 @@ import UIKit
 /// (ChartFade) into the USGS's aerial imagery under it (CloseImagery), as
 /// the web map's does, Apple's map under both (canReplaceMapContent off)
 /// where the USGS has none: the runways (RunwaySurface) lie on the real ones.
-final class ChartTileOverlay: NSObject, MKOverlay, Sendable {
+///
+/// The tile pipeline (this file, TileStore, TileCache, TileMath, KeepRoute)
+/// is nonisolated: MapKit loads and draws tiles on its own threads.
+final nonisolated class ChartTileOverlay: NSObject, MKOverlay, Sendable {
     let template: TileTemplate
     /// The day's lift (ChartLift) put on each tile as it is decoded.
     let lift: Bool
@@ -59,7 +62,7 @@ final class ChartTileOverlay: NSObject, MKOverlay, Sendable {
 
 /// A tile of the pyramid: its level, column and row, as the web map and
 /// the planner address them ({z}/{x}/{y}, KeepRoute.tile).
-struct ChartTile: Hashable, Sendable {
+nonisolated struct ChartTile: Hashable, Sendable {
     let z: Int
     let x: Int
     let y: Int
@@ -70,7 +73,7 @@ struct ChartTile: Hashable, Sendable {
 /// the pyramid's level z cuts the same square into 2^z tiles a side, so a
 /// tile's map rect is exact and the chart lies where the position dot
 /// and the airspace (both MKMapPoints) say.
-enum ChartTileMath {
+nonisolated enum ChartTileMath {
     /// The most a tile's pixel is stretched over the screen's pixels
     /// before a level finer is drawn: 1.5, so a 3x screen draws the
     /// 512-pixel tile from the moment it covers 768 of its pixels, never
@@ -146,8 +149,8 @@ enum ChartTileMath {
 /// reads either, whatever the `.png` address says): decoded once into a
 /// plain 32-bit bitmap (#547's 256 colours Core Graphics would otherwise
 /// expand at every draw), with the day's lift (ChartLift) where asked.
-enum ChartTileImage {
-    nonisolated static func decode(_ data: Data, lift: Bool) -> CGImage? {
+nonisolated enum ChartTileImage {
+    static func decode(_ data: Data, lift: Bool) -> CGImage? {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil),
               let decoded = CGImageSourceCreateImageAtIndex(source, 0, [kCGImageSourceShouldCacheImmediately: true] as CFDictionary)
         else { return nil }
@@ -179,14 +182,14 @@ enum ChartTileImage {
 ///
 /// Unchecked: MKOverlayRenderer is not Sendable, and MapKit draws it on
 /// its own threads; everything it changes is behind its two locks.
-final class ChartTileRenderer: MKOverlayRenderer, @unchecked Sendable {
+final nonisolated class ChartTileRenderer: MKOverlayRenderer, @unchecked Sendable {
     private let chart: ChartTileOverlay
     private let session: URLSession
     private let signposter = OSSignposter(subsystem: "app.wingtipmaps.ios", category: "tiles")
 
     /// The loads under way, by tile, and the tiles drawn with a stand-in
     /// that are not loading: asked again when they are back in view.
-    private struct Loads {
+    private nonisolated struct Loads {
         var running: [ChartTile: Task<Void, Never>] = [:]
         var standIn: Set<ChartTile> = []
     }
@@ -353,14 +356,14 @@ final class ChartTileRenderer: MKOverlayRenderer, @unchecked Sendable {
 /// s moves each away from the pixel's grey by 1 / (1 - s); Core Image's
 /// colour controls do both, the grey by luminance rather than the plain
 /// mean, a difference under a step of the eye on the chart's inks.
-enum ChartLift {
+nonisolated enum ChartLift {
     static let contrast = 1 / (1 - 0.1)
     static let saturation = 1 / (1 - 0.1)
     /// One context for every tile, as Core Image asks: making one is the
     /// costly part.
     private static let context = CIContext(options: [.cacheIntermediates: false])
 
-    nonisolated static func apply(_ image: CGImage) -> CGImage? {
+    static func apply(_ image: CGImage) -> CGImage? {
         let input = CIImage(cgImage: image)
         guard let filter = CIFilter(name: "CIColorControls") else { return nil }
         filter.setValue(input, forKey: kCIInputImageKey)

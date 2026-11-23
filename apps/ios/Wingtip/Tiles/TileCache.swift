@@ -12,10 +12,10 @@ import Foundation
 ///
 /// Unchecked: NSCache is thread-safe (Apple's documentation) but not
 /// marked Sendable, and it is the one stored property.
-final class TileCache: @unchecked Sendable {
+final nonisolated class TileCache: @unchecked Sendable {
     static let shared = TileCache()
 
-    private final class Box {
+    private final nonisolated class Box {
         let image: CGImage
         init(_ image: CGImage) { self.image = image }
     }
@@ -25,7 +25,7 @@ final class TileCache: @unchecked Sendable {
     /// A tile's key in the cache: its edition, kind and density (`prefix`,
     /// made once for each chart) and the tile, compared without making a
     /// string for each tile drawn.
-    final class Key: NSObject {
+    final nonisolated class Key: NSObject {
         let prefix: String
         let tile: ChartTile
         private let hashed: Int

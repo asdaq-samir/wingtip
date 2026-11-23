@@ -5,7 +5,7 @@ import Observation
 import UIKit
 
 /// A field's picture painted for the map (FlowPaint), with the box it covers.
-final class PaintedField: Sendable {
+final nonisolated class PaintedField: Sendable {
     let key: String
     let image: CGImage
     /// [west, south, east, north], degrees.

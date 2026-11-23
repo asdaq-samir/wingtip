@@ -7,7 +7,7 @@ import MetricKit
 /// and quality work, 2026-11-09). Only what the payload says of the app
 /// is read: the fault's kind and line, its call stack and the day's
 /// figures. Sent with no cookie, so a report is never the pilot's.
-enum DiagnosticsReporter {
+nonisolated enum DiagnosticsReporter {
     /// The diagnostics a payload holds -- each crash, hang, CPU and disk
     /// write exception -- as faults, at the payload's end (MetricKit sends
     /// a diagnostic as it comes, and dates the payload, not each one).

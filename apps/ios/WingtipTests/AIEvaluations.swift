@@ -1,8 +1,8 @@
 import Evaluations
 import Foundation
 import FoundationModels
-@testable import Wingtip
 import Testing
+@testable import Wingtip
 
 /// The on-device AI scored on the shared aviation fixtures with Apple's
 /// Evaluations framework (Xcode 27, WWDC26 "Meet the Evaluations
@@ -85,7 +85,7 @@ struct AIEvaluationsTests {
 /// safety bar, no figure of the model's own, is 1 everywhere, whatever the
 /// sample count. A run with fewer than `leastSamples` fails rather than
 /// passing on nothing.
-enum EvalBar {
+nonisolated enum EvalBar {
     static var onSimulator: Bool {
         #if targetEnvironment(simulator)
         true
@@ -151,7 +151,7 @@ struct TextSample: SampleProtocol {
 }
 
 /// The fixtures, as the test bundle carries them (project.yml).
-enum EvalFixtures {
+nonisolated enum EvalFixtures {
     private final class Bundled {}
 
     static func load(_ name: String) throws -> [String: Any] {

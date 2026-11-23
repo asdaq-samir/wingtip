@@ -4,8 +4,8 @@ import Synchronization
 
 /// The planner's list of the phones' packs of its FAA cycle
 /// (/api/cycle-packs, the planner's CyclePacks).
-struct CyclePackIndex: Codable, Equatable, Sendable {
-    struct Region: Codable, Equatable, Sendable {
+nonisolated struct CyclePackIndex: Codable, Equatable, Sendable {
+    nonisolated struct Region: Codable, Equatable, Sendable {
         let name: String
         let west: Double
         let south: Double
@@ -33,11 +33,11 @@ struct CyclePackIndex: Codable, Equatable, Sendable {
 ///
 /// What changes is one `State` behind one mutex, never held over a file:
 /// a pan's airspace queries read the index without waiting on a keep.
-final class CyclePacks: Sendable {
+final nonisolated class CyclePacks: Sendable {
     static let shared = CyclePacks()
 
     let root: URL
-    private struct State {
+    private nonisolated struct State {
         /// index.json as last read or written, so a pan's queries do not
         /// read and decode it again each time (nil: not read yet).
         var known: CyclePackIndex??

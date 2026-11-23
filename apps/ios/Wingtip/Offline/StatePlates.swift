@@ -3,7 +3,7 @@ import Observation
 
 /// A state's plates kept, or being kept: its d-TPP cycle, when the next
 /// takes over, and how far its charts have come.
-struct KeptPlateState: Codable, Equatable, Identifiable, Sendable {
+nonisolated struct KeptPlateState: Codable, Equatable, Identifiable, Sendable {
     let id: String
     var name: String
     var cycle: String

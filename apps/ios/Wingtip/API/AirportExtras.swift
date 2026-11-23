@@ -106,7 +106,7 @@ typealias PlateOverlay = APIPlateOverlay
 /// (ChartPage): a plate, the airport diagram, a Chart Supplement page.
 typealias ChartPage = APIChartPage
 
-extension ChartPage {
+nonisolated extension ChartPage {
     /// The page's picture, through the gateway (web lib/diagram chartPagePicture).
     var path: String {
         let parts = [source, edition, pdf].map { $0.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed.subtracting(CharacterSet(charactersIn: "/"))) ?? $0 }
@@ -118,7 +118,7 @@ extension Planner {
     /// The address of a picture the planner serves: its own paths
     /// (`/api/…`) through the gateway's proxy, and the ones it already
     /// gives as the gateway's (`/api/planner/…`, the photos') as they are.
-    static func address(of path: String) -> URL {
+    nonisolated static func address(of path: String) -> URL {
         if let absolute = URL(string: path), absolute.scheme != nil { return absolute }
         if path.hasPrefix(Config.plannerPrefix + "/") {
             return URL(string: path, relativeTo: Config.gateway)?.absoluteURL ?? Config.gateway
@@ -176,13 +176,13 @@ extension Planner {
     }
 
     /// The plate's plan view as a picture (/api/approach-plate/{cycle}/{ident}/{id}.png).
-    static func platePicturePath(cycle: String, ident: String, procedure: String) -> String {
+    nonisolated static func platePicturePath(cycle: String, ident: String, procedure: String) -> String {
         "/api/approach-plate/\(cycle)/\(ident)/\(procedure).png"
     }
 
     /// The plate's whole page as a picture, greyscale on white
     /// (/api/approach-plate-page/{cycle}/{ident}/{id}.png; PlateOverlay.page).
-    static func platePagePath(cycle: String, ident: String, procedure: String) -> String {
+    nonisolated static func platePagePath(cycle: String, ident: String, procedure: String) -> String {
         "/api/approach-plate-page/\(cycle)/\(ident)/\(procedure).png"
     }
 

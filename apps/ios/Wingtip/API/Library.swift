@@ -21,8 +21,9 @@ extension Planner {
 
     /// A document's PDF in its edition, written to `file` as it comes, a
     /// handbook being tens of megabytes; `progress` told the bytes so far.
-    /// The file is whole or not there: written beside it, then moved.
-    static func libraryPdf(doc: String, edition: String, to file: URL, progress: @escaping @MainActor (Int) -> Void) async throws {
+    /// The file is whole or not there: written beside it, then moved. On
+    /// the concurrent pool, as tens of megabytes go to the disk.
+    @concurrent nonisolated static func libraryPdf(doc: String, edition: String, to file: URL, progress: @escaping @MainActor (Int) -> Void) async throws {
         let partial = file.appendingPathExtension("part")
         try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         FileManager.default.createFile(atPath: partial.path(), contents: nil)

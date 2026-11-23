@@ -4,7 +4,7 @@ import Synchronization
 /// A region's charts kept on the phone (Setup → Downloads): which region
 /// of which cycle, the archives wanted and those on disk whole, and the
 /// cycle packs fetched with it.
-struct OfflineKept: Codable, Equatable, Sendable, Identifiable {
+nonisolated struct OfflineKept: Codable, Equatable, Sendable, Identifiable {
     var id: String { "\(cycle)/\(region)" }
     let region: String
     let name: String
@@ -69,11 +69,11 @@ struct OfflineKept: Codable, Equatable, Sendable, Identifiable {
 /// `State` behind one mutex, which the map's tile loads take; no file is
 /// read, written or removed while it is held, so a tile never waits on a
 /// manifest write or a region's folder being deleted.
-final class OfflineStore: Sendable {
+final nonisolated class OfflineStore: Sendable {
     static let shared = OfflineStore()
 
     let root: URL
-    private struct State {
+    private nonisolated struct State {
         var kept: [OfflineKept]?
         var readers: [URL: PMTilesReader] = [:]
         /// Kept cycles known to have begun: once begun, always.
@@ -240,7 +240,7 @@ final class OfflineStore: Sendable {
     }
 }
 
-extension OfflineKept {
+nonisolated extension OfflineKept {
     /// Whether a tile centred here may be in the region's archives: inside
     /// a box, or near one by a tile's width (the cut keeps every tile its
     /// boxes touch).
@@ -252,7 +252,7 @@ extension OfflineKept {
     }
 }
 
-extension String {
+nonisolated extension String {
     /// A chart cycle's name ("10-29-2026") as a sortable "2026-10-29".
     var reversedDate: String {
         let parts = split(separator: "-")

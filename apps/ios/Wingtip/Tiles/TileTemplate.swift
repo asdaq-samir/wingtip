@@ -12,7 +12,7 @@ import Foundation
 /// phone's 2x and 3x screens, where MapKit stretched the 256-pixel tile
 /// three times. Only where the kind was drawn at it (its layer's
 /// `scales`, ChartsModel.template).
-struct TileTemplate: Equatable, Sendable {
+nonisolated struct TileTemplate: Equatable, Sendable {
     let cycle: String
     let revision: Int
     let tilesBase: String?

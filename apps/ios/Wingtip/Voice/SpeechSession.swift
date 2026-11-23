@@ -167,8 +167,8 @@ final class SpeechSession {
 /// mutex: opened and closed on the main actor, read on the audio thread.
 /// Each converted buffer is a new one, as the analyzer keeps what it is
 /// given after `yield` returns.
-final class AudioFeed: Sendable {
-    private struct State {
+final nonisolated class AudioFeed: Sendable {
+    private nonisolated struct State {
         var builder: AsyncStream<AnalyzerInput>.Continuation?
         var converter: AVAudioConverter?
         var format: AVAudioFormat?

@@ -31,7 +31,7 @@ enum ChartFade {
 /// further out than the half level before the chart fades.
 /// Unchecked: MKTileOverlay is not Sendable, and MapKit loads its tiles
 /// on its own threads; it changes nothing after it is set up.
-final class CloseImageryOverlay: MKTileOverlay, @unchecked Sendable {
+final nonisolated class CloseImageryOverlay: MKTileOverlay, @unchecked Sendable {
     static let template = "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"
     /// Its last level of tiles: the service's maxScale, 1:9,028, is {z} 16
     /// (checked by the web's commit 28b4cf379, 2026-11-12: 404 at 17).

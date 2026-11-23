@@ -15,14 +15,14 @@ import os
 /// One figure a sentence can rest on: its id ("metar:KMSN", "taf:KMSN",
 /// "hazard:0", "finding:fuel"), the chip's label and the raw text the
 /// chip opens.
-struct WordsSource: Codable, Hashable, Identifiable, Sendable {
+nonisolated struct WordsSource: Codable, Hashable, Identifiable, Sendable {
     var id: String
     var label: String
     var text: String
 }
 
 /// One sentence and the ids of the figures it rests on.
-struct WordsSentence: Codable, Hashable, Sendable {
+nonisolated struct WordsSentence: Codable, Hashable, Sendable {
     var sources: [String]
     var text: String
 }
@@ -30,14 +30,14 @@ struct WordsSentence: Codable, Hashable, Sendable {
 /// The words as the screens show them: the sentences, the most important
 /// first; the sources they cite, in the order given; which model wrote
 /// them; and, with no sentences, why not, in words.
-struct Words: Codable, Hashable, Sendable {
+nonisolated struct Words: Codable, Hashable, Sendable {
     var model: String
     var sentences: [WordsSentence]
     var sources: [WordsSource]
     var unavailable: String?
 }
 
-extension Words {
+nonisolated extension Words {
     /// No words, and why.
     static func none(_ model: String, _ why: String) -> Words {
         Words(model: model, sentences: [], sources: [], unavailable: why)
@@ -74,20 +74,20 @@ extension Words {
 /// Which words, and so which instructions the model is given: besides
 /// the briefing's, a logbook entry's remark (RemarkDraft) and why the
 /// plan flies its altitude (AltitudeWhy).
-enum WordsKind: String, Sendable {
+nonisolated enum WordsKind: String, Sendable {
     case notams, weather, risk, debrief, changes, remark, altitude
 }
 
 /// What the words are asked for: their kind and the figures the phone
 /// assembled for them (WordsFigures).
-struct WordsAsk: Sendable {
+nonisolated struct WordsAsk: Sendable {
     let kind: WordsKind
     let figures: [WordsSource]
 }
 
 /// Where the words came from, for the caption over them: the pilot
 /// should know which model wrote what they read.
-enum WordsOrigin: Equatable, Sendable {
+nonisolated enum WordsOrigin: Equatable, Sendable {
     case device, cloud, none
 
     var caption: String {
@@ -103,18 +103,18 @@ enum WordsOrigin: Equatable, Sendable {
 }
 
 /// Words with where they came from.
-struct SaidWords: Equatable, Sendable {
+nonisolated struct SaidWords: Equatable, Sendable {
     let words: Words
     let origin: WordsOrigin
 }
 
 /// A source of words: the device, or a fake in a test.
-protocol WordsProvider: Sendable {
+nonisolated protocol WordsProvider: Sendable {
     func words(_ ask: WordsAsk) async throws -> Words
 }
 
 /// Why a provider gave no words, in words a pilot reads.
-struct WordsUnavailable: Error, LocalizedError, Equatable {
+nonisolated struct WordsUnavailable: Error, LocalizedError, Equatable {
     let why: String
     var errorDescription: String? { why }
 }
@@ -144,7 +144,7 @@ struct WordsAnswer {
 /// which are the engine's and the planner's own. Refused in words on a
 /// phone without Apple Intelligence, or while the model is still
 /// downloading.
-struct OnDeviceWords: WordsProvider {
+nonisolated struct OnDeviceWords: WordsProvider {
     static let model = "apple-on-device"
 
     /// Why the model cannot answer here, else nil.
@@ -242,7 +242,7 @@ struct WordsFor: Sendable {
     }
 }
 
-extension Log {
+nonisolated extension Log {
     /// The words: a provider that failed, a sentence dropped.
     static let words = Logger(subsystem: subsystem, category: "words")
 }

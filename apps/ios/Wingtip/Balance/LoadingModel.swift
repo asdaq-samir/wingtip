@@ -101,7 +101,7 @@ final class LoadingModel {
     }
 }
 
-private extension Array where Element == Double {
+private nonisolated extension Array where Element == Double {
     var minMax: (min: Double, max: Double)? {
         guard let lo = self.min(), let hi = self.max() else { return nil }
         return (lo, hi)

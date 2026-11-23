@@ -5,7 +5,7 @@ import Foundation
 /// sent), the wind on its runways, the density altitude. Asked by the
 /// on-device tools and by the engine's own words; nothing is weighed or
 /// worked out here but by the engine (Engine/Generated/EngineCalls).
-enum FieldFigures {
+nonisolated enum FieldFigures {
     /// The METAR and the TAF the briefing holds for a field, as sent, with
     /// the flight category the planner read off the METAR (AIM 7-1-7).
     /// The ids are the planner's own ("metar:KMSN", "taf:KMSN").

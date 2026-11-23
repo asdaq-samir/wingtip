@@ -8,8 +8,8 @@ import WingtipEngine
 /// minute -- worked out on the phone when the planner cannot be reached.
 /// The obstacles are the planner's alone, and the TFRs are not kept on
 /// the phone yet: both are said to be missing, never read as clear.
-extension CyclePacks {
-    struct Ahead: Decodable, Sendable {
+nonisolated extension CyclePacks {
+    nonisolated struct Ahead: Decodable, Sendable {
         let alerts: [AheadAlert]
         let unavailable: [String]
         /// The packs' ground under the airplane (their terrain grid's

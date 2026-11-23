@@ -83,7 +83,7 @@ enum BriefLegs {
 
     /// "14:20", the hours and minutes in `zone`, as the web app's
     /// clockTime gives the device's own.
-    static func clock(_ iso: String?, zone: TimeZone = .current) -> String? {
+    nonisolated static func clock(_ iso: String?, zone: TimeZone = .current) -> String? {
         AirportWords.date(iso).map { Format.clock($0, in: zone) }
     }
 

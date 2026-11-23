@@ -7,14 +7,14 @@ import Foundation
 /// home base and Favorites, offered first when they pick a field for its
 /// weather. Compiled into the app and the extension, so both read one
 /// shape; each list is written only as it changes.
-enum WidgetStore {
+nonisolated enum WidgetStore {
     static let savedFlightsKey = "widgetSavedFlights"
     static let airportsKey = "widgetAirports"
 
     /// One saved flight as the widget offers and draws it: its name or
     /// route, the route, the nav log's totals as filed, and when it is
     /// planned for (the gateway's ISO 8601 day or instant), where it says.
-    struct SavedFlight: Codable, Equatable, Sendable, Identifiable {
+    nonisolated struct SavedFlight: Codable, Equatable, Sendable, Identifiable {
         var id: Int
         var title: String
         var dep: String
@@ -28,7 +28,7 @@ enum WidgetStore {
 
     /// A field offered in the weather widget's settings: the home base
     /// first, then the Favorites, as the app keeps them.
-    struct Airport: Codable, Equatable, Sendable, Identifiable {
+    nonisolated struct Airport: Codable, Equatable, Sendable, Identifiable {
         var ident: String
         var name: String
         var id: String { ident }
