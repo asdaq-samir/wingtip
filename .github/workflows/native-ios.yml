@@ -210,12 +210,17 @@ jobs:
           path: ${{ runner.temp }}/screens
           if-no-files-found: ignore
           retention-days: 7
+      # On a cancel too, with the tests' result bundle: a leg stopped part
+      # way kept nothing to read where it stopped (the iPad's 2/2, twice).
       - name: The log, on failure
-        if: failure()
+        if: failure() || cancelled()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: native-ios-log-${{ strategy.job-index }}
-          path: ${{ runner.temp }}/xcodebuild.log
+          path: |
+            ${{ runner.temp }}/xcodebuild.log
+            ${{ runner.temp }}/Wingtip.xcresult
+          if-no-files-found: ignore
           retention-days: 7
 
   testflight:

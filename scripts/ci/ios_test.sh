@@ -100,10 +100,23 @@ said() { tail -n "+$from" "$log"; }
 # ("Metadata extraction skipped, no AppIntents.framework dependency
 # found"), and the string catalog's check read them as gone.
 # `only` is empty at night, which the Mac's bash 3.2 calls unset under -u.
+#
+# Said as it goes, not only at the end: each test as it starts and ends,
+# and a line a minute with the runner's free memory, swap and simulators,
+# so a leg stopped part way (the iPad's 2/2, cancelled twice with nothing
+# said, runs 45113706296 and 45127491141) shows where it was and what the
+# runner had left.
+( while sleep 60; do
+    echo "ios_test: $(date -u +%H:%M:%S) $(memory_pressure 2>/dev/null | grep -o 'free percentage: [0-9]*%' || true), swap $(sysctl -n vm.swapusage 2>/dev/null | awk '{print $6}'), $(pgrep -f launchd_sim | wc -l | tr -d ' ') simulators running"
+  done ) &
+watch=$!
+trap 'kill "$watch" 2>/dev/null || true' EXIT
 xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme "$scheme" -configuration Debug "${opts[@]}" ${only[@]+"${only[@]}"} \
   CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= COMPILER_INDEX_STORE_ENABLE=NO \
   ENABLE_DEBUG_DYLIB=NO \
-  WINGTIP_HOST="$host" WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID" "$action" >> "$log" 2>&1 || true
+  WINGTIP_HOST="$host" WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID" "$action" 2>&1 \
+  | tee -a "$log" | grep --line-buffered -E "^Test Case '.*' (started|passed|failed|skipped)|^✘ Test" || true
+kill "$watch" 2>/dev/null || true
 
 # Each error with the lines after it (a cause), the tests, the verdict.
 said | grep -nE "error:|error\b|Could not|Test (Case|Suite)|Executed|\*\* (BUILD|TEST)" -A6 | tail -200 || true
