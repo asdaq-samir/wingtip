@@ -176,6 +176,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
               tight={unflyable ? null : tightLeg}
               disabled={!routed}
               rules={flightRules}
+              unreachable={s.unreachable}
               // The Profile's button, the tab bar's until the owner's ask
               // (2026-11-20: "can FL show profile button").
               profile={{ openProfile, profileReady, altitudeMark }}
@@ -208,6 +209,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       changeDepart,
       flightRules,
       s.replanning,
+      s.unreachable,
       altitudeFt,
       altitudeNearest,
       openProfile,

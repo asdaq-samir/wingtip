@@ -50,7 +50,7 @@ class Answer:
     """A source's answer, as requests gives it."""
 
     def __init__(self, body: bytes, url: str = "", headers: dict | None = None):
-        self.content, self.url, self.headers, self.status_code = body, url, headers or {}, 200
+        self.content, self.url, self.headers, self.status_code = (body, url, headers or {}, 200)
 
     @property
     def text(self) -> str:
@@ -118,6 +118,24 @@ def test_a_circulars_edition_is_its_letter():
     assert library.current_link(ac, page, ac.page)[1] == "AC 90-66C"
     # AC 90-66's pattern is not AC 90-660's.
     assert library.current_link(ac, '<a href="/AC_90-660A.pdf">', ac.page) is None
+
+
+def test_a_circulars_current_edition_is_the_first_its_page_lists():
+    # The page lists the current edition first and the cancelled after,
+    # some on rgl.faa.gov, which no longer resolves (2026-11-23).
+    ac = library_catalog.BY_ID["ac-61-65"]
+    page = (
+        '<a href="https://www.faa.gov/documentLibrary/media/Advisory_Circular/AC_61-65K.pdf">'
+        '<a href="https://www.faa.gov/documentLibrary/media/Advisory_Circular/AC_61-65J.pdf">'
+        '<a href="http://rgl.faa.gov/Regulatory_and_Guidance_Library/rgAdvisoryCircular.nsf/list/AC%2061-65D/$FILE/AC61-65D.pdf">'
+    )
+    assert library.current_link(ac, page, ac.page) == (
+        "https://www.faa.gov/documentLibrary/media/Advisory_Circular/AC_61-65K.pdf",
+        "AC 61-65K",
+    )
+    rnav = library_catalog.BY_ID["ac-90-100"]
+    changed = '<a href="https://www.faa.gov/documentLibrary/media/Advisory_Circular/AC_90-100A_CHG_2.pdf">'
+    assert library.current_link(rnav, changed, rnav.page)[1] == "AC 90-100A CHG 2"
 
 
 def _sources(calls: list, pdf: bytes = b"%PDF-1.7 book"):

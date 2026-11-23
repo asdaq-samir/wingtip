@@ -18,6 +18,15 @@ Two kinds of source:
   FAA-H-8083-25C). The pages refuse a client without a browser's
   User-Agent, as registry.faa.gov does (wingtip.config.FAA_HEADERS).
 
+The addresses as the FAA had them on 2026-11-23, when the Instrument
+Flying, Aviation Weather and Risk Management Handbooks' pages had moved
+(404s) and the circulars' pages still linked cancelled editions on
+rgl.faa.gov, a host that no longer resolves: the handbooks' index
+(regulations_policies/handbooks_manuals/aviation) names each book's
+current page or file, and a circular's "document.current" page lists its
+current edition first, its cancelled ones after (wingtip.library's
+current_link takes the first there).
+
 The Chart Supplement is not here: a field's pages are the planner's
 already, by the 56-day edition (wingtip.publications), and the library
 opens them there.
@@ -52,24 +61,42 @@ class Document:
     link: str = ""
     #: The FAA's designation, before the edition's letter ("FAA-H-8083-25").
     designation: str = ""
+    #: faa: the page lists the current edition's link first and the
+    #: cancelled ones after it (a circular's page), so the first match is
+    #: taken, not the shortest name.
+    current_first: bool = False
 
 
 def _cfr(title: str, part: str, name: str) -> Document:
     return Document(f"cfr-{title}-{part}", name, "Regulations", "ecfr", title_number=title, part=part)
 
 
-def _handbook(id_: str, name: str, page: str, number: str) -> Document:
-    # "faa-h-8083-25c.pdf", "FAA-H-8083-3C.pdf": the whole book's file,
-    # not a chapter's, which the FAA names by the chapter.
-    link = rf"faa-h-{number}([a-z]?)(?:_[^/\"']*)?\.pdf"
-    return Document(id_, name, "Handbooks", "faa", page=f"{HANDBOOKS}/{page}", link=link, designation=f"FAA-H-{number}")
+def _handbook(id_: str, name: str, page: str, number: str, link: str = "", designation: str = "") -> Document:
+    # "faa-h-8083-25c.pdf", "FAA-H-8083-15B.pdf": the whole book's file,
+    # not a chapter's, which the FAA names by the chapter. `page` is a
+    # path under the handbooks' index ("" the index itself, which links
+    # some books' files directly), or a whole address where the FAA has
+    # moved a book's page out from under it.
+    link = link or rf"faa-h-{number}([a-z]?)(?:_[^/\"']*)?\.pdf"
+    address = page if page.startswith("https://") else f"{HANDBOOKS}/{page}".rstrip("/")
+    return Document(id_, name, "Handbooks", "faa", page=address, link=link, designation=designation or f"FAA-H-{number}")
 
 
 def _circular(number: str, name: str) -> Document:
-    # "/documentLibrary/media/Advisory_Circular/AC_61-65K.pdf".
+    # "/documentLibrary/media/Advisory_Circular/AC_61-65K.pdf", "AC%2091-73B.pdf",
+    # "AC_90-100A_CHG_2.pdf": the edition's letter and any change to it.
     escaped = re.escape(number)
-    link = rf"ac_?{escaped}([a-z]{{0,2}})(?:_[^/\"']*)?\.pdf"
-    return Document(f"ac-{number}", name, "Advisory Circulars", "faa", page=f"{AC_PAGE}/{number}", link=link, designation=f"AC {number}")
+    link = rf"ac(?:_|%20| )?{escaped}([a-z]{{0,2}}(?:_chg_\d+)?)(?:_[^/\"']*)?\.pdf"
+    return Document(
+        f"ac-{number}",
+        name,
+        "Advisory Circulars",
+        "faa",
+        page=f"{AC_PAGE}/{number}",
+        link=link,
+        designation=f"AC {number}",
+        current_first=True,
+    )
 
 
 SHELF: tuple[Document, ...] = (
@@ -93,11 +120,28 @@ SHELF: tuple[Document, ...] = (
         designation="AIM",
     ),
     _handbook("phak", "Pilot's Handbook of Aeronautical Knowledge", "phak", "8083-25"),
-    _handbook("afh", "Airplane Flying Handbook", "airplane_handbook", "8083-3"),
-    _handbook("ifh", "Instrument Flying Handbook", "instrument_flying_handbook", "8083-15"),
+    # FAA-H-8083-3C (2021): its page links the whole book as "00_afh_full.pdf",
+    # with no edition in the name, so the edition is the index's.
+    _handbook("afh", "Airplane Flying Handbook", "airplane_handbook", "8083-3", r"afh_full\.pdf", "FAA-H-8083-3C"),
+    # FAA-H-8083-15B (2012), linked from the index itself: its own page is gone.
+    _handbook("ifh", "Instrument Flying Handbook", "", "8083-15"),
     _handbook("iph", "Instrument Procedures Handbook", "instrument_procedures_handbook", "8083-16"),
-    _handbook("awh", "Aviation Weather Handbook", "faa-h-8083-28-aviation-weather-handbook", "8083-28"),
-    _handbook("rmh", "Risk Management Handbook", "risk_management_handbook", "8083-2"),
+    # FAA-H-8083-28B (2026), whose page moved to the FAA's new paths
+    # ("/sites/faa.gov/files/FAA-H-8083-28B.pdf").
+    _handbook(
+        "awh",
+        "Aviation Weather Handbook",
+        f"{FAA}/regulationspolicies/handbooksmanuals/aviation/faa-h-8083-28-aviation-weather-handbook",
+        "8083-28",
+    ),
+    # FAA-H-8083-2A (2022), moved likewise, its file "risk_management_handbook_2A.pdf".
+    _handbook(
+        "rmh",
+        "Risk Management Handbook",
+        f"{FAA}/regulationspolicies/handbooksmanuals/risk-management-handbook-faa-h-8083-2a",
+        "8083-2",
+        r"risk_management_handbook_\d*([a-z]?)\.pdf",
+    ),
     Document(
         "chart-users-guide",
         "Aeronautical Chart Users' Guide",
@@ -107,17 +151,31 @@ SHELF: tuple[Document, ...] = (
         link=r"(?:aero_guide|chart_users_guide)[^/\"']*\.pdf",
         designation="Chart Users' Guide",
     ),
+    # The current editions on 2026-11-23, by each circular's FAA page (the
+    # library fetches whichever is current then, and names it):
+    # AC 61-65K (2025-11-14), the endorsements' text (the engine's endorsement_kinds).
     _circular("61-65", "Certification: Pilots and Flight and Ground Instructors"),
+    # AC 61-98E (2024-10-30).
     _circular("61-98", "Currency Requirements and Guidance for the Flight Review and Instrument Proficiency Check"),
+    # AC 60-22 (1991-12-13), never revised.
     _circular("60-22", "Aeronautical Decision Making"),
-    _circular("90-23", "Aircraft Wake Turbulence"),
+    # AC 90-23H (2026-01-13), retitled from "Aircraft Wake Turbulence".
+    _circular("90-23", "Aircraft Wake Vortex Encounter Risk Mitigation"),
+    # AC 90-48E (2022-10-20).
     _circular("90-48", "Pilots' Role in Collision Avoidance"),
+    # AC 90-66C (2023-06-06).
     _circular("90-66", "Non-Towered Airport Flight Operations"),
+    # AC 90-100A with its Change 2.
     _circular("90-100", "U.S. Terminal and En Route Area Navigation (RNAV) Operations"),
+    # AC 91-63D.
     _circular("91-63", "Temporary Flight Restrictions and Flight Limitations"),
+    # AC 91-73B (2012-07-30), with its editorial update.
     _circular("91-73", "Parts 91 and 135 Single Pilot, Flight School Procedures During Taxi Operations"),
+    # AC 91-74B (2015-10-08).
     _circular("91-74", "Pilot Guide: Flight in Icing Conditions"),
+    # AC 91-92 (2021-03-15), with its editorial update of 2025-03-19.
     _circular("91-92", "Pilot's Guide to a Preflight Briefing"),
+    # AC 00-54 (1988-11-25).
     _circular("00-54", "Pilot Windshear Guide"),
 )
 

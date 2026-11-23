@@ -88,6 +88,7 @@ export default function RouteEditor({
               directTo={directParam}
               onDirectTo={directToPoint}
               unknownPoint={s.unknownPlace}
+              unreachable={s.unreachable}
               addAt={addAt}
               // Half a route cleared by the box's ✕ (the owner, 2026-11-18);
               // a route planned, by FPL's ✕.

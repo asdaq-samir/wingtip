@@ -49,6 +49,7 @@ export default function AltitudeGroup({
   disabled = false,
   rules = "vfr",
   profile,
+  unreachable = false,
 }: {
   nav: NavLogAltitude | null;
   legs: Leg[];
@@ -70,6 +71,9 @@ export default function AltitudeGroup({
   /** The Profile's button at the pill's end, after the figures
    *  (ProfilePillButton): what it opens and its caution's mark. */
   profile?: PillProfile;
+  /** The planner could not be reached (usePlan's `unreachable`): the last
+   *  altitude shown stays, not FL-___, till the route is planned again. */
+  unreachable?: boolean;
 }) {
   const engineReady = useEngineReady();
   const cruise = cruiseOf(nav, legs);
@@ -89,7 +93,14 @@ export default function AltitudeGroup({
   // feet MSL still, as VoiceOver says them (`said`). Typed, three figures
   // of hundreds of feet as written, at the owner's ask ("when altitude is
   // entered it should only hold 3 digits"), or feet in four or five.
-  const flying = commanded ?? cruise;
+  const planned = commanded ?? cruise;
+  // The altitude last shown, kept through a re-plan the planner could not
+  // answer: a restart blanked the pilot's FL-115 to FL-___ (the owner's
+  // screenshot, 2026-11-23). Set during render, React's way of keeping a
+  // value from the render before.
+  const [lastShown, setLastShown] = useState<number | null>(null);
+  if (planned !== null && planned !== lastShown) setLastShown(planned);
+  const flying = planned ?? (unreachable ? lastShown : null);
   const shown = typed ?? (problem || flying === null ? "" : flightLevel(flying).slice(3));
   const fly = () => {
     if (typed === null) return;

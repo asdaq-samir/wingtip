@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { ApiError, api, describeError, isUnknownPlace, unknownPlaceIn } from "../../lib/api/client";
+import { ApiError, api, describeError, isUnknownPlace, plannerUnreachable, unknownPlaceIn } from "../../lib/api/client";
 import { chartQuery, checkpointsQuery, courseQuery } from "../../lib/queryClient";
 import { identOf, routeOf } from "../../lib/identSchema";
 import type { Candidate, Leg, NavLogAltitude, NavLogMessage, Totals } from "../../lib/api/types";
@@ -188,7 +188,7 @@ export function usePlan({
   // altitudes…" over them, for the half second to seconds a re-plan takes.
   // Only over the same flight with another altitude (typed, picked on the
   // wheel, or one of the four plans): a new route, airplane or time is a
-  // log of its own; nor once the planner says no altitude is legal. And
+  // log of its own; nor once the planner says no altitude is legal, but kept while it cannot be reached (FL-___ in a restart, 2026-11-23). And
   // over another runway, left from (`runways`) as landed on (`patterns`,
   // the key's last): the runways picked into the wind as the field's report
   // comes in are the ones the first plan already flew (the planner's
@@ -207,7 +207,7 @@ export function usePlan({
   if (whole && !pointToPoint && (held?.messages !== streamed || held.key !== holdKey)) {
     setHeld({ key: holdKey, messages: streamed });
   }
-  const holding = !whole && !navlog.error && navlog.isFetching && held?.key === holdKey;
+  const holding = !whole && held?.key === holdKey && (plannerUnreachable(navlog.error) || (!navlog.error && navlog.isFetching));
   const messages = holding ? held.messages : streamed;
   // Each message narrowed by its own `type`, not cast: the "altitude" line was cast to a hand-written
   // copy of its shape, whose comments had gone stale while the cast kept compiling.
@@ -381,6 +381,7 @@ export function usePlan({
     stage,
     unflyable,
     unknownPlace,
+    unreachable: briefable && [course.error, checkpoints.error, navlog.error].some(plannerUnreachable),
     // The nav log failed (no legal altitude, the winds, the planner down):
     // what waits on the plan asks without it (usePlanAnswer's Routes).
     planFailed: !!navlog.error,

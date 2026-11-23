@@ -1,6 +1,6 @@
 import { MutationCache, QueryCache, QueryClient, onlineManager } from "@tanstack/react-query";
 import { describeError, isDropped } from "./api/client";
-import { retryable, retryDelay, retryOnServerFailure } from "./queryRetry";
+import { refetchWhileUnreachable, retryable, retryDelay, retryOnServerFailure } from "./queryRetry";
 import { clearProblem, raiseProblem, showError } from "./problems";
 
 declare module "@tanstack/react-query" {
@@ -37,7 +37,13 @@ declare module "@tanstack/react-query" {
 export const queryClient = new QueryClient({
   defaultOptions: {
     // None in the unit tests, as TanStack's testing guide has it.
-    queries: { retry: import.meta.env.MODE === "test" ? false : retryOnServerFailure, retryDelay, networkMode: "offlineFirst" },
+    queries: {
+      retry: import.meta.env.MODE === "test" ? false : retryOnServerFailure,
+      retryDelay,
+      networkMode: "offlineFirst",
+      // A query failed for want of the planner asked again till it is back.
+      refetchInterval: refetchWhileUnreachable,
+    },
     mutations: { networkMode: "offlineFirst" },
   },
   queryCache: new QueryCache({

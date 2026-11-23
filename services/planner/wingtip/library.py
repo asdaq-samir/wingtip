@@ -93,23 +93,32 @@ def _cfr(doc: Document, dates: dict[str, str], current: dict | None) -> dict | N
     return {"edition": date, "label": "eCFR", "date": date, "kind": "text", "file": file, "bytes": len(body), "source": url}
 
 
+#: The FAA's old Regulatory and Guidance Library, which no longer resolves
+#: (2026-11-23): the circulars' pages still link their cancelled editions
+#: there.
+_GONE_HOST = re.compile(r"^https?://rgl\.faa\.gov/", re.IGNORECASE)
+
+
 def current_link(doc: Document, page: str, base: str) -> tuple[str, str] | None:
     """(the current file's address, its edition) from the FAA's page's
     HTML: of the links matching the document's pattern, the one with the
     shortest name (the whole book's "faa-h-8083-25c.pdf" before a part's
-    "faa-h-8083-25c_ch1.pdf"). The edition is the designation with the
-    letter the link names ("FAA-H-8083-25C"), else the file's own name."""
+    "faa-h-8083-25c_ch1.pdf"), or the first on a page that lists the
+    current edition first (`current_first`, a circular's: AC_61-65K.pdf
+    before the cancelled AC61-65D.pdf, whose name is shorter). The edition
+    is the designation with the letter the link names ("FAA-H-8083-25C",
+    "AC 90-100A CHG 2"), else the file's own name."""
     pattern = re.compile(doc.link, re.IGNORECASE)
     found = []
     for href in re.findall(r"""href\s*=\s*["']([^"']+)["']""", page, re.IGNORECASE):
         match = pattern.search(href)
-        if match:
-            letter = (match.group(1) or "").upper() if match.groups() else ""
+        if match and not _GONE_HOST.match(href):
+            letter = (match.group(1) or "").upper().replace("_", " ") if match.groups() else ""
             name = Path(href.split("?")[0]).stem
             found.append((len(name), urljoin(base, href), f"{doc.designation}{letter}" if letter else name))
     if not found:
         return None
-    _, url, edition = min(found, key=lambda f: f[0])
+    _, url, edition = found[0] if doc.current_first else min(found, key=lambda f: f[0])
     return url, edition
 
 

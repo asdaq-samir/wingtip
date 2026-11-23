@@ -1,5 +1,5 @@
 import { experimental_streamedQuery as streamedQuery } from "@tanstack/react-query";
-import { ApiError, api, isUnknownPlace } from "../../lib/api/client";
+import { ApiError, api, isUnknownPlace, plannerUnreachable } from "../../lib/api/client";
 import { inBatches, ended } from "../../lib/api/streams";
 import { retryDelay } from "../../lib/queryRetry";
 import type { AircraftChoice, AltitudeChoice, Briefing, Detour, NavLogMessage } from "../../lib/api/types";
@@ -218,7 +218,11 @@ export function navlogQuery(plan: PlanParams, checkpointsToo: boolean, ahead = f
     // good, FPL without legs and Dry Run dimmed until Try Again (the
     // gateway's 502s at 10:08:30 in run 45152106014, its desktop emergency
     // spec's retry held two minutes).
-    retry: (failures: number, error: unknown) => failures < 3 && error instanceof ApiError && error.status >= 500,
+    // The planner not reached (its restart's 502s, the gateway's 404 for
+    // paths it has not read yet) too; asked again after by the client's
+    // refetchWhileUnreachable, so the route plans once it is back.
+    retry: (failures: number, error: unknown) =>
+      failures < 3 && error instanceof ApiError && (error.status >= 500 || plannerUnreachable(error)),
     retryDelay,
     // No legal altitude is the page's to say, with what can be done about
     // it (PlanWorkspace): not the query client's plain toast.
