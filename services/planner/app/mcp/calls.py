@@ -52,7 +52,10 @@ def pilot(scope: str = READ) -> str:
     if token is None or not token.subject:
         raise ToolError("Not signed in to Wingtip: reconnect Wingtip in your AI app's connector settings.")
     if scope not in token.scopes:
-        raise ToolError(f"This connection was not allowed {scope}: disconnect Wingtip, connect it again and approve it.")
+        # The consent page's own words for the write scope, so the pilot
+        # knows which box to tick when they connect again.
+        ask = ' with "Save, change and delete your saved flights" ticked' if scope == WRITE else ""
+        raise ToolError(f"This connection was not allowed {scope}: disconnect Wingtip, connect it again and approve it{ask}.")
     settings = get_settings()
     limits = (
         (RateLimitItemPerMinute(settings.mcp_calls_per_minute), "a minute"),
@@ -158,6 +161,21 @@ def rounded(value: Any, places: int = 1) -> Any:
     if isinstance(value, list):
         return [rounded(v, places) for v in value]
     return value
+
+
+def paged(items: list, offset: int, limit: int) -> dict:
+    """One page of a list a tool answers, with where the next starts: the
+    model asks again with `next_offset` while `has_more` (mcp-builder's
+    pagination: total, count, offset, has_more, next_offset)."""
+    page = items[offset : offset + limit]
+    more = offset + len(page) < len(items)
+    return {
+        "total": len(items),
+        "count": len(page),
+        "offset": offset,
+        "has_more": more,
+        "next_offset": offset + len(page) if more else None,
+    }
 
 
 def pick(row: dict, keys) -> dict:

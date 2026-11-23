@@ -4,14 +4,14 @@ as the app shows them, with where they come from."""
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 
-from ..generated.planner_calls import airport_place, airport_search, nearest_airports as nearest
-from .calls import METAR_SOURCE, editions, ident as ident_of, pilot
+from ..generated.planner_calls import airport_place, airport_procedures as procedures_at, airport_search, nearest_airports as nearest
+from .calls import METAR_SOURCE, editions, ident as ident_of, paged, pilot
 from .tool_meta import READS, read_only
 
 Ident = Annotated[str, Field(min_length=2, max_length=7, description="An airport's identifier: KDLH, DLH, C81.")]
@@ -33,10 +33,11 @@ def register(server: MCPServer) -> None:
     async def search_airports(
         query: Annotated[str, Field(min_length=2, max_length=60, description="An identifier, an airport's name or its town.")],
         limit: Annotated[int, Field(ge=1, le=25, description="How many to answer, 1 to 25.")] = 10,
+        offset: Annotated[int, Field(ge=0, description="How many to skip, for the next page: the last answer's next_offset.")] = 0,
     ) -> dict[str, Any]:
         pilot()
-        found = await airport_search(q=query)
-        return {"airports": found["airports"][:limit], "sources": editions("nasr")}
+        found = (await airport_search(q=query))["airports"]
+        return {"airports": found[offset : offset + limit], **paged(found, offset, limit), "sources": editions("nasr")}
 
     @server.tool(
         name="airport_info",
@@ -52,6 +53,34 @@ def register(server: MCPServer) -> None:
         card = await airport_place(ident=ident_of(ident))
         facts = {k: v for k, v in card.items() if k not in WEATHER and v not in (None, [], "")}
         return {**facts, "sources": [*editions("nasr"), {"source": "FAA d-TPP and Chart Supplement, the cycle in force"}]}
+
+    @server.tool(
+        name="airport_procedures",
+        description="A US airport's instrument procedures from the FAA's CIFP: each approach, arrival (STAR) and "
+        "departure (DP) with its id, its chart name, its runway and its transitions. change_approach takes an "
+        "approach by this id (I27, R09-Y).",
+        title="Airport procedures",
+        annotations=read_only("Airport procedures"),
+        meta=READS,
+    )
+    async def airport_procedures(
+        ident: Ident,
+        kind: Annotated[
+            Literal["approach", "arrival", "departure"] | None,
+            Field(description="Only approaches, arrivals or departures; all when omitted."),
+        ] = None,
+    ) -> dict[str, Any]:
+        pilot()
+        found = await procedures_at(ident=ident_of(ident))
+        keys = ("kind", "id", "name", "runway", "transitions")
+        return {
+            "airport": found["airport"],
+            "procedures": [{k: p[k] for k in keys if p.get(k) not in (None, [])} for p in found["procedures"] if kind in (None, p["kind"])],
+            # True when the FAA's file for the cycle in force could not be read
+            # and an older one's procedures are given (schemas.ProcedureList).
+            "stale": found.get("stale", False),
+            "sources": editions("cifp"),
+        }
 
     @server.tool(
         name="nearest_airports",

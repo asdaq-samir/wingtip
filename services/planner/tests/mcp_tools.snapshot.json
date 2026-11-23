@@ -20,7 +20,7 @@
       "readOnlyHint": true,
       "title": "Add fuel stops"
     },
-    "description": "Puts in the fuel stops the flight needs where it is short of fuel, each landing with the reserve (14 CFR 91.151, 91.167), as FPL's Add Fuel Stops does. Needs an airplane.",
+    "description": "Puts in the fuel stops the flight needs where it is short of fuel, each landing with the reserve (14 CFR 91.151, 91.167), as FPL's Add Fuel Stops does. Needs an airplane (pick_airplane).",
     "inputSchema": {
       "$defs": {
         "Flight": {
@@ -440,6 +440,13 @@
           "minimum": 1,
           "title": "Limit",
           "type": "integer"
+        },
+        "offset": {
+          "default": 0,
+          "description": "How many to skip, for the next page: the last answer's next_offset.",
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
         }
       },
       "required": [
@@ -455,6 +462,67 @@
       "type": "object"
     },
     "title": "Airport NOTAMs"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Airport procedures"
+    },
+    "description": "A US airport's instrument procedures from the FAA's CIFP: each approach, arrival (STAR) and departure (DP) with its id, its chart name, its runway and its transitions. change_approach takes an approach by this id (I27, R09-Y).",
+    "inputSchema": {
+      "properties": {
+        "ident": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Ident",
+          "type": "string"
+        },
+        "kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "approach",
+                "arrival",
+                "departure"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Only approaches, arrivals or departures; all when omitted.",
+          "title": "Kind"
+        }
+      },
+      "required": [
+        "ident"
+      ],
+      "title": "airport_proceduresArguments",
+      "type": "object"
+    },
+    "name": "airport_procedures",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "airport_proceduresDictOutput",
+      "type": "object"
+    },
+    "title": "Airport procedures"
   },
   {
     "_meta": {
@@ -520,7 +588,7 @@
       "readOnlyHint": true,
       "title": "Change an approach"
     },
-    "description": "Loads an approach at one of the route's airports (load, with its id from airport_info's procedures or the error's list), activates it onto the route, deactivates it back to loaded, removes it, or unsuspends or suspends its missed approach at the MAP, as a GPS navigator does.",
+    "description": "Loads an approach at one of the route's airports (load, with its id from airport_procedures), activates it onto the route, deactivates it back to loaded, removes it, or unsuspends or suspends its missed approach at the MAP, as a GPS navigator does.",
     "inputSchema": {
       "$defs": {
         "Flight": {
@@ -854,7 +922,7 @@
           "items": {
             "type": "string"
           },
-          "maxItems": 8,
+          "maxItems": 16,
           "title": "Stops",
           "type": "array"
         }
@@ -1042,6 +1110,7 @@
           "type": "string"
         },
         "place": {
+          "description": "Its new place among the stops, 1 the first; past the last is last.",
           "maximum": 16,
           "minimum": 1,
           "title": "Place",
@@ -1118,6 +1187,13 @@
           "maximum": 50,
           "minimum": 1,
           "title": "Limit",
+          "type": "integer"
+        },
+        "offset": {
+          "default": 0,
+          "description": "How many to skip, for the next page: the last answer's next_offset.",
+          "minimum": 0,
+          "title": "Offset",
           "type": "integer"
         }
       },
@@ -1485,7 +1561,7 @@
       "readOnlyHint": true,
       "title": "Plan a route"
     },
-    "description": "Plans a flight between US airports as Wingtip's nav log does: the cruise altitude (yours, or the legal fastest for the winds) and why, each leg's distance, true and magnetic course, magnetic heading, wind, ground speed, time and fuel, the totals with the reserve and the fuel margin, and the cautions. Times and fuel need one of the pilot's airplanes by tail number.",
+    "description": "Plans a flight between US airports as Wingtip's nav log does: the cruise altitude (yours, or the legal fastest for the winds) and why, each leg's distance, true and magnetic course, magnetic heading, wind, ground speed, time and fuel, the totals with the reserve and the fuel margin, and the cautions. Times and fuel need one of the pilot's airplanes by tail number. Answers the nav log as data; show_flight plans the same route in Wingtip's live view, where the edit tools change it.",
     "inputSchema": {
       "properties": {
         "airplane_tail": {
@@ -1560,7 +1636,7 @@
           "items": {
             "type": "string"
           },
-          "maxItems": 8,
+          "maxItems": 16,
           "title": "Stops",
           "type": "array"
         }
@@ -1947,7 +2023,7 @@
       "readOnlyHint": false,
       "title": "Save flight to Wingtip"
     },
-    "description": "Saves a planned flight to the signed-in pilot's Wingtip account, so it is in the app's Flights to open, brief and fly. It plans the route first, as plan_route does, and saves that plan. Adds a new flight; changes nothing already saved.",
+    "description": "Saves a route, given by its airports, altitude, airplane and time, to the signed-in pilot's Wingtip account, so it is in the app's Flights to open, brief and fly. It plans the route first, as plan_route does, and saves that plan. Adds a new flight; changes nothing already saved. A flight shown or changed with show_flight and the edit tools (its fuel stops, approaches, fuel on board) is saved whole by save_flight_plan instead.",
     "inputSchema": {
       "properties": {
         "airplane_tail": {
@@ -2022,7 +2098,7 @@
           "items": {
             "type": "string"
           },
-          "maxItems": 8,
+          "maxItems": 16,
           "title": "Stops",
           "type": "array"
         }
@@ -2064,7 +2140,7 @@
       "readOnlyHint": false,
       "title": "Save flight plan to Wingtip"
     },
-    "description": "Saves the flight being planned to the pilot's Wingtip account as a new saved flight, planned as the live view shows it. Adds a flight; changes nothing already saved.",
+    "description": "Saves the flight being planned (the flight the last show_flight or edit answer gave) to the pilot's Wingtip account as a new saved flight, planned as the live view shows it. Adds a flight; changes nothing already saved. To save over the saved flight it came from, update_saved_flight.",
     "inputSchema": {
       "$defs": {
         "Flight": {
@@ -2240,6 +2316,13 @@
           "maximum": 25,
           "minimum": 1,
           "title": "Limit",
+          "type": "integer"
+        },
+        "offset": {
+          "default": 0,
+          "description": "How many to skip, for the next page: the last answer's next_offset.",
+          "minimum": 0,
+          "title": "Offset",
           "type": "integer"
         },
         "query": {
@@ -2608,13 +2691,14 @@
         "depart_at": {
           "anyOf": [
             {
+              "format": "date-time",
               "type": "string"
             },
             {
               "type": "null"
             }
           ],
-          "description": "ISO 8601, or none.",
+          "description": "ISO 8601 (2026-11-22T15:30:00Z; UTC without an offset), or none for now.",
           "title": "Depart At"
         },
         "flight": {
@@ -2807,6 +2891,7 @@
           "description": "The flight as the last Wingtip answer gave it."
         },
         "gallons": {
+          "description": "US gallons in the tanks leaving there; 0 for none bought.",
           "maximum": 2000,
           "minimum": 0,
           "title": "Gallons",
@@ -2844,7 +2929,7 @@
       "readOnlyHint": true,
       "title": "Show flight in Wingtip"
     },
-    "description": "Opens the flight in Wingtip's live view beside the chat -- the chart with the route, the route's points with their times and fuel, and the figures -- planned by Wingtip's nav log. Give at least the departure and destination. Every edit tool answers the flight changed, to pass to the next one.",
+    "description": "Opens the flight in Wingtip's live view beside the chat -- the chart with the route, the route's points with their times and fuel, and the figures -- planned by Wingtip's nav log. Give at least the departure and destination. Every edit tool answers the flight changed, to pass to the next one. plan_route answers the same plan as data, without the view.",
     "inputSchema": {
       "$defs": {
         "Flight": {

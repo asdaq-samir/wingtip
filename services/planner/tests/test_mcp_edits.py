@@ -18,6 +18,8 @@ from .plan_world import _stubbed_world  # noqa: F401 -- the stubbed chart, altit
 from .test_mcp_tools import AIRPLANE, answer, refusal
 
 ROUTE = {"departure": "C81", "destination": "KDLH"}
+#: The route on the pilot's own airplane, which fuel stops need.
+FLOWN = {**ROUTE, "airplane_tail": "N123AB"}
 
 
 @pytest.fixture(autouse=True)
@@ -135,7 +137,7 @@ def test_fuel_stops_go_in_where_the_planner_says_and_come_out(monkeypatch):
         return p, None
 
     monkeypatch.setattr(flight_view, "planned", short)
-    added = edited("add_fuel_stops", ROUTE)
+    added = edited("add_fuel_stops", FLOWN)
     assert added["flight"]["stops"] == ["KMSN"] and added["flight"]["fuel_stops"] == ["KMSN"]
     assert added["view"]["points"][1]["fuel_stop"] is True
     removed = edited("remove_fuel_stops", {**added["flight"], "stops": ["KMSN", "KRST"]})
@@ -143,7 +145,24 @@ def test_fuel_stops_go_in_where_the_planner_says_and_come_out(monkeypatch):
 
 
 def test_no_fuel_stop_is_put_in_where_none_is_needed():
-    assert said("add_fuel_stops", ROUTE).startswith("No fuel stops are needed")
+    assert said("add_fuel_stops", FLOWN).startswith("No fuel stops are needed")
+
+
+def test_fuel_stops_without_an_airplane_ask_for_one_rather_than_say_none_is_needed():
+    """With no airplane the plan has no fuel figures (decision 0011), so
+    "the tanks reach each landing" would be said of tanks it never knew."""
+    assert "pick_airplane" in refusal(call("add_fuel_stops", {"flight": ROUTE}))
+
+
+def test_a_flight_short_of_fuel_with_no_field_in_reach_is_said_short(monkeypatch):
+    async def short(flight, pilot_id):
+        p = fake_plan(flight)
+        p["totals"]["no_fuel_stop"] = [{"departure": "C81", "destination": "KDLH", "on_board": False}]
+        return p, None
+
+    monkeypatch.setattr(flight_view, "planned", short)
+    text = said("add_fuel_stops", FLOWN)
+    assert text.startswith("No fuel stop put in, and the flight is short of fuel: C81 to KDLH: no field with fuel in reach")
 
 
 def test_an_edit_needs_only_the_read_scope():
