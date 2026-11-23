@@ -177,8 +177,8 @@ areas:
       - design/**
       - scripts/ci/content-mtimes.py
       - scripts/build/ios-strings.sh
-      # the build and the tests, as native-ios.yml's test job runs them
-      - scripts/ci/ios_test.sh
+      # the build and the tests, as native-ios.yml's test job runs them (ios_test.sh, ios_products.py)
+      - scripts/ci/ios_*
       - .github/workflows/native-ios.yml
   android:
     ci: android
@@ -318,7 +318,7 @@ ci_only:
     - apps/ios/**
     - scripts/build/ios-strings.sh
     - scripts/ci/content-mtimes.py
-    - scripts/ci/ios_test.sh
+    - scripts/ci/ios_*
     - .github/workflows/native-ios.yml
   android-app:
     - apps/android/**

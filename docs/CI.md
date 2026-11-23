@@ -380,6 +380,10 @@ through the API, the `changes` job takes:
   - when the browser tests never ran at all (the images or the plan
     failed), the whole suite runs again.
 
+  The specs job says which it did, in its log and its summary: how many
+  specs it picked of how many the commits reach, with the known reds and
+  lost shards, or that it fell back to every spec and why.
+
 `GH_TOKEN=$(gh auth token) python3 scripts/ci/validation.py show <run>`
 prints what a rerun of a run would take. Run 45089884568 gives 53 reds (by file and line),
 one lost shard, both phones, the engine, wingtip and the X-Plane leg.
@@ -394,13 +398,17 @@ the flake hunt and the issue, and with CI's usual retry:
 |---|---|---|
 | `guards` (three legs), `test-web` (three), `test-engine` (every crate), `test-python` (every suite), `test-gateway`, `test-sim`, `infra` | one runner each | 1-5 min |
 | `build-images`: every service image, built, not pushed | 1 | 2-6 min |
-| `e2e`: every spec on `mobile`, `desktop` and `webkit-phone`, and on `webkit-ipad` the smoke set and the `ipad-*` specs (`browser_specs.py`'s `WAVE_SHARDS`), after `e2e-images` | 16 | ~15-20 min |
-| `ios`: `native-ios.yml` without `unit_only`: on the newest iPhone the build, `WingtipTests` and `CardSmokeTests`, as main's push runs them; on the newest iPad its whole suite, as the night runs it, in four legs (`test (iPad 1/4)` to `test (iPad 3/4)`, the UI classes `ios_test.sh`'s `IPAD_LEG_1` to `IPAD_LEG_3` name, and `test (iPad 4/4)`, every other test; decision 0058), on macOS | 3 | 6-10 min (iPhone), ~30-35 min (each iPad leg) |
-| `android`: `native-android.yml`, `testDebugUnitTest lintDebug assembleDebug` (the APK kept with the run) | 1 | 4-6 min |
+| `e2e`: every spec on `mobile`, `desktop` and `webkit-phone`, and on `webkit-ipad` the smoke set and the `ipad-*` specs (`browser_specs.py`'s `WAVE_SHARDS`), after `e2e-images`; dealt to the shards by time, slowest first to the least loaded, from the night's seconds or else the last whole validation's (`spec_seconds.py latest`, each spec's seconds summed over its shards), and by Playwright's `--shard` where neither is there | 16 | ~13-14 min (4.5-20 by `--shard`, run 45127491141) |
+| `ios`: `native-ios.yml` without `unit_only`: on the newest iPhone the build, once for every leg (`ios_products.py`), then `WingtipTests` and `CardSmokeTests`, as main's push runs them; on the newest iPad its whole suite, as the night runs it, in four legs (`test (iPad 1/4)` to `test (iPad 3/4)`, the UI classes `ios_test.sh`'s `IPAD_LEG_1` to `IPAD_LEG_3` name, and `test (iPad 4/4)`, every other test; decision 0058), each booting its simulator while the iPhone builds and testing that build, on macOS | 5 | 8-13 min to the build, ~20 (iPhone), ~25-30 min (each iPad leg) |
+| `android`: `native-android.yml`, `testDebugUnitTest lintDebug assembleDebug` (the APK kept with the run), and beside it, not after it, the emulator's tests on the phone and the tablet | 3 | 4-14 min, ~8-15 min (each device) |
 
-About 30 to 35 minutes from the push, the iPad's legs and the browser
-shards being the longest (wave 3's runs, 2026-11-22); the night's ten
-shards take half an hour. GitHub runs 20 jobs at once on
+About 25 to 30 minutes from the push, the iPad's legs the longest: the
+iPhone's build (some 8 to 13 minutes, the engine and the app) and then the
+longest leg's tests (the card rule's suite alone some 15). Before the
+build was shared and the shards dealt by time it was 33 (run
+45127491141, 2026-11-23: each iPad leg's own build 13 minutes before its
+first test, the slowest of sixteen shards 20 and the Android devices
+starting at minute 14); the night's ten shards take half an hour. GitHub runs 20 jobs at once on
 a free account, so the sixteen shards and the short jobs share them.
 `CI passed` is the verdict; `budget` holds the run to the night's budgets
 and names each failure with its narrow command (`failure_summary.py`),

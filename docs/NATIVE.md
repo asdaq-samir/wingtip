@@ -920,8 +920,18 @@ SDK), so a build or a test runs there through `scripts/dev/one-at-a-time.sh`
 - a wave's validation (`validate-wave.yml`): the iPhone's set as on
   `main`, and the iPad's whole suite in four legs on four runners
   (`IPAD_LEG_1` to `IPAD_LEG_3` in `scripts/ci/ios_test.sh` and the
-  rest), some 30 to 35 minutes each with the build on a slow hosted
-  runner, where the night's one leg takes 34 to 48;
+  rest), where the night's one leg takes 34 to 48 minutes;
+- on every run with more than the iPhone's leg (main's push, a wave, the
+  night), the app and its tests are built once: the iPhone's leg runs
+  `build-for-testing` and uploads its `Build/Products` (the `.xctestrun`
+  and what it names, as a tar that keeps the binaries executable) as the
+  run's `ios-products` artifact, and each other leg, started at the same
+  time, boots its simulator, waits for that artifact and runs
+  `test-without-building -xctestrun` with its own `-only-testing`
+  (`scripts/ci/ios_products.py`). The build keeps every device's
+  resources (`ENABLE_ONLY_ACTIVE_RESOURCES=NO`), so one build serves the
+  iPhone, the iPad and iPhone Duo; each leg had built the engine, the
+  project and the app itself, some 13 minutes before its first test;
 - every night (`native-ios.yml`, `full`): the whole suite (the launch,
   flow and accessibility tests, the store shots and the card rule's full
   suites, `CardRuleTests` and `CardScrollTests`) on the iPhone, the iPad
