@@ -1,8 +1,8 @@
 //! The procedures a NOTAM names (FAA Order JO 7930.2 7-1-3) and what a
 //! sentence with NA takes away of them, split from card.rs for its size.
 
-use super::body::is_runway;
-use super::bare;
+use super::super::bare;
+use super::super::body::is_runway;
 use crate::contractions::listed;
 
 /// A SID's, an ODP's or a STAR's number as its name spells it, and the
@@ -16,7 +16,7 @@ const NUMBER_WORDS: &str = "ONE TWO THREE FOUR FIVE SIX SEVEN EIGHT NINE TEN ELE
 const PROCEDURE_KINDS: &str = "DEPARTURE ARRIVAL DEP ARR";
 
 /// A procedure's name or number by the two words after it, or None.
-pub(super) fn procedure_word(core: &str, next: &str, after: &str) -> Option<String> {
+pub(in crate::notam_read) fn procedure_word(core: &str, next: &str, after: &str) -> Option<String> {
     if listed(NUMBER_WORDS, core) && listed(PROCEDURE_KINDS, next) {
         return Some([&core[..1], &core[1..].to_ascii_lowercase()].concat());
     }

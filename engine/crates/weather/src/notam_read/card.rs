@@ -14,10 +14,13 @@
 //! out (notam_read's), never a guess.
 
 use super::body::{is_runway, is_taxiway};
-use super::card_procedures::{kind_of, procedures, taken_by, Taken};
-pub use super::card_procedures::Procedure;
+#[path = "card_procedures.rs"]
+mod procs;
 use super::{bare, read, spaced, NotamRead};
 use crate::json::{self, Value};
+pub(in crate::notam_read) use procs::procedure_word;
+pub use procs::Procedure;
+use procs::{kind_of, procedures, taken_by, Taken};
 
 #[derive(Debug, Default, PartialEq)]
 pub struct Card {

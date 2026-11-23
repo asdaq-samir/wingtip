@@ -27,7 +27,7 @@
 //! procedure's name ("BLOKR Eight departure", card); a longer word in capitals is set in lower case,
 //! as faa_words sets them, never changed into another word. Text with any lower case is left as written.
 
-use super::card_procedures::procedure_word;
+use super::card::procedure_word;
 use crate::contractions::{compass, is_code, listed, lookup, written};
 
 /// The short words of plain English a NOTAM uses, set in lower case (any
