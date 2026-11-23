@@ -76,6 +76,11 @@ def _records_of(path: str, _mtime: float) -> dict:
         "SITE_TYPE_CODE",
     ]
     table = df.reindex(columns=columns).astype(object).fillna("")
+    # A blank ARPT_STATUS in a file that has the column is a code, "", which
+    # the engine's field_status rules closed (decision 0043: any code but O);
+    # only a file without the column (a test's few) leaves it None, unjudged
+    # (the aviation audit of 2026-11-23, L1).
+    has_status = "ARPT_STATUS" in df.columns
     # NASR's capitals as every app writes them, the FAA's codes kept (the
     # engine's airport_names: "Sierra Vista Muni-Libby AAF"), in one call.
     names = engine("airport_names", names=[n.strip() for n in table["ARPT_NAME"]])
@@ -91,7 +96,7 @@ def _records_of(path: str, _mtime: float) -> dict:
             "icao_id": row.ICAO_ID.strip().upper(),
             "notam_id": row.NOTAM_ID.strip().upper(),
             "name": nasr_name or None,
-            "status": row.ARPT_STATUS.strip().upper() or None,
+            "status": row.ARPT_STATUS.strip().upper() if has_status else None,
             "site_type": sites[row.SITE_TYPE_CODE.strip().upper()]["words"],
             "airplane": sites[row.SITE_TYPE_CODE.strip().upper()]["airplane"],
         }

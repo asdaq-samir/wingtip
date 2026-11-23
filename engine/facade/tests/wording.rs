@@ -204,6 +204,11 @@ fn class_b_c_and_d_entry_rules_each_with_its_section() {
         b.contains(r#"above it to 10,000 ft MSL, and within 30 nm of its primary airport","cite":"14 CFR 91.215(b), 91.225(d)""#),
         "{b}"
     );
+    // 91.131(b)(2), part 91 appendix D section 4's 12 airports.
+    assert!(
+        b.contains(r#"take off or land at ATL, BOS, ADW, ORD, DFW, LAX, MIA, EWR, JFK, LGA, SFO or DCA: no student, sport or recreational pilot solo there","cite":"14 CFR 91.131(b)(2)""#),
+        "{b}"
+    );
     // 91.117(b)'s 200 kt is C's and D's; B's is (c) under it.
     assert!(b.contains(r#""cite":"14 CFR 91.117(a), (c)""#), "{b}");
     assert!(b.ends_with(r#""call":["APP","TWR"]}"#), "{b}");

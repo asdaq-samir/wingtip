@@ -81,7 +81,7 @@ pub fn parse(raw: &str) -> Option<Metar> {
             }
             // Kilometres, as some states report ten or more ("18KM").
             _ if m.visibility_sm.is_none() && w.len() > 2 && w.ends_with("KM") && w[..w.len() - 2].bytes().all(|b| b.is_ascii_digit()) => {
-                m.visibility_sm = Some(statute_miles_down(w[..w.len() - 2].parse::<f64>().unwrap() * 1000.0 * SM_PER_M));
+                m.visibility_sm = Some(metric_sm(w[..w.len() - 2].parse::<f64>().unwrap() * 1000.0));
             }
             _ if m.wind.is_none() && m.visibility_sm.is_none() && wind(w).is_some() => m.wind = wind(w),
             // A variable direction "250V310" says nothing the figures carry.

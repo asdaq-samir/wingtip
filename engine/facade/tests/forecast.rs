@@ -179,11 +179,12 @@ fn a_ceiling_is_the_lowest_broken_overcast_or_obscured_layer() {
 fn a_visibility_in_metres_is_read_in_statute_miles() {
     let vis =
         |value: f64, unit: &str| ask("ceiling_visibility", json!({"visibility": {"value": value, "unit": unit}}))["visibility_sm"].clone();
-    // 1,609.344 m in a statute mile, never rounded up (locale-time's
-    // statute_miles_down: the sixteenth below 3 sm, the whole mile from
-    // 3), so 1,600 m (0.994 sm) is 15/16 and 5,000 m (3.107 sm) 3; 9999 is
-    // 10 km or more, the AWC's 6+ (WMO No. 306), as CAVOK is.
-    assert_eq!(vis(1600.0, "m"), json!(0.9375));
+    // FMH-1 Table 6-1's reportable values, the metric step each stands
+    // for read as it (metres_to_sm): 1,600 m is 1 sm, 1,200 m 3/4, and
+    // 5,000 m (3.107 sm) the 3 below; 9999 is 10 km or more, the AWC's 6+
+    // (WMO No. 306), as CAVOK is.
+    assert_eq!(vis(1600.0, "m"), json!(1.0));
+    assert_eq!(vis(1200.0, "m"), json!(0.75));
     assert_eq!(vis(5000.0, "m"), json!(3.0));
     assert_eq!(vis(9999.0, "m"), json!(6.0));
     assert_eq!(vis(2.5, "sm"), json!(2.5));

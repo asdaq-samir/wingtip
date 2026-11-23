@@ -63,14 +63,45 @@ fn nothing_from_a_line_that_is_no_report() {
 }
 
 #[test]
-fn a_metric_visibility_is_the_step_below_never_above() {
-    // 1,200 m is 0.7456 sm: 11/16, not rounded up to 3/4 or 1.
-    assert_eq!(parse("METAR EGLL 021350Z 24005KT 1200 BR OVC002 08/08 Q1013").unwrap().visibility_sm, Some(11.0 / 16.0));
-    // 800 m is 0.497 sm: 7/16, under the half mile.
-    assert_eq!(metres_to_sm(800.0), 7.0 / 16.0);
-    // A figure already on a step stays on it.
-    assert_eq!(statute_miles_down(1.5), 1.5);
-    assert_eq!(statute_miles_down(0.0625), 0.0625);
-    assert_eq!(statute_miles_down(4.99), 4.0);
+fn a_metric_visibility_is_the_reportable_value_it_stands_for() {
+    // FMH-1 Table 6-1: the metric step for each US value reads as it.
+    assert_eq!(parse("METAR EGLL 021350Z 24005KT 1200 BR OVC002 08/08 Q1013").unwrap().visibility_sm, Some(0.75));
+    for (metres, sm) in [
+        (100.0, 0.0625),
+        (200.0, 0.125),
+        (400.0, 0.25),
+        (800.0, 0.5),
+        (1600.0, 1.0),
+        (2400.0, 1.5),
+        (3200.0, 2.0),
+        (4800.0, 3.0),
+        (8000.0, 5.0),
+    ] {
+        assert_eq!(metres_to_sm(metres), sm, "{metres} m");
+    }
+    // Between two values, the lower (FMH-1 6.5.2): 1,500 m is 0.93 sm, 7/8.
+    assert_eq!(metres_to_sm(1500.0), 0.875);
+    // 5,000 m is 3.1 sm: 3, the whole mile below.
+    assert_eq!(metres_to_sm(5000.0), 3.0);
     assert_eq!(metres_to_sm(9999.0), 6.0);
+    // Ten kilometres and more, as some states write them: 18 km is 11.2 sm.
+    assert_eq!(parse("METAR SKBO 021300Z 36005KT 18KM FEW020 12/08 Q1028").unwrap().visibility_sm, Some(11.0));
+}
+
+#[test]
+fn a_visibility_is_the_reportable_value_at_or_below_never_above() {
+    // FMH-1 Table 6-1: sixteenths stop at 3/8; no report writes 7/16,
+    // 11/16 or 15/16.
+    assert_eq!(statute_miles_down(0.0625), 0.0625);
+    assert_eq!(statute_miles_down(0.4375), 0.375);
+    assert_eq!(statute_miles_down(0.7456), 0.625);
+    assert_eq!(statute_miles_down(0.9942), 0.875);
+    assert_eq!(statute_miles_down(1.5), 1.5);
+    assert_eq!(statute_miles_down(2.2), 2.0);
+    assert_eq!(statute_miles_down(2.3), 2.25);
+    assert_eq!(statute_miles_down(4.99), 4.0);
+    assert_eq!(statute_miles_down(15.0), 15.0);
+    assert_eq!(statute_miles_down(19.9), 15.0);
+    assert_eq!(statute_miles_down(23.0), 20.0);
+    assert_eq!(statute_miles_down(44.0), 40.0);
 }

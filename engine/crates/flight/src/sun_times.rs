@@ -80,15 +80,23 @@ fn evening(ends: &Ends) -> Option<f64> {
 /// A period from this evening to the next morning, as {"from_s",
 /// "until_s"}: each null where the sun does not cross that line then. A day
 /// it never comes up is all night: "all_day" true and both null.
-fn period(out: &mut String, today: &Ends, next: &Ends, margin_s: f64) {
+fn period(out: &mut String, today: &Ends, next: &Ends, margin_s: f64, rule: &str) {
     out.push_str("{\"from_s\":");
     json::opt_number(out, evening(today).map(|e| e + margin_s));
     out.push_str(",\"until_s\":");
     json::opt_number(out, morning(next).map(|m| m - margin_s));
     out.push_str(",\"all_day\":");
     out.push_str(if matches!(today, Err(true)) { "true" } else { "false" });
+    out.push_str(",\"rule\":");
+    json::string(out, rule);
     out.push('}');
 }
+
+/// What each period is, as the rules read it (eCFR): the words a host says
+/// beside its times, so none keeps a copy.
+const NIGHT_RULE: &str = "14 CFR 1.1's night: end of evening civil twilight to beginning of morning civil twilight (91.151(a)(2)'s 45-minute VFR reserve, 91.205(c)'s equipment, night flight time)";
+const PASSENGER_NIGHT_RULE: &str = "14 CFR 61.57(b): 1 hour after sunset to 1 hour before sunrise; carrying passengers in it needs three takeoffs and three landings to a full stop made in it in the preceding 90 days";
+const LIGHTS_RULE: &str = "14 CFR 91.209(a): position lights on from sunset to sunrise";
 
 /// The local date "yyyy-mm-dd" as days since 1970-01-01.
 fn date_days(name: &str, date: &str) -> Result<i64, String> {
@@ -126,11 +134,11 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
     out.push_str(",\"civil_dusk_s\":");
     json::opt_number(&mut out, evening(&day.civil));
     out.push_str(",\"night\":");
-    period(&mut out, &day.civil, &day.next_civil, 0.0);
+    period(&mut out, &day.civil, &day.next_civil, 0.0, NIGHT_RULE);
     out.push_str(",\"passenger_night\":");
-    period(&mut out, &day.sun, &day.next_sun, PASSENGER_NIGHT_MARGIN_S);
+    period(&mut out, &day.sun, &day.next_sun, PASSENGER_NIGHT_MARGIN_S, PASSENGER_NIGHT_RULE);
     out.push_str(",\"lights\":");
-    period(&mut out, &day.sun, &day.next_sun, 0.0);
+    period(&mut out, &day.sun, &day.next_sun, 0.0, LIGHTS_RULE);
     out.push('}');
     Ok(out)
 }
@@ -152,5 +160,14 @@ mod tests {
         let day = sun_day_of(41.88, -87.63, days_from_civil(2026, 3, 20));
         let (_, sunset) = day.sun.unwrap();
         assert!((sunset - 1_774_051_380.0).abs() <= 180.0);
+    }
+
+    #[test]
+    fn each_period_says_its_rule() {
+        let v = wingtip_core::json::parse(r#"{"lat": 41.88, "lon": -87.63, "date": "2026-03-20"}"#).unwrap();
+        let out = call("sun_times", &v).unwrap();
+        for cite in ["14 CFR 1.1's night", "14 CFR 61.57(b)", "14 CFR 91.209(a)"] {
+            assert!(out.contains(cite), "{cite}: {out}");
+        }
     }
 }

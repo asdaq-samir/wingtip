@@ -92,7 +92,7 @@ pub fn divert(air: &Air, tc_deg: f64, distance_nm: f64) -> Option<Diverted> {
         wca,
         th,
         // East is least: a variation east (positive) comes off.
-        mh: norm360(th - air.magnetic_variation_deg),
+        mh: wingtip_core::wmm::magnetic_of(th, air.magnetic_variation_deg),
         gs,
         ete,
         fuel: (ete / 60.0) * air.fuel_burn_gph,

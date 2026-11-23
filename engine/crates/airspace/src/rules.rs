@@ -154,6 +154,15 @@ pub fn entry_rules(class: char) -> Vec<(String, &'static str)> {
                 "At least a private pilot certificate, or a student, sport or recreational pilot's endorsement for it".to_owned(),
                 "14 CFR 91.131(b)(1)",
             ),
+            // 91.131(b)(2): part 91 appendix D, section 4's 12 airports
+            // want a private pilot certificate whatever the endorsement.
+            (
+                format!(
+                    "At least a private pilot certificate to take off or land at {}: no student, sport or recreational pilot solo there",
+                    or_list(&wingtip_flight::special_vfr_airports::NO_SOLO_STUDENT.map(|a| a.faa))
+                ),
+                "14 CFR 91.131(b)(2)",
+            ),
             (format!("200 kt under its shelves and in a VFR corridor through it; 250 kt below {ten} ft MSL in it"), "14 CFR 91.117(a), (c)"),
         ],
         'C' => vec![
@@ -166,6 +175,14 @@ pub fn entry_rules(class: char) -> Vec<(String, &'static str)> {
         ],
         'D' => vec![("Two-way radio contact with the tower before you enter".to_owned(), "14 CFR 91.129(c)(1)"), (near_field, "14 CFR 91.117(b)")],
         _ => Vec::new(),
+    }
+}
+
+/// "A, B or C": a list as a sentence names it.
+fn or_list(items: &[&str]) -> String {
+    match items.split_last() {
+        Some((last, rest)) if !rest.is_empty() => format!("{} or {last}", rest.join(", ")),
+        _ => items.join(""),
     }
 }
 

@@ -211,14 +211,11 @@ pub fn isa_pressure_hpa(altitude_ft: f64) -> f64 {
 /// The fuels an airplane is loaded with, by grade, and the standard weight
 /// of a US gallon of each, for the weight and balance's fuel where the
 /// airplane's own figure is not given (the POH's, where the pilot enters
-/// it, rules): FAA-H-8083-1B, the Aircraft Weight and Balance Handbook --
-/// avgas 6 lb ("aviation gasoline weighs 6 pounds per gallon", chapter 7;
-/// Figure 3-4's 6.01 at 59 °F), Jet A and A-1 6.8 lb (chapter 9, "Jet A
-/// fuel has a nominal specific gravity at +15 °C of 0.812 and weighs 6.8
-/// pounds per gallon"; Figure 3-4 gives 6.68 at 59 °F, and the heavier
-/// errs toward the weight limit, the one the loading is most often near).
+/// it, rules): fuel_weight's, the one copy (FAA-H-8083-25C, chapter 10,
+/// "Standard weights": gasoline 6 lb/US gal, Jet A and Jet A-1 6.8).
 /// (grade, name as the pump and the POH write it, lb a gallon).
-pub const FUEL_GRADES: [(&str, &str, f64); 2] = [("avgas", "Avgas (100LL)", 6.0), ("jet_a", "Jet A", 6.8)];
+pub const FUEL_GRADES: [(&str, &str, f64); 2] =
+    [("avgas", "Avgas (100LL)", crate::fuel_weight::AVGAS_LB_PER_GAL), ("jet_a", "Jet A", crate::fuel_weight::JET_A_LB_PER_GAL)];
 
 #[cfg(test)]
 mod speed_tests {

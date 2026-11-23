@@ -666,7 +666,7 @@ off by default (the owner, 2026-11-13).
    in degrees magnetic, three figures and north 360 ("274°", "004°"): the
    fix's true course (the W3C Geolocation API's `coords.heading`; a dry
    run's, the plan's track) less the engine's WMM variation at the fix
-   (`magnetic_variation`; `trackFigure`), asked again only a mile on or
+   (`magnetic_variation`, turned by `magnetic_of`; `trackFigure`), asked again only a mile on or
    on a new UTC day (`lib/magnetic`'s `nearVariation`: the WMM's field
    changes over miles and years, its track written in whole degrees), "—" with no position, no course
    or below flying speed (the engine's `underway`), a column always. The
@@ -1677,9 +1677,12 @@ On all three apps:
 - **A figure typed reads a decimal comma** ("8,5" is 8.5): the web's
   NumberField reads the browser's locale, the phones' `Typed`.
 - **A visibility is written as a report gives it and never rounded up**:
-  "5/8 SM", "1 1/8 sm", the sixteenth below 3 sm and the whole mile from
-  3 (the engine's `statute_miles_down` for a metric report, each app's
-  `reportedVisibility`).
+  "5/8 SM", "1 1/8 sm", the reportable value at or below it of the
+  Federal Meteorological Handbook No. 1's Table 6-1 (sixteenths to 3/8,
+  eighths to 2, quarters to 3, whole miles on; never 11/16), the engine's
+  `visibility_reportable`, which each app's `reportedVisibility` asks. A
+  metric report reads its metres as the value they stand for: 1,600 m is
+  1 sm, 800 m 1/2 (`metres_to_sm`).
 - **Units are the FAA's, one set, each said**: nm for distance, sm for
   visibility, ft, kt, inHg (a Q group converted), °C, US gallons and
   pounds. There is no metric setting.

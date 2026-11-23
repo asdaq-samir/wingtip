@@ -25,10 +25,16 @@
 //! the others, the nearer one between two, as a median line divides them),
 //! and "other" beyond, where the US figures do not apply, so the high seas
 //! are warned of too. The outlines are within about a third of a mile of
-//! Natural Earth's where two countries meet and 6 nm on an open coast,
-//! which the 12 nm round the land takes in; a point within that of the
-//! border may read either side. An island too small for the 1:50m
-//! outlines (Bimini) reads "other", still warned of.
+//! Natural Earth's where two countries meet, so a point that near the
+//! border may read either side. On an open coast they are thinned by up to
+//! 6 nm and the 12 nm is measured from the thinned line, so a point some 6
+//! to 12 nm off such a coast, still under 91.1(b), can read "other": it is
+//! then warned of as outside the US rules, the safe side (warn, never
+//! limit), and is left so (the aviation audit of 2026-11-23, L5). Were it
+//! to matter on real routes (the Gulf coast, the Keys), measure the buffer
+//! from an unthinned coastline rather than widen it, which would take in
+//! sea outside 91.1(b). An island too small for the 1:50m outlines
+//! (Bimini) reads "other", still warned of.
 
 use std::sync::OnceLock;
 use wingtip_core::geo::{destination, distance_and_bearing};

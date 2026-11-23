@@ -1,5 +1,5 @@
 {
-  "_note": "The approach, glide, transponder, field, fuel, floor and altitude rules' figures and boundaries, written down from 14 CFR 97.3, 91.119, 91.151, 91.167, 91.175 and 91.177, AC 90-66C, the AIM and NASR's codes, never from the code. Shape and checks as engine/facade/tests/common/cases.rs says; asked by engine/facade/tests/rule_cases.rs.",
+  "_note": "The approach, glide, transponder, field, fuel, floor and altitude rules' figures and boundaries, written down from 14 CFR 97.3, 91.119, 91.131(b)(2) and part 91 appendix D, 91.151, 91.167, 91.175 and 91.177, AC 90-66C, FAA-H-8083-25C (true to magnetic), the AIM and NASR's codes, never from the code. Shape and checks as engine/facade/tests/common/cases.rs says; asked by engine/facade/tests/rule_cases.rs.",
   "cases": [
     {
       "name": "VREF 90.9: category A",
@@ -509,7 +509,9 @@
       "input": {
         "usable_gal": 40.0,
         "taxi_gal": 1.4,
-        "reserves_gal": [6.0],
+        "reserves_gal": [
+          6.0
+        ],
         "points": [
           {
             "departure": true
@@ -564,7 +566,10 @@
       "input": {
         "usable_gal": 40.0,
         "taxi_gal": 1.4,
-        "reserves_gal": [7.5, 5.0],
+        "reserves_gal": [
+          7.5,
+          5.0
+        ],
         "points": [
           {
             "departure": true
@@ -597,7 +602,10 @@
       "input": {
         "usable_gal": 40.0,
         "taxi_gal": 1.4,
-        "reserves_gal": [7.5, 5.0],
+        "reserves_gal": [
+          7.5,
+          5.0
+        ],
         "alternate_gal": 2.0,
         "points": [
           {
@@ -626,7 +634,9 @@
       "input": {
         "usable_gal": 40.0,
         "taxi_gal": 1.4,
-        "reserves_gal": [6.0],
+        "reserves_gal": [
+          6.0
+        ],
         "points": [
           {
             "departure": true
@@ -818,8 +828,16 @@
       "rule": "profile_clearance",
       "input": {
         "altitude_ft": 3500,
-        "along_nm": [0, 10, 20],
-        "ground_ft": [900, 3000, 1200],
+        "along_nm": [
+          0,
+          10,
+          20
+        ],
+        "ground_ft": [
+          900,
+          3000,
+          1200
+        ],
         "obstacles": [
           {
             "along_nm": 15,
@@ -869,8 +887,16 @@
       "rule": "profile_clearance",
       "input": {
         "altitude_ft": 3500,
-        "along_nm": [0, 10, 20],
-        "ground_ft": [900, 3000, 1200],
+        "along_nm": [
+          0,
+          10,
+          20
+        ],
+        "ground_ft": [
+          900,
+          3000,
+          1200
+        ],
         "obstacles": [],
         "points": [
           {
@@ -901,8 +927,16 @@
       "rule": "profile_clearance",
       "input": {
         "altitude_ft": 3500,
-        "along_nm": [0, 10, 20],
-        "ground_ft": [900, 2400, 1200],
+        "along_nm": [
+          0,
+          10,
+          20
+        ],
+        "ground_ft": [
+          900,
+          2400,
+          1200
+        ],
         "obstacles": [],
         "points": [
           {
@@ -1030,6 +1064,125 @@
         }
       ],
       "source": "The Altitude Advisor's wheel: every 500 ft from 1,000 ft up to 17,500 ft, the last under Class A, which begins at 18,000 ft MSL (14 CFR 71.33, 91.135). Highest first."
+    },
+    {
+      "name": "090 true with 10 E variation is 080 magnetic",
+      "rule": "magnetic_of",
+      "input": {
+        "true_deg": 90,
+        "variation_deg": 10
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 80,
+          "tolerance": 0
+        }
+      ],
+      "source": "FAA-H-8083-25C, chapter 16: variation east is subtracted from a true course and west added, \"east is least, west is best\"."
+    },
+    {
+      "name": "090 true with 4 W variation is 094 magnetic",
+      "rule": "magnetic_of",
+      "input": {
+        "true_deg": 90,
+        "variation_deg": -4
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 94,
+          "tolerance": 0
+        }
+      ],
+      "source": "FAA-H-8083-25C, chapter 16: variation east is subtracted from a true course and west added, \"east is least, west is best\"."
+    },
+    {
+      "name": "005 true with 10 E is 355: round north",
+      "rule": "magnetic_of",
+      "input": {
+        "true_deg": 5,
+        "variation_deg": 10
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 355,
+          "tolerance": 0
+        }
+      ],
+      "source": "FAA-H-8083-25C, chapter 16: variation east is subtracted from a true course and west added, \"east is least, west is best\"."
+    },
+    {
+      "name": "358 true with 4 W is 002: round north",
+      "rule": "magnetic_of",
+      "input": {
+        "true_deg": 358,
+        "variation_deg": -4
+      },
+      "expect": [
+        {
+          "path": "",
+          "value": 2,
+          "tolerance": 0
+        }
+      ],
+      "source": "FAA-H-8083-25C, chapter 16: variation east is subtracted from a true course and west added, \"east is least, west is best\"."
+    },
+    {
+      "name": "A.13 at O'Hare (KORD), an appendix D section 4 airport: warned",
+      "rule": "endorsement_warnings",
+      "input": {
+        "code": "class-b-airport",
+        "fields": {
+          "airport": "Chicago O'Hare (KORD)"
+        }
+      },
+      "expect": [
+        {
+          "path": "",
+          "length": 1
+        },
+        {
+          "path": "0",
+          "contains": "91.131(b)(2)"
+        }
+      ],
+      "source": "14 CFR 91.131(b)(2): \"no person may take off or land a civil aircraft at those airports listed in section 4 of appendix D to this part unless the pilot in command holds at least a private pilot certificate\"; part 91 appendix D, section 4 (eCFR, 2026-11-19) lists ATL, BOS, ADW, ORD, DFW, LAX, MIA, EWR, JFK, LGA, SFO and DCA."
+    },
+    {
+      "name": "A.13 at Midway (KMDW), under O'Hare's Class B but not in section 4: no warning",
+      "rule": "endorsement_warnings",
+      "input": {
+        "code": "class-b-airport",
+        "fields": {
+          "airport": "Chicago Midway (KMDW)"
+        }
+      },
+      "expect": [
+        {
+          "path": "",
+          "length": 0
+        }
+      ],
+      "source": "14 CFR 91.131(b)(2): \"no person may take off or land a civil aircraft at those airports listed in section 4 of appendix D to this part unless the pilot in command holds at least a private pilot certificate\"; part 91 appendix D, section 4 (eCFR, 2026-11-19) lists ATL, BOS, ADW, ORD, DFW, LAX, MIA, EWR, JFK, LGA, SFO and DCA."
+    },
+    {
+      "name": "A.13 at BWI, in section 3 (special VFR) but not section 4: no warning",
+      "rule": "endorsement_warnings",
+      "input": {
+        "code": "class-b-airport",
+        "fields": {
+          "airport": "KBWI"
+        }
+      },
+      "expect": [
+        {
+          "path": "",
+          "length": 0
+        }
+      ],
+      "source": "14 CFR 91.131(b)(2): \"no person may take off or land a civil aircraft at those airports listed in section 4 of appendix D to this part unless the pilot in command holds at least a private pilot certificate\"; part 91 appendix D, section 4 (eCFR, 2026-11-19) lists ATL, BOS, ADW, ORD, DFW, LAX, MIA, EWR, JFK, LGA, SFO and DCA."
     }
   ]
 }

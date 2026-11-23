@@ -15,6 +15,7 @@ use crate::figures::holding;
 use crate::geo::{destination, py_mod};
 use crate::json::Value;
 use crate::route::holds::{self, Leg};
+use wingtip_core::wmm::magnetic_of;
 
 /// One turn round the racetrack from the fix, [lat, lon] pairs: the turn
 /// at the fix toward the holding side, the outbound leg, the turn back,
@@ -87,7 +88,7 @@ pub fn hold_on_leg(leg: &Obj, before: &Obj, hold: &Held, fix: (f64, f64), variat
     let tas = leg.num("tas_kt")?;
     // Magnetic = true - variation, east positive: the course flown to the
     // point, and the hold's inbound course in true.
-    let arrival = py_mod(before.num("true_course_deg")? - before.num("magnetic_variation_deg")?, 360.0);
+    let arrival = magnetic_of(before.num("true_course_deg")?, before.num("magnetic_variation_deg")?);
     let inbound_true = py_mod(hold.inbound + variation_deg, 360.0);
     let leg_nm = hold.leg_nm.unwrap_or_else(|| hold.leg_min.filter(|m| *m != 0.0).unwrap_or(1.0) * tas / 60.0);
     let minutes = holds::held_minutes(hold.leg(), hold.turns, hold.minutes, tas);

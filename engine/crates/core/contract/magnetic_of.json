@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_core::wmm::call",
+  "description": "A true direction as a magnetic one, degrees from 0 up to 360: \"east is least, west is best\", an east variation taken off and a west one added (FAA-H-8083-25C, chapter 16). The variation is magnetic_variation's, degrees east, west negative.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "MagneticOfInput",
+      "type": "object",
+      "properties": {
+        "true_deg": {
+          "type": "number",
+          "description": "The direction, degrees true."
+        },
+        "variation_deg": {
+          "type": "number",
+          "description": "The magnetic variation there, degrees east (west negative), as magnetic_variation answers it."
+        }
+      },
+      "required": [
+        "true_deg",
+        "variation_deg"
+      ]
+    },
+    "answer": {
+      "title": "MagneticOfAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}
