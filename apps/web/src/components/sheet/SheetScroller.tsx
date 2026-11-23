@@ -69,12 +69,9 @@ interface ScrollerProps {
   /** The figures pinned at its foot, so its body is cut off there. */
   cut: boolean;
   /** FPL's page: under its foot bar (sheet/FootBar, "bar") room at its
-   *  end as tall as the bar, so its last row scrolls clear above it; with
-   *  no bar ("edge") room for the home indicator where the panel reaches
-   *  the screen's foot (the side panel; a bottom sheet's viewport already
-   *  stops over it, SheetDrawer), so the inline nav log's last row clears
-   *  it as its card's does (NavLogView; the r10 audit). */
-  endRoom?: "bar" | "edge";
+   *  end as tall as the bar, so its last row scrolls clear above it. With
+   *  none its foot (SheetFoot) ends the page, clear of the home indicator. */
+  endRoom?: "bar";
   /** Its band risen with the sheet from the pill (FPL's), frosted as at half from the finger's first move. */
   rises?: boolean;
   layout: SheetLayout;
@@ -160,9 +157,6 @@ export function SheetScroller(p: ScrollerProps) {
           under its last row (--box-foot, index.css). */}
       {p.endRoom === "bar" && (
         <div aria-hidden="true" className="h-[calc(var(--foot-bar,0px)+var(--space-group)-var(--box-foot))] shrink-0" data-foot-room="" />
-      )}
-      {p.endRoom === "edge" && !fromBottom && (
-        <div aria-hidden="true" className="h-[env(safe-area-inset-bottom)] shrink-0" data-edge-room="" />
       )}
     </div>
   );

@@ -91,7 +91,7 @@ def resolve_space(tree):
     def number(name, seen):
         if name in seen:
             raise ValueError(f"space.{name}: its aliases go round in a loop ({' -> '.join(seen + [name])})")
-        if name not in space:
+        if not isinstance(space.get(name), dict):
             raise ValueError(f"space.{seen[-1]}: no space.{name} to read")
         value = space[name]["$value"]
         if not isinstance(value, str):

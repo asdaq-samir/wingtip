@@ -76,9 +76,7 @@ export function FuelStopChip({
     <SuggestedPill
       onAdd={onAdd}
       onHide={onHide}
-      label={`${words}: add it to the route`}
-      dismissLabel={`Dismiss ${words}`}
-      shortcuts="Delete"
+      words={words}
       testId="route-fuel-stop"
       menu={
         <ContextMenuGroup>
@@ -118,13 +116,10 @@ export function FuelStopChip({
 export function SuggestedPill(p: {
   onAdd?: () => void;
   onHide?: () => void;
-  label: string;
-  dismissLabel: string;
-  /** Its keys said to a screen reader where it can be dismissed. */
-  shortcuts: string;
+  /** What it names ("Suggested fuel stop KABC"): its labels and its menu's test id come from this and `testId`. */
+  words: string;
   testId: string;
   count?: number;
-  menuTestId?: string;
   menu: ReactNode;
   children: ReactNode;
 }) {
@@ -143,8 +138,9 @@ export function SuggestedPill(p: {
       }}
       data-testid={p.testId}
       data-count={p.count}
-      aria-label={p.label}
-      aria-keyshortcuts={onHide ? p.shortcuts : undefined}
+      aria-label={`${p.words}: add ${p.count ? "them" : "it"} to the route`}
+      // Delete, and the menu key for its menu, as the fold and the chip both have.
+      aria-keyshortcuts={onHide ? "Delete ContextMenu" : undefined}
       className={cn(FUEL_CHIP, TEXT.detail)}
     >
       {p.children}
@@ -152,10 +148,10 @@ export function SuggestedPill(p: {
   );
   if (!onHide) return pill;
   return (
-    <SwipeRow chip word="Dismiss" label={p.dismissLabel} onRemove={onHide}>
+    <SwipeRow chip word="Dismiss" label={`Dismiss ${p.words}`} onRemove={onHide}>
       <ContextMenu>
         <ContextMenuTrigger render={pill} />
-        <ContextMenuContent data-testid={p.menuTestId}>{p.menu}</ContextMenuContent>
+        <ContextMenuContent data-testid={`${p.testId}-menu`}>{p.menu}</ContextMenuContent>
       </ContextMenu>
     </SwipeRow>
   );
