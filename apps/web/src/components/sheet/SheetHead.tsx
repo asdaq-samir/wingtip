@@ -4,6 +4,12 @@ import { PanelSize } from "../../lib/mapChrome";
 import { RISEN_FACE } from "./insets";
 import { ROW_PAD, SHEET_BELOW, type PanelSizeValue, type SheetLayout, type SheetSlots } from "./sheetLayout";
 
+/** The route's box under FPL's chips: the gap between groups (space.group,
+ *  16; the owner, 2026-11-23), less what the bar's row already leaves under
+ *  its chips (its 1.75rem less the look's heading line: 3 at the default
+ *  look, 0 at Native), so the pill's 68 is the same. */
+const BELOW_CHIPS = "pt-[calc(var(--space-group)-max(0px,calc(1.75rem-var(--lead-heading))))]";
+
 /** The one search's row, its field (OneSearchField, SHEET_BAR: FPL's
  *  title line over its pills, 49 at the default size) sixteen in from
  *  either side as everything in the sheet is (the sheet audit's F-P1,
@@ -88,7 +94,7 @@ export function SheetHeadBlock(p: { shownAtRest: boolean; alone: boolean; rises?
                     ? cn("px-2.25 pb-3", ROW_PAD)
                     : slots.top == null
                       ? undefined
-                      : cn("px-3 pb-1", layout.barShown ? "pt-1" : ROW_PAD),
+                      : cn("px-3 pb-2", layout.barShown ? BELOW_CHIPS : ROW_PAD),
                 )
           }
         >

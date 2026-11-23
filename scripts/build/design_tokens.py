@@ -24,7 +24,7 @@ import design_tokens_stock as stock
 import design_tokens_system as system
 import design_tokens_typography as typography
 import design_tokens_zoom as zoom
-from design_tokens_webtype import fixed, rem, size_css, web_class, web_value
+from design_tokens_webtype import fixed, rem, resolve_space, size_css, web_class, web_value
 from design_tokens_colour import hex6, rgba
 from design_tokens_formats import gen_formats
 
@@ -518,7 +518,7 @@ def gen_kotlin(tree, sch):
 
 def main():
     check = "--check" in sys.argv[1:]
-    tree = json.loads(SOURCE.read_text())
+    tree = resolve_space(json.loads(SOURCE.read_text()))
     sch = schemes(tree)
     outputs = {
         WEB_CSS: gen_css(tree),

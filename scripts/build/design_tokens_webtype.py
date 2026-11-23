@@ -78,3 +78,13 @@ def web_value(t):
     """A token's value on the web: its `web` override where it has one
     ($extensions["app.wingtipmaps"].web), else the one every app reads."""
     return t.get("$extensions", {}).get("app.wingtipmaps", {}).get("web", t["$value"])
+
+
+def resolve_space(tree):
+    """The spacing scale with its aliases read through ({space.lg} for
+    space.group), so every platform writes the one number, not the name."""
+    space = tree["space"]
+    for t in space.values():
+        if isinstance(t, dict) and isinstance(t.get("$value"), str):
+            t["$value"] = space[t["$value"].strip("{}").split(".", 1)[1]]["$value"]
+    return tree

@@ -151,8 +151,12 @@ export function SheetScroller(p: ScrollerProps) {
           sheet's foot outside it (sheet/FootBar): the bar's height, set on
           the viewport as the bar is laid out (--foot-bar), so the route's
           last row scrolls up clear of the figures and the tabs all the way
-          up, as a list ends clear of iOS's tab bar. */}
-      {p.endRoom && <div aria-hidden="true" className="h-(--foot-bar,0px) shrink-0" data-foot-room="" />}
+          up, as a list ends clear of iOS's tab bar; and the gap between
+          groups (space.group) over it, less the 8 the route's box keeps
+          under its last row. */}
+      {p.endRoom && (
+        <div aria-hidden="true" className="h-[calc(var(--foot-bar,0px)+var(--space-group)-var(--space-sm))] shrink-0" data-foot-room="" />
+      )}
     </div>
   );
 }

@@ -168,7 +168,7 @@ function GroundFoot({
           // size grows the bar rather than spilling over the map, and the
           // bar's measured height, the map's room, follows (the r6 UI
           // audit's H1). From half up a thin line just over the tabs.
-          className={cn("flex flex-col px-1", pill ? "justify-center" : "pt-1.5")}
+          className={cn("flex flex-col px-1", pill ? "justify-center" : "pt-2")}
           style={pill ? { minHeight: `calc(${FOOT_BAR_PILL} - ${EDGE_ROOM})` } : undefined}
         >
           <FlightFigures vm={vm} grow={false} thin pill={pill} />
