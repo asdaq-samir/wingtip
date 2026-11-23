@@ -140,6 +140,8 @@ const SHEET_FOOT = '[data-testid="panel-foot"]';
  *  everything in the head (the airplane's bar's glass capsules stack above
  *  the figures' row); and on the sheet's solid colour from just under the
  *  grabber to the screen's foot, where the figures' own box let the
- *  route's white box show a line above and below them. */
+ *  route's white box show a line above and below them; its top raised as
+ *  the figures are scaled up from their foot while the sheet moves
+ *  (usePinAtFoot's --pin-s, over --pin-h, their laid-out height). */
 const PINNED =
-  "relative data-pinned:visible data-pill:[&_[data-pill-hides]]:invisible data-pinned:z-30 data-pinned:-mx-3 data-pinned:px-4 data-pinned:bg-(--sheet) data-pinned:after:absolute data-pinned:after:inset-x-0 data-pinned:after:-top-1.5 data-pinned:after:-bottom-10 data-pinned:after:-z-10 data-pinned:after:bg-(--sheet)";
+  "relative data-pinned:visible data-pill:[&_[data-pill-hides]]:invisible data-pinned:z-30 data-pinned:-mx-3 data-pinned:px-4 data-pinned:bg-(--sheet) data-pinned:after:absolute data-pinned:after:inset-x-0 data-pinned:after:-top-1.5 data-pinned:after:-bottom-10 data-pinned:after:-z-10 data-pinned:after:bg-(--sheet) data-pinned:after:translate-y-[calc((1-var(--pin-s,1))*var(--pin-h,0px))]";

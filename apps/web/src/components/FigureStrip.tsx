@@ -34,12 +34,10 @@ export interface StripFigure {
  *  size whatever the sheet's (FLYING_FIGURE, useFlyingMode). */
 export type StripSize = "fixed" | "grow" | "flying" | "pin";
 
-const TYPE: Record<StripSize, { value: string; unit: string; name?: string; unitScale: number }> = {
-  fixed: FIXED_FIGURE,
-  grow: GROW_FIGURE,
-  flying: FLYING_FIGURE,
-  pin: PIN_FIGURE,
-};
+const TYPE: Record<
+  StripSize,
+  { value: string; unit: string; name?: string; unitScale: number; cell?: string; start?: string; end?: string }
+> = { fixed: FIXED_FIGURE, grow: GROW_FIGURE, flying: FLYING_FIGURE, pin: PIN_FIGURE };
 
 /**
  * The one strip of figures pinned at a sheet's foot, in every state:
@@ -137,8 +135,9 @@ export default function FigureStrip({
               key={f.name}
               className={cn(
                 "min-w-0 text-center",
-                edge === "start" && "@min-[16rem]/figures:text-left",
-                edge === "end" && "@min-[16rem]/figures:text-right",
+                type.cell,
+                edge === "start" && cn("@min-[16rem]/figures:text-left", type.start),
+                edge === "end" && cn("@min-[16rem]/figures:text-right", type.end),
               )}
             >
               {/* Its names and units a grey that reads on the pill's glass
