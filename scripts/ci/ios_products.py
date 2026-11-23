@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """The iOS build, made once and tested on every leg (native-ios.yml).
 
-The iPhone's leg builds the app and its tests (scripts/ci/ios_test.sh
+The build leg builds the app and its tests (scripts/ci/ios_test.sh
 build), packs Build/Products and uploads it as the run's `ios-products`
-artifact; every other leg (the iPad's, a wave's four iPad legs, the night's
-iPhone Duo) starts at once, boots its simulator while that build runs, then
+artifact; every device's leg (the iPhone's, the iPad's, a wave's four iPad
+legs, the night's iPhone Duo) starts at once, boots its simulator while that build runs, then
 takes the products and runs its tests from them (ios_test.sh test, from the
 .xctestrun). Each leg had built the app itself, the engine and the project
 too, some 13 minutes on a hosted runner before its first test (run
@@ -19,10 +19,15 @@ the test runners' binaries must stay executable. What only a link or a
 debugger reads (dSYMs, the packages' objects and modules) is left out.
 
 fetch reads the run through the API (GITHUB_REPOSITORY, GITHUB_RUN_ID and
-GH_TOKEN, with actions: read). It waits WAIT_MINUTES at most, and stops at
-once when the iPhone's leg has ended without the products (its build
-failed or was cancelled): its own failure says why, so this leg says only
-that there was nothing to test. The standard library and curl; seconds
+GH_TOKEN, with actions: read). It asks for the artifact every POLL_SECONDS
+and after the build leg's job only from JOBS_AFTER on, every third time, so
+five runs' legs waiting at once stay far under the token's 1,000 requests
+an hour; an API error (a 403, a 502) is waited out, longer each time, not
+taken as the end (CI audit 2026-11-23, M4). It waits WAIT_MINUTES at most,
+and stops at once when the build leg has ended without the products (its
+build failed or was cancelled): its own failure says why. The artifact is
+kept three days, so one leg run again later still finds it; past that,
+run the build leg again too. The standard library and curl; seconds
 beside the wait.
 """
 
@@ -33,11 +38,14 @@ import os
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.request
 
 NAME = "ios-products"
 WAIT_MINUTES = 30
-POLL_SECONDS = 20
+POLL_SECONDS = 30
+JOBS_AFTER = 120
+BACKOFF_MOST = 240
 
 
 def api(path: str) -> dict:
@@ -54,8 +62,12 @@ def api(path: str) -> dict:
 
 
 def builder(jobs: list[dict]) -> dict | None:
-    """The iPhone's leg, which builds: "test" in its own run, "<caller> / test" in a call."""
-    return next((j for j in jobs if j["name"] == "test" or j["name"].endswith("/ test")), None)
+    """The build leg: "build" in its own run, "<caller> / build" in a call."""
+    return next((j for j in jobs if j["name"] == "build" or j["name"].endswith("/ build")), None)
+
+
+def products(run: str) -> list[dict]:
+    return [a for a in api(f"{run}/artifacts?name={NAME}")["artifacts"] if not a["expired"]]
 
 
 def pack(temp: str) -> int:
@@ -70,24 +82,32 @@ def fetch(temp: str) -> int:
     # Booted now, while the iPhone's leg builds; ios_test.sh test waits for it to be ready.
     subprocess.run(["xcrun", "simctl", "boot", os.environ["SIM"]], capture_output=True)
     run = f"repos/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"
-    started = time.time()
+    started, polls, pause = time.time(), 0, POLL_SECONDS
     while True:
-        found = [a for a in api(f"{run}/artifacts?name={NAME}")["artifacts"] if not a["expired"]]
-        if found:
-            break
-        built = builder(api(f"{run}/jobs?per_page=100")["jobs"])
-        if built and built["status"] == "completed":
-            # Its upload ends a step before the job does: one more look.
-            time.sleep(POLL_SECONDS)
-            found = [a for a in api(f"{run}/artifacts?name={NAME}")["artifacts"] if not a["expired"]]
+        if time.time() - started > WAIT_MINUTES * 60:
+            print(f"::error title=No iOS build::no {NAME} after {WAIT_MINUTES} minutes; the build leg is still building")
+            return 1
+        try:
+            found = products(run)
             if found:
                 break
-            print(f"::error title=No iOS build::the iPhone's leg ended ({built['conclusion']}) without {NAME}; its log says why")
-            return 1
-        if time.time() - started > WAIT_MINUTES * 60:
-            print(f"::error title=No iOS build::no {NAME} after {WAIT_MINUTES} minutes; the iPhone's leg is still building")
-            return 1
-        time.sleep(POLL_SECONDS)
+            polls += 1
+            built = builder(api(f"{run}/jobs?per_page=100")["jobs"]) if time.time() - started > JOBS_AFTER and polls % 3 == 0 else None
+            if built and built["status"] == "completed":
+                # Its upload ends a step before the job does: one more look.
+                time.sleep(POLL_SECONDS)
+                found = products(run)
+                if found:
+                    break
+                late = built["conclusion"] == "success"
+                again = " (a leg run again more than three days on: run the build leg again too)" if late else ""
+                print(f"::error title=No iOS build::the build leg ended ({built['conclusion']}) without {NAME}{again}; its log says why")
+                return 1
+            pause = POLL_SECONDS
+        except (urllib.error.URLError, TimeoutError, ValueError) as err:
+            pause = min(pause * 2, BACKOFF_MOST)
+            print(f"ios_products: the API did not answer ({err}); asking again in {pause} s", file=sys.stderr)
+        time.sleep(pause)
     newest = max(found, key=lambda a: a["created_at"])
     print(f"ios_products: {NAME} after {int(time.time() - started)} s of waiting")
     # curl, which drops the token at the redirect to the storage's own signed URL.

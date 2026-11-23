@@ -160,9 +160,9 @@ TABLE = [
     Row("infra", "cfn-lint", CFN),
     Row("infra", "", "", note="Run the failed step's own lines from ci.yml's infra job: each is one docker command."),
     Row("dependency-review", "", "", note="Nothing to run locally: the job's own summary names the package and its advisory."),
-    Row("Native iOS / test*", "tring catalog", "scripts/build/ios-strings.sh --check", note="After a build; without --check it writes it."),
-    Row("Native iOS / test*", "The Swift's layout", "scripts/dev/format.sh --check swift"),
-    Row("Native iOS / test*", "", XCODE, hint="<Class>", area="ios", note=XCODE_NOTE),
+    Row("Native iOS / *", "tring catalog", "scripts/build/ios-strings.sh --check", note="After a build; without --check it writes it."),
+    Row("Native iOS / *", "The Swift's layout", "scripts/dev/format.sh --check swift"),
+    Row("Native iOS / *", "", XCODE, hint="<Class>", area="ios", note=XCODE_NOTE),
     Row("Native Android / build", "The Kotlin's layout", "scripts/dev/format.sh --check kotlin"),
     Row("Native Android / build", "", GRADLE, hint="<package.Class>", area="android", note=GRADLE_NOTE),
     # Main's push and the night: the specs its failures' titles name.

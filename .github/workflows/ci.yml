@@ -680,14 +680,10 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: python3 scripts/ci/browser_specs.py
 
-  # The browser suite (apps/web/e2e, Playwright) against the stack a pilot uses: the gateway, planner and weather
-  # images e2e-images built for this commit's keys, Postgres and Mailpit (infra/docker-compose.ci.yml). It catches
-  # what no unit test can: a lost tap, a drawer that opens empty.
-  # After merge (docs/CI.md, "The tiers"; the owner, 2026-11-10): main's push runs the @smoke and @flight-critical tests
-  # on the phone project and the iPad's WebKit, over three; the night everything over ten. A pull request runs every spec
-  # its change reaches, and "CI passed" waits for them (decision 0048, after #585 merged with three red); a failure on
-  # main is one issue (nightly-issue.yml). Each shard pulls its images and restores its caches in the background and starts
-  # each service the moment it can (about a minute and a half); not after e2e-images: it pulls the image once pushed.
+  # The browser suite (apps/web/e2e) against the stack built from this commit (infra/docker-compose.ci.yml). What runs
+  # where is browser_specs.py's (docs/CI.md, "The tiers"): a pull request's reached specs, which "CI passed" waits for
+  # (decision 0048); main's push the smoke set; a wave and the night the wave's set dealt by time, the night with the
+  # iOS audit on shards of its own. Each shard starts each service as soon as its image is pulled, not after e2e-images.
   e2e:
     name: e2e (${{ matrix.shard }}/${{ strategy.job-total }})
     needs: [changes, specs]
@@ -854,11 +850,10 @@ jobs:
             sh -c "timeout 600 npm ci --no-audit --no-fund 2>&1 | tail -20 | tee /out/npm.log"
       - name: Browser tests
         id: tests
-        # CI=1 doubles playwright.config.ts's waits; the github reporter puts
-        # each failure on the commit's checks. At night the whole iOS audit
-        # (WebKit, every device) and WCAG 2.2 too.
+        # CI=1 doubles playwright.config.ts's waits. At night or by hand the
+        # whole iOS audit (WebKit, every device), on shards of its own.
         env:
-          IOS_AUDIT: ${{ (github.event_name == 'schedule' || inputs.standards) && '1' || '' }}
+          IOS_AUDIT: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && !inputs.wave && '1' || '' }}
           SCREENSHOTS: /out/screens
           # The JSON report, for the flaky tests below (those that passed
           # on their retry): listed in the nightly issue, not failing the run.
@@ -1104,13 +1099,9 @@ jobs:
           BUILDX_NO_DEFAULT_ATTESTATIONS: "1"
         run: docker buildx bake -f .github/ci-images.hcl playwright
 
-  # Every image whose inputs changed, in one job by one BuildKit
-  # (.github/images.hcl), after merge (docs/CI.md, "The tiers"): on main
-  # pushed as `:sha-<commit>`, which Promote names `latest` once the run
-  # passes; at night built without pushing. The layer cache is in the registry (`:buildcache`, written from
-  # main), as the ML images' layers evicted each other from the Actions
-  # cache. Each Python image imports its own code last, so a missing
-  # dependency fails here.
+  # Every image whose inputs changed (.github/images.hcl), after merge: on main
+  # pushed as `:sha-<commit>`, which Promote names `latest`; at night built
+  # only. Its layer cache is the registry's `:buildcache`, written from main.
   build-images:
     name: build (images)
     # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
@@ -1168,15 +1159,10 @@ jobs:
           fail-on-severity: high
           comment-summary-in-pr: on-failure
 
-  # The quick checks, three legs on a runner each, each leg's checks all
-  # started at once (scripts/ci/guards.sh lists them). `repo`: no aviation
-  # rule outside the engine (#482), CI's own rules (docs/CI.md, "Rules"),
-  # links, file sizes, versions, brand tokens, ruff, the phones' lint.
-  # `web`: tsc, ESLint, Prettier, knip. `engine`: rustfmt, clippy, machete.
-  # And flight-critical (the owner, 2026-11-09), on every change but words
-  # alone: the engine's FAA examples here (`engine`), or test-engine's where
-  # the engine changed, so they build once; the planner's nav log is
-  # test-python's, which has the engine's wheel, so no leg waits for it.
+  # The quick checks, three legs (`repo`, `web`, `engine`), each leg's checks
+  # all at once (scripts/ci/guards.sh lists them), and the engine's
+  # flight-critical FAA examples (the owner, 2026-11-09) where test-engine
+  # does not build them; the planner's are test-python's.
   guards:
     name: Guards (${{ matrix.part }})
     runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
@@ -1620,6 +1606,19 @@ jobs:
           sparse-checkout: scripts/ci
       - run: python3 scripts/ci/sources_answer.py
 
+  # The night on the open claude/integration too, one issue each (scripts/ci/night_integration.sh).
+  night-integration:
+    name: Night on integration
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 2
+    permissions: { contents: read, actions: write }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with: { persist-credentials: false, sparse-checkout: scripts/ci }
+      - env: { GH_TOKEN: "${{ github.token }}", GH_REPO: "${{ github.repository }}" }
+        run: scripts/ci/night_integration.sh
+
   # A dump of the stack's database restored whole, as the owner's nightly
   # backup is (scripts/ci/backup_restore.sh): never tried before.
   backup-restore:
@@ -1638,7 +1637,7 @@ jobs:
   # (ci_budget.py): last, never failing, and on a run `halt` cancelled too.
   budget:
     name: CI budget
-    needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, test-sim, specs, e2e, e2e-page, e2e-page-push, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, backup-restore, halt, passed]
+    needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, test-sim, specs, e2e, e2e-page, e2e-page-push, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, night-integration, backup-restore, halt, passed]
     if: always()
     runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 3
@@ -1679,14 +1678,9 @@ jobs:
           RUN_ID: ${{ github.run_id }}
         run: gh run cancel "$RUN_ID"
 
-  # The one check main requires (its ruleset); auto-merge-agents.yml merges
-  # on it. Tier 1, about three minutes (the owner, 2026-11-10), and the
-  # browser specs a web change reaches (decision 0048, the owner,
-  # 2026-11-19: "make it a hard rule"): every job a pull request runs, each
-  # passed or skipped as not needed. The smoke set on main's push and the
-  # stack's image builds run after merge, a failure there one issue
-  # (nightly-issue.yml), fixed forward. scripts/ci/test_tiers.py holds this
-  # list to the tiers.
+  # The one check main requires (its ruleset), which auto-merge waits on: every
+  # job a pull request runs passed or skipped as not needed, tier 1 and the
+  # browser specs a change reaches (decision 0048). test_tiers.py holds the list.
   passed:
     name: CI passed
     runs-on: ${{ github.event.pull_request.head.repo.fork != true && vars.LINUX_RUNNER || 'ubuntu-26.04' }}

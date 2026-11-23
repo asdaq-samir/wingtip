@@ -128,6 +128,13 @@ def playwright() -> list[str]:
     retries = [int(n) for n in re.findall(r"\d+", m.group(1))] if m else []
     if not retries or max(retries) > MAX_RETRIES:
         errors.append(f"apps/web/playwright.config.ts: retries must be at most {MAX_RETRIES} (found {m.group(1) if m else 'none'})")
+    # The night deals the iOS audit by project (browser_specs.py's AUDIT_PROJECTS): every device once.
+    from browser_specs import AUDIT_PROJECTS
+
+    devices = set(re.findall(r'iosDevice\("([\w-]+)"', config)) | {"webkit-iphone"}
+    dealt = [p for group in AUDIT_PROJECTS for p in group]
+    if sorted(dealt) != sorted(devices):
+        errors.append(f"scripts/ci/browser_specs.py: AUDIT_PROJECTS {sorted(dealt)} are not the config's devices {sorted(devices)}")
     return errors
 
 

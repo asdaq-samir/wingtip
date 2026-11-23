@@ -2,7 +2,10 @@
 Playwright arguments it ran (PROJECTS and SHARD_ARG; the first line, which
 a rerun reads when the shard left no list of its red tests: validation.py),
 its tally, where the setup's time went and how busy the runner was, its
-slowest tests and the log's tail. SHARD names the shard; reads /tmp/e2e-out.
+slowest tests and the log's tail; and every red test in one error
+annotation of its own, as GitHub keeps only ten of the github reporter's a
+step and a night's shard had more (CI audit 2026-11-23, H1). SHARD names
+the shard; reads /tmp/e2e-out.
 """
 
 import os
@@ -65,3 +68,32 @@ else:
             timed.append((value, f"{value:5.1f}s {m[2]} [{m[1]}] {m[3][:70]}"))
     slowest = [text for _, text in sorted(timed, reverse=True)[:8]]
     say("notice" if summary else "warning", f"shard {shard}", "\n".join([ran, *summary, setup, "slowest:", *slowest, "--", *lines[-25:]]))
+
+
+def reds(lines):
+    """The shard's red tests: the list reporter's closing "N failed" block, or, where the
+    run was cut off before it, each test marked failed on its last try."""
+    out, block = [], False
+    for line in lines:
+        if re.match(r"\s*\d+ failed\s*$", line):
+            block = True
+            continue
+        if block:
+            m = re.match(r"\s*(\[[\w-]+\] › \S+ › .*?)\s*$", line)
+            if not m:
+                break
+            out.append(m[1])
+    if out:
+        return out
+    last = {}
+    for line in lines:
+        m = re.search(r"([✓✘-])\s+\d+ (\[[\w-]+\] › e2e/\S+ › .*?)(?: \(retry #\d+\))?(?: \([\d.]+m?s\))?\s*$", line)
+        if m:
+            last[m[2]] = m[1]
+    return [test for test, mark in last.items() if mark == "✘"]
+
+
+if os.path.exists(path):
+    red = reds(open(path, errors="replace").read().splitlines())
+    if red:
+        say("error", f"shard {shard}: {len(red)} red test(s)", "\n".join(red))

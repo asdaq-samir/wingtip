@@ -67,6 +67,8 @@ BUDGETS = [
     # minutes, the simulator booting meanwhile). Before the next row, which
     # would match them too.
     ("Native iOS / test (iPad ?/4)", 3, 30),
+    # The build leg, once for every device's (H5 of the CI audit, 2026-11-23).
+    ("Native iOS / build", 12, 25),
     # Each device's leg: the iPhone's "test", main's push's "test (iPad)".
     ("Native iOS / test*", 6, 70),
     ("CI passed", 1, 1),
@@ -90,12 +92,13 @@ BUDGETS = [
     ("Flake report", 2, 2),
     ("Sources still answer", 2, 2),
     ("Backup restores", 2, 2),
+    ("Night on integration", 1, 1),
 ]
 # The tier-1 gate, in minutes: no tier-1 job's budget above it but these,
 # the phones' builds, which a pull request waits for only when it touches
 # what the app builds from.
 TIER1 = 3
-TIER1_LONG = {"Native Android / build", "Native iOS / test*", "build (e2e)", "page (e2e)", "e2e (*/*)"}
+TIER1_LONG = {"Native Android / build", "Native iOS / build", "Native iOS / test*", "build (e2e)", "page (e2e)", "e2e (*/*)"}
 # The whole run, first job's start to last job's end, by event: a pull
 # request is tier 1; main's push adds tier 2; the night is everything.
 # A run is given at least its longest job's budget (a phone's build), as

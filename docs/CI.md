@@ -289,11 +289,20 @@ one issue, "Main CI failed (after merge)", labelled `ready`
 Promote publishes only a commit whose whole run on main passed.
 
 **Tier 3, every night** (CI at 09:17 UTC, Native iOS at 09:37, Native
-Android at 09:47), or by hand (Run workflow), unchanged:
+Android at 09:47, as asked: GitHub has started them 7 to 9 hours late), or
+by hand (Run workflow), unchanged. While a wave is open the three run on
+`claude/integration` too (`night-integration`, `night_integration.sh`),
+its reds in an issue of their own, "Nightly CI failed (claude/integration)"
+(the owner took the CI audit's H4, 2026-11-23). Playwright stops itself at
+28 minutes, under the shard's `timeout 1800`, so a long shard still
+writes its report, and each shard names every red test in one annotation
+(`e2e_summary.py`) past GitHub's ten a step; a failed iOS or Android test
+or lint error is an annotation of its own (`ios_failures.py`,
+`android_failures.py`).
 
 | What | Expected |
 |---|---|
-| CI: every unit suite in full, every browser test on the phone, desktop, the iPhones and the iPad, the whole iOS audit (WebKit), WCAG 2.2 and Lighthouse, over ten shards; the API reference, Javadoc and wingtip's pdoc; the flake hunt | ~15 min |
+| CI: every unit suite in full, every browser test on the phone, desktop, the iPhones and the iPad dealt by time over twelve shards, the whole iOS audit (WebKit, every device) on four of its own (over ten by `--shard`, six to eight shards a night met the 1800 s wrapper; CI audit 2026-11-23, H1), WCAG 2.2 and Lighthouse; the API reference, Javadoc and wingtip's pdoc; the flake hunt | ~15 min |
 | Native iOS, `full`: the whole suite (launch, flow and accessibility tests, the store shots, `CardRuleTests`, `CardScrollTests`) and the device's first screen, on the iPhone, the iPad and iPhone Duo, each its own runner (`test`, `test (iPad)`, `test (iPhone Duo)`): the three on one runner took over 80 minutes and were cancelled at the limit twice (#572) | ~30 min each |
 | Native Android: the build, a debug APK, then the instrumented tests on an API 35 emulator, `device (phone)` every test and `device (tablet)` (a Pixel Tablet, 1280 x 800 dp) the `@LargeScreen` ones, each its own runner; a wave's validation runs both too, a pull request neither | ~15 min |
 
@@ -408,7 +417,7 @@ longest leg's tests (the card rule's suite alone some 15). Before the
 build was shared and the shards dealt by time it was 33 (run
 45127491141, 2026-11-23: each iPad leg's own build 13 minutes before its
 first test, the slowest of sixteen shards 20 and the Android devices
-starting at minute 14); the night's ten shards take half an hour. GitHub runs 20 jobs at once on
+starting at minute 14). GitHub runs 20 jobs at once on
 a free account, so the sixteen shards and the short jobs share them.
 `CI passed` is the verdict; `budget` holds the run to the night's budgets
 and names each failure with its narrow command (`failure_summary.py`),
