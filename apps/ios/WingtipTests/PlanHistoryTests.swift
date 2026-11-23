@@ -71,6 +71,28 @@ struct PlanHistoryTests {
         #expect(offer.words == "Route Cleared")
         undo.undo()
         #expect(plan.dep == "KMSN" && plan.dest == "KOSH")
+        // Put back as typed: the planner is not asked for a route the
+        // pilot had not yet planned.
+        #expect(!plan.planning && plan.course == nil)
+    }
+
+    /// Two windows over the one plan (the iPad's): a step is in the
+    /// manager of the window it was made in, and only that window offers
+    /// its Undo.
+    @Test @MainActor func eachWindowsStepsAreItsOwn() throws {
+        let (plan, first) = planned()
+        let second = UndoManager()
+        second.groupsByEvent = false
+        step(first) { plan.clear() }
+        let offer = try #require(plan.undoOffer)
+        #expect(offer.isIn(first) && !offer.isIn(second))
+        #expect(first.canUndo && !second.canUndo)
+        // The second window made key: its steps are its own.
+        plan.undoManager = second
+        step(second) { plan.dep = "KMSN"; plan.dest = "KDPA"; plan.plan() }
+        step(second) { plan.clear() }
+        #expect(second.canUndo)
+        #expect(plan.undoOffer?.isIn(second) == true)
     }
 
     @Test @MainActor func aLaterOfferStaysWhenTheEarlierTimesOut() throws {

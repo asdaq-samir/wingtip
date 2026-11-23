@@ -1,5 +1,7 @@
 import Foundation
+import GatewayAPI
 import MetricKit
+import OpenAPIURLSession
 
 /// MetricKit's payloads read into the gateway's diagnostics report and
 /// sent (POST /api/diagnostics), so the owner sees this app's crashes,
@@ -117,6 +119,10 @@ nonisolated enum DiagnosticsReporter {
         return URLSession(configuration: config)
     }()
 
+    /// The gateway's generated client on that session, with none of the
+    /// app's middleware: no CSRF token or cookie is wanted with no sign-in.
+    private static let client = GatewayAPI.Client(serverURL: Config.gateway, transport: URLSessionTransport(configuration: .init(session: session)))
+
     /// The report sent, unless Help Improve Wingtip Maps is off; the gateway answers 204 whether it kept it or
     /// dropped it past its hourly allowance, and 400 for one it cannot
     /// read, which is logged for the next build to put right.
@@ -124,13 +130,11 @@ nonisolated enum DiagnosticsReporter {
         // Nothing once the pilot has turned Help Improve Wingtip Maps off.
         guard !report.isEmpty, HelpImprove.allows() else { return }
         do {
-            var request = URLRequest(url: Config.gateway.appending(path: "/api/diagnostics"))
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try report.json()
-            let (_, response) = try await session.data(for: request)
-            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-            if status != 204 { Log.metrics.error("the diagnostics report was refused: \(status)") }
+            switch try await client.report(.init(body: .json(report))) {
+            case .noContent: break
+            case .badRequest: Log.metrics.error("the diagnostics report was refused: 400")
+            case .undocumented(let status, _): Log.metrics.error("the diagnostics report was refused: \(status)")
+            }
         } catch {
             Log.metrics.notice("the diagnostics report was not sent: \(error.localizedDescription, privacy: .public)")
         }

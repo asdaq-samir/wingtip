@@ -313,7 +313,7 @@ enum RouteShare {
     /// address ending in its file's name, which ForeFlight names it by.
     static func packURL(_ plan: Plan) -> URL {
         let route = plan.idents.joined(separator: "-")
-        return Config.gateway.appending(path: "/api/planner/foreflight-pack/\(route)/\(route)-checkpoints.zip")
+        return Planner.foreFlightPackURL(route: route)
     }
 
     /// ForeFlight's own link for a pack (foreflight.com/support/content-packs).

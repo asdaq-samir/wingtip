@@ -179,9 +179,9 @@ struct StripDataTests {
         let answer = try Self.decoder.decode(GoNoGoAnswer.self, from: Data(GoNoGoTests.answer.utf8))
         // The head wears the planner's line and at most three findings.
         #expect(StripData.tag(answer.line.finding) == "No-go")
-        let lines = Glance.lines(answer)
-        #expect(lines.count <= 3 && lines.count == 3)
-        #expect(lines.allSatisfy { $0.words.count <= Glance.longest })
+        let lines = Glance(answer).lines
+        #expect(lines.count == 3)
+        #expect(lines.allSatisfy { $0.words.count <= 140 })
     }
 
     @Test func thePilotsInitialsAreTheirNamesElseTheirAddressesFirstLetter() throws {

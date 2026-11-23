@@ -3,15 +3,23 @@ import SwiftUI
 /// A step the pilot can take back, offered for a moment after it is made
 /// (the web's per-edit Undo toast, e401f646d): what it took away in the
 /// UndoManager's own words ("KMSN removed", "Route cleared", "Route
-/// replaced"), each offer its own so the same words twice are two.
+/// replaced"), each offer its own so the same words twice are two, and
+/// offered only in the window whose UndoManager holds the step (the
+/// plan is every window's; its steps are each window's own).
 struct UndoOffer: Equatable, Identifiable, Sendable {
     let id: UUID
     let words: String
+    /// The UndoManager the step is in, by identity: nil with none.
+    let manager: ObjectIdentifier?
 
-    init(_ words: String, id: UUID = UUID()) {
+    init(_ words: String, in manager: UndoManager? = nil, id: UUID = UUID()) {
         self.id = id
         self.words = words
+        self.manager = manager.map(ObjectIdentifier.init)
     }
+
+    /// Whether the offer is this window's: its step in the window's manager.
+    func isIn(_ manager: UndoManager?) -> Bool { self.manager == manager.map(ObjectIdentifier.init) }
 
     /// How long it stays in sight before it goes by itself: long enough to
     /// read and reach, as Mail's and Photos' undo offers stay; shake, ⌘Z
@@ -32,7 +40,7 @@ struct UndoBar: View {
     @Environment(\.undoManager) private var undoManager
 
     var body: some View {
-        if let offer = plan.undoOffer {
+        if let offer = plan.undoOffer, offer.isIn(undoManager) {
             HStack(spacing: WingtipSpace.md) {
                 Text(offer.words)
                     .font(WingtipType.row)

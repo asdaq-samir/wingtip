@@ -36,7 +36,7 @@ struct DocumentsPage: View {
             }
             Section {
                 Toggle("Keep in iCloud", isOn: Binding(get: { cloud.on }, set: { on in
-                    if on { cloud.set(true, library: library) } else { turningOff = true }
+                    if on { Task { await cloud.set(true, library: library) } } else { turningOff = true }
                 }))
                 .accessibilityIdentifier("documents-icloud")
             } footer: {
@@ -50,14 +50,14 @@ struct DocumentsPage: View {
         .refreshable { await library.refreshShelf(force: true) }
         .task {
             #if DEBUG
-            SampleDocument.addIfAsked(to: library)
+            await SampleDocument.addIfAsked(to: library)
             #endif
             library.reloadDevice()
-            cloud.pull(into: library)
+            await cloud.pull(into: library)
             await library.refreshShelf()
         }
         .fileImporter(isPresented: $adding, allowedContentTypes: [.pdf], allowsMultipleSelection: true) { result in
-            if case .success(let urls) = result { library.add(urls) }
+            if case .success(let urls) = result { Task { await library.add(urls) } }
         }
         // A PDF dragged in from Files, Mail or Safari beside the app.
         .onDrop(of: [.pdf], isTargeted: nil) { providers in
@@ -65,7 +65,7 @@ struct DocumentsPage: View {
                 _ = provider.loadFileRepresentation(forTypeIdentifier: UTType.pdf.identifier) { url, _ in
                     // The system's copy lasts only while this runs.
                     let copy = url.flatMap(WindowFiles.copy)
-                    Task { @MainActor in if let copy { library.add([copy]) } }
+                    Task { @MainActor in if let copy { await library.add([copy]) } }
                 }
             }
             return !providers.isEmpty
@@ -76,7 +76,7 @@ struct DocumentsPage: View {
             Button("Cancel", role: .cancel) {}
         }
         .confirmationDialog("Stop keeping your documents in iCloud?", isPresented: $turningOff, titleVisibility: .visible) {
-            Button("Delete from iCloud", role: .destructive) { cloud.set(false, library: library) }
+            Button("Delete from iCloud", role: .destructive) { Task { await cloud.set(false, library: library) } }
         } message: {
             Text("They stay on this device. Their copies in your iCloud are deleted.")
         }

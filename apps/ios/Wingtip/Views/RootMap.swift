@@ -23,6 +23,8 @@ struct RootMap: View {
     /// The flight (FlightSession), its parts read where they are drawn.
     @Environment(FlightSession.self) private var flight
     @Environment(\.undoManager) private var undoManager
+    /// Which window this map is in, and whether it is the key one.
+    @State private var window = KeyWindow()
     /// This window runs the flight's loops (WindowLead): a second window
     /// on the iPad draws the same flight without running them again.
     @Environment(\.leadsLoops) private var leadsLoops
@@ -192,10 +194,13 @@ struct RootMap: View {
             // The flight's own work while the map is up (FlightLoops), in
             // the lead window alone (MainWindow), behind the map.
             .background { if leadsLoops { Color.clear.modifier(FlightLoops()) } }
-            // The window's UndoManager for the route's history: shake to undo
-            // and the Edit menu (PlanHistory).
-            .onAppear { plan.undoManager = undoManager }
-            .onChange(of: undoManager) { _, manager in plan.undoManager = manager }
+            // The key window's UndoManager for the route's history: shake
+            // to undo and the Edit menu (PlanHistory). The plan is every
+            // window's, so the window the pilot is in hands over its own as
+            // it becomes the key one, and its steps are undone there.
+            .keyWindow(window) { plan.undoManager = undoManager }
+            .onAppear { if plan.undoManager == nil || window.isKey { plan.undoManager = undoManager } }
+            .onChange(of: undoManager) { _, manager in if window.isKey { plan.undoManager = manager } }
             // The GPS at its best while the map follows the airplane (OwnShip.precise).
             .onChange(of: following, initial: true) { _, now in ownShip.mapFollows = now }
             // Siri listens for the fields the shortcuts' airport entity

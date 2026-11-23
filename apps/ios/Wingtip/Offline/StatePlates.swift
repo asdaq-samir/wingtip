@@ -134,15 +134,15 @@ final class StatePlates {
             return
         }
         guard !Task.isCancelled else { return }
-        Self.write(list, in: folder)
+        await Self.write(list, in: folder)
         let jobs = KeepPlates.jobs(list.fields.map { ($0.ident, $0.charts) })
         var record = KeptPlateState(id: id, name: list.name, cycle: list.cycle, nextAt: list.nextAt, charts: jobs.count)
         let same = before == nil || before?.cycle == list.cycle
         if same { put(record) } else { updating[id] = list.cycle }
-        await KeepPlates.keepAll(jobs, keeper: source.keeper) { _, files in
+        await KeepPlates.keepAll(jobs, keeper: source.keeper) { _, files, bytes in
             guard !Task.isCancelled else { return }
             record.done += 1
-            if let files { record.bytes += files.reduce(0) { $0 + KeptForAir.size(of: $1) } } else { record.failed += 1 }
+            if files != nil { record.bytes += bytes } else { record.failed += 1 }
             if same { put(record, write: record.done % Self.writeEvery == 0) }
         }
         guard !Task.isCancelled else { return }
@@ -184,7 +184,9 @@ final class StatePlates {
         }
     }
 
-    private nonisolated static func write(_ list: APIPlateStateCharts, in folder: URL) {
+    /// A state's list written off the main actor: thousands of charts' JSON.
+    @concurrent
+    private nonisolated static func write(_ list: APIPlateStateCharts, in folder: URL) async {
         let file = listFile(list.cycle, list.id, in: folder)
         try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         if let data = try? JSONEncoder().encode(list) { try? data.write(to: file, options: .atomic) }
