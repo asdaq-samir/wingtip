@@ -11,6 +11,7 @@ import { chartPair, tileTemplate } from "../sources/tiles";
 import { CHART, MAP_ZOOM } from "../../tokens";
 import { chartBrightness, chartContrast, NIGHT_DIM } from "../chartLook";
 import { labelText } from "./layers/common";
+import { RING_OF_PLACED_FIELD } from "./placedRings";
 
 /**
  * The map's style (the owner, 2026-11-06: "Like ForeFlight, I want
@@ -255,7 +256,9 @@ export function airspaceLayers(font: string[]): LayerSpecification[] {
   const from = { source: OVERLAY_SOURCE, "source-layer": "airspace" };
   const lines: LineLayerSpecification[] = (["D", "C", "B"] as const).flatMap((c) => {
     const ink = AIRSPACE_INK[c];
-    const common = { type: "line" as const, ...from, minzoom: glZoom(AIRSPACE_FROM[c]), filter: ["==", ["get", "class"], c] as never };
+    // A Class C's or D's ring only with its field drawn (RING_OF_PLACED_FIELD); a Class B's always, as its field's mark is.
+    const of: unknown = c === "B" ? ["==", ["get", "class"], c] : ["all", ["==", ["get", "class"], c], RING_OF_PLACED_FIELD];
+    const common = { type: "line" as const, ...from, minzoom: glZoom(AIRSPACE_FROM[c]), filter: of as never };
     return [
       {
         id: `airspace-${c}-band`,

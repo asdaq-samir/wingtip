@@ -982,7 +982,11 @@ At each airport the chart already shows, from the map's own
   within a tile, so a Class C's fields are placed first in a layer of
   their own and their rings don't stand bare). A Class B's field
   and the one whose card is open always keep their mark, only the ident
-  giving way; the route's fields and stops wear their own marks.
+  giving way; the route's fields and stops wear their own marks. A
+  Class C's or D's ring is drawn only round a field that is (the tiles'
+  airspace `ident` against the placed fields' `faa_id`, written at each
+  rest of the map: placedRings), so no ring stands bare; a Class B's
+  ring always, as its field's mark is.
 - **Station model from zoom 10 in** (the matching span on the iPhone):
   the engine's `wind_barb` (5, 10 and 50 kt barbs and flags, a ring for
   calm, 0 to 2 kt calm), and two lines beside the field, the visibility with its weather
