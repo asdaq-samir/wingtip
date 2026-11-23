@@ -1,6 +1,5 @@
 package app.wingtipmaps.android.api
 
-import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.generated.AirportsInView
 import kotlinx.serialization.decodeFromString
 
@@ -32,4 +31,4 @@ suspend fun Planner.routeBriefing(dep: String, dest: String, stops: List<String>
  *  the gateway's proxy, which passes the Range on: an address rather than
  *  a call, since MapLibre's PMTiles source (MapStyle.overlayUrl) and the
  *  copy kept for the air (OverlayStore.download) read it in byte ranges. */
-fun Planner.overlayArchive(name: String): String = Config.gateway + Config.plannerPath("/api/overlay-tiles/$name.pmtiles")
+fun Planner.overlayArchive(name: String): String = PlannerPaths.address("/api/overlay-tiles/$name.pmtiles")
