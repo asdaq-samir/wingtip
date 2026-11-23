@@ -3067,6 +3067,13 @@ export interface EngineContract {
     answer: NoAltitudeAnswer;
   };
   /**
+   * A NOTAM's own card, read from its parts (FAA Order JO 7930.2): its accountability (4-2-1, "FDC"); its category, a procedure NOTAM's by what the procedures are for (SID, ODP and DVA departures, STAR arrivals, IAP approaches; 1-2-1), the rest its heading; its title, what happened ("Runway 18/36 closed"): notam_read's what, else a surface its words close (RWY, TWY; 3-3-5, 3-3-6; CLSD, JO 7340.2), else the procedures not authorized (NA); one plain sentence of its effect ("Runway 18/36 is permanently closed, so its RNAV departures are not authorized."); whether the condition is permanent (PERM, 4-2-1, or its words' PERMANENTLY); and the procedures it takes away, each by its charted name and number (7-1-3: "ADELL EIGHT DEPARTURE (RNAV)" is "ADELL 8", RNAV). Each null or empty where the NOTAM's parts do not say all of it: the card then says its words written out (notam_read), never a guess.
+   */
+  notam_card: {
+    input: NotamCardInput;
+    answer: NotamCardAnswer;
+  };
+  /**
    * A NOTAM read for a pilot, beside its text as sent: its keyword (FAA Order JO 7930.2 1-2-1) as a plain heading, or the ICAO Q) code's subject (Appendix B); its words with the FAA's contractions written out (JO 7340.2; JO 7930.2 3-3-1 and TBL 3-3-1) in sentence case, its codes (ILS, PAPI, VOR, RNAV, LPV) and idents kept, runways and taxiways as designated (3-3-5, 3-3-6), heights MSL unless AGL is stated (4-2-1), distances and compass points from a place, coordinates and fix-radial-distances written out; and its start of activity and end of validity in UTC (YYMMDDHHMM, 3-3-2), with EST (an estimate) and PERM (permanent) (4-2-1). Its what and where in our words where its subject's words say them (the airport card's lines). The keyword AD, JO 7930.2's aerodrome, is headed "Airport", the FAA's word for pilots (the AIM). A word it does not know is kept as written, never guessed.
    */
   notam_read: {
@@ -10770,6 +10777,51 @@ export interface NoAltitudeAnswer {
   reasons: string[];
   advice: string;
   detail: string;
+}
+export interface NotamCardInput {
+  /**
+   * The NOTAM as sent, domestic or ICAO form.
+   */
+  text: string;
+  /**
+   * The field's idents (OSH, KOSH), kept as written.
+   */
+  idents?: string[];
+}
+export interface NotamCardAnswer {
+  /**
+   * The domestic form's accountability ("FDC", "OSH"); null in the ICAO form.
+   */
+  account: string | null;
+  /**
+   * What kind of thing it is about, a small label: "Departure procedures", "Arrival procedures", "Instrument approaches", else notam_read's heading (Runway, Taxiway, Navaid, Airspace ...).
+   */
+  category: string | null;
+  /**
+   * What happened, the card's title: "Runway 18/36 closed"; null where its parts do not say it.
+   */
+  title: string | null;
+  /**
+   * One plain sentence of what it means: "Runway 18/36 is permanently closed, so its RNAV departures are not authorized."; null where its parts do not say it.
+   */
+  effect: string | null;
+  /**
+   * The condition is permanent: PERM as its end, or PERMANENTLY in its words (it stays until the charts show it).
+   */
+  permanent: boolean;
+  /**
+   * The procedures it takes away (NA), in its order; empty where it takes none.
+   */
+  procedures: {
+    /**
+     * Its charted name and number: "ADELL 8".
+     */
+    name: string;
+    /**
+     * An RNAV procedure, "(RNAV)" on its title.
+     */
+    rnav: boolean;
+  }[];
 }
 export interface NotamReadInput {
   /**

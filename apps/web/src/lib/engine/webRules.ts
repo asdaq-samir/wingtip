@@ -171,6 +171,7 @@ export const WEB_RULES = [
   "navlog_totals",
   "night_at_either_end",
   "nm_along",
+  "notam_card",
   "notam_read",
   "notam_subject",
   "our_call",

@@ -2,9 +2,10 @@ import { Button as BaseButton } from "@base-ui/react/button";
 import { cn } from "cn";
 import { Badge } from "../../components/ui/badge";
 import { SheetCard } from "../../components/SheetCard";
-import { headingOf, numberOf, type FieldNotam } from "./fieldNotams";
+import type { FieldNotam } from "./fieldNotams";
 import type { NotamMark } from "./notamBadges";
-import { NotamFull, NotamRows } from "./PlaceNotams";
+import { NotamRows } from "./PlaceNotams";
+import { NotamCard } from "./NotamCard";
 
 /**
  * A NOTAM's badge next to what it addresses (notamBadges), only of one in
@@ -46,22 +47,27 @@ export function NotamBadge({ mark, kind, onOpen }: { mark: NotamMark; kind: stri
 }
 
 /**
- * The NOTAMs on one thing, over the card: one in full (NotamFull) as the
+ * The NOTAMs on one thing, over the card: one in full (NotamCard) as the
  * Info tab's list opens it, several as that list's rows, each opening in
  * full.
  */
-export function NotamSheet({ notams, ident, onClose }: { notams: FieldNotam[]; ident: string; onClose: () => void }) {
+export function NotamSheet({
+  notams,
+  ident,
+  name,
+  onClose,
+}: {
+  notams: FieldNotam[];
+  ident: string;
+  name?: string | null;
+  onClose: () => void;
+}) {
   const [one] = notams;
-  if (notams.length === 1 && one)
-    return (
-      <SheetCard title={headingOf(one, ident)} description={`NOTAM ${numberOf(one, ident)}`} onClose={onClose} testId="place-notam-card">
-        <NotamFull n={one} ident={ident} />
-      </SheetCard>
-    );
+  if (notams.length === 1 && one) return <NotamCard n={one} ident={ident} name={name} onClose={onClose} />;
   return (
     <SheetCard title="NOTAMs" description={ident} onClose={onClose}>
       <div className="flex flex-col pb-6">
-        <NotamRows notams={notams} ident={ident} state={null} />
+        <NotamRows notams={notams} ident={ident} name={name} state={null} />
       </div>
     </SheetCard>
   );

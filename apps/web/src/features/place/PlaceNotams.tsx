@@ -2,21 +2,14 @@ import { useState, type ReactNode } from "react";
 import { CollapsibleContent } from "../../components/ui/collapsible";
 import { cn } from "cn";
 import { PillSection } from "../../components/Favorites";
-import { SheetCard } from "../../components/SheetCard";
-import StatusBadge from "../../components/StatusBadge";
 import { ListGroup, ListRow } from "../../components/GroupedList";
-import { NotamAsSent } from "../../components/NotamAsSent";
 import KeptAge from "../../components/KeptAge";
 import { notamCredit } from "../../lib/notamCoverage";
 import { TEXT } from "../../lib/text";
-import { useMinuteClock } from "../../lib/useMinuteClock";
-import { instantOf } from "../../lib/format";
 import {
-  headingOf,
   readNotam,
   useFieldNotams,
   useFieldZone,
-  numberOf,
   whatOf,
   whereOf,
   type FieldNotam,
@@ -25,7 +18,7 @@ import {
 } from "./fieldNotams";
 import { NotamsState } from "./NotamsState";
 import { timeLines } from "./notamTimes";
-import { TfrDetails } from "./TfrDetails";
+import { NotamCard, NotamState } from "./NotamCard";
 import { WORDING } from "../../lib/wording/generated/wording";
 
 /** The NOTAMs section's test id. */
@@ -67,44 +60,24 @@ function NotamLines({ n, read, ident }: { n: FieldNotam; read: NotamReading; ide
 }
 
 /**
- * One NOTAM in full, on a card of its own over the list: its what with
- * its Active or Inactive badge, its when and where as its row says them
- * (NotamLines), its words with the FAA's contractions written out where
- * the what says them shorter, both the engine's (notam_read); a TFR's
- * place, instructions and whom to call (TfrDetails); and its text as sent
- * folded beneath, never rewritten (raw reports as sent). Its times are
- * said once, on its Since and Ends lines: the UTC line that said them
- * again is gone, the times as sent kept in its text (the owner,
- * 2026-11-12: "dates are twice once in the title and then we decode
- * them").
- */
-export function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
-  const read = readNotam(n, ident);
-  const ours = !!read.what && n.kind !== "tfr";
-  return (
-    <div className="flex flex-col gap-1 pb-6" data-testid="place-notam-full">
-      <NotamState n={n} />
-      <p className={cn("font-medium", TEXT.prose, n.in_force === false && "text-muted-foreground")}>
-        <NotamWhat what={whatOf(n, ident)} />
-      </p>
-      <p className={TEXT.prose}>
-        <NotamLines n={n} read={read} ident={ident} />
-      </p>
-      {ours && <p className={cn("text-muted-foreground", TEXT.note)}>{read.words}</p>}
-      {n.kind === "tfr" && <TfrDetails n={n} />}
-      <NotamAsSent label={n.kind === "tfr" ? "TFR as Sent" : "As Sent"} raw={n.raw} />
-    </div>
-  );
-}
-
-/**
  * The rows, as every list on the card has them (the owner, 2026-11-11:
  * "Notams show differently then other sections"): a grouped list, each
  * row its symbol, its what with its Active or Inactive badge, and its when and where (NotamLines), a tap opening it
  * in full (NotamFull) on a card over this one. Each asks the engine as it
  * draws, which a card's content waits for (SheetCard's one EngineGate).
  */
-export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; ident: string; state: ReactNode }) {
+export function NotamRows({
+  notams,
+  ident,
+  name,
+  state,
+}: {
+  notams: FieldNotam[];
+  ident: string;
+  /** The field's name, on a NOTAM's own card under its title. */
+  name?: string | null;
+  state: ReactNode;
+}) {
   const [open, setOpen] = useState<FieldNotam | null>(null);
   return (
     <>
@@ -139,16 +112,7 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
           );
         })}
       </ListGroup>
-      {open && (
-        <SheetCard
-          title={headingOf(open, ident)}
-          description={`NOTAM ${numberOf(open, ident)}`}
-          onClose={() => setOpen(null)}
-          testId="place-notam-card"
-        >
-          <NotamFull n={open} ident={ident} />
-        </SheetCard>
-      )}
+      {open && <NotamCard n={open} ident={ident} name={name} onClose={() => setOpen(null)} />}
     </>
   );
 }
@@ -174,24 +138,6 @@ function NotamWhat({ what }: { what: string }) {
         ),
       )}
     </span>
-  );
-}
-
-/** Whether it is in force now, the shared StatusBadge (the owner,
- *  2026-11-11: "put a active and inactive badge on each notam"; 2026-11-14:
- *  "Use badges where we can"): Active; Later where it starts later; and
- *  Inactive, the owner's word, in the cold fill where it is out of force
- *  otherwise. In force unless the planner says it is not (in_force false). */
-function NotamState({ n }: { n: FieldNotam }) {
-  const active = n.in_force !== false;
-  // Read as fieldNotams' dateOf reads it: no zone is UTC, not local.
-  const starts = instantOf(n.starts);
-  const now = useMinuteClock();
-  const later = !active && starts !== null && starts > now;
-  return (
-    <StatusBadge variant={active ? "active" : later ? "later" : "cold"} className="w-fit shrink-0" data-testid="place-notam-state">
-      {active || later ? undefined : "Inactive"}
-    </StatusBadge>
   );
 }
 
@@ -237,7 +183,7 @@ function kindsOf(notams: FieldNotam[], ident: string): [string, FieldNotam[]][] 
  * want search notams"). `none` is what an empty list says in place of
  * "None heard", where the field is outside the NOTAM system.
  */
-export function PlaceNotamsSection({ ident, none = null }: { ident: string; none?: string | null }) {
+export function PlaceNotamsSection({ ident, name = null, none = null }: { ident: string; name?: string | null; none?: string | null }) {
   const { data, isError, query, atMs, failed, total, shown, long, all, toggle } = useFieldNotams(ident);
   if (!data && !isError) return null;
   // "3 of 9" at the right while closed, as FirstFew's sections.
@@ -260,14 +206,14 @@ export function PlaceNotamsSection({ ident, none = null }: { ident: string; none
             kind (Runway, Taxiway, Obstacle ...), the kinds in the order
             their first NOTAM ranks, as ForeFlight heads its list's groups
             (the owner's screenshots, 2026-11-11). */}
-        {!(all && long) && <NotamRows notams={shown} ident={ident} state={state} />}
+        {!(all && long) && <NotamRows notams={shown} ident={ident} name={name} state={state} />}
         {long && (
           <CollapsibleContent className="flex flex-col gap-2">
-            {!shown.length && <NotamRows notams={[]} ident={ident} state={state} />}
+            {!shown.length && <NotamRows notams={[]} ident={ident} name={name} state={state} />}
             {kindsOf(shown, ident).map(([kind, group]) => (
               <div key={kind} className="flex flex-col gap-1">
                 <span className={cn("px-1 text-muted-foreground", TEXT.note)}>{kind}</span>
-                <NotamRows notams={group} ident={ident} state={null} />
+                <NotamRows notams={group} ident={ident} name={name} state={null} />
               </div>
             ))}
           </CollapsibleContent>

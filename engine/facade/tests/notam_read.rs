@@ -30,6 +30,23 @@ fn each_notam_is_read_as_the_order_writes_it_out_in_the_contracts_shape() {
 }
 
 #[test]
+fn each_notams_card_is_read_from_its_parts_in_the_contracts_shape() {
+    let mut schema = read_json("engine/contract/engine.schema.json");
+    schema["required"] = json!([]);
+    let validator = jsonschema::draft7::new(&schema).expect("the contract is a draft 7 schema");
+    for case in read_json("apps/web/src/lib/fixtures/notamCard.json")["cases"].as_array().unwrap() {
+        let input = json!({ "text": case["text"], "idents": ["OSH", "KOSH"] });
+        let text = call("notam_card", &input.to_string()).unwrap_or_else(|e| panic!("{}: {e}", case["about"]));
+        let got: Value = serde_json::from_str(&text).unwrap();
+        assert_eq!(got, case["answer"], "{}", case["about"]);
+        let asked = json!({ "notam_card": { "input": input, "answer": got } });
+        let errors: Vec<String> = validator.iter_errors(&asked).map(|e| format!("{} at {}", e, e.instance_path())).collect();
+        assert!(errors.is_empty(), "{}: {}", case["about"], errors.join("\n"));
+    }
+}
+
+#[test]
 fn a_notam_with_no_text_is_refused() {
     assert!(call("notam_read", "{}").is_err());
+    assert!(call("notam_card", "{}").is_err());
 }

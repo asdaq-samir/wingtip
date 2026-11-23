@@ -8956,6 +8956,35 @@ nonisolated enum EngineContract {
         var `where`: String?
     }
 
+    nonisolated struct NotamCardAnswer: Codable, Equatable, Sendable {
+        /// The domestic form's accountability ("FDC", "OSH"); null in the ICAO form.
+        var account: String?
+        /// What kind of thing it is about, a small label: "Departure procedures", "Arrival procedures", "Instrument approaches", else notam_read's heading (Runway, Taxiway, Navaid, Airspace ...).
+        var category: String?
+        /// What happened, the card's title: "Runway 18/36 closed"; null where its parts do not say it.
+        var title: String?
+        /// One plain sentence of what it means: "Runway 18/36 is permanently closed, so its RNAV departures are not authorized."; null where its parts do not say it.
+        var effect: String?
+        /// The condition is permanent: PERM as its end, or PERMANENTLY in its words (it stays until the charts show it).
+        var permanent: Bool
+        /// The procedures it takes away (NA), in its order; empty where it takes none.
+        var procedures: [EngineContract.NotamCardAnswerProceduresItem]
+    }
+
+    nonisolated struct NotamCardAnswerProceduresItem: Codable, Equatable, Sendable {
+        /// Its charted name and number: "ADELL 8".
+        var name: String
+        /// An RNAV procedure, "(RNAV)" on its title.
+        var rnav: Bool
+    }
+
+    nonisolated struct NotamCardInput: Codable, Equatable, Sendable {
+        /// The NOTAM as sent, domestic or ICAO form.
+        var text: String
+        /// The field's idents (OSH, KOSH), kept as written.
+        var idents: [String]?
+    }
+
     nonisolated struct NotamReadAnswer: Codable, Equatable, Sendable {
         /// The form it was read in; text where it is in neither, its words then as sent.
         var form: String
