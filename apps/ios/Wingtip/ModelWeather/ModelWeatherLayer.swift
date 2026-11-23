@@ -22,6 +22,7 @@ final class ModelWeatherOverlay: NSObject, MKOverlay {
 
 /// Draws the hour's painted picture into the box. MapKit calls draw on its
 /// own queues, so the picture is held under a lock.
+/// Unchecked: MKOverlayRenderer is not Sendable; the picture is in a lock.
 final class ModelWeatherRenderer: MKOverlayRenderer, @unchecked Sendable {
     private let held = OSAllocatedUnfairLock<PaintedField?>(initialState: nil)
 
@@ -86,6 +87,24 @@ final class ModelWeatherLayer: NSObject, UIGestureRecognizerDelegate {
     private var airmetsDrawn: [APIWeatherArea] = []
     private var labelsDrawn: [String: String] = [:]
     private var badge: FlowPointAnnotation?
+    /// One task the layer owns, iterating Observations: every change is
+    /// drawn, none lost between a change and a re-arm, and it ends with the
+    /// layer.
+    private var following: Task<Void, Never>?
+
+    /// What the layer draws of the model weather, read as one value.
+    private struct Shown: Sendable {
+        let painted: PaintedField?, radar: String?
+        let airmets: [APIWeatherArea], labels: [String: String]
+        let point: CLLocationCoordinate2D?, reading: FlowReading?
+
+        @MainActor init(_ model: ModelWeather) {
+            let on = model.field != .off
+            (painted, radar) = (on ? model.painted : nil, on ? model.radarTiles : nil)
+            (airmets, labels) = (on ? model.airmets : [], model.airmetLabels)
+            (point, reading) = (on ? model.point : nil, model.reading)
+        }
+    }
 
     func attach(_ map: MKMapView) {
         self.map = map
@@ -99,13 +118,15 @@ final class ModelWeatherLayer: NSObject, UIGestureRecognizerDelegate {
     }
 
     private func follow() {
-        withObservationTracking {
+        following?.cancel()
+        following = Task { [weak self] in
             let model = Self.models
-            draw(model.field == .off ? nil : model.painted, radar: model.field == .off ? nil : model.radarTiles)
-            drawAirmets(model.field == .off ? [] : model.airmets, labels: model.airmetLabels)
-            drawBadge(model.field == .off ? nil : model.point, reading: model.reading)
-        } onChange: { [weak self] in
-            Task { @MainActor in self?.follow() }
+            for await shown in Observations({ @MainActor in Shown(model) }) {
+                guard let self else { return }
+                draw(shown.painted, radar: shown.radar)
+                drawAirmets(shown.airmets, labels: shown.labels)
+                drawBadge(shown.point, reading: shown.reading)
+            }
         }
     }
 

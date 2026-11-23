@@ -7,6 +7,8 @@ import os
 /// metres, `{bbox-epsg-3857}` in its template (wingtip.weather_loop),
 /// which MapKit does not fill itself. Counts its tiles in flight, so the
 /// loop knows when the frames have loaded (LoopTiles).
+/// Unchecked: MKTileOverlay is not Sendable, and MapKit loads its tiles
+/// on its own threads; it changes nothing after it is set up.
 final class LoopTileOverlay: MKTileOverlay, @unchecked Sendable {
     let key: String
     let radar: Bool
@@ -75,6 +77,10 @@ final class WeatherLoopLayer {
     private var overlays: [String: LoopTileOverlay] = [:]
     private var renderers: [String: MKTileOverlayRenderer] = [:]
     private var watching: Task<Void, Never>?
+    /// One task the layer owns, iterating Observations: every change is
+    /// drawn, none lost between a change and a re-arm, and it ends with the
+    /// layer.
+    private var following: Task<Void, Never>?
 
     /// How strongly each picture is drawn: the satellite's cloud under,
     /// the radar's echoes over, the chart read through both (the web's).
@@ -87,11 +93,13 @@ final class WeatherLoopLayer {
     }
 
     private func follow() {
-        withObservationTracking {
+        following?.cancel()
+        following = Task { [weak self] in
             let loop = Self.loop
-            draw(loop.kind == .off ? [] : loop.frames, shown: loop.shown, ready: loop.ready)
-        } onChange: { [weak self] in
-            Task { @MainActor in self?.follow() }
+            for await (frames, shown, ready) in Observations({ @MainActor in (loop.kind == .off ? [] : loop.frames, loop.shown, loop.ready) }) {
+                guard let self else { return }
+                draw(frames, shown: shown, ready: ready)
+            }
         }
     }
 

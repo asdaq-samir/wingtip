@@ -18,6 +18,10 @@ final class NexradLevelOverlay: MKMultiPolygon {
 final class NexradMapLayer {
     private weak var map: MKMapView?
     private var shown: [NexradLevelOverlay] = []
+    /// One task the layer owns, iterating Observations: every change is
+    /// drawn, none lost between a change and a re-arm, and it ends with the
+    /// layer.
+    private var following: Task<Void, Never>?
 
     /// Each level's colour, design/tokens.json's chart.nexrad-1 to -7.
     static let inks: [UIColor] = [WingtipColor.Chart.nexrad1, WingtipColor.Chart.nexrad2, WingtipColor.Chart.nexrad3,
@@ -31,10 +35,12 @@ final class NexradMapLayer {
 
     /// Draw now, and again when the receiver's NEXRAD changes.
     private func follow() {
-        withObservationTracking {
-            draw(Receiver.shared.nexrad)
-        } onChange: { [weak self] in
-            Task { @MainActor in self?.follow() }
+        following?.cancel()
+        following = Task { [weak self] in
+            for await nexrad in Observations({ @MainActor in Receiver.shared.nexrad }) {
+                guard let self else { return }
+                draw(nexrad)
+            }
         }
     }
 
