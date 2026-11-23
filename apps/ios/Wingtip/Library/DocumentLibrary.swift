@@ -177,7 +177,9 @@ final class DocumentLibrary {
         if let name = refused.last { problem = String(localized: "\(name) isn't a PDF, so it wasn't added.") }
         if !added.isEmpty { problem = nil }
         reloadDevice()
-        await cloud.pushed(added, from: store)
+        // Sent behind any send under way, but not waited for: a PDF opened
+        // from Files opens at once, not after every earlier iCloud send.
+        Task { await cloud.pushed(added, from: store) }
         return added
     }
 

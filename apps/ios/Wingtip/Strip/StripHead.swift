@@ -31,7 +31,7 @@ struct StripHead: View {
             card
             ways
             if let answer = verdict.answer {
-                ForEach(Glance(answer).lines) { glanceLine in
+                ForEach(Glance.of(answer).lines) { glanceLine in
                     Button(action: onBrief) {
                         HStack(spacing: WingtipSpace.md) {
                             Image(systemName: FindingStyle.symbol(glanceLine.finding))

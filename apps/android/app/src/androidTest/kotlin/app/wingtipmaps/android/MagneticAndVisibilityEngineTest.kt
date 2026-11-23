@@ -34,5 +34,18 @@ class MagneticAndVisibilityEngineTest {
         assertEquals("1 3/8 sm", Format.visibility(1.375))
         assertEquals(0 to "5/8", Format.reportedVisibility(0.7456))
         assertEquals(4 to null, Format.reportedVisibility(4.97))
+        // Sixteenths only to 3/8 (FMH-1 Table 6-1), and above 15 sm only
+        // the fives: these were FormatTest's, which the JVM cannot answer.
+        assertEquals(0 to "1/16", Format.reportedVisibility(0.0625))
+        assertEquals(0 to "3/8", Format.reportedVisibility(0.45))
+        assertEquals(0 to "1/2", Format.reportedVisibility(0.5))
+        assertEquals(0 to "7/8", Format.reportedVisibility(0.9999))
+        assertEquals(1 to null, Format.reportedVisibility(1.0))
+        assertEquals(2 to null, Format.reportedVisibility(2.2))
+        assertEquals(2 to "1/4", Format.reportedVisibility(2.25))
+        assertEquals(2 to "3/4", Format.reportedVisibility(2.99))
+        assertEquals(15 to null, Format.reportedVisibility(15.0))
+        assertEquals(15 to null, Format.reportedVisibility(19.9))
+        assertEquals(20 to null, Format.reportedVisibility(22.0))
     }
 }
