@@ -5,7 +5,9 @@ At night or by hand, every spec on every project, over ten shards. In
 a wave's validation (EVENT "wave", validate-wave.yml; decision 0054),
 every spec on the phone, desktop and WebKit phone projects, and the
 smoke set and the ipad-* specs on the iPad's WebKit, over WAVE_SHARDS: minutes, where the
-night's ten take half an hour. A rerun of a wave's red run and a check of
+night's ten take half an hour. Dealt by time, as a pull request's are, from the night's
+seconds or else the last whole validation's (spec_seconds.py latest), and by Playwright's
+--shard where neither is there. A rerun of a wave's red run and a check of
 one branch (validation.py's modes; decision 0062) deal shards of their own:
 a rerun, the earlier run's red tests on their projects with no retry
 (each still has its timeout, so a known red cannot hold a shard for its
@@ -45,7 +47,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from spec_seconds import deal, load
+from spec_seconds import deal, latest, load
 from validation import WAVE_ARGS, mode
 
 SPECS_A_SHARD = 3
@@ -89,10 +91,10 @@ def reached(base: str) -> list[str]:
 
 
 def wide(specs: list[str], extra: str = "") -> list[str]:
-    """Specs on the wave's projects, dealt by their phone and desktop seconds, three a shard on each."""
+    """Specs on the wave's projects, dealt by their seconds on those projects, three a shard on each."""
     if not specs:
         return []
-    figures = [load(os.environ.get("SPEC_SECONDS"), p) for p in ("mobile", "desktop")]
+    figures = [load(os.environ.get("SPEC_SECONDS"), p) for p in re.findall(r"--project=(\S+)", WAVE_PROJECTS)]
     timed = {s: v for s in specs if (v := sum(f.get(s, 0.0) for f in figures))}
     n = min(WAVE_SHARDS, math.ceil(2 * len(specs) / SPECS_A_SHARD))
     return [f"{WAVE_PROJECTS}{extra} " + " ".join(g) for g in deal(specs, n, timed) if g]
@@ -119,29 +121,63 @@ def again(specs: list[str], rerun: dict) -> list[str]:
     return groups + rerun["lost"]
 
 
+def timed(groups: list[str]) -> dict[str, str]:
+    return {"run": "true", "args": "", "shards": shards(len(groups)), "groups": json.dumps(["", *groups])}
+
+
+def say(event: str, rerun: dict, picked: int, specs: list[str], everything: bool) -> None:
+    """How a rerun or a check chose, in its log and its summary: the specs picked, or why it fell back to every one."""
+    if everything:
+        why = "a red build, specs job or lost shard" if rerun.get("all") else f"its {len(specs)} specs are half the suite or more"
+        line = f"{event}: every spec ({why}), not a pick"
+    else:
+        reds = len(rerun.get("reds", [])) + len(rerun.get("lost", []))
+        line = f"{event}: {len(specs)} spec(s) picked of {picked} reached, and {reds} known red test(s) or lost shard(s); not every spec"
+    print(line, file=sys.stderr)
+    if os.environ.get("GITHUB_STEP_SUMMARY"):
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+            summary.write(line + "\n")
+
+
 def plan(event: str) -> dict[str, str]:
     if event == "wave":
         event = mode()
+        # The night's figures where the cache had them, else the last whole validation's (spec_seconds.py latest).
+        try:
+            if os.environ.get("SPEC_SECONDS"):
+                latest(Path(os.environ["SPEC_SECONDS"]))
+        except (OSError, ValueError) as err:
+            print(f"spec seconds: none to read ({err}); Playwright's --shard splits", file=sys.stderr)
     if event in ("rerun", "check"):
         rerun = json.loads(os.environ.get("RERUN") or "{}")
         specs = [] if rerun.get("all") else reached(os.environ["BASE"])
+        picked = len(specs)
         # A rerun's commits that reach most of the suite (a shared hook reaches 190 of 191): the known reds and the specs
         # the commits edit, the rest left to the wave's full run, its last proof. A check that does runs the wave's set.
         if event == "rerun" and most(specs):
             edited = {f.removeprefix("apps/web/") for f in changed_since(os.environ["BASE"]).split()}
-            print(f"rerun: the commits reach {len(specs)} specs; those they edit run, the rest are the full run's", file=sys.stderr)
             specs = [s for s in specs if s in edited]
-        if rerun.get("all") or most(specs):
+            print(f"rerun: the commits reach {picked} specs; the {len(specs)} they edit run, the rest are the full run's", file=sys.stderr)
+        everything = bool(rerun.get("all")) or most(specs)
+        say(event, rerun, picked, specs, everything)
+        if everything:
             event = "wave"
         else:
             groups = again(specs, rerun) if event == "rerun" else wide(specs)
             if not groups:
                 return {"run": "false", "args": "", "shards": shards(1), "groups": ""}
             print(f"{event}: {len(groups)} shard(s)", file=sys.stderr)
-            return {"run": "true", "args": "", "shards": shards(len(groups)), "groups": json.dumps(["", *groups])}
+            return timed(groups)
     if event in ("schedule", "workflow_dispatch"):
         return {"run": "true", "args": "", "shards": shards(MAX_SHARDS), "groups": ""}
     if event == "wave":
+        # Dealt by time where a run timed them (spec_seconds.py), slowest first to the least loaded shard; else
+        # Playwright's --shard, an equal count of tests a shard.
+        if load(os.environ.get("SPEC_SECONDS"), "mobile"):
+            every = sorted(p.relative_to("apps/web").as_posix() for p in Path("apps/web/e2e").rglob("*.spec.ts"))
+            groups = wide([s for s in every if PLAIN.match(s)])
+            print(f"wave: {len(every)} specs dealt by time over {len(groups)} shards", file=sys.stderr)
+            return timed(groups)
         return {"run": "true", "args": WAVE_PROJECTS, "shards": shards(WAVE_SHARDS), "groups": ""}
     if event != "pull_request":
         return {"run": "true", "args": SMOKE, "shards": shards(SMOKE_SHARDS), "groups": ""}

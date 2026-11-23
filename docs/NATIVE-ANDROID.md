@@ -476,9 +476,15 @@ runner:
   reports by), signed with the upload key where the repository has it,
   and every 64-bit native library checked for 16 KB pages
   (`scripts/ci/android_build.sh`, `scripts/ci/android_16k.py`; below);
-- every night, and by hand: then `:app:connectedDebugAndroidTest` on an
-  API 35 x86_64 emulator (reactivecircus/android-emulator-runner), and
-  the release build's `ReleaseEngineTest` (below).
+- every night, in a wave's validation and by hand: then
+  `:app:connectedDebugAndroidTest` on an API 35 x86_64 emulator
+  (reactivecircus/android-emulator-runner), on the phone and on a Pixel
+  Tablet, and the release build's `ReleaseEngineTest` (below). The two
+  `device` jobs start with the build job, not after it: Gradle builds the
+  APKs they install in their own run anyway, so waiting held them 14
+  minutes behind the unit tests and lint (run 45127491141). Where the
+  engine's cache has not been kept yet, each builds the engine for the
+  emulator's x86_64 alone (`WINGTIP_ENGINE_ABIS`).
 - No upload to Google Play from CI: the bundle is uploaded by hand
   (Releasing to Google Play, below).
 

@@ -382,7 +382,7 @@ jobs:
                 - apps/ios/**
                 - scripts/build/ios-strings.sh
                 - scripts/ci/content-mtimes.py
-                - scripts/ci/ios_test.sh
+                - scripts/ci/ios_*
                 - .github/workflows/native-ios.yml
               android-app:
                 - apps/android/**
@@ -550,7 +550,7 @@ jobs:
                 - design/**
                 - scripts/ci/content-mtimes.py
                 - scripts/build/ios-strings.sh
-                - scripts/ci/ios_test.sh
+                - scripts/ci/ios_*
                 - .github/workflows/native-ios.yml
               android:
                 - apps/android/**
@@ -631,14 +631,17 @@ jobs:
           FAILED: ${{ steps.base.outputs.failed }}
         run: python3 scripts/ci/plan.py
 
-  # Which browser specs e2e runs (scripts/ci/browser_specs.py; decision
-  # 0048): on a pull request, every spec its change reaches, which "CI
-  # passed" waits for; on main's push the smoke set, at night everything.
+  # Which browser specs e2e runs (scripts/ci/browser_specs.py; decision 0048): on a pull request, every spec its change
+  # reaches, which "CI passed" waits for; on main's push the smoke set, at night everything. A wave's are dealt by the
+  # seconds of its last whole validation (actions: read, spec_seconds.py latest) where the night's are not cached.
   specs:
     name: Browser specs reached
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
     if: needs.changes.outputs.e2e == 'true'
+    permissions:
+      actions: read
+      contents: read
     outputs:
       run: ${{ steps.plan.outputs.run }}
       args: ${{ steps.plan.outputs.args }}
@@ -661,7 +664,7 @@ jobs:
         working-directory: apps/web
         run: npm ci --no-audit --no-fund
       # Each spec's seconds, the night's merge of the last day's runs (flake-report), to deal them to the shards by time.
-      - if: github.event_name == 'pull_request' || contains(fromJSON('["rerun", "check"]'), needs.changes.outputs.mode)
+      - if: github.event_name == 'pull_request' || inputs.wave
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: /tmp/spec-seconds
@@ -673,19 +676,18 @@ jobs:
           SPEC_SECONDS: /tmp/spec-seconds/seconds.json
           BASE: ${{ needs.changes.outputs.base }}
           RERUN: ${{ needs.changes.outputs.rerun }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: python3 scripts/ci/browser_specs.py
 
-  # The browser suite (apps/web/e2e, Playwright) against the stack a pilot
-  # uses: the gateway, planner and weather images e2e-images built for this
-  # commit's keys, Postgres and Mailpit (infra/docker-compose.ci.yml). It
-  # catches what no unit test can: a lost tap, a drawer that opens empty.
-  #
-  # After merge (docs/CI.md, "The tiers"; the owner, 2026-11-10): main's push runs the @smoke and
-  # @flight-critical tests on the phone project and the iPad's WebKit, over three; the night everything over ten. A
-  # pull request runs every spec its change reaches, and "CI passed" waits for them (decision 0048, after #585
-  # merged with three red); a failure on main is one issue (nightly-issue.yml). Each shard pulls its images
-  # and restores its caches in the background and starts each service the moment it can (setup is about a
-  # minute and a half); not after e2e-images, which it would wait on: it pulls the image once it is pushed.
+  # The browser suite (apps/web/e2e, Playwright) against the stack a pilot uses: the gateway, planner and weather
+  # images e2e-images built for this commit's keys, Postgres and Mailpit (infra/docker-compose.ci.yml). It catches
+  # what no unit test can: a lost tap, a drawer that opens empty.
+  # After merge (docs/CI.md, "The tiers"; the owner, 2026-11-10): main's push runs the @smoke and @flight-critical tests
+  # on the phone project and the iPad's WebKit, over three; the night everything over ten. A pull request runs every spec
+  # its change reaches, and "CI passed" waits for them (decision 0048, after #585 merged with three red); a failure on
+  # main is one issue (nightly-issue.yml). Each shard pulls its images and restores its caches in the background and starts
+  # each service the moment it can (about a minute and a half); not after e2e-images: it pulls the image once pushed.
   e2e:
     name: e2e (${{ matrix.shard }}/${{ strategy.job-total }})
     needs: [changes, specs]
@@ -1304,6 +1306,9 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.ios == 'true'
     uses: ./.github/workflows/native-ios.yml
+    permissions:
+      actions: read
+      contents: read
     with:
       unit_only: ${{ needs.changes.outputs.ios-full != 'true' }}
 
