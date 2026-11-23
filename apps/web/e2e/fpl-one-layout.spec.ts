@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import {
   clearTheRoute,
   controlsInSight,
@@ -26,6 +26,61 @@ import { fromRest } from "./startState";
  * route typed in has the route's field open under it till Done. Show Route As and its three layouts are gone, and the opened
  * Directions list with them.
  */
+/**
+ * The suggested routes answered at once with one way besides the route as
+ * typed (with As typed alone there is nothing to suggest and Routes is
+ * greyed, useRouteLine's routeLine). Routes is asked once the route's plan
+ * is in (useRouteWays), so these tests fly C81 to KDLH, the suite's own
+ * corridor, whose charts and checkpoints CI keeps: KORD to KDEN, read cold
+ * on each shard, was still "Finding Checkpoints…" at the 60 s Routes is
+ * waited on (validate-wave3's rerun 45107108914; main's night took 55 s).
+ */
+async function oneWay(page: Page) {
+  const way = {
+    kind: "fastest",
+    kinds: ["fastest"],
+    title: "Fastest",
+    stops: ["KOSH"],
+    fuel: [],
+    path: [
+      [42.43, -88.08],
+      [43.98, -88.56],
+      [46.84, -92.19],
+    ],
+    distance_nm: 352.4,
+    air_min: 171,
+    ground_min: 0,
+    fuel_gal: 24.3,
+    landings: 0,
+    crosses: [],
+    marginal: [],
+    bands: [{ kind: "vfr", min: 171 }],
+    tail_kt: 0,
+    floor_ft: 2000,
+  };
+  await page.route(
+    (url) => url.pathname.endsWith("/route-options"),
+    (route) =>
+      route.fulfill({
+        json: {
+          options: [way],
+          own: null,
+          direct: [0],
+          ends: [],
+          current: [],
+          current_marginal: [],
+          current_along: { bands: [], tail_kt: 0, floor_ft: 0 },
+          chips: [
+            { key: "none", label: "As typed", stops: [], fuel: [], crosses: [] },
+            { key: "fastest", label: "Fastest", stops: ["KOSH"], fuel: [], crosses: [] },
+          ],
+          hazards: [],
+          unchecked: [],
+        },
+      }),
+  );
+}
+
 test.describe("/app/plan", () => {
   // auth.setup starts every test with the fields open (wingtip.fieldsOpen),
   // which also lists every stop; here they start as a pilot's do.
@@ -42,7 +97,8 @@ test.describe("/app/plan", () => {
   test("the route is its timeline at half, no list to open: ident, time and grip a line, the figures and the Routes under it", async ({
     page,
   }) => {
-    await page.goto("/app/plan?dep=KORD&stops=KOMA&dest=KDEN");
+    await oneWay(page);
+    await page.goto("/app/plan?dep=C81&stops=KMSN&dest=KDLH");
     await settle(page);
     await fromRest(page);
     await openPanel(page);
@@ -57,10 +113,10 @@ test.describe("/app/plan", () => {
     const timeline = drawer.getByTestId("route-summary");
     await expect(timeline).toBeVisible({ timeout: slow(30_000) });
     // One stop is its own row at half, no stops' row for it.
-    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KOMA", "KDEN"], { timeout: slow(30_000) });
+    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["C81", "KMSN", "KDLH"], { timeout: slow(30_000) });
     await expect(timeline.getByTestId("timeline-stops")).toHaveCount(0);
     // No city on a line (the owner: "We don't need to say the city name").
-    await expect(timeline).not.toContainText("Chicago");
+    await expect(timeline).not.toContainText("Madison");
     await expect(timeline.getByTestId("timeline-line")).toHaveCount(3);
     // No grip's three lines nor a chevron at a field's end (the owner,
     // 2026-11-19); the drag buttons kept for the keyboard.
@@ -117,7 +173,7 @@ test.describe("/app/plan", () => {
     // More's menu took it all the way up for the route's field (openRoute).
     await grabberTo(page, "half");
     await expect(drawer).toHaveAttribute("data-panel", "half");
-    await timeline.locator('[data-testid="timeline-line"][data-ident="KOMA"]').getByTestId("timeline-toggle").click();
+    await timeline.locator('[data-testid="timeline-line"][data-ident="KMSN"]').getByTestId("timeline-toggle").click();
     await expect(drawer).toHaveAttribute("data-panel", "half");
 
     // All the way up on a phone, the same timeline: no list of its own.
@@ -135,10 +191,10 @@ test.describe("/app/plan", () => {
     const field = page.getByTestId("search-airports");
     // As Apple Maps' Change Stop: its title, the stop's name in the field.
     await expect(page.getByTestId("search-pick-title")).toHaveText("Change Stop");
-    await expect(field).toHaveValue("KOMA");
-    await field.fill("KDSM");
+    await expect(field).toHaveValue("KMSN");
+    await field.fill("KJVL");
     await page.keyboard.press("Enter");
-    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["KORD", "KDSM", "KDEN"], { timeout: slow(30_000) });
+    await expect(timeline.getByTestId("timeline-ident")).toHaveText(["C81", "KJVL", "KDLH"], { timeout: slow(30_000) });
   });
 
   test("below full the stops are one row between the ends, a tap taking the sheet up where each is its own row", async ({ page }) => {
@@ -256,52 +312,8 @@ test.describe("/app/plan", () => {
   });
 
   test("the routes button resets with the route: pills out, the route cleared, a new route's pills hidden", async ({ page }) => {
-    // A way besides the route as typed: with As typed alone there is
-    // nothing to suggest and no button (useRouteLine's routeLine).
-    const way = {
-      kind: "fastest",
-      kinds: ["fastest"],
-      title: "Fastest",
-      stops: ["KDSM"],
-      fuel: [],
-      path: [
-        [41.98, -87.9],
-        [41.53, -93.66],
-        [39.86, -104.67],
-      ],
-      distance_nm: 905.3,
-      air_min: 402,
-      ground_min: 0,
-      fuel_gal: 52.1,
-      landings: 0,
-      crosses: [],
-      marginal: [],
-      bands: [{ kind: "vfr", min: 402 }],
-      tail_kt: 0,
-      floor_ft: 2000,
-    };
-    await page.route(
-      (url) => url.pathname.endsWith("/route-options"),
-      (route) =>
-        route.fulfill({
-          json: {
-            options: [way],
-            own: null,
-            direct: [0],
-            ends: [],
-            current: [],
-            current_marginal: [],
-            current_along: { bands: [], tail_kt: 0, floor_ft: 0 },
-            chips: [
-              { key: "none", label: "As typed", stops: [], fuel: [], crosses: [] },
-              { key: "fastest", label: "Fastest", stops: ["KDSM"], fuel: [], crosses: [] },
-            ],
-            hazards: [],
-            unchecked: [],
-          },
-        }),
-    );
-    await page.goto("/app/plan?dep=KORD&dest=KDEN");
+    await oneWay(page);
+    await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
     await openPanel(page);
     const drawer = sideDrawer(page);
