@@ -102,12 +102,18 @@ export function Pages({ placed, all, mark, rings = NO_RINGS }: ReturnType<typeof
     };
     map.on("load", fit);
     map.on("resize", fit);
+    // Its pages drawn: marked once the map first comes to rest with every
+    // page's picture in, so what reads the pages (a spec's screenshot before
+    // a pinch) waits for them, not for the paper they are laid on.
+    const container = box.current;
+    map.once("load", () => map.once("idle", () => (container.dataset.drawn = "")));
     shown.current = map;
     return () => {
       marker.current?.remove();
       marker.current = null;
       drawn.current = "";
       shown.current = null;
+      delete container.dataset.drawn;
       map.remove();
     };
   }, [placed, all]);
