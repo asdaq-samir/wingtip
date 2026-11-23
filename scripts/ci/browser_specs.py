@@ -80,8 +80,11 @@ def reached(base: str) -> list[str]:
     """The specs a change from base reaches (apps/web/scripts/reached-specs.mjs), those a shell can take."""
     changed = changed_since(base)
     node = shlex.split(os.environ.get("REACHED_SPECS_NODE", "node"))
-    found = subprocess.run([*node, "scripts/reached-specs.mjs"], cwd="apps/web", input=changed, check=True, capture_output=True, text=True)
+    found = subprocess.run([*node, "scripts/reached-specs.mjs"], cwd="apps/web", input=changed, capture_output=True, text=True)
     print(found.stderr.strip(), file=sys.stderr)
+    # Its own words first, where a bare CalledProcessError said only "exit
+    # status 1" (PR #589's run 45165218062).
+    found.check_returncode()
     return [s for s in found.stdout.split() if PLAIN.match(s)]
 
 
