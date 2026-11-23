@@ -3,6 +3,7 @@ package app.wingtipmaps.android.map
 import androidx.core.graphics.toColorInt
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.design.generated.WingtipMapZoom
 import app.wingtipmaps.android.plates.PlacedPlate
 import app.wingtipmaps.android.plates.PlateLook
 import app.wingtipmaps.android.plates.PlateTagsModel
@@ -119,6 +120,11 @@ class PlateLayer(private val density: Float) {
             PropertyFactory.iconAllowOverlap(true),
             PropertyFactory.iconIgnorePlacement(true),
         )
+        // From the procedures' words' zoom (map.zoom.procedure-words), as the
+        // web's PlateTagsGl: farther out an approach's tags piled on its
+        // field, over the fields round it (the owner's screenshot,
+        // 2026-11-23: KLAS's over KSLC).
+        symbols.minZoom = MapStyle.glZoom(WingtipMapZoom.PROCEDURE_WORDS).toFloat()
         val over = OwnShipPuck.under(style).takeIf { style.getLayer(it) != null }
         if (over != null) style.addLayerBelow(symbols, over) else style.addLayer(symbols)
     }

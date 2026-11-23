@@ -5,6 +5,7 @@ import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.fieldNames
+import app.wingtipmaps.android.engine.generated.notamCard
 import app.wingtipmaps.android.engine.generated.notamRead
 import app.wingtipmaps.android.engine.generated.tfrRead
 import java.time.Instant
@@ -42,6 +43,13 @@ object FieldNotams {
     fun read(n: RankedNotam, ident: String): EngineContract.NotamReadAnswer? =
         Engine.notamRead(n.raw, identsOf(ident)).getOrNull()
 
+    /** A NOTAM's own card as the engine reads it from its parts
+     *  (`notam_card`, FAA Order JO 7930.2): its title, category, effect,
+     *  permanence and the procedures it takes away; null for a TFR, and
+     *  where it fails, the card then saying the NOTAM's words (notam_read). */
+    fun card(n: RankedNotam, ident: String): EngineContract.NotamCardAnswer? =
+        if (isTfr(n)) null else Engine.notamCard(n.raw, identsOf(ident)).getOrNull()
+
     /** A TFR read by the engine (tfr_read): its kind as a heading, its
      *  kind and rule, its levels and where it is from the field, its place. */
     fun readTfr(n: RankedNotam): EngineContract.TfrReadAnswer? {
@@ -56,7 +64,12 @@ object FieldNotams {
     }
 
     /** One NOTAM as the card says it: the engine's readings, once. */
-    class Said(val notam: RankedNotam, val read: EngineContract.NotamReadAnswer?, val tfr: EngineContract.TfrReadAnswer?) {
+    class Said(
+        val notam: RankedNotam,
+        val read: EngineContract.NotamReadAnswer?,
+        val tfr: EngineContract.TfrReadAnswer?,
+        val card: EngineContract.NotamCardAnswer? = null,
+    ) {
         /** Its first line: what it is and its condition in our words, else
          *  its words written out; a TFR's kind and rule. */
         val what: String get() = (if (tfr != null) tfr.what else read?.what ?: read?.words) ?: notam.raw
@@ -75,7 +88,8 @@ object FieldNotams {
         val kind: String? get() = if (isTfr(notam)) null else read?.heading
     }
 
-    fun say(n: RankedNotam, ident: String): Said = Said(n, if (isTfr(n)) null else read(n, ident), if (isTfr(n)) readTfr(n) else null)
+    fun say(n: RankedNotam, ident: String): Said =
+        if (isTfr(n)) Said(n, null, readTfr(n)) else Said(n, read(n, ident), null, card(n, ident))
 
     /** Its number as a briefer reads it, the field's own name off it on the
      *  field's card ("11/060", not "ORD 11/060"); another place's kept. */

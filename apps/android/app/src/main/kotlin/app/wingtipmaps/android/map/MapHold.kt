@@ -6,7 +6,6 @@ import android.graphics.PointF
 import android.view.HapticFeedbackConstants
 import androidx.core.view.ViewCompat
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.design.readReduceMotion
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
@@ -41,8 +40,9 @@ internal object MapHold {
     fun attach(view: MapView, map: MapLibreMap, tap: (LatLng) -> Boolean, here: (MapPick) -> Unit) {
         map.addOnMapClickListener { at -> tap(at) }
         map.addOnMapLongClickListener { at ->
-            // The pin-drop tap, none under Reduce Motion, as the app's haptics.
-            if (!readReduceMotion(view.context)) view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            // The pin-drop tap, under Reduce Motion too, as iOS plays it:
+            // a haptic is no motion (the owner, 2026-11-23).
+            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
             here(MapPick.Here(at.latitude, at.longitude))
             true
         }
