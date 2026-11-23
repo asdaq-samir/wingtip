@@ -29,9 +29,9 @@ test("without the tanks' size, the gallons alone", () => {
   expect(screen.getByText(/12 gal/)).toBeTruthy();
 });
 
-test("past empty, the gallons short with a minus and the gauge at empty", () => {
+test("past empty, the gallons short in words and the gauge at empty", () => {
   render(<FuelGauge gal={-11.5} usable={40} tone="low" />);
   const meter = screen.getByRole("meter");
   expect(meter.getAttribute("aria-valuenow")).toBe("0");
-  expect(meter.getAttribute("aria-valuetext")).toBe("\u221212 gal");
+  expect(meter.getAttribute("aria-valuetext")).toBe("12 gal short");
 });
