@@ -275,7 +275,8 @@ test.describe("/app/plan", () => {
     await expect(drawer.getByTestId("route-done")).toHaveCount(0);
     await expect(drawer.getByTestId("route-type")).toHaveCount(0);
 
-    // Its the route box's toggle opens the field, focused; a whole route
+    // The box's toggle, at the Destination's end, turns the card into the
+    // field in its place, focused; a whole route
     // pasted into it keeps it open, the pilot still at it, till the toggle turns it back.
     await empty.getByTestId("route-type-open").click();
     await expect(drawer.getByTestId("route-type")).toBeFocused();

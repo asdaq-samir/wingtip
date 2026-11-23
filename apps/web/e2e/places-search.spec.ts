@@ -121,10 +121,11 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await expect(sideDrawer(page).getByTestId("route-type-open")).toBeVisible();
   await expect(sideDrawer(page).getByTestId("aircraft-select")).toBeEnabled();
   // With no route there is no route's menu at all (the owner,
-  // 2026-11-18): the first row is the airplane's strip alone, and the
-  // empty route's the route box's toggle offers the route just cleared back.
+  // 2026-11-18): the first row is the airplane's strip alone; the route
+  // just cleared comes back by the toast's Undo, no Undo of the box's own
+  // (the owner, 2026-11-23: "No undo needed next to toggle").
   await expect(sideDrawer(page).getByTestId("share-route")).toHaveCount(0);
-  await expect(sideDrawer(page).getByTestId("route-undo")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("route-undo")).toHaveCount(0);
   await expect(sideDrawer(page).getByTestId("panel-tab-enroute")).toBeHidden();
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
   // The search's own page (the sheet's first) all the way up, as it was:
