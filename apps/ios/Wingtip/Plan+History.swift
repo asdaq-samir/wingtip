@@ -10,31 +10,35 @@ extension Plan {
     /// what it took away ("Undo Route cleared") and said to VoiceOver
     /// where it took something. An Undo puts the route back (put), which
     /// comes through here again inside the UndoManager's undo, so the
-    /// step it registers is the Redo, as the system does it.
-    func remember() {
+    /// step it registers is the Redo, as the system does it. `planned`:
+    /// whether the route now is one the planner was asked for, so its
+    /// Undo or Redo plans it again only then.
+    func remember(planned: Bool = true) {
         guard remembering else { return }
-        let next = routeState, before = lastState
+        let next = routeState, before = lastState, plannedBefore = lastPlanned
         guard next != before else { return }
         lastState = next
+        lastPlanned = planned
         let note = PlanHistory.note(from: before, to: next)
         if undoManager?.isUndoing == true || undoManager?.isRedoing == true {
             undoOffer = nil
         } else if let note {
             Announce.alert(note)
-            undoOffer = UndoOffer(note)
+            undoOffer = UndoOffer(note, in: undoManager)
         }
         guard let undoManager else { return }
         undoManager.levelsOfUndo = PlanHistory.limit
-        undoManager.register(self, named: note ?? "Route Change") { $0.put(before) }
+        undoManager.register(self, named: note ?? "Route Change") { $0.put(before, planned: plannedBefore) }
     }
 
-    /// The route as it was set: planned again, or forgotten where it is
-    /// not a route, and taken in as the step to go back over.
-    private func put(_ state: RouteState) {
+    /// The route as it was set: planned again where it had been, else
+    /// put back as it was typed (or forgotten where it is no route), and
+    /// taken in as the step to go back over.
+    private func put(_ state: RouteState, planned: Bool) {
         dep = state.dep; dest = state.dest; stops = state.stops; procedures = state.procedures; extras = state.extras
         ownAltitudeFt = state.ownAltitudeFt; ownAltitudeLegal = state.ownAltitudeLegal; altitudeChoice = state.altitudeChoice
-        if routed { plan() } else { forgetPlanned() }
-        remember()
+        if routed, planned { plan() } else { forgetPlanned() }
+        remember(planned: routed && planned)
     }
 
     /// No steps back: a signed-out pilot's routes are not the next one's.

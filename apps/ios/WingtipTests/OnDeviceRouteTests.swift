@@ -79,7 +79,7 @@ struct OnDeviceRouteTests {
         #expect(summary.origin == .device)
         #expect(summary.verdict == "Not as loaded.")
         // 50 lb is no figure of the finding's; fuel is clear; "3 hours" invented.
-        #expect(summary.actions.isEmpty == false || Glance.acted(a).isEmpty)
+        #expect(summary.actions.isEmpty == false || Glance(a).acted.isEmpty)
         #expect(!summary.actions.contains { $0.key == "fuel" })
         #expect(!summary.actions.contains { $0.words.contains("50 lb") || $0.words.contains("3 hours") })
     }
@@ -91,7 +91,7 @@ struct OnDeviceRouteTests {
         let summary = await BriefSummaryFor(model: FakeGlance(draft: wrong)).summary(a)
         #expect(summary.origin == .engine)
         #expect(summary.verdict == a.line.words)
-        #expect(summary.actions.map(\.key) == Glance.lines(a).map(\.key))
+        #expect(summary.actions.map(\.key) == Glance(a).lines.map(\.key))
     }
 
     @Test func withNoModelTheGlanceIsTheEnginesAndCanBeSaid() async throws {
@@ -99,16 +99,16 @@ struct OnDeviceRouteTests {
         let summary = await BriefSummaryFor(model: FakeGlance(unavailableWhy: "No model.")).summary(a)
         #expect(summary == .engine(a, why: "No model."))
         #expect(summary.spoken.hasPrefix(a.line.words))
-        #expect(summary.actions.count <= Glance.most)
+        #expect(summary.actions.count <= 3)
     }
 
     @Test func aGoodDraftIsKeptOnePerFindingAtMostThree() async throws {
         let a = try Self.answer()
-        let acted = Glance.acted(a)
+        let acted = Glance(a).acted
         let actions = acted.map { BriefGlanceDraft.Action(finding: $0.key, text: "\($0.label): \($0.detail)") }
         let draft = BriefGlanceDraft(finding: a.line.finding, verdict: a.line.words, actions: actions)
         let summary = await BriefSummaryFor(model: FakeGlance(draft: draft)).summary(a)
         #expect(summary.origin == .device)
-        #expect(summary.actions.map(\.key) == Array(acted.prefix(Glance.most).map(\.key)))
+        #expect(summary.actions.map(\.key) == acted.map(\.key))
     }
 }

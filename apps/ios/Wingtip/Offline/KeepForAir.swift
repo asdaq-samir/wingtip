@@ -139,7 +139,7 @@ final class KeepForAir {
         // (KeepPlates), every chart kept; on board only when every one is.
         if let wanted = try? await KeepPlates.flightPlates(KeepPlates.ask(for: plan)) {
             var whole = true
-            await KeepPlates.keepAll(KeepPlates.jobs(wanted.fields.map { ($0.ident, $0.charts) })) { _, kept in
+            await KeepPlates.keepAll(KeepPlates.jobs(wanted.fields.map { ($0.ident, $0.charts) })) { _, kept, _ in
                 if let kept { files += kept } else { whole = false }
             }
             if whole { kinds.append(KeptForAir.Kind.plates.rawValue) }

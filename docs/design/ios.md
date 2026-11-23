@@ -948,6 +948,11 @@ edged in the waypoint magenta outside the turn, turned with the map
      seconds, as Mail and Photos offer one after a delete) all take it
      back; the iPad's sidebar keeps the bar's Undo button too
      (`UndoToolbarItem`). Never an alert ([HIG Alerts][hig-alerts]).
+     With two windows over the one plan, each window hands the plan its
+     own `UndoManager` as it becomes the key window (`KeyWindow`), so a
+     step is undone in the window it was made in, and only that window
+     shows its bar. Undoing Clear Route on From and To typed but never
+     planned puts them back as typed, unplanned.
 6. **Options:** flight rules, departure time and airplane, as menus
    (`Picker` with `.menu`), not sliders.
 
@@ -1803,10 +1808,15 @@ PDF as SwiftData's external storage), carried by CloudKit to the
 pilot's own private iCloud database and to their other devices; those
 are written here as they arrive. Turned off (asked first), the copies
 in iCloud are deleted and the ones here stay. Markup, bookmarks and
-last pages stay on each device.
+last pages stay on each device. One document is in memory at a time:
+each PDF is read and written off the main actor (`DeviceDocuments`'
+`@concurrent` steps) and saved in a context of its own, the sends one
+after another. Adding, keeping for the air and opening a CFR part's
+text copy and decode off the main actor the same way.
 
 **Keyboard** (`WingtipCommands`, `ReaderActions`): ⌘F (the system's
-Edit > Find) finds in the document while the reader is in front; Edit's Find in
+Edit > Find) finds in the document while the reader is in front, in the
+key window alone where two are side by side (`KeyWindow`); Edit's Find in
 Document, Back (⌘[) and Forward (⌘]); Escape closes the reader.
 
 **Avoid:** a hand-built page renderer or find; a document in a sheet over

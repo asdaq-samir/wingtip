@@ -87,8 +87,15 @@ final class Plan {
     /// The route as last taken in (remember, Plan+History): what an Undo
     /// puts back.
     @ObservationIgnored var lastState = RouteState()
-    /// The window's, from SwiftUI's environment (RootView): shake to undo,
-    /// the Edit menu's Undo and Redo and the bar's Undo (UndoToolbarItem).
+    /// Whether that route had been planned: an Undo plans again only a
+    /// route that was, so a Clear Route undone on From and To typed but
+    /// never planned puts them back as typed (PlanHistory).
+    @ObservationIgnored var lastPlanned = true
+    /// The key window's, from SwiftUI's environment (RootMap): shake to
+    /// undo, the Edit menu's Undo and Redo and the bar's Undo
+    /// (UndoToolbarItem). One Plan serves every window, so each window
+    /// hands over its own as it becomes the key one, and a step lands in
+    /// the manager of the window the pilot made it in.
     @ObservationIgnored weak var undoManager: UndoManager?
     /// The step just made that the undo bar offers to take back (UndoBar),
     /// nil once it has gone; a step that only added or changed a figure has
@@ -143,13 +150,16 @@ final class Plan {
         // but not yet planned too: the fields set the ends without a step,
         // so the step taken was still the empty route, and Clear Route
         // offered no Undo though its question says Undo brings it back.
-        if remembering { lastState = routeState }
+        if remembering {
+            lastState = routeState
+            lastPlanned = planning || course != nil || problem != nil
+        }
         dep = ""; dest = ""; stops = []
         ownAltitudeFt = nil; ownAltitudeLegal = false; altitudeChoice = nil; procedures = []
         extras = RouteExtras()
         typedStops = []; pickedChip = nil; routes = nil; routesProblem = nil; routesAskedFor = nil
         forgetPlanned()
-        remember()
+        remember(planned: false)
     }
 
     /// What the planner said of the route, gone with it.

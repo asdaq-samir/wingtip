@@ -110,21 +110,22 @@ struct GoNoGoSection: View {
                 // At a glance (the owner's rule, 2026-11-03): at most three
                 // lines a pilot acts on, each opening to its why, and the
                 // rest in one row.
-                ForEach(Glance.lines(answer)) { line in
+                let glance = Glance(answer)
+                ForEach(glance.lines) { line in
                     if let item = answer.items.first(where: { $0.key == line.key }) {
                         FindingFold(item: item, words: line.words, open: open)
                     }
                 }
                 // The ADIZs the route meets (14 CFR part 99), the engine's one line.
                 AdizLine(result: RouteAdiz.brief(plan))
-                if let rest = Glance.restWords(answer) {
+                if let rest = glance.restWords {
                     DisclosureGroup(isExpanded: $restOpen) {
-                        ForEach(Glance.rest(answer)) { item in row(item) }
+                        ForEach(glance.rest) { item in row(item) }
                     } label: {
                         Label {
                             Text(rest)
                         } icon: {
-                            let finding = Glance.rest(answer).contains { $0.finding != "ok" } ? "caution" : "ok"
+                            let finding = glance.restFinding
                             Image(systemName: FindingStyle.symbol(finding)).foregroundStyle(FindingStyle.colour(finding))
                                 .accessibilityLabel(FindingStyle.word(finding))
                         }

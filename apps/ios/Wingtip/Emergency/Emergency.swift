@@ -200,6 +200,8 @@ final class Emergency {
     /// ("east is least", FAA-H-8083-25C, chapter 16).
     static func magnetic(_ trueDeg: Double?, variationDeg: Double?) -> Double? {
         guard let trueDeg, let variationDeg else { return nil }
+        // TODO(r4-aviation): `try? Engine.magneticOf(trueDeg:variationDeg:)`
+        // once that branch's magnetic_of rule is merged; this copy goes then.
         let deg = (trueDeg - variationDeg).truncatingRemainder(dividingBy: 360)
         return deg < 0 ? deg + 360 : deg
     }

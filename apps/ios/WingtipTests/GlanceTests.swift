@@ -2,56 +2,52 @@ import Foundation
 import Testing
 @testable import Wingtip
 
-/// The Go / No-Go at a glance (Glance): at most three one-sentence lines,
-/// none past 140 characters, worst first, and the rest in one row; from
-/// the planner's answer as GoNoGoTests shapes it.
+/// The Go / No-Go at a glance (Glance), the engine's gonogo_glance_lines:
+/// the shared cases the web's glance.test.ts and the engine's own test
+/// read (apps/web/src/lib/fixtures/goNoGoBrief.json) answered the same
+/// through the iPhone's engine, and the planner's answer as GoNoGoTests
+/// shapes it put into lines, its findings found again.
 struct GlanceTests {
     private func answer(_ json: String = GoNoGoTests.answer) throws -> GoNoGoAnswer {
         try Planner.json.decode(GoNoGoAnswer.self, from: Data(json.utf8))
     }
 
-    @Test func atMostThreeLinesWorstFirstEachOneSentence() throws {
-        let lines = Glance.lines(try answer())
-        #expect(lines.count == 3)
-        #expect(lines.map(\.key) == ["balance", "weather", "risk"])
-        #expect(lines.map(\.finding) == ["stop", "caution", "caution"])
-        for line in lines {
-            #expect(line.words.count <= Glance.longest, "\(line.words)")
-            #expect(line.words.hasSuffix("."), "\(line.words)")
-            #expect(!line.words.dropLast().contains(Character(".")), "one sentence: \(line.words)")
+    @Test func theEngineAnswersTheSharedCasesAsTheWebDoes() throws {
+        let fixture = try EvalFixtures.load("goNoGoBrief")
+        let cases = try #require(fixture["glance"] as? [[String: Any]])
+        #expect(!cases.isEmpty)
+        for each in cases {
+            let input = try JSONDecoder().decode(EngineContract.GonogoGlanceLinesInput.self,
+                                                 from: JSONSerialization.data(withJSONObject: try #require(each["input"])))
+            let expected = try JSONDecoder().decode(EngineContract.GonogoGlanceLinesAnswer.self,
+                                                    from: JSONSerialization.data(withJSONObject: try #require(each["answer"])))
+            let got = try Engine.gonogoGlanceLines(items: input.items, fields: input.fields, raw: input.raw)
+            #expect(got == expected, "\(each["name"] ?? "")")
         }
-        #expect(lines[0].words == "Weight & balance: The baggage, 170 lb in all, is over its 120 lb.")
     }
 
-    @Test func theRestIsOneRowTheClearOnesNamedAndTheOverflowCounted() throws {
-        let a = try answer()
-        let rest = Glance.rest(a)
-        // The runways, not worked out, ran over the three lines; the clear
-        // findings follow in the planner's order.
-        #expect(rest.map(\.key) == ["runways", "airspace", "altitude", "fuel"])
-        #expect(Glance.restWords(a) == "1 more to look at; TFRs & special use, altitude and fuel: nothing to fix")
+    @Test func theStopsThenTheCautionsAtMostThreeEachOneSentence() throws {
+        let glance = Glance(try answer())
+        #expect(glance.lines.map(\.key) == ["balance", "weather", "risk"])
+        #expect(glance.lines.map(\.finding) == ["stop", "caution", "caution"])
+        #expect(glance.acted.map(\.key) == ["balance", "weather", "risk"])
+        for line in glance.lines { #expect(line.words.count <= 140, "\(line.words)") }
+        #expect(glance.lines[0].words == "The baggage, 170 lb in all, is over its 120 lb: move or leave some weight")
     }
 
-    @Test func nothingFoldedWhereTheLinesSaidEverything() throws {
-        let json = #"{"line":{"finding":"pending","words":"Still checking: Risk"},"items":[{"key":"risk","label":"Risk","finding":"pending","detail":"Waiting on the briefing…","tab":"preflight","section":"Risk Assessment"}],"self_checks":[]}"#
-        let a = try answer(json)
-        #expect(Glance.lines(a).map(\.words) == ["Risk: Waiting on the briefing…"])
-        #expect(Glance.rest(a).isEmpty && Glance.restWords(a) == nil)
-    }
-
-    @Test func aLongFindingIsCutAtAWordToTheLongestLine() throws {
-        let detail = String(repeating: "cloud layers along the route ", count: 8)
-        let item = VerdictItem(detail: detail, finding: "caution", key: "weather", label: "Weather", tab: "enroute")
-        let words = Glance.sentence(item)
-        #expect(words.count <= Glance.longest)
-        #expect(words.hasSuffix("…") && !words.hasSuffix(" …"))
-        #expect(words.hasPrefix("Weather: cloud layers"))
+    @Test func theRestIsOneRowWithTheEnginesWords() throws {
+        let glance = Glance(try answer())
+        // The runways, not worked out, are counted; the clear findings
+        // follow in the planner's order.
+        #expect(glance.rest.map(\.key) == ["airspace", "altitude", "fuel", "runways"])
+        #expect(glance.restWords == "1 more to look at")
     }
 
     @Test func aClearFlightHasNoLinesAndOneRow() throws {
         let json = #"{"line":{"finding":"ok","words":"Go"},"items":[{"key":"weather","label":"Weather","finding":"ok","detail":"VFR","tab":"enroute"},{"key":"fuel","label":"Fuel","finding":"ok","detail":"Plenty","tab":"preflight"}],"self_checks":[]}"#
-        let a = try answer(json)
-        #expect(Glance.lines(a).isEmpty)
-        #expect(Glance.restWords(a) == "Weather and fuel: nothing to fix")
+        let glance = Glance(try answer(json))
+        #expect(glance.lines.isEmpty)
+        #expect(glance.restWords == "Weather, fuel: nothing to fix")
+        #expect(glance.restFinding == "ok")
     }
 }

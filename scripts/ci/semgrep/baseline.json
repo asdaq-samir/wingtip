@@ -11,8 +11,7 @@
  "planner-http-by-hand-phones": {
   "apps/android/app/src/main/kotlin/app/wingtipmaps/android/Charts.kt": 1,
   "apps/android/app/src/main/kotlin/app/wingtipmaps/android/diagnostics/DiagnosticsReporter.kt": 1,
-  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/offline/DownloadsModel.kt": 1,
-  "apps/ios/Wingtip/Diagnostics/DiagnosticsReporter.swift": 1
+  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/offline/DownloadsModel.kt": 1
  },
  "planner-http-by-hand-python": {
   "services/planner/app/routers/offline.py": 1

@@ -11,10 +11,10 @@ enum SampleDocument {
 
     /// Added once as the pilot's own, where the launch asks for it.
     @MainActor
-    static func addIfAsked(to library: DocumentLibrary) {
+    static func addIfAsked(to library: DocumentLibrary) async {
         guard CommandLine.arguments.contains(argument), !library.own.contains(where: { $0.name == "Sample Briefing Guide" }) else { return }
         guard let file = make() else { return }
-        library.add([file])
+        await library.add([file])
     }
 
     /// The outline is written with the pages, CoreGraphics' own

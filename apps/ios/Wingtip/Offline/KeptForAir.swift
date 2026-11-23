@@ -88,6 +88,11 @@ nonisolated enum KeptForAir {
         put(data, at: file("pictures", path, ext: "img", in: folder))
     }
 
+    /// Whether a picture is kept, by its file alone: not read to be asked.
+    static func hasPicture(_ path: String, in folder: URL = folder) -> Bool {
+        FileManager.default.fileExists(atPath: file("pictures", path, ext: "img", in: folder).path)
+    }
+
     static func picture(_ path: String, in folder: URL = folder) -> Data? {
         try? Data(contentsOf: file("pictures", path, ext: "img", in: folder))
     }
