@@ -41,12 +41,9 @@ export function FuelStopFold({
     <SuggestedPill
       onAdd={onAddAll}
       onHide={hideAll}
-      label={`${words}: add them to the route`}
-      dismissLabel={`Dismiss ${words}`}
-      shortcuts="Delete ContextMenu"
+      words={words}
       testId="route-fuel-fold"
       count={idents.length}
-      menuTestId="route-fuel-fold-menu"
       menu={
         <>
           <ContextMenuGroup>
