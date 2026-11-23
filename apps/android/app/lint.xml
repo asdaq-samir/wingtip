@@ -9,4 +9,16 @@
     <issue id="TrustAllX509TrustManager">
         <ignore path="**/bcpkix-*.jar" />
     </issue>
+    <!-- A newer library, Gradle plugin or Gradle being published is news,
+         not a fault in the commit: with warningsAsErrors on, these turned
+         an unchanged main red the night a release came out (CI audit
+         2026-11-23, H3), and the emulator's tests, which wait on the build,
+         were skipped with it. Renovate bumps the versions on purpose, so
+         lint names a newer one and fails nothing. NewerVersionAvailable,
+         off by default since it asks Maven Central on every run, stays
+         off: a severity given here would turn it on, and a check run
+         takes nothing from the live internet. -->
+    <issue id="GradleDependency" severity="informational" />
+    <issue id="AndroidGradlePluginVersion" severity="informational" />
+    <issue id="NewerVersionAvailable" severity="ignore" />
 </lint>
