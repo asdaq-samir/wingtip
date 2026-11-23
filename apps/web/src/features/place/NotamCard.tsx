@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { cn } from "cn";
 import { Badge } from "../../components/ui/badge";
 import { SheetCard } from "../../components/SheetCard";
@@ -55,9 +56,18 @@ function usePlanRole(n: FieldNotam, ident: string): { words: string; taken: bool
     alternate: is(alternate),
   };
   const roles = (Object.keys(plays) as PlanRole[]).filter((r) => plays[r]);
-  if (roles.length === 0) return null;
-  const [first] = callEngine("notam_affects", { text: n.raw, idents, roles }).affects;
-  return first ? { words: ROLE_WORDS[first.role], taken: first.taken } : null;
+  // Asked again only when the NOTAM or the plan's roles change, not on
+  // each minute's tick that draws NotamFull again (the r9 audit).
+  // The keys are words, so a new array with the same members is no change.
+  const raw = n.raw;
+  const identsKey = idents.join(" ");
+  const rolesKey = roles.join(" ");
+  return useMemo(() => {
+    if (!rolesKey) return null;
+    const asked = { text: raw, idents: identsKey.split(" "), roles: rolesKey.split(" ") as PlanRole[] };
+    const [first] = callEngine("notam_affects", asked).affects;
+    return first ? { words: ROLE_WORDS[first.role], taken: first.taken } : null;
+  }, [raw, identsKey, rolesKey]);
 }
 
 /** Whether it is in force now, the shared StatusBadge (the owner,

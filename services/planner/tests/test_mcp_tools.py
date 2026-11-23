@@ -157,6 +157,8 @@ def test_search_airports_ends_at_its_reach_with_no_next_page(monkeypatch):
     says it is the last, never a next_offset the tool would refuse."""
     many = [{"ident": f"K{n:03}", "name": "Springfield", "municipality": "Springfield"} for n in range(600)]
     monkeypatch.setattr(airports, "search_airports", lambda query, limit=8, **_: many[:limit])
+    # Counted by count_airports, not by a second search of every match (the round 9 audit).
+    monkeypatch.setattr(airports, "count_airports", lambda query, **_: len(many))
     page = answer(call("search_airports", {"query": "Springfield", "limit": 25, "offset": 490}))
     assert page["count"] == 25 and page["has_more"] is False and page["next_offset"] is None and "first 515" in page["note"]
     # And its total is the number that matched, never null beside has_more false (the round 7

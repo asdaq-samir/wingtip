@@ -68,8 +68,11 @@ struct NotamListView: View {
         case .route:
             let model = ready
             await model.fetchNotams(force: force)
-            untilCharts = await FieldNotamWords.untilCharts(model.notams?.notams ?? [])
-            ranked = model.notams
+            // Read once: the model may fetch again across the await, and the
+            // rows must be the ones untilCharts was read for (the r9 audit).
+            let fresh = model.notams
+            untilCharts = await FieldNotamWords.untilCharts(fresh?.notams ?? [])
+            ranked = fresh
             problem = model.notamsProblem ?? (plan.routed ? nil : "Plan a route to see its NOTAMs.")
         case .field(let ident):
             do {
@@ -144,8 +147,10 @@ enum NotamRows {
     /// PERM with an EST end or none, JO 7930.2 4-2-1), its end is
     /// "permanent", never the EST date (the owner, 2026-11-23: "For a
     /// permanent, just say permanent"), as on the field's list. Where the
-    /// card could not be read (nil), its end is the one as sent, below, not
-    /// a firm date that may only be the estimate (the r8 audit's I-M1).
+    /// card could not be read (nil, an engine error), no end is said at
+    /// all, never a firm date that may only be the estimate (the r8 audit's
+    /// I-M1) nor "estimated", which the owner ruled out: "In effect now" or
+    /// "From …" (the r9 audit).
     static func when(_ notam: APIRankedNotam, untilCharts: Bool? = nil, now: Date = .now) -> String {
         let (s, e) = (notam.starts.flatMap(date), notam.ends.flatMap(date))
         let tfr = notam.kind == "tfr"
@@ -157,11 +162,9 @@ enum NotamRows {
         let ends = firm.map { FieldNotamWords.when($0, zone: nil, year: year) }
         if notam.inForce == true {
             if permanent { return "In effect now, permanent" }
-            if unread { return "In effect now, end as sent" }
             return ends.map { "In effect now, until \($0)" } ?? "In effect now"
         }
         if permanent { return starts.map { "From \($0), permanent" } ?? "Permanent" }
-        if unread { return starts.map { "From \($0), end as sent" } ?? "End as sent" }
         if let starts { return ends.map { "\(starts)–\($0)" } ?? "From \(starts)" }
         return ends.map { "Until \($0)" } ?? ""
     }

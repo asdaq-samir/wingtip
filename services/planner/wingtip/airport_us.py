@@ -130,9 +130,7 @@ def search_airports(
         path = _ensure_cached(OURAIRPORTS_URL, cache_path)
         index = _search_index_of(str(path), path.stat().st_mtime, *_faa_key(cache_path))
         return _rows(df, _indexed_matches(index, query, limit, near or []))
-    exact = (df["_ident_upper"] == query) | (df["_local_upper"] == query) | (df["_display_ident"] == query)
-    ident_hit = ~exact & (df["_ident_upper"].str.startswith(query) | df["_local_upper"].str.startswith(query))
-    word_hit = ~exact & ~ident_hit & df["_words_upper"].str.contains(" " + query, regex=False)
+    exact, ident_hit, word_hit = _scanned_hits(df, query)
     matches = pd.concat([df[exact].assign(_rank=0), df[ident_hit].assign(_rank=1), df[word_hit].assign(_rank=2)])
     matches = matches.assign(
         _shut=matches["_closed"].notna(),
@@ -141,6 +139,31 @@ def search_airports(
     )
     matches = matches.sort_values(["_rank", "_shut", "_size_rank", "_named", "_near", "_display_ident"]).head(limit)
     return _rows(df, [df.index.get_loc(i) for i in matches.index])
+
+
+def count_airports(query: str, cache_path: Path = DEFAULT_CACHE_PATH) -> int:
+    """How many airports `search_airports` matches `query` with, all of
+    them, for a total past the last page it lists (the connector's
+    search_airports): counted, not each one's row built."""
+    query = query.strip().upper()
+    if not query:
+        return 0
+    df = _us_airports(cache_path)
+    if " " not in query:
+        path = _ensure_cached(OURAIRPORTS_URL, cache_path)
+        index = _search_index_of(str(path), path.stat().st_mtime, *_faa_key(cache_path))
+        return sum(len(rows) for rows in _indexed_hits(index, query))
+    return int(sum(hits.sum() for hits in _scanned_hits(df, query)))
+
+
+def _scanned_hits(df: pd.DataFrame, query: str) -> tuple[pd.Series, pd.Series, pd.Series]:
+    """A query of more than one word's matches, scanned: the ident whole,
+    the idents that start with it, the names and towns with a word that
+    does, each row in one of them only."""
+    exact = (df["_ident_upper"] == query) | (df["_local_upper"] == query) | (df["_display_ident"] == query)
+    ident_hit = ~exact & (df["_ident_upper"].str.startswith(query) | df["_local_upper"].str.startswith(query))
+    word_hit = ~exact & ~ident_hit & df["_words_upper"].str.contains(" " + query, regex=False)
+    return exact, ident_hit, word_hit
 
 
 def search_index(cache_path: Path = DEFAULT_CACHE_PATH) -> bytes:
@@ -256,6 +279,20 @@ def _indexed_matches(index: dict, query: str, limit: int, near: list[tuple[float
     towns with a word that does; the bigger fields first in each, then a
     name that starts with it, then the nearest to `near`, then by ident."""
 
+    ranks = [(rank, row) for rank, rows in enumerate(_indexed_hits(index, query)) for row in rows]
+    nearness = _nearness_nm([index["lat"][row] for _, row in ranks], [index["lon"][row] for _, row in ranks], near or [])
+    ranked = [
+        (rank, index["closed"][row], index["size"][row], not index["names"][row].startswith(query), float(nm), index["display"][row], row)
+        for (rank, row), nm in zip(ranks, nearness)
+    ]
+    return [row for *_, row in sorted(ranked)[:limit]]
+
+
+def _indexed_hits(index: dict, query: str) -> tuple[set[int], set[int], set[int]]:
+    """A one-word query's rows from the index: the ident whole, the idents
+    that start with it, the names and towns with a word that does, each
+    row in one of them only."""
+
     def prefixed(keys: list[tuple[str, int]]) -> set[int]:
         found, at = set(), bisect.bisect_left(keys, (query,))
         while at < len(keys) and keys[at][0].startswith(query):
@@ -266,10 +303,4 @@ def _indexed_matches(index: dict, query: str, limit: int, near: list[tuple[float
     exact = index["exact"].get(query, set())
     ident = prefixed(index["idents"]) - exact
     word = prefixed(index["words"]) - exact - ident
-    ranks = [(rank, row) for rank, rows in enumerate((exact, ident, word)) for row in rows]
-    nearness = _nearness_nm([index["lat"][row] for _, row in ranks], [index["lon"][row] for _, row in ranks], near or [])
-    ranked = [
-        (rank, index["closed"][row], index["size"][row], not index["names"][row].startswith(query), float(nm), index["display"][row], row)
-        for (rank, row), nm in zip(ranks, nearness)
-    ]
-    return [row for *_, row in sorted(ranked)[:limit]]
+    return exact, ident, word

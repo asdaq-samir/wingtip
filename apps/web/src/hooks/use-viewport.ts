@@ -95,21 +95,38 @@ const onVisual = (onChange: () => void) => {
   visual?.addEventListener("resize", onChange);
   visual?.addEventListener("scroll", onChange);
   // The focus leaving a field puts the keyboard away before the window
-  // has grown back; read again on each move of the focus.
+  // has grown back; read again on each move of the focus. The leaving is
+  // read a frame later: moving from one field to the next fires focusout
+  // before focusin, and read between them, with no field focused, the
+  // keyboard (still up on iOS) read as down for a moment, enough for a
+  // layout read to start the foot bar's transition (the r9 audit).
+  let frame = 0;
+  const left = () => {
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      // Gone from every field: the window is measured afresh, so a turn
+      // of the iPad with the keyboard up, which started the tallest at
+      // the shrunk height, is put right by the next field's keyboard.
+      if (!typing()) tallest.delete(window.innerWidth);
+      onChange();
+    });
+  };
   document.addEventListener("focusin", onChange);
-  document.addEventListener("focusout", onChange);
+  document.addEventListener("focusout", left);
   return () => {
+    cancelAnimationFrame(frame);
     document.removeEventListener("focusin", onChange);
-    document.removeEventListener("focusout", onChange);
+    document.removeEventListener("focusout", left);
     window.removeEventListener("resize", onChange);
     visual?.removeEventListener("resize", onChange);
     visual?.removeEventListener("scroll", onChange);
   };
 };
 
-/** The window's tallest height seen at its present width: a turn of the
- *  phone starts it again. */
-let tallest = { width: 0, height: 0 };
+/** The window's tallest height seen at each width: a turn of the phone
+ *  back to a width seen before finds its tallest again, even with the
+ *  keyboard up. */
+const tallest = new Map<number, number>();
 /** Less than this short of the tallest is Safari's bars folding, not a
  *  keyboard: its toolbar and address bar are under 100 points together. */
 const KEYBOARD_PX = 150;
@@ -129,8 +146,11 @@ const keyboard = held(() => {
   const visual = window.visualViewport;
   if (!visual) return "0|0";
   const inset = Math.max(0, Math.round(window.innerHeight - visual.height - visual.offsetTop));
-  if (tallest.width !== window.innerWidth) tallest = { width: window.innerWidth, height: 0 };
-  tallest.height = Math.max(tallest.height, window.innerHeight, visual.height);
+  const tall = Math.max(tallest.get(window.innerWidth) ?? 0, window.innerHeight, visual.height);
+  // A desktop window dragged wider meets a width a pixel at a time: keep
+  // a phone's two and an iPad's few, not every one.
+  if (tallest.size > 8 && !tallest.has(window.innerWidth)) tallest.clear();
+  tallest.set(window.innerWidth, tall);
   // Up when the visible part is well short of the window's tallest. iOS
   // 26's Safari shrinks the window itself with the keyboard, as Chrome on
   // Android does, so the window and the visual viewport agree and the
@@ -140,7 +160,7 @@ const keyboard = held(() => {
   // keyboard comes up for: a desktop's window, an iPad's window dragged
   // shorter or a touch laptop's is no keyboard (the r8 audit's W-L1).
   const touch = window.matchMedia("(any-pointer: coarse)").matches;
-  const up = inset > 0 || (touch && typing() && tallest.height - visual.height > KEYBOARD_PX);
+  const up = inset > 0 || (touch && typing() && tall - visual.height > KEYBOARD_PX);
   return `${inset}|${up ? 1 : 0}`;
 }, onVisual);
 const useKeyboardReading = () => useSyncExternalStore(keyboard.subscribe, keyboard.get, () => "0|0").split("|");
