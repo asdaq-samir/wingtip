@@ -8,7 +8,7 @@ from wingtip.aircraft import load_aircraft_profile
 
 from app.gonogo import ask
 from app.gonogo.runways import runway_checks
-from app.gonogo.weight_balance import balance, default_load
+from app.gonogo.weight_balance import balance, with_empty
 
 
 # The engine's names runway_checks asks inside the engine,
@@ -40,8 +40,8 @@ def test_over_its_weight_and_the_baggage_over_its_own():
     assert "The baggage, 170 lb in all, is over its 120 lb" in b["problems"]
 
 
-def test_the_default_load_is_the_sample_airplane_and_a_pilot():
-    assert default_load(LOADING, 40) == {"empty_weight_lb": 1642, "empty_arm_in": 38.12, "stations_lb": [170, 0, 0, 0], "fuel_gal": 40}
+def test_a_load_with_the_empty_weight_holds_the_samples_stations_until_replaced():
+    assert with_empty(LOADING, 40) == {"empty_weight_lb": 1642, "empty_arm_in": 38.12, "stations_lb": [170, 0, 0, 0], "fuel_gal": 40}
 
 
 def test_takes_turf_grass_dirt_and_gravel_as_soft_and_asphalt_not():

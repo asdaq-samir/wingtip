@@ -1,5 +1,5 @@
 {
-  "_note": "A NOTAM's own card, the engine's notam_card (engine/crates/weather/src/notam_read/card.rs), read from its parts as FAA Order JO 7930.2 gives them: the keyword (1-2-1), a surface and its condition (3-3-5, 3-3-6; CLSD and NA, JO 7340.2), an FDC procedure NOTAM's titles (7-1-3), PERM (4-2-1). The first is the owner's FDC 6/3373 at KARR (2026-11-23); each answer is worked by hand from the NOTAM's words. engine/facade/tests/notam_read.rs asks the engine each case.",
+  "_note": "A NOTAM's own card, the engine's notam_card (engine/crates/weather/src/notam_read/card.rs), read from its parts as FAA Order JO 7930.2 gives them: the keyword (1-2-1), a surface and its condition (3-3-5, 3-3-6; CLSD and NA, JO 7340.2), an FDC procedure NOTAM's titles (7-1-3), PERM (4-2-1), and a permanent one with an EST end or none running until the charts are updated. The first is the owner's FDC 6/3373 at KARR (2026-11-23); each answer is worked by hand from the NOTAM's words. engine/facade/tests/notam_read.rs asks the engine each case.",
   "cases": [
     {
       "about": "A runway closed for good takes the field's RNAV departures away (SID, 7-1-3; PERMANENTLY CLSD; NA)",
@@ -10,13 +10,14 @@
         "title": "Runway 18/36 closed",
         "effect": "Runway 18/36 is permanently closed, so its RNAV departures are not authorized.",
         "permanent": true,
+        "until_charts": true,
         "procedures": [
-          { "name": "ADELL 8", "rnav": true },
-          { "name": "BLOKR 8", "rnav": true },
-          { "name": "CARYN 8", "rnav": true },
-          { "name": "DARCY 8", "rnav": true },
-          { "name": "ELANR 9", "rnav": true },
-          { "name": "OBENE 3", "rnav": true }
+          { "name": "ADELL 8", "rnav": true, "departure": true },
+          { "name": "BLOKR 8", "rnav": true, "departure": true },
+          { "name": "CARYN 8", "rnav": true, "departure": true },
+          { "name": "DARCY 8", "rnav": true, "departure": true },
+          { "name": "ELANR 9", "rnav": true, "departure": true },
+          { "name": "OBENE 3", "rnav": true, "departure": true }
         ]
       }
     },
@@ -29,6 +30,7 @@
         "title": "Runway 18/36 closed",
         "effect": "Runway 18/36 is closed.",
         "permanent": false,
+        "until_charts": false,
         "procedures": []
       }
     },
@@ -41,6 +43,7 @@
         "title": "Taxiway B closed",
         "effect": "Taxiway B is permanently closed.",
         "permanent": true,
+        "until_charts": true,
         "procedures": []
       }
     },
@@ -53,6 +56,7 @@
         "title": "Glide slope runway 36 out of service",
         "effect": "Glide slope runway 36 is out of service.",
         "permanent": false,
+        "until_charts": false,
         "procedures": []
       }
     },
@@ -65,7 +69,8 @@
         "title": "BENKY 6 arrival not authorized",
         "effect": "The BENKY 6 arrival is not authorized.",
         "permanent": false,
-        "procedures": [{ "name": "BENKY 6", "rnav": false }]
+        "until_charts": false,
+        "procedures": [{ "name": "BENKY 6", "rnav": false, "departure": false }]
       }
     },
     {
@@ -77,6 +82,7 @@
         "title": null,
         "effect": null,
         "permanent": false,
+        "until_charts": false,
         "procedures": []
       }
     },
@@ -89,6 +95,7 @@
         "title": "Taxiway A closed between taxiway B and taxiway C",
         "effect": "Taxiway A is closed between taxiway B and taxiway C.",
         "permanent": false,
+        "until_charts": false,
         "procedures": []
       }
     },
@@ -101,6 +108,7 @@
         "title": "Taxiway A closed between taxiway B and runway 01/19",
         "effect": "Taxiway A is closed between taxiway B and runway 01/19.",
         "permanent": false,
+        "until_charts": false,
         "procedures": []
       }
     },
@@ -113,6 +121,7 @@
         "title": null,
         "effect": null,
         "permanent": false,
+        "until_charts": false,
         "procedures": []
       }
     },
@@ -125,6 +134,7 @@
         "title": "Runway 18/36 closed except taxiing",
         "effect": "Runway 18/36 is closed except taxiing.",
         "permanent": false,
+        "until_charts": false,
         "procedures": []
       }
     },
@@ -137,6 +147,7 @@
         "title": null,
         "effect": null,
         "permanent": false,
+        "until_charts": false,
         "procedures": []
       }
     }

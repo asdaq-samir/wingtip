@@ -13,7 +13,7 @@ import re
 from mcp.server.mcpserver.exceptions import ToolError
 from wingtip.aircraft import OWN_AIRPLANE, UnknownAircraft, aircraft_profile, profile_path
 
-from ..gonogo.weight_balance import default_load
+from ..gonogo.weight_balance import with_empty
 from . import records
 
 
@@ -77,7 +77,7 @@ def load(a: dict, loading: dict, stations_lb, fuel_gal: float, empty=(None, None
     `load` take it, or what is missing for it: never the POH's sample
     airplane and its 170 lb pilot in the pilot's place. The empty weight
     and moment are the pilot's (theirs given, else the airplane's weight
-    and balance record), read to an arm by the engine's own default_load."""
+    and balance record), read to an arm by with_empty."""
     figures = a.get("figures") or {}
     weight = empty[0] if empty[0] is not None else figures.get("emptyWeightLb")
     moment = empty[1] if empty[1] is not None else figures.get("emptyMomentLbIn")
@@ -92,7 +92,7 @@ def load(a: dict, loading: dict, stations_lb, fuel_gal: float, empty=(None, None
     if missing:
         return None, missing
     own = {**loading, "sample_empty_weight_lb": weight, "sample_empty_moment_lb_in": moment}
-    return {**default_load(own, fuel_gal), "stations_lb": list(stations_lb)}, []
+    return {**with_empty(own, fuel_gal), "stations_lb": list(stations_lb)}, []
 
 
 def _inspections(i: dict) -> dict:

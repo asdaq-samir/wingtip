@@ -1720,10 +1720,12 @@ its figures are (decision
 On all three apps:
 
 - **A product's time says whose it is.** A report's, a forecast's, a
-  NOTAM's, a TFR's or a hazard's time is written on the device's clock
+  TFR's or a hazard's time is written on the device's clock
   with its zone and UTC beside it, "15:00 CST (2100Z)" (the web's
   `clockAndZulu` and `tfrTimes`, the iPhone's TfrCard), or in Zulu alone
-  where the product's line is short. A local time with no zone is the
+  where the product's line is short. A NOTAM's time is the field's own
+  clock with its zone's short name alone, "13:43 CDT", or "UTC" where the
+  zone is not known (section 20). A local time with no zone is the
   airplane's own (the nav log's ETAs), and where that can be read as
   another clock it names its zone: the nav log's ETA column, the printed
   kneeboard and its head, the FPL timeline once the device keeps another
@@ -2021,11 +2023,17 @@ owner's word):
 5. **What it takes away**, under "Not authorized", by the procedures'
    charted names in capitals and their numbers: "ADELL 8 · BLOKR 8 ·
    CARYN 8 · DARCY 8 · ELANR 9 · OBENE 3 (RNAV)".
-6. **Its times in words**, in the field's own time with its zone: "In
-   effect since 27 May 2026, 13:43 CDT"; a permanent condition with an
-   estimated end "Until charts are updated (est. 27 May 2028)"; otherwise
-   "Until ...", estimated where EST says so, "· in 18d". The year where
-   either end is not this year's.
+6. **Its times, one line each**, as the list's rows say them
+   (`NotamTimeLines`): "Since 05/27/26 13:43 CDT", "Ends 05/27/28 13:43
+   CDT · in 551d" (Starts, with how soon, for one to come). In the
+   field's own time named by its zone's short name ("CST" at O'Hare),
+   "UTC" where the zone is not known; never "local", never a Z time
+   beside it, never "estimated" (the owner, 2026-11-23). A permanent
+   one's end is "Permanent" (the engine's `until_charts`: a permanent
+   condition with an EST end, or none; or a PERM end). The year on both
+   lines only where either is not this year's. Each line stays one line
+   at 390 pt and the owner's 19.65 px text: where "· in 551d" would not
+   fit, it is dropped, never wrapped.
 7. **As sent**, folded (the stock Collapsible), never rewritten.
 
 Title, category, effect, the list and permanence are the engine's
@@ -2034,8 +2042,7 @@ NOTAM they are null and the card says its words written out
 (`notam_read`) under its heading, as before. In those words a
 procedure's name keeps its capitals and its number is a word ("BLOKR
 Eight departure (RNAV)"), every one of a list alike. The list's rows say
-the same title, with Since and Ends lines ("05/27/28 13:43 local
-(1843Z), estimated · in 550d").
+the same title, with the same Since and Ends lines.
 
 ## Changing a rule
 

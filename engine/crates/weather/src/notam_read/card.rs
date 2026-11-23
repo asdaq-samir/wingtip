@@ -52,7 +52,21 @@ pub struct Card {
     pub title: Option<String>,
     pub effect: Option<String>,
     pub permanent: bool,
+    /// It stays until the charts show it, so its end, where it has one, is
+    /// only the estimate of when (until_charts).
+    pub until_charts: bool,
     pub procedures: Vec<Procedure>,
+}
+
+/// Whether a permanent condition's end is "until the charts are
+/// updated" (the owner's rule of 2026-11-23, FDC 6/3373, which the apps
+/// had each kept): a PERM condition (JO 7930.2 4-2-1) stays until the
+/// charts show it, and an end marked EST is only an estimate (4-2-1), so
+/// a permanent one with an EST end, or with none, lasts until the charts
+/// are updated, the EST time the estimate of when. A firm end is said as
+/// its time. `has_end`: the text, or the caller (the feed's end), gives one.
+pub fn until_charts(permanent: bool, estimated: bool, has_end: bool) -> bool {
+    permanent && (estimated || !has_end)
 }
 
 /// The kind of thing it is about, as a label: a procedure NOTAM's by what
@@ -146,9 +160,22 @@ fn taken_by(s: &[&str]) -> Option<Taken> {
 }
 
 /// The NOTAM's sentences, each its words as sent: split at its full stops
-/// and the "..." between a procedure NOTAM's titles.
+/// and the "..." between a procedure NOTAM's titles, but never at a
+/// decimal point ("118.3", "2.5 NM"), which would cut a closure's sentence
+/// in two and lose it.
 fn sentences(t: &str) -> Vec<Vec<&str>> {
-    t.split('.').map(|s| s.split_whitespace().collect::<Vec<_>>()).filter(|s| !s.is_empty()).collect()
+    let b = t.as_bytes();
+    let digit = |i: Option<usize>| i.and_then(|i| b.get(i)).is_some_and(u8::is_ascii_digit);
+    let mut out = Vec::new();
+    let mut from = 0;
+    for (i, &c) in b.iter().enumerate() {
+        if c == b'.' && !(digit(i.checked_sub(1)) && digit(Some(i + 1))) {
+            out.push(&t[from..i]);
+            from = i + 1;
+        }
+    }
+    out.push(&t[from..]);
+    out.into_iter().map(|s| s.split_whitespace().collect::<Vec<_>>()).filter(|s| !s.is_empty()).collect()
 }
 
 /// "closed", "out of service", ... in a what as the engine says it: the
@@ -159,7 +186,9 @@ const CONDITIONS: [&str; 6] = ["closed", "out of service", "not available", "unu
 /// A what ("Glide slope runway 09 out of service", "ILS RWY 36: not
 /// authorized") as a sentence: "... is out of service.".
 fn sentence_of(what: &str, permanent: bool) -> Option<String> {
-    let (at, c) = CONDITIONS.iter().find_map(|c| what.find(&[" ", c].concat()).map(|at| (at, *c)))?;
+    // The condition met first in the words, not first in the list: "...
+    // unusable ... closed" is said at "unusable".
+    let (at, c) = CONDITIONS.iter().filter_map(|c| what.find(&[" ", c].concat()).map(|at| (at, *c))).min_by_key(|(at, _)| *at)?;
     let subject = what[..at].trim_end_matches(':');
     let rest = &what[at + 1 + c.len()..];
     let plural = subject.starts_with("Taxiways") || subject.starts_with("Runways") || subject.contains(" and ");
@@ -182,6 +211,13 @@ fn kind_of(p: &[Procedure]) -> String {
 
 /// The NOTAM's `text`, as sent, read for its card.
 pub fn card(text: &str, idents: &[String]) -> Card {
+    card_with_end(text, idents, false)
+}
+
+/// card, with whether the caller holds an end of its own (the feed's), so
+/// a NOTAM whose text gives none is not said to run to the charts when the
+/// feed gives a firm one.
+pub fn card_with_end(text: &str, idents: &[String], known_end: bool) -> Card {
     let r = read(text, idents);
     let t = text.trim();
     let account = (r.form == "domestic").then(|| t.split_whitespace().next().map(|w| w.trim_start_matches('!').to_owned())).flatten();
@@ -193,7 +229,8 @@ pub fn card(text: &str, idents: &[String]) -> Card {
     if takes.contains(&Taken::Unsure) {
         // Part of something not authorized, which the card cannot say whole:
         // the NOTAM's words written out stand in.
-        return Card { account, category, permanent: r.permanent, ..Card::default() };
+        let until_charts = until_charts(r.permanent, r.estimated, known_end || r.ends.is_some());
+        return Card { account, category, permanent: r.permanent, until_charts, ..Card::default() };
     }
     let named = procedures(&words);
     let runway = takes.iter().find_map(|k| if let Taken::Runway(d) = k { Some(d.clone()) } else { None });
@@ -235,12 +272,13 @@ pub fn card(text: &str, idents: &[String]) -> Card {
         (None, true) => Some(not_authorized()),
         (None, false) => r.what.as_deref().and_then(|w| sentence_of(w, permanent)),
     };
-    Card { account, category, title, effect, permanent, procedures }
+    let until_charts = until_charts(permanent, r.estimated, known_end || r.ends.is_some());
+    Card { account, category, title, effect, permanent, until_charts, procedures }
 }
 
-/// `notam_card`: `{"text", "idents"?}` to `{"account", "category",
-/// "title", "effect", "permanent", "procedures": [{"name", "rnav",
-/// "departure"}]}`.
+/// `notam_card`: `{"text", "idents"?, "ends"?}` to `{"account",
+/// "category", "title", "effect", "permanent", "until_charts",
+/// "procedures": [{"name", "rnav", "departure"}]}`.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     if name != "notam_card" {
         return Err(format!("{name}: not a rule of notam_card"));
@@ -248,7 +286,8 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let text = v.get("text").and_then(Value::as_str).ok_or("notam_card: \"text\" is missing")?;
     let idents: Vec<String> =
         v.get("idents").and_then(Value::as_array).unwrap_or(&[]).iter().filter_map(Value::as_str).map(str::to_owned).collect();
-    let c = card(text, &idents);
+    let known_end = v.get("ends").and_then(Value::as_str).is_some_and(|e| !e.trim().is_empty());
+    let c = card_with_end(text, &idents, known_end);
     let mut out = String::from("{");
     for (key, value) in [("account", &c.account), ("category", &c.category), ("title", &c.title), ("effect", &c.effect)] {
         out.push('"');
@@ -258,6 +297,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         out.push(',');
     }
     out.push_str(if c.permanent { "\"permanent\":true," } else { "\"permanent\":false," });
+    out.push_str(if c.until_charts { "\"until_charts\":true," } else { "\"until_charts\":false," });
     out.push_str("\"procedures\":[");
     for (i, p) in c.procedures.iter().enumerate() {
         out.push_str(if i == 0 { "{\"name\":" } else { ",{\"name\":" });

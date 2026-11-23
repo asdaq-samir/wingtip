@@ -8969,8 +8969,20 @@ nonisolated enum EngineContract {
         var effect: String?
         /// The condition is permanent: PERM as its end, or PERMANENTLY in its words (it stays until the charts show it).
         var permanent: Bool
+        /// Its end is "until the charts are updated": a permanent condition (PERM, JO 7930.2 4-2-1) with an end marked EST, or with none, stays until the charts show it, the EST time only the estimate of when. False where its end, firm, is its end.
+        var untilCharts: Bool
         /// The procedures it takes away (NA), in its order; empty where it takes none.
         var procedures: [EngineContract.NotamCardAnswerProceduresItem]
+
+        enum CodingKeys: String, CodingKey {
+            case account
+            case category
+            case title
+            case effect
+            case permanent
+            case untilCharts = "until_charts"
+            case procedures
+        }
     }
 
     nonisolated struct NotamCardAnswerProceduresItem: Codable, Equatable, Sendable {
@@ -8987,6 +8999,8 @@ nonisolated enum EngineContract {
         var text: String
         /// The field's idents (OSH, KOSH), kept as written.
         var idents: [String]?
+        /// The end the caller holds besides the text's own (the feed's), ISO 8601 UTC; a firm one keeps a permanent NOTAM whose text gives no end from being said to run until the charts are updated.
+        var ends: String?
     }
 
     nonisolated struct NotamReadAnswer: Codable, Equatable, Sendable {
@@ -11523,7 +11537,7 @@ nonisolated enum EngineContract {
     nonisolated struct RouteJurisdictionAnswerLegsItem: Codable, Equatable, Sendable {
         /// The countries other than the United States met along the leg, its ends included, in the order met.
         var codes: [String]
-        /// The leg's own warning where it meets a country neither of its ends is in, named by where it goes and where it crosses, "The leg to KBUF crosses Canada (Ontario): Canadian rules not checked — figures use US rules"; null otherwise (a leg into a field in Canada is said at the field).
+        /// The leg's own warning where it meets a country, or a province of Canada, neither of its ends is in, named by where it goes and where it crosses, "The leg to KBUF crosses Canada (Ontario): Canadian rules not checked — figures use US rules"; null otherwise (a leg into a field in Canada is said at the field).
         var caution: String?
     }
 

@@ -11,7 +11,8 @@ import org.jspecify.annotations.Nullable;
  *  called overdue, nor current. The ELT battery's date is the one marked on
  *  the transmitter (14 CFR 91.207(c)), and so may be ahead. `forHire` says
  *  whether it carries people or is given for instruction for hire, when
- *  91.409(b)'s 100-hour inspection applies; left out, it stays as it was. */
+ *  91.409(b)'s 100-hour inspection applies; left out, like the dates, it is
+ *  not said (and read as for hire, the safe side). */
 public record InspectionsRequest(
         @PastOrPresent(message = "annualOn cannot be in the future") @Nullable
         LocalDate annualOn,

@@ -28,11 +28,14 @@ each pilot's share by a hash it cannot be read back from. The planner prunes all
 three on a schedule (wingtip.traffic.radar.prune, from app.main), not
 only when ingest or a request happens to write.
 - beats: what ingest last said of each feed and of itself (its health).
+- keys: the key the shares are hashed with where the settings give none
+  (share_key), made once at random and never logged.
 """
 
 from __future__ import annotations
 
 import json
+import secrets
 import sqlite3
 import threading
 
@@ -52,6 +55,7 @@ _SCHEMA = """
     CREATE INDEX IF NOT EXISTS following_hex ON following (hex);
     CREATE TABLE IF NOT EXISTS points (hex TEXT, t REAL, point TEXT, PRIMARY KEY (hex, t)) WITHOUT ROWID;
     CREATE TABLE IF NOT EXISTS beats (name TEXT PRIMARY KEY, at REAL, state TEXT);
+    CREATE TABLE IF NOT EXISTS keys (name TEXT PRIMARY KEY, value BLOB);
 """
 
 
@@ -187,19 +191,46 @@ def looked(since: float) -> list[tuple[float, float, float]]:
 def follow(hex_id: str, who: str, at: float, each: int, most: int) -> None:
     """An airplane followed from now on, or still, in `who`'s share: `since`
     is when its card was last opened, which its expiry counts from. At most
-    `each` in one share, so one account opening cards cannot push every
-    other pilot's airplanes out (the safety audit of 2026-11-23, M5), and
-    `most` in all; past either, the ones whose card was opened longest ago
-    go, from that share first."""
-    _write(
-        "INSERT INTO following (who, hex, since) VALUES (?, ?, ?) ON CONFLICT (who, hex) DO UPDATE SET since = excluded.since",
-        (who, hex_id, at),
-    )
-    _write(
-        "DELETE FROM following WHERE who = ? AND hex IN (SELECT hex FROM following WHERE who = ? ORDER BY since DESC LIMIT -1 OFFSET ?)",
-        (who, who, each),
-    )
-    _write("DELETE FROM following WHERE rowid IN (SELECT rowid FROM following ORDER BY since DESC LIMIT -1 OFFSET ?)", (most,))
+    `each` in one share, its own card opened longest ago going, so one
+    account opening cards cannot push every other pilot's airplanes out
+    (the safety audit of 2026-11-23, M5). Past `most` in all, the follows
+    go from the largest share first, its card opened longest ago, so
+    accounts filling the store between them lose their own before a pilot
+    who follows fewer loses any (the round 6 audit, P1). One transaction,
+    as both processes write."""
+    with _LOCK:
+        db = _connection()
+        db.execute("BEGIN IMMEDIATE")
+        try:
+            db.execute(
+                "INSERT INTO following (who, hex, since) VALUES (?, ?, ?) ON CONFLICT (who, hex) DO UPDATE SET since = excluded.since",
+                (who, hex_id, at),
+            )
+            db.execute(
+                "DELETE FROM following WHERE who = ? AND hex IN "
+                "(SELECT hex FROM following WHERE who = ? ORDER BY since DESC LIMIT -1 OFFSET ?)",
+                (who, who, each),
+            )
+            (count,) = db.execute("SELECT COUNT(*) FROM following").fetchone()
+            for _ in range(max(0, count - most)):
+                db.execute(
+                    "DELETE FROM following WHERE rowid = (SELECT rowid FROM following WHERE who = "
+                    "(SELECT who FROM following GROUP BY who ORDER BY COUNT(*) DESC, MIN(since) LIMIT 1) ORDER BY since LIMIT 1)"
+                )
+            db.execute("COMMIT")
+        except BaseException:
+            db.execute("ROLLBACK")
+            raise
+
+
+def share_key() -> bytes:
+    """The key the shares are hashed with where the settings give none:
+    made once at random and kept here, beside the shares it names, so both
+    processes and every restart hash a pilot alike; never logged."""
+    with _LOCK:
+        db = _connection()
+        db.execute("INSERT OR IGNORE INTO keys (name, value) VALUES ('follow_share', ?)", (secrets.token_bytes(32),))
+        return bytes(db.execute("SELECT value FROM keys WHERE name = 'follow_share'").fetchone()[0])
 
 
 def unfollow_before(before: float) -> int:

@@ -68,7 +68,8 @@ class UsageRollupTest {
                         row("2026-11-23", "/api/plan", 200, 3))));
         UsageRollup rollup = new UsageRollup(planner, jdbc, TX, NOV_23);
 
-        rollup.rollUp();
+        // Three rows written: today's is not finished.
+        assertThat(rollup.rollUp()).isEqualTo(3);
         // Nothing kept yet: as far back as the planner keeps.
         verify(planner).usageDaily(LocalDate.parse("2026-08-25"));
         assertThat(jdbc.queryForObject("SELECT sum(calls) FROM usage_days", Long.class))
@@ -84,5 +85,24 @@ class UsageRollupTest {
         assertThat(jdbc.queryForObject(
                         "SELECT calls FROM usage_days WHERE day = DATE '2026-11-22' AND status = 200", Long.class))
                 .isEqualTo(56);
+    }
+
+    @Test
+    void routesAlikeForTheirFirst300CharactersStayTwoRows() {
+        String stem = "/api/" + "x".repeat(UsageRollup.ROUTE_WIDTH);
+        String a = UsageRollup.fit(stem + "a", UsageRollup.ROUTE_WIDTH);
+        String b = UsageRollup.fit(stem + "b", UsageRollup.ROUTE_WIDTH);
+        assertThat(a).hasSize(UsageRollup.ROUTE_WIDTH).isNotEqualTo(b);
+        assertThat(UsageRollup.fit("/api/plan", UsageRollup.ROUTE_WIDTH)).isEqualTo("/api/plan");
+        // Two rows the planner sends for one row of the table are added.
+        LocalDate today = LocalDate.parse("2026-11-23");
+        var counts = UsageRollup.finished(
+                List.of(
+                        row("2026-11-20", stem + "a", 200, 4), row("2026-11-20", stem + "b", 200, 5),
+                        row("2026-11-20", "/api/plan", 200, 1), row("2026-11-20", "/api/plan", 200, 2)),
+                today);
+        assertThat(counts).hasSize(3);
+        assertThat(counts.get(new UsageRollup.Key(LocalDate.parse("2026-11-20"), "/api/plan", "GET", 200)))
+                .isEqualTo(3L);
     }
 }

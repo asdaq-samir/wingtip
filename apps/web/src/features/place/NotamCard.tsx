@@ -20,7 +20,8 @@ import {
   type NotamCardReading,
   type NotamReading,
 } from "./fieldNotams";
-import { cardTimes } from "./notamTimes";
+import { timeLines } from "./notamTimes";
+import { NotamTimeLines } from "./NotamTimeLines";
 import { TfrDetails } from "./TfrDetails";
 
 /** What the NOTAM's field is to the planned flight, as the chip says it
@@ -103,7 +104,7 @@ function NotamFull({ n, ident, card, read }: { n: FieldNotam; ident: string; car
   const active = n.in_force !== false;
   const role = usePlanRole(ident, card);
   // On the minute clock NotamState keeps, so "in 18d" moves on with it.
-  const times = cardTimes(n, read, card.permanent, useFieldZone(ident), useMinuteClock());
+  const times = timeLines(n, read, card.until_charts, useFieldZone(ident), useMinuteClock());
   const where = whereOf(n, read);
   // The category is a label only where the title says what happened;
   // otherwise it is the title already (NotamCard).
@@ -134,13 +135,7 @@ function NotamFull({ n, ident, card, read }: { n: FieldNotam; ident: string; car
         </p>
       )}
       {!tfr && card.procedures.length > 0 && <NotAuthorized card={card} />}
-      {times.length > 0 && (
-        <div className={cn("flex flex-col gap-0.5 tabular-nums", TEXT.prose)} data-testid="place-notam-when">
-          {times.map((t) => (
-            <span key={t}>{t}</span>
-          ))}
-        </div>
-      )}
+      <NotamTimeLines lines={times} className={TEXT.prose} />
       {where && (
         <p className={cn("text-muted-foreground", TEXT.prose)} data-testid="place-notam-where">
           {where}

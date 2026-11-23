@@ -7,6 +7,7 @@ all pruned on a schedule, whether or not ingest runs."""
 
 from __future__ import annotations
 
+import hashlib
 import sqlite3
 
 import pytest
@@ -105,8 +106,28 @@ def test_one_pilot_s_follows_never_push_out_another_s(wall, monkeypatch):
         traffic.follow(f"a0000{n}", "pilot-b")
     assert "b00001" in traffic.followed()
     assert traffic.followed()[:3] == ["a00009", "a00008", "a00007"] and len(traffic.followed()) == 4
-    # The store keeps no pilot's id, only a short hash of it.
+    # The store keeps no pilot's id, only a short keyed hash of it: not the
+    # unkeyed hash anyone could work out from a guessed id.
     assert "pilot-a" not in recorded.share_of("pilot-a") and len(recorded.share_of("pilot-a")) == 12
+    assert recorded.share_of("pilot-a") != hashlib.sha256(b"wingtip-follow:pilot-a").hexdigest()[:12]
+    assert recorded.share_of("pilot-a") == recorded.share_of("pilot-a") != recorded.share_of("pilot-b")
+
+
+def test_accounts_filling_the_store_lose_their_own_follows_first(wall, monkeypatch):
+    """The round 6 audit, P1: enough accounts, each at FOLLOW_EACH, fill
+    FOLLOW_MOST between them; a pilot who follows fewer then keeps theirs,
+    the largest share's oldest going instead."""
+    monkeypatch.setattr(recorded, "FOLLOW_EACH", 3)
+    monkeypatch.setattr(recorded, "FOLLOW_MOST", 6)
+    wall["t"] += 1
+    traffic.follow("b00001", "pilot-a")
+    for n, who in enumerate(["x1", "x1", "x1", "x2", "x2", "x2"]):
+        wall["t"] += 1
+        traffic.follow(f"c0000{n}", who)
+    assert "b00001" in traffic.followed() and len(traffic.followed()) == 6
+    wall["t"] += 1
+    traffic.follow("b00002", "pilot-c")
+    assert {"b00001", "b00002"} <= set(traffic.followed()) and len(traffic.followed()) == 6
 
 
 def test_track_points_go_after_30_days_though_the_airplane_is_never_heard_again(wall):

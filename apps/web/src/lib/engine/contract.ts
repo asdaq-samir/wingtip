@@ -3067,7 +3067,7 @@ export interface EngineContract {
     answer: NoAltitudeAnswer;
   };
   /**
-   * A NOTAM's own card, read from its parts (FAA Order JO 7930.2): its accountability (4-2-1, "FDC"); its category, a procedure NOTAM's by what the procedures are for (SID, ODP and DVA departures, STAR arrivals, IAP approaches; 1-2-1), the rest its heading; its title, what happened ("Runway 18/36 closed"): notam_read's what, else a surface its words close (RWY, TWY; 3-3-5, 3-3-6; CLSD, JO 7340.2), else the procedures not authorized (NA); one plain sentence of its effect ("Runway 18/36 is permanently closed, so its RNAV departures are not authorized."); whether the condition is permanent (PERM, 4-2-1, or its words' PERMANENTLY); and the procedures it takes away, each by its charted name and number (7-1-3: "ADELL EIGHT DEPARTURE (RNAV)" is "ADELL 8", RNAV). Each null or empty where the NOTAM's parts do not say all of it: the card then says its words written out (notam_read), never a guess.
+   * A NOTAM's own card, read from its parts (FAA Order JO 7930.2): its accountability (4-2-1, "FDC"); its category, a procedure NOTAM's by what the procedures are for (SID, ODP and DVA departures, STAR arrivals, IAP approaches; 1-2-1), the rest its heading; its title, what happened ("Runway 18/36 closed"): notam_read's what, else a surface its words close (RWY, TWY; 3-3-5, 3-3-6; CLSD, JO 7340.2), else the procedures not authorized (NA); one plain sentence of its effect ("Runway 18/36 is permanently closed, so its RNAV departures are not authorized."); whether the condition is permanent (PERM, 4-2-1, or its words' PERMANENTLY), and whether it then runs until the charts are updated (an EST end, or none); and the procedures it takes away, each by its charted name and number (7-1-3: "ADELL EIGHT DEPARTURE (RNAV)" is "ADELL 8", RNAV). Each null or empty where the NOTAM's parts do not say all of it: the card then says its words written out (notam_read), never a guess.
    */
   notam_card: {
     input: NotamCardInput;
@@ -10795,6 +10795,10 @@ export interface NotamCardInput {
    * The field's idents (OSH, KOSH), kept as written.
    */
   idents?: string[];
+  /**
+   * The end the caller holds besides the text's own (the feed's), ISO 8601 UTC; a firm one keeps a permanent NOTAM whose text gives no end from being said to run until the charts are updated.
+   */
+  ends?: string | null;
 }
 export interface NotamCardAnswer {
   /**
@@ -10817,6 +10821,10 @@ export interface NotamCardAnswer {
    * The condition is permanent: PERM as its end, or PERMANENTLY in its words (it stays until the charts show it).
    */
   permanent: boolean;
+  /**
+   * Its end is "until the charts are updated": a permanent condition (PERM, JO 7930.2 4-2-1) with an end marked EST, or with none, stays until the charts show it, the EST time only the estimate of when. False where its end, firm, is its end.
+   */
+  until_charts: boolean;
   /**
    * The procedures it takes away (NA), in its order; empty where it takes none.
    */
@@ -12933,7 +12941,7 @@ export interface RouteJurisdictionAnswer {
      */
     codes: ("US" | "CA" | "MX" | "BS" | "other")[];
     /**
-     * The leg's own warning where it meets a country neither of its ends is in, named by where it goes and where it crosses, "The leg to KBUF crosses Canada (Ontario): Canadian rules not checked — figures use US rules"; null otherwise (a leg into a field in Canada is said at the field).
+     * The leg's own warning where it meets a country, or a province of Canada, neither of its ends is in, named by where it goes and where it crosses, "The leg to KBUF crosses Canada (Ontario): Canadian rules not checked — figures use US rules"; null otherwise (a leg into a field in Canada is said at the field).
      */
     caution: string | null;
   }[];

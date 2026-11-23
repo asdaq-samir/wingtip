@@ -10,8 +10,13 @@ name through wingtip_native.call, as the web app asks them."""
 from . import ask
 
 
-def default_load(loading: dict, fuel_gal: float) -> dict:
-    """The loading's own sample (its POH's), and a pilot of 170 lb."""
+def with_empty(loading: dict, fuel_gal: float) -> dict:
+    """A load built on the loading's empty weight and moment (read to an
+    arm) with `fuel_gal` aboard, by the engine's gonogo_default_load. Its
+    stations are that rule's placeholders, the POH's sample and a pilot of
+    170 lb: the caller puts the pilot's own in before balancing it, as the
+    connector does (app.mcp.airplane), and no verdict balances them as the
+    flight's load (go/no-go sends no_load instead)."""
     return ask("gonogo_default_load", loading=loading, fuel_gal=fuel_gal)
 
 

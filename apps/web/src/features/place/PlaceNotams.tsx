@@ -7,6 +7,7 @@ import KeptAge from "../../components/KeptAge";
 import { notamCredit } from "../../lib/notamCoverage";
 import { TEXT } from "../../lib/text";
 import {
+  cardOf,
   readNotam,
   useFieldNotams,
   useFieldZone,
@@ -18,6 +19,7 @@ import {
 } from "./fieldNotams";
 import { NotamsState } from "./NotamsState";
 import { timeLines } from "./notamTimes";
+import { NotamTimeLines } from "./NotamTimeLines";
 import { NotamCard, NotamState } from "./NotamCard";
 import { WORDING } from "../../lib/wording/generated/wording";
 
@@ -26,7 +28,7 @@ const SECTION = "place-notams";
 
 /**
  * A NOTAM's lines in our words, under its what: when (in the field's own
- * time, UTC beside it) and where on the field, each the engine's
+ * time with its zone's name, a line each: NotamTimeLines) and where on the field, each the engine's
  * (notam_read) and each on its own line, the where only where the engine can say it (the owner,
  * 2026-11-11: "title(what), when, where ... on different lines"; then "Why
  * is not needed"). Where the engine has no what, the NOTAM's words written
@@ -35,21 +37,11 @@ const SECTION = "place-notams";
  * not a line (the owner, 2026-11-12: "dates are twice").
  */
 function NotamLines({ n, read, ident }: { n: FieldNotam; read: NotamReading; ident: string }) {
-  const times = timeLines(n, read, useFieldZone(ident));
+  const times = timeLines(n, read, cardOf(n, ident).until_charts, useFieldZone(ident));
   const where = whereOf(n, read);
   return (
     <span className={cn("flex flex-col gap-0.5", n.in_force === false && "text-muted-foreground")}>
-      {times.length > 0 && (
-        // Labelled, as ForeFlight's list gives them (notamTimes).
-        <span className="grid grid-cols-[auto_1fr] gap-x-2 tabular-nums" data-testid="place-notam-when">
-          {times.map((t) => (
-            <span key={t.label} className="contents">
-              <span className="text-muted-foreground">{t.label}</span>
-              <span>{t.value}</span>
-            </span>
-          ))}
-        </span>
-      )}
+      <NotamTimeLines lines={times} />
       {where && (
         <span className="text-muted-foreground" data-testid="place-notam-where">
           {where}

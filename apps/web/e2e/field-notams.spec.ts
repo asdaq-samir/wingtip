@@ -89,14 +89,14 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   const one = notams.getByTestId("place-notam");
   // The engine's reading in our words, a line each (the owner,
   // 2026-11-11: "title(what), when, where ... on different lines"): what
-  // with its Active badge, its start and end in the field's own time with
-  // UTC beside them (JO 7930.2 3-3-2: a NOTAM's times are UTC), and where.
+  // with its Active badge, its start and end in the field's own time named
+  // by its zone (the owner, 2026-11-23), and where.
   await expect(one.getByTestId("place-notam-state")).toHaveText("Active");
   await expect(one.getByTestId("place-notam-heading")).toHaveText("Runway 09/27 closed");
   // Labelled as ForeFlight's list: since its start, its end and how long is left.
   // Duluth keeps Central Standard Time in November, UTC-6, whatever the
   // device's own zone.
-  await expect(one.getByTestId("place-notam-when")).toHaveText(/^Since11\/10 06:00 local \(1200Z\)Ends11\/12 08:32 local \(1432Z\)/);
+  await expect(one.getByTestId("place-notam-when")).toHaveText(/^Since11\/10 06:00 CSTEnds11\/12 08:32 CST/);
   await expect(one.getByTestId("place-notam-condition")).toHaveText("closed");
   // No where for a runway's: its what names it (the owner, 2026-11-11).
   await expect(one.getByTestId("place-notam-where")).toHaveCount(0);
@@ -340,10 +340,9 @@ test("a NOTAM's card says what happened, its effect, the procedures it takes and
   await expect(full.getByTestId("place-notam-not-authorized")).toHaveText(
     "Not authorizedADELL 8 · BLOKR 8 · CARYN 8 · DARCY 8 · ELANR 9 · OBENE 3 (RNAV)",
   );
-  // Aurora keeps Central Daylight Time in May, UTC-5; the end is an estimate.
-  await expect(full.getByTestId("place-notam-when")).toHaveText(
-    "In effect since 27 May 2026, 13:43 CDTUntil charts are updated (est. 27 May 2028)",
-  );
+  // Aurora keeps Central Daylight Time in May, UTC-5; permanent, its EST
+  // end only the estimate, so "Permanent" (the owner, 2026-11-23).
+  await expect(full.getByTestId("place-notam-when")).toHaveText("Since05/27/26 13:43 CDTEndsPermanent");
   // As sent, folded until asked for, and never rewritten.
   await expect(full.locator("pre")).toHaveCount(0);
   const sent = full.getByRole("button", { name: "As Sent" });
