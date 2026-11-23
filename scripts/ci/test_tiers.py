@@ -69,8 +69,9 @@ META = {"passed", "budget", "halt"}
 WEB_SUITE = "scripts/ci/web_suite.sh"
 # The apps a pull request must still build when it touches their inputs
 # (#499), each by the reusable workflow ci.yml calls: iOS's UI smoke stays
-# after merge, but for a wave's validation (decision 0058's iPad leg).
-PHONES = {"native-android.yml": "", "native-ios.yml": "unit_only: ${{ !inputs.wave }}"}
+# after merge, but for a wave's validation and a rerun whose iOS failed
+# (decisions 0058 and 0062: plan.py's ios-full).
+PHONES = {"native-android.yml": "", "native-ios.yml": "unit_only: ${{ needs.changes.outputs.ios-full != 'true' }}"}
 # The script native-ios.yml's test job builds and tests through, and the
 # job's three steps in their order: the string catalog's check reads the
 # build and fails before a test runs (run 43732738720 found a stale

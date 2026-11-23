@@ -144,9 +144,10 @@ def misses(repo: str, suite: int, token: str) -> list[tuple[str, str]]:
 
 def report(repo: str, run_id: str, token: str) -> list[str]:
     run = api(f"repos/{repo}/actions/runs/{run_id}", token)
-    # A wave's validation (validate-wave.yml, a push to claude/validate-*)
-    # runs what the night does, and is held to the night's budgets.
-    wave = run["head_branch"].startswith("claude/validate-")
+    # A wave's validation (validate-wave.yml: a push to claude/validate-*,
+    # a rerun's claude/validate-failed/* or a check's claude/check-*) runs
+    # what the night does, or a part of it, and is held to the night's budgets.
+    wave = run["head_branch"].startswith(("claude/validate-", "claude/check-"))
     nightly = run["event"] in ("schedule", "workflow_dispatch") or wave
     on_main = run["head_branch"] == "main" and run["event"] != "pull_request"
     jobs = api(f"repos/{repo}/actions/runs/{run_id}/jobs?per_page=100&filter=latest", token)["jobs"]
