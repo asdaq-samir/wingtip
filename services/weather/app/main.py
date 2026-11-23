@@ -39,11 +39,12 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from collections.abc import Callable
+from pathlib import Path
 
 from apscheduler.schedulers.base import BaseScheduler
 from wingtip import log_lines, schedule, tracing, weather_store
 
-from . import aviationweather, fetch, flow, gfs, glmp, glmp_forecast, radar, satellite, spc, tfr
+from . import aviationweather, fetch, flow, gfs, glmp, glmp_forecast, radar, replay, satellite, spc, tfr
 from .settings import get_settings
 
 log = logging.getLogger("weather")
@@ -225,8 +226,14 @@ def main() -> None:
     signal.signal(signal.SIGTERM, finish)
     signal.signal(signal.SIGINT, finish)
     log.info("weather service: storing into %s, health on :%d", weather_store.store_dir(), settings.port)
+    chosen = None
+    if settings.replay:
+        # A recorded day's products written now, and left out of the turns.
+        replayed = replay.seed(Path(settings.replay))
+        log.info("replayed %s from %s; not fetched", ", ".join(sorted(replayed)), settings.replay)
+        chosen = tuple(p for p in products() if p.name not in replayed)
     on = schedule.scheduler(workers=settings.workers)
-    Schedule().jobs(on)
+    Schedule(chosen).jobs(on)
     on.start()
     stop.wait()
     on.shutdown(wait=False)

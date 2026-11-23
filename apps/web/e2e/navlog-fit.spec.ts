@@ -96,25 +96,27 @@ test("a long trip's figures keep their full size on one line in the strip, exact
   // book's figures, rounded, were still too wide for a phone's quarter
   // of the strip at a larger text size and cut to "131…", "≈12.…" and
   // "≈10…" (2026-10-11).
-  await page.route("**/api/planner/navlog**", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/x-ndjson",
-      body:
-        [
-          { type: "stage", detail: "Planning cruise altitudes…" },
-          {
-            type: "error",
-            retry: false,
-            detail: "No legal VFR cruising altitude 830-858 nm along the route",
-            brief: "Aircraft ceiling restricts mountainous flying",
-            reasons: ["The aircraft's service ceiling stops at 11,700 ft."],
-            advice: "Route around the high ground, or set a cruise altitude of your own to plan it anyway.",
-          },
-        ]
-          .map((m) => JSON.stringify(m))
-          .join("\n") + "\n",
-    }),
+  await page.route(
+    (url) => url.pathname.startsWith("/api/planner/navlog"),
+    (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/x-ndjson",
+        body:
+          [
+            { type: "stage", detail: "Planning cruise altitudes…" },
+            {
+              type: "error",
+              retry: false,
+              detail: "No legal VFR cruising altitude 830-858 nm along the route",
+              brief: "Aircraft ceiling restricts mountainous flying",
+              reasons: ["The aircraft's service ceiling stops at 11,700 ft."],
+              advice: "Route around the high ground, or set a cruise altitude of your own to plan it anyway.",
+            },
+          ]
+            .map((m) => JSON.stringify(m))
+            .join("\n") + "\n",
+      }),
   );
   await page.goto("/app/plan?dep=C81&dest=KLAS");
   await controlsInSight(page);

@@ -103,9 +103,10 @@ script can check, and the rest are for whoever writes a test or a job.
 9. **No live internet in pull-request tests.** Tests read recorded
    copies, not NOAA, AWC, FAA or adsb.lol; the night's `sources` job asks
    each live source once whether it still answers
-   (`scripts/ci/sources_answer.py`). Not yet true of the browser suite:
-   its stack's planner and weather service fetch live (below, "Live
-   sources"). *Guard:* `sources` at night.
+   (`scripts/ci/sources_answer.py`). The browser suite's weather is a
+   recorded day, its times moved to now (below, "Live sources"); its
+   radar and satellite times, the model layer and adsb.lol are still
+   live. *Guard:* `sources` at night.
 10. **A red night comes first, and a red main.** A scheduled run of CI,
     Native iOS or Native Android that fails writes its section of one
     issue, "Nightly CI failed"; main's push that fails after a merge (tier
@@ -224,14 +225,34 @@ seconds-long ones).
 ### Live sources
 
 The browser suite's stack (`infra/docker-compose.ci.yml`) turns the
-FAA's downloads off but still reaches, while a test runs: the weather
-service's AWC cache files, NOMADS' GFS winds (the fetch that once timed
-out), SPC, IEM's radar and nowCOAST; the TFRs (tfr.faa.gov); USGS
-elevations (seeded from `apps/web/e2e/fixtures/elevation_cache.csv` for
-the corridor only); adsb.lol traffic. The unit suites have no network
-guard either. Recording these (a fixture mode in the weather service and
-the planner's fetchers, and a socket guard in `pytest_guards.py`) is the
-follow-up that makes rule 9 true.
+FAA's downloads off, and its weather service replays a recorded day
+rather than fetching one (`WEATHER_REPLAY`, `services/weather/app/replay.py`;
+CI audit 2026-11-23, M2): the METARs, TAFs, winds aloft, SIGMETs, AIRMETs,
+G-AIRMETs, PIREPs, the SPC outlook, GLMP's modelled weather (cut to the
+corridor) and the TFRs in `apps/web/e2e/fixtures/weather` (1.1 MB), written
+at the start with every time in them moved by the whole hours from the
+recording to now, the reports' own day-and-time groups too. So a spec reads
+the same weather every night: brief-glance's private-field line and
+pass-times' TFRs went red on one night's reports alone. A new recording,
+from a live store, is
+`python -m app.replay record data/raw/weather apps/web/e2e/fixtures/weather`
+in the weather image. Still reached live while a test runs: the radar's
+and the satellite's newest times (IEM, nowCOAST), the model layer
+(NOMADS), USGS elevations (seeded from
+`apps/web/e2e/fixtures/elevation_cache.csv` for the corridor only) and
+adsb.lol traffic. The unit suites have no network guard either; a socket
+guard in `pytest_guards.py` is the follow-up.
+
+**Waits in the browser specs.** No time is slept before a measure: a
+spec waits on what the page says (a web-first assertion, `expect.poll`,
+`toPass`, `settled()`, the page's own marks), and `e2e/pacing.ts` is the
+one home of `waitForTimeout`, for time that is the test's input (`hold`:
+a finger held, a gesture's beat) or its claim (`watchFor`: nothing
+happens in a window), and `steady` for a reading with no mark of its own.
+ESLint refuses a `waitForTimeout` anywhere else, and a route glob whose
+`**` follows a word (`"**/api/x**"` is `[^/]*` at its end: a URL
+predicate instead). The shared session (`auth.setup.ts`) signs in by
+API, with no page to wait on.
 
 ## The tiers
 

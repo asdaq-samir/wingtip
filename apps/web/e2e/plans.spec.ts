@@ -232,29 +232,31 @@ test("plan page: no legal altitude is the route's own problem: its chip says so 
 }) => {
   // The planner's answer for Chicago to Las Vegas in a 172, without the
   // minutes of terrain and winds it takes to reach it.
-  await page.route("**/api/planner/navlog**", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/x-ndjson",
-      body:
-        [
-          { type: "stage", detail: "Planning cruise altitudes…" },
-          {
-            type: "error",
-            retry: false,
-            detail: "No legal VFR cruising altitude 830-858 nm along the route",
-            brief: "Aircraft ceiling restricts mountainous flying",
-            reasons: [
-              "The terrain and obstacles there need 10,600 ft.",
-              "The first westbound VFR altitude above that is 12,500 ft.",
-              "The aircraft's service ceiling stops at 11,700 ft.",
-            ],
-            advice: "Route around the high ground, or set a cruise altitude of your own to plan it anyway.",
-          },
-        ]
-          .map((m) => JSON.stringify(m))
-          .join("\n") + "\n",
-    }),
+  await page.route(
+    (url) => url.pathname.startsWith("/api/planner/navlog"),
+    (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/x-ndjson",
+        body:
+          [
+            { type: "stage", detail: "Planning cruise altitudes…" },
+            {
+              type: "error",
+              retry: false,
+              detail: "No legal VFR cruising altitude 830-858 nm along the route",
+              brief: "Aircraft ceiling restricts mountainous flying",
+              reasons: [
+                "The terrain and obstacles there need 10,600 ft.",
+                "The first westbound VFR altitude above that is 12,500 ft.",
+                "The aircraft's service ceiling stops at 11,700 ft.",
+              ],
+              advice: "Route around the high ground, or set a cruise altitude of your own to plan it anyway.",
+            },
+          ]
+            .map((m) => JSON.stringify(m))
+            .join("\n") + "\n",
+      }),
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
 

@@ -23,6 +23,7 @@ import {
   navLogSheet,
   briefPage,
 } from "./helpers";
+import { watchFor } from "./pacing";
 
 /**
  * The flight planning panel: how it opens -- from its grabber, a pasted
@@ -255,7 +256,7 @@ test("plan page: a pasted briefing link opens the panel, and its grabber closes 
   // checkpoints and everything else has a button. `n` used to toggle
   // this drawer and now does nothing.
   await page.keyboard.press("n");
-  await page.waitForTimeout(300);
+  await watchFor(page, 300);
   await expect(page).toHaveURL(/[?&]view=full/);
 
   const grabber = page.getByTestId("sidebar-trigger-button");

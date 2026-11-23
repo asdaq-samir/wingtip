@@ -3,6 +3,7 @@ import { cardClose, grabberTo, openTab, settle, settled, sideDrawer, slow, openR
 import { tapMarkApart } from "./marks";
 import { pickAirplane } from "./startState";
 import { LIST, DRAWN } from "./procedureStubs";
+import { hold } from "./pacing";
 
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -40,7 +41,7 @@ test.describe("on the owner's phone's width, to a finger", () => {
     // Touched and held, no lift: closed.
     const cdp = await page.context().newCDPSession(page);
     await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
-    await page.waitForTimeout(400);
+    await hold(page, 400);
     await expect(page.getByTestId("procedure-menu")).toHaveCount(0);
     // Lifted where it was touched: a tap, open.
     await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });

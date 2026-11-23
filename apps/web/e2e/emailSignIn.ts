@@ -1,4 +1,4 @@
-import { expect, request, type Page } from "@playwright/test";
+import { expect, request, type APIRequestContext, type Page } from "@playwright/test";
 import { consolePage, openConsole } from "./helpers";
 
 /**
@@ -58,6 +58,48 @@ export async function signInByEmail(page: Page, address: string) {
   await page.getByRole("dialog").getByRole("button", { name: "Sign In", exact: true }).click();
 }
 
+/** The session's XSRF-TOKEN, as the app echoes it on a write
+ *  (lib/api/http's csrfHeaders): Spring's single-page setup writes the
+ *  cookie on every answer, and a sign-in replaces it. */
+async function xsrf(api: APIRequestContext): Promise<Record<string, string>> {
+  await api.get("/api/me");
+  const token = (await api.storageState()).cookies.find((c) => c.name === "XSRF-TOKEN")?.value;
+  return token ? { "X-XSRF-TOKEN": decodeURIComponent(token) } : {};
+}
+
+/**
+ * Signs `address` in with no page: the same three calls the pilot
+ * console's sign-in makes (gatewayPilot's requestMagicLink, the link
+ * from the inbox, finishMagicLink's POST of its token), on `api`'s own
+ * cookies. The suite's shared session is made so (auth.setup.ts): from
+ * the page, it waited on the map and its sheet to settle first, and on a
+ * loaded runner that timed out and held every project of the shard
+ * (11-21 and 11-22's nights; CI audit 2026-11-23, M6). The sign-in as a
+ * pilot does it is signin.spec's.
+ */
+export async function signInByApi(api: APIRequestContext, address: string) {
+  const before = new Set(await messagesTo(address));
+  const asked = await api.post("/api/auth/magic-link", { data: { email: address }, headers: await xsrf(api) });
+  expect(asked.status(), "a sign-in link asked for").toBeLessThan(300);
+  let id: string | undefined;
+  await expect
+    .poll(async () => (id = (await messagesTo(address)).find((m) => !before.has(m))), { message: `a sign-in email to ${address}` })
+    .toBeTruthy();
+  const token = (await linkIn(id!)).searchParams.get("token") ?? "";
+  // Where the server sends a signed-in browser (the dev page, for a
+  // developer) is not followed: the session's cookie is what is wanted.
+  const verified = await api.post("/api/auth/magic-link/verify", { form: { token }, headers: await xsrf(api), maxRedirects: 0 });
+  expect(verified.status(), "the link's token spent").toBeLessThan(400);
+}
+
+/** Clears the signed-in account's home base by API, its telephone number
+ *  sent back as it is (PUT /api/me/contact takes both; blank is none). */
+export async function blankHomeBase(api: APIRequestContext) {
+  const me = (await (await api.get("/api/me")).json()) as { phone?: string | null };
+  const answer = await api.put("/api/me/contact", { data: { phone: me.phone ?? "", homeBase: "" }, headers: await xsrf(api) });
+  expect(answer.status(), "the account's home base cleared").toBe(200);
+}
+
 /** Asks for a link for `address` and opens it: the planner, with its
  *  sign-in dialog up. Answers the link, to open again. */
 export async function openLinkFor(page: Page, address: string): Promise<string> {
@@ -82,28 +124,4 @@ export async function openLinkFor(page: Page, address: string): Promise<string> 
   await page.goto(path);
   await expect(page.getByRole("dialog").getByRole("button", { name: "Sign In", exact: true })).toBeVisible();
   return path;
-}
-
-/** Clears the signed-in account's home base, its telephone number sent
- *  back as it is (PUT /api/me/contact takes both; blank is none), and this
- *  device's copy of it (preferences' homeAirport), as the app's own
- *  request does it: with the session's cookie and its CSRF header. */
-export async function blankHomeBase(page: Page) {
-  const status = await page.evaluate(async () => {
-    const token = /(?:^|;\s*)XSRF-TOKEN=([^;]+)/.exec(document.cookie)?.[1];
-    const me = (await (await fetch("/api/me")).json()) as { phone?: string | null };
-    const answer = await fetch("/api/me/contact", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", ...(token ? { "X-XSRF-TOKEN": decodeURIComponent(token) } : {}) },
-      body: JSON.stringify({ phone: me.phone ?? "", homeBase: "" }),
-    });
-    const kept = localStorage.getItem("wingtip.preferences");
-    if (kept) {
-      const prefs = JSON.parse(kept) as { state: Record<string, unknown> };
-      prefs.state.homeAirport = null;
-      localStorage.setItem("wingtip.preferences", JSON.stringify(prefs));
-    }
-    return answer.status;
-  });
-  expect(status, "the account's home base cleared").toBe(200);
 }

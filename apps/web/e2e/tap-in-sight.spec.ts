@@ -1,6 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { airportMarks, drawn, frontSheet, mapStill, settle, slow } from "./helpers";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
+import { watchFor } from "./pacing";
 
 /**
  * A mark tapped low on the chart is brought into sight over the card it
@@ -117,7 +118,7 @@ test("a VOR tapped low on the chart is brought over its card once, and own ship'
     .toBe(true);
   await mapStill(page);
   await page.evaluate(() => (window as unknown as { __nextFix: () => void }).__nextFix());
-  await page.waitForTimeout(1200);
+  await watchFor(page, 1200);
   const frames = await page.evaluate(() => {
     const w = window as unknown as { __frames: { t: number; moving: boolean; center: string }[]; __framesOn: boolean };
     w.__framesOn = false;

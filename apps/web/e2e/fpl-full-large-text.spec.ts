@@ -1,6 +1,7 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { grabberTo, settle, slow } from "./helpers";
 import { pickAirplane } from "./startState";
+import { steady } from "./pacing";
 
 test.use({ viewport: { width: 393, height: 852 }, hasTouch: true, isMobile: true });
 test.beforeEach(async ({ page }) => {
@@ -49,7 +50,8 @@ for (const size of ["full", "half"] as const) {
     const room = await scroller(page).evaluate((el) => el.scrollHeight - el.clientHeight);
     for (const at of size === "full" ? [0, 0.5, 1] : [0]) {
       await scroller(page).evaluate((el, y) => el.scrollTo(0, y), Math.round(room * at));
-      await page.waitForTimeout(500);
+      // Once the scroll and the strip pinned under it are at rest.
+      await steady(() => page.locator("[data-pin-foot]").boundingBox());
       if (at === 0) await page.screenshot({ path: test.info().outputPath(`fpl-${size}.png`) });
       // The strip's time and track its own points, not the bar's.
       for (const id of ["navlog-ete", "strip-track"]) {

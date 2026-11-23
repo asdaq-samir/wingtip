@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { grabberTo, openMapSettings, settle, slow } from "./helpers";
+import { watchFor } from "./pacing";
 
 /**
  * The radar and satellite loop (features/weather-loop, the owner's
@@ -110,7 +111,7 @@ test("under Reduce Motion the loop shows the newest frame and does not play", as
   // The newest frame, four to nine minutes old, and still.
   await expect(page.getByTestId("weather-loop-time")).not.toContainText("Old");
   await expect(page.getByTestId("weather-loop-play")).toHaveAttribute("aria-pressed", "false");
-  await page.waitForTimeout(1500);
+  await watchFor(page, 1500);
   await expect(page.getByTestId("weather-loop-play")).toHaveAttribute("aria-pressed", "false");
 });
 

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { airportSearch, firstRow, openConsole, openPanel, searchAirports, settle, sideDrawer } from "./helpers";
+import { watchFor } from "./pacing";
 
 /**
  * The desktop web, from 1024 wide with a mouse (the UI audit, 2026-11-09):
@@ -77,7 +78,7 @@ test("an airport's card has its actions' keys, Alt+F and Alt+S, and the search's
   // away"), and then no key of its has a card to act on.
   await search.blur();
   await page.keyboard.press("s");
-  await page.waitForTimeout(300);
+  await watchFor(page, 300);
   await expect(page).not.toHaveURL(/[?&]stops=KOSH/);
   // Alt+S, Add Stop: the field a landing on the way, both ends kept.
   await page.keyboard.press("Alt+KeyS");

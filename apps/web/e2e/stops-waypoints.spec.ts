@@ -3,6 +3,7 @@ import { frontSheet, grabberTo, mapStill, openPanel, settle, settled, sideDrawer
 import { stopsAre } from "./stopsParam";
 import { drawnMarks, markWith } from "./marks";
 import { pickAirplane } from "./startState";
+import { watchFor, steady } from "./pacing";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -102,14 +103,7 @@ test("a VFR waypoint on the chart is a magenta triangle with its ident, and its 
   await expect.poll(async () => (await inSight()).map((w) => w.ident), { timeout: slow(20000) }).toContain("VPBNG");
   // Once the map has stopped: a tap as the zoom eases in landed where the
   // mark had been.
-  let was = "";
-  await expect(async () => {
-    const now = JSON.stringify(await waypointMarks(page));
-    const still = now === was;
-    was = now;
-    await page.waitForTimeout(300);
-    expect(still).toBe(true);
-  }).toPass({ timeout: slow(10_000) });
+  await steady(() => waypointMarks(page));
   // Tapped again until its card is up: on CI's runner the plan's stream
   // finishing could move the map under the first tap.
   const add = page.getByTestId("waypoint-add-stop");
@@ -139,7 +133,8 @@ test("a VFR waypoint on the chart is a magenta triangle with its ident, and its 
   await mapStill(page);
   const pane = () => page.evaluate(() => document.querySelector<HTMLElement>("[data-testid=gl-map]")!.dataset.center);
   const before = await pane();
-  await page.waitForTimeout(2000);
+  // It crept slowly: only a window of time shows it does not.
+  await watchFor(page, 2000);
   expect(await pane()).toBe(before);
   await add.click();
   await expect(page).toHaveURL(/[?&]stops=VPBNG/);

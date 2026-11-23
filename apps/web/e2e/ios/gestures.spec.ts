@@ -1,5 +1,6 @@
 import { test, expect, devices, type Page } from "@playwright/test";
 import { airportMarks, drawn, mapStill, openMapSettings, settle, slow } from "../helpers";
+import { hold } from "../pacing";
 
 /**
  * The map under a finger, as on an iPhone: what is drawn on the chart
@@ -70,7 +71,7 @@ test("the imagery over the chart comes in under a finger's pan, before it lifts"
   await touch("touchStart", [[at.x, at.y]]);
   for (let i = 1; i <= 20; i++) {
     await touch("touchMove", [[at.x - i * 12, at.y]]);
-    await page.waitForTimeout(30);
+    await hold(page, 30);
   }
   // Still held: the imagery asked for where the chart has come into sight.
   // On a phone the map once asked for it only after the pan had ended.
@@ -126,7 +127,7 @@ test("a pinch brings in the airports of each level it passes, before the fingers
       [at.x - 30 - i * 6, at.y],
       [at.x + 30 + i * 6, at.y],
     ]);
-    await page.waitForTimeout(30);
+    await hold(page, 30);
   }
   // A pinch, not a ruler.
   await expect(page.getByTestId("map-ruler")).toHaveCount(0);
@@ -158,7 +159,7 @@ test("a pinch is left where the fingers leave it, as ForeFlight's is, between th
       [at.x - 30 - i * 1.1, at.y],
       [at.x + 30 + i * 1.1, at.y],
     ]);
-    await page.waitForTimeout(30);
+    await hold(page, 30);
   }
   await touch("touchEnd", []);
   await mapStill(page);
@@ -200,7 +201,7 @@ test("a pinch draws the course line again at its own width as it zooms, not scal
       [at.x - 30 - i * 3, at.y],
       [at.x + 30 + i * 3, at.y],
     ]);
-    await page.waitForTimeout(30);
+    await hold(page, 30);
     seen.push(await scale());
   }
   // Still held: the line drawn again as the fingers zoom it, scaled a
@@ -246,7 +247,7 @@ test("a pinch out fills the chart's edges with tiles before the fingers lift, un
     .poll(
       async () => {
         const was = asked;
-        await page.waitForTimeout(500);
+        await hold(page, 500);
         return asked === was;
       },
       { timeout: slow(10_000) },
@@ -268,7 +269,7 @@ test("a pinch out fills the chart's edges with tiles before the fingers lift, un
       [at.x - 90 + i * 5, at.y],
       [at.x + 90 - i * 5, at.y],
     ]);
-    await page.waitForTimeout(100);
+    await hold(page, 100);
   }
   // Still held: the edges it bared asked for already.
   await expect.poll(() => asked, { timeout: slow(5_000) }).toBeGreaterThan(before);

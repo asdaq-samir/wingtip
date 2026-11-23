@@ -12,6 +12,7 @@ import {
   consolePage,
   consoleSheet,
 } from "./helpers";
+import { watchFor } from "./pacing";
 
 /**
  * Signing in and out on the running stack, from a browser with no
@@ -43,7 +44,7 @@ test("signed out, the planner opens on the map, and the sign-in is in the pilot 
   await page.goto("/app/plan");
   await showTabs(page);
   await expect(page.getByTestId("account-button")).toBeVisible();
-  await page.waitForTimeout(500); // a moment for a console that was coming down by itself
+  await watchFor(page, 500); // a moment for a console that was coming down by itself
   await expect(consoleSheet(page)).toHaveCount(0);
   await expect(await devSwitchInSettings(page)).toHaveCount(0);
   await closeConsole(page);
@@ -159,10 +160,10 @@ test("a pilot's link lands on the planner, with no dev switch, and the pilot con
   await page.goto("/app/plan");
   await signInByEmail(page, address);
 
-  await page.waitForURL("**/app/plan**");
+  await page.waitForURL((url) => url.pathname.startsWith("/app/plan"));
   // The planner as a fresh load opens, the one search alone.
   await expect(sideDrawer(page).getByTestId("search-airports")).toBeVisible();
-  await page.waitForTimeout(500); // a moment for a console that was coming down by itself
+  await watchFor(page, 500); // a moment for a console that was coming down by itself
   await expect(consoleSheet(page)).toHaveCount(0);
   await expect(await devSwitchInSettings(page)).toHaveCount(0);
   await closeConsole(page);
@@ -195,7 +196,7 @@ test("a developer's link lands in dev mode, and the dev console logs out to the 
   await page.goto("/app/plan");
   await signInByEmail(page, DEVELOPER);
 
-  await page.waitForURL("**/app/dev**");
+  await page.waitForURL((url) => url.pathname.startsWith("/app/dev"));
   await expect(await devSwitchInSettings(page)).toHaveAttribute("aria-checked", "true");
   await page.keyboard.press("Escape");
   // Gone, not just closing: a tap on the trigger while the menu animates
@@ -211,7 +212,7 @@ test("a developer's link lands in dev mode, and the dev console logs out to the 
   await consoleSheet(page).getByTestId("role-menu").click();
   await page.getByRole("menuitem", { name: "Sign Out" }).click();
 
-  await page.waitForURL("**/app/plan**");
+  await page.waitForURL((url) => url.pathname.startsWith("/app/plan"));
   // The planner drawn, not the training page's bar on its way out: its
   // title was tapped as it went.
   await expect(page.getByRole("button", { name: /^Train/ })).toHaveCount(0);

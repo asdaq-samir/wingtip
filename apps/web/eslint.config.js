@@ -190,9 +190,26 @@ export default defineConfig(
           selector: "MemberExpression[object.object.name='test'][object.property.name='describe'][property.name='only']",
           message: "A focused test runs alone: remove .only before committing.",
         },
+        // A glob's "**" spans a slash only as a whole segment: "**/api/x**"
+        // reads its tail as [^/]*, so a stub of /api/x lets /api/x/y through
+        // to the real server, and the test fails without saying its mock was
+        // passed by (checkride.spec, 2026-10-04; CI audit 2026-11-23, L4).
+        ...["Literal", "TemplateElement[tail=true]"].map((node) => ({
+          selector: `${node}[${node === "Literal" ? "value" : "value.raw"}=/[A-Za-z0-9]\\*\\*$/]`,
+          message: 'A glob\'s "**" after a word is [^/]*: match with a URL predicate, (url) => url.pathname.startsWith("/api/x").',
+        })),
+        // A time slept before a measure is short on a loaded runner and
+        // long everywhere else (CI audit 2026-11-23, M5): e2e/pacing.ts
+        // keeps the sleeps that are the claim (hold, watchFor).
+        {
+          selector: "CallExpression[callee.property.name='waitForTimeout']",
+          message:
+            "Wait on what the page says (a web-first assertion, expect.poll, toPass, settled(), pacing's steady), not a time; time as input or as the claim is pacing's hold or watchFor.",
+        },
       ],
     },
   },
+  { files: ["e2e/pacing.ts"], rules: { "no-restricted-syntax": "off" } },
   {
     // shadcn's generated primitives export their cva variants
     // (buttonVariants, badgeVariants) beside the component, which is

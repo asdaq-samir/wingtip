@@ -57,6 +57,17 @@ Every NOMADS file (the GFS, the HRRR, GLMP, DAFS) is asked through
 `app/nomads.py`: one GET, a run not posted yet told from NOMADS being
 down, the GFS's newest run, and a GRIB2 file read a message at a time.
 
+## Replay, for the browser suite
+
+With `WEATHER_REPLAY` set to a recording (`app/replay.py`), the service
+writes each product in it into the store at the start, every time in it
+moved by the whole hours from the recording to now, and leaves those
+products out of its turns; it fetches the rest. The browser suite's stack
+sets it to `apps/web/e2e/fixtures/weather` (`infra/docker-compose.ci.yml`;
+docs/CI.md, "Live sources"), so no spec depends on the day's weather.
+`python -m app.replay record <store> <folder>` makes a recording from a
+live store, GLMP's grids cut to the suite's corridor.
+
 ## Health
 
 `GET :8000/` answers 200 while the process runs, with each product's

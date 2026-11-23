@@ -2,6 +2,7 @@ import { writeFileSync } from "node:fs";
 import { test, type Page } from "@playwright/test";
 import { controlsInSight, noTips, openPanel } from "./helpers";
 import { pickAirplane } from "./startState";
+import { watchFor } from "./pacing";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -105,24 +106,24 @@ test("the nightly speed lab", async ({ page }, info) => {
     await page.getByTestId("search-airports").first().waitFor({ timeout: 60_000 });
     keep("open_app", await page.evaluate(() => (window as unknown as { __search: number }).__search));
     await page.locator("[data-chart-zoom]").first().waitFor({ state: "attached", timeout: 60_000 });
-    await page.waitForTimeout(3000);
+    await watchFor(page, 3000);
     const map = (await page.locator(".maplibregl-map").boundingBox())!;
     await page.mouse.move(map.x + map.width / 2, map.y + 250);
     let from = await now(page);
     await page.mouse.wheel(0, -300);
-    await page.waitForTimeout(1500);
+    await watchFor(page, 1500);
     keep("zoom", await longSince(page, from));
     from = await now(page);
     await page.locator("[data-map-controls]").getByTestId("map-settings-button").click();
     await page.getByTestId("map-settings").waitFor();
-    await page.waitForTimeout(600);
+    await watchFor(page, 600);
     keep("map_settings", await inpSince(page, from));
     await page.keyboard.press("Escape");
 
     // A route by Fly Here from an airport's card.
     await page.goto("/app/plan?place=KRST");
     await page.getByTestId("fly-here").waitFor({ timeout: 60_000 });
-    await page.waitForTimeout(3000);
+    await watchFor(page, 3000);
     from = await now(page);
     await page.getByTestId("fly-here").click();
     keep("fly_here", (await shownAt(page, "[data-testid=navlog-ete]")) - from);
@@ -132,15 +133,15 @@ test("the nightly speed lab", async ({ page }, info) => {
     await openPanel(page);
     await controlsInSight(page);
     await page.locator("[data-testid=navlog-ete]").first().waitFor({ state: "attached", timeout: 90_000 });
-    await page.waitForTimeout(3000);
+    await watchFor(page, 3000);
     for (const [name, open, shown] of [["share_menu", () => page.getByTestId("share-route").first().click(), "[role=menu]"]] as const) {
       from = await now(page);
       await open();
       await page.locator(shown).first().waitFor();
-      await page.waitForTimeout(600);
+      await watchFor(page, 600);
       keep(name, await inpSince(page, from));
       await page.keyboard.press("Escape");
-      await page.waitForTimeout(800);
+      await watchFor(page, 800);
     }
   }
 

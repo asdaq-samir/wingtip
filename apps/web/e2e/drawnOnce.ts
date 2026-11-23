@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { watchFor } from "./pacing";
 
 /**
  * A transition drawn once: the guard for the flicker audit's classes
@@ -154,7 +155,7 @@ export async function expectDrawnOnce(
 ) {
   await page.evaluate((card) => (window as unknown as { __drawnArm(card: string): void }).__drawnArm(card), card);
   await act();
-  await page.waitForTimeout(settleMs);
+  await watchFor(page, settleMs);
   const rec = (await page.evaluate(() => (window as unknown as { __drawnStop(): unknown }).__drawnStop())) as Recording;
   expect(drawnOnceProblems(rec, { card, maxMoves, shiftBudget }), "drawn once, at its size, from its first frame").toEqual([]);
 }

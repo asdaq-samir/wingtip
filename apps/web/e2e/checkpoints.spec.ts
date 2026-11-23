@@ -19,6 +19,7 @@ import {
 } from "./helpers";
 import { drawnMarks } from "./marks";
 import { pickAirplane } from "./startState";
+import { steady } from "./pacing";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -190,7 +191,6 @@ test(
     // edge on a phone -- or under the table's sticky heading, below the
     // tabs -- and a row half out of view is rightly brought in.
     await neighbour.evaluate((row) => row.scrollIntoView({ block: "center" }));
-    await page.waitForTimeout(200);
     // Where the row is in the log's window, which is the claim: not the
     // scroller's offset, which the browser moves itself to keep what is
     // on screen still (scroll anchoring) while the legs still streaming
@@ -199,15 +199,16 @@ test(
     // half detent (rules.md §14.5), the card and its scroller lowered with
     // the row in it.
     const onScreen = async () => (await neighbour.boundingBox())!.y - (await scroller.boundingBox())!.y;
-    const before = await onScreen();
+    // Read once the scroll has come to rest, not after a time slept.
+    const before = await steady(onScreen, { gap: 200 });
     // Its name before the click: `neighbour` is a place in the list, read
     // again at each use.
     const name = (await nameOf(neighbour).textContent()) ?? "";
     await nameOf(neighbour).click();
     // By its name.
     await expect(nameOf(selectedRow.first())).toHaveText(name);
-    await page.waitForTimeout(400);
-    expect(Math.abs((await onScreen()) - before)).toBeLessThan(2);
+    // Where it comes to rest: a move that came back would be seen as one.
+    expect(Math.abs((await steady(onScreen)) - before)).toBeLessThan(2);
 
     // Another tab and back: the selection kept, its row brought into view.
     await closeNavLog(page);

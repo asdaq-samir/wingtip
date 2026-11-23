@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { drawn, findAirplane, grabberTo, mapStill, settle, slow, trafficOnMap } from "./helpers";
 import { sky } from "./cardEntries";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
+import { hold, watchFor } from "./pacing";
 
 /**
  * The traffic about the map (TrafficGl's symbol layers, read through
@@ -125,7 +126,7 @@ test("off, as it is unless shown, nothing is asked and nothing drawn", async ({ 
   const asks = await showTraffic(page, false);
   await page.goto("/app/plan?place=C81");
   await settle(page);
-  await page.waitForTimeout(2000);
+  await watchFor(page, 2000);
   expect(asks).toHaveLength(0);
   expect(await drawn(page, "traffic-marks")).toHaveLength(0);
   // No small print on the map at all (MapCredits).
@@ -165,7 +166,7 @@ test("the traffic is asked about wherever the map is panned, own ship or not, an
   await page.mouse.move(map.x + map.width / 2, map.y + map.height / 4);
   for (let i = 0; i < 4; i++) {
     await page.mouse.wheel(0, 400);
-    await page.waitForTimeout(400);
+    await hold(page, 400);
   }
   await expect.poll(() => Number(last().get("radius")), { timeout: slow(15_000) }).toBeGreaterThan(60);
 });

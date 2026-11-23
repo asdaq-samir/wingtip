@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { settle, sideDrawer, frontSheet, grabberTo } from "./helpers";
+import { watchFor } from "./pacing";
 
 /**
  * A phone's sheet going from the pill to half way and back keeps what it
@@ -39,7 +40,7 @@ async function frames(page: Page, move: () => Promise<void>): Promise<Frame[]> {
     requestAnimationFrame(tick);
   });
   await move();
-  await page.waitForTimeout(1400);
+  await watchFor(page, 1400);
   return page.evaluate(() => (window as unknown as { __frames: Frame[] }).__frames);
 }
 

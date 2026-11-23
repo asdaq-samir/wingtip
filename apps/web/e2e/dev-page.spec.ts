@@ -12,6 +12,7 @@ import {
   sideDrawer,
   slow,
 } from "./helpers";
+import { steady } from "./pacing";
 
 /**
  * The dev page's training: the dev console, and the waypoint drawer's
@@ -104,16 +105,7 @@ test("dev page: the waypoint drawer is a worklist -- every candidate in flight o
   // the keypress shift what nth(3) refers to -- which is what made this
   // test fail about one run in ten, on mobile, where the drawer is a
   // Sheet and everything happens a little later.
-  await expect
-    .poll(
-      async () => {
-        const before = await rows.count();
-        await page.waitForTimeout(1200);
-        return (await rows.count()) === before;
-      },
-      { timeout: slow(40000) },
-    )
-    .toBe(true);
+  await steady(() => rows.count(), { gap: 1200, timeout: slow(40000) });
   await expect(drawer.getByTestId("train-figures")).toBeVisible();
   await expect(rows.first()).toContainText("C81");
 

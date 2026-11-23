@@ -2,6 +2,7 @@ import { expect, type Page } from "@playwright/test";
 import { showPage } from "./oneSearch";
 import { slow, sideDrawer, showTabs, openPanel, grabberTo, sheetUpToType, expectDrawerOpen, frontSheet, settled } from "./sheetHelpers";
 import { closeBrief } from "./routeHelpers";
+import { watchFor } from "./pacing";
 
 /** FPL's Brief, a card over the route (BriefCard), from the chips' Brief:
  *  its pages -- Preflight, Depart, En route and Arrive -- are its. */
@@ -199,4 +200,4 @@ export async function airportSearch(page: Page) {
  *  within it are one step to undo, as the page's own settling after a load
  *  is, so a test's edit that must be a step of its own comes after it, as
  *  a pilot's does. A window of time is the rule here, so a wait is right. */
-export const pastSettling = (page: Page) => page.waitForTimeout(1600);
+export const pastSettling = (page: Page) => watchFor(page, 1600);
