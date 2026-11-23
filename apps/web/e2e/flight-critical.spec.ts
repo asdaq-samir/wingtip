@@ -27,29 +27,39 @@ test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setu
 // The worker keeps the charts: the suite blocks it, so mocks always apply
 // (playwright.config.ts), and this journey has none.
 test.use({ serviceWorkers: "allow" });
-// One after the other, in one worker: each keeps the route's 1,392 chart
-// tiles, and run side by side on CI's two workers the two keeps shared the
-// runner and the shard's planner, each 662 of 1,392 at the test's two
-// minutes on webkit-ipad (validate-wave3, run 45100051622), where alone
-// one keeps them in 28 s and the next finds the planner's tiles warm.
+// One after the other, in one worker: each keeps its route's chart tiles,
+// and side by side on CI's two workers the two keeps shared the runner and
+// the shard's planner (validate-wave3, run 45100051622).
 test.describe.configure({ mode: "default" });
+
+/**
+ * C81 to Janesville, 45 nm inside the Chicago sectional the suite's charts
+ * are cut from: a journey end to end with a few hundred tiles to keep. C81
+ * to KDLH kept 1,392, and where CI's charts cache came back without them
+ * each was cut on demand, about 8 a second at two keeps at once: 662 and
+ * 799 of 1,392 when the test's two minutes ran out (validate-wave3 runs
+ * 45100051622 and 45113706296, mobile and webkit-ipad; webkit-ipad passed
+ * after them, the tiles cut). A pilot's tiles come from the published
+ * archive, not cut while they wait.
+ */
+const ROUTE = "/app/plan?dep=C81&dest=KJVL";
 
 test(
   "a planned flight's nav log and emergency keep working offline once its charts are kept",
   { tag: "@flight-critical" },
   async ({ page, context }) => {
-    await page.goto("/app/plan?dep=C81&dest=KDLH");
+    await page.goto(ROUTE);
     await settle(page);
 
     // The nav log: every leg to the destination, with its time and fuel.
-    await expect(page.getByTestId("navlog-ete").first()).toBeVisible({ timeout: slow(120_000) });
+    await expect(page.getByTestId("navlog-ete").first()).toBeVisible({ timeout: slow(30_000) });
     await openPanel(page);
     await openNavLog(page);
     // A phone's list, or a desktop's table with its time column.
     const desk = (page.viewportSize()?.width ?? 0) >= 1024;
     const log = navLogSheet(page).getByTestId(desk ? "navlog-table" : "navlog-list");
     const timed = desk ? log.getByTestId("navlog-row-ete").last() : log;
-    await expect(log.locator('[role="row"][data-kind="destination"]')).toBeVisible({ timeout: slow(60_000) });
+    await expect(log.locator('[role="row"][data-kind="destination"]')).toBeVisible({ timeout: slow(30_000) });
     if (!desk) await expect(log.getByTestId("navlog-row-dist").first()).toContainText(/nm/);
     await expect(timed).toContainText(desk ? /^\d+\.\d$/ : /\d min\b/);
     await closeNavLog(page);
@@ -63,7 +73,7 @@ test(
       const keep = page.getByTestId("keep-offline-toggle");
       if ((await keep.getAttribute("aria-checked")) !== "true") await keep.click();
       await closeMapSettings(page);
-      await expect(page.getByText("Charts Saved Offline")).toBeVisible({ timeout: slow(180_000) });
+      await expect(page.getByText("Charts Saved Offline")).toBeVisible({ timeout: slow(30_000) });
     } else {
       test.info().annotations.push({ type: "offline", description: "No service worker over plain http: the charts were not kept." });
     }
@@ -88,7 +98,7 @@ test(
     await grabberTo(page, "half");
     await openProfile(page);
     const start = sideDrawer(page).getByTestId("dry-run-start");
-    await expect(start).toBeVisible({ timeout: slow(60_000) });
+    await expect(start).toBeVisible({ timeout: slow(30_000) });
     await pressDryRunStart(page, start);
     await expect(page.getByTestId("flying-head")).toBeVisible({ timeout: slow(10_000) });
     await page.getByTestId("flying-emergency").click();
@@ -121,9 +131,9 @@ test(
   "offline from the first ask: the nav log, Emergency, Nearest and Direct To each answer or say No connection",
   { tag: "@flight-critical" },
   async ({ page, context }) => {
-    await page.goto("/app/plan?dep=C81&dest=KDLH");
+    await page.goto(ROUTE);
     await settle(page);
-    await expect(page.getByTestId("navlog-ete").first()).toBeVisible({ timeout: slow(120_000) });
+    await expect(page.getByTestId("navlog-ete").first()).toBeVisible({ timeout: slow(30_000) });
 
     const keeping = await page.evaluate(() => "serviceWorker" in navigator && window.isSecureContext);
     if (keeping) {
@@ -131,7 +141,7 @@ test(
       const keep = page.getByTestId("keep-offline-toggle");
       if ((await keep.getAttribute("aria-checked")) !== "true") await keep.click();
       await closeMapSettings(page);
-      await expect(page.getByText("Charts Saved Offline")).toBeVisible({ timeout: slow(180_000) });
+      await expect(page.getByText("Charts Saved Offline")).toBeVisible({ timeout: slow(30_000) });
     }
 
     const route = page.url();
@@ -164,7 +174,7 @@ test(
     await grabberTo(page, "half");
     await openProfile(page);
     const start = sideDrawer(page).getByTestId("dry-run-start");
-    await expect(start).toBeVisible({ timeout: slow(60_000) });
+    await expect(start).toBeVisible({ timeout: slow(30_000) });
     await pressDryRunStart(page, start);
     await expect(page.getByTestId("flying-head")).toBeVisible({ timeout: slow(10_000) });
 
@@ -202,7 +212,7 @@ test(
     const direct = page.getByTestId("flying-direct");
     await expect(direct).toBeVisible();
     await direct.click();
-    await expect(page).toHaveURL(/[?&]direct=KDLH\b/, { timeout: slow(10_000) });
+    await expect(page).toHaveURL(/[?&]direct=KJVL\b/, { timeout: slow(10_000) });
     await expect(page.getByTestId("page-error")).toHaveCount(0);
     await expect(strip).toContainText(/\d+(\.\d)? nm/);
     await context.setOffline(false);
