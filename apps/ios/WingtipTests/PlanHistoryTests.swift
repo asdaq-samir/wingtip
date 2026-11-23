@@ -56,6 +56,23 @@ struct PlanHistoryTests {
         #expect(plan.routeState == route)
     }
 
+    /// From and To typed and not yet planned are the route Clear Route
+    /// takes away, and its Undo, which the ✕'s question promises, brings
+    /// them back (SheetPageToggleTests' testTheRoutesCloseAsksBeforeClearing).
+    @Test @MainActor func aTypedRouteNotYetPlannedComesBackFromClear() throws {
+        let plan = Plan(), undo = UndoManager()
+        undo.groupsByEvent = false
+        plan.undoManager = undo
+        plan.forgetHistory()
+        // Typed into the fields: the bindings set the ends, nothing planned.
+        plan.dep = "KMSN"; plan.dest = "KOSH"
+        step(undo) { plan.clear() }
+        let offer = try #require(plan.undoOffer)
+        #expect(offer.words == "Route Cleared")
+        undo.undo()
+        #expect(plan.dep == "KMSN" && plan.dest == "KOSH")
+    }
+
     @Test @MainActor func aLaterOfferStaysWhenTheEarlierTimesOut() throws {
         let (plan, undo) = planned()
         step(undo) { plan.stops = ["KRFD"]; plan.plan() }
