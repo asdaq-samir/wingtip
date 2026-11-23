@@ -42,7 +42,8 @@ These hold on every screen below and win over any reference app.
   the screen shows the warning beside it, and nothing is greyed out for
   being outside a limit.
 - **44-point hit areas, controls that do not grow** (decision 0030). The
-  area is a pseudo-element (`after:absolute after:-inset-…`), rows sit at
+  area is a pseudo-element, the `hit-*` utility (`hit-y-3`, `hit-x-2
+  hit-y-3`, `hit-3`; index.css), rows sit at
   `gap-2`. This is above WCAG 2.2's AA minimum of 24 by 24 CSS pixels and
   meets its AAA 44 by 44 ([WCAG 2.5.8][wcag-258], [2.5.5][wcag-255]);
   Vercel's interface guidelines ask the same, 24 px at least and 44 px on

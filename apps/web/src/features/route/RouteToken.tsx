@@ -120,7 +120,7 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
           // pseudo-element 44 tall and half the gap wider each side.
           className={cn(
             "text-muted-foreground hover:bg-transparent hover:text-tint native:text-muted-foreground disabled:opacity-40",
-            asking ? "h-5 w-auto rounded-full after:-inset-x-1 after:-inset-y-3" : "-mx-2.5 -my-2 size-9 rounded-md [&_svg]:size-5!",
+            asking ? "h-5 w-auto rounded-full hit-x-1 hit-y-3" : "-mx-2.5 -my-2 size-9 rounded-md [&_svg]:size-5!",
             i > 0 && "-ml-0.5",
           )}
         >

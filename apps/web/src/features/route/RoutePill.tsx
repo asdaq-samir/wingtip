@@ -152,7 +152,7 @@ export default function RoutePill({
         // Its 44-point area 44 tall and half the row's gap-2 wider each
         // side, meeting the arrows' beside it (RouteToken, WEB-4).
         className={cn(
-          "h-7 rounded-full px-0.75 after:-inset-x-1 after:-inset-y-2",
+          "h-7 rounded-full px-0.75 hit-x-1 hit-y-2",
           TEXT.detail,
           "font-semibold",
           // A present position in the pilot's words, not an ident's capitals.

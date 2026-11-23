@@ -37,7 +37,7 @@ export default function EmergencyChecklist({ vm }: { vm: EmergencyModel }) {
   const shown = sections[section]!;
   const menu = (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="relative text-tint after:absolute after:-inset-1.5" />}>
+      <DropdownMenuTrigger render={<Button variant="ghost" size="sm" className="relative text-tint hit-1.5" />}>
         Other <ChevronDown className="size-4" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

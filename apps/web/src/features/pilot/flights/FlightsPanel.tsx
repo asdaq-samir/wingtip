@@ -99,7 +99,7 @@ function SavedFlightRow({ f, vm }: { f: FlightSummary; vm: SavedFlightsModel }) 
         // row tapped in Edit.
         title={
           <BaseButton
-            className="relative text-left text-tint after:absolute after:-inset-y-3 after:inset-x-0"
+            className="relative text-left text-tint hit-y-3 after:inset-x-0"
             onClick={() => vm.startChange(f.id)}
             data-testid="saved-flight-rename"
           >

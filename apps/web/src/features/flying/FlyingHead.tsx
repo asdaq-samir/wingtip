@@ -174,7 +174,7 @@ function EmergencyEntry() {
       variant="ghost"
       size="sm"
       data-testid="flying-emergency"
-      className="pointer-events-auto relative -mr-2 font-semibold text-destructive after:absolute after:-inset-3.5"
+      className="pointer-events-auto relative -mr-2 font-semibold text-destructive hit-3.5"
       onClick={() => openEmergency("flying")}
     >
       Emergency

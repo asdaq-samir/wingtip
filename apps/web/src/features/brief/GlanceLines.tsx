@@ -57,7 +57,7 @@ export function Line({ line, onOpen }: { line: Omit<GlanceLine, "key"> & { key: 
           variant="link"
           size="inline"
           onClick={() => onOpen(line.tab)}
-          className={cn("relative font-semibold no-underline! after:absolute after:-inset-x-2 after:-inset-y-3", TEXT.detail)}
+          className={cn("relative font-semibold no-underline! hit-x-2 hit-y-3", TEXT.detail)}
         >
           See It in Full
         </Button>
@@ -84,7 +84,7 @@ export function Rest({ rest, onOpen }: { rest: ReturnType<typeof glanceLines>["r
             onClick={() => onOpen(i.tab)}
             data-testid={`brief-rest-${i.key}`}
             className={cn(
-              "relative flex w-full items-start gap-2 py-1.5 text-left no-underline! outline-none after:absolute after:inset-x-0 after:-inset-y-1.5 focus-visible:ring-2 focus-visible:ring-ring",
+              "relative flex w-full items-start gap-2 py-1.5 text-left no-underline! outline-none after:inset-x-0 hit-y-1.5 focus-visible:ring-2 focus-visible:ring-ring",
               TEXT.detail,
             )}
           >
