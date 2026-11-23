@@ -92,6 +92,8 @@ test("a flight is filed once, whole, and a new plan is offered for saving again"
   expect(flight.totalEteMin).not.toBeNull();
   expect(flight.checkpoints[0]).toMatchObject({ category: "departure", sequenceNo: 0 });
   expect(flight.checkpoints.at(-1)).toMatchObject({ category: "destination" });
+  // Filed with its rules, the app's setting, so it reopens VFR.
+  expect(new URLSearchParams((flight as { picks?: string }).picks ?? "").get("rules")).toBe("vfr");
 
   // A new departure time: a fresh nav log is a new plan. "Saved" used to
   // stay for the session, and a click filed a duplicate of whatever was
@@ -160,7 +162,6 @@ test("opening a saved flight puts its route in the header, and Load plans that r
         id: 9,
         departureIdent: "KMSP",
         destinationIdent: "KDLH",
-        stops: [],
         cruiseAltitudeFt: 5500,
         aircraftTailNumber: null,
         createdAt: "2026-09-20T12:00:00Z",
@@ -169,6 +170,10 @@ test("opening a saved flight puts its route in the header, and Load plans that r
         totalEteMin: 55,
         totalFuelGal: 8,
         altitudes: "KDLH:2400",
+        // Its picks, as the connector saves them too: its altitude, its
+        // fuel stop, the fuel on board leaving the departure, and IFR.
+        stops: ["KMSN"],
+        picks: "altitude_ft=5500&fuel=KMSN&tanks=KMSP%3A30&rules=ifr",
       },
     ],
   );
@@ -195,6 +200,13 @@ test("opening a saved flight puts its route in the header, and Load plans that r
   await expect(page).toHaveURL(/altitude_ft=5500/);
   // And at the altitudes the pilot set at its points: Duluth's pattern.
   await expect(page).toHaveURL(/altitudes=KDLH(%3A|:)2400/);
+  // With its fuel stop and the fuel on board it was saved with; its rules
+  // are the app's own setting, IFR now, and leave the address.
+  await expect(page).toHaveURL(/fuel=KMSN/);
+  await expect(page).toHaveURL(/tanks=KMSP(%3A|:)30/);
+  await expect(page).not.toHaveURL(/[?&]rules=/);
+  const rules = () => page.evaluate(() => JSON.parse(localStorage.getItem("wingtip.preferences") ?? "{}").state?.flightRules);
+  await expect.poll(rules).toBe("ifr");
 });
 
 test("a saved flight opened from FPL's Saved opens its page, and Open on the map plans it", async ({ page }) => {

@@ -95,9 +95,18 @@ export function usePlanRoute() {
   // Load pressed again for the same route: a fresh nav log, fresh winds.
   const [load, setLoad] = useState(0);
   const showWaypoints = usePreferences((p) => p.waypoints);
-  // VFR or IFR, kept from flight to flight (the altitude's popover).
-  const flightRules = usePreferences((p) => p.flightRules);
+  // VFR or IFR, kept from flight to flight (the altitude's popover). A
+  // saved flight opened says its own (the address's `rules`, its picks'),
+  // planned with at once and kept as the setting, then taken off.
+  const keptRules = usePreferences((p) => p.flightRules);
   const setFlightRules = usePreferences((p) => p.setFlightRules);
+  const linkedRules = address.rules;
+  const flightRules = linkedRules ?? keptRules;
+  useEffect(() => {
+    if (!linkedRules) return;
+    setFlightRules(linkedRules);
+    void setAddress({ rules: null });
+  }, [linkedRules, setFlightRules, setAddress]);
   // The procedures picked at the route's fields, drawn (below): a leg
   // flown by them is planned the longer by their path, its time and fuel
   // with it, at the owner's word (the plan said 909 nm where the dry run

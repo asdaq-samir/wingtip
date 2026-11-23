@@ -129,9 +129,11 @@ What was read, on 2026-11-22, from the pages themselves:
 - The view looks like Wingtip, not like Claude: it follows the host's
   light or dark theme, with the system's fonts, since the sandbox loads
   none of Wingtip's.
-- A flight's tanks and fuel-stop marks are not kept by a saved flight
-  (the gateway's picks are the address's `PICK_KEYS`); its procedures
-  are.
+- A saved flight keeps its procedures, its fuel stops, its fuel on
+  board and its rules among its picks (the gateway's picks are the
+  address's `PICK_KEYS`; `fuel`, `tanks` and `rules` since round 4,
+  2026-11-23), so it reopens on the web and in the connector as it was
+  saved.
 - claude.ai reaches a connector from Anthropic's servers: the owner's
   live stack on the LAN is reached through a tunnel
   (docs/MCP-CONNECTOR.md).

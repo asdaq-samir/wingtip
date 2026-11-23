@@ -14,7 +14,7 @@ export function picksOf(params: URLSearchParams, also: readonly string[] = []): 
 
 /** A saved flight back on the planner: its route, through its stops, at
  *  its altitude and the ones the pilot set at its points, with the picks
- *  it was filed with, and for its own departure time while that is still
+ *  it was filed with (its rules among them), and for its own departure time while that is still
  *  ahead -- from its own pilot's Flights, or their instructor's review of
  *  it. One filed before its picks were kept flies its altitude, as before. */
 export function planHrefOf(
@@ -33,6 +33,9 @@ export function planHrefOf(
     ...(Number.isFinite(planned) && planned > now ? { depart: f.plannedFor! } : {}),
   });
   for (const [key, value] of picks) if (KEPT_KEYS.includes(key)) params.set(key, value);
+  // Its rules, VFR where none was written: the connector writes only IFR,
+  // and the app's setting would otherwise keep the last flight's.
+  if (!params.has("rules")) params.set("rules", "vfr");
   return `/plan?${params}`;
 }
 
