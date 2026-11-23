@@ -131,7 +131,11 @@ function TimelineAction({
           areas (hit-1.5, 6 out each side) meeting over it; 8 in from the
           card's edge, the toggle last, at the box's bottom right (the owner,
           2026-11-22: "the route box toggle should be pinned to the bottom right"). */}
-      {trailing && <span className="ml-auto flex h-11 items-center gap-0.5">{trailing}</span>}
+      {/* Where they don't all fit on the words' line they go under it
+          (flex-wrap), never past the card's edge, which clips them (the
+          owner's iPhone, 2026-11-22: the toggle cut off, the two chips'
+          areas crossing at 2 apart). */}
+      {trailing && <span className="ml-auto flex h-11 items-center gap-2 pr-2">{trailing}</span>}
     </div>
   );
 }
