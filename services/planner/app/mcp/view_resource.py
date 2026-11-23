@@ -51,10 +51,14 @@ def _origin(url: str | None) -> str | None:
 
 def csp() -> dict:
     """The origins the view may load from: Wingtip's own (its chart tiles,
-    through the gateway) and the tiles' CDN where one serves them."""
+    through the gateway) and the tiles' CDN where one serves them. Images
+    alone (resourceDomains): the view draws the tiles as <img> and fetches
+    nothing, so it is given no connectDomains, and a view made to run
+    other code could not send to Wingtip's API from the host's sandbox
+    either (the security review of 2026-11-22, L2)."""
     s = get_settings()
     origins = sorted({o for o in (_origin(s.mcp_issuer), _origin(s.chart_tiles_url)) if o})
-    return {"resourceDomains": origins, "connectDomains": origins}
+    return {"resourceDomains": origins}
 
 
 async def _fetched() -> httpx2.Response:

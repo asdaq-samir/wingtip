@@ -247,7 +247,13 @@ own account), and `_meta.securitySchemes` with the scope it needs.
 never change or delete one, so they are `readOnlyHint: false,
 destructiveHint: false`; `update_saved_flight` and `delete_saved_flight`
 overwrite or delete what the pilot saved, `destructiveHint: true`, which
-Claude always asks about. The edits are read-only: they change the flight
+Claude always asks about. A flight put to an instructor for the solo
+cross-country review (14 CFR 61.93(c)(3)) is never replaced: the review and
+its endorsement show that flight's row, so the gateway answers a 409 and
+the tool says to save the plan as a new flight. `delete_saved_flight` is
+the model's alone (`_meta.ui.visibility: ["model"]`): the live view offers
+no delete, and a call from the view would skip the host's ask (the security
+review of 2026-11-22). The edits are read-only: they change the flight
 handed to them and keep nothing. Claude prompts
 for any tool that is not read-only unless the pilot has said "Always allow";
 ChatGPT asks before write actions. It was kept because the confirmation is
@@ -282,7 +288,8 @@ opens it beside the chat (the resource asks for the side panel,
   build and served by the gateway at `/app/claude-view.html`; the planner
   reads it from the gateway, keeps it five minutes, and serves it
   (`app.mcp.view_resource`). Its CSP names Wingtip's own origin alone, for
-  the chart's tiles.
+  the chart's tiles, as images only (`resourceDomains`, no
+  `connectDomains`): the view fetches nothing.
 - **The answer** is the flight (`app.mcp.flight_state`, the web's own
   address keys) and its view (`app.mcp.flight_view`): the points, the
   course thinned to 400 points, the legs and totals, the engine's

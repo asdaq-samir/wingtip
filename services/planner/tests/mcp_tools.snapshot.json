@@ -89,6 +89,11 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "maxProperties": 18,
+              "propertyNames": {
+                "maxLength": 16,
+                "minLength": 2
+              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -259,6 +264,11 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "maxProperties": 18,
+              "propertyNames": {
+                "maxLength": 16,
+                "minLength": 2
+              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -589,6 +599,11 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "maxProperties": 18,
+              "propertyNames": {
+                "maxLength": 16,
+                "minLength": 2
+              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -728,7 +743,12 @@
           ],
           "type": "oauth2"
         }
-      ]
+      ],
+      "ui": {
+        "visibility": [
+          "model"
+        ]
+      }
     },
     "annotations": {
       "destructiveHint": true,
@@ -964,6 +984,11 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "maxProperties": 18,
+              "propertyNames": {
+                "maxLength": 16,
+                "minLength": 2
+              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -1373,6 +1398,11 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "maxProperties": 18,
+              "propertyNames": {
+                "maxLength": 16,
+                "minLength": 2
+              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -1670,6 +1700,11 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "maxProperties": 18,
+              "propertyNames": {
+                "maxLength": 16,
+                "minLength": 2
+              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -1840,6 +1875,11 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "maxProperties": 18,
+              "propertyNames": {
+                "maxLength": 16,
+                "minLength": 2
+              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -2133,6 +2173,11 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "maxProperties": 18,
+              "propertyNames": {
+                "maxLength": 16,
+                "minLength": 2
+              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -2354,6 +2399,11 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "maxProperties": 18,
+              "propertyNames": {
+                "maxLength": 16,
+                "minLength": 2
+              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -2539,6 +2589,11 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "maxProperties": 18,
+              "propertyNames": {
+                "maxLength": 16,
+                "minLength": 2
+              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -2722,6 +2777,11 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "maxProperties": 18,
+              "propertyNames": {
+                "maxLength": 16,
+                "minLength": 2
+              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -2913,6 +2973,11 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "maxProperties": 18,
+              "propertyNames": {
+                "maxLength": 16,
+                "minLength": 2
+              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -3084,6 +3149,11 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
+              "maxProperties": 18,
+              "propertyNames": {
+                "maxLength": 16,
+                "minLength": 2
+              },
               "title": "Fuel On Board",
               "type": "object"
             },

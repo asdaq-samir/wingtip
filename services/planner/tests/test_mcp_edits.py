@@ -170,3 +170,18 @@ def test_the_view_s_answer_is_the_shape_the_web_s_view_reads(monkeypatch):
     kept = json.loads(FIXTURE.read_text())
     assert set(got) == set(kept) and set(got["view"]) == set(kept["view"]) and set(got["flight"]) == set(kept["flight"])
     assert got["view"]["approaches"][0]["state"] == "loaded" and got["view"]["points"][1]["fuel_stop"] is True
+
+
+def test_a_flight_handed_back_names_no_more_tanks_than_a_route_has_fields():
+    """The model hands the flight back, so its fuel on board is bounded
+    as its stops are: no /api/plan query of any length."""
+    from pydantic import ValidationError
+
+    from app.mcp.flight_state import Flight
+    from app.router_basics import MAX_STOPS
+
+    Flight(departure="C81", destination="KDLH", fuel_on_board={f"K{n:03}": 1.0 for n in range(MAX_STOPS + 2)})
+    with pytest.raises(ValidationError):
+        Flight(departure="C81", destination="KDLH", fuel_on_board={f"K{n:03}": 1.0 for n in range(MAX_STOPS + 3)})
+    with pytest.raises(ValidationError):
+        Flight(departure="C81", destination="KDLH", fuel_on_board={"K" * 17: 1.0})

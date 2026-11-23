@@ -41,8 +41,13 @@ class Flight(BaseModel):
         max_length=400,
         description="Procedures picked, as Wingtip writes them (KDLH:I27:::L); change them with change_approach.",
     )
-    fuel_on_board: dict[str, float] = Field(
-        default={}, description="Gallons in the tanks leaving a field, by its identifier; a field not named leaves full."
+    # As many fields as a route has (its two ends and its stops): the
+    # model hands the flight back, and an unbounded map was a /api/plan
+    # query of any length (the security review of 2026-11-22, L3).
+    fuel_on_board: dict[Point, float] = Field(
+        default={},
+        max_length=MAX_STOPS + 2,
+        description="Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
     )
     airplane_tail: str | None = Field(default=None, max_length=8, description="The pilot's own airplane, by tail number.")
     rules: Literal["vfr", "ifr"] = "vfr"
