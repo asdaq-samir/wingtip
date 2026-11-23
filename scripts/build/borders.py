@@ -2,7 +2,9 @@
 """The countries' outlines the engine's `jurisdiction_of` reads
 (engine/crates/flight/data/borders.txt), from Natural Earth's admin-0
 countries at 1:50m (public domain, naturalearthdata.com; the GeoJSON of
-nvkelso/natural-earth-vector v5.1.2, geojson/ne_50m_admin_0_countries.geojson).
+nvkelso/natural-earth-vector v5.1.2, geojson/ne_50m_admin_0_countries.geojson),
+and Canada's provinces and territories from its admin-1 states and
+provinces at 1:50m (geojson/ne_50m_admin_1_states_provinces.geojson).
 
 The owner's pick of 2026-11-21 (decision 0053): every rule the engine holds
 is the FAA's, so a point outside the United States is said to be, and the
@@ -25,10 +27,17 @@ degree from another country are left out. Coordinates are kept in
 thousandths of a degree, each after a ring's first as the step from the
 one before, so the file stays small in the web's WebAssembly.
 
+The provinces only name where in Canada a leg or a field is, "Canada
+(Ontario)", so a pilot reads which part of a route is outside the US: the
+country, and so the rules, are still the admin-0 outline's. They are thinned
+at PROVINCE_TOLERANCE throughout, some 3 nm, which may name the province
+next door that near a line between two of them.
+
 The standard library only.
 
   curl -sSLo ne.geojson https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_50m_admin_0_countries.geojson
-  python3 scripts/build/borders.py ne.geojson
+  curl -sSLo ne1.geojson https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/ne_50m_admin_1_states_provinces.geojson
+  python3 scripts/build/borders.py ne.geojson ne1.geojson
 """
 
 import json
@@ -44,6 +53,7 @@ FINE, COARSE = 0.005, 0.1
 NEAR_DEG = 0.5
 SMALL_ISLAND_DEG2 = 0.05
 SCALE = 1000
+PROVINCE_TOLERANCE = 0.05
 
 
 def code_of(props):
@@ -88,7 +98,36 @@ def thin(ring, tolerance):
     return [p for p, k in zip(ring, keep) if k]
 
 
-def main(path):
+def encode(ring):
+    """A ring's line: its first point whole, each after it the step from the one before."""
+    pts = [(round(x * SCALE), round(y * SCALE)) for x, y in ring]
+    out, (px, py) = [f"{pts[0][0]} {pts[0][1]}"], pts[0]
+    for x, y in pts[1:]:
+        if (x, y) != (px, py):
+            out.append(f"{x - px} {y - py}")
+        px, py = x, y
+    return " ".join(out)
+
+
+def provinces(path):
+    """Canada's provinces and territories, "P <postal code>" and their rings."""
+    lines = []
+    features = json.loads(Path(path).read_text(encoding="utf-8"))["features"]
+    for f in sorted((f for f in features if f["properties"].get("adm0_a3") == "CAN"), key=lambda f: f["properties"]["postal"]):
+        lines.append(f"P {f['properties']['postal']}")
+        for ring in rings_of(f["geometry"]):
+            ring = [tuple(p) for p in ring]
+            if ring[0] == ring[-1]:
+                ring = ring[:-1]
+            if area(ring) < SMALL_ISLAND_DEG2:
+                continue
+            kept = thin(ring + [ring[0]], [PROVINCE_TOLERANCE] * (len(ring) + 1))[:-1]
+            if len(kept) >= 3:
+                lines.append(encode(kept))
+    return lines
+
+
+def main(path, admin1):
     features = json.loads(Path(path).read_text(encoding="utf-8"))["features"]
     countries = {}
     for f in features:
@@ -107,8 +146,9 @@ def main(path):
     lines = [
         "# The countries' outlines for jurisdiction_of (engine/crates/flight/src/jurisdiction.rs),",
         "# written by scripts/build/borders.py from Natural Earth's admin-0 countries at 1:50m",
-        "# (public domain), v5.1.2. Never edit by hand: run the script again.",
-        "# C <code>: a country; then a line a ring: its points in thousandths of a degree,",
+        "# (public domain), v5.1.2, and Canada's provinces from its admin-1 at 1:50m.",
+        "# Never edit by hand: run the script again.",
+        "# C <code>: a country, P <code>: a province of Canada; then a line a ring: its points in thousandths of a degree,",
         "# lon lat, the first whole and each after it the step from the one before.",
     ]
     for code in ["US", "CA", "MX", "BS"]:
@@ -127,18 +167,13 @@ def main(path):
                 kept = thin(ring + [ring[0]], [FINE] * (len(ring) + 1))[:-1]
             if len(kept) < 3:
                 continue
-            pts = [(round(x * SCALE), round(y * SCALE)) for x, y in kept]
-            out, (px, py) = [f"{pts[0][0]} {pts[0][1]}"], pts[0]
-            for x, y in pts[1:]:
-                if (x, y) != (px, py):
-                    out.append(f"{x - px} {y - py}")
-                px, py = x, y
-            lines.append(" ".join(out))
+            lines.append(encode(kept))
+    lines += provinces(admin1)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    points = sum(len(line.split()) // 2 for line in lines if line[0] not in "#C")
+    points = sum(len(line.split()) // 2 for line in lines if line[0] not in "#CP")
     print(f"{OUT.relative_to(ROOT)}: {OUT.stat().st_size:,} bytes, {points:,} points")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(sys.argv[1], sys.argv[2])

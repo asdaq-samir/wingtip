@@ -38,17 +38,25 @@
           "type": "string",
           "description": "The country's name as the warning starts, \"Canada\"; \"Outside the US\" for other."
         },
+        "province": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "In Canada, its province or territory, \"Ontario\" (Natural Earth's admin-1 at 1:50m); null elsewhere."
+        },
         "caution": {
           "type": [
             "string",
             "null"
           ],
-          "description": "The warning where the figures are, \"Canada: rules not checked — figures use US rules\"; null in the United States."
+          "description": "The warning at the point, \"This point is in Canada (Ontario): Canadian rules not checked — figures use US rules\"; null in the United States."
         }
       },
       "required": [
         "code",
         "name",
+        "province",
         "caution"
       ]
     }

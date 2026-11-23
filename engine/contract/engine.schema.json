@@ -17717,17 +17717,25 @@
               "type": "string",
               "description": "The country's name as the warning starts, \"Canada\"; \"Outside the US\" for other."
             },
+            "province": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "In Canada, its province or territory, \"Ontario\" (Natural Earth's admin-1 at 1:50m); null elsewhere."
+            },
             "caution": {
               "type": [
                 "string",
                 "null"
               ],
-              "description": "The warning where the figures are, \"Canada: rules not checked \u2014 figures use US rules\"; null in the United States."
+              "description": "The warning at the point, \"This point is in Canada (Ontario): Canadian rules not checked \u2014 figures use US rules\"; null in the United States."
             }
           },
           "required": [
             "code",
             "name",
+            "province",
             "caution"
           ]
         }
@@ -27855,6 +27863,13 @@
                   },
                   "lon": {
                     "type": "number"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "Its name as the pilot reads it, \"KBUF\": the warnings name the point and the leg to it by it; \"This point\" and \"The leg\" without one."
                   }
                 },
                 "required": [
@@ -27862,7 +27877,7 @@
                   "lon"
                 ]
               },
-              "description": "The route's points in order, as the nav log's rows: a leg from each to the next."
+              "description": "The route's points in order, the nav log's departure, stops and destination: a leg from each to the next."
             }
           },
           "required": [
@@ -27894,7 +27909,7 @@
                       "string",
                       "null"
                     ],
-                    "description": "The warning where the figures are, \"Canada: rules not checked \u2014 figures use US rules\"; null in the United States."
+                    "description": "The warning at a point outside the United States, \"CYQT is in Canada (Ontario): Canadian rules not checked \u2014 figures use US rules\"; null in the United States."
                   }
                 },
                 "required": [
@@ -27929,7 +27944,7 @@
                       "string",
                       "null"
                     ],
-                    "description": "The warning where the figures are, \"Canada: rules not checked \u2014 figures use US rules\"; null in the United States."
+                    "description": "The leg's own warning where it meets a country neither of its ends is in, named by where it goes and where it crosses, \"The leg to KBUF crosses Canada (Ontario): Canadian rules not checked \u2014 figures use US rules\"; null otherwise (a leg into a field in Canada is said at the field)."
                   }
                 },
                 "required": [
@@ -27961,7 +27976,7 @@
                   "properties": {
                     "lead": {
                       "type": "string",
-                      "description": "The finding alone."
+                      "description": "The finding alone, \"Part of the route is in Canada (Ontario): Canadian rules not checked \u2014 figures use US rules\"."
                     },
                     "line": {
                       "type": "string",

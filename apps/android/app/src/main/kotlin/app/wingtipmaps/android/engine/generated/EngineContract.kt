@@ -7356,7 +7356,11 @@ object EngineContract {
          */
         val name: String,
         /**
-         * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+         * In Canada, its province or territory, "Ontario" (Natural Earth's admin-1 at 1:50m); null elsewhere.
+         */
+        val province: String? = null,
+        /**
+         * The warning at the point, "This point is in Canada (Ontario): Canadian rules not checked — figures use US rules"; null in the United States.
          */
         val caution: String? = null,
     )
@@ -11923,7 +11927,7 @@ object EngineContract {
     @Serializable
     data class RouteJurisdictionAnswerBrief(
         /**
-         * The finding alone.
+         * The finding alone, "Part of the route is in Canada (Ontario): Canadian rules not checked — figures use US rules".
          */
         val lead: String,
         /**
@@ -11942,7 +11946,7 @@ object EngineContract {
          */
         val codes: List<String>,
         /**
-         * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+         * The leg's own warning where it meets a country neither of its ends is in, named by where it goes and where it crosses, "The leg to KBUF crosses Canada (Ontario): Canadian rules not checked — figures use US rules"; null otherwise (a leg into a field in Canada is said at the field).
          */
         val caution: String? = null,
     )
@@ -11954,7 +11958,7 @@ object EngineContract {
          */
         val code: String,
         /**
-         * The warning where the figures are, "Canada: rules not checked — figures use US rules"; null in the United States.
+         * The warning at a point outside the United States, "CYQT is in Canada (Ontario): Canadian rules not checked — figures use US rules"; null in the United States.
          */
         val caution: String? = null,
     )
@@ -11962,7 +11966,7 @@ object EngineContract {
     @Serializable
     data class RouteJurisdictionInput(
         /**
-         * The route's points in order, as the nav log's rows: a leg from each to the next.
+         * The route's points in order, the nav log's departure, stops and destination: a leg from each to the next.
          */
         val points: List<EngineContract.RouteJurisdictionInputPointsItem>,
     )
@@ -11971,6 +11975,10 @@ object EngineContract {
     data class RouteJurisdictionInputPointsItem(
         val lat: Double,
         val lon: Double,
+        /**
+         * Its name as the pilot reads it, "KBUF": the warnings name the point and the leg to it by it; "This point" and "The leg" without one.
+         */
+        val name: String? = null,
     )
 
     /**

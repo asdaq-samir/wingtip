@@ -39,6 +39,7 @@ const point = (over: Partial<TimelinePoint> = {}): TimelinePoint => ({
   category: "VFR",
   problem: null,
   caution: null,
+  legCaution: null,
   checking: false,
   fuelStop: false,
   field: true,

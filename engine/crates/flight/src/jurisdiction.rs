@@ -18,6 +18,9 @@
 //! scripts/build/borders.py, which says how they were thinned): the United
 //! States with its territories, and Canada, Mexico and the Bahamas, the
 //! neighbours a flight from it reaches first; anywhere else is "other".
+//! Canada's provinces and territories, from Natural Earth's admin-1 at
+//! 1:50m, only name where in Canada a field or a leg is, "Canada
+//! (Ontario)", so the warning says which leg and where (province_of).
 //!
 //! Simplified toward the warning: a point on no country's land is its
 //! nearest kept country's within 12 nm of that country's outline (91.1(b)'s
@@ -67,26 +70,42 @@ fn band_of(lat: f64) -> usize {
     (((lat + 90.0) / BAND_DEG).floor().max(0.0) as usize).min(BANDS - 1)
 }
 
-/// The outlines, read once from data/borders.txt.
-fn countries() -> &'static [Country] {
-    static READ: OnceLock<Vec<Country>> = OnceLock::new();
+/// The outlines, read once from data/borders.txt: the countries, and
+/// Canada's provinces and territories, which only name where in Canada a
+/// point is.
+struct Outlines {
+    countries: Vec<Country>,
+    provinces: Vec<Country>,
+}
+
+fn outlines() -> &'static Outlines {
+    static READ: OnceLock<Outlines> = OnceLock::new();
     READ.get_or_init(|| read(include_str!("../data/borders.txt")))
 }
 
-fn read(text: &str) -> Vec<Country> {
-    let mut out: Vec<Country> = Vec::new();
+fn countries() -> &'static [Country] {
+    &outlines().countries
+}
+
+/// The engine's own code for one the file names, so each is a 'static str.
+fn code_of(code: &str) -> &'static str {
+    const CODES: [&str; 17] = ["US", "CA", "MX", "AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT", "BS"];
+    CODES.iter().find(|c| **c == code).copied().unwrap_or("BS")
+}
+
+fn read(text: &str) -> Outlines {
+    let mut all = Outlines { countries: Vec::new(), provinces: Vec::new() };
+    let mut into_provinces = false;
     for line in text.lines().filter(|l| !l.is_empty() && !l.starts_with('#')) {
-        if let Some(code) = line.strip_prefix("C ") {
-            let code = match code {
-                "US" => "US",
-                "CA" => "CA",
-                "MX" => "MX",
-                _ => "BS",
-            };
-            out.push(Country { code, bands: vec![Vec::new(); BANDS] });
+        let head = line.strip_prefix("C ").map(|c| (c, false)).or_else(|| line.strip_prefix("P ").map(|c| (c, true)));
+        if let Some((code, province)) = head {
+            into_provinces = province;
+            let list = if province { &mut all.provinces } else { &mut all.countries };
+            list.push(Country { code: code_of(code), bands: vec![Vec::new(); BANDS] });
             continue;
         }
-        let Some(country) = out.last_mut() else { continue };
+        let list = if into_provinces { &mut all.provinces } else { &mut all.countries };
+        let Some(country) = list.last_mut() else { continue };
         let steps: Vec<i64> = line.split(' ').filter_map(|n| n.parse().ok()).collect();
         let (mut x, mut y) = (0i64, 0i64);
         let ring: Vec<(f64, f64)> = steps
@@ -106,7 +125,7 @@ fn read(text: &str) -> Vec<Country> {
             }
         }
     }
-    out
+    all
 }
 
 /// Whether a point lies on a country's land: its outline crossed an odd
@@ -152,6 +171,51 @@ pub fn jurisdiction_of(lat: f64, lon: f64) -> &'static str {
         .map_or("other", |(_, code)| code)
 }
 
+/// How far from a province's outline a point in Canada off all of them
+/// (Lake Ontario's Canadian half, a coast's 12 nm) is still said to be in
+/// it, nm: past the 12 nm of territorial sea and the provinces' thinning.
+const PROVINCE_REACH_NM: f64 = 20.0;
+
+/// The province or territory of Canada a point there is in, by its
+/// English name, "Ontario": the one whose land holds it, else the nearest
+/// within PROVINCE_REACH_NM; None for a point outside Canada, or one off
+/// every province's outline.
+pub fn province_of(lat: f64, lon: f64) -> Option<&'static str> {
+    if jurisdiction_of(lat, lon) != "CA" {
+        return None;
+    }
+    province_in(lat, lon)
+}
+
+/// province_of for a point already known to be in Canada.
+fn province_in(lat: f64, lon: f64) -> Option<&'static str> {
+    let all = &outlines().provinces;
+    let code = match all.iter().find(|p| holds(p, lat, lon)) {
+        Some(p) => p.code,
+        None => {
+            all.iter()
+                .filter_map(|p| distance_within(p, lat, lon, PROVINCE_REACH_NM).map(|nm| (nm, p.code)))
+                .min_by(|a, b| a.0.total_cmp(&b.0))?
+                .1
+        }
+    };
+    Some(match code {
+        "AB" => "Alberta",
+        "BC" => "British Columbia",
+        "MB" => "Manitoba",
+        "NB" => "New Brunswick",
+        "NL" => "Newfoundland and Labrador",
+        "NS" => "Nova Scotia",
+        "NT" => "Northwest Territories",
+        "NU" => "Nunavut",
+        "ON" => "Ontario",
+        "PE" => "Prince Edward Island",
+        "QC" => "Quebec",
+        "SK" => "Saskatchewan",
+        _ => "Yukon",
+    })
+}
+
 /// A country's name as a pilot reads it at the head of the warning;
 /// "Outside the US" for a point in no kept country.
 pub fn country_name(code: &str) -> &'static str {
@@ -164,29 +228,135 @@ pub fn country_name(code: &str) -> &'static str {
     }
 }
 
-/// The warning for points or a leg outside the United States, the
-/// countries in the order met: "Canada: rules not checked — figures use US
-/// rules". None where every one is the United States.
-pub fn caution(codes: &[&str]) -> Option<String> {
-    let mut names = codes.iter().filter(|c| **c != "US").map(|c| country_name(c));
-    let first = names.next()?.to_string();
-    // A second name after the first, "Canada and outside the US".
-    let names = names.fold(first, |all, next| format!("{all} and {}", next.replacen("Outside", "outside", 1)));
-    Some(format!("{names}: rules not checked — figures use US rules"))
+/// Where outside the United States a point, a leg or a route lies: the
+/// countries other than the US met, in the order met, and the provinces
+/// of Canada among them, each once.
+#[derive(Debug, Default, PartialEq)]
+pub struct Outside {
+    pub countries: Vec<&'static str>,
+    pub provinces: Vec<&'static str>,
+}
+
+impl Outside {
+    /// A point's country and, in Canada, its province.
+    pub fn at(lat: f64, lon: f64) -> Self {
+        let mut out = Outside::default();
+        out.meet(jurisdiction_of(lat, lon), lat, lon);
+        out
+    }
+
+    fn meet(&mut self, code: &'static str, lat: f64, lon: f64) {
+        if code == "US" {
+            return;
+        }
+        if !self.countries.contains(&code) {
+            self.countries.push(code);
+        }
+        if code == "CA"
+            && let Some(p) = province_in(lat, lon)
+            && !self.provinces.contains(&p)
+        {
+            self.provinces.push(p);
+        }
+    }
+
+    /// Another's countries and provinces after this one's, each once.
+    pub fn add(&mut self, other: &Outside) {
+        for c in &other.countries {
+            if !self.countries.contains(c) {
+                self.countries.push(c);
+            }
+        }
+        for p in &other.provinces {
+            if !self.provinces.contains(p) {
+                self.provinces.push(p);
+            }
+        }
+    }
+
+    /// The places, as a pilot reads them after "is in" or "crosses":
+    /// "Canada (Ontario) and Mexico", "airspace outside the US" for a
+    /// point in no kept country (the high seas among it).
+    fn places(&self) -> String {
+        let names: Vec<String> = self
+            .countries
+            .iter()
+            .map(|c| match *c {
+                "CA" if !self.provinces.is_empty() => format!("Canada ({})", self.provinces.join(", ")),
+                "CA" => "Canada".to_string(),
+                "MX" => "Mexico".to_string(),
+                "BS" => "the Bahamas".to_string(),
+                _ => "airspace outside the US".to_string(),
+            })
+            .collect();
+        and(&names)
+    }
+
+    /// Whose rules were not checked: "Canadian rules"; outside every kept
+    /// country, the country's there or, over the high seas, ICAO Annex 2's
+    /// (14 CFR 91.703(a)(1), (2)), "foreign and ICAO rules".
+    fn rules(&self) -> String {
+        let names: Vec<String> = self
+            .countries
+            .iter()
+            .map(|c| match *c {
+                "CA" => "Canadian",
+                "MX" => "Mexican",
+                "BS" => "Bahamian",
+                _ => "foreign and ICAO",
+            })
+            .map(str::to_string)
+            .collect();
+        format!("{} rules", and(&names))
+    }
+
+    /// The warning, its subject and verb first: "The leg to KBUF crosses",
+    /// "KBUF is in", "Part of the route is in", then "Canada (Ontario):
+    /// Canadian rules not checked — figures use US rules". None where it is
+    /// all in the United States.
+    pub fn caution(&self, subject: &str) -> Option<String> {
+        if self.countries.is_empty() {
+            return None;
+        }
+        Some(format!("{subject} {}: {} not checked — figures use US rules", self.places(), self.rules()))
+    }
+}
+
+/// "A", "A and B", "A, B and C".
+fn and(names: &[String]) -> String {
+    match names {
+        [] => String::new(),
+        [one] => one.clone(),
+        [rest @ .., last] => format!("{} and {last}", rest.join(", ")),
+    }
 }
 
 /// The countries met along a leg, ends included, each once in the order
 /// met, at points LEG_STEP_NM apart on its geodesic.
 pub fn leg_codes(a: (f64, f64), b: (f64, f64)) -> Vec<&'static str> {
-    let (nm, course) = distance_and_bearing(a.0, a.1, b.0, b.1);
-    let steps = ((nm / LEG_STEP_NM).ceil() as usize).clamp(1, LEG_POINTS_MAX);
     let mut codes: Vec<&'static str> = Vec::new();
-    for i in 0..=steps {
-        let (lat, lon) = if i == steps { b } else { destination(a.0, a.1, course, nm * i as f64 / steps as f64) };
-        let code = jurisdiction_of(lat, lon);
+    along(a, b, |code, _, _| {
         if !codes.contains(&code) {
             codes.push(code);
         }
-    }
+    });
     codes
+}
+
+/// Where outside the United States a leg lies, ends included, its points
+/// LEG_STEP_NM apart on its geodesic.
+pub fn leg_outside(a: (f64, f64), b: (f64, f64)) -> Outside {
+    let mut out = Outside::default();
+    along(a, b, |code, lat, lon| out.meet(code, lat, lon));
+    out
+}
+
+/// Each point of a leg LEG_STEP_NM apart, its country, in order.
+fn along(a: (f64, f64), b: (f64, f64), mut each: impl FnMut(&'static str, f64, f64)) {
+    let (nm, course) = distance_and_bearing(a.0, a.1, b.0, b.1);
+    let steps = ((nm / LEG_STEP_NM).ceil() as usize).clamp(1, LEG_POINTS_MAX);
+    for i in 0..=steps {
+        let (lat, lon) = if i == steps { b } else { destination(a.0, a.1, course, nm * i as f64 / steps as f64) };
+        each(jurisdiction_of(lat, lon), lat, lon);
+    }
 }
