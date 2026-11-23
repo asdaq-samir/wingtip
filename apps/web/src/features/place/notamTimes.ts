@@ -1,5 +1,5 @@
 import { corner, dateOf, windowOf, type FieldNotam, type NotamReading } from "./fieldNotams";
-import { twoFigures } from "../../lib/format";
+import { formatIn, twoFigures } from "../../lib/format";
 
 /** One labelled line of a NOTAM's times: "Since", "Starts", "Ends",
  *  "Duration"; `soon` how long until it ("in 18d"), which the
@@ -7,6 +7,7 @@ import { twoFigures } from "../../lib/format";
 export type TimeLine = { label: string; value: string; soon?: string };
 
 const MINUTE = 60_000;
+const YEAR: Intl.DateTimeFormatOptions = { year: "numeric" };
 
 /** How long, as ForeFlight writes it: "5m" under an hour, "5h45m" under a
  *  day, "4d16h" under ten, "18d" past them. */
@@ -41,8 +42,13 @@ export function timeLines(n: FieldNotam, read: NotamReading, untilCharts: boolea
   const window = windowOf(n, read);
   const [starts, ends] = [dateOf(window.starts), dateOf(window.ends)];
   const active = n.in_force !== false;
-  const year = new Date(now).getUTCFullYear();
-  const withYear = [starts, ends].some((d) => d && d.getUTCFullYear() !== year);
+  // The year as the lines show it, in the field's zone, not UTC's: near
+  // New Year the two differ (the r7 audit's W-L8).
+  // A zone this browser does not know is UTC, as corner writes it then.
+  const inZone = (zone && formatIn(zone, YEAR)) || formatIn("UTC", YEAR)!;
+  const yearOf = (at: Date | number) => inZone.format(at);
+  const year = yearOf(now);
+  const withYear = [starts, ends].some((d) => d && yearOf(d) !== year);
   const when = (at: Date) => corner(at, zone, withYear);
   const soon = (at: Date) => (at.getTime() > now ? { soon: `in ${span(at.getTime() - now)}` } : {});
   const lines: TimeLine[] = [];

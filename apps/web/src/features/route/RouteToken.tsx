@@ -64,7 +64,8 @@ interface ShortFlight {
 // One piece of a token, kept whole on its line: a pill, or a chip. Pieces
 // wrap as words do, so a field with an arrival, an approach and a
 // departure picked is never one run wider than the box (the r6 audit's
-// M9); a chip keeps to its pill at a gap of 4, the next point 8 on (gap-2),
+// M9); a chip keeps to its pill at a gap of 4, the next point 8 on, each
+// gap at a piece's end, so a wrapped line starts at the left edge,
 // as ForeFlight's pills read, in order with no arrows (the owner, 2026-11-23).
 const PIECE = "inline-flex max-w-full items-center align-middle whitespace-nowrap";
 // A missing departure's word, where its field was: in the field's grey, at
@@ -209,12 +210,19 @@ export default function RouteToken({ i, box }: { i: number; box: TokenBox }) {
     // 2026-11-23). Each pill's and chip's 44-point area reaches half way
     // across the gap to its neighbour's (the audit's WEB-4).
     <span className="font-sans leading-normal whitespace-normal normal-case">
-      {pieces.map((piece, n) => (
-        <Fragment key={piece.key}>
-          {(n > 0 || i > 0) && <wbr />}
-          <span className={cn(PIECE, (n > 0 || i > 0) && (piece.tight ? "ms-1" : "ms-2"))}>{piece.node}</span>
-        </Fragment>
-      ))}
+      {pieces.map((piece, n) => {
+        // The gap after a piece, before the break: a wrapped line starts at
+        // the box's left edge as the first does, where a gap before a piece
+        // indented every line after the first (the r7 audit's W-M2).
+        const next = pieces[n + 1];
+        const gap = next ? (next.tight ? "me-1" : "me-2") : i < box.points.length - 1 ? "me-2" : undefined;
+        return (
+          <Fragment key={piece.key}>
+            {(n > 0 || i > 0) && <wbr />}
+            <span className={cn(PIECE, gap)}>{piece.node}</span>
+          </Fragment>
+        );
+      })}
     </span>
   );
 }

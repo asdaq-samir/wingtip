@@ -84,21 +84,29 @@ export default function FigureStrip({
    *  review of 2026-11-22). */
   still?: boolean;
   /** One row whatever the width, never two by two: a bar one row high
-   *  (FPL's pill), where a figure too wide is cut short with "…". */
+   *  (FPL's pill), where the last figure is dropped when they do not all
+   *  fit at full size, never one cut short. */
   row?: boolean;
 }) {
   const type = TYPE[size];
   const roll = still ? undefined : "figure-roll";
-  // As many columns as figures, so none ever wraps onto a row of its own
-  // (in flight the GPS altitude, a fifth figure in four columns, went under
-  // the rest, and the pill showed that row alone).
-  const cols = { "--cols": figures.length } as CSSProperties;
   // Two by two where the figures do not fit across at their full size
   // (useFiguresFit), as below 16 rem: never one cut short (the HIG audit
   // of 2026-11-23, H2).
   const strip = useRef<HTMLDListElement>(null);
   const fits = useFiguresFit(strip, figures.map((f) => `${f.label ?? f.name}${f.value}${f.unit ?? ""}`).join("|"));
   const fit = row || fits;
+  // One row that does not hold them all at full size: the last figure
+  // dropped rather than any cut short with "…" (the r7 audit's W-M3, at
+  // the owner's 17.88 and 19.65 px on a 375-point iPhone). It stays laid
+  // out, out of the grid and out of sight, so what the strip needs is
+  // measured the same and the row never flips between three and four.
+  const drop = row && !fits && figures.length > 1 ? figures.length - 1 : -1;
+  const last = drop >= 0 ? drop - 1 : figures.length - 1;
+  // As many columns as figures shown, so none ever wraps onto a row of its
+  // own (in flight the GPS altitude, a fifth figure in four columns, went
+  // under the rest, and the pill showed that row alone).
+  const cols = { "--cols": figures.length - (drop >= 0 ? 1 : 0) } as CSSProperties;
   return (
     <div className="@container/figures relative" data-slot="section-summary">
       <dl
@@ -120,7 +128,7 @@ export default function FigureStrip({
           // 2026-11-20: "Why aren't we using the full width for the figures
           // at the bottom?"), where each centred in its fifth left the ends
           // inset. Not in the two-column stack of a narrow strip.
-          const edge = fit && figures.length > 2 && (i === 0 ? "start" : i === figures.length - 1 ? "end" : null);
+          const edge = fit && last > 1 && (i === 0 ? "start" : i === last ? "end" : null);
           const button = tap?.(
             f,
             <>
@@ -149,8 +157,11 @@ export default function FigureStrip({
             // Each column as wide as its widest of name and figure.
             <div
               key={f.name}
+              inert={i === drop || undefined}
+              aria-hidden={i === drop || undefined}
               className={cn(
                 "min-w-0 text-center",
+                i === drop && "invisible absolute",
                 edge === "start" && "@min-[16rem]/figures:text-left",
                 edge === "end" && "@min-[16rem]/figures:text-right",
               )}

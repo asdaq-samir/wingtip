@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { UnknownPlace } from "../../lib/api/client";
 import type { Detour, FuelStopSuggestion } from "../../lib/api/types";
 import type { AirspaceClass } from "../../lib/preferences";
@@ -87,4 +88,9 @@ export interface RouteBoxProps extends RouteParts {
    *  including the approach pills etc."). Else the one row that slides. */
   wrapped?: boolean;
   height?: number;
+  /** Drawn straight under the box, before its red message: the editor's
+   *  toggle row, pulled up into the wrapped box's room under its last line
+   *  (RouteEditor), so a message under the box is never under the toggle
+   *  and its Remove takes its own tap (the r7 audit's W-M1). */
+  foot?: ReactNode;
 }

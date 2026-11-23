@@ -55,6 +55,17 @@ describe("a NOTAM's times, a line each, as ForeFlight's list gives them", () => 
     ]);
   });
 
+  it("decides the year in the field's own zone, not UTC's, at New Year", () => {
+    // 03:00 UTC on 1 January 2027 is 21:00 CST on 31 December 2026 at
+    // Oshkosh: a NOTAM since 30 December is this year's there, no year said.
+    const n = { in_force: true, starts: "2026-12-30T18:00:00Z", ends: "2027-01-01T05:00:00Z" } as FieldNotam;
+    const at = Date.parse("2027-01-01T03:00:00Z");
+    expect(timeLines(n, read, false, "America/Chicago", at)).toEqual([
+      { label: "Since", value: "12/30 12:00 CST" },
+      { label: "Ends", value: "12/31 23:00 CST", soon: "in 2h00m" },
+    ]);
+  });
+
   it("says the year on both lines where either is not this year's, as FDC 6/3373's end two years on", () => {
     const n = { in_force: true, starts: "2026-05-27T18:43:00Z", ends: "2028-05-27T18:43:00Z" } as FieldNotam;
     const at = Date.parse("2026-11-23T12:00:00Z");

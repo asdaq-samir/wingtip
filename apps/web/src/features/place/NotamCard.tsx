@@ -50,7 +50,13 @@ function usePlanRole(ident: string, card: NotamCardReading): { words: string; ta
   ].filter((r) => r.here);
   if (card.procedures.length === 0) return roles[0] ? { words: roles[0].words, taken: false } : null;
   const flown = roles.find((r) => card.procedures.some((p) => (p.departure ? r.leaves : r.lands)));
-  return flown ? { words: flown.words, taken: true } : null;
+  if (flown) return { words: flown.words, taken: true };
+  // What happened beside the procedures, the field's own ("Runway 18/36
+  // closed" over FDC 6/3373's departures), affects every role there: the
+  // neutral chip, where a procedure-only title is the engine's "... not
+  // authorized" (notam_card; the r7 audit's W-M4).
+  const fieldWide = !!card.title && !/not authorized/i.test(card.title);
+  return fieldWide && roles[0] ? { words: roles[0].words, taken: false } : null;
 }
 
 /** Whether it is in force now, the shared StatusBadge (the owner,

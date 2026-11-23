@@ -119,8 +119,9 @@ export function FuelStopChip({
 
 /** A procedure picked at a point, beside its pill: its kind's glyph and its
  *  short title in the approaches' indigo, as the map draws it
- *  (ProceduresGl); a long title cut short, so the chip is never wider than
- *  the box (the r6 audit's M9). */
+ *  (ProceduresGl), whole: pieces wrap whole (RouteToken), so its title is
+ *  never cut ("RNAV (GPS) Y RWY 2…", the r7 audit's W-L1); only one wider
+ *  than the box itself is, at the box's width. */
 export function ProcedureChip({ procedure, onOpen }: { procedure: RouteProcedure; onOpen?: () => void }) {
   const Glyph = PROCEDURE_GLYPH[procedure.kind];
   return (
@@ -133,7 +134,7 @@ export function ProcedureChip({ procedure, onOpen }: { procedure: RouteProcedure
       data-testid="route-procedure"
       aria-label={`${procedure.spoken}: the route's procedures`}
       className={cn(
-        "relative h-7 max-w-40 gap-1 rounded-full px-1 font-semibold text-procedure hit-x-0.5 hit-y-2 hover:text-procedure native:text-procedure",
+        "relative h-7 max-w-full gap-1 rounded-full px-1 font-semibold text-procedure hit-x-0.5 hit-y-2 hover:text-procedure native:text-procedure",
         TEXT.note,
       )}
     >

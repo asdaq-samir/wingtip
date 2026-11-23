@@ -118,7 +118,7 @@ export default function TripFigures({
   thin?: boolean;
   /** FPL's pill, one row of the pill's height: at most four figures, the
    *  GPS altitude the first to go, then the last; never two by two
-   *  (FigureStrip's `row`), a figure too wide cut short with "…". */
+   *  (FigureStrip's `row`), the last dropped where four are too wide, none cut short. */
   pill?: boolean;
   /** The magnetic course of the leg the strip shows (the nav log's), the Course while not at flying speed. */
   legCourseDeg?: number | null;
