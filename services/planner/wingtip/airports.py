@@ -26,13 +26,14 @@ from .airport_tables import (
     _faa_key,
     load_airports,
 )
-from .airport_us import search_airports, search_index
+from .airport_us import count_airports, search_airports, search_index
 
 __all__ = [
     "DEFAULT_CACHE_PATH",
     "FREQUENCIES_CACHE_PATH",
     "RUNWAYS_CACHE_PATH",
     "RUNWAYS_URL",
+    "count_airports",
     "find_place",
     "get_airport",
     "get_frequencies",

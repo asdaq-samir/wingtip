@@ -103,7 +103,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         // below and keeps Spring Security's no-store. Without this every
         // page load re-downloaded a megabyte of JavaScript.
         // And each sent as the .br or .gz the web's build wrote beside it
-        // (vite.config.ts's compression plugin) where the browser accepts
+        // (vite-plugins/compression.ts) where the browser accepts
         // it: Spring's own EncodedResourceResolver, which keeps the
         // file's own Content-Type (application/wasm for the engine, which
         // instantiateStreaming needs), sets Content-Encoding and adds Vary:

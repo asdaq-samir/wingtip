@@ -9,8 +9,8 @@ import Testing
 @MainActor
 struct NativeLookTests {
     private func notam(_ id: String, rank: Int, kind: String = "notam", field: String? = "KOSH", role: String? = "dest",
-                       keyword: String? = "RWY", starts: String? = nil, inForce: Bool? = nil) -> APIRankedNotam {
-        APIRankedNotam(closed: false, ends: nil, field: kind == "tfr" ? nil : field, highFt: nil, id: id, inForce: inForce, keyword: keyword,
+                       keyword: String? = "RWY", starts: String? = nil, ends: String? = nil, inForce: Bool? = nil) -> APIRankedNotam {
+        APIRankedNotam(closed: false, ends: ends, field: kind == "tfr" ? nil : field, highFt: nil, id: id, inForce: inForce, keyword: keyword,
                        kind: kind, lowFt: nil, rank: rank, raw: "!OSH 11/001 OSH RWY 09/27 CLSD", reasons: [], role: kind == "tfr" ? nil : role,
                        runways: [], score: 10, starts: starts, tied: false, top: rank == 1)
     }
@@ -33,6 +33,9 @@ struct NativeLookTests {
         #expect(NotamRows.when(notam("a", rank: 1, starts: "2026-11-09T14:00:00Z"), now: try #require(FieldNotamWords.date("2026-11-10T00:00:00Z")))
                 == "From 11/09 14:00 UTC")
         #expect(NotamRows.when(notam("a", rank: 1, inForce: true)) == "In effect now")
+        // A card the engine could not read says no end at all (the r9 audit).
+        let unread = notam("a", rank: 1, starts: "2026-11-09T14:00:00Z", ends: "2026-12-09T14:00:00Z", inForce: true)
+        #expect(NotamRows.when(unread, untilCharts: nil) == "In effect now")
         #expect(!NotamRows.summary(notam("a", rank: 1)).hasPrefix("!OSH"))
         #expect(NotamRows.kind(notam("t", rank: 1, kind: "tfr")) == "TFR")
     }

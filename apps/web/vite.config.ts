@@ -6,14 +6,13 @@ import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
-import { compression, defineAlgorithm } from "vite-plugin-compression2";
-import { constants as zlib } from "node:zlib";
 import { CHART_TILES, IN_FLIGHT_READS, LIBRARY_BOOKS, OVERLAY_ARCHIVE, RADAR_FRAMES, markFromCache } from "./vite-plugins/workboxRules";
 import { preloadEngine } from "./vite-plugins/preloadEngine.ts";
 import { MANIFEST, themeColor } from "./vite-plugins/manifest.ts";
 import { CHUNK_SIZE_LIMIT, strictRolldown, warningsFail } from "./vite-plugins/strictBuild.ts";
 import { STAGING, publish, publishDir } from "./vite-plugins/publishBuild.ts";
 import { licences } from "./vite-plugins/licences.ts";
+import { compressed } from "./vite-plugins/compression.ts";
 import { claudeView } from "./vite-plugins/claudeView.ts";
 
 // The page reader's files (features/airplane/lib/readPage), from node_modules into the
@@ -65,31 +64,8 @@ export default defineConfig({
     // and without it the compiler ran over react-dom and MapLibre too.
     babel({ exclude: [/[/\\]node_modules[/\\]/, /\/components\/ui\//], presets: [reactCompilerPreset()] }),
     tailwindcss(),
-    // Each file a .br (Brotli at 11) and a .gz (gzip at 9) beside it, made
-    // once here, which the gateway sends to a browser that asks for them
-    // (WebMvcConfig's EncodedResourceResolver): Brotli at 11 is too slow to
-    // make per request, and made here it is 19% under gzip for the engine's
-    // WebAssembly (397,838 bytes to 492,654, 2026-11-14), which iPhone Safari
-    // takes (Accept-Encoding: gzip, deflate, br). The service worker's
-    // globPatterns name no .br or .gz, so it keeps only the files themselves.
-    // CI's build check serves nothing, so asks for none (WINGTIP_PRECOMPRESS=0:
-    // they took the build from about 30 s to 89, run 43735121847). Nor the
-    // live stack's watch (publishDir set): the plugin's closeBundle stats
-    // every public file in STAGING while publish renames them away, its
-    // ENOENTs stay in the plugin's one task queue, never cleared, and every
-    // later rebuild then failed with them ("Compression failed in bundle
-    // compression with 98 error(s) ... stat '/w/.dist-next/splash/..."). The
-    // gateway's server.compression gzips the same types on the fly there.
-    process.env.WINGTIP_PRECOMPRESS !== "0" &&
-      !publishDir &&
-      compression({
-        include: /\.(js|mjs|css|html|svg|json|webmanifest|wasm)$/,
-        threshold: 1024,
-        algorithms: [
-          defineAlgorithm("brotliCompress", { params: { [zlib.BROTLI_PARAM_QUALITY]: 11 } }),
-          defineAlgorithm("gzip", { level: 9 }),
-        ],
-      }),
+    // A .br and a .gz beside each file, for the gateway (vite-plugins/compression.ts).
+    compressed(),
     // The app in the air: a service worker (Workbox, generated at
     // build) that keeps the app shell, every chart tile the map has
     // drawn or `KeepRoute` fetched ahead, and the planner's own

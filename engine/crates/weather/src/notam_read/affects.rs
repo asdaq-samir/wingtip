@@ -64,15 +64,20 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         return Err(format!("{name}: not a rule of notam_affects"));
     }
     let text = v.get("text").and_then(Value::as_str).ok_or("notam_affects: \"text\" is missing")?;
-    let strings = |key: &str| -> Vec<String> {
-        v.get(key).and_then(Value::as_array).unwrap_or(&[]).iter().filter_map(Value::as_str).map(str::to_owned).collect()
-    };
-    let idents = strings("idents");
-    let roles = strings("roles");
-    if let Some(r) = roles.iter().find(|r| !ROLES.contains(&r.as_str())) {
-        return Err(format!("notam_affects: {r:?} is not a role"));
-    }
-    let roles: Vec<&str> = roles.iter().map(String::as_str).collect();
+    let idents: Vec<String> =
+        v.get("idents").and_then(Value::as_array).unwrap_or(&[]).iter().filter_map(Value::as_str).map(str::to_owned).collect();
+    // The roles are refused whole where any is wrong: missing, or a member
+    // that is not one of the role names, a number among them as much as an
+    // unknown word, so one mistake has one failure (the r9 audit).
+    let asked = v.get("roles").and_then(Value::as_array).ok_or("notam_affects: \"roles\" is missing")?;
+    let roles = asked
+        .iter()
+        .map(|r| match r.as_str() {
+            Some(s) if ROLES.contains(&s) => Ok(s),
+            Some(s) => Err(format!("notam_affects: {s:?} is not a role")),
+            None => Err("notam_affects: a role is not a string".to_owned()),
+        })
+        .collect::<Result<Vec<&str>, String>>()?;
     let mut out = String::from("{\"affects\":[");
     for (i, (role, taken)) in affects(&card(text, &idents), &roles).into_iter().enumerate() {
         out.push_str(if i == 0 { "{\"role\":" } else { ",{\"role\":" });
@@ -132,5 +137,15 @@ mod tests {
     fn a_role_it_does_not_know_is_refused() {
         let v: Value = json::parse(r#"{"text":"x","roles":["enroute"]}"#).unwrap();
         assert!(call("notam_affects", &v).is_err());
+    }
+
+    #[test]
+    fn roles_missing_or_not_words_are_refused() {
+        for asked in [r#"{"text":"x"}"#, r#"{"text":"x","roles":[1]}"#, r#"{"text":"x","roles":["departure",null]}"#] {
+            let v: Value = json::parse(asked).unwrap();
+            assert!(call("notam_affects", &v).is_err(), "{asked}");
+        }
+        let v: Value = json::parse(r#"{"text":"x","roles":[]}"#).unwrap();
+        assert_eq!(call("notam_affects", &v).unwrap(), r#"{"affects":[]}"#);
     }
 }
