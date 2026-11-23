@@ -39,6 +39,7 @@ final class IPadLayoutTests: XCTestCase {
         let app = CardTests.launch(["-screen", "search"], size: [])
         let search = app.searchFields[CardTests.searchPrompt]
         XCTAssertTrue(search.waitForExistence(timeout: 20), "no search in the sidebar")
+        XCTAssertTrue(Self.keyboardAttached(app), "⌘2 never turned the plan to FPL: no menu bar keys at all")
         app.buttons["Hide Sidebar"].firstMatch.tap()
         XCTAssertTrue(search.waitForHittable(false, timeout: 10), "the sidebar did not go")
         app.typeKey("f", modifierFlags: .command)
@@ -66,6 +67,25 @@ final class IPadLayoutTests: XCTestCase {
         XCTAssertTrue(card.waitForNonExistence(timeout: 10), "the close did not put the card away")
         XCTAssertTrue(search.waitForHittable(true, timeout: 10), "the sidebar did not come back with the card closed")
         app.terminate()
+    }
+}
+
+extension IPadLayoutTests {
+    /// The simulator's hardware keyboard made known to the app before a
+    /// key is asked of it: a simulator booted fresh (CI's, every run) has
+    /// none until the first key is typed, and iPadOS builds the menu bar,
+    /// and with it every ⌘ key, only then, so that first key does nothing
+    /// (the app's log: the main menu built just after the ⌘F typed, run of
+    /// 2026-11-22). ⌘2 (View > FPL) until the plan shows FPL, a few
+    /// times at most: the keys' own menu, which the test then asks.
+    @MainActor
+    static func keyboardAttached(_ app: XCUIApplication) -> Bool {
+        let fpl = app.textFields["To"]
+        for _ in 0..<3 {
+            app.typeKey("2", modifierFlags: .command)
+            if fpl.waitForExistence(timeout: 3) { return true }
+        }
+        return false
     }
 }
 
