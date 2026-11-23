@@ -67,7 +67,7 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
     `${c.key === "none" ? "As typed, the route as typed" : c.label}${c.time ? `, ${c.time}` : ""}${figures(c) ? `, ${figures(c)}` : ""}${c.warning ? `, ${c.warning.toLowerCase()}` : ""}`;
   return (
     <div
-      className={cn(grouped ? "pb-1" : "mt-2 mb-1", line.stale && "opacity-50 transition-opacity motion-reduce:transition-none")}
+      className={cn(!grouped && "mt-2 mb-1", line.stale && "opacity-50 transition-opacity motion-reduce:transition-none")}
       data-testid="route-line"
       data-stale={line.stale ? "" : undefined}
       aria-busy={line.stale || undefined}
@@ -80,8 +80,19 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
         aria-label="Routes"
         disabled={line.stale}
         // Room above and under for the chips' 44-point areas, which a
-        // scrolling row would cut off.
-        className="flex w-full justify-start gap-2 overflow-x-auto overscroll-x-contain py-1.5"
+        // scrolling row would cut off. In the foot bar (`grouped`) that
+        // room is laid over the strip's: the row's 44 laid out at the thin
+        // strip's 28 (PIN_FIGURE's two lines, 1.75rem), so Routes swapping
+        // the figures for the chips moves neither the bar nor the map's
+        // room (the r10 audit). There the row is only as wide as its chips
+        // and takes no touch of its own, only a chip does, and a sideways
+        // swipe on one scrolls it (pan-x): the gaps, the room after the
+        // last chip and an upward drag pass to the sheet behind the bar, as
+        // the figures do (sheet/FootBar; the r10 audit's W-L1).
+        className={cn(
+          "flex justify-start gap-2 overflow-x-auto overscroll-x-contain py-1.5",
+          grouped ? "pointer-events-none -my-2 w-fit max-w-full touch-pan-x" : "w-full",
+        )}
       >
         {line.chips.map((c) => (
           <ToggleGroupItem
@@ -92,6 +103,7 @@ export function RouteLine({ line: asked, grouped = false }: { line: RouteLineCho
             className={cn(
               // The search's chips' pill (FilterChips), filled in the tint
               // while it is the way flown; its 44-point area round it.
+              grouped && "pointer-events-auto",
               "relative h-8 shrink-0 gap-1.5 rounded-full border border-border bg-card px-3 font-medium text-foreground",
               "hit-y-1.5",
               "data-pressed:border-tint data-pressed:bg-tint data-pressed:text-primary-foreground hover:data-pressed:bg-tint",

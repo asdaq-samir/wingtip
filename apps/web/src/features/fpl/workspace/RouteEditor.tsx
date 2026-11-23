@@ -77,8 +77,10 @@ export default function RouteEditor({
   return (
     <div
       ref={field}
-      // In the timeline's own place (RouteHead), none of its own room round it.
-      className={inPlace ? "flex flex-col" : "flex flex-col px-4 pb-2"}
+      // In the timeline's own place (RouteHead), none of its own room round
+      // it; else its room under its last row --box-foot (index.css), which
+      // the sheet's end room measures the gap past.
+      className={inPlace ? "flex flex-col" : "flex flex-col px-4 pb-(--box-foot)"}
       data-testid="route-editor"
       // Typed in, a route made whole stays open (usePlanRouteList).
       onFocus={() => setEditorFocused(true)}

@@ -6,9 +6,8 @@ import { ROW_PAD, SHEET_BELOW, type PanelSizeValue, type SheetLayout, type Sheet
 
 /** The route's box under FPL's chips: the gap between groups (space.group,
  *  16; the owner, 2026-11-23), less what the bar's row already leaves under
- *  its chips (its 1.75rem less the look's heading line: 3 at the default
- *  look, 0 at Native), so the pill's 68 is the same. */
-const BELOW_CHIPS = "pt-[calc(var(--space-group)-max(0px,calc(1.75rem-var(--lead-heading))))]";
+ *  its chips (--chips-foot, index.css), so the pill's 68 is the same. */
+const BELOW_CHIPS = "pt-[calc(var(--space-group)-var(--chips-foot))]";
 
 /** The one search's row, its field (OneSearchField, SHEET_BAR: FPL's
  *  title line over its pills, 49 at the default size) sixteen in from
@@ -22,7 +21,7 @@ const BELOW_CHIPS = "pt-[calc(var(--space-group)-max(0px,calc(1.75rem-var(--lead
  *  is this row alone: the title row over it went for the map's room (the
  *  owner, 2026-11-10). */
 function barRowPad(underGrabber: boolean) {
-  if (underGrabber) return "h-[4.25rem] pt-4 pb-[max(0px,calc(1.75rem-var(--lead-heading)))]";
+  if (underGrabber) return "h-[4.25rem] pt-4 pb-(--chips-foot)";
   return cn("h-[4.25rem] pb-[max(0px,calc(2.125rem-var(--lead-heading)))]", ROW_PAD);
 }
 /** That row's height either way, for what pins under it (--sheet-head). */

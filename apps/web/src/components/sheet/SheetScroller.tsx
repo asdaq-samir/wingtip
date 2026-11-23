@@ -68,9 +68,13 @@ interface ScrollerProps {
   head: string;
   /** The figures pinned at its foot, so its body is cut off there. */
   cut: boolean;
-  /** FPL's page under its foot bar (sheet/FootBar): room at its end as
-   *  tall as the bar, so its last row scrolls clear above it. */
-  endRoom?: boolean;
+  /** FPL's page: under its foot bar (sheet/FootBar, "bar") room at its
+   *  end as tall as the bar, so its last row scrolls clear above it; with
+   *  no bar ("edge") room for the home indicator where the panel reaches
+   *  the screen's foot (the side panel; a bottom sheet's viewport already
+   *  stops over it, SheetDrawer), so the inline nav log's last row clears
+   *  it as its card's does (NavLogView; the r10 audit). */
+  endRoom?: "bar" | "edge";
   /** Its band risen with the sheet from the pill (FPL's), frosted as at half from the finger's first move. */
   rises?: boolean;
   layout: SheetLayout;
@@ -94,7 +98,7 @@ export function SheetScroller(p: ScrollerProps) {
         {
           "--sheet-head": p.head,
           scrollPaddingTop: p.head,
-          scrollPaddingBottom: p.endRoom ? "var(--foot-bar, 0px)" : undefined,
+          scrollPaddingBottom: p.endRoom === "bar" ? "var(--foot-bar, 0px)" : undefined,
         } as CSSProperties
       }
       // Its scroll stops at its own end, not chained on to the drawer or the
@@ -152,10 +156,13 @@ export function SheetScroller(p: ScrollerProps) {
           the viewport as the bar is laid out (--foot-bar), so the route's
           last row scrolls up clear of the figures and the tabs all the way
           up, as a list ends clear of iOS's tab bar; and the gap between
-          groups (space.group) over it, less the 8 the route's box keeps
-          under its last row. */}
-      {p.endRoom && (
-        <div aria-hidden="true" className="h-[calc(var(--foot-bar,0px)+var(--space-group)-var(--space-sm))] shrink-0" data-foot-room="" />
+          groups (space.group) over it, less what the route's box keeps
+          under its last row (--box-foot, index.css). */}
+      {p.endRoom === "bar" && (
+        <div aria-hidden="true" className="h-[calc(var(--foot-bar,0px)+var(--space-group)-var(--box-foot))] shrink-0" data-foot-room="" />
+      )}
+      {p.endRoom === "edge" && !fromBottom && (
+        <div aria-hidden="true" className="h-[env(safe-area-inset-bottom)] shrink-0" data-edge-room="" />
       )}
     </div>
   );

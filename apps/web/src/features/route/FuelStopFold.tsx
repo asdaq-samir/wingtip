@@ -1,9 +1,5 @@
 import { Coffee, Fuel, Plus, X } from "lucide-react";
-import { cn } from "cn";
-import { Button } from "../../components/ui/button";
 import {
-  ContextMenu,
-  ContextMenuContent,
   ContextMenuGroup,
   ContextMenuItem,
   ContextMenuLabel,
@@ -11,11 +7,8 @@ import {
   ContextMenuSub,
   ContextMenuSubContent,
   ContextMenuSubTrigger,
-  ContextMenuTrigger,
 } from "../../components/ui/context-menu";
-import { SwipeRow } from "../../components/SwipeRow";
-import { TEXT } from "../../lib/text";
-import { FUEL_CHIP } from "./RouteChips";
+import { SuggestedPill } from "./RouteChips";
 
 /**
  * A flight's suggested stops folded into one dashed pill where they would
@@ -44,35 +37,18 @@ export function FuelStopFold({
   const kind = reason === "break" ? "stops" : "fuel stops";
   const words = `${idents.length} suggested ${kind}, ${idents.join(", ")}`;
   const hideAll = onHide ? () => idents.forEach((ident) => onHide(ident)) : undefined;
-  // The single chip's look (FUEL_CHIP): 28 tall, round, dashed in the fuel's
-  // amber, its 44 by a pseudo-element, so the line reads as one row of pills.
-  const fold = (
-    <Button
-      variant="ghost"
-      onClick={onAddAll}
-      disabled={!onAddAll}
-      onKeyDown={(e) => {
-        if (hideAll && (e.key === "Delete" || e.key === "Backspace")) {
-          e.preventDefault();
-          e.stopPropagation();
-          hideAll();
-        }
-      }}
-      data-testid="route-fuel-fold"
-      data-count={idents.length}
-      aria-label={`${words}: add them to the route`}
-      aria-keyshortcuts={hideAll ? "Delete ContextMenu" : undefined}
-      className={cn(FUEL_CHIP, TEXT.detail)}
-    >
-      <Glyph aria-hidden="true" className="size-3.5" />+{idents.length} {kind}
-    </Button>
-  );
-  if (!hideAll) return fold;
   return (
-    <SwipeRow chip word="Dismiss" label={`Dismiss ${words}`} onRemove={hideAll}>
-      <ContextMenu>
-        <ContextMenuTrigger render={fold} />
-        <ContextMenuContent data-testid="route-fuel-fold-menu">
+    <SuggestedPill
+      onAdd={onAddAll}
+      onHide={hideAll}
+      label={`${words}: add them to the route`}
+      dismissLabel={`Dismiss ${words}`}
+      shortcuts="Delete ContextMenu"
+      testId="route-fuel-fold"
+      count={idents.length}
+      menuTestId="route-fuel-fold-menu"
+      menu={
+        <>
           <ContextMenuGroup>
             <ContextMenuLabel>Suggested {kind}</ContextMenuLabel>
             {/* Each stop its own row, its choices one level in, as iOS's
@@ -90,7 +66,7 @@ export function FuelStopFold({
                       Add to Route
                     </ContextMenuItem>
                   )}
-                  <ContextMenuItem variant="destructive" onClick={() => onHide!(ident)} data-testid="route-fuel-fold-dismiss-one">
+                  <ContextMenuItem variant="destructive" onClick={() => onHide?.(ident)} data-testid="route-fuel-fold-dismiss-one">
                     <X aria-hidden="true" />
                     Dismiss
                   </ContextMenuItem>
@@ -111,8 +87,10 @@ export function FuelStopFold({
               Dismiss All
             </ContextMenuItem>
           </ContextMenuGroup>
-        </ContextMenuContent>
-      </ContextMenu>
-    </SwipeRow>
+        </>
+      }
+    >
+      <Glyph aria-hidden="true" className="size-3.5" />+{idents.length} {kind}
+    </SuggestedPill>
   );
 }

@@ -178,11 +178,12 @@ function GroundFoot({
           style={pill ? { minHeight: `calc(${FOOT_BAR_PILL} - ${EDGE_ROOM})` } : undefined}
         >
           {line ? (
-            // The chips take touches at every size, the pill too, where the
-            // bar's ground passes them to the sheet (sheet/FootBar), so a
-            // chip is picked and the row swiped where it is drawn.
-            <section aria-label="Suggested routes" className="pointer-events-auto" data-testid="route-group">
-              <Suspense fallback={<div className="h-11" />}>
+            // Only the chips take touches (RouteLine's `grouped`): the rest
+            // of the row passes them to the sheet as the bar's ground does
+            // (sheet/FootBar), so at the pill a tap or an upward drag there
+            // still opens the sheet (the r10 audit's W-L1).
+            <section aria-label="Suggested routes" className="pointer-events-none" data-testid="route-group">
+              <Suspense fallback={<div className="h-7" />}>
                 <RouteLine line={line} grouped />
               </Suspense>
             </section>
