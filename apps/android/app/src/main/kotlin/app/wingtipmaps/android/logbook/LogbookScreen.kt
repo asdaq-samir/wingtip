@@ -1,7 +1,5 @@
 package app.wingtipmaps.android.logbook
 
-import android.os.Build
-import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -35,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -193,5 +192,5 @@ private fun DeletedSnackbar(removed: LogbookModel.Removed?, host: SnackbarHostSt
     }
 }
 
-/** An entry saved: Android's Confirm (API 30), a plain key tap before it. */
-private val SAVED: Int get() = if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
+/** An entry saved: Compose's Confirm, a plain key tap below API 30. */
+private val SAVED = HapticFeedbackType.Confirm

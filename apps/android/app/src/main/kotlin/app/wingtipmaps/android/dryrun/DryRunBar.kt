@@ -1,7 +1,5 @@
 package app.wingtipmaps.android.dryrun
 
-import android.os.Build
-import android.view.HapticFeedbackConstants
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -148,5 +147,5 @@ private fun ForecastToggle(on: Boolean, onToggle: () -> Unit) {
     }
 }
 
-/** A waypoint passed: SEGMENT_TICK from API 34, CLOCK_TICK before it. */
-private val PASSED: Int get() = if (Build.VERSION.SDK_INT >= 34) HapticFeedbackConstants.SEGMENT_TICK else HapticFeedbackConstants.CLOCK_TICK
+/** A waypoint passed: Compose's SegmentTick, a clock tick below API 34. */
+private val PASSED = HapticFeedbackType.SegmentTick

@@ -9,9 +9,6 @@
   "services/gateway/src/main/java/app/wingtipmaps/gateway/monitoring/UptimeWatch.java": 1
  },
  "planner-http-by-hand-phones": {
-  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/Charts.kt": 1,
-  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/diagnostics/DiagnosticsReporter.kt": 1,
-  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/offline/DownloadsModel.kt": 1,
   "apps/ios/Wingtip/Diagnostics/DiagnosticsReporter.swift": 1
  },
  "planner-http-by-hand-python": {

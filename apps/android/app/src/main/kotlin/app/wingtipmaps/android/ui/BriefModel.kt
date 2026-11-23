@@ -17,6 +17,9 @@ import app.wingtipmaps.android.api.routeBriefing
 import app.wingtipmaps.android.brief.BriefFields
 import app.wingtipmaps.android.brief.BriefGlance
 import app.wingtipmaps.android.brief.DataCycles
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.gonogoGlanceLines
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.plan.PlanProcedures
 import app.wingtipmaps.android.ready.ReadyFacts
@@ -70,13 +73,8 @@ class BriefModel @Inject constructor() : ViewModel() {
         val found: List<Finding>
             get() = items.map { finding(it.finding) }.filter { it == Finding.STOP || it == Finding.CAUTION }.sortedBy { if (it == Finding.STOP) 0 else 1 }
 
-        /** The findings to act on, worst first, at most three. */
-        val actions: List<GlanceAction>
-            get() = items.map { it to finding(it.finding) }
-                .filter { (_, f) -> f == Finding.STOP || f == Finding.CAUTION }
-                .sortedBy { (_, f) -> if (f == Finding.STOP) 0 else 1 }
-                .take(3)
-                .map { (item, f) -> GlanceAction(item.key, f, "${item.label}: ${item.detail}") }
+        /** The findings to act on, as the engine words them (glanceActions). */
+        val actions: List<GlanceAction> by lazy { glanceActions(items) }
     }
 
     private val _state = MutableStateFlow(State())
@@ -175,6 +173,21 @@ class BriefModel @Inject constructor() : ViewModel() {
                 climbRateFpm = g[FigureKey.CLIMB_RATE.key], serviceCeilingFt = g[FigureKey.CEILING.key], taxiFuelGal = g[FigureKey.TAXI.key],
                 glideRatio = g[FigureKey.GLIDE.key],
             )
+        }
+
+        /** The findings to act on as the web's glanceLines has them: the
+         *  engine's gonogo_glance_lines, which takes the stops before the
+         *  cautions, at most three, and words each as one sentence with
+         *  what to do about it. The ranking and the words are the engine's
+         *  alone (simplicity audit 2026-11-23, M1's Android check); none
+         *  where the engine cannot answer, the verdict standing over them. */
+        fun glanceActions(
+            items: List<VerdictItem>,
+            lines: (List<EngineContract.GonogoItem>) -> EngineContract.GonogoGlanceLinesAnswer? = { Engine.gonogoGlanceLines(it).getOrNull() },
+        ): List<GlanceAction> {
+            if (items.isEmpty()) return emptyList()
+            val asked = items.map { EngineContract.GonogoItem(key = it.key, label = it.label, tab = it.tab, section = it.section, finding = it.finding, detail = it.detail) }
+            return lines(asked)?.act.orEmpty().map { GlanceAction(it.key, finding(it.finding), it.line) }
         }
 
         /** The planner's finding by name (lib/findings). */

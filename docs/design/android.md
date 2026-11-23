@@ -206,13 +206,20 @@ airport weather marks hold on all three apps: [rules.md](rules.md).
 - How the tokens' kinds (`haptic.*`, `design/Haptics.kt`) map on
   Android:
 
-  | Kind | Tokens today | On Android | Note |
-  |---|---|---|---|
-  | `direct-to` (Direct To / Fly Here taken) | `CONFIRM` | `Confirm` | keep |
-  | `warning` (a rule warns) | `REJECT` | `Reject` | keep; a warning never blocks (decision 0008) |
-  | `detent` (the sheet settles a size) | `CONTEXT_CLICK` | none: the stock sheet has no haptic of its own, and the owner had stock behaviour win (2026-11-09) | not used on Android |
-  | `altitude` (a wheel's step) | `SEGMENT_FREQUENT_TICK` (API 34+), `CLOCK_TICK` below | the same | the owner's pick, 2026-11-09 (`altitude/AltitudeSlider`, `altitude/AltitudeAdvisor`) |
-  | a switch | none | `ToggleOn` / `ToggleOff` | the stock `Switch` |
+  | Kind | Token (Compose `HapticFeedbackType`) | Note |
+  |---|---|---|
+  | `direct-to` (Direct To / Fly Here taken) | `Confirm` | a key tap below API 30, Compose's own fallback |
+  | `warning` (a rule warns) | `Reject` | a long press below API 30; a warning never blocks (decision 0008) |
+  | `detent` (the sheet settles a size) | `ContextClick` | not used on Android: the stock sheet has no haptic of its own, and the owner had stock behaviour win (2026-11-09) |
+  | `altitude` (a wheel's step) | `SegmentFrequentTick` | a clock tick below API 34; the owner's pick, 2026-11-09 (`altitude/AltitudeSlider`, `altitude/AltitudeAdvisor`) |
+  | a switch | none | the stock `Switch`'s own `ToggleOn` / `ToggleOff` |
+
+  Every tap of the app's own goes through `rememberHaptics()` on
+  Compose's `LocalHapticFeedback`, a screen's own kind (a clearance
+  understood, an entry saved, a waypoint passed, a loop frame crossed) as
+  a `HapticFeedbackType` beside it, so no screen writes an SDK fallback
+  (reuse audit 2026-11-23, L12). The map's held finger, a MapLibre view's
+  listener outside composition, keeps View's `LONG_PRESS`.
 
 - No haptics for scrolling, loading or arriving data.
 - The system's haptics switch alone governs them: Remove animations no
