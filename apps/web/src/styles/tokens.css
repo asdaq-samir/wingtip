@@ -221,7 +221,7 @@
   --sheet-blur: 24px;
   --head-fill: 94%;
   --motion-sheet: 0.3s;
-  --motion-sheet-ease: cubic-bezier(0, 0, 0.58, 1);
+  --motion-sheet-ease: cubic-bezier(0.23, 1, 0.32, 1);
   --motion-drawer: 0.45s;
   --motion-drawer-ease: cubic-bezier(0.32, 0.72, 0, 1);
   --motion-fade: 0.2s;

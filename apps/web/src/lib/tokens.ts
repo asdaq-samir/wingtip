@@ -253,7 +253,7 @@ export const TYPE_POINTS = {
 /** Motion: durations in seconds, curves as cubic-bezier points. */
 export const MOTION = {
   sheet: 0.3,
-  sheetEase: [0, 0, 0.58, 1],
+  sheetEase: [0.23, 1, 0.32, 1],
   drawer: 0.45,
   drawerEase: [0.32, 0.72, 0, 1],
   fade: 0.2,

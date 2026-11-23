@@ -169,6 +169,12 @@ def font_stack(tree, path):
     return ", ".join(f if f in ("sans-serif", "serif", "monospace", "system-ui") else "'%s'" % f for f in lookup(tree, path)["$value"])
 
 
+def web_value(t):
+    """A token's value on the web: its `web` override where it has one
+    ($extensions["app.wingtipmaps"].web), else the one every app reads."""
+    return t.get("$extensions", {}).get(EXT, {}).get("web", t["$value"])
+
+
 def gen_css(tree):
     def decls(*path):
         return [(k, css_value(tree, t["$value"])) for k, t in theme_group(tree, *path).items()]
@@ -176,7 +182,7 @@ def gen_css(tree):
     radius = {k: t["$value"] for k, t in tokens(tree["radius"]).items()}
     space = {k: t["$value"] for k, t in tokens(tree["space"]).items()}
     mat = {k: t["$value"] for k, t in tokens(tree["material"]).items()}
-    motion = {k: t["$value"] for k, t in tokens(tree["motion"]).items()}
+    motion = {k: web_value(t) for k, t in tokens(tree["motion"]).items()}
 
     def bezier(v):
         return "cubic-bezier(%s)" % ", ".join("%g" % x for x in v)
@@ -249,7 +255,7 @@ def gen_ts(tree):
     roles = tokens(tree["type"])
     classes = {(camel(k) if "-" in k else k): q(web_class(k, r)) for k, r in roles.items()}
     points = {camel(k): r["$value"]["fontSize"] for k, r in roles.items() if "fontSize" in r["$value"]}
-    motion = {camel(k): (q(t["$value"]) if isinstance(t["$value"], list) else t["$value"]) for k, t in tokens(tree["motion"]).items()}
+    motion = {camel(k): (q(web_value(t)) if isinstance(web_value(t), list) else web_value(t)) for k, t in tokens(tree["motion"]).items()}
     radius = {camel(k): t["$value"] for k, t in tokens(tree["radius"]).items()}
     space = {camel(k): t["$value"] for k, t in tokens(tree["space"]).items()}
     parts = [

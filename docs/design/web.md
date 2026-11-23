@@ -439,6 +439,14 @@ is picked on the map at a time, in one yellow (rules.md, 14;
   ([web.dev][webdev-vt-baseline]); cross-document ones are not Baseline
   ([Chrome cross-document][chrome-vt-cross]), and Wingtip is one page
   anyway. The app's `package.json` asks for React `^19.3.1`.
+- The app's own motion (a control giving way, a figure rolling in, a
+  page's view transition: `--motion-sheet-ease`) is on the strong ease-out
+  of Emil Kowalski's design-engineering standards, `cubic-bezier(0.23, 1,
+  0.32, 1)`, in place of CSS's plain ease-out (the owner, 2026-11-22): each
+  is something entering or leaving, which ease-out answers at once. It is
+  the web's own value (design/tokens.json's `web` override of motion's
+  sheet-ease); the phones keep theirs. Base UI's Drawer keeps its own curve
+  and swipe (`--motion-drawer-ease`), and the Native look shadcn's stock.
 - `prefers-reduced-motion`: animate only inside `(prefers-reduced-motion:
   no-preference)`, keep normal scrolling, drop zooms and autoplay
   ([web.dev reduced motion][webdev-reduced-motion]). Vercel adds: CSS
