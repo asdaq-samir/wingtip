@@ -91,3 +91,24 @@ def test_a_flight_the_gateway_keeps_as_reviewed_is_said_in_its_words(monkeypatch
     monkeypatch.setattr(records.httpx2, "AsyncClient", lambda **kw: real(transport=answer, **kw))
     with pytest.raises(ToolError, match="kept the flight as it was: its route stays as reviewed"):
         anyio.run(records.replan_flight, "42", 12, {"departureIdent": "C81"})
+
+
+def test_a_saved_flight_gone_since_it_was_listed_is_not_said_as_the_account(monkeypatch):
+    """The mcp audit of 2026-11-23, L6: a 404 on one flight is that flight
+    gone, which reconnecting would not bring back; a 400 is the gateway's
+    own words with what to do."""
+    monkeypatch.setenv("MCP_INTERNAL_TOKEN", "planner-secret-0123456789abcdef0123")
+    real = httpx2.AsyncClient
+
+    def answering(status, body):
+        transport = httpx2.MockTransport(lambda request: httpx2.Response(status, json=body))
+        monkeypatch.setattr(records.httpx2, "AsyncClient", lambda **kw: real(transport=transport, **kw))
+
+    answering(404, {"detail": "not found"})
+    with pytest.raises(ToolError, match="no longer in the pilot's Wingtip: my_flights lists theirs"):
+        anyio.run(records.delete_flight, "42", 12)
+    with pytest.raises(ToolError, match="disconnect Wingtip and connect it again"):
+        anyio.run(records.airplanes, "42")
+    answering(400, {"detail": "stops must be identifiers"})
+    with pytest.raises(ToolError, match="refused the flight: stops must be identifiers. Change what it names"):
+        anyio.run(records.save_flight, "42", {})

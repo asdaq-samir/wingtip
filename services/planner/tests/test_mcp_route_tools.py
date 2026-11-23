@@ -6,13 +6,13 @@ the pilot's own airplane's loading and runway distances. The plan is
 test_plan's stubbed world; the briefing and the winds store are stubbed
 at the names the planner reads them by."""
 
-from datetime import datetime
+from datetime import date, datetime, timezone
 
 import pytest
 from wingtip import winds_aloft
 
 from app import route_briefing
-from app.mcp import calls, records, route_tools
+from app.mcp import calls, day_tools, records, route_tools
 
 from .airport_world import stub_place
 from .mcp_harness import call
@@ -116,18 +116,29 @@ def test_route_airspace_is_the_plans_crossings_the_tfrs_and_the_engines_field_ru
 def test_sun_times_say_when_each_rules_night_begins(monkeypatch):
     stub_place(monkeypatch)
     sun = answer(call("sun_times", {"airport": "KDLH", "on": "2026-03-20"}))
-    at = {k: datetime.fromisoformat(sun[k].replace("Z", "+00:00")) for k in ("sunrise", "sunset", "civil_dusk")}
+    at = {k: datetime.fromisoformat(sun[k]["utc"].replace("Z", "+00:00")) for k in ("sunrise", "sunset", "civil_dusk")}
     assert sun["sun"] == "both" and at["sunrise"] < at["sunset"] < at["civil_dusk"]
     assert sun["lights"]["from"] == sun["sunset"] and sun["night"]["from"] == sun["civil_dusk"]
-    later = datetime.fromisoformat(sun["passenger_night"]["from"].replace("Z", "+00:00")) - at["sunset"]
+    # Each time in the field's own clock too, its zone named (CDT in March).
+    assert sun["time_zone"] == "America/Chicago" and sun["sunset"]["local"].endswith(" CDT")
+    later = datetime.fromisoformat(sun["passenger_night"]["from"]["utc"].replace("Z", "+00:00")) - at["sunset"]
     assert later.total_seconds() == 3600 and "61.57(b)" in sun["passenger_night"]["rule"]
     assert "91.209(a)" in sun["lights"]["rule"] and "1.1" in sun["night"]["rule"]
     assert "Give an airport" in refusal(call("sun_times", {}))
 
 
+def test_tonight_is_the_fields_own_date_not_utcs():
+    """The mcp audit of 2026-11-23, M1: at 19:00 CST (01Z) "tonight" at
+    KDLH is the 23rd, where the UTC date is already the 24th."""
+    evening = datetime(2026, 11, 24, 1, 0, tzinfo=timezone.utc)
+    assert day_tools.today(-92.19, day_tools.zone_of("America/Chicago"), evening) == date(2026, 11, 23)
+    # No zone known: the longitude's mean solar time, still the 23rd.
+    assert day_tools.today(-92.19, None, evening) == date(2026, 11, 23)
+
+
 def test_airplane_performance_is_the_pilots_airplane_or_none(monkeypatch):
     said = refusal(call("airplane_performance", {"airport": "KDLH"}))
-    assert "pick_airplane" in said and "assumes none" in said
+    assert "airplane_tail" in said
     # As /api/briefing writes a runway: its width and lights beside the Go / No-Go test's.
     paved = [{**r, "width_ft": 150, "lighted": True} for r in runways(10162)]
     field = {"name": "Duluth", "elevation_ft": 1428.0, "runways": paved, "frequencies": []}
@@ -144,4 +155,30 @@ def test_airplane_performance_is_the_pilots_airplane_or_none(monkeypatch):
     full = {"airport": "KDLH", "airplane_tail": "N123AB", "stations_lb": [170, 0, 0, 0], "fuel_gal": 40}
     loaded = answer(call("airplane_performance", {**full, "empty_weight_lb": 1642, "empty_moment_lb_in": 62600}))
     assert loaded["missing"] == [] and loaded["balance"]["takeoff"]["weight_lb"] > 1642 + 170
-    assert loaded["distance_weight"] == "the loading's"
+    assert loaded["distance_weight"] == "the loading's" and loaded["closed"] is None
+
+
+def test_airplane_performance_at_a_closed_field_says_closed_first(monkeypatch):
+    """Decision 0043: wherever a closed field appears it is labelled
+    Closed, by the engine's field_status of NASR's ARPT_STATUS."""
+    paved = [{**r, "width_ft": 150, "lighted": True} for r in runways(10162)]
+    field = {"name": "Duluth", "elevation_ft": 1428.0, "runways": paved, "frequencies": []}
+    metar = {"temp_c": 15.0, "altimeter_in_hg": 29.92, "wind_speed_kt": 6.0, "visibility_sm": 10.0}
+    told(monkeypatch, airports={"KDLH": field}, metars={"KDLH": metar})
+    monkeypatch.setattr(day_tools.field_use, "record_of", lambda ident: {"status": "CI"})
+    got = answer(call("airplane_performance", {"airport": "KDLH", "airplane_tail": "N123AB"}))
+    assert got["closed"].startswith("Closed indefinitely: NASR lists KDLH as closed") and next(iter(got)) == "closed"
+
+
+def test_winds_along_a_route_follow_its_rules(monkeypatch):
+    """The mcp audit of 2026-11-23, M6: an IFR pilot's route winds are at
+    an IFR cruise, not VFR's."""
+    asked = []
+
+    async def route(departure, destination, stops, altitude, tail, depart, rules):
+        asked.append(rules)
+        return {}, {"departure": {"ident": "C81"}, "destination": {"ident": "KDLH"}, "legs": [], "totals": {}}, None
+
+    monkeypatch.setattr(route_tools, "_route", route)
+    winds = answer(call("winds_aloft", {"departure": "C81", "destination": "KDLH", "rules": "ifr"}))
+    assert asked == ["ifr"] and winds["sources"][0]["source"].startswith("Aviation Weather Center GFA winds aloft")

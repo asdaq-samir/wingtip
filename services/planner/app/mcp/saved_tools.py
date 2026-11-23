@@ -8,6 +8,7 @@ new flight only adds (tool_meta)."""
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Annotated, Any
 
 from mcp.server.apps import Apps
@@ -43,6 +44,15 @@ async def _request(flight: Flight, who: str) -> dict:
     return save_request(p, flown, flight.depart_at.isoformat() if flight.depart_at else None, picks_of(flight))
 
 
+def _past(flight: Flight) -> str:
+    """Said where the time it was planned for has gone: it is planned then
+    still, with that time's winds, until the pilot moves it."""
+    at = flight.depart_at
+    if at is None or (at if at.tzinfo else at.replace(tzinfo=timezone.utc)) >= datetime.now(timezone.utc):
+        return ""
+    return f" It was planned for {at.isoformat()}, which has passed: set_departure_time to fly it now."
+
+
 def register_view(apps: Apps) -> None:
     """The tools whose answers the live view draws."""
 
@@ -51,14 +61,16 @@ def register_view(apps: Apps) -> None:
         name="open_saved_flight",
         title="Open a saved flight",
         description="Opens one of the pilot's saved flights in Wingtip's live view, to read or change it: its route, "
-        "altitude, procedures, airplane and time, as the flight the edit tools take.",
+        "altitude, procedures, fuel stops, fuel on board, VFR or IFR, airplane and time, as the flight the edit "
+        "tools take.",
         annotations=read_only("Open a saved flight"),
         meta=READS,
     )
     async def open_saved_flight(flight_id: FlightId) -> CallToolResult:
         who = pilot()
         saved = await _theirs(who, flight_id)
-        return await answer(from_saved(saved), who, f"Opened saved flight {flight_id}.")
+        flight = from_saved(saved)
+        return await answer(flight, who, f"Opened saved flight {flight_id}.{_past(flight)}")
 
     @apps.tool(
         resource_uri=VIEW_URI,
@@ -92,7 +104,8 @@ def register_view(apps: Apps) -> None:
         name="update_saved_flight",
         title="Replace a saved flight",
         description="Replaces the saved flight this flight came from (its saved_flight_id) with the flight as now "
-        "planned: its route, altitude, procedures, airplane, time and nav log. Its name, notes and share link are kept, "
+        "planned: its route, altitude, procedures, fuel stops, fuel on board, VFR or IFR, airplane, time and nav log. "
+        "Its name, notes and share link are kept, "
         "so whoever holds the link sees the new plan. A plan between other airports than the saved flight's is refused "
         "unless replace_route is true, which is for when the pilot has said to put this route over that flight.",
         annotations=destructive("Replace a saved flight"),

@@ -41,7 +41,10 @@ could not be read, it says so.
 - The MCP server **must** check that a token was issued for it (its
   audience) and **must not** accept or pass on any other token. Invalid or
   expired tokens get a `401`; a missing scope gets a `403` with
-  `error="insufficient_scope"`.
+  `error="insufficient_scope"`. Wingtip does that for `wingtip:read`, which
+  every call needs; a token without `wingtip:flights` reaches the server
+  and its write tool answers a tool error inside a `200`, naming the
+  consent box to tick (`calls.pilot`).
 - The `iss` parameter in the authorization response (RFC 9207) is a
   **should** for the authorization server, expected to become a **must**.
 
@@ -156,8 +159,10 @@ sequenceDiagram
   official SDK's `MCPServer` and its Streamable HTTP app, stateless and
   answered as JSON: every tool answers once, so no session lives in the
   planner or streams through the gateway. One module per tool group
-  (`airport_tools`, `weather_tools`, `flight_tools`, `pilot_tools`), and the
-  shared parts beside them (`calls`, `auth`, `records`, `airplane`,
+  (`airport_tools`, `weather_tools`, `flight_tools`, `route_tools`,
+  `day_tools`, `pilot_tools`, `edit_tools`, `saved_tools`), and the shared
+  parts beside them (`calls`, `auth`, `records`, `airplane`,
+  `flight_state`, `flight_view`, `procedure_picks`, `view_resource`,
   `tool_meta`, `server`).
 - **Each tool asks the planner's own HTTP API, in-process** (`calls.planner`,
   an ASGI transport onto the planner's app): `GET /api/plan`,
@@ -209,7 +214,7 @@ clients are Spring's own pieces put together for it (`PublicRefresh`,
 
 ## 4. The tools
 
-Read-only but the four writes. Every figure is the planner's or the engine's, asked as the app asks it; the connector works none out. Each answer carries `sources`: the FAA data set and
+Read-only but the five writes (`save_flight`, `save_flight_plan`, `update_saved_flight`, `update_saved_flight_from_view`, `delete_saved_flight`). Every figure is the planner's or the engine's, asked as the app asks it; the connector works none out. Each answer carries `sources`: the FAA data set and
 the edition held (`wingtip.data_cycles`, as the app's Status page shows), or
 the live product (METAR and TAF from aviationweather.gov, NOTAMs from the FAA
 NOTAM System), or the engine. Times and fuel need an airplane: with none
@@ -218,19 +223,19 @@ never a stock airplane's (decision 0011).
 
 | Tool | Answers | From |
 |---|---|---|
-| `search_airports` | airports whose identifier or name starts with the text, a page at a time | `GET /api/airports/search` |
+| `search_airports` | airports whose identifier or name starts with the text, a page at a time; `total` said only once the last page is in sight | `wingtip.airports.search_airports`, the search `GET /api/airports/search` runs, asked for one past the page (the endpoint answers its first 8) |
 | `airport_info` | the airport card without its weather: elevation, surface airspace class, tower, runways, frequencies, pattern, lighting, contact, FAA diagram and Chart Supplement links | `GET /api/airport/{ident}` |
 | `airport_weather` | METAR and TAF as sent and read; the nearest report or the modelled weather where a field has none | `GET /api/airport/{ident}` |
 | `airport_notams` | the field's NOTAMs and nearby TFRs, ranked by the engine, a page at a time | `GET /api/airport/{ident}/notams` |
 | `airport_procedures` | the field's approaches, arrivals and departures from the CIFP, each with the id `change_approach` takes, its chart name, runway and transitions | `GET /api/airport/{ident}/procedures` |
-| `nearest_airports` | the nearest fields to a point or an airport, filtered by runway length, tower, public use | `GET /api/airports/nearest` |
+| `nearest_airports` | the nearest fields to a point or an airport, filtered by runway length, fuel sold, an instrument approach, tower, public use; how far the planner's nearest 25 reached, and a note where a filter leaves few | `GET /api/airports/nearest` |
 | `plan_route` | the nav log: altitude and why, each leg's courses, heading, wind, ground speed, time and fuel, the totals with reserve and margin, the cautions, a link to open it in Wingtip | `GET /api/plan` |
-| `flight_briefing` | the Go / No-Go line, each finding, the risk assessment | `POST /api/go-no-go` |
-| `winds_aloft` | the wind and temperature at a field or a point and altitude, or each leg of a route at its cruise, with the forecast's valid time and whose it is (AWC's GFA, the GFS in its place) | `wingtip.winds_aloft` (the store the nav log reads; the engine's `wind_aloft_at`), or `GET /api/plan` for a route |
+| `flight_briefing` | the Go / No-Go line, each finding, the risk assessment with the airplane's inspections, VOR check and open squawks; weight and balance on the pilot's own load (`stations_lb`, `fuel_gal`, the record's empty weight), else said not worked and the runway distances said to be at the POH's sample load, never the sample said as theirs | `POST /api/go-no-go` with `load` and `own_airplane` |
+| `winds_aloft` | the wind and temperature at a field or a point and altitude, or each leg of a route at its cruise for its rules (VFR or IFR), with the forecast's valid time and whose it is (AWC's GFA, the GFS in its place), named as every flight tool names it (`calls.winds_source`) | `wingtip.winds_aloft` (the store the nav log reads; the engine's `wind_aloft_at`), or `GET /api/plan` for a route |
 | `route_hazards` | the SIGMETs, Convective SIGMETs, AIRMETs (Alaska's), G-AIRMETs and PIREPs along a route for the flight's time, each with its altitudes beside the cruise, where and when the flight meets it, a page at a time; the Brief's Adverse Conditions rows over them; Center Weather Advisories said not held yet | `GET /api/plan`, `GET /api/briefing`, the engine's `gonogo_adverse_rows` |
 | `route_airspace` | the Class B, C and D the route crosses with floors and entry rules, the special-use areas, the TFRs near it (crossed or not, altitudes, hours) a page at a time, the ADIZs, special VFR at each field in a surface area, and any field closed, private or military | `GET /api/plan`, `GET /api/briefing`, the engine's `airspace_entry_rules`, `route_adiz`, `special_vfr` and `field_status` |
-| `sun_times` | sunrise, sunset and civil twilight at a field or point on a date, and from that evening 14 CFR 1.1's night, 61.57(b)'s hour after sunset and 91.209(a)'s lights, each saying its rule; a sun that does not set or rise said so | the engine's `sun_times` |
-| `airplane_performance` | the pilot's own airplane at a field: weight and balance at takeoff and landing against its POH's limits, and its short-field distances on the runway the wind favours against its length; no airplane refused (naming `pick_airplane`), a missing figure (the empty weight and moment, the station loads, the POH's tables) named, never filled in | gateway `/internal/mcp/aircraft`, `GET /api/briefing`, the engine's `gonogo_balance`, `gonogo_default_load` and `gonogo_runway_checks` |
+| `sun_times` | sunrise, sunset and civil twilight at a field or point on its local date (its own today when none is asked: a US evening is tomorrow in UTC), each time in UTC and in the place's zone (`wingtip.time_zone`), and from that evening 14 CFR 1.1's night, 61.57(b)'s hour after sunset and 91.209(a)'s lights, each saying its rule; a sun that does not set or rise said so | the engine's `sun_times` |
+| `airplane_performance` | the pilot's own airplane at a field: weight and balance at takeoff and landing against its POH's limits, and its short-field distances on the runway the wind favours against its length; a field NASR lists as closed labelled Closed first (decision 0043, the engine's `field_status`); the tail required, a missing figure (the empty weight and moment, the station loads, the POH's tables) named, never filled in | gateway `/internal/mcp/aircraft`, `GET /api/briefing`, the engine's `gonogo_balance`, `gonogo_default_load` and `gonogo_runway_checks` |
 | `my_airplanes` | the pilot's airplanes and their figures, inspections and open squawks | gateway `/internal/mcp/aircraft` |
 | `my_flights` | the pilot's saved flights as a route summary (name, route, airplane, altitude, distance, time, fuel, when), a page at a time; never the notes, the risk assessment or the share link | gateway `/internal/mcp/flights` |
 | `save_flight` | plans the route and saves it to the pilot's Flights | `GET /api/plan`, then gateway `POST /internal/mcp/flights` |
@@ -238,9 +243,9 @@ never a stock airplane's (decision 0011).
 | `add_stop`, `remove_stop`, `move_stop` | the flight with a stop put in, taken out or moved | `GET /api/plan` |
 | `set_cruise_altitude`, `set_departure_time` | the flight at another altitude (or the legal fastest), leaving at another time (or now) | `GET /api/plan` |
 | `change_approach` | an approach at one of the route's fields loaded, activated, deactivated, removed, its missed approach unsuspended or suspended | the engine's `procedures_read` and `procedures_write`, `GET /api/airport/{ident}/procedures`, `GET /api/plan` |
-| `add_fuel_stops`, `remove_fuel_stops` | the fuel stops the plan's fuel check says the flight needs put in (`wingtip.fuel_rounds`), or taken out; with no airplane, refused (no fuel figures to check), and a flight short with no field in reach said short | `GET /api/plan` |
+| `add_fuel_stops`, `remove_fuel_stops` | the fuel stops the plan's fuel check says the flight needs put in (`wingtip.fuel_rounds`), or taken out; with no airplane, or one with no usable fuel on record, refused (no fuel check made), and a flight short with no field in reach said short | `GET /api/plan` |
 | `set_fuel_on_board`, `pick_airplane` | the tanks leaving a field; one of the pilot's airplanes, or none | `GET /api/plan`, gateway `/internal/mcp/aircraft` |
-| `open_saved_flight` | a saved flight as the flight to edit | gateway `/internal/mcp/flights` |
+| `open_saved_flight` | a saved flight as the flight to edit, with its procedures, fuel stops, fuel on board and IFR (its picks `procs`, `fuel`, `tanks`, `rules`); a time that has passed said so | gateway `/internal/mcp/flights` |
 | `save_flight_plan` | the flight being planned saved as a new flight (write, adds) | gateway `POST /internal/mcp/flights` |
 | `update_saved_flight` | the saved flight it came from replaced with it; another route only with `replace_route` (write, destructive, the model's alone) | gateway `PUT /internal/mcp/flights/{id}` |
 | `update_saved_flight_from_view` | the view's Update button: the same, between the same airports only (write, destructive, the view's alone) | gateway `PUT /internal/mcp/flights/{id}` |
@@ -301,9 +306,11 @@ instructions. The server's `instructions` tell the model such text is data
 to report, never instructions, and no tool is called because it asks; every
 planner answer loses the characters a pilot never sees (control characters,
 Unicode's format characters, the tag characters that spell ASCII
-invisibly) before it is handed on (`calls.as_data`). The one write is
-confirmed by the pilot in the host, and adds a flight only (the deep
-security review of 2026-11-21).
+invisibly, C1 controls and the variation selectors) before it is handed on
+(`calls.as_data`). The five writes ask the `wingtip:flights` scope and are
+confirmed by the pilot in the host: the two saves add a flight, the
+replaces and the delete are destructive (the deep security review of
+2026-11-21, and of 2026-11-22).
 
 ### 4b. The live view (decision 0061)
 
@@ -331,7 +338,10 @@ opens it beside the chat (the resource asks for the side panel,
   `strip_fuel` for the figure strip, the approaches and their state, the
   sectional's tile layer, the link, and a server-made time and count. The
   model reads one line of figures, the flight to pass to the next tool and
-  the link (`content`); the view reads the rest (`structuredContent`).
+  the link (`content`), with the rules flown and the fuel check (required
+  with the reserve, the margin, any flight short: `flight_view.fuel_line`),
+  so "do I have enough fuel?" needs no second plan; the view reads the
+  rest (`structuredContent`).
 - **The view** draws the chart as a still picture (tiles and SVG; the
   sandbox runs no worker and no WebAssembly), FPL's figure strip, the
   route's points with a stop's Remove, each approach's Activate,
@@ -351,8 +361,9 @@ on purpose (`WRITE_MCP_SNAPSHOT=1`).
 ## 5. Errors, limits and cost
 
 - **Errors say what failed and what to do**, in the planner's own words: an
-  unknown identifier ("Check the identifier: search_airports finds one by
-  name"), a figure out of range (FastAPI's field and message), a weather
+  unknown identifier ("Check the identifier: search_airports finds an
+  airport by its name or town; a fix or navaid goes by its exact
+  identifier"), a saved flight deleted since it was listed (not "reconnect"), a figure out of range (FastAPI's field and message), a weather
   source down, a corridor still being worked out ("ask again in a minute"),
   an airplane the pilot does not have (with the ones they do), a connection
   without the write scope.
