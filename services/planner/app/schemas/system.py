@@ -217,3 +217,19 @@ class RetrainStarted(BaseModel):
 
     started: bool
     state: str | None
+
+
+class UsageDay(BaseModel):
+    """One route's calls on one finished UTC day (app.usage_days): its
+    template and method, the status answered, and how many. Nothing of a
+    pilot, a device or an address."""
+
+    day: str
+    route: str
+    method: str
+    status: int
+    calls: int
+
+
+class UsageDays(BaseModel):
+    days: list[UsageDay]

@@ -12089,7 +12089,8 @@ public struct Client: APIProtocol {
     ///
     /// An airplane being tracked: what it is, the field it took off from
     /// and its track today (wingtip.traffic.flight); no track where its trace
-    /// cannot be had.
+    /// cannot be had. Followed from now on, its flights recorded, only where
+    /// a signed-in pilot opened it (X-Pilot-Id, set by the gateway).
     ///
     /// - Remark: HTTP `GET /api/traffic/flight/{hex_id}`.
     /// - Remark: Generated from `#/paths//api/traffic/flight/{hex_id}/get(traffic_flight)`.
@@ -12109,6 +12110,11 @@ public struct Client: APIProtocol {
                     method: .get
                 )
                 suppressMutabilityWarning(&request)
+                try converter.setHeaderFieldAsURI(
+                    in: &request.headerFields,
+                    name: "X-Pilot-Id",
+                    value: input.headers.xPilotId
+                )
                 converter.setAcceptHeader(
                     in: &request.headerFields,
                     contentTypes: input.headers.accept
@@ -12631,6 +12637,99 @@ public struct Client: APIProtocol {
                 case 422:
                     let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
                     let body: Operations.TrafficRoute.Output.UnprocessableContent.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.HTTPValidationError.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .unprocessableContent(.init(body: body))
+                default:
+                    return .undocumented(
+                        statusCode: response.status.code,
+                        .init(
+                            headerFields: response.headerFields,
+                            body: responseBody
+                        )
+                    )
+                }
+            }
+        )
+    }
+    /// Usage Daily
+    ///
+    /// Every route's calls on each finished UTC day from `since` on, today
+    /// left out until it is over: totals by route template, method and status,
+    /// tied to no pilot (docs/privacy-inventory.md).
+    ///
+    /// - Remark: HTTP `GET /api/usage/daily`.
+    /// - Remark: Generated from `#/paths//api/usage/daily/get(usage_daily)`.
+    public func usageDaily(_ input: Operations.UsageDaily.Input) async throws -> Operations.UsageDaily.Output {
+        try await client.send(
+            input: input,
+            forOperation: Operations.UsageDaily.id,
+            serializer: { input in
+                let path = try converter.renderedPath(
+                    template: "/api/usage/daily",
+                    parameters: []
+                )
+                var request: HTTPTypes.HTTPRequest = .init(
+                    soar_path: path,
+                    method: .get
+                )
+                suppressMutabilityWarning(&request)
+                try converter.setQueryItemAsURI(
+                    in: &request,
+                    style: .form,
+                    explode: true,
+                    name: "since",
+                    value: input.query.since
+                )
+                converter.setAcceptHeader(
+                    in: &request.headerFields,
+                    contentTypes: input.headers.accept
+                )
+                return (request, nil)
+            },
+            deserializer: { response, responseBody in
+                switch response.status.code {
+                case 200:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.UsageDaily.Output.Ok.Body
+                    let chosenContentType = try converter.bestContentType(
+                        received: contentType,
+                        options: [
+                            "application/json"
+                        ]
+                    )
+                    switch chosenContentType {
+                    case "application/json":
+                        body = try await converter.getResponseBodyAsJSON(
+                            Components.Schemas.UsageDays.self,
+                            from: responseBody,
+                            transforming: { value in
+                                .json(value)
+                            }
+                        )
+                    default:
+                        preconditionFailure("bestContentType chose an invalid content type.")
+                    }
+                    return .ok(.init(body: body))
+                case 422:
+                    let contentType = converter.extractContentTypeIfPresent(in: response.headerFields)
+                    let body: Operations.UsageDaily.Output.UnprocessableContent.Body
                     let chosenContentType = try converter.bestContentType(
                         received: contentType,
                         options: [

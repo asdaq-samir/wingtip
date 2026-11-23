@@ -22583,7 +22583,8 @@ public enum Operations {
     ///
     /// An airplane being tracked: what it is, the field it took off from
     /// and its track today (wingtip.traffic.flight); no track where its trace
-    /// cannot be had.
+    /// cannot be had. Followed from now on, its flights recorded, only where
+    /// a signed-in pilot opened it (X-Pilot-Id, set by the gateway).
     ///
     /// - Remark: HTTP `GET /api/traffic/flight/{hex_id}`.
     /// - Remark: Generated from `#/paths//api/traffic/flight/{hex_id}/get(traffic_flight)`.
@@ -22605,12 +22606,19 @@ public enum Operations {
             public var path: Operations.TrafficFlight.Input.Path
             /// - Remark: Generated from `#/paths/api/traffic/flight/{hex_id}/GET/header`.
             public struct Headers: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/traffic/flight/{hex_id}/GET/header/X-Pilot-Id`.
+                public var xPilotId: Swift.String?
                 public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.TrafficFlight.AcceptableContentType>]
                 /// Creates a new `Headers`.
                 ///
                 /// - Parameters:
+                ///   - xPilotId:
                 ///   - accept:
-                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.TrafficFlight.AcceptableContentType>] = .defaultValues()) {
+                public init(
+                    xPilotId: Swift.String? = nil,
+                    accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.TrafficFlight.AcceptableContentType>] = .defaultValues()
+                ) {
+                    self.xPilotId = xPilotId
                     self.accept = accept
                 }
             }
@@ -23692,6 +23700,191 @@ public enum Operations {
             /// - Throws: An error if `self` is not `.unprocessableContent`.
             /// - SeeAlso: `.unprocessableContent`.
             public var unprocessableContent: Operations.TrafficRoute.Output.UnprocessableContent {
+                get throws {
+                    switch self {
+                    case let .unprocessableContent(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "unprocessableContent",
+                            response: self
+                        )
+                    }
+                }
+            }
+            /// Undocumented response.
+            ///
+            /// A response with a code that is not documented in the OpenAPI document.
+            case undocumented(statusCode: Swift.Int, OpenAPIRuntime.UndocumentedPayload)
+        }
+        @frozen public enum AcceptableContentType: AcceptableProtocol {
+            case json
+            case other(Swift.String)
+            public init?(rawValue: Swift.String) {
+                switch rawValue.lowercased() {
+                case "application/json":
+                    self = .json
+                default:
+                    self = .other(rawValue)
+                }
+            }
+            public var rawValue: Swift.String {
+                switch self {
+                case let .other(string):
+                    return string
+                case .json:
+                    return "application/json"
+                }
+            }
+            public static var allCases: [Self] {
+                [
+                    .json
+                ]
+            }
+        }
+    }
+    /// Usage Daily
+    ///
+    /// Every route's calls on each finished UTC day from `since` on, today
+    /// left out until it is over: totals by route template, method and status,
+    /// tied to no pilot (docs/privacy-inventory.md).
+    ///
+    /// - Remark: HTTP `GET /api/usage/daily`.
+    /// - Remark: Generated from `#/paths//api/usage/daily/get(usage_daily)`.
+    public enum UsageDaily {
+        public static let id: Swift.String = "usage_daily"
+        public struct Input: Sendable, Hashable {
+            /// - Remark: Generated from `#/paths/api/usage/daily/GET/query`.
+            public struct Query: Sendable, Hashable {
+                /// The first UTC day wanted, YYYY-MM-DD
+                ///
+                /// - Remark: Generated from `#/paths/api/usage/daily/GET/query/since`.
+                public var since: Swift.String
+                /// Creates a new `Query`.
+                ///
+                /// - Parameters:
+                ///   - since: The first UTC day wanted, YYYY-MM-DD
+                public init(since: Swift.String) {
+                    self.since = since
+                }
+            }
+            public var query: Operations.UsageDaily.Input.Query
+            /// - Remark: Generated from `#/paths/api/usage/daily/GET/header`.
+            public struct Headers: Sendable, Hashable {
+                public var accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UsageDaily.AcceptableContentType>]
+                /// Creates a new `Headers`.
+                ///
+                /// - Parameters:
+                ///   - accept:
+                public init(accept: [OpenAPIRuntime.AcceptHeaderContentType<Operations.UsageDaily.AcceptableContentType>] = .defaultValues()) {
+                    self.accept = accept
+                }
+            }
+            public var headers: Operations.UsageDaily.Input.Headers
+            /// Creates a new `Input`.
+            ///
+            /// - Parameters:
+            ///   - query:
+            ///   - headers:
+            public init(
+                query: Operations.UsageDaily.Input.Query,
+                headers: Operations.UsageDaily.Input.Headers = .init()
+            ) {
+                self.query = query
+                self.headers = headers
+            }
+        }
+        @frozen public enum Output: Sendable, Hashable {
+            public struct Ok: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/usage/daily/GET/responses/200/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/usage/daily/GET/responses/200/content/application\/json`.
+                    case json(Components.Schemas.UsageDays)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.UsageDays {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UsageDaily.Output.Ok.Body
+                /// Creates a new `Ok`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UsageDaily.Output.Ok.Body) {
+                    self.body = body
+                }
+            }
+            /// Successful Response
+            ///
+            /// - Remark: Generated from `#/paths//api/usage/daily/get(usage_daily)/responses/200`.
+            ///
+            /// HTTP response code: `200 ok`.
+            case ok(Operations.UsageDaily.Output.Ok)
+            /// The associated value of the enum case if `self` is `.ok`.
+            ///
+            /// - Throws: An error if `self` is not `.ok`.
+            /// - SeeAlso: `.ok`.
+            public var ok: Operations.UsageDaily.Output.Ok {
+                get throws {
+                    switch self {
+                    case let .ok(response):
+                        return response
+                    default:
+                        try throwUnexpectedResponseStatus(
+                            expectedStatus: "ok",
+                            response: self
+                        )
+                    }
+                }
+            }
+            public struct UnprocessableContent: Sendable, Hashable {
+                /// - Remark: Generated from `#/paths/api/usage/daily/GET/responses/422/content`.
+                @frozen public enum Body: Sendable, Hashable {
+                    /// - Remark: Generated from `#/paths/api/usage/daily/GET/responses/422/content/application\/json`.
+                    case json(Components.Schemas.HTTPValidationError)
+                    /// The associated value of the enum case if `self` is `.json`.
+                    ///
+                    /// - Throws: An error if `self` is not `.json`.
+                    /// - SeeAlso: `.json`.
+                    public var json: Components.Schemas.HTTPValidationError {
+                        get throws {
+                            switch self {
+                            case let .json(body):
+                                return body
+                            }
+                        }
+                    }
+                }
+                /// Received HTTP response body
+                public var body: Operations.UsageDaily.Output.UnprocessableContent.Body
+                /// Creates a new `UnprocessableContent`.
+                ///
+                /// - Parameters:
+                ///   - body: Received HTTP response body
+                public init(body: Operations.UsageDaily.Output.UnprocessableContent.Body) {
+                    self.body = body
+                }
+            }
+            /// Validation Error
+            ///
+            /// - Remark: Generated from `#/paths//api/usage/daily/get(usage_daily)/responses/422`.
+            ///
+            /// HTTP response code: `422 unprocessableContent`.
+            case unprocessableContent(Operations.UsageDaily.Output.UnprocessableContent)
+            /// The associated value of the enum case if `self` is `.unprocessableContent`.
+            ///
+            /// - Throws: An error if `self` is not `.unprocessableContent`.
+            /// - SeeAlso: `.unprocessableContent`.
+            public var unprocessableContent: Operations.UsageDaily.Output.UnprocessableContent {
                 get throws {
                     switch self {
                     case let .unprocessableContent(response):

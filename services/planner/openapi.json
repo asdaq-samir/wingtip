@@ -24748,6 +24748,56 @@
         "title": "TrainingReadiness",
         "type": "object"
       },
+      "UsageDay": {
+        "description": "One route's calls on one finished UTC day (app.usage_days): its\ntemplate and method, the status answered, and how many. Nothing of a\npilot, a device or an address.",
+        "properties": {
+          "calls": {
+            "title": "Calls",
+            "type": "integer"
+          },
+          "day": {
+            "title": "Day",
+            "type": "string"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "route": {
+            "title": "Route",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "day",
+          "route",
+          "method",
+          "status",
+          "calls"
+        ],
+        "title": "UsageDay",
+        "type": "object"
+      },
+      "UsageDays": {
+        "properties": {
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/UsageDay"
+            },
+            "title": "Days",
+            "type": "array"
+          }
+        },
+        "required": [
+          "days"
+        ],
+        "title": "UsageDays",
+        "type": "object"
+      },
       "UsualBase": {
         "description": "Where the airplane is usually based, by the engine's `usual_base`\nover its flights ADS-B receivers heard: `field` None where they do not\nshow one clearly; `count` of its `ends` (takeoffs and landings) at the\nfield most of them are at.",
         "properties": {
@@ -33651,7 +33701,7 @@
     },
     "/api/traffic/flight/{hex_id}": {
       "get": {
-        "description": "An airplane being tracked: what it is, the field it took off from\nand its track today (wingtip.traffic.flight); no track where its trace\ncannot be had.",
+        "description": "An airplane being tracked: what it is, the field it took off from\nand its track today (wingtip.traffic.flight); no track where its trace\ncannot be had. Followed from now on, its flights recorded, only where\na signed-in pilot opened it (X-Pilot-Id, set by the gateway).",
         "operationId": "traffic_flight_api_traffic_flight__hex_id__get",
         "parameters": [
           {
@@ -33662,6 +33712,22 @@
               "pattern": "^~?[0-9a-fA-F]{6}$",
               "title": "Hex Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Pilot-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Pilot-Id"
             }
           }
         ],
@@ -33689,7 +33755,8 @@
         },
         "summary": "Traffic Flight",
         "x-gateway": {
-          "access": "public"
+          "access": "public",
+          "pilot": true
         }
       }
     },
@@ -34015,6 +34082,50 @@
         "x-gateway": {
           "access": "public"
         }
+      }
+    },
+    "/api/usage/daily": {
+      "get": {
+        "description": "Every route's calls on each finished UTC day from `since` on, today\nleft out until it is over: totals by route template, method and status,\ntied to no pilot (docs/privacy-inventory.md).",
+        "operationId": "usage_daily_api_usage_daily_get",
+        "parameters": [
+          {
+            "description": "The first UTC day wanted, YYYY-MM-DD",
+            "in": "query",
+            "name": "since",
+            "required": true,
+            "schema": {
+              "description": "The first UTC day wanted, YYYY-MM-DD",
+              "format": "date",
+              "title": "Since",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageDays"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Usage Daily",
+        "x-internal": "gateway"
       }
     },
     "/api/waypoints/in-view": {
