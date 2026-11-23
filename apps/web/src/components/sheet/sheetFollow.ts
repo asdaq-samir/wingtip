@@ -62,15 +62,25 @@ export function slidOf(el: Element): number {
  * movement handed to its readers, and a settle told to its followers.
  * Answers the watch's end.
  */
-export function relaySwipe(popup: HTMLElement): () => void {
+function relaySwipe(popup: HTMLElement): () => void {
   if (typeof MutationObserver === "undefined") return () => {};
   let swipe = popup.style.getPropertyValue(MOVEMENT) || "0px";
   let offset = popup.style.getPropertyValue(OFFSET);
   let swiping = popup.hasAttribute("data-swiping");
+  // The readers found once and kept until the sheet's subtree changes (a
+  // part added, removed or its class changed), not searched for at every
+  // move of a finger (the motion audit of 2026-11-23, fpl-motion, low).
+  let readers: HTMLElement[] | null = null;
+  const find = () =>
+    // A card's parts read their own card's movement, not the sheet's it is drawn in.
+    [...popup.querySelectorAll<HTMLElement>(`.${SWIPE_READER}`)].filter((el) => el.closest(SHEET) === popup);
+  const changed = new MutationObserver(() => {
+    readers = null;
+  });
+  changed.observe(popup, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
   const hand = (value: string) => {
-    for (const el of popup.querySelectorAll<HTMLElement>(`.${SWIPE_READER}`)) {
-      // A card's parts read their own card's movement, not the sheet's it is drawn in.
-      if (el.closest(SHEET) !== popup) continue;
+    readers ??= find();
+    for (const el of readers) {
       if (el.style.getPropertyValue("--sheet-swipe") !== value) el.style.setProperty("--sheet-swipe", value);
     }
   };
@@ -99,7 +109,10 @@ export function relaySwipe(popup: HTMLElement): () => void {
     for (const f of mine) f.settle({ popup, from, to: target(nextOffset, nextSwipe) - base, eased, was });
   });
   watch.observe(popup, { attributes: true, attributeFilter: ["style", "data-swiping"] });
-  return () => watch.disconnect();
+  return () => {
+    watch.disconnect();
+    changed.disconnect();
+  };
 }
 
 /** A popup's ref that watches it (relaySwipe) while it is on the page, and

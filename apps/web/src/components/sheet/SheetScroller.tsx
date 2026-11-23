@@ -39,8 +39,13 @@ const RISEN_BAND =
  *  it, so on the same curve and time it is where the sheet is at every
  *  frame, where it jumped to its end at the let-go and showed a band of
  *  bare sheet under the route through the settle (the gestures audit of
- *  2026-11-23, M1). */
-const CUT_BOTTOM = `[clip-path:inset(0_0_max(0px,calc(var(--sheet-offset,0px)+var(--sheet-swipe,0px)))_0)] group-data-ready/sheet:transition-[clip-path] duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none ${SWIPE_READER} ${SHEET_SLIDE}`;
+ *  2026-11-23, M1). The scroller is a composited layer of its own
+ *  (will-change: transform, with no transform set, so nothing moves and no
+ *  fixed part is held to it; none is), so each frame of the eased cut
+ *  changes only the clip the compositor applies to the layer's pixels,
+ *  where it repainted the whole scroller every frame of a settle (the
+ *  motion audit of 2026-11-23, fpl-motion, low). */
+const CUT_BOTTOM = `[will-change:transform] [clip-path:inset(0_0_max(0px,calc(var(--sheet-offset,0px)+var(--sheet-swipe,0px)))_0)] group-data-ready/sheet:transition-[clip-path] duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none ${SWIPE_READER} ${SHEET_SLIDE}`;
 
 /** Where the panel's top-right button sits, one place in every panel. */
 const CORNER_VARS = {
