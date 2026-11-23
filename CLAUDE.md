@@ -97,8 +97,10 @@ integration branch"):
   checkout stays on `main`, and no session switches it or commits on it.
 - Each piece of work is a `claude/<topic>` branch, pushed once when the
   code is done, with no pull request yet. Pushing a `claude/` branch
-  starts no CI, but `claude/validate-*` (a wave's validation, below) and
-  `claude/native-*` (the phones' own): don't name work so. Before that
+  starts no CI, but `claude/check-*` (a branch's early check on GitHub),
+  `claude/validate-*` and `claude/validate-failed/*` (a wave's validation,
+  below; decision 0062) and `claude/native-*` (the phones' own): don't
+  name work so. Before that
   push: a compile or type check of what changed, the generated files it
   needs, and **the change's own tests, run narrowly** (decision 0042):
   `vitest <files>` or `--changed`, `pytest <paths>`, `cargo test -p
