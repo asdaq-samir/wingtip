@@ -7,6 +7,8 @@ import { PointMark } from "./PointMark";
 import { Heading } from "./ColumnHeading";
 import FigureWait from "../../components/FigureWait";
 import { WaypointName } from "./WaypointName";
+import { cn } from "cn";
+import { TEXT } from "../../lib/text";
 
 // TanStack Table's own extension point for arbitrary per-column data --
 // used below to carry each numeric column's shared className (bordered,
@@ -55,6 +57,7 @@ export function navLogColumns({
   nav,
   depart,
   numbers,
+  airways,
   metarColourOf,
   onDesk,
   airplane,
@@ -63,6 +66,9 @@ export function navLogColumns({
   depart: string;
   /** Each checkpoint's number, as its dot on the map has it. */
   numbers: Map<string, number>;
+  /** The airway a row's leg joins, by the row's key, with its published
+   *  altitudes (navLogRail): "V191 · MEA 4,000 · MOCA 2,600". */
+  airways: Map<string, string>;
   metarColourOf: (ident: string) => string | undefined;
   onDesk: boolean;
   airplane: boolean;
@@ -99,7 +105,17 @@ export function navLogColumns({
             number={row.original.kind === "checkpoint" ? numbers.get(row.original.key) : undefined}
             weather={metarColourOf}
           />
-          <WaypointName row={row.original} link={onDesk} />
+          <span className="flex min-w-0 flex-col">
+            <WaypointName row={row.original} link={onDesk} />
+            {/* Under IFR the airway joined on the leg to it and its
+                published altitudes, a paper IFR log's route column: the
+                MEA the floor (14 CFR 91.177(a)(1)). */}
+            {airways.has(row.original.key) && (
+              <span className={cn("text-muted-foreground tabular-nums", TEXT.note)} data-testid="navlog-airway">
+                {airways.get(row.original.key)}
+              </span>
+            )}
+          </span>
         </span>
       ),
       // On a phone a name wraps, and a long word is hyphenated rather
