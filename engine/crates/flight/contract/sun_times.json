@@ -1,0 +1,193 @@
+{
+  "x-call": "wingtip_flight::sun_times::call",
+  "description": "A day's sun at a point, as times: its solar noon, sunrise and sunset (the sun's upper limb on the horizon, its centre 0.833 degrees down; NOAA's solar calculation, the Naval Observatory's definition), and the beginning of morning and the end of evening civil twilight (its centre six degrees down, as the Air Almanac publishes it); and the periods the rules read from them that begin that evening and end the next morning: 14 CFR 1.1's night (end of evening civil twilight to beginning of morning civil twilight: 91.151(a)(2)'s reserve, 91.205(c)'s equipment), 61.57(b)'s period (1 hour after sunset to 1 hour before sunrise: the three takeoffs and landings to a full stop it asks for within 90 days are made in it, and passengers are carried in it only then) and 91.209(a)'s position lights (sunset to sunrise). The date is the pilot's local one, read at the longitude's mean noon. Where the sun does not cross a line that day (Alaska's summer, the Arctic's winter) its instants are null and `sun` or `civil_twilight` says which way.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "SunTimesInput",
+      "type": "object",
+      "properties": {
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lon": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180,
+          "description": "East positive."
+        },
+        "date": {
+          "type": "string",
+          "description": "The local date, yyyy-mm-dd."
+        }
+      },
+      "required": [
+        "lat",
+        "lon",
+        "date"
+      ]
+    },
+    "answer": {
+      "title": "SunTimesAnswer",
+      "type": "object",
+      "properties": {
+        "solar_noon_s": {
+          "type": "number",
+          "description": "UNIX seconds."
+        },
+        "sun": {
+          "type": "string",
+          "enum": [
+            "both",
+            "never_down",
+            "never_up"
+          ],
+          "description": "both: the day has both instants; never_down: the sun never goes that far below the horizon (no instants: it stays above that line); never_up: it never comes above it."
+        },
+        "sunrise_s": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "UNIX seconds."
+        },
+        "sunset_s": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "UNIX seconds."
+        },
+        "civil_twilight": {
+          "type": "string",
+          "enum": [
+            "both",
+            "never_down",
+            "never_up"
+          ],
+          "description": "both: the day has both instants; never_down: the sun never goes that far below the horizon (no instants: it stays above that line); never_up: it never comes above it."
+        },
+        "civil_dawn_s": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Morning civil twilight begins, UNIX seconds."
+        },
+        "civil_dusk_s": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Evening civil twilight ends, UNIX seconds."
+        },
+        "night": {
+          "type": "object",
+          "description": "14 CFR 1.1's night from this evening.",
+          "properties": {
+            "from_s": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "When it begins this evening, UNIX seconds; null where the sun does not cross that line this evening."
+            },
+            "until_s": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "When it ends the next morning, UNIX seconds; null where the sun does not cross that line then."
+            },
+            "all_day": {
+              "type": "boolean",
+              "description": "The sun never comes above that line this day: the whole day is in the period."
+            }
+          },
+          "required": [
+            "from_s",
+            "until_s",
+            "all_day"
+          ]
+        },
+        "passenger_night": {
+          "type": "object",
+          "description": "14 CFR 61.57(b)'s period from this evening: 1 hour after sunset to 1 hour before sunrise.",
+          "properties": {
+            "from_s": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "When it begins this evening, UNIX seconds; null where the sun does not cross that line this evening."
+            },
+            "until_s": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "When it ends the next morning, UNIX seconds; null where the sun does not cross that line then."
+            },
+            "all_day": {
+              "type": "boolean",
+              "description": "The sun never comes above that line this day: the whole day is in the period."
+            }
+          },
+          "required": [
+            "from_s",
+            "until_s",
+            "all_day"
+          ]
+        },
+        "lights": {
+          "type": "object",
+          "description": "14 CFR 91.209(a)'s position lights from this evening: sunset to sunrise.",
+          "properties": {
+            "from_s": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "When it begins this evening, UNIX seconds; null where the sun does not cross that line this evening."
+            },
+            "until_s": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "When it ends the next morning, UNIX seconds; null where the sun does not cross that line then."
+            },
+            "all_day": {
+              "type": "boolean",
+              "description": "The sun never comes above that line this day: the whole day is in the period."
+            }
+          },
+          "required": [
+            "from_s",
+            "until_s",
+            "all_day"
+          ]
+        }
+      },
+      "required": [
+        "solar_noon_s",
+        "sun",
+        "sunrise_s",
+        "sunset_s",
+        "civil_twilight",
+        "civil_dawn_s",
+        "civil_dusk_s",
+        "night",
+        "passenger_night",
+        "lights"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

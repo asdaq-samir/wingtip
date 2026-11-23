@@ -3788,6 +3788,13 @@ export interface EngineContract {
     answer: SunDownAnswer;
   };
   /**
+   * A day's sun at a point, as times: its solar noon, sunrise and sunset (the sun's upper limb on the horizon, its centre 0.833 degrees down; NOAA's solar calculation, the Naval Observatory's definition), and the beginning of morning and the end of evening civil twilight (its centre six degrees down, as the Air Almanac publishes it); and the periods the rules read from them that begin that evening and end the next morning: 14 CFR 1.1's night (end of evening civil twilight to beginning of morning civil twilight: 91.151(a)(2)'s reserve, 91.205(c)'s equipment), 61.57(b)'s period (1 hour after sunset to 1 hour before sunrise: the three takeoffs and landings to a full stop it asks for within 90 days are made in it, and passengers are carried in it only then) and 91.209(a)'s position lights (sunset to sunrise). The date is the pilot's local one, read at the longitude's mean noon. Where the sun does not cross a line that day (Alaska's summer, the Arctic's winter) its instants are null and `sun` or `civil_twilight` says which way.
+   */
+  sun_times: {
+    input: SunTimesInput;
+    answer: SunTimesAnswer;
+  };
+  /**
    * The class of the airspace at a field's surface, from the NASR Class Airspace volumes whose shape holds it: B, C or D (14 CFR 71.41, 71.51, 71.61) or E (a surface area or an extension to one, 71.71(b), AIM 3-2-6e1 and e2) where a volume of that class reaches the ground (a floor at SFC, 0 ft AGL, or an MSL floor at or under the field's elevation), the most restrictive where they overlap; G where none does (AIM 3-3-1). A Class B or C shelf over the field is not its surface class. Part-time where every volume of that class is in effect by NOTAM or by remark (NASR WKHR_CODE NOTAM or RMK, not H24); then `otherwise` is the class at other times, the next class reaching the surface or G (AIM 3-2-5a1: "other times CLASS E" or "other times CLASS G"). A volume with no code is read as full-time.
    */
   surface_airspace: {
@@ -13847,6 +13854,98 @@ export interface SunDownInput {
    * UNIX seconds.
    */
   at_s: number;
+}
+export interface SunTimesInput {
+  lat: number;
+  /**
+   * East positive.
+   */
+  lon: number;
+  /**
+   * The local date, yyyy-mm-dd.
+   */
+  date: string;
+}
+export interface SunTimesAnswer {
+  /**
+   * UNIX seconds.
+   */
+  solar_noon_s: number;
+  /**
+   * both: the day has both instants; never_down: the sun never goes that far below the horizon (no instants: it stays above that line); never_up: it never comes above it.
+   */
+  sun: "both" | "never_down" | "never_up";
+  /**
+   * UNIX seconds.
+   */
+  sunrise_s: number | null;
+  /**
+   * UNIX seconds.
+   */
+  sunset_s: number | null;
+  /**
+   * both: the day has both instants; never_down: the sun never goes that far below the horizon (no instants: it stays above that line); never_up: it never comes above it.
+   */
+  civil_twilight: "both" | "never_down" | "never_up";
+  /**
+   * Morning civil twilight begins, UNIX seconds.
+   */
+  civil_dawn_s: number | null;
+  /**
+   * Evening civil twilight ends, UNIX seconds.
+   */
+  civil_dusk_s: number | null;
+  /**
+   * 14 CFR 1.1's night from this evening.
+   */
+  night: {
+    /**
+     * When it begins this evening, UNIX seconds; null where the sun does not cross that line this evening.
+     */
+    from_s: number | null;
+    /**
+     * When it ends the next morning, UNIX seconds; null where the sun does not cross that line then.
+     */
+    until_s: number | null;
+    /**
+     * The sun never comes above that line this day: the whole day is in the period.
+     */
+    all_day: boolean;
+  };
+  /**
+   * 14 CFR 61.57(b)'s period from this evening: 1 hour after sunset to 1 hour before sunrise.
+   */
+  passenger_night: {
+    /**
+     * When it begins this evening, UNIX seconds; null where the sun does not cross that line this evening.
+     */
+    from_s: number | null;
+    /**
+     * When it ends the next morning, UNIX seconds; null where the sun does not cross that line then.
+     */
+    until_s: number | null;
+    /**
+     * The sun never comes above that line this day: the whole day is in the period.
+     */
+    all_day: boolean;
+  };
+  /**
+   * 14 CFR 91.209(a)'s position lights from this evening: sunset to sunrise.
+   */
+  lights: {
+    /**
+     * When it begins this evening, UNIX seconds; null where the sun does not cross that line this evening.
+     */
+    from_s: number | null;
+    /**
+     * When it ends the next morning, UNIX seconds; null where the sun does not cross that line then.
+     */
+    until_s: number | null;
+    /**
+     * The sun never comes above that line this day: the whole day is in the period.
+     */
+    all_day: boolean;
+  };
 }
 export interface SurfaceAirspaceInput {
   /**

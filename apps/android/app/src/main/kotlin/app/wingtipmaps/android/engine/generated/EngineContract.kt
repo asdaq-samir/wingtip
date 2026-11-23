@@ -13389,6 +13389,136 @@ object EngineContract {
     )
 
     @Serializable
+    data class SunTimesAnswer(
+        /**
+         * UNIX seconds.
+         */
+        @SerialName("solar_noon_s")
+        val solarNoonS: Double,
+        /**
+         * both: the day has both instants; never_down: the sun never goes that far below the horizon (no instants: it stays above that line); never_up: it never comes above it.
+         */
+        val sun: String,
+        /**
+         * UNIX seconds.
+         */
+        @SerialName("sunrise_s")
+        val sunriseS: Double? = null,
+        /**
+         * UNIX seconds.
+         */
+        @SerialName("sunset_s")
+        val sunsetS: Double? = null,
+        /**
+         * both: the day has both instants; never_down: the sun never goes that far below the horizon (no instants: it stays above that line); never_up: it never comes above it.
+         */
+        @SerialName("civil_twilight")
+        val civilTwilight: String,
+        /**
+         * Morning civil twilight begins, UNIX seconds.
+         */
+        @SerialName("civil_dawn_s")
+        val civilDawnS: Double? = null,
+        /**
+         * Evening civil twilight ends, UNIX seconds.
+         */
+        @SerialName("civil_dusk_s")
+        val civilDuskS: Double? = null,
+        /**
+         * 14 CFR 1.1's night from this evening.
+         */
+        val night: EngineContract.SunTimesAnswerNight,
+        /**
+         * 14 CFR 61.57(b)'s period from this evening: 1 hour after sunset to 1 hour before sunrise.
+         */
+        @SerialName("passenger_night")
+        val passengerNight: EngineContract.SunTimesAnswerPassengerNight,
+        /**
+         * 14 CFR 91.209(a)'s position lights from this evening: sunset to sunrise.
+         */
+        val lights: EngineContract.SunTimesAnswerLights,
+    )
+
+    /**
+     * 14 CFR 91.209(a)'s position lights from this evening: sunset to sunrise.
+     */
+    @Serializable
+    data class SunTimesAnswerLights(
+        /**
+         * When it begins this evening, UNIX seconds; null where the sun does not cross that line this evening.
+         */
+        @SerialName("from_s")
+        val fromS: Double? = null,
+        /**
+         * When it ends the next morning, UNIX seconds; null where the sun does not cross that line then.
+         */
+        @SerialName("until_s")
+        val untilS: Double? = null,
+        /**
+         * The sun never comes above that line this day: the whole day is in the period.
+         */
+        @SerialName("all_day")
+        val allDay: Boolean,
+    )
+
+    /**
+     * 14 CFR 1.1's night from this evening.
+     */
+    @Serializable
+    data class SunTimesAnswerNight(
+        /**
+         * When it begins this evening, UNIX seconds; null where the sun does not cross that line this evening.
+         */
+        @SerialName("from_s")
+        val fromS: Double? = null,
+        /**
+         * When it ends the next morning, UNIX seconds; null where the sun does not cross that line then.
+         */
+        @SerialName("until_s")
+        val untilS: Double? = null,
+        /**
+         * The sun never comes above that line this day: the whole day is in the period.
+         */
+        @SerialName("all_day")
+        val allDay: Boolean,
+    )
+
+    /**
+     * 14 CFR 61.57(b)'s period from this evening: 1 hour after sunset to 1 hour before sunrise.
+     */
+    @Serializable
+    data class SunTimesAnswerPassengerNight(
+        /**
+         * When it begins this evening, UNIX seconds; null where the sun does not cross that line this evening.
+         */
+        @SerialName("from_s")
+        val fromS: Double? = null,
+        /**
+         * When it ends the next morning, UNIX seconds; null where the sun does not cross that line then.
+         */
+        @SerialName("until_s")
+        val untilS: Double? = null,
+        /**
+         * The sun never comes above that line this day: the whole day is in the period.
+         */
+        @SerialName("all_day")
+        val allDay: Boolean,
+    )
+
+    @Serializable
+    data class SunTimesInput(
+        val lat: Double,
+        /**
+         * East positive.
+         */
+        val lon: Double,
+        /**
+         * The local date, yyyy-mm-dd.
+         */
+        val date: String,
+    )
+
+    @Serializable
     data class SurfaceAirspaceAnswer(
         val `class`: String,
         @SerialName("part_time")

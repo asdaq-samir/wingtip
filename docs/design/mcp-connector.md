@@ -209,7 +209,7 @@ clients are Spring's own pieces put together for it (`PublicRefresh`,
 
 ## 4. The tools
 
-Read-only but the four writes. Each answer carries `sources`: the FAA data set and
+Read-only but the four writes. Every figure is the planner's or the engine's, asked as the app asks it; the connector works none out. Each answer carries `sources`: the FAA data set and
 the edition held (`wingtip.data_cycles`, as the app's Status page shows), or
 the live product (METAR and TAF from aviationweather.gov, NOTAMs from the FAA
 NOTAM System), or the engine. Times and fuel need an airplane: with none
@@ -226,6 +226,11 @@ never a stock airplane's (decision 0011).
 | `nearest_airports` | the nearest fields to a point or an airport, filtered by runway length, tower, public use | `GET /api/airports/nearest` |
 | `plan_route` | the nav log: altitude and why, each leg's courses, heading, wind, ground speed, time and fuel, the totals with reserve and margin, the cautions, a link to open it in Wingtip | `GET /api/plan` |
 | `flight_briefing` | the Go / No-Go line, each finding, the risk assessment | `POST /api/go-no-go` |
+| `winds_aloft` | the wind and temperature at a field or a point and altitude, or each leg of a route at its cruise, with the forecast's valid time and whose it is (AWC's GFA, the GFS in its place) | `wingtip.winds_aloft` (the store the nav log reads; the engine's `wind_aloft_at`), or `GET /api/plan` for a route |
+| `route_hazards` | the SIGMETs, Convective SIGMETs, AIRMETs (Alaska's), G-AIRMETs and PIREPs along a route for the flight's time, each with its altitudes beside the cruise, where and when the flight meets it, a page at a time; the Brief's Adverse Conditions rows over them; Center Weather Advisories said not held yet | `GET /api/plan`, `GET /api/briefing`, the engine's `gonogo_adverse_rows` |
+| `route_airspace` | the Class B, C and D the route crosses with floors and entry rules, the special-use areas, the TFRs near it (crossed or not, altitudes, hours) a page at a time, the ADIZs, special VFR at each field in a surface area, and any field closed, private or military | `GET /api/plan`, `GET /api/briefing`, the engine's `airspace_entry_rules`, `route_adiz`, `special_vfr` and `field_status` |
+| `sun_times` | sunrise, sunset and civil twilight at a field or point on a date, and from that evening 14 CFR 1.1's night, 61.57(b)'s hour after sunset and 91.209(a)'s lights, each saying its rule; a sun that does not set or rise said so | the engine's `sun_times` |
+| `airplane_performance` | the pilot's own airplane at a field: weight and balance at takeoff and landing against its POH's limits, and its short-field distances on the runway the wind favours against its length; no airplane refused (naming `pick_airplane`), a missing figure (the empty weight and moment, the station loads, the POH's tables) named, never filled in | gateway `/internal/mcp/aircraft`, `GET /api/briefing`, the engine's `gonogo_balance`, `gonogo_default_load` and `gonogo_runway_checks` |
 | `my_airplanes` | the pilot's airplanes and their figures, inspections and open squawks | gateway `/internal/mcp/aircraft` |
 | `my_flights` | the pilot's saved flights as a route summary (name, route, airplane, altitude, distance, time, fuel, when), a page at a time; never the notes, the risk assessment or the share link | gateway `/internal/mcp/flights` |
 | `save_flight` | plans the route and saves it to the pilot's Flights | `GET /api/plan`, then gateway `POST /internal/mcp/flights` |
@@ -243,6 +248,12 @@ never a stock airplane's (decision 0011).
 
 Lists come a page at a time (`limit` and `offset`), each answer with
 `total`, `count`, `offset`, `has_more` and `next_offset` (`calls.paged`).
+The route tools beside the nav log (`winds_aloft`, `route_hazards`,
+`route_airspace`) and the field tools (`sun_times`, `airplane_performance`)
+came from the mcp-builder review's coverage list (2026-11-22); fuel prices
+wait on a source. Where no endpoint answers (the winds at a point, the
+sun), the tool asks the planner's own module or the engine by name, as the
+Go / No-Go does in-process.
 `plan_route` and `save_flight` take a route by its airports and answer in
 text; `show_flight`, the edits and `save_flight_plan` carry the whole
 flight (fuel stops, approaches, fuel on board) and draw it in the live

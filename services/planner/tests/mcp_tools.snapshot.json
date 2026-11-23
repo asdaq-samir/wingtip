@@ -89,11 +89,6 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
-              "maxProperties": 18,
-              "propertyNames": {
-                "maxLength": 16,
-                "minLength": 2
-              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -264,11 +259,6 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
-              "maxProperties": 18,
-              "propertyNames": {
-                "maxLength": 16,
-                "minLength": 2
-              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -371,6 +361,139 @@
     },
     "name": "add_stop",
     "title": "Add a stop"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Airplane performance"
+    },
+    "description": "The pilot's own airplane at a field: its weight and balance at takeoff and landing against its POH's limits and envelope (14 CFR 91.9), and its short-field takeoff and landing distances on the runway the wind favours, from the field's pressure and density altitude and reported wind, against the runway's length (91.103(b)). Needs one of the pilot's airplanes (my_airplanes); says which figures are missing.",
+    "inputSchema": {
+      "properties": {
+        "airplane_tail": {
+          "anyOf": [
+            {
+              "maxLength": 8,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The pilot's airplane by tail number.",
+          "title": "Airplane Tail"
+        },
+        "airport": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Airport",
+          "type": "string"
+        },
+        "empty_moment_lb_in": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Basic empty moment; the record's when omitted.",
+          "title": "Empty Moment Lb In"
+        },
+        "empty_weight_lb": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 20000,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Basic empty weight; the record's when omitted.",
+          "title": "Empty Weight Lb"
+        },
+        "fuel_gal": {
+          "anyOf": [
+            {
+              "maximum": 2000,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Fuel at engine start, gal; full usable when omitted.",
+          "title": "Fuel Gal"
+        },
+        "stations_lb": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 12,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Pounds at each loading station, in the POH's order.",
+          "title": "Stations Lb"
+        },
+        "trip_fuel_gal": {
+          "anyOf": [
+            {
+              "maximum": 2000,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Fuel burnt before landing, gal.",
+          "title": "Trip Fuel Gal"
+        }
+      },
+      "required": [
+        "airport"
+      ],
+      "title": "airplane_performanceArguments",
+      "type": "object"
+    },
+    "name": "airplane_performance",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "airplane_performanceDictOutput",
+      "type": "object"
+    },
+    "title": "Airplane performance"
   },
   {
     "_meta": {
@@ -667,11 +790,6 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
-              "maxProperties": 18,
-              "propertyNames": {
-                "maxLength": 16,
-                "minLength": 2
-              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -807,16 +925,11 @@
         {
           "scopes": [
             "wingtip:read",
-            "wingtip:flights"
+            "wingtip:write"
           ],
           "type": "oauth2"
         }
-      ],
-      "ui": {
-        "visibility": [
-          "model"
-        ]
-      }
+      ]
     },
     "annotations": {
       "destructiveHint": true,
@@ -1052,11 +1165,6 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
-              "maxProperties": 18,
-              "propertyNames": {
-                "maxLength": 16,
-                "minLength": 2
-              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -1474,11 +1582,6 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
-              "maxProperties": 18,
-              "propertyNames": {
-                "maxLength": 16,
-                "minLength": 2
-              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -1776,11 +1879,6 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
-              "maxProperties": 18,
-              "propertyNames": {
-                "maxLength": 16,
-                "minLength": 2
-              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -1951,11 +2049,6 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
-              "maxProperties": 18,
-              "propertyNames": {
-                "maxLength": 16,
-                "minLength": 2
-              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -2049,8 +2142,264 @@
       "securitySchemes": [
         {
           "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Airspace on a route"
+    },
+    "description": "The airspace a route crosses at its cruise: Class B, C and D with each one's floor and its entry rules (14 CFR 91.129-91.131), prohibited and restricted areas, MOAs and the like with their altitudes and times of use, and the TFRs near it (whether it goes through each, its altitudes and hours); the ADIZs it meets (14 CFR part 99), special VFR at each field in a surface area (91.157), and any field on it that is closed, private or military.",
+    "inputSchema": {
+      "properties": {
+        "airplane_tail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The pilot's own airplane by tail number (my_airplanes lists them). Without one, no times or fuel.",
+          "title": "Airplane Tail"
+        },
+        "cruise_altitude_ft": {
+          "anyOf": [
+            {
+              "maximum": 45000,
+              "minimum": 500,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cruise altitude, feet MSL; Wingtip picks the legal fastest when omitted.",
+          "title": "Cruise Altitude Ft"
+        },
+        "depart_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Departure time, ISO 8601 (UTC when no offset); now when omitted.",
+          "title": "Depart At"
+        },
+        "departure": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Departure",
+          "type": "string"
+        },
+        "destination": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Destination",
+          "type": "string"
+        },
+        "limit": {
+          "default": 20,
+          "description": "How many to answer, 1 to 50.",
+          "maximum": 50,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "offset": {
+          "default": 0,
+          "description": "How many to skip, for the next page: the last answer's next_offset.",
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        },
+        "rules": {
+          "default": "vfr",
+          "description": "VFR or IFR.",
+          "enum": [
+            "vfr",
+            "ifr"
+          ],
+          "title": "Rules",
+          "type": "string"
+        },
+        "stops": {
+          "default": [],
+          "description": "Airports or waypoints landed at or flown by, in order.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Stops",
+          "type": "array"
+        }
+      },
+      "required": [
+        "departure",
+        "destination"
+      ],
+      "title": "route_airspaceArguments",
+      "type": "object"
+    },
+    "name": "route_airspace",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "route_airspaceDictOutput",
+      "type": "object"
+    },
+    "title": "Airspace on a route"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Hazards on a route"
+    },
+    "description": "The weather hazards along a route for the flight's time: SIGMETs and Convective SIGMETs, AIRMETs (Alaska's) and G-AIRMETs, and pilot reports, each with its altitudes beside the cruise flown, where along the route and when the flight meets it, and its text as sent; and the Brief's Adverse Conditions rows over them (AIM 7-1-5(b)(1)), TFRs crossed among them. Route_airspace lists the TFRs in full.",
+    "inputSchema": {
+      "properties": {
+        "airplane_tail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The pilot's own airplane by tail number (my_airplanes lists them). Without one, no times or fuel.",
+          "title": "Airplane Tail"
+        },
+        "cruise_altitude_ft": {
+          "anyOf": [
+            {
+              "maximum": 45000,
+              "minimum": 500,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cruise altitude, feet MSL; Wingtip picks the legal fastest when omitted.",
+          "title": "Cruise Altitude Ft"
+        },
+        "depart_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Departure time, ISO 8601 (UTC when no offset); now when omitted.",
+          "title": "Depart At"
+        },
+        "departure": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Departure",
+          "type": "string"
+        },
+        "destination": {
+          "description": "An airport's identifier: KDLH, DLH, C81.",
+          "maxLength": 7,
+          "minLength": 2,
+          "title": "Destination",
+          "type": "string"
+        },
+        "limit": {
+          "default": 20,
+          "description": "How many to answer, 1 to 50.",
+          "maximum": 50,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "offset": {
+          "default": 0,
+          "description": "How many to skip, for the next page: the last answer's next_offset.",
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        },
+        "rules": {
+          "default": "vfr",
+          "description": "VFR or IFR.",
+          "enum": [
+            "vfr",
+            "ifr"
+          ],
+          "title": "Rules",
+          "type": "string"
+        },
+        "stops": {
+          "default": [],
+          "description": "Airports or waypoints landed at or flown by, in order.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Stops",
+          "type": "array"
+        }
+      },
+      "required": [
+        "departure",
+        "destination"
+      ],
+      "title": "route_hazardsArguments",
+      "type": "object"
+    },
+    "name": "route_hazards",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "route_hazardsDictOutput",
+      "type": "object"
+    },
+    "title": "Hazards on a route"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
             "wingtip:read",
-            "wingtip:flights"
+            "wingtip:write"
           ],
           "type": "oauth2"
         }
@@ -2164,7 +2513,7 @@
         {
           "scopes": [
             "wingtip:read",
-            "wingtip:flights"
+            "wingtip:write"
           ],
           "type": "oauth2"
         }
@@ -2249,11 +2598,6 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
-              "maxProperties": 18,
-              "propertyNames": {
-                "maxLength": 16,
-                "minLength": 2
-              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -2482,11 +2826,6 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
-              "maxProperties": 18,
-              "propertyNames": {
-                "maxLength": 16,
-                "minLength": 2
-              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -2672,11 +3011,6 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
-              "maxProperties": 18,
-              "propertyNames": {
-                "maxLength": 16,
-                "minLength": 2
-              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -2861,11 +3195,6 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
-              "maxProperties": 18,
-              "propertyNames": {
-                "maxLength": 16,
-                "minLength": 2
-              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -3058,11 +3387,6 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
-              "maxProperties": 18,
-              "propertyNames": {
-                "maxLength": 16,
-                "minLength": 2
-              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -3148,17 +3472,105 @@
       "securitySchemes": [
         {
           "scopes": [
+            "wingtip:read"
+          ],
+          "type": "oauth2"
+        }
+      ]
+    },
+    "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": true,
+      "title": "Sun and night"
+    },
+    "description": "Sunrise, sunset and civil twilight at an airport or a place on a date (UTC times), and when night begins and ends from that evening by each rule that reads it: 14 CFR 1.1's night (civil twilight; the VFR night reserve), 61.57(b)'s period an hour after sunset to an hour before sunrise (night currency and passengers) and 91.209(a)'s position lights from sunset. Where the sun does not set or rise, says so.",
+    "inputSchema": {
+      "properties": {
+        "airport": {
+          "anyOf": [
+            {
+              "maxLength": 7,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The field: KDLH, C81.",
+          "title": "Airport"
+        },
+        "lat": {
+          "anyOf": [
+            {
+              "maximum": 90,
+              "minimum": -90,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Or a place's latitude, degrees north.",
+          "title": "Lat"
+        },
+        "lon": {
+          "anyOf": [
+            {
+              "maximum": 180,
+              "minimum": -180,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "And longitude, degrees east (west negative).",
+          "title": "Lon"
+        },
+        "on": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The local date, yyyy-mm-dd; today (UTC) when omitted.",
+          "title": "On"
+        }
+      },
+      "title": "sun_timesArguments",
+      "type": "object"
+    },
+    "name": "sun_times",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "sun_timesDictOutput",
+      "type": "object"
+    },
+    "title": "Sun and night"
+  },
+  {
+    "_meta": {
+      "securitySchemes": [
+        {
+          "scopes": [
             "wingtip:read",
-            "wingtip:flights"
+            "wingtip:write"
           ],
           "type": "oauth2"
         }
       ],
       "ui": {
-        "resourceUri": "ui://wingtip/flight",
-        "visibility": [
-          "model"
-        ]
+        "resourceUri": "ui://wingtip/flight"
       }
     },
     "annotations": {
@@ -3168,7 +3580,7 @@
       "readOnlyHint": false,
       "title": "Replace a saved flight"
     },
-    "description": "Replaces the saved flight this flight came from (its saved_flight_id) with the flight as now planned: its route, altitude, procedures, airplane, time and nav log. Its name, notes and share link are kept, so whoever holds the link sees the new plan. A plan between other airports than the saved flight's is refused unless replace_route is true, which is for when the pilot has said to put this route over that flight.",
+    "description": "Replaces the saved flight this flight came from (its saved_flight_id) with the flight as now planned: its route, altitude, procedures, airplane, time and nav log. Its name and notes are kept.",
     "inputSchema": {
       "$defs": {
         "Flight": {
@@ -3237,11 +3649,6 @@
               },
               "default": {},
               "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
-              "maxProperties": 18,
-              "propertyNames": {
-                "maxLength": 16,
-                "minLength": 2
-              },
               "title": "Fuel On Board",
               "type": "object"
             },
@@ -3311,12 +3718,6 @@
         "flight": {
           "$ref": "#/$defs/Flight",
           "description": "The flight as the last Wingtip answer gave it."
-        },
-        "replace_route": {
-          "default": false,
-          "description": "True only when the pilot asked to put a route between other airports over the saved flight.",
-          "title": "Replace Route",
-          "type": "boolean"
         }
       },
       "required": [
@@ -3333,178 +3734,156 @@
       "securitySchemes": [
         {
           "scopes": [
-            "wingtip:read",
-            "wingtip:flights"
+            "wingtip:read"
           ],
           "type": "oauth2"
         }
-      ],
-      "ui": {
-        "resourceUri": "ui://wingtip/flight",
-        "visibility": [
-          "app"
-        ]
-      }
+      ]
     },
     "annotations": {
-      "destructiveHint": true,
+      "destructiveHint": false,
       "idempotentHint": true,
       "openWorldHint": false,
-      "readOnlyHint": false,
-      "title": "Update a saved flight from the view"
+      "readOnlyHint": true,
+      "title": "Winds aloft"
     },
-    "description": "The live view's Update button: replaces the saved flight this flight came from with it, between the same airports only.",
+    "description": "The wind and temperature aloft, from the forecast Wingtip's nav log flies, with its valid time: at a place (an airport, or lat and lon) and altitude, or along a route at its cruise (give departure and destination instead), each leg at the time the airplane flies it. Not observed winds.",
     "inputSchema": {
-      "$defs": {
-        "Flight": {
-          "description": "The flight being planned, as every edit tool takes it and answers it.",
-          "properties": {
-            "airplane_tail": {
-              "anyOf": [
-                {
-                  "maxLength": 8,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": null,
-              "description": "The pilot's own airplane, by tail number.",
-              "title": "Airplane Tail"
-            },
-            "cruise_altitude_ft": {
-              "anyOf": [
-                {
-                  "maximum": 45000,
-                  "minimum": 500,
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": null,
-              "description": "Feet MSL; none flies the legal fastest.",
-              "title": "Cruise Altitude Ft"
-            },
-            "depart_at": {
-              "anyOf": [
-                {
-                  "format": "date-time",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": null,
-              "description": "ISO 8601; none is now.",
-              "title": "Depart At"
-            },
-            "departure": {
-              "description": "The departure airport's identifier.",
-              "maxLength": 16,
-              "minLength": 2,
-              "title": "Departure",
-              "type": "string"
-            },
-            "destination": {
-              "description": "The destination airport's identifier.",
-              "maxLength": 16,
-              "minLength": 2,
-              "title": "Destination",
-              "type": "string"
-            },
-            "fuel_on_board": {
-              "additionalProperties": {
-                "type": "number"
-              },
-              "default": {},
-              "description": "Gallons in the tanks leaving a field, by its identifier; a field not named leaves full.",
-              "maxProperties": 18,
-              "propertyNames": {
-                "maxLength": 16,
-                "minLength": 2
-              },
-              "title": "Fuel On Board",
-              "type": "object"
-            },
-            "fuel_stops": {
-              "default": [],
-              "description": "The stops among them where fuel is bought.",
-              "items": {
-                "maxLength": 16,
-                "minLength": 2,
-                "type": "string"
-              },
-              "maxItems": 16,
-              "title": "Fuel Stops",
-              "type": "array"
-            },
-            "procedures": {
-              "default": "",
-              "description": "Procedures picked, as Wingtip writes them (KDLH:I27:::L); change them with change_approach.",
-              "maxLength": 400,
-              "title": "Procedures",
-              "type": "string"
-            },
-            "rules": {
-              "default": "vfr",
-              "enum": [
-                "vfr",
-                "ifr"
-              ],
-              "title": "Rules",
-              "type": "string"
-            },
-            "saved_flight_id": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": null,
-              "description": "The saved flight this came from, if any.",
-              "title": "Saved Flight Id"
-            },
-            "stops": {
-              "default": [],
-              "description": "Airports or waypoints on the way, in order.",
-              "items": {
-                "maxLength": 16,
-                "minLength": 2,
-                "type": "string"
-              },
-              "maxItems": 16,
-              "title": "Stops",
-              "type": "array"
-            }
-          },
-          "required": [
-            "departure",
-            "destination"
-          ],
-          "title": "Flight",
-          "type": "object"
-        }
-      },
       "properties": {
-        "flight": {
-          "$ref": "#/$defs/Flight",
-          "description": "The flight as the last Wingtip answer gave it."
+        "airplane_tail": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The pilot's own airplane by tail number (my_airplanes lists them). Without one, no times or fuel.",
+          "title": "Airplane Tail"
+        },
+        "airport": {
+          "anyOf": [
+            {
+              "maxLength": 7,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "A place by airport: KDLH, C81.",
+          "title": "Airport"
+        },
+        "altitude_ft": {
+          "anyOf": [
+            {
+              "maximum": 45000,
+              "minimum": 500,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Cruise altitude, feet MSL; Wingtip picks the legal fastest when omitted.",
+          "title": "Altitude Ft"
+        },
+        "at_time": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Departure time, ISO 8601 (UTC when no offset); now when omitted.",
+          "title": "At Time"
+        },
+        "departure": {
+          "anyOf": [
+            {
+              "maxLength": 7,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "For a route: its departure airport (KDLH, C81).",
+          "title": "Departure"
+        },
+        "destination": {
+          "anyOf": [
+            {
+              "maxLength": 7,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "For a route: its destination airport.",
+          "title": "Destination"
+        },
+        "lat": {
+          "anyOf": [
+            {
+              "maximum": 90,
+              "minimum": -90,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Or a place by latitude, degrees north.",
+          "title": "Lat"
+        },
+        "lon": {
+          "anyOf": [
+            {
+              "maximum": 180,
+              "minimum": -180,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "And longitude, degrees east (west negative).",
+          "title": "Lon"
+        },
+        "stops": {
+          "default": [],
+          "description": "Airports or waypoints landed at or flown by, in order.",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Stops",
+          "type": "array"
         }
       },
-      "required": [
-        "flight"
-      ],
-      "title": "update_saved_flight_from_viewArguments",
+      "title": "winds_aloft_toolArguments",
       "type": "object"
     },
-    "name": "update_saved_flight_from_view",
-    "title": "Update a saved flight from the view"
+    "name": "winds_aloft",
+    "outputSchema": {
+      "additionalProperties": true,
+      "title": "winds_aloft_toolDictOutput",
+      "type": "object"
+    },
+    "title": "Winds aloft"
   }
 ]
