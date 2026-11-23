@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, type PanelState } from "../../lib/mapChrome";
@@ -165,10 +165,17 @@ function CardDrawer({
     if (unset) setCard(id, { at, from: frontOffset() });
   }, [unset, id, at]);
   // Closing (put away, or its caller gone), where it goes back down to
-  // (RISE): the top of the sheet that will be in front once it is gone.
+  // (RISE): the top of the sheet that will be in front once it is gone;
+  // swiped away, the screen's foot, on down from where the finger let go.
   const closing = entry.state !== "open";
+  const swiped = useRef(false);
   useLayoutEffect(() => {
-    if (closing && popup) popup.style.setProperty("--card-to", frontUnder(id) ?? "");
+    if (!closing || !popup) return;
+    popup.style.setProperty(
+      "--card-to",
+      swiped.current ? `calc(${popup.offsetHeight}px + var(--sheet-base, 0px))` : (frontUnder(id) ?? ""),
+    );
+    swiped.current = false;
   }, [closing, popup, id]);
   const ask = useCallback((size: PanelState) => setCard(id, { at: size }), [id]);
   // Gone, it is no longer up (the map's room, map/cardRoom).
@@ -186,7 +193,12 @@ function CardDrawer({
         at,
         ask,
         park: frame.onSwipeClose ? "half" : "peek",
-        close: swipeCloses ? frame.onSwipeClose : undefined,
+        close: swipeCloses
+          ? () => {
+              swiped.current = true;
+              frame.onSwipeClose?.();
+            }
+          : undefined,
       });
     else if (point === null) details.cancel();
   };
@@ -220,6 +232,7 @@ function CardDrawer({
         // at half, which closes, the Drawer's own close carrying it down;
         // all the way up, it comes down to half.
         if (details.reason === "swipe" && swipeCloses) {
+          swiped.current = true;
           frame.onSwipeClose?.();
           return;
         }

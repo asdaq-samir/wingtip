@@ -57,9 +57,10 @@ test.describe("by a pointer's drag", () => {
     await expect(page.locator("[data-pin-foot]").first()).toContainText(/\d/);
     const edge = await page.evaluate(() => document.querySelector('[data-testid="panel-foot"]')!.getBoundingClientRect().bottom);
     await pullDown(page, 120);
-    const settle_ = frames<{ sheet: number; bottom: number }>(
+    // The sheet's top and slide, the figures' foot, the body's cut where it has one, and the foot's place.
+    const settle_ = frames<{ sheet: number; slid: number; bottom: number; cut: number | null; foot: number }>(
       page,
-      `(() => ({ sheet: document.querySelector('[data-swipe-direction="down"]').getBoundingClientRect().top, bottom: document.querySelector("[data-pin-foot]").getBoundingClientRect().bottom }))()`,
+      `(() => { const s = document.querySelector('[data-swipe-direction="down"]'); const cut = /inset\\(0px 0px ([\\d.]+)px/.exec([...document.querySelectorAll("[data-sheet-scroll]")].map((e) => getComputedStyle(e).clipPath).find((c) => c.startsWith("inset")) ?? ""); return { sheet: s.getBoundingClientRect().top, slid: new DOMMatrixReadOnly(getComputedStyle(s).transform).m42, bottom: document.querySelector("[data-pin-foot]").getBoundingClientRect().bottom, cut: cut ? +cut[1] : null, foot: document.querySelector('[data-testid="panel-foot"]').getBoundingClientRect().bottom }; })()`,
     );
     await page.mouse.up();
     const seen = await settle_;
@@ -73,6 +74,9 @@ test.describe("by a pointer's drag", () => {
       expect(now.bottom, `frame ${i}: never past the foot`).toBeLessThanOrEqual(edge + 1);
       // Short of the foot it goes with the plan, not a share of its speed.
       if (now.bottom < edge - 6 && sheet > 2) expect(fig, `frame ${i}: down with the plan`).toBeGreaterThanOrEqual(sheet - 3);
+      // The foot held still on the screen's edge, and the body's cut where the sheet is, every frame.
+      expect(Math.abs(now.foot - edge), `frame ${i}: the foot still`).toBeLessThanOrEqual(1);
+      if (now.cut !== null) expect(Math.abs(now.cut - now.slid), `frame ${i}: the cut with the sheet`).toBeLessThanOrEqual(2);
     }
     await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
   });
