@@ -3,7 +3,7 @@ import { useEffect, useMemo, type ReactNode } from "react";
 import type { Course } from "../../../api/types";
 import type { AirspaceClass } from "../../../preferences";
 import { courseColour } from "../../marks/chartColors";
-import { ROUTE_FIX_NAMES, ROUTE_MARKS, ROUTE_MARK_LAYERS, routeMarks } from "../../marks/routeMarks";
+import { ROUTE_FIELD_IDENTS, ROUTE_FIX_NAMES, ROUTE_MARKS, ROUTE_MARK_LAYERS, fieldSides, routeMarks } from "../../marks/routeMarks";
 import { useTurnedNames } from "../useTurnedNames";
 import { useSunlight } from "../../../sunlight";
 import { useGlData, useGlLayer, useGlMap, useGlPaint, useGlTap } from "../glLayer";
@@ -229,6 +229,8 @@ export function RouteGl({
   useGlProbe("route-turns", ["route-fix-dots"], (f) => ({ name: f.properties.text, out: f.properties.out }));
   // A route point's name stays outside its turn as the map turns.
   useTurnedNames(ROUTE_FIX_NAMES);
+  // A route field's ident too, outside its turn on the turned map.
+  useTurnedNames(ROUTE_FIELD_IDENTS, fieldSides);
   // A tap on the course within a finger's reach of it, nothing nearer
   // taken first (LEG_RANK), the nearest leg's sheet.
   const { map } = useGlMap();

@@ -22,7 +22,11 @@ final class PlaneMarkView: MKAnnotationView {
         layer.borderWidth = 1
         layer.borderColor = WingtipColor.Chart.shade.withAlphaComponent(0.4).cgColor
         addSubview(arrow)
+        // Never dropped, and its room kept clear: a field's name under it
+        // gives way rather than being covered (rules.md, "The route over
+        // the whole country": no label is drawn under own ship).
         displayPriority = .required
+        collisionMode = .circle
         isEnabled = false
         // Not a button, but VoiceOver finds it on the map and says which
         // way it points.

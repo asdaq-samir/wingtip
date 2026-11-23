@@ -86,7 +86,6 @@ export default function RouteBox({
   addAt = null,
   unknownPoint = null,
   onClear,
-  onUndo,
   wrapped = false,
   height,
 }: RouteBoxProps) {
@@ -205,9 +204,14 @@ export default function RouteBox({
             // buttons are the sheet's first row's strip over it (FplBar;
             // the owner, 2026-11-14), not a footer of its own.
             className={cn(
-              "h-auto flex-wrap items-start border-0 pt-1 pr-1.5 pb-1 pl-1 shadow-none",
-              // Turned from the grouped box: the timeline card's corners.
-              wrapped ? "rounded-(--radius-card)" : "rounded-(--radius-banner)",
+              "h-auto flex-wrap items-start border-0 pt-1 pb-1 shadow-none",
+              // Turned from the grouped box: the timeline card's corners, and
+              // its words where the rows' words start (the card's 16, a
+              // mark's 32 and the 16 after it: TIMELINE_CARD, TIMELINE_GAP)
+              // and its controls as far in from the right as the rows' are
+              // (TIMELINE_END), so nothing moves as the face turns (the
+              // owner's iPhone, 2026-11-23).
+              wrapped ? "rounded-(--radius-card) pr-4 pl-16" : "rounded-(--radius-banner) pr-1.5 pl-1",
               PANEL_FIELD,
             )}
             style={wrapped && height ? { height } : undefined}
@@ -295,21 +299,11 @@ export default function RouteBox({
                 React Aria's field clear (ui/search-field), its press keeping
                 the focus in the box; the TokenField has no clear slot. */}
             {typed.text && <SearchFieldClear aria-label="Clear what is typed" onPress={clearTyped} className="mt-1 mr-1" />}
-            {/* Nothing typed: half a route cleared by the same stock ✕, and
-                the empty box's Undo, the route just cleared put back. */}
+            {/* Nothing typed: half a route cleared by the same stock ✕; a
+                route cleared is put back by the toast's Undo or Cmd-Z
+                (the owner, 2026-11-23: "No undo needed next to toggle"). */}
             {!typed.text && onClear && points.length > 0 && (
               <SearchFieldClear aria-label="Clear the route" onPress={onClear} className="mt-1 mr-1" data-testid="route-box-clear" />
-            )}
-            {!typed.text && onUndo && !points.length && (
-              <Button
-                variant="plain"
-                size="inline"
-                onClick={onUndo}
-                data-testid="route-undo"
-                className={cn("relative mt-1 mr-1 px-1 text-tint hit-2", TEXT.row)}
-              >
-                Undo
-              </Button>
             )}
           </InputGroup>
           {/* The suggestions under the box: the typing stays in the box,

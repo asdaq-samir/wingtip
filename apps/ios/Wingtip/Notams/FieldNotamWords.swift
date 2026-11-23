@@ -137,4 +137,58 @@ enum FieldNotamWords {
         if !active, let starts, let ends { lines.append(TimeLine(label: "Duration", value: span(ends.timeIntervalSince(starts)))) }
         return lines
     }
+
+    /// "27 May 2026, 13:43 CDT" in the field's own time (the planner's
+    /// zone), the year only where `year`; UTC where the zone is not known
+    /// ("27 May 2026, 1843Z"), never the device's own time called the
+    /// field's. `clock` false says the day alone. The web's cardWhen.
+    static func cardWhen(_ at: Date, zone: TimeZone?, year: Bool, clock: Bool = true) -> String {
+        let tz = zone ?? .gmt
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = tz
+        let locale = Locale(identifier: "en_US")
+        let day = year
+            ? Date.VerbatimFormatStyle(format: "\(day: .defaultDigits) \(month: .abbreviated) \(year: .defaultDigits)",
+                                       locale: locale, timeZone: tz, calendar: calendar)
+            : Date.VerbatimFormatStyle(format: "\(day: .defaultDigits) \(month: .abbreviated)", locale: locale, timeZone: tz, calendar: calendar)
+        guard clock else { return at.formatted(day) }
+        let time = zone == nil
+            ? Date.VerbatimFormatStyle(format: "\(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased))\(minute: .twoDigits)Z",
+                                       locale: locale, timeZone: tz, calendar: calendar)
+            : Date.VerbatimFormatStyle(format: "\(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased)):\(minute: .twoDigits) \(timeZone: .specificName(.short))",
+                                       locale: locale, timeZone: tz, calendar: calendar)
+        return "\(at.formatted(day)), \(at.formatted(time))"
+    }
+
+    /// A NOTAM's times on its own card, in words (the owner, 2026-11-23, of
+    /// FDC 6/3373; the web's cardTimes): "In effect since 27 May 2026, 13:43
+    /// CDT", or "Starts ... · in 5h45m"; its end "Until ...", estimated where
+    /// EST says so (JO 7930.2 4-2-1), with how long is left. A permanent
+    /// condition (`permanent`, the engine's notam_card: PERM, or PERMANENTLY
+    /// in its words) stays until the charts show it, its EST end the
+    /// estimate of when: "Until charts are updated (est. 27 May 2028)". The
+    /// year where either end is not this year's.
+    static func cardTimes(_ notam: APIRankedNotam, read: EngineContract.NotamReadAnswer?, permanent: Bool, zone: TimeZone?,
+                          now: Date = .now) -> [String] {
+        let starts = date(notam.starts ?? read?.starts), ends = date(notam.ends ?? read?.ends)
+        var utc = Calendar(identifier: .gregorian)
+        utc.timeZone = .gmt
+        let thisYear = utc.component(.year, from: now)
+        let withYear = [starts, ends].contains { $0.map { utc.component(.year, from: $0) != thisYear } ?? false }
+        func soon(_ at: Date) -> String { at > now ? " · in \(span(at.timeIntervalSince(now)))" : "" }
+        let estimated = read?.estimated == true
+        var lines: [String] = []
+        if let starts {
+            lines.append(notam.inForce != false
+                ? "In effect since \(cardWhen(starts, zone: zone, year: withYear))"
+                : "Starts \(cardWhen(starts, zone: zone, year: withYear))\(soon(starts))")
+        }
+        if permanent, estimated || ends == nil {
+            lines.append(ends.map { "Until charts are updated (est. \(cardWhen($0, zone: zone, year: withYear, clock: false)))" }
+                ?? "Until charts are updated")
+        } else if let ends {
+            lines.append("Until \(cardWhen(ends, zone: zone, year: withYear))\(estimated ? ", estimated" : "")\(soon(ends))")
+        }
+        return lines
+    }
 }

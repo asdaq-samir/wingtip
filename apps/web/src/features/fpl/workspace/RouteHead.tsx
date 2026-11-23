@@ -28,9 +28,10 @@ export default function RouteHead({
   const { hasPoints, wholeRoute } = vm.route;
   const { foldRoute } = vm.routeList;
   const editing = routeEditing(vm);
-  // The whole route's field opened by the box's toggle (TypeRouteButton):
-  // the same box turned into the field, the timeline not drawn over it and
-  // no "Route" row or Done (the owner, 2026-11-22).
+  // The route's field opened by the box's toggle (TypeRouteButton), on an
+  // empty, half or whole route: the same box turned into the field, the
+  // timeline not drawn over it and no "Route" row or Done (the owner,
+  // 2026-11-22).
   const typed = routeTyped(vm);
   // The kept height let go once the field is folded (routeEditing).
   const { routeOpen } = vm.routeList;
@@ -77,7 +78,7 @@ export default function RouteHead({
           </Button>
         </div>
       )}
-      {editing && !hasPoints && <EmptyRoute vm={vm} />}
+      {editing && !hasPoints && !typed && <EmptyRoute vm={vm} />}
       {/* The box turned into the route's field, in the timeline's own place. */}
       {typed && (
         <Suspense fallback={<div className="h-24 rounded-(--radius-card) bg-card" />}>

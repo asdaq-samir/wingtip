@@ -1,9 +1,8 @@
 import { Suspense } from "react";
 import { SearchNear } from "../../../lib/useAirportSearch";
-import { usePlanUndo } from "../../../lib/planUndo";
 import { coverCard, useSheetCards } from "../../../lib/sheetCards";
 // The route's field, on a chunk of its own, asked for beside the first
-// script (main.tsx) so it is in hand at the first the route box's toggle.
+// script (main.tsx) so it is in hand at the box's toggle's first tap.
 import { RouteBox } from "../../route";
 import type { PlanSlices } from "../vm/planSlices";
 import { FlightFigures } from "./FlightFoot";
@@ -11,9 +10,9 @@ import { TypeRouteButton } from "../../procedures/lazy";
 import { keptTimelineHeight } from "./routeEditing";
 
 /**
- * FPL's route's field, open under its timeline (RouteHead) once asked for
- * (routeBoxOpen; decision 0047): the timeline's the route box's toggle
- * before the route is whole, the keyboard button at Add a Stop's end after. The route's
+ * FPL's route's field, the box's other face once its toggle asks for it
+ * (routeBoxOpen; decision 0047), in the box's own place (inPlace), or under
+ * the card while a stop is typed. The route's
  * field to type or paste a whole route in, read by the engine's route_read
  * as it always was (RouteBox); and once the route is whole its figures
  * under it, changing as it is edited, till Done.
@@ -38,10 +37,6 @@ export default function RouteEditor({
   // sheet is inert (SheetParts, while a card is up), and the field's focus
   // as it was asked went nowhere (plans.spec, "no legal altitude").
   const covered = useSheetCards((c) => !!coverCard(c.stack));
-  // The empty box's Undo while the plan's last step took the route away
-  // (a clear, or its last point removed), gone once a new one is started:
-  // the plan's one Undo (lib/planUndo), as every edit's toast has.
-  const routeUndo = usePlanUndo((u) => (u.undoName === "Route" ? u.undo : null));
   return (
     <div
       // In the timeline's own place (RouteHead), none of its own room round it.
@@ -97,7 +92,6 @@ export default function RouteEditor({
               // Half a route cleared by the box's ✕ (the owner, 2026-11-18);
               // a route planned, by FPL's ✕.
               onClear={hasPoints && !routed ? clearRoute : undefined}
-              onUndo={!hasPoints && routeUndo ? routeUndo : undefined}
               // Turned from the grouped box by its toggle: its size and shape, the route wrapped in it.
               wrapped={inPlace}
               height={inPlace ? keptTimelineHeight() : undefined}
@@ -109,11 +103,12 @@ export default function RouteEditor({
           was on the timeline's face (TypeRouteButton): what is typed is
           read as the field is left, the tap's own blur, so the route
           folds with it in (the plan's Undo as ever); the focus kept on the
-          toggle there. Only on a whole route opened by it. */}
-      {wholeRoute && routeOpen && (
+          toggle there. On an empty, half or whole route opened by it. */}
+      {routeOpen && (
         // At the box's bottom right, where it is on the timeline's face, over
         // the box's last line (z-10), its 44-point area whole.
-        <div className="relative z-10 -mt-11 flex h-11 items-center justify-end pr-2">
+        // As far in from the right as on the rows' face (TIMELINE_END).
+        <div className="relative z-10 -mt-11 flex h-11 items-center justify-end pr-4">
           <TypeRouteButton
             pressed
             onToggle={() => {

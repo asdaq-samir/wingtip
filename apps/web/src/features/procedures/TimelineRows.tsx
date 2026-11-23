@@ -138,7 +138,10 @@ function TimelineAction({
           (flex-wrap), never past the card's edge, which clips them (the
           owner's iPhone, 2026-11-22: the toggle cut off, the two chips'
           areas crossing at 2 apart). */}
-      {trailing && <span className="ml-auto flex h-11 items-center gap-2 pr-2">{trailing}</span>}
+      {/* As far in from the card's right edge as its words are from its
+          left (the card's pl-4; the owner's iPhone, 2026-11-23: the toggle
+          touched the box's edge). */}
+      {trailing && <span className={cn("ml-auto flex h-11 items-center gap-2", TIMELINE_END)}>{trailing}</span>}
     </div>
   );
 }
@@ -248,24 +251,29 @@ const CHIP_44 = { "--hit-y": "calc((100% - 44px) / 2)" } as CSSProperties;
  *  hit-1.5), overlapping where the chips are closer than 12. */
 const ROW_CHIP = cn("gap-0.5 px-1 font-medium", TEXT.note);
 
-/** Type the Route, at the grouped box's bottom right, after Add a Stop and
- *  the fuel stops' pill, and at the empty or half route's card's end: a
+/** Type the Route, at the box's own bottom right on every face, in its
+ *  last row (Add a Stop's, the empty route's Destination, half a route's
+ *  last) and over the route's field's last line, pressed there: a
  *  toggle between the two faces of the same box, the timeline and the
  *  route's field (RouteEditor) to type or paste the route in whole, with
  *  no row or Done of its own (the owner, 2026-11-22: "It should make the
  *  same grouped box into route box and the other way. No need for a
  *  separate row and done etc."; 2026-11-23: "the toggle is enough", and
- *  "doesn't look standard"). The stock Toggle as it comes (its own size,
- *  pressed state and focus ring) with the keyboard glyph, pressed while the
- *  field is the face; its 44-point area a pseudo-element, so it grows not. */
+ *  "doesn't look standard"). The stock Toggle in its tint variant: the
+ *  keyboard glyph in the tint on its wash in a circle the head's round
+ *  chip's size (32), filled in the tint while the field is the face (the
+ *  owner, 2026-11-23: "is the toggle standard?"); its 44-point area a
+ *  pseudo-element, so it grows not. */
 export function TypeRouteButton({ pressed, onToggle }: { pressed: boolean; onToggle: () => void }) {
   return (
     <Toggle
-      size="sm"
+      variant="tint"
+      size="round"
       pressed={pressed}
       onPressedChange={onToggle}
       aria-label="Type the route"
       data-testid="route-type-open"
+      // Its area 44 whatever the circle's size, a pseudo-element.
       className="relative hit-1.5"
     >
       <Keyboard aria-hidden="true" />
@@ -285,11 +293,14 @@ export function EndRow({
   onPick,
   line = false,
   first = false,
+  trailing,
 }: {
   end: "Departure" | "Destination";
   onPick: () => void;
   line?: boolean;
   first?: boolean;
+  /** At the row's end: the box's toggle, where this is the card's last row. */
+  trailing?: ReactNode;
 }) {
   return (
     <TimelineAction
@@ -297,6 +308,7 @@ export function EndRow({
       placeholder
       line={line}
       first={first}
+      trailing={trailing}
       onClick={onPick}
       aria-label={`Pick the ${end.toLowerCase()}`}
       data-testid={end === "Departure" ? "timeline-pick-dep" : "timeline-pick-dest"}

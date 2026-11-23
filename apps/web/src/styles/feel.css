@@ -109,8 +109,10 @@
 /* The same arrival from a side of its own (--appear-from, an x and a
    y): a runway line unfolding from its head, the folded chip from its
    end, the flying head from the top. A page's time, on the sheet's
-   curve, and a transition, so a quick second tap turns it back from
-   where it is rather than starting it again, as keyframes did. */
+   curve. A transition from @starting-style plays as the element comes
+   in: one put in again (a second tap that mounts it anew) starts it over,
+   as keyframes would; only a change to an element still there turns
+   back from where it is. */
 @utility appear-slide {
   @media (prefers-reduced-motion: no-preference) {
     @variant branded {
@@ -139,6 +141,13 @@
       animation: figure-roll var(--motion-page) var(--motion-sheet-ease);
     }
   }
+}
+/* A closing card's still copy (sheet/useCardFrame's keepFace) replays
+   nothing: its figures' rolls and arrivals were done on the card itself. */
+[data-card-face],
+[data-card-face] * {
+  animation: none !important;
+  transition: none !important;
 }
 @keyframes figure-roll {
   from {

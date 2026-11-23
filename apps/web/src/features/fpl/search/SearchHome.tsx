@@ -2,6 +2,9 @@ import { Suspense } from "react";
 import { EngineGate } from "../../../lib/engine/engineGate";
 import { FavoriteStrip, PillSection, PillStrip } from "../../../components/Favorites";
 import { usePreferences, type KeptAircraft, type RecentAirport } from "../../../lib/preferences";
+import { useSearchPick } from "../../../lib/oneSearch";
+import { FieldError } from "../../../components/ui/field";
+import { TEXT } from "../../../lib/text";
 import AddFavoriteTile from "../../../components/AddFavoriteTile";
 import TabPage from "../../../components/TabPage";
 import { AircraftFavoriteStrip, AircraftRecentTiles } from "../../aircraft-pick";
@@ -52,9 +55,12 @@ export default function SearchHome({
   const { home, favorites, askFor, pickAirplane, pickPlace: openRecent, nearStrip, nearMap } = vm.search;
   const pickPlace = (a: RecentAirport) => (pickIdent ? pickIdent(a.ident) : openRecent(a));
   const openAirplane = (kept: KeptAircraft) => pickAirplane(kept, (hex) => selectFlight(hex));
+  // Why the ask came back (the first flight's "is where you are"), said here as under typed results.
+  const askProblem = useSearchPick((s) => s.pick?.problem ?? null);
   const hasAirplane = usePreferences((s) => !!s.myAircraft || s.favoriteAircraft.length > 0);
   return (
     <TabPage testId="search-home">
+      {askProblem && <FieldError className={`appear text-destructive-ink ${TEXT.note}`}>{askProblem}</FieldError>}
       <PillSection title="Nearest" onMore={openNearest} testId="pill-section-nearest">
         {/* Each field's bearing is the engine's word (compassPoint), and the
             nearest can answer before its .wasm is there. */}

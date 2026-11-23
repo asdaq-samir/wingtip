@@ -13,14 +13,17 @@ import { TAP } from "./common";
 import { pictureLayer } from "../markLayers";
 import { svgPicture, useGlSymbols, type GlSymbol } from "../useGlSymbols";
 
-/** Own ship's room on the chart, an empty picture the size of its plane
- *  and a little round it, which MapLibre's collision keeps clear: the
- *  marker is HTML over the canvas, which the collision does not see, so
- *  KORD's ident was drawn under the arrow (the owner's iPhone screenshot,
- *  2026-11-23). Always drawn, and placed first, the top of the marks, so
- *  every label gives way round it (rules.md, "Where words collide"). */
+/** Own ship's room on the chart, an empty picture the size of its arrow,
+ *  which MapLibre's collision keeps clear: the marker is HTML over the
+ *  canvas, which the collision does not see, so KORD's ident was drawn
+ *  under the arrow (the owner's iPhone screenshot, 2026-11-23). Always
+ *  drawn, at the top of the marks' slot, so the chart's own labels give
+ *  way round it, but under the top slot, where the route's own idents and
+ *  the Class B fields' weather are placed first: parked at the departure,
+ *  a 40-point room took the departure's name and KORD's weather disc
+ *  (the r5-ui audit's M2, 2026-11-23). */
 const ROOM = "own-ship-room";
-const ROOM_PICTURE = svgPicture(ROOM, () => '<svg width="40" height="40"></svg>');
+const ROOM_PICTURE = svgPicture(ROOM, () => '<svg width="24" height="24"></svg>');
 const ROOM_LAYERS = [pictureLayer(ROOM, ROOM, {}, { "icon-ignore-placement": false })];
 
 /** The location arrow's close-in, in the app's levels. */
@@ -68,7 +71,7 @@ export function OwnShipGl({ card }: { card?: ReactNode } = {}) {
     () => (roomLat === null || roomLon === null ? [] : [{ key: ROOM, lat: roomLat, lon: roomLon, picture: ROOM_PICTURE }]),
     [roomLat, roomLon],
   );
-  useGlSymbols(ROOM, ROOM_LAYERS, room);
+  useGlSymbols(ROOM, ROOM_LAYERS, room, { slot: "marks" });
   const marker = useRef<Marker | null>(null);
   // The mark's HTML as last written (drawOwnShip).
   const drawn = useRef("");

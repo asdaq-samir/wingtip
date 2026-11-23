@@ -82,8 +82,14 @@ function NotAuthorized({ card }: { card: NotamCardReading }) {
  */
 function NotamFull({ n, ident, card, read }: { n: FieldNotam; ident: string; card: NotamCardReading; read: NotamReading }) {
   const tfr = n.kind === "tfr";
+  // Only one in force affects the flight: an expired NOTAM, or one not
+  // yet begun, at the departure wore the red chip beside its own Inactive
+  // (the r5-ui audit's M6, 2026-11-23). Red only where it takes a
+  // procedure away; a crane's light at the field is the neutral chip.
+  const active = n.in_force !== false;
   const role = usePlanRole(ident);
-  const times = cardTimes(n, read, card.permanent, useFieldZone(ident));
+  // On the minute clock NotamState keeps, so "in 18d" moves on with it.
+  const times = cardTimes(n, read, card.permanent, useFieldZone(ident), useMinuteClock());
   const where = whereOf(n, read);
   // The category is a label only where the title says what happened;
   // otherwise it is the title already (NotamCard).
@@ -102,8 +108,12 @@ function NotamFull({ n, ident, card, read }: { n: FieldNotam; ident: string; car
             Permanent
           </Badge>
         )}
-        {role && (
-          <Badge variant="destructive" className={TEXT.badge} data-testid="place-notam-affects">
+        {role && active && (
+          <Badge
+            variant={card.procedures.length > 0 ? "destructive" : "secondary"}
+            className={TEXT.badge}
+            data-testid="place-notam-affects"
+          >
             {role}
           </Badge>
         )}
@@ -144,8 +154,8 @@ function numberLine(n: FieldNotam, ident: string, card: NotamCardReading, read: 
  *  (headingOf), the field and its number under it ("KARR Aurora
  *  Municipal · FDC 6/3373"). */
 export function NotamCard({ n, ident, name, onClose }: { n: FieldNotam; ident: string; name?: string | null; onClose: () => void }) {
-  // The engine asked once a card (notam_card, notam_read) and the answers
-  // handed down, not asked again by each part.
+  // Asked of the engine once a render, each a trip through its WASM, and
+  // handed down (the r5-ui audit's L13).
   const card = cardOf(n, ident);
   const read = readNotam(n, ident);
   const title = n.kind === "tfr" ? null : card.title;

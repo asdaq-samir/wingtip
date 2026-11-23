@@ -1,5 +1,5 @@
 import { lazyModule } from "../lib/lazyModule";
-import { usePointerHover } from "../hooks/use-pointer-hover";
+import { useMediaQuery } from "../hooks/use-media-query";
 import type { SwipeRowProps } from "./swipe/SwipeRowImpl";
 
 /** The swipe's chunk (components/swipe, Motion's drag with it): not in the
@@ -16,7 +16,10 @@ const swipe = lazyModule(() => import("./swipe"));
  * nothing, the minus taking the row away.
  */
 export function SwipeRow({ off = false, ...props }: SwipeRowProps & { off?: boolean }) {
-  const finger = !usePointerHover();
+  // A finger anywhere, not a primary pointer that is no mouse: an iPad
+  // with a trackpad reports a fine pointer that hovers, and its rows did
+  // not swipe under a finger (the r5-ui audit's L17).
+  const finger = useMediaQuery("(any-pointer: coarse)");
   const module = swipe.use(finger && !off);
   if (!module || !finger || off) return props.children;
   return <module.SwipeRowImpl {...props} />;

@@ -19,6 +19,11 @@ final class PlateLayer: NSObject, UIGestureRecognizerDelegate {
     private var tags: [String: PlateTags] = [:]
     private var tagMarks: [String: [PlateTagAnnotation]] = [:]
     private var finals: [String: FinalSegmentPolyline] = [:]
+    /// Whether the fixes' tags show at the zoom now: from
+    /// map.zoom.procedure-words, as the web's PlatesGl; farther out an
+    /// approach is a short line by its field, and its words would cover it
+    /// and the fields round it.
+    private var words = false
     private var task: Task<Void, Never>?
     /// Each page's card for VoiceOver, which cannot tap a page: one of the
     /// map's actions per plate (Apple's HIG: every gesture has an
@@ -129,6 +134,14 @@ final class PlateLayer: NSObject, UIGestureRecognizerDelegate {
         }
     }
 
+    /// The map rested: the fixes' tags in or out with the zoom.
+    func zoomed(_ map: MKMapView, zoom: Double) {
+        let now = zoom >= WingtipMapZoom.procedureWords
+        guard now != words else { return }
+        words = now
+        for key in keys { showTags(key, on: map) }
+    }
+
     /// A plate's tags and final segment on the map while Show Annotations
     /// is on, off it while it is off.
     private func showTags(_ key: String, on map: MKMapView) {
@@ -142,6 +155,7 @@ final class PlateLayer: NSObject, UIGestureRecognizerDelegate {
             if let page = pages[key] { map.insertOverlay(final, above: page) } else { map.addOverlay(final, level: .aboveLabels) }
             finals[key] = final
         }
+        guard words else { return }
         let marks = found.fixes.map { PlateTagAnnotation($0, plate: key) }
         tagMarks[key] = marks
         map.addAnnotations(marks)

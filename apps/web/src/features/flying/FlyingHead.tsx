@@ -135,9 +135,12 @@ function Head({ off = false, children }: { off?: boolean; children: ReactNode })
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = box.current;
-    const root = document.documentElement.style;
     if (!el || typeof ResizeObserver === "undefined") return;
-    // On the page's root, as its reader, the map's banners (MapBanners), is drawn in
+    // On the map's own element (MapPage's #content, insetVars' too), not
+    // the page's root, so a change restyles the map's part alone (the
+    // r5-ui audit's L9, 2026-11-23).
+    const root = (el.closest<HTMLElement>("#content") ?? document.documentElement).style;
+    // Over the map, as its reader, the map's banners (MapBanners), is drawn in
     // the map's shell, apart from this head, and written only as
     // the height changes:
     // a variable changed on the root restyles every element on the page,

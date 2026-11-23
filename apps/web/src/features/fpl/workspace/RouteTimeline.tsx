@@ -9,20 +9,11 @@ import { NO_CONNECTION, noConnection } from "../../../lib/problems";
 import { sameField } from "../../../lib/procedures";
 import { airportQuery } from "../../../lib/queryClient";
 import { DepartPicker } from "../../navlog/lazy";
-import {
-  FuelStopsChip,
-  NoFuelStopNote,
-  TimelineRoute,
-  TypeRouteButton,
-  visitAt,
-  visitRow,
-  type TimelinePoint,
-} from "../../procedures/lazy";
-import { keepTimelineHeight } from "./routeEditing";
+import { FuelStopsChip, NoFuelStopNote, TimelineRoute, visitAt, visitRow, type TimelinePoint } from "../../procedures/lazy";
 import { etaAt, rowCautions } from "../../plan";
 import type { PlanSlices } from "../vm/planSlices";
 import type { ProceduresRouteProps } from "../../procedures/lazy";
-import { MissingEnd, TypeRow } from "./RouteStart";
+import { BoxToggle, MissingEnd } from "./RouteStart";
 
 /**
  * FPL's route on the ground, the one layout (decision 0047) and where it
@@ -196,7 +187,7 @@ export default function RouteTimeline({
     fromRow = at;
   }
   // Half a route, open to edit: the end it lacks in its place, and the
-  // route typed or pasted where Add a Stop is on a whole one (RouteStart).
+  // box's toggle in its last row where Add a Stop is on a whole one.
   const half = !read && !wholeRoute;
   // The fuel stops' pill at Add a Stop's end: the planner's suggested ones
   // put in, every flight's, or, once the route has fuel stops and needs no
@@ -212,22 +203,15 @@ export default function RouteTimeline({
   ) : noFuelStop[0] ? (
     <NoFuelStopNote flight={noFuelStop[0]} />
   ) : null;
-  // Type the Route, where More's item was (the owner, 2026-11-21: More keeps
-  // three items): a keyboard glyph at Add a Stop's end on a whole route
-  // whose field is folded, opening the route's field to type or paste it in
-  // whole (RouteEditor), as the route box's toggle does before it is whole.
+  // The box's toggle at Add a Stop's end on a whole route whose field is
+  // folded, where More's item was (the owner, 2026-11-21: More keeps three
+  // items), after the fuel stops' pill: the box's bottom right, as it is
+  // on every face (BoxToggle).
   const typeFuel =
     wholeRoute && vm.routeList.routeFolded ? (
       <>
         {fuelPill}
-        <TypeRouteButton
-          pressed={false}
-          onToggle={() => {
-            // The grouped box's height, kept for the field it turns into.
-            keepTimelineHeight(document.querySelector('[data-testid="route-summary"]')?.getBoundingClientRect().height ?? 0);
-            vm.routeList.setRouteOpen(true);
-          }}
-        />
+        <BoxToggle vm={vm} focus={false} />
       </>
     ) : (
       fuelPill
@@ -238,7 +222,10 @@ export default function RouteTimeline({
       points={points}
       head={half && !planned.dep ? <MissingEnd vm={vm} end="Departure" /> : undefined}
       tail={half && !planned.dest ? <MissingEnd vm={vm} end="Destination" /> : undefined}
-      foot={half ? <TypeRow vm={vm} /> : undefined}
+      // Half a route: no Add a Stop, the box's toggle in its last row --
+      // the destination's to pick (MissingEnd), or the last point's.
+      building={half}
+      lastTrailing={half && planned.dest && !vm.routeList.boxOpen ? <BoxToggle vm={vm} /> : undefined}
       addTrailing={read ? undefined : typeFuel}
       allStops={read || tall || panel === "full"}
       onAllStops={() => setPanel("full")}

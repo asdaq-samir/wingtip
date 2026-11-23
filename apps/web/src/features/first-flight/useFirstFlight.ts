@@ -60,13 +60,11 @@ export function useFirstFlight({
   const planTo = useCallback(
     (dest: string) => {
       const mine = ++turn.current;
-      // The ask held while the fix is waited for, so a second tap on a
-      // Nearest, Recent or Favorite row picks again rather than opening
-      // its card: let go at the pick, the tap that came as the first
-      // waited (up to 4 s, no route yet, Search still up) opened the
-      // airport's card (the owner, 2026-11-22: "When I select a nearest
-      // airport, it shows destination search the first time but then
-      // selecting again shows the airport card").
+      // The ask held while the fix is waited for (up to 4 s, no route
+      // yet, Search still up), so the field typed in again picks again;
+      // a tap on a Nearest, Recent or Favorite tile with the field at rest
+      // opens its card, as the ask waits for the field (lib/oneSearch's
+      // pickInUse; the owner, 2026-11-23).
       if (asked.current) useSearchPick.setState({ pick: asked.current });
       void planFirstFlight(dest, null, {
         stale: () => mine !== turn.current,

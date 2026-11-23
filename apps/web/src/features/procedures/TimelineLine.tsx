@@ -41,6 +41,7 @@ export function TimelineLine({
   last,
   open,
   onOpen,
+  trailing,
 }: {
   vm: ProceduresRouteModel;
   point: TimelinePoint;
@@ -54,6 +55,10 @@ export function TimelineLine({
   last: boolean;
   open: boolean;
   onOpen: (open: boolean) => void;
+  /** At the line's end, over its tap: half a route's box's toggle, inside
+   *  the line's own right inset (TIMELINE_END), as every row's last
+   *  control is (TimelineAction). */
+  trailing?: ReactNode;
 }) {
   const { opens, refused, tank, fuelSet, reported, parts, before, after, missedOn, onPast } = lineModel(vm, point, row, field, last);
   // Each part's tray, a stop's takeoff a region of its own as the list
@@ -166,13 +171,17 @@ export function TimelineLine({
           {/* No chevron at its end (the owner, 2026-11-19: "Also remove
               the chevrons"): the line itself is the tap that opens it. */}
           {end.grip}
+          {trailing && <span className="relative z-10 flex h-11 shrink-0 items-center">{trailing}</span>}
         </div>
         <LineNotes point={point} refused={refused} />
         {opens && (
           <CollapsibleContent
             // Base UI's own panel animation: the lines under it move down as
             // it opens rather than jumping (none with Reduce Motion, index.css).
-            className="h-(--collapsible-panel-height) space-y-2 overflow-hidden pb-2 transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0"
+            // Its clip stood out by the chips' reach on three sides (a
+            // margin given back as padding), so their 44-point areas and
+            // focus rings are not cut while it is open (the r5-ui audit's L4).
+            className="-mx-2 -mt-2 h-(--collapsible-panel-height) space-y-2 overflow-hidden px-2 pt-2 pb-2 transition-[height] duration-(--motion-fade) ease-(--motion-sheet-ease) data-ending-style:h-0 data-starting-style:h-0"
             data-testid="timeline-details"
           >
             {/* The elevation under the time (the owner, 2026-11-17: "the

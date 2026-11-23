@@ -28,6 +28,18 @@ struct Glance: Equatable {
     /// The row's finding: the worst of those folded into it.
     let restFinding: String
 
+    /// The glance of an answer, the engine asked once per answer rather
+    /// than at every redraw of a view showing it (the strip's head redraws
+    /// as the in-flight figures tick): the last answer's kept beside it.
+    static func of(_ answer: GoNoGoAnswer) -> Glance {
+        if let last, last.answer == answer { return last.glance }
+        let made = Glance(answer)
+        last = (answer, made)
+        return made
+    }
+
+    private static var last: (answer: GoNoGoAnswer, glance: Glance)?
+
     init(_ answer: GoNoGoAnswer) {
         let items = answer.items.map {
             EngineContract.GonogoItem(key: $0.key, label: $0.label, tab: $0.tab, section: $0.section, finding: $0.finding, detail: $0.detail)

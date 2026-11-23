@@ -178,16 +178,23 @@ final nonisolated class HazardTileOverlay: MKTileOverlay, @unchecked Sendable {
         if let made = kept.object(forKey: key as NSString) { return made }
         let task = running.withLock { running in
             if let task = running[key] { return task }
-            let task = Task.detached(priority: .utility) { () -> Heights? in
-                guard let data = try? await Planner.terrainTile(z: z, x: x, y: y), let read = HazardPaint.heights(png: data) else { return nil }
-                return Heights(side: read.side, metres: read.metres)
+            let task = Task.detached(priority: .utility) { [self] () -> Heights? in
+                let made: Heights? = if let data = try? await Planner.terrainTile(z: z, x: x, y: y), let read = HazardPaint.heights(png: data) {
+                    Heights(side: read.side, metres: read.metres)
+                } else {
+                    nil
+                }
+                // Kept before it stops being under way, and once, by the
+                // fetch itself: a load between the two finds one of them.
+                // (The entry is in `running` already: it is set under the
+                // lock this waits on.)
+                if let made { kept.setObject(made, forKey: key as NSString, cost: made.metres.count * 4) }
+                running.withLock { $0[key] = nil }
+                return made
             }
             running[key] = task
             return task
         }
-        let made = await task.value
-        running.withLock { $0[key] = nil }
-        if let made { kept.setObject(made, forKey: key as NSString, cost: made.metres.count * 4) }
-        return made
+        return await task.value
     }
 }

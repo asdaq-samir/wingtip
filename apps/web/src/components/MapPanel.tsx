@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { useIsMobile } from "../hooks/use-mobile";
@@ -8,7 +8,6 @@ import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { useSafeArea } from "../hooks/use-viewport";
 import { GLASS_SHEET, PILL_RADIUS, useSlidingSheet, type MapInsets, type PanelState } from "../lib/mapChrome";
-import { feel } from "../lib/haptics";
 import { cardOpening, coverCard, useSheetCards } from "../lib/sheetCards";
 import { useBackCloses } from "../lib/backNavigation";
 import { CARD, FLOAT_PX, insetsOf, inspectorRoom, letGo, snapsOf } from "./sheet/insets";
@@ -142,14 +141,6 @@ export default function MapPanel(props: Props) {
   const ready = useDrawn();
   const hasPill = !!bar || !!compact;
   const atPill = size === "peek" && hasPill;
-  // A light tick as the sheet settles at another size, as iOS's sheet
-  // gives one (lib/haptics: Chrome on Android; Safari has none).
-  const settled = useRef(props.state);
-  useEffect(() => {
-    if (onPhone && settled.current !== props.state) feel("detent");
-    settled.current = props.state;
-  }, [props.state, onPhone]);
-
   // The sheet's element (the Drawer's popup, or the side panel), for what
   // it covers of the map.
   const [sheetNode, setSheetNode] = useState<HTMLElement | null>(null);

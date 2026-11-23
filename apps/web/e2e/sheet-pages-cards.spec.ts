@@ -68,10 +68,10 @@ test.describe("cards over the pages", () => {
     await expectShown(page, 1);
     // The route's actions went with it, no ••• in the first row and no ✕
     // of its own, the page toggle at the bar's end going back to the
-    // search (the owner, 2026-11-14: the two did the same); the empty box's
-    // Undo instead.
+    // search (the owner, 2026-11-14: the two did the same); the toast's
+    // Undo, none of the box's own (the owner, 2026-11-23).
     await expect(sideDrawer(page).getByTestId("route-strip").getByTestId("share-route")).toHaveCount(0);
-    await expect(sideDrawer(page).getByTestId("route-undo")).toBeVisible();
+    await expect(sideDrawer(page).getByTestId("route-undo")).toHaveCount(0);
     await expect(sideDrawer(page).getByTestId("route-close")).toHaveCount(0);
   });
 });

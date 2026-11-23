@@ -110,7 +110,7 @@ struct GoNoGoSection: View {
                 // At a glance (the owner's rule, 2026-11-03): at most three
                 // lines a pilot acts on, each opening to its why, and the
                 // rest in one row.
-                let glance = Glance(answer)
+                let glance = Glance.of(answer)
                 ForEach(glance.lines) { line in
                     if let item = answer.items.first(where: { $0.key == line.key }) {
                         FindingFold(item: item, words: line.words, open: open)

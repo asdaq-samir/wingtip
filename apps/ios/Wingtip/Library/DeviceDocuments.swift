@@ -254,11 +254,6 @@ extension DeviceDocuments {
         try JSONDecoder().decode(CfrText.self, from: Data(contentsOf: file))
     }
 
-    /// One of the pilot's own as bytes, for Keep in iCloud's record.
-    @concurrent
-    func ownPDF(_ id: String) async -> Data? {
-        try? Data(contentsOf: ownFile(id))
-    }
 
     /// A pilot's own document from iCloud (DocumentCloud) written here
     /// under the same id and name, so the two are one document.

@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { prefersReducedMotion } from "./motion";
 import { HAPTIC } from "./tokens";
 
 /** A key action a pilot feels as well as sees (design/tokens.json's haptic group). */
@@ -10,11 +9,10 @@ type HapticKind = keyof typeof HAPTIC;
  * shown, the sheet settling at a detent -- as the phones' apps give it
  * (iOS's sensory feedback, Android's HapticFeedbackConstants): here
  * navigator.vibrate's pattern from the tokens, where the browser has one
- * (Chrome on Android; Safari has none, and nothing happens). None with
- * Reduce Motion, which the pilot asked for less of, as the phones do.
+ * (Chrome on Android; Safari has none, and nothing happens). Played with
+ * Reduce Motion on, as iOS does: a tap is not motion.
  */
 export function feel(kind: HapticKind): void {
-  if (prefersReducedMotion()) return;
   const vibrate = typeof navigator !== "undefined" ? navigator.vibrate : undefined;
   if (typeof vibrate !== "function") return;
   try {

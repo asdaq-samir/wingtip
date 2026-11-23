@@ -60,7 +60,8 @@ export default function TimelineRoute({
   points,
   head,
   tail,
-  foot,
+  building = false,
+  lastTrailing,
   addTrailing,
   allStops,
   onAllStops,
@@ -71,9 +72,12 @@ export default function TimelineRoute({
    *  end still to pick (EndRow), the line running on to and from it. */
   head?: ReactNode;
   tail?: ReactNode;
-  /** The card's last row where it is not Add a Stop: before the route is
-   *  whole, RouteStart's row with the route box's toggle. */
-  foot?: ReactNode;
+  /** Before the route is whole: no Add a Stop row, the card ending in its
+   *  points or its end still to pick (`tail`). */
+  building?: boolean;
+  /** A control at the last point's end where no `tail` follows it: half a
+   *  route's box's toggle (TypeRouteButton) at the card's bottom right. */
+  lastTrailing?: ReactNode;
   /** A control at Add a Stop's end (RouteTimeline's fuel stops' pill). */
   addTrailing?: ReactNode;
   /** Every stop its own row: the sheet at full, or the route read. */
@@ -176,6 +180,7 @@ export default function TimelineRoute({
           mark={edit ? end.menu(mark, true) : mark}
           first={i === 0 && !head}
           last={i === shown.length - 1 && !tail}
+          trailing={i === shown.length - 1 && !tail ? lastTrailing : undefined}
           // The browser specs' fields open at first, each its own
           // (useProceduresRoute's openAtFirst), as they work on their
           // runways and procedures; a pilot's one at a time.
@@ -192,10 +197,9 @@ export default function TimelineRoute({
       {head}
       <RouteGrid items={items} onMove={edit?.onMove} canMove={edit?.canDrop} />
       {tail}
-      {foot ??
-        (edit && routePoints.length > 1 && (
-          <AddStopRow disabled={stopsFull} onClick={() => edit.onAddAt(routePoints.length - 1)} trailing={addTrailing} />
-        ))}
+      {!building && edit && routePoints.length > 1 && (
+        <AddStopRow disabled={stopsFull} onClick={() => edit.onAddAt(routePoints.length - 1)} trailing={addTrailing} />
+      )}
     </div>
   );
   // Read in a dry run, the list read under it has the sheets.

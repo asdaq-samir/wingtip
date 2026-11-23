@@ -179,9 +179,12 @@ fun NotamRow(s: FieldNotams.Said, onClick: () -> Unit, modifier: Modifier = Modi
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = modifier.fillMaxWidth(),
     ) {
-        // The words as sent, where the engine has no what, at most three lines.
-        val clamp = s.read?.what == null && !FieldNotams.isTfr(s.notam)
-        Text(notamWhat(s.what), color = if (muted) MaterialTheme.colorScheme.onSurfaceVariant else Color.Unspecified, maxLines = if (clamp) 3 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis)
+        // Titled what happened, as its own card is (notam_card, rules.md
+        // 19), else its what; the words as sent, where the engine has
+        // neither, at most three lines.
+        val title = s.card?.title
+        val clamp = title == null && s.read?.what == null && !FieldNotams.isTfr(s.notam)
+        Text(notamWhat(title ?: s.what), color = if (muted) MaterialTheme.colorScheme.onSurfaceVariant else Color.Unspecified, maxLines = if (clamp) 3 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis)
     }
 }
 

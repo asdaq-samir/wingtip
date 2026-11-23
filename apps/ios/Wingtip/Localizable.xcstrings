@@ -1184,9 +1184,6 @@
     "Class B" : {
 
     },
-    "Class B Weather" : {
-
-    },
     "Class Bravo airspace" : {
 
     },
@@ -1695,6 +1692,9 @@
 
     },
     "Every check" : {
+
+    },
+    "Every finding" : {
 
     },
     "Every note you wrote on a checkpoint goes; the shared ones stay." : {
@@ -4735,6 +4735,9 @@
 
     },
     "Where you are%@, the examiner says: divert. Pick a field, and work out the magnetic heading, ground speed, time and fuel to it from the chart and the forecast wind." : {
+
+    },
+    "Whether this airport is open to a solo student" : {
 
     },
     "Which NOTAM?" : {

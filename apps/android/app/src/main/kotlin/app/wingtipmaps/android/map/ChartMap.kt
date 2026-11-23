@@ -132,7 +132,7 @@ fun ChartMap(
 ) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val holder = LocalDensity.current.density.let { density -> remember { MapHolder(MapView(context).also(NexradLayer::follow).also(WeatherLoopLayer::follow).also(ForecastAreasLayer::follow).also(StationLayer::follow).also(Map3dLayer::follow).also(HazardLayer::follow).also(app.wingtipmaps.android.map.flow.ModelWeatherLayer::follow), density) } }
+    val holder = LocalDensity.current.density.let { density -> remember { MapHolder(MapView(context).also(NexradLayer::follow).also(WeatherLoopLayer::follow).also(ForecastAreasLayer::follow).also(StationLayer::follow).also(RouteMarksLayer::follow).also(Map3dLayer::follow).also(HazardLayer::follow).also(app.wingtipmaps.android.map.flow.ModelWeatherLayer::follow), density) } }
     holder.onDragged = onDragged
     holder.onRevealed = onRevealed
     holder.onPick = onPick
@@ -442,7 +442,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
     }
 
     fun ownShip(mark: OwnShipMark, follow: Boolean) {
-        lastMark = mark
+        lastMark = mark.also { RouteMarksLayer.room(it.fix) } // own ship's room in the labels' collision
         lastFollow = follow
         if (destroyed) return
         view.getMapAsync { puck?.show(mark, follow, app.wingtipmaps.android.ui.A11y.reducedMotion(view.context)) }

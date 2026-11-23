@@ -66,10 +66,6 @@ export interface RouteBoxProps extends RouteParts {
    *  is typed (the owner, 2026-11-18): its one Clear before there is a
    *  route, as FPL's ✕ is after. None where it does not apply. */
   onClear?: () => void;
-  /** A route just cleared put back, by Undo at the empty box's end, till
-   *  a new one is started (the owner, 2026-11-18): the plan's own Undo
-   *  (lib/planUndo), none where there is nothing of the route to undo. */
-  onUndo?: () => void;
   /** The route's whole line wrapped over as many lines as it takes, in a
    *  box `height` tall at the least, scrolling inside past it: the grouped
    *  box turned into the route's field by its toggle (TypeRouteButton), its

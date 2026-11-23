@@ -61,6 +61,26 @@ extension UndoManager {
         setActionName(name)
     }
 
+    /// A step of `history` (the plan's route history) taken back and
+    /// forward from this window's own manager: its Undo undoes the
+    /// history's latest step, whichever window made it, and registers the
+    /// Redo, which redoes it there, as a step registered inside an undo
+    /// is its redo. Nothing where the history has no step to take.
+    @MainActor
+    func forward(to history: UndoManager, named name: String) {
+        registerUndo(withTarget: history) { [weak self] history in
+            MainActor.assumeIsolated {
+                if self?.isRedoing == true {
+                    if history.canRedo { history.redo() }
+                } else if history.canUndo {
+                    history.undo()
+                }
+                self?.forward(to: history, named: name)
+            }
+        }
+        setActionName(name)
+    }
+
     /// The undo steps for `target` dropped: its deletes sent, its list left.
     @MainActor
     func forget(_ target: AnyObject) {

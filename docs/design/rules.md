@@ -1394,11 +1394,17 @@ less cluttered". Decision [0045](../decisions/0045-fpl-for-every-pilot.md).
    route typed whole ("KPWK V100 KLAS", "N0110A065 KPWK DCT OBK V100
    KLAS"), the engine reading the words (`route_read`, AIM Appendix 4);
    the empty field says what it takes ("From, to, or a whole route").
-   On the web, before the route is whole, the field is folded away
-   and the route box's toggle (a stock Toggle with a keyboard glyph) sits
-   at the card's end, the ends still to pick rows of the same card (the
-   owner, 2026-11-18; the "Type or Paste a Route" row removed, 2026-11-23:
-   "the toggle is enough"). The web opens no
+   On the web the route's box has two faces, the grouped rows and the
+   field, swapped in the same place by one toggle (a stock Toggle in the
+   tint: the keyboard glyph on the tint's wash in a chip's 32-point
+   circle, filled while the field is the face) at the box's bottom right,
+   inset by the box's own padding, the field's words starting where the
+   rows' do, nothing outside the box changing as it turns,
+   inside its last row on every face (the empty route's Destination, half
+   a route's last row, a whole route's Add a Stop, the field's last line),
+   never a row of its own and with no Undo beside it (the owner,
+   2026-11-18; 2026-11-23: "the same area and not a separate entry row",
+   "No undo needed next to toggle"). The web opens no
    route file (the owner, 2026-11-23: "No need for open a route file");
    the Android app keeps its own (`FlightFiles`).
 3. **Explain on tap.** An abbreviation (MH, MC, ETE, TOC, TOD, FL, the VFR

@@ -530,9 +530,10 @@ object MapStyle {
         return listOf(mark, idents)
     }
 
-    /** Each of the engine's size steps (field_mark_rank's `size`, the tiles'), as the web's MARK_SIZE
-     *  (option I, 2026-11-14): a Class B's field 1.5, a Class C's 1.2, small 0.82, else 1. */
+    /** The engine's size steps (field_mark_rank's `size`), the web's MARK_SIZE (option I, 2026-11-14): Class B 1.5, Class C 1.2, small 0.82, else 1, smaller
+     *  far out, larger close in; FAR_SIZE below map.zoom.class-b-named, a Class B's half that, as the web's ClassBGl (the owner's screenshot, 2026-11-23). */
     private val MARK_SIZE = e("match", e("get", "size"), "largest", 1.5, "larger", 1.2, "small", 0.82, 1)
+    private val FAR_SIZE = e("match", e("get", "size"), "largest", 0.75, "larger", 1.2, "small", 0.82, 1)
     private val AIRPORT_USE = e(
         "case",
         e("==", e("get", "military"), "military"), "military",
@@ -583,14 +584,13 @@ object MapStyle {
         put("filter", airportsFilter(layers))
         putJsonObject("layout") {
             put("icon-image", airportIcon(weather))
-            // Smaller out at a state's width, larger closer in, each times its field's step (MARK_SIZE).
-            put("icon-size", e("interpolate", e("linear"), e("zoom"), farthest, e("*", 0.7, MARK_SIZE), glZoom(10.0), MARK_SIZE, glZoom(13.0), e("*", 1.25, MARK_SIZE)))
+            put("icon-size", e("interpolate", e("linear"), e("zoom"), farthest, e("*", 0.7, FAR_SIZE), glZoom(WingtipMapZoom.CLASS_B_NAMED), e("*", 0.75, MARK_SIZE), glZoom(10.0), MARK_SIZE, glZoom(13.0), e("*", 1.25, MARK_SIZE)))
             put("icon-allow-overlap", false)
             // Two px round each mark at every zoom, so the towered fields stand side by side out at a few states (the web's).
             put("icon-padding", 2)
             put("symbol-sort-key", e("get", "rank"))
-            // Out past map.zoom.airport-idents only a Class B field's ident, wider than the room between two fields there.
-            put("text-field", e("step", e("zoom"), e("case", e("==", e("get", "size"), "largest"), e("get", "ident"), ""), glZoom(WingtipMapZoom.AIRPORT_IDENTS), e("get", "ident")))
+            // Out past map.zoom.airport-idents only a Class B field's ident; past class-b-named none, the route's ends and stops the only words over the whole country.
+            put("text-field", e("step", e("zoom"), "", glZoom(WingtipMapZoom.CLASS_B_NAMED), e("case", e("==", e("get", "size"), "largest"), e("get", "ident"), ""), glZoom(WingtipMapZoom.AIRPORT_IDENTS), e("get", "ident")))
             put("text-font", e(FONT))
             put("text-size", e("interpolate", e("linear"), e("zoom"), farthest, 10, glZoom(10.0), 12, glZoom(13.0), 13))
             put("text-anchor", "left")

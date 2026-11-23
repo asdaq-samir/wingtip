@@ -222,7 +222,7 @@ struct ChartMap: UIViewRepresentable {
                 map.setVisibleMapRect(line.boundingMapRect, edgePadding: Self.routePadding(in: map), animated: MapMotion.animated)
             }
         }
-        context.coordinator.legLayer.update(map, routeLegs, night: shade > 0, below: context.coordinator.courseEdge)
+        context.coordinator.legLayer.update(map, routeLegs, night: shade > 0, below: context.coordinator.courseEdge, marks: context.coordinator.routeMarks)
         (map as? RaisedMapView)?.use(MapTerrain(rawValue: terrain) ?? .flat, field: course?.destination.ident)
     }
 

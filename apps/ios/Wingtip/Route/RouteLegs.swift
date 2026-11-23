@@ -30,6 +30,15 @@ enum RouteLegs {
         }
     }
 
+    /// A top of climb or descent on the map (RouteLegModel.legPoints): its
+    /// words, where it is and the side its pill goes (RouteTurns.squareToCourse).
+    struct LegPoint: Equatable {
+        let name: String
+        let lat: Double
+        let lon: Double
+        let out: Double
+    }
+
     /// The sheet's contents for one leg.
     struct Sheet: Equatable {
         let from: String
