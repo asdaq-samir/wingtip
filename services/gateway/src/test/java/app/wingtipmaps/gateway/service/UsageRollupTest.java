@@ -88,6 +88,17 @@ class UsageRollupTest {
     }
 
     @Test
+    void aLongRouteIsCutBetweenCharactersNeverInsideOne() {
+        // The round 7 audit, G-L1: a character past the Basic Multilingual
+        // Plane is two UTF-16 units; VARCHAR(300) counts it as one.
+        String wide = "/api/" + "\uD83D\uDEE9".repeat(UsageRollup.ROUTE_WIDTH);
+        String fitted = UsageRollup.fit(wide, UsageRollup.ROUTE_WIDTH);
+        assertThat(fitted.codePointCount(0, fitted.length())).isEqualTo(UsageRollup.ROUTE_WIDTH);
+        assertThat(Character.isHighSurrogate(fitted.charAt(fitted.indexOf('#') - 1))).isFalse();
+        assertThat(UsageRollup.clip("\uD83D\uDEE9\uD83D\uDEE9", 1)).isEqualTo("\uD83D\uDEE9");
+    }
+
+    @Test
     void routesAlikeForTheirFirst300CharactersStayTwoRows() {
         String stem = "/api/" + "x".repeat(UsageRollup.ROUTE_WIDTH);
         String a = UsageRollup.fit(stem + "a", UsageRollup.ROUTE_WIDTH);

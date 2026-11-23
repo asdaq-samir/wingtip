@@ -171,7 +171,7 @@ Prices in us-east-1, October 2026, at today's traffic:
 | Its public IPv4 address | $3.65 |
 | 20 GB system disk and 30 GB data disk, gp3 | $4.00 |
 | S3 tiles: a few dozen archives a cycle (cents; they were 2.2 million tile uploads, about $11), and up to three cycles stored (some 36 GB a cycle with the @2x tiles) | ~$2.50 |
-| Secrets Manager, four secrets | $1.60 |
+| Secrets Manager, five secrets (the follow share key the fifth, 2026-11-23) | $2.00 |
 | Route 53 hosted zone | $0.50 |
 | Daily snapshots of the data disk, seven kept | ~$1 |
 | The health check (HTTPS, every 30 s), the server's logs in CloudWatch, and its eight alarms and seven figures (`health.sh`, the gateway's alerts; within CloudWatch's free ten of each) | ~$1.60 |

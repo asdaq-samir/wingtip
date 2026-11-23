@@ -110,11 +110,16 @@ const CONDITIONS: [&str; 6] = ["closed", "out of service", "not available", "unu
 /// A what ("Glide slope runway 09 out of service", "ILS RWY 36: not
 /// authorized") as a sentence: "... is out of service.".
 fn sentence_of(what: &str, permanent: bool) -> Option<String> {
-    // The condition met first in the words, not first in the list: "...
-    // unusable ... closed" is said at "unusable".
+    // The condition met first in the words, not first in the list.
     let (at, c) = CONDITIONS.iter().filter_map(|c| what.find(&[" ", c].concat()).map(|at| (at, *c))).min_by_key(|(at, _)| *at)?;
     let subject = what[..at].trim_end_matches(':');
     let rest = &what[at + 1 + c.len()..];
+    // A second condition after it ("Taxiway A unusable between taxiway B
+    // and the ramp closed") makes no one sentence: none, so the card shows
+    // the NOTAM's own words (the round 7 audit, E-L2).
+    if CONDITIONS.iter().any(|c| rest.contains(&[" ", c].concat())) {
+        return None;
+    }
     let plural = subject.starts_with("Taxiways") || subject.starts_with("Runways") || subject.contains(" and ");
     let verb = if plural { " are " } else { " is " };
     Some([subject, verb, if permanent { "permanently " } else { "" }, c, rest, "."].concat())
@@ -136,23 +141,25 @@ pub fn card_with_end(text: &str, idents: &[String], known_end: bool) -> Card {
     let spaced = spaced(t);
     let words: Vec<&str> = spaced.split_whitespace().collect();
     let parts = sentences(t);
+    // A closure stated as a sentence of its own is a procedure NOTAM's
+    // (SID, ODP, DVA, STAR, IAP; 1-2-1); a surface's NOTAM says its own.
+    let procedure_notam = matches!(r.keyword.as_deref(), Some("SID" | "ODP" | "DVA" | "STAR" | "IAP"));
+    let shut = if procedure_notam { closure(&parts) } else { None };
+    // Permanent by its end (PERM) or in its words (PERMANENTLY CLSD), one
+    // answer for every path below (the round 7 audit, E-L1).
+    let permanent = r.permanent || shut.as_ref().is_some_and(|(_, perm)| *perm);
+    let until_charts = until_charts(permanent, r.estimated, known_end || r.ends.is_some());
     let takes: Vec<Taken> = parts.iter().filter_map(|s| taken_by(s)).collect();
     if takes.contains(&Taken::Unsure) {
         // Part of something not authorized, which the card cannot say whole:
         // the NOTAM's words written out stand in.
-        let until_charts = until_charts(r.permanent, r.estimated, known_end || r.ends.is_some());
-        return Card { account, category, permanent: r.permanent, until_charts, ..Card::default() };
+        return Card { account, category, permanent, until_charts, ..Card::default() };
     }
     let named = procedures(&words);
     let runway = takes.iter().find_map(|k| if let Taken::Runway(d) = k { Some(d.clone()) } else { None });
     let every = runway.is_some() || takes.contains(&Taken::All);
     let procedures: Vec<Procedure> =
         if every { named } else { takes.into_iter().filter_map(|k| if let Taken::One(p) = k { Some(p) } else { None }).collect() };
-    // A closure stated as a sentence of its own is a procedure NOTAM's
-    // (SID, ODP, DVA, STAR, IAP; 1-2-1); a surface's NOTAM says its own.
-    let procedure_notam = matches!(r.keyword.as_deref(), Some("SID" | "ODP" | "DVA" | "STAR" | "IAP"));
-    let shut = if procedure_notam { closure(&parts) } else { None };
-    let permanent = r.permanent || shut.as_ref().is_some_and(|(_, perm)| *perm);
     let perm = if permanent { "permanently " } else { "" };
     let taken = !procedures.is_empty();
     let one = |p: &Procedure| [p.name.as_str(), if p.departure { " departure" } else { " arrival" }].concat();
@@ -183,7 +190,6 @@ pub fn card_with_end(text: &str, idents: &[String], known_end: bool) -> Card {
         (None, true) => Some(not_authorized()),
         (None, false) => r.what.as_deref().and_then(|w| sentence_of(w, permanent)),
     };
-    let until_charts = until_charts(permanent, r.estimated, known_end || r.ends.is_some());
     Card { account, category, title, effect, permanent, until_charts, procedures }
 }
 

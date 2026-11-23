@@ -224,9 +224,13 @@ class Settings(BaseSettings):
     app_open_writes: bool = False
     #: The key a pilot's share of the followed airplanes is hashed with
     #: (FOLLOW_SHARE_KEY, wingtip.traffic.recorded.share_of), 32 characters
-    #: or more where set; unset, one made at random and kept in the live
-    #: store. Never logged: _named hides a _KEY's value.
+    #: or more; production's compose refuses to start without it. Never
+    #: logged: _named hides a _KEY's value.
     follow_share_key: str | None = None
+    #: The development stack's alternative: a file the key is made into
+    #: once, on the planner's own secrets volume, never the live store
+    #: (FOLLOW_SHARE_KEY_FILE). With neither, the planner does not start.
+    follow_share_key_file: Path | None = None
     #: Tool calls one pilot's connector may make a minute and a day (app.mcp.limits).
     mcp_calls_per_minute: int = 30
     mcp_calls_per_day: int = 600
@@ -254,7 +258,7 @@ class Settings(BaseSettings):
         return _none_if_blank(value.rstrip("/") if isinstance(value, str) else value)
 
     read_blank_as_unset = field_validator(
-        "chart_tiles_bucket", "chart_landmarks_dir", "mcp_internal_token", "follow_share_key", mode="before"
+        "chart_tiles_bucket", "chart_landmarks_dir", "mcp_internal_token", "follow_share_key", "follow_share_key_file", mode="before"
     )(_none_if_blank)
 
     @field_validator("mcp_internal_token", "follow_share_key")

@@ -159,6 +159,8 @@ def test_search_airports_ends_at_its_reach_with_no_next_page(monkeypatch):
     monkeypatch.setattr(airports, "search_airports", lambda query, limit=8, **_: many[:limit])
     page = answer(call("search_airports", {"query": "Springfield", "limit": 25, "offset": 490}))
     assert page["count"] == 25 and page["has_more"] is False and page["next_offset"] is None and "first 515" in page["note"]
+    # And its total is the matches paged, never null beside has_more false (the round 7 audit, P-L2).
+    assert page["total"] == 515
 
 
 def test_nearest_airports_needs_a_place():

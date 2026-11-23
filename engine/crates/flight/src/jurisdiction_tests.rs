@@ -183,7 +183,16 @@ fn a_leg_across_a_province_neither_field_is_in_is_said_on_the_leg() {
 fn the_outlines_name_only_known_places() {
     // code_of stops on a code it does not know; reading the file here
     // proves every C and P line is one, so none reads as another country.
-    let (countries, provinces) = crate::jurisdiction::outline_codes();
+    let (countries, provinces) = crate::jurisdiction::outline_codes().unwrap();
     assert_eq!(countries, vec!["US", "CA", "MX", "BS"]);
     assert_eq!(provinces, vec!["AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT"]);
+}
+
+#[test]
+fn an_unknown_code_fails_the_read_never_panics() {
+    // The round 7 audit, E-L4: in WebAssembly a panic takes the whole
+    // engine down, not the one call.
+    let err = crate::jurisdiction::read("C ZZ\n0 0 1000 0 0 1000\n").err().unwrap();
+    assert!(err.contains("ZZ"), "{err}");
+    assert!(crate::jurisdiction::outlines_read().is_ok());
 }

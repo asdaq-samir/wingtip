@@ -28,14 +28,13 @@ each pilot's share by a hash it cannot be read back from. The planner prunes all
 three on a schedule (wingtip.traffic.radar.prune, from app.main), not
 only when ingest or a request happens to write.
 - beats: what ingest last said of each feed and of itself (its health).
-- keys: the key the shares are hashed with where the settings give none
-  (share_key), made once at random and never logged.
+The key the shares are hashed with is never kept here, beside them
+(FOLLOW_SHARE_KEY, recorded._share_key; the round 7 audit, P-M1).
 """
 
 from __future__ import annotations
 
 import json
-import secrets
 import sqlite3
 import threading
 
@@ -55,7 +54,6 @@ _SCHEMA = """
     CREATE INDEX IF NOT EXISTS following_hex ON following (hex);
     CREATE TABLE IF NOT EXISTS points (hex TEXT, t REAL, point TEXT, PRIMARY KEY (hex, t)) WITHOUT ROWID;
     CREATE TABLE IF NOT EXISTS beats (name TEXT PRIMARY KEY, at REAL, state TEXT);
-    CREATE TABLE IF NOT EXISTS keys (name TEXT PRIMARY KEY, value BLOB);
 """
 
 
@@ -72,8 +70,27 @@ def _connection() -> sqlite3.Connection:
         # traffic, never the file.
         db.execute("PRAGMA synchronous=NORMAL")
         db.executescript(_SCHEMA)
+        _drop_the_store_key(db)
         _db = db
     return _db
+
+
+def _drop_the_store_key(db: sqlite3.Connection) -> None:
+    """Once, where a store still holds the key round 6 kept in it: the key
+    deleted, and with it every pilot's follows, whose shares were hashed
+    with it (or, before it, with no key at all) and would otherwise sit
+    orphaned in the largest-share eviction until they expired (the round 7
+    audit, P-L1). A pilot's next card opened follows again under the new
+    key; the follows no pilot asked (share "") stay."""
+    db.execute("BEGIN IMMEDIATE")
+    try:
+        if db.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'keys'").fetchone():
+            db.execute("DELETE FROM following WHERE who != ''")
+            db.execute("DROP TABLE keys")
+        db.execute("COMMIT")
+    except BaseException:
+        db.execute("ROLLBACK")
+        raise
 
 
 def reset() -> None:
@@ -221,16 +238,6 @@ def follow(hex_id: str, who: str, at: float, each: int, most: int) -> None:
         except BaseException:
             db.execute("ROLLBACK")
             raise
-
-
-def share_key() -> bytes:
-    """The key the shares are hashed with where the settings give none:
-    made once at random and kept here, beside the shares it names, so both
-    processes and every restart hash a pilot alike; never logged."""
-    with _LOCK:
-        db = _connection()
-        db.execute("INSERT OR IGNORE INTO keys (name, value) VALUES ('follow_share', ?)", (secrets.token_bytes(32),))
-        return bytes(db.execute("SELECT value FROM keys WHERE name = 'follow_share'").fetchone()[0])
 
 
 def unfollow_before(before: float) -> int:

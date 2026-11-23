@@ -28,10 +28,13 @@ def _no_cycle_pack(tmp_path_factory, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def _settings_from_this_tests_environment():
+def _settings_from_this_tests_environment(monkeypatch):
     """wingtip.config.get_settings() reads the environment once and keeps
     it; a test that sets a variable clears it after (get_settings.cache_clear()),
-    and this clears it either side of every test so none sees another's."""
+    and this clears it either side of every test so none sees another's.
+    The followed airplanes' share key is a test's own, as the planner
+    starts with none unset (wingtip.traffic.recorded)."""
+    monkeypatch.setenv("FOLLOW_SHARE_KEY", "test-follow-share-key-0123456789abcdef")
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()

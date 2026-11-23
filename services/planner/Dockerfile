@@ -30,6 +30,11 @@ RUN --mount=type=cache,target=/root/.cache/pip pip install -r requirements.txt \
 COPY services/planner/app ./app
 COPY services/planner/wingtip ./wingtip
 
+# The development stack's secrets volume (docker-compose.yml), the
+# appuser's own so the follow share key can be made into it once; a
+# named volume takes this folder's owner the first time it is mounted.
+RUN mkdir -p /secrets && chown appuser:appuser /secrets && chmod 700 /secrets
+
 USER appuser
 
 ENV PYTHONPATH=/workspace/services/planner
