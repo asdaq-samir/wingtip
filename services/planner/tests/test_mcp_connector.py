@@ -93,7 +93,8 @@ def test_every_tool_says_whether_it_writes_and_needs_the_scope_it_says():
     writes = {name for name, t in tools.items() if not t.annotations.read_only_hint}
     assert writes == {"save_flight", "save_flight_plan", "update_saved_flight", "update_saved_flight_from_view", "delete_saved_flight"}
     # Saving adds; replacing and deleting are what the host always asks about.
-    assert {n for n in writes if tools[n].annotations.destructive_hint} == {"update_saved_flight", "update_saved_flight_from_view", "delete_saved_flight"}
+    overwrites = {"update_saved_flight", "update_saved_flight_from_view", "delete_saved_flight"}
+    assert {n for n in writes if tools[n].annotations.destructive_hint} == overwrites
     for name in writes:
         assert tools[name].meta["securitySchemes"][0]["scopes"] == ["wingtip:read", "wingtip:flights"], name
     # The edits change only the flight handed in: read-only, the read scope.
