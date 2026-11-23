@@ -1,6 +1,6 @@
 import { useQueries } from "@tanstack/react-query";
 import { useIsMobile } from "../../../hooks/use-mobile";
-import { unknownWhy } from "../../../lib/api/client";
+import { plannerUnreachable, unknownWhy } from "../../../lib/api/client";
 import { leaveWhen } from "../../../lib/format/leaveWhen";
 import { clockElsewhere, clockIn } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";
@@ -75,7 +75,10 @@ export default function RouteTimeline({
         checking: true,
         failed: noConnection(card)
           ? `${NO_CONNECTION}. Whether ${ident} is open is not known.`
-          : `Whether ${ident} is open could not be checked.`,
+          : plannerUnreachable(card.error)
+            ? // Asked again by itself (lib/queryRetry's refetchWhileUnreachable).
+              `The planner could not be reached. Whether ${ident} is open will be checked again.`
+            : `Whether ${ident} is open could not be checked.`,
       };
     return { closed: null, checking: true, failed: null };
   };

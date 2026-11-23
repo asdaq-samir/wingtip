@@ -62,6 +62,9 @@ export interface RouteBoxProps extends RouteParts {
    *  problem line (CLAUDE.md, the FPL audit's A2). Its ident null where
    *  the planner's answer named none; `outside` a real field abroad. */
   unknownPoint?: UnknownPlace | null;
+  /** The planner could not be reached (usePlan's `unreachable`): said
+   *  under the box, in place of a point not known, while it is asked again. */
+  unreachable?: boolean;
   /** Half a route cleared, by the stock ✕ at the box's end while nothing
    *  is typed (the owner, 2026-11-18): its one Clear before there is a
    *  route, as FPL's ✕ is after. None where it does not apply. */

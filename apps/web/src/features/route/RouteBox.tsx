@@ -9,7 +9,7 @@ import { Alert, AlertAction, AlertDescription } from "../../components/ui/alert"
 import { InputGroup } from "../../components/ui/input-group";
 import { Popover, PopoverContent } from "../../components/ui/popover";
 import { SearchFieldClear } from "../../components/ui/search-field";
-import { unknownWhy } from "../../lib/api/client";
+import { PLANNER_UNREACHABLE, unknownWhy } from "../../lib/api/client";
 import type { FuelStopSuggestion } from "../../lib/api/types";
 import { useKeyboardInset } from "../../hooks/use-viewport";
 import { fromChunk } from "../../lib/fromChunk";
@@ -85,6 +85,7 @@ export default function RouteBox({
   onHideFuelStop,
   addAt = null,
   unknownPoint = null,
+  unreachable = false,
   onClear,
   wrapped = false,
   height,
@@ -331,18 +332,26 @@ export default function RouteBox({
             </Suspense>
           </PopoverContent>
         </Popover>
-        {unknownPoint && (
+        {(unknownPoint || unreachable) && (
           // Under the box, the stock Alert in the destructive red its pill
           // is drawn in, with the one thing to do that the pill's tap does
-          // not: Remove, the stock Button.
-          <Alert variant="destructive" className="mt-1.5 border-0 bg-transparent px-2 py-0" data-testid="route-unknown">
+          // not: Remove, the stock Button. The planner not reached is said
+          // as that, never as a point not known (the owner's screenshot,
+          // 2026-11-23, taken while it restarted).
+          <Alert
+            variant="destructive"
+            className="mt-1.5 border-0 bg-transparent px-2 py-0"
+            data-testid={unknownPoint?.ident || !unreachable ? "route-unknown" : "route-unreachable"}
+          >
             <TriangleAlert aria-hidden="true" />
             <AlertDescription className={cn("text-destructive", TEXT.detail)}>
-              {unknownPoint.ident
+              {unknownPoint?.ident
                 ? `${unknownPoint.ident} ${unknownWhy(unknownPoint)}. Tap it to change it.`
-                : "A point of the route is not an airport or waypoint we know."}
+                : unreachable
+                  ? PLANNER_UNREACHABLE
+                  : "A point of the route is not an airport or waypoint we know."}
             </AlertDescription>
-            {unknownPoint.ident && points.includes(unknownPoint.ident) && (
+            {unknownPoint?.ident && points.includes(unknownPoint.ident) && (
               <AlertAction className="top-1/2 right-0 -translate-y-1/2">
                 <Button
                   variant="ghost"

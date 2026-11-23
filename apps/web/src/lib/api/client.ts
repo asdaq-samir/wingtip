@@ -13,6 +13,8 @@ export {
   failIfNotOk,
   isDropped,
   isUnknownPlace,
+  plannerUnreachable,
+  PLANNER_UNREACHABLE,
   unknownPlaceIn,
   unknownWhy,
   type UnknownPlace,
