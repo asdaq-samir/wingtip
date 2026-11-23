@@ -10786,6 +10786,42 @@ enum EngineContract {
         var at: Double
     }
 
+    struct ReceiverDeltaAnswer: Codable, Equatable, Sendable {
+        var receiver: EngineContract.ReceiverState
+        var ownship: EngineContract.ReceiverOwnship?
+        var targets: [EngineContract.ReceiverTarget]
+        /// How many FIS-B texts the picture holds.
+        var texts: Int
+        /// How many NEXRAD blocks the picture holds.
+        var blocks: Int
+        /// A new count each read that changed the traffic to merge: the targets, or whether a receiver has been heard at all.
+        var trafficRevision: Int
+        /// A new count each read that changed the FIS-B texts (one sent, or one dropped as no longer heard).
+        var textsRevision: Int
+        /// A new count each read that changed the NEXRAD blocks.
+        var nexradRevision: Int
+
+        enum CodingKeys: String, CodingKey {
+            case receiver
+            case ownship
+            case targets
+            case texts
+            case blocks
+            case trafficRevision = "traffic_revision"
+            case textsRevision = "texts_revision"
+            case nexradRevision = "nexrad_revision"
+        }
+    }
+
+    struct ReceiverDeltaInput: Codable, Equatable, Sendable {
+        /// The bytes received since the last read (whole UDP datagrams), Base64 (RFC 4648).
+        var data: String?
+        /// Now, Unix s: when the bytes came.
+        var at: Double
+        /// The picture to hold for the read, or null for an empty one.
+        var picture: EngineContract.ReceiverPicture?
+    }
+
     struct ReceiverNexradAnswer: Codable, Equatable, Sendable {
         var levels: [EngineContract.ReceiverNexradLevel]
         var time: String?

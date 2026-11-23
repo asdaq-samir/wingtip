@@ -5,10 +5,12 @@ import Observation
 /// Wi-Fi (Stratux, Sentry, uAvionix's SkyEcho, a Stratus in its open
 /// mode; docs/receivers.md): its GPS as own ship, its traffic and the
 /// FIS-B weather it is sent, with no internet. The listener gathers its GDL 90; once a second the
-/// engine reads the bytes into the picture (`receiver_read`), off the main
-/// actor and once a minute where it has gone quiet (`due`), which this
-/// model keeps and hands back; the map's traffic, the airport card's
-/// reports and the NEXRAD overlay are the engine's views of it. Traffic
+/// engine reads the bytes into the picture it holds (HeldPicture,
+/// `receiver_delta`), off the main actor and once a minute where it has
+/// gone quiet (`due`), and answers only what this model keeps: the
+/// receiver, own ship, its traffic and a revision of the rest. The map's
+/// traffic, the airport card's reports and the NEXRAD overlay are the
+/// engine's views of the held picture. Traffic
 /// helps see other airplanes, never avoid them (AIM 4-5-7); FIS-B is not
 /// the only source of weather (AIM 4-5-9).
 @MainActor
@@ -35,7 +37,7 @@ final class Receiver {
     var mode: Mode = Mode(rawValue: UserDefaults.standard.string(forKey: Receiver.modeKey) ?? "") ?? .auto {
         didSet {
             UserDefaults.standard.set(mode.rawValue, forKey: Self.modeKey)
-            if mode == .off { listener.stop(); picture = nil; nexrad = nil; onOwnship?(nil, nil) }
+            if mode == .off { listener.stop(); letGo() }
         }
     }
 
@@ -46,8 +48,10 @@ final class Receiver {
     /// listened to or read.
     var listening: Bool { Self.enabled && mode == .auto && Extra.adsbReceiver.on() }
 
-    /// What the receiver has said so far, the engine's own answer.
-    private(set) var picture: EngineContract.ReceiverPicture?
+    /// What the receiver has said so far, as the engine's last read
+    /// answered it: the receiver, own ship and traffic whole, the FIS-B
+    /// only counted, with revisions.
+    private(set) var picture: EngineContract.ReceiverDeltaAnswer?
     /// The NEXRAD to draw, worked out again as blocks come and go.
     private(set) var nexrad: EngineContract.ReceiverNexradAnswer?
     /// Why the receiver is not heard (the listener failed: the port taken,
@@ -67,6 +71,9 @@ final class Receiver {
     var summary: String? { picture?.receiver.heartbeatAt == nil ? nil : picture?.receiver.summary }
 
     private let listener = ReceiverListener()
+    /// The picture itself, held by the engine; a new one each time the
+    /// receiver is turned off, so what it said is let go.
+    @ObservationIgnored private var held = HeldPicture()
     /// Called after each read, for Traffic to merge the receiver's own.
     var onRead: (() -> Void)?
     /// Called after each read with the picture's own ship and receiver,
@@ -85,13 +92,11 @@ final class Receiver {
     @ObservationIgnored private var readAt = Date.distantPast
     @ObservationIgnored private var reading = false
 
-    /// The bytes read into the picture by the engine, off the main actor:
-    /// the picture holds the FIS-B texts and blocks, often hundreds of kB
-    /// each way, so the encode, the decode and the comparisons with the
-    /// last picture are all done there (`engineRead`), and the main actor
-    /// only takes what changed. Nothing heard and nothing to age (`due`),
-    /// the engine is not asked at all. Traffic is told only where the
-    /// picture's airplanes or whether a receiver was heard changed.
+    /// The bytes read into the held picture by the engine, off the main
+    /// actor (`engineRead`), and the main actor takes what changed.
+    /// Nothing heard and nothing to age (`due`), the engine is not asked
+    /// at all. Traffic is told only where the engine's traffic revision
+    /// moved (the airplanes, or whether a receiver was heard at all).
     func read(now: Date = Date()) async {
         guard !reading else { return }
         guard listening else {
@@ -99,10 +104,7 @@ final class Receiver {
             // Off does (stopping a listener not started is nothing), and
             // own ship is the device's again.
             listener.stop()
-            if picture != nil || problem != nil {
-                (picture, nexrad, listenProblem, readProblem) = (nil, nil, nil, nil)
-                onOwnship?(nil, nil)
-            }
+            if picture != nil || problem != nil { letGo() }
             return
         }
         listener.start()
@@ -113,47 +115,51 @@ final class Receiver {
         let bytes = listener.drain()
         guard Self.due(picture, heard: !bytes.isEmpty, sinceS: now.timeIntervalSince(readAt)) else { return }
         let before = picture
+        let held = self.held
         reading = true
         defer { reading = false }
         let read: Result<EngineRead, any Error>
-        do { read = .success(try await Self.engineRead(bytes, at: now, after: before)) } catch { read = .failure(error) }
-        guard mode == .auto else { return }
+        do { read = .success(try await Self.engineRead(bytes, at: now, into: held, after: before)) } catch { read = .failure(error) }
+        // Turned off while the engine read: that picture is let go.
+        guard mode == .auto, held === self.held else { return }
         readAt = now
         switch read {
         case let .success(next):
             readProblem = nil
-            if next.changed { picture = next.picture }
-            if next.nexradChanged { nexrad = next.nexrad }
+            if next.delta != picture { picture = next.delta }
+            if let shown = next.nexrad { nexrad = shown }
             if live, !Self.used { UserDefaults.standard.set(true, forKey: Self.usedKey) }
-            if next.trafficChanged { onRead?() }
-            if next.picture.receiver.heartbeatAt != nil { onOwnship?(next.picture.ownship, next.picture.receiver) }
+            if next.delta.trafficRevision != before?.trafficRevision { onRead?() }
+            if next.delta.receiver.heartbeatAt != nil { onOwnship?(next.delta.ownship, next.delta.receiver) }
         case let .failure(error):
             readProblem = Problems.say("The receiver could not be read", error)
         }
     }
 
-    /// One read by the engine and what it changed against `before`.
-    struct EngineRead: Sendable {
-        let picture: EngineContract.ReceiverPicture
-        let nexrad: EngineContract.ReceiverNexradAnswer?
-        let changed: Bool
-        let nexradChanged: Bool
-        let trafficChanged: Bool
+    /// The picture, its NEXRAD and the problems let go, the engine's held
+    /// picture with them, and own ship the device's again.
+    private func letGo() {
+        (picture, nexrad, listenProblem, readProblem) = (nil, nil, nil, nil)
+        held = HeldPicture()
+        onOwnship?(nil, nil)
     }
 
-    /// The engine's read, on the concurrent pool: the whole picture's JSON
-    /// both ways and the deep comparisons, none of it on the main actor.
+    /// One read by the engine: what it answered, and the NEXRAD where its
+    /// revision moved since `before` (nil: unchanged).
+    struct EngineRead: Sendable {
+        let delta: EngineContract.ReceiverDeltaAnswer
+        let nexrad: EngineContract.ReceiverNexradAnswer?
+    }
+
+    /// The engine's read, on the concurrent pool: the bytes read into the
+    /// held picture, and the NEXRAD's rectangles worked out only when its
+    /// blocks changed.
     @concurrent
-    nonisolated static func engineRead(_ bytes: Data, at now: Date, after before: EngineContract.ReceiverPicture?) async throws -> EngineRead {
-        let picture = try Engine.receiverRead(data: bytes.base64EncodedString(), at: now.timeIntervalSince1970, picture: before)
-        let nexradChanged = picture.nexrad != before?.nexrad
-        return EngineRead(
-            picture: picture,
-            nexrad: nexradChanged ? (try? Engine.receiverNexrad(picture: picture)) : nil,
-            changed: picture != before,
-            nexradChanged: nexradChanged,
-            trafficChanged: trafficChanged(before, picture)
-        )
+    nonisolated static func engineRead(_ bytes: Data, at now: Date, into held: HeldPicture,
+                                       after before: EngineContract.ReceiverDeltaAnswer?) async throws -> EngineRead {
+        let delta = try held.read(bytes, at: now)
+        let moved = delta.nexradRevision != before?.nexradRevision
+        return EngineRead(delta: delta, nexrad: moved ? try held.nexrad() : nil)
     }
 
     /// Quiet, with nothing left that ages by the second, the picture is
@@ -165,26 +171,22 @@ final class Receiver {
     /// was heard or still holds airplanes, whose 5 s and 20 s (the
     /// engine's LIVE_S and TARGET_HOLD_S) want ageing each second; else
     /// once each `quietEveryS`. Never heard: nothing to age.
-    nonisolated static func due(_ picture: EngineContract.ReceiverPicture?, heard: Bool, sinceS: TimeInterval) -> Bool {
+    nonisolated static func due(_ picture: EngineContract.ReceiverDeltaAnswer?, heard: Bool, sinceS: TimeInterval) -> Bool {
         if heard { return true }
         guard let picture else { return false }
         return picture.receiver.live || !picture.targets.isEmpty || sinceS >= quietEveryS
     }
 
-    /// Whether the traffic merged from the picture can have changed: its
-    /// airplanes, or whether a receiver has been heard at all.
-    nonisolated static func trafficChanged(_ before: EngineContract.ReceiverPicture?, _ after: EngineContract.ReceiverPicture?) -> Bool {
-        before?.targets != after?.targets || (before?.receiver.heartbeatAt == nil) != (after?.receiver.heartbeatAt == nil)
-    }
-
     /// The traffic to draw: the receiver's own airplanes first, then the
     /// internet's it does not hear, never own ship (`receiver_traffic`).
-    /// The internet's alone where no receiver is heard.
+    /// The internet's alone where no receiver is heard. Asked of the held
+    /// picture, it waits for a read under way, a millisecond or two now
+    /// that no FIS-B is copied.
     func traffic(_ internet: [TrafficAircraft], ownFt: Double?) -> [TrafficAircraft] {
         guard let picture, picture.receiver.heartbeatAt != nil else { return internet }
         do {
             let heard: [EngineContract.HeardPlane] = try Engine.recoded(internet, encoder: Planner.snakeEncoder)
-            let merged = try Engine.receiverTraffic(picture: picture, internet: heard, ownFt: ownFt, at: Date().timeIntervalSince1970)
+            let merged = try held.traffic(heard, ownFt: ownFt, at: Date())
             return try Engine.recoded(merged)
         } catch {
             Log.map.error("the receiver's traffic could not be merged: \(error.localizedDescription, privacy: .public)")
@@ -194,7 +196,7 @@ final class Receiver {
 
     /// A field's METAR and TAF as FIS-B sent them, where it did.
     func reports(_ ident: String) -> EngineContract.ReceiverReportsAnswer? {
-        guard let picture, !picture.texts.isEmpty else { return nil }
-        return try? Engine.receiverReports(picture: picture, ident: ident)
+        guard let picture, picture.texts > 0 else { return nil }
+        return try? held.reports(ident)
     }
 }

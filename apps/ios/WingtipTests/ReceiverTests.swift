@@ -90,41 +90,53 @@ struct ReceiverTests {
 
     @Test func aQuietReceiverIsAgedEachSecondOnlyWhileItsAirplanesCanStillGoStale() throws {
         let f = try fixture()
-        let heard = try picture(f)
+        let held = HeldPicture()
+        var heard: EngineContract.ReceiverDeltaAnswer?
+        for d in f.datagrams { heard = try held.read(bytes(d.hex), at: Date(timeIntervalSince1970: d.at)) }
         let last = try #require(f.datagrams.last?.at)
         // Never heard: nothing to read. Bytes: always read.
         #expect(!Receiver.due(nil, heard: false, sinceS: 1))
         #expect(Receiver.due(heard, heard: true, sinceS: 0))
         // Gone quiet with an airplane still held: aged each second.
-        #expect(!heard.targets.isEmpty)
+        #expect(heard?.targets.isEmpty == false)
         #expect(Receiver.due(heard, heard: false, sinceS: 1))
         // Past the engine's holds the airplanes are gone and the link is not
         // live: only the FIS-B products are left, aged once a minute.
-        let quiet = try Engine.receiverRead(data: "", at: last + 60, picture: heard)
+        let quiet = try held.read(Data(), at: Date(timeIntervalSince1970: last + 60))
         #expect(quiet.targets.isEmpty && !quiet.receiver.live)
-        #expect(!quiet.texts.isEmpty)
+        #expect(quiet.texts > 0)
         #expect(!Receiver.due(quiet, heard: false, sinceS: 1))
         #expect(Receiver.due(quiet, heard: false, sinceS: Receiver.quietEveryS))
         // Traffic is merged again only where its airplanes changed.
-        #expect(Receiver.trafficChanged(heard, quiet))
-        #expect(!Receiver.trafficChanged(quiet, try Engine.receiverRead(data: "", at: last + 61, picture: quiet)))
-        #expect(Receiver.trafficChanged(nil, heard))
+        #expect(quiet.trafficRevision != heard?.trafficRevision)
+        let still = try held.read(Data(), at: Date(timeIntervalSince1970: last + 61))
+        #expect(still.trafficRevision == quiet.trafficRevision)
     }
 
-    /// The read off the main actor says what changed, so the main actor
-    /// takes a new picture only when there is one.
-    @Test func theReadSaysWhatChanged() async throws {
+    /// The picture held by the engine between reads: each read answers
+    /// the small part as receiver_read's whole picture has it, the NEXRAD
+    /// is worked out only when its revision moves, and the views asked of
+    /// the held picture are the rules' answers over the whole one.
+    @Test func theHeldPictureAnswersWhatChanged() async throws {
         let f = try fixture()
-        let first = try await Receiver.engineRead(Data(), at: Date(timeIntervalSince1970: f.datagrams[0].at), after: nil)
-        var last = first
+        let held = HeldPicture()
+        var last: Receiver.EngineRead?
         for d in f.datagrams {
-            last = try await Receiver.engineRead(bytes(d.hex), at: Date(timeIntervalSince1970: d.at), after: last.picture)
+            last = try await Receiver.engineRead(bytes(d.hex), at: Date(timeIntervalSince1970: d.at), into: held, after: last?.delta)
         }
-        #expect(last.changed)
-        #expect(last.picture.targets.map(\.hex) == ["ab4549"])
-        let again = try await Receiver.engineRead(Data(), at: Date(timeIntervalSince1970: f.datagrams.last!.at), after: last.picture)
-        #expect(!again.trafficChanged)
-        #expect(!again.nexradChanged)
+        let read = try #require(last)
+        let whole = try picture(f)
+        #expect(read.delta.receiver == whole.receiver)
+        #expect(read.delta.ownship == whole.ownship)
+        #expect(read.delta.targets == whole.targets)
+        #expect(read.delta.texts == whole.texts.count && read.delta.blocks == whole.nexrad.count)
+        #expect(read.nexrad == (try Engine.receiverNexrad(picture: whole)))
+        #expect(try held.reports(f.reports.ident) == Engine.receiverReports(picture: whole, ident: f.reports.ident))
+        let again = try await Receiver.engineRead(Data(), at: Date(timeIntervalSince1970: f.datagrams.last!.at), into: held, after: read.delta)
+        #expect(again.delta.trafficRevision == read.delta.trafficRevision)
+        #expect(again.nexrad == nil)
+        // A new held picture starts empty: the receiver turned off lets go.
+        #expect(try HeldPicture().read(Data(), at: Date()).receiver.heartbeatAt == nil)
     }
 
     /// A listener that is stopped lets go of its senders and its problem,

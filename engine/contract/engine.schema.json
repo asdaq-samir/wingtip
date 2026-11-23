@@ -26393,6 +26393,104 @@
       ],
       "additionalProperties": false
     },
+    "receiver_delta": {
+      "description": "A portable ADS-B receiver's GDL 90 bytes (Garmin 560-1058-00 Rev A) read into a picture the engine holds between reads (receiver_read's, AIM 4-5-7, 4-5-8, 4-5-9), answering only its small part: the receiver's state, own ship and the traffic it hears whole, and for the FIS-B texts and NEXRAD only how many there are and a revision of each, a new one whenever a read changed them, so the host asks for a field's reports or the NEXRAD again only then. The phones hold the picture in a ReceiverSession (engine/bindings/ffi), which answers each read in this shape, so the hundreds of kB of FIS-B are never sent across each second; asked by name, the picture handed over is held for the one read, its revisions counted from 0. Traffic is for seeing, not avoiding (AIM 4-5-7).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ReceiverDeltaInput",
+          "type": "object",
+          "properties": {
+            "data": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The bytes received since the last read (whole UDP datagrams), Base64 (RFC 4648)."
+            },
+            "at": {
+              "type": "number",
+              "description": "Now, Unix s: when the bytes came."
+            },
+            "picture": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ReceiverPicture"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The picture to hold for the read, or null for an empty one."
+            }
+          },
+          "required": [
+            "at"
+          ]
+        },
+        "answer": {
+          "title": "ReceiverDelta",
+          "type": "object",
+          "properties": {
+            "receiver": {
+              "$ref": "#/definitions/ReceiverState"
+            },
+            "ownship": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ReceiverOwnship"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "targets": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ReceiverTarget"
+              }
+            },
+            "texts": {
+              "type": "integer",
+              "description": "How many FIS-B texts the picture holds."
+            },
+            "blocks": {
+              "type": "integer",
+              "description": "How many NEXRAD blocks the picture holds."
+            },
+            "traffic_revision": {
+              "type": "integer",
+              "description": "A new count each read that changed the traffic to merge: the targets, or whether a receiver has been heard at all."
+            },
+            "texts_revision": {
+              "type": "integer",
+              "description": "A new count each read that changed the FIS-B texts (one sent, or one dropped as no longer heard)."
+            },
+            "nexrad_revision": {
+              "type": "integer",
+              "description": "A new count each read that changed the NEXRAD blocks."
+            }
+          },
+          "required": [
+            "receiver",
+            "ownship",
+            "targets",
+            "texts",
+            "blocks",
+            "traffic_revision",
+            "texts_revision",
+            "nexrad_revision"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "receiver_nexrad": {
       "description": "FIS-B NEXRAD to draw (products 63 and 64, AIM 4-5-9): for each level 1 to 7, rectangles [south, west, north, east], the regional product's where sent and the CONUS product's elsewhere, with the newest block's time. Not for avoiding weather close in.",
       "type": "object",
@@ -34506,6 +34604,7 @@
     "read_track",
     "readback_check",
     "ready_to_fly",
+    "receiver_delta",
     "receiver_nexrad",
     "receiver_position",
     "receiver_read",

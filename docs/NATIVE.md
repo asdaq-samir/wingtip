@@ -262,9 +262,14 @@ owner, 2026-11-03):
   grants the multicast entitlement; [receivers.md](receivers.md)): a
   Stratux, Sentry, SkyEcho or a Stratus in open mode on the Wi-Fi sends
   GDL 90 to UDP port 4000; `ReceiverListener` (Network.framework) gathers
-  it and once a second the engine reads it (`receiver_read`,
-  `engine/crates/receiver`), off the main actor, and not at all when
-  nothing was heard and nothing ages. A listener that fails (the port
+  it and once a second the engine reads it into the picture it holds
+  between reads (`HeldPicture` over the engine's `ReceiverSession`,
+  `receiver_delta`, `engine/crates/receiver/src/held.rs`), off the main
+  actor, and not at all when nothing was heard and nothing ages. Only the
+  bytes go over and only the receiver, own ship, its traffic and a
+  revision of the FIS-B texts and NEXRAD come back, so the hundreds of kB
+  of FIS-B never cross each second; the NEXRAD is asked again only when
+  its revision moves, a field's reports when its card asks. A listener that fails (the port
   taken, Local Network refused) says so on the setting's row
   (`Receiver.problem`) and is tried again only when the network or the
   setting changes. Its GPS becomes own ship where the device has

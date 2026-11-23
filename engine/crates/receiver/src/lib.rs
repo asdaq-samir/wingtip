@@ -14,6 +14,8 @@
 //! - nexrad: NEXRAD's blocks, where each is and its bins;
 //! - picture, picture_json: what the receiver has said so far, carried
 //!   by the host from one read to the next;
+//! - held: the picture held by the engine between reads instead, for the
+//!   phones, each read answering only what changed;
 //! - position: own ship from the receiver's GPS, or the device's;
 //! - views: the traffic to draw merged with the internet's, a field's
 //!   METAR and TAF, the NEXRAD as rectangles;
@@ -28,6 +30,7 @@ pub mod calls;
 pub mod dlac;
 pub mod fisb;
 pub mod frame;
+pub mod held;
 pub mod message;
 pub mod nexrad;
 pub mod picture;

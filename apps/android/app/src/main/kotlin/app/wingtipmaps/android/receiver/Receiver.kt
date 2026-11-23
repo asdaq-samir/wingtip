@@ -3,7 +3,6 @@ package app.wingtipmaps.android.receiver
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.util.Base64
 import androidx.core.content.ContextCompat
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -14,10 +13,6 @@ import app.wingtipmaps.android.Extras
 import app.wingtipmaps.android.api.TrafficAircraft
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
-import app.wingtipmaps.android.engine.generated.receiverNexrad
-import app.wingtipmaps.android.engine.generated.receiverRead
-import app.wingtipmaps.android.engine.generated.receiverReports
-import app.wingtipmaps.android.engine.generated.receiverTraffic
 import app.wingtipmaps.android.flight.OwnShipService
 import app.wingtipmaps.android.flight.Ticker
 import app.wingtipmaps.android.settings
@@ -42,10 +37,11 @@ enum class ReceiverMode { AUTO, OFF }
  * docs/receivers.md): its GPS as own ship (OwnShipSource), its traffic and
  * the FIS-B weather it is sent, with no internet; the twin of the iOS app's Receiver. The socket gathers
  * its GDL 90; once a second the engine reads the bytes into the picture
- * (`receiver_read`), off the main thread and once a minute where it has
- * gone quiet (`due`), which this model keeps and hands back; the map's
- * traffic, the airport card's reports and the NEXRAD are the engine's
- * views of it. While a receiver is heard, a foreground service keeps the
+ * it holds (HeldPicture, `receiver_delta`), off the main thread and once a
+ * minute where it has gone quiet (`due`), and answers only what this model
+ * keeps: the receiver, own ship, its traffic and a revision of the rest.
+ * The map's traffic, the airport card's reports and the NEXRAD are the
+ * engine's views of the held picture. While a receiver is heard, a foreground service keeps the
  * listening going with the screen off (ReceiverService). Traffic helps see
  * other airplanes, never avoid them (AIM 4-5-7); FIS-B is not the only
  * source of weather (AIM 4-5-9).
@@ -58,9 +54,15 @@ class Receiver private constructor(private val context: Context, private val tic
     private val _mode = MutableStateFlow(ReceiverMode.AUTO)
     val mode: StateFlow<ReceiverMode> = _mode.asStateFlow()
 
-    private val _picture = MutableStateFlow<EngineContract.ReceiverPicture?>(null)
-    /** What the receiver has said so far, the engine's own answer. */
-    val picture: StateFlow<EngineContract.ReceiverPicture?> = _picture.asStateFlow()
+    private val _picture = MutableStateFlow<EngineContract.ReceiverDeltaAnswer?>(null)
+    /** What the receiver has said so far, as the engine's last read
+     *  answered it: the receiver, own ship and traffic whole, the FIS-B
+     *  only counted, with revisions. */
+    val picture: StateFlow<EngineContract.ReceiverDeltaAnswer?> = _picture.asStateFlow()
+
+    /** The picture itself, held by the engine; a new one each time the
+     *  receiver is turned off, so what it said is let go. */
+    private var held = HeldPicture()
 
     private val _nexrad = MutableStateFlow<EngineContract.ReceiverNexradAnswer?>(null)
     /** The NEXRAD to draw, worked out again as blocks come and go. */
@@ -88,9 +90,12 @@ class Receiver private constructor(private val context: Context, private val tic
     }
 
     /** Nothing listened to and nothing kept: the socket closed, the
-     *  picture and its NEXRAD let go, the foreground service stopped. */
+     *  picture (the engine's too) and its NEXRAD let go, the foreground
+     *  service stopped. */
     private fun quiet() {
         socket.stop()
+        held.close()
+        held = HeldPicture()
         _picture.value = null
         _nexrad.value = null
         serve(false)
@@ -106,10 +111,10 @@ class Receiver private constructor(private val context: Context, private val tic
     /** When the picture was last read, for its slow ageing (`due`). */
     private var readAtMs = Long.MIN_VALUE / 2
 
-    /** The bytes read into the picture by the engine, off the main thread:
-     *  the picture holds the FIS-B texts and blocks, often hundreds of kB
-     *  each way. Traffic is told only where the picture's airplanes, or
-     *  whether a receiver was heard, changed. */
+    /** The bytes read into the held picture by the engine, off the main
+     *  thread, the NEXRAD worked out again only where its revision moved.
+     *  Traffic is told only where the engine's traffic revision moved (the
+     *  airplanes, or whether a receiver was heard at all). */
     suspend fun read(nowMs: Long = AppClock.nowMs()) {
         if (_mode.value != ReceiverMode.AUTO) return
         // Put away with no receiver heard and no flight under way, nothing
@@ -128,18 +133,22 @@ class Receiver private constructor(private val context: Context, private val tic
         val bytes = socket.drain()
         val before = _picture.value
         if (!due(before, heard = bytes.isNotEmpty(), sinceMs = nowMs - readAtMs)) return
+        val held = held
         val read = withContext(Dispatchers.Default) {
-            Engine.receiverRead(Base64.encodeToString(bytes, Base64.NO_WRAP), nowMs / 1000.0, before)
-                .map { picture -> picture to if (picture.nexrad != before?.nexrad) Engine.receiverNexrad(picture).getOrNull() else _nexrad.value }
+            held.read(bytes, nowMs / 1000.0).mapCatching { delta ->
+                val moved = delta.nexradRevision != before?.nexradRevision
+                delta to if (moved) held.nexrad().getOrThrow() else null
+            }
         }
-        if (_mode.value != ReceiverMode.AUTO) return
+        // Turned off while the engine read: that picture is let go.
+        if (_mode.value != ReceiverMode.AUTO || held !== this.held) return
         readAtMs = nowMs
         read
             .onSuccess { (picture, nexrad) ->
                 _picture.value = picture
-                _nexrad.value = nexrad
+                if (nexrad != null) _nexrad.value = nexrad
                 serve(picture.receiver.live)
-                if (trafficChanged(before, picture)) onRead?.invoke()
+                if (picture.trafficRevision != before?.trafficRevision) onRead?.invoke()
                 if (picture.receiver.heartbeatAt != null) onOwnship?.invoke(picture.ownship, picture.receiver)
             }
             .onFailure { _problem.value = it.message }
@@ -152,7 +161,7 @@ class Receiver private constructor(private val context: Context, private val tic
         val picture = _picture.value ?: return internet
         if (picture.receiver.heartbeatAt == null) return internet
         val heard = internet.map { Engine.json.decodeFromString<EngineContract.HeardPlane>(Engine.json.encodeToString(it)) }
-        return Engine.receiverTraffic(picture, heard, ownFt, nowMs / 1000.0)
+        return held.traffic(heard, ownFt, nowMs / 1000.0)
             .map { merged -> merged.map { Engine.json.decodeFromString<TrafficAircraft>(Engine.json.encodeToString(it)) } }
             .getOrElse { internet }
     }
@@ -160,8 +169,8 @@ class Receiver private constructor(private val context: Context, private val tic
     /** A field's METAR and TAF as FIS-B sent them, where it did. */
     fun reports(ident: String): EngineContract.ReceiverReportsAnswer? {
         val picture = _picture.value ?: return null
-        if (picture.texts.isEmpty()) return null
-        return Engine.receiverReports(picture, ident).getOrNull()
+        if (picture.texts == 0) return null
+        return held.reports(ident).getOrNull()
     }
 
     /** The foreground service on while a receiver is heard. Android 12
@@ -200,16 +209,12 @@ class Receiver private constructor(private val context: Context, private val tic
          *  receiver was heard or still holds airplanes, whose 5 s and 20 s
          *  (the engine's LIVE_S, TARGET_HOLD_S) want ageing each second;
          *  else once each QUIET_EVERY_MS. Never heard: nothing to age. */
-        fun due(picture: EngineContract.ReceiverPicture?, heard: Boolean, sinceMs: Long): Boolean {
+        fun due(picture: EngineContract.ReceiverDeltaAnswer?, heard: Boolean, sinceMs: Long): Boolean {
             if (heard) return true
             if (picture == null) return false
             return picture.receiver.live || picture.targets.isNotEmpty() || sinceMs >= QUIET_EVERY_MS
         }
 
-        /** Whether the traffic merged from the picture can have changed:
-         *  its airplanes, or whether a receiver has been heard at all. */
-        fun trafficChanged(before: EngineContract.ReceiverPicture?, after: EngineContract.ReceiverPicture?): Boolean =
-            before?.targets != after?.targets || (before?.receiver?.heartbeatAt == null) != (after?.receiver?.heartbeatAt == null)
         private val KEY = stringPreferencesKey("receiver_mode")
 
         // The application's context, which lives as long as the process.

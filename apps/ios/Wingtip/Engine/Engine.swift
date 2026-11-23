@@ -106,7 +106,25 @@ enum Engine {
     /// reaches a screen as a default value unseen.
     static func rule<In: Encodable, Out: Decodable>(_ name: String, _ input: In) throws -> Out {
         let asked = try String(decoding: encoder.encode(input), as: UTF8.self)
-        let text = try called(name, asked)
+        return try contractual(name, called(name, asked))
+    }
+
+    /// The answer of a state the engine holds (the receiver's
+    /// ReceiverSession, HeldPicture) to a rule of the contract, read as
+    /// the rule's answer type: a refusal thrown and logged as `called`
+    /// does, an answer outside the contract as `rule` does.
+    static func held<Out: Decodable>(_ name: String, _ ask: () throws -> String) throws -> Out {
+        do {
+            return try contractual(name, ask())
+        } catch let EngineError.Refused(text) {
+            Log.engine.error("\(name, privacy: .public) refused: \(text, privacy: .private)")
+            throw Refused(message: text)
+        }
+    }
+
+    /// A rule's answer decoded as its contract's type, or the mismatch
+    /// logged and thrown.
+    private static func contractual<Out: Decodable>(_ name: String, _ text: String) throws -> Out {
         do {
             return try decoder.decode(Out.self, from: Data(text.utf8))
         } catch {

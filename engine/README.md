@@ -64,7 +64,7 @@ table, and its why below, in the same commit.
 | `wording` | wording (with script: the radio calls' words, proximity: the runway proximity advisor's words, `runway_proximity`, and cite: a rule's citation cut into the documents library's links, `citations`) | core, procedures, airspace, brief, route (without its options) |
 | `altitude` | altitude (the floor, the band, the cruising altitudes, the selection and its words, the cautions on a pilot's own altitude, 91.119(b)'s congested areas; ground: the figures the planner's readers of the ground take, where a tile is the sea's, the obstacles drawn (77.9(a)), the side view's width, the finer terrain's reach), congested_reach (how far round a point the planner looks for 91.119(b)'s congested areas), hazard (the map's Terrain Hazards against the altitude flown, 91.119 and 91.177's clearances, `hazard_view`; the profile's obstacles, `profile_obstacles`), clouds' along_route (the profile's TAF cloud bases, `profile_clouds`) | core, flight, weather, procedures |
 | `inflight` | watch, checks, message (`copilot_watch`: the in-flight copilot's ranked messages), flight (`copilot_flight`: the planned flight it starts from, the fuel at takeoff, the planned ground speed and whether a passenger is aboard), fields (its alternative: brief's best_fields in diversion mode, held to its weather and fuel checks) | core, flight, weather, procedures, brief |
-| `receiver` | frame, message, report, uplink, dlac, fisb, nexrad, picture (a portable ADS-B receiver's GDL 90: own ship, its traffic, FIS-B's text and NEXRAD; AIM 4-5-7, 4-5-9), views | core, flight |
+| `receiver` | frame, message, report, uplink, dlac, fisb, nexrad, picture, held (the picture kept between a phone's reads), (a portable ADS-B receiver's GDL 90: own ship, its traffic, FIS-B's text and NEXRAD; AIM 4-5-7, 4-5-9), views | core, flight |
 | `facade/` | call | all of them |
 
 Why these lines:
@@ -241,10 +241,16 @@ Then the callers switch to the name and the old copy is deleted.
 ## The engine's rules
 
 - A portable ADS-B receiver's GDL 90 (`crates/receiver`): the phones hand
-  over the bytes heard on UDP port 4000 with the last picture once a
-  second (`receiver_read`), and draw its views -- the traffic merged with
+  over the bytes heard on UDP port 4000 once a second to the picture the
+  engine holds for them between reads (`held`, bindings/ffi's
+  `ReceiverSession`), which answers only the receiver, own ship, its
+  traffic and a revision of the FIS-B texts and NEXRAD
+  (`receiver_delta`), and draw its views of it -- the traffic merged with
   the internet's (`receiver_traffic`), a field's FIS-B METAR and TAF
-  (`receiver_reports`), the NEXRAD as rectangles (`receiver_nexrad`).
+  (`receiver_reports`), the NEXRAD as rectangles (`receiver_nexrad`),
+  asked again only where a revision moved. A host with no handle hands the
+  whole picture back each read (`receiver_read`), as the simulator's
+  read-back does.
   The web has the rules but no listener: a browser opens no UDP socket.
 - The engine also reads an ATC clearance heard into its items and a call
   to us by its call sign (`crates/radio`, the web's lib/clearance and
@@ -564,9 +570,11 @@ Then the callers switch to the name and the old copy is deleted.
   and a clearance's places read of a pack's tables (the `airports`,
   `navaids` and `fixes` JSON, `airspace.attr`) is read once a pack and kept
   between calls (`crates/airspace/src/pack_kept.rs`), by the pack's CRC-32,
-  build time and length, at most 32 readings: the one state the engine
-  keeps, a pure function of the bytes, so a pan reads only the rows in its
-  box.
+  build time and length, at most 32 readings: a pure function of the
+  bytes, so a pan reads only the rows in its box. The one other state is
+  a receiver's picture, held in a `ReceiverSession` the app owns (a UniFFI
+  object: the Swift or Kotlin class is the handle, and the picture goes
+  with it), behind a lock a panic's poison empties.
   The phones' builds write the engine's hash (the engine store's,
   `scripts/build/shared-cache.sh`) beside what they build, `engine.hash`:
   `scripts/dev/xcodebuild.sh` refuses to build against an XCFramework

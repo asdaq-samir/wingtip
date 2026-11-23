@@ -32,7 +32,7 @@ enum ReceiverWords {
     }
 
     /// "Heard by Stratux 3 s ago" for an airplane the receiver hears.
-    static func heard(_ hex: String, picture: EngineContract.ReceiverPicture?, now: Date = Date()) -> String? {
+    static func heard(_ hex: String, picture: EngineContract.ReceiverDeltaAnswer?, now: Date = Date()) -> String? {
         guard let picture, let target = picture.targets.first(where: { $0.hex == hex.lowercased() }) else { return nil }
         let name = picture.receiver.name ?? "your receiver"
         return "Heard by \(name) \(max(0, Int(now.timeIntervalSince1970 - target.at))) s ago"
