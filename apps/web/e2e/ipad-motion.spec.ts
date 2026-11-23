@@ -1,6 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { grabberTo, settle, sideDrawer } from "./helpers";
-import { pick } from "./cardEntries";
+import { searchAirports, settle, sheetUpToType, showTabs, sideDrawer } from "./helpers";
 
 /**
  * On an iPad (the webkit-ipad project), what the pilot touches moves with
@@ -8,61 +7,58 @@ import { pick } from "./cardEntries";
  * inspector slides in from the right edge and fades, and goes the way it
  * came; the side panel's edge glides between its head and the window's
  * height (the apple-design audit of 2026-11-23, H1 and H2). Each was there
- * or gone in one frame while the map eased beside it. Read a frame at a
- * time after each frame is drawn.
+ * or gone in one frame while the map eased beside it. Read from the
+ * browser's own transition and animation events, not sampled frames: an
+ * iPad's WebKit without a GPU draws a frame a second at times, and a
+ * sampled frame missed the 450 ms ease.
  */
 
-/** `read` sampled after each frame is drawn, for `ms`. */
-function frames<T>(page: Page, read: string, ms = 600): Promise<T[]> {
-  return page.evaluate(
-    ([body, ms]) =>
-      new Promise<T[]>((done) => {
-        const at = new Function(`return (${body})`) as () => T;
-        const out: T[] = [];
-        const end = performance.now() + Number(ms);
-        const step = () =>
-          setTimeout(() => {
-            out.push(at());
-            if (performance.now() < end) requestAnimationFrame(step);
-            else done(out);
-          }, 0);
-        requestAnimationFrame(step);
-      }),
-    [read, String(ms)] as const,
-  );
+/** The transitions run on the inspector's card, and the side panel's glides and clips, from now on. */
+async function watchMotion(page: Page) {
+  await page.evaluate(() => {
+    const w = window as unknown as { motion: string[] };
+    w.motion = [];
+    document.addEventListener("transitionrun", (e) => {
+      const el = e.target as Element;
+      if (el.matches('[data-slot="map-inspector"] [data-sheet-card]'))
+        w.motion.push(`card:${e.propertyName}:${getComputedStyle(el).transitionDuration}`);
+    });
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (this: Element, frames, options) {
+      if (this.matches('[data-slot="map-panel"]') && JSON.stringify(frames).includes("inset")) w.motion.push("clip");
+      return animate.call(this, frames, options);
+    };
+    new MutationObserver((records) => {
+      for (const r of records)
+        for (const n of r.addedNodes)
+          if (n instanceof HTMLElement && n.hasAttribute("data-side-glide")) w.motion.push(`glide:${n.getAnimations().length}`);
+    }).observe(document.body, { childList: true, subtree: true });
+  });
 }
+const motion = (page: Page) => page.evaluate(() => (window as unknown as { motion: string[] }).motion);
 
 test("on an iPad on its side a card in the inspector comes in from its edge and fades, and leaves the way it came", async ({ page }) => {
   await page.setViewportSize({ width: 1194, height: 834 });
-  const opening = frames<{ opacity: number; x: number } | null>(
-    page,
-    `(() => { const c = document.querySelector('[data-slot="map-inspector"] [data-sheet-card]'); if (!c) return null; return { opacity: +getComputedStyle(c).opacity, x: c.getBoundingClientRect().x }; })()`,
-    4000,
-  );
-  await pick(page, "KORD", "airport");
-  const seen = (await opening).filter((f): f is { opacity: number; x: number } => f !== null);
-  expect(
-    seen.some((f) => f.opacity > 0.05 && f.opacity < 0.95),
-    "faded in, not there in one frame",
-  ).toBe(true);
-  const rest = seen.at(-1)!;
-  expect(rest.opacity).toBeCloseTo(1, 1);
-  expect(
-    seen.some((f) => f.x > rest.x + 1),
-    "came in from the right edge",
-  ).toBe(true);
+  await page.goto("/app/plan");
+  await settle(page);
+  await showTabs(page);
+  await sheetUpToType(page);
+  await page.getByTestId("search-airports").fill("KORD");
+  const row = searchAirports(page).first();
+  await expect(row).toBeVisible();
+  await watchMotion(page);
+  await row.click();
   const card = page.locator('[data-slot="map-inspector"] [data-sheet-card][data-open]');
-  const closing = frames<number | null>(
-    page,
-    `(() => { const c = document.querySelector('[data-slot="map-inspector"] [data-sheet-card]'); return c ? +getComputedStyle(c).opacity : null; })()`,
-  );
+  await expect(card).toBeVisible();
+  // Its fade on the Drawer's time (WebKit names no transitionrun for the
+  // move from the edge, which eases with it on the same time).
+  await expect.poll(() => motion(page)).toEqual(expect.arrayContaining(["card:opacity:0.45s"]));
+  await expect.poll(() => card.evaluate((c) => getComputedStyle(c).opacity)).toBe("1");
+  await page.evaluate(() => ((window as unknown as { motion: string[] }).motion.length = 0));
   await card.focus();
   await page.keyboard.press("Escape");
-  const out = (await closing).filter((o): o is number => o !== null);
-  expect(
-    out.some((o) => o > 0.05 && o < 0.95),
-    "faded out, not cut",
-  ).toBe(true);
+  await expect.poll(() => motion(page)).toEqual(expect.arrayContaining(["card:opacity:0.45s"]));
+  await expect(page.locator('[data-slot="map-inspector"] [data-sheet-card]')).toHaveCount(0);
 });
 
 test("on an iPad the side panel's edge glides between its head and the window's height", async ({ page }) => {
@@ -70,23 +66,21 @@ test("on an iPad the side panel's edge glides between its head and the window's 
   await page.goto("/app/plan");
   await settle(page);
   await expect(sideDrawer(page)).toBeVisible();
-  // Out, at the size it opens at (half and all the way up are one box beside the map).
-  const open = (await sideDrawer(page).getAttribute("data-panel")) as "half" | "full";
-  expect(open).not.toBe("peek");
-  // Its visible bottom: its box, less any clip easing in or out.
-  const bottom = `(() => { const p = document.querySelector('[data-slot="map-panel"]'); const r = p.getBoundingClientRect(); const m = /inset\\(0px 0px ([\\d.]+)px/.exec(getComputedStyle(p).clipPath); return r.bottom - (m ? +m[1] : 0); })()`;
-  const putIn = frames<boolean>(page, `!!document.querySelector("[data-side-glide]")`);
-  await grabberTo(page, "peek");
-  expect((await putIn).some(Boolean), "its ground closed up to the head over frames").toBe(true);
+  // A tap on its grabber puts it in or out (half and all the way up are one box beside the map).
+  const grabber = page.getByTestId("sidebar-trigger-button");
+  const size = () => sideDrawer(page).getAttribute("data-panel");
+  if ((await size()) === "peek") {
+    await grabber.click();
+    await expect.poll(size).not.toBe("peek");
+  }
+  await watchMotion(page);
+  // Put in: its ground, drawn to its old height, closes up to the head.
+  await grabber.click();
+  await expect.poll(size).toBe("peek");
+  await expect.poll(() => motion(page)).toContain("glide:1");
   await expect(page.locator("[data-side-glide]")).toHaveCount(0);
-  const inEnd = await page.evaluate(bottom);
-  const out = frames<number>(page, bottom);
-  await grabberTo(page, open);
-  const outSteps = await out;
-  const outEnd = outSteps.at(-1)!;
-  expect(outEnd).toBeGreaterThan(inEnd + 100);
-  expect(
-    outSteps.some((b) => b > inEnd + 20 && b < outEnd - 20),
-    "uncovered over frames, not in one",
-  ).toBe(true);
+  // Out: the panel itself uncovered from its head down, by a clip.
+  await grabber.click();
+  await expect.poll(size).not.toBe("peek");
+  await expect.poll(() => motion(page)).toContain("clip");
 });

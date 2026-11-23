@@ -25,10 +25,10 @@ export const EASE = `transition-[transform,opacity] duration-(--motion-drawer) e
  * (SheetDrawer's GIVE_WAY) -- only its face fades, the map's buttons
  * riding its top from the first frame as before (the apple-design audit
  * of 2026-11-23, M1: it came in with a cut and left with a fade in place).
- * Swiped away (a settings card at half, Base UI's data-swipe-dismiss), it
- * carries on down off the screen at the throw's speed, as the stock
- * PhoneSheet does, rather than vanishing under the finger (the gestures
- * audit's M3).
+ * Swiped away (a settings card at half), --card-to is the screen's foot,
+ * so it carries on down from where the finger let it go, as the stock
+ * PhoneSheet does, rather than going back up as it fades (the gestures
+ * audit's M3; CardStack sets it).
  *
  * Base UI plays that entry only for a drawer that opens after it has
  * mounted; one mounted already open is drawn where it rests from its first
@@ -43,7 +43,6 @@ export const EASE = `transition-[transform,opacity] duration-(--motion-drawer) e
 export const RISE = cn(
   "data-starting-style:[transform:translateY(calc(var(--card-from,var(--sheet-base,0px))_-_var(--sheet-base,0px)))] data-starting-style:opacity-0",
   "data-ending-style:[transform:translateY(calc(var(--card-to,var(--sheet-base,0px))_-_var(--sheet-base,0px)))] data-ending-style:opacity-0",
-  "data-swipe-dismiss:data-ending-style:[transform:translateY(100%)] data-swipe-dismiss:data-ending-style:duration-[calc(var(--drawer-swipe-strength,1)*400ms)]",
 );
 
 /** From `md` up a card has no sizes to slide between: it comes in and goes
