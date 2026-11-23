@@ -88,7 +88,9 @@ struct MapExtrasInput {
     /// The field whose card is open, ringed on the chart (SelectedHalo).
     var selectedField: String?
     var waypoints = false
-    var classB = false
+    /// The route's fields (its ends and stops), which wear their own marks:
+    /// no Class B mark is drawn on one (the web's ClassBGl `route`).
+    var route: Set<String> = []
     var plates = true
     var approaches: [ProcedurePick] = []
     /// The plates taken off the map from their card (HiddenPlates).
@@ -116,10 +118,9 @@ struct MapExtrasInput {
     }
 
     /// Setup's switches, kept on the device (the web app's preferences:
-    /// waypoints and Class B off until a pilot turns them on, plates on).
+    /// waypoints off until a pilot turns them on, plates on).
     enum Keys {
         static let waypoints = "map.waypoints"
-        static let classB = "map.classB"
         static let plates = "map.plates"
         /// The web app's Military and Private settings (lib/preferences):
         /// the armed services' fields and the private ones off, at first
@@ -146,9 +147,14 @@ final class MapExtrasState: NSObject {
     var onWaypoint: ((String, CLLocationCoordinate2D, CardAction) -> Void)?
     private var held: HeldAnnotation?
     private var showWaypoints = false
-    private var showClassB = false
+    /// The Class B fields asked for once, then always drawn (the owner,
+    /// 2026-11-17: "Just keep it by default in the app so all the class B
+    /// airports show even when zoomed out"), as the web's ClassBGl.
+    private var classBAsked = false
     private var waypointMarks: [String: WaypointAnnotation] = [:]
     private var classBMarks: [AirportAnnotation] = []
+    private var classBFields: [ClassBAirport] = []
+    private var classBRoute: Set<String> = []
     let plates = PlateLayer()
     /// The ground and the obstacles against the altitude flown (HazardLayer).
     let hazard = HazardLayer()
@@ -156,6 +162,8 @@ final class MapExtrasState: NSObject {
     private var classBTask: Task<Void, Never>?
 
     override nonisolated init() { super.init() }
+
+    private static let ownShip = "own-ship"
 
     /// A finger held on the map asks what is there, as Maps drops a pin.
     func attach(to map: MKMapView) {
@@ -209,9 +217,13 @@ final class MapExtrasState: NSObject {
             showWaypoints = input.waypoints
             refreshWaypoints(map, after: 0)
         }
-        if input.classB != showClassB {
-            showClassB = input.classB
+        if !classBAsked {
+            classBAsked = true
             refreshClassB(map)
+        }
+        if input.route != classBRoute {
+            classBRoute = input.route
+            placeClassB(map)
         }
         plates.onPlate = input.onPlate
         plates.update(map, picks: PlateLayer.shown(plates: input.plates, approaches: input.approaches, hidden: input.hiddenPlates),
@@ -222,6 +234,7 @@ final class MapExtrasState: NSObject {
     /// The map rested: the waypoints in view asked for again.
     func regionChanged(_ map: MKMapView) {
         if showWaypoints || !waypointMarks.isEmpty { refreshWaypoints(map, after: 300) }
+        plates.zoomed(map, zoom: MapExtras.zoom(longitudeDelta: map.region.span.longitudeDelta, width: Double(map.bounds.width)))
         hazard.rested(map)
     }
 
@@ -236,6 +249,18 @@ final class MapExtrasState: NSObject {
             // A waypoint's card is its callout, with the navaid card's
             // actions under its name, as the web's (CardKind.navaid).
             view.detailCalloutAccessoryView = actions(for: mark)
+            return view
+        }
+        if annotation is MKUserLocation {
+            // Own ship, MapKit's own view, never dropped and its room kept
+            // clear, so a field's name under it gives way rather than being
+            // covered, as the web keeps an empty symbol under its arrow
+            // (rules.md, "The route over the whole country").
+            let view = map.dequeueReusableAnnotationView(withIdentifier: Self.ownShip) as? MKUserLocationView
+                ?? MKUserLocationView(annotation: annotation, reuseIdentifier: Self.ownShip)
+            view.annotation = annotation
+            view.displayPriority = .required
+            view.collisionMode = .circle
             return view
         }
         if annotation is HeldAnnotation {
@@ -307,11 +332,17 @@ final class MapExtrasState: NSObject {
         classBTask?.cancel()
         map.removeAnnotations(classBMarks)
         classBMarks = []
-        guard showClassB else { return }
         classBTask = Task { @MainActor [weak self, weak map] in
             guard let fields = try? await Planner.classB(), !Task.isCancelled, let self, let map else { return }
-            classBMarks = fields.map { AirportAnnotation(MapExtras.pin($0)) }
-            map.addAnnotations(classBMarks)
+            classBFields = fields
+            placeClassB(map)
         }
+    }
+
+    /// The Class B fields' marks, all but the route's own.
+    private func placeClassB(_ map: MKMapView) {
+        map.removeAnnotations(classBMarks)
+        classBMarks = classBFields.filter { !classBRoute.contains($0.ident) }.map { AirportAnnotation(MapExtras.pin($0), classB: true) }
+        map.addAnnotations(classBMarks)
     }
 }

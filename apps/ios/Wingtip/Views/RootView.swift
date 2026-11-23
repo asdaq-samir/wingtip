@@ -117,7 +117,8 @@ struct RootView: View {
         .modifier(SheetFollowsSearch(search: search, layout: layout, detent: $detent))
         // The picked look's tint, the brand's blue by default (Look).
         .lookTint()
-        // The key actions' taps, none with Reduce Motion on (Feel).
+        // The key actions' taps, played under Reduce Motion too: a tap is
+        // not motion (Feel).
         .modifier(FeelHost())
         // The menu bar's commands, Open Flight or Track, and drops (WindowHost).
         .modifier(WindowHost(search: search, open: { openScreen($0) }, page: { nav.showPage($0) }, run: { await apply($0) }))

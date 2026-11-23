@@ -35,7 +35,6 @@ struct RootMap: View {
     @State private var fitRequest = 0
     // Setup's map switches (MapExtrasInput.Keys).
     @AppStorage(MapExtrasInput.Keys.waypoints) private var waypointsOn = false
-    @AppStorage(MapExtrasInput.Keys.classB) private var classBOn = false
     @AppStorage(MapExtrasInput.Keys.plates) private var platesOn = true
     // The plate card's look (PlateLook.Keys), kept on the device.
     @AppStorage(PlateLook.Keys.opacity) private var plateOpacity = PlateLook.defaultOpacity
@@ -88,7 +87,9 @@ struct RootMap: View {
             extras: MapExtrasInput(
                 held: nav.heldRoute.flatMap { AirportRoute($0).heldPoint },
                 selectedField: nav.heldRoute.flatMap { AirportRoute($0).field },
-                waypoints: waypointsOn, classB: classBOn, plates: platesOn, approaches: plan.procedures,
+                waypoints: waypointsOn,
+                route: Set(plan.course.map { [$0.departure, $0.destination] + ($0.stops ?? []) }?.map(\.ident) ?? []),
+                plates: platesOn, approaches: plan.procedures,
                 hiddenPlates: HiddenPlates.shared.keys,
                 plateLook: PlateLook(opacity: plateOpacity, inverted: plateInverted, annotations: plateAnnotations),
                 // A plate's page tapped: its card, half way up, as a field's.
@@ -113,7 +114,8 @@ struct RootMap: View {
             routeLegs: RouteLegInput(
                 legs: plan.course != nil ? RouteLegModel.mapLegs(plan) : [],
                 selected: { if case .leg(let index) = nav.top { return index }; return nil }(),
-                onSelect: { index in nav.open(.leg(index)) }),
+                onSelect: { index in nav.open(.leg(index)) },
+                points: RouteLegModel.legPoints(plan)),
             // The route's fields worse by the flight's time there, and the
             // airplane's demonstrated crosswind for the wind barbs' red.
             fieldWeather: FieldWeatherInput(
