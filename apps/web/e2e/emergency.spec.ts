@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { consoleSheet, grabberTo, inSheet, openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart } from "./helpers";
+import { cardHost, consoleSheet, grabberTo, inSheet, openPanel, openProfile, settle, sideDrawer, slow, pressDryRunStart } from "./helpers";
 import { pickAirplane } from "./startState";
 import { expectDrawnOnce, installFrameRecorder } from "./drawnOnce";
 import { showPage } from "./oneSearch";
@@ -23,7 +23,9 @@ async function flying(page: Page) {
   await settle(page);
   await openPanel(page);
   await openProfile(page);
-  const start = sideDrawer(page).getByTestId("dry-run-start");
+  // The Profile card's, over the side panel, or in the inspector at the
+  // map's right on an iPad on its side (cardHost).
+  const start = cardHost(page).getByTestId("dry-run-start");
   await expect(start).toBeVisible({ timeout: slow(60_000) });
   await pressDryRunStart(page, start);
   await expect(page.getByTestId("flying-head")).toBeVisible({ timeout: slow(10_000) });
@@ -33,7 +35,7 @@ async function flying(page: Page) {
   // Direct To flew to 50IL where the row had read 3LL4, a second field
   // picked by name was another by the click (CI, and here with the browser
   // held to 1.5 cores, 4 of 24 runs of this file and flight-critical.spec).
-  const play = sideDrawer(page).getByTestId("dry-run-play");
+  const play = cardHost(page).getByTestId("dry-run-play");
   await play.click();
   await expect(play).toHaveAttribute("aria-pressed", "false");
 }
