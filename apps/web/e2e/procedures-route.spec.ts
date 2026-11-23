@@ -67,8 +67,8 @@ test.describe("on the owner's phone's width, to a finger", () => {
     const box = sideDrawer(page).getByTestId("route-box");
     await expect(box.getByTestId("route-procedure")).toBeVisible({ timeout: slow(10000) });
     // Turned from the grouped box, the route wraps over its lines (the
-    // owner, 2026-11-22: "Route box should be as tall as the grouped box,
-    // same shape"): the field past KRFD ends on KRFD's own line, not one
+    // owner, 2026-11-22; as tall as its lines since canvas A, 2026-11-23):
+    // the field past KRFD ends on KRFD's own line, not one
     // of its own under it.
     const end = (await box.getByTestId("route-type").boundingBox())!;
     const last = (await box.getByRole("button", { name: "Destination KRFD" }).boundingBox())!;

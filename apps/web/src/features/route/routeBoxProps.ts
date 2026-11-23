@@ -79,15 +79,14 @@ export interface RouteBoxProps extends RouteParts {
    *  is typed (the owner, 2026-11-18): its one Clear before there is a
    *  route, as FPL's ✕ is after. None where it does not apply. */
   onClear?: () => void;
-  /** The route's whole line wrapped over as many lines as it takes, in a
-   *  box `height` tall at the least, growing to hold them all, each pill
-   *  whole on its line (RouteToken): the grouped
-   *  box turned into the route's field by its toggle (TypeRouteButton), its
-   *  size and shape kept (the owner, 2026-11-22: "Route box should be as
-   *  tall as the grouped box, same shape. So it can show everything
-   *  including the approach pills etc."). Else the one row that slides. */
+  /** The route's whole line wrapped over as many lines as it takes, the
+   *  box as tall as its lines and no taller, each pill whole on its line
+   *  (RouteToken): the grouped box turned into the route's field by its
+   *  toggle (TypeRouteButton). It once kept the grouped box's height (the
+   *  owner, 2026-11-22), and since fits its pills, as the route box's
+   *  canvas A the owner picked (2026-11-23), with no blank room under
+   *  them. Else the one row that slides. */
   wrapped?: boolean;
-  height?: number;
   /** Drawn straight under the box, before its red message: the editor's
    *  toggle row, pulled up into the wrapped box's room under its last line
    *  (RouteEditor), so a message under the box is never under the toggle

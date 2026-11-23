@@ -86,7 +86,6 @@ export default function RouteBox({
   unreachable = false,
   onClear,
   wrapped = false,
-  height,
   foot,
 }: RouteBoxProps) {
   // Each by its own name: three of them are refs (the field, the row and
@@ -215,8 +214,6 @@ export default function RouteBox({
               wrapped ? "rounded-(--radius-card) pr-4 pb-11 pl-4" : "rounded-(--radius-banner) pr-1.5 pl-1",
               PANEL_FIELD,
             )}
-            // Wrapped, the grouped box's height at the least, growing with the lines.
-            style={wrapped && height ? { minHeight: height } : undefined}
             data-wrapped={wrapped || undefined}
             data-testid="route-box"
           >

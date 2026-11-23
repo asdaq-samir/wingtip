@@ -1,6 +1,6 @@
+import { turnedByToggle } from "./routeEditing";
 import { flushSync } from "react-dom";
 import { EndRow, TIMELINE_CARD, TypeRouteButton } from "../../procedures";
-import { keepTimelineHeight } from "./routeEditing";
 import type { PlanSlices } from "../vm/planSlices";
 
 type StartSlices = PlanSlices<"route" | "routeList">;
@@ -22,10 +22,7 @@ export function BoxToggle({ vm, focus = true }: { vm: StartSlices; focus?: boole
     <TypeRouteButton
       pressed={false}
       onToggle={() => {
-        // The box's height, kept for the field it turns into.
-        keepTimelineHeight(
-          document.querySelector('[data-testid="route-empty"], [data-testid="route-summary"]')?.getBoundingClientRect().height ?? 0,
-        );
+        turnedByToggle(true);
         if (!focus) return setRouteOpen(true);
         flushSync(() => setRouteOpen(true));
         document.querySelector<HTMLElement>('[data-testid="route-type"]')?.focus();

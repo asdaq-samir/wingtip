@@ -142,10 +142,12 @@ test.describe("/app/plan", () => {
     const before = (await timeline.boundingBox())!;
     await drawer.getByTestId("route-type-open").click();
     await expect(drawer.getByTestId("route-box")).toBeVisible();
-    // The same box in the same place, its size and shape, the route wrapped
-    // in it (the owner, 2026-11-22: "Route box moves down when toggled").
+    // The same box in the same place and width, the route wrapped in it
+    // (the owner, 2026-11-22: "Route box moves down when toggled"), as tall
+    // as its pills and no taller (canvas A, the owner's pick, 2026-11-23).
     const typed = (await drawer.getByTestId("route-box").boundingBox())!;
-    for (const k of ["x", "y", "width", "height"] as const) expect(Math.abs(typed[k] - before[k]), `the box's ${k}`).toBeLessThanOrEqual(1);
+    for (const k of ["x", "y", "width"] as const) expect(Math.abs(typed[k] - before[k]), `the box's ${k}`).toBeLessThanOrEqual(1);
+    expect(typed.height, "the box fits its pills").toBeLessThanOrEqual(before.height + 1);
     await expect(drawer.getByTestId("route-box")).toHaveAttribute("data-wrapped", "true");
     await expect(timeline).toHaveCount(0);
     await expect(drawer.getByTestId("route-done")).toHaveCount(0);
