@@ -103,10 +103,16 @@ private struct StripFigure: View {
         // help you determine the size and density of the onscreen content".
         let nameFont: Font = glance ? .footnote : .caption2
         let valueFont: Font = glance ? .title2 : .headline
-        // Always on a solid ground (the iPhone's sheet, the iPad's card at
-        // the map's foot, SplitLayout), so the system's own inks hold 4.5:1.
+        // Always on a solid ground, the sheet's colour (the iPhone's sheet,
+        // the iPad's card at the map's foot, SplitLayout): the names in the
+        // tokens' muted ink and semibold, the figures in the primary. The
+        // system's secondary label there, regular, was drawn no darker
+        // than #97979c on the sheet's #f2f2f7, and the iPad's audit failed
+        // TO and ETE on every page; the muted ink alone, regular, still
+        // drew its thin strokes no darker than #7c7c7c, and was failed
+        // the same (AccessibilityAuditTests, 2026-11-22).
         layout {
-            Text(name).font(nameFont).foregroundStyle(.secondary)
+            Text(name).font(nameFont.weight(.semibold)).foregroundStyle(WingtipInk.muted)
             if size.isAccessibilitySize { Spacer(minLength: 0) }
             HStack(spacing: WingtipSpace.xs) {
                 // A mark with the red, for a pilot who does not see the
