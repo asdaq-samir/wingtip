@@ -106,10 +106,11 @@ import Testing
 
     /// A visibility as a report writes it, the engine's FMH-1 Table 6-1
     /// value at or below it: no report writes 11/16, nor rounds up.
-    @Test func aVisibilityIsTheReportableOneBelowIt() {
-        let (whole, fraction) = Format.reportedVisibility(0.7456)
+    @Test func aVisibilityIsTheReportableOneBelowIt() throws {
+        let (whole, fraction) = try Format.reportedVisibility(0.7456)
         #expect(whole == 0 && fraction == "5/8")
-        #expect(Format.reportedVisibility(1.625).whole == 1 && Format.reportedVisibility(1.625).fraction == "5/8")
-        #expect(Format.reportedVisibility(4.97).whole == 4 && Format.reportedVisibility(4.97).fraction == nil)
+        let mile = try Format.reportedVisibility(1.625), four = try Format.reportedVisibility(4.97)
+        #expect(mile.whole == 1 && mile.fraction == "5/8")
+        #expect(four.whole == 4 && four.fraction == nil)
     }
 }

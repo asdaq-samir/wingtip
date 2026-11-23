@@ -59,11 +59,13 @@ enum FieldWeatherMarks {
     }
 
     /// The station model's first line as a METAR writes it: "2 SM BR",
-    /// the visibility in statute miles with the weather as reported.
+    /// the visibility in statute miles with the weather as reported; none
+    /// where the engine refused it (logged), rather than a figure guessed.
     static func visibilityLine(_ sm: Double?, wx: String?) -> String? {
-        let visibility = sm.map { sm in
-            let (whole, fraction) = Format.reportedVisibility(sm)
-            return "\(fraction.map { whole > 0 ? "\(whole) \($0)" : $0 } ?? String(whole)) SM"
+        let visibility = sm.flatMap { sm in
+            (try? Format.reportedVisibility(sm)).map { v in
+                "\(v.fraction.map { v.whole > 0 ? "\(v.whole) \($0)" : $0 } ?? String(v.whole)) SM"
+            }
         }
         let line = [visibility, wx].compactMap { $0 }.joined(separator: " ")
         return line.isEmpty ? nil : line

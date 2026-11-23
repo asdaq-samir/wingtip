@@ -91,12 +91,16 @@ final class Plan {
     /// route that was, so a Clear Route undone on From and To typed but
     /// never planned puts them back as typed (PlanHistory).
     @ObservationIgnored var lastPlanned = true
-    /// The key window's, from SwiftUI's environment (RootMap): shake to
-    /// undo, the Edit menu's Undo and Redo and the bar's Undo
-    /// (UndoToolbarItem). One Plan serves every window, so each window
-    /// hands over its own as it becomes the key one, and a step lands in
-    /// the manager of the window the pilot made it in.
-    @ObservationIgnored weak var undoManager: UndoManager?
+    /// The route's one history, the plan's own: one Plan serves every
+    /// window, so its steps are in one stack, and an Undo in one window
+    /// can never put back a route from before another window's edit.
+    /// Each window's own manager (`windowUndo`) holds a step that forwards
+    /// to this one, so shake to undo, the Edit menu and ⌘Z still reach it.
+    @ObservationIgnored let undoManager = UndoManager()
+    /// The key window's UndoManager, from SwiftUI's environment (RootMap),
+    /// handed over as each window becomes the key one: where a step's
+    /// forwarder goes (UndoManager.forward).
+    @ObservationIgnored weak var windowUndo: UndoManager?
     /// The step just made that the undo bar offers to take back (UndoBar),
     /// nil once it has gone; a step that only added or changed a figure has
     /// none, though shake and the Edit menu still undo it.

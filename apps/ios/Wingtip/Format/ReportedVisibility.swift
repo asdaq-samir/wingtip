@@ -8,9 +8,10 @@ extension Format {
     /// engine's visibility_reportable, the reportable one at or below it
     /// (FMH-1 Table 6-1), as the web's reportedVisibility asks it: a
     /// visibility rounded up is more than was seen, and no report writes
-    /// 11/16. Should the engine not answer, the whole mile below, never more.
-    static func reportedVisibility(_ sm: Double) -> (whole: Int, fraction: String?) {
-        let reported = (try? Engine.visibilityReportable(sm: sm)) ?? (sm + 1e-9).rounded(.down)
+    /// 11/16. The engine is built in: a refusal is thrown (and logged by
+    /// Engine.rule), never read as a figure of our own.
+    static func reportedVisibility(_ sm: Double) throws -> (whole: Int, fraction: String?) {
+        let reported = try Engine.visibilityReportable(sm: sm)
         let whole = Int((reported + 1e-9).rounded(.down))
         // Every reportable value under 3 is a whole number of sixteenths.
         let sixteenths = Int(((reported - Double(whole)) * 16).rounded())

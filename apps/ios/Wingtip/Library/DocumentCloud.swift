@@ -8,8 +8,10 @@ import SwiftData
 /// ours (docs/privacy-inventory.md). Only while the pilot has turned on
 /// Keep in iCloud (DocumentCloud). CloudKit's rules: every attribute
 /// optional or given a value, nothing unique.
+/// Nonisolated, so the records actor (DocumentRecords) can make and read
+/// one off the main actor.
 @Model
-final class OwnDocumentRecord {
+nonisolated final class OwnDocumentRecord {
     var id: String = ""
     var name: String = ""
     var added: Date = Date()
@@ -34,10 +36,12 @@ final class OwnDocumentRecord {
 /// device.
 ///
 /// A pilot's own run to tens of megabytes each, so one document is in
-/// memory at a time: its file read and written off the main actor
-/// (DeviceDocuments), and its record saved in a context of its own that
-/// goes with it. Sends run one after another (`queue`), so two Adds close
-/// together never send the same document twice.
+/// memory at a time, and its bytes never touch the main actor: the record
+/// carrying the PDF is written and read in DocumentRecords, a model actor
+/// of its own, and the file on this device in DeviceDocuments. This class
+/// is the main actor's front: the switch, and the lists that load no PDF.
+/// Sends run one after another (`queue`), so two Adds close together never
+/// send the same document twice.
 @MainActor
 @Observable
 final class DocumentCloud {
@@ -46,6 +50,7 @@ final class DocumentCloud {
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let container: @MainActor () -> ModelContainer
     @ObservationIgnored private var queue: Task<Void, Never>?
+    @ObservationIgnored private var recordsActor: DocumentRecords?
     private(set) var on: Bool
 
     init(defaults: UserDefaults, container: @escaping @MainActor () -> ModelContainer) {
@@ -74,6 +79,14 @@ final class DocumentCloud {
     /// record's PDF is not held after it is saved or read.
     private func context() -> ModelContext { ModelContext(container()) }
 
+    /// The actor that writes and reads the records' PDFs, made once.
+    private func records() -> DocumentRecords {
+        if let made = recordsActor { return made }
+        let made = DocumentRecords(modelContainer: container())
+        recordsActor = made
+        return made
+    }
+
     /// The records' ids, names and dates, their PDFs left in the store.
     private static func listed() -> FetchDescriptor<OwnDocumentRecord> {
         var descriptor = FetchDescriptor<OwnDocumentRecord>()
@@ -98,14 +111,7 @@ final class DocumentCloud {
         for doc in docs {
             // Turned off meanwhile, or sent already.
             guard on else { return }
-            let have = (try? context().fetchCount(FetchDescriptor<OwnDocumentRecord>(predicate: #Predicate { $0.id == doc.id }))) ?? 0
-            guard have == 0 else { continue }
-            let pdf = await store.ownPDF(doc.id)
-            autoreleasepool {
-                let ctx = context()
-                ctx.insert(OwnDocumentRecord(id: doc.id, name: doc.name, added: doc.added, pdf: pdf))
-                try? ctx.save()
-            }
+            await records().send(doc, file: store.ownFile(doc.id))
         }
     }
 
@@ -125,7 +131,7 @@ final class DocumentCloud {
 
     /// The pilot's documents from their other devices written here, and a
     /// name changed there taken; run as the library opens. Each one's PDF
-    /// read from its record alone and written off the main actor.
+    /// read from its record and written here off the main actor.
     func pull(into library: DocumentLibrary) async {
         guard on else { return }
         let records = ((try? context().fetch(Self.listed())) ?? []).map { OwnDocument(id: $0.id, name: $0.name, bytes: 0, added: $0.added) }
@@ -134,16 +140,38 @@ final class DocumentCloud {
                 if mine.name != record.name, !record.name.isEmpty { try? library.store.renameOwn(mine.id, to: record.name) }
                 continue
             }
-            guard let pdf = pdf(of: record.id) else { continue }
-            await library.store.adoptOwn(record, pdf: pdf)
+            await records().take(record, into: library.store)
         }
         library.reloadDevice()
     }
+}
 
-    /// One record's PDF, read in a context that goes once it is read.
-    private func pdf(of id: String) -> Data? {
+/// Keep in iCloud's records with their PDFs, written and read off the
+/// main actor, so a 10 to 60 MB save or fetch (SwiftData's external
+/// storage file) never holds the library's screen. A context of its own
+/// for each document, dropped with it, so no PDF is held after it is
+/// saved or read.
+@ModelActor
+actor DocumentRecords {
+    /// One document's record made from its file, unless it has one.
+    func send(_ doc: OwnDocument, file: URL) {
+        let id = doc.id
+        let ctx = ModelContext(modelContainer)
+        let have = (try? ctx.fetchCount(FetchDescriptor<OwnDocumentRecord>(predicate: #Predicate { $0.id == id }))) ?? 0
+        guard have == 0 else { return }
         autoreleasepool {
-            (try? context().fetch(FetchDescriptor<OwnDocumentRecord>(predicate: #Predicate { $0.id == id })))?.first?.pdf
+            ctx.insert(OwnDocumentRecord(id: doc.id, name: doc.name, added: doc.added, pdf: try? Data(contentsOf: file)))
+            try? ctx.save()
         }
+    }
+
+    /// One record's PDF read and written to this device as the document.
+    func take(_ doc: OwnDocument, into store: DeviceDocuments) async {
+        let id = doc.id
+        let pdf: Data? = autoreleasepool {
+            (try? ModelContext(modelContainer).fetch(FetchDescriptor<OwnDocumentRecord>(predicate: #Predicate { $0.id == id })))?.first?.pdf
+        }
+        guard let pdf else { return }
+        await store.adoptOwn(doc, pdf: pdf)
     }
 }

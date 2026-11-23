@@ -194,13 +194,13 @@ struct RootMap: View {
             // The flight's own work while the map is up (FlightLoops), in
             // the lead window alone (MainWindow), behind the map.
             .background { if leadsLoops { Color.clear.modifier(FlightLoops()) } }
-            // The key window's UndoManager for the route's history: shake
-            // to undo and the Edit menu (PlanHistory). The plan is every
-            // window's, so the window the pilot is in hands over its own as
-            // it becomes the key one, and its steps are undone there.
-            .keyWindow(window) { plan.undoManager = undoManager }
-            .onAppear { if plan.undoManager == nil || window.isKey { plan.undoManager = undoManager } }
-            .onChange(of: undoManager) { _, manager in if window.isKey { plan.undoManager = manager } }
+            // The key window's UndoManager, where the route's steps are
+            // forwarded from, so shake to undo and the Edit menu reach the
+            // plan's one history (PlanHistory): the window the pilot is in
+            // hands over its own as it becomes the key one.
+            .keyWindow(window) { plan.windowUndo = undoManager }
+            .onAppear { if plan.windowUndo == nil || window.isKey { plan.windowUndo = undoManager } }
+            .onChange(of: undoManager) { _, manager in if window.isKey { plan.windowUndo = manager } }
             // The GPS at its best while the map follows the airplane (OwnShip.precise).
             .onChange(of: following, initial: true) { _, now in ownShip.mapFollows = now }
             // Siri listens for the fields the shortcuts' airport entity
