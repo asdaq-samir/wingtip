@@ -268,6 +268,11 @@ test("each picture opens full screen, where a pinch zooms it and the zoom stays,
     await expect.poll(async () => (await viewer.boundingBox())?.width).toBe(page.viewportSize()!.width);
     const canvas = viewer.locator("canvas");
     await expect(canvas).toBeVisible({ timeout: slow(15000) });
+    // Its pages drawn (ChartPages' data-drawn), not only the paper they lie
+    // on: the diagram's page, drawn by the planner from the FAA's PDF, came
+    // after a still screenshot of the bare paper, and the pinch zoomed the
+    // paper alone, the same picture (PR #589's run on 36a311a4a).
+    await expect(viewer.locator("[data-drawn]")).toBeAttached({ timeout: slow(15000) });
     const whole = await drawnStill(canvas);
     await pinchOut(canvas);
     const zoomed = await drawnStill(canvas);
