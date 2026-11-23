@@ -54,11 +54,23 @@ export function useDryRun({
   // The rows it is flown along, the procedures picked flown as the legs are
   // planned by them: out by a departure, in by an arrival and an approach.
   const runRows = useMemo(() => (course ? navLogRows(course, selected, legs) : null), [course, selected, legs]);
+  // Every row with its leg: the side view is drawn before the legs have
+  // streamed in, and a tap on its Dry run then did nothing (the run too
+  // short to fly) -- seen as the dry-run spec's phone tapped it early. Its
+  // button waits for them, dimmed.
+  const whole = !!runRows && runRows.slice(1).every((row) => !!legOf(row));
+  // Flown again only from rows whole again. The route as entered comes
+  // first, point to point, and the checkpoints' log streams in after it
+  // (usePlan): a run made from that log part way in was long enough to
+  // fly but had no time at the rows still to come, so the next
+  // checkpoint over the map (FlyingHead) went, and stayed gone while the
+  // planner was slow -- the desktop emergency spec on a cold CI planner
+  // (run 45152106014, "flying-head" never shown).
   const flownFrom = useMemo(
-    () => (runFrom !== null && course && runRows ? dryRunOf(runRows, runFrom, course.course_line, goMissed) : null),
-    [runFrom, course, runRows, goMissed],
+    () => (runFrom !== null && whole && course && runRows ? dryRunOf(runRows, runFrom, course.course_line, goMissed) : null),
+    [runFrom, whole, course, runRows, goMissed],
   );
-  // The last run long enough to fly, held while new legs stream in.
+  // The last whole run long enough to fly, held while new legs stream in.
   const [lastRun, setLastRun] = useState<DryRun | null>(null);
   if (flownFrom && flownFrom.points.length >= 2 && flownFrom !== lastRun) setLastRun(flownFrom);
   const dryRun = runFrom === null ? null : lastRun;
@@ -78,7 +90,7 @@ export function useDryRun({
   // place, at the owner's ask ("profile should play the dry run within
   // profile card"), and put away with it.
   const start = () => {
-    if (!course || !runRows) return;
+    if (!course || !runRows || !whole) return;
     const from = Math.round((depart ? Date.parse(depart) : Date.now()) / 1000);
     const run = dryRunOf(runRows, from, course.course_line, goMissed);
     if (run.points.length < 2) return;
@@ -93,11 +105,8 @@ export function useDryRun({
   // Gone missed on the final (the run's Go missed): the run that does, the
   // same up to the missed approach point, so it goes on from where it is.
   const goMissedNow = () => setGoMissed(true);
-  // Flown once every leg is in: the side view is drawn before the legs have
-  // streamed in, and a tap on its Dry run then did nothing (the run too
-  // short to fly) -- seen as the dry-run spec's phone tapped it early. Its
-  // button waits for them, dimmed.
-  const ready = !!runRows && runRows.slice(1).every((row) => !!legOf(row));
+  // Flown once every leg is in (`whole`).
+  const ready = whole;
   // Stopped, the side view it was flown over, the route's list a swipe
   // back, at the owner's ask ("When stopping dry run it should become
   // profile view and then swiping should take it back").

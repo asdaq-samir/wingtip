@@ -33,6 +33,11 @@ export async function closeProfile(page: Page) {
  *  suite's device never has the route's charts kept or the briefing
  *  fresh. Started again on the same route, there is no prompt. */
 export async function pressDryRunStart(page: Page, start: Locator) {
+  // Dimmed until every leg of the nav log is in (useDryRun's `ready`): a
+  // nav log that never came failed here in the expect's time with its own
+  // words, where the click waited out the test, twice (the desktop
+  // emergency spec's 2 x 120 s in run 45152106014).
+  await expect(start, "Dry run is enabled once every leg of the nav log is in").toBeEnabled();
   await start.click();
   const prompt = page.getByTestId("ready-prompt");
   await prompt.waitFor({ timeout: slow(3000) }).catch(() => {});
