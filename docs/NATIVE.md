@@ -262,9 +262,14 @@ owner, 2026-11-03):
   grants the multicast entitlement; [receivers.md](receivers.md)): a
   Stratux, Sentry, SkyEcho or a Stratus in open mode on the Wi-Fi sends
   GDL 90 to UDP port 4000; `ReceiverListener` (Network.framework) gathers
-  it and once a second the engine reads it (`receiver_read`,
-  `engine/crates/receiver`), off the main actor, and not at all when
-  nothing was heard and nothing ages. A listener that fails (the port
+  it and once a second the engine reads it into the picture it holds
+  between reads (`HeldPicture` over the engine's `ReceiverSession`,
+  `receiver_delta`, `engine/crates/receiver/src/held.rs`), off the main
+  actor, and not at all when nothing was heard and nothing ages. Only the
+  bytes go over and only the receiver, own ship, its traffic and a
+  revision of the FIS-B texts and NEXRAD come back, so the hundreds of kB
+  of FIS-B never cross each second; the NEXRAD is asked again only when
+  its revision moves, a field's reports when its card asks. A listener that fails (the port
   taken, Local Network refused) says so on the setting's row
   (`Receiver.problem`) and is tried again only when the network or the
   setting changes. Its GPS becomes own ship where the device has
@@ -306,7 +311,25 @@ owner, 2026-11-03):
   `Task.detached`. State shared with MapKit's or Network's threads is in
   a `Mutex` (Synchronization) the compiler checks; `@unchecked Sendable`
   is left only on subclasses of MapKit's renderers and tile overlays and
-  on `TileCache` (NSCache), each saying why.
+  on `TileCache` (NSCache), each saying why. The app target is main
+  actor by default (`SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor`): what is
+  not marked runs on the main actor, as the screens and their models do,
+  and what runs elsewhere says so with `nonisolated` on its type or
+  member -- the engine's calls and the contract's generated types
+  (`engine-contract-apps.sh` writes them so), the design tokens
+  (`design-tokens.sh`), the servers' middleware, coders and errors, the
+  map's tile pipeline (`Tiles/`), MapKit's overlay and renderer
+  subclasses, the kept files (`KeptForAir`, `OfflineStore`, `CyclePacks`),
+  the receiver's listener, the on-device model's tools and figures, the
+  App Group's store the widgets read, and what the App Intents call (the
+  intents themselves are left to App Intents' own isolation: an explicit
+  `nonisolated` refuses their `@Parameter` properties). A nested type
+  does not take its container's `nonisolated`, so each says its own. The
+  widgets, the watch and the unit tests are main actor by default too;
+  the UI tests are not, every class there being an XCTestCase, whose
+  initialisers and setUp are XCTest's nonisolated ones. The libraries
+  (WingtipEngine, PlannerAPI, GatewayAPI) stay nonisolated for their
+  callers.
 - **A string catalog** (`Wingtip/Localizable.xcstrings`,
   `SWIFT_EMIT_LOC_STRINGS`): every `Text` gathered at build, so a second
   language is a column, not a rewrite. xcodebuild extracts the strings

@@ -7,7 +7,7 @@ import FoundationModels
 /// (FigureLog), as OnDeviceTools does for Ask. The direction-of-flight
 /// rule is in the prompt itself (AppleAltitudeWhy); three tools, not more:
 /// the on-device model's context is small, and each tool's schema is in it.
-enum AltitudeWhyTools {
+nonisolated enum AltitudeWhyTools {
     static func all(_ reasons: AltitudeWhy.Reasons, log: FigureLog) -> [any Tool] {
         [
             AltitudeReasonTool(name: "limits", description: "What bounds the altitude: the floor over terrain and obstacles, the airplane's ceiling, the clouds, Class B and the freezing level.",
@@ -21,7 +21,7 @@ enum AltitudeWhyTools {
 }
 
 /// One kind of the reasons, handed over as "[id] label: words" lines.
-struct AltitudeReasonTool: Tool {
+nonisolated struct AltitudeReasonTool: Tool {
     let name: String
     let description: String
     let figures: [AskFigure]

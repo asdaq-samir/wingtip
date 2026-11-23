@@ -78,7 +78,7 @@ final class WaypointMarkView: MKAnnotationView {
 }
 
 /// The pin a held finger drops, where the airspace card is for.
-final class HeldAnnotation: MKPointAnnotation {}
+final nonisolated class HeldAnnotation: MKPointAnnotation {}
 
 /// What the root view hands the map for these: the pin, the switches
 /// from Setup, the approaches picked, and what a hold or a waypoint's

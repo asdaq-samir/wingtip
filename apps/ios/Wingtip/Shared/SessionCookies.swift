@@ -11,8 +11,10 @@ import Valet
 /// Keychain item they share through the App Group's access group, and
 /// write them back after each answer that changed them (`keep`). The
 /// first launch with this moves the cookies the App Group's jar held
-/// into the Keychain and empties that jar, once.
-enum SessionCookies {
+/// into the Keychain and empties that jar, once. Nonisolated: the
+/// servers' middleware keeps them on the network's threads, and
+/// HTTPCookieStorage and the Keychain are safe from any.
+nonisolated enum SessionCookies {
     /// The Keychain item's names.
     static let service = "app.wingtipmaps.session"
     static let account = "gateway-cookies"
@@ -76,7 +78,7 @@ enum SessionCookies {
     /// and adds one that is not, where the hand-written write deleted the
     /// item and added it again, losing the session to a failure between
     /// the two.
-    final class Vault: Sendable {
+    final nonisolated class Vault: Sendable {
         static let shared = Vault(service: SessionCookies.service, account: SessionCookies.account, group: WidgetSnapshot.suite)
 
         let account: String

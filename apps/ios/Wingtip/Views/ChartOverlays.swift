@@ -52,7 +52,7 @@ enum AirspaceZoom {
 }
 
 /// One line of a volume's ring, told by its class.
-final class AirspaceLine: MKPolyline {
+final nonisolated class AirspaceLine: MKPolyline {
     var cls = "D"
 }
 
@@ -63,7 +63,7 @@ final class AirspaceLine: MKPolyline {
 /// renderer fills with nothing and strokes wide, clipped to the polygon
 /// by the even-odd rule -- the inside of a shelf's outer ring and of its
 /// hole alike.
-final class AirspaceVignette: MKPolygon {
+final nonisolated class AirspaceVignette: MKPolygon {
     var cls = "D"
 
     static func of(_ lines: [[[Double]]], cls: String) -> AirspaceVignette? {
@@ -82,7 +82,7 @@ final class AirspaceVignette: MKPolygon {
 /// ring, clipped to the polygon, so only its inner half shows. The band
 /// widens as the map comes in, as the web's BAND_WIDTH: 3 points at
 /// Leaflet's 7, 6 at 9, 10 at 11, 16 at 13.
-final class AirspaceVignetteRenderer: MKPolygonRenderer {
+final nonisolated class AirspaceVignetteRenderer: MKPolygonRenderer {
     static func width(zoom: Double) -> CGFloat {
         let stops: [(Double, Double)] = [(7, 3), (9, 6), (11, 10), (13, 16)]
         if zoom <= stops[0].0 { return CGFloat(stops[0].1) }
@@ -140,7 +140,7 @@ enum AirspaceTab {
 
     /// A ring's size, its bounds' span: the largest of a volume's rings is
     /// its outer one.
-    static func extent(_ ring: [CLLocationCoordinate2D]) -> Double {
+    nonisolated static func extent(_ ring: [CLLocationCoordinate2D]) -> Double {
         let lats = ring.map(\.latitude), lons = ring.map(\.longitude)
         return ((lats.max() ?? 0) - (lats.min() ?? 0)) + ((lons.max() ?? 0) - (lons.min() ?? 0))
     }
@@ -270,7 +270,7 @@ final class AirspaceTabView: MKAnnotationView {
 /// own width (NASR APT_RWY RWY_WIDTH and APT_RWY_END's ends, as the
 /// planner's field answers them), drawn by MapKit's own polygon renderer
 /// (a renderer of the app's own drawing was never asked to draw).
-final class RunwaySurface: MKPolygon {
+final nonisolated class RunwaySurface: MKPolygon {
     /// Turf, grass, dirt or gravel, drawn in the soft runway's olive; nil
     /// where the engine could not class the surface.
     private(set) var soft: Bool? = false
@@ -291,7 +291,7 @@ final class RunwaySurface: MKPolygon {
 }
 
 /// A runway's dashed centreline, end to end.
-final class RunwayCentreline: MKPolyline {}
+final nonisolated class RunwayCentreline: MKPolyline {}
 
 /// From which Leaflet zoom the runways are drawn: 13, where the chart's
 /// own last level is passed and the imagery shows (ChartFade), the web

@@ -11045,6 +11045,52 @@ object EngineContract {
     )
 
     @Serializable
+    data class ReceiverDeltaAnswer(
+        val receiver: EngineContract.ReceiverState,
+        val ownship: EngineContract.ReceiverOwnship? = null,
+        val targets: List<EngineContract.ReceiverTarget>,
+        /**
+         * How many FIS-B texts the picture holds.
+         */
+        val texts: Int,
+        /**
+         * How many NEXRAD blocks the picture holds.
+         */
+        val blocks: Int,
+        /**
+         * A new count each read that changed the traffic to merge: the targets, or whether a receiver has been heard at all.
+         */
+        @SerialName("traffic_revision")
+        val trafficRevision: Int,
+        /**
+         * A new count each read that changed the FIS-B texts (one sent, or one dropped as no longer heard).
+         */
+        @SerialName("texts_revision")
+        val textsRevision: Int,
+        /**
+         * A new count each read that changed the NEXRAD blocks.
+         */
+        @SerialName("nexrad_revision")
+        val nexradRevision: Int,
+    )
+
+    @Serializable
+    data class ReceiverDeltaInput(
+        /**
+         * The bytes received since the last read (whole UDP datagrams), Base64 (RFC 4648).
+         */
+        val data: String? = null,
+        /**
+         * Now, Unix s: when the bytes came.
+         */
+        val at: Double,
+        /**
+         * The picture to hold for the read, or null for an empty one.
+         */
+        val picture: EngineContract.ReceiverPicture? = null,
+    )
+
+    @Serializable
     data class ReceiverNexradAnswer(
         val levels: List<EngineContract.ReceiverNexradLevel>,
         val time: String? = null,

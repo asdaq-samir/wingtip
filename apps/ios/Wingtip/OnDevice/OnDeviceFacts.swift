@@ -9,9 +9,9 @@ import Foundation
 /// answer. Nothing here is a figure of its own: each is the planner's or
 /// the engine's, and keeps its time where it has one, since in the air
 /// with no signal a report is as old as the last fetch.
-struct OnDeviceFacts: Equatable, Sendable {
+nonisolated struct OnDeviceFacts: Equatable, Sendable {
     /// One field of the route as the briefing gave it.
-    struct Field: Equatable, Sendable {
+    nonisolated struct Field: Equatable, Sendable {
         var ident: String
         var name: String?
         var elevationFt: Double?
@@ -22,7 +22,7 @@ struct OnDeviceFacts: Equatable, Sendable {
     }
 
     /// Own ship's last fix, and the ground under it from the packs.
-    struct Own: Equatable, Sendable {
+    nonisolated struct Own: Equatable, Sendable {
         var lat: Double
         var lon: Double
         var altitudeFt: Double?
@@ -67,7 +67,7 @@ struct OnDeviceFacts: Equatable, Sendable {
     }
 }
 
-extension OnDeviceFacts {
+nonisolated extension OnDeviceFacts {
     /// The facts as the app has them: the plan on the page, own ship and
     /// the engine's in-flight answer.
     @MainActor

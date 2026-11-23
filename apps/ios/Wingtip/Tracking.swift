@@ -7,7 +7,7 @@ import UIKit
 
 /// A point of a flown path: when (s since 1970), where, how high (feet;
 /// nil on the ground or where it was not sent).
-struct PathPoint: Codable, Equatable, Sendable {
+nonisolated struct PathPoint: Codable, Equatable, Sendable {
     let t: Double
     let lat: Double
     let lon: Double

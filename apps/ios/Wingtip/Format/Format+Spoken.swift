@@ -10,7 +10,7 @@ import Foundation
 /// whose words change with the OS ("forty-five" on one, "forty five" on
 /// another) and would let the iPhone drift from the table and the web.
 /// A screen reader is not a radio, so nine is "nine", not "niner" (AIM 4-2-8).
-extension Format {
+nonisolated extension Format {
     /// What is said for a figure not known, where the screen writes a dash.
     static let spokenNone = "not known"
 

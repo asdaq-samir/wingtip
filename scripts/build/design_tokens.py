@@ -329,15 +329,15 @@ def gen_swift(tree, sch):
     L = ["// %s" % BANNER, "", "import SwiftUI", "import UIKit", ""]
     L += [
         "/// A colour from its 0xRRGGBB and an alpha.",
-        "private func rgb(_ hex: UInt32, _ alpha: CGFloat = 1) -> UIColor {",
+        "nonisolated private func rgb(_ hex: UInt32, _ alpha: CGFloat = 1) -> UIColor {",
         "    UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,",
         "            blue: CGFloat(hex & 0xFF) / 255, alpha: alpha)",
         "}",
         "",
     ]
-    L += ["/// Wingtip's colours: the chart's, the flight categories', the mark's, the badges'.", "enum WingtipColor {"]
+    L += ["/// Wingtip's colours: the chart's, the flight categories', the mark's, the badges'.", "nonisolated enum WingtipColor {"]
     for group in SHARED:
-        L.append("    enum %s {" % group.capitalize())
+        L.append("    nonisolated enum %s {" % group.capitalize())
         for k, t in tokens(lookup(tree, "color." + group)).items():
             if "$description" in t:
                 L.append("        /// %s" % t["$description"])
@@ -345,7 +345,7 @@ def gen_swift(tree, sch):
         L.append("    }")
     L += ["}", ""]
     L.append("/// One scheme's surfaces, words and states, as the web's cascade resolves them (color.theme, color.look).")
-    L.append("struct WingtipPalette: Sendable {")
+    L.append("nonisolated struct WingtipPalette: Sendable {")
     for n in names:
         L.append("    let %s: UIColor" % camel(n))
     L.append("")
@@ -362,7 +362,7 @@ def gen_swift(tree, sch):
     L.append("")
     L.append("/// The text roles, each a Dynamic Type style (or a size scaled with one), so")
     L.append("/// every one grows with the pilot's text size.")
-    L.append("enum WingtipType {")
+    L.append("nonisolated enum WingtipType {")
     for k, r in tokens(tree["type"]).items():
         v, ext = r["$value"], r.get("$extensions", {}).get(EXT, {})
         style = ext.get("ios")
@@ -391,13 +391,13 @@ def gen_swift(tree, sch):
     L.append("}")
     L.append("")
     for enum, group, unit in (("WingtipSpace", "space", "CGFloat"), ("WingtipRadius", "radius", "CGFloat")):
-        L.append("enum %s {" % enum)
+        L.append("nonisolated enum %s {" % enum)
         for k, t in tokens(tree[group]).items():
             L.append("    static let %s: %s = %g" % (camel(k), unit, t["$value"]))
         L.append("}")
         L.append("")
     L.append("/// Motion: durations in seconds, curves as cubic-bezier points.")
-    L.append("enum WingtipMotion {")
+    L.append("nonisolated enum WingtipMotion {")
     for k, t in tokens(tree["motion"]).items():
         v = t["$value"]
         if isinstance(v, list):
@@ -410,7 +410,7 @@ def gen_swift(tree, sch):
     L.append("}")
     L.append("")
     L += haptic.swift(tokens(tree["haptic"]), camel) + [flow.swift(tree), ""]
-    L.append("enum WingtipSize {")
+    L.append("nonisolated enum WingtipSize {")
     for k, t in tokens(tree["size"]).items():
         L.append("    static let %s: CGFloat = %g" % (camel(k), t["$value"]))
     L.append("    static let glassBlur: CGFloat = %g" % tree["material"]["glass-blur"]["$value"])

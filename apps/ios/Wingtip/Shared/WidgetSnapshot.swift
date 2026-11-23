@@ -32,12 +32,12 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
 
     /// The App Group both targets are entitled to (project.yml), and the
     /// key the snapshot is kept under in its defaults.
-    static let suite = "group.app.wingtipmaps"
+    nonisolated static let suite = "group.app.wingtipmaps"
     static let key = "widgetSnapshot"
 
     /// The App Group's defaults; nil where the group is not set up, so a
     /// build without the entitlement reads and writes nothing.
-    static var store: UserDefaults? { UserDefaults(suiteName: suite) }
+    nonisolated static var store: UserDefaults? { UserDefaults(suiteName: suite) }
 
     /// The snapshot the app last wrote; nil before the first, or with no
     /// flight planned.

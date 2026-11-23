@@ -7,7 +7,7 @@ import Synchronization
 /// plain sentence -- the engine's words, shown as they are when no model
 /// is on the phone. The chip's text ends with where the figure comes
 /// from: the engine's rule and its reference, or the report as sent.
-struct AskFigure: Equatable, Sendable {
+nonisolated struct AskFigure: Equatable, Sendable {
     let source: WordsSource
     let said: String
 
@@ -25,7 +25,7 @@ struct AskFigure: Equatable, Sendable {
 
 /// Why a figure could not be worked out on the phone, in a pilot's words:
 /// the model is told it, and the engine's own words say it.
-struct AskRefused: Error, LocalizedError, Equatable {
+nonisolated struct AskRefused: Error, LocalizedError, Equatable {
     let why: String
     var errorDescription: String? { why }
 }
@@ -34,8 +34,8 @@ struct AskRefused: Error, LocalizedError, Equatable {
 /// each once: what the model's sentences may cite and nothing else
 /// (Words.checked). The tools run off the main actor, a call at a time
 /// or several at once, so the list is behind a mutex the compiler checks.
-final class FigureLog: Sendable {
-    private struct State {
+final nonisolated class FigureLog: Sendable {
+    private nonisolated struct State {
         var kept: [AskFigure] = []
         /// Each tool called, by name, for the tests and the log.
         var calls: [String] = []
@@ -68,7 +68,7 @@ final class FigureLog: Sendable {
 /// is small, and asked to word "8 kt across" it can write "9"; such a
 /// sentence is dropped, not shown. Numbers are compared by value, so
 /// "5,500" is 5500 and runway "09" is 9.
-enum NumberGuard {
+nonisolated enum NumberGuard {
     static func numbers(in text: String) -> Set<Double> {
         var out = Set<Double>()
         var digits = ""

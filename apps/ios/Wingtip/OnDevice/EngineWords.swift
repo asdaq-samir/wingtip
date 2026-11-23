@@ -5,9 +5,9 @@ import Foundation
 /// question is matched to the figures it asks for by its words, and each
 /// figure is said as the engine's own sentence, citing itself. Plain, but
 /// every word of it is a figure the engine or a report gave.
-enum EngineWords {
+nonisolated enum EngineWords {
     /// What a question asks for, by the words a pilot uses.
-    enum Topic: String, CaseIterable, Sendable {
+    nonisolated enum Topic: String, CaseIterable, Sendable {
         case wind, density, weather, fuel, glide, nearest, route
     }
 

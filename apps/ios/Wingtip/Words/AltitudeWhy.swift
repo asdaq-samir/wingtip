@@ -30,7 +30,7 @@ enum AltitudeWhy {
     /// The reasons for the altitude flown, from the planner's altitude line
     /// (NavLogAltitude, worked out by the engine's select_cruise_altitude)
     /// and the engine on the phone; nil with no altitude.
-    static func reasons(_ line: NavLogAltitude, flownFt: Double?, choice: String?) -> Reasons? {
+    nonisolated static func reasons(_ line: NavLogAltitude, flownFt: Double?, choice: String?) -> Reasons? {
         guard let flownFt = flownFt ?? line.altitudeFt else { return nil }
         let s = line.altitudeSelection
         let ifr = s.rules?.lowercased() == "ifr"

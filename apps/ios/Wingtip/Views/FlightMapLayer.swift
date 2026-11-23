@@ -23,22 +23,22 @@ struct FlightLayer {
 }
 
 /// A run of a flown path in one colour, its height's.
-final class HeightPolyline: MKPolyline {
+final nonisolated class HeightPolyline: MKPolyline {
     var colour: UIColor = .systemGray
 }
 
 /// The white casing under a flown path, so it holds over any chart colour.
-final class CasingPolyline: MKPolyline {}
+final nonisolated class CasingPolyline: MKPolyline {}
 
 /// The still-air glide ring about own ship, dashed as the web app's.
-final class GlidePolyline: MKPolyline {}
+final nonisolated class GlidePolyline: MKPolyline {}
 
 /// The emergency assistant's line to the field picked.
-final class EmergencyPolyline: MKPolyline {}
+final nonisolated class EmergencyPolyline: MKPolyline {}
 
 /// The ring round the airplane tracked, as the web app's TrafficLayer
 /// draws it.
-final class TrackedRing: MKPointAnnotation {}
+final nonisolated class TrackedRing: MKPointAnnotation {}
 
 final class TrackedRingView: MKAnnotationView {
     static let reuse = "tracked-ring"

@@ -5,7 +5,7 @@ extension UTType {
     /// A Wingtip flight file (.wingtip), the type the app exports
     /// (project.yml's UTExportedTypeDeclarations): JSON, so it conforms to
     /// public.json, and Files, AirDrop and Mail hand it to the app.
-    static let wingtipFlight = UTType(exportedAs: "app.wingtipmaps.flight", conformingTo: .json)
+    nonisolated static let wingtipFlight = UTType(exportedAs: "app.wingtipmaps.flight", conformingTo: .json)
 }
 
 /// A flight saved as a file: the plan as the shared flight's plain link

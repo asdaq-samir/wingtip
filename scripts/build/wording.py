@@ -129,7 +129,7 @@ import Foundation
 
 /// The words every app says the same (design/wording.json;
 /// docs/design/rules.md, section 18), each kept by the string catalog.
-enum Wording {{
+nonisolated enum Wording {{
 {rows}
 }}
 """

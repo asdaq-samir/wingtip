@@ -127,12 +127,13 @@ extension LogbookEntryRequest {
     }
 
     /// The form's fields in a paper logbook's order, every figure nought
-    /// where not given.
-    init(flownOn: String, aircraft: String? = nil, aircraftType: String? = nil, route: String? = nil, remarks: String? = nil,
-         totalHours: Double = 0, nightHours: Double = 0, crossCountryHours: Double = 0, dualHours: Double = 0, soloHours: Double = 0,
-         instrumentHours: Double = 0, dayLandings: Int = 0, nightLandings: Int = 0, toweredLandings: Int = 0,
-         distanceNm: Double = 0, longestLegNm: Double = 0, approaches: Int = 0, holding: Bool = false, tracking: Bool = false,
-         airHours: Double = 0, touchAndGoes: Int = 0, fromTrack: Bool = false, flightId: Int? = nil) {
+    /// where not given. Nonisolated, as AutoLogbook's entry is drafted
+    /// off the main actor (entryRequest).
+    nonisolated init(flownOn: String, aircraft: String? = nil, aircraftType: String? = nil, route: String? = nil, remarks: String? = nil,
+                     totalHours: Double = 0, nightHours: Double = 0, crossCountryHours: Double = 0, dualHours: Double = 0, soloHours: Double = 0,
+                     instrumentHours: Double = 0, dayLandings: Int = 0, nightLandings: Int = 0, toweredLandings: Int = 0,
+                     distanceNm: Double = 0, longestLegNm: Double = 0, approaches: Int = 0, holding: Bool = false, tracking: Bool = false,
+                     airHours: Double = 0, touchAndGoes: Int = 0, fromTrack: Bool = false, flightId: Int? = nil) {
         self.init(aircraft: aircraft, aircraftType: aircraftType, airHours: airHours, approaches: approaches,
                   crossCountryHours: crossCountryHours, dayLandings: dayLandings, distanceNm: distanceNm, dualHours: dualHours,
                   flightId: flightId, flownOn: flownOn, fromTrack: fromTrack, holding: holding,

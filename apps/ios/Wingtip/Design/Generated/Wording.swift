@@ -4,7 +4,7 @@ import Foundation
 
 /// The words every app says the same (design/wording.json;
 /// docs/design/rules.md, section 18), each kept by the string catalog.
-enum Wording {
+nonisolated enum Wording {
     /// About's heading over the planning aid's words.
     static let planningAidTitle = String(localized: "A Planning Aid")
     /// The planning aid's notice, where an app shows it on its own.

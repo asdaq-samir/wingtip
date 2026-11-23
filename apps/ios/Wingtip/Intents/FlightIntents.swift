@@ -77,7 +77,7 @@ struct ReadyToFlyIntent: AppIntent {
 }
 
 /// Ready to Fly's answer as Siri says it: the line, then each thing to do.
-struct ReadyAnswerWords: Sendable {
+nonisolated struct ReadyAnswerWords: Sendable {
     let line: String
     let actions: [String]
 

@@ -22,7 +22,7 @@ enum NotamsInWords {
     }
 
     /// One NOTAM as the model reads it: as sent, then the engine's reasons.
-    static func figure(id: String, raw: String, reasons: [String]) -> WordsSource {
+    nonisolated static func figure(id: String, raw: String, reasons: [String]) -> WordsSource {
         let why = reasons.joined(separator: "; ")
         return WordsSource(id: "notam:\(id)", label: "NOTAM \(id)", text: why.isEmpty ? raw : "\(raw)\nWhy it matters: \(why).")
     }

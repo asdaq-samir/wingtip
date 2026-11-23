@@ -87,7 +87,8 @@ struct TrustTests {
     }
 
     @Test func theCreditsAreTheIPhonesShareOfTheList() {
-        #expect(AboutCredits.data.count == 24)
+        // 23 since the feature review (2026-11-21, 583c9ea9d) cut adsb.fi.
+        #expect(AboutCredits.data.count == 23)
         #expect(AboutCredits.data.first?.what == "FAA aeronautical charts: sectional, terminal area and IFR enroute")
         #expect(AboutCredits.software.map(\.what) == ["Apple MapKit"])
         #expect(Wording.planningAid.hasPrefix("Wingtip Maps is a planning aid for VFR and IFR flight."))

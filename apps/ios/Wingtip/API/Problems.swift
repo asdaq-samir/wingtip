@@ -4,14 +4,14 @@ import os
 /// An error whose words are written for the pilot: the app's own, or the
 /// engine's for something typed ("not an altitude below 18,000 ft"), so
 /// `Problems` says them after what failed.
-protocol SaidToPilot: Error {
+nonisolated protocol SaidToPilot: Error {
     var said: String { get }
 }
 
-extension Engine.Refused: SaidToPilot { var said: String { message } }
-extension AskRefused: SaidToPilot { var said: String { why } }
-extension WordsUnavailable: SaidToPilot { var said: String { why } }
-extension SpeechSession.Refused: SaidToPilot { var said: String { errorDescription ?? "" } }
+nonisolated extension Engine.Refused: SaidToPilot { var said: String { message } }
+nonisolated extension AskRefused: SaidToPilot { var said: String { why } }
+nonisolated extension WordsUnavailable: SaidToPilot { var said: String { why } }
+nonisolated extension SpeechSession.Refused: SaidToPilot { var said: String { errorDescription ?? "" } }
 
 /// Why something the pilot asked for failed, as one plain sentence for the
 /// screen where it happened, the iPhone's twin of Android's api/Problems
@@ -24,8 +24,9 @@ extension SpeechSession.Refused: SaidToPilot { var said: String { errorDescripti
 /// 4xx carries words meant for the pilot, the gateway's ProblemDetail or
 /// FastAPI's `detail`), or the app's and the engine's own words
 /// (SaidToPilot). Sentences as decision 0021 has them: a capital first and
-/// a full stop last.
-enum Problems {
+/// a full stop last. Nonisolated: a failure is said wherever it happens,
+/// a download's delegate queue as much as a screen.
+nonisolated enum Problems {
     private static let log = Logger(subsystem: Log.subsystem, category: "problems")
 
     /// `what` failed, as "The chart could not be fetched", given why: the

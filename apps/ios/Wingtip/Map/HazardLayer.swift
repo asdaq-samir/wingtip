@@ -16,7 +16,7 @@ final class HazardObstacleOverlay: NSObject, MKOverlay, Sendable {
 }
 
 /// Unchecked: MKOverlayRenderer is not Sendable; this one holds nothing.
-final class HazardObstacleRenderer: MKOverlayRenderer, @unchecked Sendable {
+final nonisolated class HazardObstacleRenderer: MKOverlayRenderer, @unchecked Sendable {
     override func draw(_ mapRect: MKMapRect, zoomScale: MKZoomScale, in context: CGContext) {
         guard let dots = overlay as? HazardObstacleOverlay else { return }
         // The web's zoom of the view, from MapKit's 2^28-point world.

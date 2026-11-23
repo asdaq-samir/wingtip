@@ -5,9 +5,15 @@ import Synchronization
 
 /// A PDF as the reader holds it: PDFKit's document, its pages drawn white
 /// on black for the night when `inverted` (InvertiblePage), as ForeFlight's
-/// Invert Colors and the web's reader turn a page.
-final class ReaderDocument: PDFDocument, PDFDocumentDelegate {
-    var inverted = false
+/// Invert Colors and the web's reader turn a page. Nonisolated, as
+/// PDFKit is: it draws the pages on its own threads, so `inverted`, set
+/// from the reader's controls, is an Atomic each draw reads.
+final nonisolated class ReaderDocument: PDFDocument, PDFDocumentDelegate {
+    private let invertedFlag = Atomic(false)
+    var inverted: Bool {
+        get { invertedFlag.load(ordering: .relaxed) }
+        set { invertedFlag.store(newValue, ordering: .relaxed) }
+    }
 
     override init?(url: URL) {
         super.init(url: url)
@@ -21,7 +27,7 @@ final class ReaderDocument: PDFDocument, PDFDocumentDelegate {
 /// colour turned over by a white fill in the difference blend: white
 /// paper black, black type white, a chart's colours their opposites. The
 /// way Apple's PDFKit sample draws over a page (draw(with:to:)).
-final class InvertiblePage: PDFPage {
+final nonisolated class InvertiblePage: PDFPage {
     override func draw(with box: PDFDisplayBox, to context: CGContext) {
         super.draw(with: box, to: context)
         guard (document as? ReaderDocument)?.inverted == true else { return }

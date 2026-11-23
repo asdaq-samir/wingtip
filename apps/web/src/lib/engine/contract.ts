@@ -3431,6 +3431,13 @@ export interface EngineContract {
     answer: ReadyToFlyAnswer;
   };
   /**
+   * A portable ADS-B receiver's GDL 90 bytes (Garmin 560-1058-00 Rev A) read into a picture the engine holds between reads (receiver_read's, AIM 4-5-7, 4-5-8, 4-5-9), answering only its small part: the receiver's state, own ship and the traffic it hears whole, and for the FIS-B texts and NEXRAD only how many there are and a revision of each, a new one whenever a read changed them, so the host asks for a field's reports or the NEXRAD again only then. The phones hold the picture in a ReceiverSession (engine/bindings/ffi), which answers each read in this shape, so the hundreds of kB of FIS-B are never sent across each second; asked by name, the picture handed over is held for the one read, its revisions counted from 0. Traffic is for seeing, not avoiding (AIM 4-5-7).
+   */
+  receiver_delta: {
+    input: ReceiverDeltaInput;
+    answer: ReceiverDelta;
+  };
+  /**
    * FIS-B NEXRAD to draw (products 63 and 64, AIM 4-5-9): for each level 1 to 7, rectangles [south, west, north, east], the regional product's where sent and the CONUS product's elsewhere, with the newest block's time. Not for avoiding weather close in.
    */
   receiver_nexrad: {
@@ -12135,9 +12142,17 @@ export interface ReadyItem {
     | "keep_for_air"
     | null;
 }
-export interface ReceiverNexradInput {
+export interface ReceiverDeltaInput {
   /**
-   * The last answer, or null at first.
+   * The bytes received since the last read (whole UDP datagrams), Base64 (RFC 4648).
+   */
+  data?: string | null;
+  /**
+   * Now, Unix s: when the bytes came.
+   */
+  at: number;
+  /**
+   * The picture to hold for the read, or null for an empty one.
    */
   picture?: ReceiverPicture | null;
 }
@@ -12384,6 +12399,37 @@ export interface ReceiverBlock {
   bins: string;
   time: string;
   at: number;
+}
+export interface ReceiverDelta {
+  receiver: ReceiverState;
+  ownship: ReceiverOwnship | null;
+  targets: ReceiverTarget[];
+  /**
+   * How many FIS-B texts the picture holds.
+   */
+  texts: number;
+  /**
+   * How many NEXRAD blocks the picture holds.
+   */
+  blocks: number;
+  /**
+   * A new count each read that changed the traffic to merge: the targets, or whether a receiver has been heard at all.
+   */
+  traffic_revision: number;
+  /**
+   * A new count each read that changed the FIS-B texts (one sent, or one dropped as no longer heard).
+   */
+  texts_revision: number;
+  /**
+   * A new count each read that changed the NEXRAD blocks.
+   */
+  nexrad_revision: number;
+}
+export interface ReceiverNexradInput {
+  /**
+   * The last answer, or null at first.
+   */
+  picture?: ReceiverPicture | null;
 }
 export interface ReceiverNexradAnswer {
   levels: ReceiverNexradLevel[];

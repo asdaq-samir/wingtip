@@ -6,7 +6,7 @@ import Foundation
 /// as the web app's service worker keeps the planner's answers. One file
 /// in Application Support; the planner's own words with the time they
 /// were planned, said on the page when they are old.
-struct Kept: Codable, Equatable, Sendable {
+nonisolated struct Kept: Codable, Equatable, Sendable {
     var dep: String
     var dest: String
     var stops: [String]

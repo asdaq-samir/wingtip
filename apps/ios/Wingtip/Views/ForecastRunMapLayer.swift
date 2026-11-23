@@ -4,7 +4,7 @@ import SwiftUI
 import UIKit
 
 /// An advisory area the forecast run is in, with its kind for its look.
-final class RunAreaPolygon: MKPolygon {
+final nonisolated class RunAreaPolygon: MKPolygon {
     var kind = ""
 }
 

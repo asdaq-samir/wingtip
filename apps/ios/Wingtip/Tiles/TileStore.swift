@@ -10,7 +10,7 @@ import Foundation
 /// Caches, which iOS may clear and the next look fetches again. The disk
 /// holds the pyramid's own tiles as fetched; the map decodes them
 /// (ChartTileRenderer) and keeps the decoded ones in memory (TileCache).
-final class TileStore: Sendable {
+final nonisolated class TileStore: Sendable {
     static let shared = TileStore()
 
     /// The map's own fetches: Caches.

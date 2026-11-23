@@ -23,7 +23,7 @@ final class ModelWeatherOverlay: NSObject, MKOverlay {
 /// Draws the hour's painted picture into the box. MapKit calls draw on its
 /// own queues, so the picture is held under a lock.
 /// Unchecked: MKOverlayRenderer is not Sendable; the picture is in a lock.
-final class ModelWeatherRenderer: MKOverlayRenderer, @unchecked Sendable {
+final nonisolated class ModelWeatherRenderer: MKOverlayRenderer, @unchecked Sendable {
     private let held = OSAllocatedUnfairLock<PaintedField?>(initialState: nil)
 
     func show(_ painted: PaintedField?) {
@@ -45,7 +45,7 @@ final class ModelWeatherRenderer: MKOverlayRenderer, @unchecked Sendable {
 }
 
 /// A G-AIRMET's outline, in its hazard's colour.
-final class AirmetLine: MKPolyline {
+final nonisolated class AirmetLine: MKPolyline {
     var colour = WingtipColor.Weather.other
 }
 

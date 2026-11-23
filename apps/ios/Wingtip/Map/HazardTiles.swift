@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 
 /// The engine's two lines the ground is coloured against, ft MSL
 /// (hazard_view's warning_from_ft and caution_from_ft).
-struct HazardBands: Equatable, Sendable {
+nonisolated struct HazardBands: Equatable, Sendable {
     let warningFt: Double
     let cautionFt: Double
 }
@@ -17,7 +17,7 @@ struct HazardBands: Equatable, Sendable {
 /// it, red over the red line, as the engine levels an obstacle's top
 /// (exactly the clearance kept is amber; the shared fixture
 /// hazardView.json). Drawing, not a rule: the lines are the engine's.
-enum HazardPaint {
+nonisolated enum HazardPaint {
     enum Shade: Equatable { case clear, caution, warning }
 
     /// The chart's caution and warning, half and three fifths strong as
@@ -125,12 +125,12 @@ enum HazardPaint {
 /// 3D with the chart (RaisedMapView.isGround).
 /// Unchecked: MKTileOverlay is not Sendable, and MapKit loads its tiles
 /// on its own threads; its lines are in a lock, its heights in an NSCache.
-final class HazardTileOverlay: MKTileOverlay, @unchecked Sendable {
+final nonisolated class HazardTileOverlay: MKTileOverlay, @unchecked Sendable {
     /// The planner's terrain levels (wingtip.terrain_view, the web's
     /// dem.ts): past its 13th the 13th is enlarged.
     static let minLevel = 3, maxLevel = 13
 
-    private final class Heights {
+    private final nonisolated class Heights {
         let side: Int
         let metres: [Float]
         init(side: Int, metres: [Float]) { self.side = side; self.metres = metres }

@@ -90,7 +90,7 @@ struct LayerAgesRows: View {
 
 /// The legs a hazard tapped in the Brief is on, drawn wide in amber with
 /// the course, told from it by its class.
-final class HazardPolyline: MKPolyline {}
+final nonisolated class HazardPolyline: MKPolyline {}
 
 extension ChartMap.Coordinator {
     /// The legs shown as `legs` says, brought into view clear of the

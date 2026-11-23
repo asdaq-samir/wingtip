@@ -7,10 +7,11 @@ import org.junit.Test
 
 /** When the receiver's picture goes through the engine: each second while
  *  bytes come or its airplanes can still go stale, once a minute once only
- *  the FIS-B products are left, never before a receiver is heard; and when
- *  Traffic is told to merge again. */
+ *  the FIS-B products are left, never before a receiver is heard. When
+ *  Traffic merges again is the engine's traffic revision
+ *  (ReceiverEngineTest, and the engine's held tests). */
 class ReceiverAgeingTest {
-    private fun picture(live: Boolean, heartbeatAt: Double? = 100.0, targets: Int = 0) = EngineContract.ReceiverPicture(
+    private fun picture(live: Boolean, heartbeatAt: Double? = 100.0, targets: Int = 0) = EngineContract.ReceiverDeltaAnswer(
         receiver = EngineContract.ReceiverState(
             stratux = true, heartbeatAt = heartbeatAt, live = live, summary = "Stratux", gps = true, utcOk = true,
             batteryLow = false, maintenance = false, msl = true, frames = 10.0, badFrames = 0.0,
@@ -22,8 +23,11 @@ class ReceiverAgeingTest {
                 alert = false, at = 100.0 + it,
             )
         },
-        texts = emptyList(),
-        nexrad = emptyList(),
+        texts = 3,
+        blocks = 1,
+        trafficRevision = 1,
+        textsRevision = 1,
+        nexradRevision = 1,
     )
 
     @Test
@@ -37,13 +41,5 @@ class ReceiverAgeingTest {
         // Only the FIS-B products left: once a minute.
         assertFalse(Receiver.due(picture(live = false), heard = false, sinceMs = 1_000))
         assertTrue(Receiver.due(picture(live = false), heard = false, sinceMs = Receiver.QUIET_EVERY_MS))
-    }
-
-    @Test
-    fun trafficIsMergedAgainOnlyWhereTheReceiversAirplanesChanged() {
-        assertTrue(Receiver.trafficChanged(null, picture(live = true)))
-        assertFalse(Receiver.trafficChanged(picture(live = true, targets = 1), picture(live = false, targets = 1)))
-        assertTrue(Receiver.trafficChanged(picture(live = true, targets = 1), picture(live = true, targets = 0)))
-        assertTrue(Receiver.trafficChanged(picture(live = false, heartbeatAt = null), picture(live = true)))
     }
 }

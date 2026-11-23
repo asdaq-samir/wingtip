@@ -9,7 +9,7 @@ import Foundation
 /// then ranks by distance, or by reach where the airplane's glide is known,
 /// and says what it could not weigh. Nothing is measured here but by the
 /// engine.
-enum PackFields {
+nonisolated enum PackFields {
     /// What finds the fields in a box (FlightFigures.Pins): the packs, or a test's.
     typealias Pins = FlightFigures.Pins
 
@@ -88,7 +88,7 @@ extension Planner {
 /// reads the packs (airports_in_view, at most 300 fields a call, so each
 /// kept region is read in half-degree cells); the matching is the
 /// search's own, no aviation rule.
-enum PackSearch {
+nonisolated enum PackSearch {
     /// The cell each region is read in: small enough that no cell holds
     /// the engine's 300 fields a call, even round Los Angeles.
     static let cellDeg = 0.5

@@ -3,7 +3,7 @@ import UIKit
 
 /// What the map needs of the route's legs: each leg's ends, the one whose
 /// sheet is open, and what a tap on the course opens.
-struct RouteLegInput {
+nonisolated struct RouteLegInput {
     var legs: [RouteLegs.MapLeg] = []
     var selected: Int?
     var onSelect: ((Int) -> Void)?
@@ -11,7 +11,7 @@ struct RouteLegInput {
 
 /// The green either side of the selected leg's magenta, as ForeFlight
 /// cases a selected course (NightPalette.routeGreen).
-final class LegCasingPolyline: MKPolyline {}
+final nonisolated class LegCasingPolyline: MKPolyline {}
 
 /// The map's part for the legs, kept by ChartMap's coordinator: a tap
 /// near the course opens the nearest leg's sheet (RouteLegs.nearest), and

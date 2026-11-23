@@ -3,7 +3,7 @@ import UIKit
 
 /// The dry run's airplane: a blue arrow in a white casing, as the web app
 /// draws own ship, turned to its track.
-final class PlaneAnnotation: MKPointAnnotation {
+final nonisolated class PlaneAnnotation: MKPointAnnotation {
     var heading: Double = 0
 }
 

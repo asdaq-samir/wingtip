@@ -8,7 +8,7 @@ import WingtipEngine
 /// from the regions the pilot keeps, so a pan in flight with no signal
 /// still has its fields, rings and VORs (PackMapData asks here first).
 /// A field's live flight category is the planner's alone: null here.
-extension CyclePacks {
+nonisolated extension CyclePacks {
     /// The paths of the packs of every region the box touches; nil where
     /// none of them was ever kept.
     private func packs(south: Double, west: Double, north: Double, east: Double) -> [String]? {
@@ -54,8 +54,8 @@ extension CyclePacks {
         try? decoder.decode(T.self, from: Data(call(packs, south, west, north, east).utf8))
     }
 
-    struct AreasAnswer: Decodable { let areas: [ChartMarks.Area] }
-    struct FixesAnswer: Decodable { let fixes: [ChartMarks.Fix] }
+    nonisolated struct AreasAnswer: Decodable { let areas: [ChartMarks.Area] }
+    nonisolated struct FixesAnswer: Decodable { let fixes: [ChartMarks.Fix] }
 
     /// The special-use areas reaching into the box (the engine's
     /// special_use_in_view), MOAs first; nil with no pack.
@@ -68,7 +68,7 @@ extension CyclePacks {
         inView(FixesAnswer.self, decoder: Planner.snakeCase, south: south, west: west, north: north, east: east, WingtipEngine.fixesInView)?.fixes
     }
 
-    private struct AirportsAnswer: Decodable { let airports: [AirportPin] }
+    private nonisolated struct AirportsAnswer: Decodable { let airports: [AirportPin] }
 
     /// The fields in the box (AirportsInView), biggest first; nil with no pack.
     func airportsInView(south: Double, west: Double, north: Double, east: Double) -> [AirportPin]? {

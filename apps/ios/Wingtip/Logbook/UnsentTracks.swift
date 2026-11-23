@@ -12,7 +12,7 @@ import Observation
 @Observable
 final class UnsentTracks {
     /// A track and the saved flight it goes to.
-    struct Unsent: Codable, Equatable, Sendable {
+    nonisolated struct Unsent: Codable, Equatable, Sendable {
         let flight: Int
         let track: SavedTrack
     }

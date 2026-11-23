@@ -5,7 +5,7 @@ import UIKit
 /// as reported, its barb, whether the barb is drawn zoomed out and is
 /// red, the station model's two lines and whether the ↓ shows. Nothing
 /// here is worked out.
-struct FieldWeatherMark: Equatable, Sendable {
+nonisolated struct FieldWeatherMark: Equatable, Sendable {
     var category: String?
     /// The wind as the METAR has it: from, true degrees (nil variable),
     /// its speed and gust.
@@ -39,7 +39,7 @@ struct FieldWeatherMark: Equatable, Sendable {
 }
 
 /// A wind barb's parts as the engine's wind_barb gives them.
-struct Feathers: Equatable, Sendable {
+nonisolated struct Feathers: Equatable, Sendable {
     var flags = 0, barbs = 0, halfBarbs = 0
 }
 
@@ -47,7 +47,7 @@ struct Feathers: Equatable, Sendable {
 /// from the side the wind is from, its flags, barbs and half-barbs the
 /// engine's (wind_barb, FAA-H-8083-28B 25.2.3.4.5), a ring for calm, and
 /// the visibility and ceiling as two short lines beside the field.
-enum StationModel {
+nonisolated enum StationModel {
     /// The staff's length from the field's middle, points.
     static let staff: CGFloat = 26
 
@@ -99,7 +99,7 @@ enum StationModel {
 /// earns one, none out past a region's scale, smaller there and growing
 /// in, so a country of light winds doesn't bury the chart (the owner's
 /// iPhone at zoom 3, 2026-11-12).
-enum FarBarb {
+nonisolated enum FarBarb {
     /// From a sectional region's scale, at 0.6 of its size, whole close
     /// in: the tokens' zooms, the web's and Android's too.
     static let from = WingtipMap.zoomBarbFarFrom
@@ -120,7 +120,7 @@ enum FarBarb {
 /// "VRB05" for a variable wind, the station model's lines and the ↓
 /// badge. Brand tokens only; each stroke cased in the chart's white so it
 /// reads on any part of it.
-final class FieldWeatherLayer: CALayer {
+final nonisolated class FieldWeatherLayer: CALayer {
     private let barb = CAShapeLayer()
     private let barbCase = CAShapeLayer()
     private let variable = CATextLayer()

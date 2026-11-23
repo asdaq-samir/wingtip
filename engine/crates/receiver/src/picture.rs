@@ -1,6 +1,7 @@
 //! What a receiver has told the app so far, carried from one read to the
-//! next by the host (the engine keeps nothing between calls and has no
-//! clock: the host gives the time the bytes came): the receiver's own
+//! next by the host, or held for it by the engine (held::Held, the phones'
+//! ReceiverSession); the engine has no clock, so the host gives the time
+//! the bytes came: the receiver's own
 //! state, own ship, the traffic it hears and the FIS-B products it was
 //! sent, each dropped once it is no longer being heard.
 
@@ -100,6 +101,14 @@ pub struct KeptBlock {
     pub at: f64,
 }
 
+/// Which of the kept FIS-B products a read changed: a text or block
+/// sent, or one dropped as no longer heard.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct Changed {
+    pub texts: bool,
+    pub blocks: bool,
+}
+
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Picture {
     pub receiver: Receiver,
@@ -116,21 +125,25 @@ impl Picture {
     }
 
     /// The bytes received at `at` read into the picture, and what is no
-    /// longer heard dropped.
-    pub fn read(&mut self, bytes: &[u8], at: f64) {
+    /// longer heard dropped; which of the FIS-B products the read
+    /// changed, so a host holding the picture (held::Held) knows without
+    /// comparing hundreds of kB with the last.
+    pub fn read(&mut self, bytes: &[u8], at: f64) -> Changed {
+        let mut changed = Changed::default();
         for f in frame::frames(bytes) {
             match f {
                 Frame::Message(m) => {
                     self.receiver.frames += 1.0;
-                    self.take(message::read(&m), at);
+                    self.take(message::read(&m), at, &mut changed);
                 }
                 Frame::BadCheck => self.receiver.bad_frames += 1.0,
             }
         }
-        self.age(at);
+        self.age(at, &mut changed);
+        changed
     }
 
-    fn take(&mut self, m: Message, at: f64) {
+    fn take(&mut self, m: Message, at: f64, changed: &mut Changed) {
         let r = &mut self.receiver;
         match m {
             Message::Heartbeat(h) => {
@@ -165,7 +178,7 @@ impl Picture {
                 self.receiver.station_at = Some(at);
                 for apdu in &u.apdus {
                     let time = format!("{:02}{:02}Z", apdu.hours, apdu.minutes);
-                    self.product(fisb::read(apdu), time, at);
+                    self.product(fisb::read(apdu), time, at, changed);
                 }
             }
             Message::Other(_) => {}
@@ -187,18 +200,24 @@ impl Picture {
         self.targets.push(Heard { report, at });
     }
 
-    fn product(&mut self, product: Product, time: String, at: f64) {
+    // A text or block sent is a change even where its words are the
+    // same: it was heard again, so its time and age are new.
+    fn product(&mut self, product: Product, time: String, at: f64, changed: &mut Changed) {
         match product {
             Product::Texts(texts) => {
                 for text in texts {
+                    let kept = self.texts.len();
                     self.texts.retain(|k| !same_text(&k.text, &text));
+                    changed.texts |= self.texts.len() != kept || !text.cancelled;
                     if !text.cancelled {
                         self.texts.push(KeptText { text, at });
                     }
                 }
             }
             Product::Nexrad { regional, blocks, empty } => {
+                let kept = self.blocks.len();
                 self.blocks.retain(|k| k.regional != regional || !empty.contains(&k.block.id));
+                changed.blocks |= self.blocks.len() != kept || !blocks.is_empty();
                 for block in blocks {
                     self.blocks.retain(|k| k.regional != regional || k.block.id != block.id);
                     self.blocks.push(KeptBlock { block, regional, time: time.clone(), at });
@@ -208,13 +227,16 @@ impl Picture {
         }
     }
 
-    fn age(&mut self, at: f64) {
+    fn age(&mut self, at: f64, changed: &mut Changed) {
         self.targets.retain(|t| at - t.at <= TARGET_HOLD_S);
         if self.ownship.as_ref().is_some_and(|o| at - o.heard.at > TARGET_HOLD_S) {
             self.ownship = None;
         }
+        let (texts, blocks) = (self.texts.len(), self.blocks.len());
         self.texts.retain(|k| at - k.at <= text_hold_s(&k.text.kind));
         self.blocks.retain(|k| at - k.at <= if k.regional { REGIONAL_HOLD_S } else { CONUS_HOLD_S });
+        changed.texts |= self.texts.len() != texts;
+        changed.blocks |= self.blocks.len() != blocks;
     }
 
     /// One line for the receiver's chip: "Stratux · 12 targets · GPS".

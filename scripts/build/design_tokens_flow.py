@@ -94,7 +94,7 @@ def swift(tree):
     m, f = _tokens(tree["map"]), _tokens(tree["flow"])
     out = [
         "/// The map's camera and the zooms its marks change at (design/tokens.json's map group); pitches in degrees.",
-        "enum WingtipMap {",
+        "nonisolated enum WingtipMap {",
     ]
     out += ["    static let %s: Double = %s" % (_camel(k), _num(t["$value"])) for k, t in m.items()]
     out += [
@@ -105,7 +105,7 @@ def swift(tree):
         label.swift(tree),
         "",
         "/// Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers.",
-        "enum WingtipFlow {",
+        "nonisolated enum WingtipFlow {",
         "    typealias Stop = (at: Double, colour: UIColor, alpha: UInt8)",
     ]
     for k, t in f.items():

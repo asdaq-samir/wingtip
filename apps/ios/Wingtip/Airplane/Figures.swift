@@ -6,7 +6,7 @@ import OpenAPIRuntime
 /// is flown over its type's book figure, and for an airplane of no stock
 /// type they are its figures alone (the planner's aircraft "own"); one not
 /// given is nil, never another airplane's (the owner, 2026-11-09).
-struct Figures: Codable, Equatable, Sendable {
+nonisolated struct Figures: Codable, Equatable, Sendable {
     var cruiseTasKt: Double?
     var fuelBurnGph: Double?
     var usableFuelGal: Double?

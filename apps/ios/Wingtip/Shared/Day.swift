@@ -3,7 +3,7 @@ import Foundation
 /// A day as the gateway sends one ("2026-10-25", the pilot's own
 /// calendar day) and as the pages say it; compiled into the widgets too
 /// (Currency Status), which say the same days the same way.
-enum Day {
+nonisolated enum Day {
     // Foundation's format styles, not DateFormatter: Sendable values,
     // safe in a static and from any thread (the widgets' timelines too).
     private static let calendar = Calendar(identifier: .gregorian)

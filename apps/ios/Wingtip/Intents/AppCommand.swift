@@ -73,7 +73,7 @@ extension EnvironmentValues {
 /// to the scene itself (TargetContentProvidingIntent, the root view's
 /// `onAppIntentExecution`, before `perform`), so the app is on the screen
 /// to do it; `perform` then only says what it did.
-protocol CommandIntent: AppIntent {
+nonisolated protocol CommandIntent: AppIntent {
     /// What the app does for the intent, nil for nothing; read once, on
     /// the main actor, as the app is opened.
     @MainActor func appCommand() -> AppCommand?

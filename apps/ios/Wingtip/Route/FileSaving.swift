@@ -12,7 +12,9 @@ final class ExportedFile: WritableDocument {
 
     static var writableContentTypes: [UTType] { [.wingtipFlight, .pdf, .commaSeparatedText] }
 
-    func writer(configuration: sending WriteConfiguration) -> sending FileWrapperDocumentWriter<Data> {
+    /// Nonisolated: the writer, and the closure it is made with, are the
+    /// system's to run where it writes the file.
+    nonisolated func writer(configuration: sending WriteConfiguration) -> sending FileWrapperDocumentWriter<Data> {
         FileWrapperDocumentWriter(configuration) { data, _ in FileWrapper(regularFileWithContents: data) }
     }
 

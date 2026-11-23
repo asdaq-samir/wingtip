@@ -1933,6 +1933,12 @@ fun Engine.readyToFly(now: Double, plan: EngineContract.ReadyToFlyInputPlan? = n
     rule("ready_to_fly", EngineContract.ReadyToFlyInput(now = now, plan = plan, charts = charts, packs = packs, briefing = briefing, fields = fields, notams = notams, kept = kept, device = device, receiver = receiver))
 
 /**
+ * A portable ADS-B receiver's GDL 90 bytes (Garmin 560-1058-00 Rev A) read into a picture the engine holds between reads (receiver_read's, AIM 4-5-7, 4-5-8, 4-5-9), answering only its small part: the receiver's state, own ship and the traffic it hears whole, and for the FIS-B texts and NEXRAD only how many there are and a revision of each, a new one whenever a read changed them, so the host asks for a field's reports or the NEXRAD again only then. The phones hold the picture in a ReceiverSession (engine/bindings/ffi), which answers each read in this shape, so the hundreds of kB of FIS-B are never sent across each second; asked by name, the picture handed over is held for the one read, its revisions counted from 0. Traffic is for seeing, not avoiding (AIM 4-5-7).
+ */
+fun Engine.receiverDelta(data: String? = null, at: Double, picture: EngineContract.ReceiverPicture? = null): Result<EngineContract.ReceiverDeltaAnswer> =
+    rule("receiver_delta", EngineContract.ReceiverDeltaInput(data = data, at = at, picture = picture))
+
+/**
  * FIS-B NEXRAD to draw (products 63 and 64, AIM 4-5-9): for each level 1 to 7, rectangles [south, west, north, east], the regional product's where sent and the CONUS product's elsewhere, with the newest block's time. Not for avoiding weather close in.
  */
 fun Engine.receiverNexrad(picture: EngineContract.ReceiverPicture? = null): Result<EngineContract.ReceiverNexradAnswer> =

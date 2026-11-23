@@ -722,7 +722,10 @@ A cockpit ADS-B receiver (`receiver/`), behind `RECEIVER_ENABLED`
 (build.gradle.kts, on: Android needs no entitlement; [receivers.md](receivers.md)):
 a Stratux, Sentry, SkyEcho or open-mode Stratus's GDL 90 on UDP port 4000, gathered by a
 `DatagramSocket` with the Wi-Fi's multicast lock (`ReceiverSocket`) and
-read by the engine once a second (`receiver_read`); a foreground service
+read by the engine once a second into the picture it holds between reads
+(`HeldPicture` over the engine's `ReceiverSession`, `receiver_delta`:
+only the bytes go over, and only the receiver, own ship, its traffic and
+revisions of the FIS-B come back); a foreground service
 of the connected-device type (`ReceiverService`) kept it going with the
 screen off, and is left out of the manifest while the receiver is parked
 (below). Its traffic is drawn ahead of the

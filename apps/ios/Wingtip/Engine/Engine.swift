@@ -7,7 +7,9 @@ import WingtipEngine
 /// writes from it (engine/bindings/ffi, the WingtipEngine module): the same
 /// figures the planner works out, here with no network. Each pack is
 /// handed over by its file's path, and the engine maps it for the call.
-enum Engine {
+/// Nonisolated: the engine has no thread of its own, and its rules are
+/// asked from the main actor and the concurrent pool alike.
+nonisolated enum Engine {
     /// The coders every call shares, made once: a JSONEncoder and a
     /// JSONDecoder were made for each call, and a fix a second asks the
     /// engine several times (underway, the traffic's marks). Keys as
@@ -50,7 +52,7 @@ enum Engine {
         return name
     }
 
-    private struct RegionCell: Hashable { let lat: Int; let lon: Int }
+    private nonisolated struct RegionCell: Hashable { let lat: Int; let lon: Int }
     private static let regions = Mutex<[RegionCell: String]>([:])
 
     /// What the radio said, all the phone can make of it with no signal
@@ -58,7 +60,7 @@ enum Engine {
     /// whether it was said to `tail`, where its "direct" sends us, the
     /// places it named found in the kept packs, and the route it gives
     /// from the one planned. Its SID and STAR are the planner's to find.
-    struct Heard: Decodable {
+    nonisolated struct Heard: Decodable {
         struct Route: Decodable, Equatable { let dep: String; let stops: [String]; let dest: String }
         let clearance: Clearance
         let forUs: Bool
@@ -80,7 +82,7 @@ enum Engine {
 
     /// What the engine said was wrong with a call, in its own words (a
     /// name it has no rule for, an input not of the rule's shape).
-    struct Refused: Error, LocalizedError {
+    nonisolated struct Refused: Error, LocalizedError {
         let message: String
         var errorDescription: String? { message }
     }
@@ -106,7 +108,25 @@ enum Engine {
     /// reaches a screen as a default value unseen.
     static func rule<In: Encodable, Out: Decodable>(_ name: String, _ input: In) throws -> Out {
         let asked = try String(decoding: encoder.encode(input), as: UTF8.self)
-        let text = try called(name, asked)
+        return try contractual(name, called(name, asked))
+    }
+
+    /// The answer of a state the engine holds (the receiver's
+    /// ReceiverSession, HeldPicture) to a rule of the contract, read as
+    /// the rule's answer type: a refusal thrown and logged as `called`
+    /// does, an answer outside the contract as `rule` does.
+    static func held<Out: Decodable>(_ name: String, _ ask: () throws -> String) throws -> Out {
+        do {
+            return try contractual(name, ask())
+        } catch let EngineError.Refused(text) {
+            Log.engine.error("\(name, privacy: .public) refused: \(text, privacy: .private)")
+            throw Refused(message: text)
+        }
+    }
+
+    /// A rule's answer decoded as its contract's type, or the mismatch
+    /// logged and thrown.
+    private static func contractual<Out: Decodable>(_ name: String, _ text: String) throws -> Out {
         do {
             return try decoder.decode(Out.self, from: Data(text.utf8))
         } catch {
@@ -180,10 +200,10 @@ enum Engine {
 
 /// An Optional seen through Any, so Engine.plain can unwrap one nested
 /// in an array or an object.
-private protocol AnyOptional {
+private nonisolated protocol AnyOptional {
     var unwrapped: Any? { get }
 }
 
-extension Optional: AnyOptional {
+nonisolated extension Optional: AnyOptional {
     fileprivate var unwrapped: Any? { map { $0 as Any } }
 }

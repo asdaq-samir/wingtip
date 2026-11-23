@@ -155,7 +155,7 @@ final class PlateTagAnnotation: NSObject, MKAnnotation {
 }
 
 /// The final approach segment, drawn over the page in its cyan.
-final class FinalSegmentPolyline: MKPolyline {}
+final nonisolated class FinalSegmentPolyline: MKPolyline {}
 
 /// A fix's tag as ForeFlight draws one: a dark box beside the fix, its
 /// name over its altitudes, each with the FAA's bars.

@@ -18,7 +18,7 @@ import PlannerAPI
 /// none with no airplane picked). This only asks and keeps.
 enum KeepPlates {
     /// One chart to keep: the field it is kept for and its address.
-    struct Job: Hashable, Sendable {
+    nonisolated struct Job: Hashable, Sendable {
         let ident: String
         let url: String
     }
@@ -31,12 +31,13 @@ enum KeepPlates {
     static let atOnce = 4
 
     /// The key a chart's pages are kept under: the one the card's Charts tab reads.
-    static func key(_ job: Job) -> String { "\(job.ident)|\(job.url)" }
+    nonisolated static func key(_ job: Job) -> String { "\(job.ident)|\(job.url)" }
 
     /// The files a chart is kept in, as far as the phone has them: its
     /// pages' answer and each kept page's picture. A chart's address names
-    /// its cycle, so what is kept of one never changes.
-    static func files(of job: Job, in folder: URL = KeptForAir.folder) -> [URL] {
+    /// its cycle, so what is kept of one never changes. Nonisolated, as
+    /// the plates' sweep reads them off the main actor (StatePlates.erase).
+    nonisolated static func files(of job: Job, in folder: URL = KeptForAir.folder) -> [URL] {
         let key = key(job)
         let answer = KeptForAir.file(KeptForAir.Kind.plates.rawValue, key, in: folder)
         let pages = KeptForAir.read([ChartPage].self, .plates, key: key, in: folder)?.value ?? []
@@ -44,10 +45,10 @@ enum KeepPlates {
     }
 
     /// A page's picture as KeptPictureLoader asks it: by its whole address.
-    static func pictureAddress(_ page: ChartPage) -> String { Planner.address(of: page.path).absoluteString }
+    nonisolated static func pictureAddress(_ page: ChartPage) -> String { Planner.address(of: page.path).absoluteString }
 
     /// Whether a chart's every file is on the phone.
-    static func whole(_ job: Job, in folder: URL = KeptForAir.folder) -> Bool {
+    nonisolated static func whole(_ job: Job, in folder: URL = KeptForAir.folder) -> Bool {
         let files = files(of: job, in: folder)
         return files.count > 1 && files.allSatisfy { FileManager.default.fileExists(atPath: $0.path) }
     }
@@ -90,7 +91,7 @@ enum KeepPlates {
     }
 
     /// The charts of a flight's or a state's fields, in their order.
-    static func jobs(_ fields: [(ident: String, charts: [APITerminalChart])]) -> [Job] {
+    nonisolated static func jobs(_ fields: [(ident: String, charts: [APITerminalChart])]) -> [Job] {
         fields.flatMap { field in field.charts.map { Job(ident: field.ident, url: $0.url) } }
     }
 

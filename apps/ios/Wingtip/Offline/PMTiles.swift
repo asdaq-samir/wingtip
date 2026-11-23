@@ -16,8 +16,8 @@ import Synchronization
 /// tile the map does not have, never a crash in flight on the tile-load
 /// path. The reads are `pread`s, which share no file position, so no lock
 /// is held over the disk; one mutex guards only the leaf cache.
-final class PMTilesReader: Sendable {
-    struct Header: Equatable, Sendable {
+final nonisolated class PMTilesReader: Sendable {
+    nonisolated struct Header: Equatable, Sendable {
         let rootOffset: UInt64, rootLength: UInt64
         let leafOffset: UInt64
         let dataOffset: UInt64
@@ -26,7 +26,7 @@ final class PMTilesReader: Sendable {
         let internalCompression: UInt8
     }
 
-    struct Entry: Equatable, Sendable {
+    nonisolated struct Entry: Equatable, Sendable {
         let tileID: UInt64
         var offset: UInt64
         let length: UInt64
@@ -37,7 +37,7 @@ final class PMTilesReader: Sendable {
     let header: Header
     private let file: File
     private let root: [Entry]
-    private struct Leaves {
+    private nonisolated struct Leaves {
         var byOffset: [UInt64: [Entry]] = [:]
         var order: [UInt64] = []
     }
@@ -87,7 +87,7 @@ final class PMTilesReader: Sendable {
 
     // MARK: - The format
 
-    enum Failure: Error { case notPMTiles, truncated, compression }
+    nonisolated enum Failure: Error { case notPMTiles, truncated, compression }
 
     /// `a + b`, or `truncated` where it overflows: no real archive's
     /// offsets come near it, so one that does is damaged.
@@ -99,7 +99,7 @@ final class PMTilesReader: Sendable {
 
     /// The archive's file, read by `pread` at an offset, every range
     /// checked against the file's size.
-    final class File: Sendable {
+    final nonisolated class File: Sendable {
         private let fd: Int32
         let size: UInt64
 

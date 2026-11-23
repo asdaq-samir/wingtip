@@ -7,7 +7,7 @@ import Testing
 /// finds no tile, and none traps.
 struct PMTilesDamageTests {
     /// A PMTiles varint (little-endian base 128).
-    static func varint(_ value: UInt64) -> [UInt8] {
+    nonisolated static func varint(_ value: UInt64) -> [UInt8] {
         var v = value, out: [UInt8] = []
         repeat {
             let low = UInt8(v & 0x7F)
@@ -18,7 +18,7 @@ struct PMTilesDamageTests {
     }
 
     /// A directory of `count` entries from its four columns.
-    static func directory(ids: [UInt64], runs: [UInt64], lengths: [UInt64], offsets: [UInt64]) -> Data {
+    nonisolated static func directory(ids: [UInt64], runs: [UInt64], lengths: [UInt64], offsets: [UInt64]) -> Data {
         Data(([UInt64(ids.count)] + ids + runs + lengths + offsets).flatMap(varint))
     }
 

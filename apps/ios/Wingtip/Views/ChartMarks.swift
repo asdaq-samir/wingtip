@@ -168,7 +168,7 @@ final class ChartMarks {
 }
 
 /// A ring of a special-use area, the area on its left.
-final class SpecialUseLine: MKPolyline {
+final nonisolated class SpecialUseLine: MKPolyline {
     private(set) var restricted = false
 
     static func of(_ ring: [[Double]], restricted: Bool) -> SpecialUseLine? {
@@ -184,7 +184,7 @@ final class SpecialUseLine: MKPolyline {
 
 /// The boundary: a solid line, and inside it a band of short ticks
 /// across the line (the web's "sua|hatch" pattern), on the area's side.
-final class SpecialUseRenderer: MKPolylineRenderer {
+final nonisolated class SpecialUseRenderer: MKPolylineRenderer {
     /// The band's width and the ticks' spacing, in points on the screen.
     static let band: CGFloat = 6
     static let tickEvery: CGFloat = 5

@@ -33,7 +33,7 @@ struct ExplainNotamIntent: AppIntent {
 }
 
 /// A NOTAM's words: the figures the model may cite, and who wrote them.
-enum NotamWords {
+nonisolated enum NotamWords {
     static func figures(id: String, raw: String, reasons: [APINotamReason], flight: WordsSource?) -> [WordsSource] {
         var figures = [WordsSource(id: "notam:\(id)", label: "NOTAM \(id)", text: raw)]
         figures += reasons.map { WordsSource(id: "why:\($0.key)", label: "Why it was ranked", text: $0.words) }
@@ -77,7 +77,7 @@ struct WeatherOnArrivalIntent: AppIntent {
 }
 
 /// The forecast on arrival said as a briefer says it.
-enum ArrivalWords {
+nonisolated enum ArrivalWords {
     /// The destination's own TAF where it has one, else the station the
     /// route reaches last.
     static func station(dest: String, _ briefing: Briefing) -> APIForecastStation? {

@@ -13,23 +13,26 @@ import Foundation
 ///
 /// The public FAA and weather data stay at sign-out; the Go / No-Go, made
 /// with the pilot's minimums, loading and currency, and the routes kept
-/// are the pilot's own and go with them (`forgetPilotOwn`).
-enum KeptForAir {
+/// are the pilot's own and go with them (`forgetPilotOwn`). Nonisolated:
+/// its files are read from the map's tile loads and the plates' sweep as
+/// well as the screens; `answer`, which tells the screens, is the main
+/// actor's.
+nonisolated enum KeptForAir {
     /// The kinds, as the engine's `kept_age` and `ready_to_fly` name them.
-    enum Kind: String, CaseIterable, Sendable {
+    nonisolated enum Kind: String, CaseIterable, Sendable {
         case briefing, weather, notams, airports, plates, plan
         case goNoGo = "go_no_go"
         case weatherLoop = "weather_loop"
     }
 
-    struct Entry<T: Codable>: Codable {
+    nonisolated struct Entry<T: Codable>: Codable {
         var value: T
         var fetchedAt: Date
     }
 
     /// What Keep for the Air holds for a route: the kinds it kept and the
     /// bytes they come to, the chart's tiles included.
-    struct Manifest: Codable, Equatable, Sendable {
+    nonisolated struct Manifest: Codable, Equatable, Sendable {
         var kinds: [String]
         var bytes: Int
         var at: Date
