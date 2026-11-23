@@ -137,7 +137,16 @@ function Head({ off = false, children }: { off?: boolean; children: ReactNode })
     const el = box.current;
     const root = document.documentElement.style;
     if (!el || typeof ResizeObserver === "undefined") return;
-    const watch = new ResizeObserver(() => root.setProperty("--flying-head-h", `${el.offsetHeight}px`));
+    // On the page's root, as its reader, the map's banners (MapBanners), is drawn in
+    // the map's shell, apart from this head, and written only as
+    // the height changes:
+    // a variable changed on the root restyles every element on the page,
+    // and the observer is told of every resize, the same height too (the
+    // animation audit of 2026-11-23, M9).
+    const watch = new ResizeObserver(() => {
+      const height = `${el.offsetHeight}px`;
+      if (root.getPropertyValue("--flying-head-h") !== height) root.setProperty("--flying-head-h", height);
+    });
     watch.observe(el);
     return () => {
       watch.disconnect();

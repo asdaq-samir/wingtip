@@ -179,10 +179,14 @@ export const SHEET_CORNERS = "rounded-[var(--radius-sheet)]";
  *  phone each is a sheet, with the sheet's corners. */
 export const DIALOG_CORNERS = "rounded-[var(--radius-dialog)]";
 /** What is behind every sheet and dialog, one dimming for all of them (the
- *  sheet consolidation, 2026-10-27): the page a tenth darker and lightly
- *  blurred, half in the dark theme, where the dialogs dimmed it a fifth
- *  or a half and the sheets a tenth. */
-export const DIM = "bg-black/10 dark:bg-black/50 supports-backdrop-filter:backdrop-blur-xs solid:backdrop-blur-none";
+ *  sheet consolidation, 2026-10-27): the page a tenth darker, half in the
+ *  dark theme, where the dialogs dimmed it a fifth or a half and the
+ *  sheets a tenth. Dimmed only, as Apple's sheets and alerts are: its
+ *  light blur was a backdrop filter over the whole screen and the live
+ *  map, run again every frame its opacity followed a finger on the sheet
+ *  and every frame the map drew under it, the largest blur in the app on
+ *  an iPad (the animation audit of 2026-11-23, M6). */
+export const DIM = "bg-black/10 dark:bg-black/50";
 /** The panel at rest, its tabs and the route's figures: a rectangle with
  *  round corners, at the pilot's ask ("more of a rectangle"), where it was
  *  a capsule, its ends half its height round. */

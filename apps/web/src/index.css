@@ -185,16 +185,22 @@ button,
 /* Clear of the map panel (MapPanel): its edge's corner controls sit
    past what the panel covers at rest (MapPage sets the insets), and past
    the home indicator, moving on the Drawer's own time and curve
-   (motion.drawer), so they keep pace with the sheet they sit by. */
+   (motion.drawer), so they keep pace with the sheet they sit by. Placed
+   at the safe area and moved the rest of the way by `translate`, which
+   the compositor eases: easing `top` and `bottom` laid the map's corners
+   out again every frame of the sheet's settle and the side panel's
+   coming and going (the animation audit of 2026-11-23, M4). */
 .maplibregl-map .maplibregl-ctrl-bottom-left,
 .maplibregl-map .maplibregl-ctrl-bottom-right {
-  bottom: max(var(--map-inset-bottom, 0px), env(safe-area-inset-bottom));
-  transition: bottom var(--motion-drawer) var(--motion-drawer-ease);
+  bottom: env(safe-area-inset-bottom);
+  translate: 0 calc(-1 * max(0px, var(--map-inset-bottom, 0px) - env(safe-area-inset-bottom)));
+  transition: translate var(--motion-drawer) var(--motion-drawer-ease);
 }
 .maplibregl-map .maplibregl-ctrl-top-left,
 .maplibregl-map .maplibregl-ctrl-top-right {
-  top: max(var(--map-inset-top, 0px), env(safe-area-inset-top));
-  transition: top var(--motion-drawer) var(--motion-drawer-ease);
+  top: env(safe-area-inset-top);
+  translate: 0 max(0px, var(--map-inset-top, 0px) - env(safe-area-inset-top));
+  transition: translate var(--motion-drawer) var(--motion-drawer-ease);
 }
 /* And the chart's credit at the right clear of the inspector's card
    (MapPanel, a touch screen from size.inspector wide). */
