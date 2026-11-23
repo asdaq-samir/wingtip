@@ -183,7 +183,11 @@ integration branch"):
   owner's account suspended in October 2026).
 - Issues: "ready" (nothing left for the owner to decide) or "owner" (the
   owner decides, then labels it "ready"). Only the owner takes "owner" off.
-- How to check, ship and review: the skills in `.claude/skills`.
+- How to check, ship and review: the skills in `.claude/skills`. Outside
+  skills installed for the user (`~/.claude/skills`: Emil Kowalski's,
+  Anthropic's, Vercel's and others) are guidance only: where they differ,
+  this file, the stock-components rule, Apple's HIG, the design tokens and
+  the owner's decisions win, and validation stays at the end.
 
 ## Never
 
@@ -296,9 +300,10 @@ as at an iPhone's width, against Apple's Human Interface Guidelines first
 one search and the airport weather marks: docs/design/rules.md, on all
 three apps.
 
-- Hit areas are 44 points, but controls never grow to get there: a
-  pseudo-element (`after:absolute after:-inset-…`) makes the area, and
-  rows sit at `gap-2` so the areas meet.
+- Hit areas are 44 points, but controls never grow to get there: the
+  shared `hit-*` utility makes the area (hand-written pseudo-element
+  areas are held at zero by the ratchet), and rows sit at `gap-2` so the
+  areas meet.
 - Stock components over hand-rolled ones, on every platform (shadcn on
   Base UI and React Aria on the web, SwiftUI, Material 3): the platform's
   own component even in a release candidate, never a copy of our own;
