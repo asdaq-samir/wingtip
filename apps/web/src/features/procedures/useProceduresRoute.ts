@@ -171,10 +171,13 @@ export function useProceduresRoute(given: ProceduresRouteProps) {
     onProcedures(made ? [...kept, made] : kept, made);
     // An approach picked lands on its own runway: the field's runway chip
     // goes to it, kept in step with the approach (at the owner's ask);
-    // another only by circling (PatternChips).
+    // another only by circling (PatternChips). The map stays on the
+    // approach just picked, not the runway's pattern: a loaded approach
+    // leaves the field's pattern drawn, and its fit, at zoom 13, put the
+    // approach's transition and hold off the screen (procedures-approach.spec).
     const name = next && kind === "approach" ? listOf(ident)?.procedures.find((q) => q.id === next.id)?.name : undefined;
     const runway = name ? approachRunway(name) : null;
-    if (runway) onPick(ident, runway);
+    if (runway) onPick(ident, runway, false);
   };
   const close = () => onAt(null);
   // The runway landed on at a field, and a stop's to leave from. With an

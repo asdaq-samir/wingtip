@@ -54,10 +54,11 @@ export function useRunwayPicks({ address, setAddress }: { address: Address; setA
   const setPattern = useCallback((ident: string, end: string | null) => pickRunway("pattern", ident, end, false), [pickRunway]);
   const preselectPattern = useCallback((ident: string, end: string) => pickRunway("pattern", ident, end, true), [pickRunway]);
   // Picked by the pilot, the map goes to it; picked for them into the wind
-  // as the route comes in (ProceduresRoute), the map stays on the route.
+  // as the route comes in (ProceduresRoute), the map stays on the route;
+  // the runway an approach lands on (`go` false), the map on the approach.
   const pickPattern = useCallback(
-    (ident: string, end: string | null) => {
-      if (end) setPatternFocus(`${ident}:${end}:${Date.now()}`);
+    (ident: string, end: string | null, go = true) => {
+      if (end && go) setPatternFocus(`${ident}:${end}:${Date.now()}`);
       setPattern(ident, end);
     },
     [setPattern],
