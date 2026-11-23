@@ -201,11 +201,14 @@ final class AccessibilityAuditTests: XCTestCase {
         // 45113706296 and 45132823358), so each call has less to do. The
         // text-clipped check rides with dynamic type: alone it reported an
         // element-less "may be clipped" on the iPad's strip that the set
-        // never has. Every check asked for is still asked: what the groups
-        // do not name (.action and .parentChild, in .all) goes in a call of
-        // its own after them.
-        let named = Self.groups.reduce(XCUIAccessibilityAuditType()) { $0.union($1) }
-        for group in Self.groups + [types.subtracting(named)] {
+        // never has. These seven are every check XCTest has on iOS:
+        // .action and .parentChild are macOS's, not defined in an iOS
+        // build (XCUIAutomation's XCUIAccessibilityAuditTypes.h), so .all's
+        // other bits name nothing here. A call of those bits alone is not
+        // made: a mask with no iOS check in it was taken as all of them,
+        // the text-clipped check at the default size too, which then
+        // failed Setup's rows (a local run of 2026-11-22).
+        for group in Self.groups {
             let type = group.intersection(types)
             if type.isEmpty { continue }
             try app.performAccessibilityAudit(for: type) { issue in
@@ -218,8 +221,7 @@ final class AccessibilityAuditTests: XCTestCase {
         }
     }
 
-    /// The checks asked in calls of their own, a few to each call; any
-    /// other check asked for (audit's `types`) goes in one call after them.
+    /// The checks XCTest has on iOS, in the calls they are asked in.
     private static let groups: [XCUIAccessibilityAuditType] = [
         .contrast, [.elementDetection, .sufficientElementDescription], [.hitRegion, .trait], [.dynamicType, .textClipped],
     ]
