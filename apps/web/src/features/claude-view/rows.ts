@@ -17,6 +17,7 @@ export function markOf(point: ViewPoint, index: number): TimelinePoint {
     category: null,
     problem: null,
     caution: null,
+    legCaution: null,
     checking: false,
     fuelStop: point.fuel_stop,
     field: point.field,
